@@ -118,10 +118,11 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (S10 freeze, 2027-03-08) | — | home half stubbed 2026-10-26 (I-01-T02); counts, `subkind`, `office_id`, `evidence_review` added 2026-10-27 (I-01-T04); list filters, row facts, snooze, unsnooze, reassign added 2026-10-27 (I-01-T07) |
+| v1 | (S10 freeze, 2027-03-08) | — | home half stubbed 2026-10-26 (I-01-T02); counts, `subkind`, `office_id`, `evidence_review` added 2026-10-27 (I-01-T04); list filters, row facts, snooze, unsnooze, reassign added 2026-10-27 (I-01-T07); firm-level gates (`engagement_id` null) added 2026-11-08 (I-01-T23, DEC-2613), additive: the field was already nullable |
 
 ## 11. Open points
 - P-07-T47 (DEC-539) registers `acceptance_decision_due`, `independence_conclusion_due`, `independence_confirmation_due` and `eqr_eligibility_due` through `register_gate_source` (`review/engagement_gates.py`); `subkind` (I-01-T04) carries that name. Each of these gates is assigned to a named person and shown only to them (`GateSource.assigned_only`, DEC-544).
+- I-01-T23 (DEC-2613) adds firm-level gates: `methodology_version_approval` (a version in Needs review, waiting on the firm roles `methodology.approve` allows) and `wall_approval` (a wall waiting on its named partner alone), registered from `review/firm_gates.py` with `GateSource.scope = "firm"`. Their rows carry `engagement_id: null`; a person sees one only when it is assigned to them or their firm role allows the source's `decides` action, and never when it names a client they are walled from. Rows open KNW-02 (`KNW-02?versionId=`) and ADM-03's wall drawer (`ADM-03?wallId=`).
 - I-01-T08 (DEC-647) registers SPEC-004's review queue as `evidence_review` gates (subject `evidence_version`) and the home counts `agent_runs_running`, `audits` and `binders`; `portal_invites_pending` and the follow-up and invite-resend gates wait for their state.
 - DEC-404 records the stub's choices (one `home.read` cell per firm role, the slot's fail-closed answer, the `due_risk` thresholds).
 - OQ-2 is decided (DEC-403): an `evidence_review` class for SPEC-004 review assignments and uploads awaiting review, band Approvals & sends, added to the kind set additively with I-01-T04. The four bands are unchanged.

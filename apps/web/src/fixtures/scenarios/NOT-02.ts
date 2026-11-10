@@ -5,7 +5,8 @@
 //   c            daniel-reyes   9:51 AM              decided: Agree · decided by Daniel Reyes
 //   d            kevin-osei     9:24 AM              1099 corrections lit: two sources "1 / 2"
 //   a2           kevin-osei     9:24 AM              Activity timeline
-//   off          kevin-osei     9:24 AM              `notices.workspace` off: C-20
+//   e            kevin-osei     9:24 AM              Collins CP2000 (N3): Disagree, Awaiting IRS
+//   f            kevin-osei     9:24 AM              Santos CP14 (N5): None on file, Form 2848 to send
 //
 // Dev and test only.
 
@@ -33,16 +34,14 @@ const AT = "2026-09-14T09:24:00-05:00";
 const AT_B = "2026-09-14T08:58:00-05:00";
 const AT_C = "2026-09-14T09:51:00-05:00";
 
-function capabilities(persona: string | undefined, on: boolean): CapabilitiesOut {
-  const base = capabilitiesFor(seed, persona ?? "kevin-osei");
-  return { ...base, flags: { ...base.flags, "notices.workspace": on } };
+function capabilities(persona: string | undefined): CapabilitiesOut {
+  return capabilitiesFor(seed, persona ?? "kevin-osei");
 }
 
 function frame(
   state: string,
-  options: { persona?: string; variant?: Not02Variant; on?: boolean; clock?: string } = {},
+  options: { persona?: string; variant?: Not02Variant; clock?: string } = {},
 ): Scenario {
-  const on = options.on ?? true;
   const variant = options.variant ?? "a";
   const persona = options.persona ?? "kevin-osei";
   return {
@@ -52,7 +51,7 @@ function frame(
     get handlers(): Record<string, FixtureHandler> {
       return {
         ...E0.handlers,
-        "GET /v1/me/capabilities": ({ persona: who }) => json(capabilities(who, on)),
+        "GET /v1/me/capabilities": ({ persona: who }) => json(capabilities(who)),
         "GET /v1/notices/{notice_id}": ({ persona: who }) =>
           json(not02Notice(variant, who ?? persona)),
         "GET /v1/notices/{notice_id}/analysis": () => json(not02Analysis(variant)),
@@ -70,7 +69,8 @@ export const scenarios = defineScenarios({
   c: frame("c", { persona: "daniel-reyes", variant: "c", clock: AT_C }),
   d: frame("d"),
   a2: frame("a2"),
-  off: frame("off", { on: false }),
+  e: frame("e", { variant: "e" }),
+  f: frame("f", { variant: "f" }),
 });
 
 export type Not02State = keyof typeof scenarios;

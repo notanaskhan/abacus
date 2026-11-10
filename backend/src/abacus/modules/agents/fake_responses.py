@@ -95,4 +95,10 @@ def install(fake: FakeModel) -> FakeModel:
     from abacus.modules.agents.spec import spec
 
     fake.respond(spec("decisions.recommender").prompt, fake_recommend)
+    # N-04-T19: the notices responder's answers, read from the task by code.
+    from abacus.modules.agents.notice_responder import fake_analyze, fake_extract
+
+    responder = spec("notices.responder")
+    fake.respond(responder.prompt, fake_analyze)
+    fake.respond(responder.modes["extract"].prompt, fake_extract)
     return fake

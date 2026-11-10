@@ -88,10 +88,20 @@ def test_g02t04_the_family_is_exactly_these_routes() -> None:
     assert served == set(ROUTES)
 
 
+# Routes that create an export of audit events (a new export record and its file), never a
+# change to an event: G-02's firm exports and P-05's engagement activity CSV (P-05-T11, S33).
+EXPORTS = ("/v1/audit-events/exports", "/v1/engagements/{engagement_id}/audit-events/export")
+# AUD-29's list takes its filter as a body (P-05-T11): a read under `audit_event.read_engagement`.
+QUERY = "/v1/engagements/{engagement_id}/audit-events/query"
+
+
 def test_ac8_no_route_changes_or_removes_an_audit_event() -> None:
     for path, ops in PATHS.items():
-        if "audit-events" in path and not path.startswith("/v1/audit-events/exports"):
+        if "audit-events" in path and not path.startswith(EXPORTS) and path != QUERY:
             assert set(ops) <= {"get"}, path
+    assert set(PATHS[EXPORTS[1]]) == {"post"}  # the CSV export only
+    assert set(PATHS[QUERY]) == {"post"}
+    assert PATHS[QUERY]["post"]["x-abacus-action"] == "audit_event.read_engagement"
 
 
 @pytest.mark.parametrize("name", NAMED)

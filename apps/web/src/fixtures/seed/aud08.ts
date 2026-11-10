@@ -214,25 +214,42 @@ export function aud08Drawer(variant: Aud08Variant): RiskDrawerOut {
     const r8 = risk(ROWS[7] as (typeof ROWS)[number], "a");
     return {
       risk: r8,
-      rationale: R8_RATIONALE,
-      rationale_suggestion_id: stableId("suggestion:northwind:R8:rationale"),
-      citation_ids: [1, 2, 3].map((n) => stableId(`citation:northwind:R8:${String(n)}`)),
+      rationale: null,
+      citation_ids: [],
+      rationale_suggestion: {
+        suggestion_id: stableId("suggestion:northwind:R8:rationale"),
+        text: R8_RATIONALE,
+        citations: 3,
+        version: 1,
+      },
       versions: [],
+      pending_card_id: null,
       routed_to_name: null,
       routed_at: null,
+      response_suggestion: {
+        suggestion_id: stableId("suggestion:northwind:R8:response"),
+        target_ref: "EBP-03",
+        citations: 3,
+        version: 1,
+      },
     };
   }
   const r3 = risk(ROWS[2] as (typeof ROWS)[number], variant);
   return {
-    risk: r3,
+    // The drawer's read adds what this person may do about the card (DEC-2484).
+    risk: {
+      ...r3,
+      allowed_actions:
+        variant === "b2" ? r3.allowed_actions : [...r3.allowed_actions, "decision.notify"],
+    },
     rationale:
       "PayGrid withholds deferrals each biweekly pay date and Northwind uploads the deposit file to Keystone by hand. Internal Control row 2: the Dec 26, 2025 payroll ($48,600) was deposited on Jan 9, 2026, 9 business days later against Northwind's usual 2.",
-    rationale_suggestion_id: null,
     citation_ids: [1, 2, 3, 4].map((n) => stableId(`citation:northwind:R3:${String(n)}`)),
     versions: [
       { version_no: 1, at: "2026-09-14T10:15:00-05:00", by_name: "Hannah Leclerc" },
       { version_no: 2, at: "2026-09-14T12:31:00-05:00", by_name: "Hannah Leclerc" },
     ],
+    pending_card_id: R3_CARD,
     routed_to_name: "Margaret Okonkwo",
     routed_at: "2026-09-14T12:31:00-05:00",
   };

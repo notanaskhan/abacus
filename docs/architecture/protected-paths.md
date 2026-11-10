@@ -63,6 +63,6 @@ is a reviewed policy change with its goldens in the same diff; `tax/compute` imp
 
 
 ## EBP remittance rate file (A-05-T24, DEC-2211; A-05 §4.4, DEC-76)
-`backend/src/abacus/modules/assurance/compute/ebp/reference/irc_6621_rates.yaml` is a red file:
+`backend/src/abacus/modules/assurance/compute/ebp/reference/irc_6621_rates.yaml` and `irs_plan_limits.yaml` (A-05-T43) are red files:
 the IRC §6621(a)(2) quarterly rates VFCP lost earnings compound at, reviewed with the audit CPA
 and pinned by golden tests. A new quarter is a reviewed change with its goldens in the same diff.

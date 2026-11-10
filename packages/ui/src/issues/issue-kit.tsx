@@ -46,6 +46,8 @@ export interface IssueItem {
   sub?: string;
   /** Amber ink for an action the reviewer must take; ink-3 otherwise. */
   subTone?: "muted" | "amber";
+  /** The sub-line's first words in the red ink, ahead of `sub`: a due date a day away (HOME-02). */
+  subLead?: string;
   /** The flag's colour (tree and severity): red for high or action, amber for medium and low. */
   flag?: "red" | "amber";
   /** The agent can fix it: the trailing Settings glyph (tree). */
@@ -90,6 +92,8 @@ export interface IssueQueueProps {
   onSelect?: (item: IssueItem) => void;
   /** The list's accessible name. */
   label?: string;
+  /** severity: the band's count under its title and the glyph 5 from the words (HOME-02). */
+  stacked?: boolean;
   className?: string;
 }
 
@@ -106,6 +110,7 @@ export function IssueQueue({
   selected,
   onSelect,
   label = "Issues",
+  stacked = false,
   className,
 }: IssueQueueProps): JSX.Element {
   const [shut, setShut] = useState<Readonly<Record<string, boolean>>>(() =>
@@ -164,7 +169,9 @@ export function IssueQueue({
               <span className="min-w-0 flex-1 leading-[1.25]">
                 {g.label}
                 {variant === "severity" && (
-                  <span className="ml-[8px] text-dense text-ink-3">{g.count}</span>
+                  <span className={cn("text-dense text-ink-3", stacked ? "block" : "ml-[8px]")}>
+                    {g.count}
+                  </span>
                 )}
               </span>
               {variant !== "severity" && g.count !== "" && (
@@ -203,6 +210,7 @@ export function IssueQueue({
                     key={item.id}
                     item={item}
                     variant={variant}
+                    stacked={stacked}
                     selected={selected === item.id}
                     onKey={onKey}
                     {...(onSelect === undefined ? {} : { onSelect })}
@@ -218,6 +226,7 @@ export function IssueQueue({
 }
 
 function IssueRow({
+  stacked = false,
   item,
   variant,
   selected,
@@ -226,6 +235,7 @@ function IssueRow({
 }: {
   item: IssueItem;
   variant: IssueQueueVariant;
+  stacked?: boolean;
   selected: boolean;
   onSelect?: (item: IssueItem) => void;
   onKey: (event: KeyboardEvent<HTMLButtonElement>) => void;
@@ -261,8 +271,9 @@ function IssueRow({
           "flex w-full items-start text-left hover:bg-nested focus-visible:outline-offset-[-2px]",
           variant === "tree"
             ? "gap-[8px] py-[8px] pr-[10px] pl-[32px] text-dense leading-[1.32]"
-            : "gap-[9px] px-[12px] pt-[8px] pb-[9px] hairline-t",
-          variant === "severity" && "text-dense leading-[1.32]",
+            : cn(stacked ? "gap-[5px]" : "gap-[9px]", "px-[12px] pt-[8px] pb-[9px] hairline-t"),
+          variant === "severity" &&
+            (stacked ? "text-body leading-[1.3]" : "text-dense leading-[1.32]"),
           variant === "radio" && "text-body leading-[1.35]",
           selected && "bg-sel-bg font-medium hover:bg-sel-bg",
           done && "text-ink-3",
@@ -290,7 +301,7 @@ function IssueRow({
             className={cn("mt-[3px] flex-none", item.flag === "amber" ? "text-amber" : "text-red")}
           />
         )}
-        <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <span className={cn("flex min-w-0 flex-1 flex-col", stacked ? "gap-[2px]" : "gap-[3px]")}>
           <span
             className={cn(
               variant === "radio" ? "line-clamp-3" : "line-clamp-2",
@@ -303,10 +314,16 @@ function IssueRow({
             <span
               className={cn(
                 "truncate font-normal",
-                variant === "severity" ? "text-pill-sm" : "text-meta",
+                variant === "severity" && !stacked ? "text-pill-sm" : "text-meta",
                 item.subTone === "amber" && !done ? "text-amber-ink" : "text-ink-3",
               )}
             >
+              {item.subLead !== undefined && (
+                <span className={done ? undefined : "text-red-ink"}>
+                  {item.subLead}
+                  {item.sub === "" ? "" : " · "}
+                </span>
+              )}
               {item.sub}
             </span>
           )}

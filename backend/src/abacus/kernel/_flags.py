@@ -6,8 +6,13 @@ Regenerate: python -m abacus_tools.codegen.feature_flags
 from abacus.kernel.flags import Flag
 
 # fmt: off
-ADJUSTMENTS_ENTRIES = Flag(
-    name="adjustments.entries",
+AGENT_DOCK_ENABLED = Flag(
+    name="agent_dock.enabled",
+    kind="boolean",
+    default="false",
+)
+AGENT_RUNTIME_V2 = Flag(
+    name="agent_runtime.v2",
     kind="boolean",
     default="false",
 )
@@ -18,11 +23,6 @@ AGENTS_CLIENT_DATA_OPTIN = Flag(
 )
 AI_POLICY_V1 = Flag(
     name="ai_policy.v1",
-    kind="boolean",
-    default="false",
-)
-ASSURANCE_COMPLETION = Flag(
-    name="assurance.completion",
     kind="boolean",
     default="false",
 )
@@ -61,6 +61,16 @@ AUDIT_LOG_VALUES = Flag(
     kind="boolean",
     default="false",
 )
+AUDIT_TRAIL_ENGAGEMENT_ACTIVITY = Flag(
+    name="audit_trail.engagement_activity",
+    kind="boolean",
+    default="false",
+)
+AUDITS_ARCHIVE = Flag(
+    name="audits.archive",
+    kind="boolean",
+    default="false",
+)
 AUDITS_BINDER_EXPORT = Flag(
     name="audits.binder_export",
     kind="boolean",
@@ -71,6 +81,21 @@ AUDITS_COCKPIT = Flag(
     kind="boolean",
     default="false",
 )
+AUDITS_COMPLETION = Flag(
+    name="audits.completion",
+    kind="boolean",
+    default="false",
+)
+AUDITS_LETTERS = Flag(
+    name="audits.letters",
+    kind="boolean",
+    default="false",
+)
+AUDITS_REPORT_RELEASE = Flag(
+    name="audits.report_release",
+    kind="boolean",
+    default="false",
+)
 BINDERS_ENGINE = Flag(
     name="binders.engine",
     kind="boolean",
@@ -78,6 +103,11 @@ BINDERS_ENGINE = Flag(
 )
 CLIENTS_TAX_PROFILE = Flag(
     name="clients.tax_profile",
+    kind="boolean",
+    default="false",
+)
+COLLABORATION_V2 = Flag(
+    name="collaboration.v2",
     kind="boolean",
     default="false",
 )
@@ -133,6 +163,11 @@ EBP_MODULES = Flag(
 )
 ENGAGEMENT_AGENT_ENABLED = Flag(
     name="engagement_agent.enabled",
+    kind="boolean",
+    default="false",
+)
+ENGAGEMENT_RUN_ENABLED = Flag(
+    name="engagement_run.enabled",
     kind="boolean",
     default="false",
 )
@@ -217,16 +252,6 @@ GUIDANCE_DRAFTING = Flag(
     kind="boolean",
     default="false",
 )
-HOME_APPROVALS = Flag(
-    name="home.approvals",
-    kind="boolean",
-    default="false",
-)
-HOME_DASHBOARD = Flag(
-    name="home.dashboard",
-    kind="boolean",
-    default="false",
-)
 INBOX_FIRM_INTAKE = Flag(
     name="inbox.firm_intake",
     kind="boolean",
@@ -292,16 +317,6 @@ METHODOLOGY_PROGRAMS = Flag(
     kind="boolean",
     default="false",
 )
-NOTICES_RESPONDER = Flag(
-    name="notices.responder",
-    kind="boolean",
-    default="false",
-)
-NOTICES_WORKSPACE = Flag(
-    name="notices.workspace",
-    kind="boolean",
-    default="false",
-)
 NOTIFICATIONS_EMAIL = Flag(
     name="notifications.email",
     kind="boolean",
@@ -312,8 +327,23 @@ NOTIFICATIONS_V2 = Flag(
     kind="boolean",
     default="false",
 )
+PORTAL_APPROVALS = Flag(
+    name="portal.approvals",
+    kind="boolean",
+    default="false",
+)
+PORTAL_DELIVERABLES = Flag(
+    name="portal.deliverables",
+    kind="boolean",
+    default="false",
+)
 PORTAL_DROP_SORT = Flag(
     name="portal.drop_sort",
+    kind="boolean",
+    default="false",
+)
+PORTAL_GOVERNANCE_ROOM = Flag(
+    name="portal.governance_room",
     kind="boolean",
     default="false",
 )
@@ -350,13 +380,8 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
-QUESTIONNAIRES_EDITOR = Flag(
-    name="questionnaires.editor",
-    kind="boolean",
-    default="false",
-)
-QUESTIONNAIRES_V1 = Flag(
-    name="questionnaires.v1",
+REALTIME_SSE = Flag(
+    name="realtime.sse",
     kind="boolean",
     default="false",
 )
@@ -387,6 +412,11 @@ REVIEW_CHECKPOINTS = Flag(
 )
 RULES_REFERENCE_SETS = Flag(
     name="rules.reference_sets",
+    kind="boolean",
+    default="false",
+)
+RUN_TRACE_ENABLED = Flag(
+    name="run_trace.enabled",
     kind="boolean",
     default="false",
 )
@@ -425,18 +455,18 @@ TAX_ENGINE_BRIDGE = Flag(
     kind="boolean",
     default="false",
 )
-TAX_EXTENSIONS_ESTIMATES = Flag(
-    name="tax.extensions_estimates",
+TAX_INDIVIDUAL_WORKPAPERS = Flag(
+    name="tax.individual_workpapers",
     kind="boolean",
     default="false",
 )
-TAX_K1_RELEASE = Flag(
-    name="tax.k1_release",
+TAX_REVIEW_WORKSPACE = Flag(
+    name="tax.review_workspace",
     kind="boolean",
     default="false",
 )
-TAX_RETURNS_V1 = Flag(
-    name="tax.returns_v1",
+TAX_AGENTS_ENABLED = Flag(
+    name="tax_agents.enabled",
     kind="boolean",
     default="false",
 )
@@ -462,10 +492,10 @@ WORKPAPERS_DRAFTING = Flag(
 )
 
 FLAGS: dict[str, Flag] = {
-    "adjustments.entries": ADJUSTMENTS_ENTRIES,
+    "agent_dock.enabled": AGENT_DOCK_ENABLED,
+    "agent_runtime.v2": AGENT_RUNTIME_V2,
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
     "ai_policy.v1": AI_POLICY_V1,
-    "assurance.completion": ASSURANCE_COMPLETION,
     "assurance.estimates_rp": ASSURANCE_ESTIMATES_RP,
     "assurance.internal_control": ASSURANCE_INTERNAL_CONTROL,
     "assurance.materiality": ASSURANCE_MATERIALITY,
@@ -473,10 +503,16 @@ FLAGS: dict[str, Flag] = {
     "assurance.service_orgs": ASSURANCE_SERVICE_ORGS,
     "audit_log.explorer": AUDIT_LOG_EXPLORER,
     "audit_log.values": AUDIT_LOG_VALUES,
+    "audit_trail.engagement_activity": AUDIT_TRAIL_ENGAGEMENT_ACTIVITY,
+    "audits.archive": AUDITS_ARCHIVE,
     "audits.binder_export": AUDITS_BINDER_EXPORT,
     "audits.cockpit": AUDITS_COCKPIT,
+    "audits.completion": AUDITS_COMPLETION,
+    "audits.letters": AUDITS_LETTERS,
+    "audits.report_release": AUDITS_REPORT_RELEASE,
     "binders.engine": BINDERS_ENGINE,
     "clients.tax_profile": CLIENTS_TAX_PROFILE,
+    "collaboration.v2": COLLABORATION_V2,
     "communications.firm_sender_domain": COMMUNICATIONS_FIRM_SENDER_DOMAIN,
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
@@ -488,6 +524,7 @@ FLAGS: dict[str, Flag] = {
     "ebp.form5500_tieout": EBP_FORM5500_TIEOUT,
     "ebp.modules": EBP_MODULES,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
+    "engagement_run.enabled": ENGAGEMENT_RUN_ENABLED,
     "engagements.letter_composer": ENGAGEMENTS_LETTER_COMPOSER,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
@@ -503,8 +540,6 @@ FLAGS: dict[str, Flag] = {
     "files.browser": FILES_BROWSER,
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
-    "home.approvals": HOME_APPROVALS,
-    "home.dashboard": HOME_DASHBOARD,
     "inbox.firm_intake": INBOX_FIRM_INTAKE,
     "knowledge.catalog": KNOWLEDGE_CATALOG,
     "knowledge.firm_standards": KNOWLEDGE_FIRM_STANDARDS,
@@ -518,25 +553,26 @@ FLAGS: dict[str, Flag] = {
     "methodology.importer": METHODOLOGY_IMPORTER,
     "methodology.lifecycle": METHODOLOGY_LIFECYCLE,
     "methodology.programs": METHODOLOGY_PROGRAMS,
-    "notices.responder": NOTICES_RESPONDER,
-    "notices.workspace": NOTICES_WORKSPACE,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
+    "portal.approvals": PORTAL_APPROVALS,
+    "portal.deliverables": PORTAL_DELIVERABLES,
     "portal.drop_sort": PORTAL_DROP_SORT,
+    "portal.governance_room": PORTAL_GOVERNANCE_ROOM,
     "portal.home_v2": PORTAL_HOME_V2,
     "portal.intake_upload": PORTAL_INTAKE_UPLOAD,
     "portal.settings_editor": PORTAL_SETTINGS_EDITOR,
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
-    "questionnaires.editor": QUESTIONNAIRES_EDITOR,
-    "questionnaires.v1": QUESTIONNAIRES_V1,
+    "realtime.sse": REALTIME_SSE,
     "reporting.fs_disclosure": REPORTING_FS_DISCLOSURE,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.approve_agent_output": REVIEW_APPROVE_AGENT_OUTPUT,
     "review.checkpoints": REVIEW_CHECKPOINTS,
     "rules.reference_sets": RULES_REFERENCE_SETS,
+    "run_trace.enabled": RUN_TRACE_ENABLED,
     "sampling.sample_sets": SAMPLING_SAMPLE_SETS,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,
@@ -544,9 +580,9 @@ FLAGS: dict[str, Flag] = {
     "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
-    "tax.extensions_estimates": TAX_EXTENSIONS_ESTIMATES,
-    "tax.k1_release": TAX_K1_RELEASE,
-    "tax.returns_v1": TAX_RETURNS_V1,
+    "tax.individual_workpapers": TAX_INDIVIDUAL_WORKPAPERS,
+    "tax.review_workspace": TAX_REVIEW_WORKSPACE,
+    "tax_agents.enabled": TAX_AGENTS_ENABLED,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
     "workpapers.core": WORKPAPERS_CORE,

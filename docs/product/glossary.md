@@ -291,6 +291,11 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Comment / mention / thread | Append-only (P-42). Polymorphic anchors; thread events `resolved` and `reopened`. | `comments`, `comment_mentions` | — |
 | Presence | P-15. UNLOGGED table. | `presence_heartbeats` | — |
 | To-do | Assignable work. Never "task"; never assigned to the agent; never client-visible. PRJ-01 "Tasks" becomes "To-dos" (DF-22). | `todos` | `task` |
+| Comment thread | P-05 comments v2 (ADR-236, proposed): one thread per anchor and locator, `open` or `resolved`; Resolve and Reopen are thread events, never edits. Internal unless shared on a client-visible anchor under a grant. Never blocks a sign-off; a review note does. | `comment_threads`, `comment_thread_events` | — |
+| Anchor kind | What a comment thread or to-do is attached to (`workpaper`, `todo`, later `component_thread`, `statement_line`, `sheet_row`), registered by the owning module through `collaboration.api.register_anchor`; an unregistered kind is refused (409 `anchor_kind_not_registered`). The anchor records the version it opened on; the provider pins or follows. | `anchor_kind`, `anchor_id`, `anchor_locator` | — |
+| Thread comment | A comment in a v2 thread, sealed and Restricted. Interim table name until CL-1 moves the SPEC-032 `comments` into `collaboration` after Apr 20, 2028. | `thread_comments` | — |
+| Correct… | The author's fix to a comment: a follow-up comment in the same thread marked as correcting it; the original shows "Corrected below". Replaces "Edit" (DF-18). | `corrects_comment_id` | "Edit" on a comment |
+| Redact… | A firm administrator's removal of a comment posted in error, with a reason and a fresh MFA: every reader sees "Redacted by ‹person› on ‹date›: ‹reason›"; nothing is deleted. Replaces "Delete…" (DF-18). | `thread_comment_redactions`, action `comment.redact` | "Delete" on a comment |
 
 ## New terms: workpapers
 
@@ -513,6 +518,13 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Run record | The insert-only record of a completed specialist run: versions, model, route, inputs' hashes, records read, citations and outcome, kept for the engagement's retention after traces expire. | `agent_run_records` | — |
 | Run step | One step of an agent run. Never "task". | `agent_run_steps` | `task` |
 | Plan / question / artifact / event | P-47. | `agent_plans`, `agent_questions`, `run_artifacts`, `run_events` | — |
+| Run sign-off | A person's sign-off of a run, its open issues and decisions acknowledged. Human only. | `run_sign_offs` | — |
+| Run trace | WB-09's complete, replayable record of one run: summary, timeline, records read, writes and approvals. A read model over stored rows, never a table (P-09-T01, DEC-2801). | `trace` (read model; `RunTraceOut`) | `log` |
+| Run projection | A run's plan steps counted by level and state (`total`, `done`, `running`, `blocked`, `waiting`, `queued`, `failed`). Computed by code on read, never stored, and never called a plan (P-09 §4.3). | `RunProjectionLevelOut` | — |
+| Tool card | UI only: the dock's card for one run step ("Execute ›"). In code the step is `agent_run_step`. | `agent_run_step` | — |
+| AgentBlocks | The closed schema every model output a person sees is validated into: prose segments, tables, key-value rows, metrics, files, badges, citation lists, options and record references; numbers by fact reference, no model markup (ADR-230). | `AgentBlocks` (`agents/blocks.py`) | — |
+| Session item | One entry in a run's thread, in the C6 v2 wire set (`user`, `line`, `block`, `tool`, `progress`, `question`, `answer`, `error`, `plan`, `approval`, `decision_ref`, `artifact`, `run_card`, `notice`). | `session_kind` (C6 v1.1), `session_items` (v2) | — |
+| Agent feedback | A person's thumbs and reason codes on a step or item. | `agent_feedback` | — |
 | Proposal (agent change set) | Groups suggestions (X-14). | `proposals`, `proposal_rows` | — |
 | Learned context | UI label; no "memory", "trained" or "learned" in copy. | `memory_items`, `corrections`, `agent_feedback` | — |
 | Review package | SHL-19. | `review_packages` | — |
@@ -526,8 +538,34 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Library agent | Platform rows, published through PLT-01. | `library_agents`, `agent_installs` | — |
 | Agent (firm-made) | Only narrows a capability. | `agent_definitions` (+ versions) | — |
 | Session | A workbench session. Distinct from `support_session`. | `workbench_sessions`, `session_items` | — |
+| Session item | One insert-only, schema-versioned entry of a session's thread. | `session_items` | — |
 | Saved prompt | A user's saved request text. Never a bare `prompt`. | `saved_prompts` | — |
 | Schedule / trigger | P-50, P-51. | `agent_schedules`, `triggers` | — |
+
+## New terms: portal approvals and deliverables
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Deliverable | A finished or draft document the firm publishes to a client's audiences, once per source (C10). UI: "Deliverables". | `deliverables` | — |
+| Deliverable version | One insert-only version of a deliverable, on an evidence version. | `deliverable_versions` | — |
+| Deliverable audience | A scope that may read a deliverable: client, entity, engagement, work item or governance room. | `deliverable_audiences` | — |
+| Deliverable receipt | Who opened or downloaded a version, rebuilt from audit events. | `deliverable_receipts` | — |
+| Client approval item | One decision put to a client through C18. UI: "Approvals". | `client_approval_item` | "approval" for a review decision |
+| Governance body | A client's committee or board, one model for POR-15 and POR-22 (DEC-93). | `governance_bodies` | — |
+| Governance room | A body's private channel on one audit: A-07's `governance_recipients` row. UI: "Governance room". | `governance_room` | — |
+| Uncorrected misstatement acknowledgement | Management's human-only acknowledgement of a SUM snapshot's net effect. | `uncorrected_misstatement_acknowledgements` | — |
+| My K-1s | POR-09's band of K-1s released to this person. | UI label only | — |
+
+## New terms: tax return workspace (T-04-T03)
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Return workspace | TAX-04 to TAX-07: a return's Review, Issues and Activity tabs (RW-1). | `tax_review_workspace` | — |
+| Document approval | A person's approval of one source document at their level (preparer, detail, manager; DEC-37); one row per level; an unapprove is a reversing row. | `document_approvals` | sign-off |
+| Worksheet | TXI-01's fields per form and section, with provenance and section sign-offs (WS-1). | `return_worksheet` | — |
+| K-1 treatment | How a K-1 line flows into the return (TXI-02): proposed, approved, or overridden with a reason. | `k1_treatment` | — |
+| Residency confirmation | TXI-03's residency for a tax year, decided through an SHL-10 proposal (Q1). | `residency` | — |
+| Draft run | The Return Drafter's run on a return, started by a person or a trigger (Q12). | `tax_return.draft_run` | — |
 
 ## Legacy identifiers: rename or freeze
 

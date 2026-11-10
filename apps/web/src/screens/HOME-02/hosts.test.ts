@@ -3,7 +3,7 @@
 import type { HumanGateOut } from "@abacus/api-client";
 import { describe, expect, it } from "vitest";
 import { encodeRef } from "../../app-core/overlays";
-import { openOverlayOf } from "./hosts";
+import { openHref, openOverlayOf } from "./hosts";
 
 const gate = (over: Partial<HumanGateOut>): HumanGateOut =>
   ({
@@ -43,5 +43,32 @@ describe("openOverlayOf", () => {
   it("an acceptance decision or a send opens its host instead", () => {
     expect(link(gate({ subject: { type: "acceptance_decision_due", id: "x" } }))).toBeUndefined();
     expect(link(gate({ kind: "send", subject: { type: "letter", id: "y" } }))).toBeUndefined();
+  });
+});
+
+// I-01-T23 (DEC-2613): the firm-level gates open their hosts, with no engagement in the route.
+describe("openHref for the firm-level gates", () => {
+  const id = "7f1c2b9e-4d3a-4f6b-9c8d-2e1f0a9b8c7d";
+
+  it("a methodology version's approval opens KNW-02 on the version", () => {
+    const row = gate({
+      subject: { type: "methodology_version_approval", id },
+      subject_route: `KNW-02?versionId=${id}`,
+    });
+    expect(link(row)).toBeUndefined();
+    expect(openHref(row)).toBe(`/knowledge/methodology/${id}`);
+  });
+
+  it("a wall's approval opens ADM-03's wall drawer", () => {
+    const row = gate({
+      subject: { type: "wall_approval", id },
+      subject_route: `ADM-03?wallId=${id}`,
+    });
+    expect(link(row)).toBeUndefined();
+    expect(openHref(row)).toBe(`/settings/offices?ov=wall%3A${id}`);
+  });
+
+  it("a route with no valid id links nowhere", () => {
+    expect(openHref(gate({ subject_route: "ADM-03?wallId=not-a-uuid" }))).toBeUndefined();
   });
 });

@@ -84,3 +84,18 @@ flag `docs/architecture/feature-flags/reporting.yaml`; fixtures
 ## 9. Versioning
 Additive changes in place (DOCX if descoped, T-06's diagnostic field). A breaking change is C11 v2
 with one sprint of overlap.
+
+- **Composed kinds (A-06-T29, DEC-2615, additive, 2026-11-08).** A `DocumentKind` may register a
+  `body_provider`: code composes the whole body (DocBlocks, checked against the closed union)
+  from the owner's record, the request names no `template_version_id` (one is refused
+  `unknown_layout`), and the snapshot seals it as `body`; the render job, `regenerate` (which
+  asks the provider again) and a final render read the sealed body. Template snapshots carry no
+  `body` key, so their shape and hashes are unchanged. The one composed kind is `fs_package` in
+  the code-only layout `financial_statements` (migration 0701 widens the version CHECK); the
+  template contract's six layouts, its import validation and its OpenAPI are unchanged.
+- **`ebp_supplemental_schedule` (A-05-T58 remainder, DEC-2828, additive, 2026-11-09).** A second
+  composed kind, in the same `financial_statements` layout: a plan's supplemental schedule (Schedule
+  H line 4i first), owned by the current Form 5500 draft (`ebp_form5500_draft`) and composed from
+  `compute.ebp.form5500.schedule_4i`. Migration 0745 widens `generated_documents.kind` and
+  `report_templates.family` by the one key, so the kind list stays one list. Draft renders only;
+  the kind answers no approval.

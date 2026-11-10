@@ -4,7 +4,7 @@ title: A-06-T10 adjustments service part 2 — approve-and-send, Undo, batch, re
 spec: SPEC-642
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T10
 branch: s25-a06-t10 (stacked on s25-a06-t09)

@@ -1094,6 +1094,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"answers_sealed", "state", "version", "updated_by", "updated_at"}
         ),
         "acceptance_manual_checks": frozenset({"completed_by", "note_sealed"}),
+        # A-07-T22 (0741, DEC-2806): a checklist version is published once; its items never change.
+        "assurance_checklist_template_versions": frozenset(
+            {"published_at", "published_by", "status"}
+        ),
         # R-01 Story 2.2 (0159): a person's void of a wrong rule link, the one change it takes.
         "fulfilments": frozenset({"voided_at", "voided_by", "void_reason"}),
         "ethical_walls": frozenset(
@@ -1349,6 +1353,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "agent_runs": frozenset(
             {"status", "context_hash", "output", "failure_code", "finished_at"}
             | {"queued_reason", "estimated_start_at"}  # TASK-018b
+            # P-10-T02 (0680, 0681): the runtime's run record and its counters
+            | {"agent_minutes", "agent_ms", "blocked_on", "citations_count", "client_scope"}
+            | {"cost_usd", "event_seq", "plan_id", "records_read", "region", "route", "run_number"}
+            | {"session_id", "signed_off_at", "signed_off_by", "state", "state_reason"}
+            | {"terms_version", "writes_done", "writes_waiting"}
         ),
         "sync_runs": frozenset(
             {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "raw_size_bytes"}
@@ -1597,7 +1606,19 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "integration_mappings": frozenset(
             {"direction", "target_value", "updated_at", "updated_by", "version"}
         ),  # 0466
-        "questionnaire_template_versions": frozenset({"published_at", "published_by"}),  # 0467
+        # T-03-T03 (0655): the editor edits drafts in place (DEC-2202).
+        "questionnaire_template_versions": frozenset(
+            {
+                "applies_to_tax_year",
+                "change_summary",
+                "published_actor_kind",
+                "published_at",
+                "published_by",
+                "questionnaire_id",
+                "row_version",
+                "status",
+            }
+        ),
         "questionnaires": frozenset(
             {
                 "completed_at",
@@ -1608,7 +1629,27 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "submitted_by",
             }
         ),  # 0467
-        "questions": frozenset({"sent_at", "sent_by"}),  # 0467
+        # T-03-T03 (0655): the editor edits drafts in place (DEC-2202).
+        "questions": frozenset(
+            {
+                "amount_parts",
+                "choices",
+                "client_wording",
+                "conditional_on_question_id",
+                "conditional_value",
+                "effect_rules",
+                "help_text",
+                "internal_helper",
+                "position",
+                "required",
+                "retired_at",
+                "section_id",
+                "sent_at",
+                "sent_by",
+                "show_when",
+                "type",
+            }
+        ),
         "tax_authorizations": frozenset(
             {"envelope_id", "evidence_version_id", "row_version", "status"}
         ),  # 0550
@@ -1862,6 +1903,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "assignee_user_id",
                 "authorization_facts",
                 "client_id",
+                "create_anyway_reason_code",  # 0740 (N-04-T07, DEC-2953)
                 "created_work_item_id",
                 "discarded_reason_code",
                 "duplicate_of_work_item_id",
@@ -1890,6 +1932,597 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "template_version_id",
             }
         ),
+        # S26, S27: each table's declared UPDATE grant (schema check holds it to the database).
+        "completion_items": frozenset(
+            {
+                "depends_on_client",
+                "derived",
+                "due_on",
+                "evidence_text",
+                "gate_tag",
+                "last_event_id",
+                "link_target",
+                "na_basis_sealed",
+                "na_by",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        "control_activities": frozenset(
+            {
+                "design",
+                "implementation",
+                "reliance",
+                "row_version",
+                "service_organization_id",
+                "updated_at",
+            }
+        ),
+        "control_exceptions": frozenset(
+            {
+                "citation_ids",
+                "coso_component",
+                "description",
+                "disposition",
+                "matter",
+                "misstatement_candidate_amount",
+                "proposed_by_kind",
+                "proposed_by_user_id",
+                "proposed_severity",
+                "routed_kind",
+                "routed_ref",
+                "row_version",
+                "suggestion_id",
+                "updated_at",
+            }
+        ),
+        "cuecs": frozenset(
+            {"control_activity_id", "evidence_refs", "page_citation_id", "status", "updated_at"}
+        ),
+        "disclosure_checklist_answers": frozenset(
+            {
+                "adopted_by",
+                "answer",
+                "answered_by",
+                "note_ref",
+                "reason",
+                "reviewed_by",
+                "state",
+                "suggestion_id",
+                "updated_at",
+                "version",
+            }
+        ),
+        "disclosure_checklist_template_versions": frozenset(
+            {"published_at", "published_by", "status"}
+        ),
+        "statement_note_template_versions": frozenset({"published_at", "published_by", "status"}),
+        "ebp_certification_points": frozenset(
+            {"citation_id", "proposed_answer", "updated_at", "version"}
+        ),
+        "ebp_form5500_drafts": frozenset({"status", "updated_at", "version"}),
+        "ebp_form5500_lines": frozenset(
+            {
+                "classification",
+                "classified_by_kind",
+                "difference",
+                "engine_version",
+                "f5500_amount",
+                "fs_amount",
+                "fs_ref",
+                "inputs_hash",
+                "note_ref",
+                "updated_at",
+                "version",
+            }
+            # A-05-T58 close (0742, DEC-2820): who keyed a value and the sealed note of where.
+            | {"keyed_by", "keyed_note_sealed"}
+        ),
+        "ebp_late_remittances": frozenset(
+            {
+                "correction_status",
+                "engine_name",
+                "engine_version",
+                "excise_exposure",
+                "finding_id",
+                "form_5330_status",
+                "inputs_hash",
+                "interest_days",
+                "lost_earnings",
+                "lost_earnings_deposited_on",
+                "rate",
+                "rate_ref",
+                "scc_notice_on",
+                "schedule_h_4a",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_part_iv_answers": frozenset(
+            {
+                "amount",
+                "draft_answer",
+                "evidence_ref",
+                "issue_id",
+                "result",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_supplemental_schedules": frozenset(
+            {
+                "engine_version",
+                "generated_document_id",
+                "inputs_hash",
+                "rows",
+                "total",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_trust_report_lines": frozenset({"superseded_by", "updated_at", "version"}),
+        "eqr_checklist_items": frozenset(
+            {"status", "sub_line", "updated_at", "updated_by", "version"}
+        ),
+        "eqr_digest_cards": frozenset(
+            {"reviewed_actor_kind", "reviewed_at", "reviewed_by", "superseded_by"}
+        ),
+        "eqr_reviews": frozenset({"eligibility_snapshot", "status", "updated_at", "version"}),
+        "estimate_installments": frozenset(
+            {
+                "amount",
+                "confirmation_request_item_id",
+                "confirmed_at",
+                "confirmed_by_contact_id",
+                "due_on",
+                "due_rules_version_id",
+                "paid_evidence_version_id",
+                "paid_on",
+                "row_version",
+                "scheduled_for",
+                "status",
+            }
+        ),
+        "estimate_schedules": frozenset(
+            {
+                "annual_required",
+                "engine_version",
+                "inputs_hash",
+                "method",
+                "payment_method_label",
+                "prior_agi_over_threshold",
+                "prior_year_tax",
+                "prior_year_tax_ref",
+                "projected_withholding",
+                "row_version",
+            }
+        ),
+        "extension_payments": frozenset(
+            {
+                "approved_actor_kind",
+                "approved_at",
+                "approved_by",
+                "confirmation_evidence_version_id",
+                "paid_on",
+            }
+        ),
+        "filing_extensions": frozenset(
+            {
+                "ack_received_at",
+                "confirmation_request_item_id",
+                "due_rules_version_id",
+                "engine_version",
+                "extended_due_on",
+                "filed_form_evidence_version_id",
+                "filed_on",
+                "filed_recorded_by",
+                "form",
+                "inputs_hash",
+                "likely_note",
+                "likely_reasons",
+                "likely_to_extend",
+                "original_due_on",
+                "projected_liability",
+                "projected_liability_ref",
+                "projected_liability_source",
+                "reject_code",
+                "row_version",
+                "safe_harbor_pct",
+                "safe_harbor_target",
+                "status",
+                "withholding_plus_estimates",
+            }
+        ),
+        "filings": frozenset(
+            {
+                "ack_evidence_version_id",
+                "due_on",
+                "extended_due_on",
+                "filed_on",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        "going_concern_evaluations": frozenset(
+            {
+                "decision_card_id",
+                "engine_version",
+                "inputs",
+                "inputs_hash",
+                "updated_at",
+                "version",
+            }
+        ),
+        "legal_letters": frozenset(
+            {
+                "basis_sealed",
+                "not_applicable",
+                "request_item_id",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        "questionnaire_sections": frozenset({"key", "name", "position", "retired_at"}),
+        "questionnaire_templates": frozenset({"form_family", "key", "owner_id"}),
+        "soc_exceptions": frozenset({"impact", "impact_rationale", "routed_ref", "updated_at"}),
+        "soc_report_evaluations": frozenset(
+            {
+                "bridge_letter_evidence_version_id",
+                "bridge_letter_request_item_id",
+                "engine_version",
+                "gap_days",
+                "inputs_hash",
+                "objectives_relevant",
+                "objectives_total",
+                "opinion",
+                "period_end",
+                "period_start",
+                "reliance_card_id",
+                "reliance_state",
+                "report_date",
+                "report_type",
+                "row_version",
+                "service_auditor_name",
+                "updated_at",
+            }
+        ),
+        "statement_documents": frozenset(
+            {
+                "checklist_template_version_id",
+                "current_version_no",
+                "management_approval",
+                "row_version",
+                "status",
+                "updated_at",
+            }
+        ),
+        "subsequent_event_procedures": frozenset(
+            {"performed_by", "performed_through", "run_id", "status", "updated_at", "version"}
+        ),
+        # S28 (0667 to 0669; A-05-T41, A-07-T08, T09): EBP accounts, letters, report, archive.
+        "archives": frozenset(
+            {
+                "gate_snapshot_sha256",
+                "lock_decision_id",
+                "locked_at",
+                "locked_by",
+                "manifest_id",
+                "records_object_key",
+                "records_version_id",
+                "retention_until",
+                "seal_sha256",
+                "status",
+            }
+        ),
+        "audit_reports": frozenset(
+            {"city", "current_version_id", "report_date", "status", "updated_at", "version"}
+        ),
+        "ebp_compliance_tests": frozenset(
+            {
+                "accepted_at",
+                "accepted_by",
+                "engine_version",
+                "finding_ref",
+                "inputs_hash",
+                "limit_amount",
+                "limit_ref",
+                "result",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_erisa_budget_lines": frozenset({"amount", "citation_id", "updated_at", "version"}),
+        "ebp_loan_offsets": frozenset({"citation_id", "form_1099r_code", "updated_at", "version"}),
+        "ebp_participant_balances": frozenset(
+            {
+                "beginning_balance",
+                "citation_id",
+                "contributions",
+                "distributions",
+                "earnings",
+                "ending_balance",
+                "fees",
+                "status",
+                "transfers",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_participant_loans": frozenset(
+            {
+                "beginning_balance",
+                "citation_id",
+                "ending_balance",
+                "engine_version",
+                "inputs_hash",
+                "limit_amount",
+                "limit_result",
+                "new_loans",
+                "offsets",
+                "repayments",
+                "status",
+                "updated_at",
+                "version",
+                "vested_balance",
+            }
+        ),
+        "ebp_plan_expenses": frozenset(
+            {
+                "citation_id",
+                "credits",
+                "disclosure_citation_id",
+                "invoiced",
+                "issue_id",
+                "paid_from_plan",
+                "result",
+                "schedule_h_line",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_qualification_facts": frozenset(
+            {
+                "accepted_at",
+                "accepted_by",
+                "citation_id",
+                "result",
+                "updated_at",
+                "value",
+                "version",
+            }
+        ),
+        "ebp_sdba_holdings": frozenset(
+            {"citation_id", "market_value", "security_type", "updated_at", "version"}
+        ),
+        "governance_communications": frozenset(
+            {
+                "channel",
+                "combined_with_id",
+                "current_version_id",
+                "due_on",
+                "due_rule",
+                "envelope_id",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        "governance_recipients": frozenset({"ack_required", "updated_at", "version"}),
+        "representation_letters": frozenset(
+            {
+                "current_version_id",
+                "dated_as_of",
+                "envelope_id",
+                "g7_met_at",
+                "signed_on",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        # P-10-T02 to T06 (0680 to 0684): the agent runtime's tables, sessions and minute ledger
+        "tenant_counters": frozenset({"value"}),
+        "agent_questions": frozenset(
+            {"answer", "answered_at", "answered_by", "skip_default_applied", "state"}
+        ),
+        "agent_run_steps": frozenset(
+            {
+                "active_ms",
+                "ended_at",
+                "error_code",
+                "error_detail_safe",
+                "needs",
+                "outputs_summary",
+            }
+            | {"records_read", "started_at", "state", "usage_record_ids"}
+            # P-09-T08 (0751, DEC-3005): the step's sample references and its source.
+            | {"sample_refs", "source_ref"}
+        ),
+        "engagement_ai_settings": frozenset({"auto_mode", "auto_mode_set_at", "auto_mode_set_by"}),
+        "run_artifacts": frozenset({"saved_to", "state", "version"}),
+        "workbench_sessions": frozenset(
+            {"client_scope", "context_refs", "deleted_at", "item_seq", "last_item_at"}
+            | {"state", "title"}
+        ),
+        "engagement_agent_budgets": frozenset({"alert_pct", "minutes_per_usage_month"}),
+        "usage_month_rollups": frozenset({"cost_usd", "minutes"}),
+        # A-05-T48 (0685): estimates, related parties, parties in interest (against a version)
+        "accounting_estimates": frozenset(
+            {"account_ref", "balance", "bias", "decision_card_id", "disclosure_ref", "finding_id"}
+            | {"je_ref", "method", "range_high", "range_low", "retrospective", "rollforward"}
+            | {"significant_risk", "status", "updated_at", "version"}
+        ),
+        "estimate_components": frozenset({"amount", "label", "position"}),
+        "related_parties": frozenset(
+            {
+                "finding_id",
+                "inquiry_ref",
+                "screened_out_at",
+                "screened_out_by",
+                "screened_out_reason",
+            }
+            | {"status", "updated_at", "version"}
+            | {"disclosure", "disclosure_note", "transactions"}  # A-05-T57 close (0743)
+        ),
+        "parties_in_interest": frozenset(
+            {"erisa_relationship", "exemption", "reporting", "transactions", "updated_at"}
+            | {"version"}
+        ),
+        # R-02-T05, R-02-T07 (0710, 0712): deliverables, receipts, governance, download links
+        "deliverables": frozenset(
+            {"legend_kind", "restricted_use", "title", "updated_at", "version"}
+        ),
+        "deliverable_receipts": frozenset(
+            {"download_count", "first_downloaded_at", "first_viewed_at", "last_viewed_at"}
+        ),
+        "governance_bodies": frozenset({"kind", "name", "status", "updated_at", "version"}),
+        "governance_body_members": frozenset({"ended_on", "member_role"}),
+        "deliverable_download_links": frozenset({"used_at"}),
+        # P-10-T22 (0750, DEC-3001): a tool call moves claimed to done once (guard trigger).
+        "agent_tool_calls": frozenset(
+            {
+                "completed_at",
+                "result",
+                "state",
+            }
+        ),
+        # P-05-T04 (0760, DEC-3105): a reader's last read and mute.
+        "comment_thread_reads": frozenset(
+            {
+                "last_read_at",
+                "muted_at",
+            }
+        ),
+        # P-05-T04 (0760, DEC-3105): a thread's status, sharing and last comment.
+        "comment_threads": frozenset(
+            {
+                "last_comment_at",
+                "shared_scope_id",
+                "shared_scope_kind",
+                "status",
+                "updated_at",
+                "visibility",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): K-1 activity state and its worksheet.
+        "k1_activities": frozenset(
+            {
+                "content_hash",
+                "k1_state",
+                "k1_worksheet_id",
+                "released_at",
+                "source_evidence_version_ids",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): a treatment's proposal, decision and override.
+        "k1_treatments": frozenset(
+            {
+                "changed_vs_prior",
+                "checkpoint_id",
+                "decided_at",
+                "decided_by",
+                "engine_name",
+                "engine_version",
+                "follow_up_note",
+                "inputs_hash",
+                "override_reason_sealed",
+                "override_value",
+                "prior_year",
+                "proposal_id",
+                "resolved",
+                "status",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): the residency proposal and its confirmation.
+        "residency_determinations": frozenset(
+            {
+                "checkpoint_id",
+                "confirmed_at",
+                "confirmed_by",
+                "conflict",
+                "issue_id",
+                "jurisdictions",
+                "options",
+                "proposal_id",
+                "proposed_option",
+                "recommended_by_run_id",
+                "status",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): a return field's current value and labels.
+        "return_fields": frozenset(
+            {
+                "current_fvv_seq",
+                "current_value",
+                "estimate_flag",
+                "label",
+                "new_this_year_note",
+                "sort_order",
+                "updated_at",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): worksheet sections.
+        "return_worksheet_sections": frozenset(
+            {
+                "content_hash",
+                "name",
+                "sort_order",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): worksheets.
+        "return_worksheets": frozenset(
+            {
+                "active",
+                "content_hash",
+                "footer_note",
+                "group_path",
+                "sort_order",
+                "title",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # P-05-T04 (0760, DEC-3105): a to-do's checklist items.
+        "todo_checklist_items": frozenset(
+            {
+                "done",
+                "done_at",
+                "done_by",
+                "position",
+                "text",
+            }
+        ),
+        # P-05-T04 (0760, DEC-3105): to-dos and their anchors.
+        "todos": frozenset(
+            {
+                "anchor_id",
+                "anchor_kind",
+                "anchor_locator",
+                "assignee_seen_at",
+                "assignee_user_id",
+                "deleted_at",
+                "deleted_by",
+                "done_at",
+                "done_by",
+                "due_on",
+                "status",
+                "title",
+                "updated_at",
+                "version",
+                "work_item_id",
+            }
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1911,6 +2544,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
         | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
         | {"label"}  # A-02-T04 (0149); `source_kind` is generated
+        | {"source_evidence_version_id", "extraction_run_id"}  # A-05-T28 (0659, DEC-2208)
     )
     assert sc.APP_INSERT_COLUMNS["trial_balance_lines"] == frozenset(
         {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit", "credit"}
@@ -1927,6 +2561,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
         | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
         | {"inbox_attachment_id"}  # N-01-T22 (0431): an intake-mode run's attachment
+        # P-10-T02 (0680): the runtime's run record
+        | {"auto_mode", "blocked_on", "client_scope", "definition_id", "definition_version"}
+        | {"inputs", "mode", "parent_run_id", "region", "route", "run_number", "runs_as_user_id"}
+        | {"session_id", "state", "state_reason", "subject_ref", "terms_version", "test"}
+        | {"trigger_kind", "trigger_ref", "work_item_ref"}
     )
     assert sc.APP_INSERT_COLUMNS["screening_results"] == frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id", "action"}
@@ -1955,6 +2594,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"outcome", "inputs_hash"}
         | {"route"}  # SPEC-010 (TASK-025, migration 0021): the model route used
         | {"terms_version", "boundary_basis"}  # SPEC-036 (TASK-075, migration 0055)
+        | {"definition_id", "service_line", "session_id", "step_id"}  # P-10-T06 (0684)
     )
     assert {"ledger_snapshots", "trial_balance_lines", "fulfilments"} <= sc.INSERT_ONLY_TABLES
     assert {"screening_results", "usage_records"} <= sc.INSERT_ONLY_TABLES
@@ -2107,6 +2747,34 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "notice_response_versions": "notice_rows_immutable",  # 0650 (N-04-T03)
         "notice_sent_records": "notice_rows_immutable",  # 0650 (N-04-T03)
         "notice_agency_replies": "notice_rows_immutable",  # 0650 (N-04-T03)
+        # S26, S27: insert-only tables (A-04-T25, A-05, A-06-T19, A-07, P-11-T22, T-03-T03).
+        "answer_effects": "t03_frozen_row",
+        "ebp_certification_evaluations": "ebp_certification_evaluations_immutable",
+        "ebp_late_remittance_events": "ebp_late_remittance_events_immutable",
+        "extracted_fields": "trust_kit_immutable",
+        "extracted_table_cells": "trust_kit_immutable",
+        "extracted_tables": "trust_kit_immutable",
+        "line_items": "statement_rows_immutable",
+        "linked_values": "statement_rows_immutable",
+        "ocr_runs": "trust_kit_immutable",
+        "statement_approvals": "statement_rows_immutable",
+        "statement_notes": "statement_rows_immutable",
+        "statement_versions": "statement_rows_immutable",
+        "subsequent_events": "a07_rows_immutable",
+        "tie_out_runs": "statement_rows_immutable",
+        "walkthroughs": "walkthroughs_immutable",
+        "archive_addition_decisions": "a07_rows_immutable",  # S28
+        "archive_additions": "a07_rows_immutable",  # S28
+        "archive_binder_indexes": "a07_rows_immutable",  # S28
+        "archive_lock_decisions": "a07_rows_immutable",  # S28
+        "archive_manifests": "a07_rows_immutable",  # S28
+        "audit_report_versions": "a07_rows_immutable",  # S28
+        "governance_acknowledgements": "a07_rows_immutable",  # S28
+        "governance_communication_sends": "a07_rows_immutable",  # S28
+        "governance_communication_versions": "a07_rows_immutable",  # S28
+        "report_releases": "a07_rows_immutable",  # S28
+        "representation_letter_approvals": "a07_rows_immutable",  # S28
+        "representation_letter_versions": "a07_rows_immutable",  # S28
     }
     assert _evidence_problems(evidence) == []
 
@@ -2534,6 +3202,10 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
         | {"active_tenant_ids", "standards_sets_apply"}
         | {"standards_set_named"}  # 0580 (K-01-T18, DEC-1759): one global standards set by id
+        # 0681, 0683 (P-10-T03, P-10-T05): the run events and realtime prunes, each tenant-scoped
+        # and refused to anyone but its own system actor.
+        | {"prune_run_events", "prune_realtime_events"}
+        | {"archived_guard"}  # 0686 (A-07-T13): an archived engagement's rows refuse a change
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

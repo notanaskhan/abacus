@@ -662,3 +662,65 @@ async def consent_expiry_months(
             ).where(ReportTemplateConsentTerms.template_version_id.in_(version_ids))
         )
         return {r.template_version_id: r.expiry_months for r in rows}
+
+
+# A-07-T24 (DEC-2808; moved here from reporting at the S31 end pass, the tables are methodology's).
+@dataclass(frozen=True)
+class PublishedClauses:
+    """The newest published, not deprecated, version of a family's template: its id and its
+    clause ids in order with their default (C11 holds the wording; a composer never sees it)."""
+
+    version_id: UUID
+    clauses: tuple[tuple[str, bool], ...]
+    body_blocks: int
+
+
+_PUBLISHED_CLAUSES = text(
+    """
+    SELECT v.id, v.clauses, jsonb_array_length(v.body) AS blocks
+      FROM report_template_versions v
+      JOIN report_templates t ON t.id = v.template_id
+     WHERE t.family = :family AND (:name IS NULL OR t.name = :name)
+       AND EXISTS (SELECT 1 FROM report_template_publications p
+                    WHERE p.version_id = v.id AND p.action = 'published')
+       AND NOT EXISTS (SELECT 1 FROM report_template_publications p
+                        WHERE p.version_id = v.id AND p.action = 'deprecated')
+     ORDER BY v.created_at DESC LIMIT 1
+    """
+)
+
+
+async def published_clauses(
+    tenant: TenantContext, family: str, name: str | None = None
+) -> PublishedClauses | None:
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_PUBLISHED_CLAUSES, {"family": family, "name": name})).first()
+    if row is None:
+        return None
+    raw = cast("list[dict[str, object]]", row.clauses or [])
+    return PublishedClauses(
+        row.id,
+        tuple((str(c["clause_id"]), bool(c.get("default_enabled", False))) for c in raw),
+        int(row.blocks),
+    )
+
+
+_PUBLISHED_BODY = text(
+    """
+    SELECT v.id, v.body FROM report_template_versions v
+      JOIN report_templates t ON t.id = v.template_id
+     WHERE v.id = :id AND t.family = :family
+    """
+)
+
+
+async def published_body(
+    tenant: TenantContext, family: str, version_id: UUID
+) -> list[object] | None:
+    """A-07-T27: the blocks of a published version of `family` for a C11 render the consumer
+    composes itself (the wording stays C11 content; the consumer passes it through unread)."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(_PUBLISHED_BODY, {"id": version_id, "family": family})
+        ).first()
+    return None if row is None else cast("list[object]", row.body or [])

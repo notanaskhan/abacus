@@ -38,7 +38,15 @@ export {
   withdrawableFile,
 } from "./sheet";
 export { DROP_POLL_MS, type DropOutcome, dropOutcome, useDropBatch } from "./drops";
-export { type PortalToolbarData, portalToolbarData, usePortalToolbar } from "./shell";
+export {
+  GOVERNANCE_AREAS,
+  K1S_SECTION_TARGET,
+  type PortalToolbarData,
+  governanceNav,
+  isGovernanceScope,
+  portalToolbarData,
+  usePortalToolbar,
+} from "./shell";
 export {
   LANDING_PATH,
   portalAccessToken,

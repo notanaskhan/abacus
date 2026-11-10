@@ -42,13 +42,12 @@ const NOT_FOUND = { code: "not_found", message: "Not found." };
 
 function capabilities(persona: string | undefined, on: boolean): CapabilitiesOut {
   const base = capabilitiesFor(seed, persona ?? "hannah-leclerc");
+  // A-06-T37 (DEC-2714): the `assurance_completion` entitlement replaces `adjustments.entries`.
+  const entitlements = base.entitlements.filter((m) => m !== "assurance_completion");
   return {
     ...base,
-    flags: {
-      ...base.flags,
-      "audits.cockpit": true,
-      "adjustments.entries": on,
-    },
+    flags: { ...base.flags, "audits.cockpit": true },
+    entitlements: on ? [...entitlements, "assurance_completion"] : entitlements,
   };
 }
 

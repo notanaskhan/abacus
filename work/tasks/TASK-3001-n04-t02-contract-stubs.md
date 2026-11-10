@@ -4,7 +4,7 @@ title: N-04-T02 notices v1 contract stubs and screen contracts
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: N-04
 plan_key: N-04-T02
 branch: s25-n04-t02 (stacked on s25-n04-t01)

@@ -5,7 +5,7 @@ import type { OverlayRenderProps } from "../../app-core/overlays";
 // The sheets `sheets.tsx` registers, loaded when one opens, each in its own screen chunk. SHL-10,
 // SHL-11, SHL-12 and SHL-15 need no flag (`review.grammar_api` retired, P-04-T62); the rest stand
 // behind theirs (`review.checkpoints` for SHL-16, `signatures.envelopes` for SIG-02,
-// `tax.returns_v1` for TAX-09's engine sync).
+// the `tax_returns` entitlement for TAX-09's engine sync).
 
 const ApproveSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-10")).ApproveSheet,
@@ -38,7 +38,7 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
   if (id === undefined) return null;
   if (ref.key === "engine-sync") {
     return (
-      <FeatureGate flag="tax.returns_v1">
+      <FeatureGate entitlement="tax_returns">
         <Suspense fallback={null}>
           <EngineSyncLayer {...props} />
         </Suspense>

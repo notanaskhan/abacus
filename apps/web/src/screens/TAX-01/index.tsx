@@ -133,6 +133,8 @@ export interface TAX01Props {
   onOpen?: (row: TaxReturnRowOut) => void;
   /** The returns selected on open (artboard d's selection; the gallery and tests). */
   initialSelection?: readonly string[];
+  /** Bulk Extend…: the returns chosen go to TAX-13's Extend sheet (T-03-T16). */
+  onExtend?: (returnIds: readonly string[]) => void;
 }
 
 export function TAX01({
@@ -140,6 +142,7 @@ export function TAX01({
   onSearch,
   onOpen: onOpenRow,
   initialSelection = [],
+  onExtend: onExtendReturns,
 }: TAX01Props): JSX.Element {
   const now = useNow();
   const openHref = useOpenHref();
@@ -148,6 +151,11 @@ export function TAX01({
     onOpenRow ??
     ((row: TaxReturnRowOut): void => {
       openHref(hrefOf(to.TAX02({ returnId: row.id })));
+    });
+  const onExtend =
+    onExtendReturns ??
+    ((returnIds: readonly string[]): void => {
+      openHref(hrefOf(to.TAX13(), { ov: `extend:${returnIds.join(",")}` }));
     });
   const year = Number(search.tax_year ?? TAX_YEAR);
   const grouped = search.office === "grouped";
@@ -433,13 +441,10 @@ export function TAX01({
       },
     );
   };
-  // Extend… and Run firm standards… are planned: drawn disabled in fixture builds, absent in
-  // production (chapter 04 §2.1 rule 4).
+  // Run firm standards… is planned: drawn disabled in fixture builds, absent in production
+  // (chapter 04 §2.1 rule 4). Extend… is live since T-03-T16.
   const planned = PLANNED_VISIBLE
-    ? [
-        { label: COPY.bulk.extend, onSelect: () => undefined, disabled: true },
-        { label: COPY.bulk.standards, onSelect: () => undefined, disabled: true },
-      ]
+    ? [{ label: COPY.bulk.standards, onSelect: () => undefined, disabled: true }]
     : [];
   const bulk = (
     <Menu
@@ -458,6 +463,13 @@ export function TAX01({
             },
             disabled: chosen.size === 0,
             opensDialog: true,
+          },
+          {
+            label: COPY.bulk.extend,
+            onSelect: () => {
+              onExtend([...chosen]);
+            },
+            disabled: chosen.size === 0,
           },
           ...planned,
         ],
@@ -583,6 +595,15 @@ export function TAX01({
               })),
             ]}
           />
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              onExtend([...chosen]);
+            }}
+          >
+            {COPY.bulk.extend}
+          </Button>
           {planned.map((item) => (
             <Button key={item.label} size="sm" variant="secondary" disabled>
               {item.label}

@@ -27,6 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.modules.assurance.a07_registrations import require_live
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
 
@@ -191,6 +192,9 @@ class AuditCompletionItemOut(BaseModel):
     due_on: Annotated[date | None, classified("internal")]
     na_basis: Annotated[str | None, classified("confidential")]
     na_by_name: Annotated[str | None, classified("internal")]
+    # S31 close (DV-AUD-19-2), additive: the template item's blocker sentence, shown in "What
+    # blocks the report" while the item is open.
+    blocker_text: Annotated[str | None, classified("confidential")] = None
 
 
 class AuditCompletionOut(BaseModel):
@@ -340,6 +344,9 @@ class GoingConcernOut(BaseModel):
     decided_at: Annotated[datetime | None, classified("internal")]
     inputs: Annotated[list[CompletionKvOut], classified("confidential")]
     reserved_to: Annotated[Literal["engagement_partner"], classified("internal")]
+    # S31 close (DV-AUD-19-4), additive: whose continuance the question asks about, the plan's
+    # (an EBP audit) or the entity's (an FS audit); the question's words are AUD-19's copy.
+    subject: Annotated[Literal["plan", "entity"] | None, classified("internal")] = None
     allowed_actions: Annotated[list[CompletionAction], classified("internal")]
 
 
@@ -355,6 +362,8 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
         raise NotFound("work_item")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, replace(ref.resource(), work_item_id=work_item_id))
+    # A-07-T33 (DEC-3106): then the firm's `audits.completion` flag (off: 404).
+    await require_live(ctx.tenant, "audits.completion")
 
 
 def _not_yet() -> NoReturn:
@@ -381,9 +390,34 @@ async def eqr_review_route(work_item_id: UUID, ctx: Ctx) -> EqrReviewOut:
 async def eqr_digest_build_route(
     work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> CompletionRunAcceptedOut:
-    """Starts EqrDigestWorkflow (code only; A-07-T18, T32)."""
+    """The judgments digest, built by code and recorded as the `audit.eqr_digest` run (A-07-T32,
+    DEC-3109); the run id is the 202's."""
+    from abacus.modules.assurance.agent_capabilities import eqr_digest
+
     await _gate(ctx, work_item_id, "eqr.build_digest")
-    _not_yet()
+    del idempotency_key  # the digest keeps unchanged cards: a repeat builds nothing new
+    run_id = await eqr_digest(ctx, work_item_id)
+    return CompletionRunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
+
+
+@router.post(
+    "/completion/readiness:check",
+    action="completion.check_readiness",
+    response_model=CompletionRunAcceptedOut,
+    status_code=202,
+    errors=(501,),
+)
+async def completion_readiness_route(
+    work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> CompletionRunAcceptedOut:
+    """#4231: sign-offs, review notes and (EBP) the draft Form 5500 checked by code, recorded as
+    the `audit.completion_readiness` run (A-07-T32, DEC-3109)."""
+    from abacus.modules.assurance.agent_capabilities import completion_readiness
+
+    await _gate(ctx, work_item_id, "completion.check_readiness")
+    del idempotency_key
+    run_id = await completion_readiness(ctx, work_item_id)
+    return CompletionRunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
 
 
 @router.post(

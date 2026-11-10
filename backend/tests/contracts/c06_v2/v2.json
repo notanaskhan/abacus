@@ -1,0 +1,1370 @@
+{
+  "AgentCapabilitiesOut": {
+    "description": "From flags, policy, boundary facts and consent; no model call.",
+    "properties": {
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/CapabilityAvailabilityOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "AgentCapabilitiesOut",
+    "type": "object"
+  },
+  "AgentFeedbackIn": {
+    "additionalProperties": false,
+    "properties": {
+      "item_id": {
+        "anyOf": [
+          {
+            "maxLength": 120,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Item Id"
+      },
+      "rating": {
+        "cls": "internal",
+        "enum": [
+          "up",
+          "down"
+        ],
+        "title": "Rating",
+        "type": "string"
+      },
+      "reason": {
+        "anyOf": [
+          {
+            "enum": [
+              "wrong_figure",
+              "wrong_source",
+              "missed_something",
+              "too_long",
+              "not_useful",
+              "other"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Reason"
+      },
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      },
+      "step_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Step Id"
+      }
+    },
+    "required": [
+      "run_id",
+      "rating"
+    ],
+    "title": "AgentFeedbackIn",
+    "type": "object"
+  },
+  "AgentFeedbackOut": {
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "title": "AgentFeedbackOut",
+    "type": "object"
+  },
+  "AutoModeIn": {
+    "additionalProperties": false,
+    "properties": {
+      "confirmed": {
+        "cls": "internal",
+        "const": true,
+        "title": "Confirmed",
+        "type": "boolean"
+      },
+      "enabled": {
+        "cls": "internal",
+        "title": "Enabled",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "enabled",
+      "confirmed"
+    ],
+    "title": "AutoModeIn",
+    "type": "object"
+  },
+  "AutoModeOut": {
+    "properties": {
+      "changed_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Changed At",
+        "type": "string"
+      },
+      "changed_by": {
+        "cls": "confidential",
+        "title": "Changed By",
+        "type": "string"
+      },
+      "enabled": {
+        "cls": "internal",
+        "title": "Enabled",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "enabled",
+      "changed_by",
+      "changed_at"
+    ],
+    "title": "AutoModeOut",
+    "type": "object"
+  },
+  "BlockedOnOut": {
+    "properties": {
+      "id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Id"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "decision",
+          "question",
+          "inputs",
+          "approval",
+          "capacity"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "needs": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Needs",
+        "type": "array"
+      },
+      "role": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Role"
+      },
+      "user_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "User Id"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "title": "BlockedOnOut",
+    "type": "object"
+  },
+  "CapabilityAvailabilityOut": {
+    "properties": {
+      "available": {
+        "cls": "internal",
+        "title": "Available",
+        "type": "boolean"
+      },
+      "capability": {
+        "cls": "internal",
+        "title": "Capability",
+        "type": "string"
+      },
+      "reason": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Reason"
+      }
+    },
+    "required": [
+      "capability",
+      "available"
+    ],
+    "title": "CapabilityAvailabilityOut",
+    "type": "object"
+  },
+  "EngagementEffortOut": {
+    "description": "ENG-06's AI part: 412 = 46 + 24 + 342.",
+    "properties": {
+      "budget_minutes": {
+        "cls": "internal",
+        "title": "Budget Minutes",
+        "type": "integer"
+      },
+      "engagement_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Engagement Id",
+        "type": "string"
+      },
+      "lines": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/UsageLineOut"
+        },
+        "title": "Lines",
+        "type": "array"
+      },
+      "used_minutes": {
+        "cls": "internal",
+        "title": "Used Minutes",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "engagement_id",
+      "used_minutes",
+      "budget_minutes",
+      "lines"
+    ],
+    "title": "EngagementEffortOut",
+    "type": "object"
+  },
+  "EngagementRunIn": {
+    "additionalProperties": false,
+    "properties": {
+      "auto": {
+        "cls": "internal",
+        "default": false,
+        "title": "Auto",
+        "type": "boolean"
+      },
+      "work_item_ref": {
+        "anyOf": [
+          {
+            "maxLength": 80,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Work Item Ref"
+      }
+    },
+    "title": "EngagementRunIn",
+    "type": "object"
+  },
+  "FirmUsageOut": {
+    "description": "ADM-14: 14,920 of 20,000 = 8,640 + 4,610 + 1,420 + 120 + 130.",
+    "properties": {
+      "by_capability": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/UsageLineOut"
+        },
+        "title": "By Capability",
+        "type": "array"
+      },
+      "by_engagement": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/UsageLineOut"
+        },
+        "title": "By Engagement",
+        "type": "array"
+      },
+      "by_service_line": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/UsageLineOut"
+        },
+        "title": "By Service Line",
+        "type": "array"
+      },
+      "included_minutes": {
+        "cls": "internal",
+        "title": "Included Minutes",
+        "type": "integer"
+      },
+      "usage_month": {
+        "cls": "internal",
+        "title": "Usage Month",
+        "type": "string"
+      },
+      "used_minutes": {
+        "cls": "internal",
+        "title": "Used Minutes",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "usage_month",
+      "used_minutes",
+      "included_minutes",
+      "by_service_line",
+      "by_engagement",
+      "by_capability"
+    ],
+    "title": "FirmUsageOut",
+    "type": "object"
+  },
+  "PlanDecisionIn": {
+    "additionalProperties": false,
+    "properties": {
+      "expected_version": {
+        "cls": "internal",
+        "title": "Expected Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "expected_version"
+    ],
+    "title": "PlanDecisionIn",
+    "type": "object"
+  },
+  "QuestionAnswerIn": {
+    "additionalProperties": false,
+    "properties": {
+      "option_key": {
+        "anyOf": [
+          {
+            "maxLength": 80,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Option Key"
+      },
+      "text": {
+        "anyOf": [
+          {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Text"
+      }
+    },
+    "title": "QuestionAnswerIn",
+    "type": "object"
+  },
+  "QuestionOptionOut": {
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "label"
+    ],
+    "title": "QuestionOptionOut",
+    "type": "object"
+  },
+  "RunAcceptedOut": {
+    "description": "202: every workflow start returns where to read it.",
+    "properties": {
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      },
+      "status_url": {
+        "cls": "internal",
+        "title": "Status Url",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id",
+      "status_url"
+    ],
+    "title": "RunAcceptedOut",
+    "type": "object"
+  },
+  "RunCountersOut": {
+    "description": "Code's counts, summed from steps (ADR-050). #4118: 2,625 records, 79 citations.",
+    "properties": {
+      "agent_minutes": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Agent Minutes",
+        "type": "integer"
+      },
+      "agent_ms": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Agent Ms",
+        "type": "integer"
+      },
+      "citations_count": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Citations Count",
+        "type": "integer"
+      },
+      "records_read": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Records Read",
+        "type": "integer"
+      },
+      "writes_done": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Writes Done",
+        "type": "integer"
+      },
+      "writes_waiting": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Writes Waiting",
+        "type": "integer"
+      }
+    },
+    "title": "RunCountersOut",
+    "type": "object"
+  },
+  "RunMessageIn": {
+    "additionalProperties": false,
+    "description": "A redirect. Hostile to the model: it enters the next turn as a person's message.",
+    "properties": {
+      "body": {
+        "cls": "restricted",
+        "maxLength": 4000,
+        "minLength": 1,
+        "title": "Body",
+        "type": "string"
+      }
+    },
+    "required": [
+      "body"
+    ],
+    "title": "RunMessageIn",
+    "type": "object"
+  },
+  "RunPlanEditIn": {
+    "additionalProperties": false,
+    "properties": {
+      "expected_version": {
+        "cls": "internal",
+        "title": "Expected Version",
+        "type": "integer"
+      },
+      "steps": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 200,
+        "minItems": 1,
+        "title": "Steps",
+        "type": "array"
+      }
+    },
+    "required": [
+      "steps",
+      "expected_version"
+    ],
+    "title": "RunPlanEditIn",
+    "type": "object"
+  },
+  "RunPlanOut": {
+    "description": "One insert-only plan version; a decision is a new version, never an update.",
+    "properties": {
+      "decided_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Decided At"
+      },
+      "decided_by": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Decided By"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      },
+      "sources": {
+        "cls": "confidential",
+        "items": {
+          "type": "string"
+        },
+        "title": "Sources",
+        "type": "array"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "proposed",
+          "approved",
+          "edited",
+          "cancelled",
+          "standing"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "steps": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/RunPlanStepOut"
+        },
+        "title": "Steps",
+        "type": "array"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "run_id",
+      "version",
+      "state",
+      "steps"
+    ],
+    "title": "RunPlanOut",
+    "type": "object"
+  },
+  "RunPlanStepOut": {
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "level": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Level",
+        "type": "integer"
+      },
+      "writes": {
+        "cls": "internal",
+        "default": false,
+        "title": "Writes",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "key",
+      "label"
+    ],
+    "title": "RunPlanStepOut",
+    "type": "object"
+  },
+  "RunQuestionOut": {
+    "description": "A run asks one question at a time; agent text renders through AgentText (ADR-230).",
+    "properties": {
+      "allow_free_text": {
+        "cls": "internal",
+        "default": false,
+        "title": "Allow Free Text",
+        "type": "boolean"
+      },
+      "answered_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Answered At"
+      },
+      "answered_by": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Answered By"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "options": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/QuestionOptionOut"
+        },
+        "title": "Options",
+        "type": "array"
+      },
+      "prompt": {
+        "cls": "confidential",
+        "title": "Prompt",
+        "type": "string"
+      },
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "open",
+          "answered",
+          "skipped",
+          "expired"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "step_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Step Id"
+      }
+    },
+    "required": [
+      "id",
+      "run_id",
+      "state",
+      "prompt"
+    ],
+    "title": "RunQuestionOut",
+    "type": "object"
+  },
+  "RunSignOffIn": {
+    "additionalProperties": false,
+    "properties": {
+      "acknowledged_decision_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Acknowledged Decision Ids",
+        "type": "array"
+      },
+      "acknowledged_issue_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Acknowledged Issue Ids",
+        "type": "array"
+      }
+    },
+    "title": "RunSignOffIn",
+    "type": "object"
+  },
+  "RunV2Out": {
+    "description": "The run v2 projection; USD and model family stay out of it (WB-09: \"Accrued Agent\nruntime\" plus region).",
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "approve_plan",
+            "edit_plan",
+            "cancel_plan",
+            "answer",
+            "skip",
+            "redirect",
+            "retry",
+            "stop",
+            "sign_off"
+          ],
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "auto_mode": {
+        "cls": "internal",
+        "default": false,
+        "title": "Auto Mode",
+        "type": "boolean"
+      },
+      "blocked_on": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/BlockedOnOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal"
+      },
+      "counters": {
+        "$ref": "#/components/schemas/RunCountersOut",
+        "cls": "internal"
+      },
+      "finished_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Finished At"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "initiator_name": {
+        "cls": "confidential",
+        "title": "Initiator Name",
+        "type": "string"
+      },
+      "mode": {
+        "cls": "internal",
+        "enum": [
+          "plan",
+          "run",
+          "auto"
+        ],
+        "title": "Mode",
+        "type": "string"
+      },
+      "parent_run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Parent Run Id"
+      },
+      "plan_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Plan Id"
+      },
+      "region": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Region"
+      },
+      "run_number": {
+        "cls": "internal",
+        "title": "Run Number",
+        "type": "integer"
+      },
+      "session_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Session Id"
+      },
+      "signed_off_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Signed Off At"
+      },
+      "signed_off_by": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Signed Off By"
+      },
+      "started_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Started At"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "queued",
+          "planning",
+          "awaiting_plan_approval",
+          "dispatched",
+          "running",
+          "needs_input",
+          "blocked_on_decision",
+          "waiting_on_inputs",
+          "succeeded",
+          "approved",
+          "partially_approved",
+          "rejected",
+          "failed",
+          "cancelled"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "state_reason": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "State Reason"
+      },
+      "subject_ref": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Subject Ref"
+      },
+      "title": {
+        "cls": "confidential",
+        "title": "Title",
+        "type": "string"
+      },
+      "trigger_kind": {
+        "cls": "internal",
+        "enum": [
+          "manual",
+          "schedule",
+          "agent_trigger",
+          "engagement_trigger",
+          "retry",
+          "test",
+          "engagement_plan",
+          "agent_column",
+          "event_policy"
+        ],
+        "title": "Trigger Kind",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      },
+      "work_item_ref": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Work Item Ref"
+      }
+    },
+    "required": [
+      "id",
+      "run_number",
+      "title",
+      "state",
+      "mode",
+      "trigger_kind",
+      "initiator_name",
+      "counters",
+      "version",
+      "allowed_actions"
+    ],
+    "title": "RunV2Out",
+    "type": "object"
+  },
+  "SessionItemOut": {
+    "description": "One insert-only entry. `payload` has `v` (its schema version) and holds a verified item.",
+    "properties": {
+      "actor_kind": {
+        "cls": "internal",
+        "enum": [
+          "human",
+          "agent",
+          "system"
+        ],
+        "title": "Actor Kind",
+        "type": "string"
+      },
+      "actor_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Actor Name"
+      },
+      "created_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Created At",
+        "type": "string"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "user_message",
+          "agent_blocks",
+          "plan",
+          "question",
+          "answer",
+          "tool_card",
+          "artifact",
+          "notice"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "payload": {
+        "additionalProperties": true,
+        "cls": "confidential",
+        "title": "Payload",
+        "type": "object"
+      },
+      "run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Run Id"
+      },
+      "seq": {
+        "cls": "internal",
+        "title": "Seq",
+        "type": "integer"
+      },
+      "step_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Step Id"
+      }
+    },
+    "required": [
+      "id",
+      "seq",
+      "kind",
+      "payload",
+      "actor_kind",
+      "created_at"
+    ],
+    "title": "SessionItemOut",
+    "type": "object"
+  },
+  "SessionMessageAcceptedOut": {
+    "properties": {
+      "item_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Item Id",
+        "type": "string"
+      },
+      "run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Run Id"
+      },
+      "status_url": {
+        "cls": "internal",
+        "title": "Status Url",
+        "type": "string"
+      }
+    },
+    "required": [
+      "item_id",
+      "status_url"
+    ],
+    "title": "SessionMessageAcceptedOut",
+    "type": "object"
+  },
+  "SessionMessageIn": {
+    "additionalProperties": false,
+    "description": "A question open: this is answered first and the question stays open (AC-S2).",
+    "properties": {
+      "body": {
+        "cls": "restricted",
+        "maxLength": 8000,
+        "minLength": 1,
+        "title": "Body",
+        "type": "string"
+      }
+    },
+    "required": [
+      "body"
+    ],
+    "title": "SessionMessageIn",
+    "type": "object"
+  },
+  "SessionSnapshotOut": {
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "message",
+            "manage"
+          ],
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "items": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/SessionItemOut"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "last_item_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Last Item At"
+      },
+      "locked": {
+        "cls": "internal",
+        "default": false,
+        "title": "Locked",
+        "type": "boolean"
+      },
+      "origin": {
+        "cls": "internal",
+        "enum": [
+          "manual",
+          "schedule",
+          "trigger",
+          "test",
+          "saved_prompt",
+          "engagement_run"
+        ],
+        "title": "Origin",
+        "type": "string"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "live",
+          "running",
+          "awaiting_answer",
+          "ready_for_review",
+          "complete",
+          "failed"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "title": {
+        "cls": "confidential",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "title",
+      "origin",
+      "state",
+      "items",
+      "allowed_actions"
+    ],
+    "title": "SessionSnapshotOut",
+    "type": "object"
+  },
+  "StreamTopicsIn": {
+    "additionalProperties": false,
+    "properties": {
+      "add": {
+        "cls": "internal",
+        "items": {
+          "cls": "internal",
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        },
+        "maxItems": 100,
+        "title": "Add",
+        "type": "array"
+      },
+      "remove": {
+        "cls": "internal",
+        "items": {
+          "cls": "internal",
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        },
+        "maxItems": 100,
+        "title": "Remove",
+        "type": "array"
+      }
+    },
+    "title": "StreamTopicsIn",
+    "type": "object"
+  },
+  "StreamTopicsOut": {
+    "properties": {
+      "topics": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Topics",
+        "type": "array"
+      }
+    },
+    "required": [
+      "topics"
+    ],
+    "title": "StreamTopicsOut",
+    "type": "object"
+  },
+  "UsageLineOut": {
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "confidential",
+        "title": "Label",
+        "type": "string"
+      },
+      "minutes": {
+        "cls": "internal",
+        "title": "Minutes",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "minutes"
+    ],
+    "title": "UsageLineOut",
+    "type": "object"
+  }
+}

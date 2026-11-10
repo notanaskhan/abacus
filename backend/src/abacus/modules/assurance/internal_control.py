@@ -29,7 +29,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainUnavailable, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.assurance.events import ControlExceptionRecorded
@@ -129,6 +129,11 @@ class RouteRequest:
 
 ExceptionRouter = Callable[[UnitOfWork, RouteRequest], Awaitable[UUID]]
 _ROUTERS: dict[RouteKind, ExceptionRouter] = {}
+
+
+def exception_router(kind: RouteKind) -> ExceptionRouter | None:
+    """The kind's registered router, for another row type routed the same way (AUD-10 e)."""
+    return _ROUTERS.get(kind)
 
 
 def register_exception_route(kind: RouteKind, router: ExceptionRouter) -> None:
@@ -489,3 +494,21 @@ async def request_evidence(
         ),
     )
     return item.id, [item.id]
+
+
+_AUDIT_OWNERS: Final = {
+    "control_activity": text(
+        "SELECT id, engagement_id FROM control_activities WHERE id = ANY(:ids)"
+    ),
+    "control_exception": text(
+        "SELECT id, engagement_id FROM control_exceptions WHERE id = ANY(:ids)"
+    ),
+}
+AUDIT_KINDS: Final = frozenset(_AUDIT_OWNERS)
+
+
+async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
+    """The trail places these rows on their engagement (SPEC-304; DEC-121)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(_AUDIT_OWNERS[kind], {"ids": list(ids)})
+        return {found: owned for found, owned in rows}

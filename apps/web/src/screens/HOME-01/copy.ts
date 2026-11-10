@@ -3,6 +3,7 @@
 // are marked "undesigned" (I-01 §5.5).
 
 export const COPY = {
+  openNotice: "Open notice →",
   greeting: {
     morning: (name: string) => `Good morning, ${name}`,
     afternoon: (name: string) => `Good afternoon, ${name}`,
@@ -64,6 +65,7 @@ export const COPY = {
     uploaded: (actor: string, subject: string) => `${actor} uploaded the ${subject}`,
     flags: (n: number) => `${String(n)} flags · awaiting your decision`,
     envelope: (due: string) => `Envelope · due ${due}`,
+    completed: (client: string) => `${client} finished signing`,
     /** Undesigned (DEC-1001): the two allowlisted codes HOME-01a draws no row for. */
     followUpSent: (actor: string) => `${actor} sent a follow-up`,
     letterRecorded: "The engagement letter was recorded",

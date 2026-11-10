@@ -4,7 +4,7 @@ title: A-05-T20 eligibility engine
 spec: SPEC-640
 acceptance_criteria: [AC-18]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T20
 branch: s25-a05-t20 (stacked on s25-p04-t59)

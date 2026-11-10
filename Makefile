@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
+.PHONY: refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -73,6 +73,8 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.error_codes
 	cd backend && uv run python -m abacus_tools.quality.validate_docs
 	cd backend && uv run python -m abacus_tools.quality.scope_guards
+	# P-10-T10: the agent tool registry against the matrix (C17).
+	cd backend && uv run python -m abacus_tools.quality.tool_registry
 	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
 	# Q-03-T095 (ADR-080): every table and matrix kind the code uses has its generated tests.
@@ -105,7 +107,7 @@ check-fast:
 
 # Generated files match their sources; never hand-edit one (F-01-T06). The API client's drift
 # check stays in ci-contracts, which needs the OpenAPI export.
-GENERATORS = permission_matrix role_templates feature_flags provider_terms ai_policy_defaults agent_specs eval_suites status_vocabulary security_tests human_only_actions sub_processors export_manifest_schema write_capabilities
+GENERATORS = permission_matrix role_templates feature_flags provider_terms ai_policy_defaults agent_specs agent_specs_v2 agent_blocks_schema eval_suites status_vocabulary security_tests human_only_actions sub_processors export_manifest_schema write_capabilities
 check-generated:
 	@cd backend && for g in $(GENERATORS); do \
 		uv run python -m abacus_tools.codegen.$$g --check || { \
@@ -238,6 +240,11 @@ evals:
 # throwaway containers, no model call, no cost). Part of `check`; CI's stage 3 runs it too.
 evals-review-fast:
 	cd backend && uv run python -m abacus_tools.evals --agent evidence.upload_reviewer --route fake --subset fast
+
+# P-09-T15: the AgentBlocks conformance suite (code only: the gateway's output check over the
+# adversarial corpus, every repeat at 1.0). CI's stage 3 runs it on agent paths.
+evals-blocks-fast:
+	cd backend && uv run python -m abacus_tools.evals --agent agent_blocks
 
 # A-04-T09: the materiality recommender's suite on its fake answers, graded by code (no stack, no
 # model call). Part of `check`; CI's stage 3 runs it too. A recommendation outside the firm's range

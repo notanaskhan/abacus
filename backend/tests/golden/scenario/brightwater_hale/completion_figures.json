@@ -1,0 +1,14 @@
+{
+  "_doc": "A-06-T32 (ADR-078; author N): Northwind PY2025 completion figures, transcribed from docs/plan/epics/A-06.md §2 (AUD-15, AUD-16, AUD-17, AUD-20), never from the code. Read by backend/tests/golden/scenario/test_a06t32_completion_figures.py (the Brightwater Hale scenario) and apps/web/src/fixtures/contracts/completion-figures.test.ts (the screens' fixtures). Amounts are strings of whole dollars.",
+  "findings": {"bands": [1, 2, 1, 5], "total": 9, "badge": 3, "misstatements_tab": 2},
+  "sum": {
+    "projected": "35300", "py_reversal": "1150", "accrued": "13050",
+    "rollover": "34150", "iron_curtain": "22250", "pm": "189150", "pct_of_pm": "18.1"
+  },
+  "net_assets": {"total": "16861000", "trust": "16812400", "receivable": "48600"},
+  "tie_out": {"total": 63, "parts": [24, 15, 24]},
+  "checklist": {"total": 142, "yes": 97, "na": 45, "no": 0},
+  "review_notes": {"open": 2, "responded": 1, "cleared": 11, "total": 14},
+  "matrix": {"total": 26, "parts": [6, 3, 7, 6, 4]},
+  "matrix_footer": {"prepared": 25, "reviewed": 24, "partner_signed": 8, "partner_required": 13, "eqr_signed": 0, "eqr_required": 6, "changed_after_sign_off": 1}
+}

@@ -12,6 +12,17 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-09 (S33 end pass): A-07-T30/T31/T32, P-10-T27, R-02-T15
+        "agent_run.code_recorded",
+        "archive.assembly_started",
+        "archive.binder_index_built",
+        "archive.lock_requested",
+        "realtime.invalidated",
+        "report.final_render_requested",
+        "report.release_failed",
+        "report.release_replayed",
+        "report.release_requested",
+        "uncorrected_misstatements.acknowledged",
         "acceptance.answers_updated",
         "acceptance.condition_completed",
         "acceptance.decided",
@@ -33,6 +44,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "agent_run.trace_exported",
         "agent_stage.changed",  # Q-02-T06 (ED-120): a platform staff change of a firm's stage
         "ai.boundary_refused",
+        "answer_effect.recorded",  # reviewed 2026-11-05 (S26, S27)
         "approval_grant.consumed",
         "approval_grant.voided",
         "archive.locked",
@@ -41,6 +53,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "assurance.phase_recorded",
         "assurance.profile_updated",
         "assurance.release_recorded",  # A-01-T23: the recorded date and kind, as numbers
+        "attribute_result.marked",  # reviewed 2026-11-05 (S26, S27)
+        "attribute_result.recorded",  # reviewed 2026-11-05 (S26, S27)
+        "attribute_test.created",  # reviewed 2026-11-05 (S26, S27)
         "audit_chain.anchored",
         "auth.sign_in_refused",
         "autonomy_policy.updated",
@@ -98,11 +113,21 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment.redacted",
         "comment_thread.read",
         "conflict.cleared",
+        "control_activity.recorded",  # reviewed 2026-11-05 (S26, S27)
+        "control_exception.recorded",  # reviewed 2026-11-05 (S26, S27)
+        "control_exception.routed",  # reviewed 2026-11-05 (S26, S27)
+        "control_exception.severity_proposed",  # reviewed 2026-11-05 (S26, S27)
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
+        "ebp_late_remittance.correction_recorded",  # reviewed 2026-11-05 (S26, S27)
         "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
         "envelope.provider_hint",  # N-02-T19: a verified Connect hint (duplicate flag only)
         "envelope.provider_unavailable",  # N-02-T18: kill switch, W7 or install off; not sent
         "envelope_import_file.staged",  # N-02-T08: a scanned file for an import
+        "extension_payment.approved",  # reviewed 2026-11-05 (S26, S27)
+        "filing_extension.ack_unmatched",  # reviewed 2026-11-05 (S26, S27)
+        "filing_extension.acknowledged",  # reviewed 2026-11-05 (S26, S27)
+        "filing_extension.filed_recorded",  # reviewed 2026-11-05 (S26, S27)
+        "filing_extension.flagged",  # reviewed 2026-11-05 (S26, S27)
         "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",
         "connection.checked",
@@ -299,6 +324,22 @@ REVIEWED_FALLBACK: Final = frozenset(
         "misstatement.recorded",
         "model.called",
         "nas.evaluated",
+        "notice.analysis_recorded",  # reviewed 2026-11-05 (S26, S27)
+        "notice.created",  # reviewed 2026-11-05 (S26, S27)
+        "notice.note_added",  # reviewed 2026-11-05 (S26, S27)
+        "notice.proposed_items_recorded",  # reviewed 2026-11-05 (S26, S27)
+        "notice.return_as_filed_recorded",  # reviewed 2026-11-05 (S26, S27)
+        "notice.status_changed",  # reviewed 2026-11-05 (S26, S27)
+        "deficiency.severity_proposed",  # reviewed 2026-11-08 (A-06-T16)
+        "deficiency.severity_suggested",  # reviewed 2026-11-08 (A-06-T16)
+        "notice_intake.attached",  # reviewed 2026-11-06 (N-04-T07)
+        "notice_intake.created",  # reviewed 2026-11-05 (S26, S27)
+        "notice_intake.discarded",  # reviewed 2026-11-05 (S26, S27)
+        "notice_intake.extracted",  # reviewed 2026-11-06 (N-04-T07)
+        "notice_intake.updated",  # reviewed 2026-11-05 (S26, S27)
+        "notice_response.drafted",  # reviewed 2026-11-05 (S26, S27)
+        "notice_response.edited",  # reviewed 2026-11-05 (S26, S27)
+        "notice_response.regenerated",  # reviewed 2026-11-05 (S26, S27)
         "notification.created",
         "notification.read",
         "notification.read_all",
@@ -341,12 +382,14 @@ REVIEWED_FALLBACK: Final = frozenset(
         "procedure.started",
         "procedure.support_requested",
         "procedure_session.plan_approved",
+        "questionnaire.edited",  # reviewed 2026-11-05 (S26, S27)
         "report.released",
         "representation.added",
         "representation.removed",
         "request_item.client_assigned",
         "request_item.client_visibility_changed",
         "request_item.created",
+        "request_item.created_by_answer_effect",  # reviewed 2026-11-05 (S26, S27)
         "request_item.delegated",
         "request_item.delegation_ended",
         "request_item.deleted",
@@ -401,8 +444,13 @@ REVIEWED_FALLBACK: Final = frozenset(
         "secure_link.token_issued",
         "service_line_policy.updated",
         "session.ended",
+        "sign_off.re_review_requested",  # reviewed 2026-11-05 (S26, S27)
         "sign_off.recorded",
         "sign_off.went_stale",
+        "soc_report.bridge_letter_drafted",  # reviewed 2026-11-05 (S26, S27)
+        "soc_report.cuec_mapped",  # reviewed 2026-11-05 (S26, S27)
+        "soc_report.evaluated",  # reviewed 2026-11-05 (S26, S27)
+        "soc_report.reliance_requested",  # reviewed 2026-11-05 (S26, S27)
         "staff_invitation.accept_attempted",
         "staff_invitation.accepted",
         "staff_invitation.created",
@@ -457,6 +505,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "upload.pii_scanned",
         "upload.preview_exists",
         "upload.previewed",
+        "evidence_version.ocr_retry_requested",
         "upload.refused",
         "upload.words_exist",
         "upload.words_extracted",
@@ -558,6 +607,55 @@ REVIEWED_FALLBACK: Final = frozenset(
         "questionnaire.created",  # reviewed 2026-10-31 (S17-S19)
         "questionnaire_template.imported",  # reviewed 2026-10-31 (S17-S19)
         "questionnaire_template.published",  # reviewed 2026-10-31 (S17-S19)
+        "disclosure_checklist_template.imported",  # reviewed 2026-11-06 (A-06-T28)
+        "audit_misstatement.carried_from_py",  # reviewed 2026-11-06 (A-06-T28)
+        "statement.management_approval_recorded",  # reviewed 2026-11-06 (A-06-T28)
+        "statement.draft_requested",  # reviewed 2026-11-06 (A-06-T25)
+        "statement.draft_failed",  # reviewed 2026-11-06 (A-06-T25)
+        "statement.tie_out_requested",  # reviewed 2026-11-06 (A-06-T25)
+        "disclosure_checklist_template.published",  # reviewed 2026-11-06 (A-06-T28)
+        "disclosure_checklist.template_picked",  # reviewed 2026-11-07 (A-06-T25)
+        "statement_note_template.imported",  # reviewed 2026-11-07 (A-06-T25)
+        "statement_note_template.published",  # reviewed 2026-11-07 (A-06-T25)
+        "deliverable.published",  # reviewed 2026-11-08 (R-02-T09)
+        "deliverable.publish_repeated",  # reviewed 2026-11-08 (S31 end pass: idempotent retry)
+        # reviewed 2026-11-09 (S32 end pass): the fallback reads each right.
+        "agent_run.recorded_synthetic",
+        "agent_tool.call_claimed",
+        "agent_tool.call_completed",
+        "agent_tool.call_released",
+        "audit_report.choice_set",
+        "governance_communication.acknowledgement_repeated",
+        "governance_communication.approval_requested",
+        "governance_communication.created",
+        "governance_communication.envelope_drafted",  # TASK-6543: the fallback reads it right
+        "governance_communication.sent",
+        "governance_recipients.set",
+        "deliverable.superseded",  # reviewed 2026-11-08 (R-02-T09)
+        "deliverable.withdrawn",  # reviewed 2026-11-08 (R-02-T09)
+        "assurance_checklist_template.imported",  # reviewed 2026-11-08 (A-07-T22)
+        "assurance_checklist_template.published",  # reviewed 2026-11-08 (A-07-T22)
+        "rep_letter.version_created",  # reviewed 2026-11-08 (A-07-T24)
+        "rep_letter.approval_requested",  # reviewed 2026-11-08 (A-07-T24)
+        "rep_letter.approved",  # reviewed 2026-11-08 (A-07-T24)
+        "rep_letter.sent",  # reviewed 2026-11-08 (A-07-T24)
+        "rep_letter.signed",  # reviewed 2026-11-08 (A-07-T24)
+        "rep_letter.date_mismatch",  # reviewed 2026-11-08 (A-07-T24)
+        "subsequent_event.procedure_added",  # reviewed 2026-11-08 (A-07-T23)
+        "subsequent_event.procedure_performed",  # reviewed 2026-11-08 (A-07-T23)
+        "subsequent_event.recorded",  # reviewed 2026-11-08 (A-07-T23)
+        "legal_letter.recorded",  # reviewed 2026-11-08 (A-07-T23)
+        "going_concern.decision_requested",  # reviewed 2026-11-08 (A-07-T23)
+        "bring_down.completed",  # reviewed 2026-11-08 (A-07-T23)
+        "completion.item_changed",  # reviewed 2026-11-08 (A-07-T22)
+        "notice.respond_by_alerted",  # reviewed 2026-11-06 (N-04-T16)
+        "notice.follow_up_alerted",  # reviewed 2026-11-06 (N-04-T16)
+        "notice_response.payment_confirmation_decided",  # reviewed 2026-11-06 (N-04-T16)
+        "upload.ocr_refused",  # reviewed 2026-11-06 (P-11-T25)
+        "upload.text_ready",  # reviewed 2026-11-06 (P-11-T25)
+        "questionnaire_template.drafted",  # reviewed 2026-11-06 (T-03-T05)
+        "questionnaire_template.discarded",  # reviewed 2026-11-06 (T-03-T05)
+        "questionnaire_template.owner_assigned",  # reviewed 2026-11-06 (T-03-T05)
         "recipient_details_change.accepted",  # S19 batch 4
         "recipient_details_change.rejected",  # S19 batch 4
         "report_template.deprecated",  # reviewed 2026-10-31 (S17-S19)
@@ -657,6 +755,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "fraud_inquiry.requested",
         "attention_flag.raised",
         "attention_flag.converted",
+        "attention_flag.reminded",
         "ebp_plan_review.started",
         "ebp_import.imported",
         "ebp_import.refused",
@@ -666,5 +765,42 @@ REVIEWED_FALLBACK: Final = frozenset(
         "proposed_entries.send_undone",
         "audit_finding.recorded",
         "audit_finding.converted",
+        "consultation.raised",
+        "consultation.concluded",
+        # S28 (TASK-3334): statements (A-06-T25), form extraction and OCR (P-11-T25, T26) and the
+        # notice response (N-04-T16); the names read right through the fallback.
+        "statement.drafted",
+        "statement.tie_out_run",
+        "disclosure_checklist.answered",
+        "disclosure_checklist.adopted",
+        "disclosure_checklist.reviewed",
+        "extracted_fields.recorded",
+        "upload.ocr_read",
+        "notice_response.sent_for_signature",
+        "notice_response.ready_to_send",
+        "notice_response.sent",
+        "notice.agency_reply_recorded",
+        # reviewed 2026-11-06 (S27 gaps, TASK-3350 to TASK-3357)
+        "audit_misstatement.effect_stated",
+        "notice.analysis_started",
+        "notice.analysis_failed",
+        "audit_finding.raised_from_exception",
+        "audit_misstatement.passed_on_sum",
+        "audit_misstatement.raised_from_exception",
+        "estimate_installment.confirmation_requested",
+        "estimate_installment.due_soon_notified",
+        "estimate_installment.recorded",
+        "estimate_schedule.created",
+        "estimate_schedule.inputs_updated",
+        "filing_extension.ack_rejection_notified",
+        "filing_extension.confirmation_requested",
+        "filing_extension.due_date_recomputed",
+        "filing_extension.figures_entered",
+        "filing_extension.prepared",
+        "filing_extension.submitted_for_approval",
+        "soc_exception.impact_recorded",
+        "soc_exception.routed",
+        "sum.factor_recorded",
+        "sum.snapshot_frozen",
     }
 )

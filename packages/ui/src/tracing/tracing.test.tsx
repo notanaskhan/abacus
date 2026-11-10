@@ -263,3 +263,33 @@ describe("C-07 visuals", () => {
     ]);
   });
 });
+
+describe("keepLit: a demo's still frame (T-04-T13, DEC-3171)", () => {
+  it("keeps one element kind of a match lit beside the match, until a person moves it", () => {
+    const store = createMatchStore<CitationPayload>();
+    render(
+      <MatchScope store={store}>
+        <Matchable id={TB} kind="region">
+          box
+        </Matchable>
+        <Matchable id={TB} kind="row">
+          line
+        </Matchable>
+      </MatchScope>,
+    );
+    act(() => {
+      store.keepLit(TB, "region");
+    });
+    expect(screen.getByText("box").hasAttribute("data-lit")).toBe(true);
+    expect(screen.getByText("line").hasAttribute("data-lit")).toBe(false);
+    act(() => {
+      store.keepLit(TB, "row");
+    });
+    expect(screen.getByText("line").hasAttribute("data-lit")).toBe(true);
+    act(() => {
+      store.clear();
+    });
+    expect(screen.getByText("box").hasAttribute("data-lit")).toBe(false);
+    expect(screen.getByText("line").hasAttribute("data-lit")).toBe(false);
+  });
+});

@@ -1,0 +1,32 @@
+# Schedule K-1 (Form 1041) map (P-11-T35; P-11 F8; DEC-76, DEC-2809, DEC-3008). PROTECTED: golden tested and
+# reviewed yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+
+form: "Schedule K-1 (Form 1041)"
+form_type: "k1_1041"
+tax_year: 2027
+family: tax_forms
+version: "k1_1041-2027-v1"
+anchors: ["K-1", "1041"]
+year_after: "1041"
+# State attachments are flagged for a person's review; their figures are never read or summed.
+state_anchor: "State Information"
+fields:
+  - {key: k1_1041.box1, label: "Interest income", anchor: "Interest income", value_type: money, box: "1"}
+  - {key: k1_1041.box2a, label: "Ordinary dividends", anchor: "Ordinary dividends", value_type: money, box: "2a"}
+  - {key: k1_1041.box2b, label: "Qualified dividends", anchor: "Qualified dividends", value_type: money, box: "2b"}
+  - {key: k1_1041.box3, label: "Net short-term capital gain", anchor: "Net short-term capital gain", value_type: money, box: "3"}
+  - {key: k1_1041.box4a, label: "Net long-term capital gain", anchor: "Net long-term capital gain", value_type: money, box: "4a"}
+  - {key: k1_1041.box5, label: "Other portfolio and nonbusiness income", anchor: "Other portfolio and nonbusiness income", value_type: money, box: "5"}
+  - {key: k1_1041.box6, label: "Ordinary business income", anchor: "Ordinary business income", value_type: money, box: "6"}
+  - {key: k1_1041.box7, label: "Net rental real estate income", anchor: "Net rental real estate income", value_type: money, box: "7"}
+  - {key: k1_1041.box8, label: "Other rental income", anchor: "Other rental income", value_type: money, box: "8"}
+# Code lines ("18A … 2,356"): each code its own field; amounts read, never summed.
+code_boxes:
+  - {box: "9", key: k1_1041.box9, label: "Directly apportioned deductions"}
+  - {box: "11", key: k1_1041.box11, label: "Final year deductions"}
+  - {box: "12", key: k1_1041.box12, label: "Alternative minimum tax adjustment"}
+  - {box: "13", key: k1_1041.box13, label: "Credits and credit recapture"}
+  - {box: "14", key: k1_1041.box14, label: "Other information"}
+tie_outs:
+  - {smaller: k1_1041.box2b, larger: k1_1041.box2a}

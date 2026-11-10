@@ -349,7 +349,13 @@ async def workpapers_for(ctx: AuthContext, engagement_id: UUID) -> list[Workpape
 
 
 async def create_workpaper(
-    ctx: AuthContext, engagement_id: UUID, code: str, title: str, audit_area: str | None
+    ctx: AuthContext,
+    engagement_id: UUID,
+    code: str,
+    title: str,
+    audit_area: str | None,
+    *,
+    kind: str | None = None,
 ) -> UUID:
     """AC-2: a new paper on the engagement's assurance work item; codes unique per engagement."""
     code, title = code.strip().upper(), title.strip()
@@ -375,6 +381,7 @@ async def create_workpaper(
             title=title,
             audit_area=area,
             created_by=ctx.user_id,
+            kind=kind,
         )
         tx.record("workpaper.created", target=Target(TARGET, workpaper_id))
     return workpaper_id
@@ -599,6 +606,7 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
         ),
         blocked_code=None if blocked is None else blocked[0],
         blocked_count=0 if blocked is None else blocked[1],
+        requirement_key=requirement_key(paper.kind, paper.code),
     )
 
 
@@ -636,16 +644,38 @@ async def workpaper_reviewables(tenant: TenantContext, engagement_id: UUID) -> l
 _PLANNING_KINDS = frozenset(
     {"general_audit_planning", "risk_assessment", "internal_control", "service_organizations"}
 )
-_REPORTING_KINDS = frozenset({"ebp_form5500"})
+# AUD-17 draws Form 5500 Tie-Out under Fieldwork & Testing (TASK-3400, DEC-2399, superseding
+# DEC-2238's Reporting); a paper with no kind sits where its audit area says, if it names one.
+_REPORTING_KINDS: frozenset[str] = frozenset()
+_AREA_SECTIONS: Final = {
+    "planning": "planning",
+    "completion": "completion",
+    "reporting": "reporting",
+}
 
 
 async def matrix_sections(tenant: TenantContext, engagement_id: UUID) -> dict[UUID, str]:
     """Each paper's AUD-17 section: `planning`, `fieldwork` or `reporting` (by kind)."""
     async with tenant_session(tenant) as session:
         papers = await engagement_papers(session, engagement_id)
-    return {
-        p.id: "planning"
-        if p.kind in _PLANNING_KINDS
-        else ("reporting" if p.kind in _REPORTING_KINDS else "fieldwork")
-        for p in papers
-    }
+    return {p.id: section_of(p.kind, p.audit_area) for p in papers}
+
+
+def requirement_key(kind: str | None, code: str) -> str:
+    """The key the firm's review_levels standard assigns a paper's levels by (TASK-3399): its
+    kind, else its own code (`C-110` reads `workpaper:c_110`), since kindless papers differ."""
+    if kind:
+        return f"workpaper:{kind}"
+    slug = re.sub(r"[^a-z0-9]+", "_", code.lower()).strip("_")
+    return f"workpaper:{slug if slug[:1].isalpha() else 'p_' + slug}"
+
+
+def section_of(kind: str | None, audit_area: str | None) -> str:
+    """A paper's AUD-17 group: by its kind, else by its audit area when that names a group."""
+    if kind in _PLANNING_KINDS:
+        return "planning"
+    if kind in _REPORTING_KINDS:
+        return "reporting"
+    if kind is None:
+        return _AREA_SECTIONS.get((audit_area or "").strip().lower(), "fieldwork")
+    return "fieldwork"

@@ -97,6 +97,17 @@ def initials(name: str) -> str:
     return (parts[0][0] + parts[-1][0]).upper()
 
 
+def reviewed(row: Row) -> bool:
+    """AUD-17's Reviewed (TASK-3398, DEC-2397, the handoff's "Reviewed 24"): prepared, and every
+    review level the row requires (L2, L3) signed on its current content. A stale review isn't
+    one; a row that needs neither level (the manager's review sits in L3 when the senior
+    prepares; Findings and SUM need no L2 or L3) counts once prepared."""
+    preparer, *reviews = row.cells[:3]
+    return preparer.state == "signed" and all(
+        c.state in ("signed", "not_required") for c in reviews
+    )
+
+
 def footer_of(rows: tuple[Row, ...]) -> Footer:
     def signed(level: int) -> int:
         return sum(1 for r in rows if r.cells[level - 1].state in ("signed", "stale"))
@@ -106,7 +117,7 @@ def footer_of(rows: tuple[Row, ...]) -> Footer:
 
     return Footer(
         prepared=signed(1),
-        reviewed=signed(2),
+        reviewed=sum(1 for r in rows if reviewed(r)),
         partner_signed=signed(4),
         partner_required=required(4),
         eqr_signed=signed(5),
@@ -115,27 +126,45 @@ def footer_of(rows: tuple[Row, ...]) -> Footer:
     )
 
 
+# S28 (TASK-3400, DEC-2399): AUD-17's groups as the handoff draws them. Trial Balance and
+# Materiality sit in Planning, the sample and the mapping in Fieldwork & Testing, the financial
+# statements in Reporting; the rest of the engagement-level rows stay in Completion.
+_SECTION_OF: Final[dict[str, Section]] = {
+    "trial_balance": "planning",
+    "materiality": "planning",
+    "mapping_set": "fieldwork",
+    "sample_set_version": "fieldwork",
+    "attribute_test": "fieldwork",
+    "fs_package": "reporting",
+}
+
+
 async def matrix(
     tenant: TenantContext, engagement_id: UUID, *, section: Section | None = None
 ) -> Matrix:
     reviewables = await reviewables_of(tenant, engagement_id)
     sections = await matrix_sections(tenant, engagement_id)
+    # By type and id (TASK-3401): Materiality, Findings and SUM each use the audit work item's
+    # id, so keyed by id alone they overwrote each other's facts and sign-offs.
     facts = {
-        r.target_id: await reviewable_facts(tenant, r.target_type, r.target_id)
+        (r.target_type, r.target_id): await reviewable_facts(tenant, r.target_type, r.target_id)
         for r in reviewables
     }
-    states: dict[UUID, list[LevelState]] = {}
+    states: dict[tuple[str, UUID], list[LevelState]] = {}
     for r in reviewables:
         found = await sign_off_states(
-            tenant, r.target_type, [r.target_id], {r.target_id: facts[r.target_id].content_hash}
+            tenant,
+            r.target_type,
+            [r.target_id],
+            {r.target_id: facts[(r.target_type, r.target_id)].content_hash},
         )
-        states[r.target_id] = list(found[r.target_id])
+        states[(r.target_type, r.target_id)] = list(found[r.target_id])
     signers = {s.signed_by for listed in states.values() for s in listed if s.signed_by}
     names = await names_of(sorted(signers, key=str)) if signers else {}
     rows: list[Row] = []
     for r in reviewables:
-        f = facts[r.target_id]
-        by_level = {s.level: s for s in states[r.target_id]}
+        f = facts[(r.target_type, r.target_id)]
+        by_level = {s.level: s for s in states[(r.target_type, r.target_id)]}
         cells: list[Cell] = []
         for level in LEVELS:
             s = by_level.get(level)
@@ -159,7 +188,7 @@ async def matrix(
         row_section: Section = (
             sections.get(r.target_id, "fieldwork")
             if r.target_type == "workpaper"
-            else "completion"
+            else _SECTION_OF.get(r.target_type, "completion")
         )  # type: ignore[assignment] -- boto3 ships no stubs
         rows.append(Row(r.target_type, r.target_id, r.code, r.title, row_section, tuple(cells)))
     ordered = tuple(sorted(rows, key=lambda row: (SECTIONS.index(row.section), row.code)))

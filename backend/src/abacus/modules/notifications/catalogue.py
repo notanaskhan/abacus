@@ -44,6 +44,19 @@ async def _envelope_sender(tenant_id: UUID, payload: dict[str, object]) -> list[
     return [sender] if sender is not None else []
 
 
+async def _eqr_partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-07-T18: the engagement partners named on the concurrence event."""
+    del tenant_id
+    return _uuids(payload, "partner_user_ids")
+
+
+async def _assigned_eqr(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-07-T18: the assigned EQR a Request EQR… names (DF-05)."""
+    del tenant_id
+    found = _uuid(payload, "eqr_user_id")
+    return [found] if found is not None else []
+
+
 async def _admins(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return await firm_admins(tenant_id)
 
@@ -71,6 +84,22 @@ async def _team_but_joiner(tenant_id: UUID, payload: dict[str, object]) -> list[
     if engagement_id is None:
         return []
     return sorted({user for user, _ in await team_of(tenant_id, engagement_id) if user != joiner})
+
+
+async def _notice_intake_owner(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    del tenant_id
+    owner = _uuid(payload, "owner_id")
+    return [] if owner is None else [owner]
+
+
+async def _notice_assignee_and_notified(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """N-04-T07: the assignee, and whoever the person chose to notify at Create notice."""
+    del tenant_id
+    people = set(_uuids(payload, "notify_user_ids"))
+    assignee = _uuid(payload, "assignee_id")
+    if assignee is not None:
+        people.add(assignee)
+    return sorted(people)
 
 
 async def _added_member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
@@ -293,6 +322,9 @@ class Kind:
 
 
 CATALOGUE: Final[dict[str, Kind]] = {
+    # A-07-T18 (A-07 §4.8): G6 met, to the engagement partners; Request EQR…, to the EQR.
+    "eqr.concurred_v2": Kind("eqr_concurred", _eqr_partners, "engagement", "engagement_id"),
+    "eqr.requested": Kind("eqr_requested", _assigned_eqr, "engagement", "engagement_id"),
     # T-01-T16: a signed §7216 consent 30 days from expiry (the lifecycle sweep, once each).
     "consent.expiring": Kind(
         "consent_expiring", _consent_requester, "consent", "consent_id", None
@@ -340,6 +372,11 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "reminders.drafted": Kind("reminders.drafted", _leads, "engagement", "engagement_id"),
     # P-06-T14: the same, under its C16 code (events from before the rename keep the legacy one).
     "follow_up.drafted": Kind("follow_up_drafted", _leads, "engagement", "engagement_id"),
+    # R-02-T15 (DEC-3113): the client acknowledged the uncorrected misstatements; the EP and the
+    # managers hear of it (identifiers only, DEC-61).
+    "uncorrected_misstatements.acknowledged": Kind(
+        "uncorrected_misstatements_acknowledged", _leads, "engagement", "engagement_id"
+    ),
     "agent.digest": Kind("agent.digest", _leads, "engagement", "engagement_id"),
     # SPEC-032 (TASK-062): a person mentioned in a comment, on the request it's about.
     "comment.mentioned": Kind("mention", _mentioned, "request_item", "request_item_id"),
@@ -362,6 +399,23 @@ CATALOGUE: Final[dict[str, Kind]] = {
     # N-02-T27 (DF-11): a signer's identity checks failed; they need a handwritten signature.
     "envelope.signer_verification_failed": Kind(
         "envelope_signer_verification_failed", _envelope_sender, "envelope", "envelope_id"
+    ),
+    # N-04-T07 (DEC-2326): an intake read or opened for entry, and a new notice. No amounts.
+    "notice_intake.ready": Kind(
+        "notice_intake_ready", _notice_intake_owner, "notice_intake", "intake_id", None
+    ),
+    "notice.created": Kind(
+        "notice_created", _notice_assignee_and_notified, "notice", "work_item_id", None
+    ),
+    # N-04-T16 (DEC-2311): a notice's clocks and readiness, to its assignee.
+    "notice.respond_by_soon": Kind(
+        "notice_respond_by_soon", _assignee, "notice", "work_item_id", None
+    ),
+    "notice.follow_up_due": Kind(
+        "notice_follow_up_due", _assignee, "notice", "work_item_id", None
+    ),
+    "notice_response.ready_to_send": Kind(
+        "notice_response_ready_to_send", _assignee, "notice", "work_item_id", None
     ),
     # Q-02-T33: the incident register (the platform module's events; firm-level).
     "incident.recorded": Kind(
@@ -422,6 +476,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "proposal.routed": Kind("proposal_routed", _approver, "proposal", "proposal_id"),
     "sign_off.requested": Kind("sign_off_requested", _listed, "reviewable", "target_id"),
     "issue.assigned": Kind("issue_assigned", _assignee, "issue", "issue_id"),
+    # A-06-T10 (DEC-2486): a client's decision on a proposed entry, to the partner and managers.
+    "proposed_entry.client_decided": Kind(
+        "proposed_entry_client_responded", _leads, "proposed_entry", "entry_id"
+    ),
     "checkpoint.created": Kind(
         "import_pending_approval", _import_reviewers, "checkpoint", "checkpoint_id"
     ),
@@ -433,6 +491,14 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     "tax_return.efile_relocked": Kind("efile_relocked", _listed, "tax_return", "work_item_id"),
     "engine_ack.rejected": Kind("ack_rejected", _listed, "tax_return", "work_item_id"),
+    # T-03-T07 (DEC-2350): TAX-13's three; the kinds were registered by T-03-T01.
+    "extension.ack_rejected": Kind(
+        "extension_ack_rejected", _listed, "tax_return", "work_item_id"
+    ),
+    "extension_payment.approval_requested": Kind(
+        "extension_payment_approval_requested", _listed, "tax_return", "work_item_id"
+    ),
+    "estimate.due_soon": Kind("estimate_due_soon", _listed, "estimate_schedule", "schedule_id"),
     # P-07-T47 (P-07 §4.8): acceptance, risk review, independence and team approval.
     "acceptance.sent_to_partner": Kind(
         "acceptance_awaiting_partner", _partners, "acceptance_record", "record_id"
@@ -521,6 +587,8 @@ def register_kind_source(
 
 
 TEMPLATES: Final[dict[str, str]] = {
+    "eqr.concurred_v2": "The engagement quality reviewer concurred on {subject}.",
+    "eqr.requested": "The report on {subject} is waiting for your engagement quality review.",
     "consent.expiring": (
         "A §7216 consent expires within 30 days. Renew it from the consent registry."
     ),
@@ -542,6 +610,10 @@ TEMPLATES: Final[dict[str, str]] = {
     "independence.requested": "Confirm your independence for {engagement}.",
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
     "follow_up.drafted": "Follow-ups on {engagement} are waiting for you to send.",
+    # R-02-T15 (DEC-3113): words follow the proposed-entry response line; no amount, no names.
+    "uncorrected_misstatements.acknowledged": (
+        "A client acknowledgement of the uncorrected misstatements on {engagement} was recorded."
+    ),
     "agent.digest": "Items are overdue on {engagement}: see its activity for today's reminders.",
     "comment.mentioned": "You were mentioned in a comment on {engagement}.",
     "materiality.proposed": "Materiality on {engagement} is waiting for your decision.",
@@ -555,6 +627,11 @@ TEMPLATES: Final[dict[str, str]] = {
     "envelope.signer_verification_failed": (
         "A signer on {subject} failed identity checks and needs a handwritten signature."
     ),
+    "notice_intake.ready": "A notice you added is ready for you to review.",
+    "notice.created": "A notice was created and assigned. Open it to see what's due.",
+    "notice.respond_by_soon": "The response on {subject} is due soon.",
+    "notice.follow_up_due": "A follow-up on {subject} is due.",
+    "notice_response.ready_to_send": "The response on {subject} is ready to send.",
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
     "wall.created": "An ethical wall is waiting for your approval.",
@@ -588,6 +665,9 @@ TEMPLATES: Final[dict[str, str]] = {
     ),
     "proposal.routed": "A proposal on {engagement} was sent to you for approval.",
     "sign_off.requested": "Work on {engagement} is waiting for your sign-off.",
+    "proposed_entry.client_decided": (
+        "A client decision on a proposed entry on {engagement} was recorded."
+    ),
     "issue.assigned": "An issue on {engagement} was assigned to you.",
     "checkpoint.created": "An import on {engagement} is waiting for your approval.",
     # T-01-T27 (DEC-1463): the tax engine bridge.
@@ -595,6 +675,11 @@ TEMPLATES: Final[dict[str, str]] = {
     "tax_return.ready_to_transmit": "A return on {engagement} reached the tax engine.",
     "tax_return.efile_relocked": "A return on {engagement} was locked for e-file again.",
     "engine_ack.rejected": "The e-file for a return on {engagement} was rejected.",
+    "extension.ack_rejected": "An extension for a return on {engagement} was rejected.",
+    "extension_payment.approval_requested": (
+        "Extension payments on {engagement} are waiting for approval."
+    ),
+    "estimate.due_soon": "An estimated-tax installment falls due within the week.",
     "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
     "acceptance.review_requested": (
         "You were asked for a risk review of an acceptance on {engagement}."
@@ -641,6 +726,13 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
         "Upload",
         inline_actions=("accept_document", "return_document"),
     ),
+    NotificationKind("proposed_entry_client_responded", "client_activity", "MessageSquare"),
+    # R-02-T14 (R-02 §4.8, DEC-3112): the portal's client-side kinds. Their producers land with
+    # R-02-T15 (the acknowledgement) and R-02-T16 (questions); every recipient is re-authorised
+    # at fan-out and read, and a row holds identifiers only (DEC-61).
+    NotificationKind("client_question_asked", "client_activity", "MessageSquare"),
+    NotificationKind("uncorrected_misstatements_acknowledged", "client_activity", "ShieldCheck"),
+    NotificationKind("tcwg_question_asked", "client_activity", "MessageSquare"),
     NotificationKind("connection.created", "client_activity", "Plug"),
     NotificationKind("connection.revoked", "client_activity", "Plug"),
     # A-02 §4.8 (A-02-T23): a connection that needs its client to sign in again (produced by the
@@ -750,6 +842,24 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # Day 12 of a 14-day client invitation, to the firm admins; produced by the hourly identity
     # pass (`identity.invitation_expiry`, DEC-1000).
     NotificationKind("invitation_expiring", "deadline", "Clock"),
+    # A-07-T19 (A-07 §4.8): the completion, letters, release and archive kinds, registered on the
+    # live path before the window; their events and email sentences land with the A-07 services
+    # (T24 to T32), so none fires while the A-07 flags are off.
+    NotificationKind("eqr_requested", "approval", "Scale", email_default=True),
+    NotificationKind("eqr_concurred", "system", "BadgeCheck"),
+    NotificationKind("rep_letter_approval_requested", "approval", "FilePenLine"),
+    NotificationKind("rep_letter_viewed", "client_activity", "Eye"),
+    NotificationKind("rep_letter_signed", "client_activity", "FileCheck"),
+    NotificationKind("rep_letter_date_mismatch", "deadline", "CalendarX"),
+    NotificationKind("governance_comm_approval_requested", "approval", "Send"),
+    NotificationKind("governance_comm_acknowledged", "client_activity", "CheckCheck"),
+    NotificationKind("governance_comm_overdue", "deadline", "Clock", email_default=True),
+    NotificationKind("report_released", "system", "FileCheck", email_default=True),
+    NotificationKind("archive_lock_requested", "approval", "Lock"),
+    NotificationKind("archive_deadline_risk", "deadline", "TriangleAlert", email_default=True),
+    NotificationKind("archive_locked", "system", "Lock"),
+    NotificationKind("archive_addition_approval_requested", "approval", "FilePlus"),
+    NotificationKind("filing_due", "deadline", "CalendarClock"),
     # A-01-T22 (A-01 §4.7): in-app; an email, when a person turns it on, deep-links to the
     # export sheet (`notification.export_ready`, imported content), never to a download.
     NotificationKind("export_ready", "system", "Download"),

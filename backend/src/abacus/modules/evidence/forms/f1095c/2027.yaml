@@ -1,0 +1,16 @@
+# Form 1095-C Employer-Provided Health Insurance Offer and Coverage map (P-11-T35; P-11 F8; DEC-76, DEC-2809, DEC-3008). PROTECTED: golden tested and
+# reviewed yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+
+form: "1095-C"
+form_type: "f1095c"
+tax_year: 2027
+family: tax_forms
+version: "f1095c-2027-v1"
+anchors: ["1095-C"]
+year_after: "1095-C"
+corrected_anchor: "CORRECTED"
+fields:
+  - {key: f1095c.line14, label: "Offer of coverage code", anchor: "Offer of coverage code", value_type: code}
+  - {key: f1095c.line15, label: "Employee required contribution", anchor: "Employee required contribution", value_type: money}
+  - {key: f1095c.line16, label: "Section 4980H safe harbor code", anchor: "Section 4980H safe harbor code", value_type: code}

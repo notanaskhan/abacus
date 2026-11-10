@@ -198,17 +198,19 @@ function Timeline({ payrolls }: { payrolls: readonly PayrollOut[] }): JSX.Elemen
 function PayrollTable({
   payrolls,
   onPayroll,
+  totals,
 }: {
   payrolls: readonly PayrollOut[];
   onPayroll?: ((id: string) => void) | undefined;
+  totals?: { deferrals: string; match: string } | null | undefined;
 }): JSX.Element {
   const fmt = useFormat();
   const C = COPY.columns;
   const head = "px-[8px] text-[11.5px] font-medium text-ink-3";
   return (
-    <div role="table" data-ebp04="payrolls" className="flex flex-col">
+    <div data-ebp04="payrolls" className="flex flex-col">
       <div
-        role="row"
+        role="group"
         className="grid h-[28px] grid-cols-[100px_1fr_1fr_90px_80px_80px] items-center bg-nested"
       >
         <span className={head}>{C.payDate}</span>
@@ -222,7 +224,6 @@ function PayrollTable({
         <button
           key={p.id}
           type="button"
-          role="row"
           data-payroll={p.pay_date}
           data-late={p.late ? "true" : "false"}
           className={cn(
@@ -254,6 +255,20 @@ function PayrollTable({
           </span>
         </button>
       ))}
+      {totals != null && (
+        <div
+          role="group"
+          data-ebp04="payrolls-total"
+          className="grid h-[32px] grid-cols-[100px_1fr_1fr_90px_80px_80px] items-center border-t-[0.5px] border-stroke text-cell font-medium"
+        >
+          <span className="px-[8px]">{COPY.total}</span>
+          <Amount value={totals.deferrals} style="money" className="px-[8px] text-right" />
+          <Amount value={totals.match} style="money" className="px-[8px] text-right" />
+          <span />
+          <span />
+          <span />
+        </div>
+      )}
     </div>
   );
 }
@@ -309,11 +324,11 @@ function CardC({
         </div>
       </dl>
       {schedule !== undefined && (
-        <div role="table" data-ebp04="4a" className="flex flex-col px-[14px] pb-[8px]">
+        <div data-ebp04="4a" className="flex flex-col px-[14px] pb-[8px]">
           {schedule.rows.map((r) => (
             <div
               key={r.key}
-              role="row"
+              role="group"
               data-line={r.key}
               className="flex h-[28px] items-center justify-between text-cell hairline-b"
             >
@@ -365,6 +380,15 @@ export function useContributionsCanvas(
     .map((r) => ({ key: r.key, label: r.label.toUpperCase() }));
   const receivable =
     (figures.data?.rows ?? []).find((r) => r.key.startsWith("receivable"))?.amount ?? null;
+  // The table's foot is the server's figures: the browser sums nothing.
+  const figureOf = (key: string) =>
+    (figures.data?.rows ?? []).find((r) => r.key === key)?.amount ?? null;
+  const deferralsTotal = figureOf("deferrals");
+  const matchTotal = figureOf("match");
+  const payrollTotals =
+    deferralsTotal === null || matchTotal === null
+      ? null
+      : { deferrals: deferralsTotal, match: matchTotal };
   const canDraft = (schedule.data?.allowed_actions ?? []).includes("ebp_schedule.draft");
 
   return {
@@ -417,7 +441,7 @@ export function useContributionsCanvas(
           <section className={cn(BLOCK, "mx-[12px]")}>
             <p className={BLOCK_HEAD}>{COPY.cardB(rows.length)}</p>
             <Timeline payrolls={rows} />
-            <PayrollTable payrolls={rows} onPayroll={options.onPayroll} />
+            <PayrollTable payrolls={rows} onPayroll={options.onPayroll} totals={payrollTotals} />
           </section>
         ) : (
           <>

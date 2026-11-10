@@ -390,11 +390,13 @@ async def raise_decision_card(
     reserved_user_id: UUID | None = None,
     recommended_option_key: str | None = None,
     recommendation_suggestion_id: UUID | None = None,
+    raised_under: str = RAISE,
 ) -> UUID:
     """`review.api.raise_decision_card`: a card on `engagement_id` with options computed by the
     kind's provider. The agent raises it through `task_scope` (`decision_card.raise`); its
     recommendation is a tag on one option, never a decision. With no person named, a role held
-    by exactly one person on the engagement names them."""
+    by exactly one person on the engagement names them. `raised_under` is an owner's own action
+    where the matrix lets more people ask than may raise a card at large (DEC-2392)."""
     found = decision_kind(kind)  # unregistered: 422 unregistered_kind (fail closed)
     if not _QUESTION.fullmatch(question_key):
         raise DecisionInvalid(facts={"field": "question_key"})
@@ -402,7 +404,7 @@ async def raise_decision_card(
         raise Forbidden(RAISE, "relationship")
     ref = await get_ref(ctx, engagement_id)
     resource = replace(ref.resource(), work_item_id=work_item_id)
-    await authorise(ctx, RAISE, resource)
+    await authorise(ctx, raised_under, resource)
     # The card's work item and the agent's suggestion must be this engagement's (fail closed: an
     # unknown suggestion, or no registered owner to ask, is refused).
     if work_item_id is not None and (

@@ -1,0 +1,14 @@
+section,icon_key,key,type,client_wording,help_text,conditional_on,conditional_value
+Household,,q1,yes_no,"Did your filing status, address or dependents change in 2025?",,,
+Household,,q2,yes_no,Did you live or keep a home anywhere other than New York City in 2025?,,,
+Household,,q2a,amount_group,Days in New York City · elsewhere · traveling,,q2,Yes
+Income,,q3,yes_no,"At any time during 2025, did you (a) receive (as a reward, award or payment for property or services) or (b) sell, exchange or otherwise dispose of a digital asset (or a financial interest in a digital asset)?",,,
+Income,,q3a,upload_if_yes,Upload Form 1099-DA or exchange reports,,q3,Yes
+Income,,q4,yes_no,"Did either of you receive income not reported on a W-2, 1099 or K-1 (for example gig, rental or foreign income)?",,,
+Payments & refund,,q5,yes_no,Did you make 2025 estimated tax payments?,,,
+Payments & refund,,q5a,amount_group,Amounts paid,,q5,Yes
+Payments & refund,,q5b,upload_if_yes,Upload payment confirmations,,q5,Yes
+Payments & refund,,q6,choice,How should we handle a 2025 refund?,,,
+Deductions,,q7,upload_if_yes,Did you make charitable gifts of $250 or more?,,,
+Notices & other,,q8,upload_if_yes,Did you receive any letters from the IRS or a state in 2025?,,,
+Notices & other,,q9,yes_no,"Did you give more than $19,000 to any one person in 2025?",,,

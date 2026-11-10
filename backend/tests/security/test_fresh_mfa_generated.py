@@ -26,7 +26,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("firm_agents.pause", "ai_policy", "firm_admin"),
     ("export.create", "export", "engagement_partner"),
     ("export.download", "export", "engagement_partner"),
-    ("run_trace.export", "export", "engagement_partner"),
+    ("run_trace.export", "export", "firm_admin"),
     ("trial_balance.export", "export", "engagement_partner"),
     ("firm_export.request", "export", "security_admin"),
     ("firm_export.approve", "export", "security_admin"),
@@ -76,6 +76,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("rep_letter.approve", "sign_off", "engagement_partner"),
     ("governance_comm.approve_send", "release", "engagement_partner"),
     ("archive_addition.approve", "sign_off", "engagement_partner"),
+    ("report.release", "release", "engagement_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),
@@ -111,6 +112,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/audits/{work_item_id}/governance-communications/{communication_id}/approve-and-send",
         "governance_comm.approve_send",
     ),
+    ("POST", "/v1/audits/{work_item_id}/release", "report.release"),
     ("POST", "/v1/audits/{work_item_id}/release-record", "assurance.record_release"),
     (
         "POST",
@@ -134,6 +136,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/acceptance/risk-partner-review/complete",
         "acceptance.complete_review",
     ),
+    ("POST", "/v1/engagements/{engagement_id}/audit-events/export", "export.create"),
+    ("POST", "/v1/engagements/{engagement_id}/completion/release", "report.release"),
     ("POST", "/v1/engagements/{engagement_id}/independence/conclude", "independence.conclude"),
     ("POST", "/v1/engagements/{engagement_id}/letter/approve", "letter.approve"),
     ("POST", "/v1/engagements/{engagement_id}/team/approve", "team.approve"),

@@ -398,3 +398,17 @@ __all__ = [
     "work_class_of",
     "work_class_of_queue",
 ]
+
+
+async def signal_workflow(workflow_id: str, signal: str, *args: object) -> None:
+    """Best effort: a person's write has committed; a timer that isn't running (or the service
+    being down) must not undo it. The next start reads the row (N-04-T16)."""
+    try:
+        client = await temporal_client()
+        await client.get_workflow_handle(workflow_id).signal(signal, *args)
+    except RPCError:
+        _log.info("workflow.signal_skipped", signal=signal)
+    except (RuntimeError, OSError) as down:
+        # S33 CI fix: no Temporal configured (`temporal_client`'s RuntimeError) or none reachable
+        # (a refused connection) is the same "service down": the committed write stands.
+        _log.warning("workflow.signal_skipped", signal=signal, error=type(down).__name__)

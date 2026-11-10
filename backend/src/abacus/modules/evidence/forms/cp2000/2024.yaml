@@ -1,0 +1,21 @@
+# IRS notice header map (P-11-T26; AC8.2; DEC-76, ADR P-62's parameter side). PROTECTED: golden
+# tested and reviewed yearly. A form or year with no file writes no fields (AC8.6).
+form: CP2000
+form_type: cp2000
+tax_year: 2024
+family: notices
+version: "cp2000-2024-v2"
+anchors: ["CP2000"]
+fields:
+  - {key: notice.number, label: "Notice number", anchor: "Notice number", value_type: code}
+  - {key: notice.tax_year, label: "Tax year", anchor: "Tax year", value_type: code}
+  - {key: notice.date, label: "Notice date", anchor: "Notice date", value_type: date}
+  - {key: notice.respond_by, label: "Respond by", anchor: "Respond by", value_type: date}
+  - {key: notice.amount_due, label: "Amount due", anchor: "Amount due", value_type: money}
+  - {key: notice.taxpayer_last4, label: "Taxpayer ID", anchor: "Social Security number", value_type: code}
+  - {key: notice.proposed_tax, label: "Proposed tax", anchor: "Increase in tax", value_type: money}
+  - {key: notice.interest, label: "Interest", anchor: "Interest", value_type: money}
+# N-04-T17: the proposed-changes table and the payer list. Cells are read, never summed.
+tables:
+  - {key: notice.changes, label: "Proposed changes", header: "Shown on return", stop: "Payers reported", columns: [shown, reported, difference]}
+  - {key: notice.payers, label: "Payers", header: "Payers reported", stop: "Total", columns: [amount]}

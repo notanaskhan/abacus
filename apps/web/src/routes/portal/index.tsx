@@ -14,6 +14,7 @@ import {
   returnFrom,
   setSignInNavigator,
 } from "../../app-core/auth/bff";
+import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { LANDING_PATH } from "../../app-core/portal-session";
 
 // The client portal's route tree (P-08-T07; P-08 §5.1; DEC-59): its own entry (portal.html), its
@@ -68,6 +69,17 @@ const RequestSheetScreen = lazy(async () => ({
   default: (await import("../../screens/POR-04")).POR04,
 }));
 
+// R-02-T06: POR-08, POR-09 and POR-15's lazy route stubs, each its own chunk (planned).
+const ApprovalsScreen = lazy(async () => ({
+  default: (await import("../../screens/POR-08")).POR08,
+}));
+const DeliverablesScreen = lazy(async () => ({
+  default: (await import("../../screens/POR-09")).POR09,
+}));
+const GovernanceScreen = lazy(async () => ({
+  default: (await import("../../screens/POR-15")).POR15,
+}));
+
 /** The portal's built areas by nav label; the others stay the shell's planned page. */
 export const AREA_PATHS: Readonly<Record<string, string>> = {
   Home: "/",
@@ -75,6 +87,14 @@ export const AREA_PATHS: Readonly<Record<string, string>> = {
   Sign: "/sign",
   Questions: "/questions",
   "My K-1s": "/k1s",
+  Deliverables: "/deliverables", // R-02-T17: built; a firm with the flag off sees its designed state
+};
+
+/** R-02-T06: the planned areas a fixture build reaches from the nav (production keeps them put:
+ * its output is unchanged until each screen is built and its flag is on). */
+export const PLANNED_AREA_PATHS: Readonly<Record<string, string>> = {
+  Approvals: "/approvals",
+  Communications: "/governance",
 };
 
 function Root(): JSX.Element {
@@ -193,14 +213,35 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Sign") return <SignPage />;
   if (area === "Questions") return <QuestionsPage />;
   if (area === "K1s") return <K1sPage />;
+  if (area === "Deliverables") return <DeliverablesPage />;
   return <Shell area={area} />;
+}
+
+/** POR-09 (R-02-T17): `/deliverables[/$deliverableId][?section=k1s]`. */
+function DeliverablesPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const navigate = useAreaNavigate();
+  const params: { deliverableId?: string } = useParams({ strict: false });
+  const [section] = useState<"k1s" | undefined>(() =>
+    new URLSearchParams(window.location.search).get("section") === "k1s" ? "k1s" : undefined,
+  );
+  return (
+    <Suspense fallback={null}>
+      <DeliverablesScreen
+        mobile={mobile}
+        onNavigate={navigate}
+        {...(params.deliverableId === undefined ? {} : { deliverableId: params.deliverableId })}
+        {...(section === undefined ? {} : { section })}
+      />
+    </Suspense>
+  );
 }
 
 /** A nav item, to-do link or "Open binder": built areas by path, the rest stay put. */
 function useAreaNavigate(): (area: string) => void {
   const { history } = useRouter();
   return (area) => {
-    const path = AREA_PATHS[area];
+    const path = AREA_PATHS[area] ?? (PLANNED_VISIBLE ? PLANNED_AREA_PATHS[area] : undefined);
     if (path !== undefined) history.push(path);
   };
 }
@@ -425,7 +466,11 @@ export const portalTree = rootRoute.addChildren([
   page("/sign/$envelopeId", () => <Area area="Sign" />),
   page("/sign/$envelopeId/return", () => <Area area="Sign" />),
   page("/k1s", () => <Area area="K1s" />), // POR-13 (T-02-T27)
-  page("/governance", NotBuilt),
+  page("/approvals", () => <ApprovalsScreen />), // POR-08 (R-02-T06 stub)
+  page("/deliverables", () => <Area area="Deliverables" />), // POR-09 (R-02-T17)
+  page("/deliverables/$deliverableId", () => <Area area="Deliverables" />),
+  page("/governance", () => <GovernanceScreen />), // POR-15 (R-02-T06 stub)
+  page("/governance/$communicationId", () => <GovernanceScreen />),
   page("/intake", NotBuilt),
   page("/component-room", NotBuilt),
 ]);

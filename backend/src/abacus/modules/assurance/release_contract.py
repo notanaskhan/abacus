@@ -20,16 +20,27 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel import clock
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.modules.assurance import a07_registrations as a07
+from abacus.modules.assurance import governance_comms as gc
+from abacus.modules.assurance import report_builder as rb
+from abacus.modules.assurance.a07_registrations import require_live
 from abacus.modules.engagements.api import get_ref, work_item_engagement
-from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    allowed_actions,
+    authorise,
+    current_context,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -49,6 +60,8 @@ ArchiveAction = Literal[
     "archive.build_index", "archive.request_lock", "archive.lock", "archive.verify",
     "archive_addition.create", "archive_addition.approve",
 ]  # fmt: skip
+ArchiveStatus = Literal["assembling", "locking", "locked"]
+BinderLetter = Literal["A", "B", "C", "D", "E", "F", "G", "H"]
 GovernanceKind = Literal[
     "planning_260", "completion_260", "sd_mw_265", "reportable_703", "management_letter"
 ]
@@ -246,6 +259,8 @@ class GovernanceCreateIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     kind: Annotated[GovernanceKind, classified("internal")]
+    # DEC-3027: a published `governance_letter` version whose paragraphs open the letter.
+    template_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class GovernanceSectionIn(BaseModel):
@@ -608,10 +623,141 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
         raise NotFound("work_item")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, replace(ref.resource(), work_item_id=work_item_id))
+    # A-07-T33 (DEC-3106): authorised first, then the family's per-firm flag (off: 404), so no
+    # one learns a flag state they may not use.
+    await require_live(ctx.tenant, _flag_of(action))
+
+
+def _flag_of(action: str) -> a07.Flag:
+    """The route family's flag: letters (AUD-21, AUD-22, their envelopes), report and release
+    (AUD-23, AUD-24, filings), archive (AUD-25)."""
+    family = action.split(".", 1)[0]
+    if family in ("rep_letter", "governance_comm", "envelope"):
+        return "audits.letters"
+    if family in ("report", "filing"):
+        return "audits.report_release"
+    if family in ("archive", "archive_addition"):
+        return "audits.archive"
+    raise ValueError(f"no A-07 flag for {action}")
 
 
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
+
+
+# --- A-07-T26: AUD-22 through `governance_comms` (DEC-3011) --------------------------------------
+
+_GOV_ACTIONS: tuple[LetterAction, ...] = (
+    "governance_comm.draft",
+    "governance_comm.request_approval",
+    "governance_comm.approve_send",
+    "governance_comm.manage_recipients",
+)
+
+
+async def _gov_actions(ctx: AuthContext, work_item_id: UUID) -> list[LetterAction]:
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    if engagement_id is None:
+        return []
+    ref = await get_ref(ctx, engagement_id)
+    held = await allowed_actions(
+        ctx, replace(ref.resource(), work_item_id=work_item_id), list(_GOV_ACTIONS)
+    )
+    return [a for a in _GOV_ACTIONS if a in held]
+
+
+def _row(r: gc.Row) -> GovernanceRowOut:
+    return GovernanceRowOut(
+        id=r.id,
+        kind=cast(GovernanceKind, r.kind),
+        standard=r.standard,
+        status=cast(
+            Literal["not_started", "draft", "awaiting_ep_approval", "sent", "acknowledged"],
+            r.status,
+        ),
+        overdue=r.overdue,
+        due_on=r.due_on,
+        sent_at=r.sent_at,
+        acknowledged_at=r.acknowledged_at,
+        acknowledged_by_body=None,
+        channel=cast(Literal["governance_room", "ack_envelope"] | None, r.channel),
+    )
+
+
+async def _communication_out(
+    ctx: AuthContext, work_item_id: UUID, communication_id: UUID
+) -> GovernanceCommunicationOut:
+    found = await gc.communication(ctx, work_item_id, communication_id)
+    today = (await clock.now(ctx.tenant)).date()
+    row = next(r for r in await gc.rows(ctx, work_item_id, today) if r.id == communication_id)
+    return GovernanceCommunicationOut(
+        row=_row(row),
+        version_no=found.version_no,
+        content_hash=found.content_hash,
+        sections=[
+            GovernanceSectionOut(
+                key=x.key,
+                title=x.heading,
+                text=x.body,
+                built_from=list(x.built_from),
+                human_edited=x.human_edited,
+                citations=[],
+            )
+            for x in found.sections
+        ],
+        watermark="none" if found.status in ("sent", "acknowledged") else "draft",
+        allowed_actions=await _gov_actions(ctx, work_item_id),
+        version=found.row_version,
+    )
+
+
+# --- A-07-T27: AUD-23 through `report_builder` (DEC-3012) ----------------------------------------
+
+
+def _report_out(found: rb.ReportState, actions: list[ReportAction]) -> AuditReportOut:
+    current = None
+    if found.version_no is not None and found.content_hash is not None:
+        current = ReportVersionOut(
+            version_no=found.version_no,
+            content_hash=found.content_hash,
+            report_date=None,
+            city=None,
+            created_by_name="",
+            created_at=found.created_at or datetime.min,
+            approved_by_name=None,
+            approved_at=None,
+        )
+    return AuditReportOut(
+        report_kind=found.kind,
+        framework="",
+        status=cast(Literal["draft", "approved", "released", "reissued"], found.status),
+        current_version=current,
+        choices=[
+            ReportChoiceOut(
+                field=c.field,
+                value=c.value,
+                locked_by=c.locked_by,
+                decision_card_id=c.decision_card_id,
+                reason_code=c.reason_code,
+            )
+            for c in found.choices.values()
+        ],
+        paragraphs=[
+            ReportParagraphOut(
+                block_id=p.block_id,
+                heading=None,
+                text="",
+                included=p.included,
+                reason_code=p.reason_code,
+                citations=[],
+            )
+            for p in found.paragraphs
+        ],
+        documents=[],
+        eqr_required_not_concurred=False,
+        allowed_actions=actions,
+        version=found.row_version,
+    )
 
 
 router = AbacusRouter(prefix="/v1/audits/{work_item_id}", tags=["audit release"])
@@ -662,9 +808,14 @@ async def representation_letter_version_route(
 async def representation_letter_compose_route(
     work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """LetterComposeWorkflow: template paragraphs and trigger rules over findings and the SUM."""
+    """Template paragraphs and trigger rules over findings and the SUM, composed by code and
+    recorded as the `audit.letter_compose` run (A-07-T32, DEC-3109)."""
+    from abacus.modules.assurance.agent_capabilities import letter_compose
+
     await _gate(ctx, work_item_id, "rep_letter.draft")
-    _not_yet()
+    del idempotency_key
+    run_id = await letter_compose(ctx, work_item_id)
+    return ReleaseRunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
 
 
 @router.patch(
@@ -769,7 +920,15 @@ async def representation_redate_route(
 async def governance_list_route(work_item_id: UUID, ctx: Ctx) -> GovernanceListOut:
     """AUD-22: rows with clocks; Overdue derived from the due date (A-07-T26)."""
     await _gate(ctx, work_item_id, "governance_comm.read")
-    _not_yet()
+    today = (await clock.now(ctx.tenant)).date()
+    found = await gc.rows(ctx, work_item_id, today)
+    required = [r for r in found if r.kind in gc.REQUIRED]
+    return GovernanceListOut(
+        items=[_row(r) for r in found],
+        required_sent=sum(1 for r in required if r.status in ("sent", "acknowledged")),
+        required_total=len(gc.REQUIRED),
+        allowed_actions=await _gov_actions(ctx, work_item_id),
+    )
 
 
 @router.post(
@@ -783,7 +942,10 @@ async def governance_create_route(
     work_item_id: UUID, body: GovernanceCreateIn, ctx: Ctx
 ) -> GovernanceCommunicationOut:
     await _gate(ctx, work_item_id, "governance_comm.draft")
-    _not_yet()
+    if body.kind == "reportable_703":
+        raise gc.KindExists(facts={"kind": "sd_mw_265"})  # 703 rides in the 265 letter
+    communication_id = await gc.create(ctx, work_item_id, body.kind, body.template_version_id)
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.get(
@@ -796,7 +958,7 @@ async def governance_route(
     work_item_id: UUID, communication_id: UUID, ctx: Ctx
 ) -> GovernanceCommunicationOut:
     await _gate(ctx, work_item_id, "governance_comm.read")
-    _not_yet()
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.post(
@@ -809,9 +971,18 @@ async def governance_route(
 async def governance_compose_route(
     work_item_id: UUID, communication_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """Compose or regenerate; a section-level merge keeps human edits."""
+    """Compose or regenerate; a section-level merge keeps human edits. Composition is code over
+    the engagement's facts, so it finishes in the request; the 202 names no background run."""
+    from abacus.modules.assurance.agent_capabilities import letter_compose
+
     await _gate(ctx, work_item_id, "governance_comm.draft")
-    _not_yet()
+    del idempotency_key
+    # A-07-T32: the regenerate is recorded as the `audit.letter_compose` run.
+    await letter_compose(ctx, work_item_id, communication_id=communication_id)
+    return ReleaseRunAcceptedOut(
+        run_id=communication_id,
+        status_url=f"/v1/audits/{work_item_id}{_GC}/{communication_id}",
+    )
 
 
 @router.patch(
@@ -824,7 +995,8 @@ async def governance_section_route(
     work_item_id: UUID, communication_id: UUID, key: str, body: GovernanceSectionIn, ctx: Ctx
 ) -> GovernanceCommunicationOut:
     await _gate(ctx, work_item_id, "governance_comm.draft")
-    _not_yet()
+    await gc.edit_section(ctx, work_item_id, communication_id, key, body.text, body.seen_version)
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.post(
@@ -837,7 +1009,8 @@ async def governance_request_approval_route(
     work_item_id: UUID, communication_id: UUID, ctx: Ctx
 ) -> GovernanceCommunicationOut:
     await _gate(ctx, work_item_id, "governance_comm.request_approval")
-    _not_yet()
+    await gc.request_approval(ctx, work_item_id, communication_id)
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.post(
@@ -857,7 +1030,17 @@ async def governance_approve_send_route(
     """The EP approves and sends with fresh MFA (human only); output checks refuse materiality
     in a planning letter and the words 'SAS 114'."""
     await _gate(ctx, work_item_id, "governance_comm.approve_send")
-    _not_yet()
+    del idempotency_key  # one send per version: the send row is unique on the version
+    await gc.approve_and_send(
+        ctx,
+        work_item_id,
+        communication_id,
+        governance_body_id=body.governance_body_id,
+        recipient_contact_ids=body.recipient_contact_ids,
+        channel=body.channel,
+        seen_hash=body.seen_hash,
+    )
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.get(
@@ -868,7 +1051,7 @@ async def governance_approve_send_route(
 )
 async def governance_recipients_route(work_item_id: UUID, ctx: Ctx) -> GovernanceRecipientsOut:
     await _gate(ctx, work_item_id, "governance_comm.read")
-    _not_yet()
+    return _recipients(await gc.recipients(ctx, work_item_id))
 
 
 @router.put(
@@ -881,14 +1064,29 @@ async def governance_recipients_put_route(
     work_item_id: UUID, body: GovernanceRecipientsIn, ctx: Ctx
 ) -> GovernanceRecipientsOut:
     await _gate(ctx, work_item_id, "governance_comm.manage_recipients")
-    _not_yet()
+    return _recipients(await gc.set_recipients(ctx, work_item_id, body.governance_body_ids))
+
+
+def _recipients(found: list[gc.Recipient]) -> GovernanceRecipientsOut:
+    return GovernanceRecipientsOut(
+        items=[
+            GovernanceRecipientOut(
+                governance_body_id=r.governance_body_id,
+                body_name=r.body_name,
+                member_count=r.member_count,
+                ack_required=r.ack_required,
+            )
+            for r in found
+        ],
+        version=1,
+    )
 
 
 @router.get("/report", action="report.read", response_model=AuditReportOut, errors=(501,))
 async def audit_report_route(work_item_id: UUID, ctx: Ctx) -> AuditReportOut:
     """AUD-23: choices, paper, documents and approvals (A-07-T27). No release here."""
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    return _report_out(await rb.read(ctx, work_item_id), [])
 
 
 @router.get(
@@ -896,7 +1094,22 @@ async def audit_report_route(work_item_id: UUID, ctx: Ctx) -> AuditReportOut:
 )
 async def audit_report_versions_route(work_item_id: UUID, ctx: Ctx) -> ReportVersionsOut:
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    found = await rb.read(ctx, work_item_id)
+    return ReportVersionsOut(
+        items=[
+            ReportVersionOut(
+                version_no=no,
+                content_hash=digest,
+                report_date=None,
+                city=None,
+                created_by_name="",
+                created_at=at,
+                approved_by_name=None,
+                approved_at=None,
+            )
+            for no, digest, at in found.versions
+        ]
+    )
 
 
 @router.get(
@@ -908,8 +1121,18 @@ async def audit_report_versions_route(work_item_id: UUID, ctx: Ctx) -> ReportVer
 async def audit_report_diff_route(
     work_item_id: UUID, from_version: int, to_version: int, ctx: Ctx
 ) -> ReportDiffOut:
+    """Blocks switched on and off between two versions; C11 compare words the paper later."""
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    before = await rb.version_paragraphs(ctx.tenant, work_item_id, from_version)
+    after = await rb.version_paragraphs(ctx.tenant, work_item_id, to_version)
+    inserted, deleted = rb.word_counts(before, after)
+    return ReportDiffOut(
+        from_version=from_version,
+        to_version=to_version,
+        inserted_words=inserted,
+        deleted_words=deleted,
+        compare_document_id=None,
+    )
 
 
 @router.get(
@@ -930,7 +1153,10 @@ async def audit_report_choice_route(
     """A validated choice is a new version; a modified opinion without the EP's decided card
     answers 409 `decision_required`."""
     await _gate(ctx, work_item_id, "report.draft")
-    _not_yet()
+    found = await rb.set_choice(
+        ctx, work_item_id, body.field, body.value, body.reason_code, body.seen_version
+    )
+    return _report_out(found, [])
 
 
 @router.post(
@@ -943,9 +1169,11 @@ async def audit_report_choice_route(
 async def audit_report_request_decision_route(
     work_item_id: UUID, body: ReportDecisionRequestIn, ctx: Ctx
 ) -> AuditReportOut:
-    """Raise the `opinion` card for the EP (C3)."""
+    """Raise the `opinion` card for the EP (C3; DEC-3028)."""
     await _gate(ctx, work_item_id, "report.request_decision")
-    _not_yet()
+    del body  # one field today: the opinion
+    await rb.request_opinion_decision(ctx, work_item_id)
+    return _report_out(await rb.read(ctx, work_item_id), [])
 
 
 @router.post(
@@ -958,16 +1186,75 @@ async def audit_report_request_decision_route(
 async def audit_report_document_route(
     work_item_id: UUID, body: ReportDocumentIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical)."""
+    """A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical;
+    DEC-3028): the generated document's id is the run to follow."""
     await _gate(ctx, work_item_id, "report.generate")
-    _not_yet()
+    del idempotency_key  # C11's render is keyed by the owner version and the template
+    document_id = await rb.render_document(ctx, work_item_id, body.report_version, body.format)
+    return ReleaseRunAcceptedOut(
+        run_id=document_id, status_url=f"/v1/generated-documents/{document_id}"
+    )
 
 
 @router.get("/release", action="report.read", response_model=AuditReleaseOut, errors=(501,))
 async def audit_release_route(work_item_id: UUID, ctx: Ctx) -> AuditReleaseOut:
-    """AUD-24: G5-G7 with live values, the also-required list, deliverables, filings (A-07-T30)."""
+    """AUD-24: G5-G7 with live values, the also-required list, deliverables (A-07-T30; filings
+    arrive with A-07-T36). Every value comes from the gate providers, never the browser."""
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    return await _release_out(ctx, work_item_id)
+
+
+_RELEASE_ACTIONS: tuple[ReportAction, ...] = ("report.release",)
+
+
+async def _release_out(ctx: AuthContext, work_item_id: UUID) -> AuditReleaseOut:
+    from abacus.modules.assurance import release as rel
+    from abacus.modules.identity.api import engagement_partners, names_of
+
+    snap = await rel.snapshot(ctx.tenant, work_item_id)
+    done = await rel.released(ctx.tenant, work_item_id)
+    ref = await get_ref(ctx, snap.engagement_id)
+    held = await allowed_actions(
+        ctx, replace(ref.resource(), work_item_id=work_item_id), list(_RELEASE_ACTIONS)
+    )
+    actions = cast(list[ReportAction], [a for a in _RELEASE_ACTIONS if a in held and done is None])
+    partners = await engagement_partners(ctx.tenant_id, snap.engagement_id)
+    names = await names_of([*partners, *([done.released_by] if done else [])])
+    gates = [
+        GateCardOut(
+            gate=cast(Gate, g.gate),
+            met=g.met,
+            required=g.required,
+            value=None,
+            blockers=list(g.blockers),
+        )
+        for g in snap.gates
+    ]
+    gates.append(
+        GateCardOut(
+            gate="G8",
+            met=done is not None,
+            required=True,
+            value=None,
+            blockers=[] if done is not None else ["not_released"],
+        )
+    )
+    return AuditReleaseOut(
+        gates=gates,
+        also_required=[
+            AlsoRequiredOut(key=a.key, met=a.met, value=a.value) for a in snap.also_required
+        ],
+        gate_hash=snap.sha256,
+        can_release=done is None and not snap.blockers,
+        viewer_can_release="report.release" in actions,
+        engagement_partner_name=names.get(partners[0], "") if partners else "",
+        released_at=None if done is None else done.released_at,
+        released_by_name=None if done is None else names.get(done.released_by),
+        documentation_completion_date=None if done is None else done.documentation_completion_date,
+        deliverable_ids=[] if done is None else list(done.deliverable_ids),
+        filings=[],
+        allowed_actions=actions,
+    )
 
 
 @router.post(
@@ -981,9 +1268,20 @@ async def audit_release_post_route(
     work_item_id: UUID, body: ReleaseIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
     """G8 through ReleaseWorkflow: the EP only, fresh MFA, the gates re-checked at the server
-    (409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260)."""
+    (409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260). A replay with the
+    same Idempotency-Key after the release answers the release (A-07-T30, DEC-3107)."""
+    from abacus.modules.assurance import release as rel
+    from abacus.modules.assurance.release_workflow import start_release
+
     await _gate(ctx, work_item_id, "report.release")
-    _not_yet()
+    if not body.authorize:
+        raise NotFound("release")  # unreachable: the model requires True
+    outcome = await rel.request_release(ctx, work_item_id, body.seen_gate_hash, idempotency_key)
+    status_url = f"/v1/audits/{work_item_id}/release"
+    if isinstance(outcome, rel.ReleasedFacts):
+        return ReleaseRunAcceptedOut(run_id=outcome.release_id, status_url=status_url)
+    await start_release(outcome)
+    return ReleaseRunAcceptedOut(run_id=UUID(outcome.grant_id), status_url=status_url)
 
 
 @router.get("/filings", action="report.read", response_model=FilingsOut, errors=(501,))
@@ -1005,9 +1303,76 @@ async def audit_filing_route(
 
 @router.get("/archive", action="archive.read", response_model=AuditArchiveStateOut, errors=(501,))
 async def audit_archive_route(work_item_id: UUID, ctx: Ctx) -> AuditArchiveStateOut:
-    """AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31)."""
+    """AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31; the
+    seal and additions arrive with A-07-T37 and T42)."""
     await _gate(ctx, work_item_id, "archive.read")
-    _not_yet()
+    return await _archive_out(ctx, work_item_id)
+
+
+_ARCHIVE_ACTIONS: tuple[ArchiveAction, ...] = ("archive.build_index", "archive.request_lock")
+
+
+async def _archive_out(ctx: AuthContext, work_item_id: UUID) -> AuditArchiveStateOut:
+    from abacus.modules.assurance import archive_gate as ag
+    from abacus.modules.identity.api import names_of
+
+    state = await ag.archive_state(ctx.tenant, work_item_id)
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    held: list[str] = []
+    if engagement_id is not None:
+        ref = await get_ref(ctx, engagement_id)
+        held = list(
+            await allowed_actions(
+                ctx, replace(ref.resource(), work_item_id=work_item_id), list(_ARCHIVE_ACTIONS)
+            )
+        )
+    archive = state.archive
+    open_items = state.done < len(state.items)
+    actions = cast(
+        list[ArchiveAction],
+        [
+            a
+            for a in _ARCHIVE_ACTIONS
+            if a in held
+            and archive is not None
+            and not (open_items and a == "archive.request_lock")
+        ],
+    )
+    locked_by = None
+    if archive is not None and archive.locked_by is not None:
+        locked_by = (await names_of([archive.locked_by])).get(archive.locked_by)
+    return AuditArchiveStateOut(
+        status=None if archive is None else cast(ArchiveStatus, archive.status),
+        release_date=None if archive is None else archive.release_date,
+        documentation_completion_date=None
+        if archive is None
+        else archive.documentation_completion_date,
+        days_left=state.days_left,
+        retention_until=None if archive is None else archive.retention_until,
+        on_hold=False,
+        checklist=[
+            ArchiveChecklistItemOut(key=i.key, title=i.title, done=i.done, detail=i.detail)
+            for i in state.items
+        ],
+        checklist_done=state.done,
+        checklist_total=len(state.items),
+        checklist_hash=state.checklist_sha256,
+        binder=[
+            BinderSectionOut(
+                section=cast(BinderLetter, b.section),
+                title=b.title,
+                workpapers=b.workpapers,
+                source_documents=b.source_documents,
+                run_logs=b.run_logs,
+            )
+            for b in state.binder
+        ],
+        locked_at=None if archive is None else archive.locked_at,
+        locked_by_name=locked_by,
+        seal_sha256=None if archive is None else archive.seal_sha256,
+        additions=[],
+        allowed_actions=actions,
+    )
 
 
 @router.post(
@@ -1020,9 +1385,16 @@ async def audit_archive_route(work_item_id: UUID, ctx: Ctx) -> AuditArchiveState
 async def audit_archive_index_route(
     work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """ArchiveReadinessWorkflow (#4302): the binder index over A-01's export sections."""
+    """The binder index, built by code now (A-07-T31; ArchiveReadinessWorkflow #4302 adds the
+    fingerprint re-verification and narration with A-07-T32). The run id is the archive's."""
+    from abacus.modules.assurance import archive_gate as ag
+    from abacus.modules.assurance.agent_capabilities import archive_readiness
+
     await _gate(ctx, work_item_id, "archive.build_index")
-    _not_yet()
+    del idempotency_key, ag  # the index is keyed by its own content (the same sections answer v)
+    # A-07-T32: the build is recorded as the `audit.archive_readiness` run (#4302).
+    run_id = await archive_readiness(ctx, work_item_id)
+    return ReleaseRunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
 
 
 @router.post(
@@ -1033,8 +1405,11 @@ async def audit_archive_index_route(
 )
 async def audit_archive_request_lock_route(work_item_id: UUID, ctx: Ctx) -> AuditArchiveStateOut:
     """A senior or above notifies the manager (409 `checklist_incomplete` before 9 of 9)."""
+    from abacus.modules.assurance import archive_gate as ag
+
     await _gate(ctx, work_item_id, "archive.request_lock")
-    _not_yet()
+    await ag.request_lock(ctx, work_item_id)
+    return await _archive_out(ctx, work_item_id)
 
 
 @router.post(

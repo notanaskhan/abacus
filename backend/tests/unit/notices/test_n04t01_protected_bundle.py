@@ -85,15 +85,11 @@ def test_ac1_deciding_is_only_p04s_and_sending_is_narrow() -> None:
     }
 
 
-def test_ac1_the_two_flags_exist_and_default_off() -> None:
-    for flag, name in (
-        (_flags.NOTICES_WORKSPACE, "notices.workspace"),
-        (_flags.NOTICES_RESPONDER, "notices.responder"),
-    ):
-        assert flag.name == name
-        assert flag.default == "false"
+def test_ac1_the_two_flags_are_retired() -> None:
+    # N-04-T27 (DEC-2602): no live firm held them; the stage and the gateway gate the responder.
+    assert not hasattr(_flags, "NOTICES_WORKSPACE") and not hasattr(_flags, "NOTICES_RESPONDER")
     names = {entry.name for entry in feature_flags.parse(feature_flags.source())}
-    assert {"notices.workspace", "notices.responder"} <= names
+    assert not {"notices.workspace", "notices.responder"} & names
 
 
 @pytest.mark.parametrize("code", KINDS)

@@ -9,7 +9,7 @@ The browser never renders the raw file. `render_isolated` runs `render` in the i
   `MAX_SIDE` on the longer side; more than `MAX_PIXELS` is refused as a decompression bomb.
 - XLSX, CSV: nothing rendered; the viewer shows the extraction's tables (`table`).
 - A PDF with active content: `none/active_content`, never opened (DEC-296).
-- Anything else (HEIC until P-11-T25): `none`, with why.
+- HEIC and HEIF read like any other image (P-11-T25). Anything else: `none`, with why.
 
 Masked renditions (P-03-T15; SPEC-322 AC-24; P-03 §4.4; DEC-369): `render_masked` renders the
 flattened file's page content (no annotations: what the word layer read, `pdf_layout`) and then,
@@ -29,7 +29,10 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Final, Literal, cast
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
+from pillow_heif import (
+    register_heif_opener,  # pyright: ignore[reportUnknownVariableType] -- no stubs
+)
 
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.pdf_pages import png_of
@@ -57,6 +60,8 @@ PNG: Final = "image/png"
 JPEG: Final = "image/jpeg"
 TIFF: Final = "image/tiff"
 GIF: Final = "image/gif"
+HEIC: Final = "image/heic"
+HEIF: Final = "image/heif"
 XLSX: Final = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 CSV: Final = "text/csv"
 
@@ -114,6 +119,7 @@ def _pdf(content: bytes, burn: _Burn | None = None, *, annotations: bool = True)
 
 def _image(content: bytes, burn: _Burn | None = None) -> Rendered:
     Image.MAX_IMAGE_PIXELS = MAX_PIXELS
+    register_heif_opener()  # P-11-T25: an iPhone photo reads like any other image
     try:
         with Image.open(io.BytesIO(content)) as image:
             if image.width * image.height > MAX_PIXELS:
@@ -122,7 +128,8 @@ def _image(content: bytes, burn: _Burn | None = None) -> Rendered:
             if burn is None:
                 image.thumbnail((MAX_SIDE, MAX_SIDE))
                 return Rendered("image", pages=(_png(image),))
-            burned = burn(1, image)  # at the original size, where an image's boxes are
+            # P-11-T25: upright first, the same orientation OCR read, so its boxes land.
+            burned = burn(1, ImageOps.exif_transpose(image))  # at the original size
             burned.thumbnail((MAX_SIDE, MAX_SIDE))
             return Rendered("image", pages=(_png(burned),))
     except Image.DecompressionBombError:
@@ -138,7 +145,7 @@ def render(content: bytes, media_type: str) -> Rendered:
         if is_active(content):
             return Rendered("none", "active_content")
         return _pdf(content)
-    if media_type in (PNG, JPEG, TIFF, GIF):
+    if media_type in (PNG, JPEG, TIFF, GIF, HEIC, HEIF):
         return _image(content)
     if media_type in (XLSX, CSV):
         return Rendered("table")
@@ -227,7 +234,7 @@ def render_masked(
                 "none", "encrypted" if "password" in str(exc).casefold() else "damaged"
             )
         return _pdf(flat, burn_page, annotations=False)
-    if media_type in (PNG, JPEG, TIFF, GIF):
+    if media_type in (PNG, JPEG, TIFF, GIF, HEIC, HEIF):
         return _image(content, burn_page)
     if media_type in (XLSX, CSV):
         return Rendered("table")

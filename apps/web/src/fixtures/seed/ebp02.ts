@@ -36,6 +36,7 @@ const ROWS: readonly (readonly [string, string, string, string])[] = [
 // The two rows the 2024 amendment governs: absent from Version 1 (b2).
 const AMENDED = new Set(["long_term_part_time", "catch_up"]);
 export const PAPER = stableId("workpaper:northwind:ebp_02");
+export const SPD_2025 = stableId("evidence_version:northwind:spd_2025");
 const HL: SignOffChipOut = {
   level: 1,
   initials: "HL",
@@ -65,6 +66,13 @@ function row(
     verified,
     conflict: variant === "c" && key === "entry_dates" ? "SPD: quarterly" : null,
     amended_on: variant === "d" && key === "catch_up" ? "2025-01-01" : null,
+    conflict_source:
+      variant === "c" && key === "entry_dates"
+        ? {
+            evidence_version_id: SPD_2025,
+            note: "The SPD (2025, p. 6) says entry is on the first day of each calendar quarter.",
+          }
+        : null,
     citation_count: 1,
   };
 }
@@ -85,5 +93,11 @@ export function ebp02Review(variant: Ebp02Variant): PlanReviewOut {
     allowed_actions: v1 ? [] : ["field.sign_off"],
     workpaper_id: PAPER,
     sign_offs: signOffs,
+    version_diff: v1
+      ? {
+          current_version_no: 2,
+          added_labels: ROWS.filter(([key]) => AMENDED.has(key)).map(([, label]) => label),
+        }
+      : null,
   };
 }

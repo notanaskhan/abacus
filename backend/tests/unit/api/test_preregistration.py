@@ -44,6 +44,8 @@ NEW = {
 # I-01-T02 (TASK-1303): practice serves the C13 home-half stub. K-01-T01/T02 (TASK-1305,
 # TASK-1306, migration 0180): methodology serves its stubs and re-owns its tables.
 LANDED = {
+    "collaboration",  # P-05-T03: the C9 v2 routes (stubs behind collaboration.v2, DEC-3104)
+    "workbench",  # P-10-T09
     "assurance",
     "review",
     "workpapers",

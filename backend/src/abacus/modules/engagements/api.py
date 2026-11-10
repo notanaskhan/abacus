@@ -25,6 +25,33 @@ from abacus.modules.engagements.acceptance_contract import (
 )
 from abacus.modules.engagements.audit_placement import place_engagements
 from abacus.modules.engagements.audit_targets import AUDIT_KINDS, audit_engagements, visible_among
+from abacus.modules.engagements.client_approvals import (
+    CLIENT_APPROVAL_KINDS,
+    DECIDER_RULES,
+    ApprovalFacts,
+    ApprovalItem,
+    ApprovalKindNotRegistered,
+    ApprovalLine,
+    ApprovalScope,
+    ClientApprovalDecided,
+    ClientApprovalKind,
+    ClientApprovalProvider,
+    ClientApprovalRequested,
+    ClientApprovalState,
+    ClientDecision,
+    ClientDecisionContext,
+    Decider,
+    DeciderRule,
+    DeclineReason,
+    ItemChanged,
+    NotDecider,
+    client_approval_kinds,
+    client_approval_provider,
+    covering_grant,
+    decider_for,
+    deliver_proposed_entries,
+    register_client_approval_kind,
+)
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
 from abacus.modules.engagements.client_import_activities import (
     ACTIVITIES,
@@ -61,12 +88,15 @@ from abacus.modules.engagements.contract import (
 )
 from abacus.modules.engagements.drafts import create_draft, draft_visible, start_acceptance
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
+from abacus.modules.engagements.gate_policy import required_gates as required_gates
 from abacus.modules.engagements.gates import recorded_letter, register_gates
 from abacus.modules.engagements.hold_scope import (
     EngagementHoldFacts,
     engagement_hold_facts,
     engagements_in_hold_scope,
     work_item_engagement,
+    work_item_period,
+    work_item_titles,
 )
 from abacus.modules.engagements.home_work import AssignedWork, assigned_work
 from abacus.modules.engagements.human_gates import (
@@ -156,6 +186,7 @@ from abacus.modules.engagements.service import (
     engagement_label,
     engagement_metadata,
     engagement_resource_of,
+    engagements_of_client,
     engagements_of_entity,
     engagements_of_scope,
     entity_of,
@@ -212,10 +243,15 @@ from abacus.modules.engagements.team import (
     approve_eqr_eligibility,
     approve_team,
     assign_eqr,
+    eqr_eligibility,
     team_approval,
+)
+from abacus.modules.engagements.transitions import (
+    archive_when_items_archived as archive_when_items_archived,
 )
 from abacus.modules.engagements.work_item_facts import (
     WorkItemFacts,
+    function_holders,
     work_item_facts,
     work_item_offices,
 )
@@ -234,14 +270,17 @@ from abacus.modules.engagements.work_items import (
     client_tri_subjects,
     create_work_item,
     end_wall_assignments,
+    holders_of,
     holds_tax_return,
     lock_assurance_item,
     lock_engagement,
     mfa_tri_scope,
     portal_work_items,
     set_assurance_profile,
+    set_work_item_due,
     wall_assignment_count,
 )
+from abacus.modules.engagements.work_items import engagement_type_of as engagement_type_of
 from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,
@@ -410,6 +449,8 @@ __all__ = [
     "ACCEPTANCE_DECISION_DUE",
     "ACTIVITIES",
     "AUDIT_KINDS",
+    "CLIENT_APPROVAL_KINDS",
+    "DECIDER_RULES",
     "EQR_ELIGIBILITY_DUE",
     "INDEPENDENCE_CONCLUSION_DUE",
     "INDEPENDENCE_CONFIRMATION_DUE",
@@ -420,11 +461,29 @@ __all__ = [
     "WORKFLOWS",
     "WORK_ITEM_FUNCTIONS",
     "AccountRule",
+    "ApprovalFacts",
+    "ApprovalItem",
+    "ApprovalKindNotRegistered",
+    "ApprovalLine",
+    "ApprovalScope",
     "ApprovedGuidance",
     "Area",
     "AssignedWork",
     "AssuranceItem",
     "CheckFacts",
+    "ClientApprovalDecided",
+    "ClientApprovalKind",
+    "ClientApprovalProvider",
+    "ClientApprovalRequested",
+    "ClientApprovalState",
+    "ClientDecision",
+    "ClientDecisionContext",
+    "ClientImportEraseWorkflow",
+    "ClientImportInput",
+    "ClientImportWorkflow",
+    "Decider",
+    "DeciderRule",
+    "DeclineReason",
     "Designation",
     "DueGate",
     "Effort",
@@ -436,6 +495,7 @@ __all__ = [
     "EngagementRef",
     "GateFact",
     "IndependenceRequested",
+    "ItemChanged",
     "Judgment",
     "JudgmentSource",
     "LetterEnvelope",
@@ -448,6 +508,7 @@ __all__ = [
     "MethodologyVersionView",
     "NewCondition",
     "NewWorkItem",
+    "NotDecider",
     "PortalWorkItem",
     "PriorItem",
     "ProgressFact",
@@ -482,6 +543,8 @@ __all__ = [
     "audit_engagements",
     "change_team_role",
     "check_facts",
+    "client_approval_kinds",
+    "client_approval_provider",
     "client_contact_names",
     "client_contact_organisations",
     "client_contact_organisations_of_users",
@@ -493,26 +556,33 @@ __all__ = [
     "confirm_independence",
     "contact_ids_of_user",
     "contact_portal_user",
+    "covering_grant",
     "covering_letter_engagements",
     "create_draft",
     "create_work_item",
     "decide_acceptance",
+    "decider_for",
+    "deliver_proposed_entries",
     "designate_contact",
     "engagement_contacts",
     "engagement_hold_facts",
     "engagement_label",
     "engagement_metadata",
     "engagements_in_hold_scope",
+    "engagements_of_client",
     "engagements_of_entity",
     "entity_of",
+    "eqr_eligibility",
     "eqr_eligibility_due",
     "firm_router",
+    "function_holders",
     "g2_blocks",
     "gate_client_data",
     "gate_fact",
     "gate_offices",
     "gate_registered",
     "get_ref",
+    "holders_of",
     "holds_tax_return",
     "independence_cleared",
     "independence_conclusions_due",
@@ -538,6 +608,7 @@ __all__ = [
     "readable_client",
     "recorded_letter",
     "register_auto_retrieval",
+    "register_client_approval_kind",
     "register_draft_request_copy",
     "register_evidence_readable",
     "register_gate_provider",
@@ -562,6 +633,7 @@ __all__ = [
     "service_line_of",
     "set_ai_exclusion_of",
     "set_assurance_profile",
+    "set_work_item_due",
     "start_acceptance",
     "stored_file",
     "team_approval",
@@ -572,5 +644,22 @@ __all__ = [
     "work_item_facts",
     "work_item_index",
     "work_item_offices",
+    "work_item_period",
     "work_item_provider",
+    "work_item_titles",
 ]
+
+# S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+# P-10-T27 (DEC-3117): the engagements topics of the invalidation stream.
+from abacus.modules.engagements.realtime_topics import register as _register_topics  # noqa: E402
+from abacus.modules.engagements.workflows import (  # noqa: E402
+    ClientImportEraseWorkflow as ClientImportEraseWorkflow,
+)
+from abacus.modules.engagements.workflows import (  # noqa: E402
+    ClientImportInput as ClientImportInput,
+)
+from abacus.modules.engagements.workflows import (  # noqa: E402
+    ClientImportWorkflow as ClientImportWorkflow,
+)
+
+_register_topics()

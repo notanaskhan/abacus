@@ -14,7 +14,9 @@ comparison).
 - **Sign off** waits for every provision verified: a sign-off guard on the `ebp_provisions` kind
   answers 409 `sign_off_blocked` with `facts.reason` `provisions_unverified` and how many remain.
 - **Downstream** (EBP-03's entry rule, EBP-04's match formula, EBP-09's expenses clause) reads
-  `verified_provisions`: only ticked values, never a draft.
+  `verified_provisions`: only ticked values, never a draft. `entry_rule_read` is EBP-03's reader:
+  until all three of its provisions are ticked, and in wording code can read, there is no rule
+  and code computes no entry date (DEC-2482).
 - **Conflicts**: code compares the governing wording with the SPD (`compute.conflicts`) over the
   values a person enters for the SPD; only a person raises one (SHL-15 → AUD-15).
 """
@@ -24,7 +26,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Final
+from typing import Any, Final, Literal
 from uuid import UUID
 
 from sqlalchemy import text
@@ -40,6 +42,11 @@ from abacus.modules.agents.api import (
     SourcePaper,
     start_section_draft,
 )
+from abacus.modules.assurance.compute.ebp.eligibility import (
+    ENTRY_RULE_KEYS,
+    EntryRule,
+    entry_rule_from,
+)
 from abacus.modules.assurance.compute.ebp.provisions import (
     PROVISIONS,
     Provision,
@@ -51,8 +58,10 @@ from abacus.modules.identity.api import AgentContext, AuthContext, Forbidden, au
 from abacus.modules.review.api import (
     FieldState,
     field_states,
+    reviewable_facts,
+    sign_off_states,
 )
-from abacus.modules.workpapers.api import CELL_TARGET, paper_of_kind
+from abacus.modules.workpapers.api import CELL_TARGET, paper_id_of_kind, paper_of_kind
 
 KIND: Final = "ebp_provisions"
 PAPER_TARGET: Final = "workpaper"
@@ -60,6 +69,7 @@ MODE: Final = "ebp_provisions"
 AUDIT_TARGET: Final = "ebp_plan_review"
 UNVERIFIED: Final = "provisions_unverified"
 DOCUMENT_TITLES: Final = ("Adoption agreement", "Amendment", "Summary plan description")
+EntryRuleState = Literal["verified", "unverified", "unreadable"]
 
 
 class ReviewInvalid(DomainInvalid):
@@ -85,11 +95,28 @@ class SignedLevel:
 
 
 @dataclass(frozen=True)
+class EntryRuleRead:
+    """What EBP-03 may compute from: `rule` is set only when `state` is verified."""
+
+    state: EntryRuleState
+    rule: EntryRule | None = None
+
+
+@dataclass(frozen=True)
+class VersionDiff:
+    """What the latest review adds to an earlier one (EBP-02 b2's ribbon)."""
+
+    current_no: int
+    added_labels: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class PlanReview:
     review_no: int
     provisions: tuple[ProvisionState, ...]
     workpaper_id: UUID | None = None
     sign_offs: tuple[SignedLevel, ...] = ()
+    version_diff: VersionDiff | None = None
 
     @property
     def verified(self) -> int:
@@ -214,6 +241,17 @@ async def _review_row(
         return (await session.execute(_BY_NO, {"w": work_item_id, "n": review_no})).first()
 
 
+async def _signed(tenant: TenantContext, paper: UUID) -> tuple[SignedLevel, ...]:
+    """The paper's sign-offs: EBP-02's "✓ HL" and "Reviewed · HL Sep 17"."""
+    facts = await reviewable_facts(tenant, PAPER_TARGET, paper)
+    found = await sign_off_states(tenant, PAPER_TARGET, [paper], {paper: facts.content_hash})
+    return tuple(
+        SignedLevel(s.level, s.signed_by, s.signed_at, s.stale)
+        for s in found[paper]
+        if s.signed_by is not None and s.signed_at is not None
+    )
+
+
 async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None) -> PlanReview:
     """EBP-02's provisions for the latest review (or `review_no`, read-only b2): each row's
     adopted value and reference, and whether its value is verified now."""
@@ -226,6 +264,18 @@ async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None)
     paper = await paper_of_kind(ctx, item.engagement_id, KIND)
     rows = provisions_for(amendment_in_force=bool(found.amendment_in_force))
     states = await _states(ctx.tenant, paper, rows)
+    latest = None if review_no is None else await _review_row(ctx.tenant, work_item_id, None)
+    version_diff = None
+    if latest is not None and latest.review_no != found.review_no:
+        held = {p.key for p in rows}
+        version_diff = VersionDiff(
+            int(latest.review_no),
+            tuple(
+                p.label
+                for p in provisions_for(amendment_in_force=bool(latest.amendment_in_force))
+                if p.key not in held
+            ),
+        )
     return PlanReview(
         int(found.review_no),
         tuple(
@@ -236,9 +286,13 @@ async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None)
                 bool(states[p.value_cell].ticked_levels)
                 and states[p.value_cell].value is not None,
                 len(states[p.value_cell].citation_ids),
+                states[p.value_cell].content_hash or None,
             )
             for p in rows
         ),
+        workpaper_id=paper,
+        sign_offs=await _signed(ctx.tenant, paper),
+        version_diff=version_diff,
     )
 
 
@@ -271,6 +325,25 @@ async def verified_provisions(
         return {}
     rows = provisions_for(amendment_in_force=latest.amendment_in_force)
     return verified_of(rows, await _states(tenant, workpaper_id, rows))
+
+
+def entry_rule_of(verified: Mapping[str, str]) -> EntryRuleRead:
+    """Verified only when all three provisions are ticked and their wording is one code reads."""
+    if any(key not in verified for key in ENTRY_RULE_KEYS):
+        return EntryRuleRead("unverified")
+    rule = entry_rule_from(verified)
+    return EntryRuleRead("unreadable") if rule is None else EntryRuleRead("verified", rule)
+
+
+async def entry_rule_read(
+    tenant: TenantContext, engagement_id: UUID, work_item_id: UUID
+) -> EntryRuleRead:
+    """EBP-03's entry rule (the caller authorised on the engagement). No EBP-02 paper or no review
+    yet reads as unverified."""
+    paper = await paper_id_of_kind(tenant, engagement_id, KIND)
+    if paper is None:
+        return EntryRuleRead("unverified")
+    return entry_rule_of(await verified_provisions(tenant, engagement_id, work_item_id, paper))
 
 
 def unverified_of(rows: Sequence[Provision], states: Mapping[str, FieldState]) -> int:

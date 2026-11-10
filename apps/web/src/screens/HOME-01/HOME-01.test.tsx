@@ -10,7 +10,6 @@ import {
   type FixtureHandler,
   type Scenario,
   installFixtureMode,
-  json,
 } from "../../app-core/fixture-mode";
 import { homeSegmentOptions } from "../../domain/home";
 import { RUNNING_POLL_MS } from "../../domain/home/queries";
@@ -394,42 +393,16 @@ describe("HOME-01 avoid", () => {
   });
 });
 
-// I-01-T21: `home.approvals` decides where a Waiting-on-you row opens. Off, nothing on HOME-01
-// changes (the row opens its host); on, the row opens its gate selected in HOME-02.
-describe("HOME-01 rows with home.approvals (I-01-T21)", () => {
-  function withApprovals(on: boolean): Scenario {
-    const base = scenarios.a;
-    const caps = base.handlers["GET /v1/me/capabilities"];
-    return {
-      ...base,
-      handlers: {
-        ...base.handlers,
-        "GET /v1/me/capabilities": async (request) => {
-          const response = caps === undefined ? undefined : await caps(request);
-          const body = (await response?.json()) as { flags?: Record<string, unknown> };
-          return json({ ...body, flags: { ...body.flags, "home.approvals": on } });
-        },
-      },
-    };
-  }
-
+// I-01-T23 retired `home.approvals`: a Waiting-on-you row opens its gate selected in HOME-02.
+describe("HOME-01 rows open HOME-02 (I-01-T21, T23)", () => {
   function rowLinks(): string[] {
     return [...document.querySelectorAll("[data-gate] a")].map(
       (a) => a.getAttribute("href") ?? "",
     );
   }
 
-  it("off: no row links into /home/approvals", async () => {
-    show("a", withApprovals(false));
-    await settled();
-    await waitFor(() => {
-      expect(document.querySelectorAll("[data-gate]")).toHaveLength(11);
-    });
-    expect(rowLinks().some((href) => href.startsWith("/home/approvals"))).toBe(false);
-  });
-
-  it("on: every linked row opens /home/approvals?gate=<its id>", async () => {
-    show("a", withApprovals(true));
+  it("every linked row opens /home/approvals?gate=<its id>", async () => {
+    show("a");
     await settled();
     await waitFor(() => {
       expect(rowLinks().length).toBeGreaterThan(0);

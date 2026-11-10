@@ -377,16 +377,27 @@ BOARD_BY_LABEL: Final = {row.label: row for row in BOARD}
 @register_slice(SLICE)
 def _tax_board_slice() -> list[Event]:
     return [
+        # T-03-T19: the `tax_returns` entitlement replaces the retired rollout flags (DEC-2372).
         Event(
-            f"tax-return-board:{row.label}",
+            "tax-entitlement",
             SETUP_AT,
-            "tax.return_board_set",
+            "platform.entitlement_set",
             "system",
             SLICE,
-            {"return": row.label},
-            client=row.client,
-        )
-        for row in BOARD
+            {"module": "tax_returns"},
+        ),
+        *(
+            Event(
+                f"tax-return-board:{row.label}",
+                SETUP_AT,
+                "tax.return_board_set",
+                "system",
+                SLICE,
+                {"return": row.label},
+                client=row.client,
+            )
+            for row in BOARD
+        ),
     ]
 
 

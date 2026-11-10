@@ -3,12 +3,13 @@
 // controls." Words and figures are the handoff's.
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { toast } from "@abacus/ui";
+import { cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { type JSX, useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { NORTHWIND_AUDIT } from "../../fixtures/scenarios/AUD-06";
-import { aud08Register } from "../../fixtures/seed/aud08";
+import { R3_CARD, aud08Drawer, aud08Register } from "../../fixtures/seed/aud08";
 import { newQueryClient } from "../../testing/support";
 import { RiskRegisterPage } from "./Register";
 import { RiskDrawer } from "./RiskDrawer";
@@ -46,8 +47,26 @@ function show(state: Aud08State): void {
   );
 }
 
-function drawer(state: Aud08State, onDecide = vi.fn()): void {
-  restore = installFixtureMode(scenarios[state]);
+function drawer(
+  state: Aud08State,
+  onDecide = vi.fn(),
+  onNotify: (path: string) => void = () => undefined,
+): void {
+  const scenario = scenarios[state];
+  restore = installFixtureMode({
+    ...scenario,
+    handlers: {
+      ...scenario.handlers,
+      "POST /v1/decision-cards/{card_id}/notify": (request) => {
+        onNotify(request.path);
+        return json({
+          card_id: R3_CARD,
+          notified_user_id: "00000000-0000-4000-8000-000000000002",
+          notified_at: "2026-09-14T14:30:00-05:00",
+        });
+      },
+    },
+  });
   const variant = state === "b2" ? "b2" : "a";
   const r3 = aud08Register(variant).risks[2];
   if (r3 === undefined) throw new Error("R3");
@@ -56,7 +75,6 @@ function drawer(state: Aud08State, onDecide = vi.fn()): void {
       <RiskDrawer
         engagementId="00000000-0000-4000-8000-000000000001"
         risk={r3}
-        cardId={aud08Register(variant).approved_card_id ?? null}
         onClose={() => undefined}
         onDecide={onDecide}
       />
@@ -121,6 +139,21 @@ describe("AUD-08", () => {
     expect(rationale.textContent).toContain("9 business days later");
   });
 
+  it("b: Remind calls C3's notify on the pending card and confirms in words (DEC-2484)", async () => {
+    const notified: string[] = [];
+    const shown = vi.spyOn(toast, "show");
+    drawer("b", vi.fn(), (path) => notified.push(path));
+    const footer = await drawn("[data-aud08='routed-footer']");
+    fireEvent.click(within(footer).getByRole("button", { name: "Remind Margaret…" }));
+    await waitFor(() => {
+      expect(notified).toEqual([`/v1/decision-cards/${R3_CARD}/notify`]);
+    });
+    await waitFor(() => {
+      expect(shown).toHaveBeenCalledWith({ kind: "success", text: "Reminded Margaret Okonkwo." });
+    });
+    shown.mockRestore();
+  });
+
   it("b2: only Margaret sees Approve as significant risk; it opens SHL-11 with R3", async () => {
     const onDecide = vi.fn();
     drawer("b2", onDecide);
@@ -159,6 +192,52 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
     });
     expect(matrix.querySelector('[data-risk="R8"]')?.textContent).toContain("Suggested");
     expect(matrix.querySelectorAll('[data-dot="linked"]').length).toBeGreaterThan(0);
+  });
+
+  it("c: Link EBP-03… picks a response and links the risk to it", async () => {
+    const posted: unknown[] = [];
+    const scenario = scenarios.c;
+    restore = installFixtureMode({
+      ...scenario,
+      handlers: {
+        ...scenario.handlers,
+        "POST /v1/engagements/{engagement_id}/risks/{risk_id}/responses": (request) => {
+          posted.push(request.body);
+          return json({}, 201);
+        },
+      },
+    });
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <Page />
+      </QueryClientProvider>,
+    );
+    const tab = await waitFor(() => {
+      const el = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]')).find(
+        (t) => t.textContent === "Linkage",
+      );
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    fireEvent.click(tab);
+    const row = await drawn('[data-aud08="linkage"] [data-risk="R8"]');
+    // Radix opens a menu on pointer down.
+    fireEvent.pointerDown(within(row).getByRole("button", { name: "Link EBP-03…" }), {
+      button: 0,
+      pointerType: "mouse",
+    });
+    const option = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[role="menuitem"]');
+      expect(found).toBeTruthy();
+      return found as HTMLElement;
+    });
+    fireEvent.click(option);
+    await waitFor(() => {
+      expect(posted).toHaveLength(1);
+    });
+    const body = posted[0] as { target_kind?: unknown; target_ref?: unknown };
+    expect(typeof body.target_kind).toBe("string");
+    expect(typeof body.target_ref).toBe("string");
   });
 
   it("g: Identify risks with agent shows code's coverage and Open R8", async () => {
@@ -208,7 +287,6 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
         <RiskDrawer
           engagementId={NORTHWIND_AUDIT}
           risk={r8}
-          cardId={null}
           onClose={() => undefined}
           onDecide={vi.fn()}
         />
@@ -221,6 +299,111 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
     });
     expect(footer.textContent).toContain("Adopt");
     expect(document.querySelector("[data-drafted]")).toBeTruthy();
+    // The proposed wording is on show, and it is the suggestion's, not the row's (DEC-2481).
+    const proposed = document.querySelector('[data-aud08="proposed-rationale"]');
+    expect(proposed?.textContent).toContain("QACA escalation");
+  });
+
+  it("b: an adopted rationale is the person's: no marker and no Adopt", async () => {
+    restore = installFixtureMode(scenarios.b);
+    const r3 = aud08Register("a").risks[2];
+    if (r3 === undefined) throw new Error("R3");
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <RiskDrawer
+          engagementId={NORTHWIND_AUDIT}
+          risk={r3}
+          onClose={() => undefined}
+          onDecide={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    const card = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="rationale"]');
+      expect(el?.textContent).toContain("9 business days later");
+      return el as HTMLElement;
+    });
+    expect(card.querySelector("[data-drafted]")).toBeNull();
+    expect(card.querySelector('[data-aud08="drafted-footer"]')).toBeNull();
+    expect(card.querySelector('[data-aud08="proposed-rationale"]')).toBeNull();
+  });
+
+  it("a re-draft keeps the adopted wording in view, and Adopt carries the suggestion's version", async () => {
+    const seen: unknown[] = [];
+    const b = scenarios.b;
+    restore = installFixtureMode({
+      ...b,
+      handlers: {
+        ...b.handlers,
+        "GET /v1/engagements/{engagement_id}/risks/{risk_id}": () =>
+          new Response(
+            JSON.stringify({
+              ...aud08Drawer("a"),
+              rationale_suggestion: {
+                suggestion_id: "11111111-1111-4111-8111-111111111111",
+                text: "A re-drafted rationale",
+                citations: 2,
+                version: 4,
+              },
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          ),
+        "POST /v1/suggestions/{suggestion_id}/adopt": (request) => {
+          seen.push(request.body);
+          return json({});
+        },
+      },
+    });
+    const r3 = aud08Register("a").risks[2];
+    if (r3 === undefined) throw new Error("R3");
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <RiskDrawer
+          engagementId={NORTHWIND_AUDIT}
+          risk={r3}
+          onClose={() => undefined}
+          onDecide={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    const proposed = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="proposed-rationale"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(proposed.textContent).toContain("A re-drafted rationale");
+    expect(document.querySelector('[data-aud08="rationale"]')?.textContent).toContain(
+      "9 business days later",
+    );
+    const adopt = document.querySelector('[data-aud08="drafted-footer"] button');
+    fireEvent.click(adopt as HTMLButtonElement);
+    await waitFor(() => {
+      expect(seen).toEqual([{ seen_version: 4 }]);
+    });
+  });
+
+  it("f: the drafted response stays pending: EBP-03 with Adopt · Edit · Discard, nothing linked", async () => {
+    restore = installFixtureMode(scenarios.f);
+    const r8 = aud08Register("a").risks[7];
+    if (r8 === undefined) throw new Error("R8");
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <RiskDrawer
+          engagementId={NORTHWIND_AUDIT}
+          risk={r8}
+          onClose={() => undefined}
+          onDecide={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    const card = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="response"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(card.textContent).toContain("EBP-03");
+    expect(card.querySelector('[data-aud08="drafted-footer"]')?.textContent).toContain("Adopt");
+    expect(card.querySelector("[data-drafted]")).toBeTruthy();
   });
 
   // ED-323 (Q-03-T173): Edit once adopted the suggestion with the model's own rationale as the
@@ -249,7 +432,6 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
         <RiskDrawer
           engagementId={NORTHWIND_AUDIT}
           risk={r8}
-          cardId={null}
           onClose={() => undefined}
           onDecide={vi.fn()}
           onEdit={onEdit}

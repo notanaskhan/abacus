@@ -295,12 +295,12 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
   it("AC 1.1.5: a planned landing has a flag-off page at the area's path, never a 404", () => {
     const planned = AREAS.filter((a) => !a.routed);
     expect(planned.map((a) => a.label)).toEqual([
-      // Tax Returns is routed by T-02-T12 (TAX-01); its flag-off page is behind `tax.returns_v1`.
+      // Tax Returns is routed by T-02-T12 (TAX-01); its flag-off page is behind the `tax_returns` entitlement.
       // Files is routed by N-01-T16 (FIL-01); its flag-off page is behind `files.browser`.
       "Workbench",
       // Inbox is routed by N-01-T23 (INB-01); its flag-off page is behind `inbox.firm_intake`.
       // Binders is routed by P-06-T09 (BND-01); its flag-off page is BND-01.test.tsx's.
-      // Notices is routed by N-04-T05 (NOT-01); its flag-off page is behind `notices.workspace`.
+      // Notices is routed by N-04-T05 (NOT-01); `notices.workspace` retired at N-04-T27.
       // Audits is routed by A-01-T11 (AUD-01); its flag-off page is AUD-01.test.tsx's.
       "Closes",
       // Signatures is routed by N-02-T40 (SIG-01); its flag-off page is behind `signatures.envelopes`.

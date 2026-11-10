@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub behind `tax.extensions_estimates` (T-03-T02, 2026-11-03, DEC-2201): 404 off, 501 on until T-03-T07; freeze Fri Oct 29, 2027 |
+| Status | live behind `tax.extensions_estimates` (T-03-T02, 2026-11-03, DEC-2201; T-03-T07, DEC-2350): 404 off; freeze Fri Oct 29, 2027 |
 | Provider epic | T-03 (no C-id) |
 | Consumers | TAX-13; T-08 (HOME-03), R-03 (POR-10), T-04 (TAX-12 estimate reminders) |
 | Spec | SPEC-643 AC-4, AC-7, AC-9; `docs/plan/epics/T-03.md` §4.3 |
@@ -53,3 +53,7 @@ versions are internal.
 These routes and the questionnaire editor routes (`questionnaires.md`, T-03 additive) are listed
 for pen test #2 (Q-03-T166). The pen test itself is deferred under DEC-1389
 (`docs/plan/status/pen-test-deferral.md`).
+
+## A state line's form (DEC-2357)
+
+A state line's form must be one a published `due_date_rules` row names as its extension form, and that row gives the line's dates. A form no row names answers 409 `no_extension_form`; TY2027 state rows roll on federal and DC holidays until T-08's state calendars (T-03 R19).

@@ -4,7 +4,7 @@ title: A-04-T24 mode risk — register drafts as suggestions, Identify wording o
 spec: SPEC-620
 acceptance_criteria: [AC-21]
 risk_zone: red
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T24
 branch: s25-a04-t24 (stacked on s25-a04-t23)

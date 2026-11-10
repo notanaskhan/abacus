@@ -17,6 +17,7 @@ import tokenize
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, replace
 from fnmatch import fnmatch
+from itertools import pairwise
 from pathlib import Path
 from typing import Final
 
@@ -882,6 +883,9 @@ _ISSUERS: dict[str, frozenset[str]] = {
     # R-01-T09 (DEC-323): the portal drop sort acts for the dropper on one drop, proven by the
     # drop's own inbox row read under the tenant's row-level security.
     "src/abacus/modules/evidence/drops.py": frozenset({"system_context_for_run"}),
+    # N-04-T11 (DEC-2359): the analysis cites as the platform acting for whoever ran it, proven by
+    # the running `notice_analyses` row read under the tenant's row-level security.
+    "src/abacus/modules/notices/analysis.py": frozenset({"system_context_for_run"}),
 }
 
 
@@ -950,6 +954,12 @@ REVIEW_DECIDE_EXEMPT: dict[str, frozenset[str]] = {
     "src/abacus/modules/agents/proposal_adapters.py": frozenset(
         {"<import>", "approve_typed", "reject_typed"}
     ),
+    # R-02-T11 (SPEC-646, DEC-3009): C18's one caller of a provider's `decide()` slot, the
+    # client's own decision (portal human, fresh second factor). CLIENT-DECISION-001 already
+    # names this file as the only home outside record mode; the exemption is that one function.
+    "src/abacus/modules/portal/approvals.py": frozenset({"client_decide"}),
+    # A-07-T32 (DEC-3109): a code run's plan check names the reserved verbs only to refuse them.
+    "src/abacus/modules/agents/code_runs.py": frozenset({"_reserved"}),
 }
 
 
@@ -1386,6 +1396,9 @@ LIST_EXEMPT = frozenset(
         # A-02-T16 (DEC-514): an entity's engagements as candidates `authorise` judges one by one
         # (`connections.authorised_engagement`); never returned as a list.
         ("src/abacus/modules/engagements/repository.py", "entity_engagement_ids"),
+        # R-02-T11 (DEC-3025): a client grant's engagements as approval scopes; every item is
+        # then judged by `covering_grant` one by one.
+        ("src/abacus/modules/engagements/repository.py", "client_engagement_ids"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
         # P-06-T07: one binder's sections, requests and recipient history, read after
         # `authorise(binder.*)` on that binder; and the platform's close rule on a C1 fact.
@@ -1483,6 +1496,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "pages_of"),
         ("src/abacus/modules/evidence/repository.py", "insert_pages"),
         ("src/abacus/modules/evidence/repository.py", "sources_without_words"),
+        (
+            "src/abacus/modules/evidence/repository.py",
+            "sources_without_ocr",
+        ),  # P-11-T25: the system backfill
         # P-03-T15: the masking backfill's batch, as the system on the firm's own uploads.
         ("src/abacus/modules/evidence/repository.py", "sources_without_masks"),
         # P-03-T08, T09: the events of citations already read through `visible()` or authorised
@@ -1607,8 +1624,13 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # (SPEC-004 Q4, TASK-019); requests never imports evidence. SPEC-029 (TASK-055 D2): upload
     # cross-checks read the year end's trial balance snapshot (ledger imports nothing).
     "evidence": _BASE | {"engagements", "requests", "ledger"},
-    "review": _BASE | {"engagements"},
-    "collaboration": _BASE | {"engagements"},
+    # I-01-T23 (DEC-2613): + methodology, whose versions in Needs review are a firm-level C13
+    # gate registered here (`review/firm_gates.py`); methodology never imports review.
+    "review": _BASE | {"engagements", "methodology"},
+    # P-05-T02 (P-05 §4.1, DEC-3103): + review (convert a thread to a review note through C3 in
+    # the same unit of work) and communications (the share guard's `check_scope`); neither
+    # imports collaboration.
+    "collaboration": _BASE | {"engagements", "review", "communications"},
     # N-02-T38 (DEC-1567): + reporting, whose renderer draws the evidence package's legible page;
     # reporting never imports signatures.
     # N-02-T28 (DEC-1479): + review (the C13 gate kinds `envelope_send`, `envelope_countersign`),
@@ -1640,9 +1662,11 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # Today's fieldwork (procedures, workpapers, findings) splits into workpapers and assurance.
     # TASK-084 adds evidence (support) and requests (asking the client for it).
     "fieldwork": _BASE | {"engagements", "ledger", "sampling", "evidence", "requests"},
+    # P-05-T02 (DEC-3103): + collaboration, where the `workpaper` anchor provider registers
+    # (P-05-T09); collaboration never imports workpapers.
     "workpapers": _BASE
     | {"engagements", "methodology", "evidence", "requests", "ledger", "sampling", "review"}
-    | {"agents"},
+    | {"agents", "collaboration"},
     "adjustments": _BASE
     | {"engagements", "ledger", "methodology", "review", "agents", "integrations"},
     "reporting": _BASE
@@ -1677,7 +1701,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "portal": _BASE
     | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}
     | {"collaboration", "review", "assurance", "attest", "tax", "closes", "notices"}
-    | {"connections"},
+    | {"connections"}
+    # R-02-T04: C10's registry and the management decision live in reporting.
+    | {"reporting"},
 }
 
 
@@ -1897,6 +1923,81 @@ def _agent_denied_actions() -> frozenset[str]:
 
 
 _NON_AGENT_CONTEXTS = frozenset({"AuthContext", "SystemContext"})
+
+
+_NEVER_TOOL_WORDS = frozenset(
+    {"approve", "sign_off", "signoff", "release", "send", "post", "export", "transmit", "decide"}
+    | {"publish", "adopt", "resolve", "accept", "reject"}
+)
+
+
+def _holds_never_verb(text: str) -> bool:
+    words = re.split(r"[._]", text)
+    pairs = {f"{a}_{b}" for a, b in pairwise(words)}
+    return bool((set(words) | pairs) & _NEVER_TOOL_WORDS)
+
+
+def _check_never_tool(src: SourceFile) -> Iterator[Finding]:
+    """AC-R1 (INV-1): a tool whose name or action holds a final verb can only be
+    `approved_write`. Reads `@agent_tool(...)` and `AgentTool(...)` with constant arguments."""
+    for call in ast.walk(src.tree):
+        if not (
+            isinstance(call, ast.Call) and _terminal_name(call.func) in {"agent_tool", "AgentTool"}
+        ):
+            continue
+        values = {
+            k.arg: k.value.value
+            for k in call.keywords
+            if k.arg in {"name", "kind", "action"}
+            and isinstance(k.value, ast.Constant)
+            and isinstance(k.value.value, str)
+        }
+        if values.get("kind") == "approved_write":
+            continue
+        for key in ("name", "action"):
+            if _holds_never_verb(values.get(key, "")):
+                yield Finding(
+                    call.lineno, f"tool {key} {values[key]!r} is a final verb: approved_write only"
+                )
+
+
+def _check_archived_write(src: SourceFile) -> Iterator[Finding]:
+    """A-07 F8 (ADR P-43): only the four allowlisted service functions call
+    `allow_archived_write`, and nothing else names the setting."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Call) and _terminal_name(node.func) == "allow_archived_write":
+            yield Finding(node.lineno, "allow_archived_write outside the allowlisted services")
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and "app.archived_write" in node.value
+        ):
+            yield Finding(node.lineno, "app.archived_write is set only by the unit of work")
+
+
+def _check_client_decision(src: SourceFile) -> Iterator[Finding]:
+    """R-02 AC-5: only `portal/approvals.py` and a provider's own record-mode service
+    (`client_decisions.py`) may call a C18 provider's `decide()`, so no other path decides for a
+    client. Reads a call on the slot's result, or on a name the slot's result was bound to."""
+    bound: set[str] = set()
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Assign)
+            and isinstance(node.value, ast.Call)
+            and _terminal_name(node.value.func) == "client_approval_provider"
+        ):
+            bound |= {t.id for t in node.targets if isinstance(t, ast.Name)}
+    for call in ast.walk(src.tree):
+        if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute)):
+            continue
+        if call.func.attr != "decide":
+            continue
+        target = call.func.value
+        from_slot = isinstance(target, ast.Call) and (
+            _terminal_name(target.func) == "client_approval_provider"
+        )
+        if from_slot or (isinstance(target, ast.Name) and target.id in bound):
+            yield Finding(call.lineno, "a C18 provider's decide() outside its allowed files")
 
 
 def _check_human_decision(src: SourceFile) -> Iterator[Finding]:
@@ -2229,6 +2330,15 @@ def _check_k1_release(src: SourceFile) -> Iterator[Finding]:
             yield Finding(getattr(node, "lineno", 0), "k1_releases outside tax/k1_release.py")
 
 
+def _check_report_release(src: SourceFile) -> Iterator[Finding]:
+    """A-07-T30 (DEC-3107): G8 is written only by `assurance/release.py`'s one unit of work, after
+    the EP's consumed grant and the server's gate re-check."""
+    for node in ast.walk(src.tree):
+        text = node.value if isinstance(node, ast.Constant) else None
+        if isinstance(text, str) and re.search(r"\binsert\s+into\s+report_releases\b", text, re.I):
+            yield Finding(getattr(node, "lineno", 0), "report_releases written outside release.py")
+
+
 def _check_fraud_minutes_approval(src: SourceFile) -> Iterator[Finding]:
     """A-04-T19 (DEC-2055): an approval of the fraud brainstorm's minutes is the engagement
     partner's own act, written only by `assurance/fraud_brainstorm.approve_minutes`."""
@@ -2331,6 +2441,15 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/support.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # the ledger, as the app
             "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
+            # S30 schema tests (0710 to 0714, and the ADR-078 independent suites): they seed as
+            # the superuser and act as a session's actor to prove CHECKs, triggers and grants.
+            "tests/integration/test_r02t05_deliverables_governance_migration.py",
+            "tests/integration/test_r02t07_download_links.py",
+            "tests/integration/test_p10t14_agent_run_backfill.py",
+            "tests/integration/test_p10t17_runtime_migrations_independent.py",
+            "tests/integration/test_p10t18_runtime_tables_independent.py",
+            "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
+            "tests/integration/test_a07t20_immutable_independent.py",
             # N-02-T12: the app role's refusals on the signatures tables, after a real import.
             "tests/integration/backfill/test_n02t12_signatures_independent.py",
             "tests/integration/trust_kit/support.py",  # P-03-T05, T06: seeds as the superuser
@@ -2403,6 +2522,10 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/kernel/db/migration.py",
             "tests/integration/test_q03t028_plan_tests.py",
+            # S30: a TRUNCATE probe over a fixed table tuple, and a uuid-named probe table that
+            # tenant_table must guard (A-07-T20).
+            "tests/integration/test_r02t05_deliverables_governance_migration.py",
+            "tests/integration/test_a07t20_immutable_independent.py",
         ),
     ),
     Rule(
@@ -2510,6 +2633,13 @@ RULES: list[Rule | TreeRule] = [
             # A-03-T05/T06: the schema tests of 0520 and 0521 act as the app.
             "tests/integration/backfill/test_a03t05_sampling_tables.py",
             "tests/integration/backfill/test_a03t06_taxonomy_db.py",
+            # S30 schema tests: act as a session's actor for actor-bound CHECKs (0710 to 0714).
+            "tests/integration/test_r02t05_deliverables_governance_migration.py",
+            "tests/integration/test_r02t07_download_links.py",
+            "tests/integration/test_p10t17_runtime_migrations_independent.py",
+            "tests/integration/test_p10t18_runtime_tables_independent.py",
+            "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
+            "tests/integration/test_a07t20_immutable_independent.py",
             "tests/integration/test_tenancy.py",
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",
@@ -2984,6 +3114,39 @@ RULES: list[Rule | TreeRule] = [
         include=("src/abacus/modules/*",),
     ),
     Rule(
+        id="ARCHIVE-001",
+        description="Only the allowlisted services write past archived_guard()",
+        adr="ADR-159, A-07 F8",
+        check=_check_archived_write,
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/kernel/uow/__init__.py",
+            "src/abacus/modules/assurance/archive_additions.py",
+            "src/abacus/modules/assurance/post_issuance.py",
+            "src/abacus/modules/evidence/retention_extend.py",
+            "src/abacus/modules/evidence/destruction.py",
+        ),
+    ),
+    Rule(
+        id="TOOL-001",
+        description="A tool holding a final verb can only be approved_write",
+        adr="ADR-005, ADR-233",
+        check=_check_never_tool,
+        include=("src/abacus/modules/*",),
+        exclude=("src/abacus/modules/agents/tools/registry.py",),
+    ),
+    Rule(
+        id="CLIENT-DECISION-001",
+        description="Only the portal's approvals service and record-mode services decide",
+        adr="ADR-005, SPEC-646",
+        check=_check_client_decision,
+        include=("src/abacus/modules/*",),
+        exclude=(
+            "src/abacus/modules/portal/approvals.py",
+            "src/abacus/modules/*/client_decisions.py",
+        ),
+    ),
+    Rule(
         id="FLAG-001",
         description="Flags come from the registry and are read by their generated constant",
         adr="ADR-089",
@@ -3029,6 +3192,14 @@ RULES: list[Rule | TreeRule] = [
         check=_check_k1_release,
         include=("src/abacus/*",),
         exclude=("src/abacus/modules/tax/k1_release.py", "src/abacus/modules/tax/registry.py"),
+    ),
+    Rule(
+        id="RELEASE-001",
+        description="Only assurance/release.py writes a report release (G8)",
+        adr="A-07 §4.10, ADR-005",
+        check=_check_report_release,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/assurance/release.py",),
     ),
     Rule(
         id="FRAUD-MINUTES-001",

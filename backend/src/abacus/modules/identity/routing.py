@@ -252,7 +252,7 @@ async def current_context(
         raise HTTPException(401, "session_signed_out", headers={"WWW-Authenticate": "Bearer"})
     # G-02-T06: the MFA time the verified token states; the session comes from the BFF cookie
     # when an event is written (`identity.request_session`).
-    note_session(mfa_at=ctx.mfa_at)
+    note_session(mfa_at=ctx.mfa_at, token_expires_at=signed_in.identity.expires_at)
     return ctx
 
 

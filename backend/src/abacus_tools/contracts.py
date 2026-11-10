@@ -22,6 +22,59 @@ BACKEND = Path(__file__).resolve().parents[2]
 CONTRACTS = BACKEND / "tests" / "contracts"
 # The models each contract freezes (its OpenAPI component schema names).
 MODELS: dict[str, tuple[str, ...]] = {
+    # Notices v1 (N-04-T27; docs/contracts/notices.md): every route model of `notices/contract.py`.
+    "notices": (
+        "AuthorizationOut",
+        "AmountsOut",
+        "NoticePersonOut",
+        "NoticeRowOut",
+        "TypeCountOut",
+        "NoticesSummaryOut",
+        "IntakeSourceIn",
+        "RegionOut",
+        "IntakeFieldOut",
+        "MatchCandidateOut",
+        "MatchOut",
+        "IntakeOut",
+        "NoticeFieldEditIn",
+        "IntakeUpdateIn",
+        "IntakeCreateIn",
+        "IntakeAttachIn",
+        "IntakeDiscardIn",
+        "CreatedNoticeOut",
+        "ReadinessFactOut",
+        "NoticeOut",
+        "NoticePatchIn",
+        "CitedLineIn",
+        "ReturnAsFiledIn",
+        "ProposedItemIn",
+        "ProposedItemsIn",
+        "AnalysisRowOut",
+        "InformationReturnOut",
+        "BracketCheckOut",
+        "AnalysisChecksOut",
+        "NoticeSourceOut",
+        "AgentBlockOut",
+        "AnalysisOut",
+        "AnalysisRunOut",
+        "DecisionRequestIn",
+        "DecisionRequestOut",
+        "NoticeNoteIn",
+        "NoticeNoteOut",
+        "ActivityItemOut",
+        "BlockOut",
+        "EnclosureOut",
+        "PaymentOut",
+        "ApprovalStepOut",
+        "ResponseOut",
+        "BlockEditIn",
+        "EnclosureToggleIn",
+        "ResponseEditIn",
+        "SendForSignatureOut",
+        "MarkSentIn",
+        "SentOut",
+        "AgencyReplyIn",
+    ),
     "c1_work_items": ("EngagementSummaryOut", "EngagementOut", "GateOut", "WorkItemOut"),
     "c2_status_registry": ("EngagementStatus", "RequestStatus"),
     # C16 v1 (P-01-T12): the notifications half's v2 feed and preferences, and the email half's
@@ -119,6 +172,40 @@ MODELS: dict[str, tuple[str, ...]] = {
     ),
     # C6 v1, agent runs (Q-02-T45; ADR-169 §4; DEC-595, the owner change; frozen 2026-10-27):
     # the run list and view, trace, items, writes, records read, export and the run record.
+    # C6 v2 (P-10-T16; docs/contracts/agent-runs.md §9): the run, plan, question, command,
+    # session and usage models. `RunEventOut`, `RunStepV2Out` and `InvalidationEventOut` travel
+    # on SSE streams outside OpenAPI; `tests/contracts/c06_v2` pins their shapes.
+    "c06_v2": (
+        "BlockedOnOut",
+        "RunCountersOut",
+        "RunV2Out",
+        "RunPlanStepOut",
+        "RunPlanOut",
+        "QuestionOptionOut",
+        "RunQuestionOut",
+        "EngagementRunIn",
+        "RunAcceptedOut",
+        "RunPlanEditIn",
+        "PlanDecisionIn",
+        "QuestionAnswerIn",
+        "RunMessageIn",
+        "RunSignOffIn",
+        "AgentFeedbackIn",
+        "AgentFeedbackOut",
+        "AutoModeIn",
+        "AutoModeOut",
+        "CapabilityAvailabilityOut",
+        "AgentCapabilitiesOut",
+        "SessionItemOut",
+        "SessionSnapshotOut",
+        "SessionMessageIn",
+        "SessionMessageAcceptedOut",
+        "StreamTopicsIn",
+        "StreamTopicsOut",
+        "UsageLineOut",
+        "FirmUsageOut",
+        "EngagementEffortOut",
+    ),
     "c06_agent_runs": (
         "AgentRunOut",
         "TraceRowOut",
@@ -450,6 +537,17 @@ MODELS: dict[str, tuple[str, ...]] = {
     ),
 }
 Schema = dict[str, object]
+# In-process contracts (P-10-T22): models a module calls rather than routes, named
+# `<import path>:<model>`. C17 v1 freezes the tool call and outcome, and the page shapes a tool
+# declares; the kinds, refusals and error codes are enums inside them.
+IN_PROCESS: dict[str, tuple[str, ...]] = {
+    "c17_tools": (
+        "abacus.modules.agents.api:ToolCallIn",
+        "abacus.modules.agents.api:ToolOutcome",
+        "abacus.modules.agents.api:ToolPageIn",
+        "abacus.modules.agents.api:ToolPageOut",
+    ),
+}
 
 
 # A frozen name whose OpenAPI key changed with no change of shape: FastAPI qualifies a model's key
@@ -461,7 +559,22 @@ SCHEMA_KEYS: Final[dict[str, str]] = {
 }
 
 
+def _in_process(contract: str) -> dict[str, Schema]:
+    from importlib import import_module
+
+    from pydantic import BaseModel
+
+    found: dict[str, Schema] = {}
+    for ref in IN_PROCESS[contract]:
+        path, name = ref.split(":")
+        model = cast(type[BaseModel], getattr(import_module(path), name))
+        found[name] = cast(Schema, model.model_json_schema(mode="serialization"))
+    return found
+
+
 def current(contract: str) -> dict[str, Schema]:
+    if contract in IN_PROCESS:
+        return _in_process(contract)
     schemas = cast(dict[str, Schema], json.loads(document())["components"]["schemas"])
     return {name: schemas[SCHEMA_KEYS.get(name, name)] for name in MODELS[contract]}
 
@@ -514,7 +627,7 @@ def breaking(frozen: dict[str, Schema], now: dict[str, Schema]) -> list[str]:
 
 
 def snapshots() -> dict[str, list[Path]]:
-    return {c: sorted((CONTRACTS / c).glob("v*.json")) for c in MODELS}
+    return {c: sorted((CONTRACTS / c).glob("v*.json")) for c in (*MODELS, *IN_PROCESS)}
 
 
 def check() -> list[str]:

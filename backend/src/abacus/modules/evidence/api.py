@@ -9,6 +9,7 @@ from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.anchor_job import ACTIVITIES as ANCHOR_ACTIVITIES
 from abacus.modules.evidence.anchor_job import SCHEDULES as ANCHOR_SCHEDULES
 from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
+from abacus.modules.evidence.archive import source_document_count  # A-07-T31: section F
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.audit_values import evidence_version_values, pii_reveal_values
 from abacus.modules.evidence.citations.display import citation_display
@@ -49,15 +50,31 @@ from abacus.modules.evidence.classification import (
 )
 from abacus.modules.evidence.classifier import rules as classifier_rules
 from abacus.modules.evidence.contract import withdrawal_router
+from abacus.modules.evidence.deliverable_serving import (
+    IssuedDownload as IssuedDownload,
+)
+from abacus.modules.evidence.deliverable_serving import PageImage as PageImage
+from abacus.modules.evidence.deliverable_serving import ServableVersion as ServableVersion
+from abacus.modules.evidence.deliverable_serving import (
+    deliverable_page as deliverable_page,
+)
+from abacus.modules.evidence.deliverable_serving import (
+    issue_deliverable_download as issue_deliverable_download,
+)
+from abacus.modules.evidence.deliverable_serving import (
+    open_deliverable_download as open_deliverable_download,
+)
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.duplicates import PendingDuplicate, pending_duplicates
 from abacus.modules.evidence.duplicates_contract import duplicates_router
 from abacus.modules.evidence.events import (
+    EvidenceTextReady,
     EvidenceVersionCreated,
     EvidenceVersionWithdrawn,
     InboxFileAdded,
     InboxFileExtracted,
+    OcrRunRefused,
     UploadChecksRecorded,
 )
 from abacus.modules.evidence.export_activities import ACTIVITIES as EXPORT_ACTIVITIES
@@ -103,8 +120,17 @@ from abacus.modules.evidence.export_sections import (
 from abacus.modules.evidence.export_sections import (
     section_csv as export_section_csv,
 )
+from abacus.modules.evidence.extracted_read import (
+    ReadField,
+    extracted_fields_of,
+    ocr_refusal_of,
+    text_ready,
+    versions_with_same_bytes,
+)
 from abacus.modules.evidence.extraction import Extraction, extract_isolated
 from abacus.modules.evidence.extraction import Table as ExtractedTable
+from abacus.modules.evidence.filed_copies import file_copy_onto_work_item
+from abacus.modules.evidence.files import FolderProvider, register_folder_provider
 from abacus.modules.evidence.files_contract import files_router
 from abacus.modules.evidence.firm_export_activities import ACTIVITIES as FIRM_EXPORT_ACTIVITIES
 from abacus.modules.evidence.firm_export_activities import (
@@ -119,6 +145,8 @@ from abacus.modules.evidence.firm_export_schedule import register_firm_export_st
 from abacus.modules.evidence.firm_export_schedule_contract import (
     schedule_router as firm_export_schedule_router,
 )
+from abacus.modules.evidence.form_extraction import extract_version
+from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
 from abacus.modules.evidence.gate_facts import (
     decided_among,
     effective_decisions,
@@ -166,7 +194,11 @@ from abacus.modules.evidence.intake_sources import IntakeSource, register_intake
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
 from abacus.modules.evidence.masked_previews import intake_masked_pages, masked_preview_upload
-from abacus.modules.evidence.masked_text import intake_masked_text
+from abacus.modules.evidence.masked_text import (
+    engagement_of_version,
+    intake_masked_text,
+    masked_pages,
+)
 from abacus.modules.evidence.match_material import (
     Candidate,
     MatchMaterial,
@@ -318,7 +350,13 @@ from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVIT
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
 from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
-from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill, words_upload
+from abacus.modules.evidence.words import (
+    WORDS_VERSION,
+    PageWords,
+    start_trust_layer_backfill,
+    version_word_layers,
+    words_upload,
+)
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import (
     INTAKE,
@@ -327,6 +365,7 @@ from abacus.modules.evidence.workflow_types import (
     ExportPackageFacts,
     FirmExportFacts,
     FirmExportInput,
+    FormExtractionInput,
     LegalHoldInput,
     UploadInput,
     WithdrawalPurgeInput,
@@ -457,12 +496,21 @@ register_audit_value_resolver("pii_reveal", pii_reveal_values)
 # A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
 register_upload_facts(upload_facts)
 
+from abacus.modules.evidence.ocr_gate import (  # noqa: E402 -- P-11-T33
+    DAILY_PAGE_CAP,
+    daily_page_cap,
+    set_daily_page_cap,
+)
+from abacus.modules.evidence.ocr_step import start_ocr_backfill  # noqa: E402 -- P-11-T25
+from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
+
 __all__ = [
     "ACTIVITIES",
     "ANCHOR_ID",
     "CODE_COLUMN",
     "CONTENT_READ_KIND",
     "CREDIT_COLUMN",
+    "DAILY_PAGE_CAP",
     "DEBIT_COLUMN",
     "EXPORT_EXPIRY_ID",
     "EXPORT_FORMAT_VERSION",
@@ -502,6 +550,7 @@ __all__ = [
     "EngagementExportInput",
     "EngagementExportManifest",
     "EngagementExportWorkflow",
+    "EvidenceTextReady",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
@@ -512,6 +561,7 @@ __all__ = [
     "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
     "ExportStale",
+    "ExtractedField",
     "ExtractedTable",
     "Extraction",
     "Filed",
@@ -521,6 +571,9 @@ __all__ = [
     "FirmExportInput",
     "FirmExportScheduleWorkflow",
     "FirmExportWorkflow",
+    "FolderProvider",
+    "FormExtractionInput",
+    "FormExtractionWorkflow",
     "GeneratedFile",
     "GlBalanceRow",
     "GlHeader",
@@ -532,19 +585,26 @@ __all__ = [
     "IntakeObject",
     "IntakeSource",
     "IntegrityError",
+    "IssuedDownload",
     "LayerExport",
     "LayerLine",
     "LegalHoldApply",
     "LegalHoldInput",
     "LegalHoldRelease",
+    "LongOcr",
     "MatchMaterial",
     "NewItem",
+    "OcrBackfill",
+    "OcrRunRefused",
+    "PageImage",
+    "PageWords",
     "PendingDuplicate",
     "PolicyChange",
     "PortalFile",
     "Proposal",
     "ProposalChanged",
     "Provenance",
+    "ReadField",
     "RecordClass",
     "RecordedCitation",
     "RenderHashMismatch",
@@ -557,6 +617,7 @@ __all__ = [
     "SectionProvider",
     "SectionRequest",
     "SentBack",
+    "ServableVersion",
     "StoredObject",
     "StoredRecord",
     "SupersedeMismatch",
@@ -569,6 +630,7 @@ __all__ = [
     "UploadInput",
     "UploadProcessing",
     "WithdrawalPurgeInput",
+    "Word",
     "add_to_inbox",
     "add_version",
     "anchor_chain",
@@ -586,13 +648,17 @@ __all__ = [
     "column_families",
     "column_letters",
     "configure_storage",
+    "daily_page_cap",
     "decide",
     "decided_among",
     "decisions_on_screenings",
+    "deliverable_page",
     "destroy_intake_key",
+    "detect_pii",
     "drop_batch",
     "effective_decisions",
     "effective_policies",
+    "engagement_of_version",
     "engagement_snapshots",
     "evidence_versions_for",
     "export_manifest_json_schema",
@@ -600,7 +666,11 @@ __all__ = [
     "export_section_csv",
     "extend_record",
     "extend_retention_for",
+    "extract_form",
     "extract_isolated",
+    "extract_version",
+    "extracted_fields_of",
+    "file_copy_onto_work_item",
     "file_engine_copy",
     "file_handoff_copy",
     "file_intake_object",
@@ -613,20 +683,25 @@ __all__ = [
     "get_record",
     "held_intake_objects",
     "holds_covering",
+    "identify_form",
     "included_export_versions",
     "intake_masked_pages",
     "intake_masked_text",
     "is_version_withdrawn",
+    "issue_deliverable_download",
     "latest_document",
     "legal_hold_activate",
     "legal_hold_apply_batch",
     "list_holds",
     "live_intake_keys",
     "mark_sources_superseded",
+    "masked_pages",
     "masked_preview_upload",
     "masked_rows",
     "match_material",
     "normalised_text",
+    "ocr_refusal_of",
+    "open_deliverable_download",
     "page_quote_reason",
     "pdf_text",
     "pending_duplicates",
@@ -647,6 +722,7 @@ __all__ = [
     "register_export_audit_trail",
     "register_export_section",
     "register_firm_export_starter",
+    "register_folder_provider",
     "register_intake_source",
     "register_match_picks",
     "register_proposal_source",
@@ -664,14 +740,18 @@ __all__ = [
     "screen_and_stage",
     "screen_and_stage_detached",
     "screening_facts",
+    "set_daily_page_cap",
     "set_policy",
     "signer_page",
+    "source_document_count",
     "stage_content",
     "stale_pdfs",
+    "start_ocr_backfill",
     "start_trust_layer_backfill",
     "store_generated",
     "suggest_by_name",
     "supported_citations",
+    "text_ready",
     "tin_exposure",
     "undo_returned_files",
     "undo_review_decision",
@@ -683,6 +763,8 @@ __all__ = [
     "version_titles",
     "version_view",
     "version_with_fingerprint",
+    "version_word_layers",
+    "versions_with_same_bytes",
     "viewer_page",
     "waiting_among",
     "withdrawn_among",
@@ -698,3 +780,10 @@ register_evidence_readable(readable_version)
 register_wisp_document_reader(latest_document)
 # K-01-T18 (DEC-1759): methodology stores its source files through the platform's file store.
 register_file_store(screen_for_store, read_staged)
+
+# S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+from abacus.modules.evidence.form_extraction import Extracted as ExtractedField  # noqa: E402
+from abacus.modules.evidence.form_extraction import extract as extract_form  # noqa: E402
+from abacus.modules.evidence.form_extraction import identify as identify_form  # noqa: E402
+from abacus.modules.evidence.pii import detect as detect_pii  # noqa: E402
+from abacus.modules.evidence.words import Word as Word  # noqa: E402

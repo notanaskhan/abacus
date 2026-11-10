@@ -3,7 +3,11 @@ import type {
   PreviewQuestionOut,
   QuestionnaireEditorOut,
 } from "@abacus/api-client";
-import { questionnaireEditorOptions, questionnairePreviewOptions } from "@abacus/api-client/query";
+import {
+  questionnaireEditorOptions,
+  questionnairePreviewOptions,
+  questionnaireSaveMutation,
+} from "@abacus/api-client/query";
 import {
   Button,
   type ClientQuestion,
@@ -18,9 +22,9 @@ import {
   cn,
   useFormat,
 } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
-import { type JSX, useState } from "react";
-import { useFlag } from "../../app-core/flags";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type JSX, useMemo, useState } from "react";
+import { useEntitlement } from "../../app-core/flags";
 import { COPY } from "./copy";
 
 // BND-03 · Questionnaire editor, read states a and e and the client preview dock (T-03-T09; T-03 §3
@@ -30,7 +34,10 @@ import { COPY } from "./copy";
 // expanded with its Required toggle, client wording, answer and follow-ups, the effect banner and
 // helpers); an empty section shows its EmptyState. The dock renders `…/client-preview` (the portal
 // DTO) through the client question renderer in `@abacus/ui`: no tag, banner, helper or toggle
-// reaches it. Editing (b, c, d) is T-03-T10: the toggles and "+ Question" are read-only here.
+// reaches it. Editing (T-03-T10; b, c, d): a card opens inline, the six-type picker, the Required
+// toggle (the dock's marker follows the unsaved value), the logic row, Reorder (Move up and Move down
+// from the keyboard, since dnd-kit is not on the dependency allowlist), and a sticky Save bar against
+// `If-Match` (412 offers a reload). A template's Draft (d) opens with its banner and no answers.
 
 export type BinderTab = "requests" | "questions" | "activity";
 
@@ -149,7 +156,60 @@ function Rail({
   );
 }
 
-function FollowUp({ q }: { q: EditorQuestionOut }): JSX.Element {
+const TYPES: readonly EditorQuestionOut["type"][] = [
+  "yes_no",
+  "amount",
+  "choice",
+  "date",
+  "text",
+  "upload_if_yes",
+];
+
+function TypePicker({
+  value,
+  onChange,
+}: {
+  value: EditorQuestionOut["type"];
+  onChange: (type: EditorQuestionOut["type"]) => void;
+}): JSX.Element {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={COPY.editing.type}
+      data-bnd03="type-picker"
+      className="flex flex-wrap gap-[4px]"
+    >
+      {TYPES.map((type) => (
+        <button
+          key={type}
+          type="button"
+          role="radio"
+          aria-checked={value === type}
+          data-type-option={type}
+          className={cn(
+            "rounded-[6px] px-[8px] py-[3px] text-[12px] ring-[1px] ring-hair",
+            value === type && "bg-selected font-medium",
+          )}
+          onClick={() => {
+            onChange(type);
+          }}
+        >
+          {COPY.type[type] ?? type}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function FollowUp({
+  q,
+  editable = false,
+  onChange,
+}: {
+  q: EditorQuestionOut;
+  editable?: boolean;
+  onChange?: (patch: Partial<EditorQuestionOut>) => void;
+}): JSX.Element {
   const fmt = useFormat();
   const created = (q.effects ?? []).find((e) => e.kind === "request_item_created");
   return (
@@ -163,8 +223,19 @@ function FollowUp({ q }: { q: EditorQuestionOut }): JSX.Element {
         <Pill variant="tag" size="sm">
           {COPY.type[q.type] ?? q.type}
         </Pill>
-        <Toggle checked={q.required} disabled label={COPY.canvas.required} size="small" />
+        <Toggle
+          checked={q.required}
+          disabled={!editable}
+          label={COPY.canvas.required}
+          size="small"
+          onChange={(required) => onChange?.({ required })}
+        />
       </div>
+      {editable && q.show_when != null && (
+        <p data-bnd03="logic" className="text-[11.5px] text-ink-3">
+          {COPY.editing.logic(q.show_when.parent_key, q.show_when.equals)}
+        </p>
+      )}
       <p className={cn("text-dense", q.triggered === false || !q.answered ? "text-ink-4" : "")}>
         {q.triggered === false ? COPY.canvas.notTriggered : answerText(q, (d) => fmt.date(d))}
       </p>
@@ -186,10 +257,24 @@ function QuestionCard({
   q,
   followUps,
   expanded,
+  canEdit = false,
+  editing = false,
+  reordering = false,
+  onEdit,
+  onChange,
+  onChangeFollowUp,
+  onMove,
 }: {
   q: EditorQuestionOut;
   followUps: readonly EditorQuestionOut[];
   expanded: boolean;
+  canEdit?: boolean;
+  editing?: boolean;
+  reordering?: boolean;
+  onEdit?: () => void;
+  onChange?: (patch: Partial<EditorQuestionOut>) => void;
+  onChangeFollowUp?: (key: string, patch: Partial<EditorQuestionOut>) => void;
+  onMove?: (delta: -1 | 1) => void;
 }): JSX.Element {
   const fmt = useFormat();
   const review = (q.effects ?? []).find((e) => e.kind === "review_point_raised");
@@ -208,13 +293,60 @@ function QuestionCard({
         <Pill variant="tag" size="sm" data-type={q.type}>
           {COPY.type[q.type] ?? q.type}
         </Pill>
+        {reordering && (
+          <>
+            <Button
+              variant="ghost"
+              size="xs"
+              aria-label={COPY.editing.up}
+              onClick={() => onMove?.(-1)}
+            >
+              ↑
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              aria-label={COPY.editing.down}
+              onClick={() => onMove?.(1)}
+            >
+              ↓
+            </Button>
+          </>
+        )}
+        {canEdit && !reordering && (
+          <Button variant="ghost" size="xs" onClick={onEdit}>
+            {editing ? COPY.editing.done : COPY.editing.edit}
+          </Button>
+        )}
       </header>
+      {editing && (
+        <div
+          data-bnd03="editing"
+          className="flex flex-col gap-[8px] px-[12px] py-[8px] hairline-t"
+        >
+          <label className="flex flex-col gap-[2px] text-[12px] text-ink-3">
+            {COPY.editing.wording}
+            <input
+              aria-label={COPY.editing.wording}
+              value={q.client_wording}
+              onChange={(event) => onChange?.({ client_wording: event.target.value })}
+              className="rounded-[6px] px-[8px] py-[4px] text-[13px] text-ink ring-[1px] ring-hair"
+            />
+          </label>
+          <TypePicker value={q.type} onChange={(type) => onChange?.({ type })} />
+        </div>
+      )}
       {expanded && (
         <dl className="flex flex-col px-[12px] text-dense">
           <div className="flex h-[34px] items-center justify-between hairline-t">
             <dt className="text-ink-3">{COPY.canvas.required}</dt>
             <dd>
-              <Toggle checked={q.required} disabled label={COPY.canvas.required} />
+              <Toggle
+                checked={q.required}
+                disabled={!editing}
+                label={COPY.canvas.required}
+                onChange={(required) => onChange?.({ required })}
+              />
             </dd>
           </div>
           <div className="flex min-h-[34px] items-center justify-between gap-[10px] hairline-t">
@@ -247,7 +379,12 @@ function QuestionCard({
         </p>
       )}
       {(expanded ? followUps : []).map((f) => (
-        <FollowUp key={f.key} q={f} />
+        <FollowUp
+          key={f.key}
+          q={f}
+          editable={editing}
+          onChange={(patch) => onChangeFollowUp?.(f.key, patch)}
+        />
       ))}
     </article>
   );
@@ -269,10 +406,13 @@ function Dock({
   questionnaireId,
   keys,
   enabled,
+  required,
 }: {
   questionnaireId: string;
   keys: ReadonlySet<string>;
   enabled: boolean;
+  /** T-03-T10: the unsaved Required values, so the marker follows the toggle. */
+  required: ReadonlyMap<string, boolean>;
 }): JSX.Element {
   const [size, setSize] = useState<"desktop" | "phone">("phone");
   const preview = useQuery({
@@ -308,8 +448,10 @@ function Dock({
         {top.map((q) => (
           <ClientQuestionPreview
             key={q.key}
-            question={toClient(q)}
-            followUps={items.filter((f) => f.parent_key === q.key).map(toClient)}
+            question={{ ...toClient(q), required: required.get(q.key) ?? q.required }}
+            followUps={items
+              .filter((f) => f.parent_key === q.key)
+              .map((f) => ({ ...toClient(f), required: required.get(f.key) ?? f.required }))}
             className={size === "phone" ? "w-[260px]" : "w-[300px]"}
           />
         ))}
@@ -324,7 +466,8 @@ export function QuestionnaireEditor({
   onSection,
   onTab,
 }: EditorProps): JSX.Element {
-  const on = useFlag("questionnaires.editor") === true;
+  // T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces `questionnaires.editor`.
+  const on = useEntitlement("tax_returns");
   const editor = useQuery({
     ...questionnaireEditorOptions({ path: { questionnaire_id: questionnaireId } }),
     enabled: on,
@@ -333,7 +476,7 @@ export function QuestionnaireEditor({
   const [own, setOwn] = useState<string | null>(section ?? null);
   const selected = section ?? own ?? data?.sections[0]?.key ?? "";
   let state: ViewState = { kind: "ready" };
-  if (!on) state = { kind: "flag-off", flag: "questionnaires.editor" };
+  if (!on) state = { kind: "flag-off", flag: "tax_returns" };
   else if (editor.isError) {
     const status = (editor.error as { status?: number } | null)?.status;
     state =
@@ -342,7 +485,46 @@ export function QuestionnaireEditor({
         : { kind: "error", retry: () => void editor.refetch() };
   } else if (data === undefined) state = { kind: "loading" };
 
-  const questions = data?.questions ?? [];
+  // T-03-T10: the unsaved edits over the server's rows, in their (possibly reordered) order.
+  const [patches, setPatches] = useState<Record<string, Partial<EditorQuestionOut>>>({});
+  const [added, setAdded] = useState<EditorQuestionOut[]>([]);
+  const [order, setOrder] = useState<readonly string[] | null>(null);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const [stale, setStale] = useState(false);
+  const client = useQueryClient();
+  const server = data?.questions;
+  const questions = useMemo(() => {
+    const merged = [...(server ?? []), ...added].map((q) => ({ ...q, ...patches[q.key] }));
+    if (order === null) return merged;
+    return [...merged].sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
+  }, [server, added, patches, order]);
+  const dirty = Object.keys(patches).length + added.length + (order === null ? 0 : 1);
+  const canEdit = (data?.allowed_actions ?? []).includes("questionnaire.edit");
+  const patch = (key: string, change: Partial<EditorQuestionOut>): void => {
+    setPatches((all) => ({ ...all, [key]: { ...all[key], ...change } }));
+  };
+  const reset = (): void => {
+    setPatches({});
+    setAdded([]);
+    setOrder(null);
+    setEditingKey(null);
+    setReordering(false);
+  };
+  const save = useMutation({
+    ...questionnaireSaveMutation(),
+    onSuccess: () => {
+      reset();
+      void client.invalidateQueries();
+    },
+    onError: (error) => {
+      if ((error as { status?: number } | null)?.status === 412) setStale(true);
+    },
+  });
+  const requiredNow = useMemo(
+    () => new Map(questions.map((q) => [q.key, q.required] as const)),
+    [questions],
+  );
   const top = questions.filter((q) => (q.parent_key ?? null) === null);
   const inSection = top.filter((q) => q.section_key === selected);
   return (
@@ -383,16 +565,54 @@ export function QuestionnaireEditor({
                 <section data-bnd03="canvas" className={cn(PANE, "w-[696px] shrink-0")}>
                   <header className={HEAD}>
                     <span className="flex-1">{COPY.canvas.title}</span>
-                    <Button variant="ghost" size="sm" disabled>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!canEdit}
+                      aria-pressed={reordering}
+                      onClick={() => {
+                        setReordering((v) => !v);
+                      }}
+                    >
                       {COPY.canvas.reorder}
                     </Button>
                     <Button variant="secondary" size="sm" disabled>
                       {COPY.canvas.preview}
                     </Button>
-                    <Button variant="primary" size="sm" disabled>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={!canEdit}
+                      onClick={() => {
+                        const key = `new_${String(added.length + 1)}`;
+                        setAdded((all) => [
+                          ...all,
+                          {
+                            answered: false,
+                            client_wording: COPY.editing.newWording,
+                            id: key,
+                            key,
+                            position: questions.length + 1,
+                            required: false,
+                            section_key: selected,
+                            type: "yes_no",
+                          },
+                        ]);
+                        setEditingKey(key);
+                      }}
+                    >
                       {COPY.canvas.add}
                     </Button>
                   </header>
+                  {data.banner != null && data.banner !== "" && (
+                    <p
+                      role="status"
+                      data-bnd03="banner"
+                      className="bg-amber-tint px-[14px] py-[6px] text-[12.5px] text-amber-ink"
+                    >
+                      {data.banner}
+                    </p>
+                  )}
                   <div className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto bg-shell p-[10px]">
                     {inSection.length === 0 ? (
                       <EmptyState icon="list" title={COPY.canvas.empty}>
@@ -407,15 +627,110 @@ export function QuestionnaireEditor({
                           q={q}
                           followUps={questions.filter((f) => f.parent_key === q.key)}
                           expanded={q.section_key === selected}
+                          canEdit={canEdit}
+                          editing={editingKey === q.key}
+                          reordering={reordering}
+                          onEdit={() => {
+                            setEditingKey((k) => (k === q.key ? null : q.key));
+                          }}
+                          onChange={(change) => {
+                            if (q.key.startsWith("new_")) {
+                              setAdded((all) =>
+                                all.map((a) => (a.key === q.key ? { ...a, ...change } : a)),
+                              );
+                            } else patch(q.key, change);
+                          }}
+                          onChangeFollowUp={patch}
+                          onMove={(delta) => {
+                            const keys = questions.map((x) => x.key);
+                            const at = keys.indexOf(q.key);
+                            const to = at + delta;
+                            if (to < 0 || to >= keys.length) return;
+                            const next = [...keys];
+                            next[at] = keys[to] as string;
+                            next[to] = q.key;
+                            setOrder(next);
+                          }}
                         />
                       ))
                     )}
                   </div>
+                  {stale && (
+                    <div
+                      role="alert"
+                      data-bnd03="stale"
+                      className="flex items-center justify-between bg-red-tint px-[14px] py-[6px] text-[12.5px] text-red-ink"
+                    >
+                      {COPY.editing.stale}
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => {
+                          setStale(false);
+                          reset();
+                          void editor.refetch();
+                        }}
+                      >
+                        {COPY.editing.reload}
+                      </Button>
+                    </div>
+                  )}
+                  {dirty > 0 && (
+                    <div
+                      data-bnd03="save-bar"
+                      className="sticky bottom-0 flex h-[44px] items-center justify-end gap-[8px] bg-card px-[14px] hairline-t"
+                    >
+                      <span className="flex-1 text-[12.5px] text-ink-3">
+                        {COPY.editing.unsaved(dirty)}
+                      </span>
+                      <Button variant="secondary" size="sm" onClick={reset}>
+                        {COPY.editing.discard}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        disabled={save.isPending}
+                        onClick={() => {
+                          save.mutate({
+                            path: { questionnaire_id: questionnaireId },
+                            headers: { "If-Match": data.row_version },
+                            body: {
+                              sections: data.sections.map((sec) => ({
+                                id: sec.id,
+                                key: sec.key,
+                                title: sec.title,
+                              })),
+                              questions: questions.map((q) => ({
+                                ...(q.key.startsWith("new_") ? {} : { id: q.id }),
+                                key: q.key,
+                                section_key: q.section_key,
+                                client_wording: q.client_wording,
+                                type: q.type,
+                                required: q.required,
+                                parent_key: q.parent_key ?? null,
+                                show_when: q.show_when ?? null,
+                                ...(q.choices === undefined ? {} : { choices: q.choices }),
+                                ...(q.amount_parts === undefined
+                                  ? {}
+                                  : { amount_parts: q.amount_parts }),
+                                ...(q.effect_rules === undefined
+                                  ? {}
+                                  : { effect_rules: q.effect_rules }),
+                              })),
+                            },
+                          });
+                        }}
+                      >
+                        {COPY.editing.save}
+                      </Button>
+                    </div>
+                  )}
                 </section>
                 <Dock
                   questionnaireId={questionnaireId}
                   keys={new Set(inSection.map((q) => q.key))}
                   enabled={on}
+                  required={requiredNow}
                 />
               </div>
             </>

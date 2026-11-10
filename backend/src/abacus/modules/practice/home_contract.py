@@ -1,7 +1,7 @@
 """C13 home half, v1: `GET /v1/home` for HOME-01 (I-01-T02 stub; I-01 §4.3). Contract:
 `docs/contracts/home-and-gates.md` part 2.
 
-Behind `home.dashboard`: off, the route answers 404. Live since I-01-T10 (tiles, your work,
+`home.dashboard` retired by I-01-T23. Live since I-01-T10 (tiles, your work,
 deadlines, running count; `practice/home.py`, DEC-648); client activity since I-01-T12
 (`practice/activity.py`, DEC-900).
 The queue and every count of what waits on the viewer are not here: they are `review`'s C13
@@ -30,10 +30,8 @@ from uuid import UUID
 from fastapi import Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import HOME_DASHBOARD
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -119,6 +117,8 @@ class DeadlineRowOut(BaseModel):
     filing_label: Annotated[str, classified("confidential")]
     status: Annotated[str, classified("internal")]
     risk: Annotated[DueRisk, classified("internal")]
+    # N-04-T22: which screen the row opens; HOME-01 links a notice to NOT-02.
+    kind: Annotated[str | None, classified("internal")] = None
 
 
 class DeadlinesOut(BaseModel):
@@ -206,8 +206,6 @@ async def _gate(ctx: AuthContext) -> None:
             "home.read", "role"
         )  # INV-1: a person's Home, never an agent's or the system's
     await authorise(ctx, "home.read", Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, HOME_DASHBOARD):
-        raise NotFound("home.dashboard")
 
 
 def _tile(t: Tile) -> HomeTileOut:
@@ -231,6 +229,7 @@ def _deadline(d: DeadlineRow) -> DeadlineRowOut:
         filing_label=d.work.name,
         status=d.work.status,
         risk=d.risk,
+        kind=d.work.kind,
     )
 
 

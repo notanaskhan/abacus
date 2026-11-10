@@ -428,6 +428,31 @@ async def list_walls(ctx: AuthContext) -> list[WallView]:
     return [w for w in walls if w.id not in hidden]
 
 
+@dataclass(frozen=True)
+class WallAwaitingApproval:
+    """An active wall its named partner hasn't approved yet (I-01-T23: HOME-02's gate)."""
+
+    wall_id: UUID
+    client_id: UUID
+    approver_user_id: UUID
+
+
+async def walls_awaiting_approval(tenant: TenantContext) -> list[WallAwaitingApproval]:
+    """The firm's active walls waiting on their named partner (AC8.2), for review's C13 source.
+    Identifiers only; the read filter shows each row to its approver alone (DEC-2613)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            select(ethical_walls.c.id, ethical_walls.c.client_id, ethical_walls.c.approver_user_id)
+            .where(
+                ethical_walls.c.status == "active",
+                ethical_walls.c.approved_at.is_(None),
+                ethical_walls.c.approver_user_id.is_not(None),
+            )
+            .order_by(ethical_walls.c.created_at, ethical_walls.c.id)
+        )
+        return [WallAwaitingApproval(r.id, r.client_id, r.approver_user_id) for r in rows]
+
+
 async def wall_events(
     ctx: AuthContext, wall_id: UUID, before_seq: int | None, limit: int
 ) -> tuple[list[WallEvent], int | None, int]:

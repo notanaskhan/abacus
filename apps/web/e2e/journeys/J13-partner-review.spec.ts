@@ -67,3 +67,37 @@ test.describe("J13 · T-02 release and final approval", () => {
     });
   });
 });
+
+// I-01-T22: j13 2-3 on HOME-02, Daniel's approvals queue and the Ridgeline sign-off he opens first,
+// on the fixture project. The tax hosts behind a row stay fixture-only until T-05 (DV-4), so the
+// live project waits on them; the audit half is j23's.
+test.describe("J13 · HOME-02 queue", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(journey.project !== "fixture", "I-01-T22: the tax hosts, T-05 (S35–S44; DV-4)");
+  });
+
+  test("j13 2-3: the queue's 11 waiting, then the memo sign-off with its evidence", async ({
+    journey,
+  }) => {
+    await journey.as("daniel-reyes", "/home/approvals", {
+      clock: DEMO_INSTANT,
+      scenario: "HOME-02:a",
+    });
+    await journey.step("J13 step 2: 3 + 6 + 2 = 11 waiting on Daniel (HOME-02a)", async (page) => {
+      const queue = page.locator("[data-home02='queue']");
+      await expect(queue.getByRole("button", { name: /^Decisions\s*3/ })).toBeVisible();
+      await expect(queue.getByRole("button", { name: /^Sign-offs\s*6/ })).toBeVisible();
+      await expect(queue.getByRole("button", { name: /^Approvals & sends\s*2/ })).toBeVisible();
+    });
+    await journey.step("J13 step 3: the memo sign-off and its paper (HOME-02d)", async (page) => {
+      await page.getByRole("button", { name: /Ridgeline 1065 · Summary & preparer memo/ }).click();
+      await expect(page.getByRole("heading", { name: /^Summary & preparer memo/ })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Sign off…" })).toBeVisible();
+    });
+    // The memo's paper is an owner summary, fixture-only until T-05 (DV-4): the artboard shows it.
+    await journey.as("daniel-reyes", "/components/screens/HOME-02?st=d");
+    await journey.step("J13 step 3: the preparer memo beside it (HOME-02d)", async (page) => {
+      await expect(page.locator("[data-home02='paper']")).toBeVisible();
+    });
+  });
+});

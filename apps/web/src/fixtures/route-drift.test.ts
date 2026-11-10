@@ -24,9 +24,7 @@ const SOURCES = import.meta.glob<string>(["./**/*.ts", "../app-core/**/*.ts", "!
 });
 
 /** Routes fixture mode answers ahead of their contract, each with its defect (ED-270 …). */
-const KNOWN_DRIFT: Readonly<Record<string, string>> = {
-  "PUT /v1/engagements/{}/auto-mode": "ED-270: P-10-T39 serves it (AUD-02 f, DEC-405)",
-};
+const KNOWN_DRIFT: Readonly<Record<string, string>> = {};
 
 const shape = (path: string): string => path.replace(/\{[^}]+\}/g, "{}");
 const METHODS = ["get", "post", "put", "patch", "delete"];

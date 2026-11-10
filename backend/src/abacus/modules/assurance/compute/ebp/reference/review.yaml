@@ -1,0 +1,8 @@
+# The EBP engines' CPA review (A-05-T49; ADR P-28; chapter 10 §10.9.4). PROTECTED: changed only when
+# the audit CPA (EBP) signs docs/quality/golden-reviews/ebp@1.md, in the same PR, with the vault
+# reference of the signed memo (never the reviewer's name). Until `signed: true`, the `ebp_audits`
+# entitlement refuses every firm that isn't synthetic (`platform.entitlements`).
+memo: ebp@1
+signed: false
+signed_on: null
+vault_ref: null

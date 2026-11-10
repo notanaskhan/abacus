@@ -2805,6 +2805,132 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "agent_run_step": {
+    "queued": {
+      "label": "Queued",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "dispatched": {
+      "label": "Dispatched",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "running": {
+      "label": "Running",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "waiting_on_inputs": {
+      "label": "Waiting on inputs",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "blocked": {
+      "label": "Blocked",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "triangle_amber"
+    },
+    "succeeded": {
+      "label": "Succeeded",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "x_brick"
+    },
+    "cancelled": {
+      "label": "Cancelled",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "skipped": {
+      "label": "Skipped",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "agent_plan": {
+    "proposed": {
+      "label": "Plan ready — approve?",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Approved by {person} · {time}"
+      }
+    },
+    "edited": {
+      "label": "Approved with edits",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "cancelled": {
+      "label": "Plan cancelled",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Plan cancelled by {person} · {time}"
+      }
+    },
+    "standing": {
+      "label": "Standing plan",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "agent_question": {
+    "open": {
+      "label": "Needs your answer",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "answered": {
+      "label": "Answered",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "skipped": {
+      "label": "Skipped",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "workbench_session": {
     "live": {
       "label": "Live",
@@ -3344,6 +3470,138 @@ export const STATUS_REGISTRY = {
       "label": "Overdue",
       "variant": "red-tint",
       "terminal": false,
+      "derived": true
+    }
+  },
+  "deliverable": {
+    "for_your_review": {
+      "label": "For your review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "approved_by_you": {
+      "label": "Approved by you",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "waiting_for_approval": {
+      "label": "Waiting for approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "in_sign": {
+      "label": "In sign",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true,
+      "clientLabel": "In sign"
+    },
+    "signed": {
+      "label": "Signed",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "final": {
+      "label": "Final",
+      "variant": "green",
+      "terminal": true,
+      "derived": true
+    },
+    "released": {
+      "label": "Released",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "not_ready_yet": {
+      "label": "Not ready yet",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "ring"
+    },
+    "replaced": {
+      "label": "Replaced",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": true,
+      "contextLabels": {
+        "firm_named": "Replaced by {firm}"
+      }
+    }
+  },
+  "client_approval_item": {
+    "waiting": {
+      "label": "Waiting for you",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "not_recorded": {
+      "label": "Not recorded",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": true
+    },
+    "acknowledged": {
+      "label": "Acknowledged",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "question_sent": {
+      "label": "Question sent",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "governance_room_letter": {
+    "new": {
+      "label": "New",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "not_yet": {
+      "label": "Not yet",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "ring"
+    },
+    "sent_acknowledged": {
+      "label": "Sent · acknowledged",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "acknowledged": {
+      "label": "Acknowledged",
+      "variant": "green-tint",
+      "terminal": true,
       "derived": true
     }
   },
@@ -4726,6 +4984,32 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "ebp_participant_loan": {
+    "active": {
+      "label": "Active",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "new": {
+      "label": "New",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "paid_off": {
+      "label": "Paid off",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    },
+    "offset": {
+      "label": "Offset",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "ebp_import": {
     "mapped": {
       "label": "Mapped",
@@ -4861,6 +5145,12 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false
     },
+    "agent_tested": {
+      "label": "Agent tested",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
     "pass": {
       "label": "Pass",
       "variant": "green-tint",
@@ -4913,6 +5203,159 @@ export const STATUS_REGISTRY = {
       "variant": "muted",
       "terminal": true,
       "derived": false
+    }
+  },
+  "document_approval": {
+    "unapproved": {
+      "label": "Unapproved",
+      "variant": "outline",
+      "terminal": false,
+      "derived": true
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "micro_pill": "✓ {count}"
+      }
+    },
+    "mismatch": {
+      "label": "Mismatch",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "return_field_view": {
+    "imported": {
+      "label": "Imported",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "edited": {
+      "label": "Edited",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "proposed": {
+      "label": "Proposed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "new": {
+      "label": "New this year",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "recomputed": {
+      "label": "Recomputed by CCH Axcess after import",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "signed_off": {
+      "label": "Signed off",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "k1_activity": {
+    "draft_pre_release": {
+      "label": "Draft K-1 · pre-release",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "released": {
+      "label": "Released",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "chip": "Released {date}"
+      }
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "k1_treatment": {
+    "proposed": {
+      "label": "Proposed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "changed_tag": "Changed vs {year}"
+      }
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "overridden": {
+      "label": "Overridden",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "residency_determination": {
+    "review_point": {
+      "label": "Review point",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "confirmed": {
+      "label": "Confirmed",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "action_required": {
+      "label": "Action required",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "assistant_availability": {
+    "available": {
+      "label": "Available",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "ai_unavailable": {
+      "label": "AI unavailable",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
+    },
+    "consent_required": {
+      "label": "Consent required",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "agents_off": {
+      "label": "Agents off",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
     }
   }
 } as const;

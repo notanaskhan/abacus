@@ -55,24 +55,37 @@ describe("/audits/$auditId/misstatements", () => {
   });
 });
 
-describe.each(["review-notes", "fs-disclosure"] as const)("/audits/$auditId/%s", (tab) => {
-  it("renders the audit bar and the planned body, Not built yet", async () => {
-    show(tab);
+describe("/audits/$auditId/fs-disclosure", () => {
+  it("renders the audit bar over AUD-20, not the planned body", async () => {
+    show("fs-disclosure");
     await waitFor(() => {
       expect(
-        document.querySelector(`[data-screen='evaluation'][data-tab='${tab}']`),
+        document.querySelector("[data-screen='evaluation'][data-tab='fs-disclosure']"),
       ).not.toBeNull();
-      expect(document.body.textContent).toContain("Not built yet");
+      expect(document.querySelector("[data-screen='AUD-20']")).not.toBeNull();
+    });
+  });
+});
+
+describe("/audits/$auditId/review-notes", () => {
+  it("renders the audit bar and AUD-17's matrix (A-06-T24)", async () => {
+    show("review-notes");
+    await waitFor(() => {
+      expect(
+        document.querySelector("[data-screen='evaluation'][data-tab='review-notes']"),
+      ).not.toBeNull();
+      expect(document.querySelector("[data-aud17='matrix']")).not.toBeNull();
     });
   });
 });
 
 describe("Evaluation tabs", () => {
-  it("show the server's counts: Findings 9, Misstatements 2", async () => {
+  it("show the server's counts: Findings 3 (awaiting a decision), Misstatements 2", async () => {
     show("findings");
     await waitFor(() => {
       const tabs = document.querySelector("[data-evaluation-tabs]");
-      expect(tabs?.textContent).toContain("9");
+      expect(tabs?.textContent).toContain("Findings3");
+      expect(tabs?.textContent).not.toContain("9");
       expect(tabs?.textContent).toContain("2");
     });
   });

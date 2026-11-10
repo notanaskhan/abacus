@@ -26,6 +26,7 @@ from abacus.modules.engagements.repository import (
     client_column as _client_column,
 )
 from abacus.modules.engagements.repository import (
+    client_engagement_ids,
     entity_engagement_ids,
     get_engagement,
     insert_engagement,
@@ -390,6 +391,12 @@ async def is_archived(tenant: TenantContext, engagement_id: UUID) -> bool | None
     return engagement.status == "archived" if engagement is not None else None
 
 
+async def engagements_of_client(tenant: TenantContext, client_id: UUID) -> list[UUID]:
+    """R-02-T11 (DEC-3025): the client's engagements, newest first: candidate approval scopes."""
+    async with tenant_session(tenant) as session:
+        return list(await client_engagement_ids(session, client_id))
+
+
 async def engagements_of_entity(tenant: TenantContext, client_entity_id: UUID) -> list[UUID]:
     """A-02-T16 (POR-16): the entity's engagements, newest first, as the candidates an
     entity-scoped action authorises on, one by one (`connection.read` and the others are
@@ -603,6 +610,10 @@ class EngagementLabel:
     name: str
     client_name: str
     fiscal_year: int
+    # A-06-T29 (DEC-2615): what a financial statement's heading names (additive).
+    client_entity_name: str = ""
+    fiscal_period_end: date | None = None
+    type: str = ""
 
 
 async def engagement_label(tenant: TenantContext, engagement_id: UUID) -> EngagementLabel | None:
@@ -617,6 +628,9 @@ async def engagement_label(tenant: TenantContext, engagement_id: UUID) -> Engage
         engagement.name,
         found.client_name if found is not None else "your company",
         engagement.fiscal_period_end.year,
+        found.client_entity_name if found is not None else "",
+        engagement.fiscal_period_end,
+        engagement.type,
     )
 
 

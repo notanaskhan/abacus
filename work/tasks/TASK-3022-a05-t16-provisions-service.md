@@ -4,7 +4,7 @@ title: A-05-T16 EBP-02 provisions service
 spec: SPEC-640
 acceptance_criteria: [AC-14]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T16
 branch: s25-a05-t16 (stacked on s25-a05-t19)

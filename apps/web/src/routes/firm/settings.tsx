@@ -2,6 +2,7 @@ import { EmptyState } from "@abacus/ui";
 import { Navigate, createRoute, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useCan } from "../../app-core/can";
+import { useOverlays } from "../../app-core/overlay-host";
 import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
@@ -296,11 +297,17 @@ const settingsAuditLogRoute = createRoute({
   component: function SettingsAuditLogPage(): JSX.Element {
     const navigate = useNavigate();
     const router = useRouter();
+    const { open: openOverlay } = useOverlays();
+    // P-09-T13: a run event opens its trace drawer (WB-09, the `run-trace` overlay).
+    const openTrace = (runId: string): void => {
+      openOverlay("run-trace", runId);
+    };
     const search: Record<string, unknown> = useSearch({ strict: false });
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <FeatureGate flag="audit_log.explorer" fallback={<NotBuilt />}>
           <FirmSettingsAuditLog
+            onOpenRun={openTrace}
             search={pick(AUDIT_SEARCH, search)}
             onSearch={(next) => {
               void navigate({ to: ".", search: { ...next }, replace: true });

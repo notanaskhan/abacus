@@ -12,7 +12,8 @@ export const SANTOS_NOTICE = stableId("notice:santos-cp14");
 export const SANTOS_ENGAGEMENT = stableId("engagement:santos-notice");
 export const DANIEL = stableId("person:daniel-reyes");
 
-export type IntakeVariant = "b" | "c" | "d";
+export type IntakeVariant = "b" | "c" | "d" | "duplicate" | "manual" | "no_client";
+export const DUPLICATE_OF = stableId("notice:santos-cp14-earlier");
 
 function field(
   key: IntakeFieldOut["key"],
@@ -54,20 +55,21 @@ function fields(variant: IntakeVariant): IntakeFieldOut[] {
 
 export function santosIntake(variant: IntakeVariant, version = 1): IntakeOut {
   const extracting = variant === "c";
+  const manual = variant === "manual";
   return {
     id: SANTOS_INTAKE,
-    status: extracting ? "extracting" : "ready",
+    status: extracting ? "extracting" : manual ? "manual_entry" : "ready",
     source: "portal",
-    extraction_mode: "agent",
+    extraction_mode: manual ? "manual" : "agent",
     file_name: "Santos_IRS_letter.jpg",
     pages: 2,
     uploaded_by_label:
       "Uploaded by Aurelio Santos · portal · Upload something else · Sep 10, 2:11 PM",
-    fields: extracting ? [] : fields(variant),
+    fields: extracting || manual ? [] : fields(variant),
     match: {
-      client_entity_id: SANTOS_ENTITY,
-      client_name: "Aurelio Santos",
-      method: "name_tin",
+      client_entity_id: variant === "no_client" ? null : SANTOS_ENTITY,
+      client_name: variant === "no_client" ? null : "Aurelio Santos",
+      method: variant === "no_client" ? null : "name_tin",
       office: "Chicago",
       return_id: stableId("return:santos-2024"),
       return_label: "TY2024 Form 1040 · Accepted",
@@ -82,9 +84,9 @@ export function santosIntake(variant: IntakeVariant, version = 1): IntakeOut {
     },
     assignee_user_id: null,
     notify_user_ids: [DANIEL],
-    duplicate_of: null,
+    duplicate_of: variant === "duplicate" ? DUPLICATE_OF : null,
     created_work_item_id: null,
-    manual_reason: null,
+    manual_reason: manual ? "Read automatically isn't on" : null,
     version,
   };
 }

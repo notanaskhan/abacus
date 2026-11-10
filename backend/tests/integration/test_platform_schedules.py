@@ -32,6 +32,7 @@ IDS = (
     "audit_checkpoint:platform",  # Q-02-T21: the checkpoint every 5 minutes
     "audit_labels:platform",  # G-02-T10 (DEC-453): the label index, every 60 seconds
     "audit_partitions:platform",  # Q-02-T20: access_events partitions, every 30 days
+    "tax_estimates_due_soon:platform",  # T-03-T07 (DEC-2350): installments due within the week
     "auth_session_purge:platform",  # G-02-T14: staff sessions ended over a year ago, daily
     "client_import_erase:platform",  # P-07-T52: bulk import files erased after 30 days, daily
     "envelope_status_poll:platform",  # N-02-T19: provider status truth, every 5 minutes
@@ -52,6 +53,7 @@ BACKGROUND = (
     "audit_checkpoint:platform",
     "audit_labels:platform",
     "audit_partitions:platform",
+    "tax_estimates_due_soon:platform",
     "auth_session_purge:platform",
     "client_import_erase:platform",
     "connection_health:platform",

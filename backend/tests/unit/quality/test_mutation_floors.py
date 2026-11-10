@@ -325,8 +325,8 @@ def test_t027_the_hook_refuses_an_edit_to_scopes(project: tuple[Path, Run]) -> N
     assert project[1]("protect_paths.py", edit) == 2
     other = {
         "file_path": path,
-        "old_string": "WEEKLY_SHARDS: Final = 4",
-        "new_string": "WEEKLY_SHARDS: Final = 5",
+        "old_string": "WEEKLY_SHARDS: Final = 6",
+        "new_string": "WEEKLY_SHARDS: Final = 7",
     }
     assert project[1]("protect_paths.py", other) == 0
 

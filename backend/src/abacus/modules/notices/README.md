@@ -6,8 +6,15 @@ Will own (docs/plan/03-backend-architecture.md §2.2): Tax notices: intakes, ana
 
 ## Notices v1 (N-04)
 - **Migration 0650** (N-04-T03, DEC-2052): the v1 columns on `notices`, `notice_intakes`, `notice_responses` and nine insert-only records (`notice_rows_immutable`). Table grants are in `registry.py`.
-- **Contract** (N-04-T02, DEC-2051): `contract.py`, `docs/contracts/notices.md`; routes 404 with `notices.workspace` off and 501 until N-04-T06.
+- **Contract** (N-04-T02, DEC-2051): `contract.py`, `docs/contracts/notices.md`; routes 501 until N-04-T06; `notices.workspace` and `notices.responder` retired at N-04-T27 (DEC-2602).
 - **Red files** (DEC-2050): `compute/notice_types.yaml` and `compute/rate_schedules/*.yaml`.
+
+## Release (N-04-T27)
+- **Frozen:** C-notices v1, snapshot `backend/tests/contracts/notices/v1.json`; NOT-01 to NOT-03 contracts final.
+- **Runbook:** RB-61 (hand-off to a person at the agency, missed follow-up, escalation, OCR or agent off, re-sent envelope, onboarding open notices, the flip and rollback); RB-16's R4-15 line.
+- **Agent:** `notices.responder` clears per mode from a signed Bedrock run (N-04-T25, `evals/notices_responder/clearance.yaml`); live per firm needs N-04's rule on top of SPEC-036 (`shadow_score.responder_criterion`). Plan: `docs/ops/pilot/notices-responder-shadow-plan.md`.
+- **Load:** `abacus_tools/loadtest/scenarios/notices_desk.yaml` (list and summary at the December peak).
+- **Hand-offs:** `docs/plan/status/N-04-handoff.md` (W-03, T-08, R-03, N-03).
 
 ## Before v1 (F-03-T22, migration 0089)
 - **Table:** `notices`, the `notice` work-item subtype: one row per work item, with `notice_code` and `received_on`. Insert-only for the app; the columns it may insert are in `registry.py`.

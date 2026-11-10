@@ -99,6 +99,29 @@ RECONNECT_REQUEST: Final = register_email_template(
     used_by_label="CLS-11 · expired connections",
     designed=True,
 )
+# R-02-T14 (R-02 §4.8, DEC-3112): the portal's two new client emails. Registrations only (not
+# among POR-20's designed six): the words are each firm's (database content); until published
+# every send fails closed.
+APPROVAL_REQUESTED: Final = register_email_template(
+    "approval_requested",
+    ("client",),
+    ("client_first_name", "firm_name", "work_item", "portal_link"),
+    ("portal_home",),
+    ("POR-08",),
+    firm_editable=True,
+    name="Approval requested",
+    used_by_label="POR-08 · an item sent for the client's decision",
+)
+GOVERNANCE_LETTER_SENT: Final = register_email_template(
+    "governance_letter_sent",
+    ("client",),
+    ("client_first_name", "firm_name", "work_item", "portal_link"),
+    ("room",),
+    ("POR-15",),
+    firm_editable=True,
+    name="Governance letter sent",
+    used_by_label="POR-15 · a letter in the governance room (DF-40)",
+)
 # N-02-T24 (N-02 §4.8, DF-11): the signing emails beside `signature_request`. Registrations only:
 # each firm's words are imported or written in the editor (database content); until a version is
 # published every send fails closed (`template_missing`). No amount is a variable, so a reminder

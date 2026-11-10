@@ -20,6 +20,7 @@ from abacus.modules.workpapers.attribute_grid import (
     create_test,
     exception_prefill,
     grid,
+    latest_test_of_variant,
     mark,
     record_agent_result,
     test_facts,
@@ -42,6 +43,7 @@ from abacus.modules.workpapers.drafting import (
     apply_cell_suggestion,
     draft_paper,
     paper_engagement,
+    paper_id_of_kind,
     paper_of_kind,
 )
 from abacus.modules.workpapers.guards import register_sign_off_guard
@@ -108,12 +110,15 @@ register_citable("workpaper_cell", verify_workpaper_cell, display_workpaper_cell
 register_section_source(SECTION_SOURCE)
 register_suggestion_applier(CELL_TARGET, apply_cell_suggestion, engagement_of=paper_engagement)
 
+from abacus.modules.workpapers.service import CellEdit, set_cells  # noqa: E402 -- A-06-T28
+
 __all__ = [
     "CELL_TARGET",
     "ROUTERS",
     "WORKPAPER_KINDS",
     "AddressInvalid",
     "Attribute",
+    "CellEdit",
     "CodeTaken",
     "DesignedLayout",
     "ExceptionPrefill",
@@ -135,17 +140,20 @@ __all__ = [
     "draft_paper",
     "exception_prefill",
     "grid",
+    "latest_test_of_variant",
     "link_issue",
     "mark",
     "matrix_sections",  # A-06-T23: AUD-17 sections by paper kind
     "pack_errors",
     "paper_engagement",
+    "paper_id_of_kind",
     "paper_of_kind",
     "record_agent_result",
     "register_designed_layout",
     "register_sign_off_guard",  # A-05-T16 (DEC-2069)
     "resolve",
     "router",
+    "set_cells",
     "tie_digests",
     "validate_pack",
     "work_item_papers",

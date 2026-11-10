@@ -3,8 +3,8 @@
   "_comment": "Parity manifest (F-05-T16; chapter 04 9.3). key = <specimen id>.<part>. selector = CSS inside that specimen's section on /components. source = a PNG under $ACCRUED_HANDOFF_DIR. crop = [x0, y0, x1, y1] in the PNG's own pixels (2x), or \"window\". sha256 pins the source (python -m abacus_tools.parity.crop_handoff --pin). tier = A to D. deviation = a known, recorded difference: reported, not blocking. locked = blocking at tier B. The PNGs are never committed.",
   "tools": {
     "_comment": "Q-03-T152: the renderer, axe and font versions the baselines were measured with (pnpm-lock.yaml); a bump re-measures the parity rows before merging.",
-    "@playwright/test": "1.63.0",
-    "playwright": "1.63.0",
+    "@playwright/test": "1.64.1",
+    "playwright": "1.64.1",
     "@axe-core/playwright": "4.13.0",
     "axe-core": "4.13.0",
     "@fontsource/geist": "5.3.0"
@@ -4657,6 +4657,476 @@
       "selector": "[data-artboard=\"f\"]",
       "source": "handoff/screens/SHL-16 Checkpoint diff drawer/screenshots/SHL-16f.png",
       "sha256": "6560d3f9f81767b92bd88d65083e194bd74c04792468dc118b2a3839ac213879",
+      "crop": "window",
+      "tier": "C"
+    },
+    "home-02a.window": {
+      "page": "screens/HOME-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02a.png",
+      "sha256": "e0056519d7711a6e068729d0f3ed1de9a8683d135361d90b173f3a63f4d333cf",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-home02='footer'] > :first-child"
+      ]
+    },
+    "home-02c.window": {
+      "page": "screens/HOME-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02c.png",
+      "sha256": "2d7e632ab8c3091181401654bec272b518eca22379243565b1dd8a8aa92c2b5f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "home-02d.window": {
+      "page": "screens/HOME-02?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02d.png",
+      "sha256": "945a6827f9cb3eedecb313922f47372517210afbbac98c0af0c404e68d099f8f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "home-02e.window": {
+      "page": "screens/HOME-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02e.png",
+      "sha256": "fb202cc8e9d0779e3d4bfc4463436926b4d71ecff72563b8238ace813051a57c",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "home-02f.window": {
+      "page": "screens/HOME-02?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02f.png",
+      "sha256": "48e547878768eb44989e8df2253d47e64329a37e8961cb218523a38af560ee31",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "home-02g.window": {
+      "page": "screens/HOME-02?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02g.png",
+      "sha256": "bc4884b5cce5f2a59896a6748106320b54cc9abaec969490ed62898d65378a71",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-home02='queue']",
+        "[data-home02='subbar'] [role='tablist']"
+      ]
+    },
+    "ebp-05a.window": {
+      "page": "screens/EBP-05?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-05 Distributions and participant loans/screenshots/EBP-05a.png",
+      "sha256": "8f86225a22adad47e4f93ac575c3c4e5e7a72bdd13f013388f035056038a9f20",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-05b.window": {
+      "page": "screens/EBP-05?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-05 Distributions and participant loans/screenshots/EBP-05b.png",
+      "sha256": "cef9593a349d4e22cd0b34aeaaa908cc5ad51edd6f04995f623b9732c5017c4a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-05c.window": {
+      "page": "screens/EBP-05?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-05 Distributions and participant loans/screenshots/EBP-05c.png",
+      "sha256": "8a79422d04bcff64a0023512929119ee3b34a255074a3f33ea33135a04f9f371",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-05d.window": {
+      "page": "screens/EBP-05?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-05 Distributions and participant loans/screenshots/EBP-05d.png",
+      "sha256": "c1058d5acacf3407fb7958643cfe54134b974bdb0ac45168b1feab14e7e45557",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-05e.window": {
+      "page": "screens/EBP-05?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-05 Distributions and participant loans/screenshots/EBP-05e.png",
+      "sha256": "be8f0c468fdbc18aa1e618cc40cb081529098fc517a7811908f941d061bf0831",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-07a.window": {
+      "page": "screens/EBP-07?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-07 Form 5500 tie-out and supplemental schedules/screenshots/EBP-07a.png",
+      "sha256": "94a7655c195ee9cc701caa54306b54dd12c75efd06da9a6d9e99ef197a94958a",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "ebp-07b.window": {
+      "page": "screens/EBP-07?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-07 Form 5500 tie-out and supplemental schedules/screenshots/EBP-07b.png",
+      "sha256": "1adf9bf06c5aa34b2241fad1de16848a8cf3cc68e5af00612a89fcf962469860",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-07c.window": {
+      "page": "screens/EBP-07?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-07 Form 5500 tie-out and supplemental schedules/screenshots/EBP-07c.png",
+      "sha256": "a614b0504a726e794cd208368daf122e2b781ec3502587f506dcecb15d369af9",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-07d.window": {
+      "page": "screens/EBP-07?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-07 Form 5500 tie-out and supplemental schedules/screenshots/EBP-07d.png",
+      "sha256": "2110f0aabb61a3f36e5ff8df017013840c36652f8c4f3e106fc81b8dd470f9f6",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-07e.window": {
+      "page": "screens/EBP-07?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-07 Form 5500 tie-out and supplemental schedules/screenshots/EBP-07e.png",
+      "sha256": "3f2331f32efa35b39cdf13aadadc04fed5fa818a5ca1f978ed54adfa1dfb4028",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-08a.window": {
+      "page": "screens/EBP-08?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-08 Participant accounts summary/screenshots/EBP-08a.png",
+      "sha256": "5bee29d731e5303d8c90790c82b2ef6ba0a93ae0763dee272aa4c4cecbc48c6c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-08b.window": {
+      "page": "screens/EBP-08?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-08 Participant accounts summary/screenshots/EBP-08b.png",
+      "sha256": "b818b65804a2b42f19c0e0151a9e351910ff2f3f1c7d469539945a3b9cf1b483",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-08c.window": {
+      "page": "screens/EBP-08?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-08 Participant accounts summary/screenshots/EBP-08c.png",
+      "sha256": "c83e4d3c7b3ef6e28bc8fcbfdaa3572f0f8b1504f88581779791299b25564621",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-08d.window": {
+      "page": "screens/EBP-08?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-08 Participant accounts summary/screenshots/EBP-08d.png",
+      "sha256": "cd036cdc9ecda273d9fe7832d132239f99bce8005ba58361f026da3bfecad10b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-08e.window": {
+      "page": "screens/EBP-08?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-08 Participant accounts summary/screenshots/EBP-08e.png",
+      "sha256": "136955a2cf8a21fea8f1863acddda3a57a5249a922e39515ffc9f2cc93541518",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-09a.window": {
+      "page": "screens/EBP-09?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-09 Administrative expenses and operational compliance/screenshots/EBP-09a.png",
+      "sha256": "1db542606ab27efd5de0aca31135ce0b04d47b9f7e5dc21077506ebb8621579f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-09b.window": {
+      "page": "screens/EBP-09?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-09 Administrative expenses and operational compliance/screenshots/EBP-09b.png",
+      "sha256": "2d60550de15bc75f5844ca6d618f1f65b1001471294003102a0cb1a70f25de15",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-09c.window": {
+      "page": "screens/EBP-09?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-09 Administrative expenses and operational compliance/screenshots/EBP-09c.png",
+      "sha256": "f98c0e4788394dfa34541a5913062a30ebbfa965ef082b1c2bf6d3a8606993dd",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-09d.window": {
+      "page": "screens/EBP-09?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-09 Administrative expenses and operational compliance/screenshots/EBP-09d.png",
+      "sha256": "013638b4d6bea4efedf5a91a5e068f0a870d13f11d3512dd392e370a46fe6eb9",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-09e.window": {
+      "page": "screens/EBP-09?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-09 Administrative expenses and operational compliance/screenshots/EBP-09e.png",
+      "sha256": "12393c1a59e3f424f4b772b9977a7daabab143a33ec78e4b46fafefe59bb2a9a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-27a.window": {
+      "page": "screens/AUD-27?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-27 Estimates- related parties and parties in interest/screenshots/AUD-27a.png",
+      "sha256": "4f42c01750abe994dcf48ef2e6db62790114603301946112748876a884adc76f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-27b.window": {
+      "page": "screens/AUD-27?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-27 Estimates- related parties and parties in interest/screenshots/AUD-27b.png",
+      "sha256": "867dd37e5f332e65eb13d46eb7a591345134c4fa683acba5cc9181a49c1a38c9",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-27c.window": {
+      "page": "screens/AUD-27?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-27 Estimates- related parties and parties in interest/screenshots/AUD-27c.png",
+      "sha256": "b1a0ef2bbced99333949fe0aa1758f36fa78a421299a34b3c7a8699d833bb1bd",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-27d.window": {
+      "page": "screens/AUD-27?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-27 Estimates- related parties and parties in interest/screenshots/AUD-27d.png",
+      "sha256": "3c2465f42481de6372b1e42fd2badbd773486300f7425fdfbe279172bcd04718",
+      "crop": "window",
+      "tier": "C"
+    },
+    "aud-27e.window": {
+      "page": "screens/AUD-27?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-27 Estimates- related parties and parties in interest/screenshots/AUD-27e.png",
+      "sha256": "42183bd9f4d9e0d8a9003e2dd1a2762a605a8b3ee257001c84e55985ed176b46",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-01a.window": {
+      "page": "screens/EBP-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-01 Plan profile and service providers/screenshots/EBP-01a.png",
+      "sha256": "fee2490a2e1c89fbf79df3f48cfb0d6636a0aeaed5e86ecb24d688af023b9acd",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-01b.window": {
+      "page": "screens/EBP-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-01 Plan profile and service providers/screenshots/EBP-01b.png",
+      "sha256": "e3e52392269fc9e1bbd4222a7d30bda8549b074bcc541dfea8cb62720bef8bc3",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-01c.window": {
+      "page": "screens/EBP-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-01 Plan profile and service providers/screenshots/EBP-01c.png",
+      "sha256": "947bec918b2c0d6f9bfcb080b18c83fdd14cecdc9d2778dad98694dc9882a9e4",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-01d.window": {
+      "page": "screens/EBP-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-01 Plan profile and service providers/screenshots/EBP-01d.png",
+      "sha256": "6c31afdf9bf1755e7765346747d3873f3699ff2994c291d287f00a6df9d8c2e4",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-02a.window": {
+      "page": "screens/EBP-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-02 Plan provisions review/screenshots/EBP-02a.png",
+      "sha256": "460699088b9b497c6a00541e061ac87cf6b599b26bf2ac70b31ab4bf743b7d32",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-02b.window": {
+      "page": "screens/EBP-02?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-02 Plan provisions review/screenshots/EBP-02b.png",
+      "sha256": "bb037e314a0ea46fe3e7786e5519b0088edc462abe3dacdb97c5c3cf353cb782",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-02b2.window": {
+      "page": "screens/EBP-02?st=b2",
+      "selector": "[data-artboard=\"b2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-02 Plan provisions review/screenshots/EBP-02b2.png",
+      "sha256": "ce175fe3749537092075e06453fa2c681b84302eed35c9fb6fcd274a3b78a0a0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-02c.window": {
+      "page": "screens/EBP-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-02 Plan provisions review/screenshots/EBP-02c.png",
+      "sha256": "087c4b3db61bb5644ca1a408da93f999a2b0ff48b0614a62bc83acf5ad2ed07f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-02d.window": {
+      "page": "screens/EBP-02?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-02 Plan provisions review/screenshots/EBP-02d.png",
+      "sha256": "42da9a2ee56a25449bc380edaac0ace1acdd91d1ab3f4f9105bbb4e61e2f2266",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-02e.window": {
+      "page": "screens/EBP-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-02 Plan provisions review/screenshots/EBP-02e.png",
+      "sha256": "10096125385ccd673e896abb92980802807a23fd3cd4f4b4ad4c97dce9182bfb",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-03a.window": {
+      "page": "screens/EBP-03?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-03 Eligibility testing/screenshots/EBP-03a.png",
+      "sha256": "f8373af0b9f48c77bbddc7943d5799649f05d4e5804e59fd1bf99130be0b37d2",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-03b.window": {
+      "page": "screens/EBP-03?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-03 Eligibility testing/screenshots/EBP-03b.png",
+      "sha256": "2e16d4ed2ac92e9f8a417c5d062738fab4f4f10078cf3919e3814f4c0555bd7c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-03c.window": {
+      "page": "screens/EBP-03?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-03 Eligibility testing/screenshots/EBP-03c.png",
+      "sha256": "d86c446290ce9e8aa907b97a824d6c9891eb1e496488d9d46072ca0ef1ed535d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-03d.window": {
+      "page": "screens/EBP-03?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-03 Eligibility testing/screenshots/EBP-03d.png",
+      "sha256": "560416a64fee1925a15ed3dfa52b27ef235cc382073c4b9522cd7ebb116a8318",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-03e.window": {
+      "page": "screens/EBP-03?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-03 Eligibility testing/screenshots/EBP-03e.png",
+      "sha256": "ab6f377669156b17c0e565ec352f6423b6215daf5145d1e876aa3fa7efd8fd10",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-04a.window": {
+      "page": "screens/EBP-04?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-04 Contributions and remittance timeliness/screenshots/EBP-04a.png",
+      "sha256": "b101ad95a3a029fc57f572a38f3dab90297504fd9f873ab4d1befa249cb0962e",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-04b.window": {
+      "page": "screens/EBP-04?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-04 Contributions and remittance timeliness/screenshots/EBP-04b.png",
+      "sha256": "0234a9e93069917f2d1097dc7b4978da72c03730dd153a2ad4f3c3531d4582c2",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-04c.window": {
+      "page": "screens/EBP-04?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-04 Contributions and remittance timeliness/screenshots/EBP-04c.png",
+      "sha256": "6adbfd7f8ee5d5d8e875f879da2c2e03d578fcc3a0101cce3f8caaccd5cf7e79",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-04d.window": {
+      "page": "screens/EBP-04?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-04 Contributions and remittance timeliness/screenshots/EBP-04d.png",
+      "sha256": "72847fbf63b81e2084c6a1044fa1a1b1933c59f6e77bee64d0a481473743c74e",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-04e.window": {
+      "page": "screens/EBP-04?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-04 Contributions and remittance timeliness/screenshots/EBP-04e.png",
+      "sha256": "0b1b72a660ec967fabc212a56dc82a3a26f081f1e45c2d640a810a16a0377239",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-04f.window": {
+      "page": "screens/EBP-04?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-04 Contributions and remittance timeliness/screenshots/EBP-04f.png",
+      "sha256": "0d4ab03ba8ad7464f439c57eb4fcebde6498d2ec099838d572d3bb29cf84970b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-06a.window": {
+      "page": "screens/EBP-06?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-06 Investments- certification and trust tie-out/screenshots/EBP-06a.png",
+      "sha256": "3c64eb9ed1b7486773503ab4ad26aa921d731d8dd9cb9f60668824d3f01e418d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-06b.window": {
+      "page": "screens/EBP-06?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-06 Investments- certification and trust tie-out/screenshots/EBP-06b.png",
+      "sha256": "be44c9749e08025f7399879308402f664803d8b7e4c3f710a458d6a1b046d6a8",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-06c.window": {
+      "page": "screens/EBP-06?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-06 Investments- certification and trust tie-out/screenshots/EBP-06c.png",
+      "sha256": "9b1c798aff1956b78dcd1452a1501c266bf3842b96c1ec5282c93518c37303d3",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-06d.window": {
+      "page": "screens/EBP-06?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-06 Investments- certification and trust tie-out/screenshots/EBP-06d.png",
+      "sha256": "ba5fca42de2d83ac96d85d323f744d4176edc3f0639d4ee654a0e1522fa8a078",
+      "crop": "window",
+      "tier": "C"
+    },
+    "ebp-06e.window": {
+      "page": "screens/EBP-06?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/EBP-06 Investments- certification and trust tie-out/screenshots/EBP-06e.png",
+      "sha256": "df7d86b5ff2f8a6febf08fe973be4505a9bd0d59b0e9e2d31ceec5fc9c7bb6d0",
       "crop": "window",
       "tier": "C"
     }

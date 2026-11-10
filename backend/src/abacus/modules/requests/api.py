@@ -3,7 +3,6 @@
 from uuid import UUID
 
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.engagements.api import (
     register_draft_request_copy,
     register_open_requests,
@@ -27,6 +26,7 @@ from abacus.modules.requests.binders import (
     DropBinder,
     drop_binder,
     drop_binder_open,
+    part_for_send,
     register_binder_close_rule,
 )
 from abacus.modules.requests.classification import classify, document_kind
@@ -72,6 +72,8 @@ from abacus.modules.requests.lifecycle import (
     register_live_facts,
     request_item_scope,
     request_item_scopes,
+    send_created,
+    send_item,
     update_item,
 )
 from abacus.modules.requests.pbc_contract import pbc_portal_router
@@ -164,6 +166,8 @@ from abacus.modules.requests.service import (
     read_item,
     read_item_versions,
     reopen_after_undo,
+    request_item_sent,
+    request_item_state,
     request_items_for,
     review_hosts,
     review_targets,
@@ -201,6 +205,9 @@ WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.requests.answer_effect_handlers import (  # noqa: E402 -- T-03-T06
+    effect_rule,
+)
 from abacus.modules.requests.answer_effect_slots import (  # noqa: E402 -- T-03-T02 slot
     EffectRequest,
     EffectResult,
@@ -208,6 +215,7 @@ from abacus.modules.requests.answer_effect_slots import (  # noqa: E402 -- T-03-
     answer_effect_handler,
     register_answer_effect,
 )
+from abacus.modules.requests.answer_effects import fire_staff_edit  # noqa: E402 -- T-03-T06
 from abacus.modules.requests.questionnaire_editor_contract import (  # noqa: E402 -- T-03-T02
     questionnaire_editor_router,
 )
@@ -221,9 +229,24 @@ async def questionnaire_from_template(
     ctx: AuthContext, template_key: str, tax_year: int, binder_id: UUID
 ) -> UUID:
     """A binder's organizer from the template version published for `tax_year` (T-03 §4.4;
-    T-02 now, T-08's roll-forward later). Stub until T-03-T05."""
-    raise NotImplementedYet
+    T-02 now, T-08's roll-forward later). It records `source_template_version_id`; a binder
+    already started keeps the version it started from."""
+    from abacus.modules.requests.organizer_lifecycle import version_for
+    from abacus.modules.requests.questionnaires import attach_organizer
 
+    version_id = await version_for(ctx, template_key, tax_year)
+    return (await attach_organizer(ctx, binder_id, version_id, None)).id
+
+
+from abacus.modules.requests.organizer_lifecycle import (  # noqa: E402 -- T-03-T05
+    assign_owner as assign_template_owner,
+)
+from abacus.modules.requests.questionnaire_editor import (  # noqa: E402 -- T-03-T05
+    editor as questionnaire_editor_read,
+)
+from abacus.modules.requests.questionnaire_editor import (  # noqa: E402 -- T-03-T05
+    save as save_questionnaire,
+)
 
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
@@ -306,6 +329,7 @@ __all__ = [
     "add_request_item",
     "answer_effect_handler",
     "apply_drafted_guidance",
+    "assign_template_owner",
     "attach_organizer",
     "awaiting_review",
     "awaiting_review_count",
@@ -323,6 +347,8 @@ __all__ = [
     "drop_binder_open",
     "drop_items",
     "drop_target",
+    "effect_rule",
+    "fire_staff_edit",
     "firm_router",
     "follow_up_candidates",
     "fulfil_by_rule",
@@ -341,6 +367,7 @@ __all__ = [
     "methodology_router",
     "move_after_review",
     "overdue_for",
+    "part_for_send",
     "pbc_binders",
     "pbc_counts",
     "pbc_counts_of",
@@ -353,6 +380,7 @@ __all__ = [
     "prior_year_link",
     "publish_questionnaire_template",
     "questionnaire",
+    "questionnaire_editor_read",
     "questionnaire_from_template",
     "questionnaire_templates",
     "read_item",
@@ -368,14 +396,19 @@ __all__ = [
     "register_live_facts",
     "register_upload_facts",
     "reopen_after_undo",
+    "request_item_sent",
+    "request_item_state",
     "request_items_for",
     "review_hosts",
     "review_targets",
     "room_items",
     "router",
     "save_portal_answer",
+    "save_questionnaire",
     "screening_subject",
     "selection_engagements",
+    "send_created",
+    "send_item",
     "send_question",
     "source_documents",
     "third_party_consented",

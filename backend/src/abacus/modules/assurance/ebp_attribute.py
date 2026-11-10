@@ -9,7 +9,8 @@ distribution packet fields) with region citations; it never sees an SSN or a dat
   `hr_roster` kind), so SSN and date of birth are compared on their firm-keyed fingerprints, and
   name and hire date on the stored values. Any difference is **Needs human**; a hire-date
   difference carries the eligibility engine's note when both dates give the same entry ("No effect
-  on entry"), computed with the census date of birth opened by code, never shown or logged.
+  on entry"), computed under the verified entry rule (none until it is verified, DEC-2482) with the
+  census date of birth opened by code, never shown or logged.
 - **The mode's inputs** (`attribute_inputs`): the HR and payroll records as documents and code's
   results as facts (participant key, attribute, result, note): tokens only. `assert_masked`
   refuses inputs that carry an SSN pattern or a participant's date of birth before any run.
@@ -35,6 +36,8 @@ from abacus.modules.agents.api import ModeInputs, SourcePaper
 from abacus.modules.assurance.compute.ebp import eligibility
 from abacus.modules.assurance.draft_mappings import documents_for_areas
 from abacus.modules.assurance.ebp_participants import binding
+from abacus.modules.assurance.ebp_provisions import entry_rule_read
+from abacus.modules.engagements.api import assurance_item
 from abacus.modules.identity.api import AgentContext
 
 MODE: Final = "ebp_attribute"
@@ -110,12 +113,18 @@ async def _dob(tenant: TenantContext, row: _Row) -> date | None:
     return date.fromisoformat(opened.decode())
 
 
-def hire_check(key: str, dob: date | None, census: date, hr: date) -> Check:
-    """A hire-date difference is Needs human; with a date of birth, code says whether it moves
-    the entry date (the engine's note)."""
+def hire_check(
+    key: str,
+    dob: date | None,
+    census: date,
+    hr: date,
+    rule: eligibility.EntryRule | None = eligibility.STANDARD_RULE,
+) -> Check:
+    """A hire-date difference is Needs human; with a date of birth and a verified entry rule, code
+    says whether it moves the entry date (the engine's note)."""
     if census == hr:
         return Check(key, "hire_date", "match")
-    note = None if dob is None else eligibility.review(dob, census, hr).note
+    note = None if dob is None or rule is None else eligibility.review(dob, census, hr, rule).note
     return Check(key, "hire_date", "needs_human", note)
 
 
@@ -129,6 +138,8 @@ async def _compare(tenant: TenantContext, work_item_id: UUID) -> tuple[list[Chec
     input that carries one; end-pass review S3)."""
     census = await _rows(tenant, work_item_id, "census")
     roster = await _rows(tenant, work_item_id, "hr_roster")
+    item = await assurance_item(tenant, work_item_id)
+    rule = (await entry_rule_read(tenant, item.engagement_id, work_item_id)).rule
     out: list[Check] = []
     opened: list[date] = []
     for key in sorted(roster):
@@ -138,10 +149,11 @@ async def _compare(tenant: TenantContext, work_item_id: UUID) -> tuple[list[Chec
             continue
         out.append(Check(key, "name", "match" if _same_name(c.name, hr.name) else "needs_human"))
         if c.hire_on is not None and hr.hire_on is not None:
+            # Opened with or without a rule: the mode's guard scans for it even if no note uses it.
             dob = await _dob(tenant, c) if c.hire_on != hr.hire_on else None
             if dob is not None:
                 opened.append(dob)
-            out.append(hire_check(key, dob, c.hire_on, hr.hire_on))
+            out.append(hire_check(key, dob, c.hire_on, hr.hire_on, rule))
         pairs: tuple[tuple[Attribute, str | None, str | None], ...] = (
             ("ssn", c.ssn_fp, hr.ssn_fp),
             ("dob", c.dob_fp, hr.dob_fp),

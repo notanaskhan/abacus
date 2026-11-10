@@ -11,6 +11,7 @@ import pytest
 import abacus.modules.workpapers.api as workpapers_api
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
+from abacus.modules.review import slots
 from abacus.modules.review.api import (
     REQUIRED_LEVELS,
     ReviewableFacts,
@@ -36,6 +37,12 @@ async def _facts(_tenant: TenantContext, target_id: uuid.UUID) -> ReviewableFact
         return None
     digest = content_hash({"cells": {}, "citations": []})
     return ReviewableFacts("probe_target", KNOWN, ENGAGEMENT, digest, 3, frozenset({PREPARER}))
+
+
+@pytest.fixture(autouse=True)
+def _no_firm_levels(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The firm's assigned levels read the database (TASK-3399): out of these owner-only units."""
+    monkeypatch.delitem(slots._LEVELS, "port", raising=False)  # pyright: ignore[reportPrivateUsage] -- the registry under test
 
 
 async def test_registered_facts_are_the_owners() -> None:

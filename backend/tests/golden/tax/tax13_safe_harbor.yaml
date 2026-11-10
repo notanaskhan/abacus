@@ -1,0 +1,11 @@
+# TAX-13 safe-harbor goldens (T-03-T13), from the handoff's check rows. `reviewed_by` stays null until
+# the tax CPA signs: the figures are the handoff's, not yet a CPA's.
+source: "handoff TAX-13 spec, check rows 3 to 8"
+reviewed_by: null
+cases:
+  - {name: feld, projected: "122500", paid: "123476", pct: "90", target: "110250.00"}
+  - {name: shah, projected: "148000", paid: "148000", pct: "90", target: "133200.00"}
+  - {name: thornbury_1040, projected: "212000", paid: "212000", pct: "90", target: "190800.00"}
+  - {name: varga, projected: "3900", paid: "3900", pct: "90", target: "3510.00"}
+  - {name: calloway, projected: "46300", paid: "47000", pct: "100", target: "46300.00"}
+  - {name: ashford, projected: "1572900", paid: "1572900", pct: "100", target: "1572900.00"}

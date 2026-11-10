@@ -4,7 +4,7 @@ title: A-05-T19 tabular source imports
 spec: SPEC-640
 acceptance_criteria: [AC-17]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T19
 branch: s25-a05-t19 (stacked on s25-a05-t18)

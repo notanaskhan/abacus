@@ -9,7 +9,7 @@ from __future__ import annotations
 # A-01-T05 (0134): the record-mode phase events, insert-only and human-only when recorded.
 # A-01-T23 (0226): the external release and archive records, insert-only and human-only.
 _HUMAN_RECORDS: frozenset[str] = frozenset(
-    {"eqr_concurrences", "completion_records", "releases", "archives", "assurance_phase_events"}
+    {"eqr_concurrences", "completion_records", "releases", "assurance_phase_events"}
     | {"assurance_external_releases", "assurance_external_archives"}
 )
 # A-05-T06 (0610, DEC-1861): the EBP plan audit's first tables; checks and conflicts insert-only.
@@ -40,6 +40,12 @@ CONTROL_TABLES: frozenset[str] = frozenset(
 EBP_CONTRIBUTION_TABLES: frozenset[str] = frozenset(
     {"ebp_payrolls", "ebp_late_remittances", "ebp_late_remittance_events"}
 )
+# A-05-T48 (0685): AUD-27's estimates, related parties and parties in interest; search runs
+# insert-only.
+EBP_ESTIMATES_RP_TABLES: frozenset[str] = frozenset(
+    {"accounting_estimates", "estimate_components", "related_parties"}
+    | {"related_party_search_runs", "parties_in_interest"}
+)
 # A-07-T07 (0664, DEC-2232): EQR and completion; subsequent events insert-only.
 A07_COMPLETION_TABLES: frozenset[str] = frozenset(
     {"eqr_reviews", "eqr_checklist_items", "eqr_digest_cards", "completion_items"}
@@ -52,8 +58,48 @@ EBP_INVESTMENT_TABLES: frozenset[str] = frozenset(
     | {"ebp_form5500_drafts", "ebp_form5500_lines", "ebp_part_iv_answers"}
     | {"ebp_supplemental_schedules", "ebp_schedule_h_mappings"}
 )
+# A-05-T41 (0667, DEC-2301): EBP loans, participant accounts and expenses.
+EBP_ACCOUNT_TABLES: frozenset[str] = frozenset(
+    {"ebp_participant_loans", "ebp_loan_offsets", "ebp_participant_balances", "ebp_sdba_holdings"}
+    | {"ebp_plan_expenses", "ebp_erisa_budget_lines", "ebp_compliance_tests"}
+    | {"ebp_qualification_facts"}
+)
+# A-07-T08 (0668, DEC-2302): letters, report and release; versions and acts insert-only.
+A07_LETTER_INSERT_ONLY: frozenset[str] = frozenset(
+    {"representation_letter_versions", "representation_letter_approvals"}
+    | {"governance_communication_versions", "governance_communication_sends"}
+    | {"governance_acknowledgements", "audit_report_versions", "report_releases"}
+)
+A07_LETTER_TABLES: frozenset[str] = (
+    A07_LETTER_INSERT_ONLY
+    | {"representation_letters", "governance_communications", "governance_recipients"}
+    | {"audit_reports"}
+)
+# A-07-T09 (0669, DEC-2303): the evidence archive; the children insert-only, and `archives` moves
+# by status (its v1 rows and a locked row frozen by trigger).
+A07_ARCHIVE_INSERT_ONLY: frozenset[str] = frozenset(
+    {"archive_binder_indexes", "archive_lock_decisions", "archive_manifests"}
+    | {"archive_additions", "archive_addition_decisions"}
+)
+# R-02-T05 (0710; R-02 §4.2): governance bodies (DEC-93) and the client's acknowledgement of
+# uncorrected misstatements, insert-only and human-only.
+R02_GOVERNANCE_TABLES: frozenset[str] = frozenset(
+    {"governance_bodies", "governance_body_members", "uncorrected_misstatement_acknowledgements"}
+)
 TABLES: frozenset[str] = (
-    EBP_INVESTMENT_TABLES
+    A07_ARCHIVE_INSERT_ONLY
+    | R02_GOVERNANCE_TABLES
+    | {  # A-05-T48
+        "accounting_estimates",
+        "estimate_components",
+        "parties_in_interest",
+        "related_parties",
+        "related_party_search_runs",
+    }
+    | {"archives"}
+    | A07_LETTER_TABLES
+    | EBP_ACCOUNT_TABLES
+    | EBP_INVESTMENT_TABLES
     | _HUMAN_RECORDS
     | A07_COMPLETION_TABLES
     | EBP_CONTRIBUTION_TABLES
@@ -72,8 +118,12 @@ INSERT_ONLY: frozenset[str] = (
     | {"sum_snapshots"}
     | {"walkthroughs"}  # A-04-T25 (0657)
     | {"ebp_payrolls", "ebp_late_remittance_events"}  # A-05-T26 (0658)
+    | {"related_party_search_runs"}  # A-05-T48 (0685)
     | {"subsequent_events"}  # A-07-T07 (0664)
     | {"ebp_certification_evaluations", "ebp_schedule_h_mappings"}  # A-05-T35 (0665)
+    | A07_LETTER_INSERT_ONLY  # A-07-T08 (0668)
+    | A07_ARCHIVE_INSERT_ONLY  # A-07-T09 (0669)
+    | {"uncorrected_misstatement_acknowledgements"}  # R-02-T05 (0710)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -92,6 +142,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "archives": frozenset(
         {"tenant_id", "engagement_id", "seal", "leaf_count", "manifest", "locked_by", "actor_kind"}
+        # A-07-T09 (0669): a v2 archive's work-item columns (DEC-2303)
+        | {"work_item_id", "release_id", "released_at", "release_date", "retention_policy_id"}
+        | {"retention_until", "status", "locked_at", "lock_decision_id", "manifest_id"}
+        | {"seal_sha256", "records_object_key", "records_version_id", "gate_snapshot_sha256"}
     ),
     "assurance_phase_events": frozenset(
         {"id", "tenant_id", "engagement_id", "work_item_id", "from_phase", "to_phase", "mode"}
@@ -368,6 +422,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
             "deferral_election_pct",
             "years_of_service",
             "vested_pct",
+            "match_ytd",  # 0673 (A-05-T32, DEC-2361)
         }
     ),
     "ebp_population_queries": frozenset(
@@ -820,6 +875,7 @@ INSERT_COLUMNS.update(
         "ebp_trust_report_lines": frozenset(
             {"tenant_id", "engagement_id", "work_item_id", "evidence_version_id", "line_key"}
             | {"fund_name", "boy", "eoy", "fair_value_level", "citation_id", "origin"}
+            | {"description"}  # A-05-T58 remainder (0744)
         ),
         "ebp_certification_points": frozenset(
             {"tenant_id", "engagement_id", "work_item_id", "evidence_version_id", "point_key"}
@@ -877,6 +933,7 @@ UPDATE_COLUMNS.update(
             {"fs_amount", "f5500_amount", "difference", "classification", "note_ref"}
             | {"fs_ref", "classified_by_kind", "engine_version", "inputs_hash", "version"}
             | {"updated_at"}
+            | {"keyed_by", "keyed_note_sealed"}  # A-05-T58 close (0742)
         ),
         "ebp_part_iv_answers": frozenset(
             {"draft_answer", "amount", "evidence_ref", "result", "issue_id", "version"}
@@ -886,5 +943,227 @@ UPDATE_COLUMNS.update(
             {"rows", "total", "generated_document_id", "engine_version", "inputs_hash"}
             | {"version", "updated_at"}
         ),
+    }
+)
+
+_EBP_SCOPE: frozenset[str] = frozenset({"tenant_id", "engagement_id", "work_item_id"})
+_EBP_EVIDENCE: frozenset[str] = frozenset({"evidence_version_id", "citation_id"})
+_EBP_SEALED: frozenset[str] = frozenset({"ssn_sealed", "ssn_fp", "ssn_last4"})
+# A-05-T41 (0667, DEC-2301): EBP loans, participant accounts and expenses.
+INSERT_COLUMNS.update(
+    {
+        "ebp_participant_loans": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"participant_key", "loan_ref", "status", "originated_on", "term_months", "is_residence"}
+        | {"vested_balance", "beginning_balance", "new_loans", "repayments", "offsets"}
+        | {"ending_balance", "limit_amount", "limit_result", "engine_version", "inputs_hash"}
+        | {"interest_rate"},  # A-05-T58 remainder (0744)
+        "ebp_loan_offsets": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"loan_id", "offset_on", "amount", "form_1099r_code", "reported_line"},
+        "ebp_participant_balances": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | _EBP_SEALED
+        | {"participant_key", "name", "status", "beginning_balance", "contributions", "earnings"}
+        | {"distributions", "fees", "transfers", "ending_balance"},
+        "ebp_sdba_holdings": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | _EBP_SEALED
+        | {"participant_key", "security_type", "description", "market_value"},
+        "ebp_plan_expenses": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"provider_id", "line_key", "description", "disclosure_citation_id", "invoiced"}
+        | {"credits", "paid_from_plan", "schedule_h_line", "result", "issue_id"},
+        "ebp_erisa_budget_lines": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"line_key", "kind", "amount", "occurred_on"},
+        "ebp_compliance_tests": _EBP_SCOPE
+        | {"test_key", "plan_year", "limit_amount", "limit_ref", "result", "proposed_by_kind"}
+        | {"accepted_by", "accepted_at", "finding_ref", "engine_version", "inputs_hash"},
+        "ebp_qualification_facts": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"fact_key", "value", "result", "proposed_by_kind", "accepted_by", "accepted_at"},
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "ebp_participant_loans": frozenset(
+            {"status", "vested_balance", "beginning_balance", "new_loans", "repayments"}
+            | {"offsets", "ending_balance", "limit_amount", "limit_result", "engine_version"}
+            | {"inputs_hash", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_loan_offsets": frozenset({"citation_id", "form_1099r_code", "version", "updated_at"}),
+        "ebp_participant_balances": frozenset(
+            {"status", "beginning_balance", "contributions", "earnings", "distributions", "fees"}
+            | {"transfers", "ending_balance", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_sdba_holdings": frozenset(
+            {"security_type", "market_value", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_plan_expenses": frozenset(
+            {"disclosure_citation_id", "invoiced", "credits", "paid_from_plan", "schedule_h_line"}
+            | {"result", "issue_id", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_erisa_budget_lines": frozenset({"amount", "citation_id", "version", "updated_at"}),
+        "ebp_compliance_tests": frozenset(
+            {"limit_amount", "limit_ref", "result", "accepted_by", "accepted_at", "finding_ref"}
+            | {"engine_version", "inputs_hash", "version", "updated_at"}
+        ),
+        "ebp_qualification_facts": frozenset(
+            {"value", "result", "accepted_by", "accepted_at", "citation_id", "version"}
+            | {"updated_at"}
+        ),
+    }
+)
+
+_A07_SCOPE: frozenset[str] = frozenset({"tenant_id", "engagement_id", "work_item_id"})
+_A07_ACTOR: frozenset[str] = frozenset({"actor_kind", "actor_id"})
+# A-07-T08 (0668, DEC-2302): letters, report and release.
+INSERT_COLUMNS.update(
+    {
+        "representation_letters": _A07_SCOPE
+        | {"template_id", "status", "current_version_id", "envelope_id", "dated_as_of"},
+        "representation_letter_versions": _A07_SCOPE
+        | {"letter_id", "version_no", "template_version_id", "representations"}
+        | {"edited_paragraphs_sealed", "sum_snapshot_id", "content_hash", "drafted_by_run_id"}
+        | {"created_by", "generated_document_id"},
+        "representation_letter_approvals": _A07_SCOPE
+        | _A07_ACTOR
+        | {"version_id", "approved_by", "seen_hash", "mfa_verified_at"},
+        "governance_communications": _A07_SCOPE
+        | {"kind", "standard", "combined_with_id", "due_rule", "due_on", "status"}
+        | {"current_version_id", "channel", "envelope_id"},
+        "governance_communication_versions": _A07_SCOPE
+        | {"communication_id", "version_no", "template_version_id", "sections_sealed"}
+        | {"section_refs", "content_hash", "drafted_by_run_id", "created_by"}
+        | {"generated_document_id"},
+        "governance_communication_sends": _A07_SCOPE
+        | _A07_ACTOR
+        | {"version_id", "sent_by", "governance_body_id", "recipient_contact_ids", "channel"}
+        | {"approval_grant_id", "mfa_verified_at"},
+        "governance_recipients": _A07_SCOPE | {"governance_body_id", "ack_required"},
+        "governance_acknowledgements": _A07_SCOPE
+        | {"communication_id", "version_id", "acknowledged_by_contact_id", "acknowledged_at"}
+        | {"channel"},
+        "audit_reports": _A07_SCOPE
+        | {"report_kind", "framework", "standards_set_id", "template_id", "status"}
+        | {"current_version_id", "report_date", "city"},
+        "audit_report_versions": _A07_SCOPE
+        | {"report_id", "version_no", "choices", "paragraphs", "report_date", "city", "dual_date"}
+        | {"reissue_of_release_id", "content_hash", "created_by"},
+        "report_releases": _A07_SCOPE
+        | _A07_ACTOR
+        | {"kind", "reissue_of_id", "report_version_id", "report_version_hash", "released_by"}
+        | {"released_at", "report_date", "city", "gate_snapshot", "gate_snapshot_sha256"}
+        | {"final_document_version_id", "deliverable_ids", "approval_grant_id"}
+        | {"idempotency_key"},
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "representation_letters": frozenset(
+            {"status", "current_version_id", "envelope_id", "dated_as_of", "signed_on"}
+            | {"g7_met_at", "version", "updated_at"}
+        ),
+        "governance_communications": frozenset(
+            {"combined_with_id", "due_rule", "due_on", "status", "current_version_id", "channel"}
+            | {"envelope_id", "version", "updated_at"}
+        ),
+        "governance_recipients": frozenset({"ack_required", "version", "updated_at"}),
+        "audit_reports": frozenset(
+            {"status", "current_version_id", "report_date", "city", "version", "updated_at"}
+        ),
+    }
+)
+
+# A-07-T09 (0669, DEC-2303): the evidence archive.
+INSERT_COLUMNS.update(
+    {
+        "archive_binder_indexes": _A07_SCOPE
+        | {"archive_id", "index_version", "sections", "sha256", "built_by_kind", "run_id"},
+        "archive_lock_decisions": _A07_SCOPE
+        | _A07_ACTOR
+        | {"archive_id", "decided_by", "assembly_complete_attested", "then_roll_forward"}
+        | {"checklist_snapshot", "checklist_sha256", "mfa_verified_at", "approval_grant_id"},
+        "archive_manifests": _A07_SCOPE
+        | {"archive_id", "manifest_version", "canonicalization", "evidence_leaf_count"}
+        | {"row_leaf_count", "run_record_count", "audit_checkpoint_seq_to"}
+        | {"audit_checkpoint_root", "merkle_root", "manifest_sha256", "records_object_key"}
+        | {"records_version_id", "compliance_retain_until"},
+        "archive_additions": _A07_SCOPE
+        | {"archive_id", "description_sealed", "reason_code", "evidence_version_id"}
+        | {"content_sha256", "added_by", "post_issuance_event_id", "addition_manifest_key"},
+        "archive_addition_decisions": _A07_SCOPE
+        | _A07_ACTOR
+        | {"addition_id", "decision", "decided_by", "reason_sealed", "mfa_verified_at"},
+    }
+)
+UPDATE_COLUMNS["archives"] = frozenset(
+    {"status", "locked_at", "locked_by", "lock_decision_id", "manifest_id", "seal_sha256"}
+    | {"records_object_key", "records_version_id", "gate_snapshot_sha256", "retention_until"}
+)
+
+# A-05-T48 (0685): AUD-27. A screen-out and a conclusion are a person's (the services, A-05 §4.3).
+_AUD27_SCOPE = frozenset({"tenant_id", "engagement_id", "work_item_id", "id"})
+INSERT_COLUMNS.update(
+    {
+        "accounting_estimates": _AUD27_SCOPE
+        | {"account_ref", "name", "balance", "significant_risk", "method", "rollforward"}
+        | {"retrospective", "range_low", "range_high", "bias", "disclosure_ref", "je_ref"}
+        | {"created_by_kind"},
+        "estimate_components": _AUD27_SCOPE | {"estimate_id", "label", "amount", "position"},
+        "related_parties": _AUD27_SCOPE
+        | {"name_sealed", "display_ref", "source", "relationship", "inquiry_ref"}
+        | {"created_by_kind"}
+        | {"transactions", "disclosure", "disclosure_note"},  # A-05-T57 close (0743)
+        "related_party_search_runs": _AUD27_SCOPE
+        | {"run_id", "inputs", "candidates", "vendors_searched", "customers_searched"},
+        "parties_in_interest": _AUD27_SCOPE
+        | {"name", "erisa_relationship", "transactions", "exemption", "reporting"}
+        | {"created_by_kind"},
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "accounting_estimates": frozenset(
+            {"account_ref", "balance", "significant_risk", "method", "rollforward"}
+            | {"retrospective", "range_low", "range_high", "bias", "disclosure_ref", "je_ref"}
+            | {"status", "decision_card_id", "finding_id", "version", "updated_at"}
+        ),
+        "estimate_components": frozenset({"label", "amount", "position"}),
+        "related_parties": frozenset(
+            {"status", "screened_out_reason", "screened_out_by", "screened_out_at", "finding_id"}
+            | {"inquiry_ref", "version", "updated_at"}
+            | {"transactions", "disclosure", "disclosure_note"}  # A-05-T57 close (0743)
+        ),
+        "parties_in_interest": frozenset(
+            {"erisa_relationship", "transactions", "exemption", "reporting", "version"}
+            | {"updated_at"}
+        ),
+    }
+)
+
+# R-02-T05 (0710): a body's members change by ending a row and adding one; an acknowledgement is
+# the client's own act (its actor is the session's, I-AGENT-NEVER).
+INSERT_COLUMNS.update(
+    {
+        "governance_bodies": frozenset(
+            {"id", "tenant_id", "client_id", "client_entity_id", "name", "kind"}
+        ),
+        "governance_body_members": frozenset(
+            {"id", "tenant_id", "body_id", "contact_id", "member_role", "started_on"}
+        ),
+        "uncorrected_misstatement_acknowledgements": frozenset(
+            {"id", "tenant_id", "engagement_id", "work_item_id", "sum_snapshot_id"}
+            | {"approval_item_id", "net_effect", "engine_version", "inputs_hash", "entry_ids"}
+            | {"contact_id", "actor_user_id", "actor_kind", "actor_id", "principal_kind"}
+            | {"grant_id", "mfa_verified_at", "seen_hash"}
+        ),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "governance_bodies": frozenset({"name", "kind", "status", "version", "updated_at"}),
+        "governance_body_members": frozenset({"member_role", "ended_on"}),
     }
 )

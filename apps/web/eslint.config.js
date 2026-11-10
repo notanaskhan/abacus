@@ -63,13 +63,22 @@ const SCREEN_SYNTAX = [
   {
     // P-09-T06 (L4): the trace's model text renders only through the agent components. `blocks`
     // and `segments` name other things in other domains, so AgentBlocks payloads are typed instead.
-    selector: "JSXElement > JSXExpressionContainer MemberExpression[property.name=/^model_text$/]",
+    // P-09-T05/T06 (DEC-2812): C6 v1.1's `args_summary` (a tool call's arguments, which the model
+    // wrote) joins `model_text`.
+    selector:
+      "JSXElement > JSXExpressionContainer MemberExpression[property.name=/^(model_text|args_summary)$/]",
     message: "Render agent output through AgentText, AgentProse or AgentBlocks (ADR-065, P-09).",
   },
   {
     selector:
-      "JSXOpeningElement[name.name!=/^(AgentText|AgentProse|AgentBlocks)$/] > JSXAttribute > JSXExpressionContainer MemberExpression[property.name=/^model_text$/]",
+      "JSXOpeningElement[name.name!=/^(AgentText|AgentProse|AgentBlocks)$/] > JSXAttribute > JSXExpressionContainer MemberExpression[property.name=/^(model_text|args_summary)$/]",
     message: "Agent output goes only to AgentText, AgentProse or AgentBlocks (ADR-065, P-09).",
+  },
+  {
+    // P-09-T06 (DEC-2812): a payload typed as AgentBlocks renders only through AgentBlocks.
+    selector:
+      "JSXOpeningElement[name.name!='AgentBlocks'] > JSXAttribute > JSXExpressionContainer TSAsExpression[typeAnnotation.typeName.name='AgentBlocksPayload']",
+    message: "An AgentBlocks payload renders only through <AgentBlocks /> (ADR-230, P-09).",
   },
 ];
 

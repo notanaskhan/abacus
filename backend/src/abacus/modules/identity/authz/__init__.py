@@ -329,6 +329,13 @@ def agent_may_hold(action: str) -> bool:
     return _rule(action).decisions.get("agent") == "task_scope"
 
 
+def agent_denied(action: str) -> bool:
+    """Whether the matrix denies the agent this action outright (P-10-T20: an `approved_write`
+    tool's action, which only a person's approval grant unlocks). An action with no agent cell is
+    denied (fail closed)."""
+    return _rule(action).decisions.get("agent", "deny") == "deny"
+
+
 def policy_agent_may_hold(action: str) -> bool:
     """SPEC-027 (TASK-051): a deterministic agent (no model call) may also declare routine
     actions the firm's autonomy policy allows (`agent: firm_setting(autonomy_policy)`)."""
@@ -638,7 +645,7 @@ async def authorise(
         finally:
             _delegating.reset(token)
     # 4. Attributes.
-    if resource.archived and not rule.reads:
+    if resource.archived and not rule.reads and rule.archived_exempt is None:
         raise _deny(ctx, action, "attribute")
     mfa_at = ctx.mfa_at if isinstance(ctx, AuthContext) else None
     # allowed_actions() leaves MFA recency and a reason to the moment of acting: the UI steps up.
@@ -1020,6 +1027,25 @@ def _not_walled_client(ctx: Actor, client_id: EngagementColumn) -> ColumnElement
     return ~walls.correlate_except(ethical_walls).exists()
 
 
+def firm_role_allows(ctx: Actor, action: str) -> bool:
+    """Whether the person's firm role allows `action` outright, at no engagement (I-01-T23;
+    DEC-2613): who a firm-level gate (a methodology version in Needs review) waits on. The firm
+    role only, never an engagement role or the derived partner cell, and never an agent or the
+    system. The action's conditions (fresh MFA, a reason) stay the decision's: `authorise()`
+    checks them when the person acts. Records the check."""
+    rule = _rule(action)
+    _record(action)
+    if not isinstance(ctx, AuthContext) or ctx.firm_role is None or ctx.is_support:
+        return False
+    return rule.decisions.get(ctx.firm_role) == "allow"
+
+
+def not_walled_client(ctx: Actor, client_id: EngagementColumn) -> ColumnElement[bool]:
+    """Rows whose client the acting person isn't walled off from, for a firm-level row that names
+    a client (I-01-T23: a wall's approval gate). A row with no client passes."""
+    return or_(client_id.is_(None), _not_walled_client(ctx, client_id))
+
+
 def visible_scope(
     ctx: Actor,
     action: str,
@@ -1375,6 +1401,7 @@ __all__ = [
     "ItemFacts",
     "Resource",
     "UnknownAction",
+    "agent_denied",
     "authorise",
     "authorise_items",
     "authorise_on_condition",

@@ -4,6 +4,7 @@ export const COPY = {
   tabs: ["Service Organizations", "Linkage", "Audit Approach"] as const,
   openInExcel: "Open in Excel",
   download: "Download",
+  exportFailed: "The workpaper didn't download. Try again.",
   signOff: "Sign off…",
   adopt: "Adopt (L1)…",
   draft: "Draft · Accrued Agent",

@@ -7,6 +7,7 @@ export const COPY = {
     linked: "Linked",
     suggested: "Suggested",
     link: "Link EBP-03…",
+    failed: "That link didn't go through. Try again.",
   },
   revising: "Revising after Internal Control…",
   drafted: {
@@ -98,6 +99,7 @@ export const COPY = {
   drawer: {
     factors: "Inherent risk factors (SAS 145)",
     rationaleCard: "Rationale",
+    responseCard: "Response",
     assertions: "Relevant assertions",
     versions: "Versions",
     factor: {
@@ -109,6 +111,7 @@ export const COPY = {
     } as Record<string, string>,
     routed: (name: string, at: string): string => `Routed to ${name} · ${at}`,
     remind: (first: string): string => `Remind ${first}…`,
+    reminded: (who: string): string => `Reminded ${who}.`,
     approve: "Approve as significant risk",
     notSignificant: "Not significant…",
     citations: (n: number): string => `${String(n)} citations`,

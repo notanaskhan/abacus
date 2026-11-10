@@ -7,7 +7,7 @@
 | Surface | firm (never a client surface, INV-4) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/NOT-01 Notices index - intake sheet/` (README.md, spec.md; no revision.md) |
 | Epic and tasks | N-04 · stubs T02 (`docs/contracts/notices.md`) · a, e, f, g T05 · b, c, d intake sheet T09 · core T06 · intake T07 · live swap T22 · E2E and parity T26 |
-| Manifest status | planned until N-04-T05 (fixture) |
+| Manifest status | live (N-04-T22); contract final at N-04-T27 (2026-11-07): changes go through a new contract version |
 
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
@@ -19,7 +19,7 @@
 | e | kevin-osei | 9:24 AM | E0 | `?tile=new`: N5 and N9; Clear | fixture (T05) |
 | f | kevin-osei | 9:24 AM | empty | No visible notices: "No open notices." | fixture (T05) |
 | g | kevin-osei | 9:24 AM | — | Loading: skeleton rows | fixture (T05) |
-| composed | as a | — | — | Possible duplicate ("Looks like N2 · same notice": Attach / Create anyway); Manual entry (no confidence pills, page thumbnails); No client matched (picker); flag off and not allowed (C-20); error | composed (DEC-32) |
+| composed | as a | — | — | Possible duplicate ("Looks like N2 · same notice": Attach / Create anyway); Manual entry (no confidence pills, page thumbnails); No client matched (picker); not allowed (C-20; the flag-off state retired with `notices.workspace`, DEC-2602); error | composed (DEC-32) |
 
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |

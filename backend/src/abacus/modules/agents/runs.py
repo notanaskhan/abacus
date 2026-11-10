@@ -10,6 +10,7 @@ An export is deterministic canonical JSON with a SHA-256 manifest, and is audite
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 from collections.abc import Sequence
@@ -18,12 +19,13 @@ from datetime import UTC, datetime
 from typing import Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.ai_gateway import attempts_for
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
+from abacus.kernel.tin_patterns import scrub_tins
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.models import AgentActivity, AgentRun, AgentRunRecord, Proposal
 from abacus.modules.agents.repository import (
@@ -33,6 +35,28 @@ from abacus.modules.agents.repository import (
     run_activity,
     run_writes,
     screening_results_of_run,
+)
+from abacus.modules.agents.run_views import (
+    Counters,
+    LevelCount,
+    V2Facts,
+    levels_for,
+    v2_facts,
+    v2_items,
+)
+from abacus.modules.agents.run_views import V2Item as V2ItemT
+from abacus.modules.agents.trace import (
+    Sample,
+    SourceCount,
+    V2TraceRow,
+    args_summary_text,
+    plan_of,
+    records_read_by_source,
+    region_of,
+    samples_for,
+    step_of,
+    steps_of,
+    timeline,
 )
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import decisions_on_screenings, withdrawn_among
@@ -56,6 +80,13 @@ AGENT_LABEL: Final = {
     "requests.guidance_drafter": "Guidance drafter",
     "fieldwork.entry_assessor": "Entry assessor",
     "engagement.agent": "Engagement agent",
+    "reporting.fs_draft": "Statements draft",
+    # A-07-T32 (DEC-3109): code-only capabilities on the v1 recording path, no model call.
+    "audit.eqr_digest": "Judgments digest",
+    "audit.completion_readiness": "Completion readiness",
+    "audit.bring_down": "Bring-down",
+    "audit.letter_compose": "Letter compose",
+    "audit.archive_readiness": "Archive readiness",
 }
 State = Literal["queued", "running", "succeeded", "needs_input", "failed"]
 # DEC-87 (TASK-5002): content for the engagement's people and oversight in scope; metadata for
@@ -73,6 +104,16 @@ _V1_SUMMARY_FIELDS: Final = (
     "record_persisted_at",
 )
 RowKind = Literal["start", "queued", "attempt", "output", "decision", "finish"]
+_V11_TRACE_FIELDS: Final = ("summary", "v2_rows", "sources")
+# C6 v1.1 (P-09-T08): a legacy row's WB-09 phase and mark.
+LEGACY_PHASE: Final[dict[str, tuple[str, str]]] = {
+    "start": ("notice", "start"),
+    "queued": ("notice", "waiting"),
+    "attempt": ("execute", "done"),
+    "output": ("proposed_write", "done"),
+    "decision": ("decision", "done"),
+    "finish": ("notice", "done"),
+}
 
 
 @dataclass(frozen=True)
@@ -111,6 +152,9 @@ class TraceRow:
 class RecordsRead:
     source: str
     count: int
+    # C6 v1.1 (P-09-T08): the firm connection the records came through, or "Accrued".
+    connection_id: UUID | None = None
+    through: str | None = None
 
 
 @dataclass(frozen=True)
@@ -127,6 +171,24 @@ class Trace:
     output_counts: list[tuple[str, int]]
     model_text: str | None  # the run's own words, rendered through AgentText
     projection: Projection = "content"
+    # C6 v1.1 (P-09-T08): WB-09's summary card, and a v2 run's timeline from its durable records.
+    summary: TraceSummary | None = None
+    v2_rows: tuple[V2TraceRow, ...] = ()
+    sources: tuple[SourceCount, ...] = ()
+
+
+@dataclass(frozen=True)
+class TraceSummary:
+    run_number: int | None
+    agent_label: str
+    started_at: datetime
+    trigger_kind: str | None
+    runs_as_name: str | None
+    duration_ms: int | None
+    records_read: int
+    citations: int
+    writes_done: int
+    writes_waiting: int
 
 
 def state_of(run: AgentRun) -> State:
@@ -136,7 +198,9 @@ def state_of(run: AgentRun) -> State:
 
 
 def duration_ms(start: datetime, end: datetime | None) -> int | None:
-    return None if end is None else int((end - start).total_seconds() * 1000)
+    """Milliseconds from start to end. A run whose end reads a hair before its start (rows written
+    in one transaction, `clock_timestamp()` order) lasted no time, never a negative one."""
+    return None if end is None else max(0, int((end - start).total_seconds() * 1000))
 
 
 def _subject(run: AgentRun) -> str | None:
@@ -252,7 +316,15 @@ async def runs_for(
     async with tenant_session(ctx.tenant) as session:
         runs = await engagement_runs(session, ctx, engagement_id, max(1, min(limit, 100)))
     if state == "active":
-        runs = [r for r in runs if r.status == "running"]
+        async with tenant_session(ctx.tenant) as session:
+            facts = await v2_facts(session, [r.id for r in runs])
+        # A v2 run is active until its state is terminal; a legacy one while it runs.
+        runs = [
+            r
+            for r in runs
+            if (r.id in facts and facts[r.id].v2 and facts[r.id].active)
+            or (not (r.id in facts and facts[r.id].v2) and r.status == "running")
+        ]
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
     async with tenant_session(ctx.tenant) as session:
         facts = await _v1_facts(session, [r.id for r in runs])
@@ -423,10 +495,34 @@ async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
         for i, r in enumerate(ordered)
     ]
     read = records_read_of(run)
+    metadata = projection == "metadata"
+    async with tenant_session(ctx.tenant) as session:
+        facts = (await v2_facts(session, [run.id])).get(run.id)
+        is_v2 = facts is not None and facts.v2
+        plan = await plan_of(session, run.id) if is_v2 else None
+        steps = await steps_of(session, run.id) if is_v2 else []
+    v2_rows: tuple[V2TraceRow, ...] = ()
+    sources: tuple[SourceCount, ...] = ()
+    region = REGION
+    if is_v2 and facts is not None:
+        role = facts.blocked_on.get("role") if facts.blocked_on else None
+        v2_rows = tuple(
+            timeline(
+                plan,
+                steps,
+                names,
+                metadata=metadata,
+                blocked_role=role if isinstance(role, str) else None,
+            )
+        )
+        sources = tuple(records_read_by_source(steps))
+        read = [RecordsRead(c.source, c.count, c.connection_id, c.through) for c in sources]
+        region = region_of(await _route_of(ctx, run.id), run.started_at)
+    summary = _trace_summary(run, names, facts, sources)
     return Trace(
         _summary(run, names),
         RUNTIME_LABEL,
-        REGION,
+        region,
         TRAINING,
         len(attempts),
         sum(a.input_tokens for a in attempts),
@@ -434,8 +530,44 @@ async def trace_for(ctx: AuthContext, run_id: UUID) -> Trace:
         rows,
         read,
         counts,
-        model_text if projection == "content" else None,
+        scrub_tins(model_text) if projection == "content" and model_text else None,
         projection,
+        summary,
+        v2_rows,
+        sources,
+    )
+
+
+_ROUTE = text("SELECT route FROM agent_runs WHERE id = :run")
+
+
+async def _route_of(ctx: AuthContext, run_id: UUID) -> str | None:
+    async with tenant_session(ctx.tenant) as session:
+        return cast(str | None, (await session.execute(_ROUTE, {"run": run_id})).scalar())
+
+
+def _trace_summary(
+    run: AgentRun,
+    names: dict[UUID, str],
+    facts: V2Facts | None,
+    sources: Sequence[SourceCount],
+) -> TraceSummary:
+    """WB-09's summary card: code's counts. A legacy run counts what its record holds."""
+    counters = facts.counters if facts is not None and facts.v2 else Counters()
+    runs_as = facts.runs_as_user_id if facts is not None else None
+    records = sum(c.count for c in sources) if sources else counters.records_read
+    end = run.finished_at
+    return TraceSummary(
+        facts.run_number if facts is not None else None,
+        AGENT_LABEL.get(run.agent_id, run.agent_id),
+        run.started_at,
+        facts.trigger_kind if facts is not None else None,
+        None if runs_as is None else names.get(runs_as, "Former member"),
+        duration_ms(run.started_at, end),
+        records,
+        counters.citations_count,
+        counters.writes_done,
+        counters.writes_waiting,
     )
 
 
@@ -457,6 +589,12 @@ def canonical(trace: Trace) -> bytes:
     plain = asdict(trace)
     for key in _V1_SUMMARY_FIELDS:
         plain["run"].pop(key, None)
+    # P-09-T08's v1.1 fields stay out of trace-v1's bytes; P-09-T11's export version carries them.
+    for key in _V11_TRACE_FIELDS:
+        plain.pop(key, None)
+    for row in plain["records_read"]:
+        row.pop("connection_id", None)
+        row.pop("through", None)
     return json.dumps(_plain(plain), sort_keys=True, separators=(",", ":")).encode()
 
 
@@ -467,29 +605,55 @@ class TraceExport:
 
 
 async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
+    """P-09-T11 (DEC-3118): canonical JSON (byte-identical for the same trace version) and a
+    signed manifest naming the person, the body's SHA-256 and the persisted run record's hash;
+    `run_trace.export` needs a fresh second factor (matrix `mfa_recent`)."""
+    from abacus.kernel.crypto.signing import export_signer
+
     trace = await trace_for(ctx, run_id)
-    await _run(ctx, run_id, "run_trace.export")
+    run = await _run(ctx, run_id, "run_trace.export")
     body = canonical(trace)
     digest = hashlib.sha256(body).hexdigest()
+    manifest: dict[str, object] = {
+        "run_id": str(run_id),
+        "rows": len(trace.rows),
+        "sha256": digest,
+        "renderer_version": RENDERER_VERSION,
+        # P-09-T01 (DEC-2801): the export inherits the caller's projection, so an admin's
+        # export is the metadata trace and says so.
+        "projection": trace.projection,
+        "run_record_sha256": trace.run.record_sha256 or run_record_sha256(run),
+        "exported_by": str(ctx.user_id),
+    }
+    signed_body = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+    signer = export_signer()
+    signed = await signer.sign_digest(hashlib.sha256(signed_body).digest())
+    manifest["signature"] = base64.b64encode(signed.signature).decode()
+    manifest["signature_key_id"] = signed.key_id
     async with uow(ctx.tenant) as tx:
         tx.record(
             "agent_run.trace_exported",
             target=Target("agent_run", run_id),
-            after=Ref(sha256=digest, rows=len(trace.rows)),
+            after=Ref(sha256=digest, rows=len(trace.rows), by=ctx.user_id),
         )
-    return TraceExport(
-        body,
-        {
-            "run_id": str(run_id),
-            "rows": len(trace.rows),
-            "sha256": digest,
-            "renderer_version": RENDERER_VERSION,
-            "projection": "content",
-        },
-    )
+    return TraceExport(body, manifest)
 
 
 # --- C6 v1 (TASK-5000): the run, its records read and its writes ---------------------------
+
+
+@dataclass(frozen=True)
+class RunHeader:
+    """C6 v1.1's header (P-09-T07): from the v2 columns; names from the engagement team."""
+
+    run_number: int | None
+    blocked_on: dict[str, object] | None
+    counters: Counters | None
+    runs_as_name: str | None
+    trigger_kind: str | None
+    work_item_ref: str | None
+    plan_version: int | None = None  # P-09-T14: a plan decision's `expected_version`
+    plan_steps: tuple[tuple[str, str], ...] = ()  # DEC-3142: (key, label) for "Change order…"
 
 
 @dataclass(frozen=True)
@@ -498,6 +662,40 @@ class RunView:
     run_record_sha256: str
     allowed_actions: list[str]
     projection: Projection
+    header: RunHeader | None = None
+    levels: tuple[LevelCount, ...] = ()
+
+
+# What the dock may offer on a run: P-10's policy decides, and the view passes the caller's
+# allowed set through (P-09-T07). The commands answer 404 until P-10's routes land (P-09-T14).
+RUN_ACTIONS: Final = (
+    "agent_run.read",
+    "run_trace.export",
+    "agent_run.approve_plan",
+    "agent_run.answer",
+    "agent_run.control",
+    "agent_run.sign_off",
+    # P-09-T14 (DEC-3134): the dock draws Run and the thumbs only when the server lists them.
+    "agent_run.start",
+    "agent_feedback.create",
+)
+
+
+def _header(facts: V2Facts, names: dict[UUID, str], metadata: bool) -> RunHeader:
+    runs_as = facts.runs_as_user_id
+    blocked = facts.blocked_on
+    if metadata and blocked is not None:  # DEC-87: no record references or needs
+        blocked = {"kind": blocked.get("kind"), "role": blocked.get("role")}
+    return RunHeader(
+        facts.run_number,
+        blocked,
+        facts.counters if facts.v2 else None,
+        None if runs_as is None else names.get(runs_as, "Former member"),
+        facts.trigger_kind,
+        None if metadata else facts.work_item_ref,
+        facts.plan_version,
+        () if metadata else facts.plan_steps,
+    )
 
 
 @dataclass(frozen=True)
@@ -512,6 +710,30 @@ class RunWrite:
     decision: str | None
     decided_by_name: str | None
     decided_at: datetime | None
+    # C6 v1.1 (P-09-T08): WB-09 a4's state, the person it waits on, and its proposal.
+    state: WriteState | None = None
+    approver_name: str | None = None
+    proposal_id: UUID | None = None
+
+
+WriteState = Literal["waiting", "approved", "declined", "superseded"]
+# A suggestion's, proposal's or screening's own state, as WB-09 a4 words it (DEC-3005).
+WRITE_STATE: Final[dict[str, WriteState]] = {
+    "pending": "waiting",
+    "proposed": "waiting",
+    "open": "waiting",
+    "approved": "approved",
+    "approved_with_edits": "approved",
+    "accepted": "approved",
+    "applied": "approved",
+    "decided": "approved",
+    "rejected": "declined",
+    "declined": "declined",
+    "dismissed": "declined",
+    "superseded": "superseded",
+    "withdrawn": "superseded",
+}
+_ROUTED = text("SELECT id, routed_to_user_id FROM proposals WHERE agent_run_id = :run")
 
 
 def run_record_sha256(run: AgentRun) -> str:
@@ -542,10 +764,19 @@ async def run_view(ctx: AuthContext, run_id: UUID) -> RunView:
         raise NotFound
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
     ref = await get_ref(ctx, engagement_id)
-    actions = await allowed_actions(ctx, ref.resource(), ["agent_run.read", "run_trace.export"])
+    actions = await allowed_actions(ctx, ref.resource(), list(RUN_ACTIONS))
     projection = await projection_for(ctx, engagement_id)
+    async with tenant_session(ctx.tenant) as session:
+        facts = (await v2_facts(session, [run.id])).get(run.id)
+        levels = await levels_for(session, facts) if facts is not None and facts.v2 else []
+    header = None if facts is None else _header(facts, names, projection == "metadata")
     return RunView(
-        await _summary_v1(ctx, run, names), run_record_sha256(run), sorted(actions), projection
+        await _summary_v1(ctx, run, names),
+        run_record_sha256(run),
+        sorted(actions),
+        projection,
+        header,
+        tuple(levels),
     )
 
 
@@ -560,7 +791,50 @@ def records_read_of(run: AgentRun) -> list[RecordsRead]:
 
 
 async def records_read_for(ctx: AuthContext, run_id: UUID) -> list[RecordsRead]:
-    return records_read_of(await _run(ctx, run_id, "agent_run.read"))
+    """A v2 run's reads by record type and source, summed from its steps; a legacy run's from
+    its own row."""
+    run = await _run(ctx, run_id, "agent_run.read")
+    async with tenant_session(ctx.tenant) as session:
+        facts = (await v2_facts(session, [run.id])).get(run.id)
+        steps = await steps_of(session, run.id) if facts is not None and facts.v2 else None
+    if steps is None:
+        return records_read_of(run)
+    return [
+        RecordsRead(c.source, c.count, c.connection_id, c.through)
+        for c in records_read_by_source(steps)
+    ]
+
+
+@dataclass(frozen=True)
+class TraceStep:
+    step_id: UUID
+    title: str
+    args_summary: str | None
+    records_read: int
+    samples: tuple[Sample, ...]
+
+
+async def step_detail(ctx: AuthContext, run_id: UUID, step_id: UUID, records: int) -> TraceStep:
+    """WB-09 a2: one tool row's redacted arguments and up to five sample records the caller may
+    open. Content only: a metadata reader, or a step of another run, gets 404 (DEC-87)."""
+    run = await _run(ctx, run_id, "agent_run.read")
+    engagement_id = run.engagement_id
+    if engagement_id is None or await projection_for(ctx, engagement_id) == "metadata":
+        raise NotFound
+    async with tenant_session(ctx.tenant) as session:
+        step = await step_of(session, run.id, step_id)
+        plan = await plan_of(session, run.id)
+    if step is None:
+        raise NotFound
+    rows = timeline(plan, [step], {}, metadata=False)
+    samples = await samples_for(ctx, step.sample_refs, records)
+    return TraceStep(
+        step.id,
+        rows[-1].title,
+        args_summary_text(step.args_summary),
+        step.records_read,
+        tuple(samples),
+    )
 
 
 async def writes_for(ctx: AuthContext, run_id: UUID) -> list[RunWrite]:
@@ -612,14 +886,37 @@ async def writes_for(ctx: AuthContext, run_id: UUID) -> list[RunWrite]:
                 None if d is None else d.at,
             )
         )
+    async with tenant_session(ctx.tenant) as session:
+        routed = {
+            r.id: r.routed_to_user_id
+            for r in (await session.execute(_ROUTED, {"run": run.id})).all()
+        }
+    out = [_write_state(w, routed, names) for w in out]
     if await projection_for(ctx, engagement_id) == "metadata":  # DEC-87: no record references
-        out = [replace(w, target_id=None) for w in out]
+        out = [replace(w, target_id=None, approver_name=None) for w in out]
     return sorted(out, key=lambda w: (w.at, str(w.id)))
+
+
+def _write_state(w: RunWrite, routed: dict[UUID, UUID | None], names: dict[UUID, str]) -> RunWrite:
+    state = WRITE_STATE.get(w.outcome)
+    if w.kind == "screening" and w.decision is not None:
+        state = "declined" if w.decision in ("rejected", "dismissed") else "approved"
+    proposal = w.id if w.kind == "proposal" else None
+    approver: str | None = None
+    who = routed.get(w.id) if proposal is not None else None
+    if who is not None and state == "waiting":
+        approver = names.get(who, "Former member")
+    return replace(w, state=state, approver_name=approver, proposal_id=proposal)
 
 
 # --- C6 v1 run items (TASK-5001; P-09 Story 1.3 and 8.1) ------------------------------------
 
-ItemKind = Literal["tool_card", "narration", "decision", "failure"]
+# Legacy kinds (read-time adapter), then the C6 v2 wire set a v2 run's events carry (P-09-T07).
+ItemKind = Literal[
+    "tool_card", "narration", "decision", "failure",
+    "user", "line", "block", "tool", "progress", "question", "answer", "error", "plan",
+    "approval", "decision_ref", "artifact", "run_card", "notice",
+]  # fmt: skip
 _ITEM_ORDER: Final = ("tool_card", "narration", "decision", "failure")
 
 
@@ -642,6 +939,8 @@ class RunItem:
     actor: str | None
     ref_type: str | None
     ref_id: UUID | None
+    # A v2 item's AgentBlocks as stored; the route validates them (P-09-T03) or drops them.
+    blocks: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -661,6 +960,11 @@ async def items_for(ctx: AuthContext, run_id: UUID, after_seq: int) -> RunItems:
         raise NotFound
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
     summary = await _summary_v1(ctx, run, names)
+    async with tenant_session(ctx.tenant) as session:
+        facts = (await v2_facts(session, [run.id])).get(run.id)
+        found = await v2_items(session, run.id, after_seq) if facts and facts.v2 else None
+    if found is not None:
+        return await _v2_run_items(ctx, engagement_id, summary, names, *found)
     async with tenant_session(ctx.tenant) as session:
         writes = await run_writes(session, run.id)
         results = await screening_results_of_run(session, run.id)
@@ -747,6 +1051,44 @@ async def items_for(ctx: AuthContext, run_id: UUID, after_seq: int) -> RunItems:
     return RunItems(summary, items, last, resync)
 
 
+# DEC-87: what a metadata reader sees of a v2 run's items: the kind and its code, no words, no
+# blocks, no record references.
+_CONTENT_KINDS: Final = frozenset({"line", "block", "user", "answer", "question"})
+
+
+async def _v2_run_items(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    summary: RunSummary,
+    names: dict[UUID, str],
+    items: Sequence[V2ItemT],
+    last: int,
+    resync: bool,
+) -> RunItems:
+    out = [
+        RunItem(
+            i.seq,
+            cast(ItemKind, i.kind),
+            i.at,
+            i.code,
+            i.outcome,
+            i.detail,
+            None if i.actor_user_id is None else names.get(i.actor_user_id, "Former member"),
+            i.ref_type,
+            i.ref_id,
+            i.blocks,
+        )
+        for i in items
+    ]
+    if await projection_for(ctx, engagement_id) == "metadata":
+        out = [
+            replace(i, detail=None, ref_id=None, blocks=None)
+            for i in out
+            if i.kind not in _CONTENT_KINDS
+        ]
+    return RunItems(summary, out, last, resync)
+
+
 def page_items(raw: Sequence[RunItem], after_seq: int) -> tuple[list[RunItem], int, bool]:
     """Number items by time (the tool card first at its instant) and keep those after
     `after_seq`; a client ahead of the server gets everything back with `resync`."""
@@ -765,6 +1107,7 @@ __all__: Sequence[str] = [
     "records_read_for",
     "run_view",
     "runs_for",
+    "step_detail",
     "trace_for",
     "writes_for",
 ]

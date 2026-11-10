@@ -51,7 +51,7 @@ test.describe("J06", () => {
     await journey.as(
       "samuel-ito",
       "/tax-returns/_returnId_?ov=checkpoints:tax_return:_returnId_",
-      { scenario: "TAX-02:j06", flags: ["tax.returns_v1", "review.checkpoints"] },
+      { scenario: "TAX-02:j06", flags: ["review.checkpoints"] },
     );
     await journey.step(
       "J06 coordination: the import is pending (SHL-16, import author)",

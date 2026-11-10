@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -62,7 +62,7 @@ from abacus.kernel._statuses import (
 )
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import system_now
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import assurance_item_id, get_ref
@@ -75,7 +75,7 @@ from abacus.modules.identity.api import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
     from abacus.modules.assurance.compute.materiality import Option as MaterialityOption
     from abacus.modules.assurance.compute.materiality import Thresholds as MaterialityThresholds
@@ -432,6 +432,8 @@ class RegisterOut(BaseModel):
     register_hash: Hash
     approved_card_id: Annotated[UUID | None, classified("internal")]
     allowed_actions: Actions
+    # AUD-08 e (A-04-T29): the re-draft after Internal Control is running; the page polls.
+    revising: Annotated[bool, classified("internal")] = False
 
 
 class RiskVersionOut(BaseModel):
@@ -442,6 +444,28 @@ class RiskVersionOut(BaseModel):
     by_name: Annotated[str, classified("internal")]  # "Marcus Delaney via Agent" (INV-5)
 
 
+class SuggestedResponseOut(BaseModel):
+    """A drafted response waiting for a person (AUD-08 f; DEC-2480): nothing is linked yet."""
+
+    model_config = ConfigDict(frozen=True)
+
+    suggestion_id: Annotated[UUID, classified("internal")]
+    target_ref: Annotated[str, classified("internal")]
+    citations: Annotated[int, Field(ge=0), classified("internal")]
+    version: Annotated[int, Field(ge=1), classified("internal")]
+
+
+class SuggestedRationaleOut(BaseModel):
+    """A drafted rationale waiting for a person (AUD-08 f; DEC-2481): the row holds none of it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    suggestion_id: Annotated[UUID, classified("internal")]
+    text: Annotated[str, Field(max_length=20_000), classified("confidential")]
+    citations: Annotated[int, Field(ge=0), classified("internal")]
+    version: Annotated[int, Field(ge=1), classified("internal")]
+
+
 class RiskDrawerOut(BaseModel):
     """The O2 drawer `?ov=risk:<code>`: factors, rationale, citations and versions (AUD-08 b)."""
 
@@ -449,11 +473,17 @@ class RiskDrawerOut(BaseModel):
 
     risk: Annotated[RegisterRiskOut, classified("confidential")]
     rationale: Annotated[str | None, Field(max_length=20_000), classified("confidential")]
-    rationale_suggestion_id: Annotated[UUID | None, classified("internal")]
     citation_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")]
     versions: Annotated[list[RiskVersionOut], classified("internal")]
+    # The awaiting `significant_risk` card over this row: Remind is C3's notify on it, and the
+    # reserved person's Approve opens it (AC4.3; DEC-2484).
+    pending_card_id: Annotated[UUID | None, classified("internal")] = None
     routed_to_name: Annotated[str | None, classified("internal")]
     routed_at: Annotated[datetime | None, classified("internal")]
+    response_suggestion: Annotated[SuggestedResponseOut | None, classified("internal")] = None
+    rationale_suggestion: Annotated[SuggestedRationaleOut | None, classified("confidential")] = (
+        None
+    )
 
 
 class RiskCreateIn(BaseModel):
@@ -513,6 +543,8 @@ class LinkCellOut(BaseModel):
     risk_code: Annotated[str, classified("internal")]
     target_ref: Annotated[str, classified("internal")]
     state: Annotated[RiskLinkageStatus, classified("internal")]
+    # A `suggested` cell: the pending suggestion a person adopts or discards (A-04-T24).
+    suggestion_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class LinkageOut(BaseModel):
@@ -728,6 +760,9 @@ class ControlExceptionOut(BaseModel):
     description: Annotated[str, classified("confidential")]
     proposed_severity: Annotated[Proposable | None, classified("internal")]
     concluded_severity: Annotated[DeficiencySeverityStatus | None, classified("internal")]
+    concluded_by_initials: Annotated[str | None, Field(max_length=8), classified("internal")] = (
+        None
+    )
     disposition: Annotated[ControlExceptionDispositionStatus, classified("internal")]
     coso_component: Annotated[CosoComponent | None, classified("internal")]  # 0663
     misstatement_candidate_amount: Annotated[Decimal | None, classified("confidential")]
@@ -909,6 +944,15 @@ class CuecPatchIn(BaseModel):
     evidence_version_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
 
 
+class SocExceptionPatchIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    impact: Annotated[Literal["low", "high"], classified("internal")]
+    impact_rationale: Annotated[str | None, Field(max_length=2000), classified("confidential")] = (
+        None
+    )
+
+
 class SocRequestsIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -936,10 +980,6 @@ async def _gate(
     states = [await flag_enabled(ctx.tenant, f) for f in flags]
     if not (any(states) if any_of else all(states)):
         raise NotFound(flags[0].name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 async def _soc_out(ctx: AuthContext, engagement_id: UUID, found: object) -> SocReportOut:
@@ -1044,18 +1084,24 @@ async def _exception_actions(ctx: AuthContext, engagement_id: UUID) -> list[Plan
     ]
 
 
-def _exception_out(e: object, actions: list[PlanningAction]) -> ControlExceptionOut:
-    """No concluded severity here: A-06's record supplies it once it registers (AC6.7)."""
+def _exception_out(
+    e: object,
+    actions: list[PlanningAction],
+    concluded: Mapping[UUID, tuple[str, str | None]] | None = None,
+) -> ControlExceptionOut:
+    """`concluded`: A-06's record, by the finding the exception routed to (AC6.7; DEC-2362)."""
     from abacus.modules.assurance.internal_control import ControlException
 
     row = cast(ControlException, e)
+    severity, initials = (concluded or {}).get(row.routed_ref or row.id, (None, None))
     return ControlExceptionOut(
         sheet_row=row.sheet_row,
         address=row.address,
         matter=row.matter,
         description=row.description,
         proposed_severity=cast(Proposable | None, row.proposed_severity),
-        concluded_severity=None,
+        concluded_severity=cast(DeficiencySeverityStatus | None, severity),
+        concluded_by_initials=initials,
         disposition=ControlExceptionDispositionStatus(row.disposition),
         coso_component=cast(CosoComponent, row.coso_component),
         misstatement_candidate_amount=row.misstatement_candidate_amount,
@@ -1359,14 +1405,30 @@ async def _drawer_out(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> R
     return RiskDrawerOut(
         risk=_risk_out(found.risk, found.linked, found.actions),
         rationale=found.risk.rationale,
-        rationale_suggestion_id=found.rationale_suggestion_id,
         citation_ids=list(found.citation_ids),
         versions=[
             RiskVersionOut(version_no=v.version_no, at=v.at, by_name=v.by_name)
             for v in found.versions
         ],
-        routed_to_name=None,  # the significant_risk card (A-04-T18)
-        routed_at=None,
+        pending_card_id=found.pending_card_id,
+        routed_to_name=found.routed_to_name,
+        routed_at=found.routed_at,
+        response_suggestion=None
+        if found.response_suggestion is None
+        else SuggestedResponseOut(
+            suggestion_id=found.response_suggestion.suggestion_id,
+            target_ref=found.response_suggestion.target_ref,
+            citations=found.response_suggestion.citations,
+            version=found.response_suggestion.version,
+        ),
+        rationale_suggestion=None
+        if found.rationale_suggestion is None
+        else SuggestedRationaleOut(
+            suggestion_id=found.rationale_suggestion.suggestion_id,
+            text=found.rationale_suggestion.text,
+            citations=found.rationale_suggestion.citations,
+            version=found.rationale_suggestion.version,
+        ),
     )
 
 
@@ -1386,7 +1448,12 @@ async def _linkage_out(ctx: AuthContext, engagement_id: UUID) -> LinkageOut:
             for t in found.targets
         ],
         cells=[
-            LinkCellOut(risk_code=c, target_ref=ref, state=cast(RiskLinkageStatus, st))
+            LinkCellOut(
+                risk_code=c,
+                target_ref=ref,
+                state=cast(RiskLinkageStatus, st),
+                suggestion_id=found.suggestions.get((c, ref)) if st == "suggested" else None,
+            )
             for c, ref, st in found.cells
         ],
     )
@@ -1396,11 +1463,12 @@ async def _linkage_out(ctx: AuthContext, engagement_id: UUID) -> LinkageOut:
 async def risk_register_route(engagement_id: UUID, ctx: Ctx) -> RegisterOut:
     """The register with its code tally; no "$" anywhere (AC4.1; T13)."""
     await _gate(ctx, engagement_id, "risk.read", _RR)
-    from abacus.modules.assurance import risks
+    from abacus.modules.assurance import ic_redraft, risks
 
     found = await risks.register(ctx, engagement_id)
     t = found.tally
     return RegisterOut(
+        revising=await ic_redraft.revising(ctx, engagement_id),
         tally=TallyOut(
             risks=t.risks,
             significant=t.significant,
@@ -1841,9 +1909,13 @@ async def control_exceptions_route(engagement_id: UUID, ctx: Ctx) -> ListPage[Co
     """The Exceptions sheet with Sheet!Cell addresses (AC6.2; T25)."""
     await _gate(ctx, engagement_id, "control.read", _IC)
     from abacus.modules.assurance import internal_control as ic
+    from abacus.modules.assurance.findings import concluded_severities
 
     actions = await _exception_actions(ctx, engagement_id)
-    found = [_exception_out(e, actions) for e in await ic.exceptions(ctx, engagement_id)]
+    concluded = await concluded_severities(ctx.tenant, engagement_id)
+    found = [
+        _exception_out(e, actions, concluded) for e in await ic.exceptions(ctx, engagement_id)
+    ]
     return ListPage[ControlExceptionOut](items=found, total=len(found))
 
 
@@ -2109,7 +2181,60 @@ async def soc_report_draft_route(
     """The SOC 1 reader run (mode `soc1`): suggestions with page citations (AC7.6; T35)."""
     await _gate(ctx, engagement_id, "workpaper.draft", _SO)
     await _gate(ctx, engagement_id, "workpaper.draft", WORKPAPERS_DRAFTING)
-    _not_yet()
+    from abacus.modules.agents.api import start_section_draft
+    from abacus.modules.assurance import soc1_mode, soc_reports
+    from abacus.modules.workpapers.api import paper_of_kind
+
+    await soc_reports.report(ctx, engagement_id, soc_report_id)  # 404 for another engagement's
+    paper = await paper_of_kind(ctx, engagement_id, "service_organizations")
+    run_id = await start_section_draft(
+        ctx, engagement_id, paper, soc1_mode.MODE, None, idempotency_key
+    )
+    return RunStartedOut(run_id=run_id)
+
+
+@router.patch(
+    "/soc-reports/{soc_report_id}/exceptions/{co_ref}",
+    action="soc_report.evaluate",
+    response_model=SocReportOut,
+    errors=(409,),
+)
+async def soc_exception_edit_route(
+    engagement_id: UUID,
+    soc_report_id: UUID,
+    co_ref: Annotated[str, Path(min_length=1, max_length=40)],
+    body: SocExceptionPatchIn,
+    ctx: Ctx,
+) -> SocReportOut:
+    """A person adopts an exception's impact (AUD-10 e; DEC-2355): the mode only proposes it."""
+    await _gate(ctx, engagement_id, "soc_report.evaluate", _SO)
+    from abacus.modules.assurance import soc_reports
+
+    found = await soc_reports.set_exception_impact(
+        ctx, engagement_id, soc_report_id, co_ref, body.impact, body.impact_rationale
+    )
+    return await _soc_out(ctx, engagement_id, found)
+
+
+@router.post(
+    "/soc-reports/{soc_report_id}/exceptions/{co_ref}/send-to-findings",
+    action="soc_report.evaluate",
+    response_model=SocReportOut,
+    status_code=201,
+    errors=(409, 503),
+)
+async def soc_exception_route_route(
+    engagement_id: UUID,
+    soc_report_id: UUID,
+    co_ref: Annotated[str, Path(min_length=1, max_length=40)],
+    ctx: Ctx,
+) -> SocReportOut:
+    """AC7.5: a High-impact exception links to Findings through the exception router."""
+    await _gate(ctx, engagement_id, "soc_report.evaluate", _SO)
+    from abacus.modules.assurance import soc_reports
+
+    found = await soc_reports.route_exception(ctx, engagement_id, soc_report_id, co_ref)
+    return await _soc_out(ctx, engagement_id, found)
 
 
 @router.post(

@@ -29,6 +29,7 @@ Part 1 (P-04-T07). Every route is behind `review.grammar_api`. Off, it answers 4
 | Raise | `POST /v1/review-notes` | `review_note.raise` | engagement partner, manager, senior, reviewer | denied |
 | Respond | `POST /v1/review-notes/{note_id}/respond` | `review_note.respond` | engagement partner, manager, senior, staff, reviewer | denied |
 | Clear | `POST /v1/review-notes/{note_id}/clear` | `review_note.clear` | engagement partner, manager, senior, reviewer; only the raiser (service) | denied (and the event's CHECK) |
+| Reopen | `POST /v1/review-notes/{note_id}/reopen` | `review_note.clear` | as clear; only the raiser or the engagement partner (service); `body` required (why); a note that isn't cleared answers 409 | denied |
 | Withdraw | `POST /v1/review-notes/{note_id}/withdraw` | `review_note.withdraw` | engagement partner, manager, senior, reviewer; only the raiser (service) | denied |
 | What waits on me | `GET /v1/human-gates?assignee=me&kind=&engagement_id=&cursor=&limit=` | `human_gate.read` | firm admin, practice leader (in scope), quality partner, engagement partner, manager, senior, staff, reviewer, EQR reviewer | denied |
 
@@ -143,7 +144,7 @@ Code: `backend/src/abacus/modules/review/contract.py`.
 **Review notes**
 
 - **`ReviewNoteItemOut`**, a list row. Internal: `id`, `engagement_id`, `target_type`, `target_id`, `status`, `raised_by_user_id`, `raised_by_initials`, `raised_at`, `assignee_user_id`, `allowed_actions`. Confidential: `anchor {kind, ref}`, where `kind` is `cell`, `field`, `section` or `region` and `ref` is, for example, `RA!C14`.
-- Bodies are sealed and Restricted. **List rows never carry a body.** `ReviewNoteDetailOut` (the detail, and the response of every write) carries `note`, `body` (Restricted) and `events[] {event, body (Restricted), actor_user_id, actor_name, at}`. `event` is one of `raised`, `responded`, `cleared`, `closed`, `withdrawn` or `reopened`.
+- Bodies are sealed and Restricted. **List rows never carry a body.** `ReviewNoteDetailOut` (the detail, and the response of every write) carries `note`, `body` (Restricted) and `events[] {event, body (Restricted), actor_user_id, actor_name, at}`. `event` is one of `raised`, `responded`, `cleared`, `closed`, `withdrawn` or `reopened`. `paper_changed_after_signoff` (Internal, A-06-T24) is true when a signed level on the note's paper is stale, for AUD-17's amber notice. `allowed_actions` offers `review_note.reopen` on a cleared note to the raiser or the engagement partner.
 - **`RaiseReviewNoteIn`**: `target_type`, `target_id`, `anchor?` (Confidential), `body` (Restricted, 1 to 2,000 characters, no control characters) and `assignee_user_id?`.
 - **`ReviewNoteEventIn`**: `body?` (Restricted).
 - The list is the P-36 envelope. `counts` are per status.

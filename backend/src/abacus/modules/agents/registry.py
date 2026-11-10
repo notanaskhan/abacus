@@ -9,6 +9,7 @@ from __future__ import annotations
 # The tables this module owns; no other module reads or writes them (ADR-008).
 TABLES: frozenset[str] = frozenset(
     {
+        "agent_feedback",
         "autonomy_policy_drafts",  # G-02-T23 (0272): the AI policy's draft and versions
         "autonomy_policy_versions",
         "engagement_agents",  # SPEC-027 (TASK-050)
@@ -40,11 +41,27 @@ TABLES: frozenset[str] = frozenset(
         "proposal_rows",
         "proposal_decisions",
         "agent_run_records",  # Q-02-T41 (0171, ADR-169 §3): one per ended specialist run
+        "tenant_counters",  # P-10-T02 (0680): `run_number` per tenant
+        # P-10-T03 (0681): the runtime; the durable trace, kept 7 years or engagement retention.
+        "agent_plans",
+        "agent_run_steps",
+        "agent_questions",
+        "run_events",
+        "run_artifacts",
+        "run_sign_offs",
+        "engagement_ai_settings",
+        "agent_tool_calls",  # P-10-T22 (0750): C17's idempotency key, claimed then done once
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset(
     {
+        # P-10-T03 (0681): a plan decision is a new version; `run_events` prunes through its
+        # definer function only.
+        "agent_plans",
+        "run_events",
+        "run_sign_offs",
+        "agent_feedback",
         "agent_activity",  # SPEC-027 (TASK-050): the feed is never rewritten
         "upload_reviews",  # SPEC-030 (TASK-058): proposals, as made
         "upload_review_flags",  # SPEC-030 (TASK-058): proposals, as made
@@ -69,6 +86,38 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "agent_plans": frozenset(
+        {"id", "tenant_id", "run_id", "version", "steps", "sources", "state", "decided_by"}
+        | {"decided_at", "standing_schedule_id"}
+    ),
+    "agent_run_steps": frozenset(
+        {"id", "tenant_id", "run_id", "seq", "plan_step_key", "level", "kind", "tool_name"}
+        | {"args_summary", "args_hash", "state", "needs", "retry_of_step_id"}
+        | {"auto_started_by_trigger_id"}
+    ),
+    "agent_questions": frozenset(
+        {"id", "tenant_id", "run_id", "step_id", "steps", "recommended", "other_allowed"}
+    ),
+    "run_events": frozenset(
+        {"tenant_id", "run_id", "session_id", "run_seq", "session_seq", "type", "payload"}
+    ),
+    "run_artifacts": frozenset(
+        {"id", "tenant_id", "run_id", "kind", "name", "size_bytes", "storage_key", "cites"}
+    ),
+    "run_sign_offs": frozenset(
+        {"id", "tenant_id", "run_id", "signed_by", "open_issues_ack", "decisions_ack"}
+    ),
+    "agent_feedback": frozenset(
+        {"id", "tenant_id", "target_kind", "target_id", "rating", "reason_code", "created_by"}
+    ),
+    "engagement_ai_settings": frozenset(
+        {"tenant_id", "engagement_id", "auto_mode", "auto_mode_set_by", "auto_mode_set_at"}
+    ),
+    "tenant_counters": frozenset({"tenant_id", "name", "value"}),
+    # P-10-T22 (0750): the claim; state, result and completion are the runtime's update.
+    "agent_tool_calls": frozenset(
+        {"id", "tenant_id", "run_id", "step_seq", "attempt", "tool_name", "args_hash"}
+    ),
     # G-02-T23 (0272): the draft (one per firm) and the requested versions.
     "autonomy_policy_drafts": frozenset(
         {"tenant_id", "base_version_no", "sections", "schema_version", "updated_by"}
@@ -164,6 +213,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
         | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
         | {"inbox_attachment_id"}  # N-01-T22: an intake-mode run's attachment
+        # P-10-T02 (0680, ADR-169): run v2; a sync trigger keeps `status` and `state` together.
+        | {"state", "state_reason", "blocked_on", "run_number", "session_id", "definition_id"}
+        | {"definition_version", "mode", "trigger_kind", "trigger_ref", "parent_run_id"}
+        | {"work_item_ref", "subject_ref", "inputs", "auto_mode", "runs_as_user_id", "test"}
+        | {"client_scope", "region", "route", "terms_version"}
     ),
     "screening_results": frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}
@@ -211,7 +265,27 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "agent_runs": frozenset(
         {"status", "context_hash", "output", "failure_code", "finished_at"}
         | {"queued_reason", "estimated_start_at"}
+        # P-10-T02 (0680): the run v2 columns a run moves through.
+        | {"state", "state_reason", "blocked_on", "session_id", "plan_id", "client_scope"}
+        | {"records_read", "citations_count", "writes_done", "writes_waiting", "agent_ms"}
+        | {"agent_minutes", "cost_usd", "region", "route", "terms_version", "signed_off_by"}
+        | {"signed_off_at", "event_seq"}
+        # P-10-T14 (0711): the legacy backfill numbers pre-v2 runs; set once (trigger).
+        | {"run_number"}
     ),
+    "tenant_counters": frozenset({"value"}),
+    # P-10-T03 (0681).
+    "agent_run_steps": frozenset(
+        {"state", "needs", "started_at", "ended_at", "active_ms", "records_read"}
+        | {"outputs_summary", "error_code", "error_detail_safe", "usage_record_ids"}
+        | {"sample_refs", "source_ref"}  # P-09-T08 (0751): the trace's samples and source
+    ),
+    "agent_questions": frozenset(
+        {"state", "answer", "answered_by", "answered_at", "skip_default_applied"}
+    ),
+    "run_artifacts": frozenset({"version", "state", "saved_to"}),
+    "engagement_ai_settings": frozenset({"auto_mode", "auto_mode_set_by", "auto_mode_set_at"}),
+    "agent_tool_calls": frozenset({"state", "result", "completed_at"}),  # P-10-T22 (0750)
     # SPEC-009: document status, and each chunk's vector written once.
     "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),
     "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),

@@ -4,7 +4,7 @@ title: A-04-T19 AUD-05 narrative extras — fraud brainstorm, minutes gate, inqu
 spec: SPEC-620
 acceptance_criteria: [AC-12, AC-13, AC-14]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T19
 branch: s25-a04-t19 (stacked on s25-n04-t05 for the migration chain)

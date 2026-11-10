@@ -33,6 +33,9 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", "/v1/findings/{finding_id}/convert-to-misstatement"): "finding.convert",
     ("post", "/v1/findings/{finding_id}/resolve"): "finding.resolve",
     ("post", "/v1/findings/{finding_id}/request-decision"): "finding.request_decision",
+    ("get", f"{W}/consultations"): "consultation.read",
+    ("post", f"{W}/consultations"): "consultation.create",
+    ("post", "/v1/consultations/{consultation_id}/conclude"): "consultation.conclude",
     ("get", f"{W}/misstatements"): "misstatement.read",
     ("post", "/v1/misstatements/{misstatement_id}/pass-to-sum"): "misstatement.pass_to_sum",
     ("get", f"{W}/sum"): "sum.read",
@@ -112,6 +115,9 @@ def test_the_sum_example_is_northwinds() -> None:
     assert (found.pct_of_pm, found.fill_pct_of_overall) == (Decimal("18.1"), Decimal("13.5"))
 
 
-def test_the_flag_defaults_off() -> None:
-    flag = _flags.FLAGS["assurance.completion"]
-    assert flag.kind == "boolean" and str(flag.default).lower() == "false"
+def test_the_retired_flag_is_gone_and_the_entitlement_gates() -> None:
+    # A-06-T37 (DEC-2714): `assurance.completion` retired into `assurance_completion`.
+    from abacus.modules.platform.entitlements import MODULES
+
+    assert "assurance.completion" not in _flags.FLAGS
+    assert "assurance_completion" in MODULES

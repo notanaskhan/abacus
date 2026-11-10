@@ -377,4 +377,126 @@ test.describe("J03 planning (A-04-T34)", () => {
       await journey.as("hannah-leclerc", "/audits", { clock: DEMO_INSTANT });
     },
   );
+
+  test("j03 7, 7b, 12, 13: the plan's TB, profile, testing and contributions", async ({
+    journey,
+  }) => {
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-06&st=a&section=ebp_06", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 7: EBP-06 agrees the trust report", async (page) => {
+      await expect(page.locator("[data-screen='EBP-06']").first()).toBeVisible();
+    });
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-01&st=a&section=ebp_01", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 7b: the plan profile", async (page) => {
+      await expect(page.locator("[data-screen='EBP-01']").first()).toBeVisible();
+    });
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-03&st=a&section=ebp_03", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 12: eligibility testing", async (page) => {
+      await expect(page.locator("[data-screen='EBP-03']").first()).toBeVisible();
+    });
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-04&st=a&section=ebp_04", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 13: contributions and remittance", async (page) => {
+      await expect(page.locator("[data-screen='EBP-04']").first()).toBeVisible();
+    });
+  });
+});
+
+// A-06-T35 (TASK-6121): J03 completion steps 13, 14 and 16 on AUD-15, AUD-16, AUD-17 and AUD-20
+// in fixture mode, each with axeStep and assertInvariants (the journey harness). The full-stack
+// run waits for A-08's AUD-26 (the cockpit's completion band on staging): fixme off fixture.
+test.describe("J03 completion (A-06-T35)", () => {
+  const AUDIT = "/audits/_auditId_";
+  const FULL_STACK = "the full-stack run waits for A-08's AUD-26 (S35)";
+  const COCKPIT = ["audits.cockpit"]; // E0 leaves the cockpit off; its fixtures turn it on
+
+  test("j03 13: the findings and misstatements tabs read the SUM (AUD-16 a)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", FULL_STACK);
+    await journey.as("hannah-leclerc", `${AUDIT}/misstatements`, {
+      scenario: "AUD-16:a",
+      flags: COCKPIT,
+    });
+    await journey.step("J03 step 13: the summary of uncorrected misstatements", async (page) => {
+      await expect(page.getByText("Summary of uncorrected misstatements").first()).toBeVisible();
+    });
+  });
+
+  test("j03 14: review notes and the sign-off matrix (AUD-17 a)", async ({ journey }) => {
+    test.fixme(journey.project !== "fixture", FULL_STACK);
+    await journey.as("hannah-leclerc", `${AUDIT}/review-notes`, {
+      scenario: "AUD-17:a",
+      flags: COCKPIT,
+    });
+    await journey.step("J03 step 14: the sign-off matrix", async (page) => {
+      await expect(page.getByText("Sign-off matrix").first()).toBeVisible();
+    });
+  });
+
+  test("j03 16: the statements tie 63 of 63 and the checklist counts 142 (AUD-20 a)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", FULL_STACK);
+    await journey.as("hannah-leclerc", `${AUDIT}/fs-disclosure`, {
+      scenario: "AUD-20:a",
+      flags: COCKPIT,
+    });
+    await journey.step(
+      "J03 step 16: every line ties and the checklist is 142 items",
+      async (page) => {
+        await expect(page.locator("[data-tie]")).toHaveText("63 of 63 tie");
+        await expect(page.locator("[data-summary]")).toContainText("142 items");
+      },
+    );
+  });
+});
+
+// A-05-T61 (TASK-6221): J03 12a (participant accounts, EBP-08) and 12b (the Form 5500 tie-out,
+// EBP-07) in fixture mode on Northwind's cockpit, each with axeStep and INV-1 to INV-5 (the journey
+// harness). The staging walk waits for the EBP batch's deploy and `ebp.modules` on PF-X1: fixme off
+// fixture.
+test.describe("J03 EBP-08 and EBP-07 (A-05-T61)", () => {
+  const STAGING = "the staging walk waits for the S31 batch on staging (A-05-T61; DEC-1389 gates)";
+
+  test("j03 12a: Hannah reads the participant accounts summary (EBP-08 a)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", STAGING);
+    await journey.as("hannah-leclerc", "/audits/_auditId_?screen=EBP-08&st=a&section=ebp_08", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 12a: the participant accounts summary", async (page) => {
+      await expect(page.locator("[data-screen='EBP-08']").first()).toBeVisible();
+    });
+  });
+
+  test("j03 12b: the Form 5500 ties except the 48,600 receivable, and Note 8 explains it (EBP-07 a)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", STAGING);
+    await journey.as("hannah-leclerc", "/audits/_auditId_?screen=EBP-07&st=a&section=ebp_07", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 12b: Schedule H against the statements", async (page) => {
+      const net = page.locator("[data-line='1l']");
+      await expect(net).toContainText("16,812,400");
+      await expect(net).toContainText("48,600");
+      await expect(page.locator("[data-ebp07='note']")).toContainText("Send note to AUD-20");
+      // No "$" in the statement table (EBP-07 AVOID).
+      await expect(page.locator("[data-ebp07='schedule-h']")).not.toContainText("$");
+    });
+    await journey.as("hannah-leclerc", "/audits/_auditId_?screen=EBP-07&st=d&section=ebp_07", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 12b: before Summit's draft arrives (EBP-07 d)", async (page) => {
+      await expect(page.getByText("Draft Form 5500 not received").first()).toBeVisible();
+    });
+  });
 });

@@ -5,12 +5,15 @@
   insert-only; the newest is current).
 - **Proposed items.** The notice's proposed line changes and payer items, from the form map
   (`code_map`) or a person's cited entry (`notice_proposed_items`; a correction supersedes).
-- **Run.** Code compares them (`compute.underreporter`, `compute.bracket`) and writes an
-  insert-only `notice_analyses` version, **idempotent on `inputs_hash`** (the same inputs answer
-  the existing version). The agent step is a registered hook that fails closed: no hook, or a
-  hook that refuses, leaves the stage `off` or `refused` and no recommendation; a recommendation
-  is recorded only from a `live` stage (0650's CHECK), and only then is the card's option
-  preselected.
+- **Run.** A person starts it: a `running` version is written and `NoticeAnalysisWorkflow` does
+  the work in the background (DEC-2359), so NOT-02 polls. Code compares them
+  (`compute.underreporter`, `compute.bracket`) and writes an insert-only `notice_analyses` version,
+  **idempotent on `inputs_hash`** (the same inputs answer the existing version). The agent step is
+  a registered hook that fails closed: no hook, or a hook that refuses, leaves the stage `off` or
+  `refused` and no recommendation; a recommendation is recorded only from a `live` stage (0650's
+  CHECK), and only then is the card's option preselected. Each payer amount is located on the word
+  layers of the notice's files (the letter, then attached 1099s) and recorded as a verified
+  citation; T-01's newest transcript comparison rides on the version (DEC-2353).
 - **Position.** `notice_position` is a C3 card with code options (agree, partially agree,
   disagree), reserved to the notice's **signer**; its applier records the position on the notice.
   Decision requests and their notes are insert-only (`notice_notes`, sealed text).
@@ -36,9 +39,24 @@ from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.engagements.api import holders_of
+from abacus.modules.evidence.api import (
+    CitationAnchor,
+    CitationClaim,
+    PageWords,
+    record_citations,
+    version_word_layers,
+)
+from abacus.modules.identity.api import Actor, AuthContext, system_context_for_run
 from abacus.modules.notices.compute import bracket, underreporter
-from abacus.modules.notices.service import notice
+from abacus.modules.notices.events import NoticeAnalysisRequested
+from abacus.modules.notices.service import (
+    Notice,
+    move,
+    notice,
+    notice_document_versions,
+    notice_for_run,
+)
 from abacus.modules.review.api import (
     AppliedDecision,
     CardOption,
@@ -48,6 +66,7 @@ from abacus.modules.review.api import (
     raise_decision_card,
     register_decision_kind,
 )
+from abacus.modules.tax.api import transcript_comparison_lines
 
 POSITION_KIND: Final = "notice_position"
 POSITIONS: Final = {
@@ -309,68 +328,308 @@ def compare(
     }
 
 
-async def run(ctx: AuthContext, notice_id: UUID) -> tuple[int, bool]:
-    """Compute and record a version; the same inputs return the existing version (reused)."""
-    found = await notice(ctx, notice_id)
-    snapshot, items = await _inputs(ctx.tenant, found.id)
+_AMOUNT_ENDS: Final = ",.;:)"
+
+
+def amount_words(amount: Decimal) -> str:
+    """As a form prints it: 1,870.00."""
+    return f"{amount:,.2f}"
+
+
+def word_box(layer: PageWords, amount: Decimal) -> list[float] | None:
+    """The first word on the page that is this amount, by code (a "$" and a closing mark don't
+    count); None when the page doesn't print it."""
+    printed = amount_words(amount)
+    for word in layer.words:
+        if word.text.lstrip("$").rstrip(_AMOUNT_ENDS) == printed:
+            return [word.x0, word.top, word.x1, word.bottom]
+    return None
+
+
+async def _locate_payer_amounts(
+    actor: Actor,
+    found: Notice,
+    items: Sequence[Any],  # Any: database rows
+    infos: list[dict[str, Any]],  # Any: stored rows
+) -> None:
+    """N-04 US-4.3: each payer amount cites where it is printed. A person's cited entry keeps its
+    citation; a code-map item is looked for on the word layers of the notice's files, the letter
+    then the attached 1099s, and recorded as a verified `document_text` citation by P-03's
+    verifier. One it can't find stays uncited (the row says so); it's never guessed at."""
+    by_key = [i for i in items if i["kind"] == "payer_item"]
+    versions = await notice_document_versions(actor.tenant, found.id)
+    for info, item in zip(infos, by_key, strict=False):
+        if item["citation_id"] is not None:
+            info["citation_id"] = str(item["citation_id"])
+            continue
+        if item["amount_irs"] is None:
+            continue
+        amount = Decimal(item["amount_irs"])
+        for version_id in versions:
+            if await _cite_on(actor, found, item["id"], version_id, amount, info):
+                break
+
+
+async def _cite_on(
+    actor: Actor,
+    found: Notice,
+    item_id: UUID,
+    version_id: UUID,
+    amount: Decimal,
+    info: dict[str, Any],  # Any: a stored row
+) -> bool:
+    for layer in await version_word_layers(actor.tenant, version_id):
+        box = word_box(layer, amount)
+        if box is None:
+            continue
+        async with uow(actor.tenant) as tx:
+            recorded = await record_citations(
+                tx,
+                actor=actor,
+                anchor=CitationAnchor(
+                    type="notice_proposed_item",
+                    id=item_id,
+                    engagement_id=found.engagement_id,
+                    work_item_id=found.id,
+                ),
+                claims=[
+                    CitationClaim(
+                        kind="document_text",
+                        locator={
+                            "evidence_version_id": str(version_id),
+                            "page": layer.page,
+                            "bbox": box,
+                        },
+                        quote=amount_words(amount),
+                    )
+                ],
+            )
+        if recorded and recorded[0].verified:
+            info["citation_id"] = str(recorded[0].id)
+            info["document_id"] = str(version_id)
+            return True
+        return False
+    return False
+
+
+async def _transcript_rows(
+    tenant: TenantContext, found: Notice
+) -> list[dict[str, Any]]:  # Any: stored rows
+    """T-01's newest wage-and-income comparison for the taxpayer's year, as statement rows."""
+    if found.client_entity_id is None or found.tax_year is None:
+        return []
+    return [
+        {
+            "key": f"transcript.{line.line_no}",
+            "label": f"{line.form} {line.payer_name or ''}".strip(),
+            "as_filed": None if line.return_amount is None else str(line.return_amount),
+            "irs": str(line.transcript_amount),
+            "difference": None if line.difference is None else str(line.difference),
+            "citation_ids": [],
+        }
+        for line in await transcript_comparison_lines(
+            tenant, found.client_entity_id, found.tax_year
+        )
+    ]
+
+
+async def _computed(
+    tenant: TenantContext, found: Notice
+) -> tuple[dict[str, Any], Sequence[Any]]:  # Any: JSON and database rows
+    snapshot, items = await _inputs(tenant, found.id)
     if not items:
         raise NothingToAnalyze
     computed = compare(snapshot, items, tax_year=found.tax_year)
-    async with tenant_session(ctx.tenant) as session:
-        existing = (
+    computed["checks"]["transcript_rows"] = await _transcript_rows(tenant, found)
+    return computed, items
+
+
+async def _newest_for(
+    tenant: TenantContext, notice_id: UUID, inputs_hash: str
+) -> tuple[int, str] | None:
+    """The newest version on these inputs and its status."""
+    async with tenant_session(tenant) as session:
+        row = (
             await session.execute(
                 text(
-                    "SELECT version FROM notice_analyses WHERE work_item_id = :w "
-                    "AND inputs_hash = :h AND status = 'ready' ORDER BY version DESC LIMIT 1"
+                    "SELECT version, status FROM notice_analyses WHERE work_item_id = :w "
+                    "AND inputs_hash = :h ORDER BY version DESC LIMIT 1"
                 ),
-                {"w": found.id, "h": computed["inputs_hash"]},
+                {"w": notice_id, "h": inputs_hash},
             )
-        ).scalar()
-    if existing is not None:
-        return int(existing), True
-    step = await _agent_step(ctx.tenant, found.id, {"inputs_hash": computed["inputs_hash"]})
+        ).first()
+    return None if row is None else (int(row.version), str(row.status))
+
+
+async def _insert_version(
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    notice_id: UUID,
+    status: str,
+    computed: dict[str, Any],  # Any: JSON for the row
+    *,
+    checks: dict[str, Any] | None = None,  # Any: JSON for the row
+    with_rows: bool = True,
+    step: AgentStep | None = None,
+) -> int:
+    version = int(
+        (
+            await tx.session.execute(
+                text(
+                    "SELECT coalesce(max(version), 0) + 1 FROM notice_analyses "
+                    "WHERE work_item_id = :w"
+                ),
+                {"w": notice_id},
+            )
+        ).scalar_one()
+    )
+    await tx.session.execute(
+        text(
+            "INSERT INTO notice_analyses (tenant_id, work_item_id, version, status, "
+            "analysis_kind, rows, information_returns, checks, sources, engine_name, "
+            "engine_version, inputs_hash, agent_run_id, agent_stage, recommended_position) "
+            "VALUES (:t, :w, :v, :status, :kind, CAST(:rows AS jsonb), CAST(:infos AS jsonb), "
+            "CAST(:checks AS jsonb), '[]'::jsonb, :en, :ev, :h, :run, :stage, :rec)"
+        ),
+        {
+            "t": tenant_id,
+            "w": notice_id,
+            "v": version,
+            "status": status,
+            "kind": computed["analysis_kind"],
+            "rows": json.dumps(computed["rows"] if with_rows else []),
+            "infos": json.dumps(computed["information_returns"] if with_rows else []),
+            "checks": json.dumps(computed["checks"] if checks is None else checks),
+            "en": ENGINE_NAME,
+            "ev": ENGINE_VERSION,
+            "h": computed["inputs_hash"],
+            "run": step.run_id if step else None,
+            "stage": step.stage if step else "off",
+            "rec": step.recommended_position if step else None,
+        },
+    )
+    return version
+
+
+async def start(ctx: AuthContext, notice_id: UUID) -> tuple[int, str, bool]:
+    """A person's Run: the version and its status, and whether it was reused. A version ready or
+    running on the same inputs answers (idempotent on `inputs_hash`); a failed one runs again.
+    The running row is the run's proof: it names who started it (SYS-001, DEC-2359)."""
+    found = await notice(ctx, notice_id)
+    computed, _items = await _computed(ctx.tenant, found)
+    newest = await _newest_for(ctx.tenant, found.id, computed["inputs_hash"])
+    if newest is not None and newest[1] in ("ready", "running"):
+        return newest[0], newest[1], True
     async with uow(ctx.tenant) as tx:
-        version = int(
-            (
-                await tx.session.execute(
-                    text(
-                        "SELECT coalesce(max(version), 0) + 1 FROM notice_analyses "
-                        "WHERE work_item_id = :w"
-                    ),
-                    {"w": found.id},
-                )
-            ).scalar_one()
+        version = await _insert_version(
+            tx,
+            ctx.tenant_id,
+            found.id,
+            "running",
+            computed,
+            checks={"initiator": str(ctx.user_id)},
+            with_rows=False,
         )
-        await tx.session.execute(
-            text(
-                "INSERT INTO notice_analyses (tenant_id, work_item_id, version, status, "
-                "analysis_kind, rows, information_returns, checks, sources, engine_name, "
-                "engine_version, inputs_hash, agent_run_id, agent_stage, recommended_position) "
-                "VALUES (:t, :w, :v, 'ready', :kind, CAST(:rows AS jsonb), CAST(:infos AS jsonb), "
-                "CAST(:checks AS jsonb), '[]'::jsonb, :en, :ev, :h, :run, :stage, :rec)"
-            ),
-            {
-                "t": ctx.tenant_id,
-                "w": found.id,
-                "v": version,
-                "kind": computed["analysis_kind"],
-                "rows": json.dumps(computed["rows"]),
-                "infos": json.dumps(computed["information_returns"]),
-                "checks": json.dumps(computed["checks"]),
-                "en": ENGINE_NAME,
-                "ev": ENGINE_VERSION,
-                "h": computed["inputs_hash"],
-                "run": step.run_id,
-                "stage": step.stage,
-                "rec": step.recommended_position,
-            },
-        )
+        # S28 partials (TASK-3396): a person's Run is what makes a classified notice Analyzing.
+        if found.status == "classified":
+            await move(tx, found, "analyzing", actor_kind="human", actor_user_id=ctx.user_id)
         tx.record(
-            "notice.analysis_recorded",
+            "notice.analysis_started",
             target=Target("notice", found.id),
             after=Ref(version=version, inputs_hash=computed["inputs_hash"]),
         )
-    return version, False
+        tx.emit(NoticeAnalysisRequested(notice_id=found.id, version=version))
+    return version, "running", False
+
+
+async def _running_row(
+    tenant: TenantContext, notice_id: UUID, version: int
+) -> tuple[UUID, UUID] | None:
+    """The running version (its id, who started it), read under the tenant's row-level security,
+    while it is still the notice's newest. None: this run has nothing left to do."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT id, status, version, checks FROM notice_analyses "
+                    "WHERE work_item_id = :w ORDER BY version DESC LIMIT 1"
+                ),
+                {"w": notice_id},
+            )
+        ).first()
+    if row is None or row.status != "running" or int(row.version) != version:
+        return None
+    return UUID(str(row.id)), UUID(str(row.checks["initiator"]))
+
+
+async def complete_run(tenant_id: UUID, notice_id: UUID, version: int) -> str:
+    """`NoticeAnalysisWorkflow`'s step, safe to retry: the ready version after the running one.
+    The citations are recorded as the platform acting for whoever started the run."""
+    tenant = TenantContext(tenant_id, "system", "notices:analysis")
+    running = await _running_row(tenant, notice_id, version)
+    found = await notice_for_run(tenant, notice_id)
+    if running is None or found is None:
+        return "gone"
+    run_id, initiator = running
+    acting = system_context_for_run(
+        tenant_id=tenant_id,
+        run_id=run_id,
+        engagement_id=found.engagement_id,
+        on_behalf_of=initiator,
+    )
+    computed, items = await _computed(acting.tenant, found)
+    await _locate_payer_amounts(acting, found, items, computed["information_returns"])
+    step = await _agent_step(
+        acting.tenant,
+        found.id,
+        {
+            "inputs_hash": computed["inputs_hash"],
+            "initiator": initiator,
+            "rows": computed["rows"],
+            "checks": computed["checks"],
+            "information_returns": computed["information_returns"],
+        },
+    )
+    async with uow(acting.tenant) as tx:
+        made = await _insert_version(tx, tenant_id, found.id, "ready", computed, step=step)
+        tx.record(
+            "notice.analysis_recorded",
+            target=Target("notice", found.id),
+            after=Ref(version=made, inputs_hash=computed["inputs_hash"]),
+        )
+    return "ready"
+
+
+async def mark_failed(tenant_id: UUID, notice_id: UUID, version: int) -> str:
+    """The run gave up: a `failed` version, so NOT-02 stops spinning and a person can run again."""
+    tenant = TenantContext(tenant_id, "system", "notices:analysis")
+    if await _running_row(tenant, notice_id, version) is None:
+        return "gone"
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT analysis_kind, inputs_hash FROM notice_analyses "
+                    "WHERE work_item_id = :w AND version = :v"
+                ),
+                {"w": notice_id, "v": version},
+            )
+        ).one()
+    failed: dict[str, Any] = {  # Any: JSON for the row
+        "analysis_kind": row.analysis_kind,
+        "inputs_hash": row.inputs_hash,
+        "rows": [],
+        "information_returns": [],
+        "checks": {},
+    }
+    async with uow(tenant) as tx:
+        made = await _insert_version(tx, tenant_id, notice_id, "failed", failed)
+        tx.record(
+            "notice.analysis_failed",
+            target=Target("notice", notice_id),
+            after=Ref(version=made, inputs_hash=row.inputs_hash),
+        )
+    return "failed"
 
 
 async def latest(
@@ -406,6 +665,8 @@ async def request_decision(ctx: AuthContext, notice_id: UUID, note: str | None) 
         kind=POSITION_KIND,
         question_key=f"notice.{found.id.hex}",
         work_item_id=found.id,
+        raised_under="notice.request_decision",  # US-5.1: the preparer asks
+        reserved_user_id=next(iter(await holders_of(ctx.tenant, found.id, "signer")), None),
     )
     if note:
         await add_note(ctx, notice_id, note, card_id)

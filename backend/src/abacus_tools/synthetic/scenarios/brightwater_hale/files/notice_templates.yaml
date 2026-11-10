@@ -1,0 +1,18 @@
+# Notice response templates (N-04-T21; DEC-2316). Firm-worded and synthetic, DB content through C11's
+# import. The agree variant's text is the firm's own; no IRS or publisher wording.
+variants:
+  - key: agree
+    name: "BH Notice Response · Agree v1"
+    paragraphs: ["We have reviewed the notice and agree with the proposed change.", "Payment is enclosed as confirmed by the taxpayers."]
+  - key: partial
+    name: "BH Notice Response · Partial v1"
+    paragraphs: ["We have reviewed the notice and agree with part of the proposed change.", "We explain below the part we do not agree with."]
+  - key: disagree
+    name: "BH Notice Response · Disagree v1"
+    paragraphs: ["We have reviewed the notice and do not agree with the proposed change.", "Our explanation and the supporting documents follow."]
+  - key: balance_due
+    name: "BH Notice Response · Balance Due v1"
+    paragraphs: ["We have reviewed the balance shown on the notice.", "The payment arrangement is described below."]
+  - key: generic
+    name: "BH Notice Response · Generic v1"
+    paragraphs: ["We are responding to the enclosed notice on behalf of the taxpayers."]

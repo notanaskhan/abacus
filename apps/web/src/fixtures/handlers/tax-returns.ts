@@ -167,6 +167,23 @@ export function taxReturnHandlers(variant?: OverviewVariant): Record<string, Fix
       const frame = frameOf(params.return_id ?? "", variant);
       return frame === undefined ? json({ detail: "not_found" }, 404) : json(frame.record);
     },
+    // T-04-T12: the review workspace's one summary read (Feld: Review 36 at the preparer's level,
+    // 4 open issues, nothing proposed: "No changes needed"; T-04 §1, TAX-04 a, TAX-06 a).
+    "GET /v1/tax/returns/{return_id}/workspace": ({ params }) => {
+      const frame = frameOf(params.return_id ?? "", variant);
+      if (frame === undefined) return json({ detail: "not_found" }, 404);
+      const feld = frame.record.row.client_name === "Jonah & Claire Feld";
+      return json({
+        return_id: params.return_id,
+        review_count: feld ? 36 : 0,
+        viewer_level: "preparer",
+        issues_open: feld ? 4 : 0,
+        checkpoints_proposed: 0,
+        k1_dependency: null,
+        assistant: "available",
+        allowed_actions: ["document.approve"],
+      });
+    },
     "GET /v1/tax-returns/{return_id}/overview": ({ params }) => {
       const frame = frameOf(params.return_id ?? "", variant);
       return frame === undefined ? json({ detail: "not_found" }, 404) : json(frame.overview);

@@ -487,6 +487,10 @@ LOWER_CASE_BY_SOURCE = {"tie", "off {amount}"}
 # compound the table spells with capitals.
 CAPITALISED_BY_SOURCE = {
     "TB-linked",
+    # TXI-01's field state names the tax engine: "Recomputed by CCH Axcess after import" (T-04-T04;
+    # verbatim from the screen contract, DEC-3019).
+    "Axcess",
+    "Notices",  # N-04's upload slot names the area: "Routed to Notices" (T-03-T01; verbatim)
     "Interim",  # AUD-06 g spells the chip "TB: Interim · 8/31/2026" (A-02-T02; verbatim, DEC-15)
     # The product's name for its one agent: AUD-08 and TPL-20 cells "Suggested by Accrued Agent"
     # (A-04-T01; verbatim, DEC-15).
@@ -594,7 +598,12 @@ HOME_OBJECTS = {
 # ---------------------------------------------------------------------------------------------
 # Fields named `state` or `status` that are not an object status.
 NOT_A_STATUS = {
+    # A-05 (EBP-08): a statement row's key, a participant status or "total", never a status.
+    "AccountGroupOut.status": "an EBP-08 statement row key (a participant status, or total)",
     "FlowStepOut.state": "position of a step in a flow (done, current, todo)",
+    # A-05-T16 (S25, DEC-2482): whether EBP-03's entry rule could be read from verified
+    # provisions (verified, unverified, unreadable); an input's state, never a status word.
+    "EntryRuleOut.state": "an input's readiness for the entry-rule computation",
     "CompleteIn.state": "free-text input, not a vocabulary",
     # C5 v1.1 portal half (P-08-T01): client-side card states, never a firm object's status.
     "PortalHomeTodoOut.state": "a to-do card's state on POR-02 (open, none, overdue)",

@@ -16,13 +16,18 @@ new content hash and version. Code computes everything the register shows (ADR-0
 Management override is never rebuttable: 422 `presumption_not_rebuttable` here and a CHECK in
 0613 (AC4.5). Approving is the partner's act on the `significant_risk` card (A-04-T18), never
 here; the agent's drafts arrive as suggestions a person adopts through the `risk` applier.
+
+A drafted response (A-04-T24; DEC-2480) is a suggestion on the risk's `response` field, one section
+code from `response_targets`. While it waits, the linkage matrix and the drawer read it from the
+suggestion, so no agent writes `risk_linkages`; adopting it writes the live link, naming the
+suggestion. Model text that is not a registered section is never drawn and never adopted.
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Final, Literal, cast
@@ -38,7 +43,7 @@ from abacus.kernel.clock import now, today
 from abacus.kernel.db import Base, TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
-from abacus.modules.agents.api import AdoptedValue
+from abacus.modules.agents.api import AdoptedValue, PendingFieldSuggestion, pending_suggestions
 from abacus.modules.assurance.events import RiskRegisterApproved
 from abacus.modules.assurance.sections import registered_sections
 from abacus.modules.engagements.api import assurance_item_id, get_ref, lock_ref
@@ -53,6 +58,7 @@ from abacus.modules.review.api import (
     ComputedCard,
     DecisionKind,
     Json,
+    awaiting_cards,
     content_hash,
     field_timeline,
     raise_decision_card,
@@ -79,6 +85,11 @@ FIELDS: Final = (
     "significance",
     "fraud",
 )
+# A drafted response lands as a live link, so it has a suggestion but no field history (A-04-T24).
+RESPONSE_FIELD: Final = "response"
+RESPONSE_KIND: Final = "workpaper"
+ADOPTABLE_FIELDS: Final = (*FIELDS, RESPONSE_FIELD)
+_RESPONSE_SCREENS: Final = ("AUD-", "EBP-")
 
 
 class RiskRow(Base):
@@ -203,13 +214,34 @@ class VersionFact:
 
 
 @dataclass(frozen=True)
+class SuggestedResponse:
+    suggestion_id: UUID
+    target_ref: str
+    citations: int
+    version: int
+
+
+@dataclass(frozen=True)
+class SuggestedRationale:
+    suggestion_id: UUID
+    text: str
+    citations: int
+    version: int
+
+
+@dataclass(frozen=True)
 class Drawer:
     risk: RiskRow
     linked: bool
-    citation_ids: tuple[UUID, ...]
-    rationale_suggestion_id: UUID | None
+    citation_ids: tuple[UUID, ...]  # the adopted rationale's
     versions: list[VersionFact]
     actions: list[str]
+    response_suggestion: SuggestedResponse | None = None
+    rationale_suggestion: SuggestedRationale | None = None
+    # The awaiting `significant_risk` card over this row, and who it waits for (AC4.3).
+    pending_card_id: UUID | None = None
+    routed_to_name: str | None = None
+    routed_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -225,6 +257,8 @@ class LinkageMatrix:
     codes: list[str]
     targets: list[LinkTarget]
     cells: list[tuple[str, str, str]]  # risk code, target ref, state
+    # (risk code, target ref) -> the pending suggestion a `suggested` cell draws (A-04-T24)
+    suggestions: dict[tuple[str, str], UUID] = field(default_factory=dict[tuple[str, str], UUID])
 
 
 @dataclass(frozen=True)
@@ -375,6 +409,15 @@ async def _actions(ctx: AuthContext, engagement_id: UUID) -> list[str]:
     return [a for a in ("risk.edit", "risk.link", "risk.route_for_approval") if a in can]
 
 
+async def linked_refs(tenant: TenantContext, work_item_id: UUID) -> dict[UUID, list[str]]:
+    """Each risk's live responses, for the risk mode's cells (A-04-T24)."""
+    refs: dict[UUID, list[str]] = {}
+    for link in await _links(tenant, work_item_id):
+        if link.state == "linked":
+            refs.setdefault(link.risk_id, []).append(link.target_ref)
+    return refs
+
+
 async def linked_ids(tenant: TenantContext, work_item_id: UUID) -> list[UUID]:
     """The risks with a live response (the risk mode's coverage facts read them, A-04-T24)."""
     return [link.risk_id for link in await _links(tenant, work_item_id) if link.state == "linked"]
@@ -433,13 +476,60 @@ async def drawer(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> Drawer
         else:
             name = f"{people.get(behalf, '') if behalf else ''} via Agent".strip()
         versions.append(VersionFact(len(versions) + 1, at, name))
+    pending = await _pending_of(ctx, engagement_id, RESPONSE_FIELD)
+    live = {link.target_ref.upper() for link in links if link.risk_id == row.id}
+    response = next(
+        (
+            SuggestedResponse(p.id, ref, len(p.citation_ids), p.version)
+            for p in pending
+            if p.target_id == row.id
+            and (ref := response_target(p.value)) is not None
+            and ref.upper() not in live
+        ),
+        None,
+    )
+    # Pending, not the field's history: an adopted value is the person's and waits on nobody. The
+    # store reads oldest first; a re-draft is the one to decide (DEC-2481).
+    rationales = [
+        p for p in await _pending_of(ctx, engagement_id, "rationale") if p.target_id == row.id
+    ]
+    actions = await _actions(ctx, engagement_id)
+    # AC4.3's footers: only a row the awaiting card covers is routed. The reserved person decides
+    # (C3 checks the role and the second factor); anyone else the matrix allows may remind them.
+    waiting = (
+        await awaiting_cards(ctx.tenant, row.work_item_id, (APPROVAL_KIND,))
+        if _pending([row])
+        else []
+    )
+    card = waiting[-1] if waiting else None
+    routed_to: str | None = None
+    if card is not None:
+        reserved = card.reserved_user_id
+        if reserved is not None:
+            routed_to = (await names_of([reserved])).get(reserved)
+        if reserved == ctx.user_id:
+            actions.append("decision.decide")
+        else:
+            ref = await get_ref(ctx, engagement_id)
+            actions += await allowed_actions(ctx, ref.resource(), ("decision.notify",))
     return Drawer(
         risk=row,
+        response_suggestion=response,
+        rationale_suggestion=SuggestedRationale(
+            rationales[-1].id,
+            rationales[-1].value,
+            len(rationales[-1].citation_ids),
+            rationales[-1].version,
+        )
+        if rationales
+        else None,
         linked=any(link.risk_id == row.id and link.state == "linked" for link in links),
         citation_ids=latest.citation_ids if latest is not None else (),
-        rationale_suggestion_id=latest.suggestion_id if latest is not None else None,
         versions=versions,
-        actions=await _actions(ctx, engagement_id),
+        actions=actions,
+        pending_card_id=card.card_id if card is not None else None,
+        routed_to_name=routed_to,
+        routed_at=card.created_at if card is not None else None,
     )
 
 
@@ -701,13 +791,23 @@ def _edit_of(field_key: str, value: dict[str, object]) -> Edit:
 
 async def apply_risk_suggestion(tx: UnitOfWork, ctx: AuthContext, adopted: AdoptedValue) -> None:
     """The `risk` suggestion applier (AC4.7): a person adopted (or edited and adopted) the agent's
-    value for one field; it writes as an edit, in the adopting unit of work."""
-    if adopted.field_key not in FIELDS:
+    value for one field; it writes as an edit, in the adopting unit of work. A response writes the
+    live link instead (AC4.6): it has no field history, and the row's hash doesn't cover links."""
+    if adopted.field_key not in ADOPTABLE_FIELDS:
         raise RiskInvalid(facts={"field": "field_key"})
     found = await tx.session.get(RiskRow, adopted.target_id)
     if found is None:
         raise NotFound("risk")
     ref = await lock_ref(tx, found.engagement_id)
+    if adopted.field_key == RESPONSE_FIELD:
+        await authorise(ctx, "risk.link", ref.resource())
+        target = response_target(str(adopted.value.get("v") or ""))
+        if target is None:
+            raise RiskInvalid(facts={"field": RESPONSE_FIELD})
+        await _write_link(
+            tx, ctx, found, RESPONSE_KIND, target, suggestion_id=adopted.suggestion_id
+        )
+        return
     await authorise(ctx, "risk.edit", ref.resource())
     await _apply(
         tx,
@@ -738,12 +838,50 @@ def _registered(kind: str, ref: str) -> bool:
     return any(s.route.upper() == wanted and s.link == "live" for s in registered_sections())
 
 
+def response_targets() -> list[str]:
+    """What a drafted response may name: the registered audit sections' audit and EBP screens."""
+    return sorted(
+        {s.route for s in registered_sections() if s.route.startswith(_RESPONSE_SCREENS)}
+    )
+
+
+def response_target(value: str) -> str | None:
+    """The section a drafted (or edited) response names, or None: free text is never a target."""
+    wanted = value.strip().upper()
+    return next((r for r in response_targets() if r.upper() == wanted), None)
+
+
+async def _pending_of(
+    ctx: AuthContext, engagement_id: UUID, field_key: str
+) -> list[PendingFieldSuggestion]:
+    """A suggestion is a proposal: `proposal.read` is its read (`risk.read` alone sees none)."""
+    ref = await get_ref(ctx, engagement_id)
+    if "proposal.read" not in await allowed_actions(ctx, ref.resource(), ("proposal.read",)):
+        return []
+    return await pending_suggestions(ctx.tenant, engagement_id, TARGET, field_key)
+
+
 async def linkage(ctx: AuthContext, engagement_id: UUID) -> LinkageMatrix:
-    """`GET …/risks/linkage` (AC4.6): risks against their responses."""
+    """`GET …/risks/linkage` (AC4.6): risks against their responses, live and suggested."""
     work_item = await _work_item(ctx.tenant, engagement_id)
     rows = await _rows(ctx.tenant, work_item)
     by_id = {r.id: r for r in rows}
     links = [link for link in await _links(ctx.tenant, work_item) if link.risk_id in by_id]
+    live = {(link.risk_id, link.target_ref.upper()) for link in links}
+    suggestions: dict[tuple[str, str], UUID] = {}
+    suggested: list[tuple[str, str]] = []
+    for pending in await _pending_of(ctx, engagement_id, RESPONSE_FIELD):
+        ref = response_target(pending.value)
+        if (
+            ref is None
+            or pending.target_id not in by_id
+            or (pending.target_id, ref.upper()) in live
+        ):
+            continue
+        key = (by_id[pending.target_id].code, ref)
+        if key not in suggestions:
+            suggested.append(key)
+            suggestions[key] = pending.id
     targets: dict[tuple[str, str], LinkTarget] = {}
     for link in links:
         key = (link.target_kind, link.target_ref)
@@ -754,11 +892,76 @@ async def linkage(ctx: AuthContext, engagement_id: UUID) -> LinkageMatrix:
                 link.target_ref,
                 _registered(link.target_kind, link.target_ref),
             )
+    for _, ref in suggested:
+        targets.setdefault(
+            (RESPONSE_KIND, ref),
+            LinkTarget(RESPONSE_KIND, ref, ref, _registered(RESPONSE_KIND, ref)),
+        )
     return LinkageMatrix(
         codes=[r.code for r in rows],
         targets=sorted(targets.values(), key=lambda t: (t.kind, t.ref)),
-        cells=[(by_id[link.risk_id].code, link.target_ref, link.state) for link in links],
+        cells=[
+            *((by_id[link.risk_id].code, link.target_ref, link.state) for link in links),
+            *((code, ref, "suggested") for code, ref in suggested),
+        ],
+        suggestions=suggestions,
     )
+
+
+async def _write_link(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    row: RiskRow,
+    target_kind: str,
+    ref: str,
+    *,
+    suggestion_id: UUID | None = None,
+) -> bool:
+    """The live link (under the engagement's lock), naming what it came from; False when a live
+    link already stands, which only `link_response` treats as an error."""
+    live = (
+        await tx.session.execute(
+            select(Linkage)
+            .where(
+                Linkage.risk_id == row.id,
+                Linkage.target_kind == target_kind,
+                Linkage.target_ref == ref,
+                Linkage.removed_at.is_(None),
+            )
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    if live is not None and live.state == "linked":
+        return False
+    if live is not None:
+        await tx.session.execute(
+            update(Linkage).where(Linkage.id == live.id).values(state="linked")
+        )
+        link_id = live.id
+    else:
+        link_id = (
+            await tx.session.execute(
+                insert(Linkage)
+                .values(
+                    tenant_id=ctx.tenant_id,
+                    engagement_id=row.engagement_id,
+                    work_item_id=row.work_item_id,
+                    risk_id=row.id,
+                    target_kind=target_kind,
+                    target_ref=ref,
+                    state="linked",
+                    suggestion_id=suggestion_id,
+                )
+                .returning(Linkage.id)
+            )
+        ).scalar_one()
+    tx.record(
+        "risk.linked",
+        target=Target(AUDIT_TARGET, row.id),
+        after=Ref(link=link_id),
+        scope=Scope(engagement_id=row.engagement_id, work_item_id=row.work_item_id),
+    )
+    return True
 
 
 async def link_response(
@@ -767,50 +970,10 @@ async def link_response(
     """`POST …/risks/{rid}/responses` (the route authorised `risk.link`): a live link; a
     suggested link to the same target is accepted into it."""
     row = await _row(ctx.tenant, engagement_id, risk_id)
-    ref = target_ref.strip()
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
-        live = (
-            await tx.session.execute(
-                select(Linkage)
-                .where(
-                    Linkage.risk_id == row.id,
-                    Linkage.target_kind == target_kind,
-                    Linkage.target_ref == ref,
-                    Linkage.removed_at.is_(None),
-                )
-                .with_for_update()
-            )
-        ).scalar_one_or_none()
-        if live is not None and live.state == "linked":
+        if not await _write_link(tx, ctx, row, target_kind, target_ref.strip()):
             raise AlreadyLinked
-        if live is not None:
-            await tx.session.execute(
-                update(Linkage).where(Linkage.id == live.id).values(state="linked")
-            )
-            link_id = live.id
-        else:
-            link_id = (
-                await tx.session.execute(
-                    insert(Linkage)
-                    .values(
-                        tenant_id=ctx.tenant_id,
-                        engagement_id=engagement_id,
-                        work_item_id=row.work_item_id,
-                        risk_id=row.id,
-                        target_kind=target_kind,
-                        target_ref=ref,
-                        state="linked",
-                    )
-                    .returning(Linkage.id)
-                )
-            ).scalar_one()
-        tx.record(
-            "risk.linked",
-            target=Target(AUDIT_TARGET, row.id),
-            after=Ref(link=link_id),
-            scope=Scope(engagement_id=engagement_id, work_item_id=row.work_item_id),
-        )
 
 
 async def unlink(

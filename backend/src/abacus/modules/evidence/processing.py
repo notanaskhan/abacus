@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import date
 from decimal import Decimal
@@ -29,7 +30,7 @@ from abacus.kernel import _flags
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
+from abacus.kernel.flags import flag_enabled, flag_variant
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Handler, OutboxEvent, Ref, Target, uow
 from abacus.modules.engagements.api import AccountRule, area_for, check_facts, version_detail
@@ -48,16 +49,25 @@ from abacus.modules.evidence.checks import (
 )
 from abacus.modules.evidence.cross_checks import Account, aging_cross_check, bank_cross_check
 from abacus.modules.evidence.events import (
+    EvidenceTextReady,
     EvidenceUploaded,
     EvidenceVersionCreated,
     InboxFileAdded,
     InboxFileExtracted,
     UploadChecksRecorded,
 )
-from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, extract_isolated
-from abacus.modules.evidence.intake_sources import source_of, target_type
+from abacus.modules.evidence.extraction import (
+    EXTRACTOR_VERSION,
+    Extraction,
+    Table,
+    TextLine,
+    extract_isolated,
+    from_ocr_pages,
+)
+from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
+from abacus.modules.evidence.intake_sources import IntakeSource, source_of, target_type
 from abacus.modules.evidence.masked_text import masked_pages
-from abacus.modules.evidence.models import InboxFile, UploadExtraction
+from abacus.modules.evidence.models import EvidenceVersion, InboxFile, UploadExtraction
 from abacus.modules.evidence.object_keys import under_key
 from abacus.modules.evidence.pii import DETECTOR_VERSION, masked_rows
 from abacus.modules.evidence.previews import RENDERER_VERSION, render_isolated
@@ -78,8 +88,19 @@ from abacus.modules.evidence.repository import (
     stale_pdf_uploads,
 )
 from abacus.modules.evidence.service import engagement_snapshots
-from abacus.modules.evidence.workflow_types import INBOX, INTAKE, VERSION, UploadInput
-from abacus.modules.evidence.workflows import TrustLayerBackfill, UploadProcessing
+from abacus.modules.evidence.workflow_types import (
+    INBOX,
+    INTAKE,
+    VERSION,
+    FormExtractionInput,
+    UploadInput,
+)
+from abacus.modules.evidence.workflows import (
+    LongOcr,
+    OcrBackfill,
+    TrustLayerBackfill,
+    UploadProcessing,
+)
 from abacus.modules.ledger.api import snapshot_view
 from abacus.modules.requests.api import (
     RequestItemDocumentKindChanged,
@@ -93,11 +114,15 @@ _log = get_logger(__name__)
 WORKFLOWS: dict[type, WorkClass] = {
     UploadProcessing: "interactive",
     TrustLayerBackfill: "background",
+    OcrBackfill: "background",  # P-11-T25
+    LongOcr: "background",  # P-11-T25: more than 20 pages
+    FormExtractionWorkflow: "background",  # P-11-T26
 }
 register_work_classes(WORKFLOWS)
 
 
 WITHDRAWN: Final = "withdrawn"
+OCR_EXTRACTOR_VERSION: Final = "ocr-v1"  # P-11 §4: SPEC-029's row for a scan
 
 
 async def _withdrawn(tenant: TenantContext, version_id: UUID) -> bool:
@@ -156,7 +181,23 @@ async def on_evidence_version_created(event: OutboxEvent) -> None:
     await _start(event.tenant_id, VERSION, UUID(str(event.payload["evidence_version_id"])))
 
 
+async def on_evidence_text_ready(event: OutboxEvent) -> None:
+    """P-11-T26: a version's words are ready; code reads a known form if the firm's flag is on."""
+    tenant_id = event.tenant_id
+    version_id = str(event.payload["evidence_version_id"])
+    if await flag_variant(_system(tenant_id), _flags.EVIDENCE_FORM_EXTRACTION) == "off":
+        return
+    await dispatch(
+        FormExtractionWorkflow,
+        FormExtractionInput(str(tenant_id), version_id),
+        id=f"form_extraction:{tenant_id}:{version_id}",
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+
+
 SUBSCRIPTIONS: dict[str, Handler] = {
+    EvidenceTextReady.event_type: on_evidence_text_ready,
     EvidenceVersionCreated.event_type: on_evidence_version_created,
     EvidenceUploaded.event_type: on_evidence_uploaded,
     InboxFileAdded.event_type: on_inbox_file_added,
@@ -250,6 +291,47 @@ async def process_upload(given: UploadInput) -> str:
             )
     _log.info("upload.extracted", kind=given.kind, status=found.status, reason=found.reason)
     return found.status
+
+
+async def record_ocr_extraction(
+    given: UploadInput,
+    *,
+    source: EvidenceVersion | InboxFile | IntakeSource,
+    page_count: int,
+    pages: list[str],
+    page_lines: Sequence[tuple[TextLine, ...]] = (),
+    tables: Sequence[Table] = (),
+) -> None:
+    """P-11-T25: the OCR-derived row (`ocr-v1`), newer than the extract step's, so the checks and
+    every other reader of `newest_extraction` see a scan's words. Derived and rebuildable; the
+    version's bytes never change. One per upload and extractor, by the existing unique indexes."""
+    tenant_id, source_id = UUID(given.tenant_id), UUID(given.source_id)
+    tenant = _system(tenant_id)
+    found = from_ocr_pages(page_count, pages, page_lines, tables)
+    document = json.dumps(asdict(found), default=_json_default, sort_keys=True)
+    derived = await storage.put(tenant_id, document.encode(), under=under_key(source))
+    async with uow(tenant) as tx:
+        row = await insert_extraction(
+            tx.session,
+            tenant_id=tenant_id,
+            engagement_id=source.engagement_id,
+            evidence_version_id=source_id if given.kind == VERSION else None,
+            inbox_file_id=source_id if given.kind == INBOX else None,
+            inbox_attachment_id=source_id if given.kind == INTAKE else None,
+            extractor_version=OCR_EXTRACTOR_VERSION,
+            status=found.status,
+            reason=found.reason,
+            storage_key=derived.key,
+            storage_version_id=derived.version_id,
+            fingerprint=derived.fingerprint,
+            size_bytes=derived.size,
+            **_columns(found),
+        )
+        tx.record(
+            "upload.extracted" if row is not None else "upload.extraction_exists",
+            target=Target(target_type(given.kind), source_id),
+            after=Ref(fingerprint=source.fingerprint),
+        )
 
 
 # --- Checks (SPEC-029 goals 5 and 6; TASK-055) ---------------------------------------------------

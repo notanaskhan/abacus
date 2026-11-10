@@ -8,9 +8,10 @@ information returns, the partner's position (P-04's `notice_position` decision; 
 notices decide route), the response letter from the firm's template and its send. Every route
 answers, in order: a client principal 404 (INV-4: the portal sees only the C7 envelope, the
 payment-confirmation request and the POR-02 row, each through its own grant); the matrix action on
-the notice's engagement (or the firm for lists and intakes); 404 with `notices.workspace` off; 501
-`not_implemented` until N-04-T06 onward. Amounts and lines are tax return information (`tri`);
-TINs and confirmation numbers are sealed and only their last four digits travel.
+the notice's engagement (or the firm for lists and intakes); 501 `not_implemented` until N-04-T06
+onward (`notices.workspace` retired at N-04-T27, DEC-2602). Amounts and lines are tax return
+information (`tri`); TINs and confirmation numbers are sealed and only their last four digits
+travel.
 """
 
 from __future__ import annotations
@@ -18,17 +19,15 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import NOTICES_WORKSPACE
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import system_now
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
+from abacus.kernel.errors import NotFound
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import (
@@ -355,6 +354,11 @@ class IntakeCreateIn(BaseModel):
     notify_user_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
     engagement_id: Annotated[UUID | None, classified("internal")] = None
     create_anyway: Annotated[bool, classified("internal")] = False  # past a possible duplicate
+    # DEC-2953 (US-2.3): why, when past a duplicate: different_notice, different_tax_year,
+    # reissued_by_agency or other; 422 `create_anyway_reason_required` without one.
+    create_anyway_reason_code: Annotated[
+        str | None, Field(pattern=r"^[a-z][a-z0-9_]{0,59}$"), classified("internal")
+    ] = None
 
 
 class IntakeAttachIn(BaseModel):
@@ -627,6 +631,25 @@ class PaymentOut(BaseModel):
     request_state: Annotated[str | None, classified("internal")]
 
 
+def _payment_out(raw: object) -> PaymentOut | None:
+    """NOT-03's Payment band from the response's settings. A label, never an instrument."""
+    if not isinstance(raw, dict):
+        return None
+    payment = cast(dict[str, Any], raw)  # Any: JSON from the database
+    if not payment.get("required"):
+        return None
+    item = payment.get("confirmation_request_item_id")
+    return PaymentOut(
+        amounts=AmountsOut(total=payment.get("amount")),
+        method_label=payment.get("method_label"),
+        paid_on=payment.get("paid_on"),
+        confirmation_request_item_id=UUID(str(item)) if item else None,
+        request_state=("accepted" if payment.get("confirmation_accepted") else "requested")
+        if item
+        else None,
+    )
+
+
 class ApprovalStepOut(BaseModel):
     """P-04's ladder: Prepared KO ✓ · Reviewed SI in progress · Approved DR ring."""
 
@@ -740,8 +763,6 @@ async def _gate_firm(ctx: AuthContext, action: str) -> None:
     if ctx.client:
         raise NotFound("notices")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, NOTICES_WORKSPACE):
-        raise NotFound(NOTICES_WORKSPACE.name)
 
 
 async def _gate(ctx: AuthContext, notice_id: UUID, action: str) -> None:
@@ -754,12 +775,6 @@ async def _gate(ctx: AuthContext, notice_id: UUID, action: str) -> None:
     # A notice is its work item: scope the check to it so `function_in` (preparer, reviewers,
     # signer) is evaluated on the person's assignment, not refused for want of one.
     await authorise(ctx, action, replace(ref.resource(), work_item_id=notice_id))
-    if not await flag_enabled(ctx.tenant, NOTICES_WORKSPACE):
-        raise NotFound(NOTICES_WORKSPACE.name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 # A stub whose response carries a TIN (`MaskedTinOut`) already returns through the central mask
@@ -862,9 +877,9 @@ async def _notice_out(ctx: AuthContext, n: Notice) -> NoticeOut:
         respond_by_source=cast(
             Literal["extracted", "entered", "corrected"] | None, n.respond_by_source
         ),
-        taxpayer_tin=None,  # the sealed TIN and its mask arrive with the intake (N-04-T07)
+        taxpayer_tin=await _taxpayer_tin(ctx, n),
         related_return_id=n.related_return_id,
-        related_return_label=None,
+        related_return_label=await _return_label(ctx, n.related_return_id),
         partner_owned=n.partner_owned,
         signer=None,
         decision_id=n.decision_id,
@@ -881,7 +896,105 @@ async def _notice_out(ctx: AuthContext, n: Notice) -> NoticeOut:
     )
 
 
-def _intake_out(found: Intake) -> IntakeOut:
+# The reason an intake opened for manual entry, in words (N-04 US-2.2): never guessed.
+_MANUAL_REASON: Final[dict[str, str]] = {
+    "no_map": "We don't have a map for this notice — enter the fields",
+    "no_file": "There's no file to read yet — enter the fields",
+    "kill_switch": "Reading is switched off for now — enter the fields",
+    "flag_off": "Read automatically isn't on",
+    "provider_terms": "The reading service isn't cleared for this firm — enter the fields",
+    "terms_not_covering": "The reading service isn't cleared for this firm — enter the fields",
+    "boundary_basis": "This taxpayer's file can't go to the reading service — enter the fields",
+    "consent_7216": "No §7216 consent covers this taxpayer — enter the fields",
+    "consent_missing": "No §7216 consent covers this taxpayer — enter the fields",
+    "daily_page_cap": "Today's reading limit is reached — enter the fields",
+    "size_limit": "This file is too large to read — enter the fields",
+    "provider_error": "Couldn't read this file — enter the fields",
+}
+_FAILED_REASON: Final = "Couldn't read this file — enter the fields"
+
+
+async def _match_out(ctx: AuthContext, found: Intake) -> MatchOut:
+    """Code's match or the person's pick. Names and the return's label are read here, for a person
+    already allowed the intake, so none is stored on it."""
+    from abacus.modules.organisations.api import entity_display_name
+    from abacus.modules.tax.api import return_label
+
+    match = found.match
+    entity = _uuid_of(match.get("client_entity_id"))
+    return_id = _uuid_of(match.get("return_id"))
+    ids = [UUID(str(c)) for c in cast("list[object]", match.get("candidates") or [])]
+    candidates = [
+        MatchCandidateOut(client_entity_id=c, name=await entity_display_name(ctx.tenant, c) or "")
+        for c in ids
+    ]
+    return MatchOut(
+        client_entity_id=entity,
+        client_name=None if entity is None else await entity_display_name(ctx.tenant, entity),
+        method=cast(
+            Literal["name_tin", "tin", "name", "manual"] | None, match.get("method") or None
+        ),
+        candidates=candidates,
+        return_id=return_id,
+        return_label=None if return_id is None else await return_label(ctx.tenant, return_id),
+        office=None,
+    )
+
+
+async def _return_label(ctx: AuthContext, return_id: UUID | None) -> str | None:
+    if return_id is None:
+        return None
+    from abacus.modules.tax.api import return_label
+
+    return await return_label(ctx.tenant, return_id)
+
+
+async def _taxpayer_tin(ctx: AuthContext, n: Notice) -> MaskedTinOut | None:
+    """N-04-T06: the last four the intake adopted, with the entity's TIN kind; masked again for
+    an offshore principal by `mask_tins_for`."""
+    if n.taxpayer_tin_last4 is None:
+        return None
+    from abacus.modules.organisations.api import entity_tin_kind
+
+    entity = n.client_entity_id
+    kind = (None if entity is None else await entity_tin_kind(ctx.tenant, entity)) or "ssn"
+    return MaskedTinOut(
+        kind=cast(Literal["ssn", "ein", "itin"], kind),
+        presence="on_file",
+        last4=n.taxpayer_tin_last4,
+    )
+
+
+def _uuid_of(value: object) -> UUID | None:
+    return None if value is None else UUID(str(value))
+
+
+def _manual_reason(found: Intake) -> str | None:
+    if found.status == "failed":
+        return _FAILED_REASON
+    if found.status != "manual_entry":
+        return None
+    return _MANUAL_REASON.get(
+        str(found.match.get("manual_reason_code")), _MANUAL_REASON["flag_off"]
+    )
+
+
+async def _intake_read(ctx: AuthContext, found: Intake) -> IntakeOut:
+    return _intake_out(found, await _match_out(ctx, found))
+
+
+_NO_MATCH: Final = MatchOut(
+    client_entity_id=None,
+    client_name=None,
+    method=None,
+    candidates=[],
+    return_id=None,
+    return_label=None,
+    office=None,
+)
+
+
+def _intake_out(found: Intake, match: MatchOut = _NO_MATCH) -> IntakeOut:
     """The sheet's read; a TIN travels as its last four only."""
     auth = found.authorization
     kind = cast(AuthorizationKind, auth.get("kind", "none"))
@@ -893,7 +1006,7 @@ def _intake_out(found: Intake) -> IntakeOut:
         pages=None,
         uploaded_by_label=None,
         extraction_mode=cast(ExtractionMode | None, found.extraction_mode),
-        manual_reason=None if found.status != "manual_entry" else "Read automatically isn't on",
+        manual_reason=_manual_reason(found),
         fields=[
             IntakeFieldOut(
                 key=cast(FieldKey, f.key),
@@ -906,15 +1019,7 @@ def _intake_out(found: Intake) -> IntakeOut:
             )
             for f in found.fields
         ],
-        match=MatchOut(
-            client_entity_id=None,
-            client_name=None,
-            method=None,
-            candidates=[],
-            return_id=None,
-            return_label=None,
-            office=None,
-        ),
+        match=match,
         authorization=AuthorizationOut(
             kind=kind,
             label=str(auth.get("label", "None · blocked")),
@@ -1022,7 +1127,7 @@ async def intake_create_route(
         evidence_version_id=body.evidence_version_id,
         inbox_item_id=body.inbox_item_id,
     )
-    return await mask_tins_for(ctx, _intake_out(found))
+    return await mask_tins_for(ctx, (await _intake_read(ctx, found)))
 
 
 @router.get(_I, action="notice_intake.read", response_model=IntakeOut, errors=(501,))
@@ -1030,7 +1135,7 @@ async def intake_route(intake_id: UUID, ctx: Ctx) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.read")
     from abacus.modules.notices import intake
 
-    return await mask_tins_for(ctx, _intake_out(await intake.intake(ctx, intake_id)))
+    return await mask_tins_for(ctx, await _intake_read(ctx, await intake.intake(ctx, intake_id)))
 
 
 @router.put(_I, action="notice_intake.update", response_model=IntakeOut, errors=(409, 501))
@@ -1045,11 +1150,12 @@ async def intake_update_route(
         intake_id,
         if_match,
         fields=[(f.key, f.value_text, f.confirm) for f in body.fields],
-        client_id=None,
+        client_entity_id=body.client_entity_id,
+        related_return_id=body.related_return_id,
         assignee_user_id=body.assignee_user_id,
         notify_user_ids=body.notify_user_ids,
     )
-    return await mask_tins_for(ctx, _intake_out(found))
+    return await mask_tins_for(ctx, (await _intake_read(ctx, found)))
 
 
 @router.post(
@@ -1062,7 +1168,8 @@ async def intake_update_route(
 async def intake_confirm_route(
     intake_id: UUID, body: IntakeCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> CreatedNoticeOut:
-    """409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`."""
+    """409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`; 422
+    `create_anyway_reason_required`."""
     await _gate_firm(ctx, "notice_intake.confirm")
     from abacus.modules.notices import intake
 
@@ -1074,6 +1181,8 @@ async def intake_confirm_route(
         engagement_id=body.engagement_id,
         related_return_id=body.related_return_id,
         create_anyway=body.create_anyway,
+        notify_user_ids=body.notify_user_ids,
+        create_anyway_reason=body.create_anyway_reason_code,
     )
     return CreatedNoticeOut(notice_id=notice_id, engagement_id=engagement_id)
 
@@ -1085,7 +1194,10 @@ async def intake_attach_route(
     intake_id: UUID, body: IntakeAttachIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.confirm")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import intake
+
+    found = await intake.attach(ctx, intake_id, body.notice_id)
+    return await mask_tins_for(ctx, await _intake_read(ctx, found))
 
 
 @router.post(
@@ -1097,9 +1209,8 @@ async def intake_discard_route(
     await _gate_firm(ctx, "notice_intake.confirm")
     from abacus.modules.notices import intake
 
-    return await mask_tins_for(
-        ctx, _intake_out(await intake.discard(ctx, intake_id, body.reason_code))
-    )
+    found = await intake.discard(ctx, intake_id, body.reason_code)
+    return await mask_tins_for(ctx, await _intake_read(ctx, found))
 
 
 @router.get(_N, action="notice.read", response_model=NoticeOut, errors=(501,))
@@ -1190,8 +1301,8 @@ async def proposed_items_route(
 async def _run_out(ctx: AuthContext, notice_id: UUID) -> AnalysisRunOut:
     from abacus.modules.notices import analysis
 
-    version, reused = await analysis.run(ctx, notice_id)
-    return AnalysisRunOut(version=version, status="ready", reused=reused)
+    version, status, reused = await analysis.start(ctx, notice_id)
+    return AnalysisRunOut(version=version, status=cast(AnalysisStatus, status), reused=reused)
 
 
 @router.get(f"{_N}/analysis", action="notice.read", response_model=AnalysisOut, errors=(501,))
@@ -1218,7 +1329,9 @@ async def analysis_route(notice_id: UUID, ctx: Ctx) -> AnalysisOut:
         progress_label=None,
         rows=[AnalysisRowOut(**r) for r in row["rows"]],
         information_returns=[InformationReturnOut(**r) for r in row["information_returns"]],
-        transcript_rows=[],
+        transcript_rows=[
+            AnalysisRowOut(**r) for r in cast(list[JsonRow], checks.get("transcript_rows") or [])
+        ],
         checks=AnalysisChecksOut(
             difference_explained=bool(checks.get("difference_explained")),
             total_foots=bool(checks.get("total_foots", True)),
@@ -1259,7 +1372,7 @@ async def analysis_route(notice_id: UUID, ctx: Ctx) -> AnalysisOut:
 async def analysis_run_route(
     notice_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AnalysisRunOut:
-    """Idempotent on `inputs_hash`."""
+    """Starts `NoticeAnalysisWorkflow`; NOT-02 polls the analysis. Idempotent on `inputs_hash`."""
     await _gate(ctx, notice_id, "notice.analyze")
     return await _run_out(ctx, notice_id)
 
@@ -1354,7 +1467,7 @@ async def _response_out(ctx: AuthContext, found: object) -> ResponseOut:
     r = cast(response.Response, found)
     n = await service.notice(ctx, r.notice_id)
     code = response.blocked_code(
-        n.position, n.position if r.position_source == "decided" else None, r.blocks
+        n.position, response.drafted_for(n.position, r.position_source), r.blocks
     )
     settings = r.settings
     return ResponseOut(
@@ -1377,7 +1490,7 @@ async def _response_out(ctx: AuthContext, found: object) -> ResponseOut:
             for b in r.blocks
         ],
         enclosures=[],
-        payment=None,
+        payment=_payment_out(settings.get("payment")),
         signer_contact_ids=list(settings.get("signer_contact_ids") or []),
         channel=settings.get("channel"),
         follow_up_days=int(settings.get("follow_up_days") or 60),
@@ -1454,9 +1567,15 @@ async def response_regenerate_route(notice_id: UUID, ctx: Ctx, if_match: IfMatch
 async def send_for_signature_route(
     notice_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SendForSignatureOut:
-    """A C7 draft envelope (`notice_response`) and the payment-confirmation request."""
+    """A C7 draft envelope (`notice_response`); SIG-02 d opens it (A-04 N-04-T16)."""
     await _gate(ctx, notice_id, "notice_response.send_for_signature")
-    _not_yet()
+    from abacus.modules.notices import sending
+
+    envelope_id = await sending.send_for_signature(ctx, notice_id)
+    return SendForSignatureOut(
+        envelope_id=envelope_id,
+        confirmation_request_item_id=await sending.confirmation_item_of(ctx, notice_id),
+    )
 
 
 @router.post(
@@ -1470,7 +1589,17 @@ async def mark_sent_route(
 ) -> SentOut:
     """Sent, then Awaiting IRS; 409 `not_ready` with the facts."""
     await _gate(ctx, notice_id, "notice_response.mark_sent")
-    _not_yet()
+    from abacus.modules.notices import sending
+
+    sent_on, follow_up, last4 = await sending.mark_sent(
+        ctx,
+        notice_id,
+        channel=body.channel,
+        confirmation_no=body.confirmation_no,
+        sent_on=body.sent_on,
+        follow_up_days=body.follow_up_days,
+    )
+    return SentOut(sent_on=sent_on, follow_up_on=follow_up, confirmation_last4=last4)
 
 
 @router.post(
@@ -1484,4 +1613,14 @@ async def agency_reply_route(
     notice_id: UUID, body: AgencyReplyIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> NoticeOut:
     await _gate(ctx, notice_id, "notice.agency_reply")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import sending, service
+
+    await sending.agency_reply(
+        ctx,
+        notice_id,
+        outcome=body.outcome,
+        closed_on=body.closed_on,
+        note=body.note,
+        evidence_version_id=body.evidence_version_id,
+    )
+    return await mask_tins_for(ctx, await _notice_out(ctx, await service.notice(ctx, notice_id)))

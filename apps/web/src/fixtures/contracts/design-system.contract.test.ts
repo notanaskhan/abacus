@@ -19,6 +19,7 @@ import type {
   EvidenceUnlockOut,
   Facet,
   ListPageAccessLogRow,
+  ListPageConsultationOut,
   ListPageControlExceptionOut,
   ListPageFraudInquiryOut,
   ListPageProcessOut,
@@ -162,6 +163,8 @@ const LIST_PAGES = {
   ListPage_WorkItemRowOut_: (p: ListPageWorkItemRowOut) => envelope(p),
   // S22 (A-04-T01, K-01-T18, A-04-T04): the A-04 lists and the methodology version activity.
   ListPage_ControlExceptionOut_: (p: ListPageControlExceptionOut) => envelope(p),
+  // S25 (DEC-2484; the consultations log) added it; the list missed it (S31 end pass).
+  ListPage_ConsultationOut_: (p: ListPageConsultationOut) => envelope(p),
   ListPage_FraudInquiryOut_: (p: ListPageFraudInquiryOut) => envelope(p),
   ListPage_ProcessOut_: (p: ListPageProcessOut) => envelope(p),
   ListPage_ProgramProcedureOut_: (p: ListPageProgramProcedureOut) => envelope(p),

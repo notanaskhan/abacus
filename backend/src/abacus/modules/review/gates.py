@@ -30,6 +30,13 @@ while a person still has to act, `done` once nobody does. It is never the record
   its office (the owner's, else the work item's or engagement's, from `engagements.api`), and
   the owner's `blocked` reason code and `sort_hint`, reconciled like the rest.
 
+- **Firm scope** (I-01-T23, DEC-2613): a source with `scope="firm"` projects subjects that belong
+  to no engagement (a methodology version in Needs review, a wall waiting on its partner). Its rows
+  carry no engagement; its events reconcile the whole source, whatever they name; and a person
+  sees a row only when the row is assigned to them, or the source's `decides` action is allowed
+  by their firm role, and never when the row names a client they are walled from. Engagement
+  rows and firm rows never pass each other's filter.
+
 `register_gate_kind` (P-04-T06, `slots`) is a different slot: a computed gate's check (G1 to G5).
 """
 
@@ -40,7 +47,7 @@ import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime
-from typing import Final, cast
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, and_, false, func, or_, select, text, update
@@ -65,7 +72,13 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import gate_offices
-from abacus.modules.identity.api import AuthContext, holds_engagement_role, visible
+from abacus.modules.identity.api import (
+    AuthContext,
+    firm_role_allows,
+    holds_engagement_role,
+    not_walled_client,
+    visible,
+)
 from abacus.modules.review.models import HumanGate, HumanGateReassignment, HumanGateSnooze
 
 _log = get_logger(__name__)
@@ -93,6 +106,33 @@ def band_of(kind: str) -> str:
 # subscriptions are fixed at import, before every owner has registered.
 C13_EVENTS: Final = frozenset(
     {
+        # I-01-T23: envelopes to send or countersign (signatures), a notice response to send.
+        # I-01-T23 (S29 leftovers): a return's final approval and its engine export (tax).
+        "tax_return.approved",
+        "engine_sync.exported",
+        # I-01-T23 (DEC-2613): firm-level gates, a methodology version's and a wall's approval.
+        "methodology.review_requested",
+        "methodology_version.approved",
+        "methodology_version.discarded",
+        "wall.created",
+        "wall.approved",
+        "wall.removed",
+        "envelope.drafted",
+        "envelope.send_approved",
+        "envelope.signer_signed",
+        "envelope.completed",
+        "envelope.superseded",
+        "envelope.declined",
+        "envelope.expired",
+        "notice_response.ready_to_send",
+        "notice.response_sent",
+        # A-07-T15: completion, letters, the report, release and the archive (in_app firms).
+        "eqr.concurred",
+        "rep_letter.approved",
+        "governance_communication.sent",
+        "report.released",
+        "archive.locked",
+        "archive_addition.decided",
         "proposal.recorded",  # agents: a screening, upload review, match or guidance draft
         "guidance_draft.decided",  # agents: a person approved or discarded a draft
         "review_decision.recorded",  # evidence: a decision on a version, or its undo
@@ -128,7 +168,7 @@ class OpenGate:
     """A subject waiting on a person, as its owner says now."""
 
     subject_id: UUID
-    engagement_id: UUID
+    engagement_id: UUID | None  # None only for a firm-scoped source's subject (DEC-2613)
     assignee_user_id: UUID | None = None
     role: str | None = None
     due_on: date | None = None
@@ -154,6 +194,10 @@ class GateSource:
     # P-07-T47 (security review M3, DEC-544): a source whose gates are only ever the named
     # assignee's; an unassigned row of it is shown to nobody (need to know). Read filter only.
     assigned_only: bool = False
+    # I-01-T23 (DEC-2613): `firm` for subjects that belong to no engagement; an unassigned firm
+    # row waits on the people whose firm role allows `decides` (never read through `visible()`).
+    scope: Literal["engagement", "firm"] = "engagement"
+    decides: str | None = None
 
 
 _SOURCES: dict[str, GateSource] = {}
@@ -168,17 +212,26 @@ def register_gate_source(source: GateSource) -> None:
     unknown = sorted(source.events - C13_EVENTS)
     if unknown or not source.events:
         raise ValueError(f"gate events must be C13's subscribed events: {', '.join(unknown)}")
+    if source.scope == "firm" and source.decides is None and not source.assigned_only:
+        # A firm row read by nobody's engagement must name who it waits on (DEC-2613).
+        raise ValueError(f"firm gate {source.subject_type!r} needs `decides` or `assigned_only`")
+    if source.scope == "engagement" and source.decides is not None:
+        raise ValueError(f"`decides` is for firm gates; {source.subject_type!r} is engagement")
     known = _SOURCES.get(source.subject_type)
     if known is not None and (
         known.kind,
         known.read_action,
         known.events,
         getattr(known.open_for, "__qualname__", None),
+        known.scope,
+        known.decides,
     ) != (
         source.kind,
         source.read_action,
         source.events,
         getattr(source.open_for, "__qualname__", None),
+        source.scope,
+        source.decides,
     ):
         raise ValueError(f"gate subject {source.subject_type!r} is already registered")
     _SOURCES[source.subject_type] = source
@@ -324,12 +377,21 @@ async def _stored(
 
 async def _with_offices(tenant: TenantContext, gates: Sequence[OpenGate]) -> list[OpenGate]:
     """Each gate's office: the owner's, else the work item's or engagement's (DEC-30)."""
-    keys = [(g.engagement_id, g.work_item_id) for g in gates if g.office_id is None]
+    keys = [
+        (g.engagement_id, g.work_item_id)
+        for g in gates
+        if g.office_id is None and g.engagement_id is not None
+    ]
     offices = await gate_offices(tenant, keys) if keys else {}
     return [
         g
         if g.office_id is not None
-        else replace(g, office_id=offices.get((g.engagement_id, g.work_item_id)))
+        else replace(
+            g,
+            office_id=None
+            if g.engagement_id is None
+            else offices.get((g.engagement_id, g.work_item_id)),
+        )
         for g in gates
     ]
 
@@ -347,8 +409,16 @@ async def _reconcile(
             )
             # Read after the lock: an event committed before us is seen, one after waits.
             open_now = await source.open_for(tenant, engagement_id)
-            if engagement_id is not None:
-                open_now = [g for g in open_now if g.engagement_id == engagement_id]
+            if source.scope == "firm":
+                # A firm source's subjects belong to no engagement, whatever it says (DEC-2613).
+                open_now = [g for g in open_now if g.engagement_id is None]
+            else:
+                open_now = [
+                    g
+                    for g in open_now
+                    if g.engagement_id is not None
+                    and (engagement_id is None or g.engagement_id == engagement_id)
+                ]
             open_now = await _with_offices(tenant, open_now)
             todo = plan(await _stored(tx.session, source, engagement_id), open_now)
             if todo.empty:
@@ -413,13 +483,16 @@ async def _reconcile(
 
 
 async def apply_event(event: OutboxEvent) -> None:
-    """The `HumanGateProjector` outbox consumer: idempotent on the event (and on its subject)."""
+    """The `HumanGateProjector` outbox consumer: idempotent on the event (and on its subject). A
+    firm source reconciles all its rows; an engagement source the event's engagement, if any."""
     raw = event.payload.get("engagement_id")
-    if raw is None:
-        return
-    engagement_id = UUID(str(raw))
+    engagement_id = None if raw is None else UUID(str(raw))
     for source in gate_sources():
-        if event.event_type in source.events:
+        if event.event_type not in source.events:
+            continue
+        if source.scope == "firm":
+            await _reconcile(event.tenant_id, source, None, event.event_id)
+        elif engagement_id is not None:
             await _reconcile(event.tenant_id, source, engagement_id, event.event_id)
 
 
@@ -508,16 +581,41 @@ def _engagement() -> ColumnElement[UUID]:
     return cast(ColumnElement[UUID], HumanGate.engagement_id.expression)
 
 
+def _source_visible(
+    ctx: AuthContext, source: GateSource, read: ColumnElement[bool]
+) -> ColumnElement[bool]:
+    """One source's rows the caller may see. An engagement row: `visible(human_gate.read)` and the
+    source's read action on its engagement (walls excluded there). A firm row (DEC-2613): no
+    engagement, assigned to the caller or waiting on the firm role that allows `decides`, and
+    never naming a client the caller is walled from."""
+    mine = [HumanGate.assignee_user_id == ctx.user_id] if source.assigned_only else []
+    of_type = HumanGate.subject_ref["type"].astext == source.subject_type
+    if source.scope == "engagement":
+        return and_(
+            of_type,
+            HumanGate.engagement_id.is_not(None),
+            read,
+            visible(ctx, source.read_action, _engagement()),
+            *mine,
+        )
+    waits = (
+        or_(HumanGate.assignee_user_id == ctx.user_id, HumanGate.assignee_user_id.is_(None))
+        if source.decides is not None and firm_role_allows(ctx, source.decides)
+        else HumanGate.assignee_user_id == ctx.user_id
+    )
+    return and_(
+        of_type,
+        HumanGate.engagement_id.is_(None),
+        waits,
+        not_walled_client(ctx, cast(ColumnElement[UUID], HumanGate.client_id.expression)),
+        *mine,
+    )
+
+
 def _sources_visible(ctx: AuthContext) -> ColumnElement[bool]:
     """Each source's gates where the caller may read its subjects (walls excluded there too)."""
-    clauses = [
-        and_(
-            HumanGate.subject_ref["type"].astext == source.subject_type,
-            visible(ctx, source.read_action, _engagement()),
-            *([HumanGate.assignee_user_id == ctx.user_id] if source.assigned_only else []),
-        )
-        for source in gate_sources()
-    ]
+    read = visible(ctx, READ, _engagement())
+    clauses = [_source_visible(ctx, source, read) for source in gate_sources()]
     return or_(*clauses) if clauses else false()
 
 
@@ -557,7 +655,7 @@ def open_for_caller(ctx: AuthContext, *, state: str | None = "open") -> list[Col
     """The gates in `state` (any, with None) that wait on the caller, in engagements they may
     read them in (walls excluded through `visible()` and each source's read action; nothing
     counts what's left out)."""
-    where = [_waits_on(ctx), visible(ctx, READ, _engagement()), _sources_visible(ctx)]
+    where = [_waits_on(ctx), _sources_visible(ctx)]
     return [HumanGate.state == state, *where] if state is not None else where
 
 

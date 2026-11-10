@@ -32,9 +32,11 @@ from sqlalchemy import column, select, table, text
 
 from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.dispatch import signal_workflow
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.identity.api import AuthContext, names_of, visible
+from abacus.modules.engagements.api import add_to_team, get_ref, set_work_item_due
+from abacus.modules.identity.api import AuthContext, could, names_of, visible
 
 OPEN: Final = frozenset(
     {"received", "classified", "analyzing", "response_drafted", "approved", "escalated"}
@@ -200,6 +202,26 @@ def tallies(rows: Sequence[Notice], on: date) -> NoticeTallies:
     )
 
 
+async def notice_for_run(tenant: TenantContext, notice_id: UUID) -> Notice | None:
+    """One notice for a run a person already started on it: tenant-scoped, no viewer (the start
+    authorised `notice.analyze`, and read it through `visible`)."""
+    query = select(*(_TABLE.c[n].label("id" if n == "work_item_id" else n) for n in _NAMES)).where(
+        _TABLE.c.work_item_id == notice_id
+    )
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(query)).mappings().first()
+    return None if row is None else _notice(row)
+
+
+async def assignee_on_team(ctx: AuthContext, engagement_id: UUID, assignee: UUID) -> None:
+    """An assignee must be able to read what they were given. Someone who can't joins the
+    notice's engagement as staff, by the person assigning, who needs `engagement.member_add` (403
+    otherwise); a walled assignee still can't read it, and `could` stays false for them."""
+    resource = (await get_ref(ctx, engagement_id)).resource()
+    if not await could(ctx, assignee, "notice.read", resource):
+        await add_to_team(ctx, engagement_id, assignee, "staff")
+
+
 async def notice(ctx: AuthContext, notice_id: UUID) -> Notice:
     """One notice the viewer may read; walled or unknown: 404 (never a hint it exists)."""
     for found in await visible_notices(ctx):
@@ -221,17 +243,28 @@ async def move(
     actor_kind: str,
     actor_user_id: UUID | None,
     reason_code: str | None = None,
+    closed_on: date | None = None,
+    escalated_reason: str | None = None,
 ) -> None:
-    """The one status move, with its event row; 409 `illegal_transition` otherwise."""
+    """The one status move, with its event row; 409 `illegal_transition` otherwise. Closed needs
+    its date and Escalated its reason: the columns' CHECKs refuse either without."""
     if to not in TRANSITIONS.get(found.status, frozenset()):
         raise IllegalTransition(facts={"from_status": found.status, "to_status": to})
     moved = await tx.session.scalar(
         text(
             "UPDATE notices SET status = :to, status_changed_at = abacus_now(), "
+            "closed_on = coalesce(:closed, closed_on), "
+            "escalated_reason = coalesce(:why, escalated_reason), "
             "row_version = row_version + 1 WHERE work_item_id = :id AND status = :from "
             "RETURNING work_item_id"
         ),
-        {"to": to, "id": found.id, "from": found.status},
+        {
+            "to": to,
+            "id": found.id,
+            "from": found.status,
+            "closed": closed_on,
+            "why": escalated_reason,
+        },
     )
     if moved is None:
         raise VersionConflict
@@ -281,6 +314,8 @@ async def edit(
     found = await notice(ctx, notice_id)
     if found.row_version != expected_version:
         raise VersionConflict
+    if assignee_id is not None:
+        await assignee_on_team(ctx, found.engagement_id, assignee_id)
     async with uow(ctx.tenant) as tx:
         moved = await tx.session.scalar(
             text(
@@ -304,9 +339,20 @@ async def edit(
         )
         if moved is None:
             raise VersionConflict
+        if respond_by is not None:
+            # N-04-T06: the work item's due date follows the corrected respond-by.
+            await set_work_item_due(tx, notice_id, respond_by)
         action = "notice.assigned" if assignee_id is not None else "notice.updated"
         tx.record(
             action, target=Target("notice", notice_id), after=Ref(version=expected_version + 1)
+        )
+    if respond_by is not None:
+        # The alerts follow it too: the response workflow resets its timers (N-04 §4.5). Best
+        # effort, after the write; a workflow not yet running reads the row when it starts.
+        from abacus.modules.notices.sending import workflow_id
+
+        await signal_workflow(
+            workflow_id(ctx.tenant_id, notice_id), "respond_by_changed", respond_by.isoformat()
         )
     return await notice(ctx, notice_id)
 
@@ -331,3 +377,18 @@ async def status_of(tenant: TenantContext, work_item_id: UUID) -> str:
 
 async def on_day(ctx: AuthContext) -> date:
     return await today(ctx.tenant)
+
+
+async def notice_document_versions(tenant: TenantContext, notice_id: UUID) -> list[UUID]:
+    """The notice's files, oldest first: the letter it was opened from, then what was attached to
+    it (the 1099s filed to it, INB-02 d). N-04-T11's word-layer search reads them in order."""
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            text(
+                "SELECT evidence_version_id FROM notice_intakes "
+                "WHERE created_work_item_id = :w AND evidence_version_id IS NOT NULL "
+                "ORDER BY created_at, id"
+            ),
+            {"w": notice_id},
+        )
+        return [UUID(str(version)) for version in found.scalars()]

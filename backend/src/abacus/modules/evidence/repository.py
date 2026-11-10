@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date, datetime
-from typing import cast
+from typing import Final, cast
 from uuid import UUID
 
 from sqlalchemy import (
@@ -989,6 +989,9 @@ async def stale_pdf_uploads(
 # --- The word layer (P-03-T05) and citations (P-03-T06) ----------------------------------------
 
 
+OCR_VERSION: Final = "ocr-1"  # P-11-T25: an OCR page's row beside its text-layer row
+
+
 async def pages_of(
     session: AsyncSession,
     *,
@@ -1017,14 +1020,16 @@ async def pages_of(
             else EvidencePage.inbox_file_id == inbox_file_id
         )
     )
-    return (
+    # P-11-T25: an OCR row for the same page wins over the page's text-layer row, so every reader
+    # (scan, masks, viewer, citations, search) sees a scan's words with no change of its own.
+    rows = (
         (
             await session.execute(
                 select(EvidencePage)
                 .where(
                     source,
                     _derived(EvidencePage.derivation_id, derivation_id),
-                    EvidencePage.extractor_version == extractor_version,
+                    EvidencePage.extractor_version.in_((extractor_version, OCR_VERSION)),
                 )
                 .order_by(EvidencePage.page_no)
             )
@@ -1032,6 +1037,11 @@ async def pages_of(
         .scalars()
         .all()
     )
+    best: dict[int, EvidencePage] = {}
+    for row in rows:
+        if row.page_no not in best or row.extractor_version == OCR_VERSION:
+            best[row.page_no] = row
+    return [best[page] for page in sorted(best)]
 
 
 async def insert_pages(session: AsyncSession, rows: Sequence[dict[str, object]]) -> int:
@@ -1247,6 +1257,18 @@ async def pii_regions_of(
             else PiiRegion.inbox_file_id == inbox_file_id
         )
     )
+    # P-11 AC7.4: a re-scan's regions replace the first run's, which stay on file.
+    if detector_version is not None:
+        run = await scan_run_for(
+            session,
+            evidence_version_id=evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            inbox_attachment_id=inbox_attachment_id,
+            detector_version=detector_version,
+            derivation_id=derivation_id,
+        )
+        if run is not None:
+            detector_version = run.detector_version
     return (
         (
             await session.execute(
@@ -1287,6 +1309,18 @@ async def scanned_pages(
             else PiiScanRun.inbox_file_id == inbox_file_id
         )
     )
+    # P-11 AC7.4: a re-scan's pages replace the first run's, which stay on file.
+    if detector_version is not None:
+        run = await scan_run_for(
+            session,
+            evidence_version_id=evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            inbox_attachment_id=inbox_attachment_id,
+            detector_version=detector_version,
+            derivation_id=derivation_id,
+        )
+        if run is not None:
+            detector_version = run.detector_version
     rows = (
         await session.execute(
             select(PiiScanRun.pages_scanned).where(
@@ -1322,6 +1356,18 @@ async def unscannable_pages(
             else PiiScanRun.inbox_file_id == inbox_file_id
         )
     )
+    # P-11 AC7.4: a re-scan's pages replace the first run's, which stay on file.
+    if detector_version is not None:
+        run = await scan_run_for(
+            session,
+            evidence_version_id=evidence_version_id,
+            inbox_file_id=inbox_file_id,
+            inbox_attachment_id=inbox_attachment_id,
+            detector_version=detector_version,
+            derivation_id=derivation_id,
+        )
+        if run is not None:
+            detector_version = run.detector_version
     rows = (
         await session.execute(
             select(PiiScanRun.pages_not_scannable).where(
@@ -1379,7 +1425,9 @@ async def masked_preview_for(
                 source,
                 _derived(UploadPreview.derivation_id, derivation_id),
                 UploadPreview.mask_version.is_not(None),
-                UploadPreview.renderer_version == renderer_version,
+                UploadPreview.renderer_version.in_(
+                    (renderer_version, rerender_version(renderer_version))
+                ),
             )
             .order_by(UploadPreview.created_at.desc(), UploadPreview.id.desc())
             .limit(1)
@@ -1633,6 +1681,72 @@ async def insert_pii_regions(session: AsyncSession, rows: Sequence[dict[str, obj
         await session.execute(insert(_PII_REGION_ROWS).values(list(rows)))
 
 
+async def sources_without_ocr(
+    session: AsyncSession,
+    ocr_version: str,
+    *,
+    after_version: UUID | None,
+    after_inbox: UUID | None,
+    limit: int,
+) -> list[tuple[str, UUID]]:
+    """P-11-T25 (AC7.4): versions, then inbox files, by id after the cursors, with a page that has
+    no text layer and no OCR row (LIST_EXEMPT: the system backfill only). Never a withdrawn
+    version."""
+    bare = (
+        select(EvidencePage.id)
+        .where(EvidencePage.has_text_layer.is_(False))
+        .correlate_except(EvidencePage)
+    )
+    read = (
+        select(EvidencePage.id)
+        .where(EvidencePage.extractor_version == ocr_version)
+        .correlate_except(EvidencePage)
+    )
+    version_query = select(EvidenceVersion.id).where(
+        bare.where(EvidencePage.evidence_version_id == EvidenceVersion.id).exists(),
+        ~read.where(EvidencePage.evidence_version_id == EvidenceVersion.id).exists(),
+        not_withdrawn(),
+    )
+    if after_version is not None:
+        version_query = version_query.where(EvidenceVersion.id > after_version)
+    versions = (
+        (await session.execute(version_query.order_by(EvidenceVersion.id).limit(limit)))
+        .scalars()
+        .all()
+    )
+    inbox_query = select(InboxFile.id).where(
+        bare.where(EvidencePage.inbox_file_id == InboxFile.id).exists(),
+        ~read.where(EvidencePage.inbox_file_id == InboxFile.id).exists(),
+    )
+    if after_inbox is not None:
+        inbox_query = inbox_query.where(InboxFile.id > after_inbox)
+    inbox = (
+        (
+            await session.execute(
+                inbox_query.order_by(InboxFile.id).limit(max(limit - len(versions), 0))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
+
+
+RESCAN_SUFFIX: Final = "+ocr"
+
+
+def rescan_version(version: str) -> str:
+    """The version of a scan or a rendition made again after OCR read a page the first couldn't
+    (P-11 AC7.4). Runs are insert-only, one per source and version, so the first stays."""
+    return f"{version}{RESCAN_SUFFIX}"
+
+
+def rerender_version(version: str) -> str:
+    """A masked rendition made again after a re-scan (AC7.4). The column takes only `v<digits>`
+    (0045), so it's the renderer's version with three zeros: v3 is made again as v3000."""
+    return f"{version}000"
+
+
 async def scan_run_for(
     session: AsyncSession,
     *,
@@ -1645,7 +1759,8 @@ async def scan_run_for(
     """The source's scan run by this detector version (none derived unless named), if any."""
     return (
         await session.execute(
-            select(PiiScanRun).where(
+            select(PiiScanRun)
+            .where(
                 PiiScanRun.evidence_version_id == evidence_version_id
                 if evidence_version_id is not None
                 else (
@@ -1654,8 +1769,13 @@ async def scan_run_for(
                     else PiiScanRun.inbox_file_id == inbox_file_id
                 ),
                 _derived(PiiScanRun.derivation_id, derivation_id),
-                PiiScanRun.detector_version == detector_version,
+                PiiScanRun.detector_version.in_(
+                    (detector_version, rescan_version(detector_version))
+                ),
             )
+            # "v+ocr" sorts after "v": a re-scan, when there is one, is the scan.
+            .order_by(PiiScanRun.detector_version.desc())
+            .limit(1)
         )
     ).scalar_one_or_none()
 

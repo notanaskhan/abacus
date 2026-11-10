@@ -29,6 +29,27 @@ class MethodologyVersionSuperseded(DomainEvent):
     by_version_id: Annotated[UUID, classified("internal")]
 
 
+class MethodologyVersionApproved(DomainEvent):
+    """A quality partner approved a version (K-01-T06): it is Published from `effective_from`, and
+    nothing waits on its approval any more (I-01-T23: its Home gate closes; DEC-2613)."""
+
+    event_type: ClassVar[str] = "methodology_version.approved"
+
+    version_id: Annotated[UUID, classified("internal")]
+    template_id: Annotated[UUID, classified("internal")]
+    approved_by: Annotated[UUID, classified("internal")]
+
+
+class MethodologyVersionDiscarded(DomainEvent):
+    """A version in Needs review was discarded (K-01 AC5.7): nothing waits on its approval any
+    more (I-01-T23: its Home gate closes; DEC-2613). A draft's discard emits nothing."""
+
+    event_type: ClassVar[str] = "methodology_version.discarded"
+
+    version_id: Annotated[UUID, classified("internal")]
+    template_id: Annotated[UUID, classified("internal")]
+
+
 class FirmStandardPublished(DomainEvent):
     """A firm standard's version was published (K-02-T08): KNW-01's change log and consumers that
     cache the version in effect re-read it."""

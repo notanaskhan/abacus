@@ -1,4 +1,4 @@
-import type { AgentRunOut, RunTraceOut, RunWriteOut } from "@abacus/api-client";
+import type { AgentRunOut, RunWriteOut } from "@abacus/api-client";
 import {
   agentRunTraceOptions,
   agentRunTraceQueryKey,
@@ -12,22 +12,40 @@ import {
   Dialog,
   count,
   Drawer,
-  ratio,
+  EmptyState,
   Segmented,
   Skeleton,
   StatusPill,
-  type Tone,
   useFormat,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useEffect, useState } from "react";
 import { currentRoute, signIn } from "../../app-core/auth";
+import { useOpenOverlay } from "../../app-core/open";
 import { traceLink } from "./links";
+import {
+  RecordsReadTable,
+  SummaryCard,
+  Timeline,
+  TimelineSkeleton,
+  useMinimumLoading,
+  WriteState,
+} from "./TraceParts";
 import { narrate } from "./narrate";
 import { isActive, useRunFeed } from "./runFeed";
 
 // WB-09 run trace drawer (P-09-T10; SPEC-318): moved from legacy/AgentRuns so the SHL-13 dock
 // and the legacy Activity tab open the same drawer.
+
+/** A 404 from a C6 read: another firm's run, a walled one or none (INV-3). */
+function isNotFound(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "detail" in error &&
+    (error as { detail?: unknown }).detail === "not_found"
+  );
+}
 
 /** A refusal for want of a recent sign-in, or by role: the body's `detail` is "forbidden". */
 export function isForbidden(error: unknown): boolean {
@@ -81,35 +99,9 @@ function ConfirmItsYou({
   );
 }
 
-// SPEC-318 (TASK-461): a run's state in the status words, never a confidence figure (I-12).
-export const STATE: Record<AgentRunOut["state"], { label: string; tone: Tone }> = {
-  queued: { label: "Queued", tone: "neutral" },
-  running: { label: "Running", tone: "info" },
-  succeeded: { label: "Finished", tone: "success" },
-  needs_input: { label: "Needs a person", tone: "warning" },
-  failed: { label: "Failed", tone: "danger" },
-};
-export const SUBJECT: Record<string, string> = {
-  evidence_version: "An evidence version",
-  inbox_file: "A file in the inbox",
-  template_version: "A template version",
-  task_scope: "Records in the run's scope",
-};
-const ROW_TONE: Record<RunTraceOut["rows"][number]["state"], Tone> = {
-  done: "success",
-  failed: "danger",
-  waiting: "warning",
-  running: "info",
-};
+import { STATE, SUBJECT } from "./traceWords";
 
-/** Milliseconds as "850 ms", "4.2 s" or "3 min 5 s"; arithmetic only, no locale. */
-export function duration(ms: number | null | undefined): string {
-  if (ms == null) return "—";
-  if (ms < 1000) return `${count(ms)} ms`;
-  if (ms < 60_000) return `${ratio(ms / 1000, 1)} s`;
-  const s = Math.round(ms / 1000);
-  return `${count(Math.floor(s / 60))} min ${count(s % 60)} s`;
-}
+export { duration, STATE, SUBJECT } from "./traceWords";
 
 function download(filename: string, content: string): void {
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
@@ -140,6 +132,9 @@ const WRITE_KIND: Record<RunWriteOut["kind"], string> = {
 /** C6 v1 (TASK-5000): what the run proposed to write, and who decided. Codes only. */
 export function RunWrites({ runId }: { runId: string }): JSX.Element {
   const fmt = useFormat();
+  // P-09-T10 remainder (DEC-3143): a proposal still waiting opens SHL-10 for a person, whose
+  // server-side approval rights decide there; the drawer itself approves nothing.
+  const openOverlay = useOpenOverlay();
   const writes = useQuery({
     ...agentRunWritesOptions({ path: { run_id: runId } }),
     retry: false,
@@ -161,7 +156,22 @@ export function RunWrites({ runId }: { runId: string }): JSX.Element {
           <span className="font-medium">{WRITE_KIND[w.kind]}</span>
           <span className="font-mono text-[11px] text-ink-2">{w.key}</span>
           {w.decision == null ? (
-            <StatusPill tone="warning">Waiting on a person</StatusPill>
+            <>
+              <WriteState write={w} />
+              {w.state === "waiting" && w.kind === "proposal" && w.proposal_id != null && (
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => {
+                    // SHL-10 is `?ov=approve:<proposalRef>` (routes/to `ov.SHL10`).
+                    if (w.proposal_id != null)
+                      openOverlay({ key: "approve", args: [w.proposal_id] });
+                  }}
+                >
+                  Approve…
+                </Button>
+              )}
+            </>
           ) : (
             <span className="text-ink-2">
               {`${w.decision.replaceAll("_", " ")}${w.decided_by_name == null ? "" : ` by ${w.decided_by_name}`}`}
@@ -181,7 +191,6 @@ export function TraceDrawer({
   runId: string;
   onClose: () => void;
 }): JSX.Element {
-  const fmt = useFormat();
   const trace = useQuery({ ...agentRunTraceOptions({ path: { run_id: runId } }), retry: false });
   const [confirm, setConfirm] = useState(false);
   const [view, setView] = useState<string>("Timeline");
@@ -206,7 +215,9 @@ export function TraceDrawer({
       download(out.filename, out.content);
     },
   });
-  const t = trace.data;
+  // WB-09 e: skeleton rows for at least 200 ms, never a half-filled summary.
+  const loading = useMinimumLoading(trace.isPending);
+  const t = loading ? undefined : trace.data;
   // The run's own words: untrusted model text, rendered through AgentText only (ADR-065).
   const modelText = t?.model_text;
   return (
@@ -237,33 +248,33 @@ export function TraceDrawer({
               exp.mutate({ path: { run_id: runId }, body: { format: "json" } });
             }}
           >
-            Export JSON
+            Export trace (JSON)
           </Button>
+          <Button size="sm" variant="secondary" disabled title="PDF export arrives with P-09-T11">
+            Download PDF
+          </Button>
+          <span className="text-[11px] text-ink-3">
+            Traces are kept with the firm audit log for 7 years.
+          </span>
         </>
       }
     >
-      {trace.isPending && <Skeleton className="h-48" />}
-      {trace.isError && <Alert title="Couldn't load the trace">{errorMessage(trace.error)}</Alert>}
+      {loading && !trace.isError && <TimelineSkeleton />}
+      {trace.isError &&
+        (isForbidden(trace.error) || isNotFound(trace.error) ? (
+          <EmptyState icon="lock" title="You can't open this trace">
+            It belongs to a run you can't see.
+          </EmptyState>
+        ) : (
+          <Alert title="Couldn't load the trace">{errorMessage(trace.error)}</Alert>
+        ))}
       {exp.isError && !confirm && (
         <Alert title="Couldn't export the trace">{errorMessage(exp.error)}</Alert>
       )}
       <ConfirmItsYou open={confirm} onOpenChange={setConfirm} />
       {t && (
         <>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-[13px]">
-            <dt className="text-ink-3">Started by</dt>
-            <dd>{t.run.initiator_name}</dd>
-            <dt className="text-ink-3">Duration</dt>
-            <dd className="tabular-nums">{duration(t.run.duration_ms)}</dd>
-            <dt className="text-ink-3">Model calls</dt>
-            <dd className="tabular-nums">{t.attempts}</dd>
-            <dt className="text-ink-3">Runtime</dt>
-            <dd>{t.runtime}</dd>
-            <dt className="text-ink-3">Region</dt>
-            <dd>{t.region}</dd>
-            <dt className="text-ink-3">Training</dt>
-            <dd>{t.training}</dd>
-          </dl>
+          <SummaryCard trace={t} live={live} />
           {t.projection === "metadata" && (
             <p className="text-[13px] text-ink-2">You can see what ran, not the client content.</p>
           )}
@@ -276,25 +287,7 @@ export function TraceDrawer({
           />
           {view === "Timeline" && (
             <>
-              <section aria-label="Timeline">
-                <ol className="flex flex-col divide-y divide-hair">
-                  {t.rows.map((row) => (
-                    <li
-                      key={row.seq}
-                      className="flex flex-wrap items-center gap-2 py-1.5 text-[13px]"
-                    >
-                      <span className="w-[64px] shrink-0 text-[12px] text-ink-3 tabular-nums">
-                        {fmt.time(row.at)}
-                      </span>
-                      <StatusPill tone={ROW_TONE[row.state]}>{row.title}</StatusPill>
-                      {row.detail != null && (
-                        <span className="font-mono text-[11px] text-ink-2">{row.detail}</span>
-                      )}
-                      {row.actor != null && <span className="text-ink-2">{row.actor}</span>}
-                    </li>
-                  ))}
-                </ol>
-              </section>
+              <Timeline runId={runId} rows={t.rows} metadata={t.projection === "metadata"} />
               {narration.length > 0 && (
                 <section aria-label="What the agent did">
                   <h3 className="mb-1 text-[12px] font-medium text-ink-3">What the agent did</h3>
@@ -326,19 +319,10 @@ export function TraceDrawer({
             </>
           )}
           {view === "Records read" && (
-            <section aria-label="Records read">
-              {t.records_read.length === 0 ? (
-                <p className="text-[13px] text-ink-2">This run recorded no records read.</p>
-              ) : (
-                <ul className="text-[13px]">
-                  {t.records_read.map((r) => (
-                    <li
-                      key={r.source}
-                    >{`${SUBJECT[r.source] ?? r.source} (${count(r.count)})`}</li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <RecordsReadTable
+              rows={t.records_read}
+              label={(source) => SUBJECT[source] ?? source}
+            />
           )}
           {view === "Writes & approvals" && <RunWrites runId={runId} />}
         </>

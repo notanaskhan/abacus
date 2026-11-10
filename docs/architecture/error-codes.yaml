@@ -150,6 +150,8 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion.AlreadyReleased
+    - abacus.modules.assurance.release.AlreadyReleased
+    summary: The work item's original release exists (a reissue is A-07's later path).
   already_requested:
     status: 409
     raised_by:
@@ -168,6 +170,12 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.evidence.service.AlreadyTaken
+  amount_in_letter:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.governance_comms.AmountInLetter
+    - abacus.modules.assurance.rep_letters.AmountInLetter
+    summary: No amount (and so no materiality figure) in letter text (A-07 F3).
   annotation_invalid:
     status: 422
     raised_by:
@@ -181,6 +189,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.portal_questionnaires.AnswerInvalid
+  approval_kind_not_registered:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.client_approvals.ApprovalKindNotRegistered
+    summary: 'No provider is registered for this kind (AC-1): nothing is written.'
   approval_required:
     status: 409
     raised_by:
@@ -211,8 +224,10 @@ codes:
   archived:
     status: 409
     raised_by:
+    - abacus.kernel.errors.RowArchived
     - abacus.modules.assurance.completion_errors.Archived
-    summary: 'The work item is locked: nothing changes outside an `archived_write` kind.'
+    summary: '`archived_guard()` refused a write (A-07-T13; SQLSTATE AB409): the work item is locked,
+      or its engagement archived. The API answers 409 `archived`, whichever route reached the row.'
   attachment_filed:
     status: 409
     raised_by:
@@ -244,6 +259,10 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.AuthorizationRequired
     summary: The consent sheet's authorization toggle was not on (AC-36).
+  basis_required:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.completion_projector.BasisRequired
   before_date_as_of:
     status: 409
     raised_by:
@@ -308,6 +327,11 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.CandidateNotEligible
     summary: The person can't take this gate (not a holder of its role, or walled off).
+  checklist_answered:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.ChecklistAnswered
+    summary: An answered checklist can't change version; its answers name the one they were given on.
   checklist_changed:
     status: 409
     raised_by:
@@ -316,8 +340,14 @@ codes:
   checklist_incomplete:
     status: 409
     raised_by:
+    - abacus.modules.assurance.archive_gate.ChecklistIncomplete
     - abacus.modules.assurance.completion_errors.ChecklistIncomplete
+    - abacus.modules.assurance.eqr_service.ChecklistIncomplete
     summary: An item or an EQR note is still open (EQR concurrence, archive lock).
+  checklist_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.disclosure_checklists.ChecklistRefused
   checklist_unmet:
     status: 409
     raised_by:
@@ -334,6 +364,14 @@ codes:
     raised_by:
     - abacus.modules.review.checkpoints.CheckpointInvalid
     summary: A restore of a checkpoint that is not in effect, or of Current itself; an empty proposal.
+  choice_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.report_builder.ChoiceInvalid
+  choice_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.report_builder.ChoiceLocked
   citation_note_required:
     status: 422
     raised_by:
@@ -364,6 +402,10 @@ codes:
     - abacus.modules.sampling.populations.ColumnMapInvalid
     summary: The column map names an unknown field, no record key, a column the sheet does not have,
       one column twice, or an amount column holding something other than an amount.
+  communication_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.governance_comms.KindExists
   completeness_tie_required:
     status: 409
     raised_by:
@@ -384,6 +426,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.letters.ComputedVariable
     summary: 'A fee or billing variable was given as text: code computes those.'
+  conclusion_already_requested:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.aud27.ConclusionAlreadyRequested
   confirmed_out_of_order:
     status: 422
     raised_by:
@@ -489,6 +535,7 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion_errors.LetterContentChanged
     - abacus.modules.assurance.mapping_live.ContentChanged
+    - abacus.modules.assurance.release.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
     - abacus.modules.sampling.sample_sets.ContentChanged
     - abacus.modules.tax.approval.ContentChanged
@@ -515,6 +562,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.comments.CorrectionNotAllowed
+  create_anyway_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.notices.intake.CreateAnywayReasonRequired
+    summary: 'US-2.3: "Create anyway" past a possible duplicate names its reason.'
   cuec_evidence_missing:
     status: 409
     raised_by:
@@ -581,6 +633,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.DecisionRequired
+    - abacus.modules.assurance.report_builder.DecisionRequired
     - abacus.modules.communications.intake_contract.DecisionRequired
     summary: An attachment in the apply has no decision, or a forced Hold was answered otherwise.
   decline_not_withdrawable:
@@ -592,6 +645,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.signatures.portal.SignerDeclined
+  deliverable_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.reporting.deliverables.DeliverableInvalid
+    summary: A publish missing what C10 needs (a title, pages, an audience, the actor's person).
+  deliverable_version_ended:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.deliverables.DeliverableWithdrawnAlready
+    summary: 'The version already ended: superseded or withdrawn (one terminal event per version).'
   demo_clock_refused:
     status: 409
     raised_by:
@@ -658,6 +721,7 @@ codes:
     raised_by:
     - abacus.modules.methodology.drafts.DraftExists
     - abacus.modules.methodology.standards.DraftExists
+    - abacus.modules.requests.organizer_lifecycle.DraftExists
     summary: The template already has a draft or a version in review.
   draft_incomplete:
     status: 422
@@ -665,6 +729,11 @@ codes:
     - abacus.modules.engagements.drafts.DraftIncomplete
     - abacus.modules.engagements.intake.IntakeIncomplete
     summary: 'A step of the draft still has a problem (`facts.step`): validate it to see which.'
+  draft_without_watermark:
+    status: 422
+    raised_by:
+    - abacus.modules.reporting.deliverables.DraftWithoutWatermark
+    summary: A draft version whose P-11 generated document carries no DRAFT watermark (AC-18).
   drafted_guidance_not_allowed:
     status: 409
     raised_by:
@@ -698,6 +767,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.duplicates.DuplicateResolved
     summary: The version's duplicate was already resolved.
+  duplicate_unresolved:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.intake.DuplicateUnresolved
   duplicate_upload:
     status: 409
     raised_by:
@@ -813,6 +886,10 @@ codes:
     - abacus.modules.signatures.portal.EnvelopeNotOpen
     summary: Only a draft or an envelope out for signature can be voided; a completed, declined, expired
       or voided one stays as it is.
+  eqr_already_concurred:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.eqr_service.AlreadyConcurred
   eqr_approval_required:
     status: 409
     raised_by:
@@ -842,15 +919,24 @@ codes:
   eqr_not_eligible:
     status: 409
     raised_by:
+    - abacus.modules.assurance.eqr_service.EqrNotEligible
     - abacus.modules.engagements.team_errors.EqrNotEligible
     summary: 'The candidate fails an eligibility check (each failing check is a fact): pick an eligible
       reviewer.'
+  eqr_notes_open:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.eqr_service.EqrNotesOpen
   eqr_on_team:
     status: 409
     raised_by:
     - abacus.modules.engagements.team_errors.EqrOnTeam
     summary: 'The engagement quality reviewer is never on the team: pick someone who isn''t, or keep
       the EQR off the team roles.'
+  eqr_template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.eqr_service.EqrTemplateMissing
   esign_consent_required:
     status: 409
     raised_by:
@@ -860,6 +946,10 @@ codes:
     raised_by:
     - abacus.modules.integrations.esign_install.EsignInstallExists
     summary: 'The firm already has a live DocuSeal install: rotate or disconnect it instead.'
+  estimate_not_evaluated:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.aud27.EstimateNotEvaluated
   evidence_accepted:
     status: 409
     raised_by:
@@ -872,6 +962,11 @@ codes:
     - abacus.modules.evidence.withdrawals.EvidenceNotWithdrawable
     summary: 'Not a client''s detached-key upload (a firm upload, or one stored before detached-key mode):
       nothing can erase it, so it is not withdrawn (ADR-162 §8).'
+  exception_not_high:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.soc_reports.ExceptionNotHigh
+    summary: 'AC7.5: only a High-impact exception routes to Findings.'
   export_disabled:
     status: 409
     raised_by:
@@ -911,6 +1006,11 @@ codes:
     - abacus.modules.evidence.export_currency.ExportStale
     summary: 'Evidence or requests changed after the final export''s snapshot: export again, then record
       the archive (`facts.event_seq` names the newer event).'
+  extension_form_required:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.extensions.StateFormRequired
+    summary: A state line's first payment names its form (IT-370); only the federal form is a rule's.
   fees_do_not_foot:
     status: 422
     raised_by:
@@ -976,6 +1076,11 @@ codes:
     - abacus.modules.evidence.export_currency.FinalExportRequired
     summary: 'The archive needs a ready final binder export of this work item: none was named, or the
       one named is not final, not ready, voided or expired.'
+  final_tb_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.NoFinalTrialBalance
+    summary: Statements draft from a mapped, balanced final layer; there is none yet.
   finding_invalid:
     status: 422
     raised_by:
@@ -1035,6 +1140,15 @@ codes:
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpV2Only
     summary: 'This follow-up was drafted from a binder: send it from the binder''s follow-up sheet.'
+  form5500_key_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_form5500.KeyedValueRefused
+    summary: Only a person keys a Form 5500 value, and only on a draft that is not superseded.
+  form5500_not_tied:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_form5500.DraftNotTied
   fraud_session_invalid:
     status: 422
     raised_by:
@@ -1060,11 +1174,13 @@ codes:
     - abacus.modules.engagements.record.GateUnmet
     - abacus.modules.organisations.contacts.GateUnmet
     - abacus.modules.review.issue_resolutions.LetterGateUnmet
+    - abacus.modules.tax.extensions.ExtensionGateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   gates_not_met:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.GatesNotMet
+    - abacus.modules.assurance.release.GatesNotMet
     summary: A gate the act needs is not met at the server (`facts.gates`).
   grant_exists:
     status: 409
@@ -1324,6 +1440,14 @@ codes:
     raised_by:
     - abacus.modules.review.issue_resolutions.IssueStatusRefused
     summary: The issue cannot move there from where it is (`facts.status`).
+  item_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.governance_comms.StaleCommunication
+    - abacus.modules.assurance.governance_room.LetterChanged
+    - abacus.modules.assurance.report_builder.StaleReport
+    - abacus.modules.engagements.client_approvals.ItemChanged
+    summary: 'The decide call''s `seen_hash` is not the item''s current one (AC-4): reload.'
   item_closed:
     status: 409
     raised_by:
@@ -1334,6 +1458,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.ItemDerived
+    - abacus.modules.assurance.completion_projector.ItemDerived
     summary: A projected checklist item follows its events and cannot be marked by hand.
   item_not_open:
     status: 409
@@ -1437,6 +1562,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.record.LetterBeforeAcceptance
     summary: The letter's date is before the acceptance decision (G1 < letter, R-06).
+  letter_check_failed:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.governance_comms.LetterCheckFailed
   letter_exception_reason_required:
     status: 422
     raised_by:
@@ -1467,6 +1596,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.letter_flow.LetterNotApprovable
     summary: The letter is not a draft awaiting approval (or not a composed letter at all).
+  letter_not_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.rep_letters.LetterNotApproved
+    summary: Send is refused before the engagement partner approves the version sent.
   letter_not_sendable:
     status: 409
     raised_by:
@@ -1481,6 +1615,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.delivery.LetterRefused
+  letter_rendering:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.sending.LetterRendering
+    summary: The letter's draft is rendering; send again once it is ready.
   letter_signer_missing:
     status: 409
     raised_by:
@@ -1522,6 +1661,11 @@ codes:
     raised_by:
     - abacus.modules.communications.intake_contract.LowConfidence
     summary: 'The top destination is below the bulk threshold or ambiguous: choose it in File….'
+  low_confidence_unconfirmed:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.intake.LowConfidenceUnconfirmed
+    summary: A value read below 0.90 confidence waits for a person's confirmation or correction.
   mandatory_locked:
     status: 409
     raised_by:
@@ -1604,6 +1748,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.fraud_brainstorm.NothingToApprove
+  misstatement_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.sum_service.MisstatementMoved
+    summary: Someone changed the misstatement since this person read it.
+  misstatement_not_passable:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.sum_service.NotPassable
+    summary: Only a misstatement the client declined to book can be passed on the SUM.
   mode_not_for_paper:
     status: 409
     raised_by:
@@ -1629,6 +1783,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.filing.NoAuthorizationForm
+  no_basis_return:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.estimates.NoBasisReturn
+    summary: A confirmation request lives in a binder, which hangs off the basis return's engagement.
   no_client_copy:
     status: 409
     raised_by:
@@ -1649,6 +1808,11 @@ codes:
     raised_by:
     - abacus.modules.portal.settings.NothingToPublish
     summary: There is no draft to publish.
+  no_extension_form:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.extensions.NoExtensionForm
+    summary: The published rules name no extension form or dates for this return's form.
   no_failed_sync:
     status: 409
     raised_by:
@@ -1667,6 +1831,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.delivery.NoLetterTemplate
+  no_notice_engagement:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.intake.NoNoticeEngagement
+    summary: 'The client has no `notice_response` engagement yet (QN-1: created through ENG-01).'
   no_pending_version:
     status: 409
     raised_by:
@@ -1711,6 +1880,15 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.ebp_plan.NotAnEbpAudit
+  not_answered:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.NotAnswered
+    summary: Only an answered or adopted item can be reviewed (`facts.item_key`).
+  not_awaiting_approval:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.governance_comms.NotApprovable
   not_concludable:
     status: 409
     raised_by:
@@ -1780,6 +1958,12 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotPrepared
     summary: L2 and above need a current preparer sign-off.
+  not_ready:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.intake.NotReady
+    - abacus.modules.notices.sending.NotReady
+    summary: Facts name what blocks the step (`facts.blocking`).
   not_reassignable:
     status: 409
     raised_by:
@@ -1835,6 +2019,10 @@ codes:
     raised_by:
     - abacus.modules.workpapers.attribute_grid.NoteRequired
     summary: An exception or a no-effect mark carries the person's note.
+  note_template_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.note_templates.NoteTemplateRefused
   notes_open:
     status: 409
     raised_by:
@@ -1848,12 +2036,18 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.materiality.NothingDecided
+    - abacus.modules.assurance.sum_service.NoMateriality
     summary: A reassessment needs a decided materiality.
   nothing_pending:
     status: 409
     raised_by:
     - abacus.modules.assurance.risks.NothingPending
     summary: No significance or rebuttal waits for the partner.
+  nothing_to_adopt:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.NoSuggestion
+    summary: Only an agent's suggested answer can be adopted.
   nothing_to_analyze:
     status: 409
     raised_by:
@@ -1963,10 +2157,11 @@ codes:
     - abacus.modules.identity.walls.OwnWall
     summary: 'A partner can''t lift a wall on themself: another partner must (ADR-026; DEC-73).'
   owner_not_partner:
-    status: 422
+    status: 409 or 422
     raised_by:
     - abacus.modules.methodology.standards.OwnerNotPartner
-    summary: The owner of a standard must be a partner member of the firm.
+    - abacus.modules.requests.organizer_lifecycle.OwnerNotPartner
+    summary: A template's owner is a partner member.
   pack_configuration_error:
     status: 409
     raised_by:
@@ -1996,10 +2191,16 @@ codes:
     raised_by:
     - abacus.modules.methodology.extraction.PagePreviewUnavailable
     summary: Only a PDF source has page images (a DOCX is read as text).
+  paid_needs_evidence:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.estimates.PaidNeedsEvidence
+    summary: A paid installment rests on the client's evidence (T-03 US-5.3).
   paragraph_locked:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.ParagraphLocked
+    - abacus.modules.assurance.rep_letters.ParagraphLocked
     summary: A general paragraph is always included and is not firm-editable.
   parameters_invalid:
     status: 422
@@ -2149,6 +2350,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.roll_forward.PriorMismatch
     summary: The prior engagement isn't this client entity's, or is another type.
+  prior_year_tax_source_required:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.estimates.PriorTaxNeedsSource
   procedure_exists:
     status: 409
     raised_by:
@@ -2157,6 +2362,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.fieldwork.service.ProcedureBusy
+  projected_liability_source_required:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.extensions.LiabilityNeedsSource
+    summary: A projected liability carries where it came from (DEC-77, INV-2).
   projection_unavailable:
     status: 422
     raised_by:
@@ -2211,6 +2421,7 @@ codes:
   reason_required:
     status: 422
     raised_by:
+    - abacus.modules.reporting.statements.ReasonRequired
     - abacus.modules.requests.binders.ReasonRequired
     - abacus.modules.workpapers.core.ReasonRequired
     summary: Unpublishing a binder needs a reason.
@@ -2224,6 +2435,16 @@ codes:
     raised_by:
     - abacus.modules.review.decisions.RecommendationChanged
     summary: The card moved past the version the decider saw (reassessed or superseded).
+  reconciling_items_do_not_foot:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_form5500.ReconcilingItemsDoNotFoot
+  record_evidence_not_on_engagement:
+    status: 422
+    raised_by:
+    - abacus.modules.adjustments.decisions.RecordEvidenceNotOnEngagement
+    summary: 'Record mode''s evidence (the client''s email) must be on the entry''s own engagement (A-06-T17;
+      DEC-2956): an id from elsewhere, or none at all, records nothing.'
   record_out_of_phase:
     status: 409
     raised_by:
@@ -2265,6 +2486,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.ReleaseModeExternal
+    - abacus.modules.assurance.release.ReleaseModeExternal
     summary: The firm releases and archives in its own tool (`assurance_release_mode = external`).
   release_mode_in_app:
     status: 409
@@ -2272,6 +2494,11 @@ codes:
     - abacus.modules.assurance.release.ReleaseModeInApp
     summary: 'The firm releases reports in Accrued (`assurance_release_mode = in_app`): record mode is
       closed for release and archive.'
+  release_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.release.ReleaseRefused
+    summary: 'The release cannot proceed (`facts.reason`: grant_refused, render_failed).'
   reliance_requested:
     status: 409
     raised_by:
@@ -2287,6 +2514,10 @@ codes:
     raised_by:
     - abacus.modules.tax.consent_capture.RenewalSpansEntities
     summary: One renewal drafts one envelope, so its consents belong to one taxpayer.
+  representation_letter_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.rep_letters.LetterInvalid
   request_already_sent:
     status: 409
     raised_by:
@@ -2450,6 +2681,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.firm_export_schedule.SchedulePaused
     summary: 'A paused schedule is not approved: unpause it (which waits for both again) first.'
+  schedule_period_unknown:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_schedule_render.NoScheduleTitle
+    summary: 'A plan with no period end: the schedule''s date is never guessed.'
   scope_not_in_existence:
     status: 422
     raised_by:
@@ -2461,6 +2697,10 @@ codes:
     - abacus.modules.identity.contact_access.ScopeOutsideClient
     - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
     summary: A grant's scope, or a delegated request, is not the contact's client's.
+  screen_out_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.aud27.ScreenOutReasonRequired
   screening_running:
     status: 409
     raised_by:
@@ -2526,6 +2766,11 @@ codes:
     raised_by:
     - abacus.modules.integrations.engine_settings.SettingLocked
     summary: A stricter-only rule stays on (`facts.key`).
+  severity_concluded:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.severity_suggestions.SeverityConcluded
+    summary: 'The deficiency is concluded or past proposal: a suggestion no longer changes it.'
   shadow_report_changed:
     status: 409
     raised_by:
@@ -2688,9 +2933,12 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.ai_policy_service.StaleDraft
+    - abacus.modules.assurance.aud27.StaleEstimate
     - abacus.modules.assurance.completion_errors.StaleVersion
+    - abacus.modules.assurance.eqr_service.StaleItem
     - abacus.modules.assurance.mapping_live.StaleVersion
     - abacus.modules.assurance.phase.ProfileStale
+    - abacus.modules.assurance.rep_letters.StaleLetter
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
     - abacus.modules.connections.entity.StaleConnection
@@ -2822,6 +3070,11 @@ codes:
     raised_by:
     - abacus.modules.tax.tax_profile.TaxProfileFileUnavailable
     summary: The staged file is not the caller's own for this entity, or was already filed.
+  tax_year_required:
+    status: 422
+    raised_by:
+    - abacus.modules.requests.questionnaires.TaxYearRequired
+    summary: An editor draft is published for a named tax year.
   tb_same_snapshot:
     status: 409
     raised_by:
@@ -2855,6 +3108,7 @@ codes:
   template_missing:
     status: 409
     raised_by:
+    - abacus.modules.assurance.report_builder.NoReportTemplate
     - abacus.modules.notices.response.TemplateMissing
     summary: The firm has no published notice-response template.
   template_name_invalid:
@@ -2862,6 +3116,10 @@ codes:
     raised_by:
     - abacus.modules.methodology.service.TemplateNameInvalid
     summary: A template name is 1 to 100 characters.
+  template_not_published:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.rep_letters.NoTemplate
   template_type_mismatch:
     status: 409
     raised_by:
@@ -2917,6 +3175,15 @@ codes:
     - abacus.modules.organisations.tin.TinKindNotAllowed
     summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
       (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
+  too_many_streams:
+    status: 409
+    raised_by:
+    - abacus.kernel.realtime.TooManyStreams
+    summary: A seventh concurrent stream for one person (`facts.limit`).
+  tool_not_registered:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.tools.registry.ToolNotRegistered
   transcript_not_comparable:
     status: 409
     raised_by:
@@ -2935,6 +3202,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.TrialBalanceInvalid
+  trust_report_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_investments.NoTrustReport
+    summary: 'No adopted trust lines yet: the point cannot be evaluated against nothing.'
   unbalanced_entry:
     status: 422
     raised_by:
@@ -3021,6 +3293,11 @@ codes:
     raised_by:
     - abacus.modules.identity.settings_registry.UnknownSetting
     summary: A key no module registered, or one that isn't editable.
+  unknown_statement:
+    status: 422
+    raised_by:
+    - abacus.modules.reporting.fs_render.UnknownStatement
+    summary: 'A statement key with no caption: refused, never guessed (DEC-2615).'
   unknown_template_variable:
     status: 422
     raised_by:
@@ -3096,7 +3373,10 @@ codes:
     - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
     - abacus.modules.assurance.soc_reports.SocReportMoved
+    - abacus.modules.notices.intake.IntakeMoved
     - abacus.modules.notices.service.VersionConflict
+    - abacus.modules.reporting.statements.StaleAnswer
+    - abacus.modules.tax.estimates.EstimateMoved
     - abacus.modules.tax.extensions.ExtensionMoved
     - abacus.modules.workpapers.attribute_grid.TestMoved
     - abacus.modules.workpapers.core.VersionConflict
@@ -3127,7 +3407,12 @@ codes:
   version_published:
     status: 409
     raised_by:
+    - abacus.modules.methodology.assurance_checklists.ChecklistVersionPublished
+    - abacus.modules.methodology.disclosure_checklists.ChecklistPublished
+    - abacus.modules.requests.organizer_lifecycle.VersionPublished
+    - abacus.modules.requests.questionnaire_editor.VersionPublished
     - abacus.modules.requests.questionnaires.AlreadyPublished
+    summary: 'A published version never changes: import the next one.'
   wall_exists:
     status: 409
     raised_by:

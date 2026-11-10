@@ -236,8 +236,9 @@ async def approve_letter(
         acceptance = await g1_decision(tx.session, engagement_id)
         if acceptance is None or not acceptance.accepted:
             raise GateUnmet(facts={"gate": "G1", "engagement_id": str(engagement_id)})
-        if acceptance.decided_at.date() > _letter_date(current):
-            # G1's date must come on or before the letter's date (N-02-T33).
+        if acceptance.decided_at.astimezone(clock.FIRM_ZONE).date() > _letter_date(current):
+            # G1's date must come on or before the letter's date (N-02-T33); both are business
+            # dates in the firm's zone, never UTC's (which runs a day ahead each evening).
             raise LetterBeforeAcceptance(facts={"engagement_id": str(engagement_id)})
         version_id = cast(UUID, current["id"])
         content_hash = str(current["content_hash"])

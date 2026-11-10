@@ -3,27 +3,30 @@
 A finding is rooted on a P-04 issue (DEC-83: the issue holds lifecycle, assignee and events) and
 carries the audit's facts in 0644's `audit_findings`:
 
-- **Record** (`record_finding`): the issue on the workpaper it came from, then the finding with its
-  next `F-nn`. A finding the agent raises lands under evaluation with its `why_surfaced` sealed as
-  the agent's suggestion and must carry verified citations (422 `uncited_finding` otherwise,
-  INV-2); a person's finding needs none.
+- **Record** (`record_finding`): the issue on the workpaper it came from and the finding with its
+  next `F-nn`, in one unit of work. A finding the agent raises lands under evaluation with its
+  `why_surfaced` sealed as the agent's suggestion and must carry verified citations (422
+  `uncited_finding` otherwise, INV-2); a person's finding needs none.
 - **List** (`findings_of`): rows with the severity bands' counts (material weakness, significant
-  deficiency, deficiency, not a deficiency) and the badge of findings awaiting the partner.
+  deficiency, deficiency, not a deficiency) and the Evaluation tab's badge: findings still
+  awaiting a decision, a proposed severity for the partner or an exception to resolve (AUD-15 a:
+  F-01, F-03 and F-04 make 3; DEC-2612).
 - **Detail** with the code-computed evaluation (the row's `evaluation`, written by code only).
 - **Resolve / not applicable**: through the issue (`review.api.move_issue`); the matrix denies the
   agent both (`finding.resolve`, `finding.mark_not_applicable`).
 - **Convert** to a deficiency (Proposed, severity for the partner's card) or a misstatement
-  (factual or judgmental with its amount; a projected one takes its figure from sampling, which
-  answers 422 `projection_unavailable` until A-03's projection facts are exposed).
+  (factual or judgmental with its amount; a projected one takes the sample error and an approved
+  sample set, and its figure is sampling's, 422 `projection_unavailable` otherwise).
 
 Severity and the SUM conclusion stay the engagement partner's C3 cards (INV-1).
 """
 
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -34,13 +37,25 @@ from sqlalchemy import text
 from sqlalchemy.engine import RowMapping
 
 from abacus.kernel.crypto import open_sealed, seal
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import Ref, Scope, Target, uow
-from abacus.modules.engagements.api import get_ref, lock_ref, work_item_engagement
+from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
+from abacus.modules.assurance.internal_control import (
+    RouteNotAvailable,
+    RouteRequest,
+    register_exception_route,
+)
+from abacus.modules.engagements.api import assurance_item, get_ref, lock_ref, work_item_engagement
 from abacus.modules.evidence.api import verified_citation_ids
-from abacus.modules.identity.api import AuthContext, allowed_actions
-from abacus.modules.review.api import create_issue, issue_row, move_issue
+from abacus.modules.identity.api import AuthContext, allowed_actions, names_of
+from abacus.modules.review.api import (
+    create_issue_in,
+    decided_cards,
+    issue_row,
+    move_issue,
+    record_rule_issue,
+)
+from abacus.modules.workpapers.api import paper_id_of_kind
 
 TARGET: Final = "audit_finding"
 _FINGERPRINT: Final = "assurance.why_surfaced"
@@ -107,6 +122,15 @@ class Finding:
         return self.severity_concluded or self.severity_proposed or "not_a_deficiency"
 
 
+# AUD-15's tab badge (the handoff: "the tab badge 3 = F-01, F-03, F-04 still awaiting a decision").
+AWAITING_DECISION: Final = frozenset({"proposed", "exception_for_resolution"})
+
+
+def awaiting_decision(statuses: Sequence[str | None]) -> int:
+    """Findings a person still has to decide: a proposed severity, or an exception to resolve."""
+    return sum(1 for s in statuses if s in AWAITING_DECISION)
+
+
 @dataclass(frozen=True)
 class FindingsPage:
     rows: list[Finding]
@@ -159,21 +183,6 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
         live = {c for ids in verified.values() for c in ids}
         if not set(new.citation_ids) <= live:
             raise UncitedFinding
-    issue_id = await create_issue(
-        ctx,
-        record_type="workpaper",
-        record_id=new.workpaper_id,
-        kind="exception",
-        priority="medium",
-        title=new.title.strip(),
-        internal_note=None,
-        client_wording=None,
-        client_contact_id=None,
-        assignee_user_id=None,
-        assignee_agent=False,
-        blocks=(),
-        work_item_id=work_item_id,
-    )
     sealed = (
         None
         if new.why_surfaced is None
@@ -181,6 +190,16 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
     )
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
+        issue_id = await create_issue_in(
+            tx,
+            ctx,
+            record_type="workpaper",
+            record_id=new.workpaper_id,
+            kind="exception",
+            priority="medium",
+            title=new.title.strip(),
+            work_item_id=work_item_id,
+        )
         number = (
             await tx.session.execute(
                 text("SELECT count(*) + 1 FROM audit_findings WHERE work_item_id = :w"),
@@ -310,7 +329,7 @@ async def findings_of(
     counts: dict[str, int] = dict.fromkeys(BANDS, 0)
     for f in found:
         counts[f.band] += 1
-    awaiting = sum(1 for f in found if f.deficiency_status == "proposed")
+    awaiting = awaiting_decision([f.deficiency_status for f in found])
     if hide_concluded:
         found = [f for f in found if f.deficiency_status not in ("concluded", "communicated")]
     return FindingsPage(found, counts, awaiting)
@@ -346,8 +365,15 @@ async def move(
     return await finding(ctx, finding_id)
 
 
-async def to_deficiency(ctx: AuthContext, finding_id: UUID) -> Finding:
-    """A control finding becomes a Proposed deficiency; the severity is the partner's card."""
+async def to_deficiency(
+    ctx: AuthContext,
+    finding_id: UUID,
+    *,
+    severity_proposed: str | None = None,
+    for_resolution: bool = False,
+) -> Finding:
+    """A control finding becomes a Proposed deficiency, or an exception for resolution with no
+    severity (AUD-15 f); a proposed severity is a person's, the conclusion the partner's card."""
     work_item = await work_item_of(ctx.tenant, finding_id)
     engagement_id = await _engagement(ctx.tenant, work_item)
     async with uow(ctx.tenant) as tx:
@@ -367,9 +393,18 @@ async def to_deficiency(ctx: AuthContext, finding_id: UUID) -> Finding:
         await tx.session.execute(
             text(
                 "INSERT INTO deficiencies (tenant_id, engagement_id, work_item_id, finding_id, "
-                "status) VALUES (:t, :e, :w, :f, 'proposed')"
+                "status, severity_proposed, severity_proposed_by_kind) VALUES (:t, :e, :w, :f, "
+                ":st, :sev, :by)"
             ),
-            {"t": ctx.tenant_id, "e": engagement_id, "w": work_item, "f": finding_id},
+            {
+                "t": ctx.tenant_id,
+                "e": engagement_id,
+                "w": work_item,
+                "f": finding_id,
+                "st": "exception_for_resolution" if for_resolution else "proposed",
+                "sev": severity_proposed,
+                "by": None if severity_proposed is None else "human",
+            },
         )
         tx.record(
             "audit_finding.converted",
@@ -387,17 +422,50 @@ async def to_misstatement(
     type_: Literal["factual", "judgmental", "projected"],
     amount: Decimal | None,
     column_set: Literal["ebp_net_assets", "commercial"],
+    fs_effect: Mapping[str, str] | None = None,
+    projection_ref: UUID | None = None,
+    sample_error: Decimal | None = None,
+    nature: Literal["misstatement", "reclassification"] = "misstatement",
 ) -> UUID:
     """A misstatement from the finding: factual or judgmental with its amount; projected only from
-    sampling's projection (422 `projection_unavailable` until it is exposed)."""
-    if type_ == "projected" or amount is None or amount == 0:
-        raise (
-            ProjectionUnavailable
-            if type_ == "projected"
-            else DomainInvalid(facts={"field": "amount"})
-        )
+    the sample set's own counts, never typed (422 `projection_unavailable`). Below the in-force CT
+    code logs it, not accumulated (BCT-n)."""
     work_item = await work_item_of(ctx.tenant, finding_id)
     engagement_id = await _engagement(ctx.tenant, work_item)
+    projection: str | None = None
+    if type_ == "projected":
+        from abacus.modules.sampling.api import projection_of
+
+        found = (
+            None
+            if projection_ref is None or sample_error is None
+            else await projection_of(ctx, projection_ref, sample_error)
+        )
+        if found is None:
+            raise ProjectionUnavailable
+        amount = found.rounded
+        projection = json.dumps(
+            {
+                "sample_set_id": str(projection_ref),
+                "sample_error": str(found.sample_error),
+                "sample_count": found.sample_count,
+                "population_count": found.population_count,
+                "projected": str(found.projected),
+                "rounded": str(found.rounded),
+            }
+        )
+    if amount is None or amount == 0:
+        raise DomainInvalid(facts={"field": "amount"})
+    from abacus.modules.assurance.materiality import in_force, versions_of
+
+    decided = in_force(await versions_of(ctx.tenant, work_item))
+    below = (
+        type_ != "projected"
+        and nature == "misstatement"
+        and decided is not None
+        and abs(amount) < Decimal(decided.ct)
+    )
+    prefix = "BCT" if below else "M"
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
         moved = (
@@ -414,26 +482,34 @@ async def to_misstatement(
             raise FindingMoved
         number = (
             await tx.session.execute(
-                text("SELECT count(*) + 1 FROM audit_misstatements WHERE work_item_id = :w"),
-                {"w": work_item},
+                text(
+                    "SELECT count(*) + 1 FROM audit_misstatements "
+                    "WHERE work_item_id = :w AND ref LIKE :p"
+                ),
+                {"w": work_item, "p": f"{prefix}-%"},
             )
         ).scalar_one()
         misstatement_id = (
             await tx.session.execute(
                 text(
                     "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, "
-                    "finding_id, ref, type, status, amount, column_set) VALUES (:t, :e, :w, :f, "
-                    ":ref, :ty, 'confirmed', :a, :cs) RETURNING id"
+                    "finding_id, ref, type, nature, status, amount, column_set, fs_effect, "
+                    "projection) VALUES (:t, :e, :w, :f, :ref, :ty, :n, :st, :a, :cs, "
+                    "CAST(:effect AS jsonb), CAST(:pr AS jsonb)) RETURNING id"
                 ),
                 {
                     "t": ctx.tenant_id,
                     "e": engagement_id,
                     "w": work_item,
                     "f": finding_id,
-                    "ref": f"M-{number}",
+                    "ref": f"{prefix}-{number}",
                     "ty": type_,
+                    "n": nature,
+                    "st": "below_ct" if below else "confirmed",
                     "a": amount,
                     "cs": column_set,
+                    "effect": json.dumps(dict(fs_effect or {})),
+                    "pr": projection,
                 },
             )
         ).scalar_one()
@@ -446,14 +522,169 @@ async def to_misstatement(
     return misstatement_id
 
 
-AUDIT_KINDS: Final = frozenset({TARGET})
+@dataclass(frozen=True)
+class MisstatementFacts:
+    ref: str
+    status: str
+    amount: Decimal
+
+
+async def misstatement_facts(tenant: TenantContext, misstatement_id: UUID) -> MisstatementFacts:
+    async with tenant_session(tenant) as session:
+        row = (
+            (
+                await session.execute(
+                    text("SELECT ref, status, amount FROM audit_misstatements WHERE id = :id"),
+                    {"id": misstatement_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    return MisstatementFacts(row["ref"], row["status"], Decimal(str(row["amount"])))
+
+
+def _route_scope(request: RouteRequest) -> Scope:
+    return Scope(engagement_id=request.engagement_id, work_item_id=request.work_item_id)
+
+
+async def route_to_finding(tx: UnitOfWork, request: RouteRequest) -> UUID:
+    """AUD-09's Send to Findings and AUD-10 e's link, in the row's unit of work: a finding under
+    evaluation, its issue raised by the system on the work item with the exception's words. The
+    finding never concludes a severity (the partner's card does)."""
+    tenant = await transaction_context(tx.session)
+    paper = await paper_id_of_kind(tenant, request.engagement_id, "internal_control")
+    if paper is None:
+        raise RouteNotAvailable
+    issue_id = await record_rule_issue(
+        tenant,
+        engagement_id=request.engagement_id,
+        work_item_id=request.work_item_id,
+        record_type="workpaper",
+        record_id=paper,
+        kind="exception",
+        priority="medium",
+        title=request.matter,
+        source_ref=f"control_exception:{request.control_exception_id.hex}",
+        tx=tx,
+    )
+    number = (
+        await tx.session.execute(
+            text("SELECT count(*) + 1 FROM audit_findings WHERE work_item_id = :w"),
+            {"w": request.work_item_id},
+        )
+    ).scalar_one()
+    finding_id = (
+        await tx.session.execute(
+            text(
+                "INSERT INTO audit_findings (tenant_id, engagement_id, work_item_id, issue_id, "
+                "ref, kind, title, coso_component, created_by_kind) VALUES (:t, :e, :w, :i, :ref, "
+                "'control_deficiency', :title, :coso, 'human') RETURNING id"
+            ),
+            {
+                "t": tenant.tenant_id,
+                "e": request.engagement_id,
+                "w": request.work_item_id,
+                "i": issue_id,
+                "ref": f"F-{number:02d}",
+                "title": request.matter[:300],
+                "coso": request.coso_component,
+            },
+        )
+    ).scalar_one()
+    tx.record(
+        "audit_finding.raised_from_exception",
+        target=Target(TARGET, finding_id),
+        after=Ref(exception=request.control_exception_id),
+        scope=_route_scope(request),
+    )
+    return UUID(str(finding_id))
+
+
+async def route_to_misstatement(tx: UnitOfWork, request: RouteRequest) -> UUID:
+    """AUD-09's Convert to misstatement: a candidate with the row's amount (`NoAmount` refused
+    the row without one before this)."""
+    tenant = await transaction_context(tx.session)
+    item = await assurance_item(tenant, request.work_item_id)
+    ebp = item.ebp_plan_kind is not None or item.assurance_type.startswith("ebp")
+    number = (
+        await tx.session.execute(
+            text("SELECT count(*) + 1 FROM audit_misstatements WHERE work_item_id = :w"),
+            {"w": request.work_item_id},
+        )
+    ).scalar_one()
+    misstatement_id = (
+        await tx.session.execute(
+            text(
+                "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, ref, "
+                "origin_ref, type, status, amount, column_set, fs_effect) "
+                "VALUES (:t, :e, :w, :ref, :origin, 'factual', 'candidate', :a, :cs, "
+                "CAST(:effect AS jsonb)) RETURNING id"
+            ),
+            {
+                "t": tenant.tenant_id,
+                "e": request.engagement_id,
+                "w": request.work_item_id,
+                "ref": f"M-{number}",
+                "origin": request.address[:20],
+                "a": request.amount,
+                "cs": "ebp_net_assets" if ebp else "commercial",
+                "effect": json.dumps({"description": request.description[:500]}),
+            },
+        )
+    ).scalar_one()
+    tx.record(
+        "audit_misstatement.raised_from_exception",
+        target=Target("audit_misstatement", misstatement_id),
+        after=Ref(exception=request.control_exception_id),
+        scope=_route_scope(request),
+    )
+    return UUID(str(misstatement_id))
+
+
+async def concluded_severities(
+    tenant: TenantContext, engagement_id: UUID
+) -> dict[UUID, tuple[str, str | None]]:
+    """AUD-09 f: by finding, its deficiency's concluded severity and the initials of who decided
+    it, for a route that has authorised on the engagement (DEC-2362)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT finding_id, severity_concluded, decision_card_id FROM deficiencies "
+                    "WHERE engagement_id = :e AND severity_concluded IS NOT NULL"
+                ),
+                {"e": engagement_id},
+            )
+        ).all()
+    if not rows:
+        return {}
+    deciders = {c.card_id: c.decided_by for c in await decided_cards(tenant, engagement_id)}
+    names = await names_of(sorted(set(deciders.values()), key=str))
+    out: dict[UUID, tuple[str, str | None]] = {}
+    for row in rows:
+        decider = deciders.get(row.decision_card_id)
+        name = names.get(decider) if decider else None
+        initials = "".join(part[0] for part in name.split()).upper() if name else None
+        out[row.finding_id] = (str(row.severity_concluded), initials)
+    return out
+
+
+def register_exception_routes() -> None:
+    register_exception_route("finding", route_to_finding)
+    register_exception_route("misstatement", route_to_misstatement)
+
+
+_AUDIT_OWNERS: Final = {
+    TARGET: text("SELECT id, engagement_id FROM audit_findings WHERE id = ANY(:ids)"),
+    "audit_misstatement": text(
+        "SELECT id, engagement_id FROM audit_misstatements WHERE id = ANY(:ids)"
+    ),
+}
+AUDIT_KINDS: Final = frozenset(_AUDIT_OWNERS)
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
-    del kind
     async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            text("SELECT id, engagement_id FROM audit_findings WHERE id = ANY(:ids)"),
-            {"ids": list(ids)},
-        )
+        rows = await session.execute(_AUDIT_OWNERS[kind], {"ids": list(ids)})
         return {found: owned for found, owned in rows}

@@ -15,6 +15,19 @@ from abacus.modules.agents.ai_policy_store import policy_autonomy_level
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
+from abacus.modules.agents.code_runs import (  # A-07-T32: code-only runs, v1 path
+    CodeRun,
+    CodeStep,
+    ReservedAction,
+    begin_code_run,
+    blocks,
+    fact,
+    fail_code_run,
+    finish_code_run,
+    record_code_run,
+    text_part,
+    txt,
+)
 from abacus.modules.agents.contract import proposals_router, suggestions_router
 from abacus.modules.agents.decision_recommend import (
     RECOMMENDER,
@@ -37,6 +50,7 @@ from abacus.modules.agents.engagement_runs import (
 )
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.events import FollowUpSent
+from abacus.modules.agents.events import SectionDraftFinished as SectionDraftFinished
 from abacus.modules.agents.export_screening import screening_section
 from abacus.modules.agents.fake_responses import (
     SCREEN_PROMPT,
@@ -46,6 +60,7 @@ from abacus.modules.agents.fake_responses import (
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.fake_responses import install_review as install_fake_reviews
 from abacus.modules.agents.field_citations import register_field_citations_reader
+from abacus.modules.agents.follow_up_drafts import draft_for as draft_follow_ups
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_up_routes import follow_ups_router
 from abacus.modules.agents.follow_ups import reminder_history_of
@@ -64,6 +79,8 @@ from abacus.modules.agents.handoff import (
     SectionDraft,
     VerifiedCitation,
 )
+from abacus.modules.agents.handoff import NoticeAnalyzeOutput as NoticeAnalyzeOutput
+from abacus.modules.agents.handoff import NoticeExtractOutput as NoticeExtractOutput
 from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.intake_candidates import intake_candidates
@@ -72,6 +89,12 @@ from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.methodology_citations import register_methodology_step
 from abacus.modules.agents.methodology_import_workflow import MethodologyImportWorkflow
+from abacus.modules.agents.notice_responder import RESPONDER as RESPONDER
+from abacus.modules.agents.notice_responder import AnalyzeFacts as AnalyzeFacts
+from abacus.modules.agents.notice_responder import analyze as analyze_notice
+from abacus.modules.agents.notice_responder import build_context as notice_context
+from abacus.modules.agents.notice_responder import check as check_notice_answer
+from abacus.modules.agents.notice_responder import extract_fields as extract_notice_fields
 from abacus.modules.agents.pilot_w7 import w7_override_rate
 from abacus.modules.agents.proposal_slots import (
     AdoptedValue,
@@ -91,12 +114,16 @@ from abacus.modules.agents.proposal_slots import (
     register_threshold_policy,
 )
 from abacus.modules.agents.proposals import (
+    PendingFieldSuggestion,
+    PendingSuggestion,
     ProposalChanged,
     ProposalInvalid,
     ProposedRow,
     SuggestionChanged,
     create_proposal,
     create_suggestion,
+    pending_suggestion,
+    pending_suggestions,
     register_checkpoint_hooks,
     register_proposal_state,
 )
@@ -112,8 +139,31 @@ from abacus.modules.agents.routes import (
     router,
     template_drafts_router,
 )
+from abacus.modules.agents.run_backfill import register_session_links
+from abacus.modules.agents.run_backfill_workflow import (
+    BACKFILL_ID_PREFIX,
+    AgentRunBackfillWorkflow,
+    BackfillBatch,
+    BackfillInput,
+)
+from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, bring-down
+    last_completed_run_at,
+    run_log_count,
+)
+from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scenario's runs
+    RecordedRun,
+    RecordedStep,
+    record_synthetic_run,
+)
+from abacus.modules.agents.run_stream import badge_stream as agent_badge_stream  # P-10-T26
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
+from abacus.modules.agents.runs_v2_contract import (
+    capabilities_router,
+    engagement_runs_v2_router,
+    feedback_router,
+    runs_v2_router,
+)
 from abacus.modules.agents.screening_contract import screening_items_router, screenings_router
 from abacus.modules.agents.screenings import (
     SUBSCRIPTIONS as SCREENING_SUBSCRIPTIONS,
@@ -123,7 +173,13 @@ from abacus.modules.agents.screenings import (
     start_screening,
     workflow_id,
 )
+from abacus.modules.agents.section_draft import (
+    DraftCapReached as DraftCapReached,
+)
 from abacus.modules.agents.section_draft import DraftingNotEnabled
+from abacus.modules.agents.section_draft import (
+    followed_up_running as followed_up_running,
+)
 from abacus.modules.agents.section_draft import start as start_section_draft
 from abacus.modules.agents.section_sources import (
     ModeDocument,
@@ -158,10 +214,12 @@ from abacus.modules.agents.service import (
     screening_results_for,
 )
 from abacus.modules.agents.shadow_score import (
+    DecidedNotice,
     OverrideRate,
     ShadowScore,
     live_override,
     override_rate,
+    register_notice_shadows,
     shadow_score,
 )
 from abacus.modules.agents.spec import AGENTS, AgentSpec, cleared_for_client_data, spec
@@ -175,6 +233,19 @@ from abacus.modules.agents.stage_admin import (
 )
 from abacus.modules.agents.stage_routes import platform_stages_router
 from abacus.modules.agents.stages import assistants, stage_for, starts_in_shadow
+from abacus.modules.agents.tools.registry import AgentTool as AgentTool
+from abacus.modules.agents.tools.registry import ToolNotRegistered as ToolNotRegistered
+from abacus.modules.agents.tools.registry import ToolPageIn as ToolPageIn
+from abacus.modules.agents.tools.registry import ToolPageOut as ToolPageOut
+from abacus.modules.agents.tools.registry import agent_tool as agent_tool
+from abacus.modules.agents.tools.registry import register_tool as register_tool
+from abacus.modules.agents.tools.registry import registered_tools as registered_tools
+
+# P-10-T22 (C17 v1, frozen): the runtime the harness calls, and the shapes a tool declares.
+from abacus.modules.agents.tools.runtime import ToolCallIn as ToolCallIn
+from abacus.modules.agents.tools.runtime import ToolOutcome as ToolOutcome
+from abacus.modules.agents.tools.runtime import ToolTargets as ToolTargets
+from abacus.modules.agents.tools.runtime import call_tool as call_tool
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
@@ -202,6 +273,7 @@ from abacus.modules.agents.workflow_types import (
     NextTickInput,
     RunInput,
     ScreeningInput,
+    SectionDraftInput,
     SlotGrant,
 )
 from abacus.modules.agents.workflows import (
@@ -244,6 +316,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     template_drafts_router,
     engagement_runs_router,
     runs_router,
+    engagement_runs_v2_router,
+    runs_v2_router,
+    feedback_router,
+    capabilities_router,
     # C3 (P-04-T08; ADR-161); `review.grammar_api` retired (P-04-T62).
     proposals_router,
     suggestions_router,
@@ -285,10 +361,25 @@ register_intake_candidates(intake_candidates)
 register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
 register_client_request_sender(send_issue_to_client)  # P-04-T31 (DEC-828)
 
+# The C6 v1.1 blocks schema and the spec v2 checks, for their generators (S31 end pass; BOUND-001).
+from abacus.modules.agents.blocks import AgentBlocks, BlocksTurn, Fact  # noqa: E402
+from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
+    close_deterministic_run,
+    deterministic_run_facts,
+    open_deterministic_run,
+)
+from abacus.modules.agents.spec_v2 import (  # noqa: E402
+    AgentSpecV2,
+    ToolFacts,
+    registry_problems,
+    spec_problems,
+)
+
 __all__ = [
     "ACTIVITIES",
     "AGENTS",
     "ASSESSOR",
+    "BACKFILL_ID_PREFIX",
     "DRAFTER",
     "ENGAGEMENT_AGENT_HANDLE",
     "ENGAGEMENT_AGENT_NEXT_TICK",
@@ -302,17 +393,28 @@ __all__ = [
     "WORKFLOWS",
     "ActiveRun",
     "AdoptedValue",
+    "AgentBlocks",
     "AgentEvent",
     "AgentInput",
+    "AgentRunBackfillWorkflow",
     "AgentRunBusy",
     "AgentRunNotRunning",
     "AgentSpec",
+    "AgentSpecV2",
     "AiPolicyLoosened",
+    "AnalyzeFacts",
     "ApprovedChangeSet",
     "ApproverMustDiffer",
+    "BackfillBatch",
+    "BackfillInput",
+    "BatchOutcome",
+    "BlocksTurn",
     "ChangeSetApplier",
     "Citation",
     "CitationStates",
+    "CodeRun",
+    "CodeStep",
+    "DecidedNotice",
     "DraftCitation",
     "DraftOutcome",
     "DraftedCell",
@@ -323,6 +425,8 @@ __all__ = [
     "EntryAssessInput",
     "EntryAssessRunInput",
     "EntryAssessWorkflow",
+    "Fact",
+    "FailKnowledgeInput",
     "GuidanceDraftInput",
     "GuidanceDraftRunInput",
     "GuidanceDraftWorkflow",
@@ -339,7 +443,9 @@ __all__ = [
     "ImportedStep",
     "InboxMatchWorkflow",
     "IntakeOutcome",
+    "KnowledgeEmbeddingWorkflow",
     "KnowledgeHit",
+    "KnowledgeInput",
     "MatchInput",
     "MatchOutcome",
     "MatchRunInput",
@@ -356,6 +462,8 @@ __all__ = [
     "OverrideRate",
     "PackProblem",
     "PackRefused",
+    "PendingFieldSuggestion",
+    "PendingSuggestion",
     "PriorFact",
     "ProposalChanged",
     "ProposalInvalid",
@@ -363,6 +471,9 @@ __all__ = [
     "ProposedValue",
     "RecommendFacts",
     "Recommended",
+    "RecordedRun",
+    "RecordedStep",
+    "ReservedAction",
     "ReviewOutcome",
     "ReviewUnavailable",
     "RunInput",
@@ -373,6 +484,8 @@ __all__ = [
     "ScreeningResultView",
     "ScreeningWorkflow",
     "SectionDraft",
+    "SectionDraftFinished",
+    "SectionDraftInput",
     "SectionDraftWorkflow",
     "SectionSource",
     "ShadowReportChanged",
@@ -388,15 +501,22 @@ __all__ = [
     "SuggestionChanged",
     "ThresholdEvaluation",
     "ThresholdPolicy",
+    "ToolFacts",
     "UnregisteredTarget",
     "UploadReviewWorkflow",
     "VerifiedCitation",
     "active_engagement_runs",
+    "agent_badge_stream",
+    "analyze_notice",
     "apply_proposal",
     "ask",
+    "begin_code_run",
+    "blocks",
     "check",
     "check_live",
+    "check_notice_answer",
     "check_suggestion_target",
+    "close_deterministic_run",
     "create_draft_run",
     "create_intake_match_run",
     "create_match_run",
@@ -404,37 +524,54 @@ __all__ = [
     "create_review_run",
     "create_screening_run",
     "create_suggestion",
+    "deterministic_run_facts",
     "draft",
+    "draft_follow_ups",
     "effective_ai_policy",
     "engagement_graph",
+    "extract_notice_fields",
+    "fact",
+    "fail_code_run",
     "fail_run",
+    "finish_code_run",
     "graph_router",
     "install_fake_responses",
     "install_fake_reviews",
     "knowledge_context",
     "knowledge_router",
+    "last_completed_run_at",
     "live_override",
     "load_agent_context",
     "match",
     "match_intake",
+    "notice_context",
+    "open_deterministic_run",
     "override_rate",
+    "pending_suggestion",
+    "pending_suggestions",
     "recommend",
+    "record_code_run",
+    "record_synthetic_run",
     "register_change_set_applier",
     "register_engagement_run_agent",
     "register_mode_mapping",
     "register_mode_plan",
     "register_mode_preparer",
+    "register_notice_shadows",
     "register_proposal_adapter",
     "register_section_source",
+    "register_session_links",
     "register_suggestion_applier",
     "register_suggestion_target",
     "register_threshold_policy",
+    "registry_problems",
     "request_review",
     "review",
     "review_citation_states",
     "review_sha256",
     "router",
     "run_initiators",
+    "run_log_count",
     "run_outcome",
     "screen",
     "screening_responder",
@@ -442,13 +579,31 @@ __all__ = [
     "search_knowledge",
     "shadow_score",
     "spec",
+    "spec_problems",
     "stage_for",
     "start_agents",
     "start_screening",
     "start_section_draft",
     "starts_in_shadow",
     "template_drafts_router",
+    "text_part",
+    "txt",
     "upload_review_available",
     "verify_citations",
     "workflow_id",
 ]
+
+# S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+from abacus.modules.agents.knowledge_workflow import (  # noqa: E402
+    KnowledgeEmbeddingWorkflow as KnowledgeEmbeddingWorkflow,
+)
+
+# P-10-T27 (DEC-3117): the agents topics of the invalidation stream.
+from abacus.modules.agents.realtime_topics import register as _register_topics  # noqa: E402
+from abacus.modules.agents.workflow_types import BatchOutcome as BatchOutcome  # noqa: E402
+from abacus.modules.agents.workflow_types import (  # noqa: E402
+    FailKnowledgeInput as FailKnowledgeInput,
+)
+from abacus.modules.agents.workflow_types import KnowledgeInput as KnowledgeInput  # noqa: E402
+
+_register_topics()

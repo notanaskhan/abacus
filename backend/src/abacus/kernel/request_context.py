@@ -44,6 +44,9 @@ class RequestContext:
     session_id: UUID | None = None
     auth_method: AuthMethod | None = None
     mfa_at: datetime | None = None
+    # P-10-T26 (DEC-3141): when the caller's access token expires; a stream closes 30 seconds
+    # before (`kernel.realtime.stream`). None when the token states none.
+    token_expires_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -92,6 +95,7 @@ def note_session(
     session_id: UUID | None = None,
     auth_method: AuthMethod | None = None,
     mfa_at: datetime | None = None,
+    token_expires_at: datetime | None = None,
 ) -> None:
     """What identity learned about the caller's session; a no-op outside a request."""
     found = _current.get()
@@ -103,8 +107,17 @@ def note_session(
             session_id=session_id if session_id is not None else found.session_id,
             auth_method=auth_method if auth_method is not None else found.auth_method,
             mfa_at=mfa_at if mfa_at is not None else found.mfa_at,
+            token_expires_at=token_expires_at
+            if token_expires_at is not None
+            else found.token_expires_at,
         )
     )
+
+
+def token_expires_at() -> datetime | None:
+    """The current request's access-token expiry (P-10-T26), or None outside a request."""
+    found = _current.get()
+    return None if found is None else found.token_expires_at
 
 
 def cookie_sha256(value: str) -> str:
@@ -166,4 +179,5 @@ __all__ = [
     "register_session_resolver",
     "session_cookie_name",
     "session_resolver",
+    "token_expires_at",
 ]

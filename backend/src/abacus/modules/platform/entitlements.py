@@ -17,12 +17,34 @@ from sqlalchemy import text
 from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainForbidden
-from abacus.modules.identity.api import AuthContext, current_context
+from abacus.modules.identity.api import AuthContext, current_context, is_synthetic_firm
 
 Module = Literal[
-    "attest", "internal_audit", "group_audit", "statements_studio", "office_addins", "insights"
+    "attest",
+    "internal_audit",
+    "group_audit",
+    "statements_studio",
+    "office_addins",
+    "insights",
+    "tax_returns",  # T-03-T19: Tax Returns and K-1 packages (DEC-2372)
+    "ebp_audits",  # A-05-T49: EBP-01 to EBP-09 (ADR P-28; DEC-2603)
+    "assurance_completion",  # A-06-T37: AUD-15, AUD-16, AUD-17, AUD-20 (ADR P-28; DEC-2714)
 ]
 MODULES: Final = frozenset(get_args(Module))
+# A-05-T49 (ADR P-28; chapter 10 §10.9.4): modules whose engines a CPA signs off. For a firm that
+# isn't synthetic the module holds only while its owner's registered check says the review is
+# signed; no registered check refuses (fail closed). Synthetic firms are the review's own test bed.
+REVIEWED_MODULES: Final = frozenset({"ebp_audits"})
+ReviewCheck = Callable[[], bool]
+_reviews: dict[str, ReviewCheck] = {}
+
+
+def register_module_review(module: Module, check: ReviewCheck) -> None:
+    """The module's owner registers whether its CPA review is signed (A-05-T49)."""
+    if module not in REVIEWED_MODULES:
+        raise ValueError(f"{module!r} is not a reviewed module")
+    _reviews[module] = check
+
 
 _ENTITLEMENT = text(
     "SELECT enabled, seats, agent_minutes_allowance, valid_from, valid_to "
@@ -54,6 +76,10 @@ async def entitlement(tenant: TenantContext, module: Module) -> Entitlement | No
     today: date = await clock.today(tenant)
     if row.valid_from > today or (row.valid_to is not None and row.valid_to < today):
         return None
+    if module in REVIEWED_MODULES and not await is_synthetic_firm(tenant):
+        check = _reviews.get(module)
+        if check is None or not check():
+            return None
     return Entitlement(module, row.seats, row.agent_minutes_allowance)
 
 

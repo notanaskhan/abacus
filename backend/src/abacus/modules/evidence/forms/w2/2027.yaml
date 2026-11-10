@@ -1,0 +1,27 @@
+# Form W-2 box map (P-11-T34; P-11 F8; DEC-76, DEC-2809). PROTECTED: golden tested and reviewed
+# yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+form: "W-2"
+form_type: "w2"
+tax_year: 2027
+family: tax_forms
+version: "w2-2027-v1"
+anchors: ["W-2"]
+year_after: "Wage and Tax Statement"
+fields:
+  - {key: w2.box1, label: "Wages, tips, other compensation", anchor: "Wages, tips", value_type: money}
+  - {key: w2.box2, label: "Federal income tax withheld", anchor: "Federal income tax withheld", value_type: money}
+  - {key: w2.box3, label: "Social security wages", anchor: "Social security wages", value_type: money}
+  - {key: w2.box4, label: "Social security tax withheld", anchor: "Social security tax withheld", value_type: money}
+  - {key: w2.box5, label: "Medicare wages and tips", anchor: "Medicare wages and tips", value_type: money}
+  - {key: w2.box6, label: "Medicare tax withheld", anchor: "Medicare tax withheld", value_type: money}
+  - {key: w2.box7, label: "Social security tips", anchor: "Social security tips", value_type: money}
+  - {key: w2.box8, label: "Allocated tips", anchor: "Allocated tips", value_type: money}
+  - {key: w2.box10, label: "Dependent care benefits", anchor: "Dependent care benefits", value_type: money}
+  - {key: w2.box11, label: "Nonqualified plans", anchor: "Nonqualified plans", value_type: money}
+  - {key: w2.box16, label: "State wages, tips, etc.", anchor: "State wages", value_type: money}
+  - {key: w2.box17, label: "State income tax", anchor: "State income tax", value_type: money}
+# Code tie-outs: format and ordering only; a break flags both fields, nothing is changed.
+tie_outs:
+  - {smaller: w2.box4, larger: w2.box3}
+  - {smaller: w2.box6, larger: w2.box5}

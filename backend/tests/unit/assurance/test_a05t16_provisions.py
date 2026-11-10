@@ -10,6 +10,9 @@ an owner's block into 409 `sign_off_blocked`, and that a guard that fails blocks
 from __future__ import annotations
 
 import uuid
+from dataclasses import replace
+from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 
@@ -97,3 +100,63 @@ def test_ac_review_answers_409_sign_off_blocked_with_the_reason() -> None:
         "sign_off_blocked",
         {"reason": "provisions_unverified", "count": 2},
     )
+
+
+@pytest.mark.parametrize(
+    ("asked", "diff"),
+    [
+        (1, (2, ("Long-term part-time", "Catch-up"))),
+        (2, None),
+        (None, None),
+    ],
+)
+async def test_a17_the_review_reads_its_paper_sign_offs_hashes_and_what_the_latest_adds(
+    monkeypatch: pytest.MonkeyPatch, asked: int | None, diff: tuple[int, tuple[str, ...]] | None
+) -> None:
+    paper = uuid.uuid4()
+    signer = uuid.uuid4()
+    at = datetime(2026, 9, 17, 15, 10, tzinfo=UTC)
+
+    async def item(*_a: object) -> object:
+        return SimpleNamespace(engagement_id=uuid.uuid4())
+
+    async def review_row(_t: object, _w: object, no: int | None) -> object:
+        latest = no in (None, 2)
+        return SimpleNamespace(review_no=2 if latest else 1, amendment_in_force=latest)
+
+    async def paper_of(*_a: object) -> uuid.UUID:
+        return paper
+
+    async def states(*_a: object) -> dict[str, FieldState]:
+        found = _all(frozenset())
+        return {k: replace(v, content_hash=f"sha256:{k}") for k, v in found.items()}
+
+    async def facts(*_a: object) -> object:
+        return SimpleNamespace(content_hash="h")
+
+    async def signed(*_a: object) -> dict[uuid.UUID, list[object]]:
+        return {
+            paper: [
+                SimpleNamespace(level=1, signed_by=signer, signed_at=at, stale=False),
+                SimpleNamespace(level=2, signed_by=None, signed_at=None, stale=False),
+            ]
+        }
+
+    monkeypatch.setattr(ebp_provisions, "assurance_item", item)
+    monkeypatch.setattr(ebp_provisions, "_review_row", review_row)
+    monkeypatch.setattr(ebp_provisions, "paper_of_kind", paper_of)
+    monkeypatch.setattr(ebp_provisions, "_states", states)
+    monkeypatch.setattr(ebp_provisions, "reviewable_facts", facts)
+    monkeypatch.setattr(ebp_provisions, "sign_off_states", signed)
+    ctx = SimpleNamespace(tenant=None)
+    found = await ebp_provisions.review_of(ctx, uuid.uuid4(), asked)  # pyright: ignore[reportArgumentType] -- the stubs read `tenant`
+    assert found.workpaper_id == paper
+    assert [(s.level, s.user_id) for s in found.sign_offs] == [(1, signer)]
+    entry = next(p for p in found.provisions if p.provision.key == "entry_dates")
+    assert entry.value_hash == f"sha256:{ENTRY.value_cell}"
+    if diff is None:
+        assert found.version_diff is None
+    else:
+        assert found.version_diff is not None
+        assert found.version_diff.current_no == diff[0]
+        assert set(found.version_diff.added_labels) == set(diff[1])

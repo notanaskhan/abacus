@@ -13,7 +13,7 @@
 
 # The base image is pinned by digest (the multi-arch index), never by tag alone. Refresh it with
 # the weekly base rebuild (Q-01-T11): docker buildx imagetools inspect python:3.12-slim
-ARG PYTHON_IMAGE=python:3.12-slim@sha256:cb33f7f771ecec2ef1225cf39b159591a040391bd73e4c01f00fdfc4c47611d2
+ARG PYTHON_IMAGE=python:3.12-slim@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54
 # The renderer's native libraries (ADR-320, P-11-T02): WeasyPrint shapes text with Pango and
 # HarfBuzz and finds faces through fontconfig. Pinned to the versions of the digest-pinned base
 # (Debian trixie), so a render's bytes do not move under a rebuild; the weekly base refresh
@@ -52,8 +52,10 @@ CMD ["pytest", "tests/unit", "-q"]
 
 FROM ${PYTHON_IMAGE} AS runtime
 ARG RENDER_LIBS
+# zlib1g: Debian's security fix (CVE-2026-76844, CVE-2026-85091) until the base digest carries it.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ${RENDER_LIBS} \
+    && apt-get install -y --only-upgrade --no-install-recommends zlib1g \
     && rm -rf /var/lib/apt/lists/*
 # A fixed non-root identity with no login shell and no home directory.
 RUN groupadd --system --gid 10001 abacus \

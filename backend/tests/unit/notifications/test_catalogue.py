@@ -21,11 +21,19 @@ def test_ac7_each_event_emails_its_own_sentence() -> None:
 
 
 def test_ac1_every_catalogued_event_is_subscribed() -> None:
-    assert set(SUBSCRIPTIONS) == set(CATALOGUE)
+    # P-10-T27 (DEC-3117): the real-time invalidations subscribe beside the catalogue.
+    realtime = {"notification.created", "request_item.status_changed", "report.released"}
+    assert set(SUBSCRIPTIONS) == set(CATALOGUE) | realtime
 
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        "eqr.concurred_v2",  # A-07-T18 (C16 `eqr_concurred`, to the engagement partners)
+        "eqr.requested",  # A-07-T18 (C16 `eqr_requested`, to the assigned EQR; DF-05)
+        "uncorrected_misstatements.acknowledged",  # R-02-T15 (DEC-3113, to the team)
+        "extension_payment.approval_requested",  # T-03-T07 (DEC-2350)
+        "extension.ack_rejected",  # T-03-T07 (DEC-2350)
+        "estimate.due_soon",  # T-03-T07 (DEC-2350)
         "support_session.requested",
         "support_session.emergency_approved",
         "budget.soft_crossed",
@@ -58,12 +66,14 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "invitation.expiring",  # P-07-T47 (C16 `invitation_expiring`, to firm admins, day 12)
         "third_party.uploaded",  # R-01-T13 (C16 `third_party_uploaded`, to the request owner)
         "sign_off.went_stale",  # P-04-T19 (C16 `sign_off_stale`, to the signer)
+        "sign_off.re_review_requested",  # A-06-T14 (C16 `sign_off_re_review`, to the signer)
         "mapping_set.went_stale",  # A-03-T14 (C16 `mapping_set_stale`, to its signers)
         "review_note.raised",  # P-04-T21 (C16 `review_note_raised`, to the assignee)
         "decision_card.raised",  # P-04-T23 (C16 `decision_assigned`, to the reserved person)
         "decision_card.notify_requested",  # P-04-T23 (C16 `mention`, SHL-11 b Notify)
         "proposal.routed",  # P-04-T26 (C16 `proposal_routed`, to the named approver)
         "sign_off.requested",  # P-04-T26 (`sign_off_requested`, to the people named)
+        "proposed_entry.client_decided",  # A-06-T10 (`proposed_entry_client_responded`, leads)
         "issue.assigned",  # P-04-T26 (`issue_assigned`, to the assignee; P-04-T30 emits it)
         "checkpoint.created",  # P-04-T26 (`import_pending_approval`, an import's reviewers)
         # T-01-T27 (DEC-1463): the tax engine bridge, to the people the producer names
@@ -96,6 +106,11 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "envelope.declined",  # N-02-T24 (C16 `envelope_declined`, to the sender)
         "envelope.expired",  # N-02-T24 (C16 `envelope_expired`, to the sender)
         "envelope.signer_verification_failed",  # N-02-T27 (DF-11, to the sender)
+        "notice_intake.ready",  # N-04-T07 (DEC-2326, to the intake's owner)
+        "notice.created",  # N-04-T07 (DEC-2326, the assignee and whoever was chosen)
+        "notice.respond_by_soon",  # N-04-T16 (C16, to the assignee)
+        "notice.follow_up_due",  # N-04-T16 (C16, to the assignee)
+        "notice_response.ready_to_send",  # N-04-T16 (C16, to the assignee)
         "fraud_minutes.awaiting_approval",  # A-04-T19 (`fraud_minutes_awaiting_approval`, the EPs)
     }
 
@@ -181,3 +196,23 @@ async def test_q02t33_an_incident_tells_the_qi_and_partners_and_an_accrued_one_t
     assert await accrued.recipients(uuid.uuid4(), {"incident_id": str(uuid.uuid4())}) == sorted(
         [qi, admin]
     )
+
+
+async def test_n04t07_a_new_notice_reaches_the_assignee_and_who_was_chosen() -> None:
+    assignee, partner = uuid.UUID(int=1), uuid.UUID(int=2)
+    payload: dict[str, object] = {
+        "assignee_id": str(assignee),
+        "notify_user_ids": [str(partner), str(assignee)],
+    }
+    assert await CATALOGUE["notice.created"].recipients(uuid.UUID(int=9), payload) == [
+        assignee,
+        partner,
+    ]
+
+
+async def test_n04t07_a_ready_intake_reaches_its_owner() -> None:
+    owner = uuid.UUID(int=3)
+    found = await CATALOGUE["notice_intake.ready"].recipients(
+        uuid.UUID(int=9), {"owner_id": str(owner)}
+    )
+    assert found == [owner]

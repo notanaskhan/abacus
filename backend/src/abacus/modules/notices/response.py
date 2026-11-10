@@ -20,13 +20,14 @@ import difflib
 import hashlib
 import json
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
@@ -38,13 +39,15 @@ from abacus.modules.methodology.api import (
     report_template_version,
     report_templates_in_firm,
 )
-from abacus.modules.notices.service import notice
+from abacus.modules.notices.service import Notice, move, notice, notice_for_run
+from abacus.modules.organisations.api import entity_display_name
 from abacus.modules.reporting.api import template_blocks
-from abacus.modules.review.api import Reviewable, ReviewableFacts
+from abacus.modules.review.api import Reviewable, ReviewableFacts, sign_off_states
 
 JsonRow = dict[str, Any]  # Any: JSON columns as stored
 
 FAMILY: Final = "notice_response"
+POSITION_CLAUSES: Final = ("agree", "partially_agree", "disagree")
 TARGET: Final = "notice_response"
 
 
@@ -109,23 +112,34 @@ def content_hash(
     return hashlib.sha256(body.encode("utf-8")).hexdigest()
 
 
-async def _variables(ctx: AuthContext, notice_id: UUID) -> dict[str, str]:
-    """Typed variables by code: never a model's text."""
-    found = await notice(ctx, notice_id)
-    async with tenant_session(ctx.tenant) as session:
+async def letter_values(tenant: TenantContext, found: Notice) -> dict[str, str]:
+    """Typed variables by code: never a model's text. The draft's blocks and the signed letter fill
+    from the same values, so what a person reviews is what the taxpayers sign."""
+    async with tenant_session(tenant) as session:
         analysis = (
             await session.execute(
                 text(
                     "SELECT rows FROM notice_analyses WHERE work_item_id = :w "
                     "AND status = 'ready' ORDER BY version DESC LIMIT 1"
                 ),
-                {"w": notice_id},
+                {"w": found.id},
             )
         ).scalar()
+    on = await today(tenant)
+    code = found.notice_code or ""
     values = {
-        "notice_code": found.notice_code or "",
+        "notice_code": code,
         "tax_year": "" if found.tax_year is None else str(found.tax_year),
         "position": found.position or "",
+        "taxpayer.names": (
+            ""
+            if found.client_entity_id is None
+            else (await entity_display_name(tenant, found.client_entity_id) or "")
+        ),
+        "letter.date": f"{on:%B} {on.day}, {on.year}",
+        "notice.reference": (
+            code if found.tax_year is None else f"{code} · Tax year {found.tax_year}"
+        ),
     }
     for row in cast(
         list[JsonRow],
@@ -134,6 +148,30 @@ async def _variables(ctx: AuthContext, notice_id: UUID) -> dict[str, str]:
         values[f"{row['key']}.irs"] = row["irs"]
         values[f"{row['key']}.difference"] = row["difference"]
     return values
+
+
+def clause_states_for(position: str | None) -> dict[str, bool]:
+    """A clause named after a position is on for that position only (DEC-2392): a Disagree letter
+    must not carry the template's "we agree". Undecided, the template's defaults stand."""
+    return {} if position is None else {key: key == position for key in POSITION_CLAUSES}
+
+
+def _for_position(clauses: Sequence[object], position: str | None) -> list[object]:
+    states = clause_states_for(position)
+    return [
+        {**c, "default_enabled": states[str(c.get("clause_id"))]}
+        if str(c.get("clause_id")) in states
+        else c
+        for c in cast("Sequence[Mapping[str, object]]", clauses)
+    ]
+
+
+def drafted_for(position: str | None, position_source: str) -> str | None:
+    """The position a draft answers. One written before the decision answers none, so a decided
+    notice's sign-off refuses it until it is regenerated (DEC-2392)."""
+    if position is None:
+        return None
+    return position if position_source == "decided" else "provisional"
 
 
 async def _template(
@@ -150,11 +188,14 @@ async def _template(
 async def _template_texts(
     ctx: AuthContext, notice_id: UUID, view: TemplateVersionView
 ) -> list[JsonRow]:
-    values = await _variables(ctx, notice_id)
+    found = await notice(ctx, notice_id)
     return [
         {"key": block_id, "origin": "template", "template_block_key": block_id, "text": body}
         for block_id, _clause, body in template_blocks(
-            layout_key=view.layout_key, body=view.body, clauses=view.clauses, values=values
+            layout_key=view.layout_key,
+            body=view.body,
+            clauses=_for_position(view.clauses, found.position),
+            values=await letter_values(ctx.tenant, found),
         )
     ]
 
@@ -205,8 +246,8 @@ async def _insert_version(
     ).scalar_one()
     await tx.session.execute(
         text(
-            "UPDATE notice_responses SET current_version_id = :v, row_version = row_version + 1, "
-            "updated_at = clock_timestamp() WHERE id = :r"
+            "UPDATE notice_responses SET current_version_id = :v, row_version = row_version + 1 "
+            "WHERE id = :r"
         ),
         {"v": version_id, "r": response_id},
     )
@@ -238,6 +279,12 @@ async def draft(ctx: AuthContext, notice_id: UUID) -> Response:
             )
         ).scalar_one()
         await _insert_version(tx, ctx, UUID(str(response_id)), blocks, None)
+        # S28 partials (TASK-3396): drafting is what makes the notice "Response drafted"; nothing
+        # moved it before, so outside the seed no notice could reach Approved or be sent.
+        if found.status in _DRAFTABLE:
+            await move(
+                tx, found, "response_drafted", actor_kind="human", actor_user_id=ctx.user_id
+            )
         tx.record(
             "notice_response.drafted",
             target=Target("notice", found.id),
@@ -335,6 +382,7 @@ async def edit(
             await _insert_version(
                 tx, ctx, current.id, merged, "\n".join(b.text for b in current.blocks)
             )
+            await _unapprove(tx, ctx, notice_id)
         sets = {k: v for k, v in settings.items() if v is not None and k in _SETTABLE}
         if sets:
             # One fixed statement, bound parameters (SQL-001); an absent setting keeps its value.
@@ -345,7 +393,7 @@ async def edit(
                     "signer_contact_ids), channel = COALESCE(CAST(:channel AS text), channel), "
                     "follow_up_days = COALESCE(CAST(:follow_up_days AS integer), follow_up_days), "
                     "owner_user_id = COALESCE(CAST(:owner_user_id AS uuid), owner_user_id), "
-                    "row_version = row_version + 1, updated_at = clock_timestamp() WHERE id = :id"
+                    "row_version = row_version + 1 WHERE id = :id"
                 ),
                 {**dict.fromkeys(_SETTABLE), **sets, "id": current.id},
             )
@@ -379,6 +427,12 @@ async def regenerate(ctx: AuthContext, notice_id: UUID, if_match: int) -> Respon
         await _insert_version(
             tx, ctx, current.id, merged, "\n".join(b.text for b in current.blocks)
         )
+        await _unapprove(tx, ctx, notice_id)
+        if (await notice(ctx, notice_id)).position is not None:
+            await tx.session.execute(
+                text("UPDATE notice_responses SET position_source = 'decided' WHERE id = :r"),
+                {"r": current.id},
+            )
         tx.record(
             "notice_response.regenerated",
             target=Target("notice", current.notice_id),
@@ -443,7 +497,6 @@ async def facts(tenant: TenantContext, response_id: UUID) -> ReviewableFacts | N
         Block(b["key"], b["origin"], b.get("template_block_key"), b["text"], False)
         for b in row["blocks"]
     ]
-    drafted_for = row["position"] if row["position_source"] == "decided" else None
     return ReviewableFacts(
         target_type=TARGET,
         target_id=row["id"],
@@ -451,7 +504,9 @@ async def facts(tenant: TenantContext, response_id: UUID) -> ReviewableFacts | N
         content_hash=row["content_hash"],
         version_no=row["version_no"],
         preparer_user_ids=frozenset(),
-        blocked_code=blocked_code(row["position"], drafted_for, blocks),
+        blocked_code=blocked_code(
+            row["position"], drafted_for(row["position"], row["position_source"]), blocks
+        ),
     )
 
 
@@ -487,6 +542,58 @@ async def signoff_ready(tenant: TenantContext, work_item_id: UUID) -> bool:
         return False
     found = await facts(tenant, row["response_id"])
     return found is not None and found.blocked_code is None
+
+
+_DRAFTABLE: Final = frozenset({"classified", "analyzing"})
+PARTNER_LEVEL: Final = 4  # the ladder's Approved: the partner's sign-off (L4)
+
+
+async def _unapprove(tx: UnitOfWork, ctx: AuthContext, notice_id: UUID) -> None:
+    """A new version leaves the partner's sign-off stale: an Approved notice is drafted again."""
+    found = await notice(ctx, notice_id)
+    if found.status == "approved":
+        await move(tx, found, "response_drafted", actor_kind="human", actor_user_id=ctx.user_id)
+
+
+async def partner_approved(tenant: TenantContext, work_item_id: UUID) -> bool:
+    """The partner signed the response's current version (L4, not stale)."""
+    row = await _gate_row(tenant, work_item_id)
+    if row is None or row["response_id"] is None:
+        return False
+    found = await facts(tenant, row["response_id"])
+    if found is None:
+        return False
+    states = await sign_off_states(
+        tenant, TARGET, [found.target_id], {found.target_id: found.content_hash}
+    )
+    return any(
+        s.level == PARTNER_LEVEL and s.signed_by is not None and not s.stale
+        for s in states[found.target_id]
+    )
+
+
+async def approve_when_signed(tenant: TenantContext, response_id: UUID) -> None:
+    """After a partner's sign-off on the response: a drafted notice moves to Approved, once."""
+    async with tenant_session(tenant) as session:
+        work_item_id = (
+            await session.execute(
+                text("SELECT work_item_id FROM notice_responses WHERE id = :r"), {"r": response_id}
+            )
+        ).scalar_one_or_none()
+    if work_item_id is None:
+        return
+    found = await notice_for_run(tenant, work_item_id)
+    if found is None or found.status != "response_drafted":
+        return
+    if not await partner_approved(tenant, work_item_id):
+        return
+    async with uow(tenant) as tx:
+        await move(tx, found, "approved", actor_kind="system", actor_user_id=None)
+        tx.record(
+            "notice.approved",
+            target=Target("notice", found.id),
+            after=Ref(response=response_id),
+        )
 
 
 async def send_ready(tenant: TenantContext, work_item_id: UUID) -> bool:

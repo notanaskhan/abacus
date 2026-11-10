@@ -10,3 +10,9 @@ Owns the assurance service line. Built so far (A-01, A-02): the audits index and
 - **Runbook:** RB-33 binder export and pilot rollback (`docs/runbooks/RB-33-binder-export-and-pilot-rollback.md`).
 
 Will own (docs/plan/03-backend-architecture.md §2.2): materiality, risks, controls, walkthroughs, service organizations, confirmations, findings, misstatements, deficiencies, EQR, completion, letters, reports and releases, group audit components.
+
+## EBP modules (A-05; A-05-T62)
+- **Flags:** `ebp.modules`, `ebp.form5500_tieout`, `assurance.estimates_rp`; the modes ride A-04's `workpapers.drafting`; the EBP audits module is a DB entitlement (ADR P-28).
+- **Compute:** `compute/ebp/*.py` (provisions, eligibility, remittance, loans, accounts, expenses, form5500 with `schedule_4i`, estimates): pure Decimal engines stamping `engine_version` and `inputs_hash`; reference data in `compute/ebp/reference/*.yaml` (PROTECTED, CPA-reviewed).
+- **One late-remittance object:** `ebp_late_remittances` (0658), read in place by EBP-04, EBP-07 4a and AUD-27.
+- **Runbook:** `docs/runbooks/ebp-modules.md` (flip, rollback, corrections, recompute, annual reference updates).

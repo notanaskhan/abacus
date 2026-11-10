@@ -4,7 +4,7 @@ title: Q-04-T085 deadline week Oct 11-15 watch, rehearsed on the synthetic test 
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # no release or flip ran in the week and every daily check is logged
 risk_zone: red
-status: in-review
+status: done
 epic: Q-04
 plan_key: Q-04-T085
 branch: s25-q04-t085

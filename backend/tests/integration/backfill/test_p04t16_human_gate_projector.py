@@ -222,8 +222,9 @@ async def test_p04t16_a_walled_clients_gates_are_never_listed_or_counted(
     assert walled.status_code == 200 and walled.json()["total"] == 0
 
 
-async def test_p04t16_the_list_is_off_with_the_review_grammar_flag(net: Net, seed: Seeder) -> None:
+async def test_p04t16_the_list_answers_since_the_flag_retired(net: Net, seed: Seeder) -> None:
+    """P-04-T62 (DEC-2221): `review.grammar_api` retired, so no flag row is needed."""
     tenant_id = await seed.firm()
     who = await seed.person(tenant_id, "firm_admin")
     response = await net.call("GET", "/v1/human-gates", who)
-    assert response.status_code == 404
+    assert response.status_code == 200

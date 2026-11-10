@@ -42,6 +42,14 @@ Variant = Literal[
 HumanResult = Literal["pass", "exception", "no_effect"]
 AgentResult = Literal["agent_tested", "needs_human"]
 _HUMAN: Final = frozenset({"pass", "exception", "no_effect"})
+RowState = Literal["not_started", "agent_tested", "needs_human", "pass", "exception", "no_effect"]
+_STATE_ORDER: Final[tuple[RowState, ...]] = (
+    "exception",
+    "needs_human",
+    "agent_tested",
+    "no_effect",
+    "pass",
+)
 _ANCHOR: Final[dict[str, str]] = {
     "ebp_eligibility": "EBP-03",
     "ebp_contribution_recalc": "EBP-04",
@@ -100,10 +108,10 @@ class Row:
     cells: tuple[Cell, ...]
 
     @property
-    def state(self) -> str:
+    def state(self) -> RowState:
         """A row's state: exception if any cell is, then needs human, then the rest."""
         results = {c.result for c in self.cells}
-        for state in ("exception", "needs_human", "agent_tested", "no_effect", "pass"):
+        for state in _STATE_ORDER:
             if state in results:
                 return state
         return "not_started"
@@ -189,6 +197,23 @@ async def _test(tenant: TenantContext, test_id: UUID) -> Mapping[str, object]:
     if found is None:
         raise NotFound(TARGET)
     return dict(found)
+
+
+async def latest_test_of_variant(
+    tenant: TenantContext, work_item_id: UUID, variant: str
+) -> tuple[UUID, str] | None:
+    """A-05-T23: the work item's latest test of this variant, and its content hash."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT id, content_hash FROM attribute_tests WHERE work_item_id = :w "
+                    "AND variant = :v ORDER BY created_at DESC LIMIT 1"
+                ),
+                {"w": work_item_id, "v": variant},
+            )
+        ).first()
+    return None if row is None else (row.id, row.content_hash)
 
 
 async def grid(ctx: AuthContext, engagement_id: UUID, test_id: UUID) -> Grid:

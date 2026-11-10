@@ -76,6 +76,50 @@ async def test_ac4_3_one_card_over_every_pending_proposal(world: Books) -> None:
     assert body["subject_codes"] == ["R3", "R5"]
 
 
+async def _drawer(world: Books, risk: Json, who: object) -> Json:
+    response = await world.call("GET", _path(world, f"/{risk['id']}"), who)  # pyright: ignore[reportArgumentType] -- the persona, untyped here
+    assert response.status_code == 200, response.text
+    return cast(Json, response.json())
+
+
+async def test_ac4_3_the_drawer_reads_who_the_card_is_routed_to_and_who_may_remind(
+    world: Books,
+) -> None:
+    """AC4.3's footers on the live read (A-04-T18, T20; DEC-2484): the senior reads Routed to the
+    partner with Remind, the partner gets the decision, and Remind is C3's notify."""
+    made = await _propose(world)
+    before = await _drawer(world, made["R3"], world.senior)
+    assert before["pending_card_id"] is None
+    assert before["routed_to_name"] is None
+    raised = await world.call(
+        "POST", _path(world, "/approval-requests"), world.senior, headers=_keyed()
+    )
+    assert raised.status_code == 201, raised.text
+    card = cast(Json, raised.json())["decision_card_id"]
+
+    senior = await _drawer(world, made["R3"], world.senior)
+    assert senior["pending_card_id"] == card
+    assert senior["routed_to_name"]
+    assert senior["routed_at"]
+    senior_actions = cast(list[str], cast(Json, senior["risk"])["allowed_actions"])
+    assert "decision.notify" in senior_actions
+    assert "decision.decide" not in senior_actions
+
+    partner = await _drawer(world, made["R3"], world.partner)
+    assert partner["pending_card_id"] == card
+    partner_actions = cast(list[str], cast(Json, partner["risk"])["allowed_actions"])
+    assert "decision.decide" in partner_actions
+    assert "decision.notify" not in partner_actions
+
+    # A row the card does not cover is not routed.
+    other = await _drawer(world, made["R1"], world.senior)
+    assert other["pending_card_id"] is None
+    assert other["routed_to_name"] is None
+
+    reminded = await world.call("POST", f"/v1/decision-cards/{card}/notify", world.senior)
+    assert reminded.status_code == 200, reminded.text
+
+
 async def test_ac4_3_nothing_pending_answers_409(world: Books) -> None:
     await _northwind(world)
     response = await world.call(

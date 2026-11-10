@@ -1,0 +1,15 @@
+# Form 1099-G box map (P-11-T34; P-11 F8; DEC-76, DEC-2809). PROTECTED: golden tested and reviewed
+# yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+form: "1099-G"
+form_type: "1099_g"
+tax_year: 2025
+family: tax_forms
+version: "1099_g-2025-v1"
+anchors: ["1099-G"]
+year_after: "1099-G"
+corrected_anchor: "CORRECTED"
+fields:
+  - {key: g.box1, label: "Unemployment compensation", anchor: "Unemployment compensation", value_type: money}
+  - {key: g.box2, label: "State or local income tax refunds, credits, or offsets", anchor: "State or local income tax refunds", value_type: money}
+  - {key: g.box4, label: "Federal income tax withheld", anchor: "Federal income tax withheld", value_type: money}

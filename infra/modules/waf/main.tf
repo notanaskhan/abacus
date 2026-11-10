@@ -3,7 +3,9 @@
 # an aliased provider. Rules, in evaluation order:
 #   0  auth and code rate: 30 requests per 5 minutes per IP on the auth prefixes; the 31st is
 #      blocked with 429 (T56). Always block: it protects sign-in codes from guessing.
-#   1  general rate: 2,000 per 5 minutes per IP, block.
+#   1  general rate: 2,000 per 5 minutes per IP, block. Server-sent event streams
+#      (stream_path_regex) are not counted (P-10-T15): a stream is one long request, and a dock
+#      reconnecting with Last-Event-ID must not trip the limit; the API caps streams per person.
 #   2  provider webhook rate: 300 per 5 minutes per IP on /v1/webhooks/ (ADR-152, DEC-1281), block
 #      with 429, which the provider retries; the receiver also caps hints per envelope.
 #   3  upload rate: 300 per 5 minutes per IP on the file routes (upload_path_regex), block with
@@ -120,6 +122,25 @@ resource "aws_wafv2_web_acl" "this" {
         limit                 = var.general_rate_limit
         evaluation_window_sec = var.rate_window_seconds
         aggregate_key_type    = "IP"
+
+        scope_down_statement {
+          not_statement {
+            statement {
+              regex_match_statement {
+                regex_string = var.stream_path_regex
+
+                field_to_match {
+                  uri_path {}
+                }
+
+                text_transformation {
+                  priority = 0
+                  type     = "LOWERCASE"
+                }
+              }
+            }
+          }
+        }
       }
     }
 

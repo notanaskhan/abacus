@@ -11,6 +11,7 @@ Archived and declined engagements are included: a hold is about the records, not
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
@@ -95,6 +96,38 @@ async def engagements_in_hold_scope(
         )
     async with tenant_session(tenant) as session:
         return list((await session.scalars(query.order_by(Engagement.id))).all())
+
+
+async def work_item_titles(
+    tenant: TenantContext, work_item_ids: Sequence[UUID]
+) -> dict[UUID, str]:
+    """R-02-T09 (S31 end pass): each work item's name, for POR-09's band labels. Names only, for
+    work items the caller has already admitted (a deliverable a grant covers); RLS keeps the
+    tenant."""
+    if not work_item_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(WorkItem.id, WorkItem.name).where(WorkItem.id.in_(list(work_item_ids)))
+            )
+        ).all()
+    return {r.id: str(r.name) for r in rows}
+
+
+async def work_item_period(
+    tenant: TenantContext, work_item_id: UUID
+) -> tuple[date | None, date | None]:
+    """S31 close (AUD-27's rollforward dates): the work item's period start and end."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                select(WorkItem.period_start, WorkItem.period_end).where(
+                    WorkItem.id == work_item_id
+                )
+            )
+        ).first()
+    return (None, None) if row is None else (row.period_start, row.period_end)
 
 
 async def work_item_engagement(tenant: TenantContext, work_item_id: UUID) -> UUID | None:

@@ -402,6 +402,7 @@ async def test_ac_f9_1_a_settled_subject_goes_done_and_a_returned_one_reopens_it
     subjects = await _daniels_eleven(firm)
     decision = subjects["decision"][0]
     gone = next(g for g in _WAITING[firm.tenant_id] if g.subject_id == decision)
+    assert gone.engagement_id is not None  # an engagement source's subject (DEC-2613)
     row_before = await firm.net.seed.rows(
         "SELECT id FROM human_gates WHERE tenant_id = $1 AND subject_ref->>'id' = $2",
         firm.tenant_id,
@@ -553,12 +554,13 @@ async def test_ac_f9_2_a_client_user_reads_no_firm_gate(firm: Firm) -> None:
     assert str(firm.ashford.engagement_id) not in response.text
 
 
-async def test_ac_c3_flag_off_the_read_answers_404(net: Net) -> None:
+async def test_ac_c3_the_read_answers_since_the_flag_retired(net: Net) -> None:
+    """P-04-T62 (DEC-2221): `review.grammar_api` retired, so a firm with no flag row reads."""
     off = await _firm(net, flag=False)
     _waiting(off.tenant_id, "consumer_decision", off.ashford.engagement_id, assignee=off.daniel)
     await _deliver(_event(off.tenant_id, off.ashford.engagement_id))
     status, _ = await off.gates(off.daniel)
-    assert status == 404
+    assert status == 200
 
 
 # --- F9 story 3: the typed agent proposals project as `proposal` gates (DEC-28) --------------

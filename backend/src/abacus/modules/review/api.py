@@ -55,6 +55,7 @@ from abacus.modules.review.field_values import (
     record_value,
     typed_value,
 )
+from abacus.modules.review.firm_gates import register_firm_gates
 from abacus.modules.review.gates import (
     C13_EVENTS,
     GateSource,
@@ -70,11 +71,14 @@ from abacus.modules.review.issue_resolutions import move as move_issue
 from abacus.modules.review.issue_resolutions import register_client_request_sender
 from abacus.modules.review.issues import (
     create_issue,
+    create_issue_in,
     issue_row,
     record_engine_issue,  # T-01-T26: engine diagnostics
+    record_rule_issue,
 )
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
+from abacus.modules.review.notes import note_event as review_note_event
 from abacus.modules.review.notes import notes_for, open_note_counts, open_notes
 from abacus.modules.review.notes import raise_on_target as raise_review_note
 from abacus.modules.review.notification_states import register_notification_states
@@ -140,6 +144,7 @@ from abacus.modules.review.slots import (
     register_field_owner,
     register_fix_runner,
     register_gate_kind,
+    register_level_assignments,
     register_reviewable,
     register_reviewable_facts,
     register_suggestion_owner,
@@ -167,6 +172,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # SPEC-313 (TASK-331): G5, review complete, is the review module's.
 register_gate_provider("G5", review_gate)
 register_engagement_gates()  # P-07-T47 (C13): acceptance, independence and EQR gates
+register_firm_gates()  # I-01-T23 (C13, DEC-2613): methodology version and wall approvals
 register_card_reassign()  # I-01-T07: a decision card awaiting its role moves to another holder
 register_engagement_owners(AUDIT_KINDS, audit_owners)  # ED-112: `sign_off.went_stale`
 # P-04-T26 (C16): what a card, note or sign-off says now, for the drawer's facts and Approvals.
@@ -260,6 +266,7 @@ __all__ = [
     "checkpoint_deltas",
     "content_hash",
     "create_issue",  # P-04-T36: the scenario loader acts as the person named (as sign_target)
+    "create_issue_in",  # A-06-T11: the finding and its issue in one unit of work
     "current_checkpoint",
     "current_values",
     "decide_card",
@@ -287,6 +294,7 @@ __all__ = [
     "rebuild_human_gates",
     "record_engine_issue",
     "record_import_proposal",
+    "record_rule_issue",
     "record_sign_off",
     "record_text_reads",
     "record_value",
@@ -300,10 +308,12 @@ __all__ = [
     "register_gate_kind",
     "register_gate_presenter",
     "register_gate_source",
+    "register_level_assignments",
     "register_reassign_hook",
     "register_reviewable",
     "register_reviewable_facts",
     "register_suggestion_owner",
+    "review_note_event",
     "reviewable_fact_types",
     "reviewable_facts",
     "reviewables_of",
@@ -317,3 +327,18 @@ __all__ = [
     "states_of",
     "typed_value",
 ]
+
+
+from abacus.kernel.db import TenantContext as _Tenant  # noqa: E402
+
+
+# S28 (TASK-3399, DEC-2398): every reviewable's required levels as the firm's review_levels
+# standard in effect today assigns them (review already reads methodology, `firm_gates`).
+async def _assigned_levels(tenant: _Tenant, key: str) -> tuple[int, ...] | None:
+    from abacus.kernel.clock import today
+    from abacus.modules.methodology.api import assigned_review_levels
+
+    return await assigned_review_levels(tenant.tenant_id, key, await today(tenant))
+
+
+register_level_assignments(_assigned_levels)

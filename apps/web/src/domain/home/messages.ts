@@ -8,6 +8,24 @@ type Band = keyof GateBandsOut;
 const plural = (n: number, one: string, many: string): string =>
   `${String(n)} ${n === 1 ? one : many}`;
 
+/** I-01-T23: a registered gate's words when its presenter gives no title. Every source that
+ * registers a subkind has a line here (`test_home_gate_subkinds.py` holds that true). */
+export const GATE_SUBKIND_TITLE: Readonly<Record<string, string>> = {
+  envelope_send: "Send for signature",
+  envelope_countersign: "Countersign",
+  letter_partner_approval: "Engagement letter approval",
+  notice_response_send: "Send the notice response",
+  // I-01-T23 (S29 leftovers): no handoff source (undesigned, I-01 §5.5).
+  tax_return_export: "Export to the tax engine",
+  // I-01-T23 (DEC-2613): no handoff source (undesigned, I-01 §5.5).
+  methodology_version_approval: "Methodology version approval",
+  wall_approval: "Wall approval",
+  acceptance_decision_due: "Acceptance decision",
+  independence_conclusion_due: "Independence conclusion",
+  independence_confirmation_due: "Independence confirmation",
+  eqr_eligibility_due: "EQR eligibility",
+};
+
 export const HOME_MESSAGES = {
   bands: {
     decisions: "Decisions",

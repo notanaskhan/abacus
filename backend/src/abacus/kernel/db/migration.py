@@ -3,6 +3,9 @@
 Every migration that creates a tenant table calls `tenant_table(op, name)`; `schema_check` fails
 any table that doesn't end up with the result. Evidence and ledger tables also call `insert_only`.
 Identifiers can't be bound parameters, so table names are validated against a strict pattern.
+
+From migration 0686, `tenant_table` also attaches `archived_guard()` to a table with a
+`work_item_id` or `engagement_id` column, unless `archive_guard.EXEMPT` lists it (A-07-T13).
 """
 
 from __future__ import annotations
@@ -10,6 +13,8 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from typing import Protocol
+
+from abacus.kernel.db.archive_guard import EXEMPT, trigger_arguments
 
 _IDENTIFIER = re.compile(r"[a-z_][a-z0-9_]*")
 # NULLIF: after a transaction ends, a reused connection reads the setting as '' (not NULL), and
@@ -40,6 +45,30 @@ def tenant_table(op: Executes, table: str) -> None:
         f"CREATE POLICY tenant_isolation ON {t} "
         f"USING (tenant_id = {_TENANT}) WITH CHECK (tenant_id = {_TENANT})"
     )
+    if t not in EXEMPT:
+        _attach_archived_guard(op, t)
+
+
+_ATTACH_GUARD = """
+    DO $guard$
+    BEGIN
+        IF to_regprocedure('archived_guard()') IS NOT NULL AND EXISTS (
+            SELECT 1 FROM information_schema.columns
+             WHERE table_name = '@table'
+               AND column_name IN ('work_item_id', 'engagement_id')
+        ) THEN
+            CREATE TRIGGER archived_guard BEFORE INSERT OR UPDATE OR DELETE ON @table
+                FOR EACH ROW EXECUTE FUNCTION archived_guard(@kinds);
+        END IF;
+    END;
+    $guard$
+"""
+
+
+def _attach_archived_guard(op: Executes, table: str) -> None:
+    """Skipped before 0686 (no function yet: 0686 attaches to what exists) and for a table with
+    neither column. `table` is checked by `tenant_table`; kinds come from the reviewed registry."""
+    op.execute(_ATTACH_GUARD.replace("@table", table).replace("@kinds", trigger_arguments(table)))
 
 
 def insert_columns(op: Executes, table: str, columns: Sequence[str]) -> None:

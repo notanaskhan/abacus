@@ -5,6 +5,7 @@ import type {
   WorkpaperRecordOut,
 } from "@abacus/api-client";
 import {
+  attentionFlagRemindMutation,
   fraudMinutesApproveMutation,
   fraudSessionOptions,
   fraudSessionQueryKey,
@@ -23,7 +24,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JSX } from "react";
 import { useFlag } from "../../app-core/flags";
-import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
+import { AuditBar, errorCode, isNotFound, useAuditCockpit } from "../../domain/audits";
 import { COPY } from "./copy";
 
 // AUD-05 · Narrative workpaper, Risk Assessment (A-04-T21; A-04 §3 AC1, AC2; the handoff spec): T2
@@ -80,6 +81,7 @@ function Row({
             <Button
               size="sm"
               variant="secondary"
+              data-remind={flag.id}
               onClick={() => {
                 onRemind(flag);
               }}
@@ -237,7 +239,6 @@ export function NarrativePage({
   tab,
   onTab,
   onRegister,
-  onRemind,
   onEscalate,
   onAdopt,
   onBack,
@@ -247,7 +248,6 @@ export function NarrativePage({
   tab: NarrativeTab;
   onTab: (tab: NarrativeTab) => void;
   onRegister: () => void;
-  onRemind: (flag: AttentionFlagOut) => void;
   onEscalate: (flag: AttentionFlagOut) => void;
   onAdopt: (workpaperId: string) => void;
   onBack?: () => void;
@@ -266,6 +266,7 @@ export function NarrativePage({
     ...fraudSessionOptions({ path: { engagement_id: engagementId ?? "" } }),
     enabled: on && engagementId !== undefined && tab === "fraud",
   });
+  const remind = useMutation(attentionFlagRemindMutation());
   let state: ViewState = { kind: "ready" };
   if (!on) state = { kind: "flag-off", flag: "assurance.risk_register" };
   else if (cockpit.isError || record.isError) {
@@ -321,8 +322,30 @@ export function NarrativePage({
               <PaneAction icon="file-spreadsheet" label={COPY.openExcel} />
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-[12px] overflow-auto p-[12px]">
+              {(remind.isSuccess || remind.isError) && tab === "risk" && (
+                <p data-aud05="remind-status" role="status" className="text-[12px] text-ink-2">
+                  {remind.isSuccess
+                    ? COPY.reminded
+                    : errorCode(remind.error) === "nothing_to_remind"
+                      ? COPY.remindNothing
+                      : COPY.remindFailed}
+                </p>
+              )}
               {tab === "risk" ? (
-                <RiskTab record={data} onRemind={onRemind} onEscalate={onEscalate} />
+                <RiskTab
+                  record={data}
+                  onRemind={(flag) => {
+                    remind.mutate({
+                      path: {
+                        engagement_id: engagementId,
+                        workpaper_id: data.id,
+                        flag_id: flag.id,
+                      },
+                      headers: { "Idempotency-Key": crypto.randomUUID() },
+                    });
+                  }}
+                  onEscalate={onEscalate}
+                />
               ) : fraud.data !== undefined ? (
                 <FraudTab engagementId={engagementId} session={fraud.data} />
               ) : null}

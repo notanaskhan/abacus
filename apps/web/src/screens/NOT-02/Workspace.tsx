@@ -29,9 +29,10 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
-import { useFlag } from "../../app-core/flags";
 import { useDecisionCard } from "../../domain/review";
+import { ResponseEditor } from "../NOT-03";
 import { ViewerPane } from "../SHL-08";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // NOT-02 · Notice workspace (N-04-T14; N-04 §3; the handoff spec): the T3 Review preset (452 · 452 ·
@@ -67,6 +68,10 @@ export interface WorkspaceProps {
   onBack?: () => void;
   /** NOT-03 once the response is drafted. */
   onResponse?: () => void;
+  /** N-04-T20: NOT-03's Approve… opens SHL-12. */
+  onApproveResponse?: () => void;
+  /** N-04-T20: SIG-02 d on the drafted envelope. */
+  onEnvelope?: (envelopeId: string) => void;
   /** SHL-11 for the reserved signer (`?ov=decision:<cardId>`): the sheet records the decision. */
   onDecide?: (cardId: string, optionKey: string, rationale: string) => void;
   /** Hover state for d (the 1099 corrections row lit on open). */
@@ -162,7 +167,7 @@ function StatementRow({
   const total = row.key === "total_due";
   return (
     <div
-      role="row"
+      role="group"
       data-row={row.key}
       data-lit={lit ? "true" : undefined}
       className={cn(
@@ -215,7 +220,7 @@ function InfoReturns({
       {missing.map((i) => (
         <div
           key={`${i.form}:${i.payer_name}`}
-          role="row"
+          role="group"
           tabIndex={0}
           data-payer={i.payer_name}
           data-lit={lit === i.payer_name ? "true" : undefined}
@@ -330,9 +335,9 @@ function AnalysisPane({
         {segment === "information_returns" ? (
           <InfoReturns items={analysis.information_returns} lit={lit} onLight={onLight} />
         ) : (
-          <div role="table" data-not02="statement" className="flex flex-col">
+          <div data-not02="statement" className="flex flex-col">
             <div
-              role="row"
+              role="group"
               className="grid h-[30px] grid-cols-[170px_90px_90px_80px] items-center bg-nested text-[11.5px] font-medium text-ink-3"
             >
               <span className="px-[10px]">{C.line}</span>
@@ -515,7 +520,7 @@ function ActionPane({
           )}
           {source !== undefined && (
             <div
-              role="row"
+              role="group"
               tabIndex={0}
               data-not02="source-row"
               data-lit={lit !== null ? "true" : undefined}
@@ -594,6 +599,15 @@ function ActionPane({
       >
         <p className="text-dense font-medium">{COPY.authorization.title}</p>
         <p className="text-dense">{auth.on_file ? auth.label : COPY.authorization.none}</p>
+        {!auth.on_file && (
+          <a
+            data-not02="authorization-banner"
+            href={hrefOf(to.SIG01())}
+            className="text-dense font-medium text-red-ink hover:underline"
+          >
+            {COPY.authorization.toSend}
+          </a>
+        )}
         {auth.on_file && !auth.can_represent && (
           <div className="flex items-center gap-[8px] rounded-nested bg-amber-tint p-[8px] text-[12.5px] text-amber-ink">
             <span className="flex-1">{COPY.authorization.note}</span>
@@ -637,14 +651,16 @@ export function NoticeWorkspace({
   onSegment,
   onBack,
   onResponse,
+  onApproveResponse,
+  onEnvelope,
   onDecide,
   initialLit = false,
 }: WorkspaceProps): JSX.Element {
-  const on = useFlag("notices.workspace") === true;
-  const notice = useQuery({ ...noticeOptions({ path: { notice_id: noticeId } }), enabled: on });
+  const notice = useQuery(noticeOptions({ path: { notice_id: noticeId } }));
   const analysis = useQuery({
     ...analysisOptions({ path: { notice_id: noticeId } }),
-    enabled: on,
+    // The run is background work (DEC-2359): the spinner stops when a version lands.
+    refetchInterval: (q) => (q.state.data?.status === "running" ? 3000 : false),
   });
   const cardId = analysis.data?.decision_card_id ?? "";
   const card = useDecisionCard(cardId);
@@ -660,8 +676,7 @@ export function NoticeWorkspace({
   const at = 0;
 
   let state: ViewState = { kind: "ready" };
-  if (!on) state = { kind: "flag-off", flag: "notices.workspace" };
-  else if (notice.isError) {
+  if (notice.isError) {
     const status = (notice.error as { status?: number } | null)?.status;
     state =
       status === 404
@@ -689,7 +704,14 @@ export function NoticeWorkspace({
                   }}
                 />
               </div>
-              {tab === "activity" ? (
+              {tab === "response" ? (
+                <ResponseEditor
+                  noticeId={noticeId}
+                  notice={notice.data}
+                  {...(onApproveResponse === undefined ? {} : { onApprove: onApproveResponse })}
+                  {...(onEnvelope === undefined ? {} : { onEnvelope })}
+                />
+              ) : tab === "activity" ? (
                 <Activity noticeId={noticeId} />
               ) : (
                 <div className="grid min-h-0 flex-1 grid-cols-[452px_452px_452px] gap-[10px] px-[12px] pt-[10px] pb-[12px]">

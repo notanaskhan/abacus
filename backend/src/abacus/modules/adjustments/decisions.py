@@ -72,6 +72,13 @@ class UndoWindowClosed(DomainConflict):
     code = "undo_window_closed"
 
 
+class RecordEvidenceNotOnEngagement(DomainInvalid):
+    """Record mode's evidence (the client's email) must be on the entry's own engagement
+    (A-06-T17; DEC-2956): an id from elsewhere, or none at all, records nothing."""
+
+    code = "record_evidence_not_on_engagement"
+
+
 class EntryNotSendable(DomainInvalid):
     code = "entry_not_sendable"
 
@@ -87,6 +94,20 @@ class EntriesSentToClient(DomainEvent):
     entry_ids: Annotated[list[UUID], classified("internal")]
     recipient_contact_id: Annotated[UUID, classified("internal")]
     wording_template_version_id: Annotated[UUID, classified("internal")]
+    # R-02-T14 (DEC-3140): who sent, for the client's "approval requested" email in their name.
+    sent_by: Annotated[UUID | None, classified("internal")] = None
+
+
+class EntryClientDecided(DomainEvent):
+    """A client's decision on an entry was recorded; C16 tells the partner and managers (A-06 §4.5:
+    `proposed_entry_client_responded`)."""
+
+    event_type: ClassVar[str] = "proposed_entry.client_decided"
+
+    entry_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    decision: Annotated[str, classified("internal")]
 
 
 @dataclass(frozen=True)
@@ -109,6 +130,28 @@ def register_client_delivery(delivery: ClientDelivery) -> None:
     if _DELIVERY and _DELIVERY[0] is not delivery:
         raise ValueError("a client delivery is already registered")
     _DELIVERY[:] = [delivery]
+
+
+# A-06-T17 (DEC-2956): which engagement an evidence version sits on. Adjustments may not import
+# evidence (BOUND-002), so its owner's module registers the read; with none, record mode refuses
+# every evidence id (fail closed).
+EvidenceEngagement = Callable[[TenantContext, UUID], Awaitable[UUID | None]]
+_EVIDENCE_ENGAGEMENT: list[EvidenceEngagement] = []
+
+
+def register_evidence_engagement(read: EvidenceEngagement) -> None:
+    _EVIDENCE_ENGAGEMENT[:] = [read]
+
+
+async def _evidence_on(tenant: TenantContext, version_id: UUID, engagement_id: UUID) -> bool:
+    if not _EVIDENCE_ENGAGEMENT:
+        return False
+    return await _EVIDENCE_ENGAGEMENT[0](tenant, version_id) == engagement_id
+
+
+def decision_hooks() -> tuple[DecisionHook, ...]:
+    """The owners' hooks a client decision calls (R-02-T11's portal channel reads them too)."""
+    return tuple(_HOOKS)
 
 
 def register_entry_decision_hook(hook: DecisionHook) -> None:
@@ -312,6 +355,7 @@ async def send(
                 entry_ids=list(entry_ids),
                 recipient_contact_id=recipient_contact_id,
                 wording_template_version_id=wording_template_version_id,
+                sent_by=ctx.user_id,
             ),
             not_before=not_before,
             grant_id=grant_id,
@@ -445,6 +489,10 @@ async def _one(
             raise NotFound(TARGET)
         if row["status"] not in allowed:
             raise EntriesMoved(facts={"status": str(row["status"])})
+        if evidence_version_id is not None and not await _evidence_on(
+            ctx.tenant, evidence_version_id, row["engagement_id"]
+        ):
+            raise RecordEvidenceNotOnEngagement
         await lock_ref(tx, row["engagement_id"])
         await _decide(
             tx, ctx, row["engagement_id"], row["work_item_id"], entry_id, decision=decision,
@@ -456,6 +504,14 @@ async def _one(
         if client is not None:
             for hook in _HOOKS:
                 await hook(tx, entry_id, row["misstatement_id"], client)
+            tx.emit(
+                EntryClientDecided(
+                    entry_id=entry_id,
+                    engagement_id=row["engagement_id"],
+                    work_item_id=row["work_item_id"],
+                    decision=client,
+                )
+            )
         tx.record(
             _AUDIT[decision],
             target=Target(TARGET, entry_id),

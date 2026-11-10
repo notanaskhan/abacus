@@ -38,6 +38,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import Actor, AuthContext, Resource, authorise
+from abacus.modules.methodology.events import MethodologyReviewRequested
 from abacus.modules.methodology.models import (
     MethodologyImport,
     MethodologySourceFile,
@@ -496,6 +497,12 @@ async def finish_document_import(
             "methodology_import.needs_review",
             target=Target(SUBJECT, import_id),
             after=Ref(version_id=version_id, steps=len(rows), flags=sum(counts.values())),
+        )
+        # K-01 AC3.7: a finished import is asked for review (notification and HOME-02 gate).
+        tx.emit(
+            MethodologyReviewRequested(
+                version_id=version_id, template_id=row.template_id, by_user=row.started_by
+            )
         )
     return ImportedVersion(version_id, len(rows), sum(counts.values()), counts)
 

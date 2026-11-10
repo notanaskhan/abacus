@@ -776,6 +776,36 @@ objects:
       rejected:            {label: "Rejected", variant: red-tint, terminal: true, derived: false, context_labels: {attribution: "Rejected by {person} · reason: {reason}"}}   # SHL-10 f; SHL-16 e
       superseded:          {label: "Superseded", variant: soon, terminal: true, derived: false}   # no source wording; the document and return pattern
 
+  agent_run_step:   # agent_run_steps.state: a run step or tool card (SHL-13, WB-03; chapter 05 §5.2.2; P-10-T07). Never "task".
+    source: "chapter 05 §5.2.2; P-10 §4.2"
+    codes:
+      queued:            {label: "Queued", variant: null, disc: ring, terminal: false, derived: false}
+      dispatched:        {label: "Dispatched", variant: neutral, terminal: false, derived: false}
+      running:           {label: "Running", variant: null, disc: spinner, terminal: false, derived: false}
+      waiting_on_inputs: {label: "Waiting on inputs", variant: muted, terminal: false, derived: false}
+      blocked:           {label: "Blocked", variant: null, disc: triangle_amber, terminal: false, derived: false}
+      succeeded:         {label: "Succeeded", variant: null, disc: check_olive, terminal: true, derived: false}
+      failed:            {label: "Failed", variant: null, disc: x_brick, terminal: true, derived: false}
+      cancelled:         {label: "Cancelled", variant: muted, terminal: true, derived: false}
+      skipped:           {label: "Skipped", variant: muted, terminal: true, derived: false}
+
+  agent_plan:   # agent_plans.state, insert-only versions; a decision is a new row (P-10 §4.2). The human act is a plan decision.
+    source: "P-10 §4.2; SHL-13; WB-03"
+    codes:
+      proposed:  {label: "Plan ready — approve?", variant: amber, terminal: false, derived: false}
+      approved:  {label: "Approved", variant: green, terminal: true, derived: false, context_labels: {attribution: "Approved by {person} · {time}"}}
+      edited:    {label: "Approved with edits", variant: green, terminal: true, derived: false}
+      cancelled: {label: "Plan cancelled", variant: muted, terminal: true, derived: false, context_labels: {attribution: "Plan cancelled by {person} · {time}"}}
+      standing:  {label: "Standing plan", variant: green-tint, terminal: false, derived: false}   # Auto mode: standing approval per engagement type (P-49)
+
+  agent_question:   # agent_questions.state (SHL-13 ask card; a new message goes first and the question stays open, AC-S2)
+    source: "P-10 §3.4, §3.7; SHL-13"
+    codes:
+      open:     {label: "Needs your answer", variant: amber, terminal: false, derived: false}
+      answered: {label: "Answered", variant: null, disc: check_olive, terminal: true, derived: false}
+      skipped:  {label: "Skipped", variant: muted, terminal: true, derived: false}
+      expired:  {label: "Expired", variant: muted, terminal: true, derived: false}
+
   workbench_session:
     source: "blueprint 3.3.1"
     codes:
@@ -936,6 +966,38 @@ objects:
       sent:                 {label: "Sent", variant: state, terminal: false, derived: false}
       acknowledged:         {label: "Acknowledged", variant: green, terminal: true, derived: false, context_labels: {attribution: "Acknowledged {date} · {body}"}}
       overdue:              {label: "Overdue", variant: red-tint, terminal: false, derived: true}   # from due_on (AU-C 265: release + 60 days); never stored
+
+  deliverable:   # portal client words (POR-09; DF-31; R-02 §4.2, R-02-T04)
+    source: "R-02 §4.2 (POR-09)"
+    codes:
+      for_your_review:      {label: "For your review", variant: amber, terminal: false, derived: true}
+      approved_by_you:      {label: "Approved by you", variant: green-tint, terminal: false, derived: true}
+      waiting_for_approval: {label: "Waiting for approval", variant: amber, terminal: false, derived: true}
+      in_sign:              {label: "In sign", client_label: "In sign", variant: neutral, terminal: false, derived: true}
+      signed:               {label: "Signed", variant: green-tint, terminal: false, derived: true}
+      final:                {label: "Final", variant: green, terminal: true, derived: true}
+      released:             {label: "Released", variant: green-tint, terminal: true, derived: true}
+      not_ready_yet:        {label: "Not ready yet", variant: null, disc: ring, terminal: false, derived: true}
+      replaced:             {label: "Replaced", variant: neutral, terminal: true, derived: true, context_labels: {firm_named: "Replaced by {firm}"}}
+
+  client_approval_item:   # portal client words (POR-08; DF-31; R-02 §4.2, R-02-T04)
+    source: "R-02 §4.2 (POR-08)"
+    codes:
+      waiting:       {label: "Waiting for you", variant: amber, terminal: false, derived: true}
+      approved:      {label: "Approved", variant: green-tint, terminal: true, derived: true}
+      declined:      {label: "Declined", variant: red-tint, terminal: true, derived: true}
+      accepted:      {label: "Accepted", variant: green-tint, terminal: true, derived: true}
+      not_recorded:  {label: "Not recorded", variant: neutral, terminal: true, derived: true}
+      acknowledged:  {label: "Acknowledged", variant: green-tint, terminal: true, derived: true}
+      question_sent: {label: "Question sent", variant: neutral, terminal: false, derived: true}
+
+  governance_room_letter:   # portal client words (POR-15; DF-31; R-02 §4.2, R-02-T04)
+    source: "R-02 §4.2 (POR-15)"
+    codes:
+      new:               {label: "New", variant: amber, terminal: false, derived: true}
+      not_yet:           {label: "Not yet", variant: null, disc: ring, terminal: false, derived: true}
+      sent_acknowledged: {label: "Sent · acknowledged", variant: green-tint, terminal: true, derived: true}
+      acknowledged:      {label: "Acknowledged", variant: green-tint, terminal: true, derived: true}
 
   audit_report:   # audit_reports.status projection (AUD-23)
     source: "A-07 §4.2 (AUD-23)"
@@ -1380,6 +1442,14 @@ objects:
       retired:    {label: "Retired", variant: state, terminal: false, derived: false}
       deceased:   {label: "Deceased", variant: state, terminal: true, derived: false}
 
+  ebp_participant_loan:   # one participant loan on the rollforward (A-05-T42; EBP-05)
+    source: "A-05 §4.2 (EBP-05)"
+    codes:
+      active:   {label: "Active", variant: state, terminal: false, derived: false}
+      new:      {label: "New", variant: state, terminal: false, derived: false}
+      paid_off: {label: "Paid off", variant: state, terminal: true, derived: false}
+      offset:   {label: "Offset", variant: state, terminal: true, derived: false}
+
   ebp_import:   # ebp_source_imports.status: one tabular source's import (A-05-T19; EBP-02, EBP-05)
     source: "A-05 §3 F3 (A-05-T19)"
     codes:
@@ -1431,6 +1501,7 @@ objects:
     codes:
       untested:    {label: "Untested", variant: muted, terminal: false, derived: false}
       testing:     {label: "Testing", variant: state, terminal: false, derived: false}
+      agent_tested: {label: "Agent tested", variant: state, terminal: false, derived: false}   # EBP-04's word; a person has not marked it yet
       pass:        {label: "Pass", variant: green-tint, terminal: true, derived: false}
       exception:   {label: "Exception", variant: red-tint, terminal: true, derived: false}
       needs_human: {label: "Needs human", variant: amber, terminal: false, derived: false}
@@ -1443,6 +1514,53 @@ objects:
       evaluated:    {label: "Evaluated", variant: green-tint, terminal: false, derived: false, context_labels: {pending_ep: "Evaluated · pending EP"}}
       exception:    {label: "Exception", variant: red-tint, terminal: false, derived: false}
       screened_out: {label: "Screened out", variant: muted, terminal: true, derived: false}
+
+  # ---- T-04 return workspace (T-04-T04; DEC-3019; SPEC-649) ----
+  document_approval:   # TAX-04/TAX-05 micro-pill on a document row: the viewer's level reached
+    source: "T-04 §3.1, §3.2; TAX-04 b, TAX-05 b"
+    codes:
+      unapproved: {label: "Unapproved", variant: outline, terminal: false, derived: true}
+      approved:   {label: "Approved", variant: green-tint, terminal: false, derived: true, context_labels: {micro_pill: "✓ {count}"}}   # "✓ 1" in ink at the viewer's level
+      mismatch:   {label: "Mismatch", variant: red-tint, terminal: false, derived: true}
+
+  return_field_view:   # TXI-01 field states
+    source: "T-04 §3.3; TXI-01 a-g"
+    codes:
+      imported:  {label: "Imported", variant: neutral, terminal: false, derived: false}
+      edited:    {label: "Edited", variant: neutral, terminal: false, derived: false}
+      proposed:  {label: "Proposed", variant: amber, terminal: false, derived: false}
+      new:       {label: "New this year", variant: green-tint, terminal: false, derived: true}
+      recomputed: {label: "Recomputed by CCH Axcess after import", variant: amber, terminal: false, derived: false}
+      signed_off: {label: "Signed off", variant: green-tint, terminal: false, derived: false}
+
+  k1_activity:   # the K-1 activity chip on TAX-04 d, TAX-05, TXI-02
+    source: "T-04 §3.7; TXI-02 e"
+    codes:
+      draft_pre_release: {label: "Draft K-1 · pre-release", variant: amber, terminal: false, derived: false}
+      released:          {label: "Released", variant: green-tint, terminal: false, derived: false, context_labels: {chip: "Released {date}"}}
+      superseded:        {label: "Superseded", variant: soon, terminal: true, derived: false}
+
+  k1_treatment:   # TXI-02 rows; "Changed vs {year}" is a tag beside the state
+    source: "T-04 §3.7; TXI-02 a-d"
+    codes:
+      proposed:   {label: "Proposed", variant: amber, terminal: false, derived: false, context_labels: {changed_tag: "Changed vs {year}"}}
+      approved:   {label: "Approved", variant: green-tint, terminal: false, derived: false}
+      overridden: {label: "Overridden", variant: neutral, terminal: false, derived: false}
+
+  residency_determination:   # TXI-03
+    source: "T-04 §3.8; TXI-03 a-c"
+    codes:
+      review_point:    {label: "Review point", variant: amber, terminal: false, derived: false}
+      confirmed:       {label: "Confirmed", variant: green-tint, terminal: false, derived: false}
+      action_required: {label: "Action required", variant: red-tint, terminal: false, derived: false}
+
+  assistant_availability:   # TAX-08 and the agent surfaces' DF-04 states
+    source: "T-04 §3.6, §3.11; DF-04"
+    codes:
+      available:        {label: "Available", variant: state, terminal: false, derived: true}
+      ai_unavailable:   {label: "AI unavailable", variant: muted, terminal: false, derived: true}
+      consent_required: {label: "Consent required", variant: amber, terminal: false, derived: true}
+      agents_off:       {label: "Agents off", variant: muted, terminal: false, derived: true}
 
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---

@@ -12,6 +12,7 @@ const TEXT: Record<string, string> = {
   "engagement_member.added": "You were added to an engagement's team.",
   review_assigned: "Evidence was assigned to you for review.",
   client_uploaded: "The client uploaded a file to a request.",
+  proposed_entry_client_responded: "A client decision on a proposed entry was recorded.",
   "connection.created": "The client connected their accounting system.",
   "connection.revoked": "An accounting system connection was ended.",
   "independence.requested": "Confirm your independence for an engagement.",
@@ -36,6 +37,7 @@ const CATEGORY: Record<string, Category> = {
   "finding.severity_proposed": "needs_you",
   mention: "mentions",
   client_uploaded: "client",
+  proposed_entry_client_responded: "client",
   "connection.created": "client",
   "connection.revoked": "client",
 };
@@ -75,6 +77,7 @@ const GLYPH: Record<string, IconName> = {
   proposal_routed: "circle-check",
   run_finished: "refresh-cw",
   client_uploaded: "upload",
+  proposed_entry_client_responded: "message-square",
   mention: "at-sign",
   // The spec's Timer is not in the icon registry (F-05-T13); the clock stands in.
   deadline_approaching: "clock",
@@ -90,6 +93,9 @@ export function kindGlyph(kind: string): IconName {
  * SHL-17, ENG-11) are planned: the engagement's legacy page, or nowhere. */
 export function feedHref(item: NotificationItemOut): Destination | null {
   if (item.engagement_id === null) return null;
+  // P-09-T13: a run's notification opens the run's trace (WB-09) over the engagement's page.
+  const run = runTrace(item.kind, item.subject.type, item.subject.id);
+  if (run !== null) return { to: `/engagements/${item.engagement_id}${run}` };
   if (item.kind === "client_uploaded") {
     return { to: `/engagements/${item.engagement_id}/requests` };
   }
@@ -122,8 +128,17 @@ export function notificationHref(
   return to === null ? null : { to };
 }
 
+/** `?ov=run-trace:<run id>` for a run's own notification (run_finished, run_needs_input). */
+export function runTrace(kind: string, subjectType: string, subjectId: string): string | null {
+  if (kind !== "run_finished" && kind !== "run_needs_input") return null;
+  if (subjectType !== "agent_run" || subjectId === "") return null;
+  return `?ov=run-trace:${encodeURIComponent(subjectId)}`;
+}
+
 function firmHref(n: NotificationOut): string | null {
   if (n.engagement_id === null) return null;
+  const run = runTrace(n.kind, n.subject_type, n.subject_id);
+  if (run !== null) return `/engagements/${n.engagement_id}${run}`;
   if (n.kind === "review_assigned") return `/engagements/${n.engagement_id}/review`;
   if (n.kind === "client_uploaded") return `/engagements/${n.engagement_id}/requests`;
   if (n.kind === "reminders.drafted") return `/engagements/${n.engagement_id}/requests`;

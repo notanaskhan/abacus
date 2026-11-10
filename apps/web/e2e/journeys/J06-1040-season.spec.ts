@@ -8,7 +8,7 @@
 // full stack and staging walk the same routes against the seeded tenant once the T-01 slices and
 // the fake CCH are on that stack (T-01-T23, T-01-T22) and staging's URL is set (F-04-T28); until
 // then they are fixme, never skipped.
-import { expect, test } from "../harness";
+import { DEMO_INSTANT, expect, test } from "../harness";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -18,7 +18,7 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
 };
 const LIVE =
   "full stack: the T-01 slices (consents_7216, tax_board, tax_content) and the fake CCH seeded on the stack (T-01-T23, T-01-T22); staging once ABACUS_STAGING_URL is set (F-04-T28)";
-const TAX_FLAGS = ["tax.returns_v1", "tax.engine_bridge", "review.checkpoints"];
+const TAX_FLAGS = ["tax.engine_bridge", "review.checkpoints"];
 const CONSENT_FLAGS = ["consents.registry", "clients.tax_profile"];
 const TAX09 = "/tax-returns/_returnId_?ov=engine-sync:_returnId_";
 // J06 D2's day: Samuel exports and marks the Feld return exported on Wed Sep 16, 2026.
@@ -188,5 +188,14 @@ test.describe("J06 1040 season · coordination slice (T-01-T29)", () => {
         await expect(page.getByText(/via Agent/u)).toHaveCount(0);
       });
     }
+  });
+
+  test("j06 13: extensions, estimates and acks", async ({ journey }) => {
+    await journey.as("samuel-ito", "/tax-returns/extensions?screen=TAX-13&st=e", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J06 step 13: Feld Filed, Varga Rejected with its code", async (page) => {
+      await expect(page.getByText("IND-031-04")).toBeVisible();
+    });
   });
 });

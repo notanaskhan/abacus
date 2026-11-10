@@ -1,0 +1,12 @@
+# The collaboration module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: collaboration.v2
+    description: 'P-05 comments v2 and to-dos (SPEC-650; ADR-236 proposed): every /v1/comment-threads*, /v1/thread-comments*, /v1/todos* and mention/assignee-candidates route, SHL-17, SHL-18 and the AUD-09 chips. Off: the routes answer 404 and the surfaces show their designed flag-off state; the SPEC-032 request-item comments are untouched. P-05-T02, DEC-3103.'
+    owner: ayushkbhatia
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false

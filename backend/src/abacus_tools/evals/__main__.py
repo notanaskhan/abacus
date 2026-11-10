@@ -16,6 +16,8 @@ from abacus_tools.evals.decision_recommendation import AGENT as RECOMMENDER
 from abacus_tools.evals.decision_recommendation import recommend_main
 from abacus_tools.evals.methodology_import import AGENT as IMPORTER
 from abacus_tools.evals.methodology_import import import_suite_main
+from abacus_tools.evals.notices_responder import AGENT as RESPONDER
+from abacus_tools.evals.notices_responder import responder_main
 from abacus_tools.evals.report import render
 from abacus_tools.evals.runner import EvalRoute, Subset, guard, guard_real, prepare, run
 from abacus_tools.evals.section_drafting import AGENT as SECTION_DRAFTER
@@ -50,6 +52,10 @@ def main(argv: list[str]) -> int:
         choices=["gap", "risk_narrative", "risk", "ic", "soc1", "ebp_provisions", "ebp_attribute"],
     )
     args = parser.parse_args(argv)
+    if args.agent == "agent_blocks":  # P-09-T15: the deterministic AgentBlocks conformance suite
+        from abacus_tools.evals.agent_blocks import main as blocks_main
+
+        return blocks_main(cast(Path, args.out))
     if args.agent == "evidence.upload_reviewer":  # SPEC-030 (TASK-058 D4): its own runner
         return review_main(
             cast(Tier | None, args.tier),
@@ -59,6 +65,10 @@ def main(argv: list[str]) -> int:
         )
     if args.agent == IMPORTER:  # K-01-T22: code-graded, no stack (TASK-2921)
         return import_suite_main(
+            cast(str, args.route), cast(Path, args.out), cast(Subset, args.subset)
+        )
+    if args.agent == RESPONDER:  # N-04-T18: code-graded, no stack (DEC-2312)
+        return responder_main(
             cast(str, args.route), cast(Path, args.out), cast(Subset, args.subset)
         )
     if args.agent == RECOMMENDER:  # A-04-T09: code-graded, no stack (TASK-2802)

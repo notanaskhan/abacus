@@ -22,17 +22,17 @@ A walled, hidden or other firm's item answers 404 everywhere.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC
 from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, and_, func, or_, select
+from sqlalchemy import ColumnElement, and_, false, func, or_, select
 
 from abacus.kernel._statuses import FileDocumentStatus
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.holds import HoldCheckMissing, held_versions
 from abacus.kernel.listing import (
@@ -90,6 +90,22 @@ FOLDER_KINDS: Final[tuple[FolderKind, ...]] = (
     "signed_authorizations",
 )
 _RESOURCE: Final = "files.folder"
+
+# R-02-T09 (DEC-2805): a folder whose documents another module owns lists them through a
+# provider: `deliverables` lists a work item's C10 deliverable versions (reporting registers it;
+# reporting imports evidence, so evidence never imports reporting). The provider answers evidence
+# version ids; this module still lists only what `visible()` lets the viewer read.
+type FolderProvider = Callable[[TenantContext, UUID], Awaitable[Sequence[UUID]]]
+_FOLDER_PROVIDERS: dict[FolderKind, FolderProvider] = {}
+
+
+def register_folder_provider(kind: FolderKind, provider: FolderProvider) -> None:
+    found = _FOLDER_PROVIDERS.get(kind)
+    if found is not None and found is not provider:
+        raise ValueError(f"folder {kind!r} already has a provider")
+    _FOLDER_PROVIDERS[kind] = provider
+
+
 _LOG_CAP: Final = 200  # per target, before paging (an item has a handful of versions)
 # Actions as the access log says them ("Olivia Brandt revealed Borrower TIN"); others are
 # shown by their code, so nothing is hidden.
@@ -347,7 +363,16 @@ async def _folder_rows(ctx: AuthContext, folder: _Folder, q: str | None) -> list
         stmt = stmt.where(
             EvidenceItem.client_id == folder.client_id, EvidenceItem.scope == "client"
         )
-    if folder.folder_kind is not None:
+    provider = (
+        _FOLDER_PROVIDERS.get(folder.folder_kind) if folder.folder_kind is not None else None
+    )
+    if provider is not None and folder.work_item_id is not None:
+        # The owner names the versions; the item and version filters above still apply, so a
+        # walled or hidden one stays absent (R-02-T09 AC).
+        versions = list(await provider(ctx.tenant, folder.work_item_id))
+        stmt = stmt.where(EvidenceVersion.id.in_(versions)) if versions else stmt.where(false())
+        stmt = stmt.where(EvidenceItem.work_item_id == folder.work_item_id)
+    elif folder.folder_kind is not None:
         stmt = stmt.where(EvidenceItem.folder_kind == folder.folder_kind)
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(stmt)).all()
@@ -715,9 +740,11 @@ def _is_uuid(value: str) -> bool:
 
 __all__ = [
     "FOLDER_KINDS",
+    "FolderProvider",
     "access_log",
     "drawer",
     "folder_items",
     "parse_folder_ref",
+    "register_folder_provider",
     "tree",
 ]

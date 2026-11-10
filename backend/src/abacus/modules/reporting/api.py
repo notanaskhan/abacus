@@ -15,16 +15,25 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal, cast, get_args
+from datetime import datetime
+from typing import Final, Literal, cast, get_args
 from uuid import UUID
 
+from pydantic import TypeAdapter, ValidationError
+from sqlalchemy import text
+
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.uow import UnitOfWork
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import (
+    register_client_approval_kind,
     register_letter_finaliser,
     register_letter_locker,
     register_letter_renderer,
 )
+from abacus.modules.evidence.api import register_folder_provider as _register_folder_provider
+from abacus.modules.reporting import deliverables as _deliverables
+from abacus.modules.reporting.client_approvals import FsDraftApprovals
 from abacus.modules.reporting.consent import Recipients as Recipients
 from abacus.modules.reporting.consent import RecipientsUnavailable as RecipientsUnavailable
 from abacus.modules.reporting.consent import recipients as _consent_recipients
@@ -39,10 +48,58 @@ from abacus.modules.reporting.contract import (
     templates_router,
 )
 from abacus.modules.reporting.contract import TemplateImportIn as TemplateImportIn
+from abacus.modules.reporting.deliverable_portal import (  # S33 partials: POR-09 live reads
+    ApprovalTarget as ApprovalTarget,
+)
+from abacus.modules.reporting.deliverable_portal import PortalDeliverable as PortalDeliverable
+from abacus.modules.reporting.deliverable_portal import PortalVersion as PortalVersion
+from abacus.modules.reporting.deliverable_portal import approval_target as approval_target
+from abacus.modules.reporting.deliverable_portal import portal_client_ids as portal_client_ids
+from abacus.modules.reporting.deliverable_portal import portal_deliverable as portal_deliverable
+from abacus.modules.reporting.deliverable_reads import ReaderVersion as ReaderVersion
+from abacus.modules.reporting.deliverable_reads import reader_version as reader_version
+from abacus.modules.reporting.deliverables import AudienceReceipt as AudienceReceipt
+from abacus.modules.reporting.deliverables import DeliverableAudience as DeliverableAudience
+from abacus.modules.reporting.deliverables import (
+    DeliverableInvalid as DeliverableInvalid,
+)
+from abacus.modules.reporting.deliverables import DeliverableSpec as DeliverableSpec
+from abacus.modules.reporting.deliverables import DraftWithoutWatermark as DraftWithoutWatermark
+from abacus.modules.reporting.deliverables import ExpectedDeliverable as ExpectedDeliverable
+from abacus.modules.reporting.deliverables import PortalBand as PortalBand
+from abacus.modules.reporting.deliverables import PortalDeliverables as PortalDeliverables
+from abacus.modules.reporting.deliverables import PortalK1 as PortalK1
+from abacus.modules.reporting.deliverables import PortalRow as PortalRow
+from abacus.modules.reporting.deliverables import PublishedDeliverable as PublishedDeliverable
+from abacus.modules.reporting.deliverables import WorkItemDeliverable as WorkItemDeliverable
+from abacus.modules.reporting.deliverables import (
+    deliverables_for_work_item as deliverables_for_work_item,
+)
+from abacus.modules.reporting.deliverables import expected_deliverables as expected_deliverables
+from abacus.modules.reporting.deliverables import portal_deliverables as portal_deliverables
+from abacus.modules.reporting.deliverables import publish_deliverable as publish_deliverable
+from abacus.modules.reporting.deliverables import (
+    register_envelope_rows as register_envelope_rows,
+)
+from abacus.modules.reporting.deliverables import (
+    register_expected_deliverables as register_expected_deliverables,
+)
+from abacus.modules.reporting.deliverables import register_k1_rows as register_k1_rows
+from abacus.modules.reporting.deliverables import supersede_deliverable as supersede_deliverable
+from abacus.modules.reporting.deliverables import withdraw_deliverable as withdraw_deliverable
 from abacus.modules.reporting.engagement_letters import (
     finalise_engagement_letter,
     lock_engagement_letter,
     render_engagement_letter,
+)
+from abacus.modules.reporting.fs_captions import (
+    checklist_counts as checklist_counts,
+)
+from abacus.modules.reporting.fs_captions import (
+    statement_caption_amounts as statement_caption_amounts,
+)
+from abacus.modules.reporting.fs_captions import (
+    statement_state as statement_state,
 )
 from abacus.modules.reporting.render.core import DocxRenderOutput as DocxRenderOutput
 
@@ -64,12 +121,20 @@ publish_template = _publish_template
 RenderingRefused = _RenderingRefused
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.kernel.audit_owners import register_engagement_owners  # noqa: E402
+from abacus.modules.reporting import deliverable_reads as _deliverable_reads  # noqa: E402
+from abacus.modules.reporting import statements as _statements  # noqa: E402
 from abacus.modules.reporting.statements_contract import statements_router  # noqa: E402
+
+# A-06-T25 (DEC-2304): the trail places a statement version and a checklist answer.
+register_engagement_owners(_statements.AUDIT_KINDS, _statements.audit_owners)
+register_engagement_owners(_deliverable_reads.AUDIT_KINDS, _deliverable_reads.audit_owners)
 
 ROUTERS = (templates_router, documents_router, statements_router)  # A-06-T19: statements stub
 
 KINDS: frozenset[str] = frozenset(get_args(GeneratedDocumentKind))
-LAYOUTS: frozenset[str] = frozenset(get_args(LayoutKey))
+# The layouts a kind may register: a template's six and the composed `financial_statements`.
+LAYOUTS: frozenset[str] = frozenset(get_args(LayoutKey)) | {"financial_statements"}
 
 
 class RenderRefused(ValueError):
@@ -158,17 +223,31 @@ class RenderTicket:
 # the approver's user id and the content hash they approved, or None when it is not a human's.
 VariablesProvider = Callable[[OwnerRef, RenderScope], Awaitable[Mapping[str, str]]]
 ApprovalProvider = Callable[[ApprovalRef], Awaitable[tuple[UUID, str] | None]]
+# N-04-T16 (DEC-2311): the same, for a kind whose values need the transaction's tenant.
+TenantVariablesProvider = Callable[
+    [TenantContext, OwnerRef, RenderScope], Awaitable[Mapping[str, str]]
+]
+# A-06-T29 (DEC-2615): a kind whose whole body code composes from its owner's sealed record (the
+# financial statements): DocBlocks as plain data, sealed in the snapshot; it takes no template.
+BodyProvider = Callable[[TenantContext, OwnerRef, RenderScope], Awaitable[Sequence[object]]]
+
+
+# A kind's layout: a template's six, or `financial_statements`, which only a composed kind uses
+# (DEC-2615; C11's template contract and its OpenAPI are unchanged).
+KindLayout = LayoutKey | Literal["financial_statements"]
 
 
 @dataclass(frozen=True)
 class DocumentKind:
     kind: GeneratedDocumentKind
-    layout: LayoutKey
+    layout: KindLayout
     variables_provider: VariablesProvider
     approval_provider: ApprovalProvider
     source_events: tuple[str, ...] = ()
     retention_record_type: str = ""
     formats: tuple[RenderFormat, ...] = field(default=("pdf",))
+    tenant_variables_provider: TenantVariablesProvider | None = None
+    body_provider: BodyProvider | None = None
 
 
 class UnknownDocumentKind(LookupError):
@@ -197,6 +276,31 @@ def document_kind(kind: str) -> DocumentKind:
     return found
 
 
+def _body_kind(kind: str) -> bool:
+    """A registered kind whose body code composes (DEC-2615)."""
+    registered = _REGISTRY.get(kind)
+    return registered is not None and registered.body_provider is not None
+
+
+_BLOCKS: Final = TypeAdapter(list[DocBlock])
+
+
+async def _composed_body(
+    tx: UnitOfWork, kind: DocumentKind, request_owner: OwnerRef, scope: RenderScope
+) -> list[object] | None:
+    """A composed kind's body, checked against C11's closed block union before it is sealed."""
+    if kind.body_provider is None:
+        return None
+    body = list(
+        await kind.body_provider(await transaction_context(tx.session), request_owner, scope)
+    )
+    try:
+        _BLOCKS.validate_python(body)
+    except ValidationError as invalid:
+        raise RenderRefused("unknown_layout", "the composed body is not C11 blocks") from invalid
+    return body
+
+
 def check_render_request(request: RenderRequest) -> None:
     """The rules every render request meets before any work (AC-15, AC-16; INV-1):
 
@@ -216,8 +320,11 @@ def check_render_request(request: RenderRequest) -> None:
             raise RenderRefused("final_requires_approval", "a final render is a person's")
         if request.approval_ref is None:
             raise RenderRefused("final_requires_approval")
-    if request.template_version_id is None and request.kind != "run_trace_export":
+    composed = _body_kind(request.kind)
+    if request.template_version_id is None and request.kind != "run_trace_export" and not composed:
         raise RenderRefused("unknown_layout", "no template version")
+    if composed and request.template_version_id is not None:
+        raise RenderRefused("unknown_layout", "a composed kind takes no template version")
     if not request.formats:
         raise RenderRefused("unknown_layout", "no format")
 
@@ -234,7 +341,13 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
     if request.mode != "draft":
         raise RenderRefused("final_requires_approval", "a final render goes through render_final")
     kind = document_kind(request.kind)
-    resolved = await kind.variables_provider(request.owner_ref, request.scope)
+    resolved = (
+        await kind.tenant_variables_provider(
+            await transaction_context(tx.session), request.owner_ref, request.scope
+        )
+        if kind.tenant_variables_provider is not None
+        else await kind.variables_provider(request.owner_ref, request.scope)
+    )
     declared = await docs.declared_keys(tx, request.template_version_id)
     variables, missing = docs.declared_values(declared, resolved)
     if missing:
@@ -245,6 +358,7 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
         variables=variables,
         clause_states={c.clause_id: c.enabled for c in request.clause_states},
         overrides={o.section_id: o.paragraphs for o in request.section_overrides},
+        body=await _composed_body(tx, kind, request.owner_ref, request.scope),
     )
     snapshot_sha = docs.sha256_hex(docs.canonical(snapshot))
     content_hash = docs.sha256_hex(f"{kind.layout}:{snapshot_sha}".encode())
@@ -410,6 +524,9 @@ async def regenerate(tx: UnitOfWork, document_id: UUID, requester: Requester) ->
             str(k): tuple(str(p) for p in cast(list[object], v))
             for k, v in cast(Mapping[object, object], overrides or {}).items()
         },
+        body=await _composed_body(
+            tx, kind, OwnerRef(str(doc["owner_type"]), cast(UUID, doc["owner_id"])), scope
+        ),
     )
     snapshot_sha = docs.sha256_hex(docs.canonical(snapshot))
     content_hash = docs.sha256_hex(f"{kind.layout}:{snapshot_sha}".encode())
@@ -490,6 +607,10 @@ class _SourceSubscriptions(Mapping[str, Callable[[OutboxEvent], Awaitable[None]]
     def __getitem__(self, event_type: str) -> Callable[[OutboxEvent], Awaitable[None]]:
         if event_type == RENDER_REQUESTED:
             return _render_requested
+        if event_type == DRAFT_REQUESTED:
+            return _draft_requested
+        if event_type == TIE_OUT_REQUESTED:
+            return _tie_out_requested
         kinds = self._events()[event_type]
 
         async def handle(event: OutboxEvent) -> None:
@@ -500,14 +621,17 @@ class _SourceSubscriptions(Mapping[str, Callable[[OutboxEvent], Awaitable[None]]
         return handle
 
     def __iter__(self) -> Iterator[str]:
-        return iter((RENDER_REQUESTED, *(e for e in self._events() if e != RENDER_REQUESTED)))
+        own = (RENDER_REQUESTED, DRAFT_REQUESTED, TIE_OUT_REQUESTED)
+        return iter((*own, *(e for e in self._events() if e not in own)))
 
     def __len__(self) -> int:
-        return len(set(self._events()) | {RENDER_REQUESTED})
+        return len(set(self._events()) | {RENDER_REQUESTED, DRAFT_REQUESTED, TIE_OUT_REQUESTED})
 
 
 # P-11-T11 (DEC-1561): a version's render job runs on the relay's delivery of its event.
 RENDER_REQUESTED = "generated_document.render_requested"
+DRAFT_REQUESTED = "statement.draft_requested"
+TIE_OUT_REQUESTED = "statement.tie_out_requested"
 
 
 async def _render_requested(event: OutboxEvent) -> None:
@@ -517,17 +641,51 @@ async def _render_requested(event: OutboxEvent) -> None:
     await on_render_requested(event)
 
 
+async def _draft_requested(event: OutboxEvent) -> None:
+    # Imported here: the jobs reach agents.api and `kernel.dispatch` (A-06-T25).
+    from abacus.modules.reporting.statements_jobs import on_draft_requested
+
+    await on_draft_requested(event)
+
+
+async def _tie_out_requested(event: OutboxEvent) -> None:
+    from abacus.modules.reporting.statements_jobs import on_tie_out_requested
+
+    await on_tie_out_requested(event)
+
+
 SUBSCRIPTIONS: Mapping[str, Callable[[OutboxEvent], Awaitable[None]]] = _SourceSubscriptions()
 # The worker composes WORKFLOWS and ACTIVITIES beside SUBSCRIPTIONS for every module that has one.
+from abacus.modules.reporting.statements_jobs import (  # noqa: E402 -- A-06-T25
+    draft_activity,
+    draft_failed_activity,
+    tie_out_activity,
+)
+from abacus.modules.reporting.statements_workflows import (  # noqa: E402
+    DRAFT_ACTIVITY as DRAFT_ACTIVITY,
+)
+from abacus.modules.reporting.statements_workflows import (  # noqa: E402
+    DRAFT_FAILED_ACTIVITY as DRAFT_FAILED_ACTIVITY,
+)
+from abacus.modules.reporting.statements_workflows import (  # noqa: E402
+    TIE_OUT_ACTIVITY as TIE_OUT_ACTIVITY,
+)
+from abacus.modules.reporting.statements_workflows import (  # noqa: E402
+    FsDraftWorkflow,
+    TieOutWorkflow,
+)
+
 # The render job is a relay subscription, not a workflow (DEC-1561).
-WORKFLOWS: dict[type, str] = {}
-ACTIVITIES: tuple[object, ...] = ()
+WORKFLOWS: dict[type, str] = {FsDraftWorkflow: "interactive", TieOutWorkflow: "background"}
+ACTIVITIES: tuple[object, ...] = (draft_activity, draft_failed_activity, tie_out_activity)
 
 # N-02-T32 (DEC-1458): the engagement letter renders through C11 by engagements' port, since
 # engagements may not import reporting (ADR-008).
 register_letter_renderer(render_engagement_letter)
 register_letter_finaliser(finalise_engagement_letter)  # N-02-T33: the approval renders final
 register_letter_locker(lock_engagement_letter)  # N-02-T33: a completed envelope locks it
+# R-02-T09 (DEC-2805): FIL-01's Deliverables folder lists a work item's C10 deliverables.
+_register_folder_provider("deliverables", _deliverables.deliverable_versions_for_work_item)
 
 # A-06-T15 (DEC-2215): a reviewable on C3's matrix and G5.
 from abacus.modules.reporting.review_targets import (  # noqa: E402
@@ -559,3 +717,254 @@ def template_blocks(
     from abacus.modules.reporting.compose import block_texts, standard
 
     return block_texts(standard(layout_key=layout_key, body=body, clauses=clauses, values=values))
+
+
+async def latest_document_version(
+    tenant: TenantContext, document_id: UUID
+) -> tuple[UUID, str] | None:
+    """N-04-T16: a generated document's newest version: its id and content hash (C7's source)."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT id, content_hash FROM generated_document_versions "
+                    "WHERE generated_document_id = :d ORDER BY version_no DESC LIMIT 1"
+                ),
+                {"d": document_id},
+            )
+        ).first()
+    return None if row is None else (row.id, row.content_hash)
+
+
+async def document_is_final(tenant: TenantContext, document_id: UUID) -> bool:
+    """N-04-T16: a person's final render of this document exists."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT 1 FROM generated_document_versions "
+                "WHERE generated_document_id = :d AND mode = 'final' LIMIT 1"
+            ),
+            {"d": document_id},
+        )
+    return found is not None
+
+
+# A-06-T25, T28: the run record's port, the workflows' inputs, and the slice's path.
+# A-06-T29 (DEC-2615): the financial statements as a composed C11 kind, registered at import so
+# the render job (the worker) knows its layout and record type; send-draft calls the render.
+from abacus.modules.reporting.fs_render import ensure_kind as _ensure_fs_kind  # noqa: E402
+from abacus.modules.reporting.fs_render import (  # noqa: E402
+    render_statement_draft as render_statement_draft,
+)
+
+# A-06-T16 seam (TASK-3395): the agent's suggested checklist answers; assurance wires them, since
+# reporting may not import agents (BOUND-002).
+from abacus.modules.reporting.statements import (  # noqa: E402
+    SUGGESTION_TARGET as CHECKLIST_SUGGESTION_TARGET,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for assurance's seam (A-06-T16)
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    RunRecordPort as RunRecordPort,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    answer_item as answer_statements_item,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the scenario loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    apply_suggested_answer as apply_suggested_answer,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    checklist_options as statements_checklist_options,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the scenario loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    document_engagement as statement_document_engagement,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for assurance's seam (A-06-T16)
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    draft as draft_statements,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    pick_checklist as pick_statements_checklist,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the scenario loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    record_management_approval as record_management_approval,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    record_suggested_answer as record_suggested_answer,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    register_run_record as register_run_record,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    review_items as review_statements_items,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the scenario loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    run_tie_out as run_statement_tie_out,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    suggested_answer as suggested_answer,
+)
+from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
+    FsDraftInput as FsDraftInput,
+)
+from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
+    TieOutInput as TieOutInput,
+)
+
+_ensure_fs_kind()
+
+# R-02-T14 remainder (DEC-3172): POR-08's entries journal, a composed kind registered at import so
+# the render job knows its layout and record type.
+from abacus.modules.reporting.entries_journal import (  # noqa: E402
+    JournalPending as JournalPending,
+)
+from abacus.modules.reporting.entries_journal import (  # noqa: E402
+    JournalReady as JournalReady,
+)
+from abacus.modules.reporting.entries_journal import (  # noqa: E402
+    ensure_kind as _ensure_journal_kind,
+)
+from abacus.modules.reporting.entries_journal import (  # noqa: E402
+    journal as _journal,
+)
+
+entries_journal = _journal
+_ensure_journal_kind()
+
+# R-02-T11 (C18, DEC-3009): management approval of a draft version through the portal.
+register_client_approval_kind("fs_draft", FsDraftApprovals())
+
+
+@dataclass(frozen=True)
+class RenderOutcome:
+    """A-07-T30: a version's render job as its consumer waits on it: `queued`, `running`,
+    `succeeded` (with the PDF's evidence version, render hash and page count) or `failed` (with
+    the job's failure code)."""
+
+    status: Literal["queued", "running", "succeeded", "failed"]
+    version_id: UUID | None = None
+    evidence_version_id: UUID | None = None
+    render_hash: str | None = None
+    page_count: int | None = None
+    failure_code: str | None = None
+
+
+_OUTCOME = text(
+    "SELECT j.status, j.failure_code, v.id AS version_id, f.evidence_version_id, "
+    "encode(f.render_hash, 'hex') AS render_hash, f.page_count "
+    "FROM render_jobs j JOIN generated_document_versions v "
+    "ON v.generated_document_id = j.generated_document_id AND v.version_no = j.target_version_no "
+    "LEFT JOIN generated_document_files f ON f.version_id = v.id AND f.format = 'pdf' "
+    "WHERE j.generated_document_id = :d AND j.target_version_no = :n"
+)
+
+
+async def render_outcome(
+    tenant: TenantContext, document_id: UUID, version_no: int
+) -> RenderOutcome:
+    """The render job of one version and, once it succeeded, its PDF filed as evidence."""
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_OUTCOME, {"d": document_id, "n": version_no})).first()
+    if row is None:
+        return RenderOutcome("queued")
+    status = cast(Literal["queued", "running", "succeeded", "failed"], str(row.status))
+    if status == "succeeded" and row.evidence_version_id is None:
+        status = "running"  # the job finished before its PDF row: not yet servable
+    return RenderOutcome(
+        status,
+        cast(UUID, row.version_id),
+        cast(UUID | None, row.evidence_version_id),
+        cast(str | None, row.render_hash),
+        cast(int | None, row.page_count),
+        cast(str | None, row.failure_code),
+    )
+
+
+async def final_version_no(tenant: TenantContext, document_id: UUID) -> int | None:
+    """TASK-6543: the newest final version's number of a generated document, or None."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT max(version_no) FROM generated_document_versions "
+                "WHERE generated_document_id = :d AND mode = 'final'"
+            ),
+            {"d": document_id},
+        )
+    return None if found is None else int(found)
+
+
+async def document_of_owner(tenant: TenantContext, owner: OwnerRef, kind: str) -> UUID | None:
+    """A-07-T30: the one generated document of a consumer record and kind (0430's unique key)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT id FROM generated_documents WHERE owner_type = :t AND owner_id = :o "
+                "AND kind = :k"
+            ),
+            {"t": owner.type, "o": owner.id, "k": kind},
+        )
+    return cast(UUID | None, found)
+
+
+async def fs_approved_by_management_at(
+    tenant: TenantContext, work_item_id: UUID
+) -> datetime | None:
+    """A-07-T30's also-required "FS approved": when management approved the work item's newest
+    statement version (A-06's `approved_by_management`, the C18 portal decision); None before."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT max(a.created_at) FROM statement_approvals a "
+                "JOIN statement_versions v ON v.id = a.statement_version_id "
+                "WHERE v.work_item_id = :wi AND a.event = 'approved_by_management' "
+                "AND v.version_no = (SELECT max(version_no) FROM statement_versions "
+                "WHERE work_item_id = :wi)"
+            ),
+            {"wi": work_item_id},
+        )
+    return cast(datetime | None, found)
+
+
+@dataclass(frozen=True)
+class AudienceDeliverable:
+    """R-02-T16: a released (non-draft) deliverable whose audience names a scope."""
+
+    deliverable_id: UUID
+    kind: str
+    title: str
+    latest_version: int
+    page_count: int
+    released_at: datetime
+    restricted_use: bool
+
+
+async def released_for_audience(
+    tenant: TenantContext, scope_kind: str, scope_id: UUID
+) -> list[AudienceDeliverable]:
+    """Every deliverable whose audience includes (`scope_kind`, `scope_id`) and whose newest
+    version is not a draft; the caller has already shown the reader holds that scope."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT d.id, d.kind, d.title, d.restricted_use, v.version_no, "
+                    "v.page_count, v.published_at FROM deliverables d "
+                    "JOIN deliverable_audiences a ON a.deliverable_id = d.id "
+                    "AND a.scope_kind = :kind AND a.scope_id = :scope "
+                    "JOIN LATERAL (SELECT version_no, page_count, published_at, is_draft "
+                    "FROM deliverable_versions WHERE deliverable_id = d.id "
+                    "ORDER BY version_no DESC LIMIT 1) v ON NOT v.is_draft "
+                    "ORDER BY v.published_at DESC"
+                ),
+                {"kind": scope_kind, "scope": scope_id},
+            )
+        ).all()
+    return [
+        AudienceDeliverable(
+            r.id,
+            str(r.kind),
+            str(r.title),
+            int(r.version_no),
+            int(r.page_count),
+            r.published_at,
+            bool(r.restricted_use),
+        )
+        for r in rows
+    ]

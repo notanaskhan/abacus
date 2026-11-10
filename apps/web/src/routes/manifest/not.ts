@@ -6,21 +6,21 @@ import type { Manifest } from "./types";
 export const notScreens = {
   "NOT-01": {
     name: "Notices index · intake sheet",
-    status: "fixture",
+    status: "live", // N-04-T22
     path: "/notices",
     navArea: "Notices",
   },
   "NOT-02": {
     name: "Notice workspace · CP2000 · TY2024 · Marcus & Dana Whitley",
-    // N-04-T14: a, b, c, d, a2 on fixtures; planned until its CLI-05 and FIL-01 links are wired
-    // (the screen's links rule), e and f swap live with N-04-T22.
-    status: "planned",
+    // N-04-T22: live, with CLI-05's links and the e and f states.
+    status: "live",
     path: "/notices/$noticeId",
   },
   "NOT-03": {
     name: "Response letter editor & approval · CP2000 · TY2024 · Whitley",
-    status: "planned",
-    path: null,
+    // N-04-T22: live under NOT-02's Response tab.
+    status: "live",
+    path: "/notices/$noticeId",
   },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;

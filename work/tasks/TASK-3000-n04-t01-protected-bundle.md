@@ -4,7 +4,7 @@ title: N-04-T01 S25 protected bundle for Notices
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: N-04
 plan_key: N-04-T01
 branch: s25-n04-t01

@@ -24,7 +24,28 @@ import { OPENS as ADM10_OPENS, scenarios as adm10 } from "./scenarios/ADM-10";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as adm08 } from "./scenarios/ADM-08";
 import { scenarios as aud01 } from "./scenarios/AUD-01";
+import { scenarios as ebp01 } from "./scenarios/EBP-01";
+import { scenarios as ebp03 } from "./scenarios/EBP-03";
+import { scenarios as ebp04 } from "./scenarios/EBP-04";
+import { scenarios as ebp05 } from "./scenarios/EBP-05";
+import { scenarios as ebp06 } from "./scenarios/EBP-06";
+import { scenarios as ebp07 } from "./scenarios/EBP-07";
+import { scenarios as ebp08 } from "./scenarios/EBP-08";
+import { scenarios as aud27 } from "./scenarios/AUD-27";
+import { scenarios as ebp09 } from "./scenarios/EBP-09";
+import { scenarios as aud10 } from "./scenarios/AUD-10";
+import { scenarios as aud15 } from "./scenarios/AUD-15";
+import { scenarios as aud16 } from "./scenarios/AUD-16";
+import { scenarios as aud17 } from "./scenarios/AUD-17";
+import { scenarios as aud18 } from "./scenarios/AUD-18";
+import { scenarios as aud20 } from "./scenarios/AUD-20";
 import { OPENS as NOT01_OPENS, scenarios as not01 } from "./scenarios/NOT-01";
+import { scenarios as bnd03 } from "./scenarios/BND-03";
+import { BND03_QUESTIONNAIRE } from "./seed/bnd03";
+import { scenarios as not02 } from "./scenarios/NOT-02";
+import { NOT02_NOTICE } from "./seed/not02";
+import { scenarios as not03 } from "./scenarios/NOT-03";
+import { TAX13_OPENS, scenarios as tax13 } from "./scenarios/TAX-13";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
 import { NORTHWIND_AUDIT } from "./scenarios/AUD-06";
 import { scenarios as aud08 } from "./scenarios/AUD-08";
@@ -45,6 +66,7 @@ import { OPENS as ENG02_OPENS, scenarios as eng02 } from "./scenarios/ENG-02";
 import { OPENS as ENG13_OPENS, scenarios as eng13 } from "./scenarios/ENG-13";
 import { OPENS as FIL01_OPENS, scenarios as fil01 } from "./scenarios/FIL-01";
 import { scenarios as home01 } from "./scenarios/HOME-01";
+import { scenarios as home02 } from "./scenarios/HOME-02";
 import { OPENS as INB01_OPENS, scenarios as inb01 } from "./scenarios/INB-01";
 import { scenarios as knw01 } from "./scenarios/KNW-01";
 import { scenarios as knw04 } from "./scenarios/KNW-04";
@@ -100,6 +122,13 @@ interface ScreenScenarios {
   ids?: Readonly<Record<string, Readonly<Record<string, string | null>>>>;
 }
 
+/** Every state of NOT-02 and NOT-03 opens on the Whitley notice (`_noticeId_` in a journey path). */
+function noticeIds(
+  scenarios: Readonly<Record<string, unknown>>,
+): Record<string, { noticeId: string }> {
+  return Object.fromEntries(Object.keys(scenarios).map((s) => [s, { noticeId: NOT02_NOTICE }]));
+}
+
 /** Every state of a Northwind audit screen opens on its audit (`_auditId_` in a journey path). */
 function northwind(
   scenarios: Readonly<Record<string, unknown>>,
@@ -145,6 +174,24 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "AUD-03": { scenarios: aud03, opens: {}, ids: AUD03_IDS }, // A-01-T26: j03 4e, 5, 5c
   // A-04-T34: j03 9 and 10a on Northwind's audit (AUD-08 register, AUD-09 IC pack failure).
   "AUD-08": { scenarios: aud08, opens: {}, ids: northwind(aud08) },
+  // A-05-T50: the EBP canvases are sections of AUD-02, on Northwind's audit.
+  "EBP-01": { scenarios: ebp01, opens: {}, ids: northwind(ebp01) },
+  "EBP-03": { scenarios: ebp03, opens: {}, ids: northwind(ebp03) },
+  "EBP-04": { scenarios: ebp04, opens: {}, ids: northwind(ebp04) },
+  "EBP-05": { scenarios: ebp05, opens: {}, ids: northwind(ebp05) }, // A-05-T44
+  "EBP-06": { scenarios: ebp06, opens: {}, ids: northwind(ebp06) }, // A-05-T40
+  "EBP-09": { scenarios: ebp09, opens: {}, ids: northwind(ebp09) }, // A-05-T45
+  // A-05-T61: j03 12a (EBP-08), 12b (EBP-07) and j04 11 (AUD-27), cockpit sections too.
+  "EBP-07": { scenarios: ebp07, opens: {}, ids: northwind(ebp07) },
+  "EBP-08": { scenarios: ebp08, opens: {}, ids: northwind(ebp08) },
+  "AUD-27": { scenarios: aud27, opens: {}, ids: northwind(aud27) },
+  "AUD-10": { scenarios: aud10, opens: {} }, // A-04-T37
+  // A-06-T35: j03 13, 14 and 16 on Northwind's audit (AUD-15, AUD-16, AUD-17, AUD-20).
+  "AUD-15": { scenarios: aud15, opens: {}, ids: northwind(aud15) },
+  "AUD-16": { scenarios: aud16, opens: {}, ids: northwind(aud16) },
+  "AUD-17": { scenarios: aud17, opens: {}, ids: northwind(aud17) }, // A-06-T24
+  "AUD-18": { scenarios: aud18, opens: {} }, // A-07-T17
+  "AUD-20": { scenarios: aud20, opens: {}, ids: northwind(aud20) }, // A-06-T30
   "AUD-09": {
     scenarios: aud09,
     opens: { b: "?cell=D2", e: "?sheet=internal-control" },
@@ -194,6 +241,7 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     ),
   },
   "HOME-01": { scenarios: home01, opens: {} }, // I-01-T05
+  "HOME-02": { scenarios: home02, opens: {} }, // I-01-T22: j13 2-3
   "INB-01": {
     scenarios: onE0(inb01, ["inbox.firm_intake"]),
     opens: Object.fromEntries(
@@ -202,7 +250,17 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   },
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
+  "NOT-02": { scenarios: not02, opens: {}, ids: noticeIds(not02) }, // N-04-T26
+  "NOT-03": { scenarios: not03, opens: {}, ids: noticeIds(not03) }, // N-04-T20, T26
+  "TAX-13": { scenarios: tax13, opens: TAX13_OPENS }, // T-03-T11, T16
   "NOT-01": { scenarios: not01, opens: NOT01_OPENS }, // N-04-T05: j09 1 (T26)
+  "BND-03": {
+    scenarios: bnd03,
+    opens: {},
+    ids: Object.fromEntries(
+      Object.keys(bnd03).map((s) => [s, { questionnaireId: BND03_QUESTIONNAIRE }]),
+    ),
+  }, // T-03-T17
   "SHL-03": { scenarios: shl03, opens: {} },
   "SHL-04": { scenarios: shl04, opens: {} },
   "SHL-14": {

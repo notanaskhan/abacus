@@ -4,7 +4,7 @@ title: Q-03-T159 M14 calibration inputs
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # the M14 re-plan reads reserve actuals per founder per workstream
 risk_zone: amber
-status: in-review
+status: done
 epic: Q-03
 plan_key: Q-03-T159
 branch: s25-q03-t159

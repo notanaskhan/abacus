@@ -92,3 +92,41 @@ class ServiceOrgRelianceConcluded(DomainEvent):
     service_organization_id: Annotated[UUID, classified("internal")]
     decision_id: Annotated[UUID, classified("internal")]
     relied: Annotated[bool, classified("internal")]
+
+
+class ReportReleased(DomainEvent):
+    """G8 (A-07-T30; A-07 §4.6): the engagement partner released the report in Accrued. The P-14
+    retention clock, PostReleaseClocksWorkflow (A-07-T36), A-06's findings communicated and the
+    HOME-02 projector read it."""
+
+    event_type: ClassVar[str] = "report.released"
+
+    release_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    report_version_id: Annotated[UUID, classified("internal")]
+    final_document_version_id: Annotated[UUID, classified("internal")]
+
+
+class ArchiveLockRequested(DomainEvent):
+    """A senior or above asked the lockers to lock the archive (A-07-T31): HOME-02's
+    `archive_lock_due` and the notification read it."""
+
+    event_type: ClassVar[str] = "archive.lock_requested"
+
+    archive_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    requested_by: Annotated[UUID, classified("internal")]
+
+
+class UncorrectedMisstatementsAcknowledged(DomainEvent):
+    """R-02-T15: a client person acknowledged the frozen SUM snapshot's uncorrected misstatements
+    (A-07's rep letter and the EP and manager read it)."""
+
+    event_type: ClassVar[str] = "uncorrected_misstatements.acknowledged"
+
+    sum_snapshot_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    contact_id: Annotated[UUID, classified("internal")]

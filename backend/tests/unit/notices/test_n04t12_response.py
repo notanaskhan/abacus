@@ -45,3 +45,19 @@ def test_the_response_reviewable_and_gate_kinds_are_registered() -> None:
     from abacus.modules.review.slots import reviewable_types
 
     assert response.TARGET in reviewable_types()
+
+
+def test_a_draft_from_before_the_decision_answers_no_position() -> None:
+    assert response.drafted_for(None, "provisional") is None
+    assert response.drafted_for("agree", "decided") == "agree"
+    provisional = response.drafted_for("agree", "provisional")
+    assert response.blocked_code("agree", provisional, [TEMPLATE]) == "position_mismatch"
+
+
+def test_a_position_clause_is_on_for_its_position_only() -> None:
+    assert response.clause_states_for(None) == {}
+    assert response.clause_states_for("disagree") == {
+        "agree": False,
+        "partially_agree": False,
+        "disagree": True,
+    }

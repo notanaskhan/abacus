@@ -83,7 +83,7 @@ from contextlib import asynccontextmanager, contextmanager, suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from typing import Final, Literal, cast
+from typing import Any, Final, Literal, cast
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -100,25 +100,45 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.dispatch import dispatch
 from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
+from abacus.modules.adjustments.api import (
+    NewEntry,
+    NewLine,
+    propose_entry,
+    record_entry_decision,
+    send_entries,
+)
 from abacus.modules.assurance.api import (
     PHASE_GATES,
     ExceptionRow,
     MappingConfirmIn,
     MappingRunIn,
+    NewFinding,
     NewRisk,
     RiskEdit,
     adopt_trial_balance,
     create_risk,
     edit_risk,
+    finding_to_deficiency,
+    finding_to_misstatement,
     follows_gate,
     import_grouping_csv,
     mapping_live,
+    pass_on_sum,
     propose_materiality,
     publish_grouping_version,
     reassess_materiality,
     record_exceptions,
+    record_finding,
     record_phase,
+    record_prior_year,
+    record_sum_factor,
     request_risk_approval,
+    request_severity_decision,
+    request_sum_conclusion,
+    route_exception,
+    set_misstatement_effect,
+    start_mapping,
+    sum_snapshot,
     update_profile,
 )
 from abacus.modules.communications.api import (
@@ -178,10 +198,22 @@ from abacus.modules.ledger.api import (
     record_subsequent_snapshot,
 )
 from abacus.modules.methodology.api import (
+    AssuranceChecklistImportIn,
     EngagementType,
+    LevelAssignment,
+    ReviewLevelsPayload,
+    StandardDraftPatchIn,
     create_standard,
+    draft_standard_version,
+    edit_standard_draft,
+    import_assurance_checklist,
+    import_checklist,
+    import_notes,
     import_standard_workbook,
     import_template,
+    publish_assurance_checklist,
+    publish_checklist,
+    publish_notes,
     publish_standard,
     standard_by_key,
     standard_workbook,
@@ -191,6 +223,14 @@ from abacus.modules.methodology.api import (
 )
 from abacus.modules.methodology.api import (
     version_state as methodology_version_state,
+)
+from abacus.modules.notices.api import (
+    create_notice_from_intake,
+    create_notice_intake,
+    move_notice,
+    notice_engagement_for,
+    read_notice,
+    revise_notice_intake,
 )
 from abacus.modules.organisations.api import (
     ClientRecordChange,
@@ -220,11 +260,19 @@ from abacus.modules.portal.api import (
 )
 from abacus.modules.reporting.api import (
     TemplateImportIn,
+    answer_statements_item,
+    draft_statements,
     import_template_bundle,
+    pick_statements_checklist,
     publish_template,
+    record_management_approval,
+    review_statements_items,
+    run_statement_tie_out,
+    statements_checklist_options,
 )
 from abacus.modules.requests.api import (
     ItemPatch,
+    assign_template_owner,
     attach_organizer,
     create_questionnaire,
     draft_question,
@@ -233,17 +281,23 @@ from abacus.modules.requests.api import (
     latest_version_of,
     move_after_review,
     publish_questionnaire_template,
+    questionnaire_editor_read,
+    questionnaire_from_template,
     questionnaire_templates,
     save_portal_answer,
+    save_questionnaire,
     send_question,
     update_item,
 )
 from abacus.modules.review.api import STATEMENTS as SIGN_OFF_STATEMENTS
 from abacus.modules.review.api import (
+    AlreadySigned,
     create_issue,
     decide_card,
     raise_review_note,
+    review_note_event,
     reviewable_facts,
+    reviewables_of,
     save_checkpoint,
     sign_target,
 )
@@ -265,15 +319,30 @@ from abacus.modules.sampling.api import (
 )
 from abacus.modules.sampling.api import approve as approve_sample
 from abacus.modules.sampling.api import draw as draw_sample
-from abacus.modules.tax.api import import_engine_file, share_k1_internal
-from abacus.modules.workpapers.api import create_workpaper
+from abacus.modules.tax.api import (
+    ProposedPayment,
+    create_estimate_schedule,
+    flag_new_likely,
+    import_engine_file,
+    patch_extension,
+    patch_installment,
+    patch_schedule,
+    prepare_extensions,
+    request_estimate_confirmation,
+    share_k1_internal,
+)
+from abacus.modules.workpapers.api import CellEdit, create_workpaper, set_cells
 from abacus_tools import deploy_lock
 from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
+from abacus_tools.synthetic.scenarios.brightwater_hale import agent_runs_slice as _runs
+from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
+from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
+from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
     THORNBURY_ANSWERS,
@@ -389,6 +458,12 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
 from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
     workbook as methodology_workbook,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.notices_content import (
+    NEEDS as NOTICES_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.notices_content import (
+    SLICE as NOTICES_SLICE,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_ROLES,
     SEATS,
@@ -406,6 +481,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
     NEEDS as PLANNING_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
+    RA_PAPER as PLANNING_RA_PAPER,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
     RISKS as PLANNING_RISKS,
@@ -440,11 +518,18 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
+    A07_NEEDS as A07_TEMPLATES_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
+    A07_SLICE as A07_TEMPLATES_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     NEEDS as REPORT_TEMPLATES_NEEDS,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     SLICE as REPORT_TEMPLATES_SLICE,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import a07_content
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     bundle as report_template_bundle,
 )
@@ -518,7 +603,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.standards import SLICE as
 from abacus_tools.synthetic.scenarios.brightwater_hale.standards import (
     spec_of as standard_spec,
 )
-from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD_BY_LABEL
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD, BOARD_BY_LABEL
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import NEEDS as TAX_BOARD_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import SLICE as TAX_BOARD_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_content import (
@@ -562,8 +647,6 @@ FLAGS_ON: Final = (
     "agents.client_data_optin",
     "audits.cockpit",  # A-01: "the local seed turns it on for Brightwater Hale"
     # I-01-T13: HOME-01 lite on synthetic firms (GET /v1/home and the C13 gate list and counts).
-    "home.dashboard",
-    "home.approvals",  # I-01-T21: HOME-02 live on synthetic firms; rows open ?gate=
     "review.approve_agent_output",  # P-04-T46 (DEC-1385): SHL-10 approval on synthetic firms
     "engagements.roll_forward_v2",  # P-07-T55: ENG-13 v2 on synthetic firms
     # N-02-T17: record mode (SIG-01, the import, the portal reads) on synthetic firms from S15.
@@ -1205,6 +1288,114 @@ async def _portal_user_added(conn: asyncpg.Connection, _: Scenario, event: Event
     await _bootstrap(conn, event, write)
 
 
+async def _run_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """P-09-T12 (DEC-3121): run #4127 through the agents module's synthetic-only recorder, as its
+    initiator (a human context), never by SQL here."""
+    from abacus.modules.agents.api import RecordedRun, RecordedStep, record_synthetic_run
+
+    del conn
+    initiator = user_id_of(_SEATS[event.actor])
+    northwind = next(a for a in AUDITS if a.client == _runs.CLIENT)
+    steps = cast("list[dict[str, object]]", event.data["steps"])
+    await record_synthetic_run(
+        TenantContext(TENANT, "human", str(initiator)),
+        RecordedRun(
+            agent_id=str(event.data["agent_id"]),
+            engagement_id=engagement_id_of(northwind),
+            initiator_user_id=initiator,
+            run_number=int(cast(int, event.data["run_number"])),
+            state=str(event.data["state"]),
+            steps=[
+                RecordedStep(
+                    key=str(st["key"]),
+                    level=int(cast(int, st["level"])),
+                    label=str(st["label"]),
+                    state=str(st["state"]),
+                    reached=st["state"] != "queued",
+                )
+                for st in steps
+            ],
+            blocked_on=cast("dict[str, object]", event.data["blocked_on"]),
+            plan_decided_at=datetime.fromisoformat(str(event.data["plan_decided_at"])),
+            id=UUID(str(event.data["run_id"])),
+        ),
+    )
+
+
+async def _governance_body_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """R-02-T13 (DEC-3029): Northwind's Benefits Committee, its members as client-person contacts
+    linked to their portal users, and each member's `tcwg` grant on the room."""
+    body = UUID(_room.BODY_ID)
+    by = user_id_of(_SEATS[event.actor])
+    since = date.fromisoformat(str(event.data["since"]))
+    members = cast("list[list[str]]", event.data["members"])
+
+    async def write() -> tuple[str, str, str]:
+        client = await _client_id(conn, _room.CLIENT)
+        await conn.execute(
+            "INSERT INTO governance_bodies (id, tenant_id, client_id, name, kind, created_at) "
+            "VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
+            body,
+            TENANT,
+            client,
+            str(event.data["body"]),
+            str(event.data["kind"]),
+            event.at,
+        )
+        for name, role in members:
+            user = UUID(_PORTAL[name].id)
+            contact = UUID(_room.contact_id_of(name))
+            await conn.execute(
+                "INSERT INTO contacts (id, tenant_id, client_id, display_name, contact_kind, "
+                "user_id, created_at) VALUES ($1, $2, $3, $4, 'client_person', $5, $6) "
+                "ON CONFLICT DO NOTHING",
+                contact,
+                TENANT,
+                client,
+                name,
+                user,
+                event.at,
+            )
+            await conn.execute(
+                "INSERT INTO governance_body_members (id, tenant_id, body_id, contact_id, "
+                "member_role, started_on, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) "
+                "ON CONFLICT DO NOTHING",
+                UUID(stable_id(f"governance-member:{body}:{name}")),
+                TENANT,
+                body,
+                contact,
+                role,
+                since,
+                event.at,
+            )
+            grant = UUID(_room.grant_id_of(name))
+            inserted = await conn.fetchval(
+                "INSERT INTO client_access_grants (id, tenant_id, user_id, contact_id, role, "
+                "scope_kind, scope_id, granted_by, status, created_at) VALUES ($1, $2, $3, $4, "
+                "'tcwg', 'governance_room', $5, $6, 'active', $7) ON CONFLICT DO NOTHING "
+                "RETURNING id",
+                grant,
+                TENANT,
+                user,
+                contact,
+                body,
+                by,
+                event.at,
+            )
+            if inserted is not None:
+                await conn.execute(
+                    "INSERT INTO client_access_events (tenant_id, grant_id, event, by_user_id, "
+                    "at) VALUES ($1, $2, 'granted', $3, $4)",
+                    TENANT,
+                    grant,
+                    by,
+                    event.at,
+                )
+        return "governance_body.seeded", "governance_body", str(body)
+
+    await _bootstrap(conn, event, write)
+
+
 async def _pbc_list_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """A PBC list with its categories and requests, published when the firm has sent it."""
     pbc = _PBC[str(event.data["list"])]
@@ -1805,6 +1996,8 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     EBP_SLICE: EBP_NEEDS,  # A-05-T07: Dana's EBP source documents on Northwind
     EBP2_SLICE: EBP2_NEEDS,  # A-05-T34: investments, Form 5500, distributions; Granite Peak's
     SAMPLING_SLICE: SAMPLING_NEEDS,  # A-03-T16: Table 2, BH FS groupings, Northwind's sample
+    NOTICES_SLICE: NOTICES_NEEDS,  # N-04-T21: N1-N9 through the intake path
+    A07_TEMPLATES_SLICE: A07_TEMPLATES_NEEDS,  # A-07-T12: letters through C11's import
     REPORT_TEMPLATES_SLICE: REPORT_TEMPLATES_NEEDS,  # P-11-T13: Grace imports, Margaret publishes
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
@@ -1816,6 +2009,9 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     STANDARDS_SLICE: STANDARDS_NEEDS,  # K-02-T18: Margaret creates; each owner publishes
     SIGNATURES_SLICE: SIGNATURES_NEEDS,  # N-02-T36: SIG-01 at E0 over the tax clients
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
+    _tax_schedules.SLICE: _tax_schedules.NEEDS,  # T-03-T15: organizer v6, TAX-13's rows
+    _completion.SLICE: _completion.NEEDS,  # A-06-T28: the ASC 962 checklist
+    _room.SLICE: _room.NEEDS,  # R-02-T13: Northwind's Benefits Committee room
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
@@ -3013,6 +3209,17 @@ async def _flag_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
     await set_flag(TENANT, str(event.data["flag"]), "true", LOADER, "Brightwater Hale scenario")
 
 
+async def _entitlement_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A firm's module, as the operator console sets it (ADR-148; the app can't write these)."""
+    await conn.execute(
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, $2, '2000-01-01', $3) ON CONFLICT DO NOTHING",
+        TENANT,
+        str(event.data["module"]),
+        LOADER,
+    )
+
+
 async def _methodology_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """K-01-T10: the version's workbook through `methodology.api`, as a firm admin imports it."""
     data = event.data
@@ -3132,6 +3339,50 @@ async def _report_template_imported(conn: asyncpg.Connection, _: Scenario, event
     report = await import_template_bundle(await _staff_context(conn, event), body, dry_run=False)
     if not report.ok:
         raise RuntimeError(f"template {body.name} refused: {report.errors}")
+
+
+async def _assurance_checklist_imported(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """A-07-T22 (DEC-2806): a checklist section of the A-07 content file, imported as Grace
+    imports it (a draft version)."""
+    data = event.data
+    items = a07_content()[str(data["section"])]
+    body = AssuranceChecklistImportIn.model_validate(
+        {
+            "kind": data["kind"],
+            "engagement_type": data["engagement_type"],
+            "name": data["name"],
+            "items": items,
+        }
+    )
+    found = await import_assurance_checklist(
+        await _staff_context(conn, event), body, dry_run=False
+    )
+    if found.problems:
+        raise RuntimeError(f"checklist {body.name} refused: {found.problems}")
+
+
+async def _assurance_checklist_published(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    data = event.data
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT t.id, v.version FROM assurance_checklist_templates t "
+        "JOIN assurance_checklist_template_versions v ON v.template_id = t.id "
+        "WHERE t.kind = $1 AND t.engagement_type = $2 AND t.name = $3 "
+        "ORDER BY v.version DESC LIMIT 1",
+        str(data["kind"]),
+        str(data["engagement_type"]),
+        str(data["name"]),
+    )
+    if row is None:
+        raise RuntimeError(f"checklist {data['name']} was not imported")
+    await publish_assurance_checklist(
+        await _staff_context(conn, event), cast(UUID, row["id"]), int(row["version"])
+    )
 
 
 async def _report_template_published(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -4007,6 +4258,1144 @@ async def _organizer_answered(conn: asyncpg.Connection, _: Scenario, event: Even
     )
 
 
+async def _checklist_loaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A-06-T28: Grace imports the firm's checklist; Daniel publishes v1."""
+    made = await import_checklist(
+        await _staff_context(conn, event),
+        _completion.NAME,
+        _completion.FRAMEWORK,
+        _completion.checklist_csv(),
+        dry_run=False,
+    )
+    if made.template_id is None or made.version is None:
+        raise LookupError(f"checklist refused: {made.problems}")
+    await publish_checklist(
+        await _staff_context(conn, _as_actor(event, _completion.PUBLISHER)),
+        made.template_id,
+        made.version,
+    )
+
+
+async def _statement_notes_loaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A-06-T25: Grace imports the firm's note wording; Daniel publishes v1."""
+    made = await import_notes(
+        await _staff_context(conn, event),
+        _completion.NOTES_NAME,
+        _completion.NOTES_FRAMEWORK,
+        _completion.notes_csv(),
+        dry_run=False,
+    )
+    if made.template_id is None or made.version is None:
+        raise LookupError(f"notes refused: {made.problems}")
+    await publish_notes(
+        await _staff_context(conn, _as_actor(event, _completion.PUBLISHER)),
+        made.template_id,
+        made.version,
+    )
+
+
+# --- A-06-T28 (`--slice completion`): Northwind's completion, through the services.
+
+
+async def _completion_levels_assigned(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """TASK-3401: Daniel Reyes publishes a review_levels version naming each row kind's levels,
+    effective the day he publishes it (Sep 28), through the standards service."""
+    ctx = await _staff_context(conn, event)
+    standard = await standard_by_key(ctx, "bh-review-levels")
+    draft = await draft_standard_version(ctx, standard.id)
+    current = cast(ReviewLevelsPayload, draft.payload)
+    assigned = current.model_copy(
+        update={
+            "assignments": [
+                LevelAssignment.model_validate({"key": key, "required_levels": levels})
+                for key, levels in _completion.LEVEL_ASSIGNMENTS
+            ]
+        }
+    )
+    await edit_standard_draft(
+        ctx,
+        standard.id,
+        draft.id,
+        StandardDraftPatchIn(payload=assigned, change_summary="Audit sign-off levels by work"),
+        draft.row_version,
+    )
+    await publish_standard(
+        ctx,
+        standard.id,
+        effective_from=event.at.astimezone(_CT).date(),
+        change_summary="Audit sign-off levels by work",
+    )
+
+
+async def _completion_paper_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A matrix paper, unless the planning slice already made it (RA-100 on Sep 14)."""
+    code = str(event.data["paper"])
+    engagement = (await _northwind_work_item(conn))[0]
+    if await tenant_value(
+        conn, TENANT, "SELECT id FROM workpapers WHERE engagement_id = $1 AND code = $2",
+        engagement, code,
+    ):  # fmt: skip
+        return
+    _code, title, kind, area, _who = next(p for p in _completion.MATRIX_PAPERS if p[0] == code)
+    await create_workpaper(
+        await _staff_context(conn, event),
+        engagement,
+        code,
+        title,
+        area,
+        kind=kind,
+    )
+
+
+async def _completion_tb_notes_cleared(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """SHL-12's two notes on the trial balance, cleared before Hannah reviews it (AUD-17 draws
+    her on it at Oct 2) by Margaret, the engagement partner, who may clear any note."""
+    ctx = await _staff_context(conn, event)
+    engagement = (await _northwind_work_item(conn))[0]
+    rows = await tenant_rows(
+        conn,
+        TENANT,
+        "SELECT id FROM reviewable_notes WHERE engagement_id = $1 AND target_type = "
+        "'trial_balance' AND status IN ('open', 'responded') ORDER BY created_at",
+        engagement,
+    )
+    for row in rows:
+        await review_note_event(ctx, cast(UUID, row["id"]), "cleared", None)
+
+
+async def _completion_matrix_signed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A made-up row's sign-off (TASK-3401, DEC-2428): a paper by code, else the engagement's
+    one row of that kind, signed on the content hash its facts give, as a person signs it."""
+    ctx = await _staff_context(conn, event)
+    kind, ref = str(event.data["target"]), str(event.data["ref"])
+    if kind == "workpaper":
+        target = await _completion_paper(conn, ref)
+    else:
+        engagement = (await _northwind_work_item(conn))[0]
+        found = [r for r in await reviewables_of(ctx.tenant, engagement) if r.target_type == kind]
+        if len(found) != 1:
+            raise LookupError(f"Northwind has {len(found)} rows of {kind!r}")
+        target = found[0].target_id
+    facts = await reviewable_facts(ctx.tenant, kind, target)
+    level = int(cast(int, event.data["level"]))
+    # The planning slice signs RA-100's L1 and L3 on Sep 14 (AUD-05 d): the same person on the
+    # same content is that sign-off, kept, not a second row.
+    with suppress(AlreadySigned):
+        await sign_target(
+            ctx,
+            kind,
+            target,
+            level,
+            f"sha256:{facts.content_hash.removeprefix('sha256:')}",
+            SIGN_OFF_STATEMENTS[level].version,
+        )
+
+
+async def _completion_paper(conn: asyncpg.Connection, code: str) -> UUID:
+    engagement = (await _northwind_work_item(conn))[0]
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM workpapers WHERE engagement_id = $1 AND code = $2",
+        engagement, code,
+    )  # fmt: skip
+    if found is None:
+        raise LookupError(f"Northwind has no paper {code}")
+    return cast(UUID, found)
+
+
+async def _completion_finding(conn: asyncpg.Connection, ref: str) -> UUID:
+    item = (await _northwind_work_item(conn))[1]
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM audit_findings WHERE work_item_id = $1 AND ref = $2",
+        item, ref,
+    )  # fmt: skip
+    if found is None:
+        raise LookupError(f"Northwind has no finding {ref}")
+    return cast(UUID, found)
+
+
+async def _completion_misstatement(conn: asyncpg.Connection, ref: str) -> UUID:
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM audit_misstatements WHERE finding_id = $1",
+        await _completion_finding(conn, ref),
+    )  # fmt: skip
+    if found is None:
+        raise LookupError(f"{ref} has no misstatement")
+    return cast(UUID, found)
+
+
+async def _completion_entry(conn: asyncpg.Connection, finding: str) -> UUID:
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM proposed_entries WHERE misstatement_id = $1",
+        await _completion_misstatement(conn, finding),
+    )  # fmt: skip
+    if found is None:
+        raise LookupError(f"{finding} has no entry")
+    return cast(UUID, found)
+
+
+async def _completion_papers(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    engagement = (await _northwind_work_item(conn))[0]
+    for paper in _completion.PAPERS:
+        await create_workpaper(ctx, engagement, paper.code, paper.title, None, kind=paper.kind)
+
+
+async def _completion_exceptions(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """F-01 to F-04: control exceptions on EBP-04, sent to Findings as Hannah would."""
+    ctx = await _staff_context(conn, event)
+    engagement, item = await _northwind_work_item(conn)
+    code, title = PLANNING_IC_PAPER
+    paper = await tenant_value(
+        conn, TENANT, "SELECT id FROM workpapers WHERE engagement_id = $1 AND code = $2",
+        engagement, code,
+    )  # fmt: skip
+    if paper is None:
+        paper = await create_workpaper(
+            ctx, engagement, code, title, "Internal control", kind="internal_control"
+        )
+    await record_exceptions(
+        ctx,
+        engagement,
+        cast(UUID, paper),
+        [
+            ExceptionRow(
+                sheet_row=x.row,
+                matter=x.title[:120],
+                description=x.title,
+                coso_component=x.coso,
+                proposed_severity=cast(
+                    Literal["deficiency", "significant_deficiency", "material_weakness"] | None,
+                    x.severity,
+                ),
+            )
+            for x in _completion.EXCEPTIONS
+        ],
+    )
+    for x in _completion.EXCEPTIONS:
+        await route_exception(ctx, engagement, x.row, "finding")
+        finding = await tenant_value(
+            conn, TENANT, "SELECT id FROM audit_findings WHERE work_item_id = $1 AND title = $2",
+            item, x.title[:120],
+        )  # fmt: skip
+        await finding_to_deficiency(
+            ctx,
+            cast(UUID, finding),
+            severity_proposed=x.severity,
+            for_resolution=x.severity is None,
+        )
+
+
+async def _completion_finding_recorded(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    seed = next(f for f in _completion.FINDINGS if f.ref == event.data["ref"])
+    ctx = await _staff_context(conn, event)
+    engagement, item = await _northwind_work_item(conn)
+    made = await record_finding(
+        ctx,
+        item,
+        NewFinding(
+            workpaper_id=await _completion_paper(conn, "EBP-04"),
+            title=seed.title,
+            kind="misstatement",
+            coso_component=None,
+            citation_ids=(),
+        ),
+    )
+    sample = None
+    if seed.type_ == "projected":
+        sample = await tenant_value(
+            conn, TENANT, "SELECT id FROM sample_sets WHERE engagement_id = $1 AND title = $2",
+            engagement, SAMPLING_SET_TITLE,
+        )  # fmt: skip
+    await finding_to_misstatement(
+        ctx,
+        made.id,
+        type_=cast(Literal["factual", "judgmental", "projected"], seed.type_),
+        amount=None if seed.amount is None else Decimal(seed.amount),
+        column_set="ebp_net_assets",
+        projection_ref=cast(UUID | None, sample),
+        sample_error=None if seed.sample_error is None else Decimal(seed.sample_error),
+        fs_effect=seed.effect,
+        nature=cast(Literal["misstatement", "reclassification"], seed.nature),
+    )
+
+
+async def _completion_entry_proposed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    seed = next(e for e in _completion.ENTRIES if e.finding == event.data["finding"])
+    await propose_entry(
+        await _staff_context(conn, event),
+        (await _northwind_work_item(conn))[1],
+        NewEntry(
+            kind=cast(Literal["aje", "rje", "paje"], seed.kind),
+            description=seed.description,
+            misstatement_id=await _completion_misstatement(conn, seed.finding),
+            lines=tuple(NewLine(c, Decimal(d), Decimal(k)) for c, d, k in seed.lines),
+        ),
+    )
+
+
+async def _completion_send(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Hannah approves the four and sends them to Dana; the worker doesn't run at load."""
+    item = (await _northwind_work_item(conn))[1]
+    ids = [await _completion_entry(conn, e.finding) for e in _completion.ENTRIES]
+    versions = {
+        str(i): cast(
+            int,
+            await tenant_value(
+                conn, TENANT, "SELECT version FROM proposed_entries WHERE id = $1", i
+            ),
+        )
+        for i in ids
+    }
+    await send_entries(
+        await _staff_context(conn, event),
+        item,
+        entry_ids=ids,
+        recipient_contact_id=UUID(_PORTAL["Dana Kowalski"].id),
+        wording_template_version_id=UUID(stable_id("completion:client-wording")),
+        seen_versions=versions,
+        label="Sent to Dana Kowalski",
+    )
+
+
+async def _completion_client_decision(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    seed = next(e for e in _completion.ENTRIES if e.finding == event.data["finding"])
+    ctx = await _staff_context(conn, event)
+    item = (await _northwind_work_item(conn))[1]
+    await record_entry_decision(
+        ctx,
+        await _completion_entry(conn, seed.finding),
+        decision=cast(Literal["client_accepted", "client_declined"], seed.decision),
+        reason=seed.reason,
+        evidence_version_id=await _stored_evidence(conn, ctx, item, f"Dana {seed.finding}"),
+    )
+    if seed.note is not None:
+        # AUD-16's client note, on what the misstatement already states (DEC-2360's writer).
+        misstatement = await _completion_misstatement(conn, seed.finding)
+        version = await tenant_value(
+            conn, TENANT, "SELECT version FROM audit_misstatements WHERE id = $1", misstatement
+        )
+        stated = await tenant_value(
+            conn, TENANT, "SELECT fs_effect FROM audit_misstatements WHERE id = $1", misstatement
+        )
+        await set_misstatement_effect(
+            ctx,
+            misstatement,
+            int(cast(int, version)),
+            {**json.loads(cast(str, stated)), "client_note": seed.note},
+        )
+
+
+async def _completion_severity_requested(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    await request_severity_decision(
+        await _staff_context(conn, event),
+        await _completion_finding(conn, str(event.data["finding"])),
+    )
+
+
+async def _awaiting_card(conn: asyncpg.Connection, kind: str) -> tuple[UUID, int]:
+    item = (await _northwind_work_item(conn))[1]
+    card = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version_no FROM decision_cards WHERE engagement_id = "
+        "(SELECT engagement_id FROM work_items WHERE id = $1) AND kind = $2 "
+        "AND status = 'awaiting_role' ORDER BY created_at DESC LIMIT 1",
+        item,
+        kind,
+    )
+    if card is None:
+        raise LookupError(f"no {kind} card awaits a decision on Northwind")
+    return cast(UUID, card["id"]), int(cast(int, card["version_no"]))
+
+
+async def _completion_severity_decided(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    card, version = await _awaiting_card(conn, "deficiency_severity")
+    await decide_card(
+        await _staff_context(conn, event),
+        card,
+        option_key=str(event.data["option"]),
+        factors=(),
+        rationale=str(event.data["rationale"]),
+        seen_version=version,
+    )
+
+
+async def _completion_pass(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await pass_on_sum(
+        await _staff_context(conn, event),
+        await _completion_misstatement(conn, str(event.data["finding"])),
+        str(event.data["reason"]),
+    )
+
+
+async def _completion_prior_year(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    engagement, item = await _northwind_work_item(conn)
+    await record_prior_year(
+        await _staff_context(conn, event),
+        engagement,
+        item,
+        Decimal("11900.00"),
+        _completion.PY_EFFECT,
+        "ebp_net_assets",
+    )
+
+
+async def _completion_factors(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    engagement, item = await _northwind_work_item(conn)
+    for factor, value in _completion.FACTORS:
+        await record_sum_factor(ctx, engagement, item, factor, value, None, ())
+
+
+async def _completion_signed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    paper = await _completion_paper(conn, str(event.data["paper"]))
+    facts = await reviewable_facts(ctx.tenant, "workpaper", paper)
+    level = int(cast(int, event.data["level"]))
+    await sign_target(
+        ctx,
+        "workpaper",
+        paper,
+        level,
+        f"sha256:{facts.content_hash.removeprefix('sha256:')}",
+        SIGN_OFF_STATEMENTS[level].version,
+    )
+
+
+async def _completion_note_cleared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    n = int(cast(int, event.data["n"]))
+    note = await raise_review_note(
+        ctx,
+        "workpaper",
+        await _completion_paper(conn, "EBP-03"),
+        anchor_kind="cell",
+        anchor_ref="EBP-03!C4",
+        body=f"Review point {n}",
+        assignee=user_id_of(_SEATS["AC"]),
+    )
+    await review_note_event(ctx, note.note.id, "cleared", None)
+
+
+async def _completion_note_raised(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    note = await raise_review_note(
+        await _staff_context(conn, event),
+        "workpaper",
+        await _completion_paper(conn, str(event.data["paper"])),
+        anchor_kind="cell",
+        anchor_ref=str(event.data["anchor"]),
+        body=str(event.data["body"]),
+        assignee=user_id_of(_SEATS["AC"]),
+    )
+    if event.data["state"] == "responded":
+        await review_note_event(
+            await _staff_context(conn, _as_actor(event, "AC")),
+            note.note.id,
+            "responded",
+            _completion.RN13_RESPONSE,
+        )
+
+
+async def _completion_paper_changed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    engagement = (await _northwind_work_item(conn))[0]
+    await set_cells(
+        await _staff_context(conn, event),
+        engagement,
+        await _completion_paper(conn, str(event.data["paper"])),
+        [CellEdit("K18", "35267.20", ())],
+    )
+
+
+async def _completion_snapshot(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    engagement, item = await _northwind_work_item(conn)
+    await sum_snapshot(ctx, engagement, item, "conclusion")
+    await request_sum_conclusion(ctx, engagement, item)
+
+
+async def _completion_concluded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    card, version = await _awaiting_card(conn, "sum_conclusion")
+    await decide_card(
+        await _staff_context(conn, event),
+        card,
+        option_key="immaterial",
+        factors=(),
+        rationale=_completion.CONCLUSION_RATIONALE,
+        seen_version=version,
+    )
+
+
+async def _completion_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    engagement, item = await _northwind_work_item(conn)
+    await draft_statements(await _staff_context(conn, event), engagement, item)
+
+
+async def _completion_document(conn: asyncpg.Connection) -> UUID:
+    return cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM statement_documents WHERE work_item_id = $1",
+            (await _northwind_work_item(conn))[1],
+        ),
+    )
+
+
+async def _completion_checklist_picked(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    ctx = await _staff_context(conn, event)
+    options = await statements_checklist_options(ctx.tenant)
+    chosen = next(o for o in options if o["name"] == _completion.NAME)
+    await pick_statements_checklist(ctx, await _completion_document(conn), chosen["id"])
+
+
+async def _completion_checklist_answered(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """Ana answers the 142 (97 Yes, 45 N/A with their reason); Hannah reviews next (AUD-20)."""
+    ctx = await _staff_context(conn, event)
+    document = await _completion_document(conn)
+    for n in range(1, _completion.ITEMS + 1):
+        yes = n <= _completion.ANSWERED_YES
+        await answer_statements_item(
+            ctx,
+            document,
+            f"dc_{n:03d}",
+            "yes" if yes else "na",
+            None if yes else _completion.NA_REASON,
+            None,
+            1,
+        )
+
+
+async def _completion_checklist_reviewed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    await review_statements_items(
+        await _staff_context(conn, event),
+        await _completion_document(conn),
+        [f"dc_{n:03d}" for n in range(1, _completion.ITEMS + 1)],
+    )
+
+
+async def _granite_misstatement(conn: asyncpg.Connection) -> UUID:
+    return cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM audit_misstatements WHERE work_item_id = $1",
+            (await _granite_engagement(conn))[1],
+        ),
+    )
+
+
+async def _granite_entry(conn: asyncpg.Connection) -> tuple[UUID, int]:
+    found = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version FROM proposed_entries WHERE misstatement_id = $1",
+        await _granite_misstatement(conn),
+    )
+    if found is None:
+        raise LookupError("Granite Peak's entry is missing")
+    return cast(UUID, found["id"]), cast(int, found["version"])
+
+
+async def _granite_materiality_proposed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    engagement = (await _granite_engagement(conn))[0]
+    await propose_materiality(
+        await _staff_context(conn, event),
+        engagement,
+        tb_id=cast(
+            UUID,
+            await tenant_value(
+                conn, TENANT, "SELECT id FROM trial_balances WHERE engagement_id = $1", engagement
+            ),
+        ),
+        key="pre_tax_income",
+        rate_pct=Decimal(5),
+    )
+
+
+async def _granite_materiality_decided(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    card = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version_no FROM decision_cards WHERE work_item_id = $1 "
+        "AND status = 'awaiting_role' ORDER BY created_at DESC LIMIT 1",
+        (await _granite_engagement(conn))[1],
+    )
+    if card is None:
+        raise LookupError("no materiality card awaits a decision on Granite Peak")
+    await decide_card(
+        await _staff_context(conn, event),
+        cast(UUID, card["id"]),
+        option_key=_completion.GRANITE_RATE_OPTION,
+        factors=(),
+        rationale="5% of pre-tax income",
+        seen_version=int(cast(int, card["version_no"])),
+    )
+
+
+async def _granite_finding(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Hannah: the SURL's exception is a factual misstatement, and she proposes its entry."""
+    ctx = await _staff_context(conn, event)
+    engagement, item, _entity = await _granite_engagement(conn)
+    code, title = _completion.GRANITE_PAPER
+    paper = await create_workpaper(ctx, engagement, code, title, None)
+    made = await record_finding(
+        ctx,
+        item,
+        NewFinding(
+            workpaper_id=paper,
+            title=_completion.GRANITE_FINDING,
+            kind="misstatement",
+            coso_component=None,
+            citation_ids=(),
+        ),
+    )
+    await finding_to_misstatement(
+        ctx,
+        made.id,
+        type_="factual",
+        amount=Decimal(_completion.GRANITE_AMOUNT),
+        column_set="commercial",
+    )
+    await propose_entry(
+        ctx,
+        item,
+        NewEntry(
+            kind="aje",
+            description=_completion.GRANITE_ENTRY,
+            misstatement_id=await _granite_misstatement(conn),
+            lines=tuple(
+                NewLine(c, Decimal(d), Decimal(k)) for c, d, k in _completion.GRANITE_LINES
+            ),
+        ),
+    )
+
+
+async def _granite_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    entry, version = await _granite_entry(conn)
+    await send_entries(
+        await _staff_context(conn, event),
+        (await _granite_engagement(conn))[1],
+        entry_ids=[entry],
+        recipient_contact_id=UUID(_PORTAL["Luis Ferrante"].id),
+        wording_template_version_id=UUID(stable_id("completion:client-wording")),
+        seen_versions={str(entry): version},
+        label="Sent to Luis Ferrante",
+    )
+
+
+async def _granite_declined(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    await record_entry_decision(
+        ctx,
+        (await _granite_entry(conn))[0],
+        decision="client_declined",
+        reason=_completion.GRANITE_DECLINED,
+        evidence_version_id=await _stored_evidence(
+            conn, ctx, (await _granite_engagement(conn))[1], "Luis AJE decision"
+        ),
+    )
+
+
+async def _granite_passed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await pass_on_sum(
+        await _staff_context(conn, event),
+        await _granite_misstatement(conn),
+        _completion.GRANITE_PASSED,
+    )
+
+
+async def _completion_groupings(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    await import_grouping_csv(
+        ctx,
+        _completion.EBP_GROUPING_KEY,
+        _completion.EBP_GROUPING_NAME,
+        _completion.ebp_grouping_csv(),
+    )
+    version = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT v.id FROM grouping_set_versions v JOIN grouping_sets s "
+        "ON s.id = v.grouping_set_id WHERE s.key = $1 ORDER BY v.version DESC LIMIT 1",
+        _completion.EBP_GROUPING_KEY,
+    )
+    await publish_grouping_version(
+        ctx, cast(UUID, version), effective_from=event.at.astimezone(_CT).date()
+    )
+
+
+async def _completion_mapping(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    version = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT v.id FROM grouping_set_versions v JOIN grouping_sets s "
+        "ON s.id = v.grouping_set_id WHERE s.key = $1 ORDER BY v.version DESC LIMIT 1",
+        _completion.EBP_GROUPING_KEY,
+    )
+    engagement = (await _northwind_work_item(conn))[0]
+    await start_mapping(
+        await _staff_context(conn, event),
+        engagement,
+        await _northwind_tb(conn),
+        cast(UUID, version),
+    )
+
+
+async def _completion_tied(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    item = (await _northwind_work_item(conn))[1]
+    version = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM statement_versions WHERE work_item_id = $1 "
+        "ORDER BY version_no DESC LIMIT 1",
+        item,
+    )
+    await run_statement_tie_out((await _staff_context(conn, event)).tenant, cast(UUID, version))
+
+
+async def _completion_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Dana's signed approval of v3, recorded by Hannah (Oct 8)."""
+    ctx = await _staff_context(conn, event)
+    item = (await _northwind_work_item(conn))[1]
+    version = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT v.id FROM statement_versions v WHERE v.work_item_id = $1 "
+        "ORDER BY v.version_no DESC LIMIT 1",
+        item,
+    )
+    await record_management_approval(
+        ctx,
+        cast(UUID, version),
+        await _stored_evidence(conn, ctx, item, "Signed statements approval"),
+    )
+
+
+# --- T-03-T15 (`--slice tax_schedules`): organizer v6, TAX-13's rows, through the services ------
+
+
+def _as_actor(event: Event, actor: str) -> Event:
+    return replace(event, actor=actor)
+
+
+async def _organizer_v6_loaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Grace imports v1 to v6; Daniel owns the template and publishes v6 for TY2025."""
+    ctx = await _staff_context(conn, event)
+    found = None
+    for _version in range(_tax_schedules.VERSIONS):
+        found = await import_questionnaire_template(
+            ctx, _tax_schedules.TEMPLATE_NAME, _tax_schedules.organizer_csv(), "csv", dry_run=False
+        )
+    if found is None or found.template_id is None:
+        raise LookupError("the organizer import made no template")
+    owner = await _staff_context(conn, _as_actor(event, _tax_schedules.OWNER))
+    await assign_template_owner(
+        ctx,
+        found.template_id,
+        owner.user_id,
+        key=_tax_schedules.TEMPLATE_CODE,
+        form_family="1040",
+    )
+    await publish_questionnaire_template(
+        owner,
+        found.template_id,
+        _tax_schedules.VERSIONS,
+        applies_to_tax_year=_tax_schedules.TAX_YEAR,
+    )
+
+
+async def _organizer_feld(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Kevin attaches v6 to the Feld 2025 Binder and adds its rules; Claire answers 8 of 9."""
+    ctx = await _staff_context(conn, event)
+    feld = UUID(next(r for r in BOARD if r.client == "Jonah & Claire Feld").work_item_id)
+    made = await questionnaire_from_template(
+        ctx, _tax_schedules.TEMPLATE_CODE, _tax_schedules.TAX_YEAR, await _binder_of(conn, feld)
+    )
+    found = await questionnaire_editor_read(ctx, made)
+    questions: list[dict[str, Any]] = []  # Any: the save's own shape
+    for q in found.questions:
+        rule = _tax_schedules.RULES.get(q.key)
+        questions.append(
+            {
+                "key": q.key,
+                "section_key": q.section_key,
+                "parent_key": q.parent_key,
+                "type": q.type,
+                "client_wording": q.client_wording,
+                "show_when": {"parent_key": q.parent_key, "equals": "Yes"}
+                if q.parent_key
+                else None,
+                "choices": ["Direct deposit", "Apply to next year", "Paper check"]
+                if q.key == "q6"
+                else [],
+                "effect_rules": [
+                    {"key": rule[0], "kind": rule[1], "when_equals": "Yes", "title": rule[2]}
+                ]
+                if rule
+                else [],
+            }
+        )
+    await save_questionnaire(
+        ctx,
+        made,
+        found.row_version,
+        sections=[{"key": key, "title": title} for _s, key, title, _p in found.sections],
+        questions=questions,
+        dry_run=False,
+    )
+    claire = await _portal_context(conn, "Claire Feld")
+    latest = await questionnaire_editor_read(ctx, made)
+    for q in latest.questions:
+        value = _tax_schedules.ANSWERS.get(q.key)
+        if value is None:
+            continue
+        typed: object = value if q.type == "choice" else value == "Yes"
+        await save_portal_answer(claire, made, q.id, typed, 1)
+
+
+async def _stored_evidence(
+    conn: asyncpg.Connection, ctx: AuthContext, work_item: UUID, title: str
+) -> UUID:
+    """A filed form or a payment confirmation: a person's upload on the return's engagement."""
+    engagement = cast(
+        UUID,
+        await tenant_value(
+            conn, TENANT, "SELECT engagement_id FROM work_items WHERE id = $1", work_item
+        ),
+    )
+    stored = await stage_content(TENANT, f"{title} {work_item}".encode())
+    async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=engagement,
+            item=NewItem(title=f"{title}.pdf"),
+            stored=stored,
+            media_type="application/pdf",
+            provenance=Provenance(source="firm_upload", method="uploaded"),
+            requested_by=ctx.user_id,
+        )
+    return version.id
+
+
+async def _extension_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    row = BOARD_BY_LABEL[str(event.data["label"])]
+    ctx = await _staff_context(conn, _as_actor(event, row.preparer))
+    item = UUID(row.work_item_id)
+    seed = next((x for x in _tax_schedules.LINES if x.client == row.client), None)
+    form = _tax_schedules.federal_form(row.form)
+    await prepare_extensions(
+        ctx,
+        [item],
+        [
+            ProposedPayment(
+                item,
+                jurisdiction,
+                "ptet" if row.client == _tax_schedules.PTET else "extension_payment",
+                Decimal(amount),
+                None if jurisdiction == "US" else state_form,
+            )
+            for jurisdiction, state_form, amount in (seed.payments if seed else ())
+        ],
+        loader_dates={item: (row.original_due, row.extended_due, form)},
+    )
+    extension = cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM filing_extensions WHERE tax_return_id = $1 AND jurisdiction = 'US'",
+            item,
+        ),
+    )
+    if seed is not None and seed.projected is not None:
+        await patch_extension(
+            ctx,
+            extension,
+            action="filing_extension.prepare",
+            expected_version=await conn_extension_version(conn, extension),
+            filed_on=None,
+            form=None,
+            filed_form_evidence_version_id=None,
+            likely_to_extend=None,
+            reason=None,
+            note=None,
+            projected_liability=_tax_schedules.money(seed.projected),
+            projected_liability_source="preparer_entry",
+            projected_liability_ref={"worksheet": "synthetic"},
+            withholding_plus_estimates=_tax_schedules.money(seed.held),
+        )
+    if event.data["state"] != "filed":
+        return
+    await patch_extension(
+        ctx,
+        extension,
+        action="filing_extension.mark_filed",
+        expected_version=await conn_extension_version(conn, extension),
+        filed_on=row.original_due,
+        form=None,
+        filed_form_evidence_version_id=await _stored_evidence(conn, ctx, item, "Filed extension"),
+        likely_to_extend=None,
+        reason=None,
+        note=None,
+    )
+
+
+async def conn_extension_version(conn: asyncpg.Connection, extension: UUID) -> int:
+    return cast(
+        int,
+        await tenant_value(
+            conn, TENANT, "SELECT row_version FROM filing_extensions WHERE id = $1", extension
+        ),
+    )
+
+
+async def _likely_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    seed = next(x for x in _tax_schedules.LIKELY if x.client == event.data["client"])
+    row = next(r for r in BOARD if r.client == seed.client and not r.extended)
+    ctx = await _staff_context(conn, _as_actor(event, row.preparer))
+    await flag_new_likely(
+        ctx,
+        UUID(row.work_item_id),
+        form=seed.form,
+        original_due_on=row.original_due,
+        extended_due_on=row.extended_due,
+        reason=seed.reason,
+        note=seed.note,
+    )
+
+
+_ESTIMATE_QUARTERS: Final[dict[int, date]] = {
+    1: date(2026, 4, 15),
+    2: date(2026, 6, 15),
+    3: date(2026, 9, 15),
+    4: date(2027, 1, 15),
+}
+
+
+def _estimate_seed(client: str) -> _tax_schedules.SeedEstimate:
+    return next(x for x in _tax_schedules.ESTIMATES if x.client == client)
+
+
+async def _estimate_actor(conn: asyncpg.Connection, event: Event, client: str) -> AuthContext:
+    """The return's own preparer: a schedule's writes authorise on its basis return."""
+    basis = next((r for r in BOARD if r.client == client), None)
+    return await _staff_context(conn, _as_actor(event, basis.preparer) if basis else event)
+
+
+async def _estimate_schedule_of(conn: asyncpg.Connection, client: str) -> UUID:
+    entity = await _entity_id(conn, await _client_id(conn, client), client)
+    return cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM estimate_schedules WHERE client_entity_id = $1 AND tax_year = $2",
+            entity,
+            _tax_schedules.ESTIMATE_YEAR,
+        ),
+    )
+
+
+async def _third_quarter(conn: asyncpg.Connection, schedule: UUID) -> tuple[int, UUID | None]:
+    """Q3's version and its confirmation request item; patching the schedule recomputes its
+    open installments, which moves their versions."""
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT row_version, confirmation_request_item_id FROM estimate_installments "
+        "WHERE schedule_id = $1 AND quarter = 3",
+        schedule,
+    )
+    if row is None:
+        raise LookupError(f"no third quarter on schedule {schedule}")
+    return int(row["row_version"]), cast("UUID | None", row["confirmation_request_item_id"])
+
+
+async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """TAX-13 b's row: the schedule and its inputs through the service (DF-34, TASK-3397). A
+    quarter's paid or scheduled state follows the client's confirmation (`_estimate_confirmed`)."""
+    seed = _estimate_seed(str(event.data["client"]))
+    client = await _client_id(conn, seed.client)
+    entity = await _entity_id(conn, client, seed.client)
+    basis = next((r for r in BOARD if r.client == seed.client), None)
+    ctx = await _estimate_actor(conn, event, seed.client)
+    made = await create_estimate_schedule(
+        ctx,
+        client_entity_id=entity,
+        basis_tax_return_id=UUID(basis.work_item_id) if basis else None,
+        tax_year=_tax_schedules.ESTIMATE_YEAR,
+        jurisdiction="US",
+        form=seed.form,
+        method=seed.method,
+        due_dates=[(q, due, None) for q, due in _ESTIMATE_QUARTERS.items()],
+    )
+    if seed.prior_year_tax is not None:
+        await patch_schedule(
+            ctx,
+            made,
+            expected_version=1,
+            values={
+                "prior_year_tax": _tax_schedules.money(seed.prior_year_tax),
+                "prior_year_tax_source": "preparer_entry",
+                "prior_agi_over_threshold": seed.agi_over,
+                "projected_withholding": _tax_schedules.money(seed.withholding),
+                "payment_method_label": seed.label,
+            },
+        )
+
+
+def _client_person_id(name: str) -> UUID:
+    """A client person another slice made: the portal's (Claire Feld, Meera Shah) or the one a
+    binder names as marking it done (Eleanor Calloway, Elena Varga)."""
+    found = PERSON_BY_NAME.get(name)
+    return UUID(found.id if found is not None else person_id(name))
+
+
+async def _estimate_contact_ready(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The client's person as an active contact of the client, as an accepted invitation leaves
+    it, so a confirmation request names them (TAX-13 b's Client confirmation)."""
+    client, person = str(event.data["client"]), str(event.data["person"])
+    try:
+        contact = await _contact_of(conn, client, person)
+    except LookupError:
+        made = await create_contact(  # Grace, the firm admin (`contact.manage`)
+            await _staff_context(conn, _as_actor(event, _tax_schedules.IMPORTER)),
+            await _client_id(conn, client),
+            name=person,
+            party_kind="person",
+            email=None,
+            phone=None,
+            roles=[],
+        )
+        contact = made.contact.id
+    user = _client_person_id(person)
+    async with uow(TenantContext(TENANT, "system", LOADER)) as tx:
+        await activate_contact(tx, contact, user)
+    # A request's client assignee holds a grant on its engagement (0084's trigger): the person
+    # contributes on the return's engagement, as an accepted invitation for it leaves them.
+    basis = next(r for r in BOARD if r.client == client)
+    engagement = cast(
+        UUID,
+        await tenant_value(
+            conn, TENANT, "SELECT engagement_id FROM work_items WHERE id = $1",
+            UUID(basis.work_item_id),
+        ),
+    )  # fmt: skip
+    granter = await _estimate_actor(conn, event, client)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO client_access_grants (id, tenant_id, user_id, role, scope_kind, "
+            "scope_id, granted_by, status) VALUES ($1, $2, $3, 'contributor', 'engagement', $4, "
+            "$5, 'active') ON CONFLICT DO NOTHING",
+            UUID(stable_id(f"grant:estimate:{slug_of(person)}:{engagement}")),
+            TENANT,
+            user,
+            engagement,
+            granter.user_id,
+        )
+        return "client_access.granted", "engagement", str(engagement)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _estimate_confirmation_requested(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """The preparer sends Q3's confirmation request to the client's person (POR-10)."""
+    client, person = str(event.data["client"]), str(event.data["person"])
+    await request_estimate_confirmation(
+        await _estimate_actor(conn, event, client),
+        await _estimate_schedule_of(conn, client),
+        3,
+        await _contact_of(conn, client, person),
+    )
+
+
+async def _estimate_confirmed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The client's person uploads the payment confirmation to the request (their upload is the
+    confirmation's day), then the preparer records Q3 scheduled or paid on that evidence."""
+    client, person = str(event.data["client"]), str(event.data["person"])
+    seed = _estimate_seed(client)
+    schedule = await _estimate_schedule_of(conn, client)
+    _version, item = await _third_quarter(conn, schedule)
+    if item is None:
+        raise LookupError(f"no confirmation request for {client!r}")
+    engagement = cast(
+        UUID,
+        await tenant_value(conn, TENANT, "SELECT engagement_id FROM request_items WHERE id = $1",
+                           item),
+    )  # fmt: skip
+    sender = _client_person_id(person)
+    stored = await stage_content(TENANT, f"Payment confirmation {client} Q3".encode())
+    async with uow(TenantContext(TENANT, "human", str(sender))) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=engagement,
+            item=NewItem(title="Payment confirmation.pdf"),
+            stored=stored,
+            media_type="application/pdf",
+            provenance=Provenance(source="client_upload", method="uploaded"),
+            requested_by=sender,
+        )
+        await fulfil_by_upload(tx, request_item_id=item, evidence_version_id=version.id)
+    # The preparer accepts the upload: the decision row as `evidence.decide` writes it (only an
+    # API request may call `decide`; precedent `_file_returned`), so the request reads confirmed.
+    preparer = await _estimate_actor(conn, event, client)
+    decision = UUID(stable_id(f"review-decision:estimate:{client}"))
+    async with uow(TenantContext(TENANT, "human", str(preparer.user_id))) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO review_decisions (id, tenant_id, engagement_id, "
+                "evidence_version_id, request_item_id, decision, reason_code, note, "
+                "corrects_proposal, actor_kind, actor_id, decision_seq, prior_item_statuses) "
+                "VALUES (:id, :tenant, :engagement, :version, :item, 'accept', NULL, NULL, "
+                "false, 'human', :actor, 1, CAST(:prior AS jsonb))"
+            ),
+            {
+                "id": decision,
+                "tenant": TENANT,
+                "engagement": engagement,
+                "version": version.id,
+                "item": item,
+                "actor": str(preparer.user_id),
+                "prior": json.dumps({str(item): "uploaded"}),
+            },
+        )
+        await move_after_review(tx, item, "received")
+        tx.record("review_decision.created", target=Target("review_decision", decision))
+    current, _item = await _third_quarter(conn, schedule)
+    await patch_installment(
+        preparer,
+        schedule,
+        3,
+        expected_version=current,
+        scheduled_for=seed.on if seed.status == "scheduled" else None,
+        paid_on=seed.on if seed.status == "paid" else None,
+        evidence_version_id=version.id if seed.status == "paid" else None,
+    )
+
+
 async def _audit_item(conn: asyncpg.Connection, client: str) -> UUID:
     audit = next(a for a in AUDITS if a.client == client)
     found = await tenant_value(
@@ -4151,6 +5540,100 @@ async def _northwind_note_raised(conn: asyncpg.Connection, _: Scenario, event: E
     )
 
 
+_NOTICE_PATH: Final[dict[str, tuple[str, ...]]] = {
+    "received": (),
+    "classified": ("classified",),
+    "analyzing": ("classified", "analyzing"),
+    "response_drafted": ("classified", "analyzing", "response_drafted"),
+    "awaiting_irs": ("classified", "analyzing", "response_drafted", "approved", "sent",
+                     "awaiting_irs"),
+}  # fmt: skip
+
+
+async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """N-04-T21: an intake from a stored file, the fields entered, Create notice, then the status
+    moves, each through `notices` the way a person's action reaches it (no row written here)."""
+    ctx = await _staff_context(conn, event)
+    data = event.data
+    client = await _client_id(conn, str(event.client))
+    entity = await _entity_id(conn, client, str(event.client))
+    stored = await stage_content(TENANT, f"{data['code']} {data['notice_code']}".encode())
+    engagement = await notice_engagement_for(ctx, entity)
+    if engagement is None:
+        # QN-1: the notice's own engagement, opened as the firm opens one (DEC-2378).
+        engagement = UUID(stable_id(f"engagement:notice:{data['code']}"))
+        year = cast(int, data["tax_year"])
+        await _engagement_row(
+            conn,
+            engagement,
+            str(event.client),
+            str(event.client),
+            name=f"Notice response TY{year}",
+            type_="notice_response",
+            period=(date(year, 1, 1), date(year, 12, 31)),
+            creator=ctx.user_id,
+            created=None,
+        )
+        await conn.execute(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, 'manager') ON CONFLICT DO NOTHING",
+            TENANT,
+            engagement,
+            ctx.user_id,
+        )
+        # The client's tax team (N-04 F2): Daniel Reyes signs.
+        await conn.execute(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, 'engagement_partner') ON CONFLICT DO NOTHING",
+            TENANT,
+            engagement,
+            user_id_of(_SEATS["DR"]),
+        )
+    async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=engagement,
+            item=NewItem(title=f"{data['notice_code']} notice.pdf"),
+            stored=stored,
+            media_type="application/pdf",
+            provenance=Provenance(source="firm_upload", method="uploaded"),
+            requested_by=ctx.user_id,
+        )
+    made = await create_notice_intake(
+        ctx, source="upload", evidence_version_id=version.id, inbox_item_id=None
+    )
+    revised = await revise_notice_intake(
+        ctx,
+        made.id,
+        made.row_version,
+        fields=[
+            ("notice.code", str(data["notice_code"]), False),
+            ("notice.tax_year", str(data["tax_year"]), False),
+            ("notice.date", str(data["received"]), False),
+            *(
+                (("notice.respond_by", str(data["respond_by"]), False),)
+                if data["respond_by"]
+                else ()
+            ),
+            ("notice.amount_total", str(data["amount"]), False),
+        ],
+    )
+    assignee = user_id_of(_SEATS[str(data["assignee"])])
+    work_item, __ = await create_notice_from_intake(
+        ctx,
+        revised.id,
+        client_entity_id=entity,
+        assignee_id=assignee,
+        engagement_id=engagement,
+        related_return_id=None,
+        create_anyway=True,
+    )
+    for status in _NOTICE_PATH[str(data["status"])]:
+        found = await read_notice(ctx, work_item)
+        async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
+            await move_notice(tx, found, status, actor_kind="human", actor_user_id=ctx.user_id)
+
+
 async def _materiality_proposed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     await propose_materiality(
         await _staff_context(conn, event),
@@ -4275,7 +5758,9 @@ async def _northwind_ic(conn: asyncpg.Connection, _: Scenario, event: Event) -> 
     ctx = await _staff_context(conn, event)
     engagement = (await _northwind_work_item(conn))[0]
     code, title = PLANNING_IC_PAPER
-    paper = await create_workpaper(ctx, engagement, code, title, "Internal control")
+    paper = await create_workpaper(
+        ctx, engagement, code, title, "Internal control", kind="internal_control"
+    )
     await record_exceptions(
         ctx,
         engagement,
@@ -4324,6 +5809,53 @@ async def _northwind_risks_approved(conn: asyncpg.Connection, _: Scenario, event
         rationale=str(event.data["rationale"]),
         seen_version=int(cast(int, card["version_no"])),
     )
+
+
+async def _northwind_ra_paper(conn: asyncpg.Connection, s: Scenario, event: Event) -> None:
+    """AUD-05 (TASK-6407): Marcus's Risk Assessment paper, the completion slice's RA-100 row."""
+    await _completion_paper_created(
+        conn, s, replace(event, data={**event.data, "paper": PLANNING_RA_PAPER})
+    )
+
+
+async def _northwind_ra_signed(conn: asyncpg.Connection, s: Scenario, event: Event) -> None:
+    """AUD-05 d (TASK-6407, DEC-2957): Marcus's L1, then Hannah's review at 4:52 PM."""
+    data = {**event.data, "target": "workpaper", "ref": str(event.data["paper"])}
+    await _completion_matrix_signed(conn, s, replace(event, data=data))
+
+
+async def _northwind_materiality_reassessed(
+    conn: asyncpg.Connection, s: Scenario, event: Event
+) -> None:
+    """AUD-07 d (TASK-6407): Hannah raises the reassessment at final, unless the review slice
+    already did (any reassessment card on Northwind)."""
+    item = (await _northwind_work_item(conn))[1]
+    if await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM decision_cards WHERE work_item_id = $1 "
+        "AND kind = 'materiality_reassessment'",
+        item,
+    ):
+        return
+    await _materiality_reassessed(conn, s, event)
+
+
+async def _northwind_materiality_no_change(
+    conn: asyncpg.Connection, s: Scenario, event: Event
+) -> None:
+    """AUD-07 d (TASK-6407): Margaret records "No change" (v3), unless it is already decided."""
+    item = (await _northwind_work_item(conn))[1]
+    if not await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM decision_cards WHERE work_item_id = $1 "
+        "AND kind = 'materiality_reassessment' AND status = 'awaiting_role'",
+        item,
+    ):
+        return
+    data = {**event.data, "option_key": "no_change"}
+    await _materiality_decided(conn, s, replace(event, data=data))
 
 
 async def _ridgeline_issue_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -4419,6 +5951,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "portal.branding_set": _branding_set,
     "portal.host_added": _host_added,
     "identity.portal_person_added": _portal_person_added,
+    "assurance.governance_body_seeded": _governance_body_seeded,
+    "agents.run_recorded": _run_recorded,  # P-09-T12 (`--slice agent_runs`)
     "identity.client_invitation_created": _client_invitation_created,
     # G-01-T06 (`--slice people`): seats, then teams, then each person's profile.
     "identity.seats_provisioned": _seats_provisioned,
@@ -4433,6 +5967,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "notifications.preference_set": _preference_set,
     # Q-02-T39 (`--slice compliance`): flags first, then policies, holds and the incident.
     "platform.flag_set": _flag_set,
+    "platform.entitlement_set": _entitlement_set,
     "evidence.retention_policy_set": _retention_policy_set,
     "evidence.legal_hold_placed": _legal_hold_placed,
     "platform.incident_recorded": _incident_recorded,
@@ -4474,8 +6009,57 @@ HANDLERS: Final[dict[str, Handler]] = {
     "platform.pilot_enrolled": _pilot_enrolled,  # TASK-2470
     "standards.version_imported": _standard_imported,
     "standards.version_published": _standard_published,
+    "notices.seed_notice": _notice_seeded,  # N-04-T21
+    "methodology.checklist_loaded": _checklist_loaded,  # A-06-T28
+    "methodology.statement_notes_loaded": _statement_notes_loaded,  # A-06-T25
+    "completion.papers": _completion_papers,
+    "completion.exceptions": _completion_exceptions,
+    "completion.finding": _completion_finding_recorded,
+    "completion.entry": _completion_entry_proposed,
+    "completion.send": _completion_send,
+    "completion.client_decision": _completion_client_decision,
+    "completion.severity_requested": _completion_severity_requested,
+    "completion.severity_decided": _completion_severity_decided,
+    "completion.pass": _completion_pass,
+    "completion.prior_year": _completion_prior_year,
+    "completion.factors": _completion_factors,
+    "completion.signed": _completion_signed,
+    "completion.levels_assigned": _completion_levels_assigned,
+    "completion.paper_created": _completion_paper_created,
+    "completion.tb_notes_cleared": _completion_tb_notes_cleared,
+    "completion.matrix_signed": _completion_matrix_signed,
+    "completion.note_cleared": _completion_note_cleared,
+    "completion.note_raised": _completion_note_raised,
+    "completion.paper_changed": _completion_paper_changed,
+    "completion.sum_snapshot": _completion_snapshot,
+    "completion.sum_concluded": _completion_concluded,
+    "completion.granite_materiality_proposed": _granite_materiality_proposed,
+    "completion.granite_materiality_decided": _granite_materiality_decided,
+    "completion.granite_finding": _granite_finding,
+    "completion.granite_sent": _granite_sent,
+    "completion.granite_declined": _granite_declined,
+    "completion.granite_passed": _granite_passed,
+    "completion.statement_drafted": _completion_drafted,
+    "completion.checklist_picked": _completion_checklist_picked,
+    "completion.checklist_answered": _completion_checklist_answered,
+    "completion.checklist_reviewed": _completion_checklist_reviewed,
+    "completion.statement_approved": _completion_approved,
+    "completion.statement_tied": _completion_tied,
+    "completion.ebp_groupings": _completion_groupings,
+    "completion.mapping": _completion_mapping,
+    # T-03-T15
+    "tax.organizer_v6_loaded": _organizer_v6_loaded,
+    "tax.organizer_feld": _organizer_feld,
+    "tax.extension_seeded": _extension_seeded,
+    "tax.likely_seeded": _likely_seeded,
+    "tax.estimate_seeded": _estimate_seeded,
+    "tax.estimate_contact_ready": _estimate_contact_ready,
+    "tax.estimate_confirmation_requested": _estimate_confirmation_requested,
+    "tax.estimate_confirmed": _estimate_confirmed,
     "reporting.template_imported": _report_template_imported,
     "reporting.template_published": _report_template_published,
+    "methodology.assurance_checklist_imported": _assurance_checklist_imported,
+    "methodology.assurance_checklist_published": _assurance_checklist_published,
     # T-02-T23 (`--slice tax_content`): contacts and portal people, the engine's PDFs, then each
     # K-1 set and the shares; the organizer imported, published, attached and answered; asks.
     "tax.k1_contact_created": _k1_contact_created,
@@ -4495,13 +6079,18 @@ HANDLERS: Final[dict[str, Handler]] = {
     "assurance.materiality_proposed": _materiality_proposed,
     "assurance.northwind_tb_basis": _northwind_tb_basis,  # A-04-T28
     "assurance.northwind_materiality_basis": _northwind_materiality_basis,
-    "review.northwind_materiality_basis_decided": _northwind_materiality_basis_decided,
     "assurance.northwind_risks": _northwind_risks,
     "assurance.northwind_ic": _northwind_ic,
     "assurance.northwind_risks_routed": _northwind_risks_routed,
     "review.northwind_risks_approved": _northwind_risks_approved,
     "assurance.materiality_reassessed": _materiality_reassessed,
     "review.materiality_decided": _materiality_decided,
+    # TASK-6407: after the review slice's own kinds, so at one instant its writes come first.
+    "review.northwind_materiality_basis_decided": _northwind_materiality_basis_decided,
+    "assurance.northwind_ra_paper": _northwind_ra_paper,
+    "review.northwind_ra_signed": _northwind_ra_signed,
+    "assurance.northwind_materiality_reassessed": _northwind_materiality_reassessed,
+    "review.northwind_materiality_no_change": _northwind_materiality_no_change,
     "review.ridgeline_issue_created": _ridgeline_issue_created,
     "review.feld_checkpoint_saved": _feld_checkpoint_saved,
 }

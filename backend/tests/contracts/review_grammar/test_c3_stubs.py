@@ -41,6 +41,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", "/v1/review-notes/{note_id}/respond"): "review_note.respond",
     ("post", "/v1/review-notes/{note_id}/clear"): "review_note.clear",
     ("post", "/v1/review-notes/{note_id}/withdraw"): "review_note.withdraw",
+    ("post", "/v1/review-notes/{note_id}/reopen"): "review_note.clear",  # A-06-T24 (#1402)
     ("get", "/v1/human-gates"): "human_gate.read",
     ("get", "/v1/human-gates/counts"): "human_gate.read",  # I-01-T04: the one count source
     # I-01-T07 (DEC-646): a person's snooze, unsnooze and reassign, live behind the flag.
@@ -153,6 +154,7 @@ def _ctx() -> AuthContext:
 LIVE = frozenset(
     {
         "review_note_bands_route",  # A-06-T14 (DEC-2214)
+        "review_note_reopen_route",  # A-06-T24 (#1402): live, the service needs a body
         "sign_off_re_review_route",  # A-06-T14 (DEC-2214)
         "proposal_undo_route",  # P-04-T29 (DEC-713)
         "human_gate_list_route",

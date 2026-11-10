@@ -174,7 +174,10 @@ async def test_no_plaintext_taxpayer_id_column_exists(firm: _Firm) -> None:
         "AND column_name NOT IN ('tin_sealed', 'tin_kind', 'tin_status', 'tin_fingerprint') "
         # A-05-T15 (0642, DEC-1973): an EBP participant's SSN, sealed with its HMAC fingerprint.
         "AND (table_name, column_name) NOT IN "
-        "(('ebp_participants', 'ssn_sealed'), ('ebp_participants', 'ssn_fp'))"
+        "(('ebp_participants', 'ssn_sealed'), ('ebp_participants', 'ssn_fp'), "
+        # A-05-T41 (0667, DEC-2301): participant balances and SDBA holdings, sealed the same way.
+        "('ebp_participant_balances', 'ssn_sealed'), ('ebp_participant_balances', 'ssn_fp'), "
+        "('ebp_sdba_holdings', 'ssn_sealed'), ('ebp_sdba_holdings', 'ssn_fp'))"
     )
     assert columns == ""
     # Every envelope in the sealed sets is ciphertext, never text a value could sit in.

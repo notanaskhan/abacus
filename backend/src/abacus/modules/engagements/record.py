@@ -29,6 +29,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel import clock
 from abacus.kernel._statuses import EngagementStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
@@ -385,7 +386,8 @@ async def record_letter_v2(
         else:
             if given.client_signed_on is None or given.firm_signed_on is None:
                 raise GateUnmet(facts={"gate": "G3", "engagement_id": str(engagement_id)})
-            decided_on = acceptance.decided_at.date()
+            # the firm's business date, as the signed-on days are (never UTC's)
+            decided_on = acceptance.decided_at.astimezone(clock.FIRM_ZONE).date()
             if min(given.client_signed_on, given.firm_signed_on) < decided_on:
                 raise LetterBeforeAcceptance(facts={"engagement_id": str(engagement_id)})
             row = {

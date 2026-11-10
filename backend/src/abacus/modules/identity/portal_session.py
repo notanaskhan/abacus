@@ -39,6 +39,7 @@ from abacus.kernel.controls import control_active
 from abacus.kernel.db import TenantContext, platform_transaction
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
+from abacus.kernel.request_context import note_session
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.client_access import FULL_ROLES, active_grants
 from abacus.modules.identity.context import AuthContext
@@ -546,6 +547,9 @@ async def portal_context(token: str, host: str | None) -> AuthContext | None:
         and await mfa_required(tenant_id, user_id)
     ):
         return None  # the floor now covers the person and this session never met it
+    # P-10-T26 (DEC-3170): the access token's expiry, so a portal stream closes 30 seconds
+    # before it (a no-op outside a request).
+    note_session(token_expires_at=cast(datetime | None, row.access_expires_at))
     return portal_member_context(
         user_id,
         found[0],

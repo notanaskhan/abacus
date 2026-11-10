@@ -1,0 +1,20 @@
+# Form 1099-R box map (P-11-T34; P-11 F8; DEC-76, DEC-2809). PROTECTED: golden tested and reviewed
+# yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+form: "1099-R"
+form_type: "1099_r"
+tax_year: 2025
+family: tax_forms
+version: "1099_r-2025-v1"
+anchors: ["1099-R"]
+year_after: "1099-R"
+corrected_anchor: "CORRECTED"
+fields:
+  - {key: r.box1, label: "Gross distribution", anchor: "Gross distribution", value_type: money}
+  - {key: r.box2a, label: "Taxable amount", anchor: "Taxable amount", value_type: money}
+  - {key: r.box4, label: "Federal income tax withheld", anchor: "Federal income tax withheld", value_type: money}
+  - {key: r.box7, label: "Distribution code(s)", anchor: "Distribution code", value_type: code}
+# Code tie-outs: format and ordering only; a break flags both fields, nothing is changed.
+tie_outs:
+  - {smaller: r.box2a, larger: r.box1}
+  - {smaller: r.box4, larger: r.box1}

@@ -73,3 +73,7 @@ inside the Jan 1 – Apr 20, 2028 freeze. The rollout is `docs/runbooks/audit-pl
 | `workpapers.core`, `workpapers.drafting` | 2027-04-29 | **Renew** to Dec 30, 2027 | Flip Tue Nov 9; retire Dec 14 |
 | `assurance.internal_control` | 2027-04-29 | **Renew** to Dec 30, 2027 | Flip Tue Nov 23 (in the window); retire after the season if AUD-10 stayed dark |
 | `ledger.tb_mapping` | 2027-04-28 | **Renew** to Dec 30, 2027 | Flipped Oct 19 (Q-04-T092); retire Dec 14 |
+| `home.approvals` | 2027-04-28 | **Renew** to Dec 30, 2027 | Flips Tue Nov 2 and Nov 9 (Q-04-T097, RB-48); retire Dec 14 once on for every live firm |
+| `ebp.modules` | 2027-04-30 | **Renew** to Dec 30, 2027 before expiry, then in the M15 bundle (Tue Dec 7, 2027) to after Apr 20, 2028 | First EBP flip after the CPA memo; retire once on for every live firm after PW4 (A-05-T62, `docs/runbooks/ebp-modules.md`) |
+| `ebp.form5500_tieout` | 2027-04-30 | **Renew** as `ebp.modules` | Flips last, after AUD-20 on the firm; retire after PW4 |
+| `assurance.estimates_rp` | 2027-04-30 | **Renew** as `ebp.modules` | Retire after PW4 |

@@ -1,0 +1,34 @@
+# Notices at the December peak (N-04-T27; ADR-075 December load test; N-04 §8): staff working the
+# notices list and its summary tiles while the rest of the firm works requests. Must show: the list
+# and summary hold their p95 under the peak. What this profile cannot yet carry is written down,
+# not faked: the intake read needs an intake id the perf stack's seed doesn't write yet, and the
+# intake upload needs a multipart body and the scanner and OCR fakes on the perf stack (the
+# upload-to-fields p95 is read from OTel there). Both join this profile once the perf seed writes a
+# notice intake.
+name: notices_desk
+description: Staff on the notices list and summary at the December peak, beside request work.
+duration_seconds: 1200
+users: 30
+think_ms: 800
+ramp_seconds: 120
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-ana-cruz, weight: 3, groups: [notices_list, notices_summary, staff_home]}
+  - {subject: scenario-hannah-leclerc, weight: 2, groups: [notices_list, notices_summary]}
+groups:
+  - name: notices_list
+    weight: 4
+    p95_ms: 500
+    steps:
+      - {path: /v1/notices}
+      - {path: "/v1/notices?respond_by=7"}
+  - name: notices_summary
+    weight: 3
+    p95_ms: 300
+    steps:
+      - {path: /v1/notices/summary}
+  - name: staff_home
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: /v1/me}

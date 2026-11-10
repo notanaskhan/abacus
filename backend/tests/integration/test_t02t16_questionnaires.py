@@ -54,11 +54,6 @@ async def _binder(b: Board, item: uuid.UUID) -> uuid.UUID:
 
 
 async def test_ac_the_feld_organizer_has_24_questions_in_9_sections(board: Board) -> None:
-    await board.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'questionnaires.v1', 'true', 't02-t16', 'T-02-T16')",
-        board.tenant,
-    )
     feld = board.returns["Feld Household 1040"]
     binder = await _binder(board, feld)
     samuel = await board.person("Samuel Ito", None)  # partner level: imports and publishes
@@ -83,7 +78,12 @@ async def test_ac_the_feld_organizer_has_24_questions_in_9_sections(board: Board
         )
         assert dry.status_code == 201, dry.text
         assert (len(cast(list[str], dry.json()["added"])), dry.json()["version"]) == (24, None)
-        assert await board.seed.value("SELECT count(*) FROM questionnaire_templates") == 0
+        assert (
+            await board.seed.value(
+                "SELECT count(*) FROM questionnaire_templates WHERE tenant_id = $1", board.tenant
+            )
+            == 0
+        )
         real = await call(
             "POST",
             path,

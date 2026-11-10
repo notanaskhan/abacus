@@ -70,3 +70,8 @@ output "bootstrap_task_definition" {
   description = "Family of the one-off database bootstrap task (Q-01-T20)."
   value       = local.enabled ? module.oneoff["bootstrap"].family : null
 }
+
+output "ocr_nightly_role_name" {
+  description = "P-11-T29: the role ocr-nightly.yml assumes; compose its ARN outside git for vars.OCR_NIGHTLY_ROLE_ARN."
+  value       = var.textract_enabled ? module.ocr_nightly_role[0].role_name : null
+}

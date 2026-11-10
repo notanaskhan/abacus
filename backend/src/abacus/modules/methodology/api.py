@@ -7,7 +7,28 @@ K-02-T10.
 `methodology` imports only `identity` and `platform`.
 """
 
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy import text
+
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.methodology.assurance_checklists import (
+    ChecklistImportIn as AssuranceChecklistImportIn,
+)
+from abacus.modules.methodology.assurance_checklists import (
+    ChecklistItemIn as AssuranceChecklistItem,
+)
+from abacus.modules.methodology.assurance_checklists import (
+    PublishedChecklist as PublishedAssuranceChecklist,
+)
+from abacus.modules.methodology.assurance_checklists import (
+    assurance_checklists_router,
+    import_assurance_checklist,
+    publish_assurance_checklist,
+    published_checklist,
+)
 from abacus.modules.methodology.catalog import (
     CatalogItem,
     CatalogProvider,
@@ -55,6 +76,11 @@ from abacus.modules.methodology.extraction import (
     extract_source,
     pii_hold,
 )
+from abacus.modules.methodology.gate_reads import (  # I-01-T23: HOME-02's approval gate
+    VersionInReview,
+    versions_in_review,
+    versions_named,
+)
 from abacus.modules.methodology.import_routes import methodology_import_router
 from abacus.modules.methodology.lifecycle import (
     approve_version,
@@ -79,8 +105,11 @@ from abacus.modules.methodology.report_templates import (
     Publication as ReportTemplatePublicationView,
 )
 from abacus.modules.methodology.report_templates import (
+    PublishedClauses,
     PublishedConsentTemplate,
     consent_expiry_months,
+    published_body,
+    published_clauses,
     published_consent_template,
 )
 from abacus.modules.methodology.report_templates import TemplateBundle as ReportTemplateBundle
@@ -132,12 +161,19 @@ from abacus.modules.methodology.service import (
 )
 from abacus.modules.methodology.standards import (
     aje_classification_for,
+    assigned_review_levels,
     attribute_sample_size,
     current_version,
     current_version_of_kind,
     policy_payload,
     register_standard_examples,
     rmm_matrix_for,
+)
+from abacus.modules.methodology.standards import (
+    draft_version as draft_standard_version,  # TASK-3401: the scenario loader's assignments
+)
+from abacus.modules.methodology.standards import (
+    edit_draft as edit_standard_draft,  # TASK-3401: the scenario loader's assignments
 )
 from abacus.modules.methodology.standards_catalog import register_standards_providers
 from abacus.modules.methodology.standards_contract import (
@@ -147,6 +183,7 @@ from abacus.modules.methodology.standards_contract import (
     EntryClassification,
     ExampleRow,
     ExamplesProvider,
+    LevelAssignment,
     MaterialityCheck,
     MaterialityRangeFor,
     MaterialityRangesPayload,
@@ -154,9 +191,11 @@ from abacus.modules.methodology.standards_contract import (
     RequiredLevels,
     ReturnApproval,
     ReturnApprovalPolicyPayload,
+    ReviewLevelsPayload,
     RmmFor,
     RmmMatrixPayload,
     SsarsFramework,
+    StandardDraftPatchIn,
     StandardKind,
     VarianceResult,
     classify_entry,
@@ -208,14 +247,35 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     knowledge_router,
     standards_router,  # C21 part B (K-02-T08; import and export K-02-T11)
     methodology_import_router,  # K-01-T18: import review (KNW-02 c, d)
+    assurance_checklists_router,  # A-07-T22 (DEC-2806): completion, EQR, archive checklists
+)
+
+from abacus.modules.methodology.disclosure_checklists import (  # noqa: E402 -- A-06-T28
+    MAX_BYTES as CHECKLIST_MAX_BYTES,
+)
+from abacus.modules.methodology.disclosure_checklists import (  # noqa: E402 -- A-06-T28
+    import_checklist,
+    publish_checklist,
+)
+from abacus.modules.methodology.note_templates import (  # noqa: E402 -- A-06-T25
+    MAX_BYTES as NOTES_MAX_BYTES,
+)
+from abacus.modules.methodology.note_templates import (  # noqa: E402 -- A-06-T25
+    import_notes,
+    publish_notes,
+    published_notes,
 )
 
 __all__ = [
+    "CHECKLIST_MAX_BYTES",
     "METHODOLOGY_USAGE_TYPE",
+    "NOTES_MAX_BYTES",
     "ROUTERS",
     "AccountRule",
     "ApprovedGuidance",
     "Area",
+    "AssuranceChecklistImportIn",
+    "AssuranceChecklistItem",
     "AttributeSampleSizesPayload",
     "AttributeSize",
     "CatalogItem",
@@ -234,6 +294,7 @@ __all__ = [
     "ImportSource",
     "ImportedReportTemplateVersion",
     "ImportedVersion",
+    "LevelAssignment",
     "MaterialityCheck",
     "MaterialityRangeFor",
     "MaterialityRangesPayload",
@@ -244,6 +305,8 @@ __all__ = [
     "PiiHold",
     "PolicyRef",
     "Problem",
+    "PublishedAssuranceChecklist",
+    "PublishedClauses",
     "PublishedConsentTemplate",
     "ReportTemplateBundle",
     "ReportTemplateConsentTerms",
@@ -255,12 +318,14 @@ __all__ = [
     "ReturnApproval",
     "ReturnApprovalPolicyPayload",
     "ReviewItem",
+    "ReviewLevelsPayload",
     "RmmFor",
     "RmmMatrixPayload",
     "SourceEncrypted",
     "SourceMalformed",
     "SourceTooLong",
     "SsarsFramework",
+    "StandardDraftPatchIn",
     "StandardKind",
     "TemplateInvalid",
     "TemplateItem",
@@ -270,6 +335,7 @@ __all__ = [
     "Tier",
     "UsageCounter",
     "VarianceResult",
+    "VersionInReview",
     "VersionNotLatest",
     "VersionStep",
     "VersionSteps",
@@ -278,6 +344,7 @@ __all__ = [
     "approve_version",
     "area_for",
     "assign_flags",
+    "assigned_review_levels",
     "attribute_sample_size",
     "classify_entry",
     "confidence_hold",
@@ -287,9 +354,14 @@ __all__ = [
     "current_version",
     "current_version_of_kind",
     "deprecate_report_template",
+    "draft_standard_version",
+    "edit_standard_draft",
     "extract_source",
     "fail_document_import",
     "finish_document_import",
+    "import_assurance_checklist",
+    "import_checklist",
+    "import_notes",
     "import_report_template",
     "import_source",
     "import_standard_workbook",
@@ -304,10 +376,18 @@ __all__ = [
     "parse_workbook",
     "pii_hold",
     "policy_payload",
+    "publish_assurance_checklist",
+    "publish_checklist",
     "publish_drafted_version",
+    "publish_notes",
     "publish_report_template",
     "publish_standard",
+    "published_body",
+    "published_checklist",
+    "published_checklists",
+    "published_clauses",
     "published_consent_template",
+    "published_notes",
     "record_progress",
     "register_catalog_provider",
     "register_document_importer",
@@ -338,4 +418,35 @@ __all__ = [
     "version_in",
     "version_state",
     "version_steps",
+    "versions_in_review",
+    "versions_named",
 ]
+
+
+async def published_checklists(tenant: TenantContext) -> list[dict[str, Any]]:  # Any: row values
+    """A-06-T25 (DEC-2390): the firm's published checklist versions, newest first in each name."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT v.id, t.name, t.framework_key, v.version "
+                "FROM disclosure_checklist_template_versions v "
+                "JOIN disclosure_checklist_templates t ON t.id = v.template_id "
+                "WHERE v.status = 'published' ORDER BY t.name, v.version DESC"
+            )
+        )
+        return [dict(r) for r in rows.mappings()]
+
+
+async def disclosure_template_items(
+    tenant: TenantContext, version_id: UUID
+) -> list[dict[str, Any]]:  # Any: the template's items as JSON
+    """A-06-T25: a disclosure-checklist template version's items, in the firm's order."""
+    async with tenant_session(tenant) as session:
+        return list(
+            (
+                await session.execute(
+                    text("SELECT items FROM disclosure_checklist_template_versions WHERE id = :t"),
+                    {"t": version_id},
+                )
+            ).scalar_one()
+        )

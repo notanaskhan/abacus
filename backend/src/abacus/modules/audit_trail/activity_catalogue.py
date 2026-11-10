@@ -38,6 +38,39 @@ def _a(category: Category, mark: Mark = "pl", *facts: str) -> CatalogueEntry:
 
 # G-02 §4.7 and the governance events ADM-07 renders first; the rest arrive through the fallback.
 CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
+    # S26, S27: human-only conclusions the fallback reads as neutral, and a code run (DEC-2264).
+    "deficiency.concluded": _a("decision", "ok"),
+    "sum.concluded": _a("decision", "ok"),
+    # S32 end pass (R-02-T11, DEC-3009): a client's own decision in the portal.
+    "proposed_entry.client_accepted": _a("decision", "ok"),
+    "proposed_entry.client_declined": _a("decision", "no"),
+    "statement.management_approved_in_portal": _a("decision", "ok"),
+    "client_approval.decided": _a("decision"),
+    # A-07-T26 / R-02-T12: a governance letter's send and its acknowledgement are communications.
+    "governance_communication.acknowledged": _a("communication", "ok"),
+    "notice.position_decided": _a("decision", "ok"),
+    # S28 partials (TASK-3396): the partner's sign-off moved the notice to Approved (system).
+    "notice.approved": _a("change", "ok"),
+    "service_org.reliance_concluded": _a("decision", "ok"),
+    "ocr.run_recorded": _a("run"),
+    "ocr.daily_cap_set": _a("change"),  # P-11-T33: a platform operator sets a firm's page cap
+    # S30 rows (R-02-T07, P-10-T14, A-07-T18, A-05-T53).
+    "agent_runs.backfilled": _a("run"),
+    "deliverable.download_issued": _a("access"),
+    "deliverable.downloaded": _a("access"),
+    "eqr.requested": _a("change"),
+    "eqr_review.opened": _a("change"),
+    "eqr_checklist.updated": _a("change"),
+    "eqr_digest.built": _a("run"),
+    "eqr_digest.card_reviewed": _a("change"),
+    "eqr_digest.card_unreviewed": _a("change"),
+    "estimate.evaluated": _a("run"),
+    "estimate.conclusion_requested": _a("change"),
+    "related_party.added": _a("change"),
+    "party_in_interest.added": _a("change"),  # S31 close (AUD-27 c)
+    "ebp_schedule_h_mapping.published": _a("change"),  # S31 close (A-05-T62)
+    "related_party.screened_out": _a("change"),
+    "related_party.activity_recorded": _a("change"),  # S31 close (A-05-T57)
     # S15 (N-01, N-02): where the fallback reads the verb wrong. A sealed address revealed and a
     # message body read are access; a provider send and a reminder are communication.
     "signer.ip_revealed": _a("access"),
@@ -154,6 +187,8 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "checkpoint.restored": _a("decision", "pl", "seq", "restored_seq"),
     "checkpoint.renamed": _a("change", "pl", "seq"),
     "suggestion.created": _a("run", "pl"),
+    # A-06-T16 seam (TASK-3395): the agent's suggested answer mirrored on its item, a run.
+    "disclosure_checklist.suggested": _a("run", "pl", "suggestion_id"),
     "suggestion.adopted": _a("decision", "ok", "decision", "version"),
     "suggestion.edited": _a("decision", "ok", "decision", "version"),
     "suggestion.dismissed": _a("decision", "no", "decision", "version"),

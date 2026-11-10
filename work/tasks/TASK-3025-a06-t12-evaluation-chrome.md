@@ -4,7 +4,7 @@ title: A-06-T12 Evaluation chrome and wiring
 spec: SPEC-642
 acceptance_criteria: [AC-3]
 risk_zone: green
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T12
 branch: s25-a06-t12 (stacked on s25-a05-t17)

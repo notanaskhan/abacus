@@ -61,11 +61,13 @@ from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.agents.draft_start import DraftingUnavailable
+from abacus.modules.agents.events import SectionDraftFinished
 from abacus.modules.agents.handoff import DraftCitation, DraftedCell, DraftedFlag, SectionDraft
 from abacus.modules.agents.proposals import ProposalInvalid, create_suggestion
 from abacus.modules.agents.repository import (
     finish_run,
     insert_run,
+    latest_completed_run,
     lock_run,
     run_for_event,
     runs_since,
@@ -120,6 +122,7 @@ UNCITED: Final = "uncited"
 FLAG_NOT_IN_MODE: Final = "flag_not_in_mode"  # A-04-T23: only risk_narrative raises flags
 UNVERIFIED: Final = "citation_unverified"
 NO_PROVENANCE: Final = "number_without_provenance"
+NOT_A_CHOICE: Final = "not_a_choice"  # A-04-T24: the cell's target takes one of a closed list
 UNKNOWN_CELL: Final = "unknown_cell"
 UNKNOWN_FACT: Final = "unknown_fact"
 REVIEW_REQUIRED: Final = "review_required"
@@ -158,6 +161,9 @@ class Fact:
     label: str  # F<n>
     name: str  # the cell it was read from
     value: dict[str, object]  # `{t, v}`, code's own
+    # A-04-T24: names the model may pick from, not figures: shown to it, but its digits support no
+    # number in a text value (ADR-050) and no cell's value comes from it.
+    identifier: bool = False
 
 
 @dataclass(frozen=True)
@@ -237,10 +243,7 @@ async def start(
     preparer = mode_preparer(mode)
     if preparer is not None:
         await preparer(ctx, engagement_id, paper)
-    event = uuid5(
-        NAMESPACE_URL,
-        f"abacus:section_draft:{ctx.tenant_id}:{workpaper_id}:{section_key}:{idempotency_key}",
-    )
+    event = _source_event(ctx.tenant_id, workpaper_id, section_key, idempotency_key)
     reader = _reader(ctx.tenant_id, f"agents:{drafter.id}")
     async with tenant_session(reader) as session:
         existing = await run_for_event(session, drafter.id, event)
@@ -347,6 +350,9 @@ async def load_context(
     extra = tuple(
         Fact(f"F{len(facts) + n}", name, dict(value))
         for n, (name, value) in enumerate(inputs.facts, start=1)
+    ) + tuple(
+        Fact(f"F{len(facts) + len(inputs.facts) + n}", name, dict(value), identifier=True)
+        for n, (name, value) in enumerate(inputs.identifiers, start=1)
     )
     return DraftContext(
         paper,
@@ -451,8 +457,16 @@ def provenance_ok(
     for quote in verified_quotes:
         shown |= _numbers(quote)
     for fact in facts.values():
-        shown |= _numbers(str(fact.value.get("v") or ""))
+        if not fact.identifier:
+            shown |= _numbers(str(fact.value.get("v") or ""))
     return _numbers(cell.text) <= shown
+
+
+def is_choice(cell: DraftedCell, target: ModeTarget) -> bool:
+    """A cell whose target takes a closed list holds exactly one of it: nothing else is stored."""
+    if cell.fact is not None or cell.text is None:
+        return False
+    return cell.text.strip().casefold() in {c.casefold() for c in target.choices}
 
 
 def _value(cell: DraftedCell, facts: Mapping[str, Fact]) -> dict[str, object]:
@@ -555,7 +569,7 @@ async def _draft(
             if _cell_key(cell.cell) not in cells:
                 unsupported.append(Unsupported(cell.cell, UNKNOWN_CELL))
                 continue
-            if cell.fact is not None and cell.fact not in facts:
+            if cell.fact is not None and (cell.fact not in facts or facts[cell.fact].identifier):
                 unsupported.append(Unsupported(cell.cell, UNKNOWN_FACT))
                 continue
             if not cell.citations:
@@ -581,7 +595,12 @@ async def _draft(
                 if claim is not None
             ]
             verified_quotes = [q for q, r in zip(quotes, recorded, strict=True) if r.verified]
-            if not provenance_ok(cell, verified_quotes, facts):
+            target = context.targets.get("!".join(_cell_key(cell.cell)))
+            if target is not None and target.choices:
+                if not is_choice(cell, target):
+                    unsupported.append(Unsupported(cell.cell, NOT_A_CHOICE))
+                    continue
+            elif not provenance_ok(cell, verified_quotes, facts):
                 unsupported.append(Unsupported(cell.cell, NO_PROVENANCE))
                 continue
             kept.append((cell, tuple(r.id for r in verified)))
@@ -630,7 +649,40 @@ async def _draft(
                 target=Target("agent_run", run.id),
                 after=Ref(suggestions=len(suggestions), unsupported=len(unsupported)),
             )
+            tx.emit(
+                SectionDraftFinished(
+                    run_id=run.id,
+                    engagement_id=cast(UUID, run.engagement_id),
+                    workpaper_id=workpaper_id,
+                    mode=mode,
+                    initiator_user_id=run.initiator_user_id,
+                )
+            )
     return DraftOutcome(run.id, "completed", tuple(suggestions), tuple(unsupported))
+
+
+async def followed_up_running(
+    tenant_id: UUID, engagement_id: UUID, after_mode: str, workpaper_id: UUID, key_prefix: str
+) -> bool:
+    """Is the run started after this engagement's latest `after_mode` run still running? A-04-T29:
+    AUD-08's "Revising after Internal Control…" for as long as the re-draft runs (AC4.8)."""
+    reader = _reader(tenant_id, f"agents:{DRAFTER}")
+    async with tenant_session(reader) as session:
+        latest = await latest_completed_run(session, DRAFTER, engagement_id, after_mode)
+        if latest is None:
+            return False
+        event = _source_event(tenant_id, workpaper_id, None, f"{key_prefix}:{latest}")
+        found = await run_for_event(session, DRAFTER, event)
+    return found is not None and found.status == "running"
+
+
+def _source_event(
+    tenant_id: UUID, workpaper_id: UUID, section_key: str | None, idempotency_key: str
+) -> UUID:
+    return uuid5(
+        NAMESPACE_URL,
+        f"abacus:section_draft:{tenant_id}:{workpaper_id}:{section_key}:{idempotency_key}",
+    )
 
 
 async def _raise_flags(
@@ -691,6 +743,7 @@ __all__ = [
     "Unsupported",
     "build_context",
     "draft",
+    "is_choice",
     "load_context",
     "model_available",
     "provenance_ok",

@@ -88,6 +88,67 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # P-05-T03 (C9 v2 stub, DEC-3104): reads by POST (counts, the AUD-29 query and export) and
+    # acts on an existing thread, comment or to-do, so 200.
+    "/v1/comment-threads/counts",
+    "/v1/comment-threads/{thread_id}/mute",
+    "/v1/comment-threads/{thread_id}/read",
+    "/v1/comment-threads/{thread_id}/reopen",
+    "/v1/comment-threads/{thread_id}/resolve",
+    "/v1/comment-threads/{thread_id}/share",
+    "/v1/thread-comments/{comment_id}/redact",
+    "/v1/todos/counts",
+    "/v1/todos/{todo_id}/assign",
+    "/v1/todos/{todo_id}/complete",
+    "/v1/todos/{todo_id}/move",
+    "/v1/todos/{todo_id}/reopen",
+    "/v1/todos/{todo_id}/seen",
+    "/v1/engagements/{engagement_id}/audit-events/query",
+    "/v1/engagements/{engagement_id}/audit-events/export",
+    # A-07-T22 (DEC-2806): publishing a checklist version acts on it, so 200.
+    "/v1/methodology/assurance-checklists/{template_id}/versions/{version}/publish",
+    # A-06-T25 (#1375): publishing a note template's version acts on it, so 200.
+    "/v1/methodology/statement-note-templates/{template_id}/versions/{version}/publish",
+    # S29: acts on an existing record, so 200.
+    # T-04-T05 (RW-1 stub): reversing an approval and overriding a treatment act on them, so 200.
+    "/v1/tax/document-approvals/{approval_id}/reverse",
+    "/v1/tax/k1-treatments/{treatment_id}/override",
+    "/v1/agent-runs/{run_id}/plan/approve",
+    "/v1/agent-runs/{run_id}/plan/cancel",
+    "/v1/agent-runs/{run_id}/plan/edit",
+    "/v1/agent-runs/{run_id}/questions/{question_id}/answer",
+    "/v1/agent-runs/{run_id}/questions/{question_id}/skip",
+    "/v1/agent-runs/{run_id}/sign-off",
+    "/v1/events/{stream_id}/topics",
+    "/v1/portal/approvals/packages/{package_id}/decide",
+    "/v1/portal/approvals/proposed-entries/{entry_id}/decide",
+    "/v1/portal/approvals/uncorrected-misstatements/{item_id}/acknowledge",
+    "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/approve",
+    "/v1/portal/governance/communications/{communication_id}/acknowledge",
+    # A-05-T43: SHL-14's prefill for an expense's provider; a person sends it from the sheet.
+    "/v1/audits/{work_item_id}/ebp/plan-expenses/{expense_id}/request-support",
+    # S26, S27: acts on an existing record or returns a batch's outcomes, so 200.
+    "/v1/audits/{work_item_id}/archive/additions/{addition_id}/approve",
+    "/v1/audits/{work_item_id}/archive/additions/{addition_id}/reject",
+    "/v1/audits/{work_item_id}/archive/request-lock",
+    "/v1/audits/{work_item_id}/completion/items/{item_key}/not-applicable",
+    "/v1/audits/{work_item_id}/completion/items/{item_key}/reopen",
+    "/v1/audits/{work_item_id}/eqr/digest/{card_id}/reviewed",
+    "/v1/audits/{work_item_id}/eqr/request",
+    "/v1/audits/{work_item_id}/governance-communications/{communication_id}/request-approval",
+    "/v1/audits/{work_item_id}/representation-letter/remind",
+    "/v1/audits/{work_item_id}/representation-letter/request-approval",
+    "/v1/audits/{work_item_id}/representation-letter/versions/{version_no}/approve",
+    "/v1/evidence-versions/{version_id}/text/retry",
+    "/v1/methodology/disclosure-checklists/{template_id}/versions/{version}/publish",
+    "/v1/sign-offs/{sign_off_id}/request-re-review",
+    "/v1/statement-documents/{document_id}/disclosure-checklist/items/{item_key}/adopt",
+    "/v1/statement-documents/{document_id}/disclosure-checklist/items:review",
+    "/v1/statement-versions/{version_id}/management-approval:record",
+    "/v1/statement-versions/{version_id}/send-draft",
+    "/v1/tax/extensions:approve-and-request",
+    "/v1/tax/extensions:prepare",
+    "/v1/tax/extensions:submit-for-approval",
     # S25 (N-04-T02, A-06-T10, A-06-T11): acts on an existing intake, notice, batch or finding.
     "/v1/notice-intakes/{intake_id}/attach",
     "/v1/notice-intakes/{intake_id}/discard",
@@ -226,6 +287,7 @@ NOT_CREATING = {
     "/v1/sign-offs:bulk",
     "/v1/review-notes/{note_id}/respond",
     "/v1/review-notes/{note_id}/clear",
+    "/v1/review-notes/{note_id}/reopen",  # TASK-3394: an event on the note, as clear is
     "/v1/review-notes/{note_id}/withdraw",
     # P-04-T08 (C3 stub 2): decisions, proposal and suggestion resolutions return the record.
     "/v1/decision-cards/{card_id}/decide",
@@ -374,6 +436,8 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/convert-to-misstatement",
     # A-06-T03, T04 (S24): a finding's conversion and resolution, a misstatement passed to the
     # SUM, a client's recorded decision and a rejection act on existing rows, so 200.
+    # A-06-T11: a consultation concluded acts on the row, so 200.
+    "/v1/consultations/{consultation_id}/conclude",
     "/v1/findings/{finding_id}/convert-to-deficiency",
     "/v1/findings/{finding_id}/convert-to-misstatement",
     "/v1/findings/{finding_id}/resolve",
@@ -395,6 +459,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         TEMPLATE_DRAFTS,
         SELECT,
         ASSESS,
+        # A-07-T32 (DEC-3109): the completion readiness check starts a code run, so 202.
+        "/v1/audits/{work_item_id}/completion/readiness:check",
         # P-06-T15 (C5 v1.2 SHL-20 stub): a rerun starts screening, so 202.
         "/v1/engagements/{engagement_id}/request-items/{item_id}/screening/rerun",
         # P-04-T11 (C3 stub 3): fix instructions and Explain start an agent run, so 202.
@@ -446,13 +512,51 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/drafts",
         "/v1/engagements/{engagement_id}/risks/{risk_id}/drafts",
         "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/drafts",
+        # S26, S27: a build, a composition, a tie-out or a release starts work, so 202.
+        "/v1/audits/{work_item_id}/archive/binder-index",
+        "/v1/audits/{work_item_id}/archive/lock",
+        "/v1/audits/{work_item_id}/archive/verify",
+        "/v1/audits/{work_item_id}/eqr/digest:build",
+        "/v1/audits/{work_item_id}/governance-communications/{communication_id}/compose",
+        "/v1/audits/{work_item_id}/release",
+        "/v1/audits/{work_item_id}/report/documents",
+        "/v1/audits/{work_item_id}/representation-letter/compose",
+        "/v1/engagements/{engagement_id}/financial-statements/draft",
+        "/v1/statement-versions/{version_id}/tie-out",
+        # S29 stubs: a run or session accepts work and answers later.
+        "/v1/agent-runs/{run_id}/messages",
+        "/v1/agent-runs/{run_id}/steps/{step_id}/retry",
+        "/v1/agent-runs/{run_id}/stop",
+        "/v1/audits/{work_item_id}/ebp/participant-accounts/run",
+        "/v1/engagements/{engagement_id}/runs",
+        "/v1/workbench/sessions/{session_id}/messages",
+        # T-04-T05 (RW-1 stub): a draft, treatment or residency run starts the agent, so 202.
+        "/v1/tax/returns/{return_id}/draft-runs",
+        "/v1/tax/k1-activities/{activity_id}/treatment-runs",
+        "/v1/tax/returns/{return_id}/residency/proposal-runs",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
+        # A-06-T25 (#1375): a firm's note templates come in as rows.
+        "/v1/methodology/statement-note-templates:import",
+        # A-07-T22 (DEC-2806): a firm's assurance checklist comes in as rows.
+        "/v1/methodology/assurance-checklists:import",
+        # A-05-T62 close (DEC-2823): publishing a Schedule H mapping inserts its version's rows.
+        "/v1/ebp/schedule-h-mappings:publish",
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # P-05-T03 (C9 v2 stub, DEC-3104): a thread, a comment, a review note from a thread, a
+        # to-do and a checklist item each create a row, so 201.
+        "/v1/comment-threads",
+        "/v1/comment-threads/{thread_id}/comments",
+        "/v1/comment-threads/{thread_id}/convert-to-review-note",
+        "/v1/todos",
+        "/v1/todos/{todo_id}/checklist-items",
+        # T-04-T05 (RW-1 stub): a document approval and a final-approval request are rows, so 201.
+        "/v1/tax/returns/{return_id}/document-approvals",
+        "/v1/tax/returns/{return_id}/final-approval-requests",
         # N-04-T02: a notice from its intake, a decision request, a note, the response, its
         # signature request and an agency reply each create a row, so 201.
         "/v1/notice-intakes/{intake_id}/create",
@@ -482,6 +586,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/risks/approval-requests",
         "/v1/engagements/{engagement_id}/risks/{risk_id}/responses",
         "/v1/engagements/{engagement_id}/fraud-inquiries",
+        # DEC-2355: a High-impact SOC exception routed to Findings creates the finding.
+        "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/exceptions/{co_ref}/send-to-findings",
         "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/request-evidence",
         "/v1/engagements/{engagement_id}/service-organizations",
         "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/requests",
@@ -496,6 +602,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/audits/{work_item_id}/ebp/participants/{participant_id}/reveals",
         "/v1/audits/{work_item_id}/ebp/trust-tb/adopt",
         "/v1/audits/{work_item_id}/ebp/form-5500/reconciliation-note",
+        # A-05-T58 remainder (DEC-2828): a 4i render creates a generated document version.
+        "/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i/render",
         "/v1/audits/{work_item_id}/estimates/{estimate_id}/request-conclusion",
         "/v1/audits/{work_item_id}/related-parties",
         "/v1/audits/{work_item_id}/parties-in-interest",
@@ -746,9 +854,32 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/work-items/{work_item_id}/proposed-entries:approve-and-send",
         "/v1/approval-batches",
         "/v1/work-items/{work_item_id}/findings",
+        "/v1/work-items/{work_item_id}/consultations",  # A-06-T11
         "/v1/findings/{finding_id}/request-decision",
         "/v1/work-items/{work_item_id}/sum/snapshots",
         "/v1/work-items/{work_item_id}/sum/request-conclusion",
+        # S26, S27: each creates a row (an addition, a card, a letter, a draft, a request).
+        "/v1/audits/{work_item_id}/archive/additions",
+        "/v1/audits/{work_item_id}/eqr/concur",
+        "/v1/audits/{work_item_id}/going-concern/request-decision",
+        "/v1/audits/{work_item_id}/governance-communications",
+        "/v1/audits/{work_item_id}/governance-communications/{communication_id}/approve-and-send",
+        "/v1/audits/{work_item_id}/legal-letters/request",
+        "/v1/audits/{work_item_id}/report/request-decision",
+        "/v1/audits/{work_item_id}/representation-letter/re-date",
+        "/v1/audits/{work_item_id}/representation-letter/send",
+        "/v1/audits/{work_item_id}/subsequent-events",
+        "/v1/audits/{work_item_id}/subsequent-events/procedures",
+        "/v1/questionnaire-templates/{template_id}/versions",
+        "/v1/methodology/disclosure-checklists:import",
+        "/v1/tax/extensions/{extension_id}/confirmation-requests",
+        "/v1/tax/estimates/{schedule_id}/installments/{quarter}/confirmation-requests",
+        "/v1/tax/estimates/{schedule_id}/installments/{quarter}/follow-ups",
+        # S29: C6 v2, C10, C18 and P-11's rows that create a record.
+        "/v1/agent-feedback",
+        "/v1/portal/approvals/{kind}/{item_id}/questions",
+        "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/comments",
+        "/v1/portal/governance/communications/{communication_id}/questions",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

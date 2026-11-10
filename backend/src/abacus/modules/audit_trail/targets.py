@@ -39,6 +39,7 @@ FIRM_LEVEL: Final = frozenset(
     {
         "firm",
         "user",
+        "realtime",  # P-10-T27: an outbox event's invalidation with no row of its own
         "staff_invitation",
         "support_session",
         "methodology_version",
@@ -58,6 +59,7 @@ FIRM_LEVEL: Final = frozenset(
         "team",  # G-01-T08: teams and groups, and their rosters
         "secure_link",  # P-08-T21: a portal email's link, for one contact (no engagement)
         "firm_integration",  # A-02-T12: a firm's install of a catalogue app and its secret
+        "ocr_daily_cap",  # P-11-T33: a platform operator's page cap for the firm
         "email_template",  # R-01-T19: a firm's template key, its drafts and versions
         "follow_up_policy",  # R-01-T24: the firm's follow-up policy (one per firm)
         "sending_domain",  # R-01-T27: the firm's sender domain (no client or engagement)
@@ -73,6 +75,9 @@ FIRM_LEVEL: Final = frozenset(
         # Q-04-T007: an operator's pilot enrolment; its work item ref keeps it from walled readers
         "pilot_enrolment",
         "reference_set_version",  # K-02-T12: a platform rules table took effect (no client)
+        "disclosure_checklist_template",  # A-06-T28: the firm's checklist content
+        "statement_note_template",  # A-06-T25: the firm's note content
+        "statement_document",  # A-06-T25: a person picks its checklist (DEC-2390)
         "questionnaire_template",  # T-02-T16: the firm's organizer template and its versions
         "consent_export",  # T-01-T16: a person's export of the consent registry (a filter)
         "envelope_policy",  # N-02: the firm's envelope fallback policy (the firm is its id)

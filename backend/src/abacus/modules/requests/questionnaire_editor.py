@@ -8,6 +8,8 @@
   question is 409 `question_answered`; a missing existing question is retired (never deleted, so
   every answer keeps its question). `dry_run` returns the client-visible changes and the effect
   rules that would fire, and writes nothing.
+- **Walls and owners (DEC-2370).** A binder's organizer is read and saved against its engagement,
+  not the firm; a template's is a template action, and only a draft saves.
 - **Client preview.** The portal serializer's projection only (`client_wording`, `help_text`,
   type, choices, amount parts, required): no `internal_helper`, effect rule or tag can reach it.
 
@@ -18,18 +20,30 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Any, Final
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    Resource,
+    authorise,
+    engagement_resource,
+    names_of,
+)
 
+READ: Final = "questionnaire.read"
+EDIT: Final = "questionnaire.edit"
+TEMPLATE_READ: Final = "questionnaire_template.read"
+TEMPLATE_DRAFT: Final = "questionnaire_template.draft"
 TO_STORED: Final = {"amount": "amount_group", "text": "long_text"}
 TO_EDITOR: Final = {v: k for k, v in TO_STORED.items()}
 CLIENT_FIELDS: Final = ("key", "type", "client_wording", "help_text", "choices", "amount_parts")
@@ -53,6 +67,23 @@ class LogicInvalid(DomainInvalid):
     code = "logic_invalid"
 
 
+class VersionPublished(DomainConflict):
+    """A published template version never changes; draft the next one."""
+
+    code = "version_published"
+
+
+@dataclass(frozen=True)
+class TemplateRef:
+    template_id: UUID
+    name: str
+    version: int
+    version_id: UUID
+    applies_to_tax_year: int | None
+    status: str | None
+    from_year: int | None  # a draft's banner names the year of the version it came from
+
+
 @dataclass(frozen=True)
 class EditorQuestion:
     id: UUID
@@ -72,6 +103,8 @@ class EditorQuestion:
     answer_value: Any  # Any: JSON from the database or the document
     answered_on: date | None
     answered_by: UUID | None
+    answer_id: UUID | None = None
+    answered_by_name: str | None = None
     effects: list[dict[str, Any]] = field(  # Any: JSON from the database
         default_factory=list[dict[str, Any]]  # Any: JSON from the database
     )  # Any: JSON from the database or the document
@@ -90,6 +123,17 @@ class Editor:
     sections: tuple[tuple[UUID, str, str, int], ...]  # id, key, title, position
     questions: tuple[EditorQuestion, ...]
     row_version: int
+    binder_id: UUID | None = None
+    template: TemplateRef | None = None
+
+    def banner(self) -> str | None:
+        """Template mode: "Editing template 1040 organizer v6 — changes apply to TY2026 …"."""
+        t = self.template
+        if self.owner_kind != "template_version" or t is None:
+            return None
+        year = t.applies_to_tax_year or t.from_year
+        tail = f" — changes apply to TY{year} binders" if year else ""
+        return f"Editing template {t.name} v{t.version}{tail}"
 
     def counts(self) -> dict[str, Any]:  # Any: JSON from the database or the document
         live = self.questions
@@ -107,13 +151,49 @@ class Editor:
         }
 
 
+async def _template_ref(
+    session: AsyncSession, questionnaire_id: UUID, owner_kind: str, version_id: UUID | None
+) -> TemplateRef | None:
+    """A template's own questionnaire finds its version by owner; a binder's by what it came
+    from."""
+    own = owner_kind == "template_version"
+    if not own and version_id is None:
+        return None
+    row = (
+        await session.execute(
+            text(
+                "SELECT v.id, v.version, v.status, v.applies_to_tax_year, t.id AS template_id, "
+                "t.name, f.applies_to_tax_year AS from_year "
+                "FROM questionnaire_template_versions v "
+                "JOIN questionnaire_templates t ON t.id = v.template_id "
+                "LEFT JOIN questionnaire_template_versions f "
+                "ON f.id = v.drafted_from_version_id "
+                "WHERE (v.questionnaire_id = :q AND :own) OR (v.id = :v AND NOT :own)"
+            ),
+            {"q": questionnaire_id, "v": version_id, "own": own},
+        )
+    ).first()
+    if row is None:
+        return None
+    return TemplateRef(
+        row.template_id,
+        row.name,
+        row.version,
+        row.id,
+        row.applies_to_tax_year,
+        row.status,
+        row.from_year,
+    )
+
+
 async def editor(ctx: AuthContext, questionnaire_id: UUID) -> Editor:
     async with tenant_session(ctx.tenant) as session:
         head = (
             (
                 await session.execute(
                     text(
-                        "SELECT id, owner_kind, title, work_item_id, row_version "
+                        "SELECT id, owner_kind, title, engagement_id, work_item_id, "
+                        "request_list_id, template_version_id, row_version "
                         "FROM questionnaires WHERE id = :q"
                     ),
                     {"q": questionnaire_id},
@@ -124,6 +204,15 @@ async def editor(ctx: AuthContext, questionnaire_id: UUID) -> Editor:
         )
         if head is None:
             raise NotFound("questionnaire")
+        # The wall: a binder's answers are its engagement's, whatever the firm-level gate passed.
+        if head["owner_kind"] == "binder":
+            base = await engagement_resource(ctx.tenant, head["engagement_id"])
+            await authorise(ctx, READ, replace(base, work_item_id=head["work_item_id"]))
+        else:
+            await authorise(ctx, TEMPLATE_READ, Resource.firm(ctx.tenant_id))
+        template = await _template_ref(
+            session, questionnaire_id, head["owner_kind"], head["template_version_id"]
+        )
         sections = (
             await session.execute(
                 text(
@@ -135,45 +224,70 @@ async def editor(ctx: AuthContext, questionnaire_id: UUID) -> Editor:
             )
         ).all()
         rows = (
-            await session.execute(
-                text(
-                    "SELECT q.*, coalesce(s.key, 's' || s.position::text) AS section_key, "
-                    "p.question_key AS parent_key, a.value AS answer_value, "
-                    "a.answered_at::date AS answered_on, a.answered_by "
-                    "FROM questions q JOIN questionnaire_sections s ON s.id = q.section_id "
-                    "LEFT JOIN questions p ON p.id = q.conditional_on_question_id "
-                    "LEFT JOIN LATERAL (SELECT value, answered_at, answered_by "
-                    "FROM answer_versions WHERE question_id = q.id "
-                    "ORDER BY version_no DESC LIMIT 1) a ON true "
-                    "WHERE q.questionnaire_id = :q AND q.retired_at IS NULL "
-                    "ORDER BY s.position, q.position"
-                ),
-                {"q": questionnaire_id},
+            (
+                await session.execute(
+                    text(
+                        "SELECT q.*, coalesce(s.key, 's' || s.position::text) AS section_key, "
+                        "p.question_key AS parent_key, a.id AS answer_id, "
+                        "a.value AS answer_value, "
+                        "a.answered_at::date AS answered_on, a.answered_by "
+                        "FROM questions q JOIN questionnaire_sections s ON s.id = q.section_id "
+                        "LEFT JOIN questions p ON p.id = q.conditional_on_question_id "
+                        "LEFT JOIN LATERAL (SELECT id, value, answered_at, answered_by "
+                        "FROM answer_versions WHERE question_id = q.id "
+                        "ORDER BY version_no DESC LIMIT 1) a ON true "
+                        "WHERE q.questionnaire_id = :q AND q.retired_at IS NULL "
+                        "ORDER BY s.position, q.position"
+                    ),
+                    {"q": questionnaire_id},
+                )
             )
-        ).mappings()
+            .mappings()
+            .all()
+        )
         effect_rows = (
-            await session.execute(
-                text(
-                    "SELECT e.question_id, e.rule_key, e.effect_kind, e.target_type, e.target_id, "
-                    "e.created_at FROM answer_effects e JOIN questions q ON q.id = e.question_id "
-                    "WHERE q.questionnaire_id = :q ORDER BY e.created_at"
-                ),
-                {"q": questionnaire_id},
+            (
+                await session.execute(
+                    text(
+                        "SELECT e.id, e.question_id, e.rule_key, e.effect_kind, e.target_type, "
+                        "e.target_id, e.actor_kind, e.actor_user_id, e.created_at "
+                        "FROM answer_effects e JOIN questions q ON q.id = e.question_id "
+                        "WHERE q.questionnaire_id = :q ORDER BY e.created_at"
+                    ),
+                    {"q": questionnaire_id},
+                )
             )
-        ).mappings()
+            .mappings()
+            .all()
+        )
         by_question: dict[
             UUID, list[dict[str, Any]]  # Any: JSON from the database
         ] = {}  # Any: JSON from the database or the document
         for e in effect_rows:
             by_question.setdefault(e["question_id"], []).append(
                 {
+                    "id": e["id"],
                     "rule_key": e["rule_key"],
                     "kind": e["effect_kind"],
+                    "actor_kind": e["actor_kind"],
+                    "actor_user_id": e["actor_user_id"],
                     "target_type": e["target_type"],
                     "target_id": e["target_id"],
                     "at": e["created_at"],
                 }
             )
+        names = await names_of(
+            [r["answered_by"] for r in rows if r["answered_by"]]
+            + [
+                e["actor_user_id"]
+                for effects in by_question.values()
+                for e in effects
+                if e["actor_user_id"]
+            ]
+        )
+        for effects in by_question.values():
+            for e in effects:
+                e["actor_name"] = names.get(e["actor_user_id"]) if e["actor_user_id"] else None
         questions = tuple(
             EditorQuestion(
                 id=r["id"],
@@ -193,6 +307,8 @@ async def editor(ctx: AuthContext, questionnaire_id: UUID) -> Editor:
                 answer_value=r["answer_value"],
                 answered_on=r["answered_on"],
                 answered_by=r["answered_by"],
+                answer_id=r["answer_id"],
+                answered_by_name=names.get(r["answered_by"]) if r["answered_by"] else None,
                 effects=by_question.get(r["id"], []),
             )
             for r in rows
@@ -205,7 +321,34 @@ async def editor(ctx: AuthContext, questionnaire_id: UUID) -> Editor:
         tuple((s.id, s.key, s.name, s.position) for s in sections),
         questions,
         head["row_version"],
+        head["request_list_id"],
+        template,
     )
+
+
+async def for_binder(ctx: AuthContext, binder_id: UUID) -> Editor | None:
+    """BND-02's Questions tab: the binder's organizer, against its engagement."""
+    async with tenant_session(ctx.tenant) as session:
+        binder = (
+            await session.execute(
+                text("SELECT engagement_id, work_item_id FROM request_lists WHERE id = :b"),
+                {"b": binder_id},
+            )
+        ).first()
+        if binder is None:
+            raise NotFound("request_list")
+        base = await engagement_resource(ctx.tenant, binder.engagement_id)
+        await authorise(ctx, READ, replace(base, work_item_id=binder.work_item_id))
+        found = (
+            await session.execute(
+                text(
+                    "SELECT id FROM questionnaires WHERE request_list_id = :b "
+                    "AND kind = 'organizer' ORDER BY created_at DESC LIMIT 1"
+                ),
+                {"b": binder_id},
+            )
+        ).scalar_one_or_none()
+    return None if found is None else await editor(ctx, found)
 
 
 def client_view(
@@ -278,6 +421,27 @@ def effects_to_fire(
     return out
 
 
+async def _may_edit(ctx: AuthContext, current: Editor) -> None:
+    """A person's act: on a binder, `questionnaire.edit` on its engagement; on a template, a draft
+    with `questionnaire_template.draft`. A published version is frozen."""
+    if ctx.tenant.actor_kind != "human" or ctx.is_support:
+        raise Forbidden(EDIT, "role")
+    if current.owner_kind == "template_version":
+        await authorise(ctx, TEMPLATE_DRAFT, Resource.firm(ctx.tenant_id))
+        if current.template is None or current.template.status != "draft":
+            raise VersionPublished
+        return
+    async with tenant_session(ctx.tenant) as session:
+        row = (
+            await session.execute(
+                text("SELECT engagement_id, work_item_id FROM questionnaires WHERE id = :q"),
+                {"q": current.id},
+            )
+        ).one()
+    base = await engagement_resource(ctx.tenant, row.engagement_id)
+    await authorise(ctx, EDIT, replace(base, work_item_id=row.work_item_id))
+
+
 async def save(
     ctx: AuthContext,
     questionnaire_id: UUID,
@@ -286,11 +450,13 @@ async def save(
     sections: Sequence[dict[str, Any]],  # Any: JSON from the database or the document
     questions: Sequence[dict[str, Any]],  # Any: JSON from the database or the document
     dry_run: bool,
+    change_summary: str | None = None,
 ) -> tuple[
     bool, list[dict[str, Any]], list[dict[str, Any]]  # Any: JSON from the database
 ]:  # Any: JSON from the database or the document
     """One atomic save, or a dry run that writes nothing."""
     current = await editor(ctx, questionnaire_id)
+    await _may_edit(ctx, current)
     if current.row_version != if_match:
         raise StaleVersion(facts={"current": current.row_version})
     keys = {q["key"] for q in questions}
@@ -395,6 +561,14 @@ async def save(
             text("UPDATE questionnaires SET row_version = row_version + 1 WHERE id = :q"),
             {"q": questionnaire_id},
         )
+        if change_summary is not None and current.template and current.owner_kind != "binder":
+            await tx.session.execute(
+                text(
+                    "UPDATE questionnaire_template_versions SET change_summary = :s, "
+                    "row_version = row_version + 1 WHERE id = :v"
+                ),
+                {"s": change_summary, "v": current.template.version_id},
+            )
         tx.record(
             "questionnaire.edited",
             target=Target("questionnaire", questionnaire_id),

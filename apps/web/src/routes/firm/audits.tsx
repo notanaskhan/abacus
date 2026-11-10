@@ -22,6 +22,9 @@ const RiskRegister = lazyScreen(
 );
 const Narrative = lazyScreen(async () => (await import("../../screens/AUD-05")).NarrativePage);
 const Program = lazyScreen(async () => (await import("../../screens/AUD-04")).ProgramPage);
+const EqrWorkspace = lazyScreen(
+  async () => (await import("../../screens/AUD-18")).EqrWorkspacePage,
+);
 const Evaluation = lazyScreen(
   async () => (await import("../../screens/evaluation")).EvaluationPage,
 );
@@ -88,6 +91,9 @@ interface CockpitSearch {
   section?: string;
   dock?: "agent" | "viewer";
   doc?: string;
+  version?: number;
+  /** P-09-T09: the run open in the SHL-13 pane (`?dock=agent&run=`). */
+  run?: string;
 }
 
 export const auditRoute = createRoute({
@@ -97,6 +103,9 @@ export const auditRoute = createRoute({
     ...(typeof search.section === "string" ? { section: search.section } : {}),
     ...(search.dock === "agent" || search.dock === "viewer" ? { dock: search.dock } : {}),
     ...(typeof search.doc === "string" ? { doc: search.doc } : {}),
+    ...(typeof search.run === "string" ? { run: search.run } : {}),
+    // EBP-02 b2: the earlier plan review, read-only.
+    ...(typeof search.version === "number" ? { version: search.version } : {}),
   }),
   component: function AuditPage(): JSX.Element {
     const auditId = useParam("auditId");
@@ -117,6 +126,21 @@ export const auditRoute = createRoute({
         doc={search.doc ?? null}
         onDock={(dock, doc) => {
           go({ ...search, dock, ...(doc == null ? {} : { doc }) });
+        }}
+        runId={search.run ?? null}
+        onRun={(run) => {
+          const rest = { ...search };
+          delete rest.run;
+          go({ ...rest, dock: "agent", ...(run === null ? {} : { run }) });
+        }}
+        {...(search.version === undefined ? {} : { planReviewVersion: search.version })}
+        onPlanReviewVersion={(version) => {
+          go({
+            ...(search.section === undefined ? {} : { section: search.section }),
+            ...(search.dock === undefined ? {} : { dock: search.dock }),
+            ...(search.doc === undefined ? {} : { doc: search.doc }),
+            ...(version === null ? {} : { version }),
+          });
         }}
         onBack={() => {
           void navigate({ to: "/audits" });
@@ -222,6 +246,24 @@ function evaluationRoute(tab: EvaluationTab) {
   });
 }
 
+// A-07-T17: AUD-18 `/audits/$auditId/eqr`, the EQR's own workspace.
+export const eqrRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/eqr",
+  component: function EqrPage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const navigate = useNavigate();
+    return gated(
+      <EqrWorkspace
+        auditId={auditId}
+        onBack={() => {
+          void navigate({ to: "/audits/$auditId", params: { auditId } });
+        }}
+      />,
+    );
+  },
+});
+
 // A-04-T20: AUD-08 `/audits/$auditId/risks?filter=unaddressed`, its drawer `?ov=risk:<code>`.
 export const risksRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -312,9 +354,6 @@ export const narrativeRoute = createRoute({
         onRegister={() => {
           void navigate({ to: "/audits/$auditId/risks", params: { auditId } });
         }}
-        onRemind={() => {
-          overlays.open("request", "new");
-        }}
         onEscalate={(flag) => {
           void navigate({
             to: ".",
@@ -401,6 +440,7 @@ export const reviewNotesRoute = evaluationRoute("review-notes");
 export const fsDisclosureRoute = evaluationRoute("fs-disclosure");
 
 export const auditRoutes = [
+  eqrRoute,
   auditsRoute,
   auditRoute,
   sourceDocumentsRoute,

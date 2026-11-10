@@ -2,6 +2,7 @@ import { type JSX, useEffect, useState } from "react";
 import { Button } from "../components/button";
 import { DoneCount } from "../components/pill";
 import {
+  GroupedTile,
   KpiGrid,
   KpiTile,
   ProgressBar,
@@ -259,6 +260,27 @@ const PRACTICE_TILES = [
   { count: 10, label: "Awaiting signature", variant: "amber", mark: "dot" },
   { count: 145, label: "Filed · Accepted", variant: "green", mark: "check" },
 ] as const;
+
+// NOT-01's mini counts: 3 CP2000 · 2 CP14 · 1 CP501 · 3 State (the nine open notices).
+const BY_TYPE = [
+  { key: "cp2000", label: "CP2000", count: 3 },
+  { key: "cp14", label: "CP14", count: 2 },
+  { key: "cp501", label: "CP501", count: 1 },
+  { key: "state", label: "State", count: 3 },
+] as const;
+
+export function GroupedTileSpecimen(): JSX.Element {
+  return (
+    <Sheet title="GroupedTile" meta="300 × 72 · title 12.5/500 ink-2 · mini counts · read-only">
+      <Row name="Counts" meaning="NOT-01: the server's counts; the tile adds nothing up">
+        <GroupedTile title="By type" items={BY_TYPE} />
+      </Row>
+      <Row name="Pending" meaning="Loading: the labels hold and the counts skeleton">
+        <GroupedTile title="By type" items={BY_TYPE} pending />
+      </Row>
+    </Sheet>
+  );
+}
 
 export function StatusTileSpecimen(): JSX.Element {
   // The tiles' open counts plus the two returns that have no tile: 79. Filed is the 145 done.

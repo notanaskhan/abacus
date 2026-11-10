@@ -146,3 +146,13 @@ class QuestionnaireAnswered(DomainEvent):
     questionnaire_id: Annotated[UUID, classified("internal")]
     question_id: Annotated[UUID, classified("internal")]
     answer_id: Annotated[UUID, classified("internal")]
+
+
+class QuestionnaireTemplatePublished(DomainEvent):
+    """T-03-T05: KNW-01's change log and T-08's roll-forward read it (T-03 US-2.2)."""
+
+    event_type: ClassVar[str] = "questionnaire_template.published"
+
+    template_id: Annotated[UUID, classified("internal")]
+    version: Annotated[int, classified("internal")]
+    applies_to_tax_year: Annotated[int | None, classified("internal")]

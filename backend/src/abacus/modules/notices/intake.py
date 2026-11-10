@@ -17,6 +17,8 @@ the intake in this one (DEC-2218). Discard records its reason. Every write is au
 
 from __future__ import annotations
 
+import json
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -29,15 +31,20 @@ from sqlalchemy import text
 from abacus.kernel import clock
 from abacus.kernel._flags import EVIDENCE_FORM_EXTRACTION
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_variant
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.engagements.api import create_work_item
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.engagements.api import assign_work_item, create_work_item, holders_of
+from abacus.modules.identity.api import AuthContext, team_of
+from abacus.modules.notices.events import (
+    NoticeCreated,
+    NoticeIntakeStarted,
+    NoticeIntakeTaxpayerNamed,
+)
 
 LOW_CONFIDENCE: Final = Decimal("0.90")
 _READY: Final = frozenset({"ready", "manual_entry", "failed"})
-_KIND: Final[dict[str, str]] = {
+FIELD_KINDS: Final[dict[str, str]] = {
     "notice.code": "code",
     "notice.tax_year": "int",
     "notice.form": "text",
@@ -69,10 +76,24 @@ class DuplicateUnresolved(DomainConflict):
     code = "duplicate_unresolved"
 
 
+class CreateAnywayReasonRequired(DomainInvalid):
+    """US-2.3: "Create anyway" past a possible duplicate names its reason."""
+
+    code = "create_anyway_reason_required"
+
+
+CREATE_ANYWAY_REASONS: Final = frozenset(
+    {"different_notice", "different_tax_year", "reissued_by_agency", "other"}
+)
+
+
 class NoNoticeEngagement(DomainConflict):
     """The client has no `notice_response` engagement yet (QN-1: created through ENG-01)."""
 
     code = "no_notice_engagement"
+
+
+_CREATE: Final = "notice_intake.confirm"
 
 
 class IntakeMoved(DomainConflict):
@@ -171,7 +192,10 @@ async def create(
 ) -> Intake:
     """An intake from a stored file: code reads it when the firm's extraction covers notices,
     otherwise a person enters it."""
-    reads = await flag_variant(ctx.tenant, EVIDENCE_FORM_EXTRACTION) != "off"
+    reads = (
+        evidence_version_id is not None
+        and await flag_variant(ctx.tenant, EVIDENCE_FORM_EXTRACTION) != "off"
+    )
     status, mode = ("extracting", "code_map") if reads else ("manual_entry", "manual")
     async with uow(ctx.tenant) as tx:
         new_id = await tx.session.scalar(
@@ -190,6 +214,8 @@ async def create(
                 "by": ctx.user_id,
             },
         )
+        if reads:
+            tx.emit(NoticeIntakeStarted(intake_id=cast(UUID, new_id)))
         tx.record("notice_intake.created", target=Target("notice_intake", cast(UUID, new_id)))
     return await intake(ctx, cast(UUID, new_id))
 
@@ -200,20 +226,25 @@ async def revise(
     expected_version: int,
     *,
     fields: Sequence[tuple[str, str | None, bool]],
-    client_id: UUID | None,
-    assignee_user_id: UUID | None,
-    notify_user_ids: Sequence[UUID] | None,
+    client_entity_id: UUID | None = None,
+    related_return_id: UUID | None = None,
+    assignee_user_id: UUID | None = None,
+    notify_user_ids: Sequence[UUID] | None = None,
 ) -> Intake:
-    """Corrections (`value_text`) and confirmations (`confirm`), each a new human value row."""
+    """Corrections (`value_text`) and confirmations (`confirm`), each a new human value row. A
+    client or return picked by the person replaces code's match; picking a client looks its
+    authorization and possible duplicate up again."""
     current = await intake(ctx, intake_id)
     if current.row_version != expected_version:
         raise IntakeMoved
     if current.status in ("created", "discarded"):
         raise NotReady(facts={"status": current.status})
     by_key = {f.key: f for f in current.fields}
+    picked = await _picked(ctx, current, by_key, client_entity_id, related_return_id)
+    named = _taxpayer_named(current, by_key, fields, client_entity_id)
     async with uow(ctx.tenant) as tx:
         for key, value, confirm in fields:
-            if key not in _KIND or _KIND[key] == "tin":
+            if key not in FIELD_KINDS or FIELD_KINDS[key] == "tin":
                 continue  # a TIN is corrected by picking the client entity, never typed
             was = by_key.get(key)
             await tx.session.execute(
@@ -227,7 +258,7 @@ async def revise(
                     "t": ctx.tenant_id,
                     "id": intake_id,
                     "k": key,
-                    "vt": _KIND[key],
+                    "vt": FIELD_KINDS[key],
                     "v": value if value is not None else (was.value_text if was else None),
                     "conf": was.confidence if (confirm and was) else None,
                     "by": ctx.user_id,
@@ -238,10 +269,18 @@ async def revise(
                 "UPDATE notice_intakes SET client_id = coalesce(:client, client_id), "
                 "assignee_user_id = coalesce(:assignee, assignee_user_id), "
                 "notify_user_ids = coalesce(:notify, notify_user_ids), "
+                "match = match || CAST(:match AS jsonb), "
+                "authorization_facts = authorization_facts || CAST(:auth AS jsonb), "
+                "duplicate_of_work_item_id = CASE WHEN :repicked THEN CAST(:dup AS uuid) "
+                "ELSE duplicate_of_work_item_id END, "
                 "row_version = row_version + 1 WHERE id = :id AND row_version = :v RETURNING id"
             ),
             {
-                "client": client_id,
+                "client": picked.client_id,
+                "match": json.dumps(picked.match),
+                "auth": json.dumps(picked.authorization),
+                "repicked": client_entity_id is not None,
+                "dup": picked.duplicate_of,
                 "assignee": assignee_user_id,
                 "notify": None if notify_user_ids is None else list(notify_user_ids),
                 "id": intake_id,
@@ -250,12 +289,90 @@ async def revise(
         )
         if moved is None:
             raise IntakeMoved
+        if named is not None:
+            tx.emit(NoticeIntakeTaxpayerNamed(intake_id=intake_id, client_entity_id=named))
         tx.record(
             "notice_intake.updated",
             target=Target("notice_intake", intake_id),
             after=Ref(version=expected_version + 1),
         )
     return await intake(ctx, intake_id)
+
+
+def _taxpayer_named(
+    current: Intake,
+    by_key: Mapping[str, FieldValue],
+    fields: Sequence[tuple[str, str | None, bool]],
+    client_entity_id: UUID | None,
+) -> UUID | None:
+    """The entity, when this revise leaves a notice no form map read with both a taxpayer and a
+    year: what the §7216 gate needs to answer for the responder (N-04-T19; DEC-2387)."""
+    from abacus.modules.notices.intake_read import NO_MAP, year_of
+
+    if current.status != "manual_entry" or current.match.get("manual_reason_code") != NO_MAP:
+        return None
+    typed = {key: value for key, value, _confirm in fields if value is not None}
+    if client_entity_id is None and "notice.tax_year" not in typed:
+        return None
+    was = by_key.get("notice.tax_year")
+    year = typed.get("notice.tax_year", was.value_text if was else None)
+    entity = client_entity_id or current.match.get("client_entity_id")
+    if year_of(year) is None or entity is None:
+        return None
+    return UUID(str(entity))
+
+
+@dataclass(frozen=True)
+class _Picked:
+    client_id: UUID | None
+    match: Mapping[str, object]
+    authorization: Mapping[str, object]
+    duplicate_of: UUID | None
+
+
+async def _picked(
+    ctx: AuthContext,
+    current: Intake,
+    by_key: Mapping[str, FieldValue],
+    client_entity_id: UUID | None,
+    related_return_id: UUID | None,
+) -> _Picked:
+    """The person's pick of a client or return, with what follows from the client."""
+    match: dict[str, object] = {}
+    if related_return_id is not None:
+        match["return_id"] = str(related_return_id)
+    if client_entity_id is None:
+        return _Picked(None, match, {}, None)
+    from abacus.modules.notices.intake_read import (
+        authorization_of,
+        duplicate_of,
+        iso_date,
+        year_of,
+    )
+    from abacus.modules.organisations.api import client_of_entity
+
+    client_id = await client_of_entity(ctx.tenant, client_entity_id)
+    if client_id is None:
+        raise NotFound("client_entity")
+    match |= {"client_entity_id": str(client_entity_id), "method": "manual", "candidates": []}
+
+    def value(key: str) -> str | None:
+        found = by_key.get(key)
+        return found.value_text if found else None
+
+    async with tenant_session(ctx.tenant) as session:
+        duplicate = await duplicate_of(
+            session,
+            ctx.tenant,
+            client_entity_id,
+            value("notice.code"),
+            iso_date(value("notice.date")),
+            current.evidence_version_id,
+        )
+    authorization = await authorization_of(
+        ctx.tenant, client_entity_id, year_of(value("notice.tax_year"))
+    )
+    return _Picked(client_id, match, authorization, duplicate)
 
 
 def _date(value: str | None) -> date | None:
@@ -270,6 +387,13 @@ def _money(value: str | None) -> Decimal | None:
         return None if value is None else Decimal(value.replace(",", ""))
     except InvalidOperation:
         return None
+
+
+def notice_code_of(printed: str) -> str:
+    """The stored code from what a notice prints: "Notice of tax due" reads NOTICE-OF-TAX-DUE. The
+    column takes only capitals, digits and dashes (0089), and a state notice prints words."""
+    slug = re.sub(r"[^A-Z0-9-]+", "-", printed.upper()).strip("-")[:20].rstrip("-")
+    return slug if len(slug) >= 2 else "NOTICE"
 
 
 async def notice_engagement_for(ctx: AuthContext, client_entity_id: UUID) -> UUID | None:
@@ -288,9 +412,14 @@ async def create_notice(
     engagement_id: UUID | None,
     related_return_id: UUID | None,
     create_anyway: bool,
+    notify_user_ids: Sequence[UUID] = (),
+    create_anyway_reason: str | None = None,
 ) -> tuple[UUID, UUID]:
     """Create notice: the work item, the notice's columns, Received, and the intake created."""
     current = await intake(ctx, intake_id)
+    past_duplicate = current.duplicate_of is not None and create_anyway
+    if past_duplicate and create_anyway_reason not in CREATE_ANYWAY_REASONS:
+        raise CreateAnywayReasonRequired
     if current.status not in _READY:
         raise NotReady(facts={"status": current.status})
     if current.unconfirmed:
@@ -300,6 +429,9 @@ async def create_notice(
     engagement = engagement_id or await notice_engagement_for(ctx, client_entity_id)
     if engagement is None:
         raise NoNoticeEngagement
+    from abacus.modules.notices.service import assignee_on_team
+
+    await assignee_on_team(ctx, engagement, assignee_id)
     values = {f.key: f for f in current.fields}
     code = (values["notice.code"].value_text if "notice.code" in values else None) or "NOTICE"
     year = values.get("notice.tax_year")
@@ -314,7 +446,7 @@ async def create_notice(
         client_entity_id=client_entity_id,
         due_on=respond_by,
         details={
-            "notice_code": code[:20],
+            "notice_code": notice_code_of(code),
             "received_on": (await clock.today(ctx.tenant)).isoformat(),
         },
     )
@@ -331,6 +463,7 @@ async def create_notice(
                 "amount_tax = :tax, amount_interest = :interest, amount_penalty = :penalty, "
                 "amount_total = :total, interest_to = :it, taxpayer_tin_last4 = :last4, "
                 "agency_name = :agency, related_return_id = :ret, assignee_user_id = :assignee, "
+                "authorization_kind = :auth_kind, authorization_id = :auth_id, "
                 "source_intake_id = :intake, source_evidence_version_id = :ev, "
                 "row_version = row_version + 1 "
                 "WHERE work_item_id = :w"
@@ -349,8 +482,10 @@ async def create_notice(
                 "it": _date(text_of("notice.interest_to")),
                 "last4": values["taxpayer.tin"].last4 if "taxpayer.tin" in values else None,
                 "agency": text_of("agency.name"),
-                "ret": related_return_id,
+                "ret": related_return_id or _uuid(current.match.get("return_id")),
                 "assignee": assignee_id,
+                "auth_kind": str(current.authorization.get("kind", "none")),
+                "auth_id": _uuid(current.authorization.get("id")),
                 "intake": intake_id,
                 "ev": current.evidence_version_id,
                 "w": work_item,
@@ -367,18 +502,104 @@ async def create_notice(
         moved = await tx.session.scalar(
             text(
                 "UPDATE notice_intakes SET status = 'created', created_work_item_id = :w, "
+                "create_anyway_reason_code = :reason, "
                 "row_version = row_version + 1 WHERE id = :id AND status = :was RETURNING id"
             ),
-            {"w": work_item, "id": intake_id, "was": current.status},
+            {
+                "w": work_item,
+                "reason": create_anyway_reason if past_duplicate else None,
+                "id": intake_id,
+                "was": current.status,
+            },
+        )
+        if moved is None:
+            raise IntakeMoved
+        tx.emit(
+            NoticeCreated(
+                work_item_id=work_item,
+                assignee_id=assignee_id,
+                notify_user_ids=tuple(notify_user_ids),
+            )
+        )
+        tx.record(
+            "notice.created",
+            target=Target("notice", work_item),
+            after=Ref(intake=intake_id, past_duplicate=int(current.duplicate_of is not None)),
+        )
+    await _assign_functions(
+        ctx,
+        work_item,
+        engagement,
+        assignee_id,
+        related_return_id or _uuid(current.match.get("return_id")),
+    )
+    return work_item, engagement
+
+
+async def _assign_functions(
+    ctx: AuthContext,
+    work_item: UUID,
+    engagement: UUID,
+    assignee: UUID,
+    related_return: UUID | None,
+) -> None:
+    """N-04 F2: the assignee prepares; the manager reviewer and signer are the related return's, or
+    the one person holding that role on the client's team. Without these no one on a notice holds
+    a function, and every action the matrix gates on one is refused (DEC-2392)."""
+    from abacus.modules.notices.service import assignee_on_team
+
+    await assign_work_item(ctx, work_item, assignee, "preparer", authorised_under=_CREATE)
+    team = await team_of(ctx.tenant_id, engagement)
+    for function, role in (("manager_reviewer", "manager"), ("signer", "engagement_partner")):
+        people = await holders_of(ctx.tenant, related_return, function) if related_return else []
+        people = people or sorted({u for u, held in team if held == role}, key=str)
+        if len(people) == 1:
+            await assignee_on_team(ctx, engagement, people[0])
+            await assign_work_item(ctx, work_item, people[0], function, authorised_under=_CREATE)
+
+
+def _uuid(value: object) -> UUID | None:
+    return None if value is None else UUID(str(value))
+
+
+async def attach(ctx: AuthContext, intake_id: UUID, notice_id: UUID) -> Intake:
+    """ "Attach to N2": the file belongs to an existing notice, so no new notice is made. The
+    intake closes on that notice; the person's record of which file went where."""
+    from abacus.modules.notices.service import notice as read_notice
+
+    target = await read_notice(ctx, notice_id)  # 404 for a notice this person may not see
+    current = await intake(ctx, intake_id)
+    if current.status in ("created", "discarded"):
+        raise NotReady(facts={"status": current.status})
+    from abacus.modules.evidence.api import file_copy_onto_work_item
+
+    async with uow(ctx.tenant) as tx:
+        if current.evidence_version_id is not None:
+            # DEC-2953: the document is filed on N2 as a supporting document (the same bytes).
+            await file_copy_onto_work_item(
+                tx,
+                tenant_id=ctx.tenant_id,
+                version_id=current.evidence_version_id,
+                engagement_id=target.engagement_id,
+                work_item_id=notice_id,
+                title=f"{target.notice_code} supporting document",
+                actor_id=str(ctx.user_id),
+            )
+        moved = await tx.session.scalar(
+            text(
+                "UPDATE notice_intakes SET status = 'created', created_work_item_id = :w, "
+                "row_version = row_version + 1 WHERE id = :id AND status = :was RETURNING id"
+            ),
+            {"w": notice_id, "id": intake_id, "was": current.status},
         )
         if moved is None:
             raise IntakeMoved
         tx.record(
-            "notice.created",
-            target=Target("notice", work_item),
-            after=Ref(intake=intake_id),
+            "notice_intake.attached",
+            target=Target("notice_intake", intake_id),
+            after=Ref(notice=notice_id),
         )
-    return work_item, engagement
+    return await intake(ctx, intake_id)
 
 
 async def discard(ctx: AuthContext, intake_id: UUID, reason_code: str) -> Intake:

@@ -52,6 +52,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "evidence",  # SPEC-029 (TASK-054): upload processing
         "fieldwork",  # SPEC-037 (TASK-083): procedure selection
         "identity",  # P-08-T17: access changes end portal sessions and trusted devices
+        "notices",  # N-04-T16: the respond-by alerts and the follow-up timer
         "notifications",
         "platform",  # Q-01-T45: tenant provisioning
         "portal",  # R-01-T13: the request owner hears of a third party's upload
@@ -81,7 +82,12 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     # SPEC-009 adds knowledge embedding beside screening.
     # Q-01-T26: the worker no longer imports notifications (its purge is a Schedule).
     catalogue = importlib.import_module("abacus.modules.notifications.api").CATALOGUE
-    assert set(built.handlers) == set(catalogue) | {
+    # A-07-T22 (DEC-2806): the completion projector follows the facts its checklist reads.
+    projector = importlib.import_module("abacus.modules.assurance.completion_projector").SUBSCRIBED
+    assert set(built.handlers) == set(catalogue) | set(projector) | {
+        # P-10-T27 (DEC-3117): the real-time invalidations of `/v1/events`.
+        "notification.created",
+        "request_item.status_changed",
         EVIDENCE_VERSION_CREATED,
         "knowledge_document.added",
         "client_invitation.issued",  # SPEC-015
@@ -89,6 +95,12 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "staff_invitation.issued",  # SPEC-024 (TASK-041)
         "request_item.classified",  # SPEC-022: automatic retrieval
         "inbox_file.added",  # SPEC-027 (TASK-050): the engagement agent
+        "filing.acknowledged",  # T-03-T07: estimates and the extension answer the ack
+        "notice_intake.started",  # N-04-T07 (DEC-2326)
+        "notice_intake.taxpayer_named",  # N-04-T19 (DEC-2387)
+        "notice_analysis.requested",  # N-04-T11 (DEC-2359)
+        "section_draft.finished",  # A-04-T29 (DEC-2327)
+        "ocr_run.refused",  # P-11: a refused OCR run
         "firm.agents_resumed",
         "engagement.created",
         "due_dates.changed",  # SPEC-027 (TASK-051)
@@ -105,9 +117,18 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "portal.link_renew_requested",  # P-08-T21: a renewed link's email, token at delivery
         "portal_mfa.reset_notice_requested",  # P-08-T21: the firm reset the second step
         "gate.met",  # A-01-T05: the phase a computed gate opens is derived
+        "evidence_text.ready",  # P-11-T26: form extraction starts
+        "notice.created",  # N-04-T16: the notice's timers start
+        "statement.draft_requested",  # A-06-T25: starts FsDraftWorkflow
+        "statement.tie_out_requested",  # A-06-T25: starts TieOutWorkflow
+        "ebp.form5500.draft_received",  # A-05-T54: starts Form5500TieOut
+        "notice.respond_by_soon",  # N-04-T16: C16 to the assignee
+        "notice.follow_up_due",  # N-04-T16: C16 to the assignee
+        "notice_response.ready_to_send",  # N-04-T16: C16 to the assignee
         "evidence_version.withdrawn",  # P-06-T19: the withdrawal purge starts
         "fulfilment.voided",  # R-01 Story 2.2 (TASK-1248): the gates recompute
         "upload_review.recorded",  # P-06-T20: the screening aggregate recomposes
+        "client_approval.requested",  # R-02-T14 (DEC-3140): the approval-request email
         # P-04-T16 (C13): the human-gate projector reconciles the gates these may change.
         "proposal.recorded",
         "guidance_draft.decided",
@@ -127,6 +148,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "engagement_export.expired",
         "engagement_export.voided",
         "proposed_entries.sent_to_client",  # A-06-T10: the held send goes out after commit
+        "questionnaire.answered",  # T-03-T04: an answer's effects run after commit
+        "attribute_test.version_created",  # A-05-T22: a sign-off on the older version goes stale
         # P-07-T47 (DEC-539): the C13 projector's engagement gates.
         "acceptance.decided",
         "independence.confirmed",
@@ -158,6 +181,27 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "checkpoint.approved",  # T-01-T36: an approved checkpoint moves the filing on
         "return.delivered",  # T-01-T41: a filed return's delivery
         "generated_document.render_requested",  # P-11-T11: the render job
+        # A-07-T15, I-01-T23: C13's new events, and inbound mail for the activity projector.
+        "archive.locked",
+        "archive_addition.decided",
+        "envelope.drafted",
+        "envelope.signer_signed",
+        "envelope.superseded",
+        "eqr.concurred",
+        "governance_communication.sent",
+        "inbound_message.recorded",
+        "notice.response_sent",
+        "rep_letter.approved",
+        "report.released",
+        # I-01-T23 (S29 leftovers, DEC-2609): a return waiting for its engine export.
+        "tax_return.approved",
+        "engine_sync.exported",
+        # I-01-T23 (DEC-2613): the firm-level gates; `methodology.review_requested`,
+        # `wall.created` and `wall.approved` already had subscribers (notifications).
+        "methodology_version.approved",
+        "methodology_version.discarded",
+        "wall.removed",
+        "suggestion.created",  # A-06-T16 seam: a suggested checklist answer lands on its item
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

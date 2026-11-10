@@ -60,6 +60,8 @@ export const audScreens = {
     status: "planned",
     path: "/audits/$auditId/controls", // A-04-T32: a–e live, f on fixtures until A-06 registers
   },
+  // A-04-T37: a to e on fixtures, the AUD-02 cockpit's Service Organizations canvas; planned until
+  // its AUD-11 link has a builder (no path of its own, the links rule).
   "AUD-10": { name: "Service organizations & SOC 1 evaluation", status: "planned", path: null },
   // A-03-T11: a, b, d, the picker and the C-20 states on fixtures, the AUD-02 cockpit's Sample
   // Selection canvas (no path of its own); c, e and f are A-03-T15's.
@@ -81,20 +83,23 @@ export const audScreens = {
     status: "planned",
     path: "/audits/$auditId/misstatements",
   },
+  // A-06-T24: a to f on fixtures, under the Evaluation tabs.
   "AUD-17": {
     name: "Review notes & sign-off matrix",
-    status: "planned",
+    status: "fixture",
     path: "/audits/$auditId/review-notes",
   },
-  "AUD-18": { name: "EQR workspace", status: "planned", path: null },
+  // A-07-T17: a to e on fixtures. Live with A-07-T18's service.
+  "AUD-18": { name: "EQR workspace", status: "fixture", path: "/audits/$auditId/eqr" },
   "AUD-19": {
     name: "Completion (checklist · subsequent events · legal letters · going concern)",
     status: "planned",
     path: "/engagements/$engagementId/completion", // legacy CompletionRelease (SPEC-314)
   },
+  // A-06-T30: a to f on fixtures, under the Evaluation routes.
   "AUD-20": {
     name: "Financial statements & disclosure checklist",
-    status: "planned",
+    status: "fixture",
     path: "/audits/$auditId/fs-disclosure",
   },
   "AUD-21": { name: "Representation letter builder", status: "planned", path: null },

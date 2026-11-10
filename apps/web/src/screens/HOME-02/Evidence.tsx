@@ -1,5 +1,14 @@
 import type { HumanGateOut } from "@abacus/api-client";
-import { AgentMonogram, AgentText, Button, Pill, Segmented, TallyStrip, cn } from "@abacus/ui";
+import {
+  AgentMonogram,
+  AgentText,
+  Button,
+  Icon,
+  Pill,
+  Segmented,
+  TallyStrip,
+  cn,
+} from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { useOpenSourceViewer } from "../../app-core/overlay-host";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
@@ -87,8 +96,9 @@ function GateEvidence({
       </Button>
     ) : summary?.planned !== undefined && PLANNED_VISIBLE ? (
       // TXP-08 / TXP-01 are later waves: the link is drawn, planned, and goes nowhere yet.
-      <span data-planned="" className="text-body text-ink-2">
+      <span data-planned="" className="mr-[4px] flex items-center gap-[6px] text-body text-ink-2">
         {summary.planned}
+        <Icon name="arrow-up-right" size={13} className="text-ink-3" />
       </span>
     ) : null;
   return (
@@ -151,12 +161,8 @@ function Frame({
 function Cell({ cell, first }: { cell: EvidenceCell; first: boolean }): JSX.Element {
   if (cell.pill !== undefined) {
     return (
-      <Pill
-        variant={cell.pill.variant}
-        size="sm"
-        {...(cell.pill.check === true ? { check: true } : {})}
-      >
-        {cell.text}
+      <Pill variant={cell.pill.variant} size="tally">
+        {cell.pill.check === true ? `${cell.text} ✓` : cell.text}
       </Pill>
     );
   }
@@ -178,23 +184,33 @@ function Summary({ summary }: { summary: EvidenceSummary }): JSX.Element {
   return (
     <div data-home02="summary" className="flex flex-col">
       {(summary.tally !== undefined || summary.aside !== undefined) && (
-        <div className="flex items-center gap-[8px] px-[12px] py-[8px] hairline-b">
+        <div className="flex items-center gap-[8px] px-[12px] py-[7px] hairline-b">
           {summary.tally !== undefined && (
-            <TallyStrip
-              label={summary.title}
-              items={summary.tally}
-              className="max-w-[420px] flex-1"
-            />
+            <TallyStrip label={summary.title} items={summary.tally} density="compact" />
           )}
           {summary.aside !== undefined && (
-            <Pill variant={summary.aside.variant} size="sm">
+            <Pill variant={summary.aside.variant} size="card-state">
               {summary.aside.text}
             </Pill>
           )}
         </div>
       )}
       {table !== undefined && (
-        <table aria-label={table.label} className="w-full border-collapse tabular-nums">
+        <table
+          aria-label={table.label}
+          className={cn(
+            "w-full border-collapse tabular-nums",
+            table.widths !== undefined && "table-fixed",
+          )}
+        >
+          {table.widths !== undefined && (
+            <colgroup>
+              {table.widths.map((w, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: widths follow the columns
+                <col key={i} style={{ width: w }} />
+              ))}
+            </colgroup>
+          )}
           <thead>
             <tr className="h-[30px] bg-band-hd">
               {table.columns.map((c, i) => (
@@ -202,8 +218,9 @@ function Summary({ summary }: { summary: EvidenceSummary }): JSX.Element {
                   key={c}
                   scope="col"
                   className={cn(
-                    "px-[12px] text-th font-medium text-ink-3 hairline-b",
-                    i === 0 ? "text-left" : "text-right",
+                    "text-th font-medium text-ink-3 hairline-b",
+                    i === 0 ? "pr-[6px] pl-[12px] text-left" : "px-[6px] text-right",
+                    i === table.columns.length - 1 && "pr-[6px] pl-0",
                   )}
                 >
                   {c}
@@ -227,7 +244,11 @@ function Summary({ summary }: { summary: EvidenceSummary }): JSX.Element {
                   <td
                     // biome-ignore lint/suspicious/noArrayIndexKey: cells follow the columns
                     key={i}
-                    className={cn("px-[12px] hairline-b", i === 0 ? "text-left" : "text-right")}
+                    className={cn(
+                      "hairline-b",
+                      i === 0 ? "pr-[6px] pl-[10px] text-left" : "px-[6px] text-right",
+                      i === row.cells.length - 1 && "pr-[6px] pl-0",
+                    )}
                   >
                     <Cell cell={cell} first={i === 0} />
                   </td>
@@ -240,7 +261,7 @@ function Summary({ summary }: { summary: EvidenceSummary }): JSX.Element {
       {summary.calc !== undefined && (
         <div
           data-home02="calc"
-          className="mx-[12px] my-[12px] flex flex-col gap-[4px] rounded-nested bg-shell p-[12px] text-dense leading-[1.6]"
+          className="mx-[12px] my-[12px] flex flex-col gap-[4px] rounded-nested bg-shell p-[12px] text-dense leading-[1.3] shadow-e1"
         >
           {summary.calc.lines.map((l) => (
             <p
@@ -248,7 +269,7 @@ function Summary({ summary }: { summary: EvidenceSummary }): JSX.Element {
               className={cn(
                 "flex justify-between gap-[12px] tabular-nums",
                 l.result === true &&
-                  "font-medium shadow-[inset_0_0.5px_0_var(--color-hair)] pt-[4px]",
+                  "font-medium shadow-[inset_0_0.5px_0_var(--color-hair)] pt-[8px]",
               )}
             >
               <span>{l.label}</span>
@@ -263,7 +284,7 @@ function Summary({ summary }: { summary: EvidenceSummary }): JSX.Element {
             </p>
           ))}
           {summary.calc.note !== undefined && (
-            <p className="text-meta text-ink-3">{summary.calc.note}</p>
+            <p className="pt-[6px] text-meta leading-[1.45] text-ink-3">{summary.calc.note}</p>
           )}
         </div>
       )}

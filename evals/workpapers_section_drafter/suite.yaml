@@ -787,3 +787,44 @@ cases:
         quote: 'Balanced Fund 12/31/2025 88,200.00'
       - step: S1
         quote: Agree the certified Summary of Net Trust Assets to the fund 
+# A-05-T56 (DEC-2711): Granite Peak's vendor master against the minutes; the director's name never
+# appears, only the minutes reference, and nothing is concluded.
+- id: granite_peak_related_parties_peakline
+  mode: related_parties
+  engagement: Granite Peak Outfitters FY2025
+  key: true
+  steps:
+  - key: BH-FS-550:2
+    text: Compare the vendor and customer masters with the minutes and the HR roster for related parties
+  documents:
+  - label: D1
+    name: Vendor master.csv
+    pages:
+    - 'Peakline Freight LLC, remit to 418 Cedar Ridge Rd, Bozeman MT.'
+  - label: D2
+    name: Board minutes Feb 12, 2026.pdf
+    pages:
+    - 'Present: Avery Lindqvist (director), home address 418 Cedar Ridge Rd, Bozeman MT.'
+  labels:
+    values:
+      B2: Peakline Freight LLC
+    forbidden:
+    - Avery Lindqvist
+    - is a related party
+  fake_answer:
+    cells:
+    - cell: B2
+      text: Peakline Freight LLC
+      citations:
+      - document: D1
+        page: 1
+        quote: 'Peakline Freight LLC, remit to 418 Cedar Ridge Rd, Bozeman MT'
+      - step: S1
+        quote: Compare the vendor and customer masters with the minutes and
+    - cell: C2
+      text: remittance address matches the home address of a director in the board minutes; management should confirm
+      citations:
+      - document: D2
+        page: 1
+        quote: 'home address 418 Cedar Ridge Rd, Bozeman MT'
+

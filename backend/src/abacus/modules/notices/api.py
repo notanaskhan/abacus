@@ -4,10 +4,21 @@ Pre-registered (F-03-T08; ADR-140). N-04-T02 (DEC-2051): the notices v1 contract
 (`docs/contracts/notices.md`).
 """
 
+from abacus.kernel.audit_owners import register_client_owners, register_engagement_owners
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.notices.audit_targets import (
+    CLIENT_KINDS,
+    ENGAGEMENT_KINDS,
+    intake_clients,
+    notice_engagements,
+)
 from abacus.modules.notices.contract import router
 from abacus.modules.notices.kind import NoticeKind
+
+# DEC-2264: the trail places a notice on its engagement and an intake on its client.
+register_engagement_owners(ENGAGEMENT_KINDS, notice_engagements)
+register_client_owners(CLIENT_KINDS, intake_clients)
 
 # F-03-T22: the `notice` work-item kind.
 register_work_item_kind("notice", NoticeKind())
@@ -16,6 +27,13 @@ register_work_item_kind("notice", NoticeKind())
 from abacus.modules.notices.home_counts import register_home_counts  # noqa: E402
 
 register_home_counts()
+
+# N-04-T06 (DEC-2950): the notice's search document (C15).
+from abacus.modules.notices.search import KIND as _SEARCH_KIND  # noqa: E402
+from abacus.modules.notices.search import notice_search_document  # noqa: E402
+from abacus.modules.platform.api import register_search_projection  # noqa: E402
+
+register_search_projection(_SEARCH_KIND, notice_search_document)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)
@@ -42,3 +60,97 @@ register_gate_kind("notice_response_send", _response.send_ready)
 from abacus.modules.notices.intake_sources import register as _register_sources  # noqa: E402
 
 _register_sources()  # N-04-T13 (DEC-2245): the answer effect and the two triage destinations
+
+# N-04-T16 (DEC-2311): the response's C11 kind, C7 source, workflow and consumer.
+from abacus.modules.notices import sending as _sending  # noqa: E402
+from abacus.modules.notices.response_activities import (  # noqa: E402
+    ACTIVITIES as _RESPONSE_ACTIVITIES,
+)
+from abacus.modules.notices.response_workflow import NoticeResponseWorkflow  # noqa: E402
+from abacus.modules.notices.response_workflow_types import (  # noqa: E402
+    AlertInput as AlertInput,
+)
+from abacus.modules.notices.response_workflow_types import (  # noqa: E402
+    FollowUpInput as FollowUpInput,
+)
+from abacus.modules.notices.response_workflow_types import (  # noqa: E402
+    NoticeResponseInput as NoticeResponseInput,
+)
+
+_sending.register()
+
+# N-04-T07 (DEC-2326): the intake's read.
+from abacus.modules.notices import intake_read as _intake_read  # noqa: E402
+
+# N-04-T11 (DEC-2359): the analysis runs in the background.
+from abacus.modules.notices.analysis_activities import (  # noqa: E402
+    ACTIVITIES as _ANALYSIS_ACTIVITIES,
+)
+from abacus.modules.notices.analysis_activities import (  # noqa: E402
+    SUBSCRIPTIONS as _ANALYSIS_SUBSCRIPTIONS,
+)
+from abacus.modules.notices.analysis_workflow import NoticeAnalysisWorkflow  # noqa: E402
+from abacus.modules.notices.analysis_workflow_types import (  # noqa: E402
+    NoticeAnalysisInput as NoticeAnalysisInput,
+)
+from abacus.modules.notices.intake_activities import (  # noqa: E402
+    ACTIVITIES as _INTAKE_ACTIVITIES,
+)
+from abacus.modules.notices.intake_workflow import (  # noqa: E402
+    NoticeIntakeRereadWorkflow,
+    NoticeIntakeWorkflow,
+)
+from abacus.modules.notices.intake_workflow_types import (  # noqa: E402
+    IntakeReadStep as IntakeReadStep,
+)
+from abacus.modules.notices.intake_workflow_types import (  # noqa: E402
+    NoticeIntakeInput as NoticeIntakeInput,
+)
+
+ACTIVITIES = (*_RESPONSE_ACTIVITIES, *_INTAKE_ACTIVITIES, *_ANALYSIS_ACTIVITIES)
+SUBSCRIPTIONS = {
+    **_sending.SUBSCRIPTIONS,
+    **_intake_read.SUBSCRIPTIONS,
+    **_ANALYSIS_SUBSCRIPTIONS,
+}
+WORKFLOWS: dict[type, str] = {
+    NoticeResponseWorkflow: "time_sensitive",
+    NoticeIntakeWorkflow: "interactive",
+    NoticeIntakeRereadWorkflow: "interactive",
+    NoticeAnalysisWorkflow: "background",
+}
+
+# N-04-T19 (DEC-2313): the analysis's agent step.
+from abacus.modules.notices.agent_step import step as _agent_step  # noqa: E402
+from abacus.modules.notices.analysis import register_agent_step  # noqa: E402
+
+register_agent_step(_agent_step)
+
+# N-04-T25: the responder's shadow score pairs its runs with the signer's decided positions.
+from abacus.modules.agents.api import register_notice_shadows  # noqa: E402
+from abacus.modules.notices.agent_step import decided_shadows as _decided_shadows  # noqa: E402
+
+register_notice_shadows(_decided_shadows)
+
+# N-04-T21: the scenario loader reaches the intake path through this interface.
+from abacus.modules.notices import intake as _intake  # noqa: E402
+from abacus.modules.notices import service as _service  # noqa: E402
+
+create_notice_intake = _intake.create
+create_notice_from_intake = _intake.create_notice
+notice_engagement_for = _intake.notice_engagement_for
+revise_notice_intake = _intake.revise
+move_notice = _service.move
+read_notice = _service.notice
+
+# N-04-T22: POR-02's info row and CLI-05's Open notices band.
+from abacus.modules.notices import portal_home as _portal_home  # noqa: E402
+from abacus.modules.organisations.api import register_open_notices  # noqa: E402
+
+portal_notice_rows = _portal_home.portal_notice_rows
+register_open_notices(_portal_home.open_notice_rows)
+
+# I-01-T23: the response's send on HOME-02.
+from abacus.modules.notices.gate_sources import register_notice_gates  # noqa: E402
+
+register_notice_gates()

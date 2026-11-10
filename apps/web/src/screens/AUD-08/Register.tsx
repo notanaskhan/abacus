@@ -1,7 +1,13 @@
-import type { RegisterOut, RegisterRiskOut } from "@abacus/api-client";
-import { riskLinkageOptions, riskRegisterOptions } from "@abacus/api-client/query";
-import { PaneAction, Pill, Segmented, ViewStateBody, type ViewState, cn } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import type { LinkTargetOut, RegisterOut, RegisterRiskOut } from "@abacus/api-client";
+import {
+  riskLinkMutation,
+  riskLinkageOptions,
+  riskLinkageQueryKey,
+  riskRegisterOptions,
+  riskRegisterQueryKey,
+} from "@abacus/api-client/query";
+import { PaneAction, Pill, Segmented, ViewStateBody, type ViewState, cn, toast } from "@abacus/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
@@ -192,6 +198,8 @@ function RiskRow({
   );
 }
 
+const REVISING_POLL_MS = 5000;
+
 export function RiskRegisterPage({
   auditId,
   filter,
@@ -217,10 +225,24 @@ export function RiskRegisterPage({
   const register = useQuery({
     ...riskRegisterOptions(path),
     enabled: on && engagementId !== undefined,
+    // A-04-T29: poll while the re-draft after Internal Control runs (AC4.8).
+    refetchInterval: (query) => (query.state.data?.revising === true ? REVISING_POLL_MS : false),
   });
   const linkage = useQuery({
     ...riskLinkageOptions(path),
     enabled: on && engagementId !== undefined,
+  });
+  // A-04-T26: "Link EBP-03…" links the risk; the register and the matrix read again.
+  const queryClient = useQueryClient();
+  const link = useMutation({
+    ...riskLinkMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: riskLinkageQueryKey(path) });
+      void queryClient.invalidateQueries({ queryKey: riskRegisterQueryKey(path) });
+    },
+    onError: () => {
+      toast.show({ kind: "error", text: COPY.linkage.failed });
+    },
   });
   let state: ViewState = { kind: "ready" };
   if (!on) state = { kind: "flag-off", flag: "assurance.risk_register" };
@@ -238,6 +260,7 @@ export function RiskRegisterPage({
     if (target !== undefined) responses.set(cell.risk_code, target.label);
   }
   const data = register.data;
+  const canLink = data?.allowed_actions.includes("risk.link") === true;
   const rows = (data?.risks ?? []).filter((r) => filter !== "unaddressed" || r.unaddressed);
   const groups = (["financial_statement", "assertion"] as const)
     .map((level) => ({ level, rows: rows.filter((r) => r.level === level) }))
@@ -281,9 +304,24 @@ export function RiskRegisterPage({
                 onFilter(f ? "unaddressed" : null);
               }}
             />
-            {revising && <RevisingHeader />}
+            {(revising || data.revising === true) && <RevisingHeader />}
             {tab === "Linkage" && linkage.data !== undefined && (
-              <LinkageMatrix linkage={linkage.data} />
+              <LinkageMatrix
+                linkage={linkage.data}
+                {...(canLink
+                  ? {
+                      onLink: (code: string, target: LinkTargetOut) => {
+                        const risk = data.risks.find((r) => r.code === code);
+                        if (risk === undefined || engagementId === undefined) return;
+                        link.mutate({
+                          path: { engagement_id: engagementId, risk_id: risk.id },
+                          body: { target_kind: target.kind, target_ref: target.ref },
+                          headers: { "Idempotency-Key": crypto.randomUUID() },
+                        });
+                      },
+                    }
+                  : {})}
+              />
             )}
             <div
               hidden={tab === "Linkage"}

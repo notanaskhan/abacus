@@ -54,6 +54,12 @@ variable "auth_rate_limit_paths" {
   }
 }
 
+variable "stream_path_regex" {
+  description = "Server-sent event streams (lower-cased path), not counted by rule 1's general rate (P-10-T15): run, session, badge and invalidation streams (SPEC-647 §3.8)."
+  type        = string
+  default     = "^/v1/(?:events|me/agent-events|agent-runs/[^/]+/events|workbench/sessions/[^/]+/events)$"
+}
+
 variable "upload_path_regex" {
   description = "File routes (lower-cased path): exempt from rule 21's body-size block, rate-limited by rule 3 and capped by rule 22. Evidence and portal uploads, staff-logged intake files, every raw-body import (N-01-T24) and portal drops (R-01-T35)."
   type        = string

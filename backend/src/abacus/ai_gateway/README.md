@@ -13,6 +13,10 @@ The only path to a model (ADR-019, ADR-050, ADR-052, ADR-057, ADR-070). Owns `us
   - Untrusted task fields become JSON `<untrusted>` blocks.
   - More than `MAX_ROWS` rows raises `DatasetTooLarge`.
   - The task layer is never cut mid-text. `trim=` names a list to shorten from the end; otherwise `ContextTooLarge`.
+- `ContextV2Builder(prompt_ref, tier)` (P-10-T21, `context_v2.py`) assembles `converse()`'s context in nine fixed layers: instructions (a registered prompt; anything else is `InstructionsNotRegistered`), tools (sorted; registry descriptions), firm (`<firm_instruction>`), learned, skill (`<firm_procedure>`), engagement, examples, conversation, task. Identical inputs give a byte-identical `prefix()`; cache breakpoints follow the last firm-level layer and the last system layer.
+  - Per-tier input budgets: small 8k, medium 32k, large 64k tokens; system layers are cut at their share, the task never.
+  - Tool results enter only through `tool_result_block`/`render_tool_result` (untrusted fields in `<untrusted>` blocks); any other tool result in the conversation is `UnwrappedToolResult`.
+  - Compaction keeps the last turns (never splitting a tool call from its result) plus a summary from `register_compactor`'s compactor (W-02).
 - `prompt(ref)`, `registry()`, `UnknownPrompt`, `estimate_tokens`: prompts live in `prompts/<id>/<version>.txt`; a reference is `id@vN`.
 - `ModelProvider`, `configure_provider`, `FakeModel` (local and test only), `ProviderError`, `MODELS` (tier to model and prices).
 
@@ -75,7 +79,10 @@ The same model family is reachable through two routes, `direct` (the provider's 
 **When a route can be used:**
 - it is in `model_routes`;
 - it has a parity report from the last 90 days (`route_parity`; run `make route-parity ROUTE=…`);
-- outside synthetic environments, the agent has passed its evaluation on that route.
+- outside synthetic environments, the agent has passed its evaluation on that route;
+- for a loop-shaped spec (multi-turn tool use through `converse()`), the report also passed tools
+  and documents (`tool_parity: true` on the `route_parity` record; `routes.route_enabled_for`,
+  P-10-T13).
 
 **Admission:** admission walks tiers, then routes. Capacity and blocks are keyed by route and model.
 

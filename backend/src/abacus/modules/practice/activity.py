@@ -4,7 +4,8 @@
 - **Allowlist** (`SOURCES`): the outbox events that become a row, each mapped to an activity code
   (`ACTIVITY_TYPES`, the table's CHECK): a client upload (`evidence.uploaded`), a follow-up sent
   (`follow_up.sent`), a letter recorded (`gate.met` for G3, the interim recorded letter) and an
-  agent pre-screen (`upload_review.recorded`). Inbound mail and envelopes join in S29 (I-01-T23).
+  agent pre-screen (`upload_review.recorded`). I-01-T23 adds inbound mail filed to an engagement
+  and envelopes sent or completed (`envelope.send_approved`, delivered after the Undo window).
 - **The projector** (`on_event`, `practice.api.SUBSCRIPTIONS`): one row per event, built from the
   event's identifiers and the engagement's client and office (read from `engagements`, under the
   event's tenant as the system), inserted with `source_event_id` = the event id and `ON CONFLICT
@@ -47,7 +48,15 @@ RETENTION: Final = timedelta(days=90)
 LIMIT: Final = 20  # HOME-01 shows the first 20 (home-and-gates.md §3)
 READ_ACTION: Final = "engagement.read_metadata"
 ACTIVITY_TYPES: Final = frozenset(
-    {"client_upload", "follow_up_sent", "letter_recorded", "agent_pre_screen"}
+    {
+        "client_upload",
+        "follow_up_sent",
+        "letter_recorded",
+        "agent_pre_screen",
+        "inbound_mail",
+        "envelope_sent",
+        "envelope_completed",
+    }
 )
 
 
@@ -123,7 +132,51 @@ def _pre_screen(p: dict[str, object]) -> Shape | None:
     )
 
 
+def _envelope_sent(p: dict[str, object]) -> Shape | None:
+    envelope, by = _id(p, "envelope_id"), _id(p, "sent_by")
+    if envelope is None or by is None:
+        return None
+    return Shape(
+        "envelope_sent",
+        "user",
+        {"type": "user", "id": by},
+        {"type": "envelope", "id": envelope},
+        {},
+    )
+
+
+def _envelope_completed(p: dict[str, object]) -> Shape | None:
+    envelope = _id(p, "envelope_id")
+    if envelope is None:
+        return None
+    return Shape(
+        "envelope_completed",
+        "system",
+        {"type": "system"},
+        {"type": "envelope", "id": envelope},
+        {},
+    )
+
+
+def _inbound_mail(p: dict[str, object]) -> Shape | None:
+    """A message that names its engagement. Mail on a client alone has no row: the table reads by
+    engagement, so walls apply (`_insert` drops an event with no engagement)."""
+    message = _id(p, "message_id")
+    if message is None:
+        return None
+    return Shape(
+        "inbound_mail",
+        "system",
+        {"type": "system"},
+        {"type": "inbound_message", "id": message},
+        {},
+    )
+
+
 SOURCES: Final[dict[str, Callable[[dict[str, object]], Shape | None]]] = {
+    "inbound_message.recorded": _inbound_mail,
+    "envelope.completed": _envelope_completed,
+    "envelope.send_approved": _envelope_sent,
     "evidence.uploaded": _upload,
     "follow_up.sent": _follow_up,
     "gate.met": _letter,

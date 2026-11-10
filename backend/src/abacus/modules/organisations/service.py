@@ -528,6 +528,24 @@ async def entity_tin_last4s(
         return frozenset(str(r) for r in rows)
 
 
+async def entities_with_tin_last4(tenant: TenantContext, last4: str) -> dict[UUID, str]:
+    """N-04-T07: the firm's client entities with these last four and their names, for a notice's
+    client match. The masked form only; never the sealed TIN."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text("SELECT id, name FROM client_entities WHERE tin_last4 = :last4"),
+            {"last4": last4},
+        )
+        return {row.id: row.name for row in rows}
+
+
+async def entity_tin_kind(tenant: TenantContext, entity_id: UUID) -> str | None:
+    """N-04-T06: the kind of TIN on file for an entity (`ssn`, `ein`, `itin`), never the TIN."""
+    async with tenant_session(tenant) as session:
+        entity = await get_entity(session, entity_id)
+    return None if entity is None else entity.tin_kind
+
+
 async def firm_offices(tenant: TenantContext) -> list[tuple[UUID, str]]:
     """P-01-T04: the firm's offices for identity's `/v1/me` (registered as its office list)."""
     async with tenant_session(tenant) as session:

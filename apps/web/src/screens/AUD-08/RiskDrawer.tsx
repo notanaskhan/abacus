@@ -1,10 +1,11 @@
 import type { RegisterRiskOut } from "@abacus/api-client";
 import {
+  decisionCardNotifyMutation,
   riskDrawerOptions,
   suggestionAdoptMutation,
   suggestionDismissMutation,
 } from "@abacus/api-client/query";
-import { AgentText, Button, Drawer, Pill, time } from "@abacus/ui";
+import { AgentText, Button, Drawer, Pill, time, toast } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
 import { DraftedFooter, DraftedMarker } from "./AgentStates";
@@ -19,18 +20,14 @@ import { COPY } from "./copy";
 export function RiskDrawer({
   engagementId,
   risk,
-  cardId,
   onClose,
   onDecide,
-  onRemind,
   onEdit,
 }: {
   engagementId: string;
   risk: RegisterRiskOut;
-  cardId: string | null;
   onClose: () => void;
   onDecide: (cardId: string, subject: string) => void;
-  onRemind?: () => void;
   /** Edit the drafted rationale in the host's editor; the model's text is never sent back as a
    * person's edit (ADR-065). */
   onEdit?: () => void;
@@ -40,15 +37,25 @@ export function RiskDrawer({
   );
   const data = drawer.data;
   // A-04-T26 (f): a drafted rationale waits for a person (C-31); nothing adopts by itself.
-  const suggestionId = data?.rationale_suggestion_id ?? null;
-  const drafted = suggestionId !== null;
+  const suggested = data?.rationale_suggestion;
+  const response = data?.response_suggestion;
   const refresh = (): void => {
     void drawer.refetch();
   };
   const adopt = useMutation({ ...suggestionAdoptMutation(), onSuccess: refresh });
   const dismiss = useMutation({ ...suggestionDismissMutation(), onSuccess: refresh });
-  const decides = risk.allowed_actions.includes("decision.decide");
+  // The drawer's read says who the awaiting card waits for and what this person may do about it;
+  // the register's rows do not carry either (DEC-2484).
+  const cardId = data?.pending_card_id ?? null;
+  const actions = data?.risk.allowed_actions ?? risk.allowed_actions;
+  const decides = actions.includes("decision.decide");
   const routedTo = data?.routed_to_name ?? null;
+  const notify = useMutation({
+    ...decisionCardNotifyMutation(),
+    onSuccess: () => {
+      if (routedTo !== null) toast.show({ kind: "success", text: COPY.drawer.reminded(routedTo) });
+    },
+  });
   const footer =
     decides && cardId !== null ? (
       <div data-aud08="partner-footer" className="flex items-center gap-[8px]">
@@ -60,22 +67,35 @@ export function RiskDrawer({
         >
           {COPY.drawer.approve}
         </Button>
-        <Button variant="secondary">{COPY.drawer.notSignificant}</Button>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            onDecide(cardId, risk.code);
+          }}
+        >
+          {COPY.drawer.notSignificant}
+        </Button>
       </div>
     ) : routedTo !== null && data?.routed_at != null ? (
       <div data-aud08="routed-footer" className="flex items-center gap-[8px]">
         <span className="flex-1 text-[11.5px] text-ink-3">
           {COPY.drawer.routed(routedTo, time(data.routed_at))}
         </span>
-        <Button
-          variant="secondary"
-          icon="bell"
-          {...(onRemind === undefined ? {} : { onClick: onRemind })}
-        >
-          {COPY.drawer.remind(routedTo.split(" ")[0] ?? routedTo)}
-        </Button>
+        {cardId !== null && actions.includes("decision.notify") && (
+          <Button
+            variant="secondary"
+            icon="bell"
+            disabled={notify.isPending}
+            onClick={() => {
+              notify.mutate({ path: { card_id: cardId } });
+            }}
+          >
+            {COPY.drawer.remind(routedTo.split(" ")[0] ?? routedTo)}
+          </Button>
+        )}
       </div>
     ) : undefined;
+  const hasRationale = (data?.rationale ?? "") !== "";
   return (
     <Drawer
       open
@@ -99,38 +119,81 @@ export function RiskDrawer({
         <section data-aud08="rationale" className="rounded-pane bg-card p-[12px] shadow-e1">
           <h3 className="mb-[8px] flex items-center text-section font-medium">
             {COPY.drawer.rationaleCard}
-            {drafted && <DraftedMarker citations={data?.citation_ids.length ?? 0} />}
+            {suggested != null && <DraftedMarker citations={suggested.citations} />}
           </h3>
-          <AgentText
-            text={data?.rationale ?? ""}
-            className={
-              drafted
-                ? "text-[12.5px] leading-[1.55] text-ink-2"
-                : "text-[12.5px] leading-[1.55] text-ink"
-            }
-          />
+          {hasRationale && (
+            <AgentText
+              text={data?.rationale ?? ""}
+              className="text-[12.5px] leading-[1.55] text-ink"
+            />
+          )}
           {(data?.citation_ids.length ?? 0) > 0 && (
             <p className="mt-[8px] text-micro text-ink-3">
               {COPY.drawer.citations(data?.citation_ids.length ?? 0)}
             </p>
           )}
-          {suggestionId !== null && (
+          {suggested != null && (
+            <>
+              <div
+                data-aud08="proposed-rationale"
+                className={hasRationale ? "mt-[8px]" : undefined}
+              >
+                <AgentText
+                  text={suggested.text}
+                  className="text-[12.5px] leading-[1.55] text-ink-2"
+                />
+                {suggested.citations > 0 && (
+                  <p className="mt-[8px] text-micro text-ink-3">
+                    {COPY.drawer.citations(suggested.citations)}
+                  </p>
+                )}
+              </div>
+              <DraftedFooter
+                onAdopt={() => {
+                  adopt.mutate({
+                    path: { suggestion_id: suggested.suggestion_id },
+                    body: { seen_version: suggested.version },
+                  });
+                }}
+                onEdit={() => {
+                  onEdit?.();
+                }}
+                onDiscard={() => {
+                  dismiss.mutate({
+                    path: { suggestion_id: suggested.suggestion_id },
+                    body: { seen_version: suggested.version },
+                  });
+                }}
+              />
+            </>
+          )}
+        </section>
+        {response != null && (
+          <section data-aud08="response" className="rounded-pane bg-card p-[12px] shadow-e1">
+            <h3 className="mb-[8px] flex items-center text-section font-medium">
+              {COPY.drawer.responseCard}
+              <DraftedMarker citations={response.citations} />
+            </h3>
+            <p className="text-[12.5px] leading-[1.55] text-ink-2">{response.target_ref}</p>
             <DraftedFooter
               onAdopt={() => {
-                adopt.mutate({ path: { suggestion_id: suggestionId }, body: { seen_version: 1 } });
+                adopt.mutate({
+                  path: { suggestion_id: response.suggestion_id },
+                  body: { seen_version: response.version },
+                });
               }}
               onEdit={() => {
                 onEdit?.();
               }}
               onDiscard={() => {
                 dismiss.mutate({
-                  path: { suggestion_id: suggestionId },
-                  body: { seen_version: 1 },
+                  path: { suggestion_id: response.suggestion_id },
+                  body: { seen_version: response.version },
                 });
               }}
             />
-          )}
-        </section>
+          </section>
+        )}
         <section className="rounded-pane bg-card p-[12px] shadow-e1">
           <h3 className="mb-[8px] text-section font-medium">{COPY.drawer.assertions}</h3>
           <div className="flex flex-wrap gap-[6px]">

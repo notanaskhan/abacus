@@ -80,9 +80,12 @@ def test_send_needs_a_fresh_second_factor() -> None:
     assert _matrix.ACTIONS["proposed_entry.send_to_client"].get("mfa_recent") == "required"
 
 
-def test_the_flag_defaults_off() -> None:
-    flag = _flags.FLAGS["adjustments.entries"]
-    assert flag.kind == "boolean" and str(flag.default).lower() == "false"
+def test_the_retired_flag_is_gone_and_the_entitlement_gates() -> None:
+    # A-06-T37 (DEC-2714): `adjustments.entries` retired into `assurance_completion`.
+    from abacus.modules.platform.entitlements import MODULES
+
+    assert "adjustments.entries" not in _flags.FLAGS
+    assert "assurance_completion" in MODULES
 
 
 def test_no_route_can_post_book_or_write_to_a_client_system() -> None:

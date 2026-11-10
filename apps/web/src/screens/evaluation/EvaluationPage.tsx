@@ -3,10 +3,13 @@ import {
   misstatementsOptions,
   reviewNoteListOptions,
 } from "@abacus/api-client/query";
-import { EmptyState, Segmented, type TabOption, ViewStateBody, type ViewState } from "@abacus/ui";
+import { Segmented, type TabOption, ViewStateBody, type ViewState } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
-import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { useOpenOverlay } from "../../app-core/open";
+import { ov } from "../../routes/to";
+import { ReviewNotesPane } from "../AUD-17";
+import { FsDisclosurePane } from "../AUD-20";
 import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
 import { FindingsRegister } from "../AUD-15";
 import { MisstatementsPane } from "../AUD-16";
@@ -14,7 +17,9 @@ import { COPY } from "./copy";
 
 // The Evaluation chrome (A-06-T12; A-06 §5, chapter 04 §2.1): the audit bar, then the Evaluation
 // tabs (Findings · Misstatements · Review notes · Sign-offs, 50 px) with counts from the server —
-// the findings and misstatements list totals and the engagement's open review notes — linking
+// the findings still awaiting a decision (the list's `awaiting_decision` count: AUD-15 a's
+// "Findings 3", DEC-2612), the misstatements list total and the engagement's open review notes —
+// linking
 // `/audits/$auditId/findings`, `/misstatements` and `/review-notes`; `/fs-disclosure` (AUD-20) has
 // the bar alone. The four screens (AUD-15, AUD-16, AUD-17, AUD-20) land with their own rows (AUD-15
 // with A-06-T18): until
@@ -23,12 +28,6 @@ import { COPY } from "./copy";
 
 export type EvaluationTab = "findings" | "misstatements" | "review-notes" | "fs-disclosure";
 
-const SCREEN: Record<EvaluationTab, string> = {
-  findings: "AUD-15",
-  misstatements: "AUD-16",
-  "review-notes": "AUD-17",
-  "fs-disclosure": "AUD-20",
-};
 const LABEL: Record<Exclude<EvaluationTab, "fs-disclosure">, string> = {
   findings: COPY.findings,
   misstatements: COPY.misstatements,
@@ -43,7 +42,7 @@ function useCounts(workItemId: string, engagementId: string | undefined) {
     enabled: engagementId !== undefined,
   });
   return {
-    findings: findings.data?.total,
+    findings: findings.data?.counts?.awaiting_decision,
     misstatements: misstatements.data?.total,
     "review-notes": notes.data?.total,
   };
@@ -94,6 +93,7 @@ export function EvaluationPage({
   onBack?: () => void;
 }): JSX.Element {
   const cockpit = useAuditCockpit(auditId);
+  const open = useOpenOverlay();
   const counts = useCounts(auditId, cockpit.data?.engagement_id);
   let state: ViewState = { kind: "ready" };
   if (cockpit.isError) {
@@ -118,10 +118,25 @@ export function EvaluationPage({
                 }}
               />
             )}
-            {tab !== "findings" && tab !== "misstatements" && PLANNED_VISIBLE && (
-              <EmptyState icon="clock" title={COPY.planned}>
-                {COPY.plannedBody(SCREEN[tab])}
-              </EmptyState>
+            {/* A-06-T24: AUD-17 under the Review notes tab. */}
+            {tab === "review-notes" && (
+              <ReviewNotesPane
+                engagementId={cockpit.data.engagement_id}
+                workItemId={cockpit.data.work_item_id}
+                onSignOff={(type, id, level) => {
+                  open(ov.SHL12(type, id, `L${String(level)}`));
+                }}
+              />
+            )}
+            {/* A-06-T30: AUD-20, the Evaluation route with no tab of its own. */}
+            {tab === "fs-disclosure" && (
+              <FsDisclosurePane
+                engagementId={cockpit.data.engagement_id}
+                onMismatch={() => {
+                  onTab("misstatements");
+                }}
+                {...(onBack === undefined ? {} : { onCockpit: onBack })}
+              />
             )}
           </>
         )}

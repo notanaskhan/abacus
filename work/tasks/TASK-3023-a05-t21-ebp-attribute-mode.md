@@ -4,7 +4,7 @@ title: A-05-T21 mode ebp_attribute
 spec: SPEC-640
 acceptance_criteria: [AC-19]
 risk_zone: red
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T21
 branch: s25-a05-t21 (stacked on s25-a05-t16)

@@ -6,7 +6,7 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime
-from typing import Final
+from typing import Final, Literal
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +32,7 @@ from abacus.modules.identity.api import (
     drafted_guidance_to_clients,
     engagement_role_of,
     my_engagements,
+    names_of,
 )
 from abacus.modules.requests.availability import available_datasets
 from abacus.modules.requests.classification import (
@@ -71,6 +72,7 @@ from abacus.modules.requests.repository import (
     insert_request_item,
     item_keys,
     items_fulfilled_by,
+    last_fulfilment_at,
     list_comment_counts,
     list_fulfilled_versions,
     list_request_items,
@@ -139,6 +141,8 @@ class RequestItemView:
     # SPEC-032 (TASK-062): comments the reader may see on it and its versions; any unread.
     comment_count: int = 0
     unread_comments: bool = False
+    # T-03-T07: set on a new item, for a confirmation request's reply.
+    request_list_id: UUID | None = None
 
 
 def _view(
@@ -816,6 +820,7 @@ class ItemKind:
     id: UUID
     document_kind: str | None
     description: str = ""  # SPEC-030 (TASK-058): what the upload reviewer is told was asked for
+    status: str = ""  # N-04-T16: a confirmation request's state
 
 
 async def upload_item_of(
@@ -935,7 +940,7 @@ async def items_of_version(tenant: TenantContext, evidence_version_id: UUID) -> 
     caller acting as the system on the engagement's own uploads."""
     async with tenant_session(tenant) as session:
         items = await items_fulfilled_by(session, evidence_version_id)
-    return [ItemKind(i.id, i.document_kind, i.description) for i in items]
+    return [ItemKind(i.id, i.document_kind, i.description, i.status) for i in items]
 
 
 async def latest_version_of(tenant: TenantContext, item_id: UUID) -> UUID | None:
@@ -1034,6 +1039,7 @@ class BulkItem:
     description: str
     audit_area: str
     linked_ref: dict[str, object]
+    client_assignee_user_id: UUID | None = None
 
 
 async def create_items_bulk(
@@ -1045,20 +1051,26 @@ async def create_items_bulk(
     wave: str,
     due_on: date | None,
     batch_id: UUID,
+    request_list_id: UUID | None = None,
+    authorised_under: Literal["request_item.create", "request_item.send"] = "request_item.create",
 ) -> list[UUID]:
     """Every item in the caller's unit of work, each audited `request_item.created` and announced
     like a single add; `batch_id` rides in each `linked_ref` so P-06's request emails group one
     per recipient per batch (A-03 R14). The caller authorised its own action; this authorises
-    `request_item.create` on the engagement too."""
+    `request_item.create` on the engagement too, or `request_item.send` for a caller whose item
+    is created and sent in one act, as a tax confirmation is (TASK-3397: a staff preparer may
+    send one, and `request_item.create` is senior and up)."""
     ref = await lock_ref(tx, engagement_id)
-    await authorise(ctx, "request_item.create", ref.resource())
-    list_id, created = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
-    if created:
-        tx.record(
-            "request_list.created",
-            target=Target("request_list", list_id),
-            after=Ref(engagement_id=engagement_id),
-        )
+    await authorise(ctx, authorised_under, ref.resource())
+    list_id = request_list_id
+    if list_id is None:
+        list_id, created = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
+        if created:
+            tx.record(
+                "request_list.created",
+                target=Target("request_list", list_id),
+                after=Ref(engagement_id=engagement_id),
+            )
     ids: list[UUID] = []
     for new in items:
         item_id = uuid4()
@@ -1076,6 +1088,12 @@ async def create_items_bulk(
                 "linked_ref": {**new.linked_ref, "batch_id": str(batch_id)},
             },
         )
+        if new.client_assignee_user_id:
+            # The app holds UPDATE on the assignee, never INSERT (0028): set it once the row
+            # exists. Inserting it failed every bulk item that names a client (TASK-3397).
+            await set_client_fields(
+                tx.session, item_id, client_assignee=new.client_assignee_user_id
+            )
         tx.record(
             "request_item.created",
             target=Target("request_item", item_id),
@@ -1086,6 +1104,49 @@ async def create_items_bulk(
     if due_on is not None and ids:
         await set_due_dates(tx.session, engagement_id, ids, due_on)
     return ids
+
+
+async def request_item_sent(tenant: TenantContext, item_id: UUID) -> tuple[UUID, datetime | None]:
+    """T-03-T07 (DEC-2350): the item's binder and when it was sent, for a caller that sent it."""
+    async with tenant_session(tenant) as session:
+        item = await get_request_item(session, item_id)
+    if item is None:
+        raise NotFound("request_item")
+    return item.request_list_id, item.sent_at
+
+
+@dataclass(frozen=True)
+class RequestItemState:
+    """A confirmation's facts (T-03-T07): TAX-13 reads the request item, never a task."""
+
+    confirmed: bool
+    confirmed_on: date | None
+    requested_on: date | None
+    contact_name: str | None
+
+
+# The v2 statuses (0071): accepting the client's upload moves it `uploaded` to `received`.
+# It named three v1 words no item can hold: no confirmation ever read as confirmed (TASK-3397).
+_CONFIRMED: Final = frozenset({"received"})
+
+
+async def request_item_state(tenant: TenantContext, item_id: UUID) -> RequestItemState | None:
+    """`confirmed_on` is the newest live fulfilment's day (the client's upload); `contact_name` the
+    client person the request is assigned to, when it is assigned."""
+    async with tenant_session(tenant) as session:
+        item = await get_request_item(session, item_id)
+        if item is None:
+            return None
+        confirmed = item.status in _CONFIRMED
+        at = await last_fulfilment_at(session, item_id) if confirmed else None
+    assignee = item.client_assignee_user_id
+    names = await names_of([assignee]) if assignee else {}
+    return RequestItemState(
+        confirmed=confirmed,
+        confirmed_on=at.date() if at else None,
+        requested_on=item.sent_at.date() if item.sent_at else None,
+        contact_name=names.get(assignee) if assignee else None,
+    )
 
 
 def _record_classified(

@@ -148,6 +148,9 @@ class ParityRecord(BaseModel):
 
     checked_on: Annotated[date, classified("internal")]
     report_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
+    # P-10-T13: the report also passed tools and documents, so loop-shaped specs may use the
+    # route. A record without it (every report before P-10-T13) serves single-turn calls only.
+    tool_parity: Annotated[bool, classified("internal")] = False
 
 
 def _fake_catalog() -> dict[ModelTier, CatalogModel]:

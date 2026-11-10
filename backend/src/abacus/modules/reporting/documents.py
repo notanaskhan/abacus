@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Literal, cast
 from uuid import UUID
@@ -92,8 +92,11 @@ def snapshot_of(
     variables: Mapping[str, str],
     clause_states: Mapping[str, bool],
     overrides: Mapping[str, tuple[str, ...]],
+    body: Sequence[object] | None = None,
 ) -> dict[str, object]:
-    return {
+    """What a version seals. A composed kind's body (DEC-2615) is sealed with it; a template's
+    snapshot carries no `body` key, so its shape and hash are what they were."""
+    sealed: dict[str, object] = {
         "layout": layout,
         "layout_version": LAYOUT_VERSION,
         "template_version_id": None if template_version_id is None else str(template_version_id),
@@ -101,6 +104,9 @@ def snapshot_of(
         "clauses": dict(sorted(clause_states.items())),
         "overrides": {k: list(v) for k, v in sorted(overrides.items())},
     }
+    if body is not None:
+        sealed["body"] = list(body)
+    return sealed
 
 
 def declared_values(

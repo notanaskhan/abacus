@@ -25,7 +25,7 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
-import { useFlag } from "../../app-core/flags";
+import { useEntitlement } from "../../app-core/flags";
 import { COPY } from "./copy";
 
 // AUD-16 · Misstatements & adjustments (A-06-T22; A-06 §3 F3, F4; the handoff spec): the T6 workbook
@@ -207,7 +207,7 @@ function SumTable({
         <PaneAction icon="file" label={COPY.sum.sourceDocs} />
       </header>
       <div className="min-h-0 flex-1 overflow-auto">
-        <div role="row" className={cn(COLS, "h-[30px] bg-nested hairline-b")}>
+        <div className={cn(COLS, "h-[30px] bg-nested hairline-b")}>
           <span className={head}>{C.ref}</span>
           <span className={head}>{C.description}</span>
           <span className={head}>{C.type}</span>
@@ -434,6 +434,9 @@ function Evaluation({
   return (
     <section
       data-aud16="evaluation"
+      // a scrolling pane with nothing focusable in some states: keyboard users reach it here
+      tabIndex={0}
+      aria-label={COPY.evaluation.title}
       className="flex w-[410px] shrink-0 flex-col overflow-y-auto rounded-pane bg-card shadow-e1"
     >
       <header className="flex h-[46px] shrink-0 items-center justify-center text-[14.5px] font-medium hairline-b">
@@ -602,7 +605,8 @@ export function MisstatementsWorkbook({
   onDecision,
   onSignOff,
 }: WorkbookProps): JSX.Element {
-  const on = useFlag("adjustments.entries") === true;
+  // A-06-T37 (DEC-2714): the `assurance_completion` entitlement replaces `adjustments.entries`.
+  const on = useEntitlement("assurance_completion");
   const sum = useQuery({ ...sumOptions({ path: { work_item_id: auditId } }), enabled: on });
   const kind = view === "reclass" ? "rje" : "aje";
   const entries = useQuery({
@@ -621,7 +625,7 @@ export function MisstatementsWorkbook({
   const pending = (entries.data?.items ?? []).filter((e) => e.status === "review_required");
 
   let state: ViewState = { kind: "ready" };
-  if (!on) state = { kind: "flag-off", flag: "adjustments.entries" };
+  if (!on) state = { kind: "flag-off", flag: "assurance_completion" };
   else if (sum.isError) {
     const status = (sum.error as { status?: number } | null)?.status;
     state =

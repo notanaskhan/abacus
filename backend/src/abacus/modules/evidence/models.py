@@ -361,6 +361,11 @@ class EvidencePage(Base):
     text_layer_size: Mapped[int | None]  # 0119
     ocr_used: Mapped[bool] = mapped_column(server_default=FetchedValue())
     extractor_version: Mapped[str]
+    # 0666 (P-11-T24): how the page's words were read.
+    text_source: Mapped[str | None]
+    ocr_run_id: Mapped[UUID | None]
+    mean_confidence: Mapped[Decimal | None]
+    low_conf_words: Mapped[int | None]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 

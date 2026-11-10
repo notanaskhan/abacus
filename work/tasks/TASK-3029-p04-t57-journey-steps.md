@@ -4,7 +4,7 @@ title: P-04-T57 review grammar journey steps
 spec: SPEC-308
 acceptance_criteria: [AC-5]
 risk_zone: green
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T57
 branch: s25-p04-t57 (stacked on s25-k01-t25)

@@ -7,7 +7,7 @@
 | Surface | firm (never a client surface) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-27 Estimates, related parties & parties in interest/` (README.md, spec.md; no revision file) |
 | Epic and tasks | A-05 · SPEC-640 · contract stub A-05-T04 (`docs/contracts/ebp-workpapers.md`) · bundle T05 · migrations T06 and later · seed T07 |
-| Manifest status | planned |
+| Manifest status | planned (canvas in the AUD-02 cockpit, `?section=estimates_rp`, A-05-T57) |
 
 ## States
 | Artboard | Viewer (persona) and clock | Snapshot | Data condition that produces it | Endpoints | Parity tier | Status |
@@ -94,11 +94,16 @@ Verbatim from the handoff (copy keys in `screens/AUD-27/copy.ts` when built). Ke
 | ID | What differs from the handoff | Why | Decision recorded |
 |---|---|---|---|
 | DV-AUD-27-1 | Agent-off path: every agent-filled value has a keyed or imported equivalent with a required citation note; the agent states read "not cleared" until A-04's `workpapers.drafting` and the firm's opt-in hold | A-05 F13; ADR-112 | DEC-1857 |
+| DV-AUD-27-2 | Closed (S31 close, DEC-2827): the parties-in-interest table shows the year's transactions as a person recorded them, and the related-parties table's "FY2026 transactions" and "Disclosure" columns read the person's record on each party (a note link opens AUD-20; a screened-out candidate shows its reason) | — | DEC-2821, DEC-2827 |
+| DV-AUD-27-3 | Closed (S31 close): the rollforward line reads the work item's period dates ("Jul 1, 2025 … = Jun 30, 2026 …") | — | DEC-2821 |
+| DV-AUD-27-4 | The footer carries "Request partner conclusion…" only; "Citations (6)" and "Procedures (2)" wait for counts on the read. The Agent dock is the AUD-02 cockpit's (TASK-5003's dock, then P-09-T09 on the E6 store); the canvas does not draw it | Counts not on the read; the dock is the host's | DEC-2813 |
+| DV-AUD-27-5 | Closed (S31 close): the PT card's Form 5330 line reads "Excise tax 15% × $64.38 = $9.66 unless PTE 2002-51 relief applies", its figures EBP-04's code-computed lost earnings and excise; other states read the registry's word | — | DEC-2821 |
+| DV-AUD-27-6 | Closed (S31 close): the PT card's Form 5330 line reads "Excise tax 15% × $64.38 = $9.66 unless PTE 2002-51 relief applies", its figures EBP-04's code-computed lost earnings and excise; other states read the registry's word | — | DEC-2821 |
 
 ## Parity
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| all | C | — | reported once the screen is built |
+| a–e | C | — | gallery artboard and handoff baseline in place (A-05-T61 close, DEC-2825); report-only at Tier C |
 
 ## Open gaps
 None.

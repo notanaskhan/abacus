@@ -1,15 +1,15 @@
 """N-04-T13: where notice intakes come from (NOT-01; N-04 §3 US-1; DEC-2245).
 
 - **Answer effect** `route_upload_to_notices` (T-03's slot): an organizer upload answered with
-  an IRS letter (Q8) creates exactly one intake from its evidence version; with
-  `notices.workspace` off the handler is unavailable, so the engine records `pending_handler`
-  and the upload stays in the binder.
+  an IRS letter (Q8) creates exactly one intake from its evidence version; an upload with no
+  evidence version leaves the handler unavailable, so the engine records `pending_handler` and
+  the upload stays in the binder (`notices.workspace` retired, DEC-2602).
 - **Triage destinations** (N-01): `notice_intake` ("New notice from this file") and `notice`
   (supporting documents filed to an existing notice: Stein-style). `notice` places the file on
   the notice's work item; `notice_intake` files it to the client's permanent file, from which
   the intake is created when the person opens it (NOT-01 b).
 - The portal's "Upload something else" reaches an intake through the same answer effect when the
-  firm's organizer routes it; every source fails closed with the flag off.
+  firm's organizer routes it.
 
 Each intake records its source; a replayed effect creates nothing more (the engine's row per
 answer and rule).
@@ -22,10 +22,8 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from abacus.kernel._flags import NOTICES_WORKSPACE
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Target, UnitOfWork, uow
 from abacus.modules.communications.api import (
     IntakeDestination,
@@ -45,7 +43,7 @@ from abacus.modules.requests.api import (
 
 async def route_upload_to_notices(request: EffectRequest) -> EffectResult:
     tenant = TenantContext(request.tenant_id, "system", "answer_effects")
-    if not await flag_enabled(tenant, NOTICES_WORKSPACE) or request.evidence_version_id is None:
+    if request.evidence_version_id is None:
         raise HandlerUnavailable
     async with uow(tenant) as tx:
         # The intake's named creator is the organizer's owner (the effect is the rule's, the
@@ -70,7 +68,7 @@ async def _notice_nodes(
     ctx: AuthContext, client_id: UUID, parent: UUID | None
 ) -> Sequence[IntakeNode]:
     """The client's open notices (supporting documents file to one)."""
-    if parent is not None or not await flag_enabled(ctx.tenant, NOTICES_WORKSPACE):
+    if parent is not None:
         return []
     async with tenant_session(ctx.tenant) as session:
         rows = (
@@ -106,7 +104,7 @@ async def _place_notice(tenant: TenantContext, tx: UnitOfWork, notice_id: UUID) 
 async def _intake_nodes(
     ctx: AuthContext, client_id: UUID, parent: UUID | None
 ) -> Sequence[IntakeNode]:
-    if parent is not None or not await flag_enabled(ctx.tenant, NOTICES_WORKSPACE):
+    if parent is not None:
         return []
     return [IntakeNode("notice_intake", client_id, "New notice from this file")]
 

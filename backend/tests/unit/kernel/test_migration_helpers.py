@@ -38,23 +38,26 @@ def _insert_only(table: str) -> list[str]:
     return op.statements
 
 
-def test_ac5_tenant_table_emits_exactly_three_statements_in_order() -> None:
-    assert _tenant_table("documents") == [
+def test_ac5_tenant_table_emits_rls_then_the_archived_guard_in_order() -> None:
+    first, second, third, guard = _tenant_table("documents")
+    assert [first, second, third] == [
         "ALTER TABLE documents ENABLE ROW LEVEL SECURITY",
         "ALTER TABLE documents FORCE ROW LEVEL SECURITY",
         TENANT_ISOLATION.format(t="documents"),
     ]
+    assert "archived_guard" in guard  # A-07-T13: attached once 0686 has created the function
 
 
 def test_ac5_tenant_table_statements_are_single_line_without_semicolon() -> None:
-    for statement in _tenant_table("t1"):
+    for statement in _tenant_table("t1")[:3]:
         assert "\n" not in statement
         assert "  " not in statement
         assert not statement.rstrip().endswith(";")
 
 
 def test_ac5_tenant_table_uses_the_given_table_name_in_every_statement() -> None:
-    first, second, third = _tenant_table("_ledger_entries2")
+    first, second, third, guard = _tenant_table("_ledger_entries2")
+    assert "ON _ledger_entries2" in guard
     assert "ALTER TABLE _ledger_entries2 " in first
     assert "ALTER TABLE _ledger_entries2 " in second
     assert "ON _ledger_entries2 " in third
@@ -100,7 +103,7 @@ def test_ac13_insert_only_rejects_invalid_names_without_emitting(bad: str) -> No
 
 @pytest.mark.parametrize("good", ["t", "_t", "t1", "a_b_c", "_"])
 def test_ac5_valid_names_are_accepted(good: str) -> None:
-    assert len(_tenant_table(good)) == 3
+    assert len(_tenant_table(good)) == 4
     assert len(_insert_only(good)) == 1
 
 
@@ -139,4 +142,11 @@ def test_ac13_insert_columns_rejects_invalid_column_names_without_emitting(bad: 
     op = RecordingOp()
     with pytest.raises(ValueError):
         insert_columns(cast(Operations, op), "t", ["good", bad])
+    assert op.statements == []
+
+
+def test_insert_columns_refuses_an_empty_column_list() -> None:
+    op = RecordingOp()
+    with pytest.raises(ValueError, match="at least one column"):
+        insert_columns(cast(Operations, op), "orders", [])
     assert op.statements == []

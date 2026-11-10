@@ -1,5 +1,5 @@
 import { Check, Minus } from "lucide-react";
-import { type JSX, type KeyboardEvent, useId, useRef, useState } from "react";
+import { type JSX, type KeyboardEvent, type ReactNode, useId, useRef, useState } from "react";
 import { cn } from "../cn";
 import { type ForceState, forceAttr } from "../force-state";
 import { PRESS } from "./control-classes";
@@ -265,6 +265,8 @@ export interface RadioOption {
   value: string;
   label: string;
   disabled?: boolean;
+  /** Words under the option, indented to its label (HOME-02's decision options). */
+  detail?: ReactNode;
 }
 
 export interface RadioGroupProps {
@@ -309,35 +311,43 @@ export function RadioGroup({
       )}
     >
       {options.map((option, index) => (
-        <label key={option.value} className="inline-flex items-center gap-[8px] text-body">
-          <Radio
-            checked={option.value === chosen}
-            label={option.label}
-            size={size}
-            disabled={option.disabled === true}
-            tabIndex={option.value === entry ? 0 : -1}
-            buttonRef={(element) => {
-              items.current[index] = element;
-            }}
-            onSelect={() => {
-              set(option.value);
-            }}
-            onKeyDown={(event) => {
-              const target = nextTab(event.key, index, disabled);
-              const next = options[target];
-              if (next === undefined) return;
-              event.preventDefault();
-              set(next.value);
-              items.current[target]?.focus();
-            }}
-          />
-          <span
-            {...(option.disabled === true ? { "aria-disabled": true } : {})}
-            className={option.disabled === true ? "text-ink-4" : "text-ink"}
+        <div key={option.value} className="flex flex-col gap-[3px]">
+          <label
+            className={cn(
+              "inline-flex items-center",
+              option.detail === undefined ? "gap-[8px] text-body" : "gap-[10px] text-nav",
+            )}
           >
-            {option.label}
-          </span>
-        </label>
+            <Radio
+              checked={option.value === chosen}
+              label={option.label}
+              size={size}
+              disabled={option.disabled === true}
+              tabIndex={option.value === entry ? 0 : -1}
+              buttonRef={(element) => {
+                items.current[index] = element;
+              }}
+              onSelect={() => {
+                set(option.value);
+              }}
+              onKeyDown={(event) => {
+                const target = nextTab(event.key, index, disabled);
+                const next = options[target];
+                if (next === undefined) return;
+                event.preventDefault();
+                set(next.value);
+                items.current[target]?.focus();
+              }}
+            />
+            <span
+              {...(option.disabled === true ? { "aria-disabled": true } : {})}
+              className={option.disabled === true ? "text-ink-4" : "text-ink"}
+            >
+              {option.label}
+            </span>
+          </label>
+          {option.detail !== undefined && <div className="pl-[28px]">{option.detail}</div>}
+        </div>
       ))}
     </div>
   );

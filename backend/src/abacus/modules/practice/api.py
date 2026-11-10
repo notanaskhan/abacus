@@ -1,6 +1,6 @@
 """Public interface of the practice module; other modules import only this (ADR-008).
 
-First routes: the C13 home half (I-01-T02), `GET /v1/home` behind `home.dashboard`. C21 part A
+First routes: the C13 home half (I-01-T02), `GET /v1/home`. C21 part A
 (K-02-T07): `GET /v1/due-dates` and the calendar module API (`due_dates_for`, `add_business_days`,
 `clock_due`). Worker
 parts (I-01-T12): the client-activity projector and its daily prune.
@@ -12,6 +12,7 @@ from abacus.modules.practice.due_dates import (
     add_business_days,
     clock_due,
     due_dates_for,
+    due_dates_for_extension,
     installments_for,
 )
 from abacus.modules.practice.due_dates_contract import (
@@ -26,10 +27,11 @@ from abacus.modules.practice.due_dates_routes import router as due_dates_router
 from abacus.modules.practice.home_contract import router as home_router
 from abacus.modules.practice.jobs import ACTIVITIES, SCHEDULES, SUBSCRIPTIONS, WORKFLOWS
 from abacus.modules.practice.workflows import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
-from abacus.modules.tax.api import register_due_dates_source
+from abacus.modules.tax.api import register_due_dates_source, register_extension_dates_source
 
 # T-02-T10: the return's due dates come from these rules; tax never imports practice (T08).
 register_due_dates_source(due_dates_for)
+register_extension_dates_source(due_dates_for_extension)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -54,6 +56,7 @@ __all__ = [
     "add_business_days",
     "clock_due",
     "due_dates_for",
+    "due_dates_for_extension",
     "installments_for",
     "rebuild_home_activity",
 ]

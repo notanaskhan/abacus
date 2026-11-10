@@ -29,9 +29,12 @@
 | Approve and send | `POST /v1/work-items/{wi}/proposed-entries:approve-and-send` | `proposed_entry.send_to_client` (fresh MFA) | 201 with `undo_until` |
 | Send preview | `GET /v1/work-items/{wi}/proposed-entries:send-preview?entry_ids=` | `proposed_entry.read` | 200 recipient and template wording (AUD-16 O3; A-06-T22 stub, DEC-2254) · 501 |
 | Reject | `POST /v1/proposed-entries/{id}/reject` | `proposed_entry.reject` | 200 · 409 `entry_locked` |
-| Record a client decision | `POST /v1/proposed-entries/{id}/client-decision:record` | `proposed_entry.record_client_decision` | 200 (evidence required) |
+| Record a client decision (emits `proposed_entry.client_decided`; C16 `proposed_entry_client_responded` to the partner and managers) | `POST /v1/proposed-entries/{id}/client-decision:record` | `proposed_entry.record_client_decision` | 200 (evidence required) |
 | Batch | `POST /v1/approval-batches` | `approval_batch.create` | 201 |
 | Adjusted TB | `GET /v1/work-items/{wi}/adjusted-tb?layer=` | `adjusted_tb.read` | 200 |
 
 Every operation answers 404 to a client principal, 404 with the flag off and 501
 `not_implemented` until its task.
+
+## Screen contract (A-06-T38)
+AUD-16: `docs/screens/AUD-16.md` (artboards, deviations, consumer notes).

@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from abacus.api.export_openapi import document
 from abacus.kernel.classification import tri_paths, unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.requests import answer_effect_slots as slots
 from abacus.modules.requests import questionnaire_editor_contract as editor
@@ -163,53 +163,80 @@ async def test_ac2_a_client_principal_gets_404_before_anything_else() -> None:
         await schedules.extension_route(uuid.uuid4(), _ctx(client=True))
 
 
-@pytest.mark.parametrize(
-    ("module", "flag"),
-    [(editor, "questionnaires.editor"), (schedules, "tax.extensions_estimates")],
-)
-async def test_ac2_the_gate_authorises_then_reads_the_flag_then_answers_501(
-    monkeypatch: pytest.MonkeyPatch, module: object, flag: str
+class _PastTheGate(Exception):
+    """The live service was reached: the gate let the call through."""
+
+
+async def _past_the_gate(*_a: object, **_k: object) -> None:
+    raise _PastTheGate
+
+
+@pytest.mark.parametrize("module", [editor, schedules])
+async def test_ac2_the_gate_authorises_then_reads_the_entitlement_then_lets_the_route_run(
+    monkeypatch: pytest.MonkeyPatch, module: object
 ) -> None:
+    # T-03-T05 made the editor read live, T-03-T07 the extension read (DEC-2350).
     calls: list[str] = []
     state = {"on": False}
 
     async def authorise(_ctx: AuthContext, action: str, resource: object) -> None:
         calls.append(f"authorise:{action}")
 
-    async def flag_enabled(_tenant: object, f: object) -> bool:
-        calls.append(f"flag:{getattr(f, 'name', f)}")
-        return state["on"]
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces both retired flags.
+    async def entitlement(_tenant: object, module_name: str) -> object:
+        calls.append(f"entitlement:{module_name}")
+        return object() if state["on"] else None
 
     monkeypatch.setattr(module, "authorise", authorise)
-    monkeypatch.setattr(module, "flag_enabled", flag_enabled)
+    monkeypatch.setattr(module, "entitlement", entitlement)
     route = editor.questionnaire_editor_route if module is editor else schedules.extension_route
     with pytest.raises(NotFound):
         await route(uuid.uuid4(), _ctx())
-    assert calls[1] == f"flag:{flag}"
+    assert calls[1] == "entitlement:tax_returns"
     state["on"] = True
-    with pytest.raises(NotImplementedYet):
-        await route(uuid.uuid4(), _ctx())
+    if module is editor:
+        from abacus.modules.requests import questionnaire_editor
+
+        monkeypatch.setattr(questionnaire_editor, "editor", _past_the_gate)
+        with pytest.raises(_PastTheGate):
+            await route(uuid.uuid4(), _ctx())
+    else:
+        monkeypatch.setattr(schedules, "_extension_out", _past_the_gate)
+        with pytest.raises(_PastTheGate):
+            await route(uuid.uuid4(), _ctx())
 
 
 async def test_ac2_flag_likely_alone_is_its_own_action(monkeypatch: pytest.MonkeyPatch) -> None:
-    seen: list[str] = []
+    """A write holding `function_in` authorises on the return in the service (DEC-2350), so the
+    route names the action and the firm-level `authorise` is never called: at the firm that
+    condition refuses everyone."""
+    firm: list[str] = []
+    named: list[str] = []
 
     async def authorise(_ctx: AuthContext, action: str, resource: object) -> None:
-        seen.append(action)
+        firm.append(action)
 
-    async def flag_enabled(_tenant: object, f: object) -> bool:
-        return True
+    async def entitled(_tenant: object, _module: str) -> object:
+        return object()
+
+    async def patch(_ctx: object, _id: object, *, action: str, **_kw: object) -> None:
+        named.append(action)
+        raise _PastTheGate
 
     monkeypatch.setattr(schedules, "authorise", authorise)
-    monkeypatch.setattr(schedules, "flag_enabled", flag_enabled)
-    with pytest.raises(NotImplementedYet):
+    monkeypatch.setattr(schedules, "entitlement", entitled)
+    from abacus.modules.tax import extensions
+
+    monkeypatch.setattr(extensions, "patch", patch)
+    with pytest.raises(_PastTheGate):
         await schedules.extension_patch_route(
             uuid.uuid4(),
             schedules.ExtensionPatchIn(likely_to_extend=True, reason="k1_outstanding"),
             _ctx(),
             1,
         )
-    assert seen == ["filing_extension.flag_likely"]
+    assert named == ["filing_extension.flag_likely"]
+    assert firm == []
 
 
 def test_ac6_the_effect_slot_fails_closed_and_takes_one_handler_per_kind() -> None:

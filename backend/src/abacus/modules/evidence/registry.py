@@ -58,6 +58,9 @@ TABLES: frozenset[str] = frozenset(
         "extracted_fields",
         "extracted_tables",
         "extracted_table_cells",
+        # R-02-T07 (0712): single-use, 60-second deliverable download links.
+        "deliverable_download_links",
+        "ocr_daily_caps",  # P-11-T33 (0714): per-firm OCR page caps, set by platform ops
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -90,6 +93,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "extracted_fields",  # P-11-T24 (0666): a correction is a new row
         "extracted_tables",  # P-11-T24 (0666)
         "extracted_table_cells",  # P-11-T24 (0666)
+        "ocr_daily_caps",  # P-11-T33 (0714): a cap change is a new row
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -256,3 +260,14 @@ INSERT_COLUMNS["extracted_tables"] = frozenset(
 INSERT_COLUMNS["extracted_table_cells"] = frozenset(
     {"tenant_id", "table_id", "row_no", "col_no", "text", "bbox", "confidence"}
 )
+
+# P-11-T33 (0714): set_by_kind and set_at are server-set (the CHECK wants a system session).
+INSERT_COLUMNS["ocr_daily_caps"] = frozenset(
+    {"tenant_id", "daily_pages", "raised_by", "second_by", "reason"}
+)
+# R-02-T07 (0712): a link is issued to the session's person and used once (trigger).
+INSERT_COLUMNS["deliverable_download_links"] = frozenset(
+    {"id", "tenant_id", "deliverable_version_id", "evidence_version_id", "contact_id"}
+    | {"user_id", "request_id"}
+)
+UPDATE_COLUMNS["deliverable_download_links"] = frozenset({"used_at"})

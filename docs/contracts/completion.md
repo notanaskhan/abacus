@@ -29,6 +29,9 @@
 | Resolve | `POST /v1/findings/{id}/resolve` | `finding.resolve` |
 | Request the partner's decision | `POST /v1/findings/{id}/request-decision` | `finding.request_decision` |
 | Misstatements | `GET /v1/work-items/{wi}/misstatements?view=` | `misstatement.read` |
+| Consultations | `GET /v1/work-items/{wi}/consultations` | `consultation.read` |
+| Raise a consultation | `POST /v1/work-items/{wi}/consultations` | `consultation.create` |
+| Conclude a consultation | `POST /v1/consultations/{id}/conclude` | `consultation.conclude` (the person consulted) |
 | Pass on SUM | `POST /v1/misstatements/{id}/pass-to-sum` | `misstatement.pass_to_sum` |
 | SUM | `GET /v1/work-items/{wi}/sum` | `sum.read` |
 | A qualitative factor | `PUT /v1/work-items/{wi}/sum/qualitative-factors/{factor}` | `sum.update_factors` |
@@ -51,6 +54,7 @@ Stub behind `reporting.fs_disclosure` (404 off, 501 on until A-06-T25). Module:
 | Send the DRAFT to the client (C10 deliverable + C18 `fs_draft`) | `POST /v1/statement-versions/{id}/send-draft` | `statement.send_draft` |
 | Record management's approval (record mode) | `POST /v1/statement-versions/{id}/management-approval:record` | `statement.record_management_approval` |
 | Template import (dry run first) · publish | `POST /v1/methodology/disclosure-checklists:import` · `POST …/{id}/versions/{v}/publish` | `disclosure_checklist_template.import` · `.publish` |
+| Note templates: import (dry run first) · publish (A-06-T25, DEC-2389) | `POST /v1/methodology/statement-note-templates:import` · `POST …/{id}/versions/{v}/publish` | `statement_note_template.import` · `statement_note_template.publish` |
 
 - **Database rules.**
   - A value whose source is `override` or `stale_override` needs `override_reason`.
@@ -60,3 +64,6 @@ Stub behind `reporting.fs_disclosure` (404 off, 501 on until A-06-T25). Module:
   - A record-mode management approval needs its evidence.
 - **Sends and approvals.** Sending a draft and recording management's approval are a person's
   acts (agent deny). Client approval is R-02's C18, never these routes.
+
+## Screen contracts and consumer notes (A-06-T38)
+AUD-15, AUD-16, AUD-17 and AUD-20: `docs/screens/AUD-15.md`, `AUD-16.md`, `AUD-17.md`, `AUD-20.md`, each with its artboards, deviations and consumer notes for A-05, A-07, R-02, C-02, T-05, A-09, A-10 and P-10.

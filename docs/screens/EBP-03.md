@@ -17,6 +17,7 @@
 | c · Needs human | a–d `ana-cruz`, e `hannah-leclerc` · Sep 24 10:15 AM | b: `never()` on the results handler + scripted progressive rows; c: row 22 open | needs human — row 22 amber "Needs human" until Ana marks the hire-date difference as no effect | see API | C | live |
 | d · Adopted | a–d `ana-cruz`, e `hannah-leclerc` · Sep 24 10:15 AM | b: `never()` on the results handler + scripted progressive rows; c: row 22 open | adopted — header chip "✓ AC" and rail sub-line "Prepared · AC" | see API | C | live |
 | e · Signed off | a–d `ana-cruz`, e `hannah-leclerc` · Sep 24 10:15 AM | b: `never()` on the results handler + scripted progressive rows; c: row 22 open | signed — "✓ HL" chip, rail olive ✓ "Reviewed · HL" | see API | C | live |
+| f · Entry rule unverified | `ana-cruz` · Sep 24 10:15 AM | — | EBP-02's Minimum age, Service requirement or Entry dates not verified (or verified in wording code cannot read): the rows and results, an amber notice, no entry date, default rate, no-effect note or missed amount (DEC-2482) | see API | C | live |
 | loading, error, not allowed, off | as above | — | the read never answers / 5xx / walled 404 / `ebp.modules` off: C-20 | — | C | live |
 
 ## API
@@ -102,7 +103,7 @@ Card "
 ## Parity
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| all | C | — | reported once the screen is built |
+| a–e | C | — | gallery artboard and handoff baseline in place (A-05-T61 close, DEC-2825); report-only at Tier C |
 
 ## Open gaps
 None.

@@ -159,3 +159,15 @@ actions:
     verb: approve  # the assigned EQR concurs (G6; SPEC-314 record mode and A-07-T18; 0664)
   - action: eqr.card_reviewed
     verb: confirm  # the assigned EQR marks a digest card reviewed (A-07-T18; 0664)
+  - action: rep_letter.approved
+    verb: approve  # the engagement partner approves the representation letter (A-07-T08, 0668)
+  - action: governance_communication.sent
+    verb: send  # the engagement partner sends a governance letter (A-07-T08, 0668)
+  - action: report.reissued
+    verb: release  # the engagement partner reissues a released report (A-07-T08, 0668)
+  - action: uncorrected_misstatements.acknowledged
+    verb: confirm  # the client acknowledges the net effect of declined entries (R-02-T05, 0710)
+  - action: proposed_entry.client_decided
+    verb: decide  # the client accepts or declines an attest entry (R-02-T05, 0710)
+  - action: statement.approved_by_management
+    verb: approve  # management approves the draft statements (R-02-T05, 0710)

@@ -36,6 +36,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Final, Literal, cast
 from uuid import UUID
 
+from sqlalchemy import select
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -102,6 +103,18 @@ class Word:
     top: float
     x1: float
     bottom: float
+    confidence: float = 1.0  # P-11-T25/T26: a text layer's words read 1.0; OCR's carry theirs
+
+
+@dataclass(frozen=True)
+class KeyHint:
+    """A form's key and its value's box from OCR (P-11 AC7.3): sealed with the words."""
+
+    key: str
+    x0: float
+    top: float
+    x1: float
+    bottom: float
 
 
 @dataclass(frozen=True)
@@ -114,6 +127,7 @@ class PageWords:
     # Reviews N1, R1 to R3: the page shows content no scan reads before OCR (a picture, glyph-sized
     # vector shapes, a sideways digit): its upright text is masked, the rest is not.
     unread: bool = False
+    hints: tuple[KeyHint, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -301,10 +315,24 @@ def layer_document(page: PageWords) -> bytes:
         "h": page.height,
         "rotation": page.rotation,
         "unread": page.unread,
+        # A word's confidence is written only when it isn't 1.0 (OCR): a text layer's object stays
+        # byte for byte what it was (P-11-T25).
         "words": [
             {"text": w.text, "x0": w.x0, "top": w.top, "x1": w.x1, "bottom": w.bottom}
+            | ({} if w.confidence == 1.0 else {"confidence": w.confidence})
             for w in page.words
         ],
+        # Only an OCR page with a form's keys has these: any other layer stays byte for byte.
+        **(
+            {
+                "hints": [
+                    {"key": h.key, "x0": h.x0, "top": h.top, "x1": h.x1, "bottom": h.bottom}
+                    for h in page.hints
+                ]
+            }
+            if page.hints
+            else {}
+        ),
     }
     return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
@@ -319,6 +347,7 @@ def parse_layer(raw: bytes) -> PageWords:
             float(cast(float, w["top"])),
             float(cast(float, w["x1"])),
             float(cast(float, w["bottom"])),
+            float(cast(float, w.get("confidence", 1.0))),
         )
         for w in cast(list[dict[str, object]], body["words"])
     )
@@ -329,6 +358,16 @@ def parse_layer(raw: bytes) -> PageWords:
         int(cast(int, body["rotation"])),
         words,
         bool(body.get("unread", False)),
+        tuple(
+            KeyHint(
+                str(h["key"]),
+                float(cast(float, h["x0"])),
+                float(cast(float, h["top"])),
+                float(cast(float, h["x1"])),
+                float(cast(float, h["bottom"])),
+            )
+            for h in cast(list[dict[str, object]], body.get("hints", []))
+        ),
     )
 
 
@@ -350,6 +389,26 @@ async def read_page_layer(tenant_id: UUID, page: EvidencePage) -> PageWords:
         page.text_layer_size,
     )
     return parse_layer(await storage.get(tenant_id, stored))
+
+
+async def version_word_layers(tenant: TenantContext, version_id: UUID) -> list[PageWords]:
+    """A version's word layers, page by page; a page with no layer is skipped (N-04-T11)."""
+    async with tenant_session(tenant) as session:
+        pages = (
+            (
+                await session.execute(
+                    select(EvidencePage)
+                    .where(
+                        EvidencePage.evidence_version_id == version_id,
+                        EvidencePage.has_text_layer.is_(True),
+                    )
+                    .order_by(EvidencePage.page_no)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    return [await read_page_layer(tenant.tenant_id, page) for page in pages]
 
 
 def _system(tenant_id: UUID) -> TenantContext:

@@ -4,7 +4,7 @@ title: A-05-T17 EBP-02 screen
 spec: SPEC-640
 acceptance_criteria: [AC-15]
 risk_zone: green
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T17
 branch: s25-a05-t17 (stacked on s25-a05-t21)

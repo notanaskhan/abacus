@@ -18,27 +18,27 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
-  - name: tax.returns_v1
-    description: 'Tax returns v1 (T-02): /v1/tax-returns rows, summary, record, overview, intake, assignments and transitions; TAX-01 to TAX-03. Off: 404 and the nav item stays absent. On: 501 until T-02-T09 onward. T-02-T03, DEC-1162.'
+  - name: tax.review_workspace
+    description: 'T-04 RW-1 return review workspace (SPEC-649; TAX-04 to TAX-08): /v1/tax/returns/{id}/workspace, review-tree, document approvals, final-approval requests, K-1 activities and treatments, residency. Off: 404 and the return keeps its T-01/T-02 frame. Per firm, default off. T-04-T09, DEC-3111.'
     owner: ayushkbhatia
-    created: 2026-10-29
-    expires: 2027-04-27
+    created: 2026-11-09
+    expires: 2027-05-07
     override: DEC-137
     kind: boolean
     default: false
-  - name: tax.k1_release
-    description: 'K-1 packages (T-02): TXP-12 and POR-13. Off: 404 (TXP-12 read-only, Release hidden). On: 501 until T-02-T20 onward. T-02-T03, DEC-1162.'
+  - name: tax.individual_workpapers
+    description: 'T-04 WS-1 individual worksheets (TXI-01 to TXI-03): leadsheets, the Sch E K-1 matrix, field links and worksheets. Off: 404 and the worksheet tabs are absent. Per firm, default off. T-04-T09, DEC-3111.'
     owner: ayushkbhatia
-    created: 2026-10-29
-    expires: 2027-04-27
+    created: 2026-11-09
+    expires: 2027-05-07
     override: DEC-137
     kind: boolean
     default: false
-  - name: tax.extensions_estimates
-    description: 'Extensions and estimates (T-03): /v1/tax/extensions*, /v1/tax/estimates*, /v1/tax/payments and TAX-13 a-e. Off: 404 and the TAX-13 entry stays absent. On: 501 until T-03-T07 onward. T-03-T01, DEC-2200.'
+  - name: tax_agents.enabled
+    description: 'T-04 agent runs on a return (draft runs, K-1 treatment runs, residency proposals). Off: 404 and TAX-08 shows its designed agents-off state (DF-04). Per firm, default off. T-04-T09, DEC-3111.'
     owner: ayushkbhatia
-    created: 2026-11-03
-    expires: 2027-05-01
+    created: 2026-11-09
+    expires: 2027-05-07
     override: DEC-137
     kind: boolean
     default: false

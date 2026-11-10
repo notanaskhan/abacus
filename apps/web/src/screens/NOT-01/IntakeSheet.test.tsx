@@ -4,7 +4,7 @@
 import { client } from "@abacus/api-client/client";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { renderRoutes } from "../../testing/support";
 import { NoticesIndex } from ".";
 import { INTAKE, type Not01State, scenarios } from "./scenarios";
@@ -81,5 +81,78 @@ describe("NOT-01 d: a low-confidence field", () => {
       expect(create().disabled).toBe(false);
     });
     expect(document.body.textContent).not.toMatch(FULL_SSN);
+  });
+});
+
+describe("NOT-01 composed states (DEC-2329)", () => {
+  it("a possible duplicate names the choice and takes Create notice away", async () => {
+    mount("duplicate");
+    await waitFor(() => {
+      expect(document.querySelector("[data-intake='duplicate']")).not.toBeNull();
+    });
+    expect(create().disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Create anyway…" })).toBeTruthy();
+    expect(document.querySelector("[data-intake='duplicate']")?.textContent).toMatch(
+      /same notice/u,
+    );
+  });
+
+  it("manual entry names its reason, offers empty fields and shows no confidence", async () => {
+    mount("manual");
+    await waitFor(() => {
+      expect(document.querySelector("[data-intake='manual']")).not.toBeNull();
+    });
+    expect(document.querySelector("[data-intake='manual-reason']")?.textContent).toBe(
+      "Read automatically isn't on",
+    );
+    expect(screen.getByLabelText("Respond by")).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/\d+%/u);
+    expect(create().disabled).toBe(false);
+  });
+
+  it("no client matched keeps Create notice off until a person picks one", async () => {
+    mount("no_client");
+    await waitFor(() => {
+      expect(document.querySelector("[data-intake='no-client']")?.textContent).toBe(
+        "No client matched",
+      );
+    });
+    expect(create().disabled).toBe(true);
+  });
+
+  it("Draft Form 2848… waits for the firm's template and says so", async () => {
+    mount("b");
+    const draft = await screen.findByRole("button", { name: "Draft Form 2848…" });
+    expect((draft as HTMLButtonElement).disabled).toBe(true);
+    expect(draft.getAttribute("title")).toMatch(/template/u);
+  });
+});
+
+describe("NOT-01 Create anyway names its reason (DEC-2953)", () => {
+  it("offers the reasons and sends the one chosen", async () => {
+    const sent: unknown[] = [];
+    const scenario = scenarios.duplicate;
+    restore = installFixtureMode({
+      ...scenario,
+      handlers: {
+        ...scenario.handlers,
+        "POST /v1/notice-intakes/{intake_id}/create": (request) => {
+          sent.push(request.body);
+          return json({ notice_id: "n", engagement_id: "e" }, 201);
+        },
+      },
+    });
+    renderRoutes([
+      { path: "/", component: () => <NoticesIndex intakeId={INTAKE.duplicate ?? ""} /> },
+    ]);
+    const anyway = await screen.findByRole("button", { name: "Create anyway…" });
+    fireEvent.pointerDown(anyway, { button: 0, pointerType: "mouse" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Reissued by the agency" }));
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    const body = sent[0] as { create_anyway?: unknown; create_anyway_reason_code?: unknown };
+    expect(body.create_anyway).toBe(true);
+    expect(body.create_anyway_reason_code).toBe("reissued_by_agency");
   });
 });

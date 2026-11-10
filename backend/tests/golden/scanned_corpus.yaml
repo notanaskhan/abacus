@@ -1,0 +1,22 @@
+# Golden values of the synthetic scanned corpus (P-11-T28; DEC-2314), from the plan's figures
+# (P-11 AC8.2, AC8.4; N-04 US-4.3). Solo edition: no second person wrote these, so a CPA's review
+# stays open (requires_review) before they count as acceptance for a real firm.
+requires_review: true
+whitley_cp2000:
+  form: cp2000
+  tax_year: 2024
+  amount_due: "753.01"
+  proposed_tax: "686.40"
+  interest: "66.61"
+  respond_by: "2026-09-23"
+  changes_shown: "412.00"
+  changes_reported: "3532.00"
+  payers: {front_range_bank: "1870.00", lakeview_credit_union: "1250.00"}
+santos_cp14:
+  form: cp14
+  header_fields: 8
+  amount_due: "1982.40"
+  charges: {tax: "1842.00", penalty: "92.10", interest: "48.30"}
+feld_w2: {box_a_last4: "6081", box_1: "268,400.00"}
+iyer_1099div_corrected: {corrected: true, box_1b: "3,310.00"}
+ridgeline_k1: {codes: ["18A", "19A"]}

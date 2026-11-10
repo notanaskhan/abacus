@@ -11,7 +11,7 @@ import type {
 } from "@abacus/api-client";
 import { stableId } from "./prng";
 
-export type Bnd03Variant = "a" | "e";
+export type Bnd03Variant = "a" | "d" | "e";
 export const BND03_QUESTIONNAIRE = stableId("questionnaire:feld:2025");
 
 type Q = EditorQuestionOut;
@@ -227,9 +227,12 @@ export function bnd03Editor(variant: Bnd03Variant = "a"): QuestionnaireEditorOut
   return {
     id: BND03_QUESTIONNAIRE,
     title: "Jonah & Claire Feld · 2025 Form 1040",
-    owner_kind: "binder",
-    binder_id: stableId("binder:feld:2025"),
-    banner: null,
+    owner_kind: variant === "d" ? "template_version" : "binder",
+    binder_id: variant === "d" ? null : stableId("binder:feld:2025"),
+    banner:
+      variant === "d"
+        ? "Editing template 1040 organizer v6 — changes apply to TY2026 binders"
+        : null,
     row_version: 6,
     template: {
       template_id: stableId("template:1040-organizer"),
@@ -248,7 +251,10 @@ export function bnd03Editor(variant: Bnd03Variant = "a"): QuestionnaireEditorOut
       last_answer_on: "2026-09-09",
     },
     sections,
-    questions: [...QUESTIONS],
+    questions:
+      variant === "d"
+        ? QUESTIONS.map((x) => ({ ...x, answered: false, answer: null, effects: [] }))
+        : [...QUESTIONS],
     allowed_actions: ["questionnaire.edit"],
   };
 }

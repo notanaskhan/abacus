@@ -24,7 +24,6 @@ import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useOpenHref } from "../../app-core/open";
 import { useSession } from "../../app-core/session";
 import { hrefOf as linkOf, to } from "../../routes/to";
-import { hostHref } from "./hosts";
 import {
   HOME_SEGMENTS,
   HomeSegmented,
@@ -282,6 +281,14 @@ function Deadlines({ home, now }: { home: HomeOut; now: Date }): JSX.Element {
             dateTone={row.risk === "due_soon" || row.risk === "overdue" ? "red" : "plain"}
             client={row.client}
             form={row.filing_label}
+            {...(row.kind === "notice"
+              ? {
+                  link: {
+                    label: COPY.openNotice,
+                    href: linkOf(to.NOT02({ noticeId: row.work_item_id })),
+                  },
+                }
+              : {})}
           />
         ))}
       </ul>
@@ -303,6 +310,7 @@ const ACTIVITY_ICON: Readonly<Record<string, IconName>> = {
   agent_pre_screen: "bot",
   inbound_mail: "mail",
   envelope_sent: "send",
+  envelope_completed: "circle-check",
 };
 
 type ActivityItem = HomeOut["client_activity"][number];
@@ -337,6 +345,9 @@ export function activityLines(
     case "envelope_sent":
       text = a.sent(actor, one, subject, labels.recipient ?? "");
       if (typeof facts.due_on === "string") context = a.envelope(date(facts.due_on, { now }));
+      break;
+    case "envelope_completed":
+      text = a.completed(row.client_label);
       break;
     case "agent_pre_screen":
       text = a.preScreened(actor, row.client_label);
@@ -444,11 +455,8 @@ export function HOME01({
   const list = useWaitingOnYou();
   const now = useNow();
   const briefOn = useFlag("today_brief.enabled") === true;
-  // I-01-T21: with `home.approvals` on, a row opens its gate selected in HOME-02; off, the row
-  // opens the gate's host as before (I-01 AC2.4).
-  const approvalsOn = useFlag("home.approvals") === true;
-  const rowHref =
-    hrefOf ?? (approvalsOn ? (gate: HumanGateOut) => approvalsHref(gate.id) : hostHref);
+  // I-01-T23: a row opens its gate selected in HOME-02 (`home.approvals` retired).
+  const rowHref = hrefOf ?? ((gate: HumanGateOut) => approvalsHref(gate.id));
   const tz = session.tz ?? "America/Chicago";
   const open = useOpenHref();
   const loading = home.isPending || counts.isPending;

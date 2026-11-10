@@ -45,7 +45,7 @@ def test_t05_the_three_flags_default_off() -> None:
 
 def test_t05_the_status_words_are_registered() -> None:
     assert {s.value for s in EbpLateRemittanceStatus} == {"found", "pending_vfcp_scc", "corrected"}
-    assert len(list(EbpTestResultStatus)) == 6
+    assert len(list(EbpTestResultStatus)) == 7  # DEC-2264: agent_tested
     assert {s.value for s in Aud27ItemStatus} == {
         "unevaluated",
         "evaluated",

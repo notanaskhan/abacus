@@ -69,7 +69,7 @@ export function useDoneGates(enabled: boolean) {
   });
 }
 
-/** I-01-T21: with `home.approvals` on, a HOME-01 row opens the gate selected in HOME-02. */
+/** I-01-T21, T23: a HOME-01 row opens the gate selected in HOME-02. */
 export function approvalsHref(gateId: string): string {
   return `/home/approvals?gate=${encodeURIComponent(gateId)}`;
 }

@@ -10,7 +10,8 @@ by path, and lists every problem at once (AC-1):
   `mailto:`), `www.`, `{{`, `{%`, `${` or `<%`. Firm templates are structured blocks; the only
   expression is a `var` run naming a declared key.
 - `unknown_variable`: a `var` run, or a sample-data key, that names no declared variable.
-- `unknown_layout`: a layout key outside C11's six code-owned layouts.
+- `unknown_layout`: a layout key outside C11's six code-owned layouts (`financial_statements`
+  is composed by code from a statement version, never chosen by a template; DEC-2615).
 - `clause_conflict`: a clause id declared twice, a clause block naming no declared clause, a
   clause placed twice in the body, or a clause library entry that nests another clause.
 - `too_large`: body, clauses and variables over 512 KB as canonical JSON.
@@ -78,6 +79,7 @@ from abacus.modules.reporting.contract import (
 )
 
 MAX_BYTES: Final = 512 * 1024
+# The six a firm template may choose; `financial_statements` (DEC-2615) is code's, never theirs.
 LAYOUTS: Final = frozenset(get_args(LayoutKey))
 # AC-2: markup, a URL or a template expression anywhere in firm wording.
 _MARKUP: Final = re.compile(
@@ -358,3 +360,6 @@ async def listing(ctx: AuthContext, family: str | None) -> ListPage[ReportTempla
         for t in await report_templates_in_firm(ctx, family)
     ]
     return ListPage[ReportTemplateOut](items=items, total=len(items))
+
+
+# --- A-07-T24 (DEC-2808): a family's published clauses, for a composer --------------------------

@@ -5,8 +5,8 @@ Offline: `Replayer` needs no Temporal server and no codec. The history was recor
 `abacus_tools.workflows.record_upload_processing` with a stub activity; it is never re-recorded.
 TASK-055 and TASK-056 add steps behind `workflow.patched(...)` and must keep it replaying; so do
 P-03-T05's `words` step (v4), P-03-T13's `pii_scan` step (v5), R-01-T09's
-`portal_drop_sort` step (v6) and P-03-T15's `masked_preview` step (v7), which replaces the
-unmasked preview for new runs.
+`portal_drop_sort` step (v6), P-03-T15's `masked_preview` step (v7), which replaces the
+unmasked preview for new runs, and P-11-T25's `ocr` step (v8).
 """
 
 from __future__ import annotations
@@ -22,7 +22,14 @@ from temporalio.worker import Replayer, UnsandboxedWorkflowRunner
 from abacus.modules.evidence.api import UploadInput, UploadProcessing
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
-ALL = sorted(HISTORIES.glob("upload-processing-v*.json"))
+
+
+def _order(path: Path) -> tuple[int, str]:
+    """By version number: v10 comes after v9."""
+    return int(path.stem.removeprefix("upload-processing-v").split("-")[0]), path.name
+
+
+ALL = sorted(HISTORIES.glob("upload-processing-v*.json"), key=_order)
 IDS = [p.stem for p in ALL]
 
 
@@ -51,6 +58,12 @@ def test_ac2_the_histories_are_committed() -> None:
         "upload-processing-v7-masked-preview-failed",
         # v7 (P-03-T15): `patched("masked_preview")`, the masked rendition after the scan.
         "upload-processing-v7-masked-preview",
+        "upload-processing-v8-ocr",
+        # v9 (P-11-T25): words and OCR before the checks.
+        "upload-processing-v9-ocr-before-checks",
+        # v10 (P-11-T25): `patched("ocr_background")`; a long scan waits for `LongOcr`.
+        "upload-processing-v10-ocr-long",
+        "upload-processing-v10-ocr-route",
     ]
 
 

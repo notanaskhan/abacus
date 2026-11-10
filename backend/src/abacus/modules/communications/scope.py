@@ -16,7 +16,7 @@ from decimal import Decimal, InvalidOperation
 from abacus.kernel.logging import get_logger
 from abacus.modules.engagements.api import EngagementRef
 from abacus.modules.evidence.api import engagement_snapshots
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, firm_name
 from abacus.modules.ledger.api import firm_accounts, scope_facts
 from abacus.modules.organisations.api import firm_names
 
@@ -74,6 +74,19 @@ def _in_scope(cents: int, rounding: int, amounts: frozenset[int]) -> bool:
     return any(abs(a - cents) * 2 <= rounding for a in amounts)
 
 
+async def _without_own_names(ctx: AuthContext, ref: EngagementRef, text: str) -> str:
+    """A number in the firm's, this client's or this engagement's own name isn't an amount: a
+    client called Studio 2200 would otherwise have every message to it blocked. Another client's
+    name is still a violation of its own; a real amount written beside a name is still read."""
+    from abacus.modules.communications.notification_email import display_name
+
+    names = [n.name for n in await firm_names(ctx.tenant) if n.client_id == ref.client_id]
+    names += [await firm_name(ctx.tenant_id), await display_name(ctx.tenant_id, ref.id)]
+    for name in sorted({n.strip() for n in names if n and n.strip()}, key=len, reverse=True):
+        text = _word(name).sub(" ", text)
+    return text
+
+
 async def check_scope(ctx: AuthContext, ref: EngagementRef, text: str) -> list[Violation]:
     """What in `text` is outside the engagement's scope (for a caller that has authorised)."""
     violations: list[Violation] = []
@@ -89,7 +102,7 @@ async def check_scope(ctx: AuthContext, ref: EngagementRef, text: str) -> list[V
         code_hit = not code.isdigit() and _named(text, code, MIN_NAME)
         if code_hit or _named(text, account, MIN_ACCOUNT_NAME):
             violations.append(Violation("account", code))
-    for cents, rounding in amounts_in(text):
+    for cents, rounding in amounts_in(await _without_own_names(ctx, ref, text)):
         if not _in_scope(cents, rounding, facts.amounts_cents):
             violations.append(Violation("amount", str(cents)))
     return list(dict.fromkeys(violations))

@@ -50,6 +50,7 @@ from abacus.modules.platform.entitlements import (
     Module,
     check_entitlement,
     entitlement,
+    register_module_review,
     require_entitlement,
 )
 from abacus.modules.platform.events import TenantProvisioned
@@ -184,6 +185,7 @@ from abacus.modules.platform.tenant_keys import (
     InMemoryTenantKeyOps,
     configure_tenant_key_ops,
 )
+from abacus.modules.platform.usage_contract import engagement_effort_router, firm_usage_router
 from abacus.modules.platform.workflow_types import (
     CanaryInput,
     CanaryOutcome,
@@ -231,6 +233,8 @@ register_posture_source("pub4557_open", open_pub4557_controls)
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
+    firm_usage_router,  # C6 v2 (P-10-T09 stub; P-10-T42 implements it)
+    engagement_effort_router,
     incident_router,  # Q-02-T33: the firm's incident register
     incident_reads_router,  # security-center v1 (G-02-T11 stub; G-02-T18 implements it)
     safeguards_router,  # security-center v1 (G-02-T11 stub; G-02-T20 implements it)
@@ -408,6 +412,7 @@ __all__ = [
     "register_audit_value_resolver",
     "register_file_store",
     "register_home_count",
+    "register_module_review",
     "register_pilot_metric_source",
     "register_search_projection",
     "register_wisp_document_reader",

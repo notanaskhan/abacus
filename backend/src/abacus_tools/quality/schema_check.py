@@ -112,6 +112,7 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
         | {"outcome", "inputs_hash", "route"}
         | {"boundary_basis", "terms_version"}  # SPEC-036 (TASK-075)
+        | {"step_id", "session_id", "definition_id", "service_line"}  # 0681 (P-10-T03)
     ),
     "budgets": frozenset({"tenant_id", "monthly_soft_usd", "monthly_hard_usd", "updated_by"}),
     # Feature flags (SPEC-011): set per firm by operators.
@@ -204,12 +205,25 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "walkthroughs": "walkthroughs_immutable",  # 0657 (A-04-T25)
     "ebp_late_remittance_events": "ebp_late_remittance_events_immutable",  # 0658 (A-05-T26)
     "subsequent_events": "a07_rows_immutable",  # 0664 (A-07-T07)
+    "representation_letter_versions": "a07_rows_immutable",  # 0668 (A-07-T08)
+    "representation_letter_approvals": "a07_rows_immutable",  # 0668 (A-07-T08)
+    "governance_communication_versions": "a07_rows_immutable",  # 0668 (A-07-T08)
+    "governance_communication_sends": "a07_rows_immutable",  # 0668 (A-07-T08)
+    "governance_acknowledgements": "a07_rows_immutable",  # 0668 (A-07-T08)
+    "audit_report_versions": "a07_rows_immutable",  # 0668 (A-07-T08)
+    "report_releases": "a07_rows_immutable",  # 0668 (A-07-T08)
+    "archive_binder_indexes": "a07_rows_immutable",  # 0669 (A-07-T09)
+    "archive_lock_decisions": "a07_rows_immutable",  # 0669 (A-07-T09)
+    "archive_manifests": "a07_rows_immutable",  # 0669 (A-07-T09)
+    "archive_additions": "a07_rows_immutable",  # 0669 (A-07-T09)
+    "archive_addition_decisions": "a07_rows_immutable",  # 0669 (A-07-T09)
     "ebp_certification_evaluations": "ebp_certification_evaluations_immutable",  # A-05-T35 (0665)
     "statement_versions": "statement_rows_immutable",  # 0660 (A-06-T19)
     "line_items": "statement_rows_immutable",  # 0660 (A-06-T19)
     "linked_values": "statement_rows_immutable",  # 0660 (A-06-T19)
     "tie_out_runs": "statement_rows_immutable",  # 0660 (A-06-T19)
     "statement_approvals": "statement_rows_immutable",  # 0660 (A-06-T19)
+    "statement_notes": "statement_rows_immutable",  # 0674 (A-06-T25)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -392,6 +406,13 @@ DEFINER_FUNCTIONS = frozenset(
     # code, label and family by id for KNW-02 d. `standards_sets` is global reference data with no
     # tenant rows; search path pinned, revoked from PUBLIC, executable by the app role.
     | {"standards_set_named"}
+    # 0681 (P-10-T03), 0683 (P-10-T05): the 30-day run event and 24-hour realtime prunes. Each
+    # deletes the session tenant's rows only, refuses any actor but its own system job, search
+    # path pinned, revoked from PUBLIC, executable by the app role.
+    | {"prune_run_events", "prune_realtime_events"}
+    # 0686 (A-07-T13, P-43): the locked-work write guard, a trigger function only. It reads
+    # the work item and engagement under the caller's tenant; search path pinned.
+    | {"archived_guard"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
@@ -400,6 +421,7 @@ OWNER_ONLY_FUNCTIONS = frozenset(
     # 0400 (K-02-T03, ADR-300): the operator CLI and the publication fan-out (K-02-T06, T12).
     | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
     | {"active_tenant_ids", "standards_sets_apply"}
+    | {"archived_guard"}  # 0686: fires as a trigger; nobody calls it
 )
 # Definer functions for the operator role only (Q-01-T19): `abacus_ops` executes them, the
 # application role must not.
