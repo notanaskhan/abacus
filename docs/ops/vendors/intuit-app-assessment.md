@@ -16,11 +16,11 @@ can't be removed once saved.
 |---|---|
 | App name shown on Intuit's consent screen | **abacusv2** (Ayush, 2026-11-05; DEC-2099). A neutral name, so a firm's white-label portal never shows "Accrued" (DEC-01, ADR-133). This is the one place a name built on the code namespace is shown to clients, by Ayush's decision |
 | Scope | `com.intuit.quickbooks.accounting` only. No Payments, no OpenID, no write scope (a write scope waits on the W1 adapter ADR) |
-| Host domain | **[open: F-09-T09]** the neutral portal domain |
-| Launch URL | **[open: F-09-T09]** `https://<connect host>/` (the firm app's connections screen) |
-| Connect / reconnect URL | **[open: F-09-T09]** the same; clients start the connection from their portal |
-| Disconnect URL | **[open: F-09-T09]** `https://<connect host>/` (disconnect is a button in the app, which revokes the grant at Intuit) |
-| Redirect URI (production) | **[open: F-09-T09]** `https://<connect host on the neutral portal domain>/v1/connections/callback`, never a firm's white-label host (live-ledger cutover runbook, step 2) |
+| Host domain | The company's one domain (`<domain>` below; DEC-3901). The name is filled in on the day, never in this public repo |
+| Launch URL | `https://app.<domain>/` (the firm app) |
+| Connect / reconnect URL | `https://app.<domain>/`; clients start the connection from their firm's portal, `https://<firm>.<domain>/` |
+| Disconnect URL | `https://app.<domain>/` (disconnect is a button in the app, which revokes the grant at Intuit) |
+| Redirect URI (production) | `https://connect.<domain>/client/connect/callback` (`connections_redirect_base_url` plus `CALLBACK_PATH`), never a firm's white-label host. **[open: A-02-T33]** the page needs a signed-in session and portal sessions are pinned to the firm's host, so the connect host must hand the code on to it before this is registered (TASK-6901) |
 | Privacy policy URL | **[open: counsel, F-09-T04 rows]** a public page |
 | End-user licence agreement (EULA) URL | **[open: counsel, F-09-T04 rows]** a public page |
 
@@ -32,7 +32,7 @@ can't be removed once saved.
 | What data is read | The TrialBalance report for a chosen period, plus CompanyInfo as a daily connection health check. Nothing else |
 | Do you write to QuickBooks | No. The connector sends only GET requests to the accounting API. The only POSTs are to Intuit's token and revoke endpoints. The egress client refuses every other POST before it leaves the process (`kernel/egress.py`; ADR-040), and a test intercepts and checks every request the connector sends (`tests/unit/connections/test_qbo_connector.py`) |
 | Regulated industry | Accounting and tax services. Firms handle tax return information under IRC section 7216 and their own professional standards. We do not move money and are not a payments, lending or credit app |
-| Hosting | AWS, region us-east-2 (production). Disaster recovery in us-west-2 **[confirm against the DR plan on the day]** |
+| Hosting | AWS, region us-east-2 (production). Disaster recovery: a pilot light in us-west-2 (`docs/ops/environments.md`) **[confirm it is built on the day]** |
 | Encryption in transit | TLS 1.2 or higher on every public endpoint. Outbound calls to Intuit are HTTPS only; no redirect following; no proxies taken from the environment |
 | Encryption at rest | Database storage encrypted with AWS KMS. QuickBooks tokens are additionally sealed with the firm's own key before storage, and erased when the client disconnects |
 | Token storage | Access and refresh tokens are stored only sealed (encrypted) server-side, never in a browser, never logged |

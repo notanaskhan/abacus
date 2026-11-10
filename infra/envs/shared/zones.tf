@@ -7,8 +7,9 @@ resource "aws_route53_zone" "firm" {
   comment = "Accrued firm app"
 }
 
+# One registered domain may serve both (DEC-3901): then the firm zone is the only zone.
 resource "aws_route53_zone" "portal" {
-  count   = var.portal_base_domain == null ? 0 : 1
+  count   = var.portal_base_domain == null || var.portal_base_domain == var.firm_domain ? 0 : 1
   name    = var.portal_base_domain
   comment = "Neutral client portal domain (ADR-163)"
 }

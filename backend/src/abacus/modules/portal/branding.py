@@ -22,6 +22,7 @@ from uuid import UUID
 
 from PIL import Image
 
+from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, run_isolated
@@ -43,6 +44,29 @@ _HOST: Final = re.compile(
     r"^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+)(?::\d{1,5})?$"
 )
 _ACTOR: Final = "portal:branding"
+# Labels no firm's portal host may take one level under the portal domain: the firm app, the
+# Intuit callback, the mail subdomains and the other platform hosts share that domain (DEC-3901).
+RESERVED_LABELS: Final = frozenset(
+    {
+        "admin",
+        "api",
+        "app",
+        "auth",
+        "autodiscover",
+        "bounce",
+        "connect",
+        "docs",
+        "help",
+        "mail",
+        "mta-sts",
+        "notify",
+        "portal",
+        "staging",
+        "status",
+        "support",
+        "www",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -68,6 +92,14 @@ def _hostname(host: str | None) -> str | None:
         return None
     found = _HOST.fullmatch(host.strip().lower())
     return None if found is None else found.group(1)
+
+
+def reserved_host(name: str, base: str | None) -> bool:
+    """A platform host one level under the portal domain (or the domain itself), never a firm's."""
+    if base is None:
+        return False
+    label, _, parent = name.partition(".")
+    return name == base or (parent == base and label in RESERVED_LABELS)
 
 
 async def branding_for_host(host: str | None) -> Branding:
@@ -189,7 +221,7 @@ async def add_portal_host(
     """A host for the firm's portal, `pending_dns` until verified (provisioning's default host;
     ADM-10's custom ones from P1)."""
     name = _hostname(hostname)
-    if name is None:
+    if name is None or reserved_host(name, settings().portal_base_domain):
         raise HostInvalid
     await repository.add_domain(tx.session, tenant_id, name, kind)
     tx.record("portal_domain.added", target=Target("firm", tenant_id))

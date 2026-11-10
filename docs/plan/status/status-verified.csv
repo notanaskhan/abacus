@@ -127,3 +127,4 @@ T-01-T29,partial,"TASK-2472 (DEC-1532): nine journey tests written; 8 of 9 walk 
 F-09-T02,done,"TASK-3098 (DEC-2098): Ayush, 2026-11-03: company and legal foundation done; formation documents, founder agreement and IP assignments are held outside the repo (vault); no copy or summary in the repo"
 F-09-T03,done,"TASK-3098 (DEC-2098): Ayush, 2026-11-03: year-one spend plan (DEC-03 envelope, cash position, runway) done; amounts live in the vault only"
 F-09-T04,done,"TASK-3098 (DEC-2098): Ayush, 2026-11-03: counsel engaged; the engagement letter and its scope are held outside the repo; counsel's answers are their own rows (F-09-T22 onwards), still open"
+F-09-T09,done,"TASK-6901 (DEC-3901, DEC-3903): one domain registered 2026-10-05 for the firm app, portal and mail (name in the vault), delegated to Route 53 2026-11-10; registrar MFA waived by Ayush (admin override, DEC-3903); counsel's trademark check is counsel's row"
