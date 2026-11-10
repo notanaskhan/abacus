@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -464,11 +464,27 @@ async def draft_run_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
 
 
 @workspace_router.get(
-    f"{_R}/worksheets", action="return_worksheet.read", response_model=WorksheetsOut, errors=(501,)
+    f"{_R}/worksheets", action="return_worksheet.read", response_model=WorksheetsOut
 )
 async def worksheets_route(return_id: UUID, ctx: Ctx) -> WorksheetsOut:
+    """TAX-05's tree (T-04-T16)."""
+    from abacus.modules.tax.worksheets import tree
+
     await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
-    _not_yet()
+    return WorksheetsOut(
+        items=[
+            WorksheetNodeOut(
+                worksheet_id=n.worksheet_id,
+                title=n.title,
+                group=n.group,
+                sub_head=n.sub_head,
+                tsj=cast(Literal["T", "S", "J"] | None, n.tsj),
+                new_this_year=n.new_this_year,
+                edited=n.edited,
+            )
+            for n in await tree(ctx, return_id)
+        ]
+    )
 
 
 @workspace_router.get(
@@ -480,8 +496,33 @@ async def worksheets_route(return_id: UUID, ctx: Ctx) -> WorksheetsOut:
 async def worksheet_fields_route(
     worksheet_id: UUID, ctx: Ctx, q: Annotated[str | None, Query(max_length=120)] = None
 ) -> WorksheetFieldsOut:
+    """TAX-05's fields with their provenance (T-04-T16); edits go through `PUT /v1/fields/…`."""
+    from abacus.modules.tax.worksheets import fields
+
     await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
-    _not_yet()
+    return WorksheetFieldsOut(
+        worksheet_id=worksheet_id,
+        sections=[
+            WorksheetSectionOut(
+                key=s.key,
+                title=s.title,
+                fields=[
+                    WorksheetFieldOut(
+                        field_key=f.field_key,
+                        label=f.label,
+                        value=f.value,
+                        state=ReturnFieldViewStatus(f.state),
+                        provenance=f.provenance,
+                        citations=f.citations,
+                        engine_label=f.engine_label,
+                        seen_seq=f.seen_seq,
+                    )
+                    for f in s.fields
+                ],
+            )
+            for s in await fields(ctx, worksheet_id, q)
+        ],
+    )
 
 
 @workspace_router.get(
