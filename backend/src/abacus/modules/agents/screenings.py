@@ -35,6 +35,7 @@ from abacus.modules.agents.methodology_import_workflow import MethodologyImportW
 from abacus.modules.agents.review_start import WORKFLOWS as REVIEW_WORKFLOWS
 from abacus.modules.agents.review_start import start_upload_review
 from abacus.modules.agents.run_backfill_workflow import AgentRunBackfillWorkflow
+from abacus.modules.agents.run_workflow import AgentRunWorkflow
 from abacus.modules.agents.screening_aggregate import on_version_event, on_version_withdrawn
 from abacus.modules.agents.section_draft import WORKFLOWS as SECTION_DRAFT_WORKFLOWS
 from abacus.modules.agents.service import SCREENER
@@ -77,6 +78,8 @@ WORKFLOWS.update(ASSESS_WORKFLOWS)  # SPEC-037 Q4 (TASK-085)
 WORKFLOWS.update(SECTION_DRAFT_WORKFLOWS)  # A-04-T11
 # P-10-T14: the legacy run backfill, started per firm by the deploy pipeline.
 WORKFLOWS[AgentRunBackfillWorkflow] = "background"
+# P-10-T29: a v2 run (a person started it, so interactive; ADR-071).
+WORKFLOWS[AgentRunWorkflow] = "interactive"
 register_work_classes(WORKFLOWS)
 
 

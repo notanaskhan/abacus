@@ -227,6 +227,9 @@ class RunHeaderOut(BaseModel):
     work_item_ref: Annotated[str | None, classified("internal")] = None
     plan_version: Annotated[int | None, classified("internal")] = None  # P-09-T14
     plan_steps: Annotated[list[PlanStepRefOut], classified("internal")] = []  # DEC-3142
+    # P-10-T29: the v2 state (C2's 14 codes) and its reason code; null for a legacy run.
+    state: Annotated[str | None, classified("internal")] = None
+    state_reason: Annotated[str | None, classified("internal")] = None
 
 
 class RunViewOut(BaseModel):
@@ -563,6 +566,8 @@ def _header(header: RunHeader | None) -> RunHeaderOut | None:
         work_item_ref=header.work_item_ref,
         plan_version=header.plan_version,
         plan_steps=[PlanStepRefOut(key=k, label=label) for k, label in header.plan_steps],
+        state=header.state,
+        state_reason=header.state_reason,
     )
 
 
