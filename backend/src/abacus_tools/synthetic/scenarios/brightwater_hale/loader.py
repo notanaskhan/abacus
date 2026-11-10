@@ -141,6 +141,7 @@ from abacus.modules.assurance.api import (
     sum_snapshot,
     update_profile,
 )
+from abacus.modules.collaboration.api import create_todo, open_thread
 from abacus.modules.communications.api import (
     Inbound,
     TemplateContent,
@@ -339,6 +340,7 @@ from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale import agent_runs_slice as _runs
+from abacus_tools.synthetic.scenarios.brightwater_hale import collaboration_slice as _collab
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
@@ -2012,6 +2014,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     _tax_schedules.SLICE: _tax_schedules.NEEDS,  # T-03-T15: organizer v6, TAX-13's rows
     _completion.SLICE: _completion.NEEDS,  # A-06-T28: the ASC 962 checklist
     _room.SLICE: _room.NEEDS,  # R-02-T13: Northwind's Benefits Committee room
+    _collab.SLICE: _collab.NEEDS,  # P-05-T12: Northwind's comment and Marcus's four to-dos
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
@@ -5892,6 +5895,55 @@ async def _feld_checkpoint_saved(conn: asyncpg.Connection, _: Scenario, event: E
         )
 
 
+async def _collaboration_paper(conn: asyncpg.Connection, ctx: AuthContext) -> UUID:
+    """Northwind's Internal Control paper, found or created as the completion slice does."""
+    engagement = engagement_id_of(BY_LABEL["A1"])
+    code, title = PLANNING_IC_PAPER
+    paper = await tenant_value(
+        conn, TENANT, "SELECT id FROM workpapers WHERE engagement_id = $1 AND code = $2",
+        engagement, code,
+    )  # fmt: skip
+    if paper is None:
+        paper = await create_workpaper(
+            ctx, engagement, code, title, "Internal control", kind="internal_control"
+        )
+    return cast(UUID, paper)
+
+
+async def _collaboration_thread_seeded(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """P-05-T12 (SHL-18a): Margaret's comment on Exceptions!A3 through comments v2's service."""
+    ctx = await _staff_context(conn, event)
+    paper = await _collaboration_paper(conn, ctx)
+    await open_thread(
+        ctx,
+        anchor_kind="workpaper",
+        anchor_id=paper,
+        locator=cast("dict[str, str | int]", event.data["locator"]),
+        body=str(event.data["body"]),
+        mention_user_ids=[user_id_of(_SEATS[i]) for i in cast("list[str]", event.data["mention"])],
+    )
+
+
+async def _collaboration_todo_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """P-05-T12 (SHL-17a, f): a to-do on Northwind's Internal Control paper through the service."""
+    ctx = await _staff_context(conn, event)
+    paper = await _collaboration_paper(conn, ctx)
+    locator = cast("dict[str, str | int] | None", event.data["locator"])
+    await create_todo(
+        ctx,
+        scope_kind="engagement",
+        engagement_id=engagement_id_of(BY_LABEL["A1"]),
+        title=str(event.data["title"]),
+        assignee_user_id=user_id_of(_SEATS[str(event.data["assignee"])]),
+        due_on=date.fromisoformat(str(event.data["due_on"])),
+        anchor=("workpaper", paper, locator),
+        checklist=[str(c) for c in cast("list[str]", event.data["checklist"])],
+        source_thread_id=None,
+    )
+
+
 HANDLERS: Final[dict[str, Handler]] = {
     "identity.firm_created": _firm_created,
     "organisations.office_created": _office_created,
@@ -5952,6 +6004,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "portal.host_added": _host_added,
     "identity.portal_person_added": _portal_person_added,
     "assurance.governance_body_seeded": _governance_body_seeded,
+    "collaboration.thread_seeded": _collaboration_thread_seeded,
+    "collaboration.todo_seeded": _collaboration_todo_seeded,
     "agents.run_recorded": _run_recorded,  # P-09-T12 (`--slice agent_runs`)
     "identity.client_invitation_created": _client_invitation_created,
     # G-01-T06 (`--slice people`): seats, then teams, then each person's profile.

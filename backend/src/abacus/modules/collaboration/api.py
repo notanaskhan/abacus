@@ -15,7 +15,9 @@ from abacus.modules.collaboration.anchors import (
 )
 from abacus.modules.collaboration.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.collaboration.routes import threads_router, todos_router
+from abacus.modules.collaboration.threads import open_thread
 from abacus.modules.collaboration.todos import TODO_ANCHORS
+from abacus.modules.collaboration.todos import create as create_todo
 from abacus.modules.identity.api import AbacusRouter
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -35,6 +37,8 @@ __all__ = [
     "AnchorFacts",
     "AnchorProvider",
     "Locator",
+    "create_todo",
+    "open_thread",
     "register_anchor",
     "registered_kinds",
 ]
