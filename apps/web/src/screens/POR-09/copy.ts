@@ -18,6 +18,11 @@ export const COPY = {
   comments: (n: number) => `Comments · ${String(n)}`,
   composer: "Comment on this page…",
   composerHint: "Click anywhere on a page to add a comment.",
+  // R-02-T22: the keyboard path for a pin (a line chooser) and the composer's send.
+  addOnPage: "Add a comment on this page",
+  lineLabel: "Line (optional)",
+  send: "Send",
+  close: "Close",
   page: (n: number, of: number) => `${String(n)} / ${String(of)}`,
   previous: "Previous page",
   next: "Next page",

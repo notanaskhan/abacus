@@ -1182,6 +1182,10 @@ _SCOPE_KINDS = frozenset({"engagement", "work_item", "client", "client_entity", 
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # R-02-T22: a client's reads of the shared threads on an anchor its provider authorised for
+        # that client (`client_threads`); a client principal holds no engagement read to filter by.
+        ("src/abacus/modules/collaboration/repository.py", "shared_threads_on_anchor"),
+        ("src/abacus/modules/collaboration/repository.py", "comments_of_threads"),
         # A-05-T09 (DEC-1954): a work item's designed papers, for an owner's rail provider or
         # export section that already authorised the engagement it reads.
         ("src/abacus/modules/workpapers/repository.py", "papers_of_work_item"),

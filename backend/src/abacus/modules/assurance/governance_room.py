@@ -573,3 +573,38 @@ async def room_reports(ctx: AuthContext, room_id: UUID) -> list[AudienceDelivera
     """Released reports whose audience includes this room (C10), for a current member."""
     await _open(ctx, room_id)
     return await released_for_audience(ctx.tenant, ROOM, room_id)
+
+
+@dataclass(frozen=True)
+class CommunicationScope:
+    engagement_id: UUID
+    work_item_id: UUID
+    client_visible: bool  # sent to the governance room, and the caller a current member of it
+
+
+async def communication_scope(
+    ctx: AuthContext, communication_id: UUID
+) -> CommunicationScope | None:
+    """R-02-T22: a governance communication as a comment anchor. A client person reads it only as
+    a current member of the room it was sent to (else None, 404); a firm caller gets its
+    engagement and authorises its own action on it."""
+    async with tenant_session(ctx.tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT engagement_id, work_item_id FROM governance_communications "
+                    "WHERE id = :id"
+                ),
+                {"id": communication_id},
+            )
+        ).first()
+    if row is None:
+        return None
+    if not ctx.client:
+        return CommunicationScope(row.engagement_id, row.work_item_id, False)
+    try:
+        sent = await _sent_letter(ctx, communication_id)
+        await _open(ctx, cast(UUID, sent.governance_body_id))  # type: ignore[attr-defined] -- a raw SQL row's column
+    except NotFound:
+        return None
+    return CommunicationScope(row.engagement_id, row.work_item_id, True)

@@ -560,3 +560,41 @@ def bucket_of(due_on: date | None, today: date) -> str:
         return "today"
     end_of_week = today.toordinal() + (6 - today.weekday())
     return "this_week" if due_on.toordinal() <= end_of_week else "later"
+
+
+async def shared_threads_on_anchor(
+    session: AsyncSession, anchor_kind: str, anchor_id: UUID
+) -> list[CommentThread]:
+    """R-02-T22: the shared threads on one anchor, for the client path once the anchor's provider
+    has authorised the client (LIST_EXEMPT)."""
+    found = await session.execute(
+        select(CommentThread)
+        .where(
+            CommentThread.anchor_kind == anchor_kind,
+            CommentThread.anchor_id == anchor_id,
+            CommentThread.visibility == "shared",
+        )
+        .order_by(CommentThread.created_at, CommentThread.id)
+    )
+    return list(found.scalars().all())
+
+
+async def comments_of_threads(
+    session: AsyncSession, thread_ids: Sequence[UUID]
+) -> list[tuple[ThreadComment, ThreadCommentRedaction | None]]:
+    """R-02-T22: the comments of threads the client path already narrowed, oldest first."""
+    if not thread_ids:
+        return []
+    found = await session.execute(
+        select(ThreadComment, ThreadCommentRedaction)
+        .outerjoin(
+            ThreadCommentRedaction,
+            and_(
+                ThreadCommentRedaction.tenant_id == ThreadComment.tenant_id,
+                ThreadCommentRedaction.comment_id == ThreadComment.id,
+            ),
+        )
+        .where(ThreadComment.thread_id.in_(list(thread_ids)))
+        .order_by(ThreadComment.created_at, ThreadComment.id)
+    )
+    return [(c, r) for c, r in found.tuples().all()]

@@ -249,3 +249,29 @@ async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) ->
     async with tenant_session(tenant) as session:
         rows = await session.execute(_OWNERS, {"ids": list(ids)})
         return {found: owned for found, owned in rows if owned is not None}
+
+
+@dataclass(frozen=True)
+class DeliverableScope:
+    engagement_id: UUID | None
+    client_id: UUID
+    work_item_id: UUID | None
+
+
+async def deliverable_scope(
+    tenant: TenantContext, deliverable_id: UUID
+) -> DeliverableScope | None:
+    """R-02-T22: a deliverable's engagement, client and work item, for an anchor provider whose
+    caller authorises its own action on them (a firm member replying on a page comment)."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT engagement_id, client_id, work_item_id FROM deliverables WHERE id = :id"
+                ),
+                {"id": deliverable_id},
+            )
+        ).first()
+    if row is None:
+        return None
+    return DeliverableScope(row.engagement_id, row.client_id, row.work_item_id)
