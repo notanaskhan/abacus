@@ -245027,7 +245027,7 @@
     },
     "/v1/portal/governance/communications/{communication_id}/pdf": {
       "get": {
-        "description": "302 to the C10 download.",
+        "description": "302 to the C10 download of the sent letter (R-02-T12 remainder; DEC-3146): a room member\nonly (404 otherwise); 409 `letter_rendering` while its final PDF is not yet servable.",
         "operationId": "get_communication_pdf",
         "parameters": [
           {
@@ -245115,6 +245115,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {

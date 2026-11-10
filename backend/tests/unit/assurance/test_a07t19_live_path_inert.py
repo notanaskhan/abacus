@@ -68,7 +68,13 @@ async def test_aud01_no_tag_while_off() -> None:
 @pytest.mark.parametrize("kind", ["rep_letter", "governance_letter"])
 async def test_sig01_no_envelope_can_be_drafted_or_sent_from_a_letter(kind: str) -> None:
     source = envelope_source(kind)
-    assert source.draft is None
+    # The governance letter drafts from a sent version (TASK-6543, DEC-3145), and only while the
+    # letters are live for the firm: off, its draft is refused like its documents and signers.
+    if source.draft is not None:
+        with pytest.raises(a07.NotLive):
+            await source.draft(CTX, uuid4())
+    else:
+        assert kind == "rep_letter"
     with pytest.raises(a07.NotLive):
         await source.documents(CTX, uuid4())
     with pytest.raises(a07.NotLive):

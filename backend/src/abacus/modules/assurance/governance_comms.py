@@ -859,8 +859,11 @@ async def _final_document(tenant: TenantContext, version_id: UUID) -> tuple[UUID
 async def governance_draft(ctx: AuthContext, version_id: UUID) -> object:
     """C7's draft from a sent version: the final letter, the recipients as email-code signers,
     each in their own routing group (any order), purpose `governance_letter` (general family)."""
+    from abacus.modules.assurance.a07_registrations import require_live
     from abacus.modules.signatures.api import SourceDocument, SourceDraft, SourceSigner
 
+    # Inert while the letters are off for the firm (A-07-T19's live-path rule): 404 not_live.
+    await require_live(ctx.tenant, "audits.letters")
     async with tenant_session(ctx.tenant) as session:
         sent = (await session.execute(_LATEST_SEND, {"v": version_id})).first()
     if sent is None:
