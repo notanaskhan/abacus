@@ -46,3 +46,6 @@ variables are null.
   path is `/client/connect/callback` (not the `/v1/connections/callback` the runbook and draft
   had), and that the callback page needs a session the connect host cannot have. Recorded as
   open for A-02-T33 rather than fixed here.
+- 2026-11-10: applied `shared` from this branch (one zone added, nothing else). The state lock
+  write needed KMS backend flags (infra/README step 8). Until this merges, a `shared` apply from
+  a checkout without both domain variables would plan to destroy the zone.
