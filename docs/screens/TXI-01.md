@@ -8,7 +8,7 @@
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TXI-01 …/` |
 | Epic and tasks | T-04 · T-04-T02 (contract), T-04-T07 (fixtures), screen rows per §9 |
 | Priority | P0 |
-| Manifest status | planned |
+| Manifest status | fixture (T-04-T22: `screens/TXI-01`) |
 
 ## States
 | Artboard | Data condition that produces it | Status |
