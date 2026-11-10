@@ -15,6 +15,7 @@ import { type JSX, lazy, type ReactNode, Suspense, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { narrate } from "./narrate";
 import type { DockAgent } from "./RunPane";
+import { RunStateAnnouncer } from "./RunStateAnnouncer";
 import { isActive, POLL_MS, useRunFeed } from "./runFeed";
 import { duration, STATE, SUBJECT } from "./traceWords";
 
@@ -55,6 +56,7 @@ function CardBody({ run }: { run: AgentRunOut }): JSX.Element {
   const authored = feed.items.filter((i) => i.blocks != null);
   return (
     <dl className="grid grid-cols-[72px_1fr] gap-x-2 gap-y-1 pt-[6px] text-dense">
+      <RunStateAnnouncer message={feed.announcement} />
       <dt className="text-ink-3">Read</dt>
       <dd>{run.subject === null ? "—" : (SUBJECT[run.subject] ?? run.subject)}</dd>
       <dt className="text-ink-3">Proposed</dt>
