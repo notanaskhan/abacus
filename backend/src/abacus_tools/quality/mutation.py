@@ -50,6 +50,15 @@ SCOPES: Final[dict[str, tuple[str, ...]]] = {
     "compute": ("src/abacus/*/compute/*.py",),
     "signatures": ("src/abacus/modules/signatures/*.py",),  # N-02-T47 (ADR-079)
     "review": ("src/abacus/modules/review/*.py",),  # P-04-T59 (ADR-079; DEC-2065)
+    # A-07-T45 (ADR-079): release, the archive gate and the lock's seal; evidence/archive.py is in
+    # `evidence` and archived_guard()'s registry in `kernel/db` already.
+    "assurance/release_archive": (
+        "src/abacus/modules/assurance/release.py",
+        "src/abacus/modules/assurance/archive_gate.py",
+        "src/abacus/modules/assurance/archive_lock.py",
+        "src/abacus/modules/assurance/archive_seal.py",
+        "src/abacus/modules/assurance/archive_additions.py",
+    ),
 }
 # Generated files are regenerated, never mutated.
 GENERATED: Final = (

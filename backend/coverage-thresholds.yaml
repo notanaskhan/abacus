@@ -30,6 +30,8 @@ line:
   signatures: 0
   # P-04-T59 (DEC-2065): the review grammar is a red module; raised to its first measured baseline.
   review: 0
+  # A-07-T45 (ADR-079): release and archive are a red scope; raised to their first measured baseline.
+  assurance/release_archive: 0
 branch:
   identity/authz: 52
   kernel/db: 77
@@ -41,3 +43,4 @@ branch:
   compute: 100
   signatures: 0
   review: 0
+  assurance/release_archive: 0
