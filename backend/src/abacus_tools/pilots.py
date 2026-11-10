@@ -8,6 +8,11 @@ behalf of the named operator, and every change is audited.
         [--confirmed-by U2]
     python -m abacus_tools.pilots metrics --firm F --week 2027-06-07   (Q-04-T008, a rerun)
 
+`metrics` imports every module's api first, as the worker does, so each owner registers its
+metric source (W4 engagements, W5 requests, W6 audit_trail, W7 agents); the platform fails
+closed on an unregistered metric, so without the imports a rerun wrote nothing (found on PF-X1,
+TASK-7101).
+
 `--confirmed-by` names the firm person (the champion) who confirms the system of record (Q-04
 AC-8.4): an active member of that firm, checked here before the mode moves (Q-04-T012, DEC-834).
 """
@@ -32,6 +37,17 @@ from abacus.modules.platform.api import (
     wedge_read,
     wedge_report,
 )
+
+
+def register_metric_sources() -> None:
+    """Import every module's api, as the worker does: each owner registers its pilot metric
+    source on import (Q-04-T008; TASK-7101)."""
+    from importlib import import_module
+
+    from abacus.modules import MODULES
+
+    for name in MODULES:
+        import_module(f"abacus.modules.{name}.api")
 
 
 async def confirmer_is_member(firm: UUID, person: UUID) -> bool:
@@ -67,6 +83,7 @@ def main(argv: list[str] | None = None) -> int:
         print(asyncio.run(_read(cast(list[UUID], args.firm), args.week)), end="")
         return 0
     if args.command == "metrics":
+        register_metric_sources()
         print(asyncio.run(compute_pilot_week(args.firm, args.week)))
         return 0
     tenant = TenantContext(args.firm, "system", "operator:pilots", args.operator)
