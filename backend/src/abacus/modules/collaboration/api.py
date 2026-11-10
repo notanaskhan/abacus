@@ -14,6 +14,7 @@ from abacus.modules.collaboration.anchors import (
 )
 from abacus.modules.collaboration.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.collaboration.routes import threads_router, todos_router
+from abacus.modules.collaboration.todos import TODO_ANCHORS
 from abacus.modules.identity.api import AbacusRouter
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -21,6 +22,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     threads_router,  # P-05-T05: /v1/comment-threads*, /v1/thread-comments*, candidates
     todos_router,  # P-05-T06: /v1/todos*
 )
+
+# P-05-T06: a to-do is itself an anchor (its threads, SHL-17's comment count).
+register_anchor("todo", TODO_ANCHORS)
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)

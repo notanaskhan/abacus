@@ -174,7 +174,7 @@ async def _anchor(
 ) -> AnchorFacts:
     """The anchor's facts once `action` is allowed on it: 409 for an unknown kind, 404 for a
     missing record, an engagement-less anchor or a client principal."""
-    facts = await anchor_facts(ctx.tenant, kind, anchor_id, locator)
+    facts = await anchor_facts(ctx, kind, anchor_id, locator)
     if facts is None or ctx.client:
         raise NotFound("anchor")
     if facts.engagement_id is None:

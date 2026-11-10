@@ -135,6 +135,14 @@ async def collab(net: Net) -> Collab:
         await seed.member(site, who, role)
         await seed.member(other, who, role)
         people.append(who)
+    # Membership levels: the EP is a partner, Hannah a manager (firm-scope to-dos, AC-28).
+    for who, level in ((people[0], "partner"), (people[1], "manager")):
+        await seed.run(
+            "UPDATE memberships SET level = $3 WHERE tenant_id = $1 AND user_id = $2",
+            tenant_id,
+            who.user_id,
+            level,
+        )
     simone = await _named(net, await seed.person(tenant_id), "Simone Baptiste")
     victor = await _named(net, await seed.person(tenant_id), "Victor Hale")
     await net.wall(grace, victor, site)

@@ -6,8 +6,8 @@ window `request_item` and `evidence_version` are never registered here: their co
 the live SPEC-032 path until CL-1.
 
 A provider answers `AnchorFacts` for one anchor as the caller may see it, or None when the record
-does not exist in the tenant (404). The service then authorises the caller's action on
-`facts.resource()`, so a provider never decides who may comment.
+does not exist in the tenant or is not the caller's to see (404). The service then authorises the
+caller's action on `facts.resource()`, so a provider never decides who may comment.
 """
 
 from __future__ import annotations
@@ -19,9 +19,8 @@ from dataclasses import dataclass, field
 from typing import Final, Literal, Protocol
 from uuid import UUID
 
-from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, DomainInvalid
-from abacus.modules.identity.api import Resource
+from abacus.modules.identity.api import AuthContext, Resource
 
 VersionPolicy = Literal["pin", "follow"]
 Locator = Mapping[str, str | int]
@@ -80,7 +79,7 @@ class AnchorProvider(Protocol):
     locator_keys: frozenset[str]
 
     async def facts(
-        self, tenant: TenantContext, anchor_id: UUID, locator: Locator | None
+        self, ctx: AuthContext, anchor_id: UUID, locator: Locator | None
     ) -> AnchorFacts | None: ...
 
 
@@ -123,9 +122,9 @@ def locator_key(provider: AnchorProvider, locator: Locator | None) -> str:
 
 
 async def anchor_facts(
-    tenant: TenantContext, kind: str, anchor_id: UUID, locator: Locator | None
+    ctx: AuthContext, kind: str, anchor_id: UUID, locator: Locator | None
 ) -> AnchorFacts | None:
     """The registered provider's facts (409 for an unregistered kind, before anything else)."""
     provider = provider_of(kind)
     locator_key(provider, locator)
-    return await provider.facts(tenant, anchor_id, locator)
+    return await provider.facts(ctx, anchor_id, locator)

@@ -5490,6 +5490,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "not_offshore": "required",
     },
     "todo.assign": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5505,6 +5507,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "todo.complete": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5520,6 +5524,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "todo.create": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5535,6 +5541,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "todo.delete": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5556,6 +5564,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
     },
     "todo.read": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5574,6 +5584,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "todo.update": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",

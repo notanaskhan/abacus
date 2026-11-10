@@ -7,19 +7,19 @@ import uuid
 
 import pytest
 
-from abacus.kernel.db import TenantContext
 from abacus.modules.collaboration import anchors
 from abacus.modules.collaboration.anchors import AnchorFacts, Locator
 from abacus.modules.collaboration.candidates import initials, matches
 from abacus.modules.collaboration.errors import CommentTooLong, EmptyComment
 from abacus.modules.collaboration.threads import MAX_BODY, clean_text
+from abacus.modules.identity.api import AuthContext
 
 
 class _Cells:
     locator_keys = frozenset({"sheet", "cell"})
 
     async def facts(
-        self, tenant: TenantContext, anchor_id: uuid.UUID, locator: Locator | None
+        self, ctx: AuthContext, anchor_id: uuid.UUID, locator: Locator | None
     ) -> AnchorFacts | None:
         return None
 

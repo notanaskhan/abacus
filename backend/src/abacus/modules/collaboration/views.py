@@ -10,6 +10,7 @@ from abacus.modules.collaboration import contract as c
 from abacus.modules.collaboration.anchors import AnchorFacts
 from abacus.modules.collaboration.candidates import Candidate, initials
 from abacus.modules.collaboration.threads import ThreadView
+from abacus.modules.collaboration.todos import TodoView
 from abacus.modules.identity.api import names_of
 
 
@@ -112,3 +113,50 @@ def candidate_out(found: Candidate) -> c.PersonCandidateOut:
         selectable=found.selectable,
         reason="not_on_engagement" if found.reason == "not_on_engagement" else None,
     )
+
+
+async def todos_out(found: Sequence[TodoView]) -> list[c.TodoOut]:
+    ids: set[UUID] = set()
+    for t in found:
+        ids |= {t.assignee, t.created_by}
+        ids |= {u for u in (t.done_by,) if u is not None}
+        ids |= {i.done_by for i in t.checklist if i.done_by is not None}
+    named = await people(ids)
+    return [
+        c.TodoOut(
+            id=t.id,
+            scope_kind="firm" if t.scope_kind == "firm" else "engagement",
+            engagement_id=t.engagement_id,
+            title=t.title,
+            status=t.status,  # pyright: ignore[reportArgumentType] -- the table's CHECK
+            overdue=t.overdue,
+            bucket=t.bucket,  # pyright: ignore[reportArgumentType] -- repository.bucket_of
+            assignee=named[t.assignee],
+            created_by=named[t.created_by],
+            created_at=t.created_at,
+            due_on=t.due_on,
+            anchor=None
+            if t.anchor is None or t.anchor_kind is None or t.anchor_id is None
+            else anchor_out(t.anchor_kind, t.anchor_id, t.locator, t.anchor),
+            row_text=t.row_text,
+            source_thread_id=t.source_thread_id,
+            done_by=None if t.done_by is None else named[t.done_by],
+            done_at=t.done_at,
+            unread=t.unread,
+            checklist=[
+                c.TodoChecklistItemOut(
+                    id=i.id,
+                    position=i.position,
+                    text=i.text,
+                    done=i.done,
+                    done_by=None if i.done_by is None else named[i.done_by],
+                    done_at=i.done_at,
+                )
+                for i in t.checklist
+            ],
+            comment_count=t.comment_count,
+            version=t.version,
+            allowed_actions=t.allowed_actions,  # pyright: ignore[reportArgumentType] -- TODO_ACTIONS
+        )
+        for t in found
+    ]
