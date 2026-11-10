@@ -1,123 +1,222 @@
-"""Record `AgentRunWorkflow`'s replay history (P-10-T29; ADR-090). See `histories.py` for the
-rules.
+"""Record `AgentRunWorkflow`'s replay histories (P-10-T29 part 1, P-10-T32 part 2; ADR-090). See
+`histories.py` for the rules.
 
 Run: python -m abacus_tools.workflows.record_agent_run <output-directory>
 
-`agent-run-v1-succeeded.json`: one run with the activities stubbed: the plan (one narration step)
-recorded as version 1, the person's `plan_decided` signal, the plan read back approved, the step
-dispatched and succeeded, the run completed. A history on disk is never overwritten.
+Each history runs one plan with the activities stubbed (no database), so it pins the workflow's
+command sequence only:
+
+- `agent-run-v2-approved.json`: a 4-step plan over 3 levels, approved, every step succeeds.
+- `agent-run-v2-decision-resumed.json`: Planning materiality as a decision card; the run is
+  `blocked_on_decision` until `decision_decided`, then only the held branch resumes (AC-W4).
+- `agent-run-v2-question-skipped.json`: a question skipped; the skip default applies (AC-W5).
+- `agent-run-v2-step-retried.json`: the Internal Control step fails, a person retries it, the new
+  row succeeds and its dependant runs (AC-W6).
+- `agent-run-v2-stopped.json`: a held run stopped by a person.
+
+A history on disk is never overwritten.
 """
 
 from __future__ import annotations
 
+import asyncio
 import sys
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any
+from typing import Final
 
 from temporalio import activity
+from temporalio.client import Client, WorkflowHandle
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents.api import (
-    AgentRunInput,
-    AgentRunWorkflow,
-    RunV2Facts,
-    RunV2PlanState,
-    RunV2StepOutcome,
-)
+from abacus.modules.agents.run_activities import PlanState, RunFacts, StepOutcome
+from abacus.modules.agents.run_waits import WaitState
+from abacus.modules.agents.run_workflow import AgentRunInput, AgentRunWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 
-JsonObject = dict[str, Any]  # Any: JSON (the converter decodes Any, not object)
-_TASK_QUEUE = "abacus-recorder"
-NAME = "agent-run-v1-succeeded.json"
-_ENGAGEMENT = "00000000-0000-4000-8000-0000000004a1"
-_STEPS: list[JsonObject] = [
-    {"key": "narrate", "label": "Narrate", "level": 0, "kind": "narration"}
-]
+_TASK_QUEUE: Final = "abacus-recorder"
+_TENANT: Final = "00000000-0000-4000-8000-0000000000b1"
+_ENGAGEMENT: Final = "00000000-0000-4000-8000-0000000004e1"
 
 
-@activity.defn(name="agents.run_v2.load")
-async def _load(tenant_id: str, run_id: str) -> RunV2Facts:
-    return RunV2Facts("queued", _ENGAGEMENT, [], [], {}, 1, _STEPS)
+def _step(key: str, level: int, kind: str = "tool", *deps: str) -> dict[str, object]:
+    return {
+        "key": key,
+        "label": key,
+        "level": level,
+        "kind": kind,
+        "tool": "ledger.read_trial_balance" if kind == "tool" else None,
+        "arguments": {},
+        "depends_on": list(deps),
+    }
 
 
-@activity.defn(name="agents.run_v2.record_plan")
-async def _record_plan(
-    tenant_id: str,
-    run_id: str,
-    steps: list[JsonObject],
-    problems: list[str],
-) -> int:
-    return 1
+PLANS: Final[dict[str, list[dict[str, object]]]] = {
+    "approved": [
+        _step("tb", 0),
+        _step("risks", 1, "tool", "tb"),
+        _step("materiality_calc", 1, "tool", "tb"),
+        _step("summary", 2, "narration", "risks", "materiality_calc"),
+    ],
+    "decision-resumed": [
+        _step("tb", 0),
+        _step("materiality", 1, "decision", "tb"),
+        _step("ic", 1, "tool", "tb"),
+        _step("sampling", 2, "tool", "materiality"),
+    ],
+    "question-skipped": [
+        _step("population", 0, "question"),
+        _step("eligibility", 1, "tool", "population"),
+    ],
+    "step-retried": [
+        _step("tb", 0),
+        _step("ic", 1, "tool", "tb"),
+        _step("deficiencies", 2, "tool", "ic"),
+    ],
+    "stopped": [
+        _step("tb", 0),
+        _step("materiality", 1, "decision", "tb"),
+    ],
+}
 
 
-@activity.defn(name="agents.run_v2.plan_state")
-async def _plan_state(tenant_id: str, run_id: str) -> RunV2PlanState:
-    return RunV2PlanState(1, "approved", _STEPS)
+class _Stubs:
+    """The activities, stubbed per scenario; held steps resolve once the scenario says so."""
+
+    def __init__(self, scenario: str) -> None:
+        self.scenario = scenario
+        self.plan = PLANS[scenario]
+        self.failed_once = False
+        self.resolved = False
+
+    def activities(self) -> list[Callable[..., Awaitable[object]]]:
+        stubs = self
+
+        @activity.defn(name="agents.run_v2.load")
+        async def load(tenant_id: str, run_id: str) -> RunFacts:
+            return RunFacts("created", _ENGAGEMENT, [], [], {}, 3, stubs.plan)
+
+        @activity.defn(name="agents.run_v2.record_plan")
+        async def record_plan(
+            tenant_id: str, run_id: str, steps: list[dict[str, object]], problems: list[str]
+        ) -> int:
+            return 1
+
+        @activity.defn(name="agents.run_v2.plan_state")
+        async def plan_state(tenant_id: str, run_id: str) -> PlanState:
+            return PlanState(1, "approved", stubs.plan)
+
+        @activity.defn(name="agents.run_v2.set_state")
+        async def set_state(
+            tenant_id: str,
+            run_id: str,
+            state: str,
+            reason: str | None,
+            blocked: dict[str, object] | None,
+        ) -> int:
+            return 1
+
+        @activity.defn(name="agents.run_v2.paused")
+        async def paused(tenant_id: str, engagement_id: str | None) -> bool:
+            return False
+
+        @activity.defn(name="agents.run_v2.execute_step")
+        async def execute_step(
+            tenant_id: str,
+            run_id: str,
+            seq: int,
+            step: dict[str, object],
+            attempt: int = 1,
+            retry_of_seq: int | None = None,
+        ) -> StepOutcome:
+            kind = str(step["kind"])
+            if kind == "decision":
+                return StepOutcome("blocked", wait_ref="00000000-0000-4000-8000-00000000dc01")
+            if kind == "question":
+                return StepOutcome(
+                    "waiting_on_inputs", wait_ref="00000000-0000-4000-8000-00000000a501"
+                )
+            if stubs.scenario == "step-retried" and step["key"] == "ic" and retry_of_seq is None:
+                return StepOutcome("failed", "tool_failed")
+            return StepOutcome("succeeded", records_read=12, active_ms=900)
+
+        @activity.defn(name="agents.run_v2.wait_state")
+        async def wait_state(tenant_id: str, run_id: str, seq: int, kind: str) -> WaitState:
+            if not stubs.resolved:
+                return WaitState("open")
+            if kind == "question":
+                return WaitState("skipped_default", "succeeded")
+            return WaitState("decided", "succeeded")
+
+        @activity.defn(name="agents.run_v2.cancel_held")
+        async def cancel_held(tenant_id: str, run_id: str) -> int:
+            return 1
+
+        @activity.defn(name="agents.run_v2.complete")
+        async def complete(tenant_id: str, run_id: str, state: str, reason: str | None) -> None:
+            return None
+
+        return [
+            load,
+            record_plan,
+            plan_state,
+            set_state,
+            paused,
+            execute_step,
+            wait_state,
+            cancel_held,
+            complete,
+        ]
 
 
-@activity.defn(name="agents.run_v2.set_state")
-async def _set_state(
-    tenant_id: str,
-    run_id: str,
-    state: str,
-    reason: str | None,
-    blocked: JsonObject | None,
-) -> int:
-    return 1
+async def _drive(scenario: str, stubs: _Stubs, handle: WorkflowHandle[object, str]) -> None:
+    await asyncio.sleep(1)
+    await handle.signal("plan_decided", "approved")
+    await asyncio.sleep(2)
+    if scenario in ("decision-resumed", "question-skipped"):
+        stubs.resolved = True
+        signal = "decision_decided" if scenario == "decision-resumed" else "question_answered"
+        await handle.signal(signal)
+    elif scenario == "step-retried":
+        await handle.signal("step_retry", "ic")
+    elif scenario == "stopped":
+        await handle.signal("stop")
 
 
-@activity.defn(name="agents.run_v2.paused")
-async def _paused(tenant_id: str, engagement_id: str | None) -> bool:
-    return False
-
-
-@activity.defn(name="agents.run_v2.execute_step")
-async def _execute(
-    tenant_id: str,
-    run_id: str,
-    seq: int,
-    step: JsonObject,
-    attempt: int = 1,
-) -> RunV2StepOutcome:
-    return RunV2StepOutcome("succeeded")
-
-
-@activity.defn(name="agents.run_v2.complete")
-async def _complete(tenant_id: str, run_id: str, state: str, reason: str | None) -> None:
-    return None
+async def _record_one(client: Client, out: Path, scenario: str) -> None:
+    name = f"agent-run-v2-{scenario}.json"
+    if (out / name).exists():
+        print(f"{name} is recorded; skipped")
+        return
+    stubs = _Stubs(scenario)
+    queue = f"{_TASK_QUEUE}-{scenario}"
+    async with Worker(
+        client, task_queue=queue, workflows=[AgentRunWorkflow], activities=stubs.activities()
+    ):
+        run = f"00000000-0000-4000-8000-{list(PLANS).index(scenario) + 1:012d}"
+        handle = await client.start_workflow(
+            AgentRunWorkflow.run,
+            AgentRunInput(_TENANT, run),
+            id=f"agent_run:{_TENANT}:{run}",
+            task_queue=queue,
+        )
+        await _drive(scenario, stubs, handle)
+        await handle.result()
+        scrubbed = await decoded_and_scrubbed(await handle.fetch_history(), payload_codec())
+        (out / name).write_text(scrubbed.to_json())
+        print(f"recorded {out / name}")
 
 
 async def _record(out: Path, stack: Stack) -> None:
     client = await connect(stack)
-    async with Worker(
-        client,
-        task_queue=_TASK_QUEUE,
-        workflows=[AgentRunWorkflow],
-        activities=[_load, _record_plan, _plan_state, _set_state, _paused, _execute, _complete],
-    ):
-        run = AgentRunInput(
-            "00000000-0000-4000-8000-0000000000b1", "00000000-0000-4000-8000-0000000007a1"
-        )
-        handle = await client.start_workflow(
-            AgentRunWorkflow.run,
-            run,
-            id=f"agent_run:{run.tenant_id}:{run.run_id}",
-            task_queue=_TASK_QUEUE,
-        )
-        await handle.signal(AgentRunWorkflow.plan_decided, "approved")
-        await handle.result()
-        scrubbed = await decoded_and_scrubbed(await handle.fetch_history(), payload_codec())
-        (out / NAME).write_text(scrubbed.to_json())
-        print(f"recorded {out / NAME}")
+    for scenario in PLANS:
+        await _record_one(client, out, scenario)
 
 
 def main(argv: list[str]) -> int:
     out = Path(argv[0]) if argv else Path("tests/workflows/histories")
-    if (out / NAME).exists():
-        print("the agent run history is recorded; nothing to do")
-        return 0
 
     async def record(stack: Stack) -> None:
         await _record(out, stack)

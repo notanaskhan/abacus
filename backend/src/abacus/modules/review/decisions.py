@@ -25,6 +25,8 @@ from datetime import datetime
 from typing import Final, cast
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
+
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
@@ -61,7 +63,7 @@ from abacus.modules.review.events import (
     DecisionNotifyRequested,
 )
 from abacus.modules.review.mfa import require_fresh
-from abacus.modules.review.models import DecisionCard, DecisionCardVersion
+from abacus.modules.review.models import Decision, DecisionCard, DecisionCardVersion
 from abacus.modules.review.repository import (
     awaiting_cards_of,
     card_list_query,
@@ -559,6 +561,16 @@ class DecidedCard:
     option_key: str
     decided_by: UUID
     decided_at: datetime
+
+
+async def card_decision(tenant: TenantContext, card_id: UUID) -> str | None:
+    """`review.api.card_decision` (P-10-T32): the option a card was decided with, or None while it
+    awaits its person. For the owner that raised the card and holds its id (a run's held step)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            select(Decision.option_key).where(Decision.card_id == card_id)
+        )
+    return str(found) if found is not None else None
 
 
 async def decided_cards(

@@ -1,5 +1,5 @@
 """P-10-T29 (ADR-090): `AgentRunWorkflow` replays its recorded history (offline; recorded by
-`abacus_tools.workflows.record_agent_run` with stub activities)."""
+`abacus_tools.workflows.record_agent_run_v1` with stub activities)."""
 
 from __future__ import annotations
 
