@@ -128,8 +128,9 @@ def _routes() -> dict[tuple[str, str], str]:
 ROUTES = _routes()
 
 
-def test_both_stubs_carry_59_operations_under_the_audit_work_item() -> None:
-    assert len(ROUTES) == 59  # 18 completion (A-07-T04) + 41 release (A-07-T05)
+def test_both_stubs_carry_60_operations_under_the_audit_work_item() -> None:
+    # 18 completion (A-07-T04) + 1 readiness check (A-07-T32, DEC-3109) + 41 release (A-07-T05)
+    assert len(ROUTES) == 60
     assert all(path.startswith(A) for _, path in ROUTES)
 
 

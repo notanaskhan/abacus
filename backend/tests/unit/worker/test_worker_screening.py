@@ -128,6 +128,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "evidence_version.withdrawn",  # P-06-T19: the withdrawal purge starts
         "fulfilment.voided",  # R-01 Story 2.2 (TASK-1248): the gates recompute
         "upload_review.recorded",  # P-06-T20: the screening aggregate recomposes
+        "client_approval.requested",  # R-02-T14 (DEC-3140): the approval-request email
         # P-04-T16 (C13): the human-gate projector reconciles the gates these may change.
         "proposal.recorded",
         "guidance_draft.decided",

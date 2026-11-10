@@ -78,10 +78,25 @@ def _operation(method: str, path: str) -> dict[str, object]:
     return paths[path][method]
 
 
+# S33 partials round (R-02-T09/T16/T17, DEC-3136): the deliverables reads, pages, download and
+# approve are live; page comments (R-02-T22) and the governance stubs still answer 501.
+LIVE = {
+    ("get", "/v1/portal/deliverables"),
+    ("get", "/v1/portal/deliverables/{deliverable_id}"),
+    ("get", "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}"),
+    ("get", "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/pages/{page}"),
+    ("get", "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/download"),
+    ("post", "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/approve"),
+}
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_every_route_exists_with_its_501(method: str, path: str) -> None:
     responses = cast(dict[str, object], _operation(method, path)["responses"])
-    assert "501" in responses
+    if (method, path) in LIVE:
+        assert "501" not in responses  # a live route no longer documents the stub answer
+    else:
+        assert "501" in responses
 
 
 @pytest.mark.parametrize("action", sorted(set(ROUTES.values())))

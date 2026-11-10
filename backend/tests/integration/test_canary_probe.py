@@ -130,8 +130,10 @@ async def test_the_outbox_event_is_seen_once_the_relay_has_published_it(
     with pytest.raises(CanaryStepFailed) as lagging:
         await probe.observe_outbox(plan, version)
     assert lagging.value.code == "outbox_lag"
-    for _ in range(20):  # every pending event of every test firm, until ours is out
-        await relay_once(RoutingPublisher({}))
+    # Every pending event of every test firm, until ours is out. S33 CI fix: the shared test
+    # database holds more pending events than 20 default passes (10 a firm) reached.
+    for _ in range(50):
+        await relay_once(RoutingPublisher({}), batch=500, per_tenant=500)
         if (
             await event_state(
                 tenant, "evidence.uploaded", field="evidence_version_id", value=str(version)

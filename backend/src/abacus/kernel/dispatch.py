@@ -408,3 +408,7 @@ async def signal_workflow(workflow_id: str, signal: str, *args: object) -> None:
         await client.get_workflow_handle(workflow_id).signal(signal, *args)
     except RPCError:
         _log.info("workflow.signal_skipped", signal=signal)
+    except (RuntimeError, OSError) as down:
+        # S33 CI fix: no Temporal configured (`temporal_client`'s RuntimeError) or none reachable
+        # (a refused connection) is the same "service down": the committed write stands.
+        _log.warning("workflow.signal_skipped", signal=signal, error=type(down).__name__)
