@@ -87472,6 +87472,18 @@
             "cls": "internal",
             "title": "Id"
           },
+          "sent_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sent By"
+          },
           "sent_on": {
             "anyOf": [
               {
@@ -87958,6 +87970,22 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "queued",
+                  "planning",
+                  "awaiting_plan_approval",
+                  "dispatched",
+                  "running",
+                  "needs_input",
+                  "blocked_on_decision",
+                  "waiting_on_inputs",
+                  "succeeded",
+                  "approved",
+                  "partially_approved",
+                  "rejected",
+                  "failed",
+                  "cancelled"
+                ],
                 "type": "string"
               },
               {

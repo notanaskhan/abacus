@@ -114,6 +114,7 @@ function rowSub(row: RoomLetterRowOut, day: (v: string | null | undefined) => st
   if (row.status === "new" && row.sent_on && row.due_on) {
     return COPY.due(day(row.sent_on), day(row.due_on));
   }
+  if (row.sent_on && row.sent_by) return COPY.sentFrom(day(row.sent_on), row.sent_by);
   if (row.sent_on) return COPY.sentOn(day(row.sent_on));
   if (row.due_on) return COPY.expected(day(row.due_on));
   return "";

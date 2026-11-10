@@ -210,6 +210,8 @@ class LetterRow:
     sent_on: date | None
     due_on: date | None
     acknowledged_on: date | None
+    # R-02-T21 (partial closed): who sent the letter to the room (the EP's send).
+    sent_by_user_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -257,7 +259,7 @@ async def letters(
         rows.append(
             LetterRow(
                 s.id, TITLE.get(str(s.kind), str(s.kind)), state, s.sent_at.date(), s.due_on,
-                None if mine_at is None else mine_at.date(),
+                None if mine_at is None else mine_at.date(), cast(UUID | None, s.sent_by),
             )
         )  # fmt: skip
     for p in planned:

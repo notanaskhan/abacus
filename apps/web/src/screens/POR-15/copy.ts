@@ -12,6 +12,7 @@ export const COPY = {
   acknowledgedOn: (day: string) => `Acknowledged ${day}`,
   acknowledgedByCommittee: (day: string) => `Acknowledged by the committee · ${day}`,
   sentOn: (day: string) => `Sent ${day}`,
+  sentFrom: (day: string, by: string) => `Sent ${day} · from ${by}`,
   expected: (day: string) => `Expected · ${day}`,
   due: (sent: string, due: string) => `Sent ${sent} · due ${due}`,
   downloadPdf: "Download PDF",

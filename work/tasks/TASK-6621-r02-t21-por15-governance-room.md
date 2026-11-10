@@ -48,3 +48,8 @@ management's requests.
 - Partial: the rail's "· from Margaret Okonkwo" on the planning row is not on `RoomLetterRowOut`
   (no sender); the row reads "Sent Sep 18". After Send answers the screen shows "Answers sent"
   (the inquiries list has no answered state yet).
+
+- 2026-11-10 (partial narrowed): the room's letter rows carry `sent_by` (the person whose send put
+  the letter in the room, `governance_communication_sends.sent_by`), and POR-15's rail reads
+  "Sent Sep 18 · from Margaret Okonkwo" as the handoff draws it. The "How we use technology"
+  section stays a decision for A-07's letter template owner.
