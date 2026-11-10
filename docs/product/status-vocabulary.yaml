@@ -781,11 +781,11 @@ objects:
     codes:
       queued:            {label: "Queued", variant: null, disc: ring, terminal: false, derived: false}
       dispatched:        {label: "Dispatched", variant: neutral, terminal: false, derived: false}
-      running:           {label: "Running", variant: null, disc: spinner, terminal: false, derived: false}
-      waiting_on_inputs: {label: "Waiting on inputs", variant: muted, terminal: false, derived: false}
+      running:           {label: "Running", variant: null, disc: spinner, terminal: false, derived: false, context_labels: {entity_task_row: "Running…"}}   # T-05-T05: TXP-00 TaskRow meta
+      waiting_on_inputs: {label: "Waiting on inputs", variant: muted, terminal: false, derived: false, context_labels: {entity_run_card: "Waiting on {n} answer"}}   # T-05-T05: TXP-00 d RunCard
       blocked:           {label: "Blocked", variant: null, disc: triangle_amber, terminal: false, derived: false}
       succeeded:         {label: "Succeeded", variant: null, disc: check_olive, terminal: true, derived: false}
-      failed:            {label: "Failed", variant: null, disc: x_brick, terminal: true, derived: false}
+      failed:            {label: "Failed", variant: null, disc: x_brick, terminal: true, derived: false, context_labels: {entity_task_row: "Stopped at {task}"}}   # T-05-T05: TXP-00 e
       cancelled:         {label: "Cancelled", variant: muted, terminal: true, derived: false}
       skipped:           {label: "Skipped", variant: muted, terminal: true, derived: false}
 
@@ -1561,6 +1561,23 @@ objects:
       ai_unavailable:   {label: "AI unavailable", variant: muted, terminal: false, derived: true}
       consent_required: {label: "Consent required", variant: amber, terminal: false, derived: true}
       agents_off:       {label: "Agents off", variant: muted, terminal: false, derived: true}
+
+  # ---- T-05 entity returns (T-05-T05; T-05 §2, §4.2; TXP-01, TXP-06) ----
+  preparer_memo:   # derived, never stored (T-05 §4.2): Drafting while its run is active, Adopted (L1), Approved (L2), Stale when the cited figures' fingerprint differs
+    source: "T-05 §4.2; TXP-01 a, b, c, d"
+    codes:
+      drafting: {label: "Drafting", variant: state, disc: spinner, terminal: false, derived: true}
+      adopted:  {label: "Adopted", variant: neutral, terminal: false, derived: true}   # "Adopted by OB · Sep 10"
+      approved: {label: "Approved", variant: green-tint, terminal: false, derived: true}   # "Approved by Samuel Ito · Sep 14, 9:40 AM"
+      stale:    {label: "Stale", variant: amber, terminal: false, derived: true}   # a cited figure moved; Regenerate sections
+
+  allocation_structure:   # TXP-06; approval is an SHL-12 L3 sign-off, never SHL-10
+    source: "T-05 §2; TXP-06 a, c, d"
+    codes:
+      editing:          {label: "Editing", variant: state, terminal: false, derived: false}   # a rung changed, "Pending until Save" (d)
+      pending_approval: {label: "Pending approval", variant: amber, terminal: false, derived: false}   # c
+      approved:         {label: "Approved", variant: green-tint, terminal: false, derived: false}   # a, b
+      superseded:       {label: "Superseded", variant: soon, terminal: true, derived: false}   # a later structure was approved
 
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---

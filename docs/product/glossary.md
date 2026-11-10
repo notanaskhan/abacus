@@ -567,6 +567,20 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Residency confirmation | TXI-03's residency for a tax year, decided through an SHL-10 proposal (Q1). | `residency` | — |
 | Draft run | The Return Drafter's run on a return, started by a person or a trigger (Q12). | `tax_return.draft_run` | — |
 
+## New terms: tax entity returns (T-05-T05)
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Workbook | An entity return's calculation workbook (TXP-11): sheets of cells a run fills and a person edits, versioned, each cell with its author and citations. The engine computes tax; the workbook holds Accrued's workpaper figures (DEC-77). UI "Workpaper" tab. | `workbook` | `spreadsheet` |
+| Workbook cell | One cell of a workbook sheet: a value or a closed-grammar formula (E13, ADR-237), its author (run step, import or person) and state. | `workbook_cell` | — |
+| Allocation structure | How a partnership's items are allocated among partners (TXP-06): a straight percentage with ownership periods, or a targeted waterfall of rungs; approved by an L3 sign-off. | `allocation_structure` | — |
+| Allocation rung | One tier of a targeted waterfall (return of capital, preferred return, catch-up, promote), with its clause citation. | `allocation_rung` | — |
+| Ownership period | A span of the tax year in which each partner's percentage is constant; a transfer starts a new one (§706(d) interim closing or proration). | `ownership_period` | — |
+| Interest transfer | A partner's sale or assignment of part of its interest on a date, with its agreement citation. | `interest_transfer` | — |
+| Preparer memo | TXP-01's memo on an entity return: sections a person writes or adopts from a drafting run; status derived (Drafting, Adopted, Approved, Stale). Matrix actions `tax_memo.*`. | `preparer_memo` | — |
+| Tie-out (entity returns) | An entity return's tie-out tally against its source or the engine import, the same `tie_out_tally` words as a tie-out check (tie · off n · Check · Pending · Ties once posted · Reconciled). | `tie_out` | — |
+| Partner (of a partnership) | An owner of a partnership's interest, the K-1 recipient on a 1065. Never the firm's partner role (`engagement_partner`, `firm_partner`). | `partner` (`return_partners`) | — |
+
 ## Legacy identifiers: rename or freeze
 
 | Identifier | Problem | Action | When |
