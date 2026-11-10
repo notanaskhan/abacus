@@ -4,11 +4,11 @@ title: "A-07-T30: the in-app release transaction (G8) — POST /v1/audits/{id}/r
 spec: SPEC-644
 acceptance_criteria: [AC-1]  # the row's acceptance (F6)
 risk_zone: red
-status: in-review
+status: done
 branch: s33-a07-t30
 worktree: /Users/ayushkbhatia/Accrued/abacus-s33
 created: 2026-11-09
-updated: 2026-11-09
+updated: 2026-11-10
 plan_key: A-07-T30
 ---
 
@@ -39,6 +39,9 @@ Rollback: revert; no migration (0668 has the tables).
 - `2026-11-09` — Built; unit acceptance tests written (`tests/unit/assurance/test_a07t30_release.py`),
   not run (end pass). Partial: `bring_down` has no provider until A-07-T32 (this sprint); filings
   stay `[]` until A-07-T36 (S34); the deliverable's audience is the engagement's client.
+- `2026-11-10` — Closed (bookkeeping, no code). `bring_down`'s provider landed with A-07-T32's
+  partials round (#1569); A-07-T36 (#1597) added `assurance/filings.py`, and the release read
+  (`release_contract._release_out`) now lists `filings_of` instead of `[]`. Nothing left in this row.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
