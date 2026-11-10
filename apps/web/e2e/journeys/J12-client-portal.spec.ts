@@ -5,6 +5,7 @@
 // The portal is white-labelled: no step may show the product's name (INV-4).
 import { DEMO_INSTANT, expect, test } from "../harness";
 import { M13, artboard, openEnvelope } from "../signatures/support";
+import { WIDTHS, artboardAs, board, noProductName } from "./r02-support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -309,5 +310,121 @@ test.describe("J12 signing (N-02-T42)", () => {
     await journey.step("j12 9: declined (POR-06 g)", async (page) => {
       await expect(page.getByText(/[Dd]eclined/).first()).toBeVisible();
     });
+  });
+});
+
+// R-02-T23 (R-02 §5.6): steps 8 and 10 and the scoped-identity lines on POR-08 and POR-09, in the
+// fixture project at 1400 and 390. J12 P0 core is walkable once POR-09 is live (Fri Mar 3, 2028).
+test.describe("J12 · R-02 approvals and deliverables", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "R-02's live swap (R-02-T28) and the batch deploy; POR-08 a–d stay fixture (C-02, A-08)",
+    );
+  });
+
+  for (const width of WIDTHS) {
+    const at = width === 390 ? " · 390" : "";
+    test(`j12 8: Dana accepts AJE-1 and RJE-1, declines PAJE-1 and PAJE-2 with reasons and acknowledges the 22,250 net effect${at}`, async ({
+      journey,
+    }) => {
+      await artboardAs(journey, "dana-kowalski", "POR-08", "e", width);
+      await journey.step(`j12 8: Dana's four attest entries (POR-08 e)${at}`, async (page) => {
+        for (const amount of ["$48,600.00", "$14,850.00", "$35,300.00", "$13,050.00"]) {
+          await expect(board(page, "e").getByText(amount).first()).toBeVisible();
+        }
+        await expect(board(page, "e").getByRole("button", { name: "Accept" })).toHaveCount(4);
+        await noProductName(page, "e");
+      });
+      await artboardAs(journey, "dana-kowalski", "POR-08", "e2", width);
+      await journey.step(
+        `j12 8: recorded, and 22,250 acknowledged (POR-08 e2)${at}`,
+        async (page) => {
+          await expect(
+            board(page, "e2").getByText(/Accepted by Dana Kowalski · Sep 25/),
+          ).toHaveCount(2);
+          await expect(
+            board(page, "e2").getByText("Not recorded · Sep 25 · Recorded when invoiced"),
+          ).toBeVisible();
+          await expect(board(page, "e2").getByText(/\$22,250\.00 in total/)).toBeVisible();
+          await noProductName(page, "e2");
+        },
+      );
+    });
+
+    test(`j12 8 (fixture): Ben asks about accrued expenses and Tess approves the August package${at}`, async ({
+      journey,
+    }) => {
+      await artboardAs(journey, "ben-ashby", "POR-08", "a", width);
+      await journey.step(`j12 8: the August package waits (POR-08 a)${at}`, async (page) => {
+        await expect(board(page, "a").getByText(/Revenue rose 4.5% to \$214,600/)).toBeVisible();
+        await expect(
+          board(page, "a").getByText("Prepared by Brightwater Hale. No assurance is provided."),
+        ).toBeVisible();
+      });
+      await artboardAs(journey, "ben-ashby", "POR-08", "d", width);
+      await journey.step(`j12 8: Ask about this entry (POR-08 d)${at}`, async (page) => {
+        await expect(board(page, "d").getByRole("button", { name: "Send" })).toBeVisible();
+      });
+      await artboardAs(journey, "tess-moreno", "POR-08", "b", width);
+      await journey.step(`j12 8: approved by Tess Moreno (POR-08 b)${at}`, async (page) => {
+        await expect(
+          board(page, "b")
+            .getByText(/Tess Moreno/)
+            .first(),
+        ).toBeVisible();
+        await expect(board(page, "b").getByRole("button", { name: "Approve" })).toHaveCount(0);
+      });
+    });
+
+    test(`j12 10: Dana comments on page 2, approves draft v4 and downloads the finals after release${at}`, async ({
+      journey,
+    }) => {
+      await artboardAs(journey, "dana-kowalski", "POR-09", "a", width);
+      await journey.step(
+        `j12 10: the draft for review, page 2 of 14 (POR-09 a)${at}`,
+        async (page) => {
+          await expect(board(page, "a").getByText("Draft for review")).toBeVisible();
+          await expect(board(page, "a").getByText("2 / 14")).toBeVisible();
+          await expect(
+            board(page, "a").getByText(
+              "Keystone calls these participant loans. Can the note say both?",
+            ),
+          ).toBeVisible();
+        },
+      );
+      await artboardAs(journey, "dana-kowalski", "POR-09", "b", width);
+      await journey.step(`j12 10: approved, the watermark stays (POR-09 b)${at}`, async (page) => {
+        await expect(board(page, "b").getByRole("button", { name: "Approve" })).toHaveCount(0);
+      });
+      await artboardAs(journey, "dana-kowalski", "POR-09", "c", width);
+      await journey.step(`j12 10: the finals with Download (POR-09 c)${at}`, async (page) => {
+        await expect(
+          board(page, "c").getByRole("button", { name: "Download" }).first(),
+        ).toBeVisible();
+        await noProductName(page, "c");
+      });
+    });
+  }
+
+  test("j12 scoped: Meera Shah sees only her Ridgeline K-1 and Sam Ortiz has no Approvals or Deliverables", async ({
+    journey,
+  }) => {
+    await artboardAs(journey, "meera-shah", "POR-09", "d");
+    await journey.step(
+      "j12 scoped: Meera's released K-1 only (POR-09 d)",
+      async (page) => {
+        await expect(board(page, "d").getByText("My K-1s")).toBeVisible();
+      },
+      { outOfScope: ["Dana Kowalski", "Northwind Robotics 401(k) Plan"] },
+    );
+    await journey.as("sam-ortiz", "/", { clock: DEMO_INSTANT });
+    await journey.step(
+      "j12 scoped: Sam Ortiz's reduced portal has no Approvals or Deliverables",
+      async (page) => {
+        await expect(page.getByRole("link", { name: "Approvals" })).toHaveCount(0);
+        await expect(page.getByRole("link", { name: "Deliverables" })).toHaveCount(0);
+      },
+    );
   });
 });
