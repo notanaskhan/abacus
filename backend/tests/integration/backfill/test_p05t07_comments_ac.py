@@ -1,5 +1,5 @@
-"""P-05-T07 (ac-test-author; SPEC-650 §3.1–3.5, §3.11; ADR-236): comments v2, from the SPEC and the
-P-05-T03 501 stubs, before the service (P-05-T05). Against the stubs every test fails (501).
+"""P-05-T07 (ac-test-author; SPEC-650 §3.1 to 3.5, §3.11; ADR-236): comments v2, from the SPEC
+and the P-05-T03 501 stubs, before the service (P-05-T05). Against the stubs every test fails (501).
 
 Until P-05-T09 registers the `workpaper` provider, the one registered anchor kind is P-05-T06's
 `todo`, so AC-1's thread is opened on a to-do; the workpaper locator half is P-05-T09's suite.
@@ -149,9 +149,12 @@ async def test_ac6_a_crafted_mention_of_a_non_member_posts_nothing(w: Collab, wh
     response = await w.thread_on(anchor, mention_user_ids=[str(target.user_id)])
     assert response.status_code == 422, response.text
     assert response.json()["code"] == "mention_not_allowed"
-    assert await w.net.seed.value(
-        "SELECT count(*) FROM thread_comments WHERE tenant_id = $1", w.tenant_id
-    ) == 0
+    assert (
+        await w.net.seed.value(
+            "SELECT count(*) FROM thread_comments WHERE tenant_id = $1", w.tenant_id
+        )
+        == 0
+    )
 
 
 async def test_ac7_one_mention_event_per_person_and_no_body_anywhere(w: Collab) -> None:
@@ -266,9 +269,12 @@ async def test_ac11_a_firm_admin_redacts_with_fresh_mfa_and_the_body_never_retur
         w.marcus,
     )
     assert NOTE not in read.text
-    assert await w.net.seed.value(
-        "SELECT count(*) FROM thread_comments WHERE id = $1", uuid.UUID(str(comment))
-    ) == 1  # kept, sealed
+    assert (
+        await w.net.seed.value(
+            "SELECT count(*) FROM thread_comments WHERE id = $1", uuid.UUID(str(comment))
+        )
+        == 1
+    )  # kept, sealed
 
 
 async def test_ac12_a_muted_thread_adds_no_unread_dot(w: Collab) -> None:
@@ -301,7 +307,11 @@ async def test_ac13_the_app_role_cannot_update_or_delete_append_only_rows(
     w: Collab, table: str
 ) -> None:
     tenant = TenantContext(w.tenant_id, "human", str(w.margaret.user_id))
-    for statement in (f"UPDATE {table} SET tenant_id = tenant_id", f"DELETE FROM {table}"):
+    statements = (
+        f"UPDATE {table} SET tenant_id = tenant_id",  # noqa: S608 -- table from the parametrize list
+        f"DELETE FROM {table}",  # noqa: S608 -- table from the parametrize list
+    )
+    for statement in statements:
         with pytest.raises(DBAPIError):
             async with tenant_session(tenant) as session:
                 await session.execute(text(statement))

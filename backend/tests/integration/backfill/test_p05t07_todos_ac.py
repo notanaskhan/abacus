@@ -1,5 +1,5 @@
-"""P-05-T07 (ac-test-author; SPEC-650 §3.6–3.8, §3.11): to-dos, from the SPEC and the P-05-T03 501
-stubs, before the service (P-05-T06). Against the stubs every test fails (501).
+"""P-05-T07 (ac-test-author; SPEC-650 §3.6 to 3.8, §3.11): to-dos, from the SPEC and the
+P-05-T03 501 stubs, before the service (P-05-T06). Against the stubs every test fails (501).
 
 Dates are relative to the server's business date in the firm's zone (no demo clock over HTTP);
 AC-29's Sep 14 golden counts are the bucketing unit test in P-05-T06's suite.
@@ -116,9 +116,7 @@ async def test_ac22_a_checklist_holds_eight_items(w: Collab) -> None:
     ninth = await w.call("POST", path, w.margaret, {"text": "Step 9"})
     assert ninth.status_code == 422
     assert ninth.json()["code"] == "checklist_full"
-    toggled = await w.call(
-        "PATCH", f"{path}/{items[0]['id']}", w.marcus, {"done": True}
-    )
+    toggled = await w.call("PATCH", f"{path}/{items[0]['id']}", w.marcus, {"done": True})
     assert toggled.status_code == 200, toggled.text
     assert toggled.json()["checklist"][0]["done"] is True
     assert "todo.checklist_changed" in [a for a, _ in await w.audit_actions(todo["id"])]
@@ -220,9 +218,12 @@ async def test_ac29_my_to_dos_counts_foot_to_the_open_total(w: Collab) -> None:
 
 async def test_ac30_to_dos_never_enter_the_human_gate_projection(w: Collab) -> None:
     await w.todo()
-    assert await w.net.seed.value(
-        "SELECT count(*) FROM human_gates WHERE tenant_id = $1", w.tenant_id
-    ) == 0
+    assert (
+        await w.net.seed.value(
+            "SELECT count(*) FROM human_gates WHERE tenant_id = $1", w.tenant_id
+        )
+        == 0
+    )
 
 
 async def test_ac39_flag_off_the_to_do_routes_answer_not_found(w: Collab) -> None:
