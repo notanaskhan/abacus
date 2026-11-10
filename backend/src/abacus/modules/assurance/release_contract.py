@@ -1209,6 +1209,7 @@ _RELEASE_ACTIONS: tuple[ReportAction, ...] = ("report.release",)
 
 async def _release_out(ctx: AuthContext, work_item_id: UUID) -> AuditReleaseOut:
     from abacus.modules.assurance import release as rel
+    from abacus.modules.assurance.filings import filings_of
     from abacus.modules.identity.api import engagement_partners, names_of
 
     snap = await rel.snapshot(ctx.tenant, work_item_id)
@@ -1252,7 +1253,7 @@ async def _release_out(ctx: AuthContext, work_item_id: UUID) -> AuditReleaseOut:
         released_by_name=None if done is None else names.get(done.released_by),
         documentation_completion_date=None if done is None else done.documentation_completion_date,
         deliverable_ids=[] if done is None else list(done.deliverable_ids),
-        filings=[],
+        filings=[_filing_out(f) for f in await filings_of(ctx.tenant, work_item_id)],
         allowed_actions=actions,
     )
 
@@ -1284,21 +1285,41 @@ async def audit_release_post_route(
     return ReleaseRunAcceptedOut(run_id=UUID(outcome.grant_id), status_url=status_url)
 
 
-@router.get("/filings", action="report.read", response_model=FilingsOut, errors=(501,))
+def _filing_out(f: object) -> FilingOut:
+    return FilingOut.model_validate(f, from_attributes=True)
+
+
+@router.get("/filings", action="report.read", response_model=FilingsOut)
 async def audit_filings_route(work_item_id: UUID, ctx: Ctx) -> FilingsOut:
+    """AUD-24 f: the Form 5500 tracker (A-07-T36); an EBP audit's row opens at the release."""
+    from abacus.modules.assurance.filings import filings_of
+
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    return FilingsOut(items=[_filing_out(f) for f in await filings_of(ctx.tenant, work_item_id)])
 
 
 @router.patch(
-    "/filings/{filing_id}", action="filing.update", response_model=FilingOut, errors=(409, 501)
+    "/filings/{filing_id}", action="filing.update", response_model=FilingOut, errors=(409,)
 )
 async def audit_filing_route(
     work_item_id: UUID, filing_id: UUID, body: FilingIn, ctx: Ctx
 ) -> FilingOut:
-    """Manual EFAST2 tracking (A-07-T36); Accrued never files."""
+    """Manual EFAST2 tracking (A-07-T36); Accrued never files. 422 `filing_evidence_required`,
+    409 `stale_version`."""
+    from abacus.modules.assurance.filings import update_filing
+
     await _gate(ctx, work_item_id, "filing.update")
-    _not_yet()
+    return _filing_out(
+        await update_filing(
+            ctx,
+            work_item_id,
+            filing_id,
+            status=body.status,
+            filed_on=body.filed_on,
+            ack_evidence_version_id=body.ack_evidence_version_id,
+            seen_version=body.seen_version,
+        )
+    )
 
 
 @router.get("/archive", action="archive.read", response_model=AuditArchiveStateOut, errors=(501,))

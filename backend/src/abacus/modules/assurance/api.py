@@ -147,6 +147,9 @@ from abacus.modules.assurance.phase import (
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.planning_gate import g4_facts
+from abacus.modules.assurance.post_release import ACTIVITIES as POST_RELEASE_ACTIVITIES
+from abacus.modules.assurance.post_release import SUBSCRIPTIONS as POST_RELEASE_SUBSCRIPTIONS
+from abacus.modules.assurance.post_release import WORKFLOWS as POST_RELEASE_WORKFLOWS
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, ReleaseRequest
 from abacus.modules.assurance.release_contract import router as audit_release_router
@@ -295,7 +298,10 @@ _BASE_SUBSCRIPTIONS = (
     | dict(EQR_SUBSCRIPTIONS)
     | dict(FORM5500_SUBSCRIPTIONS)
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
-    | dict(ARCHIVE_SUBSCRIPTIONS)  # A-07-T31: report.released opens the archive
+    # A-07-T31: report.released opens the archive; A-07-T36: then the filing, the clocks and the
+    # retention anchor (post_release chains the archive's handler first).
+    | dict(ARCHIVE_SUBSCRIPTIONS)
+    | dict(POST_RELEASE_SUBSCRIPTIONS)
     | {"suggestion.created": _on_suggestion_created}
 )
 
@@ -327,12 +333,14 @@ WORKFLOWS: dict[type, str] = (
     | {BringDownWorkflow: "background"}
     | dict(RELEASE_WORKFLOWS)
     | dict(READINESS_WORKFLOWS)
+    | dict(POST_RELEASE_WORKFLOWS)  # A-07-T36
 )
 ACTIVITIES: tuple[object, ...] = (
     *FORM5500_ACTIVITIES,
     bring_down,
     *RELEASE_ACTIVITIES,
     *READINESS_ACTIVITIES,
+    *POST_RELEASE_ACTIVITIES,  # A-07-T36
 )
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
