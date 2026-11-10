@@ -12,6 +12,10 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-10 (S34): T-04-T15 the workspace in the review grammar
+        "return_field.edited",
+        "return_field.proposal_applied",
+        "tax_proposal.linked",
         # reviewed 2026-11-10 (S34): A-07-T37 the lock decision, the seal, the engagement archived
         "archive.engagement_archived",
         "archive.lock_decided",

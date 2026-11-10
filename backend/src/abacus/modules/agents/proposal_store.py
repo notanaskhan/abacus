@@ -261,3 +261,14 @@ async def match_decision(session: AsyncSession, match_id: UUID) -> InboxMatchDec
 
 async def insert_match_decision(session: AsyncSession, values: dict[str, object]) -> None:
     await session.execute(insert(InboxMatchDecision).values(values))
+
+
+async def approved_rows(
+    session: AsyncSession, proposal_id: UUID
+) -> tuple[UUID | None, Sequence[ProposalRow]] | None:
+    """T-04-T15: an approved proposal's engagement and its rows, for the owner's applier; None
+    when it is not approved (an applier never writes a pending or rejected change)."""
+    found = await session.get(Proposal, proposal_id)
+    if found is None or found.state not in ("approved", "approved_with_edits"):
+        return None
+    return found.engagement_id, await rows_of(session, proposal_id)
