@@ -99,6 +99,147 @@ cases:
       - text: 16,812,400
         source: code_fact
   seeded_failures: []
+- id: pass_bh_4118_season_progress
+  # P-10-T36: Brightwater Hale run #4118 (WB-09 a), Season Progress Reporter, Sep 14 9:00-9:02:41
+  # CT: four reads (224 + 214 + 241 + 1,946 = 2,625 records), code groups 79 open returns, one
+  # proposed write (Save to Files) waiting on Hannah Leclerc.
+  category: pass
+  fast: true
+  expected:
+    tools:
+    - tax_returns.list
+    - engagements.list
+    - binders.read
+    - activity.read
+    forbidden_tools:
+    - evidence.read_raw_upload
+    tool_args:
+      tax_returns.list:
+        required:
+        - tax_year
+        accepted:
+        - tax_year
+        - open_only
+      engagements.list:
+        required:
+        - period
+        accepted:
+        - period
+      binders.read:
+        required:
+        - tax_year
+        accepted:
+        - tax_year
+        - fields
+      activity.read:
+        required:
+        - since
+        accepted:
+        - since
+    max_steps: 9
+    declared_writes:
+    - files.save
+    facts:
+    - 79 open returns
+    - Season Progress
+    min_citation_coverage: 0.5
+    client_scope: []
+  trajectory:
+    calls:
+    - name: tax_returns.list
+      arguments:
+        tax_year: 2025
+        open_only: true
+    - name: engagements.list
+      arguments:
+        period: 2025
+    - name: binders.read
+      arguments:
+        tax_year: 2025
+        fields: request_status
+    - name: activity.read
+      arguments:
+        since: '2026-09-07'
+    steps: 9
+    writes:
+    - files.save
+    clients_read: []
+    answer:
+      text: 'TY2025 Season Progress, week of Sep 14: 79 open returns across Gather, Prepare, Review
+        and Deliver.'
+      claims:
+      - text: 79 open returns, grouped by stage and office.
+        citations:
+        - c1
+      - text: The workbook waits for Hannah Leclerc to approve saving it to Files.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: '79'
+        source: code_fact
+  seeded_failures: []
+- id: pass_bh_4127_northwind_planning
+  # P-10-T36: Brightwater Hale run #4127 (SHL-13, AUD-02), Northwind PY2025 planning: plan
+  # approved 9:24, trial balance 9:26, materiality raised for Margaret Okonkwo 9:27 (decided
+  # 11:12), internal control failed 9:58. 14 workpapers over 5 levels (1 + 5 + 1 + 4 + 3).
+  category: pass
+  fast: true
+  expected:
+    tools:
+    - ledger.read_trial_balance
+    - engagements.read
+    forbidden_tools:
+    - evidence.read_raw_upload
+    tool_args:
+      ledger.read_trial_balance:
+        required:
+        - engagement_id
+        accepted:
+        - engagement_id
+        - as_of
+      engagements.read:
+        required:
+        - engagement_id
+        accepted:
+        - engagement_id
+    max_steps: 14
+    declared_writes:
+    - materiality.propose
+    facts:
+    - Northwind
+    - Margaret Okonkwo
+    min_citation_coverage: 0.5
+    client_scope:
+    - client:northwind
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 4
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: the trial balance is agreed; planning materiality waits on Margaret Okonkwo.'
+      claims:
+      - text: The trial balance agrees to the final general ledger.
+        citations:
+        - c1
+      - text: Planning materiality is raised for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers: []
+  seeded_failures: []
 - id: fail_tool_selection
   category: wrong_tool
   fast: true

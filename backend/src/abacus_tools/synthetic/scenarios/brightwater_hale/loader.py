@@ -1324,6 +1324,26 @@ async def _run_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> 
     )
 
 
+async def _run_step_advanced(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """P-10-T36: a recorded #4127 step moves on after the 9:41 snapshot, through the recorder's
+    service as the scenario's person (never by SQL here)."""
+    from abacus.modules.agents.api import StepAdvance, advance_synthetic_step
+
+    del conn
+    error = event.data.get("error_code")
+    await advance_synthetic_step(
+        TenantContext(TENANT, "human", str(user_id_of(_SEATS[event.actor]))),
+        StepAdvance(
+            run_id=UUID(str(event.data["run_id"])),
+            key=str(event.data["key"]),
+            state=str(event.data["state"]),
+            at=event.at,
+            run_state=str(event.data["run_state"]),
+            error_code=str(error) if error else None,
+        ),
+    )
+
+
 async def _governance_body_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """R-02-T13 (DEC-3029): Northwind's Benefits Committee, its members as client-person contacts
     linked to their portal users, and each member's `tcwg` grant on the room."""
@@ -6007,6 +6027,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "collaboration.thread_seeded": _collaboration_thread_seeded,
     "collaboration.todo_seeded": _collaboration_todo_seeded,
     "agents.run_recorded": _run_recorded,  # P-09-T12 (`--slice agent_runs`)
+    "agents.run_step_advanced": _run_step_advanced,  # P-10-T36 (after the 9:41 snapshot)
     "identity.client_invitation_created": _client_invitation_created,
     # G-01-T06 (`--slice people`): seats, then teams, then each person's profile.
     "identity.seats_provisioned": _seats_provisioned,
