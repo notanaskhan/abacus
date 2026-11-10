@@ -38,9 +38,14 @@ from temporalio import activity
 from abacus.kernel._flags import AGENT_RUNTIME_V2
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_enabled
-from abacus.kernel.uow import DomainEvent, Ref, Target, uow
-from abacus.modules.agents.events import RunStateChanged
-from abacus.modules.agents.run_waits import RUN_WAIT_ACTIVITIES, QUESTION_KINDS, open_wait
+from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
+from abacus.modules.agents.events import (
+    RunFailedV2,
+    RunNeedsInput,
+    RunReadyForReview,
+    RunStateChanged,
+)
+from abacus.modules.agents.run_waits import QUESTION_KINDS, RUN_WAIT_ACTIVITIES, open_wait
 from abacus.modules.agents.service import AgentRunNotRunning, load_run_v2_context
 from abacus.modules.agents.tools.registry import registered_tools
 from abacus.modules.agents.tools.runtime import ToolCallIn, call_tool
@@ -221,6 +226,7 @@ async def set_state_activity(
                 },
             ),
         )
+        notice = await _notice(tx, run, state)
         await tx.session.execute(
             text(
                 "INSERT INTO run_events (tenant_id, run_id, run_seq, type, payload) "
@@ -240,7 +246,39 @@ async def set_state_activity(
         )
         event: DomainEvent = RunStateChanged(run_id=run, state=state, run_seq=seq)
         tx.emit(event)
+        if notice is not None:
+            tx.emit(notice)
     return seq
+
+
+_NEEDS_INPUT: Final = frozenset({"awaiting_plan_approval", "needs_input", "waiting_on_inputs"})
+
+
+async def _notice(tx: UnitOfWork, run: UUID, state: str) -> DomainEvent | None:
+    """P-10-T33: C16 `run_needs_input` (a plan to approve, a question open) to the person the run
+    runs as, else its initiator; `run_finished` ("Ready for review" or "Failed") to the
+    initiator. A firm-level run notifies no one."""
+    if state not in _NEEDS_INPUT and state not in ("succeeded", "failed"):
+        return None
+    row = (
+        await tx.session.execute(
+            text(
+                "SELECT engagement_id, initiator_user_id, runs_as_user_id FROM agent_runs "
+                "WHERE id = :run"
+            ),
+            {"run": run},
+        )
+    ).first()
+    if row is None or row.engagement_id is None:
+        return None
+    if state in _NEEDS_INPUT:
+        return RunNeedsInput(
+            run_id=run,
+            engagement_id=row.engagement_id,
+            user_id=row.runs_as_user_id or row.initiator_user_id,
+        )
+    finished = RunReadyForReview if state == "succeeded" else RunFailedV2
+    return finished(run_id=run, engagement_id=row.engagement_id, user_id=row.initiator_user_id)
 
 
 @activity.defn(name="agents.run_v2.paused")

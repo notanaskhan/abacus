@@ -9,14 +9,15 @@ stream, `engagement_run.enabled` for the engagement run; 404 off), then 501 unti
 
 **Events carry identifiers, enums and verified items only** (AC-T2): an item that would hold a
 Restricted-tagged field travels as `{id, ref_only: true}`. No model token is streamed (ADR-234).
-A plan decision, an answer and a sign-off are a person's: `agent: deny` in the matrix, and the
-database refuses anyone else (P-10-T03).
+A plan decision, an answer and a sign-off are a person's: `agent: deny` in the matrix,
+`commands.require_live_human`, and the database refuses anyone else (P-10-T03). The run commands
+landed with P-10-T33 (`agents/commands.py`); each keeps 501 in `errors` (the stub convention).
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn, get_args
+from typing import Annotated, Literal, NoReturn, cast, get_args
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -26,6 +27,7 @@ from abacus.kernel._flags import AGENT_RUNTIME_V2, ENGAGEMENT_RUN_ENABLED, REALT
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
+from abacus.modules.agents import commands
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -390,6 +392,81 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+def _plan_out(plan: commands.PlanView) -> RunPlanOut:
+    return RunPlanOut(
+        id=plan.id,
+        run_id=plan.run_id,
+        version=plan.version,
+        state=cast(PlanState, plan.state),
+        steps=[
+            RunPlanStepOut(key=s.key, label=s.label, level=s.level, writes=bool(s.writes))
+            for s in plan.steps
+        ],
+        sources=plan.sources,
+        decided_by=plan.decided_by,
+        decided_at=plan.decided_at,
+    )
+
+
+def _question_out(q: commands.QuestionView) -> RunQuestionOut:
+    return RunQuestionOut(
+        id=q.id,
+        run_id=q.run_id,
+        step_id=q.step_id,
+        state=cast(QuestionState, q.state),
+        prompt=q.prompt,
+        options=[QuestionOptionOut(key=k, label=label) for k, label in q.options],
+        allow_free_text=q.allow_free_text,
+        answered_by=q.answered_by,
+        answered_at=q.answered_at,
+    )
+
+
+def _accepted(run_id: UUID) -> RunAcceptedOut:
+    return RunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
+
+
+def _run_out(state: commands.RunState) -> RunV2Out:
+    view = state.view
+    header = view.header
+    counters = header.counters if header is not None else None
+    return RunV2Out(
+        id=view.run.id,
+        run_number=(header.run_number if header is not None else None) or 0,
+        title=view.run.agent_label,
+        state=cast(RunStateV2, (header.state if header is not None else None) or "queued"),
+        state_reason=header.state_reason if header is not None else None,
+        mode=cast(RunMode, state.mode),
+        trigger_kind=cast(
+            TriggerKind, (header.trigger_kind if header is not None else None) or "manual"
+        ),
+        session_id=state.session_id,
+        parent_run_id=state.parent_run_id,
+        work_item_ref=header.work_item_ref if header is not None else None,
+        subject_ref=state.subject_ref,
+        plan_id=state.plan_id,
+        auto_mode=state.auto_mode,
+        initiator_name=view.run.initiator_name,
+        region=state.region,
+        counters=RunCountersOut(
+            records_read=counters.records_read,
+            citations_count=counters.citations_count,
+            writes_done=counters.writes_done,
+            writes_waiting=counters.writes_waiting,
+            agent_ms=counters.agent_ms,
+            agent_minutes=counters.agent_minutes,
+        )
+        if counters is not None
+        else RunCountersOut(),
+        started_at=state.started_at,
+        finished_at=view.run.finished_at,
+        signed_off_by=state.signed_off_by,
+        signed_off_at=state.signed_off_at,
+        version=state.version,
+        allowed_actions=[cast(RunAction, a) for a in state.actions],
+    )
+
+
 @runs_v2_router.get(
     "/{run_id}/events", action="agent_run.read", response_model=bytes, errors=(409, 501)
 )
@@ -446,7 +523,7 @@ async def approve_run_plan_route(
 ) -> RunPlanOut:
     """Never optimistic. PLAN-001: plan decisions come only from `agents/commands.py` (T33)."""
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    return _plan_out(await commands.approve_plan(ctx, run_id, body.expected_version))
 
 
 @runs_v2_router.post(
@@ -459,7 +536,7 @@ async def edit_run_plan_route(
     run_id: UUID, body: RunPlanEditIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunPlanOut:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    return _plan_out(await commands.edit_plan(ctx, run_id, body.expected_version, body.steps))
 
 
 @runs_v2_router.post(
@@ -472,7 +549,7 @@ async def cancel_run_plan_route(
     run_id: UUID, body: PlanDecisionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunPlanOut:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    return _plan_out(await commands.cancel_plan(ctx, run_id, body.expected_version))
 
 
 @runs_v2_router.post(
@@ -489,7 +566,11 @@ async def answer_question_route(
     idempotency_key: IdempotencyKey,
 ) -> RunQuestionOut:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    return _question_out(
+        await commands.answer_question(
+            ctx, run_id, question_id, option_key=body.option_key, free_text=body.text
+        )
+    )
 
 
 @runs_v2_router.post(
@@ -502,7 +583,7 @@ async def skip_question_route(
     run_id: UUID, question_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunQuestionOut:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    return _question_out(await commands.skip_question(ctx, run_id, question_id))
 
 
 @runs_v2_router.post(
@@ -516,7 +597,8 @@ async def redirect_run_route(
     run_id: UUID, body: RunMessageIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunAcceptedOut:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    await commands.redirect(ctx, run_id, body.body)
+    return _accepted(run_id)
 
 
 @runs_v2_router.post(
@@ -531,7 +613,8 @@ async def retry_step_route(
 ) -> RunAcceptedOut:
     """Re-dispatches only the failed step."""
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    await commands.retry(ctx, run_id, step_id)
+    return _accepted(run_id)
 
 
 @runs_v2_router.post(
@@ -545,7 +628,8 @@ async def stop_run_route(
     run_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunAcceptedOut:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    await commands.stop(ctx, run_id)
+    return _accepted(run_id)
 
 
 @runs_v2_router.post(
@@ -558,7 +642,13 @@ async def sign_off_run_route(
     run_id: UUID, body: RunSignOffIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunV2Out:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    await commands.sign_off(
+        ctx,
+        run_id,
+        issues=body.acknowledged_issue_ids,
+        decisions=body.acknowledged_decision_ids,
+    )
+    return _run_out(await commands.run_state(ctx, run_id))
 
 
 @feedback_router.post(
@@ -572,7 +662,10 @@ async def create_feedback_route(
     body: AgentFeedbackIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AgentFeedbackOut:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    feedback = await commands.create_feedback(
+        ctx, run_id=body.run_id, step_id=body.step_id, rating=body.rating, reason=body.reason
+    )
+    return AgentFeedbackOut(id=feedback)
 
 
 @capabilities_router.get(

@@ -33,6 +33,9 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        "agent_run.needs_input",  # P-10-T33 (C16 `run_needs_input`, to the person it waits on)
+        "agent_run.ready_for_review",  # P-10-T33 (C16 `run_finished`, to the initiator)
+        "agent_run.failed_v2",  # P-10-T33 (C16 `run_finished`, to the initiator)
         "eqr.concurred_v2",  # A-07-T18 (C16 `eqr_concurred`, to the engagement partners)
         "eqr.requested",  # A-07-T18 (C16 `eqr_requested`, to the assigned EQR; DF-05)
         "uncorrected_misstatements.acknowledged",  # R-02-T15 (DEC-3113, to the team)

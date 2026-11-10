@@ -275,7 +275,7 @@ async def _quality_reviewers(tenant_id: UUID, payload: dict[str, object]) -> lis
 
 
 async def _member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
-    """P-07-T47: the member a reminder is about."""
+    """P-07-T47: the member a reminder is about; P-10-T33: the person a run waits on or ran for."""
     member = _uuid(payload, "user_id")
     return [member] if member is not None else []
 
@@ -347,6 +347,11 @@ class Kind:
 
 
 CATALOGUE: Final[dict[str, Kind]] = {
+    # P-10-T33 (SPEC-647 §4.6): a v2 run waits on a person, or ended ("Ready for review" or
+    # "Failed"); the subject is the run's engagement, the recipient the person in the payload.
+    "agent_run.needs_input": Kind("run_needs_input", _member, "engagement", "engagement_id"),
+    "agent_run.ready_for_review": Kind("run_finished", _member, "engagement", "engagement_id"),
+    "agent_run.failed_v2": Kind("run_finished", _member, "engagement", "engagement_id"),
     # A-07-T18 (A-07 §4.8): G6 met, to the engagement partners; Request EQR…, to the EQR.
     "eqr.concurred_v2": Kind("eqr_concurred", _eqr_partners, "engagement", "engagement_id"),
     "eqr.requested": Kind("eqr_requested", _assigned_eqr, "engagement", "engagement_id"),
@@ -619,6 +624,9 @@ def register_kind_source(
 
 
 TEMPLATES: Final[dict[str, str]] = {
+    "agent_run.needs_input": "A run on {subject} is waiting for your input.",
+    "agent_run.ready_for_review": "A run on {subject} is ready for review.",
+    "agent_run.failed_v2": "A run on {subject} failed.",
     "eqr.concurred_v2": "The engagement quality reviewer concurred on {subject}.",
     "eqr.requested": "The report on {subject} is waiting for your engagement quality review.",
     "consent.expiring": (
@@ -929,6 +937,9 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("extension_payment_approval_requested", "approval", "Gavel"),
     NotificationKind("estimate_due_soon", "deadline", "CalendarClock"),
     NotificationKind("sign_off_re_review", "approval", "UserCheck"),  # A-06-T14
+    # P-10-T33: agent-originated (AGENT_KINDS), so no inline action (INV-1).
+    NotificationKind("run_needs_input", "run", "MessageSquareText"),
+    NotificationKind("run_finished", "run", "Bot"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

@@ -193,3 +193,34 @@ class RunStateChanged(DomainEvent):
     run_id: Annotated[UUID, classified("internal")]
     state: Annotated[str, classified("internal")]
     run_seq: Annotated[int, classified("internal")]
+
+
+class RunNeedsInput(DomainEvent):
+    """P-10-T33 (SPEC-647 §4.6): a v2 run waits on a person: its plan to approve, or a question.
+    C16 `run_needs_input`, to the person the run runs as (else its initiator)."""
+
+    event_type: ClassVar[str] = "agent_run.needs_input"
+
+    run_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]
+
+
+class RunReadyForReview(DomainEvent):
+    """P-10-T33: a v2 run succeeded ("Ready for review"); C16 `run_finished`, to its initiator."""
+
+    event_type: ClassVar[str] = "agent_run.ready_for_review"
+
+    run_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]
+
+
+class RunFailedV2(DomainEvent):
+    """P-10-T33: a v2 run failed; C16 `run_finished`, to its initiator."""
+
+    event_type: ClassVar[str] = "agent_run.failed_v2"
+
+    run_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]

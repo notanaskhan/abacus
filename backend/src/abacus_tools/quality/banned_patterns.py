@@ -1890,6 +1890,25 @@ def _check_formula_engine_evaluates_nothing(src: SourceFile) -> Iterator[Finding
             )
 
 
+_PLAN_DECISION = re.compile(r"INSERT\s+INTO\s+agent_plans\b", re.IGNORECASE)
+
+
+def _check_plan_decision_outside_commands(src: SourceFile) -> Iterator[Finding]:
+    """P-10-T33 (SPEC-647 AC-W1): a plan version is written by `agents/commands.py` (a person's
+    decision), the workflow's `record_plan` activity (the `proposed` version) and the
+    synthetic-only recorder, and nowhere else."""
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and _PLAN_DECISION.search(node.value)
+        ):
+            yield Finding(
+                node.lineno,
+                "agent_plans rows come only from agents/commands.py or record_plan (PLAN-001)",
+            )
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -3251,6 +3270,20 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-237, ADR-052",
         check=_check_formula_engine_evaluates_nothing,
         include=("src/abacus/modules/workpapers/compute/*", "src/abacus/modules/tax/compute/*"),
+    ),
+    Rule(
+        id="PLAN-001",
+        description="Plan versions are written only by agents/commands.py and record_plan",
+        adr="ADR-005, ADR-169",
+        check=_check_plan_decision_outside_commands,
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/agents/commands.py",
+            "src/abacus/modules/agents/run_activities.py",
+            # The synthetic-only recorder (P-09-T07): one decided plan as the run's initiator, on
+            # a synthetic firm only (`NotSynthetic`).
+            "src/abacus/modules/agents/run_recorder.py",
+        ),
     ),
 ]
 
