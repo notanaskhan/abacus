@@ -35,6 +35,8 @@ from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
 from abacus.modules.assurance.agent_capabilities import register as register_agent_capabilities
 from abacus.modules.assurance.archive_gate import SUBSCRIPTIONS as ARCHIVE_SUBSCRIPTIONS
+from abacus.modules.assurance.archive_lock import ACTIVITIES as ARCHIVE_LOCK_ACTIVITIES
+from abacus.modules.assurance.archive_lock import WORKFLOWS as ARCHIVE_LOCK_WORKFLOWS
 from abacus.modules.assurance.aud27 import register_estimate_conclusion_kind
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.bring_down import (
@@ -334,6 +336,7 @@ WORKFLOWS: dict[type, str] = (
     | dict(RELEASE_WORKFLOWS)
     | dict(READINESS_WORKFLOWS)
     | dict(POST_RELEASE_WORKFLOWS)  # A-07-T36
+    | dict(ARCHIVE_LOCK_WORKFLOWS)  # A-07-T37: the seal, on the batch class
 )
 ACTIVITIES: tuple[object, ...] = (
     *FORM5500_ACTIVITIES,
@@ -341,6 +344,7 @@ ACTIVITIES: tuple[object, ...] = (
     *RELEASE_ACTIVITIES,
     *READINESS_ACTIVITIES,
     *POST_RELEASE_ACTIVITIES,  # A-07-T36
+    *ARCHIVE_LOCK_ACTIVITIES,  # A-07-T37
 )
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 

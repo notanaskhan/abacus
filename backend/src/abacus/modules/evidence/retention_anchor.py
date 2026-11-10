@@ -4,6 +4,7 @@ the platform's own context after a release: identifiers only."""
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import text
@@ -27,3 +28,40 @@ async def engagement_stored_versions(
             )
         ).all()
     return [(r.storage_key, r.storage_version_id) for r in rows]
+
+
+async def engagement_version_leaves(
+    tenant: TenantContext, engagement_id: UUID
+) -> list[tuple[UUID, str, str, str]]:
+    """A-07-T37: `(version id, SHA-256 fingerprint, storage key, storage version id)` of every
+    version of the engagement, superseded ones kept: the archive seal's evidence leaves."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT id, fingerprint, storage_key, storage_version_id "
+                    "FROM evidence_versions WHERE engagement_id = :e ORDER BY id"
+                ),
+                {"e": engagement_id},
+            )
+        ).all()
+    return [(r.id, r.fingerprint, r.storage_key, r.storage_version_id) for r in rows]
+
+
+async def extend_versions_until(
+    tenant: TenantContext, objects: list[tuple[str, str]], until: datetime
+) -> int:
+    """A-07-T37: each stored object's GOVERNANCE retain-until extended to at least `until` (the
+    archive's retention); audited `retention.extended` once. Governance mode only ever extends."""
+    from abacus.kernel.uow import Ref, Target, uow
+    from abacus.modules.evidence.storage import StoredObject, extend_retention
+
+    for key, version_id in objects:
+        await extend_retention(StoredObject(key, version_id, "", 0), until)
+    async with uow(TenantContext(tenant.tenant_id, "system", "retention_clock")) as tx:
+        tx.record(
+            "retention.extended",
+            target=Target("firm", tenant.tenant_id),
+            after=Ref(objects=len(objects), until=until.date().isoformat()),
+        )
+    return len(objects)
