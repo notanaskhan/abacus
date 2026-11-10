@@ -47,3 +47,10 @@ tool creates a proposal, never a value.
 
 ## Decisions
 - DEC-3211.
+
+- 2026-11-10 (partial closed): `tests/unit/tax/test_t04t19_tax_tools_runtime.py` runs all twelve
+  tax tools through C17's runtime with each handler replaced by a probe: without both §7216
+  consents each refuses `consent_required` before its handler runs (no data fetched); the gate is
+  asked for the taxpayer and the year; a taxpayer outside the run's client scope is refused before
+  consent is asked; with consent and scope the handler runs. The handlers' SQL against Postgres
+  stays T-04-T42's. Status: done.
