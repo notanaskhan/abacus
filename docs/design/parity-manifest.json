@@ -5567,6 +5567,258 @@
         "[data-spinner]",
         "[data-presence]"
       ]
+    },
+    "por-08a.window": {
+      "page": "screens/POR-08?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/POR-08 Approvals - Copperleaf August 2026 Close/screenshots/POR-08a.png",
+      "sha256": "1cb99d1025ac0700058249809cf30a1fb867a476e7eb02b70f0b927d4efd75b0",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-08a2.window": {
+      "page": "screens/POR-08?st=a2",
+      "selector": "[data-artboard=\"a2\"]",
+      "source": "handoff/screens/POR-08 Approvals - Copperleaf August 2026 Close/screenshots/POR-08a2.png",
+      "sha256": "5a724dfee93e0053827c6d216294ca562c2737e38d0e255aac0fddc0ec2bf9d6",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-08b.window": {
+      "page": "screens/POR-08?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/POR-08 Approvals - Copperleaf August 2026 Close/screenshots/POR-08b.png",
+      "sha256": "4071d0eb24c6aec301dae266b1a0f19bc8e597773551e0040a6dd2f7fd11539d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-08c.window": {
+      "page": "screens/POR-08?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/POR-08 Approvals - Copperleaf August 2026 Close/screenshots/POR-08c.png",
+      "sha256": "b9a00de5a2bfbe514bb35aefd6d656b3a9dca84dec4409452e48e2d3f86ee7e9",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-08d.window": {
+      "page": "screens/POR-08?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/POR-08 Approvals - Copperleaf August 2026 Close/screenshots/POR-08d.png",
+      "sha256": "17e60eed8c440eb6bf669286fe491f59c50d718cb262d2789deaee628cef7eeb",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-08e.window": {
+      "page": "screens/POR-08?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/POR-08 Approvals - Copperleaf August 2026 Close/screenshots/POR-08e.png",
+      "sha256": "00cd2f458eb04dd8121078264fbdac83c55741a27c3cca9d2388caaee0feb35b",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-08e2.window": {
+      "page": "screens/POR-08?st=e2",
+      "selector": "[data-artboard=\"e2\"]",
+      "source": "handoff/screens/POR-08 Approvals - Copperleaf August 2026 Close/screenshots/POR-08e2.png",
+      "sha256": "88912067c7557ffa9da8d41cb525c9b9eb40aba8a2dafa8d3371c3c8c7cbd7c2",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-08f.window": {
+      "page": "screens/POR-08?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/POR-08 Approvals - Copperleaf August 2026 Close/screenshots/POR-08f.png",
+      "sha256": "ecfa77fa22ad6032557687b814e9cdc7d114b08f964087a7b4b0b3ccd2c2ad24",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-09a.window": {
+      "page": "screens/POR-09?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/POR-09 Deliverables - Northwind Robotics 401-k- Plan/screenshots/POR-09a.png",
+      "sha256": "2eb45578fac857f01f9c41cf04d39571c7e5b35c35531f91d96e199edaab8862",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-09a2.window": {
+      "page": "screens/POR-09?st=a2",
+      "selector": "[data-artboard=\"a2\"]",
+      "source": "handoff/screens/POR-09 Deliverables - Northwind Robotics 401-k- Plan/screenshots/POR-09a2.png",
+      "sha256": "95c7ac2cbf1774538ec6e86b01f3a5d0f24edbfba76005c3a067f72dbb53350b",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-09b.window": {
+      "page": "screens/POR-09?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/POR-09 Deliverables - Northwind Robotics 401-k- Plan/screenshots/POR-09b.png",
+      "sha256": "d91adf7829e44e6948a843698b584e992045b73f13310ff6d27788c37f326d13",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-09c.window": {
+      "page": "screens/POR-09?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/POR-09 Deliverables - Northwind Robotics 401-k- Plan/screenshots/POR-09c.png",
+      "sha256": "0d650ac5d29126bae8e806987d5aedbebd7b3287a486c5256a37d12a70243694",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-09d.window": {
+      "page": "screens/POR-09?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/POR-09 Deliverables - Northwind Robotics 401-k- Plan/screenshots/POR-09d.png",
+      "sha256": "8a82e8ff852c2fb24e8a70f515f2f8856f0c1b43152cecc5f3f31ce01d4c5866",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-09e.window": {
+      "page": "screens/POR-09?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/POR-09 Deliverables - Northwind Robotics 401-k- Plan/screenshots/POR-09e.png",
+      "sha256": "05be1753b14d84bb0b39945943842d93e1fc684b79a3e184985d09274b44d619",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-09f.window": {
+      "page": "screens/POR-09?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/POR-09 Deliverables - Northwind Robotics 401-k- Plan/screenshots/POR-09f.png",
+      "sha256": "0b18d7ea7fc14b3d34c1858921cec0ad4038be08cfeda1d9a1b2754cd5a34aa9",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-15a.window": {
+      "page": "screens/POR-15?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/POR-15 Governance room - Northwind benefits committee/screenshots/POR-15a.png",
+      "sha256": "6dd3706ce2215081ea59cd8943bc1908603928adebe4556821e77c902b616c79",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-15b.window": {
+      "page": "screens/POR-15?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/POR-15 Governance room - Northwind benefits committee/screenshots/POR-15b.png",
+      "sha256": "a5038f68e01be40efdb24aede44ee3d712f26ee0ba90dc6bad8d6a6488c4e2e5",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-15c.window": {
+      "page": "screens/POR-15?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/POR-15 Governance room - Northwind benefits committee/screenshots/POR-15c.png",
+      "sha256": "666b006c3ac30758fe2d367255f9d5b6ad6a932f2b597387ae557907a69479cf",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-15d.window": {
+      "page": "screens/POR-15?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/POR-15 Governance room - Northwind benefits committee/screenshots/POR-15d.png",
+      "sha256": "3bc10787f06621a9ddb0b79b868bb714d6e18848e9cc25b89ad1ad2d79adc084",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-15e.window": {
+      "page": "screens/POR-15?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/POR-15 Governance room - Northwind benefits committee/screenshots/POR-15e.png",
+      "sha256": "8295b9c49b823914bb3269290c331b74987d47683df954f7c25e384c8f33a2d8",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
+    },
+    "por-15f.window": {
+      "page": "screens/POR-15?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/POR-15 Governance room - Northwind benefits committee/screenshots/POR-15f.png",
+      "sha256": "d2f3336145a046b9c47a677d2cb774de1c36c2d5c52c27b81d7ae1884fa6540d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]"
+      ]
     }
   }
 }

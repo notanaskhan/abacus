@@ -241,6 +241,24 @@ import { Issuance } from "./AUD-24";
 import { FRAMES as AUD24_FRAMES } from "./AUD-24/copy";
 import { Archive } from "./AUD-25";
 import { FRAMES as AUD25_FRAMES } from "./AUD-25/copy";
+import { POR08 } from "./POR-08";
+import {
+  OPENING as POR08_OPENING,
+  STATES as POR08_STATES,
+  scenarios as por08Scenarios,
+} from "./POR-08/scenarios";
+import { POR09 } from "./POR-09";
+import {
+  OPENING as POR09_OPENING,
+  STATES as POR09_STATES,
+  scenarios as por09Scenarios,
+} from "./POR-09/scenarios";
+import { POR15 } from "./POR-15";
+import {
+  OPENING as POR15_OPENING,
+  STATES as POR15_STATES,
+  scenarios as por15Scenarios,
+} from "./POR-15/scenarios";
 import { scenarios as aud27Scenarios } from "./AUD-27/scenarios";
 import { NORTHWIND_AUDIT as SECTION_AUDIT_ID } from "../fixtures/scenarios/AUD-06";
 import {
@@ -3473,4 +3491,67 @@ registerScreen("AUD-25", {
       </A07Frame>
     );
   },
+});
+
+// R-02-T24 (R-02 §5.4): POR-08, POR-09 and POR-15 on the gallery, one artboard per built state
+// (21: POR-08 a–f with a2 and e2, POR-09 a, a2, b–f, POR-15 a–f); `&w=390` draws the phone.
+function portalArtboard(
+  states: readonly string[],
+  scenarioOf: (st: string) => Parameters<typeof installFixtureMode>[0] | undefined,
+  render: (st: string, mobile: boolean) => JSX.Element,
+): (props: { params: FixtureParams }) => JSX.Element | null {
+  return function PortalArtboard({ params }) {
+    const state = states.find((s) => s === params.st) ?? states[0] ?? "a";
+    const [ready, setReady] = useState<string | null>(null);
+    useEffect(() => {
+      const scenario = scenarioOf(state);
+      if (scenario === undefined) return undefined;
+      const restore = installFixtureMode(
+        scenario,
+        params.as === undefined ? {} : { persona: params.as },
+      );
+      setReady(state);
+      return () => {
+        setReady(null);
+        restore();
+      };
+    }, [state, params.as]);
+    if (ready !== state) return null;
+    return (
+      <div key={state} data-artboard={state} data-surface="portal">
+        {render(state, params.w === "390")}
+      </div>
+    );
+  };
+}
+
+registerScreen("POR-08", {
+  title: "Approvals · Copperleaf August 2026 Close",
+  Component: portalArtboard(
+    POR08_STATES,
+    (st) => por08Scenarios[st as keyof typeof por08Scenarios],
+    (st, mobile) => (
+      <POR08 frame mobile={mobile} {...(POR08_OPENING[st as keyof typeof POR08_OPENING] ?? {})} />
+    ),
+  ),
+});
+registerScreen("POR-09", {
+  title: "Deliverables · Northwind Robotics 401(k) Plan",
+  Component: portalArtboard(
+    POR09_STATES,
+    (st) => por09Scenarios[st as keyof typeof por09Scenarios],
+    (st, mobile) => (
+      <POR09 frame mobile={mobile} {...(POR09_OPENING[st as keyof typeof POR09_OPENING] ?? {})} />
+    ),
+  ),
+});
+registerScreen("POR-15", {
+  title: "Governance room · Northwind benefits committee",
+  Component: portalArtboard(
+    POR15_STATES,
+    (st) => por15Scenarios[st as keyof typeof por15Scenarios],
+    (st, mobile) => (
+      <POR15 frame mobile={mobile} {...(POR15_OPENING[st as keyof typeof POR15_OPENING] ?? {})} />
+    ),
+  ),
 });
