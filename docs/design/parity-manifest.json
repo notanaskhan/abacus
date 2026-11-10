@@ -1651,6 +1651,26 @@
       "crop": "window",
       "tier": "C"
     },
+    "home-01h.window": {
+      "page": "screens/HOME-01?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-01 Home dashboard/screenshots/HOME-01h.png",
+      "sha256": "d34b2fcf75603e69c1a44141ab7b656d0b7aa0cbc45dac467ce818b5fafb2fc1",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "HOME-01 R2 h and i: the To-dos and Mentions bands are built unwired under components/screens/HOME-01 (I-01-T24) and join the live composition after Apr 20, 2028 (P-29 rule 2); measured, not blocking, until then (I-01-T25)",
+      "locked": false
+    },
+    "home-01i.window": {
+      "page": "screens/HOME-01?st=i",
+      "selector": "[data-artboard=\"i\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-01 Home dashboard/screenshots/HOME-01i.png",
+      "sha256": "119f02b1e05f6c122490d6ba4b91c8316d4e3a98cb327ed41666cbcbc5246062",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "HOME-01 R2 h and i: the To-dos and Mentions bands are built unwired under components/screens/HOME-01 (I-01-T24) and join the live composition after Apr 20, 2028 (P-29 rule 2); measured, not blocking, until then (I-01-T25)",
+      "locked": false
+    },
     "aud-06a.window": {
       "page": "screens/AUD-06?st=a",
       "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",

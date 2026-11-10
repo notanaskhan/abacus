@@ -134,3 +134,20 @@ test.describe("J16 signatures (N-02-T40)", () => {
     });
   });
 });
+
+// I-01-T25 (I-01 §2): J16 A2, Hannah sees Margaret's mention band on Home (HOME-01 h). The band is
+// built unwired (I-01-T24, components/screens/HOME-01) and joins HOME-01 after Apr 20, 2028 (P-29
+// rule 2), with P-05's flags; until then the step is recorded and skipped.
+test.describe("J16 · Home mentions band", () => {
+  test.fixme(
+    "j16 A2: Hannah sees Margaret's mention band on Home",
+    owner("I-01 · wiring after Apr 20, 2028 (P-29 rule 2), P-05's flags on"),
+    async ({ journey }) => {
+      await journey.as("hannah-leclerc", "/", { clock: "2026-09-14T12:40:00-05:00" });
+      await journey.step("J16 A2: Mentions 2, the 12:35 PM one unread", async (page) => {
+        const band = page.getByRole("region", { name: "Mentions" });
+        await expect(band.getByText("Margaret Okonkwo mentioned you")).toHaveCount(2);
+      });
+    },
+  );
+});
