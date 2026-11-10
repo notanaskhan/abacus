@@ -17,6 +17,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
+from abacus.kernel.viewer_host import ViewerHost
 from abacus.modules.identity.access_window import access_has_ended
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.firm_settings import (
@@ -580,7 +581,7 @@ async def accept_invitation_route(
 
 @invitation_router.post("/preview", action=PRE_SESSION, response_model=InvitationPreviewOut)
 async def preview_invitation_route(
-    body: InvitationPreviewIn, request: Request, host: Annotated[str | None, Header()] = None
+    body: InvitationPreviewIn, request: Request, host: ViewerHost
 ) -> Response:
     """POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the
     token out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the

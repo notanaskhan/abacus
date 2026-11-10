@@ -76,6 +76,14 @@ def _row() -> dict[str, object]:
     }
 
 
+# Literal statements per table the tests count (no SQL built from a value).
+_COUNTS: dict[str, str] = {
+    "connection_secrets": "SELECT count(*) FROM connection_secrets WHERE tenant_id = $1",
+    "connection_consents": "SELECT count(*) FROM connection_consents WHERE tenant_id = $1",
+    "connection_states": "SELECT count(*) FROM connection_states WHERE tenant_id = $1",
+}
+
+
 class DemoAdapter:
     key = "fake"
     category = "ledger"
@@ -167,8 +175,7 @@ class World:
         )
 
     async def count(self, table: str) -> int:
-        sql = f"SELECT count(*) FROM {table} WHERE tenant_id = $1"  # noqa: S608 - fixed names
-        return cast(int, await self.net.seed.value(sql, self.tenant))
+        return cast(int, await self.net.seed.value(_COUNTS[table], self.tenant))
 
     async def portal_headers(self) -> dict[str, str]:
         """A portal session for Tess on the firm's portal host after the second step: the firm

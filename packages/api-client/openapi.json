@@ -87955,6 +87955,30 @@
             "cls": "internal",
             "title": "Runs As Name"
           },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State"
+          },
+          "state_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State Reason"
+          },
           "trigger_kind": {
             "anyOf": [
               {
@@ -121641,7 +121665,7 @@
     },
     "/v1/audits/{work_item_id}/archive/lock": {
       "post": {
-        "description": "G9: the lock decision and ArchiveLockWorkflow (seal, COMPLIANCE manifest; A-07-T37).",
+        "description": "G9: the lock decision and ArchiveLockWorkflow (seal, COMPLIANCE manifest; A-07-T37). A\nmanager or the EP with a fresh MFA, at 9 of 9 (409 `checklist_incomplete`), on the checklist\nthey saw (409 `checklist_changed`); once (409 `archive_locked`). A replay with the key answers\nthe same run.",
         "operationId": "audit_archive_lock",
         "parameters": [
           {
@@ -121789,6 +121813,7 @@
     },
     "/v1/audits/{work_item_id}/archive/manifest": {
       "get": {
+        "description": "The locked archive's manifest facts (A-07-T37): counts, the checkpoint, the roots and both\nretain-until dates; 404 before the seal.",
         "operationId": "audit_archive_manifest",
         "parameters": [
           {
@@ -129250,6 +129275,7 @@
     },
     "/v1/audits/{work_item_id}/filings": {
       "get": {
+        "description": "AUD-24 f: the Form 5500 tracker (A-07-T36); an EBP audit's row opens at the release.",
         "operationId": "audit_filings",
         "parameters": [
           {
@@ -129366,7 +129392,7 @@
     },
     "/v1/audits/{work_item_id}/filings/{filing_id}": {
       "patch": {
-        "description": "Manual EFAST2 tracking (A-07-T36); Accrued never files.",
+        "description": "Manual EFAST2 tracking (A-07-T36); Accrued never files. 422 `filing_evidence_required`,\n409 `stale_version`.",
         "operationId": "audit_filing",
         "parameters": [
           {
@@ -144656,7 +144682,7 @@
     },
     "/v1/comment-threads": {
       "get": {
-        "description": "Threads and comments for one anchor (internal threads never to a client principal).",
+        "description": "Threads and comments for one anchor; `counts` holds Open and Resolved (SHL-18d).",
         "operationId": "list_comment_threads",
         "parameters": [
           {
@@ -144807,16 +144833,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Comment Threads Route",
@@ -144949,16 +144965,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Open Thread Route",
@@ -144970,6 +144976,7 @@
     },
     "/v1/comment-threads/counts": {
       "post": {
+        "description": "The C-27 chips for up to 200 anchors.",
         "operationId": "thread_counts",
         "parameters": [
           {
@@ -145056,6 +145063,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -145065,16 +145082,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Thread Counts Route",
@@ -145219,16 +145226,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Post Comment Route",
@@ -145489,16 +145486,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mute Thread Route",
@@ -145605,16 +145592,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Read Thread Route",
@@ -145748,16 +145725,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reopen Thread Route",
@@ -145892,16 +145859,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Resolve Thread Route",
@@ -146046,16 +146003,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Share Thread Route",
@@ -155187,6 +155134,7 @@
     },
     "/v1/engagements/{engagement_id}/assignee-candidates": {
       "get": {
+        "description": "SHL-17b: the people on the engagement (AC-17); never the agent.",
         "operationId": "assignee_candidates",
         "parameters": [
           {
@@ -155299,16 +155247,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Assignee Candidates Route",
@@ -158802,7 +158740,7 @@
     },
     "/v1/engagements/{engagement_id}/connection/start": {
       "post": {
-        "description": "SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting. A-02-T33: the\nstate keeps this request's `Host` (after `TrustedHosts`), never anything in the query.",
+        "description": "SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting. A-02-T33: the\nstate keeps this request's viewer host (`TrustedHosts`, DEC-3990), never the query's.",
         "operationId": "start",
         "parameters": [
           {
@@ -170497,6 +170435,7 @@
     },
     "/v1/engagements/{engagement_id}/mention-candidates": {
       "get": {
+        "description": "SHL-18b/b2: the team entry and its members; non-members greyed for a search (AC-6).",
         "operationId": "thread_mention_candidates",
         "parameters": [
           {
@@ -170609,16 +170548,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Thread Mention Candidates Route",
@@ -222009,24 +221938,6 @@
       "post": {
         "description": "POR-01 d before any session (SPEC-320 AC-12): one 404 for every failure. POST keeps the\ntoken out of URLs and logs; misses are counted per `preview_bucket` (the viewer address the\nedge forwards when trusted), kept only as a digest.",
         "operationId": "preview_invitation",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -239773,22 +239684,6 @@
         "parameters": [
           {
             "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          },
-          {
-            "in": "header",
             "name": "user-agent",
             "required": false,
             "schema": {
@@ -239923,24 +239818,6 @@
       "post": {
         "description": "A new TOTP factor for a person with none: the QR code's URI and the key, once.",
         "operationId": "portal_mfa_setup",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -240035,22 +239912,6 @@
         "description": "The new factor's first code: enrolled, 8 backup codes once, and the session.",
         "operationId": "portal_mfa_setup_verify",
         "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          },
           {
             "in": "cookie",
             "name": "__Host-abacus-portal",
@@ -240206,22 +240067,6 @@
           },
           {
             "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          },
-          {
-            "in": "header",
             "name": "X-Abacus-Activity",
             "required": false,
             "schema": {
@@ -240316,24 +240161,6 @@
     "/v1/portal/auth/resend": {
       "post": {
         "operationId": "portal_resend",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -240550,24 +240377,6 @@
       "post": {
         "description": "Always 202 with the same shape, for any email on any host; 404 `link_expired` for a link\nthat can't be used; 503 `sign_in_paused`.",
         "operationId": "portal_start",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -240651,22 +240460,6 @@
       "post": {
         "operationId": "portal_verify",
         "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          },
           {
             "in": "cookie",
             "name": "__Host-abacus-portal",
@@ -241471,24 +241264,6 @@
       "get": {
         "description": "POR-01's branding for the request's host: Public slots, or the same shape with neutral\nvalues. Cached per host at the edge for a minute.",
         "operationId": "get_portal_branding",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "content": {
@@ -241552,24 +241327,6 @@
       "get": {
         "description": "The firm's logo, re-encoded as PNG on upload, served same-origin; 404 for any host\nwithout one. The body is `image/png` (the model is only the generator's placeholder).",
         "operationId": "get_portal_logo",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "content": {
@@ -243255,7 +243012,7 @@
     },
     "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start": {
       "post": {
-        "description": "POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.\nA-02-T33: the state keeps this request's `Host` (after `TrustedHosts`), never the query's.",
+        "description": "POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.\nA-02-T33: the state keeps the request's viewer host (DEC-3990), never the query's.",
         "operationId": "start_connection",
         "parameters": [
           {
@@ -247725,24 +247482,6 @@
     "/v1/portal/links/renew": {
       "post": {
         "operationId": "portal_link_renew",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "host",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Host"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -269031,6 +268770,7 @@
     },
     "/v1/tax/returns/{return_id}/review-tree": {
       "get": {
+        "description": "The documents at a level, \"Review n\" (T-04-T17).",
         "operationId": "review_tree",
         "parameters": [
           {
@@ -269318,6 +269058,7 @@
     },
     "/v1/tax/returns/{return_id}/worksheets": {
       "get": {
+        "description": "TAX-05's tree (T-04-T16).",
         "operationId": "worksheets",
         "parameters": [
           {
@@ -269434,6 +269175,7 @@
     },
     "/v1/tax/returns/{return_id}/workspace": {
       "get": {
+        "description": "TAX-04's tab counts at the viewer's level (T-04-T17).",
         "operationId": "workspace",
         "parameters": [
           {
@@ -269550,6 +269292,7 @@
     },
     "/v1/tax/worksheets/{worksheet_id}/fields": {
       "get": {
+        "description": "TAX-05's fields with their provenance (T-04-T16); edits go through `PUT /v1/fields/\u2026`.",
         "operationId": "worksheet_fields",
         "parameters": [
           {
@@ -269780,7 +269523,7 @@
     },
     "/v1/thread-comments/{comment_id}/redact": {
       "post": {
-        "description": "Firm admin with a fresh MFA (matrix); 409 `already_redacted`.",
+        "description": "Firm admin with a fresh MFA (matrix); 409 `already_redacted`. A retry with the key after a\nredaction answers 409 too: the comment is redacted either way.",
         "operationId": "redact_thread_comment",
         "parameters": [
           {
@@ -269913,16 +269656,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Redact Thread Comment Route",
@@ -269934,7 +269667,7 @@
     },
     "/v1/todos": {
       "get": {
-        "description": "My to-dos (`assignee=me`) or the to-dos on one anchor.",
+        "description": "My to-dos (`assignee=me`, with the bands in `counts`) or the to-dos on one anchor. A\nperson's to-dos are few (no cursor yet; `limit` caps the page).",
         "operationId": "list_todos",
         "parameters": [
           {
@@ -270118,16 +269851,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Todos Route",
@@ -270260,16 +269983,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Todo Route",
@@ -270281,6 +269994,7 @@
     },
     "/v1/todos/counts": {
       "post": {
+        "description": "The \"n To-do\" chips for up to 200 anchors.",
         "operationId": "todo_counts",
         "parameters": [
           {
@@ -270376,16 +270090,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Todo Counts Route",
@@ -270503,16 +270207,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Delete Todo Route",
@@ -270617,16 +270311,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Todo Route",
@@ -270769,16 +270453,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Patch Todo Route",
@@ -270922,16 +270596,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Assign Todo Route",
@@ -271059,16 +270723,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Add Checklist Item Route",
@@ -271195,16 +270849,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Delete Checklist Item Route",
@@ -271339,16 +270983,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Patch Checklist Item Route",
@@ -271482,16 +271116,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Complete Todo Route",
@@ -271635,16 +271259,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Move Todo Route",
@@ -271779,16 +271393,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Reopen Todo Route",
@@ -271896,16 +271500,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Seen Todo Route",

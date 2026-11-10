@@ -1,17 +1,16 @@
 ---
 id: RB-43
-title: Document services part 1 (failed renders, engine upgrade and golden re-baseline, template rollback)
+title: Document services (part 1 renders, engine upgrade, template rollback; part 2 OCR, kill switch, backfill, yearly form-map refresh)
 owner: builder
 alarms: []
 last_rehearsed: never
 rehearse_by: 2027-08-20
 ---
 
-# RB-43 · Document services, part 1
+# RB-43 · Document services
 
-P-11-T17 (P-11 §4.10, R4; ADR-320). Part 2 (OCR: Textract outage, refusal spikes, cost cap, the
-`ocr.textract` kill switch, backfill, the yearly form-map refresh) is P-11-T38 (S34) and lands in
-this file as §9 onward. The row named `docs/runbooks/document-services.md`; it carries the next free
+P-11-T17 (P-11 §4.10, R4; ADR-320) wrote part 1 (§1–§8: renders). Part 2 (§9–§14: OCR, the
+kill switch, the backfill, the yearly form-map refresh) is P-11-T38 (S34). The row named `docs/runbooks/document-services.md`; it carries the next free
 runbook number like every other (README rule).
 
 | Field | Value |
@@ -152,6 +151,79 @@ rehearsal log below.
 Open the blameless review. A new failure code becomes a row in §1; a template that slipped past
 bundle validation becomes a validation rule and a test in `templates.py`; an engine drift becomes
 a pin. Update this runbook and set "Last reviewed against an incident".
+
+## 9. OCR is down or slow (Textract outage)
+RB-47 holds the alarms (`textract-throttled`, `textract-usererrorcount`,
+`textract-servererrorcount`) and their first steps; this section is what a firm sees.
+1. Nothing is lost: an upload lands as an evidence version whatever OCR does, and the viewer shows
+   the page image. A page OCR could not read is `not_scannable`; the inbox and TAX-03 show manual
+   entry for its fields (P-11 §4.10).
+2. A regional Textract outage: set the kill switch (§11) so pages stop reaching a failing
+   provider and no firm piles up refusals; tell the firms that OCR is paused (the status page).
+3. When AWS reports recovery: lift the kill switch, then run the backfill (§12) for each firm that
+   uploaded during the outage. The backfill reads only pages with no words and no OCR row yet.
+
+## 10. Refusal spikes
+Every OCR call goes through the gate first (`evidence/ocr_gate.py`, P-11-T23), and the first failing
+condition is the reason, written to the insert-only `ocr_runs` row with identifiers and counts only.
+A refusal is never retried automatically and never rerouted. Read the spike by reason:
+
+| Reason | What it means | Do |
+|---|---|---|
+| `kill_switch` | `model_route_block` on route `textract` is set | Expected during §9/§11; otherwise find who set it (audit trail) |
+| `flag_off` | the firm's `evidence.ocr` is off | Expected before a firm's flip (RB-68); a spike after a flip means the flag was turned off |
+| `terms_not_covering` | no provider-terms entry covers `textract` today | RB-40: the entry expired or was never added; nothing reaches AWS until it is fixed |
+| `boundary_basis` | a real firm without the AI-services opt-out evidence on its entry | RB-40; a synthetic firm never refuses on this |
+| `consent_missing` | tax return information without the C19 consent the caller found | §7216: the firm collects consent (ADM-05); never override in code |
+| `quota_exceeded` | the firm reached its daily page cap (§11) | Expected on bulk days; the cap is a refusal, never a queue |
+
+A spike of `terms_not_covering`, `boundary_basis` or `consent_missing` is a compliance signal, not
+an outage: raise it with the firm's admin the same day.
+
+## 11. Cost cap and the kill switch
+- **Daily page cap:** 5,000 pages per firm per day (`DAILY_PAGE_CAP`, P-11 §cost). Pages over it
+  refuse with `quota_exceeded`; the next day's first page runs. The 80% alarm and the December
+  profile are RB-68's.
+- **Kill switch, every firm:** set `model_route_block` on route `textract` in the platform console
+  (ADR-140). The gate refuses the next page; calls in flight finish. Lift it the same way.
+- **One firm:** turn its `evidence.ocr` flag off (per firm, RB-68 §flip). Form extraction follows:
+  `evidence.form_extraction` off writes no fields and consumers show manual entry.
+Neither switch changes evidence: versions, fingerprints and the words already read stay.
+
+## 12. Backfill (an ECS one-off task, never a laptop)
+`python -m abacus_tools.ocr_backfill <tenant-id>` starts (or joins) the tenant's
+`ocr_backfill:<tenant>` workflow on the background queue. It runs the same idempotent activities a
+new upload runs, behind the same gate, in batches by cursor, and never changes evidence.
+1. On staging or production, run it as an **ECS one-off task** of the API service's task definition
+   with the command overridden (the ops request, `ops-task.yml`; staging: the ops one-off in
+   `infra/README.md`). **Never from a laptop against a shared database** (AGENTS.md rule 17).
+2. One firm at a time; the workflow id makes a second start join the first.
+3. Watch `ocr_runs` for the tenant: refusals stop the page, not the backfill. A long scan (over
+   20 pages) runs as `LongOcr` on the background queue.
+4. Done when `pending_ocr` returns nothing for the tenant (the workflow completes).
+
+## 13. Yearly form-map refresh (owner: ayushkbhatia)
+The maps are repo parameter files, `backend/src/abacus/modules/evidence/forms/<form>/<tax_year>.yaml`
+(DEC-76): reviewed yearly against the IRS form for the year. **Owner:** ayushkbhatia (the
+`evidence.form_extraction` flag owner). **Due:** each Dec 1 for the coming tax year, before the
+Jan 1 window.
+1. For each form (1098, 1099-DIV, -G, -INT, -MISC, -NEC, -R, the notices), read the new year's IRS
+   draft. Unchanged: add `<year>.yaml` with `inherits: <prior year>` and a new `version`. Changed:
+   copy the prior map and edit anchors, boxes and code boxes.
+2. **Golden corpus:** `backend/tests/golden/scanned_corpus.yaml` (P-11-T28) and the map tests
+   (`tests/unit/evidence/test_p11t34_tax_form_maps.py`, `test_p11t35_tax_form_maps_part2.py`,
+   `test_p11t37_form_extraction_independent.py`) gain the year's cases; an unsupported year must
+   still yield no fields.
+3. The change is a protected-path PR (maps are PROTECTED): golden tests green, both approvals,
+   merged in the Dec bundle. No migration; old years' maps stay for re-reads.
+
+## 14. Rehearse part 2 (staging drill)
+On staging with the synthetic test firm PF-X1 (Brightwater Hale; DEC-1530), from this runbook only:
+1. Set the kill switch; upload a scanned 1099-INT; confirm a `kill_switch` refusal row and the
+   page image in the viewer; lift it.
+2. Run §12's backfill as an ECS one-off task for PF-X1; confirm the page now has words and the
+   fields appear (with `evidence.form_extraction` covering tax forms).
+3. Record the drill in the rehearsal log below with the times.
 
 ## Rehearsal log
 

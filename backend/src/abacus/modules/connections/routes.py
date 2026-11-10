@@ -12,6 +12,7 @@ from fastapi import Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel.classification import classified
+from abacus.kernel.viewer_host import viewer_host
 from abacus.modules.connections.connect import (
     ConnectionView,
     access_log,
@@ -219,8 +220,8 @@ async def providers_route(engagement_id: UUID, ctx: Ctx) -> list[ProviderOut]:
 )
 async def start_route(engagement_id: UUID, body: StartIn, ctx: Ctx, request: Request) -> StartOut:
     """SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting. A-02-T33: the
-    state keeps this request's `Host` (after `TrustedHosts`), never anything in the query."""
-    started = await start(ctx, engagement_id, body.provider, host=request.headers.get("host"))
+    state keeps this request's viewer host (`TrustedHosts`, DEC-3990), never the query's."""
+    started = await start(ctx, engagement_id, body.provider, host=viewer_host(request))
     return StartOut(authorise_url=started.authorise_url)
 
 

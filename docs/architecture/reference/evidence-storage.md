@@ -83,6 +83,12 @@ TOTAL_LABEL = "Total"
 - Local runs create the bucket with `python -m abacus_tools.local.evidence_bucket`, which refuses a bucket without Object Lock and runs only in `local` and `test`. In AWS, Terraform creates it (TASK-014).
 - Tests point storage at their own bucket with `configure_storage(client, bucket)` and tear down with `reset_storage()`.
 
+## What OCR adds (P-11)
+OCR never touches the object or the version: the words, the `ocr_runs` row and the extracted fields
+are separate rows keyed by the version, so a re-read (a new map year, a cleared refusal, the
+backfill) adds rows and never rewrites evidence. The fingerprint stays the original bytes'.
+Operations: RB-43 part 2.
+
 ## Not yet
 - The KMS key service and per-firm KMS keys (TASK-014); AWS environments refuse to start without them.
 - Uploads (the 50 MiB cap is a placeholder).

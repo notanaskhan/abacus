@@ -130,3 +130,39 @@ class UncorrectedMisstatementsAcknowledged(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     work_item_id: Annotated[UUID, classified("internal")]
     contact_id: Annotated[UUID, classified("internal")]
+
+
+class FilingUpdated(DomainEvent):
+    """A-07-T36 (A-07 §4.6): a person recorded the client's Form 5500 filing (or undid it)."""
+
+    event_type: ClassVar[str] = "filing.updated"
+
+    filing_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    status: Annotated[str, classified("internal")]
+
+
+class ArchiveDeadlineRisk(DomainEvent):
+    """A-07-T36: a post-release clock reached a boundary (the archive at 7 days, its deadline or
+    the day after; AU-C 265's due date or the day after). The leads hear of it."""
+
+    event_type: ClassVar[str] = "archive.deadline_risk"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    clock: Annotated[str, classified("internal")]  # archive · au_c_265
+    boundary: Annotated[str, classified("internal")]  # deadline_risk · deadline · overdue
+    deadline: Annotated[str, classified("internal")]  # ISO date
+
+
+class ArchiveLocked(DomainEvent):
+    """A-07-T37 (G9): the archive is locked and sealed; the clocks stop, C13 recomputes G9, and
+    the HOME-02 projector reads it."""
+
+    event_type: ClassVar[str] = "archive.locked"
+
+    archive_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    seal_sha256: Annotated[str, classified("internal")]

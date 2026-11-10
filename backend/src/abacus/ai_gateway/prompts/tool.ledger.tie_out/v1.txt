@@ -1,0 +1,1 @@
+Check whether the named accounts' balances sum to an expected figure, to the cent: the total, the difference and the accounts not found, computed by code.

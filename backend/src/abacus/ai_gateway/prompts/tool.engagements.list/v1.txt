@@ -1,0 +1,1 @@
+List the engagements of a client (the run engagement's client when none is named): id, name, type, status and fiscal period, at most 200, with the total counted by code.

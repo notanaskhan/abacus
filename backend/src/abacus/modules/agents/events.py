@@ -182,3 +182,14 @@ class SectionDraftFinished(DomainEvent):
     workpaper_id: Annotated[UUID, classified("internal")]
     mode: Annotated[str, classified("internal")]
     initiator_user_id: Annotated[UUID, classified("internal")]
+
+
+class RunStateChanged(DomainEvent):
+    """P-10-T29 (SPEC-647 §4.5): a v2 run moved state; realtime invalidation reads it (identifiers
+    and the state code only)."""
+
+    event_type: ClassVar[str] = "agent_run.state_changed"
+
+    run_id: Annotated[UUID, classified("internal")]
+    state: Annotated[str, classified("internal")]
+    run_seq: Annotated[int, classified("internal")]

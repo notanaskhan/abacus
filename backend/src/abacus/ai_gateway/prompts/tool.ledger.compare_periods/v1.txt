@@ -1,0 +1,1 @@
+Compare a client entity's trial balance across two period ends account by account: current, prior, change and change percent, all computed by code. Never do arithmetic on these figures yourself.

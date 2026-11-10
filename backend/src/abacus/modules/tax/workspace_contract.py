@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -357,8 +357,22 @@ _R = "/returns/{return_id}"
     f"{_R}/workspace", action="tax_return.read", response_model=WorkspaceSummaryOut, errors=(501,)
 )
 async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
+    """TAX-04's tab counts at the viewer's level (T-04-T17)."""
+    from abacus.modules.tax.review_tree import summary
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    found = await summary(ctx, return_id)
+    return WorkspaceSummaryOut(
+        return_id=return_id,
+        review_count=found.review_count,
+        viewer_level=found.viewer_level,
+        issues_open=0,
+        k1_dependency=None
+        if found.k1_dependency is None
+        else K1ActivityStatus(found.k1_dependency),
+        assistant="agents_off",
+        allowed_actions=cast(list[WorkspaceAction], found.allowed),
+    )
 
 
 @workspace_router.get(
@@ -371,8 +385,26 @@ async def review_tree_route(
     q: Annotated[str | None, Query(max_length=120)] = None,
     category: Annotated[str | None, Query(max_length=60)] = None,
 ) -> ReviewTreeOut:
+    """The documents at a level, "Review n" (T-04-T17)."""
+    from abacus.modules.tax.review_tree import tree
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    docs, review, _ = await tree(ctx, return_id, level=level, q=q, category=category)
+    return ReviewTreeOut(
+        items=[
+            ReviewDocumentOut(
+                evidence_version_id=d.evidence_version_id,
+                title=d.title,
+                category=d.category,
+                approval=d.approval,
+                approvals_count=d.approvals_count,
+                version=d.version,
+            )
+            for d in docs
+        ],
+        total=len(docs),
+        review_count=review,
+    )
 
 
 @workspace_router.post(
@@ -386,8 +418,22 @@ async def document_approval_route(
     return_id: UUID, body: DocumentApprovalIn, ctx: Ctx
 ) -> DocumentApprovalOut:
     """409 `mismatch` (`facts.field_key`), 403 `level_not_permitted`, 409 `version_superseded`."""
+    from abacus.modules.tax.review_tree import approve
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    return _approval_out(
+        await approve(
+            ctx,
+            return_id,
+            evidence_version_id=body.evidence_version_id,
+            level=body.level,
+            seen_version=body.seen_version,
+        )
+    )
+
+
+def _approval_out(a: object) -> DocumentApprovalOut:
+    return DocumentApprovalOut.model_validate(a, from_attributes=True)
 
 
 @workspace_router.post(
@@ -400,8 +446,10 @@ async def document_approval_reverse_route(
     approval_id: UUID, body: DocumentApprovalReverseIn, ctx: Ctx
 ) -> DocumentApprovalOut:
     """Unapprove as a reversing row, own level only; nothing is deleted."""
+    from abacus.modules.tax.review_tree import reverse
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    return _approval_out(await reverse(ctx, approval_id, body.reason))
 
 
 @workspace_router.get(
@@ -446,8 +494,11 @@ async def final_approval_request_route(
     return_id: UUID, body: FinalApprovalRequestIn, ctx: Ctx
 ) -> FinalApprovalRequestOut:
     """409 `{blockers: draft_k1 | blocking_issues | unapproved_documents}`."""
+    from abacus.modules.tax.review_tree import request_final_approval
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    gate_id, at = await request_final_approval(ctx, return_id, body.assignee_user_id)
+    return FinalApprovalRequestOut(gate_id=gate_id, requested_at=at)
 
 
 @workspace_router.post(
@@ -467,8 +518,24 @@ async def draft_run_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
     f"{_R}/worksheets", action="return_worksheet.read", response_model=WorksheetsOut, errors=(501,)
 )
 async def worksheets_route(return_id: UUID, ctx: Ctx) -> WorksheetsOut:
+    """TAX-05's tree (T-04-T16)."""
+    from abacus.modules.tax.worksheets import tree
+
     await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
-    _not_yet()
+    return WorksheetsOut(
+        items=[
+            WorksheetNodeOut(
+                worksheet_id=n.worksheet_id,
+                title=n.title,
+                group=n.group,
+                sub_head=n.sub_head,
+                tsj=cast(Literal["T", "S", "J"] | None, n.tsj),
+                new_this_year=n.new_this_year,
+                edited=n.edited,
+            )
+            for n in await tree(ctx, return_id)
+        ]
+    )
 
 
 @workspace_router.get(
@@ -480,8 +547,33 @@ async def worksheets_route(return_id: UUID, ctx: Ctx) -> WorksheetsOut:
 async def worksheet_fields_route(
     worksheet_id: UUID, ctx: Ctx, q: Annotated[str | None, Query(max_length=120)] = None
 ) -> WorksheetFieldsOut:
+    """TAX-05's fields with their provenance (T-04-T16); edits go through `PUT /v1/fields/…`."""
+    from abacus.modules.tax.worksheets import fields
+
     await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
-    _not_yet()
+    return WorksheetFieldsOut(
+        worksheet_id=worksheet_id,
+        sections=[
+            WorksheetSectionOut(
+                key=s.key,
+                title=s.title,
+                fields=[
+                    WorksheetFieldOut(
+                        field_key=f.field_key,
+                        label=f.label,
+                        value=f.value,
+                        state=ReturnFieldViewStatus(f.state),
+                        provenance=f.provenance,
+                        citations=f.citations,
+                        engine_label=f.engine_label,
+                        seen_seq=f.seen_seq,
+                    )
+                    for f in s.fields
+                ],
+            )
+            for s in await fields(ctx, worksheet_id, q)
+        ],
+    )
 
 
 @workspace_router.get(

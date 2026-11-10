@@ -389,10 +389,19 @@ HUMAN_ONLY = [
 ]
 
 
+# P-10-T28 (DEC-3204, DEC-3213): `activity.read` is the agent's only through the activity.read
+# tool a run's spec lists (task scope ∩ the initiator's rights); an agent never calls these routes,
+# never holds the read outright, and every write here stays denied.
+AGENT_TASK_SCOPE_READS = frozenset({"activity.read"})
+
+
 @pytest.mark.parametrize(("method", "path"), HUMAN_ONLY)
 def test_a01_each_human_only_operation_denies_the_agent(method: str, path: str) -> None:
-    # Absent is deny in `authorise` (no `allow` among the decisions); never task_scope or allow.
-    assert RULES[_action(method, path)].decisions.get("agent") in (None, "deny")
+    # Absent is deny in `authorise` (no `allow` among the decisions); never allow.
+    action = _action(method, path)
+    allowed = (None, "deny", "task_scope") if action in AGENT_TASK_SCOPE_READS else (None, "deny")
+    assert method == "get" or action not in AGENT_TASK_SCOPE_READS
+    assert RULES[action].decisions.get("agent") in allowed
 
 
 @pytest.mark.parametrize(

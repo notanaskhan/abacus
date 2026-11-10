@@ -41417,6 +41417,14 @@ export type RunHeaderOut = {
      */
     runs_as_name?: string | null;
     /**
+     * State
+     */
+    state?: string | null;
+    /**
+     * State Reason
+     */
+    state_reason?: string | null;
+    /**
      * Trigger Kind
      */
     trigger_kind?: 'manual' | 'schedule' | 'agent_trigger' | 'engagement_trigger' | 'retry' | 'test' | 'engagement_plan' | 'agent_column' | 'event_policy' | null;
@@ -67492,10 +67500,6 @@ export type ListCommentThreadsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListCommentThreadsError = ListCommentThreadsErrors[keyof ListCommentThreadsErrors];
@@ -67551,10 +67555,6 @@ export type OpenThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type OpenThreadError = OpenThreadErrors[keyof OpenThreadErrors];
@@ -67599,13 +67599,13 @@ export type ThreadCountsErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ThreadCountsError = ThreadCountsErrors[keyof ThreadCountsErrors];
@@ -67666,10 +67666,6 @@ export type PostCommentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PostCommentError = PostCommentErrors[keyof PostCommentErrors];
@@ -67786,10 +67782,6 @@ export type MuteThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MuteThreadError = MuteThreadErrors[keyof MuteThreadErrors];
@@ -67842,10 +67834,6 @@ export type ReadThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReadThreadError = ReadThreadErrors[keyof ReadThreadErrors];
@@ -67906,10 +67894,6 @@ export type ReopenThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReopenThreadError = ReopenThreadErrors[keyof ReopenThreadErrors];
@@ -67970,10 +67954,6 @@ export type ResolveThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ResolveThreadError = ResolveThreadErrors[keyof ResolveThreadErrors];
@@ -68034,10 +68014,6 @@ export type ShareThreadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ShareThreadError = ShareThreadErrors[keyof ShareThreadErrors];
@@ -72145,10 +72121,6 @@ export type AssigneeCandidatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AssigneeCandidatesError = AssigneeCandidatesErrors[keyof AssigneeCandidatesErrors];
@@ -79192,10 +79164,6 @@ export type ThreadMentionCandidatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ThreadMentionCandidatesError = ThreadMentionCandidatesErrors[keyof ThreadMentionCandidatesErrors];
@@ -102631,12 +102599,6 @@ export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInv
 
 export type PreviewInvitationData = {
     body: InvitationPreviewIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/invitations/preview';
@@ -110684,10 +110646,6 @@ export type PortalMfaData = {
     body: PortalMfaIn;
     headers?: {
         /**
-         * Host
-         */
-        host?: string | null;
-        /**
          * User-Agent
          */
         'user-agent'?: string | null;
@@ -110741,12 +110699,6 @@ export type PortalMfaResponse = PortalMfaResponses[keyof PortalMfaResponses];
 
 export type PortalMfaSetupData = {
     body: PortalMfaSetupIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/mfa/setup';
@@ -110792,12 +110744,6 @@ export type PortalMfaSetupResponse = PortalMfaSetupResponses[keyof PortalMfaSetu
 
 export type PortalMfaSetupVerifyData = {
     body: PortalMfaSetupVerifyIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/mfa/setup/verify';
@@ -110857,10 +110803,6 @@ export type PortalRefreshData = {
          */
         origin?: string | null;
         /**
-         * Host
-         */
-        host?: string | null;
-        /**
          * X-Abacus-Activity
          */
         'X-Abacus-Activity'?: string | null;
@@ -110902,12 +110844,6 @@ export type PortalRefreshResponse = PortalRefreshResponses[keyof PortalRefreshRe
 
 export type PortalResendData = {
     body: PortalSignInResendIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/resend';
@@ -111004,12 +110940,6 @@ export type PortalSignOutResponse = PortalSignOutResponses[keyof PortalSignOutRe
 
 export type PortalStartData = {
     body: PortalSignInStartIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/start';
@@ -111051,12 +110981,6 @@ export type PortalStartResponse = PortalStartResponses[keyof PortalStartResponse
 
 export type PortalVerifyData = {
     body: PortalSignInVerifyIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/verify';
@@ -111412,12 +111336,6 @@ export type UndoMarkDoneResponse = UndoMarkDoneResponses[keyof UndoMarkDoneRespo
 
 export type GetPortalBrandingData = {
     body?: never;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/branding';
@@ -111455,12 +111373,6 @@ export type GetPortalBrandingResponse = GetPortalBrandingResponses[keyof GetPort
 
 export type GetPortalLogoData = {
     body?: never;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/branding/logo';
@@ -114329,12 +114241,6 @@ export type PortalEFurnishingResponse = PortalEFurnishingResponses[keyof PortalE
 
 export type PortalLinkRenewData = {
     body: PortalLinkRenewIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/links/renew';
@@ -124306,10 +124212,6 @@ export type RedactThreadCommentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RedactThreadCommentError = RedactThreadCommentErrors[keyof RedactThreadCommentErrors];
@@ -124382,10 +124284,6 @@ export type ListTodosErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListTodosError = ListTodosErrors[keyof ListTodosErrors];
@@ -124441,10 +124339,6 @@ export type CreateTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreateTodoError = CreateTodoErrors[keyof CreateTodoErrors];
@@ -124492,10 +124386,6 @@ export type TodoCountsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TodoCountsError = TodoCountsErrors[keyof TodoCountsErrors];
@@ -124552,10 +124442,6 @@ export type DeleteTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeleteTodoError = DeleteTodoErrors[keyof DeleteTodoErrors];
@@ -124608,10 +124494,6 @@ export type GetTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetTodoError = GetTodoErrors[keyof GetTodoErrors];
@@ -124672,10 +124554,6 @@ export type PatchTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PatchTodoError = PatchTodoErrors[keyof PatchTodoErrors];
@@ -124736,10 +124614,6 @@ export type AssignTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AssignTodoError = AssignTodoErrors[keyof AssignTodoErrors];
@@ -124796,10 +124670,6 @@ export type AddChecklistItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AddChecklistItemError = AddChecklistItemErrors[keyof AddChecklistItemErrors];
@@ -124860,10 +124730,6 @@ export type DeleteChecklistItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeleteChecklistItemError = DeleteChecklistItemErrors[keyof DeleteChecklistItemErrors];
@@ -124924,10 +124790,6 @@ export type PatchChecklistItemErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PatchChecklistItemError = PatchChecklistItemErrors[keyof PatchChecklistItemErrors];
@@ -124988,10 +124850,6 @@ export type CompleteTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CompleteTodoError = CompleteTodoErrors[keyof CompleteTodoErrors];
@@ -125052,10 +124910,6 @@ export type MoveTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MoveTodoError = MoveTodoErrors[keyof MoveTodoErrors];
@@ -125116,10 +124970,6 @@ export type ReopenTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReopenTodoError = ReopenTodoErrors[keyof ReopenTodoErrors];
@@ -125172,10 +125022,6 @@ export type SeenTodoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SeenTodoError = SeenTodoErrors[keyof SeenTodoErrors];

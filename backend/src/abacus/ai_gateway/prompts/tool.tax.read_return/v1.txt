@@ -1,0 +1,1 @@
+Read the taxpayer's return for the year on the run's engagement: form, tax year, status and how many worksheets are active. Needs the client entity and tax year; refused without section 7216 consent in force.

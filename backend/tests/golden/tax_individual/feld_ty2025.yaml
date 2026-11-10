@@ -1,0 +1,38 @@
+# T-04-T20 goldens (ADR-078 as amended: written from the blueprint, not the compute code): the Feld
+# family's TY2025 figures. `source` names the blueprint passage; `reviewed_by` stays null until the
+# tax CPA signs (the figures are the blueprint's, not yet a CPA's). Every amount is exact Decimal.
+source: "accrued-blueprint/01-platform-blueprint.md §9.8, Feld — New York IT-201 TY2025; Ridgeline states & PTET (TXP-09)"
+reviewed_by: null
+it201:
+  inputs:
+    line19_federal_agi: "598030"
+    line20_interest_other_states: "1550"
+    line22_ptet_addback: "16025"
+    line34_deduction: "16050"
+    line39_ny_tax_import: "29791"   # NY tax after the IT-112-R credit (41,070 - 11,279)
+    line47a_nyc_tax_import: "23014"
+    payments: ["17400", "9390", "20000", "4746"]
+  expect:
+    line33_ny_agi: "615605"
+    line37_taxable: "599555"
+    total_tax: "52805"
+    total_payments: "51536"
+    balance_due: "1269"
+    overpayment: "0"
+it225:
+  - {name: total, addbacks: ["4746", "11279"], expect: "16025"}
+  - {name: it112r_states, addbacks: ["7011", "4268"], expect: "11279"}
+it112r:
+  other_state_tax: "11279"
+  ny_tax: "41070"
+  other_state_income: "238623"
+  ny_agi: "615605"
+  expect: {limit: "15920", credit: "11279"}
+sourcing:
+  amount: "307900"
+  by_state: [["IL", "46.0"], ["CO", "31.5"], ["NY", "22.5"]]
+  expect: {IL: "141634", CO: "96989", NY: "69277"}
+ptet_share:
+  tax_year: 2025
+  entity: [["IL", "28044"], ["CO", "17070"], ["NY", "18982"]]
+  expect: {IL: "7011", CO: "4268", NY: "4746", total: "16025"}

@@ -147,8 +147,9 @@ def _redirect_uri() -> str:
 
 
 def origin_host(host: str | None) -> str | None:
-    """The request's `Host` (after `TrustedHosts`) as a host name: lower case, without its port
-    or a trailing dot; None for anything that is not a host name (never handed on)."""
+    """The request's viewer host (`kernel.viewer_host`, DEC-3990) as a host name: lower case,
+    without its port or a trailing dot; None for anything that is not a host name (never handed
+    on)."""
     name = (host or "").strip().lower()
     if name.count(":") == 1:
         name = name.split(":", 1)[0]

@@ -38,6 +38,7 @@ from abacus.modules.agents.guidance_draft import (
 from abacus.modules.agents.inbox_match import create_match_run, match
 from abacus.modules.agents.intake_match import create_intake_match_run, match_intake
 from abacus.modules.agents.knowledge import embed_next_batch, fail_document
+from abacus.modules.agents.run_activities import RUN_V2_ACTIVITIES
 from abacus.modules.agents.run_backfill import backfill_run_batch_activity
 from abacus.modules.agents.run_records import persist_run_record
 from abacus.modules.agents.section_draft import draft as draft_section
@@ -736,4 +737,5 @@ ACTIVITIES = (
     importer_finish_activity,
     importer_fail_activity,
     backfill_run_batch_activity,  # P-10-T14
+    *RUN_V2_ACTIVITIES,  # P-10-T29: AgentRunWorkflow part 1
 )

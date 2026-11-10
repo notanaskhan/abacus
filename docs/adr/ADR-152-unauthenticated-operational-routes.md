@@ -79,6 +79,7 @@ Proposed under N-02-T01 for DocuSign Connect, retargeted to DocuSeal by ADR-342 
 - **`POST /v1/connections/handoff`** joins the ROUTE-001 exception list, inside `AbacusRouter` under the `PRE_SESSION` marker (on `PRE_SESSION_PATHS`). The provider returns every firm's OAuth flow to one registered host, where no session is valid; this route tells that host's page where the flow began.
 - **The OAuth state authenticates it.** It answers `{origin_host}` only for an unused, unexpired state whose stored host (the request's own `Host` at start, never the query) is the app host or an active portal host of the state's own firm; anything else is one 404. It names no tenant, firm or engagement and never spends the state; completion stays authenticated (`POST /v1/connections/complete`).
 - No GET: the state stays out of request lines and logs.
+- (2026-11-10; TASK-6990, DEC-3990) "The request's own `Host`" is the viewer host defined by ADR-163's viewer-host amendment: the load balancer's `X-Forwarded-Host` behind CloudFront, else `Host`.
 
 ## Revisit when
 A third unauthenticated route is proposed, or branding needs per-visitor data.
