@@ -21,7 +21,7 @@ from abacus.kernel._statuses import CommentThreadStatus, TodoStatus
 from abacus.kernel.errors import DomainInvalid, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.collaboration import candidates, threads
+from abacus.modules.collaboration import candidates, threads, todos
 from abacus.modules.collaboration import views as v
 from abacus.modules.collaboration.contract import (
     AnchorCountsIn,
@@ -45,6 +45,7 @@ from abacus.modules.collaboration.contract import (
     TodoAssignIn,
     TodoChecklistItemIn,
     TodoChecklistItemPatchIn,
+    TodoCountOut,
     TodoCountsOut,
     TodoCreateIn,
     TodoMoveIn,
@@ -367,16 +368,51 @@ todos_router = AbacusRouter(prefix="/v1/todos", tags=["collaboration"])
 _D = "/{todo_id}"
 
 
+def _anchor_of(ref: AnchorRef | None) -> tuple[str, UUID, dict[str, str | int] | None] | None:
+    return None if ref is None else (ref.anchor_kind, ref.anchor_id, ref.locator)
+
+
+async def _todo_out(ctx: AuthContext, todo_id: UUID) -> TodoOut:
+    return (await v.todos_out([await todos.read(ctx, todo_id)]))[0]
+
+
 @todos_router.post(
-    "", action="todo.create", response_model=TodoOut, status_code=201, errors=(409, 501)
+    "", action="todo.create", response_model=TodoOut, status_code=201, errors=(409,)
 )
 async def create_todo_route(body: TodoCreateIn, ctx: Ctx, key: Key = None) -> TodoOut:
     """422 `assignee_not_allowed` (not a human member, walled, or the agent)."""
     await gate(ctx)
-    not_yet()
+
+    async def run() -> tuple[int, dict[str, object]]:
+        todo_id = await todos.create(
+            ctx,
+            scope_kind=body.scope_kind,
+            engagement_id=body.engagement_id,
+            title=body.title,
+            assignee_user_id=body.assignee_user_id,
+            due_on=body.due_on,
+            anchor=_anchor_of(body.anchor),
+            checklist=body.checklist,
+            source_thread_id=body.source_thread_id,
+        )
+        return 201, {"todo_id": str(todo_id)}
+
+    if key is None:
+        _, made = await run()
+    else:
+        made = (
+            await idempotent(
+                ctx.tenant,
+                route="todo.create",
+                key=key,
+                body=body.model_dump(mode="json"),
+                run=run,
+            )
+        ).body
+    return await _todo_out(ctx, UUID(str(made["todo_id"])))
 
 
-@todos_router.get("", action="todo.read", response_model=TodoPageOut, errors=(501,))
+@todos_router.get("", action="todo.read", response_model=TodoPageOut)
 async def list_todos_route(
     ctx: Ctx,
     assignee: Annotated[Literal["me"] | None, Query()] = None,
@@ -386,68 +422,102 @@ async def list_todos_route(
     cursor: Annotated[str | None, Query(max_length=512)] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> TodoPageOut:
-    """My to-dos (`assignee=me`) or the to-dos on one anchor."""
+    """My to-dos (`assignee=me`, with the bands in `counts`) or the to-dos on one anchor. A
+    person's to-dos are few (no cursor yet; `limit` caps the page)."""
+    del cursor
     await gate(ctx)
-    not_yet()
+    if anchor_kind is not None and anchor_id is not None:
+        found = await todos.on_anchor(ctx, anchor_kind, anchor_id)
+        items = await v.todos_out(found[:limit])
+        return TodoPageOut(items=items, total=len(found), counts={"open": len(found)})
+    page = await todos.mine(ctx, status=None if status is None else str(status.value))
+    items = await v.todos_out(page.items[:limit])
+    return TodoPageOut(items=items, total=len(page.items), counts=page.counts)
 
 
-@todos_router.post("/counts", action="todo.read", response_model=TodoCountsOut, errors=(501,))
+@todos_router.post("/counts", action="todo.read", response_model=TodoCountsOut)
 async def todo_counts_route(body: AnchorCountsIn, ctx: Ctx) -> TodoCountsOut:
+    """The "n To-do" chips for up to 200 anchors."""
     await gate(ctx)
-    not_yet()
+    found = await todos.anchor_counts(
+        ctx, [(a.anchor_kind, a.anchor_id, a.locator) for a in body.anchors]
+    )
+    return TodoCountsOut(
+        items=[
+            TodoCountOut(
+                anchor=AnchorRef(anchor_kind=k, anchor_id=a, locator=dict(loc) if loc else None),
+                open=n,
+            )
+            for k, a, loc, n in found
+        ]
+    )
 
 
-@todos_router.get(_D, action="todo.read", response_model=TodoOut, errors=(501,))
+@todos_router.get(_D, action="todo.read", response_model=TodoOut)
 async def get_todo_route(todo_id: UUID, ctx: Ctx) -> TodoOut:
     await gate(ctx)
-    not_yet()
+    return await _todo_out(ctx, todo_id)
 
 
-@todos_router.patch(_D, action="todo.update", response_model=TodoOut, errors=(409, 501))
+@todos_router.patch(_D, action="todo.update", response_model=TodoOut, errors=(409,))
 async def patch_todo_route(
     todo_id: UUID, body: TodoPatchIn, ctx: Ctx, if_match: IfMatch = None
 ) -> TodoOut:
     """409 `stale_version` when `If-Match` is not the current version (AC-20)."""
     await gate(ctx)
-    not_yet()
+    await todos.patch(
+        ctx,
+        todo_id,
+        title=body.title,
+        due_on=body.due_on,
+        clear_due_on=body.clear_due_on,
+        if_match=if_match,
+    )
+    return await _todo_out(ctx, todo_id)
 
 
-@todos_router.post(f"{_D}/assign", action="todo.assign", response_model=TodoOut, errors=(409, 501))
+@todos_router.post(f"{_D}/assign", action="todo.assign", response_model=TodoOut, errors=(409,))
 async def assign_todo_route(
     todo_id: UUID, body: TodoAssignIn, ctx: Ctx, key: Key = None
 ) -> TodoOut:
+    del key  # reassigning to the same person again changes nothing a person sees
     await gate(ctx)
-    not_yet()
+    await todos.assign(ctx, todo_id, body.assignee_user_id)
+    return await _todo_out(ctx, todo_id)
 
 
-@todos_router.post(
-    f"{_D}/complete", action="todo.complete", response_model=TodoOut, errors=(409, 501)
-)
+@todos_router.post(f"{_D}/complete", action="todo.complete", response_model=TodoOut, errors=(409,))
 async def complete_todo_route(todo_id: UUID, ctx: Ctx, key: Key = None) -> TodoOut:
+    del key  # `open` to `done` once: a retry answers 409 `todo_already_done`
     await gate(ctx)
-    not_yet()
+    await todos.complete(ctx, todo_id)
+    return await _todo_out(ctx, todo_id)
 
 
-@todos_router.post(
-    f"{_D}/reopen", action="todo.complete", response_model=TodoOut, errors=(409, 501)
-)
+@todos_router.post(f"{_D}/reopen", action="todo.complete", response_model=TodoOut, errors=(409,))
 async def reopen_todo_route(todo_id: UUID, ctx: Ctx, key: Key = None) -> TodoOut:
     """Reopen, and the Undo of a completion (a compensating command, DEC-24)."""
+    del key  # `done` to `open` once: a retry answers 409 `todo_not_done`
     await gate(ctx)
-    not_yet()
+    await todos.reopen(ctx, todo_id)
+    return await _todo_out(ctx, todo_id)
 
 
-@todos_router.post(f"{_D}/move", action="todo.update", response_model=TodoOut, errors=(409, 501))
+@todos_router.post(f"{_D}/move", action="todo.update", response_model=TodoOut, errors=(409,))
 async def move_todo_route(todo_id: UUID, body: TodoMoveIn, ctx: Ctx, key: Key = None) -> TodoOut:
+    del key  # moving to the same anchor again changes nothing
     await gate(ctx)
-    not_yet()
+    await todos.move(
+        ctx, todo_id, (body.anchor.anchor_kind, body.anchor.anchor_id, body.anchor.locator)
+    )
+    return await _todo_out(ctx, todo_id)
 
 
-@todos_router.delete(_D, action="todo.delete", response_model=TodoOut, errors=(409, 501))
+@todos_router.delete(_D, action="todo.delete", response_model=TodoOut, errors=(409,))
 async def delete_todo_route(todo_id: UUID, ctx: Ctx) -> TodoOut:
     """A soft delete (creator, assignee or manager-or-above; 403 otherwise)."""
     await gate(ctx)
-    not_yet()
+    return (await v.todos_out([await todos.delete(ctx, todo_id)]))[0]
 
 
 @todos_router.post(
@@ -455,40 +525,44 @@ async def delete_todo_route(todo_id: UUID, ctx: Ctx) -> TodoOut:
     action="todo.update",
     response_model=TodoOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def add_checklist_item_route(todo_id: UUID, body: TodoChecklistItemIn, ctx: Ctx) -> TodoOut:
     """422 `checklist_full` on a ninth item."""
     await gate(ctx)
-    not_yet()
+    await todos.add_item(ctx, todo_id, body.text)
+    return await _todo_out(ctx, todo_id)
 
 
 @todos_router.patch(
     f"{_D}/checklist-items/{{item_id}}",
     action="todo.update",
     response_model=TodoOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def patch_checklist_item_route(
     todo_id: UUID, item_id: UUID, body: TodoChecklistItemPatchIn, ctx: Ctx
 ) -> TodoOut:
     await gate(ctx)
-    not_yet()
+    await todos.change_item(ctx, todo_id, item_id, text=body.text, done=body.done)
+    return await _todo_out(ctx, todo_id)
 
 
 @todos_router.delete(
     f"{_D}/checklist-items/{{item_id}}",
     action="todo.update",
     response_model=TodoOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def delete_checklist_item_route(todo_id: UUID, item_id: UUID, ctx: Ctx) -> TodoOut:
     await gate(ctx)
-    not_yet()
+    await todos.remove_item(ctx, todo_id, item_id)
+    return await _todo_out(ctx, todo_id)
 
 
-@todos_router.post(f"{_D}/seen", action="todo.read", response_model=TodoOut, errors=(501,))
+@todos_router.post(f"{_D}/seen", action="todo.read", response_model=TodoOut)
 async def seen_todo_route(todo_id: UUID, ctx: Ctx) -> TodoOut:
     """The assignee opened it: clears the unread dot."""
     await gate(ctx)
-    not_yet()
+    await todos.seen(ctx, todo_id)
+    return await _todo_out(ctx, todo_id)

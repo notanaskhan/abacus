@@ -62,7 +62,12 @@ class ThreadReopened(DomainEvent):
     engagement_id: Id
 
 
-class _TodoEvent(DomainEvent):
+# Each to-do event carries the same identifiers (a DomainEvent subclass names its own type).
+
+
+class TodoCreated(DomainEvent):
+    event_type: ClassVar[str] = "todo.created"
+
     todo_id: Id
     scope_kind: Code
     engagement_id: OptId = None
@@ -71,28 +76,59 @@ class _TodoEvent(DomainEvent):
     assignee_user_id: Id
 
 
-class TodoCreated(_TodoEvent):
-    event_type: ClassVar[str] = "todo.created"
-
-
-class TodoUpdated(_TodoEvent):
+class TodoUpdated(DomainEvent):
     event_type: ClassVar[str] = "todo.updated"
 
+    todo_id: Id
+    scope_kind: Code
+    engagement_id: OptId = None
+    anchor_kind: Annotated[str | None, classified("internal")] = None
+    anchor_id: OptId = None
+    assignee_user_id: Id
 
-class TodoCompleted(_TodoEvent):
+
+class TodoCompleted(DomainEvent):
     event_type: ClassVar[str] = "todo.completed"
 
+    todo_id: Id
+    scope_kind: Code
+    engagement_id: OptId = None
+    anchor_kind: Annotated[str | None, classified("internal")] = None
+    anchor_id: OptId = None
+    assignee_user_id: Id
 
-class TodoReopened(_TodoEvent):
+
+class TodoReopened(DomainEvent):
     event_type: ClassVar[str] = "todo.reopened"
 
+    todo_id: Id
+    scope_kind: Code
+    engagement_id: OptId = None
+    anchor_kind: Annotated[str | None, classified("internal")] = None
+    anchor_id: OptId = None
+    assignee_user_id: Id
 
-class TodoMoved(_TodoEvent):
+
+class TodoMoved(DomainEvent):
     event_type: ClassVar[str] = "todo.moved"
 
+    todo_id: Id
+    scope_kind: Code
+    engagement_id: OptId = None
+    anchor_kind: Annotated[str | None, classified("internal")] = None
+    anchor_id: OptId = None
+    assignee_user_id: Id
 
-class TodoDeleted(_TodoEvent):
+
+class TodoDeleted(DomainEvent):
     event_type: ClassVar[str] = "todo.deleted"
+
+    todo_id: Id
+    scope_kind: Code
+    engagement_id: OptId = None
+    anchor_kind: Annotated[str | None, classified("internal")] = None
+    anchor_id: OptId = None
+    assignee_user_id: Id
 
 
 class TodoAssigned(DomainEvent):

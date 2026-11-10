@@ -4,12 +4,12 @@ thread's or the to-do's engagement, after the service authorised the anchor."""
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date
 from typing import Any, cast
 from uuid import UUID
 
-from sqlalchemy import and_, delete, func, insert, or_, select, text, update
+from sqlalchemy import and_, delete, false, func, insert, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
@@ -126,13 +126,16 @@ async def list_threads_on(
 async def list_threads_on_anchors(
     session: AsyncSession, ctx: AuthContext, anchors: Sequence[tuple[str, UUID]]
 ) -> list[CommentThread]:
-    """The threads on up to 200 anchors, for the C-27 chips."""
-    if not anchors:
-        return []
-    match = or_(
-        *(
-            and_(CommentThread.anchor_kind == kind, CommentThread.anchor_id == anchor)
-            for kind, anchor in anchors
+    """The threads on up to 200 anchors, for the C-27 chips (no anchors: none, but the filter is
+    still built, which is the route's check)."""
+    match = (
+        false()
+        if not anchors
+        else or_(
+            *(
+                and_(CommentThread.anchor_kind == kind, CommentThread.anchor_id == anchor)
+                for kind, anchor in anchors
+            )
         )
     )
     found = await session.execute(
@@ -329,16 +332,36 @@ async def get_todo(session: AsyncSession, todo_id: UUID) -> Todo | None:
 
 
 async def update_todo(
-    session: AsyncSession, todo_id: UUID, *, expected_version: int | None, **values: object
+    session: AsyncSession,
+    todo_id: UUID,
+    *,
+    expected_version: int | None,
+    bump: bool = True,
+    **values: object,
 ) -> Todo | None:
-    """Bump the version and set `values`; None when `expected_version` is stale."""
+    """Set `values` (and bump the version, unless `bump` is off for a read marker); None when
+    `expected_version` is stale or the to-do is gone."""
+    return await update_todo_values(
+        session, todo_id, values, expected_version=expected_version, bump=bump
+    )
+
+
+async def update_todo_values(
+    session: AsyncSession,
+    todo_id: UUID,
+    values: Mapping[str, object],
+    *,
+    expected_version: int | None,
+    bump: bool = True,
+) -> Todo | None:
     query = update(Todo).where(Todo.id == todo_id, Todo.deleted_at.is_(None))
     if expected_version is not None:
         query = query.where(Todo.version == expected_version)
+    changes: dict[str, object] = {**values, "updated_at": func.clock_timestamp()}
+    if bump:
+        changes["version"] = Todo.version + 1
     found = await session.execute(
-        query.values(**values, version=Todo.version + 1, updated_at=func.clock_timestamp())
-        .returning(Todo)
-        .execution_options(synchronize_session=False)
+        query.values(changes).returning(Todo).execution_options(synchronize_session=False)
     )
     return found.scalar_one_or_none()
 
@@ -391,10 +414,12 @@ async def list_todos_on(
 async def list_todos_on_anchors(
     session: AsyncSession, ctx: AuthContext, anchors: Sequence[tuple[str, UUID]]
 ) -> list[Todo]:
-    if not anchors:
-        return []
-    match = or_(
-        *(and_(Todo.anchor_kind == kind, Todo.anchor_id == anchor) for kind, anchor in anchors)
+    match = (
+        false()
+        if not anchors
+        else or_(
+            *(and_(Todo.anchor_kind == kind, Todo.anchor_id == anchor) for kind, anchor in anchors)
+        )
     )
     found = await session.execute(
         select(Todo).where(
@@ -405,6 +430,23 @@ async def list_todos_on_anchors(
         )
     )
     return list(found.scalars().all())
+
+
+async def comment_counts_on(
+    session: AsyncSession, ctx: AuthContext, anchor_kind: str, anchor_ids: Sequence[UUID]
+) -> list[tuple[UUID, int]]:
+    """Comments on the threads of each anchor (SHL-17's comment count)."""
+    found = await session.execute(
+        select(CommentThread.anchor_id, func.count(ThreadComment.id))
+        .join(ThreadComment, ThreadComment.thread_id == CommentThread.id)
+        .where(
+            CommentThread.anchor_kind == anchor_kind,
+            CommentThread.anchor_id.in_(list(anchor_ids)),
+            visible(ctx, "comment.read", CommentThread.engagement_id),
+        )
+        .group_by(CommentThread.anchor_id)
+    )
+    return [(a, int(n)) for a, n in found.tuples().all()]
 
 
 async def list_checklist(
