@@ -12,7 +12,7 @@ import {
 } from "react";
 import { cn } from "../cn";
 import { useOverlayStack } from "../overlays/stack-react";
-import { type MatchState, type MatchStore, createMatchStore } from "./match-store";
+import { type MatchState, type MatchStore, createMatchStore, keptKey } from "./match-store";
 import type { CitationPayload, MatchId, MatchKind } from "./types";
 
 // E1 MatchProvider, the React side (F-05-T41): `MatchScope` gives a subtree one store (one active
@@ -96,7 +96,10 @@ export function useMatch(id: MatchId, kind: MatchKind = "row"): UseMatch {
   const store = useMatchStore();
   const lit = useSyncExternalStore(
     store.subscribe,
-    () => store.get().id === id,
+    () => {
+      const state = store.get();
+      return state.id === id || state.kept?.has(keptKey(id, kind)) === true;
+    },
     () => false,
   );
   const handlers = useMemo(

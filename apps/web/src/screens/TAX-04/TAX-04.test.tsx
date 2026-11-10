@@ -23,13 +23,35 @@ describe("TAX-04 Prepare preset", () => {
 
   it("a: box 1a 14,820 lights line 3b in the demo's order", () => {
     render(<TAX04 frame="a" />);
-    const line3b = (): Element | null => document.querySelector("[data-lead-row='3b']");
-    expect(line3b()?.getAttribute("data-lit")).toBeNull();
+    const line = (id: string): Element | null => document.querySelector(`[data-lead-row='${id}']`);
+    const litBoxes = (): number =>
+      document.querySelectorAll("[data-match-kind='region'][data-lit]").length;
+    expect(line("3b")?.getAttribute("data-lit")).toBeNull();
     act(() => {
       vi.advanceTimersByTime(700);
     });
-    expect(line3b()?.getAttribute("data-lit")).toBe("true");
-    expect(line3b()?.textContent).toContain("$14,820");
+    expect(litBoxes()).toBe(1); // box 1a
+    expect(line("3b")?.getAttribute("data-lit")).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(litBoxes()).toBe(2); // and box 1b at 1000 ms
+    act(() => {
+      vi.advanceTimersByTime(950);
+    });
+    expect(line("3b")?.getAttribute("data-lit")).toBe("true"); // 1950 ms
+    expect(line("3b")?.textContent).toContain("$14,820");
+    expect(line("3a")?.getAttribute("data-lit")).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    // The poster (3600 ms) holds all four: both boxes and both lines.
+    act(() => {
+      vi.advanceTimersByTime(1350);
+    });
+    expect(litBoxes()).toBe(2);
+    expect(line("3a")?.getAttribute("data-lit")).toBe("true");
+    expect(line("3b")?.getAttribute("data-lit")).toBe("true");
   });
 
   it("approving moves Review 36 to 35 and swaps the footer to Unapprove", () => {
