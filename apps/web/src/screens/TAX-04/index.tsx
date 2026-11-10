@@ -38,7 +38,8 @@ import {
 // SourceViewer with its region layer, and the Form 1040 leadsheet cards, lit through one
 // MatchScope (purple only through MatchProvider). A source box and the line it feeds share one
 // match id, the region's C4 locator (INV-2), so they light together; the demo's order lights box
-// 1a and line 3b at 700 ms and the poster holds it; reduced motion lights it at once. Approve
+// 1a, 1b, then lines 3b and 3a (700/1000/1950/2250 ms) and the poster holds all four; reduced
+// motion lights them at once. Approve
 // Document is a person's act (TriadFooter's HumanAction; an agent draws none) and moves Review
 // 36 to 35 with the ink "✓ 1"; a mismatch disables it with "Resolve 1 mismatch to approve".
 //
@@ -200,19 +201,30 @@ export function TAX04({ frame = "a", onIssue, onTab, onPreset }: Tax04Props): JS
     if (frame === "d") s.togglePin(matchOf("k1box5"), null);
     return s;
   });
-  // The demo's order: box 1a and line 3b light at 700 ms and stay (the poster); at once under
-  // reduced motion. Frames other than a and c open still.
+  // The demo's order (handoff MOTION; T-04-T13, DEC-3171): box 1a at 700 ms, box 1b at 1000,
+  // line 3b at 1950 and line 3a at 2250; the poster at 3600 holds all four. Each is its own
+  // element kind of one match (a box and the line it feeds share an id), kept lit by the store
+  // until a person moves the match; reduced motion lights all four at once. Frames d and e open
+  // still.
   useEffect(() => {
     if (frame !== "a" && frame !== "c" && frame !== "b") return undefined;
+    const steps: readonly [number, RegionKey, "region" | "row"][] = [
+      [DEMO_MS.first, "div1a", "region"],
+      [DEMO_MS.second, "div1b", "region"],
+      [DEMO_MS.third, "div1a", "row"],
+      [DEMO_MS.fourth, "div1b", "row"],
+    ];
     if (reduced) {
-      store.light(matchOf("div1a"));
+      for (const [, key, kind] of steps) store.keepLit(matchOf(key), kind);
       return undefined;
     }
-    const t = setTimeout(() => {
-      store.light(matchOf("div1a"));
-    }, DEMO_MS.first);
+    const timers = steps.map(([at, key, kind]) =>
+      setTimeout(() => {
+        store.keepLit(matchOf(key), kind);
+      }, at),
+    );
     return () => {
-      clearTimeout(t);
+      for (const t of timers) clearTimeout(t);
     };
   }, [frame, reduced, store]);
 

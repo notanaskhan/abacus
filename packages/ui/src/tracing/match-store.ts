@@ -65,6 +65,14 @@ export interface MatchState<P = unknown> {
   origin: HTMLElement | null;
   /** What the anchored popover shows for this match; null means no popover. */
   payload: P | null;
+  /** A demo's still frame (`keepLit`): elements lit by id and kind beside the match, until a
+   * person moves the match. Keys from `keptKey`. */
+  kept?: ReadonlySet<string>;
+}
+
+/** The `kept` key for one element kind of a match id. */
+export function keptKey(id: MatchId, kind: MatchKind): string {
+  return `${kind}|${id}`;
 }
 
 export interface MatchStore<P = unknown> {
@@ -83,6 +91,10 @@ export interface MatchStore<P = unknown> {
   hold: () => void;
   /** Light now, with no delay (a step, a menu row, a test). */
   light: (id: MatchId | null, origin?: HTMLElement | null, payload?: P | null) => void;
+  /** A demo's still frame (T-04-T13, DEC-3171): keep this match's `kind` elements lit beside the
+   * match, so a poster can hold several in the handoff's order; a person's intent, pin, clear or
+   * Escape lets them go. */
+  keepLit: (id: MatchId, kind: MatchKind) => void;
   /** A click: pin this match, or unpin it when it is the pinned one. */
   togglePin: (id: MatchId | null, origin: HTMLElement | null, payload?: P | null) => void;
   /** Move the lit match within a pinned or open payload (the popover's ‹ ›). */
@@ -135,7 +147,8 @@ export function createMatchStore<P = unknown>(): MatchStore<P> {
       next.id === state.id &&
       next.pinned === state.pinned &&
       next.origin === state.origin &&
-      next.payload === state.payload
+      next.payload === state.payload &&
+      next.kept === state.kept
     ) {
       return;
     }
@@ -212,6 +225,12 @@ export function createMatchStore<P = unknown>(): MatchStore<P> {
     },
     hold: cancelRelease,
     light,
+    // Every other move emits a state without `kept`, so the still frame goes with it.
+    keepLit: (id, kind) => {
+      const key = keptKey(id, kind);
+      if (state.kept?.has(key) === true) return;
+      emit({ ...state, kept: new Set([...(state.kept ?? []), key]) });
+    },
     togglePin: (id, origin, payload = null) => {
       cancelIntent();
       cancelRelease();
