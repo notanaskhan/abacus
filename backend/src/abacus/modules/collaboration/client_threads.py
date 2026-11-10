@@ -9,7 +9,8 @@ client's scope:
   comments only on a shared thread, 0760's trigger), and the text is sealed, plain, 1 to 4,000
   characters, never in an audit or notification row (AC-34).
 - `client_comments`: what the client may read on the anchor: the shared threads' comments, except
-  under an `author_only` reader policy (POR-15 "Ask the auditor…", AC-33), where a client reads only
+  under an `author_only` reader policy (POR-15 "Ask the auditor…", AC-33), where a client reads
+  only
   the thread they opened (its locator carries the author), never another member's.
 
 An anchor's reader policy is set where it is registered (`register_client_policy`); the default is
@@ -59,7 +60,7 @@ def policy_of(kind: str) -> ReaderPolicy:
 
 
 def _client(ctx: AuthContext) -> None:
-    if ctx.client is None or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or not ctx.client:
         raise Forbidden("comment.create", "role")
 
 
@@ -105,9 +106,9 @@ async def post_client_comment(
         raise AnchorNotShareable(facts={"anchor_kind": anchor_kind})
     text = _clean(body)
     key = locator_key(provider_of(anchor_kind), scoped)
-    from abacus.modules.collaboration.threads import _seal  # the module's one sealing rule
+    from abacus.modules.collaboration.threads import seal_body  # the module's one sealing rule
 
-    sealed, fingerprint = await _seal(ctx, text)
+    sealed, fingerprint = await seal_body(ctx, text)
     async with uow(ctx.tenant) as tx:
         thread = await repo.find_thread(
             tx.session,

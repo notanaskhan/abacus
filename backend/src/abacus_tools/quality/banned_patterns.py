@@ -1879,11 +1879,28 @@ _FORMULA_BANNED_NAMES = frozenset(
 )
 
 
+def _evaluating_names(src: SourceFile) -> Iterator[tuple[int, str]]:
+    """Bare names and imported names (`eval`, `from importlib import import_module`) and the
+    `builtins`/`ast`/`importlib` attributes that evaluate; never a method such as `re.compile`."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                yield node.lineno, alias.name
+        elif isinstance(node, ast.Name):
+            yield node.lineno, node.id
+        elif (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id in {"builtins", "ast", "importlib"}
+        ):
+            yield node.lineno, node.attr
+
+
 def _check_formula_engine_evaluates_nothing(src: SourceFile) -> Iterator[Finding]:
     """ADR-237 §2 (T-05-T07): the workbook formula engine parses a closed grammar and never hands
     a formula to Python. No eval, exec, compile, dynamic import or builtins lookup in the compute
     packages."""
-    for line, name in _names_used(src):
+    for line, name in _evaluating_names(src):
         if name in _FORMULA_BANNED_NAMES:
             yield Finding(
                 line, f"{name}: formulas are parsed, never evaluated by Python (ADR-237)"
@@ -2489,6 +2506,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_r02t07_download_links.py",
             "tests/integration/test_p10t14_agent_run_backfill.py",
             "tests/integration/test_p10t17_runtime_migrations_independent.py",
+            "tests/integration/test_t04t24_individual_workspace_independent.py",  # S35, as above
             "tests/integration/test_p10t18_runtime_tables_independent.py",
             "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
             "tests/integration/test_a07t20_immutable_independent.py",
@@ -2679,6 +2697,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_r02t05_deliverables_governance_migration.py",
             "tests/integration/test_r02t07_download_links.py",
             "tests/integration/test_p10t17_runtime_migrations_independent.py",
+            "tests/integration/test_t04t24_individual_workspace_independent.py",  # S35, as above
             "tests/integration/test_p10t18_runtime_tables_independent.py",
             "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
             "tests/integration/test_a07t20_immutable_independent.py",
@@ -3266,7 +3285,7 @@ RULES: list[Rule | TreeRule] = [
     ),
     Rule(
         id="FORMULA-001",
-        description="The formula engine and tax compute never evaluate code (no eval, exec, compile)",
+        description="Formula engine and tax compute never evaluate code (no eval, exec, compile)",
         adr="ADR-237, ADR-052",
         check=_check_formula_engine_evaluates_nothing,
         include=("src/abacus/modules/workpapers/compute/*", "src/abacus/modules/tax/compute/*"),

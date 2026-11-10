@@ -309,7 +309,9 @@ class K1ActivitiesOut(BaseModel):
 class K1OverrideIn(BaseModel):
     model_config = _strict()
 
-    value: Annotated[str, Field(min_length=1, max_length=80), Internal]
+    value: Annotated[
+        str, Field(min_length=1, max_length=80), Confidential
+    ]  # the client's treatment
     reason: Annotated[str, Field(min_length=1, max_length=1000), Confidential]
     seen_version: Annotated[int, Field(ge=1), Internal]
 

@@ -2,7 +2,7 @@
 id: TASK-6702
 title: "T-05-T07: E13 part 1, workpapers/compute/formula.py: closed-grammar tokenizer and parser, typed AST, error codes; no eval"
 spec: SPEC-651
-acceptance_criteria: [AC-4.5, AC-4.6]
+acceptance_criteria: [AC-4]
 risk_zone: amber
 status: in-review
 branch: s35-t05-t07

@@ -1,5 +1,5 @@
 // C-29 (P-05-T10): CommentThread v2, its Composer and MentionPicker; shared later with the portal.
-export { CommentChip, type CommentChipProps } from "./CommentChip";
+// The row chip is `domain/comment-chip` (kept apart so its hosts' route chunks stay small).
 export { CommentComposer, type ComposerSubmit } from "./CommentComposer";
 export {
   type CommentAnchor,

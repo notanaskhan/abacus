@@ -20,7 +20,8 @@ from abacus.modules.tax.api import start_draft
 from abacus.modules.tax.drafter_workflow import DraftInput, draft_activity
 
 from .conftest import MigratedDatabase
-from .test_t01t25_engine_export import engines, feld_return  # noqa: F401 -- fixtures
+from .test_t01t25_engine_export import engines as engines  # the autouse fixture
+from .test_t01t25_engine_export import feld_return
 
 pytestmark = pytest.mark.asyncio
 
@@ -31,7 +32,7 @@ async def test_ac_a_missing_consent_leaves_the_run_waiting_on_inputs_with_no_mod
     feld = await feld_return(migrated_db)
     dispatched: list[object] = []
 
-    async def capture(workflow: object, arg: object, *, id: str) -> None:  # noqa: A002
+    async def capture(workflow: object, arg: object, *, id: str, **_: object) -> None:
         dispatched.append(arg)
 
     async def no_model(*_: object, **__: object) -> object:

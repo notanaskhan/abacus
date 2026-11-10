@@ -30,7 +30,7 @@ def _s(key: str, *deps: str) -> PlanStep:
 def _ctx(kind: str) -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(
-        tenant=TenantContext(uuid.uuid4(), kind, str(user)),  # pyright: ignore[reportArgumentType]
+        tenant=TenantContext(uuid.uuid4(), kind, str(user)),  # pyright: ignore[reportArgumentType] -- a str actor kind under test
         user_id=user,
         membership_id=uuid.uuid4(),
         firm_role=None,

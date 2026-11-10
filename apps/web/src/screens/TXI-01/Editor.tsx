@@ -186,7 +186,14 @@ export function WorksheetEditor({
               {COPY.search}
             </span>
             <span className="text-[12.5px]">{w2 ? "W-2" : COPY.picker}</span>
-            <Button variant="secondary" size="sm" icon="pencil" onClick={() => setEditing("20")}>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon="pencil"
+              onClick={() => {
+                setEditing("20");
+              }}
+            >
               {COPY.edit}
             </Button>
           </div>
@@ -231,8 +238,16 @@ export function WorksheetEditor({
                     field={f}
                     frame={frame}
                     lit={lit === f.key}
-                    onLight={() => setLit(f.key)}
-                    onFlag={onFlag ? () => onFlag(f.key) : undefined}
+                    onLight={() => {
+                      setLit(f.key);
+                    }}
+                    onFlag={
+                      onFlag
+                        ? () => {
+                            onFlag(f.key);
+                          }
+                        : undefined
+                    }
                   />
                 ))}
               </div>
@@ -265,7 +280,9 @@ export function WorksheetEditor({
               <input
                 aria-label="Value"
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                }}
                 className="h-[30px] rounded-[8px] bg-nested px-[8px]"
               />
               <input

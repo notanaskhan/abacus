@@ -1,0 +1,171 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-14T09:41",
+    "slices": [
+      "agent_runs"
+    ]
+  },
+  "persona": "marcus-delaney",
+  "request": "GET /v1/agent-runs/{run_id}",
+  "body": {
+    "access": "content",
+    "allowed_actions": [
+      "agent_feedback.create",
+      "agent_run.read"
+    ],
+    "header": {
+      "blocked_on": {
+        "id": null,
+        "kind": "decision",
+        "needs": [],
+        "role": null,
+        "user_id": null
+      },
+      "counters": {
+        "agent_minutes": 0,
+        "agent_ms": 0,
+        "citations_count": 0,
+        "records_read": 0,
+        "writes_done": 0,
+        "writes_waiting": 0
+      },
+      "plan_steps": [
+        {
+          "key": "workpapers.trial_balance",
+          "label": "Run trial balance workpaper"
+        },
+        {
+          "key": "workpapers.materiality",
+          "label": "Propose materiality"
+        },
+        {
+          "key": "workpapers.risk_assessment",
+          "label": "Draft risk assessment"
+        },
+        {
+          "key": "workpapers.audit_planning",
+          "label": "General audit planning"
+        },
+        {
+          "key": "workpapers.internal_control",
+          "label": "Internal control"
+        },
+        {
+          "key": "planning_5",
+          "label": "Planning"
+        },
+        {
+          "key": "sampling_1",
+          "label": "Sampling"
+        },
+        {
+          "key": "testing_1",
+          "label": "Testing"
+        },
+        {
+          "key": "testing_2",
+          "label": "Testing"
+        },
+        {
+          "key": "testing_3",
+          "label": "Testing"
+        },
+        {
+          "key": "testing_4",
+          "label": "Testing"
+        },
+        {
+          "key": "completion_1",
+          "label": "Completion"
+        },
+        {
+          "key": "completion_2",
+          "label": "Completion"
+        },
+        {
+          "key": "completion_3",
+          "label": "Completion"
+        }
+      ],
+      "plan_version": 1,
+      "run_number": 4127,
+      "runs_as_name": "Marcus Delaney",
+      "state": "running",
+      "state_reason": null,
+      "trigger_kind": "manual",
+      "work_item_ref": null
+    },
+    "levels": [
+      {
+        "blocked": 0,
+        "done": 1,
+        "failed": 0,
+        "level": 1,
+        "queued": 0,
+        "running": 0,
+        "total": 1,
+        "waiting": 0
+      },
+      {
+        "blocked": 1,
+        "done": 0,
+        "failed": 0,
+        "level": 2,
+        "queued": 1,
+        "running": 1,
+        "total": 5,
+        "waiting": 2
+      },
+      {
+        "blocked": 0,
+        "done": 0,
+        "failed": 0,
+        "level": 3,
+        "queued": 1,
+        "running": 0,
+        "total": 1,
+        "waiting": 0
+      },
+      {
+        "blocked": 0,
+        "done": 0,
+        "failed": 0,
+        "level": 4,
+        "queued": 4,
+        "running": 0,
+        "total": 4,
+        "waiting": 0
+      },
+      {
+        "blocked": 0,
+        "done": 0,
+        "failed": 0,
+        "level": 5,
+        "queued": 3,
+        "running": 0,
+        "total": 3,
+        "waiting": 0
+      }
+    ],
+    "projection": "content",
+    "run": {
+      "agent": "engagement.agent",
+      "agent_label": "Engagement agent",
+      "duration_ms": null,
+      "finished_at": null,
+      "id": "91a2cedc-d562-4e42-95e9-6fde76516d17",
+      "initiator_name": "Marcus Delaney",
+      "outcome": null,
+      "record_persisted_at": null,
+      "record_sha256": null,
+      "stage": "live",
+      "started_at": "2026-09-14T14:41:00Z",
+      "state": "running",
+      "state_reason": null,
+      "subject": null
+    },
+    "run_record_sha256": "724b29a4079eaa1d96572281a76e452ef6cd03c4c80ed2ca7334360122d4f93a"
+  }
+}

@@ -67,9 +67,10 @@ async def open_wait(
     tenant = _tenant(tenant_id, run_id)
     run = UUID(run_id)
     if kind in QUESTION_KINDS:
-        questions = arguments.get("questions") or [
+        single: list[dict[str, object]] = [
             {"key": str(step.get("key", "")), "options": arguments.get("options") or []}
         ]
+        questions: object = arguments.get("questions") or single
         recommended = arguments.get("recommended")
         async with uow(tenant) as tx:
             question = cast(
@@ -141,7 +142,8 @@ async def open_wait(
 async def _hold(tx: UnitOfWork, step_id: UUID, state: str, needs: dict[str, str | None]) -> None:
     await tx.session.execute(
         text(
-            "UPDATE agent_run_steps SET state = :state, needs = CAST(:needs AS jsonb) WHERE id = :id"
+            "UPDATE agent_run_steps SET state = :state, needs = CAST(:needs AS jsonb) "
+            "WHERE id = :id"
         ),
         {"state": state, "needs": json.dumps(needs, sort_keys=True), "id": step_id},
     )
@@ -242,7 +244,8 @@ async def cancel_held_activity(tenant_id: str, run_id: str) -> int:
     async with uow(tenant) as tx:
         await tx.session.execute(
             text(
-                "UPDATE agent_questions SET state = 'expired' WHERE run_id = :run AND state = 'open'"
+                "UPDATE agent_questions SET state = 'expired' "
+                "WHERE run_id = :run AND state = 'open'"
             ),
             {"run": run},
         )

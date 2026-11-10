@@ -45,10 +45,10 @@ __all__ = [
     "ClientComment",
     "Locator",
     "client_comments",
-    "post_client_comment",
-    "register_client_policy",
     "create_todo",
     "open_thread",
+    "post_client_comment",
     "register_anchor",
+    "register_client_policy",
     "registered_kinds",
 ]

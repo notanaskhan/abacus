@@ -47,7 +47,7 @@ for (const [screen, states] of Object.entries(SCREENS)) {
       await page.keyboard.press("Tab");
       const id = await page.evaluate(() => {
         const el = document.activeElement;
-        return el ? `${el.tagName}:${el.textContent?.slice(0, 30) ?? ""}` : "none";
+        return el ? `${el.tagName}:${el.textContent.slice(0, 30)}` : "none";
       });
       seen.add(id);
     }

@@ -89,6 +89,7 @@ def test_the_scenario_is_deterministic_and_pinned_to_its_version() -> None:
 def test_ac2_the_named_snapshots() -> None:
     assert [s.name for s in SNAPSHOTS] == [
         "E0",
+        "2026-09-14T09:41",  # P-10-T36: the agent runs at 9:41 AM
         "2026-09-24",
         "2026-09-24T10:20",
         "2026-10-01",

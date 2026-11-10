@@ -53,7 +53,9 @@ def test_a_conversation_is_graded_turn_by_turn() -> None:
 
 
 def test_a_grader_that_raises_fails_its_case() -> None:
-    broken = tr.Expected(tool_args={"x.y": {"required": None}})  # type: ignore[dict-item]  # a malformed case
+    # A malformed case, built past validation (a loaded case is validated; the grader still
+    # must not crash the suite on one that is not).
+    broken = tr.Expected.model_construct(tool_args={"x.y": {"required": None}})
     seen = tr.Trajectory(calls=[tr.ToolCall(name="x.y")])
     grades = {g.grader: g for g in tr.grade_trajectory(broken, seen)}
     assert grades["args_valid"].passed is False

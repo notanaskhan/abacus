@@ -31,6 +31,11 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "apps/web/src/fixtures/seed/2026-09-14t0941.run-4127.json",
+        "SECRET-003",
+        "a run step's `key` names its plan step (planning_5), never a credential (P-10-T36)",
+    ),
+    (
         "apps/web/src/fixtures/seed/portal-r02.ts",
         "SECRET-003",
         "a deliverables band's `key` names the work item (tax-return-2025), never a credential"

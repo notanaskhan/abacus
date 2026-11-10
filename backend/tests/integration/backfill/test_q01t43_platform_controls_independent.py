@@ -48,6 +48,8 @@ EXEMPT_ROUTES: Final = {
     ("POST", "/v1/knowledge/search"): "a read sent as POST",
     ("POST", "/v1/firm/staff/{user_id}/revoke"): "ending access: a person's",
     ("POST", "/v1/firm/staff/invitations/{invitation_id}/revoke"): "ending access: an invitation",
+    # A-02-T33 (#1601): the unauthenticated connect hand-off only reads where a flow began.
+    ("POST", "/v1/connections/handoff"): "pre-session: the hand-off reads its origin",
 }
 
 

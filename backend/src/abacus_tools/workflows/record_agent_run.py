@@ -10,8 +10,8 @@ command sequence only:
 - `agent-run-v2-decision-resumed.json`: Planning materiality as a decision card; the run is
   `blocked_on_decision` until `decision_decided`, then only the held branch resumes (AC-W4).
 - `agent-run-v2-question-skipped.json`: a question skipped; the skip default applies (AC-W5).
-- `agent-run-v2-step-retried.json`: the Internal Control step fails, a person retries it, the new
-  row succeeds and its dependant runs (AC-W6).
+- `agent-run-v2-step-retried.json`: the Internal Control step fails while a materiality decision
+  holds the run; a person retries it, the new row succeeds, the decision is taken, the run ends.
 - `agent-run-v2-stopped.json`: a held run stopped by a person.
 
 A history on disk is never overwritten.
@@ -23,16 +23,21 @@ import asyncio
 import sys
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 from temporalio import activity
 from temporalio.client import Client, WorkflowHandle
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents.run_activities import PlanState, RunFacts, StepOutcome
-from abacus.modules.agents.run_waits import WaitState
-from abacus.modules.agents.run_workflow import AgentRunInput, AgentRunWorkflow
+from abacus.modules.agents.api import (
+    AgentRunInput,
+    AgentRunWorkflow,
+    PlanState,
+    RunFacts,
+    StepOutcome,
+    WaitState,
+)
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 
@@ -70,9 +75,12 @@ PLANS: Final[dict[str, list[dict[str, object]]]] = {
         _step("population", 0, "question"),
         _step("eligibility", 1, "tool", "population"),
     ],
+    # A held decision keeps the run open while the failed step is retried (a run with nothing
+    # left to run or await ends; a retry after that is a whole-run retry, a child run).
     "step-retried": [
         _step("tb", 0),
         _step("ic", 1, "tool", "tb"),
+        _step("materiality", 1, "decision", "tb"),
         _step("deficiencies", 2, "tool", "ic"),
     ],
     "stopped": [
@@ -100,7 +108,10 @@ class _Stubs:
 
         @activity.defn(name="agents.run_v2.record_plan")
         async def record_plan(
-            tenant_id: str, run_id: str, steps: list[dict[str, object]], problems: list[str]
+            tenant_id: str,
+            run_id: str,
+            steps: list[dict[str, Any]],  # Any: JSON (Temporal cannot decode `object`)
+            problems: list[str],
         ) -> int:
             return 1
 
@@ -114,7 +125,7 @@ class _Stubs:
             run_id: str,
             state: str,
             reason: str | None,
-            blocked: dict[str, object] | None,
+            blocked: dict[str, Any] | None,  # Any: JSON (Temporal cannot decode `object`)
         ) -> int:
             return 1
 
@@ -127,7 +138,7 @@ class _Stubs:
             tenant_id: str,
             run_id: str,
             seq: int,
-            step: dict[str, object],
+            step: dict[str, Any],  # Any: JSON (Temporal cannot decode `object`)
             attempt: int = 1,
             retry_of_seq: int | None = None,
         ) -> StepOutcome:
@@ -171,7 +182,11 @@ class _Stubs:
         ]
 
 
-async def _drive(scenario: str, stubs: _Stubs, handle: WorkflowHandle[object, str]) -> None:
+async def _drive(
+    scenario: str,
+    stubs: _Stubs,
+    handle: WorkflowHandle[Any, str],  # Any: the workflow class differs per recorder
+) -> None:
     await asyncio.sleep(1)
     await handle.signal("plan_decided", "approved")
     await asyncio.sleep(2)
@@ -181,6 +196,9 @@ async def _drive(scenario: str, stubs: _Stubs, handle: WorkflowHandle[object, st
         await handle.signal(signal)
     elif scenario == "step-retried":
         await handle.signal("step_retry", "ic")
+        await asyncio.sleep(2)
+        stubs.resolved = True
+        await handle.signal("decision_decided")
     elif scenario == "stopped":
         await handle.signal("stop")
 
@@ -203,7 +221,7 @@ async def _record_one(client: Client, out: Path, scenario: str) -> None:
             task_queue=queue,
         )
         await _drive(scenario, stubs, handle)
-        await handle.result()
+        await asyncio.wait_for(handle.result(), timeout=180)  # a stuck run fails, not hangs
         scrubbed = await decoded_and_scrubbed(await handle.fetch_history(), payload_codec())
         (out / name).write_text(scrubbed.to_json())
         print(f"recorded {out / name}")

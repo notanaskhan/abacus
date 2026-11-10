@@ -267,7 +267,8 @@ async def deliverable_scope(
         row = (
             await session.execute(
                 text(
-                    "SELECT engagement_id, client_id, work_item_id FROM deliverables WHERE id = :id"
+                    "SELECT engagement_id, client_id, work_item_id FROM deliverables "
+                    "WHERE id = :id"
                 ),
                 {"id": deliverable_id},
             )

@@ -43,7 +43,8 @@ def test_oq4_collaboration_stays_out_except_deletions_and_redactions() -> None:
     assert activity.link_of("comment.redacted").in_activity
     sql = str(
         activity.in_activity_list().compile(
-            dialect=postgresql.dialect(),  # type: ignore[no-untyped-call]  # SQLAlchemy's dialect factory is untyped
+            # Named parameters: the pyformat default renders a literal `%` as `%%`.
+            dialect=postgresql.dialect(paramstyle="named"),
             compile_kwargs={"literal_binds": True},
         )
     )
@@ -52,7 +53,7 @@ def test_oq4_collaboration_stays_out_except_deletions_and_redactions() -> None:
 
 
 def test_ac32_segment_classification() -> None:
-    sql = str(activity.SEGMENT.compile(dialect=postgresql.dialect()))  # type: ignore[no-untyped-call]  # as above
+    sql = str(activity.SEGMENT.compile(dialect=postgresql.dialect()))
     assert "via_agent" in sql and "policy" in sql and "human" in sql
     assert "run_id" in sql and "agent_run_id" in sql
 
@@ -101,7 +102,7 @@ def test_ac38_csv_cells_are_neutralised() -> None:
         link_kind="materiality",
     )
     buffer = io.StringIO()
-    csv.writer(buffer).writerow(activity._csv_cells(row))  # pyright: ignore[reportPrivateUsage]
+    csv.writer(buffer).writerow(activity._csv_cells(row))  # pyright: ignore[reportPrivateUsage] -- the CSV row helper under test
     cells = next(csv.reader(io.StringIO(buffer.getvalue())))
     assert cells[0] == "7"
     assert cells[6] == '\'=HYPERLINK("x")'

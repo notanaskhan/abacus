@@ -18,6 +18,7 @@ from typing import Final, Literal
 from uuid import UUID
 
 from sqlalchemy import text
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel.dispatch import dispatch, signal_workflow
 from abacus.kernel.errors import DomainConflict, NotFound
@@ -126,6 +127,8 @@ async def retry_run(ctx: AuthContext, run_id: UUID) -> UUID:
         AgentRunWorkflow,
         AgentRunInput(str(ctx.tenant_id), str(child_id)),
         id=run_workflow_id(str(ctx.tenant_id), str(child_id)),
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
     return child_id
 

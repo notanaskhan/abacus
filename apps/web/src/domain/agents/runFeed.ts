@@ -29,7 +29,12 @@ export function useRunFeed(runId: string): RunFeed & { error: unknown; announcem
         });
         return data;
       },
-      { sse, onStateChange: (state) => setAnnouncement(runStateWords(state)) },
+      {
+        sse,
+        onStateChange: (state) => {
+          setAnnouncement(runStateWords(state));
+        },
+      },
     );
     return store.connect(source);
   }, [runId, store, sse]);

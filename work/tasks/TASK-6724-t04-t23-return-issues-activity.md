@@ -2,7 +2,7 @@
 id: TASK-6724
 title: "T-04-T23: return issues (sources, category paths, Draft K-1 system resolution, CSV), checkpoint chip, tax ACTIVITY_KINDS and the work-item activity filter"
 spec: SPEC-649
-acceptance_criteria: [AC-4.1, AC-4.2, AC-4.7, AC-5.1, AC-5.2, AC-5.6]
+acceptance_criteria: [AC-4, AC-5]
 risk_zone: amber
 status: in-review
 branch: s35-t04-t23

@@ -1,4 +1,5 @@
-"""The `collaboration` slice (P-05-T12; P-05 §5.4; SPEC-650 AC-1, AC-7, AC-17 to AC-29): Northwind's
+"""The `collaboration` slice (P-05-T12; P-05 §5.4; SPEC-650 AC-1, AC-7, AC-17 to AC-29):
+Northwind's
 comment and to-dos on its Internal Control paper, through collaboration's services as the people
 who wrote them (never direct inserts), so `make seed-demo` shows what fixture mode shows
 (`apps/web/src/fixtures/seed/collaboration.ts`).

@@ -49,6 +49,7 @@ Matrix actions from `permission-matrix/tax.yaml` (T-05-T04): every human verb `a
 | Amber cell | SHL-09 (expected value) | planned |
 | M-2 ties · off 6,200 | TXP-10 (the M-2 review point) | planned |
 | Sign off… | SHL-12 (blocked state while the tie is off) | planned |
+| Allocation basis (tooltip) | TXP-06 (the Allocation Structure) | planned |
 
 ## Notes
 

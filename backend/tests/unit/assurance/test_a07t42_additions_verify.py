@@ -79,7 +79,7 @@ def test_only_a_live_person_adds_or_decides() -> None:
     for kind in ("agent", "system", "support"):
         ctx = SimpleNamespace(tenant=SimpleNamespace(actor_kind=kind), client=None)
         with pytest.raises(Exception, match="role"):
-            aa._person(ctx, "archive_addition.approve")  # type: ignore[arg-type]  # pyright: ignore[reportPrivateUsage]
+            aa._person(ctx, "archive_addition.approve")  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- the rule
 
 
 def test_the_monthly_sweep_is_declared() -> None:

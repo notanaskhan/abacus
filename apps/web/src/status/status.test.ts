@@ -80,8 +80,9 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // notice_response_readiness (+3). A-05-T19 added ebp_import (+1; DEC-2078). S27 added the
     // A-07 completion, release and archive objects and the N-04 and T-03 rows (+18). T-04-T04
     // added document_approval, return_field_view, k1_activity, k1_treatment,
-    // residency_determination and assistant_availability (+6; DEC-3019).
-    expect(Object.keys(REGISTRY)).toHaveLength(180); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan
+    // residency_determination and assistant_availability (+6; DEC-3019). T-05-T05 added
+    // preparer_memo and allocation_structure (+2; agent_run_step gained labels only).
+    expect(Object.keys(REGISTRY)).toHaveLength(182); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -109,7 +110,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +69 (S27): the A-07 completion, release and archive codes and the N-04 and T-03 rows.
     // +22 (T-04-T04, DEC-3019): document_approval 3, return_field_view 6, k1_activity 3,
     // k1_treatment 3, residency_determination 3, assistant_availability 4.
-    expect(ROWS).toHaveLength(780); // DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows
+    // +8 (T-05-T05): preparer_memo 4, allocation_structure 4.
+    expect(ROWS).toHaveLength(788); // DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

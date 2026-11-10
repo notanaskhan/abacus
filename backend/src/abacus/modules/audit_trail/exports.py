@@ -743,6 +743,10 @@ async def mark_failed_activity(failure: AuditExportFailure) -> str:
 
 ACTIVITIES: tuple[object, ...] = (build_activity, mark_ready_activity, mark_failed_activity)
 
+# P-05-T11: AUD-29's export neutralises its cells the same way (one rule, one place).
+csv_cell = _cell
+json_cell = _json_cell
+
 __all__ = [
     "ACTIVITIES",
     "CSV_COLUMNS",
@@ -753,10 +757,12 @@ __all__ = [
     "Download",
     "ExportRangeInvalid",
     "build",
+    "csv_cell",
     "download",
     "download_link",
     "download_path",
     "file_stem",
+    "json_cell",
     "manifest_bytes",
     "mark_failed",
     "mark_ready",

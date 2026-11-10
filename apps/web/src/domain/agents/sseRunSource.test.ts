@@ -45,6 +45,7 @@ function item(seq: number): RunItemOut {
 function server(upto: { n: number; state?: AgentRunOut["state"] }) {
   const calls: number[] = [];
   const fetchPage = async (after: number): Promise<RunItemsOut> => {
+    await Promise.resolve();
     calls.push(after);
     const items = Array.from({ length: Math.max(0, upto.n - after) }, (_, i) =>
       item(after + i + 1),

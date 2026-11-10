@@ -70,7 +70,7 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE FUNCTION issue_events_system_only() RETURNS trigger
-            LANGUAGE plpgsql
+            LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp
         AS $$
         DECLARE
             only_system boolean;

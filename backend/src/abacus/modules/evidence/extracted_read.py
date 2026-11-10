@@ -46,9 +46,16 @@ async def extracted_fields_of(tenant: TenantContext, version_id: UUID) -> tuple[
         rows = (await session.execute(_FIELDS, {"v": version_id})).all()
     return tuple(
         ReadField(
-            *row[:8],
-            int(row.page_no),
-            cast(tuple[float, float, float, float], tuple(float(b) for b in row.bbox)),
+            id=row.id,
+            field_key=row.field_key,
+            value_text=row.value_text,
+            last4=row.last4,
+            confidence=row.confidence,
+            low_confidence=row.low_confidence,
+            form_type=row.form_type,
+            tax_year=row.tax_year,
+            page_no=int(row.page_no),
+            bbox=cast(tuple[float, float, float, float], tuple(float(b) for b in row.bbox)),
         )
         for row in rows
     )

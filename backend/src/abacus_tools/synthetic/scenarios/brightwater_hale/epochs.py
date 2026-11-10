@@ -34,6 +34,7 @@ class Snapshot:
 
 SNAPSHOTS: Final[tuple[Snapshot, ...]] = (
     Snapshot("E0", DEMO_INSTANT),
+    Snapshot("2026-09-14T09:41", datetime(2026, 9, 14, 9, 41, tzinfo=CT)),  # P-10-T36 runs
     Snapshot("2026-09-24", datetime(2026, 9, 24, 9, 0, tzinfo=CT)),
     Snapshot("2026-09-24T10:20", datetime(2026, 9, 24, 10, 20, tzinfo=CT)),  # AUD-11 f
     Snapshot("2026-10-01", datetime(2026, 10, 1, 9, 0, tzinfo=CT)),

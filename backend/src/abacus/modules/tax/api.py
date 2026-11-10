@@ -17,7 +17,6 @@ from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
 from abacus.modules.reporting.api import register_k1_rows
-from abacus.modules.tax import activity_kinds as _activity_kinds
 from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax import drafter_workflow as _drafter
@@ -140,7 +139,6 @@ async def _filing_acknowledged(event: OutboxEvent) -> None:
 
 
 _answer_effects.register()  # T-03-T06 (DEC-2352): review points from organizer answers
-_activity_kinds.register()  # T-04-T23: TAX-07's Activity kinds on P-05's query
 
 SUBSCRIPTIONS = {
     "reference_set.published": _reference_set_published,
@@ -171,6 +169,11 @@ ACTIVITIES: tuple[object, ...] = (
     *_drafter.ACTIVITIES,
 )
 start_draft = _drafter.start_draft
+# T-04-T25: the history recorder's workflow and its types (abacus_tools reaches tax only here).
+DraftInput = _drafter.DraftInput
+DraftOutcome = _drafter.DraftOutcome
+ReturnDrafterWorkflow = _drafter.ReturnDrafterWorkflow
+drafter_workflow_id = _drafter.drafter_workflow_id
 SCHEDULES = _schedule_jobs.SCHEDULES
 
 
@@ -222,17 +225,21 @@ __all__ = [
     "TRANSITIONS",
     "WORKFLOWS",
     "ApprovalBlocker",
+    "DraftInput",
+    "DraftOutcome",
     "FiledReturn",
     "K1DeliveryInput",
     "K1ReleaseFailure",
     "K1ReleaseInput",
     "K1ReleaseWorkflow",
     "ProposedPayment",
+    "ReturnDrafterWorkflow",
     "StaleReturn",
     "TaxCalendarSweepWorkflow",
     "TransitionRefused",
     "apply_transition",
     "create_estimate_schedule",
+    "drafter_workflow_id",
     "estimates_for",
     "extension_for",
     "filed_returns",

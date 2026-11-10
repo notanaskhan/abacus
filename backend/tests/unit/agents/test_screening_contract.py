@@ -82,6 +82,7 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
         "evidence_version.withdrawn",
         # Q-02-T08 (TASK-1367): a firm's changed boundary facts are forgotten in the worker too.
         "ai_boundary.facts_changed",
+        "decision.decided",  # P-10-T32 (AC-W4): a decided card resumes the run held on it
     }
     # the reviewer's (SPEC-030), matcher's (033), drafter's (035), entry assessor's (TASK-085),
     # the matcher's intake mode (N-01-T22), the methodology importer (K-01-T21) and the section
@@ -96,8 +97,8 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
     # section drafter's one (`section_draft.draft`; the route creates its run). P-10-T14
     # (TASK-6105) adds the agent-run backfill's one (`backfill_batch`). P-10-T29 (TASK-6607) adds
     # the run v2 workflow's seven (load, record_plan, plan_state, set_state, paused,
-    # execute_step, complete).
-    assert len(ACTIVITIES) == 33
+    # execute_step, complete). P-10-T32 adds part 2's two (wait_state, cancel_held).
+    assert len(ACTIVITIES) == 35
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

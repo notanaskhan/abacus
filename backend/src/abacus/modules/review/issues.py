@@ -32,7 +32,14 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import engagement_resource_of
-from abacus.modules.identity.api import AuthContext, Resource, allowed_actions, authorise, names_of
+from abacus.modules.identity.api import (
+    Actor,
+    AuthContext,
+    Resource,
+    allowed_actions,
+    authorise,
+    names_of,
+)
 from abacus.modules.review.sealing import open_text, record_text_reads, seal_text
 from abacus.modules.review.slots import reviewable_facts
 
@@ -164,16 +171,14 @@ class IssueSource:
             raise ValueError("only a dependency issue resolves by the system alone")
 
 
-async def _record(
-    ctx: AuthContext, record_type: str, record_id: UUID
-) -> tuple[UUID, Resource, str]:
+async def _record(ctx: Actor, record_type: str, record_id: UUID) -> tuple[UUID, Resource, str]:
     facts = await reviewable_facts(ctx.tenant, record_type, record_id)
     resource = await engagement_resource_of(ctx.tenant, facts.engagement_id)
     return facts.engagement_id, resource, facts.label
 
 
 async def create_issue(
-    ctx: AuthContext,
+    ctx: Actor,  # T-04-T25: the drafter's self-checks raise issues as the agent (task scope)
     *,
     record_type: str,
     record_id: UUID,
@@ -281,7 +286,7 @@ async def create_issue_in(
 
 async def _write_issue(
     tx: UnitOfWork,
-    ctx: AuthContext,
+    ctx: Actor,
     *,
     issue_id: UUID,
     engagement_id: UUID,
@@ -343,7 +348,7 @@ async def _write_issue(
 
 
 async def _assigned(
-    unit: UnitOfWork, ctx: AuthContext, issue_id: UUID, engagement_id: UUID, assignee: UUID
+    unit: UnitOfWork, ctx: Actor, issue_id: UUID, engagement_id: UUID, assignee: UUID
 ) -> None:
     await unit.session.execute(
         text("INSERT INTO issue_events (tenant_id, issue_id, event) VALUES (:t, :i, 'assigned')"),

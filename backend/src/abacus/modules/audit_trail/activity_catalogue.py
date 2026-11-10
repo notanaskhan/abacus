@@ -41,6 +41,18 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     # S26, S27: human-only conclusions the fallback reads as neutral, and a code run (DEC-2264).
     "deficiency.concluded": _a("decision", "ok"),
     "sum.concluded": _a("decision", "ok"),
+    # T-04-T23 (TAX-07): the tax return's own actions (tax.activity_kinds mirrors them).
+    "return_worksheet.created": _a("change", "pl"),
+    "k1_treatment.proposed": _a("change", "pl"),
+    "k1_treatment.approved": _a("decision", "ok"),
+    "k1_treatment.overridden": _a("decision", "ok"),
+    "residency.proposed": _a("change", "pl"),
+    "residency.confirmed": _a("decision", "ok"),
+    "tax_return.draft_requested": _a("run", "pl"),
+    "issue.explained": _a("change", "pl"),
+    "issue.system_resolved": _a("change", "pl"),
+    "tax_assistant.asked": _a("run", "pl"),
+    "export.created": _a("export", "pl"),
     # S32 end pass (R-02-T11, DEC-3009): a client's own decision in the portal.
     "proposed_entry.client_accepted": _a("decision", "ok"),
     "proposed_entry.client_declined": _a("decision", "no"),

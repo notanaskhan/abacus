@@ -257,9 +257,25 @@ async def _scope_and_rights(
         if owner is None:
             return "not_visible"
         clients.append(owner)
+    # A client already reached through an engagement resource is authorised there; an agent bound
+    # to an engagement holds its role on that engagement only (no client-level role), so a TRI
+    # subject of its own engagement's client is authorised on that engagement (S35 end pass: a
+    # client-level check refused every TRI read of an engagement run).
+    covered = {r.client_id for r in resources if r.client_id is not None}
+    own_client = (
+        await client_of(agent.tenant, agent.engagement_id)
+        if agent.engagement_id is not None
+        else None
+    )
     for client in dict.fromkeys(clients):
         if client not in pinned:
             return "out_of_scope"
+        if client in covered:
+            continue
+        if agent.engagement_id is not None and client == own_client:
+            resources.append(await engagement_resource(agent.tenant, agent.engagement_id))
+            covered.add(client)
+            continue
         resources.append(Resource.client(agent.tenant_id, client))
     if not resources:
         resources.append(Resource.firm(agent.tenant_id))

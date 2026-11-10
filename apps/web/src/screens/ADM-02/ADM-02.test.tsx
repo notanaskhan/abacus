@@ -25,7 +25,7 @@ afterEach(() => {
   cleanup();
   restore?.();
   restore = undefined;
-  toastStore.clear();
+  toastStore.reset(); // now, without the 180 ms leave, so no toast outlives its test
 });
 
 interface Call {

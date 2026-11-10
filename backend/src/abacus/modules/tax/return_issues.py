@@ -183,13 +183,20 @@ async def issues_csv(ctx: AuthContext, return_id: UUID) -> str:
         kind=None,
         limit=500,
     )
-    engagement_id = page.rows[0].engagement_id if page.rows else None
+    # The export is authorised on the return's own engagement, issues or not (security review).
+    from sqlalchemy import text
+
+    from abacus.kernel.db import tenant_session
+    from abacus.kernel.errors import NotFound
     from abacus.modules.engagements.api import engagement_resource_of
 
-    if engagement_id is not None:
-        await authorise(
-            ctx, EXPORT_ACTION, await engagement_resource_of(ctx.tenant, engagement_id)
+    async with tenant_session(ctx.tenant) as session:
+        engagement_id = await session.scalar(
+            text("SELECT engagement_id FROM tax_returns WHERE work_item_id = :r"), {"r": return_id}
         )
+    if engagement_id is None:
+        raise NotFound(TARGET)
+    await authorise(ctx, EXPORT_ACTION, await engagement_resource_of(ctx.tenant, engagement_id))
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator="\n")
     writer.writerow(EXPORT_COLUMNS)

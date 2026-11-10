@@ -449,7 +449,6 @@ register_pilot_metric_source("w4", w4_portal_activation)  # Q-04-T008 (DEC-825)
 from abacus.modules.engagements.agent_tools import AGENT_TOOLS  # noqa: E402
 
 __all__ = [
-    "client_of",
     "ACCEPTANCE_DECISION_DUE",
     "ACTIVITIES",
     "AGENT_TOOLS",
@@ -553,6 +552,7 @@ __all__ = [
     "client_contact_names",
     "client_contact_organisations",
     "client_contact_organisations_of_users",
+    "client_of",
     "client_tax_years",
     "client_tri_subjects",
     "commit_client_intake",

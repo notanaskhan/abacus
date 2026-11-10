@@ -160,9 +160,19 @@ export function ReviewPreset({
                             row={r}
                             approvedHere={approvedHere}
                             onFlag={
-                              r.flagged && onFlag ? () => onFlag(COPY.flaggedIssue) : undefined
+                              r.flagged && onFlag
+                                ? () => {
+                                    onFlag(COPY.flaggedIssue);
+                                  }
+                                : undefined
                             }
-                            onInfo={onInfo ? () => onInfo(r.key) : undefined}
+                            onInfo={
+                              onInfo
+                                ? () => {
+                                    onInfo(r.key);
+                                  }
+                                : undefined
+                            }
                           />
                         </div>
                       );
@@ -210,8 +220,12 @@ export function ReviewPreset({
               type="button"
               data-box="5"
               data-lit={lit === "interest"}
-              onMouseEnter={() => setLit("interest")}
-              onMouseLeave={() => setLit(frame === "a" ? "interest" : null)}
+              onMouseEnter={() => {
+                setLit("interest");
+              }}
+              onMouseLeave={() => {
+                setLit(frame === "a" ? "interest" : null);
+              }}
               className={`mt-[8px] block rounded-[3px] px-[4px] ${lit === "interest" ? "bg-match-bg inset-ring-1 inset-ring-match-line" : ""}`}
             >
               5 Interest income 4,600
@@ -277,7 +291,13 @@ export function ReviewPreset({
                       key={m.label}
                       data-matrix={m.label}
                       data-lit={on}
-                      onMouseEnter={m.lit ? () => setLit("interest") : undefined}
+                      onMouseEnter={
+                        m.lit
+                          ? () => {
+                              setLit("interest");
+                            }
+                          : undefined
+                      }
                       className={`h-[41px] ${on ? "bg-match-bg" : ""}`}
                     >
                       <th

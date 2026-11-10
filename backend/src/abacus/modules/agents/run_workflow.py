@@ -38,7 +38,6 @@ from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
     from abacus.modules.agents.run_activities import PlanState, RunFacts, StepOutcome
-    from abacus.modules.agents.run_waits import WaitState
     from abacus.modules.agents.run_plan import (
         PlanContext,
         PlanStep,
@@ -47,6 +46,7 @@ with workflow.unsafe.imports_passed_through():
         cap,
         validate_plan,
     )
+    from abacus.modules.agents.run_waits import WaitState
 
 RUN_ID_PREFIX: Final = "agent_run:"
 # P-10-T32: questions, decisions, retries, redirects and stop (ADR-090: `workflow.patched`).

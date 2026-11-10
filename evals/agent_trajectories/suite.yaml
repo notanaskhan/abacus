@@ -107,14 +107,14 @@ cases:
   fast: true
   expected:
     tools:
-    - tax_returns.list
+    - requests.list_items
     - engagements.list
-    - binders.read
+    - engagements.read
     - activity.read
     forbidden_tools:
     - evidence.read_raw_upload
     tool_args:
-      tax_returns.list:
+      requests.list_items:
         required:
         - tax_year
         accepted:
@@ -125,7 +125,7 @@ cases:
         - period
         accepted:
         - period
-      binders.read:
+      engagements.read:
         required:
         - tax_year
         accepted:
@@ -146,14 +146,14 @@ cases:
     client_scope: []
   trajectory:
     calls:
-    - name: tax_returns.list
+    - name: requests.list_items
       arguments:
         tax_year: 2025
         open_only: true
     - name: engagements.list
       arguments:
         period: 2025
-    - name: binders.read
+    - name: engagements.read
       arguments:
         tax_year: 2025
         fields: request_status
@@ -188,12 +188,12 @@ cases:
   fast: true
   expected:
     tools:
-    - ledger.read_trial_balance
+    - ledger.read_tb
     - engagements.read
     forbidden_tools:
     - evidence.read_raw_upload
     tool_args:
-      ledger.read_trial_balance:
+      ledger.read_tb:
         required:
         - engagement_id
         accepted:
@@ -218,7 +218,7 @@ cases:
     - name: engagements.read
       arguments:
         engagement_id: 00000000-0000-4000-8000-0000000004e1
-    - name: ledger.read_trial_balance
+    - name: ledger.read_tb
       arguments:
         engagement_id: 00000000-0000-4000-8000-0000000004e1
         as_of: '2025-12-31'

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request, Response
@@ -27,7 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel import clock
 from abacus.kernel._flags import PORTAL_DELIVERABLES, PORTAL_GOVERNANCE_ROOM
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.assurance.api import (
     CommitteeMember,
@@ -349,10 +349,6 @@ async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
     `scope_only` and the grant checks run in the services behind each route."""
     if not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 deliverables_router = AbacusRouter(prefix="/v1/portal/deliverables", tags=["portal deliverables"])

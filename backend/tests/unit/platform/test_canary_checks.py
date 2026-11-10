@@ -108,6 +108,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "connection_health:platform",  # A-02-T25: the daily connection health pass (DEC-708)
         "consent_sweep:platform",  # T-01-T16: the daily §7216 consent lifecycle sweep
         "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
+        "seal_verify:platform",  # A-07-T42: every locked archive's seal, monthly
         "home_activity_prune:platform",  # I-01-T12 (DEC-900): Home client activity, daily
         "incident_reminders:platform",  # G-02-T18: the incident register's FTC clock reminders
         "envelope_status_poll:platform",  # N-02-T19: provider status truth, every 5 minutes

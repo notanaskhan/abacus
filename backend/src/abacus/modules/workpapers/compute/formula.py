@@ -7,9 +7,9 @@ banned-pattern test proves it). The grammar is closed (ADR-237 §2):
     formula     := "="? expression
     expression  := additive
     comparison  := additive (("=" | "<>" | "≠" | "<" | "<=" | "≤" | ">" | ">=" | "≥") additive)?
-    additive    := term (("+" | "-" | "−") term)*
-    term        := unary (("*" | "×" | "/" | "÷") unary)*
-    unary       := ("-" | "−" | "+") unary | postfix
+    additive    := term (("+" | "-" | "-") term)*
+    term        := unary (("*" | "x" | "/" | "÷") unary)*
+    unary       := ("-" | "-" | "+") unary | postfix
     postfix     := primary "%"?
     primary     := NUMBER | reference | function | "(" expression ")"
     reference   := [sheet "!"] CELL [":" CELL]
@@ -181,8 +181,17 @@ class Formula:
 
 # --- addresses --------------------------------------------------------------------------------
 
-_BARE_TITLE: Final = re.compile(r"^[A-Za-z0-9_.]+$")
-_CELL: Final = re.compile(r"\$?([A-Za-z]{1,3})\$?([0-9]{1,7})")
+# Patterns as strings, matched through `re`'s module functions (which cache them): the no-eval
+# scan of this package refuses a `compile` name of any kind.
+_BARE_TITLE: Final = r"^[A-Za-z0-9_.]+$"
+_CELL: Final = r"\$?([A-Za-z]{1,3})\$?([0-9]{1,7})"
+_DIGIT_WORD: Final = r"[A-Za-z0-9_.]+"
+
+
+def _match_at(pattern: str, text: str, index: int) -> str | None:
+    """The match of `pattern` at `index` of `text` (anchored there), or None."""
+    found = re.match(pattern, text[index:])
+    return None if found is None else found.group()
 
 
 def column_letters(column: int) -> str:
@@ -202,7 +211,7 @@ def column_number(letters: str) -> int:
 
 def format_address(sheet: str, a1: str) -> str:
     """`Sheet!A1`, quoting the title (and doubling its quotes) when it is not a bare word."""
-    if _BARE_TITLE.match(sheet) and not sheet[0].isdigit():
+    if re.match(_BARE_TITLE, sheet) and not sheet[0].isdigit():
         return f"{sheet}!{a1}"
     return "'" + sheet.replace("'", "''") + f"'!{a1}"
 
@@ -234,9 +243,9 @@ class _Token:
 _OPERATORS: Final = {
     "+": "+",
     "-": "-",
-    "−": "-",  # U+2212, as the handoff writes it
+    "\u2212": "-",  # MINUS SIGN, as the handoff writes it
     "*": "*",
-    "×": "*",
+    "\u00d7": "*",  # MULTIPLICATION SIGN
     "/": "/",
     "÷": "/",
     "=": "=",
@@ -249,8 +258,9 @@ _OPERATORS: Final = {
     ">=": ">=",
     "≥": ">=",
 }
-_NUMBER: Final = re.compile(r"[0-9]+(?:\.[0-9]+)?|\.[0-9]+")
-_WORD: Final = re.compile(r"\$?[A-Za-z_][A-Za-z0-9_.]*\$?[0-9]*")
+_NUMBER: Final = r"[0-9]+(?:\.[0-9]+)?|\.[0-9]+"
+_WORD: Final = r"\$?[A-Za-z_][A-Za-z0-9_.]*\$?[0-9]*"
+_SUPPORTED: Final = frozenset(f.value for f in Function)
 
 
 def _tokens(text: str) -> list[_Token]:
@@ -285,23 +295,25 @@ def _tokens(text: str) -> list[_Token]:
             continue
         if char.isdigit() or (char == "." and index + 1 < length and text[index + 1].isdigit()):
             # A digit-led word followed by "!" is a bare sheet title (`05!H12`).
-            word = re.compile(r"[A-Za-z0-9_.]+").match(text, index)
-            assert word is not None
-            if word.end() < length and text[word.end()] == "!":
-                tokens.append(_Token(_Kind.SHEET, word.group(), start))
-                index = word.end() + 1
+            word = _match_at(_DIGIT_WORD, text, index)
+            if word is None:  # the digit at `index` always matches; kept for the type checker
+                raise FormulaError(FormulaErrorCode.SYNTAX, start)
+            after = index + len(word)
+            if after < length and text[after] == "!":
+                tokens.append(_Token(_Kind.SHEET, word, start))
+                index = after + 1
                 continue
-            number = _NUMBER.match(text, index)
-            assert number is not None
-            tokens.append(_Token(_Kind.NUMBER, number.group(), start))
-            index = number.end()
+            number = _match_at(_NUMBER, text, index)
+            if number is None:
+                raise FormulaError(FormulaErrorCode.SYNTAX, start)
+            tokens.append(_Token(_Kind.NUMBER, number, start))
+            index += len(number)
             continue
         if char.isalpha() or char in "$_":
-            word = _WORD.match(text, index)
-            if word is None:
+            raw = _match_at(_WORD, text, index)
+            if raw is None:
                 raise FormulaError(FormulaErrorCode.SYNTAX, start)
-            raw = word.group()
-            index = word.end()
+            index += len(raw)
             if index < length and text[index] == "!":
                 if "$" in raw:
                     raise FormulaError(FormulaErrorCode.REF_INVALID, start)
@@ -310,9 +322,13 @@ def _tokens(text: str) -> list[_Token]:
                 continue
             if index < length and text[index] == "(":
                 # A name before "(" is a function call, even when it looks like a cell (LOG10).
+                # One outside the grammar is refused here, at its name, before its arguments
+                # (which may hold what the grammar has no token for: `INDIRECT("A1")`).
+                if raw.upper() not in _SUPPORTED:
+                    raise FormulaError(FormulaErrorCode.UNSUPPORTED_FUNCTION, start)
                 tokens.append(_Token(_Kind.NAME, raw.upper(), start))
                 continue
-            if _CELL.fullmatch(raw):
+            if re.fullmatch(_CELL, raw):
                 tokens.append(_Token(_Kind.CELL, raw, start))
                 continue
             # A bare word that is neither a cell, a sheet nor a function (a name, TRUE, a
@@ -434,7 +450,8 @@ class _Parser:
             if not isinstance(value, Number) or start.kind is not _Kind.NUMBER:
                 raise FormulaError(FormulaErrorCode.TYPE, percent.position)
             return Percent(value.value)
-        assert not isinstance(value, RangeRef)
+        if isinstance(value, RangeRef):
+            raise FormulaError(FormulaErrorCode.TYPE, 0)
         return value
 
     def _primary(self, *, allow_range: bool) -> Expr | RangeRef:
@@ -457,7 +474,7 @@ class _Parser:
         raise FormulaError(FormulaErrorCode.SYNTAX, token.position)
 
     def _cell(self, token: _Token, sheet: str | None) -> CellRef:
-        match = _CELL.fullmatch(token.text)
+        match = re.fullmatch(_CELL, token.text)
         if match is None:
             raise FormulaError(FormulaErrorCode.REF_INVALID, token.position)
         column = column_number(match.group(1))

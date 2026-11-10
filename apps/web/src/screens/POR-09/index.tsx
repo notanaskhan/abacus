@@ -280,12 +280,15 @@ function PageImage({
   );
 }
 
-function useComments(deliverableId: string, version: DeliverableVersionOut) {
+function useComments(deliverableId: string, version: DeliverableVersionOut | undefined) {
   return useQuery({
     ...listPageCommentsOptions({
-      path: { deliverable_id: deliverableId, version_no: version.version_no },
+      path: { deliverable_id: deliverableId, version_no: version?.version_no ?? 0 },
     }),
-    enabled: version.page_comments && version.allowed_actions.includes("comment"),
+    enabled:
+      version !== undefined &&
+      version.page_comments &&
+      version.allowed_actions.includes("comment"),
     retry: false,
   });
 }
@@ -405,7 +408,9 @@ function Comments({
             add.mutate({
               path: { deliverable_id: deliverableId, version_no: version.version_no },
               body: { page, body, ...(line.trim() ? { line_ref: line.trim() } : {}) },
-              headers: { "Idempotency-Key": `${deliverableId}:${String(page)}:${body.length}` },
+              headers: {
+                "Idempotency-Key": `${deliverableId}:${String(page)}:${String(body.length)}`,
+              },
             });
           }}
         >

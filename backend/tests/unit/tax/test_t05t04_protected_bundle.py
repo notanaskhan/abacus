@@ -37,7 +37,9 @@ def test_ac_every_human_verb_denies_the_agent_the_system_support_and_portal(acti
     assert cells["agent"] == "deny"
     assert cells["system"] == "deny"
     for role in NOBODY_ELSE:
-        assert cells[role] == "deny", (action, role)
+        # An unlisted role is denied; SPEC-012 keeps the support roles off write rows entirely.
+        assert cells.get(role, "deny") == "deny", (action, role)
+    assert "platform_support" not in cells and "platform_support_content" not in cells
     assert "independence" not in cells  # independence is not required for tax (T-05 §4.3)
 
 

@@ -86,9 +86,10 @@ def test_insert_only_tables_refuse_update_and_delete_to_the_app_role(
 ) -> None:
     (row,) = _rows(
         db.superuser_dsn,
-        "SELECT has_table_privilege('abacus_app', $1, 'UPDATE') AS u, "
+        "SELECT has_any_column_privilege('abacus_app', $1, 'UPDATE') AS u, "
         "has_table_privilege('abacus_app', $1, 'DELETE') AS d, "
-        "has_table_privilege('abacus_app', $1, 'INSERT') AS i",
+        # INSERT is granted column by column (the app names what it writes), so any column.
+        "has_any_column_privilege('abacus_app', $1, 'INSERT') AS i",
         table,
     )
     assert row["i"] and not row["u"] and not row["d"]
@@ -123,7 +124,8 @@ def test_a_second_tenant_reads_nothing_through_the_app_role(db: sc.Database) -> 
             counts: list[int] = []
             async with conn.transaction():
                 await conn.execute(
-                    "SELECT set_config('app.tenant_id', '00000000-0000-4000-8000-0000000000ff', true)"
+                    "SELECT set_config('app.tenant_id', "
+                    "'00000000-0000-4000-8000-0000000000ff', true)"
                 )
                 for statement in COUNTS:
                     counts.append(int(await conn.fetchval(statement)))
@@ -135,14 +137,18 @@ def test_a_second_tenant_reads_nothing_through_the_app_role(db: sc.Database) -> 
 
 
 def _models() -> list[type[BaseModel]]:
-    from abacus.modules.tax import workspace_contract, worksheets
+    from abacus.modules.tax import worksheets, workspace_contract
 
     found: list[type[BaseModel]] = []
     for module in (workspace_contract, worksheets):
         for value in vars(module).values():
-            if isinstance(value, type) and issubclass(value, BaseModel) and value is not BaseModel:
-                if value.__module__ == module.__name__:
-                    found.append(value)
+            if (
+                isinstance(value, type)
+                and issubclass(value, BaseModel)
+                and value is not BaseModel
+                and value.__module__ == module.__name__
+            ):
+                found.append(value)
     return found
 
 

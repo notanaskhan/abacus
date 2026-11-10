@@ -63,30 +63,34 @@ def _cfg() -> ConfigDict:
 # --- the rail and the partners -------------------------------------------------------------------
 
 
-class GeneralInformationOut(BaseModel):
+class WorkbookGeneralInformationOut(BaseModel):
     model_config = _cfg()
 
     return_id: Annotated[UUID, Internal]
     entity_name: Annotated[str, Confidential]
     form: Annotated[Literal["1065", "1120-S", "1120", "990"], Internal]
     tax_year: Annotated[int, Internal]
-    ein_last4: Annotated[str | None, Field(pattern=r"^\d{4}$"), Confidential] = None
+    ein_last4: Annotated[
+        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
+    ] = None
     accounting_method: Annotated[str | None, Internal] = None
     preparer_name: Annotated[str | None, Confidential] = None
     reviewer_name: Annotated[str | None, Confidential] = None
     signer_name: Annotated[str | None, Confidential] = None
 
 
-class PartnerOut(BaseModel):
+class WorkbookPartnerOut(BaseModel):
     model_config = _cfg()
 
     id: Annotated[UUID, Internal]
     name: Annotated[str, Tri]
-    tin_last4: Annotated[str | None, Field(pattern=r"^\d{4}$"), Tri] = None  # never the full TIN
+    tin_last4: Annotated[  # never the full TIN
+        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
+    ] = None
     kind: Annotated[Literal["general", "limited", "llc_member"], Internal]
 
 
-class OwnershipPeriodOut(BaseModel):
+class WorkbookOwnershipPeriodOut(BaseModel):
     model_config = _cfg()
 
     starts_on: Annotated[date, Internal]
@@ -94,7 +98,7 @@ class OwnershipPeriodOut(BaseModel):
     shares: Annotated[dict[str, Decimal], Tri]  # partner id → percentage (exact decimal)
 
 
-class InterestTransferOut(BaseModel):
+class WorkbookInterestTransferOut(BaseModel):
     model_config = _cfg()
 
     on: Annotated[date, Internal]
@@ -104,23 +108,23 @@ class InterestTransferOut(BaseModel):
     citation_id: Annotated[UUID | None, Internal] = None
 
 
-class PartnersOut(BaseModel):
+class WorkbookPartnersOut(BaseModel):
     model_config = _cfg()
 
     version: Annotated[int, Internal]
-    partners: Annotated[list[PartnerOut], Tri]
-    periods: Annotated[list[OwnershipPeriodOut], Tri]
-    transfers: Annotated[list[InterestTransferOut], Tri]
+    partners: Annotated[list[WorkbookPartnerOut], Tri]
+    periods: Annotated[list[WorkbookOwnershipPeriodOut], Tri]
+    transfers: Annotated[list[WorkbookInterestTransferOut], Tri]
     allowed_actions: Annotated[list[WorkbookAction], Internal]
 
 
-class OwnershipIn(BaseModel):
+class WorkbookOwnershipIn(BaseModel):
     model_config = _cfg()
 
     expected_version: Annotated[int, Internal]
-    periods: Annotated[list[OwnershipPeriodOut], Field(min_length=1, max_length=24), Tri]
-    transfers: Annotated[list[InterestTransferOut], Field(max_length=50), Tri] = Field(
-        default_factory=list[InterestTransferOut]
+    periods: Annotated[list[WorkbookOwnershipPeriodOut], Field(min_length=1, max_length=24), Tri]
+    transfers: Annotated[list[WorkbookInterestTransferOut], Field(max_length=50), Tri] = Field(
+        default_factory=list[WorkbookInterestTransferOut]
     )
     citation_note: Annotated[str, Field(min_length=1, max_length=500), Tri]
 
@@ -128,7 +132,7 @@ class OwnershipIn(BaseModel):
 # --- the workbook ------------------------------------------------------------------------------
 
 
-class SheetOut(BaseModel):
+class WorkbookSheetOut(BaseModel):
     model_config = _cfg()
 
     key: Annotated[str, Internal]  # "05_capital"
@@ -142,11 +146,11 @@ class WorkbookOut(BaseModel):
 
     return_id: Annotated[UUID, Internal]
     version: Annotated[int, Internal]
-    sheets: Annotated[list[SheetOut], Internal]
+    sheets: Annotated[list[WorkbookSheetOut], Internal]
     allowed_actions: Annotated[list[WorkbookAction], Internal]
 
 
-class CellOut(BaseModel):
+class WorkbookCellOut(BaseModel):
     model_config = _cfg()
 
     address: Annotated[str, Field(pattern=r"^[A-Z]{1,3}[0-9]{1,6}$"), Internal]
@@ -158,25 +162,25 @@ class CellOut(BaseModel):
     version: Annotated[int, Internal]
 
 
-class SheetCellsOut(BaseModel):
+class WorkbookSheetCellsOut(BaseModel):
     model_config = _cfg()
 
     sheet: Annotated[str, Internal]
     version: Annotated[int, Internal]
-    cells: Annotated[list[CellOut], Tri]
+    cells: Annotated[list[WorkbookCellOut], Tri]
     next_range: Annotated[str | None, Internal] = None
 
 
-class CellProvenanceOut(BaseModel):
+class WorkbookCellProvenanceOut(BaseModel):
     model_config = _cfg()
 
-    cell: Annotated[CellOut, Tri]
+    cell: Annotated[WorkbookCellOut, Tri]
     writer: Annotated[str, Confidential]  # "Run 3 · started by Samuel Ito", "Olivia Brandt"
     inputs: Annotated[list[str], Internal] = Field(default_factory=list[str])
     issue_ids: Annotated[list[UUID], Internal] = Field(default_factory=list[UUID])
 
 
-class CellEditIn(BaseModel):
+class WorkbookCellEditIn(BaseModel):
     model_config = _cfg()
 
     expected_version: Annotated[int, Internal]
@@ -184,7 +188,7 @@ class CellEditIn(BaseModel):
     formula: Annotated[str | None, Field(max_length=2000), Tri] = None
 
 
-class ImportAcceptedOut(BaseModel):
+class WorkbookImportAcceptedOut(BaseModel):
     model_config = _cfg()
 
     import_id: Annotated[UUID, Internal]
@@ -225,7 +229,7 @@ class WorkbookRunsOut(BaseModel):
 # --- TB → TTB, tallies, entries, mapping --------------------------------------------------------
 
 
-class TbRowOut(BaseModel):
+class WorkbookTbRowOut(BaseModel):
     model_config = _cfg()
 
     account_code: Annotated[str, Confidential]
@@ -238,15 +242,15 @@ class TbRowOut(BaseModel):
     tax_basis: Annotated[Decimal, Tri]
 
 
-class TrialBalanceOut(BaseModel):
+class WorkbookTrialBalanceOut(BaseModel):
     model_config = _cfg()
 
     view: Annotated[Literal["account", "line"], Internal]
-    rows: Annotated[list[TbRowOut], Tri]
+    rows: Annotated[list[WorkbookTbRowOut], Tri]
     unmapped: Annotated[int, Field(ge=0), Internal]
 
 
-class TallyOut(BaseModel):
+class WorkbookTallyOut(BaseModel):
     model_config = _cfg()
 
     key: Annotated[str, Internal]
@@ -255,13 +259,13 @@ class TallyOut(BaseModel):
     difference: Annotated[MaybeMoney, Tri] = None
 
 
-class TalliesOut(BaseModel):
+class WorkbookTalliesOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[TallyOut], Tri]
+    items: Annotated[list[WorkbookTallyOut], Tri]
 
 
-class JournalEntryOut(BaseModel):
+class WorkbookJournalEntryOut(BaseModel):
     model_config = _cfg()
 
     id: Annotated[UUID, Internal]
@@ -271,26 +275,26 @@ class JournalEntryOut(BaseModel):
     state: Annotated[str, Internal]
 
 
-class JournalEntriesOut(BaseModel):
+class WorkbookJournalEntriesOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[JournalEntryOut], Tri]
+    items: Annotated[list[WorkbookJournalEntryOut], Tri]
 
 
-class FormLineOut(BaseModel):
+class WorkbookFormLineOut(BaseModel):
     model_config = _cfg()
 
     key: Annotated[str, Internal]
     label: Annotated[str, Internal]
 
 
-class FormLinesOut(BaseModel):
+class WorkbookFormLinesOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[FormLineOut], Internal]
+    items: Annotated[list[WorkbookFormLineOut], Internal]
 
 
-class MappingIn(BaseModel):
+class WorkbookMappingIn(BaseModel):
     model_config = _cfg()
 
     account_code: Annotated[str, Field(min_length=1, max_length=40), Confidential]
@@ -298,7 +302,7 @@ class MappingIn(BaseModel):
     rationale: Annotated[str | None, Field(max_length=500), Confidential] = None
 
 
-class MappingProposedOut(BaseModel):
+class WorkbookMappingProposedOut(BaseModel):
     model_config = _cfg()
 
     proposal_id: Annotated[UUID, Internal]
@@ -307,45 +311,45 @@ class MappingProposedOut(BaseModel):
 # --- Schedule K, capital, M-2 ------------------------------------------------------------------
 
 
-class ScheduleKCellOut(BaseModel):
+class WorkbookScheduleKCellOut(BaseModel):
     model_config = _cfg()
 
     partner_id: Annotated[UUID, Internal]
     amount: Annotated[Decimal, Tri]
 
 
-class ScheduleKLineOut(BaseModel):
+class WorkbookScheduleKLineOut(BaseModel):
     model_config = _cfg()
 
     line: Annotated[str, Internal]  # "1", "2", "13d"
     label: Annotated[str, Internal]
     total: Annotated[Decimal, Tri]
-    by_partner: Annotated[list[ScheduleKCellOut], Tri]
+    by_partner: Annotated[list[WorkbookScheduleKCellOut], Tri]
     tie: Annotated[TallyState, Internal]
 
 
-class ScheduleKOut(BaseModel):
+class WorkbookScheduleKOut(BaseModel):
     model_config = _cfg()
 
     view: Annotated[Literal["federal", "state"], Internal]
-    lines: Annotated[list[ScheduleKLineOut], Tri]
+    lines: Annotated[list[WorkbookScheduleKLineOut], Tri]
 
 
-class BreakdownRowOut(BaseModel):
+class WorkbookBreakdownRowOut(BaseModel):
     model_config = _cfg()
 
     property_name: Annotated[str, Confidential]
     amount: Annotated[Decimal, Tri]
 
 
-class BreakdownOut(BaseModel):
+class WorkbookBreakdownOut(BaseModel):
     model_config = _cfg()
 
     line: Annotated[str, Internal]
-    rows: Annotated[list[BreakdownRowOut], Tri]
+    rows: Annotated[list[WorkbookBreakdownRowOut], Tri]
 
 
-class CapitalRowOut(BaseModel):
+class WorkbookCapitalRowOut(BaseModel):
     model_config = _cfg()
 
     partner_id: Annotated[UUID, Internal]
@@ -356,16 +360,16 @@ class CapitalRowOut(BaseModel):
     ending: Annotated[Decimal, Tri]
 
 
-class CapitalAccountsOut(BaseModel):
+class WorkbookCapitalAccountsOut(BaseModel):
     model_config = _cfg()
 
     view: Annotated[Literal["by_partner", "by_movement"], Internal]
     basis: Annotated[Literal["tax", "gaap", "section_704b"], Internal]
-    rows: Annotated[list[CapitalRowOut], Tri]
+    rows: Annotated[list[WorkbookCapitalRowOut], Tri]
     tie: Annotated[TallyState, Internal]
 
 
-class M2Out(BaseModel):
+class WorkbookM2Out(BaseModel):
     model_config = _cfg()
 
     variant: Annotated[Literal["as_drafted", "with_fix"], Internal]
@@ -378,7 +382,7 @@ class M2Out(BaseModel):
 # --- the allocation structure ------------------------------------------------------------------
 
 
-class RungOut(BaseModel):
+class WorkbookRungOut(BaseModel):
     model_config = _cfg()
 
     key: Annotated[str, Internal]
@@ -388,44 +392,44 @@ class RungOut(BaseModel):
     citation_ids: Annotated[list[UUID], Internal] = Field(default_factory=list[UUID])
 
 
-class AllocationStructureOut(BaseModel):
+class WorkbookAllocationStructureOut(BaseModel):
     model_config = _cfg()
 
     version: Annotated[int, Internal]
     kind: Annotated[StructureKind, Internal]
     status: Annotated[StructureStatus, Internal]
-    rungs: Annotated[list[RungOut], Tri]
+    rungs: Annotated[list[WorkbookRungOut], Tri]
     seen_hash: Annotated[str, Internal]  # what an L3 sign-off names (P-04)
     allowed_actions: Annotated[list[WorkbookAction], Internal]
 
 
-class AllocationDraftIn(BaseModel):
+class WorkbookAllocationDraftIn(BaseModel):
     model_config = _cfg()
 
     expected_version: Annotated[int, Internal]
     kind: Annotated[StructureKind, Internal]
-    rungs: Annotated[list[RungOut], Field(min_length=1, max_length=20), Tri]
+    rungs: Annotated[list[WorkbookRungOut], Field(min_length=1, max_length=20), Tri]
 
 
 # --- sections, issues, the memo, reconciliation ------------------------------------------------
 
 
-class SectionOut(BaseModel):
+class WorkbookSectionOut(BaseModel):
     model_config = _cfg()
 
     key: Annotated[str, Internal]
     title: Annotated[str, Internal]
-    tallies: Annotated[list[TallyOut], Tri]
+    tallies: Annotated[list[WorkbookTallyOut], Tri]
     signed_levels: Annotated[list[str], Internal]
 
 
-class SectionsOut(BaseModel):
+class WorkbookSectionsOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[SectionOut], Tri]
+    items: Annotated[list[WorkbookSectionOut], Tri]
 
 
-class SectionSignOffIn(BaseModel):
+class WorkbookSectionSignOffIn(BaseModel):
     model_config = _cfg()
 
     level: Annotated[Literal["l2", "l3"], Internal]
@@ -433,13 +437,13 @@ class SectionSignOffIn(BaseModel):
     note: Annotated[str | None, Field(max_length=500), Confidential] = None
 
 
-class SignOffRecordedOut(BaseModel):
+class WorkbookSignOffRecordedOut(BaseModel):
     model_config = _cfg()
 
     sign_off_id: Annotated[UUID, Internal]
 
 
-class ReturnIssueOut(BaseModel):
+class WorkbookReturnIssueOut(BaseModel):
     model_config = _cfg()
 
     id: Annotated[UUID, Internal]
@@ -449,15 +453,15 @@ class ReturnIssueOut(BaseModel):
     status: Annotated[str, Internal]
 
 
-class ReturnIssuesOut(BaseModel):
+class WorkbookReturnIssuesOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[ReturnIssueOut], Confidential]
+    items: Annotated[list[WorkbookReturnIssueOut], Confidential]
     by_section: Annotated[dict[str, int], Internal]
     by_step: Annotated[dict[str, int], Internal]
 
 
-class MemoSectionOut(BaseModel):
+class WorkbookMemoSectionOut(BaseModel):
     model_config = _cfg()
 
     key: Annotated[str, Internal]
@@ -468,17 +472,17 @@ class MemoSectionOut(BaseModel):
     version: Annotated[int, Internal]
 
 
-class MemoOut(BaseModel):
+class WorkbookMemoOut(BaseModel):
     model_config = _cfg()
 
     status: Annotated[MemoStatus, Internal]
-    sections: Annotated[list[MemoSectionOut], Tri]
+    sections: Annotated[list[WorkbookMemoSectionOut], Tri]
     seen_hash: Annotated[str, Internal]
     stale_fields: Annotated[list[str], Internal] = Field(default_factory=list[str])
     allowed_actions: Annotated[list[WorkbookAction], Internal]
 
 
-class MemoDraftIn(BaseModel):
+class WorkbookMemoDraftIn(BaseModel):
     model_config = _cfg()
 
     sections: Annotated[list[str], Field(max_length=12), Internal] = Field(
@@ -486,33 +490,33 @@ class MemoDraftIn(BaseModel):
     )
 
 
-class MemoSectionEditIn(BaseModel):
+class WorkbookMemoSectionEditIn(BaseModel):
     model_config = _cfg()
 
     expected_version: Annotated[int, Internal]
     body: Annotated[str, Field(min_length=1, max_length=20_000), Tri]
 
 
-class MemoAdoptIn(BaseModel):
+class WorkbookMemoAdoptIn(BaseModel):
     model_config = _cfg()
 
     seen_hash: Annotated[str, Internal]
 
 
-class OpportunityOut(BaseModel):
+class WorkbookOpportunityOut(BaseModel):
     model_config = _cfg()
 
     key: Annotated[str, Internal]
     title: Annotated[str, Confidential]
 
 
-class OpportunitiesOut(BaseModel):
+class WorkbookOpportunitiesOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[OpportunityOut], Confidential]
+    items: Annotated[list[WorkbookOpportunityOut], Confidential]
 
 
-class ReconciliationRowOut(BaseModel):
+class WorkbookReconciliationRowOut(BaseModel):
     model_config = _cfg()
 
     field_key: Annotated[str, Internal]
@@ -521,15 +525,15 @@ class ReconciliationRowOut(BaseModel):
     issue_id: Annotated[UUID | None, Internal] = None
 
 
-class ReconciliationOut(BaseModel):
+class WorkbookReconciliationOut(BaseModel):
     model_config = _cfg()
 
     checkpoint_id: Annotated[UUID | None, Internal] = None
-    rows: Annotated[list[ReconciliationRowOut], Tri]
+    rows: Annotated[list[WorkbookReconciliationRowOut], Tri]
     differences: Annotated[int, Field(ge=0), Internal]
 
 
-class AcceptedOut(BaseModel):
+class WorkbookAcceptedOut(BaseModel):
     model_config = _cfg()
 
     run_id: Annotated[UUID, Internal]
@@ -553,28 +557,30 @@ def _not_yet() -> NoReturn:
 
 @workbook_router.get(
     f"{_R}/general-information", action="tax_return.read",
-    response_model=GeneralInformationOut, errors=(501,),
+    response_model=WorkbookGeneralInformationOut, errors=(501,),
 )  # fmt: skip
-async def entity_general_information_route(return_id: UUID, ctx: Ctx) -> GeneralInformationOut:
+async def entity_general_information_route(
+    return_id: UUID, ctx: Ctx
+) -> WorkbookGeneralInformationOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    f"{_R}/partners", action="tax_return.read", response_model=PartnersOut, errors=(501,)
+    f"{_R}/partners", action="tax_return.read", response_model=WorkbookPartnersOut, errors=(501,)
 )
-async def entity_partners_route(return_id: UUID, ctx: Ctx) -> PartnersOut:
+async def entity_partners_route(return_id: UUID, ctx: Ctx) -> WorkbookPartnersOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.put(
-    f"{_R}/ownership", action="tax_ownership.edit", response_model=PartnersOut,
+    f"{_R}/ownership", action="tax_ownership.edit", response_model=WorkbookPartnersOut,
     errors=(409, 501),
 )  # fmt: skip
 async def entity_ownership_route(
-    return_id: UUID, body: OwnershipIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> PartnersOut:
+    return_id: UUID, body: WorkbookOwnershipIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> WorkbookPartnersOut:
     await _flag_on(ctx)
     _not_yet()
 
@@ -588,7 +594,8 @@ async def workbook_route(return_id: UUID, ctx: Ctx) -> WorkbookOut:
 
 
 @workbook_router.get(
-    f"{_R}/workbook/sheets/{{sheet}}", action="workbook.read", response_model=SheetCellsOut,
+    f"{_R}/workbook/sheets/{{sheet}}", action="workbook.read",
+    response_model=WorkbookSheetCellsOut,
     errors=(501,),
 )  # fmt: skip
 async def entity_sheet_route(
@@ -597,32 +604,36 @@ async def entity_sheet_route(
     ctx: Ctx,
     version: Annotated[int | None, Query(ge=1)] = None,
     range_: Annotated[str | None, Query(alias="range", max_length=40)] = None,
-) -> SheetCellsOut:
+) -> WorkbookSheetCellsOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
     f"{_R}/workbook/cells/{{address}}", action="workbook.read",
-    response_model=CellProvenanceOut, errors=(501,),
+    response_model=WorkbookCellProvenanceOut, errors=(501,),
 )  # fmt: skip
 async def entity_cell_route(
     return_id: UUID,
     address: str,
     ctx: Ctx,
     version: Annotated[int | None, Query(ge=1)] = None,
-) -> CellProvenanceOut:
+) -> WorkbookCellProvenanceOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.put(
-    f"{_R}/workbook/cells/{{address}}", action="workbook.edit", response_model=CellOut,
+    f"{_R}/workbook/cells/{{address}}", action="workbook.edit", response_model=WorkbookCellOut,
     errors=(409, 501),
 )  # fmt: skip
 async def entity_edit_cell_route(
-    return_id: UUID, address: str, body: CellEditIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> CellOut:
+    return_id: UUID,
+    address: str,
+    body: WorkbookCellEditIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> WorkbookCellOut:
     """`cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422)."""
     await _flag_on(ctx)
     _not_yet()
@@ -644,7 +655,8 @@ async def entity_export_route(
 
 
 @workbook_router.post(
-    f"{_R}/workbook/imports", action="workbook_import.create", response_model=ImportAcceptedOut,
+    f"{_R}/workbook/imports", action="workbook_import.create",
+    response_model=WorkbookImportAcceptedOut,
     status_code=201, errors=(409, 501),
 )  # fmt: skip
 async def entity_import_route(
@@ -652,7 +664,7 @@ async def entity_import_route(
     kind: Annotated[ImportKind, Query()],
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
-) -> ImportAcceptedOut:
+) -> WorkbookImportAcceptedOut:
     """Raw-body report, parsed as hostile (ADR-052); cells cited as `engine_import`."""
     await _flag_on(ctx)
     _not_yet()
@@ -679,7 +691,10 @@ async def entity_runs_route(return_id: UUID, ctx: Ctx) -> WorkbookRunsOut:
 
 
 @workbook_router.get(
-    f"{_R}/trial-balance", action="workbook.read", response_model=TrialBalanceOut, errors=(501,)
+    f"{_R}/trial-balance",
+    action="workbook.read",
+    response_model=WorkbookTrialBalanceOut,
+    errors=(501,),
 )
 async def entity_trial_balance_route(
     return_id: UUID,
@@ -688,50 +703,50 @@ async def entity_trial_balance_route(
     statement: Annotated[Literal["full", "balance_sheet", "income_statement"], Query()] = "full",
     filter_: Annotated[Literal["unmapped"] | None, Query(alias="filter")] = None,
     version: Annotated[int | None, Query(ge=1)] = None,
-) -> TrialBalanceOut:
+) -> WorkbookTrialBalanceOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    f"{_R}/trial-balance/tallies", action="workbook.read", response_model=TalliesOut,
+    f"{_R}/trial-balance/tallies", action="workbook.read", response_model=WorkbookTalliesOut,
     errors=(501,),
 )  # fmt: skip
-async def entity_tallies_route(return_id: UUID, ctx: Ctx) -> TalliesOut:
+async def entity_tallies_route(return_id: UUID, ctx: Ctx) -> WorkbookTalliesOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    f"{_R}/journal-entries", action="adjusted_tb.read", response_model=JournalEntriesOut,
+    f"{_R}/journal-entries", action="adjusted_tb.read", response_model=WorkbookJournalEntriesOut,
     errors=(501,),
 )  # fmt: skip
-async def entity_journal_entries_route(return_id: UUID, ctx: Ctx) -> JournalEntriesOut:
+async def entity_journal_entries_route(return_id: UUID, ctx: Ctx) -> WorkbookJournalEntriesOut:
     """AJE, RJE and TJE over C8; propose and approve go through A-06's endpoints."""
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    "/form-lines", action="reference_set.read", response_model=FormLinesOut, errors=(501,)
+    "/form-lines", action="reference_set.read", response_model=WorkbookFormLinesOut, errors=(501,)
 )
 async def entity_form_lines_route(
     ctx: Ctx,
     form: Annotated[Literal["1065", "1120-S", "1120", "990"], Query()],
     tax_year: Annotated[int, Query(ge=2000, le=2100)],
     q: Annotated[str | None, Query(max_length=80)] = None,
-) -> FormLinesOut:
+) -> WorkbookFormLinesOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.post(
-    f"{_R}/mappings", action="account_mapping.edit", response_model=MappingProposedOut,
+    f"{_R}/mappings", action="account_mapping.edit", response_model=WorkbookMappingProposedOut,
     status_code=201, errors=(409, 501),
 )  # fmt: skip
 async def entity_mapping_route(
-    return_id: UUID, body: MappingIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> MappingProposedOut:
+    return_id: UUID, body: WorkbookMappingIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> WorkbookMappingProposedOut:
     """A ledger mapping proposal, approved through P-04's `POST /proposals/{id}/approve`. The
     plan's `account_mapping.propose` is not in the matrix yet (A-03's file), so it is
     `account_mapping.edit`.
@@ -741,29 +756,31 @@ async def entity_mapping_route(
 
 
 @workbook_router.get(
-    f"{_R}/schedules/k", action="workbook.read", response_model=ScheduleKOut, errors=(501,)
+    f"{_R}/schedules/k", action="workbook.read", response_model=WorkbookScheduleKOut, errors=(501,)
 )
 async def entity_schedule_k_route(
     return_id: UUID,
     ctx: Ctx,
     view: Annotated[Literal["federal", "state"], Query()] = "federal",
     version: Annotated[int | None, Query(ge=1)] = None,
-) -> ScheduleKOut:
+) -> WorkbookScheduleKOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
     f"{_R}/schedules/k/lines/{{line}}/breakdown", action="workbook.read",
-    response_model=BreakdownOut, errors=(501,),
+    response_model=WorkbookBreakdownOut, errors=(501,),
 )  # fmt: skip
-async def entity_schedule_k_breakdown_route(return_id: UUID, line: str, ctx: Ctx) -> BreakdownOut:
+async def entity_schedule_k_breakdown_route(
+    return_id: UUID, line: str, ctx: Ctx
+) -> WorkbookBreakdownOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    f"{_R}/capital-accounts", action="workbook.read", response_model=CapitalAccountsOut,
+    f"{_R}/capital-accounts", action="workbook.read", response_model=WorkbookCapitalAccountsOut,
     errors=(501,),
 )  # fmt: skip
 async def entity_capital_accounts_route(
@@ -771,41 +788,41 @@ async def entity_capital_accounts_route(
     ctx: Ctx,
     view: Annotated[Literal["by_partner", "by_movement"], Query()] = "by_partner",
     version: Annotated[int | None, Query(ge=1)] = None,
-) -> CapitalAccountsOut:
+) -> WorkbookCapitalAccountsOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    f"{_R}/schedules/m2", action="workbook.read", response_model=M2Out, errors=(501,)
+    f"{_R}/schedules/m2", action="workbook.read", response_model=WorkbookM2Out, errors=(501,)
 )
 async def entity_m2_route(
     return_id: UUID,
     ctx: Ctx,
     variant: Annotated[Literal["as_drafted", "with_fix"], Query()] = "as_drafted",
-) -> M2Out:
+) -> WorkbookM2Out:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
     f"{_R}/allocation-structure", action="allocation_structure.read",
-    response_model=AllocationStructureOut, errors=(501,),
+    response_model=WorkbookAllocationStructureOut, errors=(501,),
 )  # fmt: skip
 async def entity_allocation_route(
     return_id: UUID, ctx: Ctx, version: Annotated[int | None, Query(ge=1)] = None
-) -> AllocationStructureOut:
+) -> WorkbookAllocationStructureOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.put(
     f"{_R}/allocation-structure/draft", action="allocation_structure.edit",
-    response_model=AllocationStructureOut, errors=(409, 501),
+    response_model=WorkbookAllocationStructureOut, errors=(409, 501),
 )  # fmt: skip
 async def entity_allocation_draft_route(
-    return_id: UUID, body: AllocationDraftIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> AllocationStructureOut:
+    return_id: UUID, body: WorkbookAllocationDraftIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> WorkbookAllocationStructureOut:
     """A new draft version; approval is P-04's L3 sign-off on `allocation_structure`."""
     await _flag_on(ctx)
     _not_yet()
@@ -813,31 +830,35 @@ async def entity_allocation_draft_route(
 
 @workbook_router.post(
     f"{_R}/allocation-structure/preview", action="allocation_structure.read",
-    response_model=AllocationStructureOut, errors=(501,),
+    response_model=WorkbookAllocationStructureOut, errors=(501,),
 )  # fmt: skip
 async def entity_allocation_preview_route(
-    return_id: UUID, body: AllocationDraftIn, ctx: Ctx
-) -> AllocationStructureOut:
+    return_id: UUID, body: WorkbookAllocationDraftIn, ctx: Ctx
+) -> WorkbookAllocationStructureOut:
     """Recompute without persistence."""
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    f"{_R}/sections", action="workbook.read", response_model=SectionsOut, errors=(501,)
+    f"{_R}/sections", action="workbook.read", response_model=WorkbookSectionsOut, errors=(501,)
 )
-async def entity_sections_route(return_id: UUID, ctx: Ctx) -> SectionsOut:
+async def entity_sections_route(return_id: UUID, ctx: Ctx) -> WorkbookSectionsOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.post(
     f"{_R}/sections/{{key}}/sign-off", action="sign_off.create",
-    response_model=SignOffRecordedOut, status_code=201, errors=(409, 501),
+    response_model=WorkbookSignOffRecordedOut, status_code=201, errors=(409, 501),
 )  # fmt: skip
 async def entity_section_sign_off_route(
-    return_id: UUID, key: str, body: SectionSignOffIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> SignOffRecordedOut:
+    return_id: UUID,
+    key: str,
+    body: WorkbookSectionSignOffIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> WorkbookSignOffRecordedOut:
     """Tie-out precheck (`tie_out_off`, 409), then P-04's sign-off (`level_not_permitted`, 403;
     `not_preparer_of_target`)."""
     await _flag_on(ctx)
@@ -845,7 +866,7 @@ async def entity_section_sign_off_route(
 
 
 @workbook_router.get(
-    f"{_R}/issues", action="issue.read", response_model=ReturnIssuesOut, errors=(501,)
+    f"{_R}/issues", action="issue.read", response_model=WorkbookReturnIssuesOut, errors=(501,)
 )
 async def entity_issues_route(
     return_id: UUID,
@@ -855,67 +876,78 @@ async def entity_issues_route(
     step: Annotated[str | None, Query(max_length=60)] = None,
     q: Annotated[str | None, Query(max_length=120)] = None,
     show_resolved: Annotated[bool, Query()] = False,
-) -> ReturnIssuesOut:
+) -> WorkbookReturnIssuesOut:
     await _flag_on(ctx)
     _not_yet()
 
 
-@workbook_router.get(f"{_R}/memo", action="tax_memo.read", response_model=MemoOut, errors=(501,))
-async def entity_memo_route(return_id: UUID, ctx: Ctx) -> MemoOut:
+@workbook_router.get(
+    f"{_R}/memo", action="tax_memo.read", response_model=WorkbookMemoOut, errors=(501,)
+)
+async def entity_memo_route(return_id: UUID, ctx: Ctx) -> WorkbookMemoOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.post(
-    f"{_R}/memo/draft", action="tax_memo.draft", response_model=AcceptedOut, status_code=202,
+    f"{_R}/memo/draft", action="tax_memo.draft",
+    response_model=WorkbookAcceptedOut, status_code=202,
     errors=(409, 501),
 )  # fmt: skip
 async def entity_memo_draft_route(
-    return_id: UUID, body: MemoDraftIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> AcceptedOut:
+    return_id: UUID, body: WorkbookMemoDraftIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> WorkbookAcceptedOut:
     """A memo run; `consent_required` (409) without both §7216 consents."""
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.patch(
-    f"{_R}/memo/sections/{{key}}", action="tax_memo.edit", response_model=MemoSectionOut,
+    f"{_R}/memo/sections/{{key}}", action="tax_memo.edit", response_model=WorkbookMemoSectionOut,
     errors=(409, 501),
 )  # fmt: skip
 async def entity_memo_section_route(
-    return_id: UUID, key: str, body: MemoSectionEditIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> MemoSectionOut:
+    return_id: UUID,
+    key: str,
+    body: WorkbookMemoSectionEditIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> WorkbookMemoSectionOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.post(
-    f"{_R}/memo/adopt", action="sign_off.create", response_model=SignOffRecordedOut,
+    f"{_R}/memo/adopt", action="sign_off.create", response_model=WorkbookSignOffRecordedOut,
     status_code=201, errors=(409, 501),
 )  # fmt: skip
 async def entity_memo_adopt_route(
-    return_id: UUID, body: MemoAdoptIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> SignOffRecordedOut:
+    return_id: UUID, body: WorkbookMemoAdoptIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> WorkbookSignOffRecordedOut:
     """The preparer's L1 sign-off on the memo (`seen_hash`); the reviewer's L2 is P-04's."""
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    f"{_R}/opportunities", action="tax_memo.read", response_model=OpportunitiesOut, errors=(501,)
+    f"{_R}/opportunities",
+    action="tax_memo.read",
+    response_model=WorkbookOpportunitiesOut,
+    errors=(501,),
 )
-async def entity_opportunities_route(return_id: UUID, ctx: Ctx) -> OpportunitiesOut:
+async def entity_opportunities_route(return_id: UUID, ctx: Ctx) -> WorkbookOpportunitiesOut:
     await _flag_on(ctx)
     _not_yet()
 
 
 @workbook_router.get(
-    f"{_R}/reconciliation", action="tax_reconciliation.read", response_model=ReconciliationOut,
+    f"{_R}/reconciliation", action="tax_reconciliation.read",
+    response_model=WorkbookReconciliationOut,
     errors=(501,),
 )  # fmt: skip
 async def entity_reconciliation_route(
     return_id: UUID, ctx: Ctx, checkpoint: Annotated[UUID | None, Query()] = None
-) -> ReconciliationOut:
+) -> WorkbookReconciliationOut:
     await _flag_on(ctx)
     _not_yet()
 

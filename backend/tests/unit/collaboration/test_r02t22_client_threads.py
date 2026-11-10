@@ -17,15 +17,17 @@ from abacus.modules.collaboration.errors import CommentTooLong, EmptyComment
 
 def _ctx(client: bool = True, kind: str = "human") -> SimpleNamespace:
     return SimpleNamespace(
-        user_id=uuid4(), client=object() if client else None, tenant=SimpleNamespace(actor_kind=kind)
+        user_id=uuid4(),
+        client=object() if client else None,
+        tenant=SimpleNamespace(actor_kind=kind),
     )
 
 
 def test_ac33_an_author_only_anchor_scopes_each_thread_to_its_author() -> None:
     ct.register_client_policy("test_letter", "author_only")
     victoria, robert = _ctx(), _ctx()
-    mine = ct._scoped(victoria, "test_letter", None)  # pyright: ignore[reportPrivateUsage]  # type: ignore[arg-type]
-    theirs = ct._scoped(robert, "test_letter", None)  # pyright: ignore[reportPrivateUsage]  # type: ignore[arg-type]
+    mine = ct._scoped(victoria, "test_letter", None)  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- the cleaning rule under test
+    theirs = ct._scoped(robert, "test_letter", None)  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- the cleaning rule under test
     assert mine == {"author": str(victoria.user_id)}
     assert mine != theirs
 
@@ -33,7 +35,7 @@ def test_ac33_an_author_only_anchor_scopes_each_thread_to_its_author() -> None:
 def test_anchor_readers_is_the_default_and_keeps_the_locator() -> None:
     assert ct.policy_of("never_registered") == "anchor_readers"
     ctx = _ctx()
-    assert ct._scoped(ctx, "never_registered", {"page": 2}) == {"page": 2}  # pyright: ignore[reportPrivateUsage]  # type: ignore[arg-type]
+    assert ct._scoped(ctx, "never_registered", {"page": 2}) == {"page": 2}  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- the cleaning rule under test
 
 
 def test_a_policy_is_registered_once() -> None:
@@ -44,21 +46,23 @@ def test_a_policy_is_registered_once() -> None:
 
 
 def test_ac34_client_text_is_plain_and_bounded() -> None:
-    assert ct._clean("  Can the note say both?\u202e ") == "Can the note say both?"  # pyright: ignore[reportPrivateUsage]
+    assert ct._clean("  Can the note say both?\u202e ") == "Can the note say both?"  # pyright: ignore[reportPrivateUsage] -- the cleaning rule under test
     with pytest.raises(EmptyComment):
-        ct._clean("   ")  # pyright: ignore[reportPrivateUsage]
+        ct._clean("   ")  # pyright: ignore[reportPrivateUsage]  # the cleaning rule under test
     with pytest.raises(CommentTooLong):
-        ct._clean("x" * (ct.MAX_CLIENT_BODY + 1))  # pyright: ignore[reportPrivateUsage]
+        ct._clean("x" * (ct.MAX_CLIENT_BODY + 1))  # pyright: ignore[reportPrivateUsage] -- the cleaning rule under test
 
 
 def test_only_a_client_person_takes_the_client_path() -> None:
     for ctx in (_ctx(client=False), _ctx(kind="agent"), _ctx(kind="system")):
         with pytest.raises(Exception, match="role"):
-            ct._client(ctx)  # pyright: ignore[reportPrivateUsage]  # type: ignore[arg-type]
+            ct._client(ctx)  # pyright: ignore[reportPrivateUsage, reportArgumentType]  # the cleaning rule under test
 
 
 def test_the_portal_registers_its_three_anchors() -> None:
-    import abacus.modules.portal.api  # noqa: F401  # registers at import
+    import abacus.modules.portal.api as portal_api  # registers at import
+
+    assert portal_api.ROUTERS
     from abacus.modules.collaboration.api import registered_kinds
 
     assert {"client_approval_item", "deliverable_version", "governance_communication"} <= set(

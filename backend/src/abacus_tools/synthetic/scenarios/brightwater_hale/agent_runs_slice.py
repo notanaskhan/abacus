@@ -77,7 +77,7 @@ def agent_runs_events() -> list[Event]:
             SLICE,
             {
                 "run_id": RUN_ID,
-                "agent_id": "audit_planning",
+                "agent_id": "engagement.agent",  # its planning run (CHECK: module.name)
                 "run_number": 4127,
                 "state": "running",
                 "started_at": STARTED.isoformat(),

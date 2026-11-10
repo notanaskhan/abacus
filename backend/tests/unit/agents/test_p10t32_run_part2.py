@@ -9,7 +9,11 @@ from __future__ import annotations
 import pytest
 
 from abacus.modules.agents.run_activities import StepOutcome
-from abacus.modules.agents.run_commands import RunNotEnded, StepNotFailed, _person
+from abacus.modules.agents.run_commands import (
+    RunNotEnded,
+    StepNotFailed,
+    _person,  # pyright: ignore[reportPrivateUsage] -- the live-person rule under test
+)
 from abacus.modules.agents.run_plan import PlanStep, Schedule, aggregate
 from abacus.modules.agents.run_waits import QUESTION_KINDS, run_workflow_id
 

@@ -58,7 +58,7 @@ describe("TAX-05 review preset", () => {
   it("e: all approved, the banner, and Request final approval… blocked while the Draft K-1 exists", () => {
     render(<ReviewPreset frame="e" />);
     expect(screen.getByText(COPY.allApproved)).toBeTruthy();
-    const request = screen.getByRole("button", { name: COPY.requestFinal }) as HTMLButtonElement;
+    const request = screen.getByRole<HTMLButtonElement>("button", { name: COPY.requestFinal });
     expect(request.disabled).toBe(true);
     expect(screen.getAllByText(COPY.draftBlocks).length).toBeGreaterThan(0);
     expect(screen.queryByText(/^Review \d+$/)).toBeNull();

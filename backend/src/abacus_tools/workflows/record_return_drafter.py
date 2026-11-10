@@ -18,14 +18,14 @@ import asyncio
 import sys
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 from temporalio import activity
 from temporalio.client import Client, WorkflowHandle
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.tax.drafter_workflow import (
+from abacus.modules.tax.api import (
     DraftInput,
     DraftOutcome,
     ReturnDrafterWorkflow,
@@ -54,7 +54,7 @@ class _Stubs:
             run_id: str,
             state: str,
             reason: str | None,
-            blocked: dict[str, object] | None,
+            blocked: dict[str, Any] | None,  # Any: JSON (Temporal cannot decode `object`)
         ) -> int:
             return 1
 
@@ -74,7 +74,10 @@ class _Stubs:
         return [set_state, draft]
 
 
-async def _drive(scenario: str, handle: WorkflowHandle[object, str]) -> None:
+async def _drive(
+    scenario: str,
+    handle: WorkflowHandle[Any, str],  # Any: the workflow class differs per recorder
+) -> None:
     if scenario == "proposed":
         return
     await asyncio.sleep(2)
@@ -99,7 +102,7 @@ async def _record_one(client: Client, out: Path, scenario: str) -> None:
             task_queue=queue,
         )
         await _drive(scenario, handle)
-        await handle.result()
+        await asyncio.wait_for(handle.result(), timeout=180)  # a stuck run fails, not hangs
         scrubbed = await decoded_and_scrubbed(await handle.fetch_history(), payload_codec())
         (out / name).write_text(scrubbed.to_json())
         print(f"recorded {out / name}")

@@ -2,7 +2,7 @@
 id: TASK-6719
 title: "T-04-T22: TXI-01 worksheet editor states a-g in fixture mode, panes 300-566-490"
 spec: SPEC-649
-acceptance_criteria: [AC-3.1, AC-3.2, AC-3.3, AC-3.4, AC-3.5, AC-3.6, AC-3.7, AC-3.8]
+acceptance_criteria: [AC-3]
 risk_zone: green
 status: in-review
 branch: s35-t04-t22
