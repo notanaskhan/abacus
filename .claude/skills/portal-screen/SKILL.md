@@ -30,6 +30,14 @@ portal domain plus firm custom domains (DEC-59), same-origin /v1.
    confirmation, never automatic.
 8. Emails are database templates rendered by the backend (contract C16); a screen never composes email.
 
+## Client comments on an anchor (R-02-T22; R-02-T25)
+
+A portal screen that lets a client comment registers its anchor kind in collaboration's anchor slot from `portal/thread_anchors.py`, through `collaboration.api.register_anchor`. The provider reports the anchor's facts for the caller, `None` when it is not theirs (404); it never decides who may comment.
+- **Who may post:** the route authorises its own portal action first (`client_approval.ask`, `deliverable.comment`, `tcwg.ask`). It then calls `collaboration.api.post_client_comment` (shared thread, sealed plain text, 1 to 4,000 characters, never in an audit or notification row) and `client_comments` for reads.
+- **Who reads:** `register_client_policy(kind, "author_only")` gives each client author their own thread, as POR-15's questions do; the default lets every reader of the anchor read.
+- **Firm replies** use the ordinary `post_comment` on the same thread.
+- **Copy:** never "Accrued" (DEC-01), never the firm's internal note.
+
 ## Tests
 INV-4 in every scenario: a second client persona and a third party cannot see each other's data. axe at all three widths.
 The white-label crawler on every state.

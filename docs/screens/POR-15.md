@@ -47,6 +47,8 @@ Every endpoint is in `docs/contracts/deliverables.md` (T02) or `docs/contracts/p
 - DV-10: the member email on send is the new Governance letter database template (DF-40)
 - DV-12: README labels board d Completion frame; the spec's d is the internal control letter (Tue Nov 24, 2026)
 
+- (R-02-T25) **Author-only questions.** "Ask the auditor…" opens a thread only its author reads (`author_only`, AC-33). Another committee member never sees it, and the firm replies on the same thread (R-02-T22).
+
 ## Links
 | From | To (manifest builder) | Planned or live |
 |---|---|---|

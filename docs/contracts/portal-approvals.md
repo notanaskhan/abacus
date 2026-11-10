@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C18 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | live (R-02-T11, 2026-11-09, DEC-3009; stub R-02-T03). `proposed_entry` and `fs_draft` are registered; `uncorrected_misstatements` (R-02-T15) and `fs_package` (C-02, A-08) still answer 409. Questions (R-02-T22) answer 501. The entries journal is live (R-02-T14 remainder, 2026-11-10, DEC-3172) |
+| Status | **v1 frozen 2026-11-10 (R-02-T25)**; live (R-02-T11, 2026-11-09, DEC-3009; stub R-02-T03). `proposed_entry` and `fs_draft` are registered; `uncorrected_misstatements` (R-02-T15) and `fs_package` (C-02, A-08) still answer 409. Questions (R-02-T22) answer 501. The entries journal is live (R-02-T14 remainder, 2026-11-10, DEC-3172) |
 | Provider epic | R-02 (SPEC-646) |
 | Consumers | A-06 (entries, drafts), A-07 (`fs.approved_by_management` and the acknowledgement for release), C-02, A-08 (packages), X-01 (system description, later) |
 | Freeze sprint | S30 |
@@ -101,3 +101,6 @@ principal `contact`, channel `portal`, `grant:<id>`), moves the statement and em
 |---|---|---|
 | v1 | 2026-11-06 | Stub (R-02-T03, DEC-2403) |
 | v1 | 2026-11-09 | Service, decider rule, `proposed_entry` and `fs_draft` providers (R-02-T11, DEC-3009) |
+
+## Freeze (R-02-T25)
+C18 v1 is frozen as of 2026-11-10: a new approval kind registers through the provider slot (additive); a change to a request or response shape is v2 with one sprint of overlap.
