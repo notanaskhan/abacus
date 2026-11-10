@@ -79,9 +79,9 @@ def test_ac_c16_the_three_renamed_kinds_are_registered_undotted() -> None:
 def test_ac_c16_every_catalogued_event_feeds_a_registered_kind() -> None:
     codes = set(notifications.registered())
     assert {entry.kind for entry in notifications.CATALOGUE.values()} <= codes
-    # P-10-T27 (DEC-3117), #1589: the relay also feeds `/v1/events` its invalidating events, through
-    # `INVALIDATIONS`, which the worker composes after every module's subscriptions; C16's own
-    # subscriptions hold only the catalogued events.
+    # P-10-T27 (DEC-3117), #1589: the relay also feeds `/v1/events` its invalidating events,
+    # through `INVALIDATIONS`, which the worker composes after every module's subscriptions; C16's
+    # own subscriptions hold only the catalogued events.
     from abacus.kernel.realtime import invalidating_events
 
     assert set(notifications.SUBSCRIPTIONS) == set(notifications.CATALOGUE)

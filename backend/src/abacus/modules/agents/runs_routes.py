@@ -44,7 +44,12 @@ from abacus.modules.agents.runs import (
     trace_for,
     writes_for,
 )
-from abacus.modules.agents.runs_v2_contract import BlockedOnOut, RunCountersOut, TriggerKind
+from abacus.modules.agents.runs_v2_contract import (
+    BlockedOnOut,
+    RunCountersOut,
+    RunStateV2,
+    TriggerKind,
+)
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 TRIGGER_KINDS: frozenset[str] = frozenset(get_args(TriggerKind))
@@ -230,7 +235,7 @@ class RunHeaderOut(BaseModel):
     plan_version: Annotated[int | None, classified("internal")] = None  # P-09-T14
     plan_steps: Annotated[list[PlanStepRefOut], classified("internal")] = []  # DEC-3142
     # P-10-T29: the v2 state (C2's 14 codes) and its reason code; null for a legacy run.
-    state: Annotated[str | None, classified("internal")] = None
+    state: Annotated[RunStateV2 | None, classified("internal")] = None
     state_reason: Annotated[str | None, classified("internal")] = None
 
 
@@ -579,7 +584,7 @@ def _header(header: RunHeader | None) -> RunHeaderOut | None:
         work_item_ref=header.work_item_ref,
         plan_version=header.plan_version,
         plan_steps=[PlanStepRefOut(key=k, label=label) for k, label in header.plan_steps],
-        state=header.state,
+        state=cast("RunStateV2 | None", header.state),  # agent_runs.state CHECK holds the 14 codes
         state_reason=header.state_reason,
     )
 

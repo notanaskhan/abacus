@@ -83,7 +83,7 @@ test.describe("P-09 agent runs (P-09-T19)", () => {
     await journey.as("lena-park", "/audits", { scenario: "WB-09:n", clock: DEMO_INSTANT });
     await journey.step("J18 step 5: not allowed, no run data shown", async (page) => {
       const drawer = page.getByRole("dialog").last();
-      await expect(drawer).toContainText("You don't have access to this run.");
+      await expect(drawer).toContainText("You can't open this trace");
       await expect(drawer).not.toContainText("PY2025 planning run");
     });
   });

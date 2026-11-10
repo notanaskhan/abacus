@@ -30,7 +30,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "governance_communication.due_set",
         "filing.updated",
         # reviewed 2026-11-10 (S34): P-10-T29 AgentRunWorkflow part 1's transitions
-        "agent_run.completed_v2",
+        "agent_run.finished",
         "agent_run.plan_proposed",
         "agent_run.plan_refused",
         "agent_run.state_changed",

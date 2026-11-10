@@ -605,6 +605,8 @@ NOT_A_STATUS = {
     # provisions (verified, unverified, unreadable); an input's state, never a status word.
     "EntryRuleOut.state": "an input's readiness for the entry-rule computation",
     "CompleteIn.state": "free-text input, not a vocabulary",
+    # A-02-T33 (#1601): the OAuth `state` round-trip value of the connect hand-off, never a status.
+    "HandoffIn.state": "the OAuth state parameter the provider returns (opaque)",
     # C5 v1.1 portal half (P-08-T01): client-side card states, never a firm object's status.
     "PortalHomeTodoOut.state": "a to-do card's state on POR-02 (open, none, overdue)",
     "PortalHomeStageOut.state": "a client stage's place in the tracker (done, current, upcoming)",

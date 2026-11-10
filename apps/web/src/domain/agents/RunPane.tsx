@@ -998,6 +998,7 @@ export function RunPane({
           {live && (
             <span
               data-live-dot="true"
+              role="img"
               aria-label="Run active"
               className="absolute left-[12px] size-[8px] rounded-full bg-green"
             />

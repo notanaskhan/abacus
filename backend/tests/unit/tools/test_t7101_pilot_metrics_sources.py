@@ -24,12 +24,12 @@ def test_every_module_api_is_imported_so_w4_to_w7_register(monkeypatch: object) 
         seen.append(name)
         return real(name, package)
 
-    monkeypatch.setattr(importlib, "import_module", spy)  # type: ignore[attr-defined]
+    monkeypatch.setattr(importlib, "import_module", spy)  # type: ignore[attr-defined] -- an untyped monkeypatch
     p.register_metric_sources()
     assert seen == [f"abacus.modules.{m}.api" for m in MODULES]
     # The owners of W4 to W7 are among them, and once imported each has registered.
     assert {"engagements", "requests", "audit_trail", "agents"} <= set(MODULES)
-    assert {"w4", "w5", "w6", "w7"} <= set(pilot_metrics._SOURCES)  # pyright: ignore[reportPrivateUsage]
+    assert {"w4", "w5", "w6", "w7"} <= set(pilot_metrics._SOURCES)  # pyright: ignore[reportPrivateUsage] -- the registry under test
 
 
 def test_main_registers_before_it_computes(monkeypatch: object) -> None:
@@ -45,8 +45,8 @@ def test_main_registers_before_it_computes(monkeypatch: object) -> None:
         calls.append("register")
 
     mp = monkeypatch  # pytest's MonkeyPatch
-    mp.setattr(p, "register_metric_sources", fake_register)  # type: ignore[attr-defined]
-    mp.setattr(p, "compute_pilot_week", fake_compute)  # type: ignore[attr-defined]
+    mp.setattr(p, "register_metric_sources", fake_register)  # type: ignore[attr-defined] -- an untyped monkeypatch
+    mp.setattr(p, "compute_pilot_week", fake_compute)  # type: ignore[attr-defined] -- an untyped monkeypatch
     firm = "293fc3e7-be13-4767-ae6a-ce245b2dbda9"
     assert p.main(["metrics", "--firm", firm, "--week", "2026-09-14"]) == 0
     assert calls == ["register", "compute"]
