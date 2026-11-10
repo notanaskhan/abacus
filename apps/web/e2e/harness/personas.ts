@@ -58,6 +58,9 @@ export const PERSONAS = {
   "meera-shah": portal("Meera Shah"),
   "mira-kapoor": portal("Mira Kapoor"), // F-06-T02: the TPL-16 signer on envelope E6
   "sam-ortiz": portal("Sam Ortiz", "third_party"),
+  // R-02-T23: POR-08's Copperleaf preparer of record and POR-15's committee member.
+  "ben-ashby": portal("Ben Ashby"),
+  "victoria-lam": portal("Victoria Lam"),
   // T-02-T32: the two K-1-only people of T-02 §1 (seed/portal-k1s.ts); the member has no name.
   "nora-calloway": portal("Nora Calloway"),
   "pell-street-member": {

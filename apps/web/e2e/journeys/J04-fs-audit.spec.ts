@@ -7,6 +7,7 @@
 // chapter 01 date (journey-e2e skill), never skipped or left out. Walkable on staging by M6 (Fri
 // Mar 5, 2027). The portal is white-labelled: no portal step may show the product's name (INV-4).
 import { DEMO_INSTANT, expect, test } from "../harness";
+import { artboardAs, board, noProductName, owner as r02Owner } from "./r02-support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -318,4 +319,27 @@ test.describe("J04 estimates and related parties (A-05-T61)", () => {
       await expect(page.getByRole("button", { name: /^Conclude$/ })).toHaveCount(0);
     });
   });
+});
+
+// R-02-T23 (R-02 §5.6): j04 13 on POR-09 (fixture project). The g/h co-review is A-10's.
+test.describe("J04 · R-02 deliverables", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(journey.project !== "fixture", "R-02's live swap (R-02-T28) and the batch deploy");
+  });
+
+  test("j04 13: Luis Ferrante reads the watermarked draft and the Final statements in POR-09", async ({
+    journey,
+  }) => {
+    await artboardAs(journey, "luis-ferrante", "POR-09", "f");
+    await journey.step("j04 13: Luis's deliverables (POR-09 f)", async (page) => {
+      await expect(board(page, "f")).toBeVisible();
+      await noProductName(page, "f");
+    });
+  });
+
+  test.fixme(
+    "j04 13 g/h: the co-review of the draft with Luis",
+    r02Owner("A-10 · POR-09 g and h (co-review), S36+"),
+    async () => {},
+  );
 });

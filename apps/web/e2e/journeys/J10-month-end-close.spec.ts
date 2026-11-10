@@ -5,6 +5,7 @@
 // holds the invoice (adding it again reads "7 of 10") and answers no binder rows, so the step
 // waits for the BND-02 live swap or CLS-03 (C-01).
 import { expect, test } from "../harness";
+import { artboardAs, board, noProductName } from "./r02-support";
 
 const INVOICE = "Sound Electric invoice — Aug 18 ($3,200)";
 
@@ -56,6 +57,29 @@ test.describe("J10", () => {
       await expect(
         page.getByText("4 within threshold · 20,020 · approved as one batch by Raj Malhotra"),
       ).toBeVisible();
+    });
+  });
+});
+
+// R-02-T23 (R-02 §5.6): j10 11 on POR-08 (fixture project); the full stack waits on C-02 (J10 P0
+// at S55).
+test.describe("J10 · R-02 approvals", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(journey.project !== "fixture", "C-02 registers the close package provider (S55)");
+  });
+
+  test("j10 11: Tess approves the August package in POR-08 on Sep 15 at 8:42 AM", async ({
+    journey,
+  }) => {
+    await artboardAs(journey, "tess-moreno", "POR-08", "b");
+    await journey.step("j10 11: approved by Tess Moreno (POR-08 b)", async (page) => {
+      await expect(
+        board(page, "b")
+          .getByText(/Tess Moreno/)
+          .first(),
+      ).toBeVisible();
+      await expect(board(page, "b").getByRole("button", { name: "Approve" })).toHaveCount(0);
+      await noProductName(page, "b");
     });
   });
 });

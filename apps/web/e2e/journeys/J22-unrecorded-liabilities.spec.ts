@@ -5,6 +5,7 @@
 // fixture project step 3 walks SHL-14's own scenario (`?screen=`, G-01-T16); step 4 and
 // the other projects wait for `binders.engine` on in E0 and the BND-02 and SHL-20 live swaps.
 import { expect, test } from "../harness";
+import { owner as r02Owner } from "./r02-support";
 
 const LIVE =
   "binders.engine is off in E0; the BND-02, SHL-14 and SHL-20 live swaps are P-06-T16's";
@@ -83,4 +84,14 @@ test.describe("J22 completion (A-06-T35)", () => {
   }) => {
     await journey.as("hannah-leclerc", "/audits/_auditId_/findings", { scenario: "AUD-15:a" });
   });
+});
+
+// R-02-T23 (R-02 §5.6): j22 8 needs Luis's AJE-3 on POR-08, which R-02-T19's fixtures do not draw
+// (a–f are Ben's, Tess's and Dana's); recorded until a Granite Peak POR-08 fixture lands.
+test.describe("J22 · R-02 approvals", () => {
+  test.fixme(
+    "j22 8: Luis declines AJE-3 68,400 in POR-08 and AUD-16 shows it Passed on SUM",
+    r02Owner("R-02 · a Granite Peak POR-08 fixture for Luis (AJE-3 68,400) and A-06's SUM, S36"),
+    async () => {},
+  );
 });

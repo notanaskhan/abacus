@@ -2,6 +2,7 @@
 // periods ending before Dec 15, 2026 are prepared under AR-C 70. Each step runs axe and INV-1 to
 // INV-5 (journey harness). The CLS consumer of the switch is C-01's; this step reads the standard.
 import { expect, test } from "../harness";
+import { owner as r02Owner } from "./r02-support";
 
 test.describe("J05", () => {
   test("j05 S: SSARS 27 early adoption off, so AR-C 70 for Copperleaf (KNW-04 h)", async ({
@@ -32,4 +33,16 @@ test.describe("J05 completion (A-06-T35)", () => {
   }) => {
     await journey.as("priya-raman", "/audits/_auditId_/fs-disclosure", { scenario: "AUD-20:a" });
   });
+});
+
+// R-02-T23 (R-02 §5.6): variant P needs Carla Juniper's preparation statements on POR-08, which no
+// provider registers yet (A-08) and R-02-T19's fixtures do not draw.
+test.describe("J05 · R-02 approvals", () => {
+  test.fixme(
+    "j05 P: Carla Juniper approves the preparation statements in POR-08",
+    r02Owner(
+      "A-08 · registers the preparation-statements approval provider; then a Carla fixture",
+    ),
+    async () => {},
+  );
 });

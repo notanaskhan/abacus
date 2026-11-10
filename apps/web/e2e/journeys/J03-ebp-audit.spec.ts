@@ -11,6 +11,7 @@
 import type { Page } from "@playwright/test";
 import { DEMO_INSTANT, expect, test } from "../harness";
 import { M13, artboard } from "../signatures/support";
+import { artboardAs, board, noProductName, owner as r02Owner } from "./r02-support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -498,5 +499,114 @@ test.describe("J03 EBP-08 and EBP-07 (A-05-T61)", () => {
     await journey.step("J03 step 12b: before Summit's draft arrives (EBP-07 d)", async (page) => {
       await expect(page.getByText("Draft Form 5500 not received").first()).toBeVisible();
     });
+  });
+});
+
+// R-02-T23 (R-02 §5.6): J03's portal halves on POR-15, POR-08 and POR-09 (fixture project); J03
+// P0 lands at S36 with A-07.
+test.describe("J03 · R-02 portal halves", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(journey.project !== "fixture", "R-02's live swap (R-02-T28) and the batch deploy");
+  });
+
+  test("j03 9b: the Benefits Committee acknowledges the planning letter in the governance room", async ({
+    journey,
+  }) => {
+    await artboardAs(journey, "victoria-lam", "POR-15", "a");
+    await journey.step(
+      "j03 9b: the planning letter, two of three acknowledged (POR-15 a)",
+      async (page) => {
+        await expect(board(page, "a").getByText("Benefits Committee").first()).toBeVisible();
+        await expect(board(page, "a").getByText("Our responsibilities")).toBeVisible();
+        await expect(board(page, "a").getByRole("button", { name: "Acknowledge" })).toBeVisible();
+        await noProductName(page, "a");
+      },
+    );
+    await artboardAs(journey, "victoria-lam", "POR-15", "b");
+    await journey.step("j03 9b: acknowledged by the committee (POR-15 b)", async (page) => {
+      await expect(
+        board(page, "b").getByText("Acknowledged by the committee · Sep 21").first(),
+      ).toBeVisible();
+      await expect(board(page, "b").getByRole("button", { name: "Acknowledge" })).toHaveCount(0);
+    });
+  });
+
+  test("j03 13: Dana accepts AJE-1 in POR-08 and the misstatement is Booked", async ({
+    journey,
+  }) => {
+    await artboardAs(journey, "dana-kowalski", "POR-08", "e");
+    await journey.step("j03 13: AJE-1 waits on Dana (POR-08 e)", async (page) => {
+      await expect(board(page, "e").getByText(/AJE-1/).first()).toBeVisible();
+      await expect(board(page, "e").getByText("$48,600.00").first()).toBeVisible();
+    });
+    await artboardAs(journey, "dana-kowalski", "POR-08", "e2");
+    await journey.step("j03 13: accepted, recorded (POR-08 e2)", async (page) => {
+      await expect(
+        board(page, "e2")
+          .getByText(/Accepted by Dana Kowalski · Sep 25/)
+          .first(),
+      ).toBeVisible();
+    });
+  });
+
+  test.fixme(
+    "j03 13 (firm half): AUD-16 shows AJE-1 Booked after Dana's acceptance",
+    r02Owner(
+      "A-06 · the SUM's booked state from R-02's decision event, full stack after the batch",
+    ),
+    async () => {},
+  );
+
+  test("j03 17: the report and FS appear Final in POR-09 and in the room's Reports", async ({
+    journey,
+  }) => {
+    await artboardAs(journey, "dana-kowalski", "POR-09", "c");
+    await journey.step("j03 17: Final documents with Download (POR-09 c)", async (page) => {
+      await expect(board(page, "c").getByText("Final").first()).toBeVisible();
+      await expect(
+        board(page, "c").getByRole("button", { name: "Download" }).first(),
+      ).toBeVisible();
+    });
+    await artboardAs(journey, "victoria-lam", "POR-15", "e");
+    await journey.step("j03 17: the room's Reports (POR-15 e)", async (page) => {
+      await expect(
+        board(page, "e").getByRole("button", { name: "Download" }).first(),
+      ).toBeVisible();
+    });
+  });
+
+  test("j03 18: the committee acknowledges the AU-C 265/703 letter on Nov 24", async ({
+    journey,
+  }) => {
+    await artboardAs(journey, "victoria-lam", "POR-15", "d");
+    await journey.step("j03 18: the internal control letter is new (POR-15 d)", async (page) => {
+      await expect(
+        board(page, "d").getByText(
+          "Significant deficiency — Remittance of participant contributions",
+        ),
+      ).toBeVisible();
+      await expect(board(page, "d").getByText("Sent Nov 20 · due Dec 8")).toBeVisible();
+      await expect(board(page, "d").getByRole("button", { name: "Acknowledge" })).toBeVisible();
+    });
+  });
+
+  test("j03 privacy: Victoria Lam's answers and question stay invisible to Dana Kowalski and Robert Haines", async ({
+    journey,
+  }) => {
+    await artboardAs(journey, "victoria-lam", "POR-15", "c");
+    await journey.step(
+      "j03 privacy: Victoria's two private inquiries (POR-15 c)",
+      async (page) => {
+        await expect(board(page, "c").getByRole("button", { name: "Send answers" })).toBeVisible();
+      },
+    );
+    await journey.as("dana-kowalski", "/components/screens/POR-15?st=n&frame=1");
+    await journey.step(
+      "j03 privacy: Dana's management grant opens no room",
+      async (page) => {
+        await expect(page.getByRole("button", { name: "Send answers" })).toHaveCount(0);
+      },
+      { outOfScope: ["Victoria Lam"] },
+    );
   });
 });
