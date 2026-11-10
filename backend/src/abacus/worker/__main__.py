@@ -94,11 +94,16 @@ MODULES = tuple(
     if hasattr(api, "SUBSCRIPTIONS")
 )
 SUBSCRIBERS = tuple(module.SUBSCRIPTIONS for module in MODULES)
+# P-10-T27 (DEC-3117): the `/v1/events` invalidation subscribers, kept apart from a module's
+# `SUBSCRIPTIONS` and routed after all of them.
+INVALIDATORS = tuple(
+    module.INVALIDATIONS for module in MODULES if hasattr(module, "INVALIDATIONS")
+)
 
 
 def publisher() -> RoutingPublisher:
     handlers: dict[str, list[Handler]] = {}
-    for subscriptions in SUBSCRIBERS:
+    for subscriptions in (*SUBSCRIBERS, *INVALIDATORS):
         for event_type, handler in subscriptions.items():
             handlers.setdefault(event_type, []).append(handler)
     return RoutingPublisher(handlers)

@@ -43,20 +43,11 @@ from abacus.modules.notifications.workflows import (
 SUBSCRIPTIONS = dict.fromkeys(CATALOGUE, notify)
 
 Handler = Callable[[OutboxEvent], Awaitable[None]]
-# P-10-T27 (DEC-3117): the invalidation stream's subscriber, after `notify` where both read one
-# event; registered here so the worker composes it with the rest.
+# P-10-T27 (DEC-3117): the invalidation stream's subscriber. It feeds no C16 kind, so it stays out
+# of `SUBSCRIPTIONS`, which holds only the catalogued events; the worker composes `INVALIDATIONS`
+# after every module's `SUBSCRIPTIONS`, so it runs after `notify` where both read one event.
 _register_realtime()
-for _event in _invalidating_events():
-    _first = SUBSCRIPTIONS.get(_event)
-    if _first is None:
-        SUBSCRIPTIONS[_event] = _on_realtime
-    else:
-
-        async def _both(event: OutboxEvent, _f: Handler = _first) -> None:
-            await _f(event)
-            await _on_realtime(event)
-
-        SUBSCRIPTIONS[_event] = _both
+INVALIDATIONS: dict[str, Handler] = dict.fromkeys(_invalidating_events(), _on_realtime)
 
 
 def register_kind_source(
@@ -87,6 +78,7 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 __all__ = [
     "ACTIVITIES",
     "CATALOGUE",
+    "INVALIDATIONS",
     "NOTIFICATION_PURGE_ID",
     "ROUTERS",
     "SCHEDULES",

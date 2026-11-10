@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from abacus.modules.notifications.api import CATALOGUE, SUBSCRIPTIONS, TEMPLATES
+from abacus.modules.notifications.api import CATALOGUE, INVALIDATIONS, SUBSCRIPTIONS, TEMPLATES
 from abacus.modules.notifications.email import SENTENCES
 
 
@@ -21,9 +21,14 @@ def test_ac7_each_event_emails_its_own_sentence() -> None:
 
 
 def test_ac1_every_catalogued_event_is_subscribed() -> None:
-    # P-10-T27 (DEC-3117): the real-time invalidations subscribe beside the catalogue.
+    assert set(SUBSCRIPTIONS) == set(CATALOGUE)
+
+
+def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None:
+    # P-10-T27 (DEC-3117): `/v1/events` invalidations feed no C16 kind, so they stay out of
+    # `SUBSCRIPTIONS`; the worker composes them after every module's subscriptions.
     realtime = {"notification.created", "request_item.status_changed", "report.released"}
-    assert set(SUBSCRIPTIONS) == set(CATALOGUE) | realtime
+    assert set(INVALIDATIONS) == realtime
 
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
