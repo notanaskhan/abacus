@@ -6,7 +6,7 @@ of record before submission, and no answer may promise a control, region or cert
 not hold on the day it is sent. Items marked **[open]** wait on another row; nothing here is a
 commitment until submitted.
 
-The app that goes to the assessment is a **new app with only `com.intuit.quickbooks.accounting`**.
+The app that goes to the assessment is **abacusv2**, created with only `com.intuit.quickbooks.accounting`.
 The Quick Start app (payments and OpenID scopes saved) stays a sandbox-only throwaway: scopes
 can't be removed once saved.
 
@@ -14,7 +14,7 @@ can't be removed once saved.
 
 | Field | Answer |
 |---|---|
-| App name shown on Intuit's consent screen | **abacus** (Ayush, 2026-11-03; DEC-2099). A neutral name, so a firm's white-label portal never shows "Accrued" (DEC-01, ADR-133). This is the one place the code namespace is shown to clients, by Ayush's decision |
+| App name shown on Intuit's consent screen | **abacusv2** (Ayush, 2026-11-05; DEC-2099). A neutral name, so a firm's white-label portal never shows "Accrued" (DEC-01, ADR-133). This is the one place a name built on the code namespace is shown to clients, by Ayush's decision |
 | Scope | `com.intuit.quickbooks.accounting` only. No Payments, no OpenID, no write scope (a write scope waits on the W1 adapter ADR) |
 | Host domain | **[open: F-09-T09]** the neutral portal domain |
 | Launch URL | **[open: F-09-T09]** `https://<connect host>/` (the firm app's connections screen) |
