@@ -261,6 +261,8 @@ def test_adr165_pre_session_is_used_only_on_the_three_sign_in_routes() -> None:
         "/v1/invitations/preview",
         # P-08-T21: a recipient's link renewal, always 202.
         "/v1/portal/links/renew",
+        # A-02-T33 (DEC-3902): the connect host's hand-off; the OAuth state authenticates it.
+        "/v1/connections/handoff",
     }
 
 

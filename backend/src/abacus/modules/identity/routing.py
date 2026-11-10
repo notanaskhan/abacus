@@ -81,6 +81,9 @@ PRE_SESSION_PATHS: Final = frozenset(
     | {"/v1/invitations/preview"}
     # P-08-T21 (DEC-139, P-08 §4.3): a recipient renews a portal email's link, always 202.
     | {"/v1/portal/links/renew"}
+    # A-02-T33 (DEC-3902): the connect host's hand-off. The OAuth state authenticates it; it
+    # answers only the host a live state began on (404 otherwise) and never spends the state.
+    | {"/v1/connections/handoff"}
 )
 # P-08-T05 (ADR-163 §6, ADR-152; on the ROUTE-001 exception list): the portal's branding, read
 # before anyone signs in. Public fields only, the same shape for any host; no other path may

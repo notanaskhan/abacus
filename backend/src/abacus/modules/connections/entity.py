@@ -55,6 +55,7 @@ from abacus.modules.connections.connect import (
     hash_state,
     oauth_providers,
     open_verifier,
+    origin_host,
     pkce_pair,
     redirect_uri,
     seal_verifier,
@@ -451,6 +452,7 @@ async def start_entity(
     *,
     authorized: bool,
     connection_id: UUID | None = None,
+    host: str | None = None,
 ) -> Started:
     """AC-36, AC-37: authorise (`connection.create`, fresh MFA), refuse without the toggle,
     record the consent as shown and a single-use state, answer the provider's sign-in URL."""
@@ -492,6 +494,7 @@ async def start_entity(
             connection_id=reconnect.id if reconnect is not None else None,
             category=target.category,
             verifier_sealed=await seal_verifier(ctx.tenant_id, hash_state(state), verifier),
+            origin_host=origin_host(host),  # A-02-T33: the connect host hands back to it
         )
         tx.record(
             "connection.consent_recorded",

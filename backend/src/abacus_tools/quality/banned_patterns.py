@@ -729,6 +729,9 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     | {"/v1/invitations/preview"}
     # P-08-T21 (DEC-139): a recipient's link renewal, always 202, under `PRE_SESSION`.
     | {"/v1/portal/links/renew"}
+    # A-02-T33 (DEC-3902): the connect host's hand-off, under `PRE_SESSION`; the OAuth state
+    # authenticates it and it answers only that state's origin host.
+    | {"/v1/connections/handoff"}
     # ADR-152 amendment (DEC-1281): the DocuSeal webhook, signature-verified, under
     # `PROVIDER_WEBHOOK`.
     | {"/v1/webhooks/docuseal/{tenant_id}/{install_id}"}

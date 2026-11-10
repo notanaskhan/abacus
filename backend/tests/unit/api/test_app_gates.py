@@ -361,6 +361,8 @@ NOT_CREATING = {
     "/v1/portal/room/suggest",
     # P-08-T18 (SPEC-320 AC-12): the invitation preview reads; nothing is created.
     "/v1/invitations/preview",
+    # A-02-T33: the connect host's hand-off reads a state's origin host; nothing is created.
+    "/v1/connections/handoff",
     # P-07-T29 (team, acceptance, independence and conflict stubs): these move a record or
     # answer an existing request (a completed check or condition, a send to the partner, a
     # confirmation or decline, a reminder, a replaced EQR, a cleared result), so 200.

@@ -296,6 +296,7 @@ GLOBAL_TABLES = frozenset(
     | {"plans"}  # 0088
     | {"plan_modules"}  # 0107 (Q-01-T45)
     | {"portal_domains"}  # 0111 (P-08-T05)
+    | {"connection_state_firms"}  # 0790 (A-02-T33): a state hash's firm, definers only
     | {"retention_floors", "retention_policy_defaults"}  # 0112 (Q-02-T23)
     | {"email_templates", "email_template_versions"}  # 0092 (P-01-T05)
     | {"auth_login_states", "auth_sessions", "auth_session_cookies"}  # 0101 (P-01-T09)
@@ -413,6 +414,12 @@ DEFINER_FUNCTIONS = frozenset(
     # 0686 (A-07-T13, P-43): the locked-work write guard, a trigger function only. It reads
     # the work item and engagement under the caller's tenant; search path pinned.
     | {"archived_guard"}
+    # 0790 (A-02-T33, DEC-3902): the connect host's hand-off. `connection_state_firm_note` is the
+    # trigger that notes a new state's hash and firm in the global `connection_state_firms`;
+    # `connection_state_origin` answers a live state's stored origin host, read in that firm's
+    # tenant scope, only when it is the app host or an active portal host of that firm, and never
+    # spends the state. Search path pinned, revoked from PUBLIC, executable by the app role.
+    | {"connection_state_origin", "connection_state_firm_note"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
@@ -422,6 +429,7 @@ OWNER_ONLY_FUNCTIONS = frozenset(
     | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
     | {"active_tenant_ids", "standards_sets_apply"}
     | {"archived_guard"}  # 0686: fires as a trigger; nobody calls it
+    | {"connection_state_firm_note"}  # 0790 (A-02-T33): fires as a trigger; nobody calls it
 )
 # Definer functions for the operator role only (Q-01-T19): `abacus_ops` executes them, the
 # application role must not.

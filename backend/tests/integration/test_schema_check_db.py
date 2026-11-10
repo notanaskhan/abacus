@@ -3206,6 +3206,8 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         # and refused to anyone but its own system actor.
         | {"prune_run_events", "prune_realtime_events"}
         | {"archived_guard"}  # 0686 (A-07-T13): an archived engagement's rows refuse a change
+        # 0790 (A-02-T33): the connect host's hand-off: the hash-to-firm note and the lookup.
+        | {"connection_state_origin", "connection_state_firm_note"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

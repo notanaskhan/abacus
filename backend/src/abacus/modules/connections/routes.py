@@ -17,6 +17,7 @@ from abacus.modules.connections.connect import (
     access_log,
     check,
     connection_of,
+    handoff_origin,
     providers,
     revoke,
     start,
@@ -42,7 +43,7 @@ from abacus.modules.connections.ledger_import import (
 )
 from abacus.modules.connections.retrievals import trigger_retrieval
 from abacus.modules.connections.service import RetrievalView, retrieval_status
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import PRE_SESSION, AbacusRouter, AuthContext, current_context
 
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}/retrievals", tags=["retrievals"])
 Status = Literal["running", "succeeded", "failed_validation", "failed", "queued"]
@@ -146,6 +147,20 @@ class CompleteIn(BaseModel):
     code: Annotated[str, Field(min_length=1, max_length=2000), classified("restricted")]
 
 
+class HandoffIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    state: Annotated[str, Field(min_length=1, max_length=200), classified("restricted")]
+
+
+class HandoffOut(BaseModel):
+    """A-02-T33: where the connect host sends the browser on; the host only, never a tenant."""
+
+    model_config = ConfigDict(frozen=True)
+
+    origin_host: Annotated[str, classified("internal")]
+
+
 class CompleteOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -202,9 +217,10 @@ async def providers_route(engagement_id: UUID, ctx: Ctx) -> list[ProviderOut]:
 @connection_router.post(
     "/start", action="connection.create", response_model=StartOut, errors=(409,)
 )
-async def start_route(engagement_id: UUID, body: StartIn, ctx: Ctx) -> StartOut:
-    """SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting."""
-    started = await start(ctx, engagement_id, body.provider)
+async def start_route(engagement_id: UUID, body: StartIn, ctx: Ctx, request: Request) -> StartOut:
+    """SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting. A-02-T33: the
+    state keeps this request's `Host` (after `TrustedHosts`), never anything in the query."""
+    started = await start(ctx, engagement_id, body.provider, host=request.headers.get("host"))
     return StartOut(authorise_url=started.authorise_url)
 
 
@@ -226,6 +242,17 @@ async def complete_route(body: CompleteIn, ctx: Ctx) -> CompleteOut:
         client_entity_id=done.client_entity_id if done.connection_id is not None else None,
         reconnected=done.reconnected,
     )
+
+
+@complete_router.post("/handoff", action=PRE_SESSION, response_model=HandoffOut)
+async def handoff_route(body: HandoffIn) -> HandoffOut:
+    """A-02-T33 (DEC-3902; ADR-152, on the ROUTE-001 exception list): the provider returns every
+    firm's flow to the one registered connect host, where no session is valid. Its page sends
+    the state here and is told the host the flow began on, to send the browser on to with the
+    provider's query unchanged. The state authenticates the call: 404, one answer, for one that
+    is unknown, used or expired, or whose host is not the app host or an active portal host of
+    its own firm. Nothing else is answered, and the state is not spent (completion does that)."""
+    return HandoffOut(origin_host=await handoff_origin(body.state))
 
 
 @connection_router.get("", action="connection.read_log", response_model=ConnectionOut | None)
