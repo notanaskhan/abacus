@@ -1,4 +1,4 @@
-# Accessibility audits deferred; no live pilot firms (DEC-1391, amended by DEC-1530)
+# Accessibility audits deferred; no live pilot firms (DEC-1391, amended by DEC-1530 and DEC-4100)
 
 Decided 2026-11-01 by Ayush: **no external accessibility audit, and no in-house accessibility
 audit, for now.** Both wait for a decision that books one. Same date, a standing fact: **no pilot
@@ -84,18 +84,36 @@ reported as PF-X1's ("rehearsed on PF-X1, synthetic"), never as a live firm's. W
 - runbook and rollback rehearsals, canary and journey walks, evidence packs assembled from them,
   each labelled synthetic.
 
-**What still needs a real firm** (stays open, "waiting on a live firm"):
+**Widened on 2026-11-10 (DEC-4100).** Ayush, as an internal test of progress: every S0–S25 row
+whose acceptance needs a pilot firm runs on PF-X1, including the clauses DEC-1530 left open. The
+list, with what each row needs and where it stands, is `PF-X1-runs.md`.
 
-- `tenant.real` in `make go-live-check` (fails on PF-X1 by design) and so `go_live_dossier check
-  --ready`; a milestone's "the pilot firm is live" (M11 and later) stays open;
-- signed MSA, DPA and pilot terms; counsel-approved §7216 templates; the SOC 2, pen-test and
-  sub-processor packet (dossier contract-1 to contract-4);
-- a firm person's confirmations: the champion's system-of-record confirmation, the firm admin's
-  shadow-rules acknowledgement, champion memos;
-- reconciliation against a firm's own engine data (PF-X1 reconciles to the fake CCH only);
-- founding-price invoices, support hours against a live reserve, SEV and escaped-defect logs from
-  real use, exit evidence;
-- rule 3: a flag waiting for "on for every live firm" still waits; PF-X1 is never a live firm.
+- Brightwater Hale is **extended, not copied**: its scenario gains the synthetic files, inputs and
+  data the rows need, through service APIs and import endpoints only (AGENTS rule 16; no kit sample
+  data, DF-35). A second firm would collide on the scenario's global ids, so a row that names a
+  second or third firm runs once, on PF-X1, and records that the others are not there.
+- **The clauses DEC-1530 left open now run synthetically too:**
+  - `tenant.real` and `go_live_dossier check --ready`, as a labelled rehearsal
+    (`go_live --rehearse-real`; `check --ready --rehearsal`). Plain `--ready` on PF-X1 still fails;
+  - signed MSA, DPA and pilot terms, as synthetic documents marked SYNTHETIC on every page and
+    never sent anywhere;
+  - a firm person's confirmations (system of record, shadow-rules acknowledgement, champion memos,
+    window notices), given by Brightwater Hale's seeded people;
+  - CCH reconciliation, against the fake CCH (`abacus_tools/fakes/cch_axcess.py`);
+  - founding-price invoices, as a synthetic record with no amount (the decision log's money rule).
+- **Labelled:** every such run reads "synthetic (PF-X1)" in its record and in `status-verified.csv`,
+  never as a live firm's.
+- **Comes back:** the real-firm version of each clause is a go-live check for the first real firm
+  that signs, listed in `docs/ops/go-live/PF-X1.md` §Real-firm go-live checks. A real firm gets its
+  own dossier and never inherits PF-X1's evidence.
+
+**Still not synthetic** (stays open, with the person who acts named):
+
+- what DEC-2098 keeps with the founders: a counsel review or advice, a vendor contract, a price, a
+  hire, and a founder's own signature on a dossier (the sign-off table);
+- rule 3: a flag waiting for "on for every live firm" still waits; PF-X1 is never a live firm;
+- what needs a hosted stack (staging journeys, `make seed-staging`, real SES and DNS, the paging
+  tool): partial, with the command for Ayush in `PF-X1-runs.md`.
 
 **Untouched:** every gate DEC-1389 keeps open (pen test #1, deltas #1 and #2, "delta #2 closed" in
 T-01-T47's pack) and rule 4 above.
