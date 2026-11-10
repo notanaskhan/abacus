@@ -540,8 +540,37 @@ async def approve_deliverable_route(
 async def list_page_comments_route(
     deliverable_id: UUID, version_no: int, ctx: Member
 ) -> PageCommentsOut:
+    """POR-09's comment column: the version's shared page threads (R-02-T22, AC-32)."""
+    from abacus.modules.collaboration.api import client_comments
+
     await _flag_on(ctx, PORTAL_DELIVERABLES)
-    _not_yet()
+    found = await client_comments(
+        ctx,
+        anchor_kind="deliverable_version",
+        anchor_id=deliverable_id,
+        locator={"version": version_no, "page": 1},
+    )
+    return PageCommentsOut(
+        items=[_page_comment(c) for c in found if c.locator.get("version") == version_no]
+    )
+
+
+def _page_comment(c: object) -> PageCommentOut:
+    from abacus.modules.collaboration.api import ClientComment
+
+    comment = cast(ClientComment, c)
+    where = comment.locator
+    x, y = where.get("x"), where.get("y")
+    return PageCommentOut(
+        id=comment.id,
+        page=int(where.get("page", 1)),
+        line_ref=str(where["line_ref"]) if "line_ref" in where else None,
+        x=int(x) / 10_000 if isinstance(x, int) else None,
+        y=int(y) / 10_000 if isinstance(y, int) else None,
+        author=comment.author_name,
+        body=comment.body,
+        created_at=comment.created_at,
+    )
 
 
 @deliverables_router.post(
@@ -558,9 +587,25 @@ async def add_page_comment_route(
     ctx: Member,
     idempotency_key: IdempotencyKey,
 ) -> PageCommentOut:
-    """A version with `page_comments = false` refuses a pin: 409."""
+    """A version with `page_comments = false` refuses a pin: 409. A pin's x and y are kept as
+    integers in ten-thousandths (locators hold no floats)."""
+    from abacus.modules.collaboration.api import post_client_comment
+
+    del idempotency_key  # one comment per send; the client's retry posts again by design
     await _flag_on(ctx, PORTAL_DELIVERABLES)
-    _not_yet()
+    locator: dict[str, str | int] = {"version": version_no, "page": body.page}
+    if body.line_ref:
+        locator["line_ref"] = body.line_ref
+    elif body.x is not None and body.y is not None:
+        locator["x"], locator["y"] = round(body.x * 10_000), round(body.y * 10_000)
+    posted = await post_client_comment(
+        ctx,
+        anchor_kind="deliverable_version",
+        anchor_id=deliverable_id,
+        locator=locator,
+        body=body.body,
+    )
+    return _page_comment(posted)
 
 
 @governance_router.get(
@@ -744,8 +789,18 @@ async def acknowledge_communication_route(
 )
 async def list_private_questions_route(communication_id: UUID, ctx: Member) -> PrivateQuestionsOut:
     """The author's own thread; other members and management get 404 (AC-33)."""
+    from abacus.modules.collaboration.api import client_comments
+
     await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
-    _not_yet()
+    found = await client_comments(
+        ctx, anchor_kind="governance_communication", anchor_id=communication_id
+    )
+    return PrivateQuestionsOut(
+        items=[
+            PrivateQuestionOut(id=c.id, author=c.author_name, body=c.body, created_at=c.created_at)
+            for c in found
+        ]
+    )
 
 
 @governance_router.post(
@@ -761,5 +816,18 @@ async def ask_auditor_route(
     ctx: Member,
     idempotency_key: IdempotencyKey,
 ) -> PrivateQuestionOut:
+    """ "Ask the auditor…": the member's own thread on the letter (author-only readers)."""
+    from abacus.modules.collaboration.api import post_client_comment
+
+    del idempotency_key
     await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
-    _not_yet()
+    posted = await post_client_comment(
+        ctx,
+        anchor_kind="governance_communication",
+        anchor_id=communication_id,
+        locator=None,
+        body=body.body,
+    )
+    return PrivateQuestionOut(
+        id=posted.id, author=posted.author_name, body=posted.body, created_at=posted.created_at
+    )

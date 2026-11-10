@@ -520,6 +520,7 @@ __all__ = [
     "follows_gate",
     "g4_facts",
     "governance_letter",
+    "governance_communication_scope",
     "governance_letter_pdf",
     "governance_rooms",
     "import_grouping_csv",
@@ -605,6 +606,9 @@ from abacus.modules.assurance.governance_room import (  # noqa: E402
     acknowledge as acknowledge_letter,
 )
 from abacus.modules.assurance.governance_room import letter as governance_letter  # noqa: E402
+from abacus.modules.assurance.governance_room import (  # noqa: E402  # R-02-T22: its anchor
+    communication_scope as governance_communication_scope,
+)
 from abacus.modules.assurance.governance_room import (  # noqa: E402
     letter_pdf as governance_letter_pdf,
 )

@@ -5,13 +5,16 @@ import type {
   DeliverablesOut,
   DeliverableVersionOut,
   K1RowOut,
+  PageCommentOut,
 } from "@abacus/api-client";
 import { downloadDeliverable, getDeliverablePage } from "@abacus/api-client";
 import {
+  addPageCommentMutation,
   approveDeliverableMutation,
   getDeliverableOptions,
   listDeliverablesOptions,
   listPageCommentsOptions,
+  listPageCommentsQueryKey,
   portalK1sOptions,
 } from "@abacus/api-client/query";
 import {
@@ -277,23 +280,88 @@ function PageImage({
   );
 }
 
-function Comments({
-  deliverableId,
-  version,
-}: {
-  deliverableId: string;
-  version: DeliverableVersionOut;
-}): JSX.Element | null {
-  const now = useNow();
-  const listed = useQuery({
+function useComments(deliverableId: string, version: DeliverableVersionOut) {
+  return useQuery({
     ...listPageCommentsOptions({
       path: { deliverable_id: deliverableId, version_no: version.version_no },
     }),
     enabled: version.page_comments && version.allowed_actions.includes("comment"),
     retry: false,
   });
+}
+
+/** R-02-T22 (AC-32): pins on the page for its comments, in reading order; the selected one lit. */
+function Pins({
+  items,
+  page,
+  selected,
+  onSelect,
+}: {
+  items: readonly PageCommentOut[];
+  page: number;
+  selected: string | null;
+  onSelect: (id: string) => void;
+}): JSX.Element {
+  return (
+    <>
+      {items.map((c, i) =>
+        c.page === page ? (
+          <button
+            key={c.id}
+            type="button"
+            data-pin={i + 1}
+            aria-pressed={selected === c.id}
+            aria-label={`Comment ${String(i + 1)} · Page ${String(c.page)}${c.line_ref ? ` · ${c.line_ref}` : ""}`}
+            onClick={() => {
+              onSelect(c.id);
+            }}
+            style={{
+              left: `${String((c.x ?? 0.04) * 100)}%`,
+              top: `${String((c.y ?? 0.1 + 0.06 * i) * 100)}%`,
+            }}
+            className={`absolute flex size-[22px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[11px] font-medium shadow-e1 ${selected === c.id ? "bg-match-mark text-on-dark ring-2 ring-match-line" : "bg-ink text-card"}`}
+          >
+            {i + 1}
+          </button>
+        ) : null,
+      )}
+    </>
+  );
+}
+
+function Comments({
+  deliverableId,
+  version,
+  page,
+  selected,
+  onSelect,
+}: {
+  deliverableId: string;
+  version: DeliverableVersionOut;
+  page: number;
+  selected: string | null;
+  onSelect: (id: string) => void;
+}): JSX.Element | null {
+  const now = useNow();
+  const queryClient = useQueryClient();
+  const listed = useComments(deliverableId, version);
+  const [draft, setDraft] = useState("");
+  const [line, setLine] = useState("");
+  const add = useMutation({
+    ...addPageCommentMutation(),
+    onSuccess: (posted) => {
+      setDraft("");
+      onSelect(posted.id);
+      void queryClient.invalidateQueries({
+        queryKey: listPageCommentsQueryKey({
+          path: { deliverable_id: deliverableId, version_no: version.version_no },
+        }),
+      });
+    },
+  });
   if (!version.page_comments) return null;
   const threads = listed.data?.items ?? [];
+  const canComment = version.allowed_actions.includes("comment");
   return (
     <aside aria-label="Comments" className="flex w-[280px] shrink-0 flex-col bg-card hairline-l">
       <h3 className="flex h-[44px] items-center px-[12px] text-body font-medium">
@@ -301,13 +369,24 @@ function Comments({
       </h3>
       <ol className="flex flex-col gap-[8px] px-[12px]">
         {threads.map((c, i) => (
-          <li key={c.id} data-comment={c.id} className="rounded-nested p-[12px] shadow-e1">
-            <p className="flex items-center gap-[6px] text-meta text-ink-3">
+          <li
+            key={c.id}
+            data-comment={c.id}
+            data-selected={selected === c.id}
+            className={`rounded-nested p-[12px] shadow-e1 ${selected === c.id ? "bg-match-bg inset-ring-1 inset-ring-match-line" : ""}`}
+          >
+            <button
+              type="button"
+              className="flex items-center gap-[6px] text-meta text-ink-3"
+              onClick={() => {
+                onSelect(c.id);
+              }}
+            >
               <span className="inline-flex size-[18px] items-center justify-center rounded-full bg-ink text-[10.5px] font-medium text-card">
                 {i + 1}
               </span>
               {`Page ${String(c.page)}${c.line_ref ? ` · ${c.line_ref}` : ""}`}
-            </p>
+            </button>
             <p className="pt-[4px] text-dense font-medium">
               {c.author} · {formatDate(c.created_at, { now })}
             </p>
@@ -315,13 +394,55 @@ function Comments({
           </li>
         ))}
       </ol>
-      {version.allowed_actions.includes("comment") && (
-        <div className="mt-auto px-[12px] pb-[12px]">
-          <div className="flex h-[40px] items-center rounded-nested bg-nested px-[10px] text-dense text-ink-3">
-            {COPY.composer}
+      {canComment && (
+        <form
+          className="mt-auto flex flex-col gap-[6px] px-[12px] pb-[12px]"
+          aria-label={COPY.addOnPage}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const body = draft.trim();
+            if (!body) return;
+            add.mutate({
+              path: { deliverable_id: deliverableId, version_no: version.version_no },
+              body: { page, body, ...(line.trim() ? { line_ref: line.trim() } : {}) },
+              headers: { "Idempotency-Key": `${deliverableId}:${String(page)}:${body.length}` },
+            });
+          }}
+        >
+          <label className="text-meta text-ink-3">
+            {COPY.lineLabel}
+            <input
+              value={line}
+              maxLength={120}
+              onChange={(e) => {
+                setLine(e.target.value);
+              }}
+              className="mt-[2px] block h-[30px] w-full rounded-nested bg-nested px-[8px] text-dense text-ink"
+            />
+          </label>
+          <textarea
+            aria-label={COPY.composer}
+            placeholder={COPY.composer}
+            value={draft}
+            maxLength={1000}
+            rows={2}
+            onChange={(e) => {
+              setDraft(e.target.value);
+            }}
+            className="rounded-nested bg-nested px-[10px] py-[8px] text-dense text-ink placeholder:text-ink-3"
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-meta text-ink-3">{COPY.composerHint}</p>
+            <Button
+              type="submit"
+              variant="secondary"
+              size="sm"
+              disabled={!draft.trim() || add.isPending}
+            >
+              {COPY.send}
+            </Button>
           </div>
-          <p className="pt-[6px] text-meta text-ink-3">{COPY.composerHint}</p>
-        </div>
+        </form>
       )}
     </aside>
   );
@@ -343,6 +464,9 @@ function Viewer({
   const latest = deliverable.versions[deliverable.versions.length - 1];
   const [page, setPage] = useState(initialPage);
   const [zoom, setZoom] = useState<(typeof ZOOMS)[number]>(1);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [sheet, setSheet] = useState(false);
+  const pinned = useComments(deliverable.id, latest);
   const [confirm, setConfirm] = useState(confirming);
   const approve = useMutation({
     ...approveDeliverableMutation(),
@@ -481,6 +605,15 @@ function Viewer({
               page={page}
               zoom={mobile ? 0.6 : zoom}
             />
+            <Pins
+              items={pinned.data?.items ?? []}
+              page={page}
+              selected={selected}
+              onSelect={(id) => {
+                setSelected(id);
+                if (mobile) setSheet(true);
+              }}
+            />
             {draft && (
               <span
                 aria-hidden="true"
@@ -500,8 +633,61 @@ function Viewer({
             )}
           </div>
         </div>
-        {!mobile && <Comments deliverableId={deliverable.id} version={latest} />}
+        {!mobile && (
+          <Comments
+            deliverableId={deliverable.id}
+            version={latest}
+            page={page}
+            selected={selected}
+            onSelect={setSelected}
+          />
+        )}
       </div>
+      {mobile && latest.page_comments && (
+        <div className="px-[12px] pb-[8px]">
+          <Button
+            variant="secondary"
+            size="lg"
+            className="w-full"
+            onClick={() => {
+              setSheet(true);
+            }}
+          >
+            {COPY.comments(pinned.data?.items.length ?? 0)}
+          </Button>
+        </div>
+      )}
+      {mobile && sheet && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={COPY.comments(pinned.data?.items.length ?? 0)}
+          data-sheet="comments"
+          className="fixed inset-x-0 bottom-0 z-(--z-modal) max-h-[70vh] overflow-y-auto rounded-t-[16px] bg-card shadow-e3"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setSheet(false);
+          }}
+        >
+          <div className="flex justify-end p-[8px]">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSheet(false);
+              }}
+            >
+              {COPY.close}
+            </Button>
+          </div>
+          <Comments
+            deliverableId={deliverable.id}
+            version={latest}
+            page={page}
+            selected={selected}
+            onSelect={setSelected}
+          />
+        </div>
+      )}
       {mobile && approveButton !== false && (
         <div className="sticky bottom-0 bg-card p-[12px] hairline-t" data-sticky-approve>
           {approveButton}

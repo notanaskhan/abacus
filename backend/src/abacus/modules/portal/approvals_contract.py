@@ -385,9 +385,21 @@ async def get_approval_route(kind: KindParam, item_id: UUID, ctx: Member) -> App
 async def list_approval_questions_route(
     kind: KindParam, item_id: UUID, ctx: Member
 ) -> ApprovalQuestionsOut:
+    from abacus.modules.collaboration.api import client_comments
+
     await _flag_on(ctx, PORTAL_APPROVALS)
     _registered(kind)
-    _not_yet()
+    found = await client_comments(
+        ctx, anchor_kind="client_approval_item", anchor_id=item_id, locator={"kind": kind}
+    )
+    return ApprovalQuestionsOut(
+        items=[
+            ApprovalQuestionOut(
+                id=c.id, author=c.author_name, body=c.body, created_at=c.created_at
+            )
+            for c in found
+        ]
+    )
 
 
 @approvals_router.post(
@@ -405,9 +417,21 @@ async def ask_about_item_route(
     idempotency_key: IdempotencyKey,
 ) -> ApprovalQuestionOut:
     """A client-authored comment on the item's thread (AC-31; R-02-T22)."""
+    from abacus.modules.collaboration.api import post_client_comment
+
+    del idempotency_key
     await _flag_on(ctx, PORTAL_APPROVALS)
     _registered(kind)
-    _not_yet()
+    posted = await post_client_comment(
+        ctx,
+        anchor_kind="client_approval_item",
+        anchor_id=item_id,
+        locator={"kind": kind},
+        body=body.body,
+    )
+    return ApprovalQuestionOut(
+        id=posted.id, author=posted.author_name, body=posted.body, created_at=posted.created_at
+    )
 
 
 @approvals_router.get(

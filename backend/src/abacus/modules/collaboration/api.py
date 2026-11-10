@@ -14,6 +14,12 @@ from abacus.modules.collaboration.anchors import (
     registered_kinds,
 )
 from abacus.modules.collaboration.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.collaboration.client_threads import (
+    ClientComment,
+    client_comments,
+    post_client_comment,
+    register_client_policy,
+)
 from abacus.modules.collaboration.routes import threads_router, todos_router
 from abacus.modules.collaboration.threads import open_thread
 from abacus.modules.collaboration.todos import TODO_ANCHORS
@@ -36,7 +42,11 @@ __all__ = [
     "ROUTERS",
     "AnchorFacts",
     "AnchorProvider",
+    "ClientComment",
     "Locator",
+    "client_comments",
+    "post_client_comment",
+    "register_client_policy",
     "create_todo",
     "open_thread",
     "register_anchor",

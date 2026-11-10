@@ -66,3 +66,13 @@ __all__ = [
 from abacus.modules.portal.realtime_topics import register as _register_topics  # noqa: E402
 
 _register_topics()
+
+# R-02-T22: the portal's comment anchors (POR-08 questions, POR-09 page comments, POR-15 "Ask the
+# auditor…"); the governance letter's client readers are its authors only (AC-33).
+from abacus.modules.collaboration.api import register_anchor, register_client_policy  # noqa: E402
+from abacus.modules.portal import thread_anchors as _anchors  # noqa: E402
+
+register_anchor(_anchors.APPROVAL, _anchors.APPROVAL_ANCHORS)
+register_anchor(_anchors.PAGE, _anchors.PAGE_ANCHORS)
+register_anchor(_anchors.LETTER, _anchors.LETTER_ANCHORS)
+register_client_policy(_anchors.LETTER, "author_only")
