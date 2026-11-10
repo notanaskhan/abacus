@@ -23,3 +23,8 @@ description: How to add or change an AI agent or model step — spec, prompt, co
 - Every call has a per-run budget (earlier usage counts), a per-call timeout (`max_seconds`), one repair, then escalation; usage rows and `ai.call` spans are automatic.
 - Code has the last word: verify citations against the source (`citations.verify`) and force `needs_revision` when checks fail.
 - Tests use the fake model (`install_fake_responses`); evaluations run with `make evals` (`evals/<suite>/`), with the pinned real model once one is configured (ADR-076).
+
+## Showing runs (P-09)
+- A new agent's runs show in the SHL-13 dock and the WB-09 trace with no screen work: emit run items
+  and trace rows through `agents.runs`; never render model text outside `AgentBlocks`/`AgentText`.
+- Degraded dock or trace: RB-69 (poll rate and trace latency signals; per-firm flags).
