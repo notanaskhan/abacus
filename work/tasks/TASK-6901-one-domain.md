@@ -49,3 +49,6 @@ variables are null.
 - 2026-11-10: applied `shared` from this branch (one zone added, nothing else). The state lock
   write needed KMS backend flags (infra/README step 8). Until this merges, a `shared` apply from
   a checkout without both domain variables would plan to destroy the zone.
+- 2026-11-10: Ayush set the four Route 53 name servers at the registrar; the .si registry
+  published them at 10:03 UTC (Cloudflare and Quad9 resolve them; Google still cached the parking
+  answer). Row stays partial until Ayush confirms registrar MFA.
