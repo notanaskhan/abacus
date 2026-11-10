@@ -33,9 +33,10 @@ import hashlib
 import json
 import re
 from collections.abc import Mapping, Sequence
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
-from typing import Final, Literal, cast
+from typing import Any, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -733,9 +734,209 @@ async def approve_and_send(
             ),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
+        # TASK-6543 (DEC-3145): the letter becomes a final C11 document in the same transaction:
+        # a draft of the approved version, then its final on that draft's hash, approved by this
+        # send (the partner approved the version's content hash with a fresh second factor; the
+        # draft is that version's deterministic rendering).
+        await _render_final(
+            tx,
+            ctx,
+            cast(UUID, row.current_version_id),  # type: ignore[attr-defined] -- a raw SQL row's column
+            send_id,
+            engagement_id,
+            work_item_id,
+        )
     if channel == "governance_room":
         await _letter_emails(ctx, engagement_id, work_item_id, send_id, recipients, people)
+    else:
+        await _draft_acknowledgement_envelope(ctx, communication_id, engagement_id, work_item_id)
     return send_id
+
+
+# --- the letter as a C11 document (TASK-6543; DEC-3145) ------------------------------------------
+
+LETTER_KIND: Final = "governance_letter"
+VERSION_OWNER: Final = "governance_communication_version"
+APPROVAL_KIND: Final = "governance_send"
+_approving: ContextVar[tuple[object, UUID] | None] = ContextVar(
+    "governance_letter_approving", default=None
+)
+_VERSION_SECTIONS = text(
+    "SELECT v.sections_sealed, c.kind FROM governance_communication_versions v "
+    "JOIN governance_communications c ON c.id = v.communication_id WHERE v.id = :v"
+)
+
+
+def letter_blocks(sections: Sequence[LetterPart]) -> list[object]:
+    """The C11 body of a version: each section's heading, then a paragraph per paragraph of its
+    text (blank lines split them). The words are the version's own; code only arranges them."""
+    blocks: list[object] = []
+    for part in sections:
+        if part.heading:
+            blocks.append({"type": "heading", "level": 2, "text": part.heading})
+        for para in (p.strip() for p in part.body.split("\n\n")):
+            if para:
+                blocks.append({"type": "paragraph", "runs": [{"type": "text", "text": para}]})
+    return blocks
+
+
+async def letter_body(tenant: TenantContext, owner: object, _scope: object) -> list[object]:
+    """C11's body provider for `governance_letter`: the owner version's sealed sections."""
+    from abacus.modules.reporting.api import OwnerRef
+
+    if not isinstance(owner, OwnerRef) or owner.type != VERSION_OWNER:
+        return []
+    async with tenant_session(tenant) as session:
+        found = (await session.execute(_VERSION_SECTIONS, {"v": owner.id})).first()
+    if found is None:
+        raise NotFound("governance_communication_version")
+    raw = await open_sealed(tenant.tenant_id, found.sections_sealed, SECTIONS_FINGERPRINT)
+    return letter_blocks(_sections(json.loads(raw)))
+
+
+async def send_approval(ref: object) -> tuple[UUID, str] | None:
+    """C11's approval provider: only the send in flight, for the partner who is sending it."""
+    held = _approving.get()
+    return None if held is None or held[0] != ref else (held[1], getattr(ref, "content_hash", ""))
+
+
+async def _render_final(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    version_id: UUID,
+    send_id: UUID,
+    engagement_id: UUID,
+    work_item_id: UUID,
+) -> None:
+    from abacus.modules.reporting import api as c11
+
+    client_id = (await get_ref(ctx, engagement_id)).client_id
+    who = c11.Requester("human", user_id=ctx.user_id)
+    ticket = await c11.render(
+        tx,
+        c11.RenderRequest(
+            kind=LETTER_KIND,
+            owner_ref=c11.OwnerRef(VERSION_OWNER, version_id),
+            scope=c11.RenderScope(
+                client_id=client_id, engagement_id=engagement_id, work_item_id=work_item_id
+            ),
+            template_version_id=None,
+            requested_by=who,
+            formats=("pdf",),
+        ),
+    )
+    ref = c11.ApprovalRef(APPROVAL_KIND, send_id, ticket.content_hash)
+    token = _approving.set((ref, ctx.user_id))
+    try:
+        await c11.render_final(tx, ticket.generated_document_id, ref, who)
+    finally:
+        _approving.reset(token)
+
+
+# --- the acknowledgement envelope (A-07-T19 / A-07-T26 remainder; DEC-3145) -------------------
+
+_LATEST_SEND = text(
+    "SELECT s.id, s.version_id, s.recipient_contact_ids, s.engagement_id, s.work_item_id, "
+    "c.kind FROM governance_communication_sends s "
+    "JOIN governance_communication_versions v ON v.id = s.version_id "
+    "JOIN governance_communications c ON c.id = v.communication_id "
+    "WHERE s.version_id = :v ORDER BY s.created_at DESC LIMIT 1"
+)
+
+
+async def _final_document(tenant: TenantContext, version_id: UUID) -> tuple[UUID, str]:
+    from abacus.modules.reporting import api as c11
+
+    document = await c11.document_of_owner(
+        tenant, c11.OwnerRef(VERSION_OWNER, version_id), LETTER_KIND
+    )
+    latest = None if document is None else await c11.latest_document_version(tenant, document)
+    if latest is None:
+        raise NotFound("governance_letter_document")
+    return latest
+
+
+async def governance_draft(ctx: AuthContext, version_id: UUID) -> object:
+    """C7's draft from a sent version: the final letter, the recipients as email-code signers,
+    each in their own routing group (any order), purpose `governance_letter` (general family)."""
+    from abacus.modules.signatures.api import SourceDocument, SourceDraft, SourceSigner
+
+    async with tenant_session(ctx.tenant) as session:
+        sent = (await session.execute(_LATEST_SEND, {"v": version_id})).first()
+    if sent is None:
+        raise NotFound("governance_communication_send")
+    await _person(ctx, cast(UUID, sent.work_item_id), "governance_comm.read")
+    version, content_hash = await _final_document(ctx.tenant, version_id)
+    client_id = (await get_ref(ctx, cast(UUID, sent.engagement_id))).client_id
+    return SourceDraft(
+        purpose=LETTER_KIND,
+        policy_family="general",
+        client_id=client_id,
+        title=f"{STANDARD.get(str(sent.kind), 'Governance')} acknowledgement",
+        documents=(
+            SourceDocument(
+                sha256=content_hash,
+                generated_document_version_id=version,
+                source_ref=f"governance_letter:{version_id}",
+            ),
+        ),
+        signers=tuple(
+            SourceSigner(identity_method="email_code", contact_id=contact, routing_group=1)
+            for contact in cast("list[UUID]", sent.recipient_contact_ids)
+        ),
+        engagement_id=cast(UUID, sent.engagement_id),
+        work_item_id=cast(UUID, sent.work_item_id),
+        signer_order="parallel",
+    )
+
+
+async def governance_documents(ctx: AuthContext, version_id: UUID) -> Sequence[object]:
+    return list(cast("Any", await governance_draft(ctx, version_id)).documents)
+
+
+async def governance_signers(ctx: AuthContext, version_id: UUID) -> Sequence[object]:
+    return list(cast("Any", await governance_draft(ctx, version_id)).signers)
+
+
+async def _draft_acknowledgement_envelope(
+    ctx: AuthContext, communication_id: UUID, engagement_id: UUID, work_item_id: UUID
+) -> None:
+    """The ack_envelope channel: a SIG-02 draft the partner (or a person) then sends from C7."""
+    from abacus.modules.signatures.api import create_draft
+
+    async with tenant_session(ctx.tenant) as session:
+        version_id = cast(
+            UUID,
+            await session.scalar(
+                text("SELECT current_version_id FROM governance_communications WHERE id = :c"),
+                {"c": communication_id},
+            ),
+        )
+    try:
+        envelope_id = await create_draft(ctx, LETTER_KIND, version_id)
+    except (DomainConflict, DomainInvalid, DomainForbidden, NotFound, Forbidden) as refused:
+        # The send stands (the room and grants are the record); the envelope is drafted from
+        # SIG-02 once the firm can (e-signatures on, the partner holding `envelope.draft`).
+        _log.warning(
+            "governance_letter.envelope_not_drafted",
+            communication_id=str(communication_id),
+            reason=type(refused).__name__,
+        )
+        return
+    async with uow(ctx.tenant) as tx:
+        await tx.session.execute(
+            text(
+                "UPDATE governance_communications SET envelope_id = :e, version = version + 1, "
+                "updated_at = clock_timestamp() WHERE id = :c"
+            ),
+            {"e": envelope_id, "c": communication_id},
+        )
+        tx.record(
+            "governance_communication.envelope_drafted",
+            target=Target("governance_communication", communication_id),
+            after=Ref(envelope=envelope_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
 
 
 # R-02-T14 (AC-36; DF-40; DEC-3140): each room recipient hears of the letter by the firm's
