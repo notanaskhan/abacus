@@ -1,0 +1,1 @@
+List only the K-1 treatments whose value changed from the prior year, with both values. Code compares; you explain what changed and why it may matter.

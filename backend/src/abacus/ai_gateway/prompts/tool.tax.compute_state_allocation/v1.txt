@@ -1,0 +1,1 @@
+Allocate an amount across states in whole dollars by the weights you pass, footing exactly (largest remainder). Code computes; never split amounts yourself.

@@ -269,3 +269,10 @@ from abacus.modules.tax.worksheet_review import (  # noqa: E402
 )
 
 _register_worksheet_review()
+
+# T-04-T19 (DEC-3211): the tax tools on C17 register at their module's import.
+from abacus.modules.tax.tools import (  # noqa: E402
+    read_return as _tax_tools_loaded,
+)
+
+del _tax_tools_loaded
