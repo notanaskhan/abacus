@@ -67,3 +67,10 @@ QuickBooks hosts (no Payments, no OpenID, no writes).
 
 Tokens sit in `~/.abacus/qbo-sandbox.json` (0600, outside the repository) until `revoke` deletes
 them. Production keys never go through this tool.
+
+## Quoting a request to Intuit support
+
+Each Intuit response logs `qbo.response` with its `intuit_tid` as one hex run, so the log's
+taxpayer-ID backstop can't garble it (DEC-2901). To quote one, put the hyphens back after the
+first and ninth characters: `16aebb6220f7e070c63d767e144afce37` is
+`1-6aebb622-0f7e070c63d767e144afce37`.

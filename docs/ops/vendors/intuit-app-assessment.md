@@ -54,8 +54,8 @@ can't be removed once saved.
 | Retries a failed authorisation automatically | No | — |
 | Handles 401 on API calls | Yes. Treated as an expired token; the client is asked to reconnect | `_get` |
 | Handles 429 and 5xx | Yes. Treated as provider unavailable; the sync activity is retryable, so the workflow's retry policy (Temporal, exponential backoff) tries again | `_get`, `connections/activities.py` |
-| Captures `intuit_tid` | Yes. Logged with the endpoint and status for every response; no tokens, bodies or company data in the log | `_call` (DEC-2099) |
-| Revokes tokens on disconnect | Yes. Disconnect revokes the refresh token at Intuit's revoke endpoint, then erases it | `revoke`, DEC-515 M1 |
+| Captures `intuit_tid` | Yes. Logged with the endpoint and status for every response; no tokens, bodies or company data in the log | `_call`, `tid_for_log` (DEC-2099, DEC-2901) |
+| Revokes tokens on disconnect | Yes. Disconnect revokes the refresh token at Intuit's revoke endpoint (JSON body; only a 200 counts), then erases it. Tested live 2026-11-04: revoke 200, and the revoked token then fails | `revoke`, DEC-515 M1, DEC-2901 |
 | Uses the OAuth Playground for production tokens | No | — |
 | Uses Change Data Capture (CDC) or webhooks | No. Reads are on demand for a period | `changes_since` raises `NotSupported` |
 | Minor version pinned | Yes, `minorversion=75` | `MINOR_VERSION` |
