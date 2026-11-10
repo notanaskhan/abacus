@@ -12235,7 +12235,7 @@ export const getApproval = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Entries Journal Route
  *
- * "Download entries" (R-02-T14 remainder, DEC-3147): 202 `{render_job_id}` while the
+ * "Download entries" (R-02-T14 remainder, DEC-3172): 202 `{render_job_id}` while the
  * deterministic journal renders (C11); once filed, 302 to the journal's bytes on this API
  * (ADR-104: never an object key or a presigned URL). The person is admitted as POR-08's
  * detail admits them.

@@ -169,3 +169,24 @@ async def test_a_failed_render_renders_again(monkeypatch: pytest.MonkeyPatch) ->
     _wire(monkeypatch, document=DOC, status="failed", calls=calls)
     assert await _journal() == ej.JournalPending(JOB)
     assert calls == ["regenerate"]
+
+
+async def test_a_concurrent_first_request_answers_the_other_render(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # End-pass review: two first requests race to make the item's one document.
+    from sqlalchemy.exc import IntegrityError
+
+    calls: list[str] = []
+    _wire(monkeypatch, document=None, status="running", calls=calls)
+    seen = iter([None, DOC])
+
+    async def of_owner(*_a: object) -> uuid.UUID | None:
+        return next(seen)
+
+    async def clash(*_a: object) -> object:
+        raise IntegrityError("INSERT", {}, Exception("unique"))
+
+    monkeypatch.setattr(c11, "document_of_owner", of_owner)
+    monkeypatch.setattr(c11, "render", clash)
+    assert await _journal() == ej.JournalPending(JOB)

@@ -60,6 +60,7 @@ def _wire(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_a_portal_request_notes_the_tokens_expiry(monkeypatch: pytest.MonkeyPatch) -> None:
     _wire(monkeypatch)
     token = "pat_" + "a" * 43
+
     def portal(_t: str) -> bool:
         return True
 
