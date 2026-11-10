@@ -1299,6 +1299,18 @@ class AssistantAvailabilityStatus(StrEnum):
     # derived, never stored: available, ai_unavailable, consent_required, agents_off
 
 
+class PreparerMemoStatus(StrEnum):
+    pass
+    # derived, never stored: drafting, adopted, approved, stale
+
+
+class AllocationStructureStatus(StrEnum):
+    EDITING = "editing"
+    PENDING_APPROVAL = "pending_approval"
+    APPROVED = "approved"
+    SUPERSEDED = "superseded"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -2358,6 +2370,14 @@ STORED: dict[str, tuple[str, ...]] = {
         "action_required",
     ),
     "assistant_availability": (
+    ),
+    "preparer_memo": (
+    ),
+    "allocation_structure": (
+        "editing",
+        "pending_approval",
+        "approved",
+        "superseded",
     ),
 }
 CHECKS: dict[str, str] = {

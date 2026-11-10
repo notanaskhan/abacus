@@ -2824,13 +2824,19 @@ export const STATUS_REGISTRY = {
       "variant": null,
       "terminal": false,
       "derived": false,
+      "contextLabels": {
+        "entity_task_row": "Running…"
+      },
       "disc": "spinner"
     },
     "waiting_on_inputs": {
       "label": "Waiting on inputs",
       "variant": "muted",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "entity_run_card": "Waiting on {n} answer"
+      }
     },
     "blocked": {
       "label": "Blocked",
@@ -2851,6 +2857,9 @@ export const STATUS_REGISTRY = {
       "variant": null,
       "terminal": true,
       "derived": false,
+      "contextLabels": {
+        "entity_task_row": "Stopped at {task}"
+      },
       "disc": "x_brick"
     },
     "cancelled": {
@@ -5356,6 +5365,59 @@ export const STATUS_REGISTRY = {
       "variant": "muted",
       "terminal": false,
       "derived": true
+    }
+  },
+  "preparer_memo": {
+    "drafting": {
+      "label": "Drafting",
+      "variant": "state",
+      "terminal": false,
+      "derived": true,
+      "disc": "spinner"
+    },
+    "adopted": {
+      "label": "Adopted",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "stale": {
+      "label": "Stale",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "allocation_structure": {
+    "editing": {
+      "label": "Editing",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "pending_approval": {
+      "label": "Pending approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
     }
   }
 } as const;
