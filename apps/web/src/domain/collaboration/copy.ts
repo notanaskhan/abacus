@@ -31,14 +31,14 @@ export const COPY = {
   correctedBelow: "Corrected below",
   you: "(you)",
   resolvedBy: (name: string, time: string, n: number) =>
-    `Resolved by ${name} · ${time} · ${n} ${n === 1 ? "comment" : "comments"}`,
+    `Resolved by ${name} · ${time} · ${String(n)} ${n === 1 ? "comment" : "comments"}`,
   redactedBy: (name: string, date: string, reason: string) =>
     `Redacted by ${name} on ${date}: ${reason}`,
   notified: (names: string[], time: string) =>
     `${names.join(", ")} notified in Accrued and by email · ${time}`,
   openResolved: (open: number, resolved: number) =>
-    [`Open ${open}`, `Resolved ${resolved}`] as const,
-  teamCount: (label: string, n: number) => `${label} · ${n} people`,
+    [`Open ${String(open)}`, `Resolved ${String(resolved)}`] as const,
+  teamCount: (label: string, n: number) => `${label} · ${String(n)} people`,
   refused: {
     mention_not_allowed: "Someone you mentioned can't see this comment.",
     empty_comment: "Write something first.",

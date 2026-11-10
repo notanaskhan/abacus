@@ -33,8 +33,10 @@ const defaultOpener: BadgeOpener = async (signal, onBadge) => {
       }
     },
   });
-  for await (const _ of stream) {
-    // counts arrive through onSseEvent
+  // Counts arrive through onSseEvent; this drains the stream.
+  const reader = stream[Symbol.asyncIterator]();
+  while (!(await reader.next()).done) {
+    // each count was handled by onSseEvent
   }
 };
 
@@ -53,7 +55,9 @@ export function useAgentBadge(open: BadgeOpener = defaultOpener): AgentBadge | n
       .finally(() => {
         if (!abort.signal.aborted) setBadge(null); // dead stream: the shell's polling takes over
       });
-    return () => abort.abort();
+    return () => {
+      abort.abort();
+    };
   }, [sse, open]);
   return badge;
 }

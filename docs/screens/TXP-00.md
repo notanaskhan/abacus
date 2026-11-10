@@ -52,6 +52,12 @@ Matrix actions from `permission-matrix/tax.yaml` (T-05-T04): every human verb `a
 | Reconnect | A-02 connection panel (WB-11 when W-01 lands) | planned |
 | Composer | TAX-08 (T-04) | planned |
 | Links rail | CLI-02, ENG-02, BND-02, FIL-01 | planned |
+| Task group (tooltip): Financials (TB → TTB) | TXP-02 | planned |
+| Task group (tooltip): Fixed assets | TXP-03 | planned |
+| Task group (tooltip): Capital accounts | TXP-07 | planned |
+| Task group (tooltip): Allocation structure | TXP-06 | planned |
+| Task group (tooltip): States & PTET | TXP-09 | planned |
+| Task group (tooltip): K-1 package | TXP-12 | planned |
 
 ## Notes
 

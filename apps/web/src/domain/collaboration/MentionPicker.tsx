@@ -98,7 +98,9 @@ export function MentionPicker({
                 role="option"
                 aria-selected={selected}
                 className={`flex h-[36px] cursor-default items-center gap-[8px] rounded-[8px] px-[10px] text-[12.5px] ${selected ? "bg-sel-bg" : ""}`}
-                onMouseEnter={() => onActive(i)}
+                onMouseEnter={() => {
+                  onActive(i);
+                }}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   onPick(entry);
@@ -118,7 +120,9 @@ export function MentionPicker({
               role="option"
               aria-selected={selected}
               className={`flex h-[36px] cursor-default items-center gap-[8px] rounded-[8px] px-[10px] text-[12.5px] ${selected ? "bg-sel-bg" : ""}`}
-              onMouseEnter={() => onActive(i)}
+              onMouseEnter={() => {
+                onActive(i);
+              }}
               onMouseDown={(e) => {
                 e.preventDefault();
                 onPick(entry);

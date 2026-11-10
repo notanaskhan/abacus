@@ -106,6 +106,7 @@ INSERT_COLUMNS["issues"] = frozenset(
     | {"title_sealed", "status", "instructions_required", "assignee_user_id", "assignee_agent"}
     | {"client_contact_id", "client_wording_sealed", "internal_note_sealed", "blocks"}
     | {"source_ref"}
+    | {"source_kind", "category_path", "system_resolved_only"}  # T-04-T23 (0800)
 )
 INSERT_COLUMNS["issue_events"] = frozenset(
     {"tenant_id", "issue_id", "event", "fix_instructions_sealed", "scope"}

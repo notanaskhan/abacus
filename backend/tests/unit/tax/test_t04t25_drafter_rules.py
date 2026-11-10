@@ -83,6 +83,12 @@ def test_an_engine_field_a_low_confidence_box_and_a_later_year_follow_the_rules(
     assert box_map(2027) is box_map(2025)  # a year inherits where unchanged
 
 
+def _judged(worksheet: str, tsj: str, note: str) -> WorksheetJudgment:
+    return WorksheetJudgment.model_validate(
+        dict(zip(("key", "tsj", "new_this_year_note"), (worksheet, tsj, note), strict=True))
+    )
+
+
 def test_the_model_judges_only_tsj_and_notes_within_codes_offer() -> None:
     judgment = ReturnDraftJudgment(
         worksheets=[
@@ -90,9 +96,7 @@ def test_the_model_judges_only_tsj_and_notes_within_codes_offer() -> None:
             WorksheetJudgment(
                 key="it653", tsj="T", new_this_year_note="New this year: PTET elected"
             ),
-            WorksheetJudgment(
-                key="sch_e_p2", tsj="T", new_this_year_note="Up 1,550 from last year"
-            ),
+            _judged("sch_e_p2", "T", "Up 1,550 from last year"),
             WorksheetJudgment(key="it999", tsj="T"),
         ]
     )

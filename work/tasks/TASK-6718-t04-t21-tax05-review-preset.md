@@ -2,7 +2,7 @@
 id: TASK-6718
 title: "T-04-T21: TAX-05 Review preset states a-f in fixture mode on T3 452x3"
 spec: SPEC-649
-acceptance_criteria: [AC-2.1, AC-2.2, AC-2.3, AC-2.5, AC-2.6]
+acceptance_criteria: [AC-2]
 risk_zone: green
 status: in-review
 branch: s35-t04-t21

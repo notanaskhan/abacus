@@ -30,7 +30,7 @@ import {
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useFlag } from "../../app-core/flags";
-import { CommentChip } from "../../domain/collaboration";
+import { CommentChip } from "../../domain/comment-chip";
 import { COPY } from "./copy";
 
 // AUD-09 · Internal control & exceptions (A-04-T32; A-04 §3 AC6, SPEC-620; the handoff spec): the

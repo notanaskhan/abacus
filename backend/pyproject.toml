@@ -185,6 +185,12 @@ only_mutate = [
     "src/abacus/*/compute/*",
     "src/abacus/modules/signatures/*",
     "src/abacus/modules/review/*",  # P-04-T59 (DEC-2065)
+    # A-07-T45: the release and archive red path (mutation.SCOPES["assurance/release_archive"]).
+    "src/abacus/modules/assurance/release",
+    "src/abacus/modules/assurance/archive_gate",
+    "src/abacus/modules/assurance/archive_lock",
+    "src/abacus/modules/assurance/archive_seal",
+    "src/abacus/modules/assurance/archive_additions",
 ]
 do_not_mutate = [
     "*/_matrix.py",

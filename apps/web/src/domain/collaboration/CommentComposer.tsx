@@ -114,15 +114,16 @@ export function CommentComposer({
     }
   };
 
-  const activeId = open && entries[active] ? `${listId}-${entries[active]?.key}` : undefined;
+  const activeEntry = open ? entries[active] : undefined;
+  const activeId = activeEntry === undefined ? undefined : `${listId}-${activeEntry.key}`;
   return (
     <div data-c29="composer" className="relative flex flex-col gap-[6px]">
-      {open && candidates ? (
+      {open ? (
         <div className="absolute bottom-[48px] left-0 z-10">
           <MentionPicker
             id={listId}
             found={candidates}
-            query={typing?.query ?? ""}
+            query={typing.query}
             engagementLabel={engagementLabel}
             active={active}
             onActive={setActive}
@@ -144,10 +145,12 @@ export function CommentComposer({
           disabled={disabled}
           placeholder={COPY.placeholder}
           className="min-w-0 flex-1 resize-none bg-transparent py-[10px] text-[13px] text-ink outline-none placeholder:text-ink-3"
-          onChange={(e) =>
-            update(e.target.value, e.target.selectionStart ?? e.target.value.length)
-          }
-          onSelect={(e) => setCaret(e.currentTarget.selectionStart ?? text.length)}
+          onChange={(e) => {
+            update(e.target.value, e.target.selectionStart);
+          }}
+          onSelect={(e) => {
+            setCaret(e.currentTarget.selectionStart);
+          }}
           onKeyDown={onKey}
         />
         <button

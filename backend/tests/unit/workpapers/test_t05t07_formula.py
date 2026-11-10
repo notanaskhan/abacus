@@ -26,8 +26,8 @@ COMPUTE = Path(f.__file__).parent
     [
         "=F18+G18+H18",  # TXP-02 a2: 01 Trial Balance!I18
         "=I18+J18",  # TXP-11 c
-        "='06 Schedule K'!C31 × 25%",  # TXP-11 a: the expected value for 05 Capital!H12
-        "='06 Schedule K'!C31 × 38%",  # TXP-07 a2: 05 Capital!H9
+        "='06 Schedule K'!C31 \u00d7 25%",  # TXP-11 a: the expected value for 05 Capital!H12
+        "='06 Schedule K'!C31 \u00d7 38%",  # TXP-07 a2: 05 Capital!H9
         "=D12+E12+F12+G12+H12+I12",  # 05 Capital crossfoot to J12
         "=SUM(J8:J12)",  # J13
         "=SUM(H8:H12)",  # the tax-exempt total, 6,200
@@ -47,7 +47,7 @@ def test_ac4_6_the_handoff_formulas_parse(text: str) -> None:
 
 
 def test_cross_sheet_reference_keeps_the_quoted_title() -> None:
-    parsed = f.parse("='06 Schedule K'!C31 × 25%")
+    parsed = f.parse("='06 Schedule K'!C31 \u00d7 25%")
     assert parsed.references == (f.CellRef("06 Schedule K", 3, 31),)
     assert parsed.tree == f.Binary(
         f.BinaryOp.MUL, f.CellRef("06 Schedule K", 3, 31), f.Percent(Decimal(25))
@@ -80,7 +80,7 @@ def test_precedence_and_rendering_round_trip() -> None:
 
 
 def test_operators_from_the_handoff_are_ascii_in_the_tree() -> None:
-    assert f.parse("=A1 − B1 ÷ C1") == f.parse("=A1-B1/C1")
+    assert f.parse("=A1 \u2212 B1 ÷ C1") == f.parse("=A1-B1/C1")
     assert f.parse("=IF(A1≥B1,1,0)") == f.parse("=IF(A1>=B1,1,0)")
     assert f.parse("=IF(A1≠B1,1,0)") == f.parse("=IF(A1<>B1,1,0)")
 

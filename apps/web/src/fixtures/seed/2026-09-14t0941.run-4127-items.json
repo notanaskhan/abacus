@@ -1,0 +1,34 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-14T09:41",
+    "slices": [
+      "agent_runs"
+    ]
+  },
+  "persona": "marcus-delaney",
+  "request": "GET /v1/agent-runs/{run_id}/items",
+  "body": {
+    "items": [],
+    "last_seq": 0,
+    "next_seq": 0,
+    "resync": false,
+    "run": {
+      "agent": "engagement.agent",
+      "agent_label": "Engagement agent",
+      "duration_ms": null,
+      "finished_at": null,
+      "id": "91a2cedc-d562-4e42-95e9-6fde76516d17",
+      "initiator_name": "Marcus Delaney",
+      "outcome": null,
+      "record_persisted_at": null,
+      "record_sha256": null,
+      "stage": "live",
+      "started_at": "2026-09-14T14:41:00Z",
+      "state": "running",
+      "state_reason": null,
+      "subject": null
+    }
+  }
+}

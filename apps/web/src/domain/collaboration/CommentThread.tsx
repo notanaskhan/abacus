@@ -148,10 +148,22 @@ function CommentRow({
   const mine = comment.author.user_id === viewerId;
   const items: MenuItem[] = [];
   if (mine && !comment.redaction && onCorrect) {
-    items.push({ label: COPY.correct, opensDialog: true, onSelect: () => onCorrect(comment.id) });
+    items.push({
+      label: COPY.correct,
+      opensDialog: true,
+      onSelect: () => {
+        onCorrect(comment.id);
+      },
+    });
   }
   if (canRedact && !comment.redaction && onRedact) {
-    items.push({ label: COPY.redact, opensDialog: true, onSelect: () => onRedact(comment.id) });
+    items.push({
+      label: COPY.redact,
+      opensDialog: true,
+      onSelect: () => {
+        onRedact(comment.id);
+      },
+    });
   }
   const mentioned = namesOf(comment.mentioned_user_ids, candidates, comment.body ?? "");
   return (
@@ -351,7 +363,9 @@ export function CommentThreadView(props: CommentThreadViewProps): JSX.Element {
                   type="button"
                   aria-expanded={expanded}
                   className="truncate text-left"
-                  onClick={() => setExpanded((v) => !v)}
+                  onClick={() => {
+                    setExpanded((v) => !v);
+                  }}
                 >
                   {COPY.resolvedBy(
                     resolvedBy?.actor.name ?? "",
@@ -496,10 +510,18 @@ export function LiveCommentThread(props: LiveCommentThreadProps): JSX.Element {
       {...(props.onRedact ? { onRedact: props.onRedact } : {})}
       {...(id
         ? {
-            onResolve: () => resolve.mutate({ path: { thread_id: id } }),
-            onReopen: () => reopen.mutate({ path: { thread_id: id } }),
-            onMute: (muted: boolean) => mute.mutate({ path: { thread_id: id }, body: { muted } }),
-            onConvertToReviewNote: () => convert.mutate({ path: { thread_id: id } }),
+            onResolve: () => {
+              resolve.mutate({ path: { thread_id: id } });
+            },
+            onReopen: () => {
+              reopen.mutate({ path: { thread_id: id } });
+            },
+            onMute: (muted: boolean) => {
+              mute.mutate({ path: { thread_id: id }, body: { muted } });
+            },
+            onConvertToReviewNote: () => {
+              convert.mutate({ path: { thread_id: id } });
+            },
           }
         : {})}
       onMentionQuery={setQ}

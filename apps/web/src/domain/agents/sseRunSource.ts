@@ -8,7 +8,8 @@
 //   `resync` refetches from 0 (the page says `resync`, so the store replaces the feed); `locked`
 //   stops the stream and reports the not-allowed error; a terminal run state stops it for good.
 // - When the stream dies (the runtime's retries spent, or the iterator throws), the source falls
-//   back to `PollingRunSource` at 2 s from the same cursor, so no event is lost.
+//   back to `PollingRunSource` at 2 s from the same cursor, so no event is lost. A clean end of
+//   the iterator is not a death (the runtime reconnects on its own).
 // - `runSourceFor` picks SSE behind `realtime.sse` and polling otherwise; polling stays the
 //   fallback everywhere.
 
@@ -49,12 +50,17 @@ async function* frames(
   maxAttempts: number,
 ): AsyncGenerator<RunStreamFrame> {
   const queue: RunStreamFrame[] = [];
-  let wake: (() => void) | null = null;
-  let finished = false;
-  let failure: unknown = null;
+  // Mutated from the stream's callbacks: an object, so the checks below read its live values.
+  const state: { wake: (() => void) | null; finished: boolean; failure: Error | null } = {
+    wake: null,
+    finished: false,
+    failure: null,
+  };
+  const asError = (error: unknown): Error =>
+    error instanceof Error ? error : new Error(String(error));
   const push = (frame: RunStreamFrame): void => {
     queue.push(frame);
-    wake?.();
+    state.wake?.();
   };
   void (async () => {
     try {
@@ -68,37 +74,39 @@ async function* frames(
         sseDefaultRetryDelay: 1_000,
         sseMaxRetryDelay: 10_000,
         onSseError: (error: unknown) => {
-          failure = error;
+          state.failure = asError(error);
         },
         onSseEvent: (event) => {
-          const data = (event.data ?? {}) as Record<string, unknown>;
+          const data = (event.data as Record<string, unknown> | undefined) ?? {};
           const seq = Number(event.id ?? data["seq"] ?? 0);
           push({ event: event.event ?? "message", seq, data });
         },
       });
-      for await (const _ of stream) {
-        // frames arrive through onSseEvent, with their event names
+      // Frames arrive through onSseEvent, with their event names; this drains the stream.
+      const reader = stream[Symbol.asyncIterator]();
+      while (!(await reader.next()).done) {
+        // each frame was handled by onSseEvent
       }
     } catch (error) {
-      failure = error;
+      state.failure = asError(error);
     } finally {
-      finished = true;
-      wake?.();
+      state.finished = true;
+      state.wake?.();
     }
   })();
-  while (true) {
+  for (;;) {
     if (queue.length > 0) {
       yield queue.shift() as RunStreamFrame;
       continue;
     }
-    if (finished) {
-      if (failure !== null && !signal.aborted) throw failure;
+    if (state.finished) {
+      if (state.failure !== null && !signal.aborted) throw state.failure;
       return;
     }
     await new Promise<void>((resolve) => {
-      wake = resolve;
+      state.wake = resolve;
     });
-    wake = null;
+    state.wake = null;
   }
 }
 
@@ -174,12 +182,17 @@ export class SseRunSource implements RunSource {
       if (this.done) return null;
       this.cursor = page.resync ? page.last_seq : Math.max(this.cursor, page.last_seq);
       this.emit({ kind: "page", page });
-      if (!isActive(page.run) && page.run !== null) this.stop();
+      if (!isActive(page.run)) this.stop();
       return page;
     } catch (error) {
       this.emit({ kind: "error", error });
       return null;
     }
+  }
+
+  /** Read live: `stop()` may run while a stream is awaited. */
+  private get stopped(): boolean {
+    return this.done;
   }
 
   private async listen(abort: AbortController): Promise<void> {
@@ -192,7 +205,7 @@ export class SseRunSource implements RunSource {
         signal: abort.signal,
         maxAttempts: SSE_MAX_ATTEMPTS,
       } as Parameters<RunStreamOpener>[0])) {
-        if (this.done) return;
+        if (this.stopped) return;
         if (frame.event === "locked") {
           this.emit({ kind: "error", error: new RunStreamLocked() });
           this.stop();
@@ -202,8 +215,7 @@ export class SseRunSource implements RunSource {
           await this.pull(0);
           continue;
         }
-        const state =
-          typeof frame.data["state"] === "string" ? (frame.data["state"] as string) : null;
+        const state = typeof frame.data["state"] === "string" ? frame.data["state"] : null;
         if (frame.event === "run.state_changed" && state !== null)
           this.options.onStateChange?.(state);
         if (frame.seq > this.cursor || frame.data["ref_only"] === true) {
@@ -214,9 +226,10 @@ export class SseRunSource implements RunSource {
           return;
         }
       }
-      if (!this.done) this.fallBack();
+      // A clean end is not a death: the runtime reconnects inside `client.sse` (with
+      // Last-Event-ID) until its retries are spent, and that surfaces as an error, below.
     } catch {
-      if (!this.done) this.fallBack();
+      if (!this.stopped) this.fallBack();
     }
   }
 

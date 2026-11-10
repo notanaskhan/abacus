@@ -37,7 +37,13 @@ from abacus.modules.assurance.agent_capabilities import register as register_age
 from abacus.modules.assurance.archive_additions import ACTIVITIES as ARCHIVE_VERIFY_ACTIVITIES
 from abacus.modules.assurance.archive_additions import SCHEDULES as ARCHIVE_VERIFY_SCHEDULES
 from abacus.modules.assurance.archive_additions import WORKFLOWS as ARCHIVE_VERIFY_WORKFLOWS
-from abacus.modules.assurance.archive_additions import seal_matches
+from abacus.modules.assurance.archive_additions import (
+    SealVerifyInput,
+    SealVerifySweepWorkflow,
+    SealVerifyWorkflow,
+    VerifyResult,
+    seal_matches,
+)
 from abacus.modules.assurance.archive_gate import SUBSCRIPTIONS as ARCHIVE_SUBSCRIPTIONS
 from abacus.modules.assurance.archive_lock import ACTIVITIES as ARCHIVE_LOCK_ACTIVITIES
 from abacus.modules.assurance.archive_lock import WORKFLOWS as ARCHIVE_LOCK_WORKFLOWS
@@ -471,12 +477,11 @@ register_run_record(
 )
 
 __all__ = [
-    "SCHEDULES",
-    "seal_matches",
     "ACTIVITIES",
     "BRING_DOWN_ID_PREFIX",
     "PHASE_GATES",
     "ROUTERS",
+    "SCHEDULES",
     "SUBSCRIPTIONS",
     "TIEOUT_ID_PREFIX",
     "WORKFLOWS",
@@ -505,9 +510,13 @@ __all__ = [
     "RiskEdit",
     "RouteRequest",
     "RunSummary",
+    "SealVerifyInput",
+    "SealVerifySweepWorkflow",
+    "SealVerifyWorkflow",
     "SectionState",
     "TieOutCounts",
     "TieOutInput",
+    "VerifyResult",
     "acknowledge_letter",
     "adopt_trial_balance",
     "completion_errors",
@@ -519,8 +528,8 @@ __all__ = [
     "finding_to_misstatement",
     "follows_gate",
     "g4_facts",
-    "governance_letter",
     "governance_communication_scope",
+    "governance_letter",
     "governance_letter_pdf",
     "governance_rooms",
     "import_grouping_csv",
@@ -549,6 +558,7 @@ __all__ = [
     "room_letters",
     "route_exception",
     "router",
+    "seal_matches",
     "set_misstatement_effect",
     "start_mapping",
     "sum_snapshot",
@@ -605,10 +615,10 @@ from abacus.modules.assurance.governance_room import (  # noqa: E402
 from abacus.modules.assurance.governance_room import (  # noqa: E402
     acknowledge as acknowledge_letter,
 )
-from abacus.modules.assurance.governance_room import letter as governance_letter  # noqa: E402
 from abacus.modules.assurance.governance_room import (  # noqa: E402  # R-02-T22: its anchor
     communication_scope as governance_communication_scope,
 )
+from abacus.modules.assurance.governance_room import letter as governance_letter  # noqa: E402
 from abacus.modules.assurance.governance_room import (  # noqa: E402
     letter_pdf as governance_letter_pdf,
 )

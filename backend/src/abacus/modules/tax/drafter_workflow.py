@@ -23,16 +23,16 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
-from sqlalchemy import text
 from temporalio import activity, workflow
-from temporalio.common import RetryPolicy
-
-from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
+from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 if TYPE_CHECKING:
     from abacus.modules.identity.api import AuthContext
 
 with workflow.unsafe.imports_passed_through():
+    from sqlalchemy import text
+
+    from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
     from abacus.modules.tax.drafter import DRAFTER
 
 _TIMEOUT: Final = timedelta(minutes=5)
@@ -177,6 +177,8 @@ async def start_draft(ctx: AuthContext, tax_return_id: UUID) -> UUID:
         ReturnDrafterWorkflow,
         DraftInput(str(ctx.tenant_id), str(run_id), str(entity), int(row.tax_year)),
         id=drafter_workflow_id(str(ctx.tenant_id), str(run_id)),
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
     return run_id
 

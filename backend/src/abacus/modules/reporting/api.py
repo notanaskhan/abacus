@@ -57,10 +57,10 @@ from abacus.modules.reporting.deliverable_portal import approval_target as appro
 from abacus.modules.reporting.deliverable_portal import portal_client_ids as portal_client_ids
 from abacus.modules.reporting.deliverable_portal import portal_deliverable as portal_deliverable
 from abacus.modules.reporting.deliverable_reads import ReaderVersion as ReaderVersion
-from abacus.modules.reporting.deliverable_reads import reader_version as reader_version
 from abacus.modules.reporting.deliverable_reads import (  # R-02-T22: page-comment anchors
     deliverable_scope as deliverable_scope,
 )
+from abacus.modules.reporting.deliverable_reads import reader_version as reader_version
 from abacus.modules.reporting.deliverables import AudienceReceipt as AudienceReceipt
 from abacus.modules.reporting.deliverables import DeliverableAudience as DeliverableAudience
 from abacus.modules.reporting.deliverables import (

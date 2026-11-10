@@ -1,9 +1,15 @@
 // C-29's row chip (P-05-T10; SHL-18a): a 20h chip at a row's end that opens the thread in an O1
 // popover 420 anchored to it. Mounted by host screens behind `collaboration.v2` (AUD-09 rows).
+// Its own public root, apart from `domain/collaboration`: a host route (AUD-09, inside the AUD-02
+// chunk) carries the chip only, and the thread loads when the chip first opens (bundle budget).
 import { Icon, Popover } from "@abacus/ui";
-import { type JSX, useState } from "react";
+import { type JSX, lazy, Suspense, useState } from "react";
 import { useSession } from "../../app-core/session";
-import { type CommentAnchor, LiveCommentThread } from "./CommentThread";
+import type { CommentAnchor } from "../collaboration/CommentThread";
+
+const LiveCommentThread = lazy(async () => ({
+  default: (await import("../collaboration/CommentThread")).LiveCommentThread,
+}));
 
 export interface CommentChipProps {
   anchor: CommentAnchor;
@@ -46,16 +52,20 @@ export function CommentChip({
         </button>
       }
     >
-      <LiveCommentThread
-        variant="popover"
-        anchor={anchor}
-        anchorLabel={anchorLabel}
-        engagementId={engagementId}
-        engagementLabel={engagementLabel}
-        viewerId={session.user?.id ?? ""}
-        {...(context ? { context } : {})}
-        onClose={() => setOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <LiveCommentThread
+          variant="popover"
+          anchor={anchor}
+          anchorLabel={anchorLabel}
+          engagementId={engagementId}
+          engagementLabel={engagementLabel}
+          viewerId={session.user?.id ?? ""}
+          {...(context ? { context } : {})}
+          onClose={() => {
+            setOpen(false);
+          }}
+        />
+      </Suspense>
     </Popover>
   );
 }

@@ -16,7 +16,7 @@
 //
 // They live under fixtures/ (dev and test only); src/screens/HOME-01/scenarios.ts re-exports them.
 
-import type { CapabilitiesOut } from "@abacus/api-client";
+import type { CapabilitiesOut, NotificationItemOut, TodoOut } from "@abacus/api-client";
 import {
   type FixtureHandler,
   type Scenario,
@@ -26,6 +26,8 @@ import {
 } from "../../app-core/fixture-mode";
 import { homeHandlers } from "../handlers/home";
 import { humanGateHandlers } from "../handlers/human-gates";
+import { CLOCKS, IDS, P, row6Todo } from "../seed/collaboration";
+import { stableId as bandId } from "../seed/prng";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { DEMO_INSTANT } from "../seed/clock";
@@ -91,4 +93,65 @@ export const scenarios = defineScenarios({
 /** The office each state opens on (null: all offices): office-denver opens on Denver. */
 export const OFFICE: Readonly<Partial<Record<keyof typeof scenarios, string>>> = {
   "office-denver": officeIdOf("Denver"),
+};
+
+// ---- HOME-01 R2 bands (I-01-T24): h, i and a2, seeded to-dos and mentions only (revision.md) ----
+
+export type BandFrame = "a2" | "h" | "i";
+
+export interface BandScenario {
+  viewer: string;
+  /** The pane header's count stays the built one (11 for Daniel): bands never count into it. */
+  headerCount: number | null;
+  todos: TodoOut[];
+  mentions: NotificationItemOut[];
+}
+
+function mention(
+  key: string,
+  createdAt: string,
+  read: boolean,
+  excerpt: string,
+  objectLabel: string,
+): NotificationItemOut {
+  return {
+    id: bandId(`notification:home01:${key}`),
+    kind: "mention",
+    category: "mention",
+    actor: { kind: "human", user_id: P.margaret.user_id },
+    created_at: createdAt,
+    engagement_id: IDS.northwind,
+    facts: { actor_name: P.margaret.name, excerpt, object_label: objectLabel },
+    inline_actions: [],
+    pending: false,
+    read,
+    subject: { id: IDS.threadRow3, type: "comment_thread" },
+  };
+}
+
+export const BAND_SCENARIOS: Record<BandFrame, BandScenario> = {
+  // Daniel Reyes scrolled to the new bands: both empty, the header still 11.
+  a2: { viewer: "daniel-reyes", headerCount: 11, todos: [], mentions: [] },
+  h: {
+    viewer: "hannah-leclerc",
+    headerCount: null,
+    todos: [],
+    mentions: [
+      mention(
+        "row3",
+        CLOCKS.shl18a,
+        false,
+        "this cutoff item drives AJE-1 — show it as factual on the SUM.",
+        "Northwind · Exceptions row 3",
+      ),
+      mention(
+        "aud03",
+        "2026-09-14T08:31:00-05:00",
+        true,
+        "did the bridge letter request go to Keystone for Oct–Dec 2025?",
+        "AUD-03 Source Documents",
+      ),
+    ],
+  },
+  i: { viewer: "marcus-delaney", headerCount: null, todos: [row6Todo("marcus")], mentions: [] },
 };

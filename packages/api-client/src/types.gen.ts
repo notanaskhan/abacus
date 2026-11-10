@@ -4209,7 +4209,7 @@ export type AuditEventDetail = {
     /**
      * Link Kind
      */
-    link_kind?: 'run' | 'none';
+    link_kind?: 'run' | 'sign_off' | 'materiality' | 'document' | 'risk' | 'gate' | 'todo' | 'none';
     /**
      * Mark
      */
@@ -4315,7 +4315,7 @@ export type AuditEventRow = {
     /**
      * Link Kind
      */
-    link_kind?: 'run' | 'none';
+    link_kind?: 'run' | 'sign_off' | 'materiality' | 'document' | 'risk' | 'gate' | 'todo' | 'none';
     /**
      * Mark
      */
@@ -14365,6 +14365,10 @@ export type EngagementActivityExportIn = {
      * Until
      */
     until?: string | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id?: string | null;
 };
 
 /**
@@ -14402,6 +14406,10 @@ export type EngagementActivityQueryIn = {
      * Until
      */
     until?: string | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id?: string | null;
 };
 
 /**
@@ -53421,6 +53429,1137 @@ export type WorkRowOut = {
      * Work Item Id
      */
     work_item_id: string;
+};
+
+/**
+ * WorkbookAcceptedOut
+ */
+export type WorkbookAcceptedOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+};
+
+/**
+ * WorkbookAllocationDraftIn
+ */
+export type WorkbookAllocationDraftIn = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Kind
+     */
+    kind: 'straight_percentage' | 'targeted_waterfall';
+    /**
+     * Rungs
+     */
+    rungs: Array<WorkbookRungOutInput>;
+};
+
+/**
+ * WorkbookAllocationStructureOut
+ */
+export type WorkbookAllocationStructureOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    /**
+     * Kind
+     */
+    kind: 'straight_percentage' | 'targeted_waterfall';
+    /**
+     * Rungs
+     */
+    rungs: Array<WorkbookRungOutOutput>;
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+    /**
+     * Status
+     */
+    status: 'editing' | 'pending_approval' | 'approved' | 'superseded';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * WorkbookBreakdownOut
+ */
+export type WorkbookBreakdownOut = {
+    /**
+     * Line
+     */
+    line: string;
+    /**
+     * Rows
+     */
+    rows: Array<WorkbookBreakdownRowOut>;
+};
+
+/**
+ * WorkbookBreakdownRowOut
+ */
+export type WorkbookBreakdownRowOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Property Name
+     */
+    property_name: string;
+};
+
+/**
+ * WorkbookCapitalAccountsOut
+ */
+export type WorkbookCapitalAccountsOut = {
+    /**
+     * Basis
+     */
+    basis: 'tax' | 'gaap' | 'section_704b';
+    /**
+     * Rows
+     */
+    rows: Array<WorkbookCapitalRowOut>;
+    /**
+     * Tie
+     */
+    tie: 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
+    /**
+     * View
+     */
+    view: 'by_partner' | 'by_movement';
+};
+
+/**
+ * WorkbookCapitalRowOut
+ */
+export type WorkbookCapitalRowOut = {
+    /**
+     * Beginning
+     */
+    beginning: string;
+    /**
+     * Contributions
+     */
+    contributions: string;
+    /**
+     * Distributions
+     */
+    distributions: string;
+    /**
+     * Ending
+     */
+    ending: string;
+    /**
+     * Income
+     */
+    income: string;
+    /**
+     * Partner Id
+     */
+    partner_id: string;
+};
+
+/**
+ * WorkbookCellEditIn
+ */
+export type WorkbookCellEditIn = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Formula
+     */
+    formula?: string | null;
+    /**
+     * Value
+     */
+    value?: string | null;
+};
+
+/**
+ * WorkbookCellOut
+ */
+export type WorkbookCellOut = {
+    /**
+     * Address
+     */
+    address: string;
+    /**
+     * Author
+     */
+    author: 'run_step' | 'engine_import' | 'person' | 'formula';
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Formula
+     */
+    formula?: string | null;
+    /**
+     * State
+     */
+    state: 'value' | 'formula' | 'locked_by_run' | 'stale' | 'flagged';
+    /**
+     * Value
+     */
+    value?: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * WorkbookCellProvenanceOut
+ */
+export type WorkbookCellProvenanceOut = {
+    cell: WorkbookCellOut;
+    /**
+     * Inputs
+     */
+    inputs?: Array<string>;
+    /**
+     * Issue Ids
+     */
+    issue_ids?: Array<string>;
+    /**
+     * Writer
+     */
+    writer: string;
+};
+
+/**
+ * WorkbookFormLineOut
+ */
+export type WorkbookFormLineOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * WorkbookFormLinesOut
+ */
+export type WorkbookFormLinesOut = {
+    /**
+     * Items
+     */
+    items: Array<WorkbookFormLineOut>;
+};
+
+/**
+ * WorkbookGeneralInformationOut
+ */
+export type WorkbookGeneralInformationOut = {
+    /**
+     * Accounting Method
+     */
+    accounting_method?: string | null;
+    /**
+     * Ein Last4
+     */
+    ein_last4?: string | null;
+    /**
+     * Entity Name
+     */
+    entity_name: string;
+    /**
+     * Form
+     */
+    form: '1065' | '1120-S' | '1120' | '990';
+    /**
+     * Preparer Name
+     */
+    preparer_name?: string | null;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Reviewer Name
+     */
+    reviewer_name?: string | null;
+    /**
+     * Signer Name
+     */
+    signer_name?: string | null;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * WorkbookImportAcceptedOut
+ */
+export type WorkbookImportAcceptedOut = {
+    /**
+     * Cells
+     */
+    cells: number;
+    /**
+     * Import Id
+     */
+    import_id: string;
+    /**
+     * Kind
+     */
+    kind: 'depreciation_register' | 'state_apportionment';
+};
+
+/**
+ * WorkbookInterestTransferOut
+ */
+export type WorkbookInterestTransferOutInput = {
+    /**
+     * Citation Id
+     */
+    citation_id?: string | null;
+    /**
+     * From Partner Id
+     */
+    from_partner_id: string;
+    /**
+     * On
+     */
+    on: string;
+    /**
+     * Percentage
+     */
+    percentage: number | string;
+    /**
+     * To Partner Id
+     */
+    to_partner_id: string;
+};
+
+/**
+ * WorkbookInterestTransferOut
+ */
+export type WorkbookInterestTransferOutOutput = {
+    /**
+     * Citation Id
+     */
+    citation_id?: string | null;
+    /**
+     * From Partner Id
+     */
+    from_partner_id: string;
+    /**
+     * On
+     */
+    on: string;
+    /**
+     * Percentage
+     */
+    percentage: string;
+    /**
+     * To Partner Id
+     */
+    to_partner_id: string;
+};
+
+/**
+ * WorkbookJournalEntriesOut
+ */
+export type WorkbookJournalEntriesOut = {
+    /**
+     * Items
+     */
+    items: Array<WorkbookJournalEntryOut>;
+};
+
+/**
+ * WorkbookJournalEntryOut
+ */
+export type WorkbookJournalEntryOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'aje' | 'rje' | 'tje';
+    /**
+     * Reference
+     */
+    reference: string;
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
+ * WorkbookM2Out
+ */
+export type WorkbookM2Out = {
+    /**
+     * Beginning
+     */
+    beginning: string;
+    /**
+     * Difference
+     */
+    difference?: string | null;
+    /**
+     * Ending
+     */
+    ending: string;
+    /**
+     * Tie
+     */
+    tie: 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
+    /**
+     * Variant
+     */
+    variant: 'as_drafted' | 'with_fix';
+};
+
+/**
+ * WorkbookMappingIn
+ */
+export type WorkbookMappingIn = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Form Line Key
+     */
+    form_line_key: string;
+    /**
+     * Rationale
+     */
+    rationale?: string | null;
+};
+
+/**
+ * WorkbookMappingProposedOut
+ */
+export type WorkbookMappingProposedOut = {
+    /**
+     * Proposal Id
+     */
+    proposal_id: string;
+};
+
+/**
+ * WorkbookMemoAdoptIn
+ */
+export type WorkbookMemoAdoptIn = {
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * WorkbookMemoDraftIn
+ */
+export type WorkbookMemoDraftIn = {
+    /**
+     * Sections
+     */
+    sections?: Array<string>;
+};
+
+/**
+ * WorkbookMemoOut
+ */
+export type WorkbookMemoOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    /**
+     * Sections
+     */
+    sections: Array<WorkbookMemoSectionOut>;
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+    /**
+     * Stale Fields
+     */
+    stale_fields?: Array<string>;
+    /**
+     * Status
+     */
+    status: 'drafting' | 'adopted' | 'approved' | 'stale';
+};
+
+/**
+ * WorkbookMemoSectionEditIn
+ */
+export type WorkbookMemoSectionEditIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+};
+
+/**
+ * WorkbookMemoSectionOut
+ */
+export type WorkbookMemoSectionOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Human Owned
+     */
+    human_owned: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * WorkbookOpportunitiesOut
+ */
+export type WorkbookOpportunitiesOut = {
+    /**
+     * Items
+     */
+    items: Array<WorkbookOpportunityOut>;
+};
+
+/**
+ * WorkbookOpportunityOut
+ */
+export type WorkbookOpportunityOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * WorkbookOut
+ */
+export type WorkbookOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Sheets
+     */
+    sheets: Array<WorkbookSheetOut>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * WorkbookOwnershipIn
+ */
+export type WorkbookOwnershipIn = {
+    /**
+     * Citation Note
+     */
+    citation_note: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Periods
+     */
+    periods: Array<WorkbookOwnershipPeriodOutInput>;
+    /**
+     * Transfers
+     */
+    transfers?: Array<WorkbookInterestTransferOutInput>;
+};
+
+/**
+ * WorkbookOwnershipPeriodOut
+ */
+export type WorkbookOwnershipPeriodOutInput = {
+    /**
+     * Ends On
+     */
+    ends_on: string;
+    /**
+     * Shares
+     */
+    shares: {
+        [key: string]: number | string;
+    };
+    /**
+     * Starts On
+     */
+    starts_on: string;
+};
+
+/**
+ * WorkbookOwnershipPeriodOut
+ */
+export type WorkbookOwnershipPeriodOutOutput = {
+    /**
+     * Ends On
+     */
+    ends_on: string;
+    /**
+     * Shares
+     */
+    shares: {
+        [key: string]: string;
+    };
+    /**
+     * Starts On
+     */
+    starts_on: string;
+};
+
+/**
+ * WorkbookPartnerOut
+ */
+export type WorkbookPartnerOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'general' | 'limited' | 'llc_member';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Tin Last4
+     */
+    tin_last4?: string | null;
+};
+
+/**
+ * WorkbookPartnersOut
+ */
+export type WorkbookPartnersOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    /**
+     * Partners
+     */
+    partners: Array<WorkbookPartnerOut>;
+    /**
+     * Periods
+     */
+    periods: Array<WorkbookOwnershipPeriodOutOutput>;
+    /**
+     * Transfers
+     */
+    transfers: Array<WorkbookInterestTransferOutOutput>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * WorkbookReconciliationOut
+ */
+export type WorkbookReconciliationOut = {
+    /**
+     * Checkpoint Id
+     */
+    checkpoint_id?: string | null;
+    /**
+     * Differences
+     */
+    differences: number;
+    /**
+     * Rows
+     */
+    rows: Array<WorkbookReconciliationRowOut>;
+};
+
+/**
+ * WorkbookReconciliationRowOut
+ */
+export type WorkbookReconciliationRowOut = {
+    /**
+     * Accrued
+     */
+    accrued?: string | null;
+    /**
+     * Engine
+     */
+    engine?: string | null;
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Issue Id
+     */
+    issue_id?: string | null;
+};
+
+/**
+ * WorkbookReturnIssueOut
+ */
+export type WorkbookReturnIssueOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Section
+     */
+    section?: string | null;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Step
+     */
+    step?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * WorkbookReturnIssuesOut
+ */
+export type WorkbookReturnIssuesOut = {
+    /**
+     * By Section
+     */
+    by_section: {
+        [key: string]: number;
+    };
+    /**
+     * By Step
+     */
+    by_step: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<WorkbookReturnIssueOut>;
+};
+
+/**
+ * WorkbookRunAcceptedOut
+ */
+export type WorkbookRunAcceptedOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Run No
+     */
+    run_no: number;
+};
+
+/**
+ * WorkbookRunIn
+ */
+export type WorkbookRunIn = {
+    /**
+     * Keys
+     */
+    keys?: Array<string>;
+    /**
+     * Scope
+     */
+    scope: 'all' | 'group' | 'task';
+};
+
+/**
+ * WorkbookRunRowOut
+ */
+export type WorkbookRunRowOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Run No
+     */
+    run_no: number;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Started By
+     */
+    started_by: string;
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
+ * WorkbookRungOut
+ */
+export type WorkbookRungOutInput = {
+    /**
+     * Amount
+     */
+    amount?: number | string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Percentage
+     */
+    percentage?: number | string | null;
+};
+
+/**
+ * WorkbookRungOut
+ */
+export type WorkbookRungOutOutput = {
+    /**
+     * Amount
+     */
+    amount?: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Percentage
+     */
+    percentage?: string | null;
+};
+
+/**
+ * WorkbookRunsOut
+ */
+export type WorkbookRunsOut = {
+    /**
+     * Items
+     */
+    items: Array<WorkbookRunRowOut>;
+};
+
+/**
+ * WorkbookScheduleKCellOut
+ */
+export type WorkbookScheduleKCellOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Partner Id
+     */
+    partner_id: string;
+};
+
+/**
+ * WorkbookScheduleKLineOut
+ */
+export type WorkbookScheduleKLineOut = {
+    /**
+     * By Partner
+     */
+    by_partner: Array<WorkbookScheduleKCellOut>;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line
+     */
+    line: string;
+    /**
+     * Tie
+     */
+    tie: 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
+ * WorkbookScheduleKOut
+ */
+export type WorkbookScheduleKOut = {
+    /**
+     * Lines
+     */
+    lines: Array<WorkbookScheduleKLineOut>;
+    /**
+     * View
+     */
+    view: 'federal' | 'state';
+};
+
+/**
+ * WorkbookSectionOut
+ */
+export type WorkbookSectionOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Signed Levels
+     */
+    signed_levels: Array<string>;
+    /**
+     * Tallies
+     */
+    tallies: Array<WorkbookTallyOut>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * WorkbookSectionSignOffIn
+ */
+export type WorkbookSectionSignOffIn = {
+    /**
+     * Level
+     */
+    level: 'l2' | 'l3';
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * WorkbookSectionsOut
+ */
+export type WorkbookSectionsOut = {
+    /**
+     * Items
+     */
+    items: Array<WorkbookSectionOut>;
+};
+
+/**
+ * WorkbookSheetCellsOut
+ */
+export type WorkbookSheetCellsOut = {
+    /**
+     * Cells
+     */
+    cells: Array<WorkbookCellOut>;
+    /**
+     * Next Range
+     */
+    next_range?: string | null;
+    /**
+     * Sheet
+     */
+    sheet: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * WorkbookSheetOut
+ */
+export type WorkbookSheetOut = {
+    /**
+     * Flagged
+     */
+    flagged?: number;
+    /**
+     * Imported From
+     */
+    imported_from?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * WorkbookSignOffRecordedOut
+ */
+export type WorkbookSignOffRecordedOut = {
+    /**
+     * Sign Off Id
+     */
+    sign_off_id: string;
+};
+
+/**
+ * WorkbookTalliesOut
+ */
+export type WorkbookTalliesOut = {
+    /**
+     * Items
+     */
+    items: Array<WorkbookTallyOut>;
+};
+
+/**
+ * WorkbookTallyOut
+ */
+export type WorkbookTallyOut = {
+    /**
+     * Difference
+     */
+    difference?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * State
+     */
+    state: 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
+};
+
+/**
+ * WorkbookTbRowOut
+ */
+export type WorkbookTbRowOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Aje
+     */
+    aje: string;
+    /**
+     * Form Line Key
+     */
+    form_line_key?: string | null;
+    /**
+     * Rje
+     */
+    rje: string;
+    /**
+     * Tax Basis
+     */
+    tax_basis: string;
+    /**
+     * Tje
+     */
+    tje: string;
+    /**
+     * Unadjusted
+     */
+    unadjusted: string;
+};
+
+/**
+ * WorkbookTrialBalanceOut
+ */
+export type WorkbookTrialBalanceOut = {
+    /**
+     * Rows
+     */
+    rows: Array<WorkbookTbRowOut>;
+    /**
+     * Unmapped
+     */
+    unmapped: number;
+    /**
+     * View
+     */
+    view: 'account' | 'line';
 };
 
 /**
@@ -100780,6 +101919,70 @@ export type UndoFollowUpResponses = {
 
 export type UndoFollowUpResponse = UndoFollowUpResponses[keyof UndoFollowUpResponses];
 
+export type EntityFormLinesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Form
+         */
+        form: '1065' | '1120-S' | '1120' | '990';
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/v1/form-lines';
+};
+
+export type EntityFormLinesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityFormLinesError = EntityFormLinesErrors[keyof EntityFormLinesErrors];
+
+export type EntityFormLinesResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookFormLinesOut;
+};
+
+export type EntityFormLinesResponse = EntityFormLinesResponses[keyof EntityFormLinesResponses];
+
 export type GetGeneratedDocumentData = {
     body?: never;
     headers?: {
@@ -120949,6 +122152,187 @@ export type RejectionIssueResponses = {
 
 export type RejectionIssueResponse = RejectionIssueResponses[keyof RejectionIssueResponses];
 
+export type EntityAllocationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/tax-returns/{return_id}/allocation-structure';
+};
+
+export type EntityAllocationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityAllocationError = EntityAllocationErrors[keyof EntityAllocationErrors];
+
+export type EntityAllocationResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookAllocationStructureOut;
+};
+
+export type EntityAllocationResponse = EntityAllocationResponses[keyof EntityAllocationResponses];
+
+export type EntityAllocationDraftData = {
+    body: WorkbookAllocationDraftIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/allocation-structure/draft';
+};
+
+export type EntityAllocationDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityAllocationDraftError = EntityAllocationDraftErrors[keyof EntityAllocationDraftErrors];
+
+export type EntityAllocationDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookAllocationStructureOut;
+};
+
+export type EntityAllocationDraftResponse = EntityAllocationDraftResponses[keyof EntityAllocationDraftResponses];
+
+export type EntityAllocationPreviewData = {
+    body: WorkbookAllocationDraftIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/allocation-structure/preview';
+};
+
+export type EntityAllocationPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityAllocationPreviewError = EntityAllocationPreviewErrors[keyof EntityAllocationPreviewErrors];
+
+export type EntityAllocationPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookAllocationStructureOut;
+};
+
+export type EntityAllocationPreviewResponse = EntityAllocationPreviewResponses[keyof EntityAllocationPreviewResponses];
+
 export type ReturnAssignData = {
     body: AssignmentIn;
     headers?: {
@@ -121008,6 +122392,71 @@ export type ReturnAssignResponses = {
 };
 
 export type ReturnAssignResponse = ReturnAssignResponses[keyof ReturnAssignResponses];
+
+export type EntityCapitalAccountsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * View
+         */
+        view?: 'by_partner' | 'by_movement';
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/tax-returns/{return_id}/capital-accounts';
+};
+
+export type EntityCapitalAccountsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityCapitalAccountsError = EntityCapitalAccountsErrors[keyof EntityCapitalAccountsErrors];
+
+export type EntityCapitalAccountsResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookCapitalAccountsOut;
+};
+
+export type EntityCapitalAccountsResponse = EntityCapitalAccountsResponses[keyof EntityCapitalAccountsResponses];
 
 export type PublishDeliverableData = {
     body?: never;
@@ -121594,6 +123043,62 @@ export type ApproveReturnResponses = {
 
 export type ApproveReturnResponse = ApproveReturnResponses[keyof ApproveReturnResponses];
 
+export type EntityGeneralInformationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/general-information';
+};
+
+export type EntityGeneralInformationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityGeneralInformationError = EntityGeneralInformationErrors[keyof EntityGeneralInformationErrors];
+
+export type EntityGeneralInformationResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookGeneralInformationOut;
+};
+
+export type EntityGeneralInformationResponse = EntityGeneralInformationResponses[keyof EntityGeneralInformationResponses];
+
 export type ReturnIntakeData = {
     body?: never;
     headers?: {
@@ -121645,6 +123150,139 @@ export type ReturnIntakeResponses = {
 };
 
 export type ReturnIntakeResponse = ReturnIntakeResponses[keyof ReturnIntakeResponses];
+
+export type EntityIssuesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Section
+         */
+        section?: string | null;
+        /**
+         * Status
+         */
+        status?: string | null;
+        /**
+         * Step
+         */
+        step?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Show Resolved
+         */
+        show_resolved?: boolean;
+    };
+    url: '/v1/tax-returns/{return_id}/issues';
+};
+
+export type EntityIssuesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityIssuesError = EntityIssuesErrors[keyof EntityIssuesErrors];
+
+export type EntityIssuesResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookReturnIssuesOut;
+};
+
+export type EntityIssuesResponse = EntityIssuesResponses[keyof EntityIssuesResponses];
+
+export type EntityJournalEntriesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/journal-entries';
+};
+
+export type EntityJournalEntriesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityJournalEntriesError = EntityJournalEntriesErrors[keyof EntityJournalEntriesErrors];
+
+export type EntityJournalEntriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookJournalEntriesOut;
+};
+
+export type EntityJournalEntriesResponse = EntityJournalEntriesResponses[keyof EntityJournalEntriesResponses];
 
 export type ListK1PackagesData = {
     body?: never;
@@ -121878,6 +123516,378 @@ export type ShareK1Responses = {
 
 export type ShareK1Response = ShareK1Responses[keyof ShareK1Responses];
 
+export type EntityMappingData = {
+    body: WorkbookMappingIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/mappings';
+};
+
+export type EntityMappingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityMappingError = EntityMappingErrors[keyof EntityMappingErrors];
+
+export type EntityMappingResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkbookMappingProposedOut;
+};
+
+export type EntityMappingResponse = EntityMappingResponses[keyof EntityMappingResponses];
+
+export type EntityMemoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/memo';
+};
+
+export type EntityMemoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityMemoError = EntityMemoErrors[keyof EntityMemoErrors];
+
+export type EntityMemoResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookMemoOut;
+};
+
+export type EntityMemoResponse = EntityMemoResponses[keyof EntityMemoResponses];
+
+export type EntityMemoAdoptData = {
+    body: WorkbookMemoAdoptIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/memo/adopt';
+};
+
+export type EntityMemoAdoptErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityMemoAdoptError = EntityMemoAdoptErrors[keyof EntityMemoAdoptErrors];
+
+export type EntityMemoAdoptResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkbookSignOffRecordedOut;
+};
+
+export type EntityMemoAdoptResponse = EntityMemoAdoptResponses[keyof EntityMemoAdoptResponses];
+
+export type EntityMemoDraftData = {
+    body: WorkbookMemoDraftIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/memo/draft';
+};
+
+export type EntityMemoDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityMemoDraftError = EntityMemoDraftErrors[keyof EntityMemoDraftErrors];
+
+export type EntityMemoDraftResponses = {
+    /**
+     * Successful Response
+     */
+    202: WorkbookAcceptedOut;
+};
+
+export type EntityMemoDraftResponse = EntityMemoDraftResponses[keyof EntityMemoDraftResponses];
+
+export type EntityMemoSectionData = {
+    body: WorkbookMemoSectionEditIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/memo/sections/{key}';
+};
+
+export type EntityMemoSectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityMemoSectionError = EntityMemoSectionErrors[keyof EntityMemoSectionErrors];
+
+export type EntityMemoSectionResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookMemoSectionOut;
+};
+
+export type EntityMemoSectionResponse = EntityMemoSectionResponses[keyof EntityMemoSectionResponses];
+
+export type EntityOpportunitiesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/opportunities';
+};
+
+export type EntityOpportunitiesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityOpportunitiesError = EntityOpportunitiesErrors[keyof EntityOpportunitiesErrors];
+
+export type EntityOpportunitiesResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookOpportunitiesOut;
+};
+
+export type EntityOpportunitiesResponse = EntityOpportunitiesResponses[keyof EntityOpportunitiesResponses];
+
 export type ReturnOverviewData = {
     body?: never;
     headers?: {
@@ -121929,6 +123939,497 @@ export type ReturnOverviewResponses = {
 };
 
 export type ReturnOverviewResponse = ReturnOverviewResponses[keyof ReturnOverviewResponses];
+
+export type EntityOwnershipData = {
+    body: WorkbookOwnershipIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/ownership';
+};
+
+export type EntityOwnershipErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityOwnershipError = EntityOwnershipErrors[keyof EntityOwnershipErrors];
+
+export type EntityOwnershipResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookPartnersOut;
+};
+
+export type EntityOwnershipResponse = EntityOwnershipResponses[keyof EntityOwnershipResponses];
+
+export type EntityPartnersData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/partners';
+};
+
+export type EntityPartnersErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityPartnersError = EntityPartnersErrors[keyof EntityPartnersErrors];
+
+export type EntityPartnersResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookPartnersOut;
+};
+
+export type EntityPartnersResponse = EntityPartnersResponses[keyof EntityPartnersResponses];
+
+export type EntityReconciliationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Checkpoint
+         */
+        checkpoint?: string | null;
+    };
+    url: '/v1/tax-returns/{return_id}/reconciliation';
+};
+
+export type EntityReconciliationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityReconciliationError = EntityReconciliationErrors[keyof EntityReconciliationErrors];
+
+export type EntityReconciliationResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookReconciliationOut;
+};
+
+export type EntityReconciliationResponse = EntityReconciliationResponses[keyof EntityReconciliationResponses];
+
+export type EntityScheduleKData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * View
+         */
+        view?: 'federal' | 'state';
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/tax-returns/{return_id}/schedules/k';
+};
+
+export type EntityScheduleKErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityScheduleKError = EntityScheduleKErrors[keyof EntityScheduleKErrors];
+
+export type EntityScheduleKResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookScheduleKOut;
+};
+
+export type EntityScheduleKResponse = EntityScheduleKResponses[keyof EntityScheduleKResponses];
+
+export type EntityScheduleKBreakdownData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Line
+         */
+        line: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/schedules/k/lines/{line}/breakdown';
+};
+
+export type EntityScheduleKBreakdownErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityScheduleKBreakdownError = EntityScheduleKBreakdownErrors[keyof EntityScheduleKBreakdownErrors];
+
+export type EntityScheduleKBreakdownResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookBreakdownOut;
+};
+
+export type EntityScheduleKBreakdownResponse = EntityScheduleKBreakdownResponses[keyof EntityScheduleKBreakdownResponses];
+
+export type EntityM2Data = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Variant
+         */
+        variant?: 'as_drafted' | 'with_fix';
+    };
+    url: '/v1/tax-returns/{return_id}/schedules/m2';
+};
+
+export type EntityM2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityM2Error = EntityM2Errors[keyof EntityM2Errors];
+
+export type EntityM2Responses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookM2Out;
+};
+
+export type EntityM2Response = EntityM2Responses[keyof EntityM2Responses];
+
+export type EntitySectionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/sections';
+};
+
+export type EntitySectionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntitySectionsError = EntitySectionsErrors[keyof EntitySectionsErrors];
+
+export type EntitySectionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookSectionsOut;
+};
+
+export type EntitySectionsResponse = EntitySectionsResponses[keyof EntitySectionsResponses];
+
+export type EntitySectionSignOffData = {
+    body: WorkbookSectionSignOffIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/sections/{key}/sign-off';
+};
+
+export type EntitySectionSignOffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntitySectionSignOffError = EntitySectionSignOffErrors[keyof EntitySectionSignOffErrors];
+
+export type EntitySectionSignOffResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkbookSignOffRecordedOut;
+};
+
+export type EntitySectionSignOffResponse = EntitySectionSignOffResponses[keyof EntitySectionSignOffResponses];
 
 export type TransitionData = {
     body: TransitionIn;
@@ -122045,6 +124546,653 @@ export type RecordTransmissionResponses = {
 };
 
 export type RecordTransmissionResponse = RecordTransmissionResponses[keyof RecordTransmissionResponses];
+
+export type EntityTrialBalanceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * View
+         */
+        view?: 'account' | 'line';
+        /**
+         * Statement
+         */
+        statement?: 'full' | 'balance_sheet' | 'income_statement';
+        /**
+         * Filter
+         */
+        filter?: 'unmapped' | null;
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/tax-returns/{return_id}/trial-balance';
+};
+
+export type EntityTrialBalanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityTrialBalanceError = EntityTrialBalanceErrors[keyof EntityTrialBalanceErrors];
+
+export type EntityTrialBalanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookTrialBalanceOut;
+};
+
+export type EntityTrialBalanceResponse = EntityTrialBalanceResponses[keyof EntityTrialBalanceResponses];
+
+export type EntityTalliesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/trial-balance/tallies';
+};
+
+export type EntityTalliesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityTalliesError = EntityTalliesErrors[keyof EntityTalliesErrors];
+
+export type EntityTalliesResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookTalliesOut;
+};
+
+export type EntityTalliesResponse = EntityTalliesResponses[keyof EntityTalliesResponses];
+
+export type WorkbookData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/workbook';
+};
+
+export type WorkbookErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WorkbookError = WorkbookErrors[keyof WorkbookErrors];
+
+export type WorkbookResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookOut;
+};
+
+export type WorkbookResponse = WorkbookResponses[keyof WorkbookResponses];
+
+export type EntityRunsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/workbook-runs';
+};
+
+export type EntityRunsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityRunsError = EntityRunsErrors[keyof EntityRunsErrors];
+
+export type EntityRunsResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookRunsOut;
+};
+
+export type EntityRunsResponse = EntityRunsResponses[keyof EntityRunsResponses];
+
+export type EntityStartRunData = {
+    body: WorkbookRunIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/workbook-runs';
+};
+
+export type EntityStartRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityStartRunError = EntityStartRunErrors[keyof EntityStartRunErrors];
+
+export type EntityStartRunResponses = {
+    /**
+     * Successful Response
+     */
+    202: WorkbookRunAcceptedOut;
+};
+
+export type EntityStartRunResponse = EntityStartRunResponses[keyof EntityStartRunResponses];
+
+export type EntityCellData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Address
+         */
+        address: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/tax-returns/{return_id}/workbook/cells/{address}';
+};
+
+export type EntityCellErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityCellError = EntityCellErrors[keyof EntityCellErrors];
+
+export type EntityCellResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookCellProvenanceOut;
+};
+
+export type EntityCellResponse = EntityCellResponses[keyof EntityCellResponses];
+
+export type EntityEditCellData = {
+    body: WorkbookCellEditIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Address
+         */
+        address: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/workbook/cells/{address}';
+};
+
+export type EntityEditCellErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityEditCellError = EntityEditCellErrors[keyof EntityEditCellErrors];
+
+export type EntityEditCellResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookCellOut;
+};
+
+export type EntityEditCellResponse = EntityEditCellResponses[keyof EntityEditCellResponses];
+
+export type EntityExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+        /**
+         * Sheet
+         */
+        sheet?: string | null;
+    };
+    url: '/v1/tax-returns/{return_id}/workbook/export.xlsx';
+};
+
+export type EntityExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityExportError = EntityExportErrors[keyof EntityExportErrors];
+
+export type EntityExportResponses = {
+    /**
+     * Response Entity Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type EntityExportResponse = EntityExportResponses[keyof EntityExportResponses];
+
+export type EntityImportData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query: {
+        /**
+         * Kind
+         */
+        kind: 'depreciation_register' | 'state_apportionment';
+    };
+    url: '/v1/tax-returns/{return_id}/workbook/imports';
+};
+
+export type EntityImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntityImportError = EntityImportErrors[keyof EntityImportErrors];
+
+export type EntityImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkbookImportAcceptedOut;
+};
+
+export type EntityImportResponse = EntityImportResponses[keyof EntityImportResponses];
+
+export type EntitySheetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Sheet
+         */
+        sheet: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+        /**
+         * Range
+         */
+        range?: string | null;
+    };
+    url: '/v1/tax-returns/{return_id}/workbook/sheets/{sheet}';
+};
+
+export type EntitySheetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EntitySheetError = EntitySheetErrors[keyof EntitySheetErrors];
+
+export type EntitySheetResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkbookSheetCellsOut;
+};
+
+export type EntitySheetResponse = EntitySheetResponses[keyof EntitySheetResponses];
 
 export type BulkAssignData = {
     body: BulkAssignIn;
@@ -123473,6 +126621,64 @@ export type FinalApprovalRequestResponses = {
 };
 
 export type FinalApprovalRequestResponse = FinalApprovalRequestResponses[keyof FinalApprovalRequestResponses];
+
+export type ReturnIssuesExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/issues/export';
+};
+
+export type ReturnIssuesExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReturnIssuesExportError = ReturnIssuesExportErrors[keyof ReturnIssuesExportErrors];
+
+export type ReturnIssuesExportResponses = {
+    /**
+     * Response Return Issues Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ReturnIssuesExportResponse = ReturnIssuesExportResponses[keyof ReturnIssuesExportResponses];
 
 export type K1ActivitiesData = {
     body?: never;

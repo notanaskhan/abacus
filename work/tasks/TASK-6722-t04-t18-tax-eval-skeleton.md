@@ -2,7 +2,7 @@
 id: TASK-6722
 title: "T-04-T18: evals/tax_return suite skeleton (frozen thresholds, case schema, graders, 31 seed cases)"
 spec: SPEC-649
-acceptance_criteria: [AC-6.8, AC-9.3, AC-11.1]
+acceptance_criteria: [AC-6, AC-9, AC-11]
 risk_zone: red
 status: in-review
 branch: s35-t04-t18

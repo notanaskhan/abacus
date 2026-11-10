@@ -2,10 +2,13 @@
 // items route with its cursor; run notifications deep-link to the run's trace.
 import type { RunItemsOut } from "@abacus/api-client";
 import { client } from "@abacus/api-client/client";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
+import type { JSX, ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { feedHref, runTrace } from "../../shell/notifications";
+import { newQueryClient } from "../../testing/support";
 import { useRunFeed } from "./runFeed";
 
 beforeAll(() => {
@@ -53,6 +56,11 @@ function page(afterSeq: number): RunItemsOut {
   };
 }
 
+// P-10-T35: the feed reads `realtime.sse` through the flags query, so the hook needs a client.
+function wrapper({ children }: { children: ReactNode }): JSX.Element {
+  return <QueryClientProvider client={newQueryClient()}>{children}</QueryClientProvider>;
+}
+
 describe("P-09-T13 live swap", () => {
   it("the feed polls the live items route with its after_seq cursor", async () => {
     const cursors: string[] = [];
@@ -67,7 +75,7 @@ describe("P-09-T13 live swap", () => {
         },
       },
     });
-    const { result } = renderHook(() => useRunFeed(RUN));
+    const { result } = renderHook(() => useRunFeed(RUN), { wrapper });
     await waitFor(() => {
       expect(result.current.items).toHaveLength(1);
     });

@@ -224,6 +224,10 @@ async def _seal(ctx: AuthContext, body: str) -> tuple[bytes, str]:
     return await seal(ctx.tenant_id, body.encode(), fingerprint), fingerprint
 
 
+# R-02-T22: the client comment path (`client_threads.py`) seals with the same rule.
+seal_body = _seal
+
+
 async def _write_comment(
     tx: UnitOfWork,
     ctx: AuthContext,

@@ -10,8 +10,8 @@ import pytest
 from abacus.modules.audit_trail.engagement_activity import ActivityFilter
 from abacus.modules.review.issues import IssueSource
 from abacus.modules.tax.activity_kinds import ACTIVITY_KINDS, GROUP_OF, title
-from abacus.modules.tax.return_issues import (  # pyright: ignore[reportPrivateUsage]
-    _cell,
+from abacus.modules.tax.return_issues import (
+    _cell,  # pyright: ignore[reportPrivateUsage]  # the CSV cell rule under test
     category_for,
     dependency_ref,
 )
@@ -37,7 +37,7 @@ def test_every_tax_kind_has_a_group_and_no_agent_self_action_is_a_decision() -> 
     assert set(ACTIVITY_KINDS) <= set(GROUP_OF)
     assert set(GROUP_OF.values()) <= {"approvals", "client", "agent", "tax_engine", "issues"}
     for action, kind in ACTIVITY_KINDS.items():
-        assert not (kind.agent_self and kind.entry.mark == "ok"), action
+        assert not (kind.agent_self and kind.mark == "ok"), action
 
 
 def test_ac_category_paths_and_formula_cells() -> None:
@@ -62,3 +62,14 @@ def test_ac_the_activity_filter_narrows_to_one_return() -> None:
     narrowed = ActivityFilter(engagement, work_item_id=item)
     assert plain.digest() != narrowed.digest()
     assert plain.fingerprint() != narrowed.fingerprint()
+
+
+def test_the_audit_trail_catalogue_carries_every_tax_kind() -> None:
+    """Nothing imports audit_trail, so its catalogue and links hold the tax kinds; this keeps the
+    two in step."""
+    from abacus.modules.audit_trail.activity_catalogue import CATALOGUE
+    from abacus.modules.audit_trail.engagement_activity import ACTIVITY_LINKS
+
+    for action, kind in ACTIVITY_KINDS.items():
+        assert (CATALOGUE[action].category, CATALOGUE[action].mark) == (kind.category, kind.mark)
+        assert ACTIVITY_LINKS[action].link_kind == kind.link_kind

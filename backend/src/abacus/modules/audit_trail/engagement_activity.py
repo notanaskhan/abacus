@@ -37,10 +37,22 @@ import json
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Literal, cast
+from typing import Any, Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, and_, case, distinct, func, literal, or_, select, true
+from sqlalchemy import (
+    ColumnElement,
+    String,
+    and_,
+    case,
+    distinct,
+    func,
+    literal,
+    literal_column,
+    or_,
+    select,
+    true,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import tenant_session
@@ -61,7 +73,7 @@ from abacus.modules.audit_trail import explorer
 from abacus.modules.audit_trail import labels as label_index
 from abacus.modules.audit_trail.activity_catalogue import activity_of
 from abacus.modules.audit_trail.audit_log_contract import AuditEventRow, LinkKind
-from abacus.modules.audit_trail.exports import CSV_COLUMNS, _cell, _json_cell
+from abacus.modules.audit_trail.exports import CSV_COLUMNS, csv_cell, json_cell
 from abacus.modules.identity.api import AuthContext
 
 Segment = Literal["all", "human", "via_agent", "policy"]
@@ -72,6 +84,14 @@ EXPORT_PAGE: Final = 500
 _log = get_logger(__name__)
 
 t = explorer.t
+
+
+def _equals(
+    column: ColumnElement[Any],  # Any: any column type
+    value: object,
+) -> ColumnElement[bool]:
+    """`column = value` as SQL (a named column on the left reads naturally to ruff and pyright)."""
+    return column == value
 
 
 @dataclass(frozen=True)
@@ -91,6 +111,18 @@ def _link(kind: LinkKind, *keywords: str, shown: bool = True) -> ActivityLink:
 # The v1 entries for the actions AUD-29a renders by S35 (P-05 §4.3). Prefix entries (ending in
 # ".") apply to every action of the entity; an exact entry wins over a prefix.
 ACTIVITY_LINKS: Final[Mapping[str, ActivityLink]] = {
+    # T-04-T23 (TAX-07): the tax return's own actions (tax.activity_kinds mirrors them).
+    "return_worksheet.created": _link("document", "worksheet"),
+    "k1_treatment.proposed": _link("document", "k-1", "treatment"),
+    "k1_treatment.approved": _link("document", "k-1", "treatment"),
+    "k1_treatment.overridden": _link("document", "k-1", "treatment"),
+    "residency.proposed": _link("none", "residency"),
+    "residency.confirmed": _link("none", "residency"),
+    "tax_return.draft_requested": _link("run", "draft"),
+    "issue.explained": _link("none", "issue"),
+    "issue.system_resolved": _link("none", "issue", "k-1"),
+    "tax_assistant.asked": _link("none", "assistant"),
+    "export.created": _link("none", "export", "csv"),
     # Runs, drafts and resumes open the WB-09 run trace.
     "agent_run.": _link("run", "run", "agent"),
     "engagement_run.": _link("run", "run", "agent"),
@@ -178,7 +210,8 @@ def in_activity_list() -> ColumnElement[bool]:
     exceptions back in."""
     exact, prefixes = _hidden_actions()
     hidden = [t.action.in_(exact)] if exact else []
-    hidden += [t.action.startswith(prefix) for prefix in prefixes]
+    # `LIKE 'comment.%'` with `_` escaped (an entity prefix holds no other wildcard).
+    hidden += [t.action.like(prefix.replace("_", "\\_") + "%", escape="\\") for prefix in prefixes]
     if not hidden:
         return literal(True)
     shown = _shown_actions()
@@ -188,15 +221,20 @@ def in_activity_list() -> ColumnElement[bool]:
 
 # AC-32: the segment of an event, in SQL. A system event with an agent run in its references
 # reads "via Agent" (the run acted for a person); support, client and gate facts read Human.
+# Constants inline (literal columns), so the statement reads as the segment rule it is.
+def _sql(value: str) -> ColumnElement[str]:
+    return literal_column(f"'{value}'", String)
+
+
 _HAS_RUN: Final = or_(
-    t.after_ref["run_id"].astext.is_not(None),
-    t.after_ref["agent_run_id"].astext.is_not(None),
+    t.after_ref.op("->>")(_sql("run_id")).is_not(None),
+    t.after_ref.op("->>")(_sql("agent_run_id")).is_not(None),
 )
 SEGMENT: Final[ColumnElement[str]] = case(
-    (t.actor_kind == "agent", literal("via_agent")),
-    (and_(t.actor_kind == "system", _HAS_RUN), literal("via_agent")),
-    (t.actor_kind == "policy", literal("policy")),
-    else_=literal("human"),
+    (_equals(t.actor_kind, _sql("agent")), _sql("via_agent")),
+    (and_(_equals(t.actor_kind, _sql("system")), _HAS_RUN), _sql("via_agent")),
+    (_equals(t.actor_kind, _sql("policy")), _sql("policy")),
+    else_=_sql("human"),
 )
 
 
@@ -248,7 +286,7 @@ async def _actions_in(
     there (one indexed read)."""
     async with tenant_session(ctx.tenant) as session:
         found = await session.execute(
-            select(distinct(t.action)).where(explorer.ENGAGEMENT == engagement_id)
+            select(distinct(t.action)).where(_equals(explorer.ENGAGEMENT, engagement_id))
         )
         actions = [str(a) for a in found.scalars().all()]
     wanted = frozenset(categories)
@@ -260,7 +298,7 @@ async def _conditions(
 ) -> list[ColumnElement[bool]]:
     found: list[ColumnElement[bool]] = [
         explorer.shown_to(reader),
-        explorer.ENGAGEMENT == where.engagement_id,
+        _equals(explorer.ENGAGEMENT, where.engagement_id),
         in_activity_list(),
     ]
     if where.categories:
@@ -317,7 +355,7 @@ async def query(
     others = await _conditions(ctx, reader, where)
     conditions = list(others)
     if where.segment != "all":
-        conditions.append(SEGMENT == where.segment)
+        conditions.append(_equals(SEGMENT, where.segment))
     async with tenant_session(ctx.tenant) as session:
         stmt = keyset(
             explorer._select(conditions),  # pyright: ignore[reportPrivateUsage] - the explorer's wide row
@@ -370,9 +408,9 @@ def _csv_cells(row: AuditEventRow) -> list[str]:
         row.office_id,
         row.ip,
     ]
-    out = [_cell(c) for c in cells]
-    out.append(_json_cell(row.detail_facts))
-    out.append(_cell(row.link_kind))
+    out = [csv_cell(c) for c in cells]
+    out.append(json_cell(row.detail_facts))
+    out.append(csv_cell(row.link_kind))
     return out
 
 

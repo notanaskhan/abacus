@@ -32,7 +32,7 @@ import pytest
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.engagements.api import engagement_resource_of
-from abacus.modules.identity.api import Forbidden, agent_context_for_run, authorise
+from abacus.modules.identity.api import AgentContext, Forbidden, agent_context_for_run, authorise
 
 from .support import Net, Person
 from .tb_support import (
@@ -259,10 +259,11 @@ async def test_ac9_a_client_user_never_reads_the_trial_balance(world: Books) -> 
 
 
 # AC-30: the agent also holds neither the on-demand ledger pull (a connector read, ADR-040) nor
-# the reconnect request the AUD-06 source menu offers.
+# the reconnect request the AUD-06 source menu offers. `trial_balance.read` is DEC-3213's one C9
+# exception, held only through a run's task scope (the next test).
 @pytest.mark.parametrize(
     "action",
-    [*HUMAN_ONLY, "trial_balance.read", "ledger.pull", "connection.reconnect_request"],
+    [*HUMAN_ONLY, "ledger.pull", "connection.reconnect_request"],
 )
 async def test_inv1_the_agent_principal_is_refused_every_c9_action(
     world: Books, action: str
@@ -280,6 +281,32 @@ async def test_inv1_the_agent_principal_is_refused_every_c9_action(
     )
     with pytest.raises(Forbidden):
         await authorise(agent, action, resource)
+
+
+async def test_dec3213_the_agent_reads_the_tb_only_through_its_run_task_scope(
+    world: Books,
+) -> None:
+    """DEC-3213 (P-10-T28's read tools): `trial_balance.read` is `task_scope` for the agent, never
+    `allow`: a run whose scope lists it may read, one whose scope does not is refused."""
+    resource = await engagement_resource_of(
+        TenantContext(world.tenant_id, "system", "test"), world.site.engagement_id
+    )
+
+    async def agent(scope: frozenset[str]) -> AgentContext:
+        return await agent_context_for_run(
+            tenant_id=world.tenant_id,
+            run_id=uuid.uuid4(),
+            agent_id="engagement.agent",
+            engagement_id=world.site.engagement_id,
+            task_scope=scope,
+            initiator_user_id=world.partner.user_id,
+        )
+
+    without = await agent(frozenset({"engagement.read"}))
+    with pytest.raises(Forbidden):
+        await authorise(without, "trial_balance.read", resource)
+    listed = await agent(frozenset({"engagement.read", "trial_balance.read"}))
+    await authorise(listed, "trial_balance.read", resource)
 
 
 async def test_inv1_the_check_rows_refuse_an_agent_definer(world: Books) -> None:

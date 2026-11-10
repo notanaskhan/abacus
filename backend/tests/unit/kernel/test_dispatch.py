@@ -186,6 +186,7 @@ def test_ac2_screening_is_time_sensitive_as_its_spec_says() -> None:
         "batch",  # SPEC-037 Q4 (TASK-085): the entry assessor
         "background",  # A-04-T11: the section drafter
         "background",  # P-10-T14 (TASK-6106): the agent-run backfill
+        "interactive",  # P-10-T29: a v2 agent run, which a person started (ADR-071)
     ]
     assert agents.spec(agents.SCREENER).work_class == "time_sensitive"
     assert work_class_of(agents.ScreeningWorkflow) == "time_sensitive"

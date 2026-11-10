@@ -29,10 +29,15 @@ async def _paper(w: Collab) -> uuid.UUID:
     client_id = await seed.value(
         "SELECT client_id FROM engagements WHERE id = $1", w.site.engagement_id
     )
+    # One assurance work item per engagement (`work_items_one_assurance`): reuse it when a paper
+    # was seeded before.
     work_item = await seed.value(
+        "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
+        w.site.engagement_id,
+    ) or await seed.value(
         "INSERT INTO work_items (tenant_id, engagement_id, client_id, kind, name, period_start, "
-        "period_end, created_by) VALUES ($1, $2, $3, 'audit', 'Northwind PY2025', '2025-01-01', "
-        "'2025-12-31', $4) RETURNING id",
+        "period_end, created_by) VALUES ($1, $2, $3, 'assurance', 'Northwind PY2025', "
+        "'2025-01-01', '2025-12-31', $4) RETURNING id",
         w.tenant_id,
         w.site.engagement_id,
         client_id,
@@ -95,7 +100,7 @@ async def test_ac15_convert_to_review_note_in_one_unit_of_work(w: Collab) -> Non
     assert converted.status_code == 201, converted.text
     note_id = converted.json()["review_note_id"]
     note = await w.net.seed.rows(
-        "SELECT status, target_type, target_id, anchor_ref FROM review_notes WHERE id = $1",
+        "SELECT status, target_type, target_id, anchor_ref FROM reviewable_notes WHERE id = $1",
         uuid.UUID(note_id),
     )
     assert note and note[0]["status"] == "open"

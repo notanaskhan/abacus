@@ -49,6 +49,10 @@ Matrix actions from `permission-matrix/tax.yaml` (T-05-T04): every human verb `a
 | Citation marker | SHL-07 then SHL-08 | planned |
 | Approve… | SHL-12 (L2) | planned |
 | Raise with client… | TAX-15 (T-08) / PRJ-01 (T-09) | planned |
+| Memo marker (tooltip): Review › Financials · 4000 Rental income | TXP-02 | planned |
+| Memo marker (tooltip): Review › M-1/M-3 · permanent differences | TXP-04 | planned |
+| Memo marker (tooltip): tax-exempt interest 6,200 omitted from the capital rollforward | TXP-10 | planned |
+| Memo marker (tooltip): K-1 package · drafts shared internally | TXP-12 | planned |
 
 ## Notes
 

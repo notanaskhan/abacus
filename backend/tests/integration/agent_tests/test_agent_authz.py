@@ -140,6 +140,7 @@ async def test_ac17_is_active_member_is_scoped_to_the_firm(seed: Seeder, world: 
         "suggestion.create",
         "follow_up.draft",
         "support_match.run",
+        "engagement.read",  # P-10-T28 (DEC-3204): the engagements.* read tools, task_scope only
     ],
 )
 def test_ac17_agent_may_hold_is_true_for_task_scope_actions(action: str) -> None:
@@ -156,7 +157,6 @@ def test_ac17_agent_may_hold_is_true_for_task_scope_actions(action: str) -> None
         "follow_up.send",
         "evidence.upload",
         "request_item.mark_ready",
-        "engagement.read",
         "connection.pull",
     ],
 )

@@ -40,7 +40,9 @@ const thread = (): HTMLElement | null => document.querySelector("[data-c29='thre
 describe("SHL-18 comments and mentions", () => {
   it.each(STATES)("%s renders its variant at the handoff width", async (state) => {
     show(state);
-    await waitFor(() => expect(thread()).not.toBeNull());
+    await waitFor(() => {
+      expect(thread()).not.toBeNull();
+    });
     const width = { popover: "420px", dock: "360px", drawer: "480px" }[FRAMES[state].variant];
     expect(thread()?.getAttribute("data-variant")).toBe(FRAMES[state].variant);
     expect(thread()?.style.width).toBe(width);
@@ -62,10 +64,10 @@ describe("SHL-18 comments and mentions", () => {
   it("a: the thread menu converts and mutes, and never edits or deletes", async () => {
     show("a");
     await screen.findByText(/this cutoff item drives AJE-1/);
-    fireEvent.pointerDown(screen.getByRole("button", { name: COPY.more }), { button: 0 });
+    // Enter opens the menu (a pointer-down as well would toggle it shut again in jsdom).
     fireEvent.keyDown(screen.getByRole("button", { name: COPY.more }), { key: "Enter" });
     const items = await screen.findAllByRole("menuitem");
-    const labels = items.map((i) => i.textContent ?? "");
+    const labels = items.map((i) => i.textContent);
     expect(labels).toEqual(
       expect.arrayContaining([COPY.copyLink, COPY.toTodo, COPY.toReviewNote, COPY.mute]),
     );

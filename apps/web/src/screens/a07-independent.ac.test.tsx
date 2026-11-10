@@ -30,7 +30,7 @@ function finalControlsInAgentElements(): string[] {
     for (const control of owned.querySelectorAll(
       "button, a, [role='button'], [role='menuitem']",
     )) {
-      const name = (control.getAttribute("aria-label") ?? control.textContent ?? "").trim();
+      const name = (control.getAttribute("aria-label") ?? control.textContent).trim();
       if (FINAL.test(name)) found.push(name);
     }
   }
@@ -40,9 +40,9 @@ function finalControlsInAgentElements(): string[] {
 function disabledFinalsWithoutWords(root: HTMLElement): string[] {
   const missing: string[] = [];
   for (const button of root.querySelectorAll<HTMLButtonElement>("button:disabled")) {
-    const name = (button.getAttribute("aria-label") ?? button.textContent ?? "").trim();
+    const name = (button.getAttribute("aria-label") ?? button.textContent).trim();
     if (!FINAL.test(name)) continue;
-    const near = button.parentElement?.textContent?.replace(name, "").trim() ?? "";
+    const near = button.parentElement?.textContent.replace(name, "").trim() ?? "";
     const described = button.getAttribute("aria-describedby") ?? button.getAttribute("title");
     if (!described && near.length === 0) missing.push(name);
   }
@@ -136,8 +136,8 @@ describe("A-07 screens: final verbs are never optimistic", () => {
     render(<Archive frame="b2" canLock onLock={onLock} />);
     const before = document.querySelector("[data-screen='AUD-25']")?.getAttribute("data-frame");
     const lock = screen.queryAllByRole("button", { name: /^Lock/ }).at(-1);
-    const attest = screen.queryByRole("checkbox");
-    if (attest !== null) fireEvent.click(attest);
+    // The lock sheet holds the attestation and the roll-forward choice: tick both.
+    for (const box of screen.queryAllByRole("checkbox")) fireEvent.click(box);
     if (lock !== undefined && !(lock as HTMLButtonElement).disabled) fireEvent.click(lock);
     expect(document.querySelector("[data-screen='AUD-25']")?.getAttribute("data-frame")).toBe(
       before,

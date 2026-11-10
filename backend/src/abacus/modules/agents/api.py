@@ -390,7 +390,13 @@ from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
 from abacus.modules.agents.proposal_store import (  # noqa: E402
     approved_rows as approved_proposal_rows,
 )
+from abacus.modules.agents.run_activities import (  # noqa: E402 -- the history recorder's types
+    PlanState,
+    RunFacts,
+    StepOutcome,
+)
 from abacus.modules.agents.run_start import open_capability_run  # noqa: E402 -- T-04-T25
+from abacus.modules.agents.run_waits import WaitState  # noqa: E402 -- the history recorder's
 from abacus.modules.agents.service import load_run_v2_context  # noqa: E402 -- T-04-T25
 from abacus.modules.agents.spec_v2 import (  # noqa: E402
     AgentSpecV2,
@@ -423,7 +429,9 @@ __all__ = [
     "AgentInput",
     "AgentRunBackfillWorkflow",
     "AgentRunBusy",
+    "AgentRunInput",
     "AgentRunNotRunning",
+    "AgentRunWorkflow",
     "AgentSpec",
     "AgentSpecV2",
     "AiPolicyLoosened",
@@ -489,6 +497,7 @@ __all__ = [
     "PackRefused",
     "PendingFieldSuggestion",
     "PendingSuggestion",
+    "PlanState",
     "PriorFact",
     "ProposalChanged",
     "ProposalInvalid",
@@ -501,6 +510,7 @@ __all__ = [
     "ReservedAction",
     "ReviewOutcome",
     "ReviewUnavailable",
+    "RunFacts",
     "RunInput",
     "RunOutcome",
     "RunV2Facts",
@@ -526,6 +536,7 @@ __all__ = [
     "SourcePaper",
     "StageNotReady",
     "StepAdvance",
+    "StepOutcome",
     "SuggestionApplier",
     "SuggestionChanged",
     "ThresholdEvaluation",
@@ -534,6 +545,7 @@ __all__ = [
     "UnregisteredTarget",
     "UploadReviewWorkflow",
     "VerifiedCitation",
+    "WaitState",
     "active_engagement_runs",
     "advance_synthetic_step",
     "agent_badge_stream",

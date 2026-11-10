@@ -21,18 +21,24 @@ from abacus.modules.tax import workbook_contract as wb
 ROOT = Path(__file__).resolve().parents[4]
 NEEDS: dict[str, tuple[type[BaseModel], tuple[str, ...]]] = {
     "TXP-00 run": (wb.WorkbookRunAcceptedOut, ("run_id", "run_no")),
-    "TXP-01 memo": (wb.MemoOut, ("status", "sections", "seen_hash", "stale_fields")),
-    "TXP-02 TB": (wb.TbRowOut, ("unadjusted", "aje", "rje", "tje", "tax_basis", "form_line_key")),
-    "TXP-02 tallies": (wb.TallyOut, ("state", "difference")),
-    "TXP-05 K": (wb.ScheduleKLineOut, ("line", "total", "by_partner", "tie")),
-    "TXP-06 structure": (wb.AllocationStructureOut, ("kind", "status", "rungs", "seen_hash")),
+    "TXP-01 memo": (wb.WorkbookMemoOut, ("status", "sections", "seen_hash", "stale_fields")),
+    "TXP-02 TB": (
+        wb.WorkbookTbRowOut,
+        ("unadjusted", "aje", "rje", "tje", "tax_basis", "form_line_key"),
+    ),
+    "TXP-02 tallies": (wb.WorkbookTallyOut, ("state", "difference")),
+    "TXP-05 K": (wb.WorkbookScheduleKLineOut, ("line", "total", "by_partner", "tie")),
+    "TXP-06 structure": (
+        wb.WorkbookAllocationStructureOut,
+        ("kind", "status", "rungs", "seen_hash"),
+    ),
     "TXP-07 capital": (
-        wb.CapitalRowOut,
+        wb.WorkbookCapitalRowOut,
         ("beginning", "contributions", "income", "distributions", "ending"),
     ),
-    "TXP-10 issues": (wb.ReturnIssuesOut, ("items", "by_section", "by_step")),
+    "TXP-10 issues": (wb.WorkbookReturnIssuesOut, ("items", "by_section", "by_step")),
     "TXP-11 cells": (
-        wb.CellOut,
+        wb.WorkbookCellOut,
         ("address", "value", "formula", "author", "state", "citation_ids"),
     ),
 }
@@ -52,8 +58,8 @@ def test_every_route_is_published_with_a_501_until_built() -> None:
     paths = _paths()
     for route in wb.workbook_router.routes:
         for method in getattr(route, "methods", ()):
-            op = paths[route.path][method.lower()]  # type: ignore[attr-defined]
-            assert "501" in cast(dict[str, object], op["responses"]), route.path  # type: ignore[attr-defined]
+            op = paths[route.path][method.lower()]  # type: ignore[attr-defined] -- starlette route attributes
+            assert "501" in cast(dict[str, object], op["responses"]), route.path  # type: ignore[attr-defined] -- starlette route attributes
     assert len(wb.workbook_router.routes) == 32
 
 
@@ -82,10 +88,10 @@ def test_the_human_verbs_deny_the_agent_and_the_doc_names_each() -> None:
 
 def test_values_and_memo_text_are_tax_return_information() -> None:
     for model, name in (
-        (wb.CellOut, "value"),
-        (wb.MemoSectionOut, "body"),
-        (wb.TbRowOut, "tax_basis"),
+        (wb.WorkbookCellOut, "value"),
+        (wb.WorkbookMemoSectionOut, "body"),
+        (wb.WorkbookTbRowOut, "tax_basis"),
     ):
         schema = json.dumps(model.model_json_schema()["properties"][name])
         assert '"cls": "restricted"' in schema, (model, name)
-    assert "tin" not in " ".join(wb.PartnerOut.model_fields).replace("tin_last4", "")
+    assert "tin" not in " ".join(wb.WorkbookPartnerOut.model_fields).replace("tin_last4", "")

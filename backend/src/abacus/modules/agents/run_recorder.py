@@ -226,7 +226,7 @@ async def record_synthetic_run(tenant: TenantContext, run: RecordedRun) -> UUID:
             )
         counters = {c: int(run.counters.get(c, 0)) for c in _COUNTERS}
         await tx.session.execute(
-            _FINISH, {"plan": plan_id, "seq": len(run.items) or None, "run": run.id, **counters}
+            _FINISH, {"plan": plan_id, "seq": len(run.items), "run": run.id, **counters}
         )
         tx.record(
             "agent_run.recorded_synthetic",
@@ -312,12 +312,14 @@ async def advance_synthetic_step(tenant: TenantContext, advance: StepAdvance) ->
                 "tenant": tenant.tenant_id,
                 "run": advance.run_id,
                 "seq": seq,
+                # The stream's identifier keys only (P-10-T37): the step, its state, its code;
+                # the time is the step row's and the event row's own.
                 "payload": json.dumps(
                     {
-                        "step_id": str(step.id),
+                        "kind": "step",
+                        "id": str(step.id),
                         "state": advance.state,
-                        "at": advance.at.isoformat(),
-                        "error_code": advance.error_code,
+                        "reason": advance.error_code,
                     }
                 ),
             },

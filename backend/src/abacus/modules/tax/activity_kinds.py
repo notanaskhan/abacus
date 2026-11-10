@@ -1,12 +1,8 @@
 """The tax return's Activity kinds (T-04-T23; T-04 §4.6; SPEC-649 AC-5.1, AC-5.6; DEC-60, INV-5).
-TAX-07 reads P-05's engagement activity with a `work_item_id` filter; this registers how each tax
-action reads there, so `audit_trail` itself never changes (P-05 §4.3):
-
-- the C9 catalogue entry (`register_activity_kinds`): its category and marker. A decision-class
-  marker (`ok`) is only on actions a person takes (INV-1: the catalogue test fails the build on
-  an agent decision);
-- the AUD-29 link (`register_activity_links`): where a row's click goes, its search words, and
-  whether the default list shows it;
+TAX-07 reads P-05's engagement activity with a `work_item_id` filter. Nothing imports
+`audit_trail` (the module map), so the tax actions' C9 catalogue entries and AUD-29 links live in
+its own files (`activity_catalogue.CATALOGUE`, `engagement_activity.ACTIVITY_LINKS`, as the
+envelope's do), mirrored here with:
 - TAX-07's own filter group (`TAX_GROUP`: approvals, client, agent, tax_engine, issues) and the
   title verb, for "{Verb} by {Actor}" (`title`): an agent's row reads "… by <person> via Agent",
   or "by Accrued Agent" for proposals and self-checks only; an approval always names a person.
@@ -21,13 +17,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final, Literal
 
-from abacus.modules.audit_trail.api import (
-    ActivityLink,
-    CatalogueEntry,
-    register_activity_kinds,
-    register_activity_links,
-)
-
 TaxGroup = Literal["approvals", "client", "agent", "tax_engine", "issues"]
 
 
@@ -35,8 +24,10 @@ TaxGroup = Literal["approvals", "client", "agent", "tax_engine", "issues"]
 class TaxActivityKind:
     group: TaxGroup
     verb: str  # TAX-07's title verb; "{verb} by {actor}"
-    entry: CatalogueEntry
-    link: ActivityLink
+    category: str  # the C9 catalogue category (audit_trail's CATALOGUE carries the entry)
+    mark: str  # ok · no · pl
+    link_kind: str  # AUD-29's deep link (audit_trail's ACTIVITY_LINKS carries it)
+    keywords: tuple[str, ...] = ()
     agent_self: bool = False  # proposals and self-checks may read "by Accrued Agent"
 
 
@@ -49,13 +40,7 @@ def _k(
     *keywords: str,
     agent_self: bool = False,
 ) -> TaxActivityKind:
-    return TaxActivityKind(
-        group,
-        verb,
-        CatalogueEntry(category, mark),  # type: ignore[arg-type]  # literals checked below
-        ActivityLink(link, keywords),  # type: ignore[arg-type]
-        agent_self,
-    )
+    return TaxActivityKind(group, verb, category, mark, link, keywords, agent_self)
 
 
 # Only the tax module's own actions (P-04's checkpoint, issue and field actions keep their
@@ -115,7 +100,7 @@ _AGENT_SELF: Final = frozenset(
     {a for a, k in ACTIVITY_KINDS.items() if k.agent_self}
     | {"checkpoint.proposed", "issue.created"}
 )
-_DECISIONS: Final = frozenset(a for a, k in ACTIVITY_KINDS.items() if k.entry.mark == "ok") | {
+_DECISIONS: Final = frozenset(a for a, k in ACTIVITY_KINDS.items() if k.mark == "ok") | {
     "document.approved",
     "tax_return.approved",
     "checkpoint.approved",
@@ -138,10 +123,4 @@ def title(action: str, actor_kind: str, actor_name: str, on_behalf_of: str | Non
     return f"{verb} by {actor_name}"
 
 
-def register() -> None:
-    """At import (tax/api.py)."""
-    register_activity_kinds({a: k.entry for a, k in ACTIVITY_KINDS.items()})
-    register_activity_links({a: k.link for a, k in ACTIVITY_KINDS.items()})
-
-
-__all__ = ["ACTIVITY_KINDS", "GROUP_OF", "VERBS", "TaxActivityKind", "register", "title"]
+__all__ = ["ACTIVITY_KINDS", "GROUP_OF", "VERBS", "TaxActivityKind", "title"]

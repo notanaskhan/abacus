@@ -41,7 +41,7 @@ from abacus.modules.portal.api import activate_portal_host, add_portal_host
 from .support import Json, Net, Person, Site
 
 MASTER: Final = b"a02t33-master-key-0123456789abcdef"
-LEDGER: Final = "probe_t33_demo_ledger"
+LEDGER: Final = "probe_t16_demo_ledger"  # shared: one `fake` provider row per database
 APP_HOST: Final = "localhost"  # `app_base_url`'s host on a local stack and in tests
 CONNECT_HOST: Final = "connect.portal-example.test"
 HANDOFF: Final = "/v1/connections/handoff"
@@ -350,12 +350,9 @@ async def test_the_whole_path_for_a_client_admin_with_a_portal_session(world: Wo
     """The flow begins on the firm's portal host and the hand-off sends it back there, where the
     portal session is valid and nowhere else (ADR-163 §5): the reason for the hop.
 
-    Known gap, outside this task (reported with TASK-6902): a portal context carries no `mfa_at`
-    (`portal_member_context`), so `connection.create`'s `mfa_recent` refuses a portal session at
-    the matrix, at start and at completion alike. The start here therefore uses Tess's firm
-    sign-in on the portal host, and the completion on the portal host is pinned at that refusal
-    (authenticated, then forbidden), not at 401: it moves to 201 when portal sessions carry
-    their second step's time."""
+    The start uses Tess's firm sign-in on the portal host; the completion on the portal host is
+    her portal session, which carries its second step's time since TASK-6960 (#1607), so
+    `connection.create`'s `mfa_recent` holds and the connection is made (201)."""
     portal = await world.portal_headers()
     handed = await world.start(world.firm_headers(world.portal_host))
     bounced = await world.handoff({"state": handed["state"]})
@@ -364,4 +361,5 @@ async def test_the_whole_path_for_a_client_admin_with_a_portal_session(world: Wo
     assert elsewhere.status_code == 401, elsewhere.text  # not valid on the connect host
     assert (await world.handoff({"state": handed["state"]})).status_code == 200  # still unspent
     on_origin = await world.complete(handed, {**portal, "host": bounced.json()["origin_host"]})
-    assert on_origin.status_code == 403, on_origin.text  # authenticated; `mfa_recent` (the gap)
+    assert on_origin.status_code == 201, on_origin.text
+    assert on_origin.json()["client_entity_id"] == str(world.site.entity_id)

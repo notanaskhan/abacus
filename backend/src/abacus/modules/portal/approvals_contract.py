@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn, Self
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query, Response
@@ -26,7 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel._flags import PORTAL_APPROVALS
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.engagements.api import (
     ApprovalItem,
@@ -223,10 +223,6 @@ async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
     `scope_only` and the grant checks run in the services behind each route."""
     if not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 def _registered(kind: str) -> None:

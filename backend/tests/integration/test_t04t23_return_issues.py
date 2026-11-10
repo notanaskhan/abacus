@@ -24,7 +24,8 @@ from abacus.modules.tax.return_issues import (
 )
 
 from .conftest import MigratedDatabase
-from .test_t01t25_engine_export import Feld, engines, feld_return  # noqa: F401 -- fixtures
+from .test_t01t25_engine_export import Feld, feld_return
+from .test_t01t25_engine_export import engines as engines  # the autouse fixture
 
 pytestmark = pytest.mark.asyncio
 

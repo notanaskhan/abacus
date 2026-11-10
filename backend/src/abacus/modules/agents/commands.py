@@ -132,7 +132,10 @@ async def _head(ctx: AuthContext, run_id: UUID, action: str) -> RunHead:
     async with tenant_session(ctx.tenant) as session:
         row = (
             await session.execute(
-                text("SELECT state, plan_id, signed_off_by FROM agent_runs WHERE id = :run"),
+                text(
+                    "SELECT r.state, r.plan_id, s.signed_by AS signed_off_by FROM agent_runs r "
+                    "LEFT JOIN run_sign_offs s ON s.run_id = r.id WHERE r.id = :run"
+                ),
                 {"run": run_id},
             )
         ).first()
@@ -156,9 +159,12 @@ class PlanView:
     decided_at: datetime | None
 
 
+# The run's row is locked, not the plan's: `agent_plans` is insert-only (no UPDATE grant, so no
+# FOR UPDATE), and `(run_id, version)` is unique, so two deciders of one version cannot both land.
+_LOCK_RUN: Final = text("SELECT id FROM agent_runs WHERE id = :run FOR UPDATE")
 _LATEST_PLAN: Final = text(
     "SELECT id, version, state, steps, sources, decided_by, decided_at FROM agent_plans "
-    "WHERE run_id = :run ORDER BY version DESC LIMIT 1 FOR UPDATE"
+    "WHERE run_id = :run ORDER BY version DESC LIMIT 1"
 )
 
 
@@ -171,6 +177,7 @@ async def _decide(
 ) -> PlanView:
     head = await _head(ctx, run_id, "agent_run.approve_plan")
     async with uow(ctx.tenant) as tx:
+        await tx.session.execute(_LOCK_RUN, {"run": run_id})
         latest = (await tx.session.execute(_LATEST_PLAN, {"run": run_id})).first()
         if latest is None:
             raise NotFound("agent_plan")
@@ -178,10 +185,12 @@ async def _decide(
             raise PlanVersionConflict(facts={"version": int(latest.version)})
         current = [PlanStep.parse(s) for s in cast(list[dict[str, object]], latest.steps or [])]
         if state == "edited":
+            if latest.state == "cancelled":  # a cancelled plan is not edited back to life
+                raise PlanNotDecidable(facts={"state": "cancelled"})
             current = _edited(current, steps or ())
-        elif state == "approved" and latest.state not in _DECIDABLE:
-            raise PlanNotDecidable(facts={"state": str(latest.state)})
-        elif state == "cancelled" and (latest.state not in _DECIDABLE or head.state != _AWAITING):
+        elif (state == "approved" and latest.state not in _DECIDABLE) or (
+            state == "cancelled" and (latest.state not in _DECIDABLE or head.state != _AWAITING)
+        ):
             raise PlanNotDecidable(facts={"state": str(latest.state)})
         if head.state in TERMINAL:
             raise RunEnded(facts={"state": str(head.state)})
@@ -543,10 +552,8 @@ async def sign_off(
         )
         if signed is None:
             raise RunAlreadySignedOff
-        await tx.session.execute(
-            text("UPDATE agent_runs SET signed_off_by = :by, signed_off_at = :at WHERE id = :run"),
-            {"by": ctx.user_id, "at": signed, "run": run_id},
-        )
+        # The sign-off is its insert-only row (one per run): a finished run's own row is
+        # forward-only (`agent_runs_forward_only`), so the run is not written again.
         tx.record(
             "agent_run.signed_off",
             target=Target("agent_run", run_id),
@@ -654,9 +661,11 @@ async def run_state(ctx: AuthContext, run_id: UUID) -> RunState:
         row = (
             await session.execute(
                 text(
-                    "SELECT mode, plan_id, parent_run_id, subject_ref, auto_mode, region, "
-                    "session_id, started_at, signed_off_by, signed_off_at, event_seq, state "
-                    "FROM agent_runs WHERE id = :run"
+                    "SELECT r.mode, r.plan_id, r.parent_run_id, r.subject_ref, r.auto_mode, "
+                    "r.region, r.session_id, r.started_at, s.signed_by AS signed_off_by, "
+                    "s.signed_at AS signed_off_at, r.event_seq, r.state "
+                    "FROM agent_runs r LEFT JOIN run_sign_offs s ON s.run_id = r.id "
+                    "WHERE r.id = :run"
                 ),
                 {"run": run_id},
             )

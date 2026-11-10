@@ -1,5 +1,5 @@
 """Post-lock additions and seal verification (A-07-T42; A-07 F7, F8; ADR-159 proposed, P-43;
-AU-C 230 ¶.16–.17). PROTECTED (red path).
+AU-C 230 ¶.16 to .17). PROTECTED (red path).
 
 **Additions.** After lock, a manager or senior adds a document with a reason code
 (`au_c_585_omitted_procedure`, `au_c_560_subsequently_discovered_fact`, `other`) and an evidence
@@ -33,19 +33,22 @@ from datetime import UTC, date, datetime, time, timedelta
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import text
 from temporalio import activity, workflow
-from temporalio.common import RetryPolicy
+from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
-from abacus.kernel import clock
-from abacus.kernel.crypto import open_sealed, seal
-from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.dispatch import PlatformSchedule, dispatch
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.logging import get_logger
-from abacus.kernel.metrics import meter
-from abacus.kernel.uow import Ref, Scope, Target, uow
-from abacus.modules.identity.api import AuthContext, Forbidden, names_of
+# The workflow sandbox loads this module; its activities' imports pass through (as archive_lock's).
+with workflow.unsafe.imports_passed_through():
+    from sqlalchemy import text
+
+    from abacus.kernel import clock
+    from abacus.kernel.crypto import open_sealed, seal
+    from abacus.kernel.db import TenantContext, tenant_session
+    from abacus.kernel.dispatch import PlatformSchedule, dispatch
+    from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+    from abacus.kernel.logging import get_logger
+    from abacus.kernel.metrics import meter
+    from abacus.kernel.uow import Ref, Scope, Target, uow
+    from abacus.modules.identity.api import AuthContext, Forbidden, names_of
 
 AdditionReason = Literal[
     "au_c_585_omitted_procedure", "au_c_560_subsequently_discovered_fact", "other"
@@ -258,7 +261,7 @@ async def additions_of(tenant: TenantContext, work_item_id: UUID) -> list[Additi
                 r.decision,
                 r.decided_by,
                 r.decided_at,
-            )  # fmt: skip
+            )
         )
     return out
 
@@ -286,7 +289,7 @@ async def decide_addition(
     """The EP's decision (the route authorised `archive_addition.approve`, fresh MFA). An approval
     writes the addition manifest to `records` (COMPLIANCE) first, then the decision row; a
     rejection writes only the decision, with its reason sealed."""
-    from abacus.modules.assurance.archive_seal import five_year_floor
+    from abacus.modules.assurance.archive_records import five_year_floor
     from abacus.modules.evidence.api import put_record
 
     _person(ctx, "archive_addition.approve")
@@ -526,6 +529,8 @@ async def start_verify(ctx: AuthContext, work_item_id: UUID) -> UUID:
         SealVerifyWorkflow,
         SealVerifyInput(str(ctx.tenant_id), str(archive.id)),
         id=f"seal_verify:{ctx.tenant_id}:{archive.id}:{run}",
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
     return run
 

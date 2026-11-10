@@ -6,6 +6,6 @@ T-04-T19's tools are declared in `tools.py`, so this imports it (registration ha
 
 from __future__ import annotations
 
-from abacus.modules.tax import tools as _tools  # noqa: F401 -- registers the tax.* tools
+from abacus.modules.tax import tools  # registers the tax.* tools at import
 
-__all__: list[str] = []
+__all__ = ["tools"]

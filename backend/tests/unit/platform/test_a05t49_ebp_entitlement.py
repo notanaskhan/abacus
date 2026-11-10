@@ -73,7 +73,8 @@ def _synthetic(monkeypatch: pytest.MonkeyPatch, value: bool) -> None:
 def test_ac_ebp_audits_is_a_reviewed_module_with_its_check_registered() -> None:
     assert assurance_api.__name__  # importing assurance's api registers the check
     assert "ebp_audits" in entitlements.MODULES
-    assert {"ebp_audits"} == entitlements.REVIEWED_MODULES
+    # T-05-T04 adds `tax_entity_returns`, the second reviewed module (its own check, own test).
+    assert {"ebp_audits", "tax_entity_returns"} == entitlements.REVIEWED_MODULES
     assert entitlements._reviews["ebp_audits"] is review.review_signed  # pyright: ignore[reportPrivateUsage] -- the registration under test
 
 

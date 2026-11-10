@@ -2,7 +2,7 @@
 id: TASK-6717
 title: "T-04-T24: independent AC tests (ADR-078) for the individual workspace migration, registrations, worksheets and approvals"
 spec: SPEC-649
-acceptance_criteria: [AC-1.6]
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 branch: s35-t04-t24

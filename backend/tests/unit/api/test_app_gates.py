@@ -88,6 +88,8 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # T-05-T06 (tax workbook v1 stub): an allocation preview reads by POST, so 200.
+    "/v1/tax-returns/{return_id}/allocation-structure/preview",
     # P-05-T03 (C9 v2 stub, DEC-3104): reads by POST (counts, the AUD-29 query and export) and
     # acts on an existing thread, comment or to-do, so 200.
     "/v1/comment-threads/counts",
@@ -536,6 +538,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/tax/returns/{return_id}/draft-runs",
         "/v1/tax/k1-activities/{activity_id}/treatment-runs",
         "/v1/tax/returns/{return_id}/residency/proposal-runs",
+        # T-05-T06 (tax workbook v1 stub): a workbook run and a memo draft start runs, so 202.
+        "/v1/tax-returns/{return_id}/workbook-runs",
+        "/v1/tax-returns/{return_id}/memo/draft",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -576,6 +581,12 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests",
         # T-01: issuing an acknowledgement records it, so 201.
         "/v1/tax-returns/{return_id}/acks/{ack_id}/issue",
+        # T-05-T06 (tax workbook v1 stub): an import, a mapping, a section sign-off and the memo's
+        # adoption each record a row, so 201.
+        "/v1/tax-returns/{return_id}/workbook/imports",
+        "/v1/tax-returns/{return_id}/mappings",
+        "/v1/tax-returns/{return_id}/sections/{key}/sign-off",
+        "/v1/tax-returns/{return_id}/memo/adopt",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
         # K-01-T18: a methodology import.

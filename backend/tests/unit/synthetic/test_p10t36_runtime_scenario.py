@@ -51,5 +51,7 @@ def test_the_scenario_runs_trajectories_pass_every_grader() -> None:
     cases = {c.id: c for c in trajectory.load()}
     for case_id in ("pass_bh_4118_season_progress", "pass_bh_4127_northwind_planning"):
         assert trajectory.grade_case(cases[case_id]).passed
-    numbers = cases["pass_bh_4118_season_progress"].trajectory.answer.numbers
+    seen = cases["pass_bh_4118_season_progress"].trajectory
+    assert seen is not None
+    numbers = seen.answer.numbers
     assert [n.text for n in numbers] == [str(BOOK["run_4118"]["open_returns"]["total"])]

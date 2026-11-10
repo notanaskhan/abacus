@@ -2,7 +2,7 @@
 id: TASK-6723
 title: "T-04-T25: tax.return_drafter v1 (mode draft): spec v2 workflow, ReturnDrafterWorkflow, box-to-field mapper, judgment, citations, self-check, Initial draft checkpoint"
 spec: SPEC-649
-acceptance_criteria: [AC-9.3, AC-11.1]
+acceptance_criteria: [AC-9, AC-11]
 risk_zone: red
 status: in-review
 branch: s35-t04-t25
