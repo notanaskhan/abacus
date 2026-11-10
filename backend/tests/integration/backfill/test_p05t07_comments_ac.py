@@ -1,5 +1,6 @@
 """P-05-T07 (ac-test-author; SPEC-650 §3.1 to 3.5, §3.11; ADR-236): comments v2, from the SPEC
-and the P-05-T03 501 stubs, before the service (P-05-T05). Against the stubs every test fails (501).
+and the P-05-T03 501 stubs, before the service (P-05-T05). Against the stubs every test fails
+(501).
 
 Until P-05-T09 registers the `workpaper` provider, the one registered anchor kind is P-05-T06's
 `todo`, so AC-1's thread is opened on a to-do; the workpaper locator half is P-05-T09's suite.
@@ -16,7 +17,8 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import Target, uow
 from abacus.modules.identity.api import RULES
 
 from .p05_support import Collab, collab
@@ -78,7 +80,7 @@ async def test_ac2_an_unregistered_anchor_kind_is_refused_and_writes_nothing(
         {"anchor": {"anchor_kind": kind, "anchor_id": str(uuid.uuid4())}, "body": "Hello."},
     )
     assert response.status_code == 409, response.text
-    assert response.json()["code"] == "anchor_kind_not_registered"
+    assert response.json()["detail"] == "anchor_kind_not_registered"
     count = await w.net.seed.value(
         "SELECT count(*) FROM comment_threads WHERE tenant_id = $1", w.tenant_id
     )
@@ -104,7 +106,7 @@ async def test_ac4_empty_and_over_long_comments_are_refused(
 ) -> None:
     response = await w.thread_on(await _anchor(w), body=body)
     assert response.status_code == 422, response.text
-    assert response.json()["code"] == code
+    assert response.json()["detail"] == code
 
 
 async def test_ac4_four_thousand_characters_are_accepted(w: Collab) -> None:
@@ -148,7 +150,7 @@ async def test_ac6_a_crafted_mention_of_a_non_member_posts_nothing(w: Collab, wh
     target = getattr(w, who)
     response = await w.thread_on(anchor, mention_user_ids=[str(target.user_id)])
     assert response.status_code == 422, response.text
-    assert response.json()["code"] == "mention_not_allowed"
+    assert response.json()["detail"] == "mention_not_allowed"
     assert (
         await w.net.seed.value(
             "SELECT count(*) FROM thread_comments WHERE tenant_id = $1", w.tenant_id
@@ -202,7 +204,7 @@ async def test_ac9_resolve_is_an_event_in_the_resolvers_name(w: Collab) -> None:
     assert resolved["events"][-1]["actor"]["name"] == "Hannah Leclerc"
     again = await w.call("POST", f"/v1/comment-threads/{thread['id']}/resolve", w.hannah)
     assert again.status_code == 409
-    assert again.json()["code"] == "thread_already_resolved"
+    assert again.json()["detail"] == "thread_already_resolved"
     kinds = await w.net.seed.rows(
         "SELECT kind, actor_kind FROM comment_thread_events WHERE thread_id = $1 ORDER BY "
         "created_at",
@@ -243,7 +245,7 @@ async def test_ac11_the_author_corrects_and_nobody_else_may(w: Collab) -> None:
         "POST", path, w.hannah, {"body": "My version.", "corrects_comment_id": first}
     )
     assert other.status_code == 422
-    assert other.json()["code"] == "correction_not_allowed"
+    assert other.json()["detail"] == "correction_not_allowed"
 
 
 async def test_ac11_a_firm_admin_redacts_with_fresh_mfa_and_the_body_never_returns(
@@ -262,7 +264,7 @@ async def test_ac11_a_firm_admin_redacts_with_fresh_mfa_and_the_body_never_retur
     assert done.json()["redaction"]["redacted_by"]["name"] == "Grace Holloway"
     assert done.json()["redaction"]["reason"] == "Posted in error."
     again = await w.call("POST", path, w.grace, {"reason": "Twice."})
-    assert again.status_code == 409 and again.json()["code"] == "already_redacted"
+    assert again.status_code == 409 and again.json()["detail"] == "already_redacted"
     read = await w.call(
         "GET",
         f"/v1/comment-threads?anchor_kind=todo&anchor_id={thread['anchor']['anchor_id']}",  # type: ignore[index] -- JSON
@@ -275,6 +277,12 @@ async def test_ac11_a_firm_admin_redacts_with_fresh_mfa_and_the_body_never_retur
         )
         == 1
     )  # kept, sealed
+
+
+def _anchor_ref(thread: dict[str, object]) -> dict[str, object]:
+    """The thread's anchor as a request names one (kind, record, locator; no read-only facts)."""
+    anchor = cast(dict[str, object], thread["anchor"])
+    return {k: anchor[k] for k in ("anchor_kind", "anchor_id", "locator")}
 
 
 async def test_ac12_a_muted_thread_adds_no_unread_dot(w: Collab) -> None:
@@ -291,31 +299,44 @@ async def test_ac12_a_muted_thread_adds_no_unread_dot(w: Collab) -> None:
         "POST",
         "/v1/comment-threads/counts",
         w.hannah,
-        {"anchors": [thread["anchor"]]},
+        {"anchors": [_anchor_ref(thread)]},
     )
     assert counts.status_code == 200, counts.text
     assert counts.json()["items"][0]["unread"] == 0
     assert counts.json()["items"][0]["open"] == 1
 
 
-@pytest.mark.parametrize(
-    "table",
-    ["thread_comments", "thread_comment_mentions", "thread_comment_redactions",
-     "comment_thread_events"],
-)  # fmt: skip
+# Literal statements per append-only table (no SQL built from a value).
+_APPEND_ONLY_WRITES: dict[str, tuple[str, str]] = {
+    "thread_comments": (
+        "UPDATE thread_comments SET tenant_id = tenant_id",
+        "DELETE FROM thread_comments",
+    ),
+    "thread_comment_mentions": (
+        "UPDATE thread_comment_mentions SET tenant_id = tenant_id",
+        "DELETE FROM thread_comment_mentions",
+    ),
+    "thread_comment_redactions": (
+        "UPDATE thread_comment_redactions SET tenant_id = tenant_id",
+        "DELETE FROM thread_comment_redactions",
+    ),
+    "comment_thread_events": (
+        "UPDATE comment_thread_events SET tenant_id = tenant_id",
+        "DELETE FROM comment_thread_events",
+    ),
+}
+
+
+@pytest.mark.parametrize("table", sorted(_APPEND_ONLY_WRITES))
 async def test_ac13_the_app_role_cannot_update_or_delete_append_only_rows(
     w: Collab, table: str
 ) -> None:
     tenant = TenantContext(w.tenant_id, "human", str(w.margaret.user_id))
-    statements = (
-        f"UPDATE {table} SET tenant_id = tenant_id",  # noqa: S608 -- table from the parametrize list
-        f"DELETE FROM {table}",  # noqa: S608 -- table from the parametrize list
-    )
-    for statement in statements:
+    for statement in _APPEND_ONLY_WRITES[table]:
         with pytest.raises(DBAPIError):
-            async with tenant_session(tenant) as session:
-                await session.execute(text(statement))
-                await session.commit()
+            async with uow(tenant) as tx:
+                await tx.session.execute(text(statement))
+                tx.record("comment.corrected", target=Target("comment_thread", w.tenant_id))
 
 
 async def test_ac16_sharing_an_internal_anchor_is_refused(w: Collab) -> None:
@@ -327,7 +348,7 @@ async def test_ac16_sharing_an_internal_anchor_is_refused(w: Collab) -> None:
         {"scope_kind": "engagement", "scope_id": str(w.site.engagement_id)},
     )
     assert response.status_code == 409, response.text
-    assert response.json()["code"] == "anchor_not_shareable"
+    assert response.json()["detail"] == "anchor_not_shareable"
 
 
 async def test_inv4_a_client_principal_never_reaches_a_thread(w: Collab) -> None:

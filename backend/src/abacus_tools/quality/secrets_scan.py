@@ -37,6 +37,18 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         " (R-02-T17)",
     ),
     (
+        "apps/web/src/fixtures/seed/portal-por08.ts",
+        "SECRET-003",
+        "an approvals context's `key` names the period (copperleaf-2026-08), never a credential"
+        " (R-02-T19)",
+    ),
+    (
+        "backend/tests/unit/agents/test_p10t31_tools_independent.py",
+        "SECRET-003",
+        "a methodology step's `step_key` names the step (BH-FS-430), never a credential"
+        " (P-10-T31)",
+    ),
+    (
         "backend/tests/unit/tax/test_t04t14_form_line_citations.py",
         "SECRET-003",
         "a return field's `field_key` names the line (f1040.line3b), never a credential"

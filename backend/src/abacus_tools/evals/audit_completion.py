@@ -18,9 +18,9 @@ from typing import Any, Final, cast
 import yaml
 
 from abacus.ai_gateway.output_checks import run_output_check
-from abacus.modules.agents.api import BlocksTurn, Fact
-from abacus.modules.agents.run_plan import reserved
-from abacus.modules.agents.tools.runtime import ToolOutcome, for_model
+from abacus.modules.agents.api import BlocksTurn, Fact, ToolOutcome
+from abacus.modules.agents.api import reserved_plan_tools as reserved
+from abacus.modules.agents.api import tool_output_for_model as for_model
 
 AGENT: Final = "audit_completion"
 SUITE: Final = Path(__file__).resolve().parents[4] / "evals" / "audit_completion" / "suite.yaml"
@@ -60,12 +60,13 @@ def narration(case: dict[str, Any]) -> str:  # ANY-001: a YAML case
     segments: list[dict[str, str]] = []
     for s in case["segments"]:
         if isinstance(s, dict):
-            segments.append({"kind": "fact", "fact_id": str(cast(dict[str, Any], s)["fact"])})
+            item = cast(dict[str, Any], s)  # Any: a YAML case
+            segments.append({"kind": "fact", "fact_id": str(item["fact"])})
         else:
             segments.append({"kind": "text", "text": str(s)})
     facts = {
         k: Fact(id=k, kind="count", value=str(v), basis="code")
-        for k, v in cast(dict[str, Any], case.get("facts") or {}).items()
+        for k, v in cast(dict[str, Any], case.get("facts") or {}).items()  # Any: YAML
     }
     turn = BlocksTurn({"parts": [{"kind": "p", "segments": segments}]}, facts, set())
     failure = run_output_check("agent_blocks", turn)

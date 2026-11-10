@@ -29,7 +29,7 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AuthContext, authorise
-from abacus.modules.review.api import record_value
+from abacus.modules.review.api import edited_by_a_person, latest_sources, record_value
 from abacus.modules.tax.worksheet_formulas import recompute
 
 READ: Final = "return_worksheet.read"
@@ -59,7 +59,7 @@ class FieldRow:
 
 
 @dataclass(frozen=True)
-class Section:
+class FieldGroup:
     key: str
     title: str
     fields: list[FieldRow]
@@ -87,21 +87,20 @@ async def tree(ctx: AuthContext, return_id: UUID) -> list[Node]:
         rows = (
             await session.execute(
                 text(
-                    "SELECT w.id, w.title, w.group_path, w.default_tsj, w.new_vs_prior_year, "
-                    "EXISTS (SELECT 1 FROM field_value_versions v WHERE v.target_type = "
-                    "'return_worksheet' AND v.target_id = w.id AND v.value_source = 'human') "
-                    "AS edited FROM return_worksheets w WHERE w.tax_return_id = :r AND w.active "
+                    "SELECT w.id, w.title, w.group_path, w.default_tsj, w.new_vs_prior_year "
+                    "FROM return_worksheets w WHERE w.tax_return_id = :r AND w.active "
                     "ORDER BY w.sort_order, w.key"
                 ),
                 {"r": return_id},
             )
         ).all()
+    edited = await edited_by_a_person(ctx.tenant, WORKSHEET, [r.id for r in rows])
     found: list[Node] = []
     for r in rows:
         group, sub = _split(r.group_path)
         tsj = r.default_tsj if r.default_tsj in ("T", "S", "J") else None
         found.append(
-            Node(r.id, r.title, group, sub, tsj, bool(r.new_vs_prior_year), bool(r.edited))
+            Node(r.id, r.title, group, sub, tsj, bool(r.new_vs_prior_year), r.id in edited)
         )
     return found
 
@@ -116,6 +115,7 @@ def _money(value: object) -> Decimal | None:
         return None
 
 
+WORKSHEET: Final = "return_worksheet"
 _STATE: Final = {
     "engine_import": "imported",
     "human": "edited",
@@ -124,7 +124,7 @@ _STATE: Final = {
 }
 
 
-async def fields(ctx: AuthContext, worksheet_id: UUID, q: str | None) -> list[Section]:
+async def fields(ctx: AuthContext, worksheet_id: UUID, q: str | None) -> list[FieldGroup]:
     async with tenant_session(ctx.tenant) as session:
         work_item = await session.scalar(
             text("SELECT tax_return_id FROM return_worksheets WHERE id = :w"), {"w": worksheet_id}
@@ -138,13 +138,7 @@ async def fields(ctx: AuthContext, worksheet_id: UUID, q: str | None) -> list[Se
                 text(
                     "SELECT s.key AS section_key, s.name AS section_name, f.field_key, f.label, "
                     "f.line_ref, f.derivation, f.engine_field_key, f.current_value, "
-                    "coalesce(f.current_fvv_seq, 0) AS seq, "
-                    "(SELECT v.value_source FROM field_value_versions v WHERE v.target_type = "
-                    "'return_worksheet' AND v.target_id = f.worksheet_id AND v.field_key = "
-                    "f.field_key ORDER BY v.seq DESC LIMIT 1) AS source, "
-                    "(SELECT cardinality(v.citation_ids) FROM field_value_versions v WHERE "
-                    "v.target_type = 'return_worksheet' AND v.target_id = f.worksheet_id AND "
-                    "v.field_key = f.field_key ORDER BY v.seq DESC LIMIT 1) AS cites "
+                    "coalesce(f.current_fvv_seq, 0) AS seq "
                     "FROM return_fields f JOIN return_worksheet_sections s ON s.id = f.section_id "
                     "WHERE f.worksheet_id = :w ORDER BY s.sort_order, s.key, f.sort_order, "
                     "f.field_key"
@@ -152,8 +146,9 @@ async def fields(ctx: AuthContext, worksheet_id: UUID, q: str | None) -> list[Se
                 {"w": worksheet_id},
             )
         ).all()
+    latest = await latest_sources(ctx.tenant, WORKSHEET, [worksheet_id])
     needle = (q or "").strip().casefold()
-    sections: dict[str, Section] = {}
+    sections: dict[str, FieldGroup] = {}
     for r in rows:
         if (
             needle
@@ -161,9 +156,10 @@ async def fields(ctx: AuthContext, worksheet_id: UUID, q: str | None) -> list[Se
             and needle not in (r.line_ref or "").casefold()
         ):
             continue
-        source = r.source or ("engine_import" if r.derivation == "engine" else None)
+        known, cites = latest.get((worksheet_id, r.field_key), (None, 0))
+        source = known or ("engine_import" if r.derivation == "engine" else None)
         state = _STATE.get(source or "", "imported")
-        section = sections.setdefault(r.section_key, Section(r.section_key, r.section_name, []))
+        section = sections.setdefault(r.section_key, FieldGroup(r.section_key, r.section_name, []))
         section.fields.append(
             FieldRow(
                 r.field_key,
@@ -171,7 +167,7 @@ async def fields(ctx: AuthContext, worksheet_id: UUID, q: str | None) -> list[Se
                 _money(r.current_value),
                 state,
                 None,
-                int(r.cites or 0),
+                cites,
                 r.engine_field_key if r.derivation == "engine" else None,
                 int(r.seq),
             )

@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Final, cast
 from uuid import UUID
 
@@ -112,7 +112,7 @@ async def decide_lock(
                     "roll": then_roll_forward,
                     "snap": json.dumps(snapshot),
                     "sha": state.checklist_sha256,
-                    "mfa": ctx.mfa_at or datetime.now(UTC),
+                    "mfa": ctx.mfa_at or clock.system_now(),
                 },
             ),
         )
@@ -128,7 +128,7 @@ async def decide_lock(
         tx.record(
             "archive.lock_decided",
             target=Target("archive", archive.id),
-            after=Ref(decision=decision, checklist=state.checklist_sha256),
+            after=Ref(checklist=state.checklist_sha256),
             scope=Scope(engagement_id=archive.engagement_id, work_item_id=work_item_id),
         )
     return archive.id

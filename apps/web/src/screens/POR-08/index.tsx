@@ -323,7 +323,7 @@ function PackageCard({
       headers: { "Idempotency-Key": key(item, d.seen_hash) },
     });
   };
-  const firm = branding.data?.firm_name ?? "";
+  const firm = branding.data?.portal_name ?? branding.data?.firm_name ?? "";
   let sub: ReactNode = `${firm} · ${COPY.waitingSub}`;
   if (item.state === "approved") {
     sub = COPY.approvedBy(item.decided_by ?? "", when(item.decided_at, true));
@@ -449,7 +449,6 @@ function PackageCard({
             <Button
               size="lg"
               className="w-full"
-              opensDialog
               onClick={() => {
                 setSheet(true);
               }}
@@ -474,7 +473,7 @@ function PackageCard({
           send("approve", null, "");
         }}
       />
-      {declining && canDecline && (
+      {declining && canDecline && d !== undefined && (
         <DeclineSheet
           title={COPY.declineTitle}
           codes
@@ -596,7 +595,7 @@ function EntryCard({ item, period }: { item: ApprovalItemOut; period: string }):
           }}
         />
       )}
-      {declining && (
+      {declining && d !== undefined && (
         <DeclineSheet
           title={COPY.declineEntryTitle}
           codes={false}
@@ -949,7 +948,7 @@ function Approvals(props: Por08Props): JSX.Element {
   } else if (empty) {
     main = (
       <EmptyState title={COPY.empty} icon="circle-check">
-        {COPY.emptyBody(branding.data?.firm_name ?? "")}
+        {COPY.emptyBody(branding.data?.portal_name ?? branding.data?.firm_name ?? "")}
       </EmptyState>
     );
   } else if (data !== undefined) {

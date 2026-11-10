@@ -73,7 +73,7 @@ async def test_ac19_a_non_member_or_walled_assignee_is_refused(w: Collab, who: s
         },
     )
     assert response.status_code == 422, response.text
-    assert response.json()["code"] == "assignee_not_allowed"
+    assert response.json()["detail"] == "assignee_not_allowed"
 
 
 async def test_ac20_a_stale_if_match_is_refused(w: Collab) -> None:
@@ -92,7 +92,7 @@ async def test_ac20_a_stale_if_match_is_refused(w: Collab) -> None:
         headers={**w.net.headers(w.hannah), "If-Match": "1"},
     )
     assert stale.status_code == 409
-    assert stale.json()["code"] == "stale_version"
+    assert stale.json()["detail"] == "stale_version"
 
 
 async def test_ac21_the_assignee_opens_it_and_the_unread_dot_clears(w: Collab) -> None:
@@ -115,7 +115,7 @@ async def test_ac22_a_checklist_holds_eight_items(w: Collab) -> None:
     assert [i["position"] for i in items] == list(range(1, 9))
     ninth = await w.call("POST", path, w.margaret, {"text": "Step 9"})
     assert ninth.status_code == 422
-    assert ninth.json()["code"] == "checklist_full"
+    assert ninth.json()["detail"] == "checklist_full"
     toggled = await w.call("PATCH", f"{path}/{items[0]['id']}", w.marcus, {"done": True})
     assert toggled.status_code == 200, toggled.text
     assert toggled.json()["checklist"][0]["done"] is True
@@ -173,7 +173,7 @@ async def test_ac27_a_move_stays_inside_the_engagement(w: Collab) -> None:
         {"anchor": {"anchor_kind": "todo", "anchor_id": elsewhere["id"]}},
     )
     assert away.status_code == 422
-    assert away.json()["code"] == "anchor_scope_mismatch"
+    assert away.json()["detail"] == "anchor_scope_mismatch"
     moved = await w.call(
         "POST",
         f"/v1/todos/{todo['id']}/move",

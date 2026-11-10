@@ -1,8 +1,8 @@
 ---
 id: TASK-5901
 title: QuickBooks revoke really ends the grant; intuit_tid survives the log's backstop
-spec: A-02-T26 (connector), DEC-515 M1, F-09-T05
-acceptance_criteria: [a live sandbox revoke returns 200 and the revoked token then fails; no refusal reads as revoked; every intuit_tid is logged intact]
+spec: SPEC-000  # row (TASK-5901): A-02-T26 (connector), DEC-515 M1, F-09-T05
+acceptance_criteria: [AC-1]  # a live sandbox revoke returns 200 and the revoked token then fails; no refusal reads as revoked; every intuit_tid is logged intact
 risk_zone: red
 status: in-review
 branch: qbo-revoke-tid

@@ -51,9 +51,9 @@ class Filing:
     version: int
 
 
-_COLUMNS: Final = (
-    "id, form, channel, filer_name, due_on, extended_due_on, status, filed_on, "
-    "ack_evidence_version_id, version"
+_BY_WORK_ITEM = text(
+    "SELECT id, form, channel, filer_name, due_on, extended_due_on, status, filed_on, "
+    "ack_evidence_version_id, version FROM filings WHERE work_item_id = :wi ORDER BY form"
 )
 
 
@@ -62,7 +62,7 @@ async def filings_of(tenant: TenantContext, work_item_id: UUID) -> list[Filing]:
     async with tenant_session(tenant) as session:
         rows = (
             await session.execute(
-                text(f"SELECT {_COLUMNS} FROM filings WHERE work_item_id = :wi ORDER BY form"),  # noqa: S608 -- fixed column list
+                _BY_WORK_ITEM,
                 {"wi": work_item_id},
             )
         ).all()
@@ -102,7 +102,7 @@ async def open_filing(
     tx.record(
         "filing.opened",
         target=Target("filing", filing_id),
-        after=Ref(form=FORM, due_on=due.isoformat()),
+        after=Ref(due_on=int(due.strftime("%Y%m%d"))),
         scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
     )
     return filing_id
@@ -123,7 +123,8 @@ async def update_filing(
         row = (
             await session.execute(
                 text(
-                    "SELECT engagement_id, version FROM filings WHERE id = :f AND work_item_id = :wi"
+                    "SELECT engagement_id, version FROM filings "
+                    "WHERE id = :f AND work_item_id = :wi"
                 ),
                 {"f": filing_id, "wi": work_item_id},
             )
@@ -159,7 +160,7 @@ async def update_filing(
         )
         if moved is None:
             raise StaleVersion
-        refs: dict[str, UUID | int | str] = {"status": status, "version": seen_version + 1}
+        refs: dict[str, UUID | int] = {"version": seen_version + 1}
         if ack_evidence_version_id is not None:
             refs["ack_evidence_version_id"] = ack_evidence_version_id
         tx.record(

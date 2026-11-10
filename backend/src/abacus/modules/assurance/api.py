@@ -37,6 +37,9 @@ from abacus.modules.assurance.agent_capabilities import register as register_age
 from abacus.modules.assurance.archive_gate import SUBSCRIPTIONS as ARCHIVE_SUBSCRIPTIONS
 from abacus.modules.assurance.archive_lock import ACTIVITIES as ARCHIVE_LOCK_ACTIVITIES
 from abacus.modules.assurance.archive_lock import WORKFLOWS as ARCHIVE_LOCK_WORKFLOWS
+from abacus.modules.assurance.archive_lock import ArchiveLockWorkflow as ArchiveLockWorkflow
+from abacus.modules.assurance.archive_lock import LockInput as ArchiveLockInput
+from abacus.modules.assurance.archive_lock import SealResult as ArchiveSealResult
 from abacus.modules.assurance.aud27 import register_estimate_conclusion_kind
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.bring_down import (
@@ -152,6 +155,11 @@ from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.post_release import ACTIVITIES as POST_RELEASE_ACTIVITIES
 from abacus.modules.assurance.post_release import SUBSCRIPTIONS as POST_RELEASE_SUBSCRIPTIONS
 from abacus.modules.assurance.post_release import WORKFLOWS as POST_RELEASE_WORKFLOWS
+from abacus.modules.assurance.post_release import ClocksInput as PostReleaseClocksInput
+from abacus.modules.assurance.post_release import FireResult as PostReleaseFireResult
+from abacus.modules.assurance.post_release import (
+    PostReleaseClocksWorkflow as PostReleaseClocksWorkflow,
+)
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, ReleaseRequest
 from abacus.modules.assurance.release_contract import router as audit_release_router
@@ -462,6 +470,8 @@ __all__ = [
     "SUBSCRIPTIONS",
     "TIEOUT_ID_PREFIX",
     "WORKFLOWS",
+    "ArchiveLockInput",
+    "ArchiveSealResult",
     "AuditSection",
     "BringDownInput",
     "BringDownResult",
@@ -476,6 +486,8 @@ __all__ = [
     "MappingRunIn",
     "NewFinding",
     "NewRisk",  # A-04-T28: the planning slice records the register through the service
+    "PostReleaseClocksInput",
+    "PostReleaseFireResult",
     "ReadinessInput",
     "ReleaseRequest",
     "ReleaseWorkflow",

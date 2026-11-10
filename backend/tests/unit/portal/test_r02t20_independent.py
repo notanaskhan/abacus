@@ -34,13 +34,17 @@ from typing import Any, cast
 import pytest
 import yaml
 
+from abacus.kernel.uow import UnitOfWork
+from abacus.modules.engagements.api import ClientDecision, ClientDecisionContext
 from abacus.modules.engagements.client_approvals import (
     DECIDER_RULES,
     ApprovalScope,
+    ClientDecisionWord,
     scope_covered,
 )
 from abacus.modules.identity.api import ScopeFacts
 
+Json = Any  # Any: the OpenAPI document is untyped JSON
 REPO = Path(__file__).resolve().parents[4]
 MATRIX = REPO / "docs" / "architecture" / "permission-matrix" / "portal.yaml"
 # The pack rule (R-02 §3: the client sees amounts, never the firm's judgement or its tooling).
@@ -72,28 +76,28 @@ FIRM_ROLES = (
 
 
 @cache
-def _openapi() -> dict[str, Any]:
+def _openapi() -> dict[str, Json]:
     from abacus.api import create_app
 
-    spec: dict[str, Any] = create_app().openapi()
+    spec: dict[str, Json] = create_app().openapi()
     return spec
 
 
-def _resolve(spec: Mapping[str, Any], node: Mapping[str, Any]) -> Mapping[str, Any]:
+def _resolve(spec: Mapping[str, Json], node: Mapping[str, Json]) -> Mapping[str, Json]:
     ref = node.get("$ref")
     if isinstance(ref, str):
-        found: Any = spec
+        found: Json = spec
         for part in ref.removeprefix("#/").split("/"):
             found = found[part]
-        return cast(Mapping[str, Any], found)
+        return cast(Mapping[str, Json], found)
     return node
 
 
-def _fields(spec: Mapping[str, Any], node: object, seen: set[str]) -> Iterator[tuple[str, str]]:
+def _fields(spec: Mapping[str, Json], node: object, seen: set[str]) -> Iterator[tuple[str, str]]:
     """(schema, property) for every property reachable from `node`, through refs and unions."""
     if not isinstance(node, Mapping):
         return
-    node = cast(Mapping[str, Any], node)
+    node = cast(Mapping[str, Json], node)
     ref = node.get("$ref")
     if isinstance(ref, str):
         if ref in seen:
@@ -101,7 +105,7 @@ def _fields(spec: Mapping[str, Any], node: object, seen: set[str]) -> Iterator[t
         seen.add(ref)
     schema = _resolve(spec, node)
     title = str(schema.get("title", ref or "?"))
-    for name, prop in cast(Mapping[str, Any], schema.get("properties", {})).items():
+    for name, prop in cast(Mapping[str, Json], schema.get("properties", {})).items():
         yield title, name
         yield from _fields(spec, prop, seen)
     for key in ("items", "additionalProperties"):
@@ -111,9 +115,9 @@ def _fields(spec: Mapping[str, Any], node: object, seen: set[str]) -> Iterator[t
             yield from _fields(spec, part, seen)
 
 
-def _bodies(op: Mapping[str, Any]) -> Iterator[object]:
-    body: dict[str, Any] = op.get("requestBody") or {}
-    contents: dict[str, Any] = body.get("content", {})
+def _bodies(op: Mapping[str, Json]) -> Iterator[object]:
+    body: dict[str, Json] = op.get("requestBody") or {}
+    contents: dict[str, Json] = body.get("content", {})
     for content in contents.values():
         yield content.get("schema")
     for response in op.get("responses", {}).values():
@@ -121,10 +125,10 @@ def _bodies(op: Mapping[str, Any]) -> Iterator[object]:
             yield content.get("schema")
 
 
-def portal_fields(spec: Mapping[str, Any]) -> list[tuple[str, str, str]]:
+def portal_fields(spec: Mapping[str, Json]) -> list[tuple[str, str, str]]:
     """(path, schema, property) for every DTO the portal API reads or answers."""
     out: list[tuple[str, str, str]] = []
-    for path, ops in cast(Mapping[str, Mapping[str, Any]], spec["paths"]).items():
+    for path, ops in cast(Mapping[str, Mapping[str, Json]], spec["paths"]).items():
         if not path.startswith("/v1/portal"):
             continue
         for op in ops.values():
@@ -134,7 +138,7 @@ def portal_fields(spec: Mapping[str, Any]) -> list[tuple[str, str, str]]:
     return out
 
 
-def banned_fields(spec: Mapping[str, Any]) -> list[tuple[str, str, str]]:
+def banned_fields(spec: Mapping[str, Json]) -> list[tuple[str, str, str]]:
     return [f for f in portal_fields(spec) if BANNED.search(f[2])]
 
 
@@ -156,7 +160,7 @@ def test_ac_no_portal_dto_carries_a_materiality_threshold_policy_or_agent_field(
 
 
 def test_ac_the_scan_fails_on_a_planted_field() -> None:
-    spec: dict[str, Any] = {
+    spec: dict[str, Json] = {
         "paths": {
             "/v1/portal/approvals": {
                 "get": {
@@ -384,17 +388,18 @@ class _Tx:
 VERSION = uuid.uuid4()
 
 
-def _decision(kind: str = "approve") -> object:
-    from abacus.modules.engagements.api import ClientDecision
+def _decision(kind: str = "approve") -> ClientDecision:
+    word = cast("ClientDecisionWord", kind)  # a decline reaches the guard, never the database
+    return ClientDecision(decision=word, seen_hash="x" * 64)
 
-    return ClientDecision(decision=kind, seen_hash="x" * 64)  # type: ignore[arg-type]
+
+def _context() -> ClientDecisionContext:
+    """Never read: each refusal comes before the context is used."""
+    return cast(ClientDecisionContext, object())
 
 
-def _context() -> object:
-    from abacus.modules.engagements.api import ClientDecisionContext
-
-    fields = ClientDecisionContext.__dataclass_fields__
-    return ClientDecisionContext(**{n: uuid.uuid4() for n in fields})  # type: ignore[arg-type]
+def _tx(session: _Session) -> UnitOfWork:
+    return cast(UnitOfWork, _Tx(session))
 
 
 @pytest.mark.asyncio
@@ -404,7 +409,7 @@ async def test_ac_an_older_draft_answers_item_changed_and_writes_nothing() -> No
 
     session = _Session(newer=True)
     with pytest.raises(ItemChanged):
-        await FsDraftApprovals().decide(_Tx(session), VERSION, _decision(), _context())  # type: ignore[arg-type]
+        await FsDraftApprovals().decide(_tx(session), VERSION, _decision(), _context())
     assert session.writes == []
 
 
@@ -415,7 +420,7 @@ async def test_ac_an_approved_draft_cannot_be_approved_again() -> None:
 
     session = _Session(approved=True)
     with pytest.raises(ItemChanged):
-        await FsDraftApprovals().decide(_Tx(session), VERSION, _decision(), _context())  # type: ignore[arg-type]
+        await FsDraftApprovals().decide(_tx(session), VERSION, _decision(), _context())
     assert session.writes == []
 
 
@@ -426,5 +431,5 @@ async def test_ac_a_draft_is_only_ever_approved() -> None:
 
     session = _Session()
     with pytest.raises(ItemChanged):
-        await FsDraftApprovals().decide(_Tx(session), VERSION, _decision("decline"), _context())  # type: ignore[arg-type]
+        await FsDraftApprovals().decide(_tx(session), VERSION, _decision("decline"), _context())
     assert session.writes == []

@@ -1,7 +1,7 @@
 """The P-05 acceptance world (ac-test-author: P-05-T07, T08; written from SPEC-650 and the 501
 stubs, not from the services): one Brightwater-Hale-shaped firm with `collaboration.v2`
-on, Northwind's engagement team of five, a firm member not on the engagement, a walled member and a client
-contact.
+on, Northwind's engagement team of five, a firm member not on the engagement, a walled member and
+a client contact.
 
 Names follow the SPEC's people so that a failure reads like the story: Margaret Okonkwo (EP),
 Hannah Leclerc (manager), Marcus Delaney (staff), Alicia Chen (senior), Tom Whitaker (staff),
@@ -46,9 +46,10 @@ class Collab:
         path: str,
         who: Person,
         body: dict[str, object] | None = None,
-        **kw: bool,
+        *,
+        mfa: bool = True,
     ) -> httpx.Response:
-        return await self.net.call(method, path, who, body=body, **kw)
+        return await self.net.call(method, path, who, body=body, mfa=mfa)
 
     async def flag(self, on: bool) -> None:
         await self.net.seed.run(
@@ -147,6 +148,10 @@ async def collab(net: Net) -> Collab:
     victor = await _named(net, await seed.person(tenant_id), "Victor Hale")
     await net.wall(grace, victor, site)
     client = await seed.client_contact(site)
-    world = Collab(net, tenant_id, site, other, *people, simone, grace, victor, client)
+    margaret, hannah, marcus, alicia, tom = people
+    world = Collab(
+        net, tenant_id, site, other, margaret, hannah, marcus, alicia, tom, simone, grace, victor,
+        client,
+    )  # fmt: skip
     await world.flag(True)
     return world

@@ -354,7 +354,7 @@ async def open_thread(
             tx.record(
                 "comment_thread.opened",
                 target=Target("comment_thread", thread_id),
-                after=Ref(anchor_kind=anchor_kind, anchor_id=anchor_id),
+                after=Ref(anchor_id=anchor_id),
             )
         else:
             thread_id = thread.id
@@ -452,6 +452,32 @@ async def redact(ctx: AuthContext, comment_id: UUID, reason: str) -> UUID:
             after=Ref(comment_id=comment_id),
         )
     return comment.thread_id
+
+
+async def redacted_view(ctx: AuthContext, comment_id: UUID) -> CommentView:
+    """AC-11: what a redactor sees after redacting: that comment alone, body withheld. A firm
+    administrator may redact on an engagement whose threads they cannot read, so this never reads
+    the thread."""
+    async with tenant_session(ctx.tenant) as session:
+        comment = await repo.get_comment(session, comment_id)
+        r = await repo.get_redaction(session, comment_id)
+        corrected_by = await repo.corrected_by_of(session, comment_id)
+    if comment is None or r is None or ctx.client:
+        raise NotFound("thread_comment")
+    ref = await get_ref(ctx, comment.engagement_id)
+    await authorise(ctx, "comment.redact", ref.resource())
+    return CommentView(
+        comment.id,
+        comment.author_user_id,
+        comment.author_side,
+        None,
+        comment.corrects_comment_id,
+        corrected_by,
+        [],  # mentions are the thread's to show; a redactor who cannot read it sees none
+        list(comment.citation_ids or []),
+        RedactionView(r.redacted_by, r.created_at, r.reason),
+        comment.created_at,
+    )
 
 
 async def _move(ctx: AuthContext, thread_id: UUID, *, resolve: bool) -> None:
@@ -559,7 +585,7 @@ async def share(ctx: AuthContext, thread_id: UUID, *, scope_kind: str, scope_id:
             tx.record(
                 "comment_thread.shared",
                 target=Target("comment_thread", thread_id),
-                after=Ref(scope_kind=scope_kind, scope_id=scope_id),
+                after=Ref(scope_id=scope_id),
             )
 
 

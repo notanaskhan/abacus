@@ -267,7 +267,7 @@ function renderBlocks(Renderer: (props: { blocks: AgentBlocksPayload }) => JSX.E
       blocks={{
         parts: [
           { kind: "p", segments: [{ kind: "text", text: HOSTILE }] },
-          { kind: "unknown_part", secret: "raw-payload-1234" } as { kind: string },
+          { kind: "unknown_part", payload: "raw-payload-1234" } as { kind: string },
           { kind: "metric", label: "Net effect", fact_id: "missing-fact-id" },
         ],
       }}

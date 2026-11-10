@@ -5,6 +5,7 @@ it in the integration suite."""
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 from typing import cast
 from uuid import uuid4
 
@@ -12,6 +13,7 @@ import pytest
 import yaml
 
 from abacus.modules.agents.tools.registry import registered_tools
+from abacus.modules.identity.api import AgentContext
 from abacus.modules.tax import tools  # registers at import
 from abacus.modules.tax.worksheet_review import WORKSHEET
 
@@ -95,11 +97,10 @@ def test_ac1_tool_targets_name_the_7216_subject() -> None:
         client_entity_id=entity, tax_year=2025, determination_id=uuid4(), option="part_year"
     )
 
-    class Agent:
-        engagement_id = uuid4()
-
-    targets = args.tool_targets(Agent())  # pyright: ignore[reportArgumentType]
-    assert targets.engagement_ids == (Agent.engagement_id,)
+    engagement = uuid4()
+    agent = cast("AgentContext", SimpleNamespace(engagement_id=engagement))  # reads one field
+    targets = args.tool_targets(agent)
+    assert targets.engagement_ids == (engagement,)
     assert [(s.entity_id, s.tax_year) for s in targets.tri_subjects] == [(entity, 2025)]
 
 

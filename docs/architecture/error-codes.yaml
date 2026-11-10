@@ -145,6 +145,7 @@ codes:
   already_redacted:
     status: 409
     raised_by:
+    - abacus.modules.collaboration.errors.AlreadyRedacted
     - abacus.modules.requests.comments.AlreadyRedacted
   already_released:
     status: 409
@@ -176,6 +177,24 @@ codes:
     - abacus.modules.assurance.governance_comms.AmountInLetter
     - abacus.modules.assurance.rep_letters.AmountInLetter
     summary: No amount (and so no materiality figure) in letter text (A-07 F3).
+  anchor_kind_not_registered:
+    status: 409
+    raised_by:
+    - abacus.modules.collaboration.anchors.AnchorKindNotRegistered
+  anchor_locator_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.collaboration.anchors.LocatorInvalid
+    - abacus.modules.collaboration.routes.QueryLocatorInvalid
+    summary: The locator names a key the provider's schema does not know, or a value too long.
+  anchor_not_shareable:
+    status: 409
+    raised_by:
+    - abacus.modules.collaboration.anchors.AnchorNotShareable
+  anchor_scope_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.collaboration.anchors.AnchorScopeMismatch
   annotation_invalid:
     status: 422
     raised_by:
@@ -220,6 +239,7 @@ codes:
   archive_locked:
     status: 409
     raised_by:
+    - abacus.modules.assurance.archive_lock.AlreadyLocking
     - abacus.modules.assurance.completion.AlreadyLocked
   archived:
     status: 409
@@ -228,6 +248,10 @@ codes:
     - abacus.modules.assurance.completion_errors.Archived
     summary: '`archived_guard()` refused a write (A-07-T13; SQLSTATE AB409): the work item is locked,
       or its engagement archived. The API answers 409 `archived`, whichever route reached the row.'
+  assignee_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.collaboration.errors.AssigneeNotAllowed
   attachment_filed:
     status: 409
     raised_by:
@@ -335,12 +359,18 @@ codes:
   checklist_changed:
     status: 409
     raised_by:
+    - abacus.modules.assurance.archive_lock.ChecklistChanged
     - abacus.modules.methodology.lifecycle.ChecklistChanged
     summary: 'The checklist is not the one you approved: review it again.'
+  checklist_full:
+    status: 422
+    raised_by:
+    - abacus.modules.collaboration.errors.ChecklistFull
   checklist_incomplete:
     status: 409
     raised_by:
     - abacus.modules.assurance.archive_gate.ChecklistIncomplete
+    - abacus.modules.assurance.archive_lock.ArchiveNotReady
     - abacus.modules.assurance.completion_errors.ChecklistIncomplete
     - abacus.modules.assurance.eqr_service.ChecklistIncomplete
     summary: An item or an EQR note is still open (EQR concurrence, archive lock).
@@ -402,6 +432,10 @@ codes:
     - abacus.modules.sampling.populations.ColumnMapInvalid
     summary: The column map names an unknown field, no record key, a column the sheet does not have,
       one column twice, or an amount column holding something other than an amount.
+  comment_too_long:
+    status: 422
+    raised_by:
+    - abacus.modules.collaboration.errors.CommentTooLong
   communication_exists:
     status: 409
     raised_by:
@@ -561,6 +595,7 @@ codes:
   correction_not_allowed:
     status: 422
     raised_by:
+    - abacus.modules.collaboration.errors.CorrectionNotAllowed
     - abacus.modules.requests.comments.CorrectionNotAllowed
   create_anyway_reason_required:
     status: 422
@@ -823,6 +858,7 @@ codes:
   empty_comment:
     status: 422
     raised_by:
+    - abacus.modules.collaboration.errors.EmptyComment
     - abacus.modules.requests.comments.EmptyComment
   empty_file:
     status: 422
@@ -843,6 +879,15 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.EngagementNotOpen
+  engagement_required:
+    status: 422
+    raised_by:
+    - abacus.modules.collaboration.todos.EngagementRequired
+  engine_field_read_only:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.worksheet_review.EngineFieldReadOnly
+    summary: An engine-sourced field takes its value from the engine import, never an edit.
   engine_file_invalid:
     status: 422
     raised_by:
@@ -1248,6 +1293,11 @@ codes:
     raised_by:
     - abacus.modules.signatures.builder.IdentityMethodNotAllowed
     summary: The policy does not allow this identity method for this signer (DF-11).
+  if_match_required:
+    status: 422
+    raised_by:
+    - abacus.modules.collaboration.errors.IfMatchRequired
+    summary: 'An autosave without `If-Match` (AC-20: every PATCH carries the version it edits).'
   ignore_notes_exhausted:
     status: 409
     raised_by:
@@ -1618,8 +1668,9 @@ codes:
   letter_rendering:
     status: 409
     raised_by:
+    - abacus.modules.assurance.governance_room.LetterRendering
     - abacus.modules.notices.sending.LetterRendering
-    summary: The letter's draft is rendering; send again once it is ready.
+    summary: 'The letter''s final PDF is still being rendered (or its render failed): try again.'
   letter_signer_missing:
     status: 409
     raised_by:
@@ -1727,6 +1778,7 @@ codes:
   mention_not_allowed:
     status: 422
     raised_by:
+    - abacus.modules.collaboration.errors.MentionNotAllowed
     - abacus.modules.requests.comments.MentionNotAllowed
   methodology_already_applied:
     status: 409
@@ -2127,6 +2179,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpOutOfScope
+    - abacus.modules.collaboration.threads.CommentOutOfScope
     - abacus.modules.communications.service.OutOfScope
     - abacus.modules.requests.comments.CommentOutOfScope
     - abacus.modules.requests.lifecycle.OutOfScope
@@ -2786,6 +2839,11 @@ codes:
     raised_by:
     - abacus.modules.agents.stage_admin.ShadowReportStale
     summary: 'The report is older than 7 days, or dated in the future: compute it again.'
+  share_scope_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.collaboration.threads.ShareScopeInvalid
+    summary: The grant scope does not cover the anchor (C5).
   sharing_unavailable:
     status: 409
     raised_by:
@@ -2939,6 +2997,7 @@ codes:
     - abacus.modules.assurance.mapping_live.StaleVersion
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.assurance.rep_letters.StaleLetter
+    - abacus.modules.collaboration.errors.StaleVersion
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
     - abacus.modules.connections.entity.StaleConnection
@@ -3130,6 +3189,10 @@ codes:
     raised_by:
     - abacus.modules.methodology.imports.TextRequired
     summary: An edit that resolves a flag carries the step's new text.
+  thread_already_resolved:
+    status: 409
+    raised_by:
+    - abacus.modules.collaboration.errors.ThreadAlreadyResolved
   thread_changed:
     status: 409
     raised_by:
@@ -3140,6 +3203,11 @@ codes:
     raised_by:
     - abacus.modules.communications.inbox_read.ThreadAlreadyMatched
     summary: Only an unmatched thread can be ignored as a sender.
+  thread_not_resolved:
+    status: 409
+    raised_by:
+    - abacus.modules.collaboration.errors.ThreadNotResolved
+    summary: 'Reopen on an open thread: nothing to reopen.'
   tie_out_check_invalid:
     status: 422
     raised_by:
@@ -3175,6 +3243,14 @@ codes:
     - abacus.modules.organisations.tin.TinKindNotAllowed
     summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
       (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
+  todo_already_done:
+    status: 409
+    raised_by:
+    - abacus.modules.collaboration.errors.TodoAlreadyDone
+  todo_not_done:
+    status: 409
+    raised_by:
+    - abacus.modules.collaboration.errors.TodoNotDone
   too_many_streams:
     status: 409
     raised_by:

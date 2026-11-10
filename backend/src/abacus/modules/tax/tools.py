@@ -37,8 +37,7 @@ from sqlalchemy import text
 from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
-from abacus.modules.agents.api import ProposedRow, agent_tool, create_proposal
-from abacus.modules.agents.tools.runtime import ToolTargets
+from abacus.modules.agents.api import ProposedRow, ToolTargets, agent_tool, create_proposal
 from abacus.modules.engagements.api import entity_of
 from abacus.modules.evidence.api import engagement_documents
 from abacus.modules.identity.api import AgentContext

@@ -151,6 +151,9 @@ from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, 
     run_log_count,
     run_record_hashes,  # A-07-T37: the archive seal's run-record leaves
 )
+from abacus.modules.agents.run_plan import reserved as reserved_plan_tools
+
+# P-10-T22 (C17 v1, frozen): the runtime the harness calls, and the shapes a tool declares.
 from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scenario's runs
     RecordedRun,
     RecordedStep,
@@ -244,12 +247,11 @@ from abacus.modules.agents.tools.registry import ToolPageOut as ToolPageOut
 from abacus.modules.agents.tools.registry import agent_tool as agent_tool
 from abacus.modules.agents.tools.registry import register_tool as register_tool
 from abacus.modules.agents.tools.registry import registered_tools as registered_tools
-
-# P-10-T22 (C17 v1, frozen): the runtime the harness calls, and the shapes a tool declares.
 from abacus.modules.agents.tools.runtime import ToolCallIn as ToolCallIn
 from abacus.modules.agents.tools.runtime import ToolOutcome as ToolOutcome
 from abacus.modules.agents.tools.runtime import ToolTargets as ToolTargets
 from abacus.modules.agents.tools.runtime import call_tool as call_tool
+from abacus.modules.agents.tools.runtime import for_model as tool_output_for_model
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
@@ -576,6 +578,7 @@ __all__ = [
     "register_threshold_policy",
     "registry_problems",
     "request_review",
+    "reserved_plan_tools",
     "review",
     "review_citation_states",
     "review_sha256",
@@ -598,6 +601,7 @@ __all__ = [
     "starts_in_shadow",
     "template_drafts_router",
     "text_part",
+    "tool_output_for_model",
     "txt",
     "upload_review_available",
     "verify_citations",

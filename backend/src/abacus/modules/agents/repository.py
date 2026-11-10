@@ -160,6 +160,14 @@ async def get_run(session: AsyncSession, run_id: UUID) -> AgentRun | None:
     ).scalar_one_or_none()
 
 
+async def run_v2_state(session: AsyncSession, run_id: UUID) -> str | None:
+    """The run's v2 state (`agent_runs.state`, P-10's column; the v1 model maps `status`)."""
+    found = await session.scalar(
+        text("SELECT state FROM agent_runs WHERE id = :run"), {"run": run_id}
+    )
+    return None if found is None else str(found)
+
+
 async def lock_run(session: AsyncSession, run_id: UUID) -> AgentRun | None:
     return (
         await session.execute(select(AgentRun).where(AgentRun.id == run_id).with_for_update())

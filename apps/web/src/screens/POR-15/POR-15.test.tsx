@@ -150,7 +150,7 @@ describe("POR-15 governance room", () => {
       await screen.findByText("Significant deficiency — Remittance of participant contributions"),
     ).toBeTruthy();
     expect(screen.getByText(/December 26, 2025 payroll \(\$48,600\)/)).toBeTruthy();
-    expect(screen.getByText("Sent Nov 20 · due Dec 8")).toBeTruthy();
+    expect(await screen.findByText("Sent Nov 20 · due Dec 8")).toBeTruthy();
     expect(screen.getByText("Sent · acknowledged")).toBeTruthy();
     expect(screen.getByRole("button", { name: COPY.acknowledge })).toBeTruthy();
   });

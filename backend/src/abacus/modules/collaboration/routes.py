@@ -263,9 +263,8 @@ async def redact_thread_comment_route(
     redaction answers 409 too: the comment is redacted either way."""
     del key  # a redaction is one row per comment: the database is its own idempotency
     await gate(ctx)
-    thread_id = await threads.redact(ctx, comment_id, body.reason)
-    out = await _thread_out(ctx, thread_id)
-    return next(c for c in out.comments if c.id == comment_id)
+    await threads.redact(ctx, comment_id, body.reason)
+    return await v.comment_out(await threads.redacted_view(ctx, comment_id))
 
 
 @threads_router.post(
