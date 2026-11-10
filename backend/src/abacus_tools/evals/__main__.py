@@ -56,6 +56,11 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.audit_completion import main as completion_main
 
         return completion_main(cast(Path, args.out))
+    if args.agent == "agent_trajectories":  # P-10-T34: runtime v2's trajectory graders
+        from abacus_tools.evals.trajectory import main as trajectory_main
+
+        subset = "fast" if args.subset == "fast" else "full"
+        return trajectory_main(cast(Path, args.out), subset)
     if args.agent == "agent_blocks":  # P-09-T15: the deterministic AgentBlocks conformance suite
         from abacus_tools.evals.agent_blocks import main as blocks_main
 

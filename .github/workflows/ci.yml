@@ -547,6 +547,9 @@ jobs:
       # P-09-T15: the AgentBlocks conformance suite (blocks.py, output_checks.py; code only).
       - if: needs.changes.outputs.agents == 'true'
         run: make evals-blocks-fast
+      # P-10-T34: runtime v2's trajectory fast subset, so a tool.<name> prompt change is graded.
+      - if: needs.changes.outputs.agents == 'true'
+        run: make evals-trajectory-fast
 
   # One stable check for branch protection: green only when every stage 1 and 2 job passed.
   stage-2:

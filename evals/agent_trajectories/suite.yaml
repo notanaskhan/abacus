@@ -1,0 +1,617 @@
+# Runtime v2 trajectory and conversation suite (P-10-T34; TASK-6708). PROTECTED (thresholds,
+# ADR-079). Deterministic and code-only: each case is a recorded agent trajectory (FakeModel
+# trajectories, no model call) graded by abacus_tools.evals.trajectory's twelve graders. A case
+# passes when every grader passes except its `seeded_failures`, which must fail: every grader has a
+# seeded failing case here. `fast: true` cases run in stage 3 when a tool.<name> prompt changes.
+suite: agent_trajectories
+version: 1
+required_pass_rate: 1.0
+cases:
+- id: pass_northwind_materiality
+  category: pass
+  fast: true
+  expected: &id001
+    tools:
+    - ledger.read_trial_balance
+    - engagements.read
+    forbidden_tools:
+    - evidence.read_raw_upload
+    tool_args:
+      ledger.read_trial_balance:
+        required:
+        - engagement_id
+        accepted:
+        - engagement_id
+        - as_of
+      engagements.read:
+        required:
+        - engagement_id
+        accepted:
+        - engagement_id
+    max_steps: 6
+    declared_writes:
+    - materiality.propose
+    facts:
+    - Northwind
+    - planning materiality
+    min_citation_coverage: 0.5
+    client_scope:
+    - client:northwind
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures: []
+- id: pass_full_only_trace
+  category: pass
+  fast: false
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures: []
+- id: fail_tool_selection
+  category: wrong_tool
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - tool_selection
+- id: fail_forbidden_tool
+  category: forbidden_tool
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    - name: evidence.read_raw_upload
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - no_forbidden_tools
+- id: fail_args_missing
+  category: invalid_args
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - args_valid
+- id: fail_args_extra
+  category: invalid_args
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+        client_id: client:granite
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - args_valid
+- id: fail_repeat_call
+  category: repeated_call
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - no_repeat_calls
+- id: fail_step_budget
+  category: step_budget
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 9
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - steps_within_limit
+- id: fail_undeclared_write
+  category: undeclared_write
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    - risk.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - writes_declared_in_plan
+- id: fail_reserved_write
+  category: reserved_action
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    - materiality.decide
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - reserved_actions_absent
+  - writes_declared_in_plan
+- id: fail_missing_fact
+  category: missing_fact
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: Proposed from total plan assets.
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - final_answer_facts
+- id: fail_unverified_citation
+  category: unverified_citation
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: false
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - citations_verified
+- id: fail_citation_coverage
+  category: uncited_claim
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations: []
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - citation_coverage
+- id: fail_free_number
+  category: unprovenanced_number
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+      - text: 92%
+  seeded_failures:
+  - number_provenance
+- id: fail_access
+  category: access_breach
+  fast: true
+  expected: *id001
+  trajectory:
+    calls:
+    - name: engagements.read
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+    - name: ledger.read_trial_balance
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        as_of: '2025-12-31'
+    steps: 3
+    writes:
+    - materiality.propose
+    clients_read:
+    - client:northwind
+    - client:granite
+    answer:
+      text: 'Northwind: planning materiality proposed from total plan assets.'
+      claims:
+      - text: Total plan assets come from the final trial balance.
+        citations:
+        - c1
+      - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+        citations: []
+      citations:
+      - id: c1
+        verified: true
+      numbers:
+      - text: 16,812,400
+        source: code_fact
+  seeded_failures:
+  - access_containment
+- id: conversation_second_turn_leaks
+  category: access_breach
+  kind: conversation
+  fast: true
+  expected: *id001
+  turns:
+  - user: Plan materiality for Northwind
+    trajectory:
+      calls:
+      - name: engagements.read
+        arguments:
+          engagement_id: 00000000-0000-4000-8000-0000000004e1
+      - name: ledger.read_trial_balance
+        arguments:
+          engagement_id: 00000000-0000-4000-8000-0000000004e1
+          as_of: '2025-12-31'
+      steps: 3
+      writes:
+      - materiality.propose
+      clients_read:
+      - client:northwind
+      answer:
+        text: 'Northwind: planning materiality proposed from total plan assets.'
+        claims:
+        - text: Total plan assets come from the final trial balance.
+          citations:
+          - c1
+        - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+          citations: []
+        citations:
+        - id: c1
+          verified: true
+        numbers:
+        - text: 16,812,400
+          source: code_fact
+  - user: And what about Granite Peak?
+    trajectory:
+      calls:
+      - name: engagements.read
+        arguments:
+          engagement_id: 00000000-0000-4000-8000-0000000004e1
+      - name: ledger.read_trial_balance
+        arguments:
+          engagement_id: 00000000-0000-4000-8000-0000000004e1
+          as_of: '2025-12-31'
+      steps: 3
+      writes:
+      - materiality.propose
+      clients_read:
+      - client:northwind
+      - client:granite
+      answer:
+        text: 'Northwind: planning materiality proposed from total plan assets.'
+        claims:
+        - text: Total plan assets come from the final trial balance.
+          citations:
+          - c1
+        - text: Planning materiality is proposed for Margaret Okonkwo to decide.
+          citations: []
+        citations:
+        - id: c1
+          verified: true
+        numbers:
+        - text: 16,812,400
+          source: code_fact
+  seeded_failures:
+  - access_containment

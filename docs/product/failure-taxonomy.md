@@ -50,6 +50,25 @@ are unchanged.
 - `match_in_4a`, `small_plan_safe_harbor_applied`, `offset_as_deemed_distribution`,
   `director_name_surfaced`: answers that must never occur.
 
+## Agent trajectory failures (P-10-T34)
+
+Not screening categories: the failures runtime v2's trajectory graders report
+(`backend/src/abacus_tools/evals/trajectory.py`, `evals/agent_trajectories/suite.yaml`), one per
+grader. Each has a seeded failing case in the suite.
+
+- `wrong_tool` (tool_selection): an expected tool was never called.
+- `forbidden_tool` (no_forbidden_tools): a forbidden tool was called.
+- `invalid_args` (args_valid): a call lacks a required argument or names one its tool does not take.
+- `repeated_call` (no_repeat_calls): the same tool with the same arguments twice.
+- `step_budget` (steps_within_limit): more steps than the case allows.
+- `undeclared_write` (writes_declared_in_plan): a write the plan did not declare.
+- `reserved_action` (reserved_actions_absent): a call or write that names a human-only action.
+- `missing_fact` (final_answer_facts): a fact the answer must state is missing.
+- `unverified_citation` (citations_verified): a citation shown that was not verified.
+- `uncited_claim` (citation_coverage): fewer claims carry a citation than required.
+- `unprovenanced_number` (number_provenance): a number that is neither a citation nor a code fact.
+- `access_breach` (access_containment): a record read outside the run's client scope.
+
 ## Changing this taxonomy
 
 This file is protected. Adding or renaming a category requires founder approval and updates to the generator, screening rules and evaluation suites in the same change.
