@@ -153,4 +153,12 @@ test.describe("J19-estate-amended (P-07's steps 0, 2 and 3)", () => {
     owner("T-04 · TXT-04, TAX-12, TAX-07, TAX-16 (J19's tax steps)"),
     async () => {},
   );
+
+  // I-01-T25: HOME-02's queue is ready for step 7; the `amendment_approval` subkind arrives with
+  // T-08 (S50-S55), so the step stays fixme until then.
+  test.fixme(
+    "j19 7: Neil approves the Okafor amendment from HOME-02",
+    owner("T-08 · the amendment_approval gate subkind (S50-S55); I-01's queue is ready"),
+    async () => {},
+  );
 });
