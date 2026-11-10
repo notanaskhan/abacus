@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C13 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | home half live (I-01-T10, 2026-10-27; client activity live, I-01-T12, DEC-900); gate half live (P-04-T16 list; the counts, I-01-T04; filters, presentation facts, snooze and reassign, I-01-T07, 2026-10-27) |
+| Status | **v1 frozen 2026-11-10 (I-01-T26)**; home half live (I-01-T10, 2026-10-27; client activity live, I-01-T12, DEC-900); gate half live (P-04-T16 list; the counts, I-01-T04; filters, presentation facts, snooze and reassign, I-01-T07, 2026-10-27) |
 | Provider epic | I-01 (home half, AY) with P-04 (projection and gate half, N) |
 | Consumers | HOME-01, HOME-02, SHL-04 (Approvals tab), I-02 (HOME-05, SHL-23), every gate-producing epic |
 | Freeze sprint | S10 (starts 2027-03-08) |
@@ -118,7 +118,7 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (S10 freeze, 2027-03-08) | — | home half stubbed 2026-10-26 (I-01-T02); counts, `subkind`, `office_id`, `evidence_review` added 2026-10-27 (I-01-T04); list filters, row facts, snooze, unsnooze, reassign added 2026-10-27 (I-01-T07); firm-level gates (`engagement_id` null) added 2026-11-08 (I-01-T23, DEC-2613), additive: the field was already nullable |
+| v1 | (S10 freeze, 2027-03-08) | — | home half stubbed 2026-10-26 (I-01-T02); counts, `subkind`, `office_id`, `evidence_review` added 2026-10-27 (I-01-T04); list filters, row facts, snooze, unsnooze, reassign added 2026-10-27 (I-01-T07); firm-level gates (`engagement_id` null) added 2026-11-08 (I-01-T23, DEC-2613), additive: the field was already nullable; **frozen 2026-11-10 (I-01-T26)**: a change from here is additive in place or v2 |
 
 ## 11. Open points
 - P-07-T47 (DEC-539) registers `acceptance_decision_due`, `independence_conclusion_due`, `independence_confirmation_due` and `eqr_eligibility_due` through `register_gate_source` (`review/engagement_gates.py`); `subkind` (I-01-T04) carries that name. Each of these gates is assigned to a named person and shown only to them (`GateSource.assigned_only`, DEC-544).
@@ -126,3 +126,31 @@ Additive changes in place. Breaking changes ship as v2 with one sprint of overla
 - I-01-T08 (DEC-647) registers SPEC-004's review queue as `evidence_review` gates (subject `evidence_version`) and the home counts `agent_runs_running`, `audits` and `binders`; `portal_invites_pending` and the follow-up and invite-resend gates wait for their state.
 - DEC-404 records the stub's choices (one `home.read` cell per firm role, the slot's fail-closed answer, the `due_risk` thresholds).
 - OQ-2 is decided (DEC-403): an `evidence_review` class for SPEC-004 review assignments and uploads awaiting review, band Approvals & sends, added to the kind set additively with I-01-T04. The four bands are unchanged.
+
+## 12. Registering a new gate subkind (I-01-T26)
+A gate is a record waiting on a person; Home lists and counts it once its owner registers a source.
+Nothing in `review`, `practice` or the web app's Home code changes for a new subkind.
+
+1. **Backend, in the owning module** (at import, from its `api.py` or a module it imports):
+   `review.api.register_gate_source(GateSource(subject_type=..., kind=..., read_action=...,
+   events=..., open_for=...))`.
+   - `subject_type` is the subkind: snake_case, unique (it is the row's `subkind`).
+   - `kind` is one of DF-25's classes. It decides the band (§4's band rule) and the glyph: `decision`, `sign_off_request`, `proposal`, `send`, `final_approval`, `export`, `release`, `evidence_review`.
+   - `events` are the C13 events that open, move or close it. `open_for` answers, from the owner's records, who it waits on and its facts (title words, context, due date, engagement, client).
+   - `assigned_only=True` for a gate only its named person may see (DEC-544); `scope="firm"` for a firm-level gate (`engagement_id` null, DEC-2613).
+   - A reassignable gate also registers its reassign hook; without one, Reassign is hidden (409 `not_reassignable`).
+2. **Words.** The row's title is the presenter's. When it gives none, HOME-01 and HOME-02 read `GATE_SUBKIND_TITLE[subkind]` (`apps/web/src/domain/home/messages.ts`), else the subkind as words (`fallbackTitle`). Add a line to `GATE_SUBKIND_TITLE` when the handoff names the gate; mark one with no handoff source "undesigned (I-01 §5.5)".
+3. **Where a row opens.** Add the host's route to HOME-02's target resolver (`hrefOf`), or leave it plain text until the host is built (planned links are hidden in production).
+4. **Tests that must pass:**
+   - `backend/tests/unit/test_i01t25_every_subkind_renders.py`: every registered source has words and its kind a glyph.
+   - `backend/tests/unit/test_home_gate_subkinds.py`.
+   - `apps/web/src/domain/home/countEquality.test.ts`: add the persona's fixture row; the counts still tie on every surface.
+5. **Then on Home:** a seeded record of the subkind, as its person, appears in its band on HOME-01 and HOME-02 and counts once in the header, badge and SHL-04's Approvals tab.
+
+## 13. Consumer notes (I-01-T26)
+- **I-02** (HOME-05 Today brief, SHL-23): read `GET /v1/human-gates/counts` for the brief's "3 decisions · 6 sign-offs · 2 approvals & sends"; never count the list yourself. "Open Today" opens HOME-05 with the same counts (HOME-01 R2).
+- **T-08** (amendments, TAX-16): register `amendment_approval` (kind `final_approval`, Approvals & sends) per §12. J19 step 7 (`e2e/journeys/J19-estate-amended.spec.ts`) is `test.fixme` until it lands; remove the fixme in the same change.
+- **I-03, I-04:** a new tile is a home count registered through `platform.register_home_count` (`GET /v1/home` `tiles`), never a gate. A count of work waiting on a person is a gate (§12), so it is counted once.
+- **W-02** (Workbench): agent outputs that wait on a person are `proposal` gates (band Agent outputs). The agent never decides: rows are links to where a person decides (INV-1).
+- **The R2 bands** (To-dos, Mentions) are built unwired (`apps/web/src/components/screens/HOME-01`, I-01-T24) and join HOME-01 after Apr 20, 2028 (P-29 rule 2). They never count into the header.
+

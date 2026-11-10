@@ -89,6 +89,14 @@ The client portal is a second Vite entry, not an area of the firm tree. To add a
 ## A cockpit section canvas (A-05; A-05-T62)
 An EBP or completion screen that lives in the AUD-02 cockpit exports `use<Name>Canvas(workItemId, options)` returning a `CockpitCanvas` (title, actions, controls, `state`, children) and a rail key (`ebp_07`, `completion_checklist`); AUD-02 composes it. The flag-off and walled states are the canvas's `state` (C-20). Register its fixture scenarios in `fixtures/screen-scenarios.ts` for `?screen=` journeys. Typed form values render in `text-doc-typed`; a row and a document region share the server's `match_id`.
 
+## The gate-class registry (Home; I-01-T26)
+
+A gate that waits on a person shows on HOME-01 and HOME-02 with no Home code change. Its owner registers it in the backend (`register_gate_source`; `docs/contracts/home-and-gates.md` §12). The web side has two places to look, `apps/web/src/domain/home/`:
+- `gateClasses.ts`: the band order and each kind's glyph. A new **kind** (rare: DF-25's set) needs a glyph here. A new **subkind** of an existing kind needs nothing.
+- `messages.ts`: `GATE_SUBKIND_TITLE` gives a subkind its words when the presenter gives no title. Add the handoff's words, or mark the line "undesigned (I-01 §5.5)"; otherwise `fallbackTitle` reads the name as words.
+
+Never count gates in a component: read `GET /v1/human-gates/counts` (`total`, `bands`). A row is a link to where the gate is decided, never a decision control (INV-1). Add the persona's fixture row to `countEquality.test.ts` when a scenario adds gates.
+
 ## Frozen contracts (P-07-T64, DEC-1054)
 
 A frozen contract (`docs/contracts/*.md` with **frozen**, snapshot under `backend/tests/contracts/<family>/v<n>.json`) takes additions only. A rename, retype, newly required field or removed enum member ships the next version with overlap: `python -m abacus_tools.contracts --freeze <family> v<n+1>`, never an edit of the old snapshot.
