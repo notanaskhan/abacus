@@ -1455,7 +1455,7 @@
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "deviation": "A-01-T33 (DEC-909): report-only: 3.19% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
+      "deviation": "A-01-T33 (DEC-909): report-only: 4.50% measured Nov 10, 2026 (S34 partials pass, parity-screens, spinners only masked); over 3% with the live SHL-13 dock unmasked (the dock's run transcript and the Source Documents order, DEC-341), so not locked"
     },
     "aud-02b.window": {
       "page": "screens/AUD-02?st=b",
@@ -1481,7 +1481,7 @@
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "deviation": "A-01-T33 (DEC-909): report-only: 3.13% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
+      "deviation": "A-01-T33 (DEC-909): report-only: 3.96% measured Nov 10, 2026 (S34 partials pass, parity-screens, spinners only masked); over 3% with the live SHL-13 dock unmasked (the dock's run transcript and the Source Documents order, DEC-341), so not locked"
     },
     "aud-02d.window": {
       "page": "screens/AUD-02?st=d",
@@ -1509,7 +1509,7 @@
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "deviation": "A-01-T33 (DEC-909): report-only: 3.19% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
+      "deviation": "A-01-T33 (DEC-909): report-only: 4.49% measured Nov 10, 2026 (S34 partials pass, parity-screens, spinners only masked); over 3% with the live SHL-13 dock unmasked (the dock's run transcript and the Source Documents order, DEC-341), so not locked"
     },
     "aud-02f.window": {
       "page": "screens/AUD-02?st=f",
@@ -5297,12 +5297,12 @@
       "sha256": "d5465eca6706ad71a8c7928a2793f3ac2882e2a4d3291939f5490a215ea10e57",
       "crop": "window",
       "tier": "C",
-      "locked": true,
       "mask": [
         "[data-spinner]",
         "[data-shimmer]",
         "[data-live-dot]"
-      ]
+      ],
+      "deviation": "P-09-T18: report-only: 5.01% measured Nov 10, 2026 (S34 partials pass) on the AUD-02 frame with run #4127 in the dock; over 3%, so the plan's lock is not set (the A-01-T33 rule)"
     },
     "wb-09a.window": {
       "page": "screens/WB-09?st=a",
@@ -5316,7 +5316,7 @@
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "locked": true
+      "deviation": "P-09-T18: report-only: not measurable at Tier C: the gallery draws the drawer alone, pinned 10 px inside the 1440 x 900 viewport (480 x 880), while the handoff draws it inside the 1400 x 860 window over WB-01 (480 x 840), so the sizes never match; Tier D holds. The plan's lock waits on a gallery frame that draws the WB-01 window behind the drawer"
     },
     "wb-09a2.window": {
       "page": "screens/WB-09?st=a2",
@@ -5370,7 +5370,7 @@
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "locked": true
+      "deviation": "P-09-T18: report-only: not measurable at Tier C: the gallery draws the drawer alone, pinned 10 px inside the 1440 x 900 viewport (480 x 880), while the handoff draws it inside the 1400 x 860 window over WB-01 (480 x 840), so the sizes never match; Tier D holds. The plan's lock waits on a gallery frame that draws the WB-01 window behind the drawer"
     },
     "wb-09c.window": {
       "page": "screens/WB-09?st=c",
@@ -5384,7 +5384,7 @@
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "locked": true
+      "deviation": "P-09-T18: report-only: not measurable at Tier C: the gallery draws the drawer alone, pinned 10 px inside the 1440 x 900 viewport (480 x 880), while the handoff draws it inside the 1400 x 860 window over WB-01 (480 x 840), so the sizes never match; Tier D holds. The plan's lock waits on a gallery frame that draws the WB-01 window behind the drawer"
     },
     "wb-09d.window": {
       "page": "screens/WB-09?st=d",
