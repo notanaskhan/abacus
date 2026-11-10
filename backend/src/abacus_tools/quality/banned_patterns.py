@@ -1870,6 +1870,22 @@ def _check_workflow_imports(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, f"{name}: workflows never step outside the sandbox")
 
 
+_FORMULA_BANNED_NAMES = frozenset(
+    {"eval", "exec", "compile", "__import__", "import_module", "literal_eval", "__builtins__"}
+)
+
+
+def _check_formula_engine_evaluates_nothing(src: SourceFile) -> Iterator[Finding]:
+    """ADR-237 §2 (T-05-T07): the workbook formula engine parses a closed grammar and never hands
+    a formula to Python. No eval, exec, compile, dynamic import or builtins lookup in the compute
+    packages."""
+    for line, name in _names_used(src):
+        if name in _FORMULA_BANNED_NAMES:
+            yield Finding(
+                line, f"{name}: formulas are parsed, never evaluated by Python (ADR-237)"
+            )
+
+
 # --- tree rules -------------------------------------------------------------------------------
 
 
@@ -3224,6 +3240,13 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005, ADR-009",
         check=_check_unexplained_auth_cast,
         include=("src/abacus/*",),
+    ),
+    Rule(
+        id="FORMULA-001",
+        description="The formula engine and tax compute never evaluate code (no eval, exec, compile)",
+        adr="ADR-237, ADR-052",
+        check=_check_formula_engine_evaluates_nothing,
+        include=("src/abacus/modules/workpapers/compute/*", "src/abacus/modules/tax/compute/*"),
     ),
 ]
 

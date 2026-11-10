@@ -264,6 +264,7 @@ source_modules = [
     "abacus.modules.assurance.compute",
     "abacus.modules.notices.compute",  # N-04-T04 (DEC-2053)
     "abacus.modules.tax.compute",  # T-03-T04 (DEC-2203)
+    "abacus.modules.workpapers.compute",  # T-05-T07: E13 formula engine (ADR-237)
 ]
 forbidden_modules = [
     "abacus.api",
@@ -282,6 +283,7 @@ ignore_imports = [
     "abacus.modules.assurance.compute.** -> abacus.modules.assurance.compute.**",
     "abacus.modules.notices.compute.** -> abacus.modules.notices.compute.**",
     "abacus.modules.tax.compute.** -> abacus.modules.tax.compute.**",
+    "abacus.modules.workpapers.compute.** -> abacus.modules.workpapers.compute.**",
 ]
 unmatched_ignore_imports_alerting = "none"
 
