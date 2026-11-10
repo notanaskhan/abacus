@@ -18,6 +18,16 @@ REVIEWED_FALLBACK: Final = frozenset(
         "archive.seal_verified",
         "archive_addition.created",
         "archive_addition.decided",
+        # reviewed 2026-11-10 (S35): P-10-T33 a person's run commands (agents/commands.py)
+        "agent_feedback.created",
+        "agent_run.plan_approved",
+        "agent_run.plan_cancelled",
+        "agent_run.plan_edited",
+        "agent_run.question_answered",
+        "agent_run.question_skipped",
+        "agent_run.redirected",
+        "agent_run.signed_off",
+        "agent_run.stop_requested",
         # reviewed 2026-11-10 (S35): P-10-T32 AgentRunWorkflow part 2's waits, retries and stop
         "agent_run.decision_raised",
         "agent_run.question_opened",

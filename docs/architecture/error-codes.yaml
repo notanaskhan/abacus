@@ -212,6 +212,7 @@ codes:
   answer_invalid:
     status: 422
     raised_by:
+    - abacus.modules.agents.commands.AnswerInvalid
     - abacus.modules.requests.portal_questionnaires.AnswerInvalid
   approval_kind_not_registered:
     status: 409
@@ -2327,6 +2328,16 @@ codes:
     raised_by:
     - abacus.modules.platform.pilots.PilotModeRefused
     summary: The enrolment cannot move to that mode from where it is (or without a confirming person).
+  plan_edit_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.commands.PlanEditInvalid
+    summary: 'A plan edit keeps and reorders the newest version''s step keys; nothing new, nothing a kept step depends on dropped (P-10-T33).'
+  plan_not_decidable:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.commands.PlanNotDecidable
+    summary: 'The plan''s newest version is not open to this decision (P-10-T33).'
   plan_number_invalid:
     status: 422
     raised_by:
@@ -2337,6 +2348,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.ebp_provisions.ReviewInvalid
+  plan_version_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.commands.PlanVersionConflict
+    summary: '`expected_version` is not the plan''s newest version: someone decided first (P-10-T33).'
   planning_invalid:
     status: 422
     raised_by:
@@ -2461,6 +2477,11 @@ codes:
     raised_by:
     - abacus.modules.requests.questionnaire_editor.QuestionAnswered
     summary: An answered question keeps its type (retire it and add a new one).
+  question_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.commands.QuestionNotOpen
+    summary: 'The question was answered, skipped or expired (P-10-T33).'
   question_sent:
     status: 409
     raised_by:
@@ -2728,6 +2749,16 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.RowsNotReviewed
     summary: 'SPEC-040 AC-10: every row is signed by a reviewer, on its current result, first.'
+  run_already_signed_off:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.commands.RunAlreadySignedOff
+    summary: 'A run is signed off once (P-10-T33).'
+  run_ended:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.commands.RunEnded
+    summary: 'The run has ended: nothing to decide, redirect, retry or stop (P-10-T33).'
   run_not_ended:
     status: 409
     raised_by:
@@ -2879,6 +2910,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.service.SignOffInvalid
+  sign_off_unacknowledged:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.commands.SignOffUnacknowledged
+    summary: 'Every open issue and decision on the run is acknowledged by id first (P-10-T33).'
   signatures_incomplete:
     status: 409
     raised_by:
