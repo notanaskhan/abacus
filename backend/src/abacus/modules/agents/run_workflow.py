@@ -23,7 +23,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Final
+from typing import Any, Final
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
@@ -82,7 +82,7 @@ class AgentRunWorkflow:
         p: AgentRunInput,
         state: str,
         reason: str | None = None,
-        blocked: dict[str, object] | None = None,
+        blocked: dict[str, Any] | None = None,  # Any: JSON facts (the converter decodes Any)
     ) -> None:
         await self._act(
             "agents.run_v2.set_state",

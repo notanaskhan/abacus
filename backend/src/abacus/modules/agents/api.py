@@ -139,6 +139,9 @@ from abacus.modules.agents.routes import (
     router,
     template_drafts_router,
 )
+from abacus.modules.agents.run_activities import PlanState as RunV2PlanState
+from abacus.modules.agents.run_activities import RunFacts as RunV2Facts
+from abacus.modules.agents.run_activities import StepOutcome as RunV2StepOutcome
 from abacus.modules.agents.run_backfill import register_session_links
 from abacus.modules.agents.run_backfill_workflow import (
     BACKFILL_ID_PREFIX,
@@ -160,6 +163,8 @@ from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scen
     record_synthetic_run,
 )
 from abacus.modules.agents.run_stream import badge_stream as agent_badge_stream  # P-10-T26
+from abacus.modules.agents.run_workflow import AgentRunInput as AgentRunInput
+from abacus.modules.agents.run_workflow import AgentRunWorkflow as AgentRunWorkflow
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.runs_v2_contract import (
@@ -489,6 +494,9 @@ __all__ = [
     "ReviewUnavailable",
     "RunInput",
     "RunOutcome",
+    "RunV2Facts",
+    "RunV2PlanState",
+    "RunV2StepOutcome",
     "ScreeningInput",
     "ScreeningOutcome",
     "ScreeningOutput",
