@@ -40,11 +40,11 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
 from abacus.modules.agents.events import RunStateChanged
+from abacus.modules.agents.service import AgentRunNotRunning, load_run_v2_context
 from abacus.modules.agents.tools.registry import registered_tools
 from abacus.modules.agents.tools.runtime import ToolCallIn, call_tool
 from abacus.modules.identity.api import (
     AgentContext,
-    agent_context_for_run,
     agents_paused,
     engagement_resource,
     member_could,
@@ -133,7 +133,7 @@ async def record_plan_activity(
             tx.record(
                 "agent_run.plan_refused",
                 target=Target("agent_run", run),
-                after=Ref(problems=len(problems), first=problems[0].split(":")[0]),
+                after=Ref(problems=len(problems)),
             )
             return 0
         version = cast(
@@ -229,7 +229,7 @@ async def set_state_activity(
         tx.record(
             "agent_run.state_changed",
             target=Target("agent_run", run),
-            after=Ref(state=state, seq=seq),
+            after=Ref(seq=seq),
         )
         event: DomainEvent = RunStateChanged(run_id=run, state=state, run_seq=seq)
         tx.emit(event)
@@ -263,26 +263,7 @@ class StepOutcome:
 
 
 async def _agent(tenant_id: str, run_id: str) -> AgentContext:
-    async with tenant_session(_tenant(tenant_id, run_id)) as session:
-        row = (
-            await session.execute(
-                text(
-                    "SELECT agent_id, engagement_id, task_scope, initiator_user_id "
-                    "FROM agent_runs WHERE id = :run"
-                ),
-                {"run": UUID(run_id)},
-            )
-        ).first()
-    if row is None:
-        raise ValueError("agent_run not found")
-    return await agent_context_for_run(
-        tenant_id=UUID(tenant_id),
-        run_id=UUID(run_id),
-        agent_id=row.agent_id,
-        engagement_id=row.engagement_id,
-        task_scope=frozenset(cast(list[str], row.task_scope or [])),
-        initiator_user_id=row.initiator_user_id,
-    )
+    return await load_run_v2_context(UUID(tenant_id), UUID(run_id))
 
 
 def _args_hash(name: str, arguments: dict[str, object]) -> str:
@@ -324,10 +305,17 @@ async def execute_step_activity(
             ),
         )
         tx.record("agent_run_step.started", target=Target("agent_run", run), after=Ref(seq=seq))
+    agent: AgentContext | None = None
     if kind == "narration":
         outcome = StepOutcome("succeeded")
     elif kind in ("tool", "compute") and tool_name is not None:
-        agent = await _agent(tenant_id, run_id)
+        try:
+            agent = await _agent(tenant_id, run_id)
+        except AgentRunNotRunning:
+            agent = None
+    if kind in ("tool", "compute") and tool_name is not None and agent is None:
+        outcome = StepOutcome("failed", "run_ended")
+    elif kind in ("tool", "compute") and tool_name is not None and agent is not None:
         result = await call_tool(
             agent,
             ToolCallIn(
@@ -367,7 +355,7 @@ async def execute_step_activity(
         tx.record(
             "agent_run_step.finished",
             target=Target("agent_run", run),
-            after=Ref(seq=seq, state=outcome.state, code=outcome.error_code or "none"),
+            after=Ref(seq=seq),
         )
     return outcome
 
@@ -389,7 +377,7 @@ async def complete_run_activity(
         tx.record(
             "agent_run.completed_v2",
             target=Target("agent_run", run),
-            after=Ref(state=state, reason=reason or "none"),
+            after=None,
         )
 
 

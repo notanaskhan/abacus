@@ -19,7 +19,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Final
+from typing import Final, cast
 
 CANONICALIZATION: Final = "rfc8785"
 MANIFEST_VERSION: Final = 1
@@ -61,12 +61,12 @@ def canonical(value: object) -> bytes:
         if isinstance(v, float):
             raise TypeError("the manifest holds no floats")
         if isinstance(v, dict):
-            for k, x in v.items():  # pyright: ignore[reportUnknownVariableType] -- JSON
+            for k, x in cast("dict[object, object]", v).items():
                 if not isinstance(k, str):
                     raise TypeError("manifest keys are strings")
                 check(x)
         elif isinstance(v, list | tuple):
-            for x in v:  # pyright: ignore[reportUnknownVariableType] -- JSON
+            for x in cast("list[object] | tuple[object, ...]", v):
                 check(x)
 
     check(value)

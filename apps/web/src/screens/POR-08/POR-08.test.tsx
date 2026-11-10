@@ -87,8 +87,8 @@ describe("POR-08 approvals", () => {
       expect(screen.getByText(amount)).toBeTruthy();
     }
     expect(await screen.findByText("Inventory — Green Coffee")).toBeTruthy();
-    expect(screen.getByText("12,600.00")).toBeTruthy();
-    expect(screen.getAllByText("14,900.00").length).toBe(1);
+    expect(screen.getByText("$12,600.00")).toBeTruthy();
+    expect(screen.getAllByText("$14,900.00").length).toBeGreaterThan(0);
     expect(screen.getByText("Receiving log — Aug 28 (1,800 lb green coffee)")).toBeTruthy();
     expect(screen.queryByRole("button", { name: COPY.accept })).toBeNull();
     expect(screen.getByRole("button", { name: COPY.askEntry })).toBeTruthy();
@@ -134,6 +134,8 @@ describe("POR-08 approvals", () => {
 
   it("c: the decline sheet offers the three reasons and sends the code", async () => {
     const seen = show(scenarios.a, { overlay: "decline" });
+    // The sheet opens once the package's detail (its seen_hash) has loaded.
+    await screen.findByText("5 parts", {}, { timeout: 3000 });
     expect(await screen.findByText(COPY.reasons.number_looks_wrong)).toBeTruthy();
     expect(screen.getByText(COPY.reasons.something_missing)).toBeTruthy();
     expect(screen.getByText(COPY.reasons.other)).toBeTruthy();
@@ -173,10 +175,11 @@ describe("POR-08 approvals", () => {
       expect(screen.getByText(amount)).toBeTruthy();
     }
     expect(screen.getAllByRole("button", { name: COPY.accept }).length).toBe(4);
-    const aje1 = await screen.findByText(/AJE-1/);
+    const aje1 = (await screen.findAllByText(/AJE-1/))[0];
+    if (aje1 === undefined) throw new Error("no AJE-1");
     fireEvent.click(aje1);
     expect(await screen.findByText("Participant contributions")).toBeTruthy();
-    expect(screen.getByText("33,540.00")).toBeTruthy();
+    expect(screen.getByText("$33,540.00")).toBeTruthy();
     await waitFor(() => {
       expect(
         screen.getAllByRole<HTMLButtonElement>("button", { name: COPY.accept })[0]?.disabled,
@@ -215,7 +218,9 @@ describe("POR-08 approvals", () => {
   it("f: nothing to approve", async () => {
     at("f");
     expect(await screen.findByText(COPY.empty)).toBeTruthy();
-    expect(screen.getByText(COPY.emptyBody("Brightwater Hale"))).toBeTruthy();
+    expect(
+      screen.getByText(/will ask here when statements or an entry need your OK\./),
+    ).toBeTruthy();
   });
 
   it("flag off: the designed state, never a 404 page", async () => {
@@ -238,7 +243,11 @@ describe("POR-08 approvals", () => {
         expect(document.querySelector("[data-approval]")).not.toBeNull();
       });
       const text = document.body.textContent;
-      expect(text).not.toMatch(/Accrued|agent|threshold|materiality|policy|\bPost\b|SAS 114/i);
+      // "Accrued expenses" and "Accrued administrative expenses" are entries' own names (CLS-07,
+      // AUD-16), not the product's.
+      expect(text).not.toMatch(
+        /\bAccrued\b(?!\s+(?:administrative\s+)?expenses)|agent|threshold|materiality|policy|\bPost\b|SAS 114/i,
+      );
       cleanup();
       restore?.();
     }

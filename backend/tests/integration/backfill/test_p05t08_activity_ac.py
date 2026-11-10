@@ -38,7 +38,9 @@ async def w(net: Net) -> Collab:
     for n in range(23):
         kind = "human" if n < 12 else "agent"
         actor = str(world.margaret.user_id) if kind == "human" else f"run-{uuid.uuid4()}"
-        async with uow(TenantContext(world.tenant_id, kind, actor)) as tx:
+        # An agent always acts for a person (audit_events_agent_acts_for_a_person): Hannah's run.
+        on_behalf = world.hannah.user_id if kind == "agent" else None
+        async with uow(TenantContext(world.tenant_id, kind, actor, on_behalf)) as tx:
             tx.record(
                 "engagement.note_added",
                 target=Target("engagement", world.site.engagement_id),
@@ -67,7 +69,7 @@ async def test_ac34_the_search_text_stays_in_the_body(w: Collab) -> None:
     assert "Materiality" not in str(response.request.url)
 
 
-@WAITING
+# The refusals come before the 501: authorisation and walls already answer (no WAITING).
 async def test_ac36_a_firm_admin_and_a_client_are_refused(w: Collab) -> None:
     for who in (w.grace, w.client, w.victor):
         response = await w.call("POST", _path(w, "query"), who, {})

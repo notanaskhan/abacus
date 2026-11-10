@@ -199,6 +199,20 @@ async def get_comment(session: AsyncSession, comment_id: UUID) -> ThreadComment 
     return await session.get(ThreadComment, comment_id)
 
 
+async def get_redaction(session: AsyncSession, comment_id: UUID) -> ThreadCommentRedaction | None:
+    """AC-11: a comment's redaction row, by the comment's id."""
+    return await session.scalar(
+        select(ThreadCommentRedaction).where(ThreadCommentRedaction.comment_id == comment_id)
+    )
+
+
+async def corrected_by_of(session: AsyncSession, comment_id: UUID) -> UUID | None:
+    """The comment that corrects this one, if any."""
+    return await session.scalar(
+        select(ThreadComment.id).where(ThreadComment.corrects_comment_id == comment_id)
+    )
+
+
 async def insert_mentions(
     session: AsyncSession,
     tenant_id: UUID,
@@ -503,7 +517,7 @@ async def set_checklist_item(
     done: bool | None,
     by: UUID,
 ) -> None:
-    values: dict[str, Any] = {}
+    values: dict[str, Any] = {}  # Any: column values of mixed types
     if text is not None:
         values["text"] = text
     if done is not None:

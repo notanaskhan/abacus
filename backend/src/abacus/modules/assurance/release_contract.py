@@ -1289,7 +1289,7 @@ def _filing_out(f: object) -> FilingOut:
     return FilingOut.model_validate(f, from_attributes=True)
 
 
-@router.get("/filings", action="report.read", response_model=FilingsOut)
+@router.get("/filings", action="report.read", response_model=FilingsOut, errors=(501,))
 async def audit_filings_route(work_item_id: UUID, ctx: Ctx) -> FilingsOut:
     """AUD-24 f: the Form 5500 tracker (A-07-T36); an EBP audit's row opens at the release."""
     from abacus.modules.assurance.filings import filings_of
@@ -1299,7 +1299,7 @@ async def audit_filings_route(work_item_id: UUID, ctx: Ctx) -> FilingsOut:
 
 
 @router.patch(
-    "/filings/{filing_id}", action="filing.update", response_model=FilingOut, errors=(409,)
+    "/filings/{filing_id}", action="filing.update", response_model=FilingOut, errors=(409, 501)
 )
 async def audit_filing_route(
     work_item_id: UUID, filing_id: UUID, body: FilingIn, ctx: Ctx
@@ -1475,7 +1475,9 @@ async def audit_archive_lock_route(
     )
 
 
-@router.get("/archive/manifest", action="archive.read", response_model=ArchiveManifestOut)
+@router.get(
+    "/archive/manifest", action="archive.read", response_model=ArchiveManifestOut, errors=(501,)
+)
 async def audit_archive_manifest_route(work_item_id: UUID, ctx: Ctx) -> ArchiveManifestOut:
     """The locked archive's manifest facts (A-07-T37): counts, the checkpoint, the roots and both
     retain-until dates; 404 before the seal."""

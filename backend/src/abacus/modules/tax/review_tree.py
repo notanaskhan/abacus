@@ -212,7 +212,7 @@ async def approve(
         tx.record(
             "document.approved",
             target=Target("tax_return", return_id),
-            after=Ref(approval=approval_id, evidence_version_id=evidence_version_id, level=level),
+            after=Ref(approval=approval_id, evidence_version_id=evidence_version_id),
             scope=Scope(engagement_id=engagement, work_item_id=return_id),
         )
     names = await names_of([ctx.user_id])
@@ -274,7 +274,7 @@ async def reverse(ctx: AuthContext, approval_id: UUID, reason: str | None) -> Ap
         tx.record(
             "document.approval_reversed",
             target=Target("tax_return", row.tax_return_id),
-            after=Ref(approval=approval_id, level=str(row.level)),
+            after=Ref(approval=approval_id),
             scope=Scope(engagement_id=engagement, work_item_id=row.tax_return_id),
         )
     names = await names_of([row.actor_user_id])

@@ -294,9 +294,9 @@ async def create(
         await repo.insert_checklist_items(
             tx.session, ctx.tenant_id, todo_id, list(enumerate(texts, start=1))
         )
-        refs: dict[str, UUID | int | str] = {"scope": scope_kind, "checklist": len(texts)}
+        refs: dict[str, UUID | int] = {"checklist": len(texts)}
         if anchor is not None:
-            refs.update(anchor_kind=anchor[0], anchor_id=anchor[1])
+            refs["anchor_id"] = anchor[1]
         tx.record("todo.created", target=Target("todo", todo_id), after=Ref(**refs))
         tx.record(
             "todo.assigned",
@@ -335,7 +335,7 @@ async def create(
             tx.record(
                 "comment_thread.converted",
                 target=Target("comment_thread", thread.id),
-                after=Ref(ref_type="todo", ref_id=todo_id),
+                after=Ref(ref_id=todo_id),
             )
     return todo_id
 
@@ -383,7 +383,7 @@ async def patch(
         tx.record(
             "todo.updated",
             target=Target("todo", todo_id),
-            after=Ref(fields=",".join(sorted(values)) or "none", version=expected + 1),
+            after=Ref(fields=len(values), version=expected + 1),
         )
 
 
@@ -482,7 +482,7 @@ async def move(ctx: AuthContext, todo_id: UUID, anchor: tuple[str, UUID, Locator
         tx.record(
             "todo.moved",
             target=Target("todo", todo_id),
-            after=Ref(anchor_kind=anchor[0], anchor_id=anchor[1]),
+            after=Ref(anchor_id=anchor[1]),
         )
         tx.emit(TodoMoved.model_validate(_event_fields(moved)))
 
@@ -541,7 +541,7 @@ async def add_item(ctx: AuthContext, todo_id: UUID, text: str) -> None:
         tx.record(
             "todo.checklist_changed",
             target=Target("todo", todo_id),
-            after=Ref(change="added", position=count + 1),
+            after=Ref(position=count + 1),
         )
 
 
@@ -557,11 +557,10 @@ async def change_item(
         await repo.set_checklist_item(
             tx.session, item_id, text=text.strip() if text else None, done=done, by=ctx.user_id
         )
-        change = "edited" if done is None else ("checked" if done else "unchecked")
         tx.record(
             "todo.checklist_changed",
             target=Target("todo", todo_id),
-            after=Ref(change=change, position=item.position),
+            after=Ref(position=item.position),
         )
 
 
@@ -570,9 +569,7 @@ async def remove_item(ctx: AuthContext, todo_id: UUID, item_id: UUID) -> None:
     async with uow(ctx.tenant) as tx:
         if not await repo.remove_checklist_item(tx.session, todo_id, item_id):
             raise NotFound("todo_checklist_item")
-        tx.record(
-            "todo.checklist_changed", target=Target("todo", todo_id), after=Ref(change="removed")
-        )
+        tx.record("todo.checklist_changed", target=Target("todo", todo_id))
 
 
 # --- reads ---------------------------------------------------------------------------------------

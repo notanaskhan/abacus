@@ -123,7 +123,7 @@ async def fire_activity(
             tx.record(
                 "archive.deadline_risk",
                 target=Target("work_item", wi),
-                after=Ref(clock=kind, boundary=boundary, deadline=at),
+                after=Ref(deadline=int(at[:10].replace("-", ""))),
                 scope=Scope(engagement_id=UUID(engagement_id), work_item_id=wi),
             )
             tx.emit(
@@ -213,7 +213,7 @@ async def _letter_due(
             tx.record(
                 "governance_communication.due_set",
                 target=Target("governance_communication", UUID(str(moved))),
-                after=Ref(due_on=due.isoformat()),
+                after=Ref(due_on=int(due.strftime("%Y%m%d"))),
                 scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
             )
 

@@ -19,7 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import cast
+from typing import Final, cast
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,6 +58,7 @@ from abacus.modules.agents.repository import (
     lock_run,
     result_for_run,
     run_for_event,
+    run_v2_state,
     runs_since,
     set_queued,
     try_lock_run,
@@ -252,6 +253,30 @@ async def load_agent_context(tenant_id: UUID, run_id: UUID) -> AgentContext:
         agent_id=run.agent_id,
         engagement_id=run.engagement_id,
         task_scope=frozenset(run.task_scope) & scope,
+        initiator_user_id=run.initiator_user_id,
+    )
+
+
+_RUN_V2_ENDED: Final = frozenset({"succeeded", "failed", "cancelled", "stopped"})
+
+
+async def load_run_v2_context(tenant_id: UUID, run_id: UUID) -> AgentContext:
+    """P-10-T29 (run v2 activities): the agent's context for one plan step, proven from the run's
+    own row read under the tenant's row-level security (its agent, engagement, task scope and
+    initiator; the initiator's live membership is checked by the issuer)."""
+    async with tenant_session(_reader(tenant_id, f"agent-run:{run_id}")) as session:
+        run = await get_run(session, run_id)
+        state = await run_v2_state(session, run_id)
+    if run is None:
+        raise NotFound("agent_run")
+    if state in _RUN_V2_ENDED:
+        raise AgentRunNotRunning(str(state))  # a stopped or finished run calls no more tools
+    return await agent_context_for_run(
+        tenant_id=tenant_id,
+        run_id=run.id,
+        agent_id=run.agent_id,
+        engagement_id=run.engagement_id,
+        task_scope=frozenset(run.task_scope or []),
         initiator_user_id=run.initiator_user_id,
     )
 

@@ -247,7 +247,13 @@ function Body({ text }: { text: string }): JSX.Element {
 function Paper({ letter, room }: { letter: GovernanceLetterOut; room: GovernanceRoomOut }) {
   const branding = useBranding();
   const firm = branding.data?.firm_name ?? "";
-  const address = branding.data?.address_line ?? null;
+  // The brand's address line may lead with the firm's name ("… LLP · 311 West …"): the letterhead
+  // prints the name once, above the address.
+  const line = branding.data?.address_line ?? null;
+  const address =
+    line !== null && firm !== "" && line.startsWith(`${firm} · `)
+      ? line.slice(firm.length + 3)
+      : line;
   return (
     <article
       data-paper={letter.id}
@@ -492,7 +498,6 @@ function Inquiry({
 }): JSX.Element {
   return (
     <article
-      aria-label={inquiry.prompt}
       data-inquiry={inquiry.question_id}
       className="flex flex-col gap-[10px] rounded-pane bg-card px-[16px] py-[14px] shadow-e1"
     >
@@ -566,7 +571,9 @@ function Questions({ roomId }: { roomId: string }): JSX.Element {
           }}
         />
       ))}
-      <p className="text-meta text-ink-3">{COPY.privacy(branding.data?.firm_name ?? "")}</p>
+      <p className="text-meta text-ink-3">
+        {COPY.privacy(branding.data?.portal_name ?? branding.data?.firm_name ?? "")}
+      </p>
       <div>
         {sent ? (
           <p data-answers-sent className="text-[12.5px] text-ink-2">

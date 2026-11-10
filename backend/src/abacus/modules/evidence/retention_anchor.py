@@ -62,6 +62,6 @@ async def extend_versions_until(
         tx.record(
             "retention.extended",
             target=Target("firm", tenant.tenant_id),
-            after=Ref(objects=len(objects), until=until.date().isoformat()),
+            after=Ref(objects=len(objects), until=int(until.strftime("%Y%m%d"))),
         )
     return len(objects)

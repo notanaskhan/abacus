@@ -3,13 +3,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from uuid import UUID
 
 from abacus.modules.collaboration import contract as c
 from abacus.modules.collaboration.anchors import AnchorFacts
 from abacus.modules.collaboration.candidates import Candidate, initials
-from abacus.modules.collaboration.threads import ThreadView
+from abacus.modules.collaboration.threads import CommentView, ThreadView
 from abacus.modules.collaboration.todos import TodoView
 from abacus.modules.identity.api import names_of
 
@@ -47,31 +47,40 @@ def _thread_people(views: Sequence[ThreadView]) -> set[UUID]:
     return found
 
 
+def _comment(m: CommentView, named: Mapping[UUID, c.PersonRefOut]) -> c.ThreadCommentOut:
+    return c.ThreadCommentOut(
+        id=m.id,
+        author=named[m.author_user_id],
+        author_side="client" if m.author_side == "client" else "firm",
+        body=m.body,
+        corrects_comment_id=m.corrects_comment_id,
+        corrected_by_comment_id=m.corrected_by_comment_id,
+        mentioned_user_ids=m.mentioned_user_ids,
+        citation_ids=m.citation_ids,
+        redaction=None
+        if m.redaction is None
+        else c.ThreadRedactionOut(
+            redacted_by=named[m.redaction.redacted_by],
+            redacted_at=m.redaction.redacted_at,
+            reason=m.redaction.reason,
+        ),
+        created_at=m.created_at,
+    )
+
+
+async def comment_out(m: CommentView) -> c.ThreadCommentOut:
+    """One comment on its own (AC-11: what a redactor sees)."""
+    ids: set[UUID] = {m.author_user_id}
+    if m.redaction is not None:
+        ids.add(m.redaction.redacted_by)
+    return _comment(m, await people(ids))
+
+
 async def threads_out(views: Sequence[ThreadView]) -> list[c.ThreadOut]:
     named = await people(_thread_people(views))
     out: list[c.ThreadOut] = []
     for v in views:
-        comments = [
-            c.ThreadCommentOut(
-                id=m.id,
-                author=named[m.author_user_id],
-                author_side="client" if m.author_side == "client" else "firm",
-                body=m.body,
-                corrects_comment_id=m.corrects_comment_id,
-                corrected_by_comment_id=m.corrected_by_comment_id,
-                mentioned_user_ids=m.mentioned_user_ids,
-                citation_ids=m.citation_ids,
-                redaction=None
-                if m.redaction is None
-                else c.ThreadRedactionOut(
-                    redacted_by=named[m.redaction.redacted_by],
-                    redacted_at=m.redaction.redacted_at,
-                    reason=m.redaction.reason,
-                ),
-                created_at=m.created_at,
-            )
-            for m in v.comments
-        ]
+        comments = [_comment(m, named) for m in v.comments]
         events = [
             c.ThreadEventOut(
                 kind=e.kind,  # pyright: ignore[reportArgumentType] -- the table's CHECK

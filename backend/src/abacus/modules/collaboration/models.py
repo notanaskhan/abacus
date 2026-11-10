@@ -26,7 +26,7 @@ class CommentThread(Base):
     client_id: Mapped[UUID]
     anchor_kind: Mapped[str]
     anchor_id: Mapped[UUID]
-    anchor_locator: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    anchor_locator: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
     anchor_locator_key: Mapped[str] = mapped_column(server_default=FetchedValue())
     opened_on_version_no: Mapped[int | None]
     pinned_version_no: Mapped[int | None]
@@ -118,7 +118,7 @@ class Todo(Base):
     due_on: Mapped[date | None]
     anchor_kind: Mapped[str | None]
     anchor_id: Mapped[UUID | None]
-    anchor_locator: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    anchor_locator: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
     row_text_sealed: Mapped[bytes | None]
     row_text_fingerprint: Mapped[str | None]
     source_thread_id: Mapped[UUID | None]

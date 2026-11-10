@@ -354,7 +354,7 @@ _R = "/returns/{return_id}"
 
 
 @workspace_router.get(
-    f"{_R}/workspace", action="tax_return.read", response_model=WorkspaceSummaryOut
+    f"{_R}/workspace", action="tax_return.read", response_model=WorkspaceSummaryOut, errors=(501,)
 )
 async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
     """TAX-04's tab counts at the viewer's level (T-04-T17)."""
@@ -375,7 +375,9 @@ async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
     )
 
 
-@workspace_router.get(f"{_R}/review-tree", action="tax_return.read", response_model=ReviewTreeOut)
+@workspace_router.get(
+    f"{_R}/review-tree", action="tax_return.read", response_model=ReviewTreeOut, errors=(501,)
+)
 async def review_tree_route(
     return_id: UUID,
     ctx: Ctx,
@@ -513,7 +515,7 @@ async def draft_run_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
 
 
 @workspace_router.get(
-    f"{_R}/worksheets", action="return_worksheet.read", response_model=WorksheetsOut
+    f"{_R}/worksheets", action="return_worksheet.read", response_model=WorksheetsOut, errors=(501,)
 )
 async def worksheets_route(return_id: UUID, ctx: Ctx) -> WorksheetsOut:
     """TAX-05's tree (T-04-T16)."""

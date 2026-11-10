@@ -198,9 +198,16 @@ def test_the_documented_refusals_are_catalogued(code: str) -> None:
     assert code in codes
 
 
+# P-10-T28 (DEC-3204, DEC-3213): the agent reads the trial balance only through the ledger.* tools
+# a run's spec lists, intersected with its initiator's rights; it never holds the read outright,
+# and every C9 write stays denied.
+AGENT_TASK_SCOPE_READS = frozenset({"trial_balance.read"})
+
+
 @pytest.mark.parametrize("action", ACTIONS)
 def test_ac30_the_agent_holds_no_c9_action(action: str) -> None:
-    assert RULES[action].decisions.get("agent", "deny") == "deny"
+    allowed = ("deny", "task_scope") if action in AGENT_TASK_SCOPE_READS else ("deny",)
+    assert RULES[action].decisions.get("agent", "deny") in allowed
     assert RULES[action].decisions.get("system", "deny") == "deny"
 
 

@@ -85,8 +85,8 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
     }
     # the reviewer's (SPEC-030), matcher's (033), drafter's (035), entry assessor's (TASK-085),
     # the matcher's intake mode (N-01-T22), the methodology importer (K-01-T21) and the section
-    # drafter (A-04-T11), and the agent-run backfill (P-10-T14)
-    assert len(WORKFLOWS) == 11
+    # drafter (A-04-T11), the agent-run backfill (P-10-T14) and the run v2 workflow (P-10-T29)
+    assert len(WORKFLOWS) == 12
     # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps;
     # SPEC-027 adds the engagement agent's two (handle; TASK-051's next tick); SPEC-030 the
     # reviewer's two (create_run, review); SPEC-033 (TASK-066) the matcher's two; SPEC-035
@@ -94,8 +94,10 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
     # N-01-T22 adds the intake mode's two (create_intake_run, match_intake). K-01-T21 adds the
     # methodology importer's four (extract_pages, parse_batch, finish, fail). A-04-T11 adds the
     # section drafter's one (`section_draft.draft`; the route creates its run). P-10-T14
-    # (TASK-6105) adds the agent-run backfill's one (`backfill_batch`).
-    assert len(ACTIVITIES) == 26
+    # (TASK-6105) adds the agent-run backfill's one (`backfill_batch`). P-10-T29 (TASK-6607) adds
+    # the run v2 workflow's seven (load, record_plan, plan_state, set_state, paused,
+    # execute_step, complete).
+    assert len(ACTIVITIES) == 33
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

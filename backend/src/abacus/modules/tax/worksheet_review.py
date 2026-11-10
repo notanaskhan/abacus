@@ -146,13 +146,41 @@ async def section_reviewables(tenant: TenantContext, engagement_id: UUID) -> lis
     return [Reviewable(SECTION, r.id, r.code, r.name, r.content_hash, True) for r in rows]
 
 
+# Fixed statements per table of this module (no SQL is built from a value).
+_FACTS: Final = {
+    "return_worksheets": text(
+        "SELECT engagement_id, content_hash, version_no FROM return_worksheets WHERE id = :i"
+    ),
+    "return_worksheet_sections": text(
+        "SELECT engagement_id, content_hash, version_no FROM return_worksheet_sections "
+        "WHERE id = :i"
+    ),
+}
+_ENGAGEMENT_OF: Final = {
+    "return_fields": text("SELECT engagement_id FROM return_fields WHERE id = :i"),
+    "return_worksheets": text("SELECT engagement_id FROM return_worksheets WHERE id = :i"),
+    "k1_treatments": text("SELECT engagement_id FROM k1_treatments WHERE id = :i"),
+    "residency_determinations": text(
+        "SELECT engagement_id FROM residency_determinations WHERE id = :i"
+    ),
+}
+_LINK_PROPOSAL: Final = {
+    "k1_treatments": text(
+        "UPDATE k1_treatments SET proposal_id = :p, updated_at = clock_timestamp(), "
+        "version_no = version_no + 1 WHERE id = :i"
+    ),
+    "residency_determinations": text(
+        "UPDATE residency_determinations SET proposal_id = :p, updated_at = clock_timestamp(), "
+        "version_no = version_no + 1 WHERE id = :i"
+    ),
+}
+
+
 async def _facts(tenant: TenantContext, table: str, target: str, row_id: UUID) -> ReviewableFacts:
     async with tenant_session(tenant) as session:
         row = (
             await session.execute(
-                text(
-                    f"SELECT engagement_id, content_hash, version_no FROM {table} WHERE id = :i"  # noqa: S608 -- a fixed table of this module
-                ),
+                _FACTS[table],
                 {"i": row_id},
             )
         ).first()
@@ -250,7 +278,7 @@ def label_of(field_key: str) -> str:
 async def _engagement_of(table: str, tenant: TenantContext, row_id: UUID) -> UUID | None:
     async with tenant_session(tenant) as session:
         found = await session.scalar(
-            text(f"SELECT engagement_id FROM {table} WHERE id = :i"),  # noqa: S608 -- a fixed table of this module
+            _ENGAGEMENT_OF[table],
             {"i": row_id},
         )
     return cast(UUID | None, found)
@@ -323,10 +351,9 @@ async def _apply_status(table: str, tenant: TenantContext, proposal_id: UUID) ->
             if target is None:
                 continue
             await tx.session.execute(
-                text(f"UPDATE {table} SET proposal_id = :p, updated_at = clock_timestamp(), "  # noqa: S608 -- a fixed table of this module
-                     "version_no = version_no + 1 WHERE id = :i"),
+                _LINK_PROPOSAL[table],
                 {"p": proposal_id, "i": UUID(str(target))},
-            )  # fmt: skip
+            )
         tx.record(
             "tax_proposal.linked",
             target=Target("proposal", proposal_id),

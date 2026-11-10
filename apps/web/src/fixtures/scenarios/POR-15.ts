@@ -56,6 +56,7 @@ function handlers(state: Por15State | "n", clock: string): Record<string, Fixtur
       return found === undefined ? json(NOT_FOUND, 404) : json(found);
     },
     [`GET ${G}/communications/{communication_id}/pdf`]: () => pdf(),
+    "GET /v1/portal/deliverables/{deliverable_id}/versions/{version_no}/download": () => pdf(),
     [`POST ${G}/communications/{communication_id}/acknowledge`]: (r) =>
       json({
         communication_id: r.params.communication_id,
