@@ -51,6 +51,7 @@ from abacus.modules.review.api import (
     register_reviewable,
     register_reviewable_facts,
 )
+from abacus.modules.tax.worksheets import recompute_after_edit
 
 WORKSHEET: Final = "return_worksheet"
 SECTION: Final = "return_worksheet_section"
@@ -95,6 +96,20 @@ async def _rehash(tx: UnitOfWork, worksheet_id: UUID, section_id: UUID) -> str:
         ),
         {"h": sheet, "w": worksheet_id},
     )
+    return sheet
+
+
+async def _rehash_all(tx: UnitOfWork, worksheet_id: UUID) -> str:
+    """Every section's hash and the worksheet's, after a recompute moved fields anywhere."""
+    sections = (
+        await tx.session.execute(
+            text("SELECT id FROM return_worksheet_sections WHERE worksheet_id = :w"),
+            {"w": worksheet_id},
+        )
+    ).scalars()
+    sheet = ""
+    for section_id in list(sections):
+        sheet = await _rehash(tx, worksheet_id, section_id)
     return sheet
 
 
@@ -212,6 +227,9 @@ async def apply_field_edit(
     field_id, section_id, engagement_id, sheet = await write_field(
         tx, worksheet_id, field_key, value
     )
+    # T-04-T16: the derived lines in code, in this unit of work, then every section's hash.
+    if await recompute_after_edit(tx, engagement_id, worksheet_id):
+        sheet = await _rehash_all(tx, worksheet_id)
     tx.record(
         "return_field.edited",
         target=Target("return_worksheet", worksheet_id),
