@@ -9,6 +9,10 @@ Sampling 1 · Testing 4 · Completion 3 (1 + 5 + 1 + 4 + 3 = 14). At 9:41 the tr
 running, two wait on inputs and one is queued; the later levels are queued. Steps the handoff
 names keep their workpaper code; the rest are labelled by their level, never invented.
 
+After the snapshot (P-10-T36, DEC-3300 row): Internal control fails at 9:58 on the pack
+configuration error and Margaret Okonkwo's 11:12 decision releases materiality, each through the
+recorder's `advance_synthetic_step`; a load at 9:41 stops before both.
+
 Not here (DEC-3121): #4118 and the Aug 17 failure are firm-level runs (no engagement; a run row
 needs one until P-10's firm-scope runs), and Copperleaf's Run 2 needs C-01's close engagement;
 those stay fixture-only, their figures footed from the same book
@@ -33,6 +37,15 @@ RUN_ID: Final = stable_id("agent-run:northwind-py2025-planning-4127")
 _CT: Final = ZoneInfo("America/Chicago")
 SNAPSHOT: Final = datetime(2026, 9, 14, 9, 41, tzinfo=_CT)
 STARTED: Final = datetime(2026, 9, 14, 9, 24, tzinfo=_CT)
+# P-10-T36 (SHL-13 frames 6 and 4): after the 9:41 snapshot, through the recorder's service.
+IC_FAILED: Final = datetime(2026, 9, 14, 9, 58, tzinfo=_CT)
+DECIDED: Final = datetime(2026, 9, 14, 11, 12, tzinfo=_CT)
+# (at, seat, step key, step state, run state, error code): the seat is the person the recorder
+# writes as (Marcus started the run; Margaret's decision releases materiality).
+ADVANCES: Final[tuple[tuple[datetime, str, str, str, str, str | None], ...]] = (
+    (IC_FAILED, "MD", "workpapers.internal_control", "failed", "running", "pack_configuration"),
+    (DECIDED, "MO", "workpapers.materiality", "succeeded", "running", None),
+)
 
 # (key, level, label, state at 9:41)
 STEPS: Final[tuple[tuple[str, int, str, str], ...]] = (
@@ -76,5 +89,23 @@ def agent_runs_events() -> list[Event]:
                 ],
             },
             client=CLIENT,
-        )
+        ),
+        *(
+            Event(
+                f"agent-run-step:{RUN_ID}:{key}:{at.strftime('%H%M')}",
+                at,
+                "agents.run_step_advanced",
+                seat,
+                SLICE,
+                {
+                    "run_id": RUN_ID,
+                    "key": key,
+                    "state": state,
+                    "run_state": run_state,
+                    "error_code": error,
+                },
+                client=CLIENT,
+            )
+            for at, seat, key, state, run_state, error in ADVANCES
+        ),
     ]

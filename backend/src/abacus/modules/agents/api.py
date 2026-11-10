@@ -160,6 +160,8 @@ from abacus.modules.agents.run_plan import reserved as reserved_plan_tools
 from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scenario's runs
     RecordedRun,
     RecordedStep,
+    StepAdvance,
+    advance_synthetic_step,
     record_synthetic_run,
 )
 from abacus.modules.agents.run_stream import badge_stream as agent_badge_stream  # P-10-T26
@@ -494,6 +496,7 @@ __all__ = [
     "Recommended",
     "RecordedRun",
     "RecordedStep",
+    "StepAdvance",
     "ReservedAction",
     "ReviewOutcome",
     "ReviewUnavailable",
@@ -576,6 +579,7 @@ __all__ = [
     "pending_suggestions",
     "recommend",
     "record_code_run",
+    "advance_synthetic_step",
     "record_synthetic_run",
     "register_change_set_applier",
     "register_engagement_run_agent",

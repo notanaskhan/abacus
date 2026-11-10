@@ -16,7 +16,8 @@ Reads run under the snapshot's business clock (`clock.frozen`), so `as of` figur
 the snapshot. Object keys are sorted and lists keep the API's order.
 
 Each exported snapshot has a profile (`PROFILES`): its slices, flags and reads. E0 is the MVP
-paths above; `2026-09-24T10:20` is A-03's AUD-11 and AUD-31 (DEC-1770). Its reads answer ids
+paths above; `2026-09-24T10:20` is A-03's AUD-11 and AUD-31 (DEC-1770); `2026-09-14T09:41` is
+run #4127 (P-10-T36). Its reads answer ids
 the server makes (work items, sample sets, mapping sets, FS lines …), so `server_ids` names each
 by its natural key after the load, and the files carry `stable_id(key)` in its place, inside
 strings too, with each content hash remade from its object's stand-in: two loads export the
@@ -226,6 +227,32 @@ def _sampling_reads() -> tuple[Read, ...]:
     return tuple(reads)
 
 
+# P-10-T36 (TASK-6721): run #4127 at the 9:41 snapshot (SHL-13, WB-09 b), as Marcus Delaney who
+# started it: the run view (header, projection by level) and its items. The `agent_runs` slice
+# brings `audit_core`; its later states (9:58, 11:12) fall after the snapshot.
+RUN_SNAPSHOT: Final = "2026-09-14T09:41"
+
+
+def _run_reads() -> tuple[Read, ...]:
+    from abacus_tools.synthetic.scenarios.brightwater_hale.agent_runs_slice import RUN_ID
+
+    return (
+        Read(
+            "run-4127",
+            "marcus-delaney",
+            f"/v1/agent-runs/{RUN_ID}",
+            label="GET /v1/agent-runs/{run_id}",
+        ),
+        Read(
+            "run-4127-items",
+            "marcus-delaney",
+            f"/v1/agent-runs/{RUN_ID}/items",
+            params={"after_seq": "0"},
+            label="GET /v1/agent-runs/{run_id}/items",
+        ),
+    )
+
+
 # Server-made ids and the natural key each one's stand-in is made from (`stable_id(label)`). A
 # label may name another server id; `server_ids` puts that id's label in its place.
 _SERVER_IDS: Final = (
@@ -278,6 +305,7 @@ class Profile:
 PROFILES: Final[dict[str, Profile]] = {
     "E0": Profile(SLICES, FLAGS, READS),
     SAMPLING_SNAPSHOT: Profile(("sampling",), (), _sampling_reads(), server_ids=True),
+    RUN_SNAPSHOT: Profile(("agent_runs",), (), _run_reads()),
 }
 SNAPSHOTS: Final = tuple(PROFILES)
 

@@ -19,7 +19,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Final
+from typing import Final, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -237,4 +237,105 @@ async def record_synthetic_run(tenant: TenantContext, run: RecordedRun) -> UUID:
     return run.id
 
 
-__all__ = ["NotSynthetic", "RecordedItem", "RecordedRun", "RecordedStep", "record_synthetic_run"]
+_STEP_OF = text(
+    "SELECT id, state FROM agent_run_steps WHERE run_id = :run AND plan_step_key = :key "
+    "ORDER BY seq DESC LIMIT 1"
+)
+_STEP_STATE = text(
+    "UPDATE agent_run_steps SET state = :state, ended_at = :ended, error_code = :error "
+    "WHERE id = :id"
+)
+_RUN_STATE = text(
+    "UPDATE agent_runs SET state = :state, blocked_on = CAST(:blocked AS jsonb), "
+    "event_seq = event_seq + 1 WHERE id = :run RETURNING event_seq"
+)
+_STATE_EVENT = text(
+    "INSERT INTO run_events (tenant_id, run_id, run_seq, type, payload) VALUES "
+    "(:tenant, :run, :seq, 'step.state', CAST(:payload AS jsonb))"
+)
+
+
+@dataclass(frozen=True)
+class StepAdvance:
+    """A recorded step's later state, at the scenario's business time (P-10-T36)."""
+
+    run_id: UUID
+    key: str
+    state: str  # agent_run_steps.state
+    at: datetime
+    run_state: str  # the run's state after it (C2's 14)
+    blocked_on: Mapping[str, object] | None = None
+    error_code: str | None = None
+
+
+async def advance_synthetic_step(tenant: TenantContext, advance: StepAdvance) -> int:
+    """P-10-T36: move one recorded step on (#4127's internal control failing at 9:58, Margaret
+    Okonkwo's decision releasing materiality at 11:12), its run's state and one `step.state`
+    run event, for a synthetic firm only. Returns the run's new event sequence."""
+    if advance.state not in BUCKET:
+        raise ValueError(f"unknown step state {advance.state!r}")
+    if tenant.actor_kind != "human":
+        raise ValueError("the recorder writes as a person of the scenario")
+    if not await is_synthetic_firm(tenant):
+        raise NotSynthetic
+    async with uow(tenant) as tx:
+        step = (
+            await tx.session.execute(_STEP_OF, {"run": advance.run_id, "key": advance.key})
+        ).first()
+        if step is None:
+            raise ValueError(f"step {advance.key!r} was not reached")
+        ended = (
+            advance.at
+            if advance.state in ("succeeded", "failed", "skipped", "cancelled")
+            else None
+        )
+        await tx.session.execute(
+            _STEP_STATE,
+            {"id": step.id, "state": advance.state, "ended": ended, "error": advance.error_code},
+        )
+        seq = int(
+            await tx.session.scalar(
+                _RUN_STATE,
+                {
+                    "state": advance.run_state,
+                    "blocked": None
+                    if advance.blocked_on is None
+                    else json.dumps(dict(advance.blocked_on)),
+                    "run": advance.run_id,
+                },
+            )
+            or 0
+        )
+        await tx.session.execute(
+            _STATE_EVENT,
+            {
+                "tenant": tenant.tenant_id,
+                "run": advance.run_id,
+                "seq": seq,
+                "payload": json.dumps(
+                    {
+                        "step_id": str(step.id),
+                        "state": advance.state,
+                        "at": advance.at.isoformat(),
+                        "error_code": advance.error_code,
+                    }
+                ),
+            },
+        )
+        tx.record(
+            "agent_run.advanced_synthetic",
+            target=Target("agent_run", advance.run_id),
+            after=Ref(step=cast(UUID, step.id), seq=seq),
+        )
+    return seq
+
+
+__all__ = [
+    "NotSynthetic",
+    "RecordedItem",
+    "RecordedRun",
+    "RecordedStep",
+    "StepAdvance",
+    "advance_synthetic_step",
+    "record_synthetic_run",
+]

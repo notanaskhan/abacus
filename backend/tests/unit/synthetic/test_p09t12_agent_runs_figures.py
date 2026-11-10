@@ -41,8 +41,12 @@ def test_copperleaf_square_net() -> None:
 def test_the_slice_records_4127_from_the_book() -> None:
     from abacus_tools.synthetic.scenarios.brightwater_hale import agent_runs_slice as s
 
-    (event,) = s.agent_runs_events()
+    event, *later = s.agent_runs_events()
     assert event.kind == "agents.run_recorded"
+    # P-10-T36: after the 9:41 snapshot, internal control fails (9:58) and materiality is decided
+    # (11:12), each a later event, so a 9:41 load is the same run P-09-T12 recorded.
+    assert [e.kind for e in later] == ["agents.run_step_advanced"] * 2
+    assert all(e.at > event.at for e in later)
     steps = event.data["steps"]
     assert len(steps) == 14  # type: ignore[arg-type]  # a list
     assert [st["level"] for st in steps].count(2) == 5  # type: ignore[index, union-attr]  # dicts
