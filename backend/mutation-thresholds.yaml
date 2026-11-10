@@ -29,3 +29,9 @@ floors:
   # P-04-T59 (DEC-2065): a new scope, target 75 (ADR-079). The floor is raised to the scope's first
   # weekly baseline (a floor above it would fail the run before any survivor is triaged).
   review: 0
+  # A-07-T45 (ADR-079): a new scope, target 75 for release, the archive gate, the lock, the seal
+  # and post-lock additions. The floor starts at 0 and is raised to the scope's first run (a floor
+  # above it would fail the run before any survivor is triaged). p95 budgets under the x25
+  # profile (abacus_tools.loadtest.a07_budgets, checked on staging): release <= 3 s, lock enqueue
+  # <= 500 ms, the Northwind seal <= 2 min, archived_guard() overhead <= 2 ms per row.
+  assurance/release_archive: 0
