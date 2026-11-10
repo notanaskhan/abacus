@@ -33,6 +33,8 @@ class AuthContext:
     portal_session_id: UUID | None = None
     # N-02-T23 (DEC-1283): that portal session passed the second step or started on a trusted
     # device (P-08-T17's floor); signing requires it. A sign-in token carries `mfa_at` instead.
+    # A portal session that passed the second step also carries its time in `mfa_at` (DEC-3960);
+    # a trusted-device session carries None, so `mfa_recent` refuses it.
     portal_second_step: bool = False
 
     @property

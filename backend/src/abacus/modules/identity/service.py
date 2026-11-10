@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from abacus.kernel.clock import system_now
@@ -117,17 +118,25 @@ def choose_tenant(signed_in: SignedIn, requested: str | None) -> AuthContext:
 
 
 def portal_member_context(
-    user_id: UUID, membership: MembershipRecord, session_id: UUID, *, second_step: bool = False
+    user_id: UUID,
+    membership: MembershipRecord,
+    session_id: UUID,
+    *,
+    second_step: bool = False,
+    mfa_at: datetime | None = None,
 ) -> AuthContext:
     """P-08-T10 (ADR-168): a portal person's context from their validated, active client
     membership in the firm their session is pinned to; `second_step` when the session passed the
-    second step or started on a trusted device (P-08-T17; N-02-T23 signing needs it)."""
+    second step or started on a trusted device (P-08-T17; N-02-T23 signing needs it). `mfa_at`
+    (TASK-6960, DEC-3960) is when the session's own second step verified (`auth_sessions.mfa_at`),
+    None for a trusted-device session: the matrix's `mfa_recent` reads it as it reads a staff
+    token's, so a trusted device meets the floor and never a fresh-factor action."""
     return AuthContext(
         tenant=TenantContext(membership.tenant_id, "human", str(user_id)),
         user_id=user_id,
         membership_id=membership.membership_id,
         firm_role=None,
-        mfa_at=None,
+        mfa_at=mfa_at,
         client=True,
         portal_session_id=session_id,
         portal_second_step=second_step,
