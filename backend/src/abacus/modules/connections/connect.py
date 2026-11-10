@@ -2,15 +2,23 @@
 
 A client admin starts a flow (`connection.create`, fresh MFA): a random state is kept only as
 its hash, bound to them, the engagement and its client entity, for ten minutes. The provider
-sends the browser back to the SPA, which completes the flow with the same person's token (D1),
-so no API route is unauthenticated. Credentials are sealed with the tenant's key (ADR-035) and
-deleted on revoke. Provider text is never kept or shown: only codes (ADR-052).
+sends the browser back to the SPA, which completes the flow with the same person's token (D1).
+Credentials are sealed with the tenant's key (ADR-035) and deleted on revoke. Provider text is
+never kept or shown: only codes (ADR-052).
+
+A-02-T33 (DEC-3902): the provider returns every firm's flow to one registered host
+(`connections_redirect_base_url`, `connect.<domain>`), where no session is valid (a portal
+session is pinned to its firm's host, ADR-163 §5). So the state also keeps the host the flow
+began on, and `handoff_origin` (the one unauthenticated step, `POST /v1/connections/handoff`,
+pre-session) answers that host for a live state, for the page to send the browser on to it.
+It never spends the state: completion stays here, with the person's own token.
 """
 
 from __future__ import annotations
 
 import base64
 import hashlib
+import re
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -21,9 +29,9 @@ from abacus.kernel._flags import CONNECTIONS_PORTAL_V2
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import open_sealed, seal
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.egress import check_sign_in_url
-from abacus.kernel.errors import DomainConflict, DomainInvalid
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.connections.connector import ConnectorError
@@ -42,6 +50,7 @@ from abacus.modules.connections.repository import (
     secret_of,
     set_connection,
     spend_state,
+    state_origin,
 )
 from abacus.modules.connections.service import connector_for
 from abacus.modules.engagements.api import gate_client_data, get_ref, lock_ref
@@ -52,6 +61,11 @@ LOG_PAGE: Final = 50
 CALLBACK_PATH: Final = "/client/connect/callback"
 # Providers by environment (SPEC-020 Q1): the demo ledger only where the fake connector may run.
 PROVIDER_NAMES: Final = {"fake": "Demo ledger"}
+# A host name of one label or more, as 0790's CHECK has it; no port, no trailing dot.
+_HOST_NAME: Final = re.compile(
+    r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*"
+)
+_HANDOFF_ACTOR: Final = "connections:handoff"
 
 
 class UnknownProvider(DomainInvalid):
@@ -132,6 +146,34 @@ def _redirect_uri() -> str:
     return f"{config.connections_redirect_base_url or config.app_base_url}{CALLBACK_PATH}"
 
 
+def origin_host(host: str | None) -> str | None:
+    """The request's `Host` (after `TrustedHosts`) as a host name: lower case, without its port
+    or a trailing dot; None for anything that is not a host name (never handed on)."""
+    name = (host or "").strip().lower()
+    if name.count(":") == 1:
+        name = name.split(":", 1)[0]
+    name = name.rstrip(".")
+    return name if len(name) <= 253 and _HOST_NAME.fullmatch(name) else None
+
+
+def app_host() -> str:
+    """The firm app's host, from configuration: a staff sign-in's flow begins there."""
+    authority = settings().app_base_url.split("://", 1)[-1].split("/", 1)[0]
+    return origin_host(authority.rsplit("@", 1)[-1]) or ""
+
+
+async def handoff_origin(state: str) -> str:
+    """A-02-T33: the host a live state's flow began on, for the connect host's page to send the
+    provider's answer back to. `NotFound` (one answer) for a state that is unknown, used or
+    expired, or whose host is not the app host or an active portal host of its own firm. No
+    tenant is named or needed, and the state is not spent."""
+    async with platform_transaction(_HANDOFF_ACTOR) as conn:
+        found = await state_origin(conn, _hash(state), app_host())
+    if found is None:
+        raise NotFound("connection_state")
+    return found
+
+
 def _hash(state: str) -> str:
     return hashlib.sha256(state.encode()).hexdigest()
 
@@ -171,9 +213,12 @@ async def open_verifier(tenant_id: UUID, found: ConnectionState) -> str | None:
     return opened.decode("ascii")
 
 
-async def start(ctx: AuthContext, engagement_id: UUID, provider: str) -> Started:
+async def start(
+    ctx: AuthContext, engagement_id: UUID, provider: str, *, host: str | None = None
+) -> Started:
     """AC-2, AC-3: authorise (fresh MFA), keep the hashed state, return the provider's URL.
-    A-02-T16 review M2: refused once POR-16 is on for the firm (the consent sheet is there)."""
+    A-02-T16 review M2: refused once POR-16 is on for the firm (the consent sheet is there).
+    A-02-T33: `host` is the request's own `Host`, kept for the connect host's hand-off."""
     if provider not in _available():
         raise UnknownProvider
     await gate_client_data(ctx, engagement_id, "connection.create")  # SPEC-025 AC-7
@@ -194,6 +239,7 @@ async def start(ctx: AuthContext, engagement_id: UUID, provider: str) -> Started
             state_hash=_hash(state),
             expires_at=system_now() + STATE_TTL,
             verifier_sealed=await seal_verifier(ctx.tenant_id, _hash(state), verifier),
+            origin_host=origin_host(host),
         )
         tx.record(
             "connection.started",

@@ -68,6 +68,9 @@ class ConnectionState(Base):
     category: Mapped[str | None]
     # The PKCE verifier, sealed (bound to `state_hash`); opened once at completion (review L6).
     verifier_sealed: Mapped[bytes | None] = mapped_column(LargeBinary)
+    # 0790 (A-02-T33): the request's host at start, so the connect host hands the provider's
+    # answer back to it; null when the host was not a host name (never handed on).
+    origin_host: Mapped[str | None]
 
 
 class ConnectionGrantRevocation(Base):

@@ -20,7 +20,7 @@ can't be removed once saved.
 | Launch URL | `https://app.<domain>/` (the firm app) |
 | Connect / reconnect URL | `https://app.<domain>/`; clients start the connection from their firm's portal, `https://<firm>.<domain>/` |
 | Disconnect URL | `https://app.<domain>/` (disconnect is a button in the app, which revokes the grant at Intuit) |
-| Redirect URI (production) | `https://connect.<domain>/client/connect/callback` (`connections_redirect_base_url` plus `CALLBACK_PATH`), never a firm's white-label host. **[open: A-02-T33]** the page needs a signed-in session and portal sessions are pinned to the firm's host, so the connect host must hand the code on to it before this is registered (TASK-6901) |
+| Redirect URI (production) | `https://connect.<domain>/client/connect/callback` (`connections_redirect_base_url` plus `CALLBACK_PATH`), never a firm's white-label host. The connect host hands the code on: its page asks the API for the host the flow began on (stored with the state at start, from the request's own host) and sends the browser there with the query unchanged, where the person's own session completes it (A-02-T33; DEC-3902; TASK-6902) |
 | Privacy policy URL | **[open: counsel, F-09-T04 rows]** a public page |
 | End-user licence agreement (EULA) URL | **[open: counsel, F-09-T04 rows]** a public page |
 

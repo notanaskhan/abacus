@@ -75,6 +75,11 @@ Proposed under N-02-T01 for DocuSign Connect, retargeted to DocuSeal by ADR-342 
 - **Rate-limited** per source (the edge's WAF rule on `/v1/webhooks/`) and per envelope (at most ten hints a minute); **echoes nothing** (an empty 202, 401 or 413); bodies and headers are not logged.
 - **Without a webhook key** in the install, the firm runs poll-only (`EnvelopeStatusPoll` every 5 minutes for open provider envelopes, and on a portal return).
 
+## Amendment: the connect host's hand-off (2026-11-10; A-02-T33, DEC-3902)
+- **`POST /v1/connections/handoff`** joins the ROUTE-001 exception list, inside `AbacusRouter` under the `PRE_SESSION` marker (on `PRE_SESSION_PATHS`). The provider returns every firm's OAuth flow to one registered host, where no session is valid; this route tells that host's page where the flow began.
+- **The OAuth state authenticates it.** It answers `{origin_host}` only for an unused, unexpired state whose stored host (the request's own `Host` at start, never the query) is the app host or an active portal host of the state's own firm; anything else is one 404. It names no tenant, firm or engagement and never spends the state; completion stays authenticated (`POST /v1/connections/complete`).
+- No GET: the state stays out of request lines and logs.
+
 ## Revisit when
 A third unauthenticated route is proposed, or branding needs per-visitor data.
 

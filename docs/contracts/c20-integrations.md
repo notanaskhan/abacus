@@ -165,4 +165,6 @@ connectors' only HTTP client. Sign-in URLs are HTTPS to an allowlisted host or t
 Retry and disconnect replay a repeated `Idempotency-Key`; the start does not (its answer is
 Restricted). Runs and failures are shown only for engagements the reader may read.
 
+**A-02-T33 (additive, 2026-11-10; DEC-3902):** `POST /v1/connections/handoff` `{state}` (pre-session, ADR-152 amendment) answers `{origin_host}`: the host the flow began on, stored with the state at start from the request's own `Host`, for a state that is unused and unexpired and whose host is the app host or an active portal host of its own firm; 404 `not found` otherwise, one answer. It does not spend the state. The portal bundle's `/client/connect/callback` asks it on the connect host and sends the browser to `https://<origin_host>/client/connect/callback` with the provider's query unchanged; on that host the page completes as before.
+
 **A-02-T28 (additive, 2026-10-27):** `POST /v1/connections/complete` answers `{engagement_id, client_entity_id, reconnected}`; `client_entity_id` is set for an entity-scoped (POR-16) flow and null for the legacy engagement flow, so the portal returns to Connections. QuickBooks Online's `realmId` travels inside `code` as `<code>~<realmId>` (DEC-709).

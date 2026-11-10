@@ -22269,6 +22269,28 @@ export type GuidanceIn = {
 };
 
 /**
+ * HandoffIn
+ */
+export type HandoffIn = {
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
+ * HandoffOut
+ *
+ * A-02-T33: where the connect host sends the browser on; the host only, never a tenant.
+ */
+export type HandoffOut = {
+    /**
+     * Origin Host
+     */
+    origin_host: string;
+};
+
+/**
  * HeadingBlock
  */
 export type HeadingBlock = {
@@ -68238,6 +68260,43 @@ export type CompleteResponses = {
 };
 
 export type CompleteResponse = CompleteResponses[keyof CompleteResponses];
+
+export type HandoffData = {
+    body: HandoffIn;
+    path?: never;
+    query?: never;
+    url: '/v1/connections/handoff';
+};
+
+export type HandoffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type HandoffError = HandoffErrors[keyof HandoffErrors];
+
+export type HandoffResponses = {
+    /**
+     * Successful Response
+     */
+    200: HandoffOut;
+};
+
+export type HandoffResponse = HandoffResponses[keyof HandoffResponses];
 
 export type ReconnectRequestData = {
     body?: never;

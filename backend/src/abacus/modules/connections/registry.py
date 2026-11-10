@@ -21,6 +21,9 @@ TABLES: frozenset[str] = frozenset(
         "reconnect_requests",
         # 0215 (A-02-T16 review M1): retired grants until the provider's revoke answers.
         "connection_grant_revocations",
+        # 0790 (A-02-T33): which firm a state's hash belongs to, for the connect host's hand-off.
+        # Global: written by a definer trigger on connection_states, read by a definer only.
+        "connection_state_firms",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -55,6 +58,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "engagement_id", "client_entity_id", "user_id", "provider"}
         | {"state_hash", "expires_at"}
         | {"consent_id", "connection_id", "category", "verifier_sealed"}  # 0215 (A-02-T16)
+        | {"origin_host"}  # 0790 (A-02-T33): the host the flow began on
     ),
     "connection_secrets": frozenset({"connection_id", "tenant_id", "sealed"}),
     "connection_consents": frozenset(

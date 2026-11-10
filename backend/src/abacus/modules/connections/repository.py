@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from abacus.kernel.clock import system_now
 from abacus.modules.connections.models import (
@@ -296,6 +296,7 @@ async def insert_state(
     connection_id: UUID | None = None,
     category: str | None = None,
     verifier_sealed: bytes | None = None,
+    origin_host: str | None = None,
 ) -> UUID:
     return (
         await session.execute(
@@ -312,6 +313,7 @@ async def insert_state(
                 connection_id=connection_id,
                 category=category,
                 verifier_sealed=verifier_sealed,
+                origin_host=origin_host,
             )
             .returning(ConnectionState.id)
         )
@@ -326,6 +328,18 @@ async def lock_state(session: AsyncSession, state_hash: str) -> ConnectionState 
             .with_for_update()
         )
     ).scalar_one_or_none()
+
+
+async def state_origin(conn: AsyncConnection, state_hash: str, app_host: str) -> str | None:
+    """A live state's origin host, when it is the app host or an active portal host of the
+    state's own firm (definer lookup, no tenant; A-02-T33). Never spends the state."""
+    found = (
+        await conn.execute(
+            text("SELECT connection_state_origin(:state_hash, :app_host)"),
+            {"state_hash": state_hash, "app_host": app_host},
+        )
+    ).scalar_one()
+    return None if found is None else str(found)
 
 
 async def spend_state(session: AsyncSession, state_id: UUID) -> None:

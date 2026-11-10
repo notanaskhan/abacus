@@ -52,6 +52,10 @@ const Room = lazy(async () => ({
 const Connections = lazy(async () => ({
   default: (await import("../../screens/POR-16")).PortalConnections,
 }));
+// A-02-T33 (DEC-3902): the provider's return page, on the connect host and the firm's own host.
+const ConnectCallback = lazy(async () => ({
+  default: (await import("../../portal/ConnectCallback")).PortalConnectCallback,
+}));
 // POR-06 (N-02-T26): the Sign area, its own chunk.
 const SignScreen = lazy(async () => ({
   default: (await import("../../screens/POR-06")).PortalSign,
@@ -461,6 +465,12 @@ export const portalTree = rootRoute.addChildren([
   page("/requests", () => <Area area="Requests" />), // POR-14
   page("/requests/$requestId", () => <Area area="Requests" />),
   page("/connections", () => <Area area="Connections" />), // POR-16 (A-02-T28)
+  // A-02-T33: public like sign-in (the connect host has no session); it signs in on the origin.
+  page("/client/connect/callback", () => (
+    <Suspense fallback={null}>
+      <ConnectCallback />
+    </Suspense>
+  )),
   page("/sign", () => <Area area="Sign" />), // POR-06 (N-02-T26)
   page("/questions", () => <Area area="Questions" />), // POR-05 (T-02-T24)
   page("/sign/$envelopeId", () => <Area area="Sign" />),

@@ -1001,6 +1001,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/conflict-checks", "conflict.run"),
     ("POST", "/v1/conflict-checks/{check_id}/results/{result_id}/clear", "conflict.clear"),
     ("POST", "/v1/connections/complete", "connection.create"),
+    ("POST", "/v1/connections/handoff", "pre_session"),
     ("POST", "/v1/connections/{connection_id}/reconnect-requests", "connection.reconnect_request"),
     ("POST", "/v1/consent-templates/imports", "consent_template.manage"),
     ("POST", "/v1/consent-templates/{template_id}/publish", "consent_template.publish"),

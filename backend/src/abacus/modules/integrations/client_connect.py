@@ -228,7 +228,12 @@ async def _entry(
 
 
 async def start_card(
-    ctx: AuthContext, entity_id: UUID, catalog_key: str, body: ConnectionStartIn
+    ctx: AuthContext,
+    entity_id: UUID,
+    catalog_key: str,
+    body: ConnectionStartIn,
+    *,
+    host: str | None = None,
 ) -> ConnectionStartOut:
     """POR-16 b, e (AC-36, AC-37): authorise, flag, the toggle, the catalogue, then start."""
     await authorised_engagement(ctx, entity_id, "connection.create")
@@ -257,6 +262,7 @@ async def start_card(
         ),
         authorized=body.authorized,
         connection_id=body.connection_id,
+        host=host,  # A-02-T33: the request's own host, for the connect host's hand-off
     )
     return ConnectionStartOut(
         consent_id=started.consent_id,

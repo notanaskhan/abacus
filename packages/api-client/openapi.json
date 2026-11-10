@@ -47675,6 +47675,38 @@
         "title": "GuidanceIn",
         "type": "object"
       },
+      "HandoffIn": {
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "cls": "restricted",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "HandoffIn",
+        "type": "object"
+      },
+      "HandoffOut": {
+        "description": "A-02-T33: where the connect host sends the browser on; the host only, never a tenant.",
+        "properties": {
+          "origin_host": {
+            "cls": "internal",
+            "title": "Origin Host",
+            "type": "string"
+          }
+        },
+        "required": [
+          "origin_host"
+        ],
+        "title": "HandoffOut",
+        "type": "object"
+      },
       "HeadingBlock": {
         "properties": {
           "level": {
@@ -146501,6 +146533,79 @@
         "x-abacus-action": "connection.create"
       }
     },
+    "/v1/connections/handoff": {
+      "post": {
+        "description": "A-02-T33 (DEC-3902; ADR-152, on the ROUTE-001 exception list): the provider returns every\nfirm's flow to the one registered connect host, where no session is valid. Its page sends\nthe state here and is told the host the flow began on, to send the browser on to with the\nprovider's query unchanged. The state authenticates the call: 404, one answer, for one that\nis unknown, used or expired, or whose host is not the app host or an active portal host of\nits own firm. Nothing else is answered, and the state is not spent (completion does that).",
+        "operationId": "handoff",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandoffIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandoffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Handoff Route",
+        "tags": [
+          "connection"
+        ],
+        "x-abacus-action": "pre_session"
+      }
+    },
     "/v1/connections/{connection_id}/reconnect-requests": {
       "post": {
         "description": "AUD-06's *Ask client to reconnect* (A-02-T23): at most one open request per connection\n(a second ask returns the open one and sends nothing), the POR-20 Reconnect request email from\nits database template to the entity's owners, a POR-02 to-do. Audited\n`connection.reconnect_requested`.",
@@ -158697,7 +158802,7 @@
     },
     "/v1/engagements/{engagement_id}/connection/start": {
       "post": {
-        "description": "SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting.",
+        "description": "SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting. A-02-T33: the\nstate keeps this request's `Host` (after `TrustedHosts`), never anything in the query.",
         "operationId": "start",
         "parameters": [
           {
@@ -243150,7 +243255,7 @@
     },
     "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start": {
       "post": {
-        "description": "POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.",
+        "description": "POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.\nA-02-T33: the state keeps this request's `Host` (after `TrustedHosts`), never the query's.",
         "operationId": "start_connection",
         "parameters": [
           {
