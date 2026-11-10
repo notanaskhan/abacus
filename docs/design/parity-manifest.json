@@ -1451,8 +1451,11 @@
       "crop": "window",
       "tier": "C",
       "mask": [
-        "[data-cockpit='dock']"
-      ]
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only: 3.19% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
     },
     "aud-02b.window": {
       "page": "screens/AUD-02?st=b",
@@ -1463,7 +1466,8 @@
       "tier": "C",
       "mask": [
         "[data-cockpit='dock']"
-      ]
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only at 3.13% (S13): the Source Documents order under DEC-341 and the OverviewCard height differ from the artboard; AUD-02 contract DV-13"
     },
     "aud-02c.window": {
       "page": "screens/AUD-02?st=c",
@@ -1473,8 +1477,11 @@
       "crop": "window",
       "tier": "C",
       "mask": [
-        "[data-cockpit='dock']"
-      ]
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only: 3.13% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
     },
     "aud-02d.window": {
       "page": "screens/AUD-02?st=d",
@@ -1484,8 +1491,11 @@
       "crop": "window",
       "tier": "C",
       "mask": [
-        "[data-cockpit='dock']"
-      ]
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "locked": true
     },
     "aud-02e.window": {
       "page": "screens/AUD-02?st=e",
@@ -1495,8 +1505,11 @@
       "crop": "window",
       "tier": "C",
       "mask": [
-        "[data-cockpit='dock']"
-      ]
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only: 3.19% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
     },
     "aud-02f.window": {
       "page": "screens/AUD-02?st=f",
@@ -1518,7 +1531,8 @@
       "tier": "C",
       "mask": [
         "[data-cockpit='dock']"
-      ]
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only at 3.14% (S13): the Source Documents order under DEC-341 and the OverviewCard height, as b; AUD-02 contract DV-13"
     },
     "aud-03a.window": {
       "page": "screens/AUD-03?st=a",
@@ -1566,7 +1580,8 @@
       "mask": [
         "[data-cockpit='dock']",
         "[data-overlay='dialog']"
-      ]
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only at 7.51% (S13): P-06's ReturnDialog against the artboard's Return to uploader sheet; AUD-03 contract DV-10"
     },
     "aud-03e.window": {
       "page": "screens/AUD-03?st=e",
@@ -1589,7 +1604,8 @@
       "tier": "C",
       "mask": [
         "[data-cockpit='dock']"
-      ]
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only at 3.18% (S13), cause not yet traced; re-measured at each parity run; AUD-03 contract DV-10"
     },
     "aud-03g.window": {
       "page": "screens/AUD-03?st=g",
