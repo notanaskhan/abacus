@@ -34,3 +34,9 @@ with a code), `files.py` (rendered files as evidence versions and the field-regi
 `reads.py` (the live routes: read, versions, fields, compare, changes, regenerate with an
 `Idempotency-Key`, template list and SAMPLE preview), `compose.py`, `consent.py` (the §7216 consent
 floor), `engagement_letters.py` (C11's `engagement_letter` kind for ENG-04).
+
+## Operations (RB-43)
+Failed renders, an engine upgrade with its golden re-baseline and a template rollback are RB-43
+part 1; a locked document is never re-rendered. OCR, which feeds extracted fields some templates
+read, is RB-43 part 2: when OCR is paused, consumers show manual entry and nothing renders from a
+field that was never extracted.
