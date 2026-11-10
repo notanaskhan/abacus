@@ -164,6 +164,7 @@ Each becomes a test in `HOME-02.test.tsx` ("HOME-02 avoid: …"): gradients in p
 | DV-6 | g follows the data, not the frame's queue: Samuel's badge is 6 and the queue shows Decisions 0 · Sign-offs 4 · Agent outputs 2 (the artboard draws "Approvals 2" and only the Agent outputs band). Detail and evidence are as drawn | One count source: HOME-01c reads "0 decisions · 4 sign-offs · 2 agent outputs" (AC1.2) | DEC-403 |
 | DV-7 | "Reassign…" renders only with `human_gate.reassign` in `allowed_actions`; candidates are the reserved role's holders on that engagement, not "partners" in general | AC8.2, DEC-39 | I-01 §3 F8 |
 | DV-8 | Bulk *decide* and bulk approve of agent outputs never exist; bulk is sign-off only, through SHL-12 f | Decisions are individual | I-01 §2.2 |
+| DV-9 | No new deviation at I-01's close (I-01-T26): the band counts are held to the one source with HOME-01's header, badge and SHL-04's Approvals tab for six personas (`countEquality.test.ts`, I-01-T25) | One count source (C13) | I-01-T25 |
 
 N's sign-off of these deviations at Contract Monday (Mon Mar 8, 2027) is a solo-edition formality: decided and recorded as DEC-403 (`docs/plan/AMENDMENT-solo.md` items 1, 2, 7).
 

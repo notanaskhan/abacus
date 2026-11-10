@@ -187,6 +187,8 @@ Each becomes a test in `HOME-01.test.tsx` ("HOME-01 avoid: …"): gradients in p
 | DV-6 | The R2 bands (To-dos, Mentions) are built unwired in S35 and wired after Apr 20, 2028 (T27) | Busy-season freeze, P-29 rule 2 | I-01 §2, DEC-68 |
 | DV-7 | Tax content (Daniel's gates, deadlines and returns) is fixture-only until T-02, T-04 and T-05 register their subkinds; the live analog is the audit half | Owning epics | I-01 §2.1, R5 |
 | DV-8 | Toolbar overflow (Signatures under More ⌄ at ≤ 1440, as every artboard draws) is P-01's | DF-39, DEC-131 | DEC-131 |
+| DV-9 | h and i are measured at Tier C but not locked: their bands live in `components/screens/HOME-01` (I-01-T24) until the wiring after Apr 20, 2028, so the full-window frames cannot match the live screen yet (parity rows `home-01h.window`, `home-01i.window`, recorded deviations) | P-29 rule 2 (DV-6) | I-01-T25 |
+| DV-10 | The mention row's quoted text is a read-time fact (`excerpt`) the C16 resolver opens for an authorised reader; the notification row never stores the comment body | DEC-61, SPEC-650 AC-7 | I-01-T24 |
 
 N's sign-off of these deviations at Contract Monday (Mon Mar 8, 2027) is a solo-edition formality: decided and recorded as DEC-403 (`docs/plan/AMENDMENT-solo.md` items 1, 2, 7).
 
@@ -194,7 +196,7 @@ N's sign-off of these deviations at Contract Monday (Mon Mar 8, 2027) is a solo-
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
 | a, a2, f, g | C (report every build; lock before M8, Fri May 28, 2027) | not run (unbuilt) | `data-contrast="reference"` (DEC-11); masks: the running-pill spinner |
-| h, i | C (report; lock at S35) | not run | compare the left pane's To-dos and Mentions bands; tiles, badge, deadlines and activity masked (Open gaps) |
+| h, i | C (report; recorded deviation DV-9, locked at wiring after Apr 20, 2028) | not run | compare the left pane's To-dos and Mentions bands; tiles, badge, deadlines and activity masked (Open gaps) |
 | b, c, d, e | — | — | spec-only: scenario tests, no pixel compare |
 | office-denver, tile-popover, today-brief-off, walled | — | — | scenario tests |
 | host | D (blocking through T11) | — | toolbar 46, subbar 42, tile 120 × 99 r14, Audits tile 360, pane header 46 with a 14.5/500 title, band 31, row 44, right column 420, gutter 10, edge 12 |
