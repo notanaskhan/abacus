@@ -11,14 +11,14 @@ from __future__ import annotations
 
 import json
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
 
 from abacus.kernel._flags import COLLABORATION_V2
 from abacus.kernel._statuses import CommentThreadStatus, TodoStatus
-from abacus.kernel.errors import DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.collaboration import candidates, threads, todos
@@ -68,10 +68,6 @@ async def gate(ctx: AuthContext) -> None:
         raise NotFound("comment_thread")
     if not await flag_enabled(ctx.tenant, COLLABORATION_V2):
         raise NotFound(COLLABORATION_V2.name)
-
-
-def not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 class QueryLocatorInvalid(DomainInvalid):
@@ -323,9 +319,12 @@ async def share_thread_route(
     errors=(409, 501),
 )
 async def convert_to_review_note_route(thread_id: UUID, ctx: Ctx, key: Key = None) -> ConvertedOut:
-    """Raises an open AUD-17 note through C3 in the same unit of work (P-05-T09)."""
+    """Raises an open AUD-17 note through C3 in the same unit of work (P-05-T09); a shared thread
+    answers 409 `thread_shared`, an anchor that is not a reviewable 404."""
+    del key  # one conversion per call; the note is the thread's own record of it
     await gate(ctx)
-    not_yet()
+    note_id = await threads.convert_to_review_note(ctx, thread_id)
+    return ConvertedOut(thread=await _thread_out(ctx, thread_id), review_note_id=note_id)
 
 
 @threads_router.get(

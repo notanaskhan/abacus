@@ -83,6 +83,7 @@ from abacus.modules.review.mfa import MfaRequired
 from abacus.modules.review.notes import note_event as review_note_event
 from abacus.modules.review.notes import notes_for, open_note_counts, open_notes
 from abacus.modules.review.notes import raise_on_target as raise_review_note
+from abacus.modules.review.notes import raise_on_target_in as raise_review_note_in
 from abacus.modules.review.notification_states import register_notification_states
 from abacus.modules.review.routes import router
 from abacus.modules.review.sealing import open_text, record_text_reads, seal_text
@@ -295,6 +296,7 @@ __all__ = [
     "propose_checkpoint",
     "raise_decision_card",
     "raise_review_note",
+    "raise_review_note_in",
     "rebuild_human_gates",
     "record_engine_issue",
     "record_import_proposal",

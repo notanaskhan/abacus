@@ -54,6 +54,7 @@ from abacus.modules.collaboration.errors import (
     MentionNotAllowed,
     ThreadAlreadyResolved,
     ThreadNotResolved,
+    ThreadShared,
 )
 from abacus.modules.collaboration.events import (
     CommentCreated,
@@ -65,6 +66,7 @@ from abacus.modules.collaboration.models import CommentThread
 from abacus.modules.communications.api import check_scope
 from abacus.modules.engagements.api import EngagementRef, get_ref
 from abacus.modules.identity.api import AuthContext, Forbidden, allowed_actions, authorise
+from abacus.modules.review.api import raise_review_note_in
 
 MAX_BODY: Final = 4000
 MAX_REASON: Final = 500
@@ -755,3 +757,68 @@ async def counts(
             )
         )
     return found
+
+
+# --- conversion to a review note (P-05-T09; AC-15) -----------------------------------------------
+
+
+def note_anchor(locator: Locator | None) -> tuple[str | None, str | None]:
+    """The review note's pin from the thread's locator: a cell is `cell` ("Exceptions!A3"); a row
+    or a sheet is `region` ("Exceptions row 6", "Exceptions"); no locator, no pin."""
+    if not locator:
+        return None, None
+    sheet, cell, row = locator.get("sheet"), locator.get("cell"), locator.get("row")
+    if isinstance(sheet, str) and isinstance(cell, str):
+        return "cell", f"{sheet}!{cell}"
+    if isinstance(sheet, str) and isinstance(row, int):
+        return "region", f"{sheet} row {row}"
+    if isinstance(sheet, str):
+        return "region", sheet
+    return None, None
+
+
+async def convert_to_review_note(ctx: AuthContext, thread_id: UUID) -> UUID:
+    """AC-15: an internal thread's first live comment becomes an open AUD-17 review note on the
+    thread's anchor (a registered reviewable, fail closed), and the thread records `converted`
+    with the note's id, in one unit of work. A shared thread answers 409 `thread_shared`."""
+    thread, _ = await _thread(ctx, thread_id, "review_note.raise")
+    if thread.visibility != "internal":
+        raise ThreadShared
+    async with tenant_session(ctx.tenant) as session:
+        rows = await repo.list_comments(session, ctx, [thread_id])
+    body: str | None = None
+    for comment, redaction in rows:
+        if redaction is None and comment.author_side == "firm":
+            body = (
+                await open_sealed(ctx.tenant_id, comment.body_sealed, comment.body_fingerprint)
+            ).decode()
+            break
+    if body is None:
+        raise EmptyComment
+    kind, ref = note_anchor(thread.anchor_locator)
+    async with uow(ctx.tenant) as tx:
+        note_id = await raise_review_note_in(
+            tx,
+            ctx,
+            thread.anchor_kind,
+            thread.anchor_id,
+            anchor_kind=kind,
+            anchor_ref=ref,
+            body=body,
+        )
+        await repo.insert_event(
+            tx.session,
+            tenant_id=ctx.tenant_id,
+            engagement_id=thread.engagement_id,
+            thread_id=thread_id,
+            kind="converted",
+            actor_user_id=ctx.user_id,
+            ref_type="review_note",
+            ref_id=note_id,
+        )
+        tx.record(
+            "comment_thread.converted",
+            target=Target("comment_thread", thread_id),
+            after=Ref(ref_id=note_id),
+        )
+    return note_id

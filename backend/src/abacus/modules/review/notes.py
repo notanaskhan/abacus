@@ -35,7 +35,7 @@ from abacus.kernel.listing import (
     query_hash,
     status_counts,
 )
-from abacus.kernel.uow import Ref, Scope, Target, uow
+from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.identity.api import (
     PARTNER_ROLES,
@@ -534,59 +534,86 @@ async def _write_raise(
     notify: frozenset[UUID],
     work_item_id: UUID | None = None,
 ) -> UUID:
+    async with uow(ctx.tenant) as tx:
+        return await _write_raise_in(
+            tx,
+            ctx,
+            engagement_id,
+            target_type,
+            target_id,
+            anchor_ref=anchor_ref,
+            body=body,
+            assignee=assignee,
+            notify=notify,
+            work_item_id=work_item_id,
+        )
+
+
+async def _write_raise_in(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    target_type: str,
+    target_id: UUID,
+    *,
+    anchor_ref: dict[str, str] | None,
+    body: str,
+    assignee: UUID | None,
+    notify: frozenset[UUID],
+    work_item_id: UUID | None = None,
+) -> UUID:
+    """The raise's writes in the caller's unit of work (P-05-T09: a thread converted in one)."""
     note_id, event_id = uuid4(), uuid4()
     legacy_anchor = anchor_ref["ref"] if anchor_ref else None
     if legacy_anchor is not None and len(legacy_anchor) > _LEGACY_ANCHOR:
         legacy_anchor = None
-    async with uow(ctx.tenant) as tx:
-        ref = await lock_ref(tx, engagement_id)
-        resource = replace(ref.resource(), work_item_id=work_item_id)
-        await authorise(ctx, "review_note.raise", resource)
-        if assignee is not None and (
-            assignee == ctx.user_id
-            or not await could(ctx, assignee, "review_note.respond", resource)
-        ):
-            raise NoteInvalid(facts={"field": "assignee_user_id"})
-        await insert_note(
-            tx.session,
-            id=note_id,
-            tenant_id=ctx.tenant_id,
+    ref = await lock_ref(tx, engagement_id)
+    resource = replace(ref.resource(), work_item_id=work_item_id)
+    await authorise(ctx, "review_note.raise", resource)
+    if assignee is not None and (
+        assignee == ctx.user_id or not await could(ctx, assignee, "review_note.respond", resource)
+    ):
+        raise NoteInvalid(facts={"field": "assignee_user_id"})
+    await insert_note(
+        tx.session,
+        id=note_id,
+        tenant_id=ctx.tenant_id,
+        engagement_id=engagement_id,
+        target_type=target_type,
+        target_id=target_id,
+        anchor=legacy_anchor,
+        anchor_ref=anchor_ref,
+        body_sealed=await _sealed(ctx.tenant, body, SUBJECT, note_id),
+        raised_by=ctx.user_id,
+        assignee_user_id=assignee,
+    )
+    await insert_note_event(
+        tx.session,
+        id=event_id,
+        tenant_id=ctx.tenant_id,
+        note_id=note_id,
+        kind="raised",
+        body_sealed=await _sealed(ctx.tenant, body, "review_note_event", event_id),
+        by_user=ctx.user_id,
+    )
+    tx.record(
+        "review_note.raised",
+        target=Target(SUBJECT, note_id),
+        after=Ref(target=target_id),
+        scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+    )
+    recipients = {assignee} if assignee is not None else set(notify)
+    recipients.discard(ctx.user_id)
+    tx.emit(
+        ReviewNoteRaised(
+            note_id=note_id,
             engagement_id=engagement_id,
             target_type=target_type,
             target_id=target_id,
-            anchor=legacy_anchor,
-            anchor_ref=anchor_ref,
-            body_sealed=await _sealed(ctx.tenant, body, SUBJECT, note_id),
-            raised_by=ctx.user_id,
-            assignee_user_id=assignee,
-        )
-        await insert_note_event(
-            tx.session,
-            id=event_id,
-            tenant_id=ctx.tenant_id,
-            note_id=note_id,
-            kind="raised",
-            body_sealed=await _sealed(ctx.tenant, body, "review_note_event", event_id),
             by_user=ctx.user_id,
+            recipient_user_ids=sorted(recipients),
         )
-        tx.record(
-            "review_note.raised",
-            target=Target(SUBJECT, note_id),
-            after=Ref(target=target_id),
-            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
-        )
-        recipients = {assignee} if assignee is not None else set(notify)
-        recipients.discard(ctx.user_id)
-        tx.emit(
-            ReviewNoteRaised(
-                note_id=note_id,
-                engagement_id=engagement_id,
-                target_type=target_type,
-                target_id=target_id,
-                by_user=ctx.user_id,
-                recipient_user_ids=sorted(recipients),
-            )
-        )
+    )
     return note_id
 
 
@@ -655,6 +682,43 @@ async def raise_on_target(
         work_item_id=facts.work_item_id,
     )
     return await note_detail(ctx, note_id)
+
+
+async def raise_on_target_in(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    target_type: str,
+    target_id: UUID,
+    *,
+    anchor_kind: str | None,
+    anchor_ref: str | None,
+    body: str,
+) -> UUID:
+    """`raise_on_target` inside the caller's unit of work (P-05-T09; SPEC-650 AC-15): a comment
+    thread converted to a review note writes the note and its `converted` event together. The
+    target must be a registered reviewable (fail closed); the target's preparers are notified."""
+    if not _live_human(ctx):
+        raise Forbidden("review_note.raise", "role")
+    text = cast(str, _text(body, _BODY_LIMIT, required=True))
+    pin: dict[str, str] | None = None
+    if anchor_kind is not None or anchor_ref is not None:
+        ref_text = _text(anchor_ref, _ANCHOR_LIMIT, required=True)
+        if anchor_kind not in _ANCHOR_KINDS or ref_text is None:
+            raise NoteInvalid(facts={"field": "anchor"})
+        pin = {"kind": anchor_kind, "ref": ref_text}
+    facts = await reviewable_facts(ctx.tenant, target_type, target_id)
+    return await _write_raise_in(
+        tx,
+        ctx,
+        facts.engagement_id,
+        target_type,
+        target_id,
+        anchor_ref=pin,
+        body=text,
+        assignee=None,
+        notify=facts.preparer_user_ids,
+        work_item_id=facts.work_item_id,
+    )
 
 
 async def add_event(

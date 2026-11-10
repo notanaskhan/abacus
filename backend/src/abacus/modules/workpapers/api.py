@@ -5,6 +5,7 @@ Working papers (A-04; SPEC-308): the grid, formulas, citations and sign-offs.
 
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.api import register_section_source, register_suggestion_applier
+from abacus.modules.collaboration.api import register_anchor
 from abacus.modules.evidence.api import register_citable
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.review.api import (
@@ -12,6 +13,8 @@ from abacus.modules.review.api import (
     register_reviewable,
     register_reviewable_facts,
 )
+from abacus.modules.workpapers.anchors import KIND as WORKPAPER_KIND
+from abacus.modules.workpapers.anchors import WORKPAPER_ANCHORS
 from abacus.modules.workpapers.attribute_grid import TARGET as ATTRIBUTE_TEST
 from abacus.modules.workpapers.attribute_grid import (
     Attribute,
@@ -91,6 +94,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     a04_router,  # A-04-T01 workpaper core stub (docs/contracts/workpapers-core.md)
 )
 
+# P-05-T09: a paper's sheets, rows and cells carry comment threads and to-dos (AUD-09).
+register_anchor(WORKPAPER_KIND, WORKPAPER_ANCHORS)
 # SPEC-313 (TASK-331): papers appear in the sign-off matrix and count toward G5.
 register_reviewable("workpaper", workpaper_reviewables)
 # A-05-T22 (DEC-2212): an attribute test is adopted by its C3 sign-off (SHL-12).
