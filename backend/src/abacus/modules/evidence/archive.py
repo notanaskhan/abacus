@@ -22,3 +22,27 @@ async def source_document_count(tenant: TenantContext, engagement_id: UUID) -> i
             {"e": engagement_id},
         )
     return int(found or 0)
+
+
+async def engagement_documents(
+    tenant: TenantContext, engagement_id: UUID
+) -> list[tuple[UUID, UUID, str, str, int, bool]]:
+    """T-04-T17: each evidence version of the engagement as TAX-04's review tree lists it:
+    `(version id, item id, item title, folder kind, version number, is the item's latest)`."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT v.id, v.evidence_item_id, i.title, i.folder_kind, v.version_no, "
+                    "v.version_no = max(v.version_no) OVER (PARTITION BY v.evidence_item_id) "
+                    "AS latest FROM evidence_versions v JOIN evidence_items i "
+                    "ON i.id = v.evidence_item_id WHERE v.engagement_id = :e "
+                    "ORDER BY i.folder_kind, i.title, v.version_no"
+                ),
+                {"e": engagement_id},
+            )
+        ).all()
+    return [
+        (r.id, r.evidence_item_id, r.title, r.folder_kind, r.version_no, bool(r.latest))
+        for r in rows
+    ]

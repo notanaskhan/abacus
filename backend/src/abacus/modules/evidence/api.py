@@ -498,6 +498,9 @@ register_upload_facts(upload_facts)
 
 # P-10-T28: the agent tools this module owns (C17 via the kernel slot; `agents` registers them).
 from abacus.modules.evidence.agent_tools import AGENT_TOOLS  # noqa: E402
+
+# T-04-T17: the return's documents for TAX-04's review tree.
+from abacus.modules.evidence.archive import engagement_documents  # noqa: E402
 from abacus.modules.evidence.ocr_gate import (  # noqa: E402 -- P-11-T33
     DAILY_PAGE_CAP,
     daily_page_cap,
@@ -668,6 +671,7 @@ __all__ = [
     "drop_batch",
     "effective_decisions",
     "effective_policies",
+    "engagement_documents",
     "engagement_of_version",
     "engagement_snapshots",
     "engagement_stored_versions",

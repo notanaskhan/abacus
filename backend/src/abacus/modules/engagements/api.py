@@ -580,6 +580,7 @@ __all__ = [
     "eqr_eligibility_due",
     "firm_router",
     "function_holders",
+    "functions_on",
     "g2_blocks",
     "gate_client_data",
     "gate_fact",

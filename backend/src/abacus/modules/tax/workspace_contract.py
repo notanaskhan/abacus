@@ -354,16 +354,28 @@ _R = "/returns/{return_id}"
 
 
 @workspace_router.get(
-    f"{_R}/workspace", action="tax_return.read", response_model=WorkspaceSummaryOut, errors=(501,)
+    f"{_R}/workspace", action="tax_return.read", response_model=WorkspaceSummaryOut
 )
 async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
+    """TAX-04's tab counts at the viewer's level (T-04-T17)."""
+    from abacus.modules.tax.review_tree import summary
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    found = await summary(ctx, return_id)
+    return WorkspaceSummaryOut(
+        return_id=return_id,
+        review_count=found.review_count,
+        viewer_level=found.viewer_level,
+        issues_open=0,
+        k1_dependency=None
+        if found.k1_dependency is None
+        else K1ActivityStatus(found.k1_dependency),
+        assistant="agents_off",
+        allowed_actions=cast(list[WorkspaceAction], found.allowed),
+    )
 
 
-@workspace_router.get(
-    f"{_R}/review-tree", action="tax_return.read", response_model=ReviewTreeOut, errors=(501,)
-)
+@workspace_router.get(f"{_R}/review-tree", action="tax_return.read", response_model=ReviewTreeOut)
 async def review_tree_route(
     return_id: UUID,
     ctx: Ctx,
@@ -371,8 +383,26 @@ async def review_tree_route(
     q: Annotated[str | None, Query(max_length=120)] = None,
     category: Annotated[str | None, Query(max_length=60)] = None,
 ) -> ReviewTreeOut:
+    """The documents at a level, "Review n" (T-04-T17)."""
+    from abacus.modules.tax.review_tree import tree
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    docs, review, _ = await tree(ctx, return_id, level=level, q=q, category=category)
+    return ReviewTreeOut(
+        items=[
+            ReviewDocumentOut(
+                evidence_version_id=d.evidence_version_id,
+                title=d.title,
+                category=d.category,
+                approval=d.approval,
+                approvals_count=d.approvals_count,
+                version=d.version,
+            )
+            for d in docs
+        ],
+        total=len(docs),
+        review_count=review,
+    )
 
 
 @workspace_router.post(
@@ -386,8 +416,22 @@ async def document_approval_route(
     return_id: UUID, body: DocumentApprovalIn, ctx: Ctx
 ) -> DocumentApprovalOut:
     """409 `mismatch` (`facts.field_key`), 403 `level_not_permitted`, 409 `version_superseded`."""
+    from abacus.modules.tax.review_tree import approve
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    return _approval_out(
+        await approve(
+            ctx,
+            return_id,
+            evidence_version_id=body.evidence_version_id,
+            level=body.level,
+            seen_version=body.seen_version,
+        )
+    )
+
+
+def _approval_out(a: object) -> DocumentApprovalOut:
+    return DocumentApprovalOut.model_validate(a, from_attributes=True)
 
 
 @workspace_router.post(
@@ -400,8 +444,10 @@ async def document_approval_reverse_route(
     approval_id: UUID, body: DocumentApprovalReverseIn, ctx: Ctx
 ) -> DocumentApprovalOut:
     """Unapprove as a reversing row, own level only; nothing is deleted."""
+    from abacus.modules.tax.review_tree import reverse
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    return _approval_out(await reverse(ctx, approval_id, body.reason))
 
 
 @workspace_router.get(
@@ -446,8 +492,11 @@ async def final_approval_request_route(
     return_id: UUID, body: FinalApprovalRequestIn, ctx: Ctx
 ) -> FinalApprovalRequestOut:
     """409 `{blockers: draft_k1 | blocking_issues | unapproved_documents}`."""
+    from abacus.modules.tax.review_tree import request_final_approval
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    gate_id, at = await request_final_approval(ctx, return_id, body.assignee_user_id)
+    return FinalApprovalRequestOut(gate_id=gate_id, requested_at=at)
 
 
 @workspace_router.post(
