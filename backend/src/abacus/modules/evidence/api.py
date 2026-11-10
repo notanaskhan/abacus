@@ -496,6 +496,8 @@ register_audit_value_resolver("pii_reveal", pii_reveal_values)
 # A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
 register_upload_facts(upload_facts)
 
+# P-10-T28: the agent tools this module owns (C17 via the kernel slot; `agents` registers them).
+from abacus.modules.evidence.agent_tools import AGENT_TOOLS  # noqa: E402
 from abacus.modules.evidence.ocr_gate import (  # noqa: E402 -- P-11-T33
     DAILY_PAGE_CAP,
     daily_page_cap,
@@ -506,6 +508,7 @@ from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
 
 __all__ = [
     "ACTIVITIES",
+    "AGENT_TOOLS",
     "ANCHOR_ID",
     "CODE_COLUMN",
     "CONTENT_READ_KIND",

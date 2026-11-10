@@ -233,6 +233,9 @@ from abacus.modules.agents.stage_admin import (
 )
 from abacus.modules.agents.stage_routes import platform_stages_router
 from abacus.modules.agents.stages import assistants, stage_for, starts_in_shadow
+
+# P-10-T28: importing the catalogue registers every module's declared tools.
+from abacus.modules.agents.tools.catalogue import DECLARED as DECLARED
 from abacus.modules.agents.tools.registry import AgentTool as AgentTool
 from abacus.modules.agents.tools.registry import ToolNotRegistered as ToolNotRegistered
 from abacus.modules.agents.tools.registry import ToolPageIn as ToolPageIn

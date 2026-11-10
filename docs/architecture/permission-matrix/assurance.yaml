@@ -3,7 +3,7 @@
 
 actions:
   # --- The trial balance of record (SPEC-309; TASK-320; A-02 §4.4) ---
-  trial_balance.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; client and agent principals deny
+  trial_balance.read:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: task_scope, independence: required}   # firm roles; clients deny; P-10-T28 (DEC-3204): the agent through the ledger.* tools in task_scope only
   trial_balance.adopt:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # human only (the database CHECK agrees)
   trial_balance.annotate:   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # audit area and WP ref; amounts are never editable
   trial_balance.export:     {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required, mfa_recent: required, not_offshore: required}   # A-02 §4.4 (TASK-1185): Open in Excel (C9 v1 stub, A-02-T22 live); audited; a fresh second factor and no wider than run_trace.export (DEC-316, amended by the security review)

@@ -87,6 +87,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "agent": "task_scope",
     },
     "adjusted_tb.read": {
         "engagement_partner": "allow",
@@ -1557,6 +1558,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_admin": "client_visible_only",
         "client_contributor": "client_visible_only",
         "platform_support_content": "allow",
+        "agent": "task_scope",
     },
     "engagement.read_metadata": {
         "firm_admin": "allow",
@@ -3139,6 +3141,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "reviewer": "allow",
         "platform_support_content": "allow",
+        "agent": "task_scope",
     },
     "ledger.pull": {
         "engagement_partner": "allow",
@@ -5663,6 +5666,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "agent": "task_scope",
         "independence": "required",
     },
     "uncorrected_misstatements.acknowledge": {
