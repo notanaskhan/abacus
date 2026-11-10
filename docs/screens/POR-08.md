@@ -54,6 +54,9 @@ Every endpoint is in `docs/contracts/deliverables.md` (T02) or `docs/contracts/p
 - DV-08: a to d are fixture-only until a provider registers `fs_package`; production hides the package cards
 - DV-11: J22's decline of AJE-3 68,400 by Luis Ferrante has no artboard; it runs on the e and e2 grammar from seed data
 
+- (R-02-T25) **No AUD-20 row for a client decision on `fs_draft`.** `reporting.api.apply_management_decision` does not exist yet, so a client's approval of the statements shows on POR-08 and in C18 but not as a row in the firm's AUD-20. It joins with A-06's port (R-02-T22, partial).
+- (R-02-T25) **j22 8 and j05 P are not walked.** POR-08's fixtures draw no Granite Peak AJE-3 for Luis Ferrante and no preparation statements for Carla Juniper (A-08's provider), so both journey steps are `test.fixme` naming their owners (R-02-T23).
+
 ## Links
 | From | To (manifest builder) | Planned or live |
 |---|---|---|

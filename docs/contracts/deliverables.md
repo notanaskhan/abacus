@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C10 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | service live (R-02-T09, 2026-11-08; DEC-2805): `publish_deliverable`, `supersede_deliverable`, `withdraw_deliverable`, `deliverables_for_work_item`, `expected_deliverables`, `portal_deliverables` and FIL-01's `deliverables` folder provider. Every portal route still answers 501 until R-02-T14 turns on `portal.deliverables` |
+| Status | **v1 frozen 2026-11-10 (R-02-T25)**; service live (R-02-T09, 2026-11-08; DEC-2805): `publish_deliverable`, `supersede_deliverable`, `withdraw_deliverable`, `deliverables_for_work_item`, `expected_deliverables`, `portal_deliverables` and FIL-01's `deliverables` folder provider. Every portal route still answers 501 until R-02-T14 turns on `portal.deliverables` |
 | Provider epic | R-02 (SPEC-646) |
 | Consumers | A-06 (FS drafts), A-07 (release pack at G8, governance letter PDFs), C-02 (packages), T-02, T-04, T-06, T-08 (client copy, filing letter), T-09 (memo), X-01 (SOC reports) |
 | Freeze sprint | S29 (frozen once R-02-T08's suites are green) |
@@ -84,6 +84,7 @@ have no cell on any route. Every read is `scope_only`; out of scope or outside a
 | Version | Date | Change |
 |---|---|---|
 | v1 | 2026-11-06 | Stub (R-02-T02, DEC-2402) |
+| v1 | 2026-11-10 | Frozen (R-02-T25): a change from here is additive in place or v2 |
 
 ## 9. Read-through slots (R-02-T09)
 POR-09's rail shows rows other modules own. Those modules import `reporting`, so they register:

@@ -53,6 +53,9 @@ Every endpoint is in `docs/contracts/deliverables.md` (T02) or `docs/contracts/p
 - DV-08: e is fixture-only until a provider registers `fs_package`
 - DV-09: K-1 attachment chips use T-02's routes and its electronic-furnishing consent sheet
 
+- (R-02-T25) **g, h and i are not built.** The co-review states (POR-09 g, h) are A-10's; i waits on the same work. Pins, the composer and the mobile sheet (a, a2) are R-02-T22's.
+- (R-02-T25) **Client comment notifications.** A client's page comment reaches the firm's thread, but no C16 kind notifies the team yet (R-02-T22, partial).
+
 ## Links
 | From | To (manifest builder) | Planned or live |
 |---|---|---|

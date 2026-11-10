@@ -62,6 +62,9 @@ The rollback run is green; `/abacus/<env>/release` names the previous SHA with `
 ## 8. Review
 Open the blameless review. Typical actions: a test that would have caught the change, a smoke step, an alarm that fires sooner.
 
+## Flag flips and their rollback (R-02-T25)
+A per-firm feature flag is not a deploy: flipping it back is the rollback, and a code rollback is not needed. Each rollout runbook names its flags, its order and what stays after a flag goes off (decisions, publications and audit rows are never undone). The R-02 portal flags are `RB-71-portal-r02-rollout.md`. A flag flip needs both founders' approval in its Tuesday window (P-29), and the staging journeys named there green within 24 hours.
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|
