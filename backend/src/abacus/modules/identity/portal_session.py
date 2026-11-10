@@ -555,6 +555,7 @@ async def portal_context(token: str, host: str | None) -> AuthContext | None:
         found[0],
         cast(UUID, row.session_id),
         second_step=row.mfa_at is not None or row.device_trusted_at is not None,
+        mfa_at=cast(datetime | None, row.mfa_at),  # DEC-3960: the second step's own time
     )
 
 
