@@ -55,6 +55,11 @@ codes:
     - abacus.modules.evidence.viewer.ActiveContent
     summary: 'A PDF with active content is kept but never shown (DEC-296, ED-021): every viewer read
       refuses it, whatever was derived before the rule existed.'
+  addition_already_decided:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.archive_additions.AdditionDecided
+    summary: An archive addition has one decision (A-07-T42).
   adjustment_state:
     status: 409
     raised_by:
@@ -241,6 +246,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.archive_lock.AlreadyLocking
     - abacus.modules.assurance.completion.AlreadyLocked
+  archive_not_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.archive_additions.ArchiveNotLocked
+    summary: Additions and seal verification are for a locked archive (A-07-T42).
   archived:
     status: 409
     raised_by:
@@ -1007,6 +1017,11 @@ codes:
     - abacus.modules.evidence.withdrawals.EvidenceNotWithdrawable
     summary: 'Not a client''s detached-key upload (a firm upload, or one stored before detached-key mode):
       nothing can erase it, so it is not withdrawn (ADR-162 §8).'
+  evidence_version_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.archive_additions.EvidenceNotFound
+    summary: The addition names an evidence version the firm does not hold (A-07-T42).
   exception_not_high:
     status: 409
     raised_by:

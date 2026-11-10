@@ -237,6 +237,7 @@ from abacus.modules.evidence.records import (
     extend_record,
     get_record,
     put_record,
+    record_key,
 )
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
@@ -513,6 +514,7 @@ from abacus.modules.evidence.retention_anchor import (  # noqa: E402
     engagement_stored_versions,
     engagement_version_leaves,
     extend_versions_until,
+    version_fingerprint,
 )
 from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
 
@@ -727,6 +729,8 @@ __all__ = [
     "portal_files",
     "process_upload",
     "put_record",
+    "record_key",
+    "version_fingerprint",
     "quote_in",
     "read_content",
     "read_staged",
