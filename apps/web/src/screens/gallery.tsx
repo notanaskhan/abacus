@@ -324,11 +324,13 @@ import {
 } from "./ENG-05/scenarios";
 import { RunPane, TraceDrawer } from "../domain/agents";
 import {
+  AUD02_DOCK_RUN,
   agentScenario,
   DOCKS as SHL13_DOCKS,
   WB09 as WB09_OPENS,
   type Wb09State,
   WB09_STATES,
+  withAgentDock,
 } from "../fixtures/scenarios/SHL-13";
 import { RUN_4127_ID as SHL13_FULL_RUN } from "../fixtures/seed/agent-runs";
 import { PortalSignIn } from "./POR-01";
@@ -1672,7 +1674,11 @@ function Aud02Frame({ state }: { state: Aud02State }): JSX.Element {
       <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
         <AuditCockpitPage
           auditId={AUD02_AUDIT_ID}
-          initial={AUD02_OPENS[state]}
+          initial={
+            AUD02_DOCK_RUN[state] === undefined
+              ? AUD02_OPENS[state]
+              : { ...AUD02_OPENS[state], run: AUD02_DOCK_RUN[state] }
+          }
           onBack={() => undefined}
         />
       </AppShell>
@@ -1684,8 +1690,10 @@ function Aud02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   const state: Aud02State = AUD02_STATES.find((s) => s === params.st) ?? "b";
   const [ready, setReady] = useState<string | null>(null);
   useEffect(() => {
+    // A-01-T33: the run artboards (a, c, d, e) draw the live SHL-13 dock on the fixture runs.
+    const scenario = aud02Scenarios[state];
     const restore = installFixtureMode(
-      aud02Scenarios[state],
+      AUD02_DOCK_RUN[state] === undefined ? scenario : withAgentDock(scenario),
       params.as === undefined ? {} : { persona: params.as },
     );
     setReady(state);

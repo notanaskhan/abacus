@@ -73,3 +73,35 @@ export function agentScenario(state: string, loading = false): Scenario {
     },
   };
 }
+
+/** A-01-T33: a host's scenario with the dock live: the fixture runs' routes beside its own, and
+ * the three agent flags added to whatever capabilities it answers (AUD-02's cockpit flag kept). */
+export function withAgentDock(scenario: Scenario): Scenario {
+  const runs = agentRunHandlers();
+  const read = scenario.handlers["GET /v1/me/capabilities"];
+  return {
+    ...scenario,
+    handlers: {
+      ...runs,
+      ...scenario.handlers,
+      "GET /v1/me/capabilities": async (request) => {
+        const answer =
+          read === undefined
+            ? json(capabilitiesFor(getSeed(), request.persona ?? "hannah-leclerc"))
+            : await read(request);
+        if (!answer.ok) return answer;
+        const body = (await answer.json()) as { flags?: Record<string, unknown> };
+        const on = Object.fromEntries(FLAGS.map((f) => [f, true]));
+        return json({ ...body, flags: { ...body.flags, ...on } });
+      },
+    },
+  };
+}
+
+/** A-01-T33: the run AUD-02's run artboards open in the dock (b and g have none; f is the O3). */
+export const AUD02_DOCK_RUN: Readonly<Record<string, string>> = {
+  a: RUN_4127_ID,
+  c: RUN_4127_PLAN_ID,
+  d: RUN_4127_ID,
+  e: RUN_4127_FAILED_ID,
+};
