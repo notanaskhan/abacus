@@ -1,5 +1,6 @@
 // P-05-T03: comments v2 and to-dos in fixture mode, one artboard state at a time
-// (seed/collaboration.ts). Writes answer 501 as the live stub does until P-05-T05 and T06.
+// (seed/collaboration.ts). P-05-T10: the thread writes answer the state's thread as the live
+// routes do since P-05-T05 (the gallery never persists); to-do writes stay 501 here (SHL-17).
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import {
   componentThread,
@@ -51,10 +52,16 @@ export function collaborationHandlers(
       const todo = todoFor(shl17);
       return todo ? json(todo) : json({ detail: "not_found" }, 404);
     },
-    "POST /v1/comment-threads": notYet,
-    "POST /v1/comment-threads/{thread_id}/comments": notYet,
-    "POST /v1/comment-threads/{thread_id}/resolve": notYet,
-    "POST /v1/comment-threads/{thread_id}/reopen": notYet,
+    "POST /v1/comment-threads": () => json(threadsFor(shl18)[0] ?? row3Thread(), 201),
+    "POST /v1/comment-threads/{thread_id}/comments": () =>
+      json(threadsFor(shl18)[0] ?? row3Thread(), 201),
+    "POST /v1/comment-threads/{thread_id}/resolve": () =>
+      json(threadsFor(shl18)[0] ?? row3Thread()),
+    "POST /v1/comment-threads/{thread_id}/reopen": () =>
+      json(threadsFor(shl18)[0] ?? row3Thread()),
+    "POST /v1/comment-threads/{thread_id}/mute": () => json(threadsFor(shl18)[0] ?? row3Thread()),
+    "POST /v1/comment-threads/{thread_id}/convert-to-review-note": () =>
+      json({ thread: row3Thread(), review_note_id: "00000000-0000-4000-8000-0000000017a3" }, 201),
     "POST /v1/todos": notYet,
     "POST /v1/todos/{todo_id}/complete": notYet,
     "POST /v1/todos/{todo_id}/reopen": notYet,

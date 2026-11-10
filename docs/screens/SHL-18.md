@@ -7,7 +7,7 @@
 | Surface | firm (shared threads reach the portal only through a grant scope, A-09) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SHL-18 Comments and mentions/` (README.md, spec.md) |
 | Epic and tasks | P-05 · bundle T02 · stubs T03 · migration T04 · service T05 · kinds and anchors T09 · screen T10 · journeys T15 · SPEC-650 · ADR-236 |
-| Manifest status | planned (fixture with P-05-T03; live with P-05-T10 behind `collaboration.v2`, after ADR-236 is accepted) |
+| Manifest status | built (P-05-T10: `domain/collaboration` C-29, `screens/SHL-18`; live behind `collaboration.v2`, dark until ADR-236 is accepted) |
 
 ## States
 | Artboard | Viewer (persona) | Clock | Data condition that produces it | Status |
@@ -37,7 +37,7 @@ blocking on popover 420 and picker 300.
 | write | `POST …/share` | grant scope | `comment.share` | 409 `anchor_not_shareable` |
 | write | `POST …/convert-to-review-note` | — | `review_note.raise` | hidden on shared threads |
 
-Every endpoint is in `docs/contracts/collaboration.md` (P-05-T03); 501 until P-05-T05.
+Every endpoint is in `docs/contracts/collaboration.md` (P-05-T03); built in P-05-T05 and P-05-T09.
 
 ## Status
 `comment_thread` (`open`, `resolved`).

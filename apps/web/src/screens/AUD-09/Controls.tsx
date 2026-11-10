@@ -30,6 +30,7 @@ import {
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useFlag } from "../../app-core/flags";
+import { CommentChip } from "../../domain/collaboration";
 import { COPY } from "./copy";
 
 // AUD-09 · Internal control & exceptions (A-04-T32; A-04 §3 AC6, SPEC-620; the handoff spec): the
@@ -342,6 +343,7 @@ function ExceptionsSheet({
   cell,
   onCell,
   options,
+  comments,
 }: {
   rows: readonly ControlExceptionOut[];
   engagementId: string;
@@ -349,6 +351,8 @@ function ExceptionsSheet({
   cell: string;
   onCell: (cell: string) => void;
   options: ControlsOptions;
+  /** P-05-T10: the paper threads hang on (its id and label) while `collaboration.v2` is on. */
+  comments?: { workpaperId: string; engagementLabel: string } | undefined;
 }): JSX.Element {
   const [picker, setPicker] = useState<string | null>(options.initialPicker ?? null);
   // The routes hide once the server answers 503 `route_not_available` (A-06 not registered).
@@ -421,6 +425,19 @@ function ExceptionsSheet({
                   at("B", r.sheet_row),
                   <span className="flex items-center justify-between gap-[4px]">
                     <span className="truncate">{r.matter}</span>
+                    {comments ? (
+                      <CommentChip
+                        anchor={{
+                          anchor_kind: "workpaper",
+                          anchor_id: comments.workpaperId,
+                          locator: { sheet: COPY.sheet, row: r.sheet_row },
+                        }}
+                        anchorLabel={`${COPY.sheet} row ${String(r.sheet_row)} · ${comments.engagementLabel}`}
+                        engagementId={engagementId}
+                        engagementLabel={comments.engagementLabel}
+                        context={{ title: r.matter }}
+                      />
+                    ) : null}
                     <RowMenu
                       row={r}
                       engagementId={engagementId}
@@ -570,6 +587,7 @@ export function useControlsCanvas(
   options: ControlsOptions = {},
 ): CockpitCanvas {
   const on = useFlag(FLAG) === true;
+  const collaboration = useFlag("collaboration.v2") === true;
   const active = options.active ?? true;
   const engagementId = cockpit.engagement_id;
   const failed = controlsFailed(cockpit);
@@ -639,6 +657,14 @@ export function useControlsCanvas(
             options.onCell?.(next);
           }}
           options={options}
+          comments={
+            collaboration && rowOf(cockpit)?.work_item_ref
+              ? {
+                  workpaperId: rowOf(cockpit)?.work_item_ref ?? "",
+                  engagementLabel: cockpit.audit_bar.title,
+                }
+              : undefined
+          }
         />
       ) : (
         <ProcessesSheet
