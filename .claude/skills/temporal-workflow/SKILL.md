@@ -44,6 +44,15 @@ Copy `SampleDrawWorkflow` (`sampling/draw_workflow.py`, activity `sample_draw.ru
 - The randomness is a recorded input: the seed is drawn at the start (server `secrets`), stored on the row and passed in. The workflow never calls a random source, so a replay and a re-performance (RB-46 §A) see the same seed.
 - Histories `sample-draw-v1-drafted.json` and `sample-draw-v1-failed.json`; a change lands behind `workflow.patched`.
 
+## Operator-started workflows (the OCR backfill, P-11-T25; RB-43 §12)
+- An operator command starts the workflow (`abacus_tools.<name>`), never a request: a fixed id per
+  tenant (`ocr_backfill:<tenant>`), `ALLOW_DUPLICATE` reuse and `USE_EXISTING` conflict policy, so a
+  second start joins the first.
+- It pages by cursor (ids only in the payload), runs the same idempotent activities as the live
+  path behind the same gates, and never changes the records it reads.
+- On staging or production it runs as an ECS one-off task, never from a laptop against a shared
+  database.
+
 ## Tests
 - Replay test with recorded histories (required check). Record with `python -m abacus_tools.workflows.record_<name>`; never overwrite a history, add `v<N+1>`.
 - Tracing comes from the shared client's interceptor (`kernel.temporal`); don't add your own.

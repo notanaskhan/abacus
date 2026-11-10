@@ -262,3 +262,17 @@ from abacus.modules.tax.schedule_workflows import (  # noqa: E402
 )
 
 _register_form_line()
+
+# T-04-T15 (DEC-3208): the workspace's reviewables, field owner, suggestion targets and appliers.
+from abacus.modules.tax.worksheet_review import (  # noqa: E402
+    register as _register_worksheet_review,
+)
+
+_register_worksheet_review()
+
+# T-04-T19 (DEC-3211): the tax tools on C17 register at their module's import.
+from abacus.modules.tax.tools import (  # noqa: E402
+    read_return as _tax_tools_loaded,
+)
+
+del _tax_tools_loaded

@@ -26,6 +26,7 @@ from typing import Annotated
 from fastapi import Cookie, Depends, Header
 from fastapi.responses import JSONResponse, Response
 
+from abacus.kernel.viewer_host import ViewerHost
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.portal_contract import (
     PortalMfaIn,
@@ -136,9 +137,7 @@ def _mfa_error(exc: Exception) -> Response:
     status_code=202,
     errors=(503,),
 )
-async def portal_start_route(
-    body: PortalSignInStartIn, host: Annotated[str | None, Header()] = None
-) -> Response:
+async def portal_start_route(body: PortalSignInStartIn, host: ViewerHost) -> Response:
     """Always 202 with the same shape, for any email on any host; 404 `link_expired` for a link
     that can't be used; 503 `sign_in_paused`."""
     try:
@@ -169,7 +168,7 @@ async def portal_start_route(
 )
 async def portal_verify_route(
     body: PortalSignInVerifyIn,
-    host: Annotated[str | None, Header()] = None,
+    host: ViewerHost,
     previous: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
     device: Annotated[str | None, Cookie(alias=DEVICE_COOKIE)] = None,
 ) -> Response:
@@ -199,9 +198,7 @@ async def portal_verify_route(
     status_code=202,
     errors=(410, 429, 503),
 )
-async def portal_resend_route(
-    body: PortalSignInResendIn, host: Annotated[str | None, Header()] = None
-) -> Response:
+async def portal_resend_route(body: PortalSignInResendIn, host: ViewerHost) -> Response:
     try:
         await check_not_paused(host)
         found = await resend_code(host, body.challenge_id)
@@ -226,7 +223,7 @@ async def portal_resend_route(
 )
 async def portal_mfa_route(
     body: PortalMfaIn,
-    host: Annotated[str | None, Header()] = None,
+    host: ViewerHost,
     user_agent: Annotated[str | None, Header()] = None,
     previous: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
 ) -> Response:
@@ -263,9 +260,7 @@ async def portal_mfa_route(
 @portal_auth_router.post(
     "/mfa/setup", action=PRE_SESSION, response_model=PortalMfaSetupOut, errors=(410, 503)
 )
-async def portal_mfa_setup_route(
-    body: PortalMfaSetupIn, host: Annotated[str | None, Header()] = None
-) -> Response:
+async def portal_mfa_setup_route(body: PortalMfaSetupIn, host: ViewerHost) -> Response:
     """A new TOTP factor for a person with none: the QR code's URI and the key, once."""
     try:
         await check_not_paused(host)
@@ -286,7 +281,7 @@ async def portal_mfa_setup_route(
 )
 async def portal_mfa_setup_verify_route(
     body: PortalMfaSetupVerifyIn,
-    host: Annotated[str | None, Header()] = None,
+    host: ViewerHost,
     previous: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
 ) -> Response:
     """The new factor's first code: enrolled, 8 backup codes once, and the session."""
@@ -307,10 +302,10 @@ async def portal_mfa_setup_verify_route(
 
 @portal_auth_router.post("/refresh", action=PRE_SESSION, response_model=PortalSignInVerifyOut)
 async def portal_refresh_route(
+    host: ViewerHost,
     cookie: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
     csrf: Annotated[str | None, Header(alias=CSRF_HEADER)] = None,
     origin: Annotated[str | None, Header()] = None,
-    host: Annotated[str | None, Header()] = None,
     activity: Annotated[str | None, Header(alias="X-Abacus-Activity", max_length=16)] = None,
 ) -> Response:
     """Cookie-authenticated, with the CSRF header and the portal host's own Origin. Only a

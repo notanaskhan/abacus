@@ -445,9 +445,13 @@ SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {
 
 register_pilot_metric_source("w4", w4_portal_activation)  # Q-04-T008 (DEC-825)
 
+# P-10-T28: the agent tools this module owns (C17 via the kernel slot; `agents` registers them).
+from abacus.modules.engagements.agent_tools import AGENT_TOOLS  # noqa: E402
+
 __all__ = [
     "ACCEPTANCE_DECISION_DUE",
     "ACTIVITIES",
+    "AGENT_TOOLS",
     "AUDIT_KINDS",
     "CLIENT_APPROVAL_KINDS",
     "DECIDER_RULES",
@@ -576,6 +580,7 @@ __all__ = [
     "eqr_eligibility_due",
     "firm_router",
     "function_holders",
+    "functions_on",
     "g2_blocks",
     "gate_client_data",
     "gate_fact",

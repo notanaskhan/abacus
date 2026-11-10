@@ -163,7 +163,11 @@ ROUTERS: tuple[()] = ()
 register_entity_owners(ENTITY_KINDS, audit_entities)
 register_engagement_owners(ENGAGEMENT_KINDS, audit_owners)
 
+# P-10-T28: the agent tools this module owns (C17 via the kernel slot; `agents` registers them).
+from abacus.modules.ledger.agent_tools import AGENT_TOOLS  # noqa: E402
+
 __all__ = [
+    "AGENT_TOOLS",
     "CONFIDENCE",
     "ROUTERS",
     "AccountEdits",

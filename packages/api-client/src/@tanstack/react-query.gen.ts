@@ -823,7 +823,10 @@ export const auditArchiveIndexMutation = (options?: Partial<Options<AuditArchive
 /**
  * Audit Archive Lock Route
  *
- * G9: the lock decision and ArchiveLockWorkflow (seal, COMPLIANCE manifest; A-07-T37).
+ * G9: the lock decision and ArchiveLockWorkflow (seal, COMPLIANCE manifest; A-07-T37). A
+ * manager or the EP with a fresh MFA, at 9 of 9 (409 `checklist_incomplete`), on the checklist
+ * they saw (409 `checklist_changed`); once (409 `archive_locked`). A replay with the key answers
+ * the same run.
  */
 export const auditArchiveLockMutation = (options?: Partial<Options<AuditArchiveLockData>>): UseMutationOptions<AuditArchiveLockResponse, AuditArchiveLockError, Options<AuditArchiveLockData>> => {
     const mutationOptions: UseMutationOptions<AuditArchiveLockResponse, AuditArchiveLockError, Options<AuditArchiveLockData>> = {
@@ -843,6 +846,9 @@ export const auditArchiveManifestQueryKey = (options: Options<AuditArchiveManife
 
 /**
  * Audit Archive Manifest Route
+ *
+ * The locked archive's manifest facts (A-07-T37): counts, the checkpoint, the roots and both
+ * retain-until dates; 404 before the seal.
  */
 export const auditArchiveManifestOptions = (options: Options<AuditArchiveManifestData>) => queryOptions<AuditArchiveManifestResponse, AuditArchiveManifestError, AuditArchiveManifestResponse, ReturnType<typeof auditArchiveManifestQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -2062,6 +2068,8 @@ export const auditFilingsQueryKey = (options: Options<AuditFilingsData>) => crea
 
 /**
  * Audit Filings Route
+ *
+ * AUD-24 f: the Form 5500 tracker (A-07-T36); an EBP audit's row opens at the release.
  */
 export const auditFilingsOptions = (options: Options<AuditFilingsData>) => queryOptions<AuditFilingsResponse, AuditFilingsError, AuditFilingsResponse, ReturnType<typeof auditFilingsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -2079,7 +2087,8 @@ export const auditFilingsOptions = (options: Options<AuditFilingsData>) => query
 /**
  * Audit Filing Route
  *
- * Manual EFAST2 tracking (A-07-T36); Accrued never files.
+ * Manual EFAST2 tracking (A-07-T36); Accrued never files. 422 `filing_evidence_required`,
+ * 409 `stale_version`.
  */
 export const auditFilingMutation = (options?: Partial<Options<AuditFilingData>>): UseMutationOptions<AuditFilingResponse, AuditFilingError, Options<AuditFilingData>> => {
     const mutationOptions: UseMutationOptions<AuditFilingResponse, AuditFilingError, Options<AuditFilingData>> = {
@@ -4608,7 +4617,7 @@ export const listCommentThreadsQueryKey = (options: Options<ListCommentThreadsDa
 /**
  * List Comment Threads Route
  *
- * Threads and comments for one anchor (internal threads never to a client principal).
+ * Threads and comments for one anchor; `counts` holds Open and Resolved (SHL-18d).
  */
 export const listCommentThreadsOptions = (options: Options<ListCommentThreadsData>) => queryOptions<ListCommentThreadsResponse, ListCommentThreadsError, ListCommentThreadsResponse, ReturnType<typeof listCommentThreadsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -4645,6 +4654,8 @@ export const openThreadMutation = (options?: Partial<Options<OpenThreadData>>): 
 
 /**
  * Thread Counts Route
+ *
+ * The C-27 chips for up to 200 anchors.
  */
 export const threadCountsMutation = (options?: Partial<Options<ThreadCountsData>>): UseMutationOptions<ThreadCountsResponse, ThreadCountsError, Options<ThreadCountsData>> => {
     const mutationOptions: UseMutationOptions<ThreadCountsResponse, ThreadCountsError, Options<ThreadCountsData>> = {
@@ -6306,6 +6317,8 @@ export const assigneeCandidatesQueryKey = (options: Options<AssigneeCandidatesDa
 
 /**
  * Assignee Candidates Route
+ *
+ * SHL-17b: the people on the engagement (AC-17); never the agent.
  */
 export const assigneeCandidatesOptions = (options: Options<AssigneeCandidatesData>) => queryOptions<AssigneeCandidatesResponse, AssigneeCandidatesError, AssigneeCandidatesResponse, ReturnType<typeof assigneeCandidatesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -6914,7 +6927,7 @@ export const revokeMutation = (options?: Partial<Options<RevokeData>>): UseMutat
  * Start Route
  *
  * SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting. A-02-T33: the
- * state keeps this request's `Host` (after `TrustedHosts`), never anything in the query.
+ * state keeps this request's viewer host (`TrustedHosts`, DEC-3990), never the query's.
  */
 export const startMutation = (options?: Partial<Options<StartData>>): UseMutationOptions<StartResponse, StartError, Options<StartData>> => {
     const mutationOptions: UseMutationOptions<StartResponse, StartError, Options<StartData>> = {
@@ -8696,6 +8709,8 @@ export const threadMentionCandidatesQueryKey = (options: Options<ThreadMentionCa
 
 /**
  * Thread Mention Candidates Route
+ *
+ * SHL-18b/b2: the team entry and its members; non-members greyed for a search (AC-6).
  */
 export const threadMentionCandidatesOptions = (options: Options<ThreadMentionCandidatesData>) => queryOptions<ThreadMentionCandidatesResponse, ThreadMentionCandidatesError, ThreadMentionCandidatesResponse, ReturnType<typeof threadMentionCandidatesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -20719,7 +20734,7 @@ export const listEntityConnectionsOptions = (options: Options<ListEntityConnecti
  * POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422
  * `authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,
  * `connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.
- * A-02-T33: the state keeps this request's `Host` (after `TrustedHosts`), never the query's.
+ * A-02-T33: the state keeps the request's viewer host (DEC-3990), never the query's.
  */
 export const startConnectionMutation = (options?: Partial<Options<StartConnectionData>>): UseMutationOptions<StartConnectionResponse, StartConnectionError, Options<StartConnectionData>> => {
     const mutationOptions: UseMutationOptions<StartConnectionResponse, StartConnectionError, Options<StartConnectionData>> = {
@@ -24844,6 +24859,8 @@ export const reviewTreeQueryKey = (options: Options<ReviewTreeData>) => createQu
 
 /**
  * Review Tree Route
+ *
+ * The documents at a level, "Review n" (T-04-T17).
  */
 export const reviewTreeOptions = (options: Options<ReviewTreeData>) => queryOptions<ReviewTreeResponse, ReviewTreeError, ReviewTreeResponse, ReturnType<typeof reviewTreeQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24880,6 +24897,8 @@ export const worksheetsQueryKey = (options: Options<WorksheetsData>) => createQu
 
 /**
  * Worksheets Route
+ *
+ * TAX-05's tree (T-04-T16).
  */
 export const worksheetsOptions = (options: Options<WorksheetsData>) => queryOptions<WorksheetsResponse, WorksheetsError, WorksheetsResponse, ReturnType<typeof worksheetsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24898,6 +24917,8 @@ export const workspaceQueryKey = (options: Options<WorkspaceData>) => createQuer
 
 /**
  * Workspace Route
+ *
+ * TAX-04's tab counts at the viewer's level (T-04-T17).
  */
 export const workspaceOptions = (options: Options<WorkspaceData>) => queryOptions<WorkspaceResponse, WorkspaceError, WorkspaceResponse, ReturnType<typeof workspaceQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24916,6 +24937,8 @@ export const worksheetFieldsQueryKey = (options: Options<WorksheetFieldsData>) =
 
 /**
  * Worksheet Fields Route
+ *
+ * TAX-05's fields with their provenance (T-04-T16); edits go through `PUT /v1/fields/…`.
  */
 export const worksheetFieldsOptions = (options: Options<WorksheetFieldsData>) => queryOptions<WorksheetFieldsResponse, WorksheetFieldsError, WorksheetFieldsResponse, ReturnType<typeof worksheetFieldsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24952,7 +24975,8 @@ export const browserErrorMutation = (options?: Partial<Options<BrowserErrorData>
 /**
  * Redact Thread Comment Route
  *
- * Firm admin with a fresh MFA (matrix); 409 `already_redacted`.
+ * Firm admin with a fresh MFA (matrix); 409 `already_redacted`. A retry with the key after a
+ * redaction answers 409 too: the comment is redacted either way.
  */
 export const redactThreadCommentMutation = (options?: Partial<Options<RedactThreadCommentData>>): UseMutationOptions<RedactThreadCommentResponse, RedactThreadCommentError, Options<RedactThreadCommentData>> => {
     const mutationOptions: UseMutationOptions<RedactThreadCommentResponse, RedactThreadCommentError, Options<RedactThreadCommentData>> = {
@@ -24973,7 +24997,8 @@ export const listTodosQueryKey = (options?: Options<ListTodosData>) => createQue
 /**
  * List Todos Route
  *
- * My to-dos (`assignee=me`) or the to-dos on one anchor.
+ * My to-dos (`assignee=me`, with the bands in `counts`) or the to-dos on one anchor. A
+ * person's to-dos are few (no cursor yet; `limit` caps the page).
  */
 export const listTodosOptions = (options?: Options<ListTodosData>) => queryOptions<ListTodosResponse, ListTodosError, ListTodosResponse, ReturnType<typeof listTodosQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24993,7 +25018,8 @@ export const listTodosInfiniteQueryKey = (options?: Options<ListTodosData>): Que
 /**
  * List Todos Route
  *
- * My to-dos (`assignee=me`) or the to-dos on one anchor.
+ * My to-dos (`assignee=me`, with the bands in `counts`) or the to-dos on one anchor. A
+ * person's to-dos are few (no cursor yet; `limit` caps the page).
  */
 export const listTodosInfiniteOptions = (options?: Options<ListTodosData>) => {
     const opts = infiniteQueryOptions<ListTodosResponse, ListTodosError, InfiniteData<ListTodosResponse>, QueryKey<Options<ListTodosData>>, string | null | Pick<QueryKey<Options<ListTodosData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -25041,6 +25067,8 @@ export const createTodoMutation = (options?: Partial<Options<CreateTodoData>>): 
 
 /**
  * Todo Counts Route
+ *
+ * The "n To-do" chips for up to 200 anchors.
  */
 export const todoCountsMutation = (options?: Partial<Options<TodoCountsData>>): UseMutationOptions<TodoCountsResponse, TodoCountsError, Options<TodoCountsData>> => {
     const mutationOptions: UseMutationOptions<TodoCountsResponse, TodoCountsError, Options<TodoCountsData>> = {

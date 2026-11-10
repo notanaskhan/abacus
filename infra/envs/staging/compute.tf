@@ -50,6 +50,10 @@ locals {
     ABACUS_PROXY_TRUSTED_HOSTS      = jsonencode(module.network.app_subnet_cidrs)
     ABACUS_RELEASE                  = split("@", var.image_digest)[1]
     ABACUS_DATABASE_CA_FILE         = "/app/src/abacus/kernel/certs/rds-global-bundle.pem"
+    # DEC-3990: behind the portal edge the API judges the viewer's host (X-Forwarded-Host from the
+    # ALB), so portal hosts are trusted only once the API knows the portal domain.
+    }, var.portal_base_domain == null ? {} : {
+    ABACUS_PORTAL_BASE_DOMAIN = var.portal_base_domain
   }) : {}
   common_secrets = {
     ABACUS_DATABASE_URL                  = "${local.secret.db_app}:url::"

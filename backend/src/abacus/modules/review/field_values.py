@@ -262,6 +262,46 @@ async def current_values(
     return {str(r.field_key): cast(dict[str, object], r.value) for r in rows}
 
 
+async def latest_sources(
+    tenant: TenantContext, target_type: str, target_ids: Sequence[UUID]
+) -> dict[tuple[UUID, str], tuple[str, int]]:
+    """T-04-T16: each field's latest version on the targets, as `(value_source, citations)` by
+    `(target_id, field_key)`. The caller has authorised a read of the targets."""
+    if not target_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT DISTINCT ON (target_id, field_key) target_id, field_key, "
+                    "value_source, coalesce(cardinality(citation_ids), 0) AS cites "
+                    "FROM field_value_versions "
+                    "WHERE target_type = :t AND target_id = ANY(:ids) "
+                    "ORDER BY target_id, field_key, seq DESC"
+                ),
+                {"t": target_type, "ids": list(target_ids)},
+            )
+        ).all()
+    return {(r.target_id, str(r.field_key)): (str(r.value_source), int(r.cites)) for r in rows}
+
+
+async def edited_by_a_person(
+    tenant: TenantContext, target_type: str, target_ids: Sequence[UUID]
+) -> set[UUID]:
+    """T-04-T16: the targets with any version a person wrote (TAX-04's "edited" mark)."""
+    if not target_ids:
+        return set()
+    async with tenant_session(tenant) as session:
+        rows = await session.scalars(
+            text(
+                "SELECT DISTINCT target_id FROM field_value_versions WHERE target_type = :t "
+                "AND target_id = ANY(:ids) AND value_source = 'human'"
+            ),
+            {"t": target_type, "ids": list(target_ids)},
+        )
+        return set(cast("list[UUID]", list(rows)))
+
+
 @dataclass(frozen=True)
 class FieldVersionFact:
     """One version of a field, as an owner's history shows it (A-04-T13: AUD-08 b's versions)."""

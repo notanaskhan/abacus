@@ -1,0 +1,1 @@
+Read the engagement agent's activity log: what it did under which policy, the outcome and the record, newest first, with counts by outcome computed by code.

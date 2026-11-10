@@ -187,13 +187,16 @@ export function RunWrites({ runId }: { runId: string }): JSX.Element {
 export function TraceDrawer({
   runId,
   onClose,
+  initialView = "Timeline",
 }: {
   runId: string;
   onClose: () => void;
+  /** The Segmented view open on arrival (WB-09 a3 Records read, a4 Writes & approvals). */
+  initialView?: (typeof VIEWS)[number];
 }): JSX.Element {
   const trace = useQuery({ ...agentRunTraceOptions({ path: { run_id: runId } }), retry: false });
   const [confirm, setConfirm] = useState(false);
-  const [view, setView] = useState<string>("Timeline");
+  const [view, setView] = useState<string>(initialView);
   const client = useQueryClient();
   const feed = useRunFeed(runId);
   const live = isActive(feed.run);

@@ -87,6 +87,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "agent": "task_scope",
     },
     "adjusted_tb.read": {
         "engagement_partner": "allow",
@@ -1557,6 +1558,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_admin": "client_visible_only",
         "client_contributor": "client_visible_only",
         "platform_support_content": "allow",
+        "agent": "task_scope",
     },
     "engagement.read_metadata": {
         "firm_admin": "allow",
@@ -3139,6 +3141,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "reviewer": "allow",
         "platform_support_content": "allow",
+        "agent": "task_scope",
     },
     "ledger.pull": {
         "engagement_partner": "allow",
@@ -5490,6 +5493,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "not_offshore": "required",
     },
     "todo.assign": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5505,6 +5510,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "todo.complete": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5520,6 +5527,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "todo.create": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5535,6 +5544,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "todo.delete": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5556,6 +5567,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
     },
     "todo.read": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5574,6 +5587,8 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "todo.update": {
+        "firm_partner": "allow",
+        "firm_manager": "allow",
         "engagement_partner": "allow",
         "manager": "allow",
         "senior": "allow",
@@ -5651,6 +5666,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "agent": "task_scope",
         "independence": "required",
     },
     "uncorrected_misstatements.acknowledge": {

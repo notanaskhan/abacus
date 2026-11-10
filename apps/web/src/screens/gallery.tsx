@@ -2,7 +2,7 @@ import { publishPortalSettings } from "@abacus/api-client";
 import { AppShell, time, toast } from "@abacus/ui";
 import { KNW03_TAILORING } from "../fixtures/seed/knw03";
 import { type JSX, useEffect, useState } from "react";
-import { installFixtureMode } from "../app-core/fixture-mode";
+import { installFixtureMode, type Scenario } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
@@ -322,6 +322,17 @@ import {
   type Eng05State,
   scenarios as eng05Scenarios,
 } from "./ENG-05/scenarios";
+import { RunPane, TraceDrawer } from "../domain/agents";
+import {
+  AUD02_DOCK_RUN,
+  agentScenario,
+  DOCKS as SHL13_DOCKS,
+  WB09 as WB09_OPENS,
+  type Wb09State,
+  WB09_STATES,
+  withAgentDock,
+} from "../fixtures/scenarios/SHL-13";
+import { RUN_4127_ID as SHL13_FULL_RUN } from "../fixtures/seed/agent-runs";
 import { PortalSignIn } from "./POR-01";
 import { PortalHome } from "./POR-02";
 import { PortalDocuments } from "./POR-03";
@@ -1663,7 +1674,11 @@ function Aud02Frame({ state }: { state: Aud02State }): JSX.Element {
       <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
         <AuditCockpitPage
           auditId={AUD02_AUDIT_ID}
-          initial={AUD02_OPENS[state]}
+          initial={
+            AUD02_DOCK_RUN[state] === undefined
+              ? AUD02_OPENS[state]
+              : { ...AUD02_OPENS[state], run: AUD02_DOCK_RUN[state] }
+          }
           onBack={() => undefined}
         />
       </AppShell>
@@ -1675,8 +1690,10 @@ function Aud02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   const state: Aud02State = AUD02_STATES.find((s) => s === params.st) ?? "b";
   const [ready, setReady] = useState<string | null>(null);
   useEffect(() => {
+    // A-01-T33: the run artboards (a, c, d, e) draw the live SHL-13 dock on the fixture runs.
+    const scenario = aud02Scenarios[state];
     const restore = installFixtureMode(
-      aud02Scenarios[state],
+      AUD02_DOCK_RUN[state] === undefined ? scenario : withAgentDock(scenario),
       params.as === undefined ? {} : { persona: params.as },
     );
     setReady(state);
@@ -2475,6 +2492,102 @@ function Shl16Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-16", { title: "Checkpoint diff drawer", Component: Shl16Artboard });
+
+// P-09-T18 (P-09 §5.4): SHL-13's state board (the handoff's eight 330 × 733 docks on a 1440 × 1640
+// board at x 24/378/732/1086 and y 60/877), the full frame (the AUD-02 cockpit at 9:41 with run
+// #4127 in the dock) and WB-09's drawer on each run, all on the fixture runs with the flags on.
+function useAgentScenario(state: string, persona: string | undefined, base?: Scenario): boolean {
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const scenario = agentScenario(state, state === "e");
+    const restore = installFixtureMode(
+      base === undefined
+        ? scenario
+        : { ...scenario, handlers: { ...base.handlers, ...scenario.handlers } },
+      persona === undefined ? {} : { persona },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, persona, base]);
+  return ready === state;
+}
+
+const DOCK_X = [24, 378, 732, 1086] as const;
+const DOCK_Y = [60, 877] as const;
+
+function Shl13Board(): JSX.Element {
+  return (
+    <div data-artboard="board" className="relative h-[1640px] w-[1440px]">
+      {SHL13_DOCKS.map((d, i) => (
+        <section
+          key={d.n}
+          aria-label={d.caption}
+          className="absolute"
+          style={{ left: DOCK_X[i % 4], top: DOCK_Y[Math.floor(i / 4)] }}
+        >
+          <p className="absolute -top-[30px] text-[13px] text-ink-2">{`${String(d.n)} · ${d.caption}`}</p>
+          <div
+            data-dock={d.n}
+            className="flex h-[733px] w-[330px] flex-col overflow-hidden rounded-pane bg-card shadow-e2"
+          >
+            <RunPane runId={d.runId} onTrace={() => undefined} />
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function Shl13FullFrame(): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard="F">
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <AuditCockpitPage
+          auditId={AUD02_AUDIT_ID}
+          initial={{ ...AUD02_OPENS.a, run: SHL13_FULL_RUN }}
+          onBack={() => undefined}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Shl13Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = params.st === "F" ? "F" : "board";
+  const ready = useAgentScenario(state, params.as, state === "F" ? aud02Scenarios.a : undefined);
+  if (!ready) return null;
+  return state === "F" ? <Shl13FullFrame /> : <Shl13Board />;
+}
+
+registerScreen("SHL-13", { title: "Agent dock · run pane", Component: Shl13Artboard });
+
+function Wb09Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Wb09State = WB09_STATES.find((s) => s === params.st) ?? "a";
+  const ready = useAgentScenario(state, params.as);
+  if (!ready) return null;
+  const open = WB09_OPENS[state];
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <TraceDrawer
+        runId={open.runId}
+        onClose={() => undefined}
+        {...(open.view === undefined ? {} : { initialView: open.view })}
+      />
+    </div>
+  );
+}
+
+registerScreen("WB-09", { title: "Run trace drawer", Component: Wb09Artboard });
 
 // SHL-09 (P-04-T55): the field provenance tray a–f where its O1 popover sits over the worksheet.
 function Shl09Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

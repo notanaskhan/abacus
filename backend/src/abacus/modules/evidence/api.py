@@ -496,16 +496,29 @@ register_audit_value_resolver("pii_reveal", pii_reveal_values)
 # A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
 register_upload_facts(upload_facts)
 
+# P-10-T28: the agent tools this module owns (C17 via the kernel slot; `agents` registers them).
+from abacus.modules.evidence.agent_tools import AGENT_TOOLS  # noqa: E402
+
+# T-04-T17: the return's documents for TAX-04's review tree.
+from abacus.modules.evidence.archive import engagement_documents  # noqa: E402
 from abacus.modules.evidence.ocr_gate import (  # noqa: E402 -- P-11-T33
     DAILY_PAGE_CAP,
     daily_page_cap,
     set_daily_page_cap,
 )
 from abacus.modules.evidence.ocr_step import start_ocr_backfill  # noqa: E402 -- P-11-T25
+
+# A-07-T36 (P-14): the stored versions a report release anchors.
+from abacus.modules.evidence.retention_anchor import (  # noqa: E402
+    engagement_stored_versions,
+    engagement_version_leaves,
+    extend_versions_until,
+)
 from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
 
 __all__ = [
     "ACTIVITIES",
+    "AGENT_TOOLS",
     "ANCHOR_ID",
     "CODE_COLUMN",
     "CONTENT_READ_KIND",
@@ -658,14 +671,18 @@ __all__ = [
     "drop_batch",
     "effective_decisions",
     "effective_policies",
+    "engagement_documents",
     "engagement_of_version",
     "engagement_snapshots",
+    "engagement_stored_versions",
+    "engagement_version_leaves",
     "evidence_versions_for",
     "export_manifest_json_schema",
     "export_requester",
     "export_section_csv",
     "extend_record",
     "extend_retention_for",
+    "extend_versions_until",
     "extract_form",
     "extract_isolated",
     "extract_version",

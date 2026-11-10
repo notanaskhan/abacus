@@ -1,0 +1,1 @@
+Read the engagement team: each person's id, name and role. Client people are not listed.

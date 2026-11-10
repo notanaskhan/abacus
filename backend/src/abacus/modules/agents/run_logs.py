@@ -37,3 +37,16 @@ async def last_completed_run_at(
     async with tenant_session(tenant) as session:
         found = await session.scalar(_LAST_COMPLETED, {"e": engagement_id, "a": agent_id})
     return found if isinstance(found, datetime) else None
+
+
+_RECORD_HASHES = text(
+    "SELECT run_id, record_sha256 FROM agent_run_records WHERE engagement_id = :e ORDER BY run_id"
+)
+
+
+async def run_record_hashes(tenant: TenantContext, engagement_id: UUID) -> list[tuple[UUID, str]]:
+    """A-07-T37: each packaged run record's `record_sha256`, the archive seal's run-record leaves
+    (identifiers and hashes only)."""
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_RECORD_HASHES, {"e": engagement_id})).all()
+    return [(r.run_id, r.record_sha256) for r in rows]

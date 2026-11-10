@@ -138,6 +138,31 @@ async def _mentioned(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return sorted({UUID(str(u)) for u in cast(list[object], raw)})
 
 
+async def _mentioned_member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-05-T05 (SPEC-650 AC-8): the person a v2 comment mentions, only while they are still on
+    the engagement's team (a removed member or one walled since, whose assignment the wall ends,
+    gets nothing). The feed re-checks access again at read (DEC-61)."""
+    engagement_id = _uuid(payload, "engagement_id")
+    user = _uuid(payload, "user_id")
+    if engagement_id is None or user is None:
+        return []
+    team = {member for member, _ in await team_of(tenant_id, engagement_id)}
+    return [user] if user in team else []
+
+
+async def _todo_assignee(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """P-05-T06 (P-05 §4.8): the to-do's new assignee, while still on the engagement's team (a
+    firm-scope to-do names no engagement and goes to its assignee). Re-checked at read."""
+    assignee = _uuid(payload, "assignee_user_id")
+    if assignee is None:
+        return []
+    engagement_id = _uuid(payload, "engagement_id")
+    if engagement_id is None:
+        return [assignee]
+    team = {member for member, _ in await team_of(tenant_id, engagement_id)}
+    return [assignee] if assignee in team else []
+
+
 async def _partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """SPEC-305 (TASK-306): the engagement partner, who alone decides; never about their own
     proposal (TASK-307)."""
@@ -461,6 +486,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
     # P-04-T23: a card waits on its reserved person; "Notify" mentions them (SHL-11 b).
     "decision_card.raised": Kind("decision_assigned", _listed, "decision_card", "card_id"),
     "decision_card.notify_requested": Kind("mention", _assignee, "decision_card", "card_id"),
+    # P-05-T05 (P-05 §4.8): a v2 comment's mention, a second source of `mention`, the target the
+    # thread (and through it the anchor); one event per person, re-checked at fan-out (AC-8).
+    "mention.created": Kind("mention", _mentioned_member, "comment_thread", "thread_id"),
+    # A-07-T36 (A-07 §4.8): a post-release clock at a boundary, to the engagement's leads.
+    "archive.deadline_risk": Kind("archive_deadline_risk", _leads, "work_item", "work_item_id"),
+    # P-05-T06: a to-do assigned to someone (SHL-04 R2 "To-do assigned"), never to the agent.
+    "todo.assigned": Kind("todo_assigned", _todo_assignee, "todo", "todo_id"),
     # A-04-T12 (AC3.7): a revised materiality tells the preparers of every impacted workpaper.
     # A-04-T19 (DEC-2055): the minutes wait for the engagement partners.
     "fraud_minutes.awaiting_approval": Kind(
@@ -658,6 +690,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "review_note.raised": "A review note on {engagement} is waiting for you.",
     "decision_card.raised": "A decision on {engagement} is waiting for you.",
     "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
+    "mention.created": "You were mentioned in a comment on {engagement}.",  # P-05-T05
+    "archive.deadline_risk": "A post-release deadline on {engagement} is close or has passed.",
+    "todo.assigned": "You were assigned a to-do.",  # P-05-T06 (a firm to-do names no engagement)
     # A-04-T12 (AC3.7): the impacted workpapers' preparers.
     "materiality.revised": "Materiality on {engagement} was revised; your workpapers use it.",
     "fraud_minutes.awaiting_approval": (
@@ -750,6 +785,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("follow_up_sent", "client_activity", "Send"),
     NotificationKind("agent.digest", "run", "Sparkles"),
     NotificationKind("mention", "mention", "AtSign", email_default=True),
+    NotificationKind("todo_assigned", "other", "CircleCheck", email_default=True),  # P-05-T06
     NotificationKind("materiality.proposed", "approval", "Scale"),
     NotificationKind("risk.approval_requested", "approval", "TriangleAlert"),
     NotificationKind("sample_set_approval_requested", "approval", "ListChecks"),  # A-03-T10

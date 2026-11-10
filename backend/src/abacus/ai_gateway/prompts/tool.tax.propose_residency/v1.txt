@@ -1,0 +1,1 @@
+Propose a residency option for a residency determination. Creates a proposal for a person to approve; the determination is never confirmed by you.

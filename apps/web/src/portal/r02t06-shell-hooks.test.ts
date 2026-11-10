@@ -31,7 +31,8 @@ describe("R-02's portal shell hooks", () => {
   });
 
   it("production's nav map gains only built screens; the planned areas are fixture-only", () => {
-    // R-02-T17 built POR-09: Deliverables moved from the planned map to production's.
+    // R-02-T17 built POR-09, R-02-T19 POR-08 and R-02-T21 POR-15: Deliverables, Approvals and
+    // Communications moved from the planned map to production's.
     expect(Object.keys(AREA_PATHS)).toEqual([
       "Home",
       "Documents",
@@ -39,11 +40,10 @@ describe("R-02's portal shell hooks", () => {
       "Questions",
       "My K-1s",
       "Deliverables",
+      "Approvals",
+      "Communications",
     ]);
-    expect(PLANNED_AREA_PATHS).toEqual({
-      Approvals: "/approvals",
-      Communications: "/governance",
-    });
+    expect(PLANNED_AREA_PATHS).toEqual({});
   });
 
   it("a tcwg scope draws the room's reduced nav, never management's", () => {

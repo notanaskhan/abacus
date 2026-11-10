@@ -77,3 +77,19 @@ inside the Jan 1 – Apr 20, 2028 freeze. The rollout is `docs/runbooks/audit-pl
 | `ebp.modules` | 2027-04-30 | **Renew** to Dec 30, 2027 before expiry, then in the M15 bundle (Tue Dec 7, 2027) to after Apr 20, 2028 | First EBP flip after the CPA memo; retire once on for every live firm after PW4 (A-05-T62, `docs/runbooks/ebp-modules.md`) |
 | `ebp.form5500_tieout` | 2027-04-30 | **Renew** as `ebp.modules` | Flips last, after AUD-20 on the firm; retire after PW4 |
 | `assurance.estimates_rp` | 2027-04-30 | **Renew** as `ebp.modules` | Retire after PW4 |
+
+## The P-09 agent dock and trace flags (P-09-T20, Q-04-T130)
+
+P-09 §8 and ADR-089: `agent_dock.enabled` and `run_trace.enabled` (`agents.yaml`, owner
+notanaskhan) were created 2026-11-08 and expire 2027-05-07 under the DEC-137 override, outside the
+Jan 1 – Apr 20 freeze. The plan's registry-only renewal ("Tue Feb 15", to "May 12" in the plan's
+calendar) maps to today's calendar as the S9-style renewal train before the freeze ends: renewing
+now would only move the expiry into the freeze (90 days from Nov 10, 2026 is Feb 8, 2027), so no
+YAML changes in S34. Recorded 2026-11-10 (DEC-3212).
+
+| Flag | Owner | Expires | Due | Action | Condition |
+|---|---|---|---|---|---|
+| `agent_dock.enabled` | notanaskhan | 2027-05-07 | **Thu Apr 22, 2027** | **Renew** to Wed Jul 21, 2027 | Registry-only: the PR changes only `agents.yaml` and carries both founders' approvals. Retire once the dock is on for every live firm (after the canary, then the firm waves); the v1 Agent-tab list is deleted in the same change |
+| `run_trace.enabled` | notanaskhan | 2027-05-07 | **Thu Apr 22, 2027** | **Renew** to Wed Jul 21, 2027 | The same PR. Retire with the dock; the drawer's v1 trace path and the step route's 404 branch go together |
+
+Apr 22, 2027 is the first renewal day after the freeze, and Jul 21, 2027 is 90 days on.

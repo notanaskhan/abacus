@@ -31,8 +31,8 @@ export const porScreens = {
   // POR-03 gives (DEC-347).
   "POR-06": { name: "Sign · Ridgeline engagement letter", status: "planned", path: null },
   "POR-07": { name: "Messages · Feld household", status: "planned", path: null },
-  // R-02-T06: a lazy route stub at /approvals in the portal entry (fixture builds reach it from the
-  // nav); planned with a null path for the reason POR-03 gives (DEC-347).
+  // R-02-T19: e, e2 and f live and a to d on fixtures (DV-08); the portal entry mounts /approvals.
+  // Planned with a null path for the reason POR-03 gives (DEC-347).
   "POR-08": { name: "Approvals · Copperleaf August 2026 Close", status: "planned", path: null },
   // R-02-T17: a, a2, b, c, d, f live and e on fixtures; the portal entry mounts /deliverables.
   // Planned with a null path for the reason POR-03 gives (DEC-347).
@@ -59,6 +59,8 @@ export const porScreens = {
     status: "planned",
     path: null,
   },
+  // R-02-T21: a to f live on a tcwg grant's reduced shell; the portal entry mounts /governance.
+  // Planned with a null path for the reason POR-03 gives (DEC-347).
   "POR-15": {
     name: "Governance room · Northwind benefits committee",
     status: "planned",

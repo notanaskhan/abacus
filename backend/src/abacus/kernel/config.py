@@ -402,15 +402,16 @@ class Settings(BaseSettings):
     otlp_endpoint: Annotated[str | None, classified("internal")] = None
     sentry_dsn: Annotated[SecretStr | None, classified("restricted")] = None
     release: Annotated[str | None, classified("internal")] = None
-    # HTTP edge (ADR-152, P-45; Q-01-T16). The Host values the API answers to: exact names, `*.`
-    # suffixes, IP addresses or CIDR networks (a load balancer probes by target IP). A comma
-    # separated list or a JSON array. Explicit outside local and test, never `*`.
+    # HTTP edge (ADR-152, P-45; Q-01-T16). The viewer hosts the API answers to (DEC-3990: the
+    # load balancer's X-Forwarded-Host, else Host): exact names, `*.` suffixes, IP addresses or
+    # CIDR networks (a load balancer probes by target IP). A comma separated list or a JSON
+    # array. Explicit outside local and test, never `*`.
     trusted_hosts: Annotated[tuple[str, ...] | None, NoDecode, classified("internal")] = None
     # The neutral domain portals are served under: `<slug>.<portal_base_domain>` is a trusted
-    # host. Only a branding hint; tenant resolution never reads the Host header (INV-4).
+    # host. Only a branding hint; tenant resolution never reads the host (INV-4).
     portal_base_domain: Annotated[str | None, classified("internal")] = None
-    # Peers whose X-Forwarded-For and X-Forwarded-Proto are believed (the load balancer's subnets,
-    # as addresses or CIDR networks). Empty: proxy headers are ignored.
+    # Peers whose X-Forwarded-For, X-Forwarded-Proto and X-Forwarded-Host are believed (the load
+    # balancer's subnets, as addresses or CIDR networks). Empty: proxy headers are ignored.
     proxy_trusted_hosts: Annotated[tuple[str, ...], NoDecode, classified("internal")] = ()
     # Whether the edge sets `CloudFront-Viewer-Address` on every request and overwrites any the
     # viewer sent (the portal distribution's origin request policy includes it): only then is it

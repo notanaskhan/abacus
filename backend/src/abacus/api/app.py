@@ -232,9 +232,11 @@ async def _lifespan(_app: FastAPI) -> AsyncGenerator[None]:
 
 
 def _add_edge_middleware(app: FastAPI) -> None:
-    """Innermost first (the last one added is outermost): proxy headers are corrected for the
-    trusted load balancer, then the Host is checked, then the body is bounded, then the request's
-    audit context is bound (G-02-T06), from the corrected client address."""
+    """Innermost first (the last one added is outermost). A request meets them in this order:
+    the viewer's host is judged (`X-Forwarded-Host` from the trusted load balancer, else `Host`;
+    DEC-3990) while the peer is still the real one, then proxy headers correct the client address
+    and scheme for that load balancer, then the body is bounded, then the request's audit context
+    is bound (G-02-T06), from the corrected client address."""
     s = settings()
     app.add_middleware(RequestContextCapture)
     app.add_middleware(
@@ -243,12 +245,12 @@ def _add_edge_middleware(app: FastAPI) -> None:
         route_bytes=UPLOAD_EDGE_BYTES,
         route_paths=UPLOAD_ROUTE_PATHS,
     )
+    if s.proxy_trusted_hosts:
+        app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=list(s.proxy_trusted_hosts))
     hosts = list(s.trusted_hosts or ())
     if s.portal_base_domain:
         hosts.append(f"*.{s.portal_base_domain}")  # portal hosts: a branding hint only (INV-4)
-    app.add_middleware(TrustedHosts, allowed=hosts)
-    if s.proxy_trusted_hosts:
-        app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=list(s.proxy_trusted_hosts))
+    app.add_middleware(TrustedHosts, allowed=hosts, proxies=s.proxy_trusted_hosts)
 
 
 def create_app() -> FastAPI:

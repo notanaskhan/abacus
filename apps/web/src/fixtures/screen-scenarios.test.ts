@@ -34,6 +34,8 @@ describe("screen scenarios on the firm entry", () => {
       "AUD-01",
       "AUD-03",
       "AUD-08", // A-04-T34
+      "SHL-13", // P-09-T19: the dock on AUD-02's run artboards
+      "WB-09", // P-09-T19: the run trace drawer
       "EBP-01", // A-05-T50
       "EBP-03",
       "EBP-04",

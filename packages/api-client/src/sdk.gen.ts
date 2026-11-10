@@ -454,7 +454,10 @@ export const auditArchiveIndex = <ThrowOnError extends boolean = false>(options:
 /**
  * Audit Archive Lock Route
  *
- * G9: the lock decision and ArchiveLockWorkflow (seal, COMPLIANCE manifest; A-07-T37).
+ * G9: the lock decision and ArchiveLockWorkflow (seal, COMPLIANCE manifest; A-07-T37). A
+ * manager or the EP with a fresh MFA, at 9 of 9 (409 `checklist_incomplete`), on the checklist
+ * they saw (409 `checklist_changed`); once (409 `archive_locked`). A replay with the key answers
+ * the same run.
  */
 export const auditArchiveLock = <ThrowOnError extends boolean = false>(options: Options<AuditArchiveLockData, ThrowOnError>): RequestResult<AuditArchiveLockResponses, AuditArchiveLockErrors, ThrowOnError> => (options.client ?? client).post<AuditArchiveLockResponses, AuditArchiveLockErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -468,6 +471,9 @@ export const auditArchiveLock = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Audit Archive Manifest Route
+ *
+ * The locked archive's manifest facts (A-07-T37): counts, the checkpoint, the roots and both
+ * retain-until dates; 404 before the seal.
  */
 export const auditArchiveManifest = <ThrowOnError extends boolean = false>(options: Options<AuditArchiveManifestData, ThrowOnError>): RequestResult<AuditArchiveManifestResponses, AuditArchiveManifestErrors, ThrowOnError> => (options.client ?? client).get<AuditArchiveManifestResponses, AuditArchiveManifestErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1209,6 +1215,8 @@ export const estimateConclusion = <ThrowOnError extends boolean = false>(options
 
 /**
  * Audit Filings Route
+ *
+ * AUD-24 f: the Form 5500 tracker (A-07-T36); an EBP audit's row opens at the release.
  */
 export const auditFilings = <ThrowOnError extends boolean = false>(options: Options<AuditFilingsData, ThrowOnError>): RequestResult<AuditFilingsResponses, AuditFilingsErrors, ThrowOnError> => (options.client ?? client).get<AuditFilingsResponses, AuditFilingsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1219,7 +1227,8 @@ export const auditFilings = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Audit Filing Route
  *
- * Manual EFAST2 tracking (A-07-T36); Accrued never files.
+ * Manual EFAST2 tracking (A-07-T36); Accrued never files. 422 `filing_evidence_required`,
+ * 409 `stale_version`.
  */
 export const auditFiling = <ThrowOnError extends boolean = false>(options: Options<AuditFilingData, ThrowOnError>): RequestResult<AuditFilingResponses, AuditFilingErrors, ThrowOnError> => (options.client ?? client).patch<AuditFilingResponses, AuditFilingErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2685,7 +2694,7 @@ export const clientRelationships = <ThrowOnError extends boolean = false>(option
 /**
  * List Comment Threads Route
  *
- * Threads and comments for one anchor (internal threads never to a client principal).
+ * Threads and comments for one anchor; `counts` holds Open and Resolved (SHL-18d).
  */
 export const listCommentThreads = <ThrowOnError extends boolean = false>(options: Options<ListCommentThreadsData, ThrowOnError>): RequestResult<ListCommentThreadsResponses, ListCommentThreadsErrors, ThrowOnError> => (options.client ?? client).get<ListCommentThreadsResponses, ListCommentThreadsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2711,6 +2720,8 @@ export const openThread = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Thread Counts Route
+ *
+ * The C-27 chips for up to 200 anchors.
  */
 export const threadCounts = <ThrowOnError extends boolean = false>(options: Options<ThreadCountsData, ThrowOnError>): RequestResult<ThreadCountsResponses, ThreadCountsErrors, ThrowOnError> => (options.client ?? client).post<ThreadCountsResponses, ThreadCountsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3759,6 +3770,8 @@ export const setAiExclusion = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Assignee Candidates Route
+ *
+ * SHL-17b: the people on the engagement (AC-17); never the agent.
  */
 export const assigneeCandidates = <ThrowOnError extends boolean = false>(options: Options<AssigneeCandidatesData, ThrowOnError>): RequestResult<AssigneeCandidatesResponses, AssigneeCandidatesErrors, ThrowOnError> => (options.client ?? client).get<AssigneeCandidatesResponses, AssigneeCandidatesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -4130,7 +4143,7 @@ export const revoke = <ThrowOnError extends boolean = false>(options: Options<Re
  * Start Route
  *
  * SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting. A-02-T33: the
- * state keeps this request's `Host` (after `TrustedHosts`), never anything in the query.
+ * state keeps this request's viewer host (`TrustedHosts`, DEC-3990), never the query's.
  */
 export const start = <ThrowOnError extends boolean = false>(options: Options<StartData, ThrowOnError>): RequestResult<StartResponses, StartErrors, ThrowOnError> => (options.client ?? client).post<StartResponses, StartErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5299,6 +5312,8 @@ export const materialityVersions = <ThrowOnError extends boolean = false>(option
 
 /**
  * Thread Mention Candidates Route
+ *
+ * SHL-18b/b2: the team entry and its members; non-members greyed for a search (AC-6).
  */
 export const threadMentionCandidates = <ThrowOnError extends boolean = false>(options: Options<ThreadMentionCandidatesData, ThrowOnError>): RequestResult<ThreadMentionCandidatesResponses, ThreadMentionCandidatesErrors, ThrowOnError> => (options.client ?? client).get<ThreadMentionCandidatesResponses, ThreadMentionCandidatesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -12661,7 +12676,7 @@ export const listEntityConnections = <ThrowOnError extends boolean = false>(opti
  * POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422
  * `authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,
  * `connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.
- * A-02-T33: the state keeps this request's `Host` (after `TrustedHosts`), never the query's.
+ * A-02-T33: the state keeps the request's viewer host (DEC-3990), never the query's.
  */
 export const startConnection = <ThrowOnError extends boolean = false>(options: Options<StartConnectionData, ThrowOnError>): RequestResult<StartConnectionResponses, StartConnectionErrors, ThrowOnError> => (options.client ?? client).post<StartConnectionResponses, StartConnectionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15174,6 +15189,8 @@ export const residencyProposal = <ThrowOnError extends boolean = false>(options:
 
 /**
  * Review Tree Route
+ *
+ * The documents at a level, "Review n" (T-04-T17).
  */
 export const reviewTree = <ThrowOnError extends boolean = false>(options: Options<ReviewTreeData, ThrowOnError>): RequestResult<ReviewTreeResponses, ReviewTreeErrors, ThrowOnError> => (options.client ?? client).get<ReviewTreeResponses, ReviewTreeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15192,6 +15209,8 @@ export const stateAllocation = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Worksheets Route
+ *
+ * TAX-05's tree (T-04-T16).
  */
 export const worksheets = <ThrowOnError extends boolean = false>(options: Options<WorksheetsData, ThrowOnError>): RequestResult<WorksheetsResponses, WorksheetsErrors, ThrowOnError> => (options.client ?? client).get<WorksheetsResponses, WorksheetsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15201,6 +15220,8 @@ export const worksheets = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Workspace Route
+ *
+ * TAX-04's tab counts at the viewer's level (T-04-T17).
  */
 export const workspace = <ThrowOnError extends boolean = false>(options: Options<WorkspaceData, ThrowOnError>): RequestResult<WorkspaceResponses, WorkspaceErrors, ThrowOnError> => (options.client ?? client).get<WorkspaceResponses, WorkspaceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15210,6 +15231,8 @@ export const workspace = <ThrowOnError extends boolean = false>(options: Options
 
 /**
  * Worksheet Fields Route
+ *
+ * TAX-05's fields with their provenance (T-04-T16); edits go through `PUT /v1/fields/…`.
  */
 export const worksheetFields = <ThrowOnError extends boolean = false>(options: Options<WorksheetFieldsData, ThrowOnError>): RequestResult<WorksheetFieldsResponses, WorksheetFieldsErrors, ThrowOnError> => (options.client ?? client).get<WorksheetFieldsResponses, WorksheetFieldsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15231,7 +15254,8 @@ export const browserError = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * Redact Thread Comment Route
  *
- * Firm admin with a fresh MFA (matrix); 409 `already_redacted`.
+ * Firm admin with a fresh MFA (matrix); 409 `already_redacted`. A retry with the key after a
+ * redaction answers 409 too: the comment is redacted either way.
  */
 export const redactThreadComment = <ThrowOnError extends boolean = false>(options: Options<RedactThreadCommentData, ThrowOnError>): RequestResult<RedactThreadCommentResponses, RedactThreadCommentErrors, ThrowOnError> => (options.client ?? client).post<RedactThreadCommentResponses, RedactThreadCommentErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15246,7 +15270,8 @@ export const redactThreadComment = <ThrowOnError extends boolean = false>(option
 /**
  * List Todos Route
  *
- * My to-dos (`assignee=me`) or the to-dos on one anchor.
+ * My to-dos (`assignee=me`, with the bands in `counts`) or the to-dos on one anchor. A
+ * person's to-dos are few (no cursor yet; `limit` caps the page).
  */
 export const listTodos = <ThrowOnError extends boolean = false>(options?: Options<ListTodosData, ThrowOnError>): RequestResult<ListTodosResponses, ListTodosErrors, ThrowOnError> => (options?.client ?? client).get<ListTodosResponses, ListTodosErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15271,6 +15296,8 @@ export const createTodo = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Todo Counts Route
+ *
+ * The "n To-do" chips for up to 200 anchors.
  */
 export const todoCounts = <ThrowOnError extends boolean = false>(options: Options<TodoCountsData, ThrowOnError>): RequestResult<TodoCountsResponses, TodoCountsErrors, ThrowOnError> => (options.client ?? client).post<TodoCountsResponses, TodoCountsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
