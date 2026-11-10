@@ -32,3 +32,10 @@ why it stays report-only, and axe stays clean.
   report-only with the figure; a, c, e lock if they measure under 3 %.
 - Partial: b and g are not fixed (the Source Documents order is DEC-341's decision and the
   OverviewCard is shared); AUD-03 f's 3.18 % has no traced cause yet.
+- 2026-11-10 (measured, S34 partials pass): `pnpm parity:screens` on main 799a6e5bc, baselines
+  cropped from the handoff (2026-10-21), the dock unmasked. AUD-02 a 4.50, b 3.13, c 3.96, d 2.39,
+  e 4.49, f 6.01, g 3.14; AUD-03 a 2.91, b 2.91, c 2.81, d 7.51, e 2.92, f 3.18, g 2.93. d stays
+  locked; a, c, e stay report-only with their measured figures as the deviation (manifest and
+  AUD-02's DV-13 and Parity table). AUD-03 locks (a, b, c, e, g) hold. Closed as far as it goes:
+  a, c, e need the live dock transcript to match the handoff's static one (and DEC-341's order),
+  which is screen work, not a lock.

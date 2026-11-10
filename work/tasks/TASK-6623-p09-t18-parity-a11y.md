@@ -50,3 +50,11 @@ and the keyboard and reduced-motion suites pass.
     journeys (P-09-T19) cover close-and-return from the AUD-02 host.
   - Docks 3 and 4 both read run #4127 at 9:41 (the fixture has one running run); 4's scroll
     position (the decision card) differs from the board, report-only.
+- 2026-11-10 (measured, S34 partials pass): visual project on main 799a6e5bc with baselines cropped
+  from the handoff. Tier D 13/13 (eight docks, the user bubble, WB-09 a–d). Tier C: SHL-13·F
+  (`shl-13.window`) 5.01 %, docks 1–8 2.17 / 5.99 / 6.49 / 6.20 / 5.41 / 6.74 / 3.32 / 3.39.
+  WB-09 is not measurable: the gallery draws the drawer pinned 10 px inside the 1440 × 900 viewport
+  (480 × 880) and the handoff draws it inside the 1400 × 860 window over WB-01 (480 × 840), so every
+  WB-09 shot is a size mismatch. Per the A-01-T33 rule, `shl-13.window` and `wb-09{a,b,c}.window`
+  drop `locked` and carry the measured figure or the reason as their deviation. Follow-up: a WB-09
+  gallery frame that draws the WB-01 window behind the drawer, then re-measure and lock a, b, c.
