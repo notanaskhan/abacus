@@ -21,10 +21,11 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
@@ -34,6 +35,9 @@ from abacus.modules.engagements.api import (
     client_approval_kinds,
     client_approval_provider,
 )
+
+if TYPE_CHECKING:
+    from abacus.modules.reporting.api import Requester
 
 KIND: Final = "client_entries_journal"
 OWNER: Final = "client_approval_item"
@@ -151,38 +155,57 @@ async def journal(
     owner = c11.OwnerRef(OWNER, item.item_id)
     requester = c11.Requester("human", user_id=requested_by)
     document_id = await c11.document_of_owner(tenant, owner, KIND)
-    if document_id is not None:
-        async with tenant_session(tenant) as session:
-            latest = (await session.execute(_LATEST, {"d": document_id})).first()
-        if latest is not None:
-            outcome = await c11.render_outcome(tenant, document_id, int(latest.version_no))
-            if outcome.status == "succeeded" and outcome.evidence_version_id is not None:
-                return JournalReady(outcome.evidence_version_id)
-            if outcome.status != "failed" and latest.job_id is not None:
-                return JournalPending(latest.job_id)
-        async with uow(tenant) as tx:
-            ticket = await c11.regenerate(tx, document_id, requester)
-    else:
-        async with uow(tenant) as tx:
-            ticket = await c11.render(
-                tx,
-                c11.RenderRequest(
-                    kind=KIND,
-                    owner_ref=owner,
-                    scope=c11.RenderScope(
-                        client_id=client_id,
-                        engagement_id=engagement_id,
-                        work_item_id=work_item_id,
+    if document_id is None:
+        try:
+            async with uow(tenant) as tx:
+                ticket = await c11.render(
+                    tx,
+                    c11.RenderRequest(
+                        kind=KIND,
+                        owner_ref=owner,
+                        scope=c11.RenderScope(
+                            client_id=client_id,
+                            engagement_id=engagement_id,
+                            work_item_id=work_item_id,
+                        ),
+                        template_version_id=None,
+                        requested_by=requester,
+                        formats=("pdf",),
                     ),
-                    template_version_id=None,
-                    requested_by=requester,
-                    formats=("pdf",),
-                ),
-            )
+                )
+        except IntegrityError:
+            # End-pass review: a concurrent first request made the item's one document (0430's
+            # unique owner and kind); answer that render instead of a 500.
+            document_id = await c11.document_of_owner(tenant, owner, KIND)
+            if document_id is None:
+                raise
+            return await _existing(tenant, document_id, requester)
+        return await _pending(tenant, ticket.generated_document_id, ticket.version_no)
+    return await _existing(tenant, document_id, requester)
+
+
+async def _existing(
+    tenant: TenantContext, document_id: UUID, requester: Requester
+) -> JournalPending | JournalReady:
+    """The item's document: filed, still rendering, or (after a failure) rendered again."""
+    from abacus.modules.reporting import api as c11
+
     async with tenant_session(tenant) as session:
-        job = await session.scalar(
-            _JOB, {"d": ticket.generated_document_id, "n": ticket.version_no}
-        )
+        latest = (await session.execute(_LATEST, {"d": document_id})).first()
+    if latest is not None:
+        outcome = await c11.render_outcome(tenant, document_id, int(latest.version_no))
+        if outcome.status == "succeeded" and outcome.evidence_version_id is not None:
+            return JournalReady(outcome.evidence_version_id)
+        if outcome.status != "failed" and latest.job_id is not None:
+            return JournalPending(latest.job_id)
+    async with uow(tenant) as tx:
+        ticket = await c11.regenerate(tx, document_id, requester)
+    return await _pending(tenant, ticket.generated_document_id, ticket.version_no)
+
+
+async def _pending(tenant: TenantContext, document_id: UUID, version_no: int) -> JournalPending:
+    async with tenant_session(tenant) as session:
+        job = await session.scalar(_JOB, {"d": document_id, "n": version_no})
     if job is None:
         raise NotFound("render_job")
     return JournalPending(job)

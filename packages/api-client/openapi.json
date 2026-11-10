@@ -239115,7 +239115,7 @@
     },
     "/v1/portal/approvals/{kind}/{item_id}/journal": {
       "get": {
-        "description": "\"Download entries\" (R-02-T14 remainder, DEC-3147): 202 `{render_job_id}` while the\ndeterministic journal renders (C11); once filed, 302 to the journal's bytes on this API\n(ADR-104: never an object key or a presigned URL). The person is admitted as POR-08's\ndetail admits them.",
+        "description": "\"Download entries\" (R-02-T14 remainder, DEC-3172): 202 `{render_job_id}` while the\ndeterministic journal renders (C11); once filed, 302 to the journal's bytes on this API\n(ADR-104: never an object key or a presigned URL). The person is admitted as POR-08's\ndetail admits them.",
         "operationId": "entries_journal",
         "parameters": [
           {

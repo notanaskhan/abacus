@@ -581,6 +581,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/portal/approvals", "client_approval.read"),
     ("GET", "/v1/portal/approvals/{kind}/{item_id}", "client_approval.read"),
     ("GET", "/v1/portal/approvals/{kind}/{item_id}/journal", "client_approval.read"),
+    ("GET", "/v1/portal/approvals/{kind}/{item_id}/journal/file", "client_approval.read"),
     ("GET", "/v1/portal/approvals/{kind}/{item_id}/questions", "client_approval.ask"),
     ("GET", "/v1/portal/binders", "portal_documents.read"),
     ("GET", "/v1/portal/binders/{binder_id}", "portal_documents.read"),
