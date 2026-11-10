@@ -12,6 +12,13 @@ AI opt-in and the agents' stages, the provider terms register, the write-capabil
 `deploy/windows.yaml`, the flag calendar, the runbooks' rehearsal dates and the on-call file.
 
     python -m abacus_tools.go_live --firm <tenant_id> --level shadow [--at <ISO instant>]
+    python -m abacus_tools.go_live --firm <tenant_id> --level shadow --rehearse-real
+
+`--rehearse-real` (DEC-4100) runs the check on the synthetic test pilot firm as if it were real:
+`tenant.real` passes, read as "synthetic (<code>): rehearsed as real", and the report is stamped
+`rehearsal: true`. It is refused for any firm `deploy/windows.yaml` does not list as synthetic,
+so a real firm's check is never a rehearsal, and only `go_live_dossier check --ready --rehearsal`
+accepts its stamp.
 """
 
 from __future__ import annotations
@@ -104,7 +111,19 @@ def walls_item(f: Facts) -> Item:
     )
 
 
-def shadow_items(f: Facts, at: datetime, cal: release_windows.Calendar) -> list[Item]:
+def real_item(f: Facts, *, rehearse_real: bool = False) -> Item:
+    """`tenant.real`: a real firm passes; a synthetic one fails, unless this run rehearses the
+    synthetic test firm as real (DEC-4100), when it passes and says so in what it read."""
+    if f.synthetic and rehearse_real:
+        return Item(
+            "tenant.real", "Tenant", "pass", f"synthetic ({f.pilot_code}): rehearsed as real"
+        )
+    return _item(not f.synthetic, "tenant.real", "Tenant", "synthetic" if f.synthetic else "real")
+
+
+def shadow_items(
+    f: Facts, at: datetime, cal: release_windows.Calendar, *, rehearse_real: bool = False
+) -> list[Item]:
     """Q-04 AC-6.1: the items every level carries."""
     today = release_windows.local_day(at)
     stages = dict(f.agent_stages)
@@ -118,7 +137,7 @@ def shadow_items(f: Facts, at: datetime, cal: release_windows.Calendar) -> list[
             "Tenant",
             "provisioned" if f.provisioned else "not provisioned",
         ),
-        _item(not f.synthetic, "tenant.real", "Tenant", "synthetic" if f.synthetic else "real"),
+        real_item(f, rehearse_real=rehearse_real),
         _item(
             f.pilot_code is not None,
             "windows.entry",
@@ -330,10 +349,17 @@ def season_items(f: Facts, at: datetime, cal: release_windows.Calendar) -> list[
 
 
 def evaluate(
-    level: Level, facts: Facts, at: datetime, cal: release_windows.Calendar
+    level: Level,
+    facts: Facts,
+    at: datetime,
+    cal: release_windows.Calendar,
+    *,
+    rehearse_real: bool = False,
 ) -> list[Item]:
     """Every item for `level`: shadow's, plus the level's own (Q-04 AC-6.1 to AC-6.4)."""
-    items = shadow_items(facts, at, cal)
+    if rehearse_real and not facts.synthetic:
+        raise ValueError("--rehearse-real is for a synthetic firm only (DEC-4100)")
+    items = shadow_items(facts, at, cal, rehearse_real=rehearse_real)
     if level == "client_facing":
         items += client_facing_items(facts, at)
     elif level == "tax":
@@ -343,9 +369,16 @@ def evaluate(
     return items
 
 
-def report(level: Level, facts: Facts, at: datetime, items: Sequence[Item]) -> dict[str, object]:
+def report(
+    level: Level,
+    facts: Facts,
+    at: datetime,
+    items: Sequence[Item],
+    *,
+    rehearsal: bool = False,
+) -> dict[str, object]:
     failed = [i.id for i in items if i.status == "fail"]
-    return {
+    out: dict[str, object] = {
         "tenant_id": str(facts.tenant_id),
         "pilot_code": facts.pilot_code,
         "level": level,
@@ -354,6 +387,9 @@ def report(level: Level, facts: Facts, at: datetime, items: Sequence[Item]) -> d
         "failed": failed,
         "items": [asdict(i) for i in items],
     }
+    if rehearsal:
+        out["rehearsal"] = True  # DEC-4100: never a real firm's evidence
+    return out
 
 
 # --- reading the facts ---------------------------------------------------------------------------
@@ -444,6 +480,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--firm", type=UUID, required=True)
     parser.add_argument("--level", choices=LEVELS, required=True)
     parser.add_argument("--at", default=None, help="ISO 8601 with an offset; now by default")
+    parser.add_argument(
+        "--rehearse-real",
+        action="store_true",
+        help="the synthetic test firm rehearsed as real (DEC-4100); refused for any other firm",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
     at = system_now() if args.at is None else datetime.fromisoformat(cast(str, args.at))
     if at.tzinfo is None:
@@ -469,10 +510,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         finally:
             await dispose_engine()
 
+    rehearse = bool(args.rehearse_real)
+    if rehearse:
+        listed = cal.firm(cast(UUID, args.firm))
+        if listed is None or not listed.synthetic:
+            print(
+                "--rehearse-real: the firm is not a synthetic firm in deploy/windows.yaml",
+                file=sys.stderr,
+            )
+            return 2
     facts = asyncio.run(run())
     level = cast(Level, args.level)
-    items = evaluate(level, facts, at, cal)
-    out = report(level, facts, at, items)
+    try:
+        items = evaluate(level, facts, at, cal, rehearse_real=rehearse)
+    except ValueError as refused:
+        print(str(refused), file=sys.stderr)
+        return 2
+    out = report(level, facts, at, items, rehearsal=rehearse)
     print(json.dumps(out, indent=2, sort_keys=True))
     return 0 if out["passed"] else 1
 
