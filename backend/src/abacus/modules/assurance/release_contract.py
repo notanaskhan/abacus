@@ -1391,7 +1391,7 @@ async def _archive_out(ctx: AuthContext, work_item_id: UUID) -> AuditArchiveStat
         locked_at=None if archive is None else archive.locked_at,
         locked_by_name=locked_by,
         seal_sha256=None if archive is None else archive.seal_sha256,
-        additions=[],
+        additions=await _additions_out(ctx, work_item_id) if archive is not None else [],
         allowed_actions=actions,
     )
 
@@ -1523,7 +1523,42 @@ async def audit_archive_manifest_route(work_item_id: UUID, ctx: Ctx) -> ArchiveM
 )
 async def audit_archive_additions_route(work_item_id: UUID, ctx: Ctx) -> ArchiveAdditionsOut:
     await _gate(ctx, work_item_id, "archive.read")
-    _not_yet()
+    return ArchiveAdditionsOut(items=await _additions_out(ctx, work_item_id))
+
+
+async def _additions_out(ctx: AuthContext, work_item_id: UUID) -> list[ArchiveAdditionOut]:
+    from abacus.modules.assurance import archive_additions as aa
+
+    rows = await aa.additions_of(ctx.tenant, work_item_id)
+    names = await aa.names_for(rows)
+    return [_addition_out(r, names) for r in rows]
+
+
+def _addition_out(row: object, names: dict[UUID, str]) -> ArchiveAdditionOut:
+    from abacus.modules.assurance.archive_additions import AdditionRow
+
+    r = cast(AdditionRow, row)
+    return ArchiveAdditionOut(
+        id=r.id,
+        description=r.description,
+        reason_code=cast(AdditionReason, r.reason_code),
+        evidence_version_id=r.evidence_version_id,
+        content_sha256=r.content_sha256,
+        added_by_name=names.get(r.added_by, ""),
+        added_at=cast(datetime, r.added_at),
+        decision=cast(Literal["pending", "approved", "rejected"], r.decision or "pending"),
+        decided_by_name=names.get(r.decided_by) if r.decided_by else None,
+        decided_at=cast(datetime | None, r.decided_at),
+    )
+
+
+async def _addition(ctx: AuthContext, work_item_id: UUID, addition_id: UUID) -> ArchiveAdditionOut:
+    from abacus.modules.assurance import archive_additions as aa
+
+    rows = [r for r in await aa.additions_of(ctx.tenant, work_item_id) if r.id == addition_id]
+    if not rows:
+        raise NotFound("archive_addition")
+    return _addition_out(rows[0], await aa.names_for(rows))
 
 
 @router.post(
@@ -1537,8 +1572,18 @@ async def audit_archive_addition_route(
     work_item_id: UUID, body: ArchiveAdditionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ArchiveAdditionOut:
     """ "Add after lock…" (pending until the EP decides; A-07-T42)."""
+    from abacus.modules.assurance import archive_additions as aa
+
+    del idempotency_key  # the kernel's Idempotency-Key middleware replays a repeated create
     await _gate(ctx, work_item_id, "archive_addition.create")
-    _not_yet()
+    addition_id = await aa.create_addition(
+        ctx,
+        work_item_id,
+        description=body.description,
+        reason_code=body.reason_code,
+        evidence_version_id=body.evidence_version_id,
+    )
+    return await _addition(ctx, work_item_id, addition_id)
 
 
 @router.post(
@@ -1551,8 +1596,12 @@ async def audit_archive_addition_approve_route(
     work_item_id: UUID, addition_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ArchiveAdditionOut:
     """The EP approves with fresh MFA under the `archive_addition` exception kind."""
+    from abacus.modules.assurance import archive_additions as aa
+
+    del idempotency_key  # a second approval answers 409 addition_already_decided
     await _gate(ctx, work_item_id, "archive_addition.approve")
-    _not_yet()
+    await aa.decide_addition(ctx, work_item_id, addition_id, approve=True)
+    return await _addition(ctx, work_item_id, addition_id)
 
 
 @router.post(
@@ -1564,8 +1613,11 @@ async def audit_archive_addition_approve_route(
 async def audit_archive_addition_reject_route(
     work_item_id: UUID, addition_id: UUID, body: ArchiveAdditionRejectIn, ctx: Ctx
 ) -> ArchiveAdditionOut:
+    from abacus.modules.assurance import archive_additions as aa
+
     await _gate(ctx, work_item_id, "archive_addition.approve")
-    _not_yet()
+    await aa.decide_addition(ctx, work_item_id, addition_id, approve=False, reason=body.reason)
+    return await _addition(ctx, work_item_id, addition_id)
 
 
 @router.post(
@@ -1579,5 +1631,9 @@ async def audit_archive_verify_route(
     work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
     """SealVerifyWorkflow: "Seal verified" or `seal_mismatch` with an RB-29 alert."""
+    from abacus.modules.assurance import archive_additions as aa
+
+    del idempotency_key  # each request is its own verification run
     await _gate(ctx, work_item_id, "archive.verify")
-    _not_yet()
+    run = await aa.start_verify(ctx, work_item_id)
+    return ReleaseRunAcceptedOut(run_id=run, status_url=f"/v1/audits/{work_item_id}/archive")

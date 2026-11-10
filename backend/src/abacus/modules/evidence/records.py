@@ -32,9 +32,12 @@ from abacus.kernel.uow.chain import latest_checkpoint
 if TYPE_CHECKING:
     from types_boto3_s3 import S3Client
 
-RecordClass = Literal["chain_anchor", "seal_manifest", "consent_evidence", "signature_evidence"]
+RecordClass = Literal[
+    "chain_anchor", "seal_manifest", "consent_evidence", "signature_evidence", "addition_manifest"
+]
 RECORD_CLASSES: Final = frozenset(
     {"chain_anchor", "seal_manifest", "consent_evidence", "signature_evidence"}
+    | {"addition_manifest"}  # A-07-T42: a post-lock addition's appended manifest
 )
 _RACE: Final = ("PreconditionFailed", "ConditionalRequestConflict")
 

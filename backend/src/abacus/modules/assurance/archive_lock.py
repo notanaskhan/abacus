@@ -232,25 +232,14 @@ def _end_of(day: date) -> datetime:
     return datetime.combine(day, time(23, 59, 59), tzinfo=clock.FIRM_ZONE)
 
 
-@activity.defn(name="assurance.archive_lock.seal")
-async def seal_activity(tenant_id: str, work_item_id: str, archive_id: str) -> SealResult:
-    """The snapshot, the manifest row (version 1) and the COMPLIANCE records object."""
-    from abacus.kernel.uow.chain import latest_checkpoint
+async def seal_leaves(tenant: TenantContext, engagement_id: UUID) -> list[Leaf]:
+    """The seal's leaves from the database (A-07-T37; A-07-T42's verification rebuilds them the
+    same way): every evidence version, every reviewable row's content hash, every packaged agent
+    run record."""
     from abacus.modules.agents.api import run_record_hashes
-    from abacus.modules.evidence.api import engagement_version_leaves, put_record
+    from abacus.modules.evidence.api import engagement_version_leaves
     from abacus.modules.review.api import reviewables_of
 
-    tenant = _tenant(tenant_id, work_item_id)
-    row = await _archive_row(tenant, UUID(archive_id))
-    status = str(row.status)
-    if status == "locked":
-        return SealResult("", str(row.seal_sha256), True)
-    engagement_id = row.engagement_id
-    release_date = row.release_date
-    retention_until = row.retention_until
-    found = await _manifest_of(tenant, UUID(archive_id))
-    if found is not None:
-        return SealResult(str(found[0]), found[1], False)  # a resumed run: sealed already
     leaves = [
         Leaf("evidence_version", str(v), sha)
         for v, sha, _, _ in await engagement_version_leaves(tenant, engagement_id)
@@ -263,6 +252,27 @@ async def seal_activity(tenant_id: str, work_item_id: str, archive_id: str) -> S
         Leaf("run_record", str(run), sha)
         for run, sha in await run_record_hashes(tenant, engagement_id)
     ]
+    return leaves
+
+
+@activity.defn(name="assurance.archive_lock.seal")
+async def seal_activity(tenant_id: str, work_item_id: str, archive_id: str) -> SealResult:
+    """The snapshot, the manifest row (version 1) and the COMPLIANCE records object."""
+    from abacus.kernel.uow.chain import latest_checkpoint
+    from abacus.modules.evidence.api import put_record
+
+    tenant = _tenant(tenant_id, work_item_id)
+    row = await _archive_row(tenant, UUID(archive_id))
+    status = str(row.status)
+    if status == "locked":
+        return SealResult("", str(row.seal_sha256), True)
+    engagement_id = row.engagement_id
+    release_date = row.release_date
+    retention_until = row.retention_until
+    found = await _manifest_of(tenant, UUID(archive_id))
+    if found is not None:
+        return SealResult(str(found[0]), found[1], False)  # a resumed run: sealed already
+    leaves = await seal_leaves(tenant, engagement_id)
     checkpoint = await latest_checkpoint(tenant.tenant_id)
     compliance_until = five_year_floor(release_date)
     manifest = build(

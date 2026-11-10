@@ -12,6 +12,12 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-10 (S35): A-07-T42 post-lock additions and seal verification
+        "archive.addition_logged",
+        "archive.seal_mismatch",
+        "archive.seal_verified",
+        "archive_addition.created",
+        "archive_addition.decided",
         # reviewed 2026-11-10 (S35): P-10-T32 AgentRunWorkflow part 2's waits, retries and stop
         "agent_run.decision_raised",
         "agent_run.question_opened",

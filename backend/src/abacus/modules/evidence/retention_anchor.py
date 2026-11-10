@@ -48,6 +48,15 @@ async def engagement_version_leaves(
     return [(r.id, r.fingerprint, r.storage_key, r.storage_version_id) for r in rows]
 
 
+async def version_fingerprint(tenant: TenantContext, version_id: UUID) -> str | None:
+    """A-07-T42: one evidence version's SHA-256 fingerprint (an archive addition names it)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT fingerprint FROM evidence_versions WHERE id = :v"), {"v": version_id}
+        )
+    return str(found) if found is not None else None
+
+
 async def extend_versions_until(
     tenant: TenantContext, objects: list[tuple[str, str]], until: datetime
 ) -> int:

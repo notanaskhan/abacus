@@ -34,6 +34,10 @@ from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBSCRIPTIONS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
 from abacus.modules.assurance.agent_capabilities import register as register_agent_capabilities
+from abacus.modules.assurance.archive_additions import ACTIVITIES as ARCHIVE_VERIFY_ACTIVITIES
+from abacus.modules.assurance.archive_additions import SCHEDULES as ARCHIVE_VERIFY_SCHEDULES
+from abacus.modules.assurance.archive_additions import WORKFLOWS as ARCHIVE_VERIFY_WORKFLOWS
+from abacus.modules.assurance.archive_additions import seal_matches
 from abacus.modules.assurance.archive_gate import SUBSCRIPTIONS as ARCHIVE_SUBSCRIPTIONS
 from abacus.modules.assurance.archive_lock import ACTIVITIES as ARCHIVE_LOCK_ACTIVITIES
 from abacus.modules.assurance.archive_lock import WORKFLOWS as ARCHIVE_LOCK_WORKFLOWS
@@ -345,6 +349,7 @@ WORKFLOWS: dict[type, str] = (
     | dict(READINESS_WORKFLOWS)
     | dict(POST_RELEASE_WORKFLOWS)  # A-07-T36
     | dict(ARCHIVE_LOCK_WORKFLOWS)  # A-07-T37: the seal, on the batch class
+    | dict(ARCHIVE_VERIFY_WORKFLOWS)  # A-07-T42: seal verification, one and the monthly sweep
 )
 ACTIVITIES: tuple[object, ...] = (
     *FORM5500_ACTIVITIES,
@@ -353,7 +358,10 @@ ACTIVITIES: tuple[object, ...] = (
     *READINESS_ACTIVITIES,
     *POST_RELEASE_ACTIVITIES,  # A-07-T36
     *ARCHIVE_LOCK_ACTIVITIES,  # A-07-T37
+    *ARCHIVE_VERIFY_ACTIVITIES,  # A-07-T42
 )
+# A-07-T42: the monthly seal verification sweep (a mismatch raises RB-29).
+SCHEDULES = ARCHIVE_VERIFY_SCHEDULES
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
@@ -463,6 +471,8 @@ register_run_record(
 )
 
 __all__ = [
+    "SCHEDULES",
+    "seal_matches",
     "ACTIVITIES",
     "BRING_DOWN_ID_PREFIX",
     "PHASE_GATES",
