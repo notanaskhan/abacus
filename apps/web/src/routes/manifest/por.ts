@@ -59,6 +59,8 @@ export const porScreens = {
     status: "planned",
     path: null,
   },
+  // R-02-T21: a to f live on a tcwg grant's reduced shell; the portal entry mounts /governance.
+  // Planned with a null path for the reason POR-03 gives (DEC-347).
   "POR-15": {
     name: "Governance room · Northwind benefits committee",
     status: "planned",
