@@ -390,11 +390,14 @@ from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
 from abacus.modules.agents.proposal_store import (  # noqa: E402
     approved_rows as approved_proposal_rows,
 )
+from abacus.modules.agents.run_start import open_capability_run  # noqa: E402 -- T-04-T25
+from abacus.modules.agents.service import load_run_v2_context  # noqa: E402 -- T-04-T25
 from abacus.modules.agents.spec_v2 import (  # noqa: E402
     AgentSpecV2,
     ToolFacts,
     registry_problems,
     spec_problems,
+    spec_v2,  # T-04-T25: a capability's v2 spec (the drafter's tier, limits, routes)
 )
 
 __all__ = [
@@ -412,7 +415,6 @@ __all__ = [
     "SCREENER",
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
-    "has_never_verb",
     "WORKFLOWS",
     "ActiveRun",
     "AdoptedValue",
@@ -496,7 +498,6 @@ __all__ = [
     "Recommended",
     "RecordedRun",
     "RecordedStep",
-    "StepAdvance",
     "ReservedAction",
     "ReviewOutcome",
     "ReviewUnavailable",
@@ -524,6 +525,7 @@ __all__ = [
     "SourceCell",
     "SourcePaper",
     "StageNotReady",
+    "StepAdvance",
     "SuggestionApplier",
     "SuggestionChanged",
     "ThresholdEvaluation",
@@ -533,6 +535,7 @@ __all__ = [
     "UploadReviewWorkflow",
     "VerifiedCitation",
     "active_engagement_runs",
+    "advance_synthetic_step",
     "agent_badge_stream",
     "analyze_notice",
     "apply_proposal",
@@ -563,6 +566,7 @@ __all__ = [
     "fail_run",
     "finish_code_run",
     "graph_router",
+    "has_never_verb",
     "install_fake_responses",
     "install_fake_reviews",
     "knowledge_context",
@@ -570,16 +574,17 @@ __all__ = [
     "last_completed_run_at",
     "live_override",
     "load_agent_context",
+    "load_run_v2_context",
     "match",
     "match_intake",
     "notice_context",
+    "open_capability_run",
     "open_deterministic_run",
     "override_rate",
     "pending_suggestion",
     "pending_suggestions",
     "recommend",
     "record_code_run",
-    "advance_synthetic_step",
     "record_synthetic_run",
     "register_change_set_applier",
     "register_engagement_run_agent",
@@ -611,6 +616,7 @@ __all__ = [
     "shadow_score",
     "spec",
     "spec_problems",
+    "spec_v2",
     "stage_for",
     "start_agents",
     "start_screening",

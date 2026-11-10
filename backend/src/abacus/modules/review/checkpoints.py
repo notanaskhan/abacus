@@ -721,11 +721,13 @@ async def propose(
     proposal_id: UUID | None = None,
     run_id: UUID | None = None,
     engine_sync_event_id: UUID | None = None,
+    name: str | None = None,
 ) -> UUID:
     """Service-only (`checkpoint.propose`): the agent through its task scope, or the system for
     an engine import ("Import pending approval"). Never a decision: the checkpoint waits on a
     person (status `proposed`). A proposal's checkpoint is made after its proposal and names it
-    (`proposal_id`): deciding the proposal decides the checkpoint."""
+    (`proposal_id`): deciding the proposal decides the checkpoint. `name` is a fixed label the
+    caller's code gives (T-04-T25's "Initial draft"), never model text."""
     if not changes:
         raise CheckpointInvalid(facts={"reason": "no_changes"})
     facts, resource = await _target(ctx, target_type, target_id)
@@ -743,6 +745,7 @@ async def propose(
             cause=cause,
             status="proposed",
             content_hash=content_hash.removeprefix("sha256:"),
+            name=name,
             proposal_id=proposal_id,
             run_id=run_id,
             engine_sync_event_id=engine_sync_event_id,

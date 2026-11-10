@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import select, text
@@ -24,11 +25,14 @@ class ReadField:
     low_confidence: bool
     form_type: str
     tax_year: int | None
+    # T-04-T25: where the box is, for a `document_text` box citation the word layer re-reads.
+    page_no: int = 1
+    bbox: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
 
 
 _FIELDS = text(
     "SELECT DISTINCT ON (field_key) id, field_key, value_text, last4, confidence, low_confidence, "
-    "form_type, tax_year FROM extracted_fields WHERE evidence_version_id = :v "
+    "form_type, tax_year, page_no, bbox FROM extracted_fields WHERE evidence_version_id = :v "
     "ORDER BY field_key, created_at DESC"
 )
 _REFUSAL = text(
@@ -40,7 +44,14 @@ _REFUSAL = text(
 async def extracted_fields_of(tenant: TenantContext, version_id: UUID) -> tuple[ReadField, ...]:
     async with tenant_session(tenant) as session:
         rows = (await session.execute(_FIELDS, {"v": version_id})).all()
-    return tuple(ReadField(*row) for row in rows)
+    return tuple(
+        ReadField(
+            *row[:8],
+            int(row.page_no),
+            cast(tuple[float, float, float, float], tuple(float(b) for b in row.bbox)),
+        )
+        for row in rows
+    )
 
 
 async def ocr_refusal_of(tenant: TenantContext, version_id: UUID) -> str | None:
