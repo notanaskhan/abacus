@@ -19,6 +19,7 @@ from abacus.modules.platform.api import register_search_projection
 from abacus.modules.reporting.api import register_k1_rows
 from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
+from abacus.modules.tax import drafter_workflow as _drafter
 from abacus.modules.tax import extensions as _extensions
 from abacus.modules.tax import schedule_jobs as _schedule_jobs
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
@@ -152,8 +153,17 @@ SUBSCRIPTIONS = {
     **filed_delivery.SUBSCRIPTIONS,
 }
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
-WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS, **_schedule_jobs.WORKFLOWS}
-ACTIVITIES: tuple[object, ...] = (*k1_release.ACTIVITIES, *_schedule_jobs.ACTIVITIES)
+WORKFLOWS: dict[type, str] = {
+    **k1_release.WORKFLOWS,
+    **_schedule_jobs.WORKFLOWS,
+    **_drafter.WORKFLOWS,  # T-04-T25: ReturnDrafterWorkflow
+}
+ACTIVITIES: tuple[object, ...] = (
+    *k1_release.ACTIVITIES,
+    *_schedule_jobs.ACTIVITIES,
+    *_drafter.ACTIVITIES,
+)
+start_draft = _drafter.start_draft
 SCHEDULES = _schedule_jobs.SCHEDULES
 
 
@@ -238,6 +248,7 @@ __all__ = [
     "send_confirmation",
     "set_extended",
     "share_k1_internal",
+    "start_draft",
     "transcript_comparison_lines",
 ]
 

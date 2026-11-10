@@ -1,0 +1,40 @@
+# tax.return_drafter v1, mode draft (T-04-T25; T-04 §6; TASK-6723). The first workflow-shape v2
+# capability: ReturnDrafterWorkflow (`modules/tax/drafter_workflow.py`) runs code's box-to-field
+# mapper and asks the model only for TSJ and new-this-year notes; every read and the proposal go
+# through C17 under C19's §7216 gate. Source of truth: compiled into ../_specs_v2.py by
+# `python -m abacus_tools.codegen.agent_specs_v2`.
+id: tax.return_drafter
+version: 1
+purpose: Propose an individual return's initial draft from its documents' boxes, mapped by code, with each worksheet's TSJ and new-this-year notes, for the preparer to approve.
+shape: workflow
+prompt: tax.return_drafter@v1
+tier: medium
+escalation_tier: medium
+input_schema: ReturnDraftInput
+output_schema: ReturnDraftJudgment
+tools:
+  read: [tax.read_return, tax.list_documents, tax.read_worksheet]
+  propose: [tax.propose_field_changes]
+task_scope:
+  - tax_return.read
+  - return_worksheet.read
+  - proposal.create
+  - issue.create
+  - checkpoint.propose
+  - evidence.read
+limits:
+  max_output_tokens: 1200
+  max_cost_usd: "0.75"
+  max_steps: 30
+  max_seconds: 300
+  max_tool_calls: 30
+plan: required_when_writes
+autonomy: propose
+data_classes: [tri]
+untrusted_inputs: [document_text]
+evaluation_suite: evals/tax_return
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none
