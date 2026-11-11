@@ -2611,6 +2611,14 @@ export type ApprovalItemDetailOut = {
      */
     reason_code?: 'number_looks_wrong' | 'something_missing' | 'other' | null;
     /**
+     * Released At
+     */
+    released_at?: string | null;
+    /**
+     * Released By
+     */
+    released_by?: string | null;
+    /**
      * Seen Hash
      */
     seen_hash: string;
@@ -2666,6 +2674,14 @@ export type ApprovalItemOut = {
      * Reason Code
      */
     reason_code?: 'number_looks_wrong' | 'something_missing' | 'other' | null;
+    /**
+     * Released At
+     */
+    released_at?: string | null;
+    /**
+     * Released By
+     */
+    released_by?: string | null;
     /**
      * State
      */

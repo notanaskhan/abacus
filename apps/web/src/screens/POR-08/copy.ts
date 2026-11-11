@@ -23,6 +23,8 @@ export const COPY = {
   reviewRequired: "Review required",
   parts: (n: number) => `${String(n)} parts`,
   waitingSub: "waiting for your approval",
+  // R-02-T19 (POR-08 a): the handoff's "Released by Priya Raman, Brightwater Hale · Sep 14, 4:25 PM".
+  releasedBy: (who: string, firm: string, when: string) => `Released by ${who}, ${firm} · ${when}`,
   approveTitle: (title: string, client: string) =>
     client === "" ? `Approve the ${title}?` : `Approve the ${title} for ${client}?`,
   approvedBy: (who: string, when: string) => `Approved by ${who} · ${when}`,

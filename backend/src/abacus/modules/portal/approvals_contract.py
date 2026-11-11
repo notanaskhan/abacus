@@ -36,7 +36,7 @@ from abacus.modules.engagements.api import (
     DeclineReason,
     client_approval_provider,
 )
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member
+from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member, display_names
 from abacus.modules.portal import approvals as service
 
 # A portal person themself, never a break-glass support context.
@@ -100,6 +100,9 @@ class ApprovalItemOut(BaseModel):
     decided_at: Annotated[datetime | None, Internal] = None
     reason_code: Annotated[DeclineReason | None, Internal] = None
     question_sent_at: Annotated[datetime | None, Internal] = None
+    # R-02-T19 (POR-08 a): the "Released by" line, the firm person who sent it to the client.
+    released_by: Annotated[str | None, Confidential] = None
+    released_at: Annotated[datetime | None, Internal] = None
     allowed_actions: Annotated[list[ApprovalAction], Internal]
 
 
@@ -229,9 +232,20 @@ def _registered(kind: str) -> None:
     client_approval_provider(kind)
 
 
-def _out(shown: service.Shown) -> ApprovalItemOut:
+async def _released_names(items: list[ApprovalItem]) -> dict[UUID, str]:
+    ids = [i.released_by_user_id for i in items if i.released_by_user_id is not None]
+    return await display_names(ids) if ids else {}
+
+
+def _released_by(i: ApprovalItem, names: dict[UUID, str]) -> str | None:
+    return None if i.released_by_user_id is None else names.get(i.released_by_user_id)
+
+
+def _out(shown: service.Shown, names: dict[UUID, str]) -> ApprovalItemOut:
     i = shown.item
     return ApprovalItemOut(
+        released_by=_released_by(i, names),
+        released_at=i.released_at,
         kind=i.kind,
         id=i.item_id,
         title=i.title,
@@ -245,9 +259,13 @@ def _out(shown: service.Shown) -> ApprovalItemOut:
 
 
 def _detail(
-    i: ApprovalItem, actions: tuple[service.ApprovalAction, ...] = ("ask",)
+    i: ApprovalItem,
+    actions: tuple[service.ApprovalAction, ...] = ("ask",),
+    names: dict[UUID, str] | None = None,
 ) -> ApprovalItemDetailOut:
     return ApprovalItemDetailOut(
+        released_by=_released_by(i, names or {}),
+        released_at=i.released_at,
         kind=i.kind,
         id=i.item_id,
         title=i.title,
@@ -278,8 +296,9 @@ async def list_approvals_route(
     await _flag_on(ctx, PORTAL_APPROVALS)
     del context  # the period picker's contexts arrive with the close kinds (C-02)
     listing = await service.approvals(ctx, scope_id, filter)
+    names = await _released_names([s.item for s in listing.items])
     return ApprovalsOut(
-        items=[_out(s) for s in listing.items],
+        items=[_out(s, names) for s in listing.items],
         counts=ApprovalCountsOut(**listing.counts),
         contexts=[],
     )
@@ -369,7 +388,7 @@ async def get_approval_route(kind: KindParam, item_id: UUID, ctx: Member) -> App
     await _flag_on(ctx, PORTAL_APPROVALS)
     _registered(kind)
     shown = await service.approval(ctx, kind, item_id)
-    return _detail(shown.item, shown.actions)
+    return _detail(shown.item, shown.actions, await _released_names([shown.item]))
 
 
 @approvals_router.get(

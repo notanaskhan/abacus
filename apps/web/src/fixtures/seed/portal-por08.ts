@@ -117,6 +117,9 @@ function packageItem(state: Por08State): ApprovalItemOut {
     id: POR08_ID.package,
     kind: "fs_package",
     title: PACKAGE_TITLE,
+    // Sep 14, 4:25 PM CT (the handoff's Card A sub-line).
+    released_by: "Priya Raman",
+    released_at: "2026-09-14T21:25:00Z",
     allowed_actions: ["approve", "decline", "ask"],
   });
 }

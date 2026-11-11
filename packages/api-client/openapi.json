@@ -5607,6 +5607,31 @@
             "cls": "internal",
             "title": "Reason Code"
           },
+          "released_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Released At"
+          },
+          "released_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Released By"
+          },
           "seen_hash": {
             "cls": "internal",
             "maxLength": 128,
@@ -5757,6 +5782,31 @@
             ],
             "cls": "internal",
             "title": "Reason Code"
+          },
+          "released_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Released At"
+          },
+          "released_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Released By"
           },
           "state": {
             "cls": "internal",

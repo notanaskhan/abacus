@@ -80,6 +80,13 @@ describe("POR-08 approvals", () => {
     expect(screen.getByRole("button", { name: COPY.approve })).toBeTruthy();
   });
 
+  it("a: Card A names who released it and when (R-02-T19)", async () => {
+    at("a");
+    expect(
+      await screen.findByText("Released by Priya Raman, Brightwater Hale · Sep 14, 4:25 PM"),
+    ).toBeTruthy();
+  });
+
   it("a: the six posted entries are read-only, whole dollars, and the 14,900 one opens its lines", async () => {
     at("a");
     expect(await screen.findByText("Entries posted for August (6)")).toBeTruthy();

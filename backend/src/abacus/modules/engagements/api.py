@@ -51,6 +51,7 @@ from abacus.modules.engagements.client_approvals import (
     decider_for,
     deliver_proposed_entries,
     register_client_approval_kind,
+    user_of,
 )
 from abacus.modules.engagements.client_facts import client_engagements, engagements_section
 from abacus.modules.engagements.client_import_activities import (
@@ -644,6 +645,7 @@ __all__ = [
     "stored_file",
     "team_approval",
     "update_answers",
+    "user_of",
     "version_detail",
     "visible_among",
     "work_item_engagement",

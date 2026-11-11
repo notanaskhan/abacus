@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Sequence
+from datetime import datetime
 from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
@@ -44,12 +45,17 @@ from abacus.modules.engagements.api import (
     ClientApprovalState,
     ClientDecision,
     ClientDecisionContext,
+    user_of,
 )
 
 # A sent entry, waiting or decided, on a scope (its work item or its engagement).
 _SENT = (
     "SELECT e.id, e.engagement_id, e.work_item_id, e.ref, e.description, e.amount, e.status, "
-    "e.version, e.is_attest_client, e.misstatement_id FROM proposed_entries e "
+    "e.version, e.is_attest_client, e.misstatement_id, "
+    "(SELECT d.actor_id FROM proposed_entry_decisions d WHERE d.entry_id = e.id "
+    "AND d.decision = 'sent_to_client' ORDER BY d.created_at DESC LIMIT 1) AS released_by, "
+    "(SELECT max(d.created_at) FROM proposed_entry_decisions d WHERE d.entry_id = e.id "
+    "AND d.decision = 'sent_to_client') AS released_at FROM proposed_entries e "
     "WHERE EXISTS (SELECT 1 FROM proposed_entry_decisions d WHERE d.entry_id = e.id "
     "AND d.decision = 'sent_to_client') "
     "AND e.status IN ('approved', 'client_approved', 'client_declined')"
@@ -136,6 +142,8 @@ async def _items(tenant: TenantContext, rows: Sequence[Row]) -> list[ApprovalIte
                 scope_kind="work_item",
                 scope_id=cast(UUID, r["work_item_id"]),
                 sent_to_client=True,
+                released_by_user_id=user_of(r["released_by"]),
+                released_at=cast("datetime | None", r["released_at"]),
                 title=f"{ref} · {description}" if description else ref,
                 state=_STATE[str(r["status"])],
                 seen_hash=seen_hash(

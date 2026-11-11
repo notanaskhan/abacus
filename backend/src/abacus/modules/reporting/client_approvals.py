@@ -31,6 +31,7 @@ from abacus.modules.engagements.api import (
     ClientDecision,
     ClientDecisionContext,
     ItemChanged,
+    user_of,
 )
 from abacus.modules.reporting.statements import FsApprovedByManagement
 
@@ -40,7 +41,12 @@ _SENT = (
     "EXISTS (SELECT 1 FROM statement_approvals a WHERE a.statement_version_id = v.id "
     "AND a.event = 'approved_by_management') AS approved, "
     "(SELECT max(a.created_at) FROM statement_approvals a WHERE a.statement_version_id = v.id "
-    "AND a.event = 'approved_by_management') AS approved_at "
+    "AND a.event = 'approved_by_management') AS approved_at, "
+    "(SELECT s.actor_id FROM statement_approvals s WHERE s.statement_version_id = v.id "
+    "AND s.event = 'sent_for_approval' AND s.channel = 'portal' ORDER BY s.created_at DESC "
+    "LIMIT 1) AS released_by, "
+    "(SELECT max(s.created_at) FROM statement_approvals s WHERE s.statement_version_id = v.id "
+    "AND s.event = 'sent_for_approval' AND s.channel = 'portal') AS released_at "
     "FROM statement_versions v WHERE EXISTS (SELECT 1 FROM statement_approvals s "
     "WHERE s.statement_version_id = v.id AND s.event = 'sent_for_approval' "
     "AND s.channel = 'portal')"
@@ -70,6 +76,8 @@ def _item(r: RowMapping) -> ApprovalItem:
             cast(UUID, r["id"]), cast(int, r["version_no"]), str(r["content_hash"])
         ),
         decided_at=r["approved_at"],
+        released_by_user_id=user_of(r["released_by"]),
+        released_at=r["released_at"],
     )
 
 

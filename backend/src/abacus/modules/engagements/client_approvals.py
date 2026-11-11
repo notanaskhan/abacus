@@ -118,6 +118,14 @@ class ApprovalLine:
     credit: Decimal | None = None
 
 
+def user_of(actor_id: object) -> UUID | None:
+    """A send record's `actor_id` (the session's person, as text) as the user's id, or None."""
+    try:
+        return None if actor_id is None else UUID(str(actor_id))
+    except ValueError:
+        return None
+
+
 @dataclass(frozen=True)
 class ApprovalItem:
     """What a provider reports. `sent_to_client` false hides the item from the portal (AC-1)."""
@@ -138,6 +146,10 @@ class ApprovalItem:
     decided_by: str | None = None
     decided_at: datetime | None = None
     reason_code: DeclineReason | None = None
+    # R-02-T19 (POR-08 a): who in the firm released the item to the client, and when (the send
+    # record's person and time); the portal names them, the browser computes nothing.
+    released_by_user_id: UUID | None = None
+    released_at: datetime | None = None
 
 
 @dataclass(frozen=True)
