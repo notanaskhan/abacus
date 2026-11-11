@@ -6376,7 +6376,8 @@ export const engagementActivityQueryMutation = (options?: Partial<Options<Engage
 /**
  * Set Auto Mode Route
  *
- * Standing plan approval per engagement type (ADR-186); refused for real firms in season 1.
+ * Standing plan approval per engagement type (ADR-186); refused for real firms in season 1
+ * (T39, DEC-3404: 409 `auto_mode_not_available`).
  */
 export const setAutoModeMutation = (options?: Partial<Options<SetAutoModeData>>): UseMutationOptions<SetAutoModeResponse, SetAutoModeError, Options<SetAutoModeData>> => {
     const mutationOptions: UseMutationOptions<SetAutoModeResponse, SetAutoModeError, Options<SetAutoModeData>> = {
@@ -11145,7 +11146,7 @@ export const rollForwardCreateMutation = (options?: Partial<Options<RollForwardC
 /**
  * Start Engagement Run Route
  *
- * The engagement run: its plan computed by code from methodology (T39).
+ * The engagement run: its plan computed by code from methodology (T39, DEC-3404).
  */
 export const startEngagementRunMutation = (options?: Partial<Options<StartEngagementRunData>>): UseMutationOptions<StartEngagementRunResponse, StartEngagementRunError, Options<StartEngagementRunData>> => {
     const mutationOptions: UseMutationOptions<StartEngagementRunResponse, StartEngagementRunError, Options<StartEngagementRunData>> = {
@@ -17438,7 +17439,8 @@ export const issueUpdateMutation = (options?: Partial<Options<IssueUpdateData>>)
 /**
  * Issue Explain Route
  *
- * SHL-15 d, "Explain…": a person asks the agent to explain; nothing is decided.
+ * SHL-15 d, "Explain…": a person asks the agent to explain; nothing is decided. 409
+ * `explain_unavailable` when no explainer serves the issue's record (T-04-T31).
  */
 export const issueExplainMutation = (options?: Partial<Options<IssueExplainData>>): UseMutationOptions<IssueExplainResponse, IssueExplainError, Options<IssueExplainData>> => {
     const mutationOptions: UseMutationOptions<IssueExplainResponse, IssueExplainError, Options<IssueExplainData>> = {

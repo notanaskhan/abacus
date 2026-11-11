@@ -14689,6 +14689,10 @@ export type EngagementEffortOut = {
      */
     lines: Array<UsageLineOut>;
     /**
+     * Runs
+     */
+    runs?: number;
+    /**
      * Used Minutes
      */
     used_minutes: number;
@@ -19724,9 +19728,17 @@ export type FirmUsageOut = {
      */
     by_service_line: Array<UsageLineOut>;
     /**
+     * Ends On
+     */
+    ends_on?: string | null;
+    /**
      * Included Minutes
      */
     included_minutes: number;
+    /**
+     * Starts On
+     */
+    starts_on?: string | null;
     /**
      * Usage Month
      */

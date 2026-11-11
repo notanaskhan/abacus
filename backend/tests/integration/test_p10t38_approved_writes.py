@@ -48,7 +48,9 @@ async def engines(migrated_db: MigratedDatabase) -> AsyncIterator[None]:
 
 
 @pytest.fixture
-async def team(migrated_db: MigratedDatabase) -> Cast:
+async def team(migrated_db: MigratedDatabase, object_store: str) -> Cast:
+    """The cast, with the session's S3 gateway as the settings' store (the workbook is stored)."""
+    del object_store
     found = await make_cast(migrated_db.superuser_dsn)
     await found.seed.run("UPDATE firms SET synthetic = true WHERE tenant_id = $1", found.tenant)
     await found.seed.run(

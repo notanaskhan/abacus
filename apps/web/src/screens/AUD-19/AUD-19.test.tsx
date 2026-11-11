@@ -125,8 +125,11 @@ describe("AUD-19", () => {
   it("d: the going-concern card is decided, read-only and reserved", async () => {
     show("d", "going_concern");
     const card = await drawn("[data-aud19='going-concern']");
-    expect(card.getAttribute("aria-readonly")).toBe("true");
-    expect(card.querySelector("button")).toBeNull();
+    // S36 CI (TASK-6827): `aria-readonly` is not allowed on a section (axe aria-allowed-attr,
+    // critical); read-only is the card's data and the absence of any control in it.
+    expect(card.getAttribute("data-readonly")).toBe("true");
+    expect(card.getAttribute("aria-readonly")).toBeNull();
+    expect(card.querySelector("button, input, select, textarea, [role='radio']")).toBeNull();
     expect(card.querySelector("[data-selected]")?.getAttribute("data-option")).toBe(
       "no_substantial_doubt",
     );

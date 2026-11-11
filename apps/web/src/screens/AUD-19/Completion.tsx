@@ -328,7 +328,7 @@ function GoingConcern({
     <section
       data-aud19="going-concern"
       data-state={view.state}
-      aria-readonly="true"
+      data-readonly="true"
       className="m-[14px] rounded-[12px] bg-card p-[14px] shadow-e1"
     >
       <p className="flex gap-[8px] text-[13px] font-medium">
