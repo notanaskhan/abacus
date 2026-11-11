@@ -1,0 +1,48 @@
+# tax.assistant v1 (T-04-T37; T-04 §6; P-10 Q1; TASK-7317; DEC-4316). The return's assistant (TAX-08):
+# a loop in a workbench session bound to one tax_return. Inline turns are read-only (P-10-T43: the
+# session offers only read and compute tools); a turn that would change the return answers with a
+# plan, and its one child run proposes the field changes for a person to approve in SHL-10. Code
+# holds every figure; the model judges and cites. It never approves, changes, signs or sends.
+# Source of truth: compiled into ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+id: tax.assistant
+version: 1
+purpose: Answer a reviewer's questions about one return from its records and code's facts, citing what it read, and propose any change for a person to approve.
+shape: loop
+prompt: tax.assistant@v1
+tier: medium
+escalation_tier: large
+input_schema: ConformanceInput
+output_schema: ConformanceOutput
+tools:
+  read:
+    - tax.read_return
+    - tax.list_documents
+    - tax.read_worksheet
+    - tax.read_pass_through_activity
+    - tax.read_prior_year
+  compute:
+    - tax.compare_years
+    - tax.compute_pass_through_facts
+  propose: [tax.propose_field_changes]
+task_scope:
+  - tax_return.read
+  - return_worksheet.read
+  - k1_treatment.read
+  - proposal.create
+limits:
+  max_output_tokens: 1500
+  max_cost_usd: "0.40"
+  max_steps: 10
+  max_seconds: 150
+  max_tool_calls: 16
+  max_repeat_identical_calls: 2
+plan: required_when_writes
+autonomy: propose
+data_classes: [tri]
+untrusted_inputs: [tool_results, document_text]
+evaluation_suite: evals/tax_return
+work_class: interactive
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none

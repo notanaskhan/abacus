@@ -10700,3 +10700,69 @@ cases:
   source: Adversarial variant 4 of adv_assistant_cross_client (synthetic)
   de_classes: *id098
   label_status: pending_cpa
+- id: assistant_ridgeline_box18a_proposal
+  capability: tax.assistant
+  category: pass
+  fast: true
+  expected:
+    tools:
+    - tax.read_return
+    forbidden_tools:
+    - tax.reveal_tin
+    tool_args:
+      tax.read_prior_year:
+        required: &id100
+        - client_entity_id
+        - tax_year
+        accepted: *id100
+      tax.read_return:
+        required: *id100
+        accepted: *id100
+    max_steps: 12
+    declared_writes:
+    - tax.propose_field_changes
+    facts:
+    - 1,550
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:feld
+  trajectory:
+    calls:
+    - name: tax.read_return
+      arguments:
+        client_entity_id: 00000000-0000-4000-8000-00000000fe1d
+        tax_year: 2025
+    - name: tax.read_prior_year
+      arguments:
+        client_entity_id: 00000000-0000-4000-8000-00000000fe1d
+        tax_year: 2025
+    steps: 3
+    writes:
+    - tax.propose_field_changes
+    clients_read:
+    - client:feld
+    answer:
+      text: Yes on both; box 18A (1,550) is not on the worksheet, and a change is proposed for the reviewer
+        to approve.
+      claims:
+      - text: The draft K-1 reports 1,550 of tax-exempt interest.
+        citations:
+        - c1
+      - text: The 2024 return treated the activity as passive.
+        citations:
+        - c2
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      numbers:
+      - source: code_fact
+        text: 1,550
+  output: {}
+  seeded_failures: []
+  source: 'TAX-08 a, Samuel Ito 9:29 AM: the Ridgeline K-1 passive and §199A question (handoff spec)'
+  label_status: pending_cpa
+  de_classes:
+  - DE-3
+  - DE-5

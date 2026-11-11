@@ -15,6 +15,10 @@ from abacus.modules.agents.ai_policy_store import policy_autonomy_level
 from abacus.modules.agents.approved_writes import SUBSCRIPTIONS as APPROVED_WRITE_SUBSCRIPTIONS
 from abacus.modules.agents.approved_writes import register_file_writes
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
+
+# P-10-T43 (DEC-4301): a workbench session's turns are runs; workbench runs them inline.
+# P-10-T44 (DEC-4302): frozen trace exports, the run_events prune and A-07's archive hook.
+from abacus.modules.agents.capability_availability import capability_ready as capability_ready
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
 from abacus.modules.agents.code_runs import (  # A-07-T32: code-only runs, v1 path
@@ -278,9 +282,6 @@ from abacus.modules.agents.tools.runtime import ToolOutcome as ToolOutcome
 from abacus.modules.agents.tools.runtime import ToolTargets as ToolTargets
 from abacus.modules.agents.tools.runtime import call_tool as call_tool
 from abacus.modules.agents.tools.runtime import for_model as tool_output_for_model
-
-# P-10-T43 (DEC-4301): a workbench session's turns are runs; workbench runs them inline.
-# P-10-T44 (DEC-4302): frozen trace exports, the run_events prune and A-07's archive hook.
 from abacus.modules.agents.trace_records import PRUNE_SCHEDULES as SCHEDULES
 from abacus.modules.agents.trace_records import AdoptedTrace as AdoptedTrace
 from abacus.modules.agents.trace_records import adopted_run_traces as adopted_run_traces
@@ -605,6 +606,7 @@ __all__ = [
     "ask",
     "begin_code_run",
     "blocks",
+    "capability_ready",
     "check",
     "check_live",
     "check_notice_answer",

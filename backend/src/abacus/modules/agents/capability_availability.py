@@ -132,3 +132,15 @@ async def capabilities_for(ctx: AuthContext, engagement_id: UUID | None) -> list
             ),
         )
     ]
+
+
+async def capability_ready(
+    ctx: AuthContext, engagement_id: UUID, capability: str
+) -> tuple[bool, str | None]:
+    """P-10-T43/T-04-T37: whether `capability` may run on the engagement for this person now, and
+    the reason when not (no model call). An unknown or test-only capability reads unavailable."""
+    found = {a.capability: a for a in await capabilities_for(ctx, engagement_id)}
+    hit = found.get(capability)
+    if hit is None:
+        return False, "capability_unavailable"
+    return hit.available, hit.reason

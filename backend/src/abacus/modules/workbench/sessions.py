@@ -38,7 +38,7 @@ from abacus.kernel.dispatch import signal_with_start
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.agents.api import open_turn_run
+from abacus.modules.agents.api import capability_ready, open_turn_run
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import (
     AuthContext,
@@ -279,7 +279,13 @@ async def post_message(
     engagement = ref_of(row.context_refs, "engagement")
     capability = await capability_of(ctx.tenant, row)
     run_id: UUID | None = None
+    blocked: str | None = None
     if engagement is not None and capability is not None:
+        # T-04-T37 (DF-04): consent, boundary and pause facts first; no run, no model call.
+        ready, blocked = await capability_ready(ctx, UUID(engagement), capability)
+        if ready:
+            blocked = None
+    if engagement is not None and capability is not None and blocked is None:
         run_id = await open_turn_run(
             ctx,
             agent_id=capability,
@@ -288,6 +294,8 @@ async def post_message(
             inputs={"session_id": str(session_id), "kind": kind},
         )
     payload: dict[str, object] = {"v": 1, "body": body, "key": key}
+    if blocked is not None:
+        payload["blocked"] = blocked
     if answers_seq is not None:
         payload["answers_seq"] = answers_seq
     async with uow(ctx.tenant) as tx:
@@ -337,8 +345,10 @@ async def open_session(
     origin: str,
     engagement_id: UUID | None = None,
     capability: str | None = None,
+    subject: tuple[str, UUID] | None = None,
 ) -> UUID:
-    """A session for `ctx` (module docstring); its engagement must be readable."""
+    """A session for `ctx` (module docstring); its engagement must be readable. `subject` binds it
+    to one record (T-04-T37: `("tax_return", id)`), which its owner checked the person may read."""
     await authorise(ctx, "session.create", Resource.firm(ctx.tenant_id))
     refs: list[dict[str, str]] = []
     clients: list[UUID] = []
@@ -349,6 +359,8 @@ async def open_session(
         clients.append(ref.client_id)
     if capability is not None:
         refs.append({"kind": "capability", "id": capability})
+    if subject is not None:
+        refs.append({"kind": subject[0], "id": str(subject[1])})
     async with uow(ctx.tenant) as tx:
         session_id = cast(
             UUID,
@@ -374,3 +386,31 @@ async def open_session(
             after=Ref(owner=ctx.user_id),
         )
     return session_id
+
+
+@dataclass(frozen=True)
+class SessionSummary:
+    id: UUID
+    title: str
+    state: str
+    last_item_at: datetime | None
+
+
+async def sessions_for_subject(
+    ctx: AuthContext, kind: str, subject_id: UUID
+) -> list[SessionSummary]:
+    """The person's own sessions bound to one record, newest first (TAX-08 History). The owner of
+    the record has checked the person may read it."""
+    await authorise(ctx, "session.read", Resource.firm(ctx.tenant_id))
+    async with tenant_session(ctx.tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT id, title, state, last_item_at FROM workbench_sessions "
+                    "WHERE owner_user_id = :me AND deleted_at IS NULL AND context_refs @> "
+                    "CAST(:ref AS jsonb) ORDER BY coalesce(last_item_at, created_at) DESC LIMIT 50"
+                ),
+                {"me": ctx.user_id, "ref": json.dumps([{"kind": kind, "id": str(subject_id)}])},
+            )
+        ).all()
+    return [SessionSummary(r.id, r.title, r.state, r.last_item_at) for r in rows]
