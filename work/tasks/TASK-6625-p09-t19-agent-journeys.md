@@ -33,3 +33,11 @@ or sign-off row carries actor_kind agent.
   the fixture's until P-10 records them on the seeded tenant; staging nightly is not up.
 - j18 5 opens WB-09 over the audits index rather than AUD-29 (WB-09's scenario has no audit id);
   the step checks the drawer, not the link that opened it.
+- 2026-11-11 (partial closure, after S35): j03 6's plan approval walks. P-10-T33 (S35, #1653)
+  serves `POST /v1/agent-runs/{run_id}/plan/approve`; the fixture's run routes now answer it
+  (C6 v2: the plan's version is checked, a second approval or a stale version is a 409) and the
+  run then reads `dispatched` with nothing blocking it. The journey presses "yes, run it" on
+  SHL-13 c as Hannah Leclerc and sees the go-ahead chips go. j03 6's trace step now expands a
+  finished tool card before Open trace (the card shows it only when open; the step never passed).
+  Still partial: compose and staging walk the seeded runs once the batch deploys (P-10-T36's
+  synthetic runs), the nightly needs staging.

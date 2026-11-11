@@ -4,7 +4,7 @@
 // drawer over firm pages (fixtures/screen-scenarios.ts "SHL-13" and "WB-09"). Compose and staging
 // read the seeded runs; a step that needs a route not served yet is fixme with its owner.
 //
-//   j03 6   the run projection and the dock's trace link on Northwind's cockpit (plan approval: P-10-T33)
+//   j03 6   the run projection, the dock's trace link and Hannah's plan approval on Northwind's cockpit
 //   j03 10  the failed Internal Control step, Retry and Open trace
 //   j18 5   Thomas Whitcombe reads run #4127's trace read-only; Lena Park is not allowed
 //   j11 a4  run #4118's trace: Timeline, Records read, Writes & approvals
@@ -12,10 +12,6 @@
 import { DEMO_INSTANT, expect, test } from "../harness";
 
 const COCKPIT = "/audits/_auditId_";
-
-function owner(description: string): { annotation: { type: string; description: string } } {
-  return { annotation: { type: "owner", description } };
-}
 
 test.describe("P-09 agent runs (P-09-T19)", () => {
   test("j03 6: the run projection by level and the dock's trace link", async ({ journey }) => {
@@ -42,13 +38,24 @@ test.describe("P-09 agent runs (P-09-T19)", () => {
     });
   });
 
-  test.fixme(
-    "j03 6: Hannah approves the proposed plan from the dock",
-    owner("P-10-T33 · the plan routes (S35); the plan card renders, its approve route does not"),
-    async ({ journey }) => {
-      await journey.as("hannah-leclerc", COCKPIT, { scenario: "SHL-13:c", clock: DEMO_INSTANT });
-    },
-  );
+  test("j03 6: Hannah approves the proposed plan from the dock", async ({ journey }) => {
+    // P-10-T33 (S35) serves `POST /v1/agent-runs/{run_id}/plan/approve`; staging walks the seeded
+    // run once the batch deploys.
+    test.fixme(journey.project !== "fixture", "the seeded plan waits on staging (P-10-T36)");
+    await journey.as("hannah-leclerc", COCKPIT, { scenario: "SHL-13:c", clock: DEMO_INSTANT });
+    await journey.step("J03 step 6: the plan waits for Hannah's go-ahead", async (page) => {
+      const pane = page.locator("[data-run-pane]");
+      await expect(pane).toHaveAttribute("data-run-pane", "needs_input");
+      await expect(pane.getByText("Plan ready — approve?").first()).toBeVisible();
+      await expect(pane.getByRole("button", { name: "yes, run it" })).toBeEnabled();
+    });
+    await journey.step("J03 step 6: Hannah approves; the run is dispatched", async (page) => {
+      const pane = page.locator("[data-run-pane]");
+      await pane.getByRole("button", { name: "yes, run it" }).click();
+      await expect(pane).toHaveAttribute("data-run-pane", "dispatched");
+      await expect(pane.getByRole("button", { name: "yes, run it" })).toHaveCount(0);
+    });
+  });
 
   test("j03 10: the failed step quotes the error, offers Retry and Open trace", async ({
     journey,
