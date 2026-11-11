@@ -256,6 +256,7 @@ import {
 import { POR15 } from "./POR-15";
 import {
   OPENING as POR15_OPENING,
+  NOT_ALLOWED as POR15_NOT_ALLOWED,
   STATES as POR15_STATES,
   scenarios as por15Scenarios,
 } from "./POR-15/scenarios";
@@ -3548,8 +3549,9 @@ registerScreen("POR-09", {
 registerScreen("POR-15", {
   title: "Governance room · Northwind benefits committee",
   Component: portalArtboard(
-    POR15_STATES,
-    (st) => por15Scenarios[st as keyof typeof por15Scenarios],
+    // `n`: Dana Kowalski's management grant opens no room (j03 privacy; R-02 §5.6).
+    [...POR15_STATES, "n"],
+    (st) => (st === "n" ? POR15_NOT_ALLOWED : por15Scenarios[st as keyof typeof por15Scenarios]),
     (st, mobile) => (
       <POR15 frame mobile={mobile} {...(POR15_OPENING[st as keyof typeof POR15_OPENING] ?? {})} />
     ),

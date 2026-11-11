@@ -9,7 +9,10 @@ const VERB = new RegExp(`^(${VERBS.join("|")})\\b`, "i");
 
 async function gallery(page: Page): Promise<void> {
   await page.goto("/components");
-  await expect(page.getByRole("heading", { name: "Components", level: 1 })).toBeVisible();
+  // The gallery index mounts every specimen; a cold CI runner can take past the 15 s default.
+  await expect(page.getByRole("heading", { name: "Components", level: 1 })).toBeVisible({
+    timeout: 60_000,
+  });
 }
 
 test("INV-1: no human-only verb sits on an agent-owned element", async ({ page }) => {
