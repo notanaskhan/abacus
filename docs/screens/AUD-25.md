@@ -78,7 +78,7 @@ Built and **live** in the AUD-02 cockpit (`releaseArchiveHosts.tsx` → `Archive
 
 | Deviation | Evidence |
 |---|---|
-| DV-2 | **Not applied:** `screens/AUD-25/copy.ts` reads "Locked · WORM" (the handoff's words); DF-20 keeps it until OQ-2 (the SOC 2 auditor's answer on GOVERNANCE-mode wording) is closed. Open, owner A-07 / Q-02. |
+| DV-2 | **Applied (S36 fixes, DEC-3420):** `screens/AUD-25/copy.ts` reads "Locked · sealed"; OQ-2 decided with the plan's option (DF-20) until the SOC 2 auditor accepts "WORM" for GOVERNANCE-mode objects with bypass denied. FIL-01 already read "Locked · sealed". The J03 19 and J18 6 journeys assert it. |
 | DV-7 | `IssuanceLive` ("Releasing…") and `ArchiveLive` ("Locking…") show the transient states while the workflow runs; applied. |
 | DV-8 | **Partly:** AUD-23 g names AUD-30 in its copy; no inline list, DOCX download or reference chip for FSP-06, XLA-02, AUD-28 or AUD-30 was found. Open until A-10, W-04 and Q-05 draw their targets. |
 

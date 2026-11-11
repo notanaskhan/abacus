@@ -71,7 +71,7 @@ Built and **live** in the AUD-02 cockpit (`releaseArchiveHosts.tsx` → `Issuanc
 
 | Deviation | Evidence |
 |---|---|
-| DV-6 | **Not found in code:** the AUD-24 and AUD-25 rails do not read "2 of 3 required sent". Open, AUD-24/25 follow-up. |
+| DV-6 | **Applied on the live screens (DEC-3420):** AUD-24's also-required list and AUD-25's archive checklist read "Governance Communications · n of m required sent" from `GET /v1/audits/{id}/governance` (`required_sent`, `required_total`: the server's required set per engagement type); no row when none is required. The fixture canvases keep the handoff's count. |
 | DV-7 | `IssuanceLive` ("Releasing…") and `ArchiveLive` ("Locking…") show the transient states while the workflow runs; applied. |
 
 Copy: the L1–L12 copy lint (L2: verbatim from the handoff) runs over `screens/AUD-24/copy.ts` at the S36 end pass; no key changed in S36.

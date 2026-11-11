@@ -58,7 +58,7 @@ describe("AUD-25 assembly and archive", () => {
   it("c: locked with the seal and G9, roll forward offered, the dock names what carries", () => {
     const onRollForward = vi.fn();
     render(<Archive frame="c" canLock onRollForward={onRollForward} />);
-    expect(screen.getByText("Locked · WORM")).toBeTruthy();
+    expect(screen.getByText("Locked · sealed")).toBeTruthy();
     expect(
       screen.getByText("Locked Dec 3, 2026 · 4:18 PM · Hannah Leclerc · seal 7c41…a9e2 · G9 ✓"),
     ).toBeTruthy();

@@ -142,6 +142,7 @@ describe("A-07 screens: final verbs are never optimistic", () => {
     expect(document.querySelector("[data-screen='AUD-25']")?.getAttribute("data-frame")).toBe(
       before,
     );
+    expect(screen.queryByText("Locked · sealed")).toBeNull();
     expect(screen.queryByText("Locked · WORM")).toBeNull();
   });
 });

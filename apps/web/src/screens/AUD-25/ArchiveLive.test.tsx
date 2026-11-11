@@ -70,3 +70,12 @@ describe("AUD-25 live", () => {
     expect(screen.queryByRole("button", { name: /Delete/ })).toBeNull();
   });
 });
+
+describe("AUD-25 live: DV-6 (DF-27)", () => {
+  it('reads "3 of 3 required sent" on the rail', () => {
+    render(<ArchiveLive archive={aud25("a")} governance={{ sent: 3, total: 3 }} />);
+    expect(document.querySelector("[data-governance]")?.textContent).toBe(
+      "Governance Communications · 3 of 3 required sent",
+    );
+  });
+});

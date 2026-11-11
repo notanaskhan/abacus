@@ -4,9 +4,9 @@ Brightwater Hale only; nothing here is platform content.
 
 - **Retention policies** (FIL-02a, its eight rows): the firm's policy per record type, set by
   Felix Andersen (the security admin, `retention_policy.update`). Every firm policy is 7 years,
-  from the row's "Clock starts" event; Audit documentation is locked ("Locked · WORM"). The legal
-  minimums beside them are **not** seeded: floors are platform reference data published with
-  counsel through the two-person import (DEC-71, Q-02-T31), and no floor value may sit in a
+  from the row's "Clock starts" event; Audit documentation is locked ("Locked · sealed", DV-2).
+  The legal minimums beside them are **not** seeded: floors are platform reference data published
+  with counsel through the two-person import (DEC-71, Q-02-T31), and no floor value may sit in a
   commit. Until a floor set is published, the policies read with no legal minimum. No basis text
   is seeded: FIL-02 gives none. The record-type codes are the seed's (DEC-363).
 - **Legal holds** (FIL-02b): Collins · CP2000 · TY2023 placed by Victor Hammond and Meridian ·

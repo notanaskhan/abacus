@@ -36,7 +36,7 @@ test.describe("J18 G6 to G9 (A-07-T50)", () => {
     });
     await journey.as("margaret-okonkwo", a07("AUD-25", "c"));
     await journey.step("J18 step 6: G9 locked with its seal (AUD-25 c)", async (page) => {
-      await expect(page.getByText("Locked · WORM").first()).toBeVisible();
+      await expect(page.getByText("Locked · sealed").first()).toBeVisible();
     });
     await journey.as("marcus-delaney", a07("AUD-25", "d"));
     await journey.step(

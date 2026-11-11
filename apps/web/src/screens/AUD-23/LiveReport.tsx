@@ -4,6 +4,7 @@ import {
   auditReportDocumentMutation,
   auditReportOptions,
   auditReportRequestDecisionMutation,
+  eqrRequestMutation,
 } from "@abacus/api-client/query";
 import { Button, Icon, Picker, Pill, Skeleton, Toggle, toast } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,8 @@ const TOGGLE_LABEL: Readonly<Record<string, string>> = {
   erisa_supplemental_schedules: "Supplemental schedules required by ERISA (AU-C 703 section)",
   other_information: "Other information (AU-C 720)",
 };
+const REQUEST_EQR = "Request EQR…"; // DV-4 (A-07 §DV; DF-05)
+const EQR_REQUESTED = "The engagement quality reviewer was told the report is waiting.";
 const TITLE: Readonly<Record<AuditReportOut["report_kind"], string>> = {
   audit: "Independent Auditor’s Report",
   review: "Independent Accountant’s Review Report",
@@ -116,6 +119,19 @@ export function LiveReport(props: LiveReportProps): JSX.Element {
   const generate = useMutation({
     ...auditReportDocumentMutation(),
     onSuccess: refresh,
+    onError: (e) => {
+      toast.show(refusal(e));
+    },
+  });
+
+  // DV-4 (DF-05): "Request EQR…" tells the assigned EQR the report waits on them; it is audited
+  // and does nothing else. Shown only while an EQR is required and not concurred.
+  const requestEqr = useMutation({
+    ...eqrRequestMutation(),
+    onSuccess: () => {
+      toast.show(EQR_REQUESTED);
+      refresh();
+    },
     onError: (e) => {
       toast.show(refusal(e));
     },
@@ -264,6 +280,18 @@ export function LiveReport(props: LiveReportProps): JSX.Element {
               {current === null ? "" : ` · v${String(current.version_no)}`}
             </h2>
             <div className="absolute right-[10px] flex gap-2">
+              {data.eqr_required_not_concurred && data.status === "draft" && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={requestEqr.isPending}
+                  onClick={() => {
+                    requestEqr.mutate({ path: { work_item_id: props.workItemId }, body: {} });
+                  }}
+                >
+                  {REQUEST_EQR}
+                </Button>
+              )}
               {can("report.generate") && current !== null && (
                 <Button
                   size="sm"

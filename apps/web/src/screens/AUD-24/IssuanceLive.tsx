@@ -8,6 +8,7 @@
 import type { AuditReleaseOut } from "@abacus/api-client";
 import { Button, Checkbox, DEFAULT_TZ, Dialog, Icon, dateTime } from "@abacus/ui";
 import { type JSX, useState } from "react";
+import { governanceWords } from "../../domain/completion-live";
 // The live screen's own words (never the artboard copy, which carries the handoff's sample data
 // and must stay out of a production build: dist.test's ac10).
 const TITLE = "Issuance & release";
@@ -35,6 +36,8 @@ const ALSO_LABEL: Readonly<Record<string, string>> = {
 
 export interface IssuanceLiveProps {
   release: AuditReleaseOut;
+  /** The governance letters' required count (`GET …/governance`: required_sent, required_total). */
+  governance?: { sent: number; total: number } | undefined;
   /** Releasing: the grant is issued and ReleaseWorkflow runs (the host polls). */
   running?: boolean;
   /** A refusal in words (the host maps the server's code). */
@@ -128,6 +131,21 @@ export function IssuanceLive(props: IssuanceLiveProps): JSX.Element {
                 <span className="text-ink-3">{a.value ?? ""}</span>
               </li>
             ))}
+            {props.governance === undefined || props.governance.total === 0 ? null : (
+              <li
+                data-governance="true"
+                data-met={props.governance.sent >= props.governance.total ? "true" : "false"}
+                className="flex min-h-[36px] items-center gap-2 px-[12px] text-[13px]"
+              >
+                <Icon
+                  name={
+                    props.governance.sent >= props.governance.total ? "circle-check" : "circle"
+                  }
+                  size={13}
+                />
+                <span className="flex-1">{governanceWords(props.governance)}</span>
+              </li>
+            )}
           </ul>
         </section>
         {release.documentation_completion_date !== null && (

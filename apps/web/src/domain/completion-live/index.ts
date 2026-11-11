@@ -7,6 +7,7 @@ export {
   REFUSAL_WORDS,
   RUN_POLL_MS,
   asksForStepUp,
+  governanceWords,
   invalidateCompletion,
   lockRunning,
   refusalWords,

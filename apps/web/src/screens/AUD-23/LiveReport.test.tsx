@@ -153,3 +153,31 @@ describe("AUD-23 live report", () => {
     ).toBe(true);
   });
 });
+
+describe("AUD-23 live report: Request EQR… (DV-4; DF-05)", () => {
+  it("shows only while an EQR is required and not concurred, and only asks", async () => {
+    const asked: string[] = [];
+    mockApi({
+      [`GET ${P}`]: () => json(report({ eqr_required_not_concurred: true })),
+      [`POST /v1/audits/${WI}/eqr/request`]: () => {
+        asked.push("request");
+        return new Response(null, { status: 204 });
+      },
+    });
+    renderRoutes([{ path: "/", component: () => <LiveReport workItemId={WI} /> }]);
+    fireEvent.click(await screen.findByRole("button", { name: "Request EQR…" }));
+    await waitFor(() => {
+      expect(asked).toHaveLength(1);
+    });
+  });
+
+  it("is absent once the EQR has concurred, or for an approved report", async () => {
+    show(report({ eqr_required_not_concurred: false }));
+    await screen.findByText("In our opinion …");
+    expect(screen.queryByRole("button", { name: "Request EQR…" })).toBeNull();
+    cleanup();
+    show(report({ eqr_required_not_concurred: true, status: "approved" }));
+    await screen.findByText("In our opinion …");
+    expect(screen.queryByRole("button", { name: "Request EQR…" })).toBeNull();
+  });
+});
