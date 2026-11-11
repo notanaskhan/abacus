@@ -12,15 +12,19 @@ from abacus.modules.platform.audit_slots import (
     AuditNotIncluded,
     AuditSource,
     AuditSourceResolver,
+    AuditTenantLabeler,
     AuditValueResolver,
     AuditValueRow,
     AuditValues,
     audit_labels,
+    audit_noun,
     audit_source,
     audit_values,
     mask_value,
     register_audit_labeler,
+    register_audit_noun,
     register_audit_source,
+    register_audit_tenant_labeler,
     register_audit_value_resolver,
     registered_audit_types,
 )
@@ -299,6 +303,7 @@ __all__ = [
     "AuditNotIncluded",
     "AuditSource",
     "AuditSourceResolver",
+    "AuditTenantLabeler",  # Q-03-T235
     "AuditValueResolver",
     "AuditValueRow",
     "AuditValues",
@@ -370,6 +375,7 @@ __all__ = [
     "WispPackInput",
     "WispPackWorkflow",
     "audit_labels",
+    "audit_noun",  # Q-03-T235
     "audit_source",
     "audit_values",
     "canary_boundary",
@@ -408,7 +414,9 @@ __all__ = [
     "reference_value",
     "references_in_effect",
     "register_audit_labeler",
+    "register_audit_noun",  # Q-03-T235
     "register_audit_source",
+    "register_audit_tenant_labeler",  # Q-03-T235
     "register_audit_value_resolver",
     "register_file_store",
     "register_home_count",

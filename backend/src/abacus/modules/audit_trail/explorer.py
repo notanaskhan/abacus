@@ -103,7 +103,7 @@ from abacus.modules.identity.api import (
     visible,
     walled_from,
 )
-from abacus.modules.platform.api import AuditEventRef, audit_labels, audit_source
+from abacus.modules.platform.api import AuditEventRef, audit_labels, audit_noun, audit_source
 
 READ: Final = "audit_event.read"
 RESOURCE: Final = "audit_events"
@@ -439,8 +439,10 @@ async def _labels(ctx: AuthContext, rows: Sequence[Row]) -> _Labels:
         by_type.setdefault(str(row["target_type"]), set()).add(str(row["target_id"]))
     targets: dict[tuple[str, str], str] = {}
     for kind, ids in by_type.items():
-        for target, label in (await audit_labels(ctx, kind, sorted(ids))).items():
-            targets[(kind, target)] = label.text
+        labelled = await audit_labels(ctx, kind, sorted(ids))
+        for target in ids:  # Q-03-T235: an unnamed target reads as its noun, never its id
+            found = labelled.get(target)
+            targets[(kind, target)] = found.text if found is not None else audit_noun(kind)
     return _Labels(names, targets)
 
 
