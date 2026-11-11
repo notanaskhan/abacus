@@ -12,6 +12,7 @@ import type { Page } from "@playwright/test";
 import { DEMO_INSTANT, expect, test } from "../harness";
 import { M13, artboard } from "../signatures/support";
 import { artboardAs, board, noProductName, owner as r02Owner } from "./r02-support";
+import { A07_LIVE, a07, noAgentDecision, onScreen } from "./a07-support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -614,5 +615,141 @@ test.describe("J03 · R-02 portal halves", () => {
       },
       { outOfScope: ["Victoria Lam"] },
     );
+  });
+});
+
+// A-07-T50 (TASK-6820; A-07 §10 item 1): J03 completion to the locked archive, steps 9b, 15, 16,
+// 17, 18 and 19, on the A-07 artboards (AUD-18, AUD-21, AUD-22, AUD-23, AUD-24, AUD-25) in fixture
+// mode, each with axeStep and INV-1 to INV-5 (the journey harness). The staging walk waits for the
+// S36 batch deploy and the three A-07 flags on PF-X1: fixme off fixture (A07_LIVE).
+test.describe("J03 completion to archive (A-07-T50)", () => {
+  test("j03 9b: Margaret approves and sends the AU-C 260 planning letter to the Benefits Committee", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", A07_LIVE);
+    await journey.as("margaret-okonkwo", a07("AUD-22", "a2"));
+    await journey.step("j03 9b: the planning letter waits on the partner (AUD-22 a2)", async (page) => {
+      await onScreen(page, "AUD-22");
+      await expect(
+        page.getByText("Our planned audit of the plan's 2025 financial statements").first(),
+      ).toBeVisible();
+      await noAgentDecision(page);
+    });
+    await journey.as("hannah-leclerc", a07("AUD-22", "b"));
+    await journey.step("j03 9b: sent Sep 18 and acknowledged Sep 21 (AUD-22 b)", async (page) => {
+      await expect(page.getByText("Sent Sep 18").first()).toBeVisible();
+      await expect(page.getByText("Acknowledged Sep 21 · Benefits Committee").first()).toBeVisible();
+      await expect(page.getByLabel("Locked").first()).toBeVisible();
+    });
+  });
+
+  test("j03 15: Thomas Whitcombe concurs and G6 is recorded; the EQR cannot sign L1–L4", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", A07_LIVE);
+    await journey.as("thomas-whitcombe", a07("AUD-18", "a"));
+    await journey.step("j03 15: the EQR reads, with no edit or sign-off control (AUD-18 a)", async (page) => {
+      await onScreen(page, "AUD-18");
+      await expect(page.getByRole("button", { name: /^Sign off/ })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
+    });
+    await journey.as("thomas-whitcombe", a07("AUD-18", "c"));
+    await journey.step("j03 15: concurred, G6 recorded (AUD-18 c)", async (page) => {
+      await expect(page.getByText("Concurrence · G6").first()).toBeVisible();
+      await expect(page.getByText("G6 ✓").first()).toBeVisible();
+      await noAgentDecision(page);
+    });
+    await journey.as("hannah-leclerc", a07("AUD-18", "e"));
+    await journey.step("j03 15: anyone but the assigned EQR cannot concur (AUD-18 e)", async (page) => {
+      await expect(page.getByText("Only the assigned EQR can concur.").first()).toBeVisible();
+    });
+  });
+
+  test("j03 16: completion clears and Dana Kowalski signs the representation letter dated Oct 9, so G7 is met", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", A07_LIVE);
+    await journey.as("hannah-leclerc", a07("AUD-21", "e"));
+    await journey.step("j03 16: dated the report date, G7 (AUD-21 e)", async (page) => {
+      await onScreen(page, "AUD-21");
+      await expect(page.getByText("Dated October 9, 2026 = report date ✓ · G7").first()).toBeVisible();
+      await noAgentDecision(page);
+    });
+  });
+
+  test("j03 17: Margaret approves the report and releases on Oct 9, so G8 is recorded and POR-09 shows Final", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", A07_LIVE);
+    await journey.as("margaret-okonkwo", a07("AUD-23", "b"));
+    await journey.step("j03 17: the report for the partner's approval (AUD-23 b)", async (page) => {
+      await onScreen(page, "AUD-23");
+      await noAgentDecision(page);
+    });
+    await journey.as("margaret-okonkwo", a07("AUD-24", "a"));
+    await journey.step("j03 17: G5 to G7 met, G8 waits on the partner (AUD-24 a)", async (page) => {
+      await expect(page.getByText("G8 · Released — recorded when you release").first()).toBeVisible();
+      await expect(page.getByText("Reserved to the engagement partner").first()).toBeVisible();
+    });
+    await journey.as("margaret-okonkwo", a07("AUD-24", "d"));
+    await journey.step("j03 17: released, G8 recorded, the archive clock starts (AUD-24 d)", async (page) => {
+      await expect(
+        page.getByText("Released Oct 9, 2026 · 10:07 AM · Margaret Okonkwo").first(),
+      ).toBeVisible();
+      await expect(page.getByText("Archive in 60 days · by Dec 8, 2026").first()).toBeVisible();
+      await expect(page.getByText("Report released · delivered to Dana Kowalski").first()).toBeVisible();
+    });
+  });
+
+  test("j03 18: the AU-C 265/703 letter is sent Nov 20 and acknowledged Nov 24", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", A07_LIVE);
+    await journey.as("hannah-leclerc", a07("AUD-22", "c"));
+    await journey.step("j03 18: the AU-C 265 letter with its 60-day clock (AUD-22 c)", async (page) => {
+      await expect(page.getByText("Due Dec 8, 2026 · 60 days after release").first()).toBeVisible();
+      await expect(page.getByText("Reportable findings (AU-C 703)").first()).toBeVisible();
+    });
+    await journey.as("hannah-leclerc", a07("AUD-22", "e"));
+    await journey.step("j03 18: sent and acknowledged (AUD-22 e)", async (page) => {
+      await onScreen(page, "AUD-22");
+      await noAgentDecision(page);
+    });
+  });
+
+  test("j03 19: Marcus Delaney assembles, Hannah Leclerc locks on Dec 3, and a later edit is refused", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", A07_LIVE);
+    await journey.as("hannah-leclerc", a07("AUD-25", "a"));
+    await journey.step("j03 19: 8 of 9, the lock waits on the open letter (AUD-25 a)", async (page) => {
+      await onScreen(page, "AUD-25");
+      await expect(page.getByText("8 of 9").first()).toBeVisible();
+      await expect(page.getByText("47 days").first()).toBeVisible();
+    });
+    await journey.as("hannah-leclerc", a07("AUD-25", "b"));
+    await journey.step("j03 19: 9 of 9, ready to lock (AUD-25 b)", async (page) => {
+      await expect(page.getByText("9 of 9").first()).toBeVisible();
+    });
+    await journey.as("margaret-okonkwo", a07("AUD-25", "c"));
+    await journey.step("j03 19: locked with the seal, G9 (AUD-25 c)", async (page) => {
+      await expect(page.getByText("Locked · WORM").first()).toBeVisible();
+      await expect(
+        page.getByText("Locked Dec 3, 2026 · 4:18 PM · Hannah Leclerc · seal 7c41…a9e2 · G9 ✓").first(),
+      ).toBeVisible();
+      await noAgentDecision(page);
+    });
+    await journey.as("marcus-delaney", a07("AUD-25", "d"));
+    await journey.step("j03 19: a later change is a post-lock addition only (AUD-25 d)", async (page) => {
+      await expect(page.getByText("Post-lock additions").first()).toBeVisible();
+      await expect(
+        page
+          .getByText(
+            "After the lock, additions need a reason and engagement partner approval. The original stays unchanged.",
+          )
+          .first(),
+      ).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
+    });
   });
 });

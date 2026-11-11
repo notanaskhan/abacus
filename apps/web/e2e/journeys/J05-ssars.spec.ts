@@ -3,6 +3,7 @@
 // INV-5 (journey harness). The CLS consumer of the switch is C-01's; this step reads the standard.
 import { expect, test } from "../harness";
 import { owner as r02Owner } from "./r02-support";
+import { A08_AUD26, owner as a07Owner } from "./a07-support";
 
 test.describe("J05", () => {
   test("j05 S: SSARS 27 early adoption off, so AR-C 70 for Copperleaf (KNW-04 h)", async ({
@@ -45,4 +46,10 @@ test.describe("J05 · R-02 approvals", () => {
     ),
     async () => {},
   );
+});
+
+// A-07-T50 (TASK-6820): J05 step 6, the review report mode (AUD-23 e), waits for AUD-26's SSARS
+// reports (A-08); ADR-079 forbids a skip without an issue, so it is fixme naming its owner.
+test.describe("J05 report mode (A-07-T50)", () => {
+  test.fixme("j05 6: review report mode", a07Owner(A08_AUD26), async () => {});
 });

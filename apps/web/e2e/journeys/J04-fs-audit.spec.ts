@@ -7,6 +7,7 @@
 // chapter 01 date (journey-e2e skill), never skipped or left out. Walkable on staging by M6 (Fri
 // Mar 5, 2027). The portal is white-labelled: no portal step may show the product's name (INV-4).
 import { DEMO_INSTANT, expect, test } from "../harness";
+import { A07_LIVE, a07, noAgentDecision, owner as a07Owner } from "./a07-support";
 import { artboardAs, board, noProductName, owner as r02Owner } from "./r02-support";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -340,6 +341,36 @@ test.describe("J04 · R-02 deliverables", () => {
   test.fixme(
     "j04 13 g/h: the co-review of the draft with Luis",
     r02Owner("A-10 · POR-09 g and h (co-review), S36+"),
+    async () => {},
+  );
+});
+
+// A-07-T50 (TASK-6820; A-07 §10 item 1): J04 steps 12 and 14-16. Step 12 is the going-concern
+// card's decision on AUD-19 (Granite Peak's FS-audit question, DV-AUD-19-4) in fixture mode; the
+// release on Oct 27 and the archive are Granite Peak's, whose AUD-24 and AUD-25 artboards the
+// handoff draws on Northwind only, so steps 14-16 walk on staging with the Granite slice.
+test.describe("J04 completion (A-07-T50)", () => {
+  test("j04 12: Margaret decides no substantial doubt for Granite Peak", async ({ journey }) => {
+    test.fixme(journey.project !== "fixture", A07_LIVE);
+    await journey.as("margaret-okonkwo", a07("AUD-19", "e"));
+    await journey.step("j04 12: the going-concern question for the entity (AUD-19 e)", async (page) => {
+      await expect(
+        page
+          .getByText(
+            "Is there substantial doubt about the entity's ability to continue as a going concern within one year after the financial statements are available to be issued?",
+          )
+          .first(),
+      ).toBeVisible();
+      await expect(page.getByText("No substantial doubt").first()).toBeVisible();
+      await noAgentDecision(page);
+    });
+  });
+
+  test.fixme(
+    "j04 14-16: the FS-audit report is released Oct 27 and archived",
+    a07Owner(
+      "A-07 · A-07-T50 staging walk on Granite Peak (the A-07-T41 archive slice names Northwind; Granite's release and lock run on PF-X1 after the S36 batch) · S36, Fri Mar 17, 2028",
+    ),
     async () => {},
   );
 });
