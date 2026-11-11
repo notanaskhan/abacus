@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-29 Engagement activity log - cockpit/` (README.md, spec.md) |
 | Epic and tasks | P-05 · bundle and 501 stubs T02 · AC suite T08 · backend T11 · seed T12 · screen T14 · journeys T15 · SPEC-650 |
-| Manifest status | planned (live with P-05-T14 behind `audit_trail.engagement_activity`) |
+| Manifest status | fixture (P-05-T14: `screens/AUD-29`; live in the T2 cockpit with the A-01 host) |
 
 ## States
 | Artboard | Viewer (persona) | Clock | Data condition that produces it | Status |
