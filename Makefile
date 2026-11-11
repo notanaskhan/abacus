@@ -30,7 +30,10 @@ STACK_ENV = ABACUS_DATABASE_URL=postgresql+asyncpg://abacus_app:abacusapp@$(STAC
 	ABACUS_TEMPORAL_TARGET=127.0.0.1:$(ABACUS_TEMPORAL_PORT)
 
 # Local runs: the fake connector reads fixtures from here; seed_dev writes them (TASK-012).
-LOCAL_ENV = $(STACK_ENV) ABACUS_FAKE_CONNECTOR_DIR=$(CURDIR)/backend/.local/fake-connector
+# The records bucket (COMPLIANCE mode: seal manifests, chain anchors) for local runs only, so an
+# archive locks under `make dev`; tests keep it unset (records fail closed; S35 follow-up).
+LOCAL_ENV = $(STACK_ENV) ABACUS_FAKE_CONNECTOR_DIR=$(CURDIR)/backend/.local/fake-connector \
+	ABACUS_RECORDS_BUCKET=abacus-records
 
 # The API on :8001, the local sign-in server on :9000, the worker (relay + screening with the
 # fake model) and the SPA on :5173, which proxies /v1 to the API; each port plus this checkout's

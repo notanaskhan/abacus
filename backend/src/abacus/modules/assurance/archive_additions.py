@@ -151,6 +151,33 @@ def _person(ctx: AuthContext, action: str) -> None:
         raise Forbidden(action, "role")  # INV-1: never the agent, a system or a client
 
 
+async def store_addition_evidence(
+    ctx: AuthContext, work_item_id: UUID, *, title: str, content: bytes, media_type: str
+) -> UUID:
+    """The document an addition after lock cites, as a new evidence version on the locked file
+    (S35 follow-up, DEC-3308; AU-C 230.A27: a later addition is documented, never replacing what
+    was sealed). Only here: a person's act (the route authorises `archive_addition.create`),
+    only on a locked archive, under `archived_write = archive_addition`. Returns its id."""
+    from abacus.modules.evidence.api import NewItem, Provenance, add_version, stage_content
+
+    _person(ctx, "archive_addition.create")
+    archive = await locked_archive(ctx.tenant, work_item_id)
+    stored = await stage_content(ctx.tenant_id, content)
+    async with uow(ctx.tenant) as tx:
+        await tx.allow_archived_write("archive_addition")
+        version = await add_version(
+            tx,
+            engagement_id=archive.engagement_id,
+            item=NewItem(title=title),
+            stored=stored,
+            media_type=media_type,
+            provenance=Provenance(source="firm_upload", method="uploaded"),
+            requested_by=ctx.user_id,
+            post_lock_addition=True,
+        )
+    return version.id
+
+
 async def create_addition(
     ctx: AuthContext,
     work_item_id: UUID,

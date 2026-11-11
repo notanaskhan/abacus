@@ -38,8 +38,10 @@ async def fs_approved(
     from abacus.modules.reporting import api as c11
 
     del engagement_id
-    at = await c11.fs_approved_by_management_at(tenant, work_item_id)
-    return AlsoRequired("fs_approved", at is not None, None if at is None else at.isoformat())
+    version = await c11.fs_approved_version_no(tenant, work_item_id)
+    return AlsoRequired(
+        "fs_approved", version is not None, None if version is None else f"v{version}"
+    )
 
 
 async def independence(

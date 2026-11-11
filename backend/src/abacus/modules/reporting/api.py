@@ -925,6 +925,24 @@ async def fs_approved_by_management_at(
     return cast(datetime | None, found)
 
 
+async def fs_approved_version_no(tenant: TenantContext, work_item_id: UUID) -> int | None:
+    """The newest statement version's number once management approved it (AUD-24's "FS
+    approved" row reads "v3"), or None before. A version number, not a time, so the row reads the
+    same on every load (S35 follow-up: the approval's `created_at` is the database's clock)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT v.version_no FROM statement_approvals a "
+                "JOIN statement_versions v ON v.id = a.statement_version_id "
+                "WHERE v.work_item_id = :wi AND a.event = 'approved_by_management' "
+                "AND v.version_no = (SELECT max(version_no) FROM statement_versions "
+                "WHERE work_item_id = :wi) LIMIT 1"
+            ),
+            {"wi": work_item_id},
+        )
+    return None if found is None else int(cast(int, found))
+
+
 @dataclass(frozen=True)
 class AudienceDeliverable:
     """R-02-T16: a released (non-draft) deliverable whose audience names a scope."""

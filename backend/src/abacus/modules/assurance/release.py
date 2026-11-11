@@ -668,7 +668,9 @@ async def record_in_app_release(
             tx,
             c11.DeliverableSpec(
                 client_id=facts.client_id,
-                kind="audit_report",
+                # C10's kind (the deliverables CHECK, `portal.deliverables_contract`), not C11's
+                # document kind `audit_report`: the release failed its insert (S35 follow-up).
+                kind="auditor_report",
                 title="Independent auditor's report",
                 source_module="assurance",
                 source_ref=f"report_release:{work_item_id}",
@@ -689,10 +691,11 @@ async def record_in_app_release(
                     "INSERT INTO report_releases (tenant_id, engagement_id, work_item_id, kind, "
                     "report_version_id, report_version_hash, released_by, report_date, city, "
                     "gate_snapshot, gate_snapshot_sha256, final_document_version_id, "
-                    "deliverable_ids, approval_grant_id, idempotency_key, actor_kind, actor_id) "
+                    "deliverable_ids, approval_grant_id, idempotency_key, actor_kind, actor_id, "
+                    "released_at) "
                     "VALUES (:tenant, :engagement, :wi, 'original', :version, :version_hash, "
                     ":by, :report_date, :city, CAST(:snapshot AS jsonb), :snapshot_sha, :final, "
-                    ":deliverables, :grant, :key, 'human', :by) RETURNING id"
+                    ":deliverables, :grant, :key, 'human', :actor, :released_at) RETURNING id"
                 ),
                 {
                     "tenant": UUID(request.tenant_id),
@@ -709,6 +712,13 @@ async def record_in_app_release(
                     "deliverables": [published.deliverable_id],
                     "grant": UUID(request.grant_id),
                     "key": request.idempotency_key,
+                    # `actor_id` is text, `released_by` a uuid: one parameter for both is
+                    # "inconsistent types deduced" on Postgres (S35 follow-up).
+                    "actor": str(released_by),
+                    # Business time, as every A-07 clock reads it: the column's default is the
+                    # wall clock, which put a synthetic firm's release on the day of the load
+                    # and moved its documentation date with it (S35 follow-up).
+                    "released_at": await clock.now(person),
                 },
             ),
         )

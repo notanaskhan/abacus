@@ -52,15 +52,42 @@ def _session(row: object) -> object:
     return open_session
 
 
+def _row(target_type: str, *states: str) -> SimpleNamespace:
+    return SimpleNamespace(
+        target_type=target_type, cells=[SimpleNamespace(state=s) for s in states]
+    )
+
+
 @pytest.mark.parametrize(("changed", "status"), [(0, "done"), (2, "open")])
 async def test_sign_offs_follow_the_matrix_footer(
     monkeypatch: pytest.MonkeyPatch, changed: int, status: str
 ) -> None:
+    rows = [_row("workpaper", "signed", "stale") for _ in range(changed)]
+    rows.append(_row("workpaper", "signed", "signed"))
+
     async def matrix(_t: object, _e: object) -> SimpleNamespace:
-        return SimpleNamespace(footer=SimpleNamespace(changed_after_sign_off=changed))
+        return SimpleNamespace(rows=rows)
 
     monkeypatch.setattr(review_matrix, "matrix", matrix)
-    assert (await cf.sign_offs(TENANT, WI)).status == status
+    fact = await cf.sign_offs(TENANT, WI)
+    assert fact.status == status
+    if changed:
+        assert fact.evidence_text == f"{changed} changed after sign-off"
+
+
+async def test_the_checklist_s_own_row_does_not_count_as_changed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Signing the checklist changes the checklist; its own row must not re-open this item
+    (S35 follow-up: the archive load's release stayed blocked on G5 otherwise)."""
+
+    async def matrix(_t: object, _e: object) -> SimpleNamespace:
+        return SimpleNamespace(
+            rows=[_row("completion_checklist", "stale", "stale"), _row("workpaper", "signed")]
+        )
+
+    monkeypatch.setattr(review_matrix, "matrix", matrix)
+    assert (await cf.sign_offs(TENANT, WI)).status == "done"
 
 
 @pytest.mark.parametrize(

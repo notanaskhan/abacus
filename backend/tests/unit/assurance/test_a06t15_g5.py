@@ -90,3 +90,23 @@ def test_ac_assurance_owns_g5() -> None:
     from abacus.modules.engagements import slots
 
     assert slots._GATES["G5"] is gates.g5_facts  # pyright: ignore[reportPrivateUsage] -- the private helper under test
+
+
+@pytest.mark.parametrize(("roles", "blocked"), [((), False), (("eqr_reviewer",), True)])
+async def test_l5_binds_only_an_engagement_with_an_eqr(
+    monkeypatch: pytest.MonkeyPatch, roles: tuple[str, ...], blocked: bool
+) -> None:
+    """S35 follow-up (DEC-3306): L5 is the EQR's; with no EQR on the team it is not owed."""
+    _patch(monkeypatch, [_state(1), _state(2)], [])
+
+    async def facts(_t: object, kind: str, target: uuid.UUID) -> ReviewableFacts:
+        return ReviewableFacts(kind, target, ENGAGEMENT, "h" * 64, 3, frozenset(), (1, 2, 5))
+
+    async def team(_t: uuid.UUID, _e: uuid.UUID) -> list[tuple[uuid.UUID, str]]:
+        return [(uuid.uuid4(), "engagement_partner")] + [(uuid.uuid4(), r) for r in roles]
+
+    monkeypatch.setattr(gates, "reviewable_facts", facts)
+    monkeypatch.setattr(gates, "team_of", team)
+    tenant = SimpleNamespace(tenant_id=uuid.uuid4())
+    blockers = await gates.g5_blockers(tenant, ENGAGEMENT)  # type: ignore[arg-type] -- the test reaches past the public type
+    assert blockers == ([f"unsigned:workpaper:{PAPER}:L5"] if blocked else [])

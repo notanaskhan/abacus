@@ -1,0 +1,35 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-10-09T10:05",
+    "slices": [
+      "archive"
+    ]
+  },
+  "persona": "margaret-okonkwo",
+  "request": "GET /v1/audits/{work_item_id}/governance-communications",
+  "body": {
+    "allowed_actions": [
+      "governance_comm.request_approval",
+      "governance_comm.approve_send",
+      "governance_comm.manage_recipients"
+    ],
+    "items": [
+      {
+        "acknowledged_at": null,
+        "acknowledged_by_body": null,
+        "channel": "governance_room",
+        "due_on": null,
+        "id": "18f9c6ce-6b19-4732-b9a8-cf9deafe48de",
+        "kind": "completion_260",
+        "overdue": false,
+        "sent_at": "2026-10-08T20:00:00Z",
+        "standard": "AU-C 260",
+        "status": "sent"
+      }
+    ],
+    "required_sent": 1,
+    "required_total": 2
+  }
+}

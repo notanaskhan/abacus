@@ -41,12 +41,12 @@ MEMBERS: Final[tuple[tuple[str, str], ...]] = (
 BY: Final = "MO"  # Margaret Okonkwo, the engagement partner
 
 
-def contact_id_of(name: str) -> str:
-    return stable_id(f"contact:governance:{CLIENT}:{name}")
+def contact_id_of(name: str, client: str = CLIENT) -> str:
+    return stable_id(f"contact:governance:{client}:{name}")
 
 
-def grant_id_of(name: str) -> str:
-    return stable_id(f"grant:tcwg:{BODY_ID}:{name}")
+def grant_id_of(name: str, body_id: str = BODY_ID) -> str:
+    return stable_id(f"grant:tcwg:{body_id}:{name}")
 
 
 @register_slice(SLICE)

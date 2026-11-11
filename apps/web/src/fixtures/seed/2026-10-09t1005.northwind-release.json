@@ -1,0 +1,85 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-10-09T10:05",
+    "slices": [
+      "archive"
+    ]
+  },
+  "persona": "margaret-okonkwo",
+  "request": "GET /v1/audits/{work_item_id}/release",
+  "body": {
+    "allowed_actions": [
+      "report.release"
+    ],
+    "also_required": [
+      {
+        "key": "fs_approved",
+        "met": true,
+        "value": "v3"
+      },
+      {
+        "key": "bring_down",
+        "met": true,
+        "value": null
+      },
+      {
+        "key": "independence",
+        "met": true,
+        "value": "6 of 6"
+      },
+      {
+        "key": "final_materiality",
+        "met": true,
+        "value": "v3"
+      },
+      {
+        "key": "governance_260",
+        "met": true,
+        "value": "sent"
+      }
+    ],
+    "can_release": true,
+    "deliverable_ids": [],
+    "documentation_completion_date": null,
+    "engagement_partner_name": "Margaret Okonkwo",
+    "filings": [],
+    "gate_hash": "b707399ebc750aa02edaff4703ad731bd6ee1fb0a8b83820c8e67f9fadcc277e",
+    "gates": [
+      {
+        "blockers": [],
+        "gate": "G5",
+        "met": true,
+        "required": true,
+        "value": null
+      },
+      {
+        "blockers": [],
+        "gate": "G6",
+        "met": true,
+        "required": true,
+        "value": null
+      },
+      {
+        "blockers": [],
+        "gate": "G7",
+        "met": true,
+        "required": true,
+        "value": null
+      },
+      {
+        "blockers": [
+          "not_released"
+        ],
+        "gate": "G8",
+        "met": false,
+        "required": true,
+        "value": null
+      }
+    ],
+    "released_at": null,
+    "released_by_name": null,
+    "viewer_can_release": true
+  }
+}

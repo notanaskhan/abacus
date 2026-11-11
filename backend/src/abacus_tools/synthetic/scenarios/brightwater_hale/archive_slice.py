@@ -33,12 +33,12 @@ demo clock. Synthetic firm only (PF-X1); every name, date and figure is the hand
   omitted procedure"); Margaret approves it ("Addition logged"; the seal unchanged).
 
 **Granite Peak Outdoor Supply FY2026** (J04): Margaret decides "no substantial doubt" on the
-going-concern card on Mon Oct 26; the letter is signed and the report approved for the Oct 27
-release. The release itself is not here: it needs the AU-C 260 completion letter sent, and no
-slice seeds Granite Peak's governance body (R-02's room is Northwind's), so it waits on that seed.
+going-concern card on Mon Oct 26; its audit committee (Luis Ferrante, chair) gets the AU-C 260
+completion letter on Tue Oct 27, and the report releases that morning.
 
-**Lakeshore Literacy Alliance** (AR-C 90): Celia Marsh drafts the review report's
-choices on Tue Nov 10 (AUD-23 e).
+**Lakeshore Literacy Alliance** (AR-C 90): Omar Haddad, its manager, drafts the review report's
+choices on Tue Nov 10 (AUD-23 e). The design names Celia Marsh, the partner; the matrix gives
+`report.draft` to a manager or senior only, so the manager drafts (DEC-3306).
 
 Not here, or not as designed (DEC-3302): the rep letter's envelope is written as the provider
 would have written it (as `signatures` writes SIG-01's), since the C7 send matures through the
@@ -55,6 +55,7 @@ from datetime import datetime
 from typing import Final
 
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
+from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
@@ -92,13 +93,28 @@ ADDITION_DESCRIPTION: Final = (
     "PI-02 alternative procedure: participant deferral rates agreed to payroll elections."
 )
 GOING_CONCERN_CHOICE: Final = "no_substantial_doubt"
+# The EP's rationale (C3 needs one): AUD-19 e's code-computed inputs, in the partner's words.
+GOING_CONCERN_RATIONALE: Final = (
+    "DSCR of 1.32 against the 1.25 covenant minimum; the Front Range Bank revolver matures in "
+    "March 2028."
+)
+# Granite Peak's TCWG (J04): its audit committee, Luis Ferrante the chair, so the AU-C 260
+# completion letter has a room to go to (a governance body is the client's, DEC-93).
+GRANITE_BODY: Final = "Audit Committee"
+GRANITE_BODY_ID: Final = stable_id("governance-body:granite-audit-committee")
+GRANITE_MEMBERS: Final = (("Luis Ferrante", "chair"),)
+# The body each audit's governance letters go to, with its members.
+BODIES: Final = {
+    "A1": None,  # Northwind's Benefits Committee: the governance_room slice's (R-02-T13)
+    "A2": (GRANITE_BODY_ID, GRANITE_MEMBERS, GRANITE),
+}
 # Who does what, by the scenario's seat initials.
 PARTNER: Final = "MO"  # Margaret Okonkwo, engagement partner
 EQR: Final = "TW"  # Thomas Whitcombe
 MANAGER: Final = "HL"  # Hannah Leclerc
 SENIOR: Final = "MD"  # Marcus Delaney
 ADMIN: Final = "GH"  # Grace Holloway, firm admin
-REVIEW_PARTNER: Final = "CM"  # Celia Marsh, Lakeshore's partner
+REVIEW_MANAGER: Final = "OH"  # Omar Haddad, Lakeshore's manager (drafts: `report.draft`)
 
 
 def at(year: int, month: int, day: int, hour: int, minute: int = 0) -> datetime:
@@ -127,6 +143,24 @@ def _setup() -> list[Event]:
         Event(f"flag:{flag}", _at(10, 2, 8), "platform.flag_set", "system", SLICE, {"flag": flag})
         for flag in FLAGS
     ]
+    events.append(
+        Event(
+            f"governance-body:{GRANITE_BODY_ID}",
+            _at(9, 1, 10),
+            "assurance.governance_body_seeded",
+            PARTNER,
+            SLICE,
+            {
+                "body": GRANITE_BODY,
+                "kind": "audit_committee",
+                "members": [list(m) for m in GRANITE_MEMBERS],
+                "since": "2026-09-01",
+                "body_id": GRANITE_BODY_ID,
+                "client": GRANITE,
+            },
+            client=GRANITE,
+        )
+    )
     events.append(
         Event(
             "archive:release-mode",
@@ -181,6 +215,10 @@ def _northwind() -> list[Event]:
         # Fri Oct 9: the bring-down, the signature, the release.
         e("bring-down", _at(10, 9, 9, 4), "archive.bring_down", PARTNER),
         e("letter-signed", _at(10, 9, 9, 12), "archive.letter_signed", "system"),
+        # The completion checklist moved with the bring-down and Dana's signature (the projector,
+        # under `make dev`'s relay): its sign-offs read Changed, so they are given again before
+        # release (P-04's re-sign; a no-op where nothing moved).
+        e("review-final", _at(10, 9, 9, 40), "archive.review_closed", MANAGER),
         e("release", _at(10, 9, 10, 7), "archive.released", PARTNER),
         # Wed Oct 14: the Form 5500 filed.
         e("filed", _at(10, 14, 11), "archive.form_5500_filed", MANAGER, filed_on=FILED_ON),
@@ -206,9 +244,14 @@ def _northwind() -> list[Event]:
 def _granite() -> list[Event]:
     e = _event
     return [
+        # The FS audit's statements (A-06): drafted from the mapped trial balance, then approved
+        # by Luis Ferrante, recorded from his signed approval (AUD-24's "FS approved" row).
+        e("statements", _at(10, 23, 9), "archive.statements_drafted", MANAGER, GRANITE),
+        e("statements-approved", _at(10, 26, 8), "archive.statements_approved", MANAGER,
+          GRANITE),
         e("going-concern", _at(10, 26, 9), "archive.going_concern_requested", MANAGER, GRANITE),
         e("going-concern-decided", _at(10, 26, 11), "archive.going_concern_decided", PARTNER,
-          GRANITE, choice=GOING_CONCERN_CHOICE),
+          GRANITE, choice=GOING_CONCERN_CHOICE, rationale=GOING_CONCERN_RATIONALE),
         e("letter-v1", _at(10, 26, 13), "archive.letter_composed", MANAGER, GRANITE),
         e("letter-approval", _at(10, 26, 13, 30), "archive.letter_approval_requested", MANAGER,
           GRANITE),
@@ -220,13 +263,23 @@ def _granite() -> list[Event]:
           report_date=GRANITE_REPORT_DATE, city=REPORT_CITY),
         e("report-prepared", _at(10, 26, 17, 20), "archive.report_prepared", MANAGER, GRANITE),
         e("report-approved", _at(10, 26, 17, 30), "archive.report_approved", PARTNER, GRANITE),
+        e("letter-260", _at(10, 27, 8), "archive.governance_drafted", MANAGER, GRANITE,
+          letter=GOVERNANCE_260),
+        e("letter-260-sent", _at(10, 27, 8, 30), "archive.governance_sent", PARTNER, GRANITE,
+          letter=GOVERNANCE_260),
+        e("bring-down", _at(10, 27, 9, 4), "archive.bring_down", PARTNER, GRANITE),
         e("letter-signed", _at(10, 27, 9, 20), "archive.letter_signed", "system", GRANITE),
+        e("review-final", _at(10, 27, 10, 30), "archive.review_closed", MANAGER, GRANITE),
+        e("release", _at(10, 27, 11), "archive.released", PARTNER, GRANITE),
     ]  # fmt: skip
 
 
 def _lakeshore() -> list[Event]:
     return [
-        _event("report-v1", _at(11, 10, 9), "archive.report_choice", REVIEW_PARTNER, LAKESHORE,
+        # `report.draft` needs the drafter's independence on the engagement (the matrix).
+        _event("independence:OH", _at(11, 10, 8, 50), "engagements.member_independence_confirmed",
+               REVIEW_MANAGER, LAKESHORE),
+        _event("report-v1", _at(11, 10, 9), "archive.report_choice", REVIEW_MANAGER, LAKESHORE,
                field="other_information", value=False),
     ]  # fmt: skip
 

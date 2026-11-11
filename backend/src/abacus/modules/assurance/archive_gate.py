@@ -399,6 +399,9 @@ async def request_lock(ctx: AuthContext, work_item_id: UUID) -> ArchiveState:
     return state
 
 
+_ARCHIVE_OF = text("SELECT id FROM archives WHERE work_item_id = :wi")
+
+
 async def on_report_released(event: OutboxEvent) -> None:
     """`report.released` → the archive opens Assembling (once; a redelivery finds the row)."""
     from abacus.modules.assurance.archive_records import open_archive
@@ -410,6 +413,12 @@ async def on_report_released(event: OutboxEvent) -> None:
     done = await released(tenant, work_item_id)
     if done is None:
         return
+    # Both `report.released` consumers open the archive (post_release calls this first): the
+    # second finds the row, and a unit that records nothing may not commit, so it is skipped
+    # here (S35 follow-up: the event retried forever under the worker).
+    async with tenant_session(tenant) as session:
+        if await session.scalar(_ARCHIVE_OF, {"wi": work_item_id}) is not None:
+            return
     async with uow(tenant) as tx:
         await open_archive(
             tx,

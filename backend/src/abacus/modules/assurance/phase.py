@@ -33,7 +33,7 @@ from datetime import datetime
 from typing import Annotated, ClassVar, Final
 from uuid import UUID, uuid4
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, text
 
 from abacus.kernel.classification import classified
 from abacus.kernel.crypto import open_sealed, seal
@@ -351,6 +351,11 @@ class PhaseGateUnmet(DomainConflict):
     code = "phase_gate_unmet"
 
 
+_IN_APP_RELEASED = text(
+    "SELECT EXISTS (SELECT 1 FROM report_releases WHERE engagement_id = :e AND kind = 'original')"
+)
+
+
 async def _gate_met_in(
     tx: UnitOfWork, tenant: TenantContext, engagement_id: UUID, gate: str
 ) -> bool:
@@ -364,6 +369,10 @@ async def _gate_met_in(
         return (
             await release_of(tx.session, engagement_id) is not None
             or await external_release_of(tx.session, engagement_id) is not None
+            # A-07's in-app release (`report_releases`), written in this unit before the move;
+            # read here, it was never met and the release failed `phase_gate_unmet` (S35
+            # follow-up: the archive load's first in-app release against Postgres).
+            or bool(await tx.session.scalar(_IN_APP_RELEASED, {"e": engagement_id}))
         )
     if gate == "G9":
         return (
