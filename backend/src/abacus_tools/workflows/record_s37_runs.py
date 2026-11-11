@@ -9,6 +9,7 @@ Activities are stubbed (no database), so each history pins the command sequence 
   `AgentRunWorkflow` (a stub here) starts once, abandoned on close.
 - `session-v1-side-queue.json`: a message whose turn asks a question, a second message answered
   while the question stays open, then the answer, then `close`.
+- `run-events-prune-v1.json` (P-10-T44): one prune activity.
 
 A history on disk is never overwritten.
 """
@@ -25,7 +26,7 @@ from temporalio.client import Client
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents.api import AgentRunInput
+from abacus.modules.agents.api import AgentRunInput, RunEventsPruneWorkflow
 from abacus.modules.workbench.session_workflow import (
     SessionInput,
     TurnDone,
@@ -60,7 +61,11 @@ class _Stubs:
                 return TurnDone(asked=2)
             return TurnDone()
 
-        return [turn]
+        @activity.defn(name="agents.run_events.prune")
+        async def prune() -> int:
+            return 3
+
+        return [turn, prune]
 
 
 def _session_id(n: int) -> str:
@@ -109,6 +114,20 @@ async def _record(out: Path, stack: Stack) -> None:
             await asyncio.sleep(1)
             await handle.signal("close")
             await _save(client, out, name, handle)
+    name = "run-events-prune-v1.json"
+    if (out / name).exists():
+        print(f"{name} is recorded; skipped")
+        return
+    async with Worker(
+        client,
+        task_queue=f"{_QUEUE}-prune",
+        workflows=[RunEventsPruneWorkflow],
+        activities=_Stubs("prune").activities(),
+    ):
+        handle = await client.start_workflow(
+            RunEventsPruneWorkflow.run, id="run_events_prune:record", task_queue=f"{_QUEUE}-prune"
+        )
+        await _save(client, out, name, handle)
 
 
 def main(argv: list[str]) -> int:

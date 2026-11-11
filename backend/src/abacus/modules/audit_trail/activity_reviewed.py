@@ -12,6 +12,9 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-12 (S37): P-10-T44 frozen traces and the run_events prune
+        "agent_run.trace_frozen",
+        "run_events.pruned",
         # reviewed 2026-11-12 (S37): P-10-T43 workbench sessions and their turns
         "agent_run.turn_recorded",
         "session.created",
