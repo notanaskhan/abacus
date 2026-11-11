@@ -1693,9 +1693,69 @@ def _issue_item(
     )
 
 
+async def _citation_labels(ctx: AuthContext, ids: list[UUID]) -> dict[UUID, str]:
+    """The chips' labels from the field-citations reader; with none registered, a plain label."""
+    from abacus.kernel.errors import ServiceUnavailable
+    from abacus.modules.review.slots import field_citations
+
+    if not ids:
+        return {}
+    try:
+        found = await field_citations().describe(ctx, ids)
+    except ServiceUnavailable:
+        found = {}
+    return {i: (found[i].label if i in found else "Citation") for i in ids}
+
+
+async def _issue_runs_out(
+    ctx: AuthContext, issue_id: UUID
+) -> tuple[IssueFixInstructionsOut | None, IssueFixRunOut | None, list[IssueExplanationOut]]:
+    """T-04-T29: SHL-15 a', a'' and d from the issue's own runs (issue_runs.py)."""
+    from abacus.modules.agents.api import run_v2_status
+    from abacus.modules.review.issue_runs import issue_run_facts
+
+    instructions, fix, explanations = await issue_run_facts(ctx.tenant, issue_id)
+    people = [instructions.set_by] if instructions and instructions.set_by else []
+    names = await names_of(people) if people else {}
+    instructions_out = (
+        None
+        if instructions is None or instructions.set_by is None
+        else IssueFixInstructionsOut(
+            text=instructions.text,
+            scope=cast(FixScope, instructions.scope),
+            set_by_user_id=instructions.set_by,
+            set_by_name=names.get(instructions.set_by, ""),
+            set_at=instructions.set_at,
+        )
+    )
+    run_out = None
+    if fix is not None:
+        state = await run_v2_status(ctx.tenant, fix.agent_run_id)
+        run_out = IssueFixRunOut(
+            agent_run_id=fix.agent_run_id,
+            label=instructions.text if instructions is not None else "",
+            status=AgentRunStatus(state or "queued"),
+            proposal_id=fix.proposal_id,
+        )
+    labels = await _citation_labels(ctx, [c for e in explanations for c in e.citation_ids])
+    explained = [
+        IssueExplanationOut(
+            id=e.id,
+            text=e.text,
+            agent_run_id=e.agent_run_id,
+            explained_at=e.explained_at,
+            citations=[CitedSourceOut(citation_id=c, label=labels[c]) for c in e.citation_ids],
+            pinned=False,
+        )
+        for e in explanations
+    ]
+    return instructions_out, run_out, explained
+
+
 async def _issue_detail(ctx: AuthContext, issue_id: UUID) -> IssueDetailOut:
     row, texts, allowed = await issues_svc.read_issue(ctx, issue_id)
     names = await names_of([row.assignee_user_id]) if row.assignee_user_id else {}
+    fix_instructions, fix_run, explanations = await _issue_runs_out(ctx, issue_id)
     return IssueDetailOut(
         issue=_issue_item(row, names, allowed),
         record_label=texts.record_label,
@@ -1705,9 +1765,9 @@ async def _issue_detail(ctx: AuthContext, issue_id: UUID) -> IssueDetailOut:
         client_contact=None,
         links=[],
         suggestion=None,
-        fix_instructions=None,
-        fix_run=None,
-        explanations=[],
+        fix_instructions=fix_instructions,
+        fix_run=fix_run,
+        explanations=explanations,
         request_item_id=None,
         events=[],
     )
