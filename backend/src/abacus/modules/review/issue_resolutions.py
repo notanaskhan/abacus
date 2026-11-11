@@ -30,6 +30,7 @@ from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.engagements.api import gate_fact
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.review.events import IssueStatusChanged
 from abacus.modules.review.issue_runs import record_issue_run
 from abacus.modules.review.issues import SUBJECT, IssueChanged
 from abacus.modules.review.issues import issue_record as _record
@@ -144,6 +145,9 @@ async def move(ctx: AuthContext, issue_id: UUID, to: str, seen_version: int) -> 
             after=Ref(version=current.version + 1),
             scope=Scope(engagement_id=current.engagement_id),
         )
+        tx.emit(
+            IssueStatusChanged(issue_id=issue_id, engagement_id=current.engagement_id, status=to)
+        )
 
 
 async def _system_only(tenant: TenantContext, issue_id: UUID) -> bool:
@@ -192,6 +196,11 @@ async def system_resolve_dependents(system: TenantContext, source_ref: str) -> l
                 before=Ref(version=int(row.version)),
                 after=Ref(version=int(row.version) + 1),
                 scope=Scope(engagement_id=row.engagement_id),
+            )
+            tx.emit(
+                IssueStatusChanged(
+                    issue_id=row.id, engagement_id=row.engagement_id, status="resolved"
+                )
             )
             resolved.append(row.id)
     return resolved

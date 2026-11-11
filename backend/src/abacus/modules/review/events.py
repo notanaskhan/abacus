@@ -228,3 +228,18 @@ class SignOffReReviewRequested(DomainEvent):
     level: Annotated[int, classified("internal")]
     signed_by: Annotated[UUID, classified("internal")]
     requested_by: Annotated[UUID, classified("internal")]
+
+
+# --- Issues (T-04-T29: the return's counts reach a second tab) ---------------------------------
+
+
+class IssueStatusChanged(DomainEvent):
+    """An issue was raised or moved (resolved, verified, reopened, not applicable, system
+    resolved). Identifiers and the status word only: the invalidation stream refetches the
+    engagement's counts (`GET /v1/tax/returns/{id}/workspace`), never the text."""
+
+    event_type: ClassVar[str] = "issue.status_changed"
+
+    issue_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    status: Annotated[str, classified("internal")]

@@ -208,6 +208,11 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "agent_run.completed",
         "proposal.decided",
         "proposal.undone",
+        # T-04-T29: the return workspace's invalidations (a second tab's counts).
+        "document_approval.changed",
+        "issue.status_changed",
+        "checkpoint.recorded",
+        "checkpoint.rejected",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

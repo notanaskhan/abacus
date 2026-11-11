@@ -20,16 +20,17 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Final, Literal, cast
+from typing import Annotated, ClassVar, Final, Literal, cast
 from uuid import UUID, uuid5
 
 from sqlalchemy import text
 
+from abacus.kernel.classification import classified
 from abacus.kernel.clock import now
 from abacus.kernel.crypto import seal
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden, NotFound
-from abacus.kernel.uow import Ref, Scope, Target, uow
+from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
 from abacus.modules.engagements.api import functions_on, get_ref, work_item_engagement
 from abacus.modules.evidence.api import engagement_documents
 from abacus.modules.identity.api import AuthContext, Resource, allowed_actions, authorise, names_of
@@ -53,6 +54,18 @@ WORKSPACE_ACTIONS: Final = (
     "residency.request_proposal",
     "residency.confirm",
 )
+
+
+class DocumentApprovalChanged(DomainEvent):
+    """A document was approved or unapproved at a level (T-04-T29): the invalidation stream
+    refetches the return's "Review n" on a second tab. Identifiers only."""
+
+    event_type: ClassVar[str] = "document_approval.changed"
+
+    approval_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    kind: Annotated[Literal["approve", "reverse"], classified("internal")]
 
 
 class LevelNotPermitted(DomainForbidden):
@@ -215,6 +228,14 @@ async def approve(
             after=Ref(approval=approval_id, evidence_version_id=evidence_version_id),
             scope=Scope(engagement_id=engagement, work_item_id=return_id),
         )
+        tx.emit(
+            DocumentApprovalChanged(
+                approval_id=approval_id,
+                engagement_id=engagement,
+                work_item_id=return_id,
+                kind="approve",
+            )
+        )
     names = await names_of([ctx.user_id])
     return Approval(
         approval_id,
@@ -276,6 +297,14 @@ async def reverse(ctx: AuthContext, approval_id: UUID, reason: str | None) -> Ap
             target=Target("tax_return", row.tax_return_id),
             after=Ref(approval=approval_id),
             scope=Scope(engagement_id=engagement, work_item_id=row.tax_return_id),
+        )
+        tx.emit(
+            DocumentApprovalChanged(
+                approval_id=approval_id,
+                engagement_id=engagement,
+                work_item_id=row.tax_return_id,
+                kind="reverse",
+            )
         )
     names = await names_of([row.actor_user_id])
     return Approval(

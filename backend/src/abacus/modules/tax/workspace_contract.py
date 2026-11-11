@@ -268,6 +268,8 @@ class WorksheetSectionOut(BaseModel):
     title: Annotated[str, Internal]
     fields: Annotated[list[WorksheetFieldOut], Tri]
     signed_off: Annotated[bool, Internal] = False
+    # T-04-T29: the section's id, the `return_worksheet_section` sign-off target (SHL-12).
+    section_id: Annotated[UUID | None, Internal] = None
 
 
 class WorksheetFieldsOut(BaseModel):
@@ -563,6 +565,7 @@ async def worksheet_fields_route(
             WorksheetSectionOut(
                 key=s.key,
                 title=s.title,
+                section_id=s.section_id,
                 fields=[
                     WorksheetFieldOut(
                         field_key=f.field_key,

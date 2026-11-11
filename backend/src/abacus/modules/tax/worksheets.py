@@ -63,6 +63,7 @@ class FieldGroup:
     key: str
     title: str
     fields: list[FieldRow]
+    section_id: UUID | None = None  # T-04-T29: the section's sign-off target
 
 
 async def _authorised(ctx: AuthContext, work_item_id: UUID) -> UUID:
@@ -136,7 +137,8 @@ async def fields(ctx: AuthContext, worksheet_id: UUID, q: str | None) -> list[Fi
         rows = (
             await session.execute(
                 text(
-                    "SELECT s.key AS section_key, s.name AS section_name, f.field_key, f.label, "
+                    "SELECT s.id AS section_id, s.key AS section_key, s.name AS section_name, "
+                    "f.field_key, f.label, "
                     "f.line_ref, f.derivation, f.engine_field_key, f.current_value, "
                     "coalesce(f.current_fvv_seq, 0) AS seq "
                     "FROM return_fields f JOIN return_worksheet_sections s ON s.id = f.section_id "
@@ -159,7 +161,9 @@ async def fields(ctx: AuthContext, worksheet_id: UUID, q: str | None) -> list[Fi
         known, cites = latest.get((worksheet_id, r.field_key), (None, 0))
         source = known or ("engine_import" if r.derivation == "engine" else None)
         state = _STATE.get(source or "", "imported")
-        section = sections.setdefault(r.section_key, FieldGroup(r.section_key, r.section_name, []))
+        section = sections.setdefault(
+            r.section_key, FieldGroup(r.section_key, r.section_name, [], r.section_id)
+        )
         section.fields.append(
             FieldRow(
                 r.field_key,

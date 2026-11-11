@@ -30,6 +30,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import OutboxEvent, Ref, Scope, Target, uow
 from abacus.modules.identity.api import AgentContext, AuthContext, Forbidden, authorise
+from abacus.modules.review.events import IssueStatusChanged
 from abacus.modules.review.issues import SUBJECT, issue_row, record_of
 from abacus.modules.review.sealing import open_text, seal_text
 
@@ -208,6 +209,11 @@ async def _resolve_as(
             before=Ref(version=current.version),
             after=Ref(version=current.version + 1, proposal=str(proposal_id)),
             scope=Scope(engagement_id=current.engagement_id),
+        )
+        tx.emit(
+            IssueStatusChanged(
+                issue_id=issue_id, engagement_id=current.engagement_id, status="resolved"
+            )
         )
     return issue_id
 

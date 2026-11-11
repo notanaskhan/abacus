@@ -28,6 +28,15 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
     # P-10-T27 (DEC-3117): `/v1/events` invalidations feed no C16 kind, so they stay out of
     # `SUBSCRIPTIONS`; the worker composes them after every module's subscriptions.
     realtime = {"notification.created", "request_item.status_changed", "report.released"}
+    # T-04-T29 (DEC-3419): the return workspace's counts reach a second tab.
+    realtime |= {
+        "document_approval.changed",
+        "issue.status_changed",
+        "checkpoint.recorded",
+        "checkpoint.approved",
+        "checkpoint.rejected",
+        "sign_off.recorded",
+    }
     assert set(INVALIDATIONS) == realtime
 
 
