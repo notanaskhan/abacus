@@ -8,20 +8,20 @@
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TAX-07 …/` |
 | Epic and tasks | T-04 · T-04-T02 (contract), T-04-T07 (fixtures), screen rows per §9 |
 | Priority | P0 |
-| Manifest status | planned |
+| Manifest status | fixture (T-04-T27: `screens/TAX-07`; live wiring with T-04-T29) |
 
 ## States
 | Artboard | Data condition that produces it | Status |
 |---|---|---|
-| a | Default (24 events; Manager review checkpoint Current + starred) | planned |
-| b | Proposed checkpoint ("☰ 1 proposed", "K-1 box 18A · Proposed · Review") | planned |
-| b2 | Reviewing the proposal (SHL-16 diff with agent steps) | planned |
-| c | No changes needed (9:31 AM; Issues 4→3; out of sync until export) | planned |
-| d | Delivered (Sep 19; accepted IRS + NY; Partner approval current) | planned |
-| e | Filtered "Agent" | planned |
-| e2 | Empty filter ("No events match this filter.") | planned |
-| f | Checkpoint diff (Initial draft; Return Drafter steps; Restore…; Compare) | planned |
-| loading | skeleton per the handoff | planned |
+| a | Default (24 events; Manager review checkpoint Current + starred) | fixture |
+| b | Proposed checkpoint ("☰ 1 proposed", "K-1 box 18A · Proposed · Review") | fixture |
+| b2 | Reviewing the proposal (SHL-16 diff with agent steps) | fixture |
+| c | No changes needed (9:31 AM; Issues 4→3; out of sync until export) | fixture |
+| d | Delivered (Sep 19; accepted IRS + NY; Partner approval current) | fixture |
+| e | Filtered "Agent" | fixture |
+| e2 | Empty filter ("No events match this filter.") | fixture |
+| f | Checkpoint diff (Initial draft; Return Drafter steps; Restore…; Compare) | fixture |
+| loading | skeleton per the handoff | fixture |
 | not allowed | walled or out of scope: 404 (INV-3) | planned |
 
 ## API
