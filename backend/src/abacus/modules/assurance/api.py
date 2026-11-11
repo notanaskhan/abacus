@@ -593,6 +593,7 @@ __all__ = [
     "run_eqr_digest",  # A-07-T41: the archive slice
     "run_letter_compose",  # A-07-T41: the archive slice
     "seal_matches",
+    "set_governance_recipients",  # A-07-T41: the archive slice
     "set_misstatement_effect",
     "start_archive_lock",  # A-07-T41: the archive slice
     "start_mapping",
@@ -699,6 +700,11 @@ from abacus.modules.assurance.archive_lock import decide_lock as decide_archive_
 from abacus.modules.assurance.archive_lock import start_lock as start_archive_lock  # noqa: E402
 from abacus.modules.assurance.eqr_service import REVIEW_TARGET as EQR_REVIEW_TARGET  # noqa: E402
 from abacus.modules.assurance.eqr_service import concur as eqr_concur  # noqa: E402
+
+# S35 round 2 end pass (TASK-6740): EQR notes (AUD-18) target the review; facts only, no G5 row.
+from abacus.modules.assurance.eqr_service import (  # noqa: E402
+    eqr_review_facts as _eqr_review_facts,
+)
 from abacus.modules.assurance.eqr_service import mark_reviewed as eqr_mark_reviewed  # noqa: E402
 from abacus.modules.assurance.eqr_service import open_reviews as open_eqr_reviews  # noqa: E402
 from abacus.modules.assurance.eqr_service import (  # noqa: E402
@@ -739,3 +745,8 @@ from abacus.modules.assurance.report_builder import (  # noqa: E402
 from abacus.modules.assurance.report_builder import state as report_state  # noqa: E402
 from abacus.modules.assurance.shadow import ShadowFacts as ShadowFacts  # noqa: E402  # Q-04-T136
 from abacus.modules.assurance.shadow import shadow_facts as a07_shadow_facts  # noqa: E402
+
+_register_reviewable_facts(EQR_REVIEW_TARGET, _eqr_review_facts)
+from abacus.modules.assurance.governance_comms import (  # noqa: E402  # A-07-T41
+    set_recipients as set_governance_recipients,
+)

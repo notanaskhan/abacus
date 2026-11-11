@@ -2,7 +2,7 @@
 id: TASK-6737
 title: "A-07-T47: fixture-to-live swap for AUD-24 and AUD-25 (polling, invalidation, refusal words, run status)"
 spec: SPEC-314
-acceptance_criteria: [A-07 F6, F7, F11]
+acceptance_criteria: [AC-6, AC-7, AC-9]
 risk_zone: green
 status: in-review
 branch: s35b-a07-t47

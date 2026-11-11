@@ -172,6 +172,7 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     run_archive_readiness,
     run_eqr_digest,
     run_letter_compose,
+    set_governance_recipients,
     set_misstatement_effect,
     start_archive_lock,
     start_mapping,
@@ -4271,8 +4272,19 @@ async def _archive_report_dated(conn: asyncpg.Connection, _: Scenario, event: Ev
     )
 
 
+async def _archive_report_prepared(
+    conn: asyncpg.Connection, scenario: Scenario, event: Event
+) -> None:
+    """The preparer's L1 on the report version (the grammar's prepared mark, before any review)."""
+    await _report_sign(conn, event, 1)
+
+
 async def _archive_report_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """AUD-23 b: the EP's L4 sign-off on the report version's content hash (SHL-12)."""
+    await _report_sign(conn, event, 4)
+
+
+async def _report_sign(conn: asyncpg.Connection, event: Event, level: int) -> None:
     _engagement, item = await _archive_item(conn, event)
     ctx = await _staff_context(conn, event)
     current = await report_state(ctx.tenant, item)
@@ -4288,9 +4300,9 @@ async def _archive_report_approved(conn: asyncpg.Connection, _: Scenario, event:
         ctx,
         "audit_report_version",
         cast(UUID, version),
-        4,
+        level,
         current.content_hash,
-        SIGN_OFF_STATEMENTS[4].version,
+        SIGN_OFF_STATEMENTS[level].version,
     )
 
 
@@ -4314,9 +4326,30 @@ async def _eqr_review(conn: asyncpg.Connection, engagement: UUID, item: UUID) ->
     return cast(UUID, found)
 
 
+async def _archive_function(
+    conn: asyncpg.Connection, engagement: UUID, item: UUID, seat: str, function: str
+) -> None:
+    """A work-item function the matrix's `function_in` reads (P-04): scenario structure, seeded
+    as the tax board seeds its preparers and reviewers."""
+    user = user_id_of(_SEATS[seat])
+    async with as_tenant(conn, TENANT):
+        await conn.execute(
+            "INSERT INTO work_item_assignments (tenant_id, work_item_id, engagement_id, "
+            "user_id, function, assigned_by) SELECT $1, $2, $3, $4, $5, $4 "
+            "WHERE NOT EXISTS (SELECT 1 FROM work_item_assignments WHERE tenant_id = $1 "
+            "AND work_item_id = $2 AND user_id = $4 AND function = $5 AND removed_at IS NULL)",
+            TENANT,
+            item,
+            engagement,
+            user,
+            function,
+        )
+
+
 async def _archive_eqr_digest(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """AUD-18 d: "Assemble judgments digest", the Agent's code run for Thomas."""
     engagement, item = await _archive_item(conn, event)
+    await _archive_function(conn, engagement, item, _archive.EQR, "eqr")
     await _eqr_review(conn, engagement, item)
     await run_eqr_digest(await _staff_context(conn, event), item)
 
@@ -4343,13 +4376,13 @@ async def _archive_eqr_checklist(conn: asyncpg.Connection, _: Scenario, event: E
 async def _archive_eqr_note_raised(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     engagement, item = await _archive_item(conn, event)
     review = await _eqr_review(conn, engagement, item)
-    _ref, body, assignee = _archive.EQR_NOTES[int(cast(int, event.data["n"])) - 1]
+    ref, body, assignee = _archive.EQR_NOTES[int(cast(int, event.data["n"])) - 1]
     await raise_review_note(
         await _staff_context(conn, event),
         EQR_REVIEW_TARGET,
         review,
-        anchor_kind=None,
-        anchor_ref=None,
+        anchor_kind="section",  # a note is pinned (the table's CHECK); EQR-1 and EQR-2 name theirs
+        anchor_ref=ref,
         body=body,
         assignee=user_id_of(_SEATS[assignee]),
     )
@@ -4359,7 +4392,7 @@ async def _eqr_notes(conn: asyncpg.Connection, review: UUID) -> list[UUID]:
     rows = await tenant_rows(
         conn,
         TENANT,
-        "SELECT id FROM review_notes WHERE target_type = $1 AND target_id = $2 "
+        "SELECT id FROM reviewable_notes WHERE target_type = $1 AND target_id = $2 "
         "ORDER BY created_at, id",
         EQR_REVIEW_TARGET,
         review,
@@ -4417,10 +4450,30 @@ _SIGNER_OF_LEVEL: Final = {1: "AC", 2: _archive.SENIOR, 3: _archive.MANAGER, 4: 
 async def _archive_review_closed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """G5 before release (AUD-24 a): every reviewable's outstanding level signed by the person
     who holds it on the team, and every open note answered and cleared, through the review
-    grammar (P-04). What is outstanding is G5's own blocker list, so nothing already signed is
-    signed again."""
+    grammar (P-04): the notes first (a sign-off refuses a target with an open note), then the
+    levels. What is outstanding is G5's own blocker list, so nothing signed is signed again."""
     engagement, _item = await _archive_item(conn, event)
     tenant = TenantContext(TENANT, "system", "archive_scenario")
+    for blocker in await g5_blockers(tenant, engagement):
+        kind, _sep, note = blocker.partition(":")
+        if kind != "review_note":
+            continue
+        status = await tenant_value(
+            conn, TENANT, "SELECT status FROM reviewable_notes WHERE id = $1", UUID(note)
+        )
+        if status == "open":
+            await review_note_event(
+                await _staff_context(conn, _as_actor(event, "AC")), UUID(note), "responded",
+                "Addressed on the workpaper.",
+            )  # fmt: skip
+        # Only the raiser clears (SPEC-041 AC-3): as the person who raised it.
+        raiser = await tenant_value(
+            conn, TENANT, "SELECT raised_by FROM reviewable_notes WHERE id = $1", UUID(note)
+        )
+        seat = next((i for i in _SEATS if user_id_of(_SEATS[i]) == raiser), event.actor)
+        await review_note_event(
+            await _staff_context(conn, _as_actor(event, seat)), UUID(note), "cleared", None
+        )
     for blocker in await g5_blockers(tenant, engagement):
         kind, _sep, rest = blocker.partition(":")
         if kind in ("unsigned", "stale"):
@@ -4438,19 +4491,6 @@ async def _archive_review_closed(conn: asyncpg.Connection, _: Scenario, event: E
                     facts.content_hash,
                     SIGN_OFF_STATEMENTS[level].version,
                 )
-    for blocker in await g5_blockers(tenant, engagement):
-        kind, _sep, note = blocker.partition(":")
-        if kind != "review_note":
-            continue
-        status = await tenant_value(
-            conn, TENANT, "SELECT status FROM review_notes WHERE id = $1", UUID(note)
-        )
-        if status == "open":
-            await review_note_event(
-                await _staff_context(conn, _as_actor(event, "AC")), UUID(note), "responded",
-                "Addressed on the workpaper.",
-            )  # fmt: skip
-        await review_note_event(await _staff_context(conn, event), UUID(note), "cleared", None)
 
 
 async def _governance_id(conn: asyncpg.Connection, item: UUID, kind: str) -> UUID:
@@ -4482,6 +4522,10 @@ async def _archive_governance_drafted(conn: asyncpg.Connection, _: Scenario, eve
     communication = (
         cast(UUID, existing) if existing is not None else await governance_create(ctx, item, kind)
     )
+    # AUD-22's recipients: the Benefits Committee for Northwind (DEC-93); other clients have none
+    # seeded, so their letters go to no body and stay drafts the EP sends elsewhere.
+    if str(event.data["audit"]) == "A1":
+        await set_governance_recipients(ctx, item, [UUID(_room.BODY_ID)])
     await governance_request_approval(ctx, item, communication)
 
 
@@ -6867,6 +6911,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "archive.letter_sent": _archive_letter_sent,
     "archive.review_closed": _archive_review_closed,
     "archive.report_dated": _archive_report_dated,
+    "archive.report_prepared": _archive_report_prepared,
     "archive.report_approved": _archive_report_approved,
     "archive.governance_drafted": _archive_governance_drafted,
     "archive.governance_sent": _archive_governance_sent,
@@ -6967,7 +7012,9 @@ async def load(
     host = portal_host(HOST_LABEL) if PORTAL_SLICE in slices else None
     if staging and PORTAL_SLICE in slices and host is None:
         raise LoadRefused("--slice portal on staging needs portal_base_domain for its host")
-    scenario = build(at, holdouts, ("audit_core", *slices))
+    # A slice that needs `audit_core` (governance_room) brings it in its expansion: build takes it
+    # once (A-07-T41 found the duplicate).
+    scenario = build(at, holdouts, ("audit_core", *(s for s in slices if s != "audit_core")))
     replayed = skipped = 0
     conn = await connect_db(dsn)
     try:

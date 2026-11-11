@@ -676,6 +676,9 @@ NO_YAML_ENTRY = {
     "K1HandoffOut.status": "draft_shared, final_replaced",
     "LetterConsentOut.status": "needed",
     "TranscriptLineDiffOut.status": "agrees, differs, not_on_return",
+    # S35 round 2 end pass (TASK-6740), recorded for its owner: T-05-T06's workbook stub (#1665)
+    # names E13's cell states before TAX-05's live grid gives `value` and `locked_by_run` words.
+    "WorkbookCellOut.state": "value, locked_by_run",
 }
 # Findings: fields with a literal outside the 3.3.1 object they belong to.
 OUTSIDE_ITS_OBJECT = {
@@ -696,6 +699,9 @@ UNTYPED = {
     "ComposerLetterOut.envelope_status",
     "IntakeBinderOut.status", "IntakeQuestionnaireOut.status", "IntakeRequestOut.status",
     "K1RelatedReturnOut.status",
+    # S35 round 2 end pass (TASK-6740): T-05-T06's workbook stub (#1665) carries the run's, the
+    # entry's and the issue's own status words as strings until TAX-05's live rows type them.
+    "WorkbookRunRowOut.state", "WorkbookJournalEntryOut.state", "WorkbookReturnIssueOut.status",
 }  # fmt: skip
 
 

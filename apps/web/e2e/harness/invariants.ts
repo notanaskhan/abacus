@@ -31,6 +31,9 @@ export interface InvariantContext {
 }
 
 /** The human-only verbs (plan 04 rule 9; F-05 H1; inv.spec.ts). */
+/** The product's name (DEC-01), not an account word that starts with it. */
+export const PRODUCT_NAME = /\bAccrued\b(?! (?:[a-z]|Expenses))/;
+
 export const HUMAN_VERBS = [
   "Approve",
   "Accept",
@@ -138,7 +141,9 @@ export function violations(
       out.push(`${portal ? "INV-4" : "INV-3"}: ${ctx.persona.name} sees out-of-scope "${name}"`);
     }
   }
-  if (portal && /\bAccrued\b/.test(facts.text)) {
+  // The product's name, never an account the client names ("Accrued expenses", "Accrued
+  // administrative expenses": PAJE-2 and Copperleaf's package; S35 round 2).
+  if (portal && PRODUCT_NAME.test(facts.text)) {
     out.push(`INV-4: the portal shows "Accrued" to ${ctx.persona.name} (DEC-01)`);
   }
   for (const [path, status] of probeStatuses) {

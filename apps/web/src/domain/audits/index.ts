@@ -78,17 +78,3 @@ export {
   isNarrowedAudits,
   useAuditIndex,
 } from "./list";
-export {
-  COMPLETION_QUERIES,
-  LIVE_POLL_MS,
-  REFUSAL_PROBLEM,
-  REFUSAL_WORDS,
-  RUN_POLL_MS,
-  asksForStepUp,
-  invalidateCompletion,
-  lockRunning,
-  refusalWords,
-  releaseRunning,
-  useLiveArchive,
-  useLiveRelease,
-} from "./completionLive";

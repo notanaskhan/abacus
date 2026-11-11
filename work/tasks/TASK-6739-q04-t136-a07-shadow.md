@@ -1,8 +1,9 @@
 ---
 id: TASK-6739
 title: "Q-04-T136: A-07 dark code shadowed on PF-X1's Northwind against its own tool; the T-04 1040 workspace shadow plan"
-spec: Q-04
-acceptance_criteria: [Q-04-T136]
+spec: SPEC-000  # row
+acceptance_criteria: [AC-1]
+epic: Q-04
 risk_zone: red
 status: in-review
 branch: s35b-q04-t136

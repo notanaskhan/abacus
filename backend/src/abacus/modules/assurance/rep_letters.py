@@ -499,7 +499,7 @@ async def mark_sent(
         tx.record(
             "rep_letter.sent",
             target=Target("representation_letter", cast("_LetterRow", letter).id),
-            after=Ref(envelope=envelope_id, dated_as_of=report_date.isoformat()),
+            after=Ref(envelope=envelope_id, dated_as_of=int(report_date.strftime("%Y%m%d"))),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
 
@@ -569,7 +569,7 @@ async def record_signature(
         tx.record(
             "rep_letter.signed" if outcome.status == "signed" else "rep_letter.date_mismatch",
             target=Target("representation_letter", letter.id),
-            after=Ref(signed_on=outcome.signed_on.isoformat()),
+            after=Ref(signed_on=int(outcome.signed_on.strftime("%Y%m%d"))),
             scope=Scope(engagement_id=letter.engagement_id, work_item_id=letter.work_item_id),
         )
     return outcome

@@ -16,7 +16,8 @@ import pytest
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
-from abacus.modules.assurance.api import release_snapshot
+from abacus.modules.assurance.api import a07_shadow_facts, release_snapshot
+from abacus_tools.a07_shadow import compare
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import BY_LABEL
@@ -101,3 +102,18 @@ async def test_ac_northwind_is_ready_to_release_at_10_05_through_the_services(
     assert (
         await seed.value("SELECT count(*) FROM report_releases WHERE work_item_id = $1", item) == 0
     )
+    # Q-04-T136 (synthetic, PF-X1): the shadow at 10:05 reads every gate met, and nothing yet to
+    # compare with the firm tool's release, documentation date or lock.
+    facts = await a07_shadow_facts(TenantContext(TENANT, "system", "a07t41-shadow"), item)
+    tool = {"report_released_on": "2026-10-09", "documentation_completion_date": "2026-12-08",
+            "archived_on": "2026-12-03"}  # fmt: skip
+    accrued = {"report_released_on": facts.released_on,
+               "documentation_completion_date": facts.documentation_completion_date,
+               "archived_on": facts.archived_on}  # fmt: skip
+    outcomes = {c.key: c.outcome for c in compare(accrued, dict(facts.gates), tool)}
+    assert outcomes == {
+        "report_released_on": "not_yet",
+        "documentation_completion_date": "not_yet",
+        "archived_on": "not_yet",
+        "gates_at_release": "match",
+    }

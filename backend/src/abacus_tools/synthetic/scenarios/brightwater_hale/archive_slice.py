@@ -33,7 +33,9 @@ demo clock. Synthetic firm only (PF-X1); every name, date and figure is the hand
   omitted procedure"); Margaret approves it ("Addition logged"; the seal unchanged).
 
 **Granite Peak Outdoor Supply FY2026** (J04): Margaret decides "no substantial doubt" on the
-going-concern card on Mon Oct 26; the report releases on Tue Oct 27, 2026.
+going-concern card on Mon Oct 26; the letter is signed and the report approved for the Oct 27
+release. The release itself is not here: it needs the AU-C 260 completion letter sent, and no
+slice seeds Granite Peak's governance body (R-02's room is Northwind's), so it waits on that seed.
 
 **Lakeshore Literacy Alliance** (AR-C 90): Celia Marsh drafts the review report's
 choices on Tue Nov 10 (AUD-23 e).
@@ -169,6 +171,7 @@ def _northwind() -> list[Event]:
         e("review-closed", _at(10, 7, 15), "archive.review_closed", MANAGER),
         e("report-date", _at(10, 7, 16), "archive.report_dated", MANAGER,
           report_date=REPORT_DATE, city=REPORT_CITY),
+        e("report-prepared", _at(10, 7, 16, 10), "archive.report_prepared", MANAGER),
         e("report-approved", _at(10, 7, 16, 20), "archive.report_approved", PARTNER),
         # Thu Oct 8: the AU-C 260 completion letter.
         e("letter-260", _at(10, 8, 10), "archive.governance_drafted", MANAGER,
@@ -215,14 +218,9 @@ def _granite() -> list[Event]:
         e("review-closed", _at(10, 26, 17), "archive.review_closed", MANAGER, GRANITE),
         e("report-date", _at(10, 26, 17, 10), "archive.report_dated", MANAGER, GRANITE,
           report_date=GRANITE_REPORT_DATE, city=REPORT_CITY),
+        e("report-prepared", _at(10, 26, 17, 20), "archive.report_prepared", MANAGER, GRANITE),
         e("report-approved", _at(10, 26, 17, 30), "archive.report_approved", PARTNER, GRANITE),
-        e("letter-260", _at(10, 27, 8), "archive.governance_drafted", MANAGER, GRANITE,
-          letter=GOVERNANCE_260),
-        e("letter-260-sent", _at(10, 27, 8, 30), "archive.governance_sent", PARTNER, GRANITE,
-          letter=GOVERNANCE_260),
-        e("bring-down", _at(10, 27, 9, 4), "archive.bring_down", PARTNER, GRANITE),
         e("letter-signed", _at(10, 27, 9, 20), "archive.letter_signed", "system", GRANITE),
-        e("release", _at(10, 27, 11), "archive.released", PARTNER, GRANITE),
     ]  # fmt: skip
 
 

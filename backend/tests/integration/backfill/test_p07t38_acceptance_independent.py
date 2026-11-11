@@ -37,6 +37,7 @@ import asyncpg
 import httpx
 import pytest
 
+from abacus.kernel.clock import FIRM_ZONE
 from abacus.kernel.db import TenantContext
 from abacus.kernel.db.session import ActorKind
 from abacus.modules.identity.api import RULES, AuthContext, Forbidden
@@ -901,7 +902,7 @@ async def test_ac11_a_letter_dated_before_the_decision_answers_409(tb: Thornbury
     decided = _json(await tb.decide("accept"), 201)
     decided_on = (
         datetime.fromisoformat(cast(str, cast(Json, decided["decision"])["decided_at"]))
-        .astimezone(UTC)
+        .astimezone(FIRM_ZONE)  # the server compares on the firm's date, not UTC's
         .date()
     )
     letter = f"/v1/engagements/{tb.engagement_id}/letter/record"

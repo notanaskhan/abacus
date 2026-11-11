@@ -1072,6 +1072,7 @@ UPDATE_COLUMNS.update(
         "governance_recipients": frozenset({"ack_required", "version", "updated_at"}),
         "audit_reports": frozenset(
             {"status", "current_version_id", "report_date", "city", "version", "updated_at"}
+            | {"template_id"}  # 0802 (TASK-6740): a choice follows the newest published template
         ),
     }
 )

@@ -36,7 +36,9 @@ for (const [screen, states] of Object.entries(BUILT)) {
     test(`${screen}${st}: the portal never says Accrued`, async ({ page }) => {
       await open(page, screen, st);
       const text = await page.locator(`[data-artboard='${st}']`).innerText();
-      expect(text).not.toMatch(/Accrued/);
+      // The product's name, never an account: "Accrued expenses" and "Accrued administrative
+      // expenses" (PAJE-2) are the client's own words (J12 8; S35 round 2).
+      expect(text).not.toMatch(/Accrued(?! (?:[a-z]|Expenses))/);
     });
   }
 

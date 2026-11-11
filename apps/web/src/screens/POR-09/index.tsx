@@ -602,7 +602,12 @@ function Viewer({
         <p className="px-[12px] py-[6px] text-[12.5px] text-ink-3">{COPY.approvedNote}</p>
       )}
       <div className="flex min-h-0 flex-1">
-        <div className="relative min-h-0 flex-1 overflow-auto bg-shell p-[14px]">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Document"
+          className="relative min-h-0 flex-1 overflow-auto bg-shell p-[14px]"
+        >
           <div className="relative mx-auto w-fit overflow-hidden rounded-[6px] shadow-page">
             <PageImage
               deliverableId={deliverable.id}
@@ -623,10 +628,8 @@ function Viewer({
               <span
                 aria-hidden="true"
                 data-watermark="draft"
-                className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06]"
-              >
-                DRAFT
-              </span>
+                className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06] before:content-['DRAFT']"
+              />
             )}
             {deliverable.legend_kind === "ar_c_70" && (
               <p

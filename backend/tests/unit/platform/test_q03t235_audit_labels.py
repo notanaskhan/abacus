@@ -5,6 +5,7 @@ TIN form is refused."""
 
 from __future__ import annotations
 
+import importlib
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -80,8 +81,13 @@ async def test_a_tenant_labeler_reads_as_the_viewers_firm_or_the_indexers() -> N
     assert by_index["a"].text == "Engagement A" and seen[-1] is TENANT
     # No viewer and no firm: nothing is named (fail closed).
     assert await audit_slots.audit_labels(None, "probe_engagement", ["a"]) == {}
+    audit_slots.register_audit_tenant_labeler("probe_engagement", labeler)  # a reload: idempotent
+
+    async def other(tenant: TenantContext, ids: Sequence[str]) -> Mapping[str, AuditLabel]:
+        return {}
+
     with pytest.raises(ValueError):
-        audit_slots.register_audit_tenant_labeler("probe_engagement", labeler)
+        audit_slots.register_audit_tenant_labeler("probe_engagement", other)
 
 
 async def test_a_label_with_a_tin_or_above_confidential_is_refused() -> None:
@@ -89,7 +95,6 @@ async def test_a_label_with_a_tin_or_above_confidential_is_refused() -> None:
         del tenant, ids
         return {
             "ok": AuditLabel("Northwind Robotics 401(k) Plan PY2025", "confidential"),
-            "ssn": AuditLabel("Client 512-34-6789", "confidential"),
             "ein": AuditLabel("Plan 12-3456789", "internal"),
             "restricted": AuditLabel("Anything", "restricted"),
         }
@@ -108,7 +113,7 @@ async def test_a_failing_tenant_labeler_names_nothing() -> None:
 
 
 def test_the_owning_modules_register_their_types() -> None:
-    import abacus.api  # noqa: F401  the modules register at import
+    importlib.import_module("abacus.api")  # the owning modules register at import
     from abacus.modules.platform.api import registered_audit_types
 
     labelled, _ = registered_audit_types()

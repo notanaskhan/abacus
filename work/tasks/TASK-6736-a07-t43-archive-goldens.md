@@ -2,7 +2,7 @@
 id: TASK-6736
 title: "A-07-T43: golden tests (ADR-078) for the A-07 content, projector and the archive scenario"
 spec: SPEC-314
-acceptance_criteria: [A-07 F2, F3, F6, F7]
+acceptance_criteria: [AC-5, AC-6, AC-7]
 risk_zone: amber
 status: in-review
 branch: s35b-a07-t43

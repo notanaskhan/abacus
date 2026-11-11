@@ -90,3 +90,20 @@ async def test_the_city_is_one_short_line(city: str) -> None:
 async def test_the_agent_never_dates_the_report() -> None:
     with pytest.raises(Forbidden):
         await rb.set_report_date(_ctx("agent"), WORK_ITEM, date(2026, 10, 9), "Chicago", 1)
+
+
+@pytest.mark.usefixtures("person")
+async def test_a_partner_approved_report_keeps_its_date(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Security review (S35 round 2): the date is outside the version's hash, so once the EP's L4
+    stands on the current version the date and city are fixed."""
+
+    async def state(*_: object) -> rb.ReportState:
+        return _state()
+
+    async def approved(*_: object) -> bool:
+        return True
+
+    monkeypatch.setattr(rb, "state", state)
+    monkeypatch.setattr(rb, "_partner_approved", approved)
+    with pytest.raises(rb.ReportNotDraft):
+        await rb.set_report_date(_ctx(), WORK_ITEM, date(2026, 10, 9), "Chicago, Illinois", 3)

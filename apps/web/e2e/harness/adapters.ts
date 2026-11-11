@@ -114,7 +114,11 @@ const fixture: PersonaAdapter = {
       },
       Date.parse(clock) + 12 * 3_600_000,
     );
-    if (persona.kind !== "staff") await servePortalEntry(page, path);
+    // A portal person on a gallery artboard (`/components/…`, R-02-T23's walks) stays on the
+    // gallery, which draws the portal screen itself; anywhere else they get the portal's entry.
+    if (persona.kind !== "staff" && !path.startsWith("/components")) {
+      await servePortalEntry(page, path);
+    }
     const flags = options.flags ?? [];
     await page.goto(
       withQuery(path, {

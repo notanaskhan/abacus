@@ -618,7 +618,19 @@ async def load(snapshot: str, superuser: str, app: str) -> None:
 async def _load_and_capture(
     snapshot: str, superuser: str, app: str, identity: str
 ) -> tuple[dict[str, Json], dict[str, str]]:
-    await load(snapshot, superuser, app)
+    # The load reads people's names too (a checkpoint's card, A-07-T41's runs): the identity
+    # lookup must name the throwaway database, not the developer's (S35 round 2 end pass).
+    previous = os.environ.get(_IDENTITY_ENV)
+    os.environ[_IDENTITY_ENV] = identity
+    settings.cache_clear()
+    try:
+        await load(snapshot, superuser, app)
+    finally:
+        if previous is None:
+            os.environ.pop(_IDENTITY_ENV, None)
+        else:
+            os.environ[_IDENTITY_ENV] = previous
+        settings.cache_clear()
     found = await server_ids(snapshot, superuser)
     return await capture(snapshot, app_url=app, identity_url=identity, found=found), found
 

@@ -2,7 +2,7 @@
 id: TASK-6735
 title: "A-07-T41: Brightwater Hale completion-to-archive scenario (the `archive` slice) through the services"
 spec: SPEC-314
-acceptance_criteria: [A-07 F1, F3, F4, F5, F6, F7]
+acceptance_criteria: [AC-2, AC-4, AC-5, AC-6, AC-7, AC-8]
 risk_zone: amber
 status: in-review
 branch: s35b-a07-t41

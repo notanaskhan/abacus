@@ -36,15 +36,7 @@ async def test_ac_named_targets_read_by_name_and_the_rest_by_their_noun(
 ) -> None:
     seed = Seeder(migrated_db.superuser_dsn)
     tenant = await seed.firm()
-    user = cast(
-        uuid.UUID,
-        await seed.value(
-            "INSERT INTO users (idp_issuer, idp_subject, email, display_name) "
-            "VALUES ('https://probe.test', $1, $2, 'Hannah Leclerc') RETURNING id",
-            uuid.uuid4().hex,
-            f"{uuid.uuid4().hex}@example.test",
-        ),
-    )
+    user = (await seed.person(tenant)).user_id  # a member, as engagements.created_by needs
     entity = await seed.entity(tenant)
     engagement = await seed.engagement(tenant, entity, user)
     client = cast(

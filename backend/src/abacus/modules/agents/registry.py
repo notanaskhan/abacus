@@ -94,6 +94,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "run_id", "seq", "plan_step_key", "level", "kind", "tool_name"}
         | {"args_summary", "args_hash", "state", "needs", "retry_of_step_id"}
         | {"auto_started_by_trigger_id"}
+        # 0802 (TASK-6740): a code run's step is written finished in its insert.
+        | {"started_at", "ended_at", "records_read", "outputs_summary"}
     ),
     "agent_questions": frozenset(
         {"id", "tenant_id", "run_id", "step_id", "steps", "recommended", "other_allowed"}

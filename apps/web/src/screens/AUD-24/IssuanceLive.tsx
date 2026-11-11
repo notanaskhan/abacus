@@ -8,7 +8,22 @@
 import type { AuditReleaseOut } from "@abacus/api-client";
 import { Button, Checkbox, DEFAULT_TZ, Dialog, Icon, dateTime } from "@abacus/ui";
 import { type JSX, useState } from "react";
-import { DIALOG, GATES, MET, NOT_MET, TITLE } from "./copy";
+// The live screen's own words (never the artboard copy, which carries the handoff's sample data
+// and must stay out of a production build: dist.test's ac10).
+const TITLE = "Issuance & release";
+const MET = "✓ Met";
+const NOT_MET = "Not met";
+const GATE_TITLE: Readonly<Record<string, string>> = {
+  G5: "Reviewed",
+  G6: "EQR concurred",
+  G7: "Represented",
+};
+const DIALOG = {
+  title: "Release report",
+  attest: "I am the engagement partner and I authorize release of this report",
+  cancel: "Cancel",
+  confirm: "Release report",
+} as const;
 
 const ALSO_LABEL: Readonly<Record<string, string>> = {
   fs_approved: "Final FS approved by management",
@@ -83,7 +98,7 @@ export function IssuanceLive(props: IssuanceLiveProps): JSX.Element {
       )}
       <div className="grid gap-[10px] px-[12px] pb-[12px]">
         {release.gates.map((g) => {
-          const title = GATES.find((x) => x.gate === g.gate)?.title ?? g.gate;
+          const title = GATE_TITLE[g.gate] ?? g.gate;
           return (
             <section
               key={g.gate}

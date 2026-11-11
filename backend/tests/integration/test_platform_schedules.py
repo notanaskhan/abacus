@@ -43,6 +43,7 @@ IDS = (
     "incident_reminders:platform",  # G-02-T18: FTC clock reminders, every 6 hours
     "notification_purge:platform",
     "pilot_metrics:platform",  # Q-04-T008: last week's pilot metrics, weekly (batch)
+    "seal_verify:platform",  # A-07-T42: every locked archive's seal, monthly (RB-29)
     "ses_events:platform",
     "signatures-evidence-integrity",  # N-02-T38: every envelope's evidence re-hashed, nightly
     "spend_anomaly:platform",

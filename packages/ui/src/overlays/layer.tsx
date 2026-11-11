@@ -69,6 +69,8 @@ export function Layer({
       ref={ref}
       data-overlay={kind}
       {...(role === undefined ? {} : { role })}
+      // A modal layer says so (the drawer, the dialog; WB-09's a11y check): a peek is not modal.
+      {...(modal ? { "aria-modal": true } : {})}
       {...(noDescription ? { "aria-describedby": undefined } : {})}
       style={centred ? undefined : { zIndex: layer.panelZ }}
       className={cn(className, animate && motion)}

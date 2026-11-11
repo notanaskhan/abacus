@@ -303,16 +303,20 @@ export function LiveReport(props: LiveReportProps): JSX.Element {
               )}
             </div>
           </header>
-          <div className="min-h-0 flex-1 overflow-y-auto p-[14px]">
+          <div
+            // A scrolling region is reachable by keyboard (axe scrollable-region-focusable).
+            tabIndex={0}
+            role="region"
+            aria-label="Paper content"
+            className="min-h-0 flex-1 overflow-y-auto p-[14px]"
+          >
             <article className="relative mx-auto w-[600px] overflow-hidden rounded-pane bg-card px-[26px] pb-[26px] pt-[22px] text-[12px] leading-[1.55] shadow-e2">
               {data.status === "draft" && (
                 <span
                   aria-hidden="true"
                   data-watermark="draft"
-                  className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06]"
-                >
-                  DRAFT
-                </span>
+                  className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06] before:content-['DRAFT']"
+                />
               )}
               <h3 className="text-[16px] font-medium">{TITLE[data.report_kind]}</h3>
               {data.paragraphs

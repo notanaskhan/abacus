@@ -455,7 +455,12 @@ function LetterPane({
           <span className="w-[120px]" />
         )}
       </header>
-      <div className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto bg-shell p-[14px]">
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="Room"
+        className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto bg-shell p-[14px]"
+      >
         <Paper letter={letter} room={room} />
         {letter.status === "acknowledged" && all && (
           <p className="mx-auto text-meta text-ink-3">
@@ -559,6 +564,7 @@ function Questions({ roomId }: { roomId: string }): JSX.Element {
   }
   return (
     <section
+      tabIndex={0}
       aria-label={COPY.questions}
       className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto bg-shell p-[14px]"
     >

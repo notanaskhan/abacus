@@ -766,7 +766,7 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
           />
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 gap-[10px] px-[12px] pb-[12px]">
+      <div className="flex min-h-0 flex-1 gap-[10px] pb-[12px]">
         <section
           aria-label="Structure"
           className="w-[470px] shrink-0 overflow-y-auto rounded-pane bg-card shadow-e1"
@@ -881,16 +881,20 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
               </Pill>
             </div>
           ))}
-          <div className="min-h-0 flex-1 overflow-y-auto p-[14px]">
+          <div
+            // A scrolling region is reachable by keyboard (axe scrollable-region-focusable).
+            tabIndex={0}
+            role="region"
+            aria-label="Paper content"
+            className="min-h-0 flex-1 overflow-y-auto p-[14px]"
+          >
             <article className="relative mx-auto w-[600px] overflow-hidden rounded-pane bg-card px-[26px] pb-[26px] pt-[22px] text-[12px] leading-[1.55] shadow-e2">
               {!lock && (
                 <span
                   aria-hidden="true"
                   data-watermark="draft"
-                  className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06]"
-                >
-                  DRAFT
-                </span>
+                  className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06] before:content-['DRAFT']"
+                />
               )}
               <p className="text-[13.5px] font-medium">{LETTERHEAD[0]}</p>
               <p className="text-[11.5px] text-ink-3">{LETTERHEAD[1]}</p>

@@ -8,7 +8,20 @@
 import type { AuditArchiveStateOut } from "@abacus/api-client";
 import { Button, Checkbox, DEFAULT_TZ, Dialog, Icon, dateTime } from "@abacus/ui";
 import { type JSX, useState } from "react";
-import { BINDER_TITLE, CHECKLIST_TITLE, LOCK, SHEET, TITLE } from "./copy";
+// The live screen's own words (never the artboard copy, which carries the handoff's sample data
+// and must stay out of a production build: dist.test's ac10).
+const TITLE = "Assembly & archive";
+const LOCK = "Lock archive…";
+const CHECKLIST_TITLE = "Archive checklist";
+const BINDER_TITLE = "Binder index";
+const SHEET = {
+  title: "Lock the archive",
+  body: "Contents become read-only and are sealed with a SHA-256 hash",
+  attest: "Assembly is complete",
+  roll: "Then roll forward to PY2026 (ENG-13)",
+  cancel: "Cancel",
+  confirm: "Lock archive",
+} as const;
 
 export interface ArchiveLiveProps {
   archive: AuditArchiveStateOut;
