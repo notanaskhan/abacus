@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-18 EQR workspace/` (README.md, spec.md; revision.md wins where present) |
 | Epic and tasks | A-07 · stubs T04 · migration T07 · fixtures T11 · screen T17 · service T18 · gate G6 T15 · agent T32 · parity T48 · SPEC-644 |
-| Manifest status | planned (fixture with its screen task; live with A-07-T47) |
+| Manifest status | fixture (final, A-07-T53, S36) |
 
 ## States
 Clock is the demo clock (DEC-27): CDT (UTC−5) until Sun Nov 1, 2026, CST (UTC−6) after. Snapshots
@@ -67,3 +67,23 @@ Every endpoint is in `docs/contracts/audit-completion.md` (A-07-T04, T05); 501 u
 ## Acceptance
 - Every artboard letter above carries live, fixture-only or deferred with its owning task or epic.
 - No agent-owned control carries Approve, Sign off, Release, Send, Post or Decide; final verbs are never optimistic (A-07-T44).
+
+## Final status (A-07-T53, S36)
+
+Built on fixtures (A-07-T17); A-07-T18's EQR service is live but the screen has no live host yet, so every artboard is **fixture-only** until the AUD-18 live wiring (flagged S36, A-07-T53).
+
+| Artboard | Final status |
+|---|---|
+| a | built · fixture-only |
+| b | built · fixture-only |
+| b2 | built · fixture-only |
+| c | built · fixture-only |
+| d | built · fixture-only |
+| e | built · fixture-only |
+
+| Deviation | Evidence |
+|---|---|
+| DV-3 | **Not found in code:** `screens/AUD-18` draws no sign-off control (the first half holds), but no "L5 sign off…" menu item on EQR-required rows exists yet. Open: AUD-18's live host. |
+| DV-8 | **Partly:** AUD-23 g names AUD-30 in its copy; no inline list, DOCX download or reference chip for FSP-06, XLA-02, AUD-28 or AUD-30 was found. Open until A-10, W-04 and Q-05 draw their targets. |
+
+Copy: the L1–L12 copy lint (L2: verbatim from the handoff) runs over `screens/AUD-18/copy.ts` at the S36 end pass; no key changed in S36.

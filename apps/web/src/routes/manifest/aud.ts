@@ -102,15 +102,18 @@ export const audScreens = {
     status: "fixture",
     path: "/audits/$auditId/fs-disclosure",
   },
-  "AUD-21": { name: "Representation letter builder", status: "planned", path: null },
+  // A-07-T53 (S36): AUD-21 to AUD-25 are live inside the AUD-02 cockpit (completionLetters.tsx and
+  // releaseArchiveHosts.tsx, A-07-T47) behind audits.letters, audits.report_release and audits.archive.
+  // They have no route of their own, so no path and no to.<ID>() (AUD-23 g stays on fixtures, DV-9).
+  "AUD-21": { name: "Representation letter builder", status: "live", path: null },
   "AUD-22": {
     name: "Governance communications (AU-C 260 planning letter; AU-C 260 / 265 / 703 completion letters)",
-    status: "planned",
+    status: "live",
     path: null,
   },
-  "AUD-23": { name: "Report builder", status: "planned", path: null },
-  "AUD-24": { name: "Issuance & release", status: "planned", path: null },
-  "AUD-25": { name: "Assembly & archive", status: "planned", path: null },
+  "AUD-23": { name: "Report builder", status: "live", path: null },
+  "AUD-24": { name: "Issuance & release", status: "live", path: null },
+  "AUD-25": { name: "Assembly & archive", status: "live", path: null },
   "AUD-26": {
     name: "Review, compilation & preparation workspace · SSARS",
     status: "planned",

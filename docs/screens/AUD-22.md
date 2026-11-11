@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-22 Governance communications -AU-C 260 planning letter AU-C 260 265/` (README.md, spec.md; revision.md wins where present) |
 | Epic and tasks | A-07 · stubs T05 · migration T08 · templates T12 · service T26 · screen T29 · clocks T36 · SPEC-644 |
-| Manifest status | planned (fixture with its screen task; live with A-07-T47) |
+| Manifest status | live (final, A-07-T53, S36) |
 
 ## States
 Clock is the demo clock (DEC-27): CDT (UTC−5) until Sun Nov 1, 2026, CST (UTC−6) after. Snapshots
@@ -63,3 +63,23 @@ Every endpoint is in `docs/contracts/audit-completion.md` (A-07-T04, T05); 501 u
 ## Acceptance
 - Every artboard letter above carries live, fixture-only or deferred with its owning task or epic.
 - No agent-owned control carries Approve, Sign off, Release, Send, Post or Decide; final verbs are never optimistic (A-07-T44).
+
+## Final status (A-07-T53, S36)
+
+Built and **live** in the AUD-02 cockpit (`completionLetters.tsx` → `GovernanceLive`) behind `audits.letters`; no route of its own (path null).
+
+| Artboard | Final status |
+|---|---|
+| a | built · live behind the flag |
+| a2 | built · live behind the flag |
+| a3 | built · live behind the flag |
+| b | built · live behind the flag |
+| c | built · live behind the flag |
+| d | built · live behind the flag |
+| e | built · live behind the flag |
+
+| Deviation | Evidence |
+|---|---|
+| DV-6 | **Not found in code:** the AUD-24 and AUD-25 rails do not read "2 of 3 required sent". Open, AUD-24/25 follow-up. |
+
+Copy: the L1–L12 copy lint (L2: verbatim from the handoff) runs over `screens/AUD-22/copy.ts` at the S36 end pass; no key changed in S36.

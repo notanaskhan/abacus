@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-25 Assembly and archive/` (README.md, spec.md; revision.md wins where present) |
 | Epic and tasks | A-07 · stubs T05 · migration T09 · guard T13/T14 · checklist T31 · lock and seal T37 · additions and verify T42 · screen T39 · SPEC-644 |
-| Manifest status | planned (fixture with its screen task; live with A-07-T47) |
+| Manifest status | live (final, A-07-T53, S36) |
 
 ## States
 Clock is the demo clock (DEC-27): CDT (UTC−5) until Sun Nov 1, 2026, CST (UTC−6) after. Snapshots
@@ -62,3 +62,24 @@ Every endpoint is in `docs/contracts/audit-completion.md` (A-07-T04, T05); 501 u
 ## Acceptance
 - Every artboard letter above carries live, fixture-only or deferred with its owning task or epic.
 - No agent-owned control carries Approve, Sign off, Release, Send, Post or Decide; final verbs are never optimistic (A-07-T44).
+
+## Final status (A-07-T53, S36)
+
+Built and **live** in the AUD-02 cockpit (`releaseArchiveHosts.tsx` → `ArchiveLive`, A-07-T47) behind `audits.archive`; e is an illustrative state built on fixtures.
+
+| Artboard | Final status |
+|---|---|
+| a | built · live behind the flag |
+| b | built · live behind the flag |
+| b2 | built · live behind the flag |
+| c | built · live behind the flag |
+| d | built · live behind the flag |
+| e | built · live behind the flag |
+
+| Deviation | Evidence |
+|---|---|
+| DV-2 | **Not applied:** `screens/AUD-25/copy.ts` reads "Locked · WORM" (the handoff's words); DF-20 keeps it until OQ-2 (the SOC 2 auditor's answer on GOVERNANCE-mode wording) is closed. Open, owner A-07 / Q-02. |
+| DV-7 | `IssuanceLive` ("Releasing…") and `ArchiveLive` ("Locking…") show the transient states while the workflow runs; applied. |
+| DV-8 | **Partly:** AUD-23 g names AUD-30 in its copy; no inline list, DOCX download or reference chip for FSP-06, XLA-02, AUD-28 or AUD-30 was found. Open until A-10, W-04 and Q-05 draw their targets. |
+
+Copy: the L1–L12 copy lint (L2: verbatim from the handoff) runs over `screens/AUD-25/copy.ts` at the S36 end pass; no key changed in S36.
