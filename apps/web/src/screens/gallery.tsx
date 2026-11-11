@@ -254,6 +254,11 @@ import {
 } from "./SHL-18";
 import { ActivityLog, FRAMES as AUD29_FRAMES } from "./AUD-29";
 import { Assistant as Tax08Assistant, FRAMES as TAX08_FRAMES } from "./TAX-08";
+import { TAX04 } from "./TAX-04";
+import { ReviewPreset, FRAMES as TAX05_FRAMES } from "./TAX-05";
+import { Issues as Tax06Issues, FRAMES as TAX06_FRAMES } from "./TAX-06";
+import { Activity as Tax07Activity, FRAMES as TAX07_FRAMES } from "./TAX-07";
+import { WorksheetEditor, FRAMES as TXI01_FRAMES } from "./TXI-01";
 import { FRAMES as AUD25_FRAMES } from "./AUD-25/copy";
 import { POR08 } from "./POR-08";
 import {
@@ -3653,6 +3658,65 @@ registerScreen("AUD-29", {
     return (
       <div data-artboard={st} className="h-[900px]">
         <ActivityLog frame={st} allowedActions={st === "a" ? ["export.create"] : []} />
+      </div>
+    );
+  },
+});
+
+// T-04-T32 (DEC-4319): the 1040 review artboards on the gallery for J06's slice (fixture mode);
+// the routes keep them behind `tax.review_workspace` until T-04-T29's live hosts.
+const TAX04_FRAMES = ["a", "b", "c", "d", "e"] as const;
+registerScreen("TAX-04", {
+  title: "Return › Review, prepare preset",
+  Component: ({ params }) => {
+    const st = pick(TAX04_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[900px]">
+        <TAX04 frame={st} />
+      </div>
+    );
+  },
+});
+registerScreen("TAX-05", {
+  title: "Return › Review preset",
+  Component: ({ params }) => {
+    const st = pick(TAX05_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[900px]">
+        <ReviewPreset frame={st} />
+      </div>
+    );
+  },
+});
+registerScreen("TAX-06", {
+  title: "Return › Issues",
+  Component: ({ params }) => {
+    const st = pick(TAX06_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[900px]">
+        <Tax06Issues frame={st} />
+      </div>
+    );
+  },
+});
+registerScreen("TAX-07", {
+  title: "Return › Activity and checkpoints",
+  Component: ({ params }) => {
+    const st = pick(TAX07_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[900px]">
+        <Tax07Activity frame={st} />
+      </div>
+    );
+  },
+});
+registerScreen("TXI-01", {
+  title: "Worksheet editor",
+  Component: ({ params }) => {
+    const st = pick(TXI01_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[900px]">
+        <WorksheetEditor frame={st} />
       </div>
     );
   },
