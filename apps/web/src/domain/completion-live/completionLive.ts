@@ -203,3 +203,9 @@ export function useLiveArchive(workItemId: string): {
     },
   };
 }
+
+/** DV-6 (DF-27): "2 of 3 required sent" — the required set is the server's, per engagement type
+ * (`GET /v1/audits/{id}/governance`: `required_sent`, `required_total`). */
+export function governanceWords(g: { sent: number; total: number }): string {
+  return `Governance Communications · ${String(g.sent)} of ${String(g.total)} required sent`;
+}

@@ -10,7 +10,9 @@ export const RELEASED = "Released Oct 9, 2026";
 export const PILL = {
   days: "Archive in 47 days",
   risk: "Archive in 5 days",
-  locked: "Locked · WORM",
+  // DV-2 (DF-20; OQ-2 decided with the plan's option, DEC-3420): "sealed" until the SOC 2
+  // auditor accepts "WORM" for GOVERNANCE-mode objects with bypass denied.
+  locked: "Locked · sealed",
 } as const;
 
 export const REQUEST_LOCK = "Request lock…";

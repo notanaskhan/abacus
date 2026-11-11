@@ -8,6 +8,7 @@
 import type { AuditArchiveStateOut } from "@abacus/api-client";
 import { Button, Checkbox, DEFAULT_TZ, Dialog, Icon, dateTime } from "@abacus/ui";
 import { type JSX, useState } from "react";
+import { governanceWords } from "../../domain/completion-live";
 // The live screen's own words (never the artboard copy, which carries the handoff's sample data
 // and must stay out of a production build: dist.test's ac10).
 const TITLE = "Assembly & archive";
@@ -25,6 +26,8 @@ const SHEET = {
 
 export interface ArchiveLiveProps {
   archive: AuditArchiveStateOut;
+  /** DV-6: the governance letters' required count (`GET …/governance`). */
+  governance?: { sent: number; total: number } | undefined;
   /** Locking: the decision is recorded and ArchiveLockWorkflow seals (the host polls). */
   running?: boolean;
   problem?: string | null;
@@ -118,6 +121,14 @@ export function ArchiveLive(props: ArchiveLiveProps): JSX.Element {
                 {i.detail !== null && <span className="text-ink-3">{i.detail}</span>}
               </li>
             ))}
+            {props.governance === undefined || props.governance.total === 0 ? null : (
+              <li
+                data-governance="true"
+                className="flex min-h-[36px] items-center gap-2 px-[12px] text-[13px] text-ink-2"
+              >
+                {governanceWords(props.governance)}
+              </li>
+            )}
           </ul>
         </section>
         <section

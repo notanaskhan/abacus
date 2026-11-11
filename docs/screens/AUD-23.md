@@ -84,7 +84,7 @@ Built and **live** in the AUD-02 cockpit (`completionLetters.tsx` → `LiveRepor
 
 | Deviation | Evidence |
 |---|---|
-| DV-4 | **Not found in code:** `screens/AUD-23/copy.ts` has no "Request EQR…". Open, AUD-23 follow-up. |
+| DV-4 | **Applied on the live report (DEC-3420):** `screens/AUD-23/LiveReport.tsx` shows the secondary "Request EQR…" while `eqr_required_not_concurred` and the report is a draft; it posts `POST /v1/audits/{id}/eqr/request` (A-07-T18's audited `eqr.requested`) and does nothing else. The fixture canvas keeps the handoff's header. |
 | DV-8 | **Partly:** AUD-23 g names AUD-30 in its copy; no inline list, DOCX download or reference chip for FSP-06, XLA-02, AUD-28 or AUD-30 was found. Open until A-10, W-04 and Q-05 draw their targets. |
 | DV-9 | `AUD-23` g Reissue stays on fixtures; the reissue path is Q-05's; applied. |
 

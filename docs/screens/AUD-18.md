@@ -83,7 +83,7 @@ Built on fixtures (A-07-T17); A-07-T18's EQR service is live but the screen has 
 
 | Deviation | Evidence |
 |---|---|
-| DV-3 | **Not found in code:** `screens/AUD-18` draws no sign-off control (the first half holds), but no "L5 sign off…" menu item on EQR-required rows exists yet. Open: AUD-18's live host. |
+| DV-3 | **Open (S36 fixes, DEC-3420):** the rail lists the EQR checklist (`EqrChecklistItemOut`), whose items name no workpaper and no EQR requirement, so an "L5 sign off…" menu item has no target. It needs the checklist item's workpaper link (A-07-T18's service, an additive field) or AUD-17's matrix rows on the rail; SHL-12 g at L5 already opens with `ov.SHL12("workpaper", id, "L5_eqr")`. |
 | DV-8 | **Partly:** AUD-23 g names AUD-30 in its copy; no inline list, DOCX download or reference chip for FSP-06, XLA-02, AUD-28 or AUD-30 was found. Open until A-10, W-04 and Q-05 draw their targets. |
 
 Copy: the L1–L12 copy lint (L2: verbatim from the handoff) runs over `screens/AUD-18/copy.ts` at the S36 end pass; no key changed in S36.

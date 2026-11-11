@@ -80,3 +80,17 @@ describe("AUD-24 live", () => {
     expect(screen.getByRole("alert").textContent).toBe("Not every gate is met yet.");
   });
 });
+
+describe("AUD-24 live: DV-6 (DF-27)", () => {
+  it('reads "2 of 3 required sent" from the server\'s required set', () => {
+    render(<IssuanceLive release={aud24("a")} governance={{ sent: 2, total: 3 }} />);
+    const row = document.querySelector("[data-governance]");
+    expect(row?.textContent).toContain("Governance Communications · 2 of 3 required sent");
+    expect(row?.getAttribute("data-met")).toBe("false");
+  });
+
+  it("draws no row when the engagement type requires none", () => {
+    render(<IssuanceLive release={aud24("a")} governance={{ sent: 0, total: 0 }} />);
+    expect(document.querySelector("[data-governance]")).toBeNull();
+  });
+});
