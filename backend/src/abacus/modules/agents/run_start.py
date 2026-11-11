@@ -16,10 +16,11 @@ from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
-from abacus.modules.agents.spec_v2 import spec_v2
+from abacus.modules.agents.spec_v2 import TEST_ONLY, spec_v2
 from abacus.modules.engagements.api import get_ref
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.identity.api import AuthContext, Forbidden, authorise, is_synthetic_firm
 
 COUNTER: Final = "agent_run"
 _SEED = text(
@@ -47,6 +48,8 @@ async def open_capability_run(
     if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden("agent_run.start", "role")
     spec = spec_v2(agent_id)
+    if spec.id in TEST_ONLY and not await is_synthetic_firm(ctx.tenant):
+        raise NotFound("agent_capability")  # P-10-T40: never installable for a real firm
     ref = await get_ref(ctx, engagement_id)  # a wall answers 404
     await authorise(ctx, "agent_run.start", ref.resource())
     async with uow(ctx.tenant) as tx:

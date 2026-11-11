@@ -43,6 +43,9 @@ DataClassV2 = Literal["internal", "confidential", "restricted", "tri"]
 ToolKindV2 = Literal["read", "compute", "propose", "approved_write"]
 TRI_CONSENT_PURPOSES: Final = ("use", "ai_disclosure")
 WRITE_KINDS: Final = frozenset({"propose", "approved_write"})
+# P-10-T40 (DEC-3403): capabilities that run only for synthetic firms, are never installable and
+# that no firm-facing route may start (`runtime.conformance`, the runtime's reference).
+TEST_ONLY: Final = frozenset({"runtime.conformance"})
 
 
 class LimitsV2(BaseModel):

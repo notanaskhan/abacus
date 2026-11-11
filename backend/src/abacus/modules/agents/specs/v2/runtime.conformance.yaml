@@ -1,0 +1,63 @@
+# runtime.conformance v1 (P-10-T40; P-10 §6, §8.2; TASK-6803; DEC-3403). The reference loop
+# capability: it proves converse(), the harness, the tool registry (C17), grants and the trajectory
+# graders on the fake, direct and Bedrock routes. Synthetic firms only, never installable, no
+# firm-facing endpoint (`agents/conformance.py` TEST_ONLY). Source of truth: compiled into
+# ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+id: runtime.conformance
+version: 1
+purpose: Answer a question about the run's own engagement from its records through registered tools, citing what it read, asking when the request is ambiguous, and offering any file it builds for a person to approve.
+shape: loop
+prompt: runtime.conformance@v1
+tier: medium
+escalation_tier: large
+input_schema: ConformanceInput
+output_schema: ConformanceOutput
+tools:
+  read:
+    - engagements.list
+    - engagements.read
+    - engagements.read_graph
+    - engagements.read_team
+    - methodology.read_step
+    - evidence.search
+    - evidence.read_extraction
+    - evidence.list_uploads
+    - knowledge.search
+    - activity.read
+    - requests.list_items
+    - requests.read_item
+    - ledger.read_tb
+  compute:
+    - ledger.compare_periods
+    - ledger.tie_out
+    - files.build_workbook
+  propose: [files.propose_save]
+  approved_write: [files.save_approved]
+task_scope:
+  - engagement.read
+  - methodology.read
+  - evidence.read
+  - knowledge.read
+  - activity.read
+  - request_item.read
+  - trial_balance.read
+  - file.propose
+  - file.save
+  - proposal.create
+limits:
+  max_output_tokens: 2000
+  max_cost_usd: "0.50"
+  max_steps: 12
+  max_seconds: 180
+  max_tool_calls: 20
+  max_repeat_identical_calls: 2
+plan: required_when_writes
+autonomy: propose
+data_classes: [confidential]
+untrusted_inputs: [tool_results, file_text]
+evaluation_suite: evals/runtime_conformance
+work_class: interactive
+essential: false
+cheaper_tiers: []
+routes: [direct, bedrock]
+client_data: none
