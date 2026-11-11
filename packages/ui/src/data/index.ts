@@ -63,3 +63,12 @@ export {
   type MappingTableProps,
   type MappingTableRow,
 } from "./mapping-table";
+export {
+  addressOf,
+  formulaText,
+  parseAddress,
+  type WorkbookCell,
+  WorkbookGrid,
+  type WorkbookGridProps,
+  type WorkbookSheetTab,
+} from "./workbook-grid"; // T-05-T12

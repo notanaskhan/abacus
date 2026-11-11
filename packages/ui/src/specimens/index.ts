@@ -124,6 +124,7 @@ import {
   VirtualGridSpecimen,
 } from "./data-3";
 import { SectionBandSpecimen, SourceDocsSpecimen, WorkpaperPaneSpecimen } from "./workpaper";
+import { WorkbookGridSpecimen } from "./workbook-grid";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
 // "@abacus/ui/specimens": only the gallery subtree, which a production build does not compile,
@@ -425,6 +426,7 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-01-leadsheet", kit: "C-01", title: "Leadsheet grammar", Component: LeadsheetSpecimen },
   { id: "c-01-fields", kit: "C-01", title: "Field rows", Component: FieldRowsSpecimen },
   { id: "c-01-virtual", kit: "C-01", title: "Virtualisation", Component: VirtualGridSpecimen },
+  { id: "c-01-workbook-grid", kit: "C-01", title: "WorkbookGrid", Component: WorkbookGridSpecimen },
   // Toasts E3 (F-05-T21): C-21
   { id: "c-21-toast-kinds", kit: "C-21", title: "Toast kinds", Component: ToastKindsSpecimen },
   { id: "c-21-toast-live", kit: "C-21", title: "Toast live stack", Component: ToastLiveSpecimen },
