@@ -61,6 +61,14 @@ def main(argv: list[str]) -> int:
 
         subset = "fast" if args.subset == "fast" else "full"
         return trajectory_main(cast(Path, args.out), subset)
+    if args.agent == "runtime_conformance" and args.route != "fake":  # P-10-T46: real routes
+        from abacus_tools.evals.runtime_conformance_real import real_main as conformance_real
+
+        return conformance_real(
+            cast(str, args.route),
+            cast(Path, args.out),
+            "fast" if args.subset == "fast" else "full",
+        )
     if args.agent == "runtime_conformance":  # P-10-T41: runtime.conformance's suite (code only)
         from abacus_tools.evals.runtime_conformance import main as conformance_main
 
