@@ -62,3 +62,18 @@ Cells (stored as `integration_mappings`): `return_id_template` (default `{Tax ye
 
 ## T-01-T51 additions (DEC-1667)
 Additive: `EngineSettingsOut.last_sync_return_id` (default null): the return of the firm's latest sync (an approved import or a marked export), which ADM-08's Last sync opens as TAX-09 (`?ov=engine-sync:<id>`; TAX-09 authorises the return itself). Integrations never reads tax: tax answers through `integrations.api.register_last_engine_sync`. TAX-12 is routed at `/tax-returns/$returnId/delivery` behind `tax.returns_v1` and `tax.delivery_efile`.
+
+## T-04-T30 additions: worksheet fields (DEC-3405)
+- **Export:** the `Fields` sheet carries the values the **current approved checkpoint** covered
+  (each field as recorded at or before that checkpoint, never a later edit): the return's own
+  fields under their keys, and each Accrued worksheet field (`return_fields.derivation` input,
+  formula or copy) under its `engine_field_key`. Engine-computed lines are never sent back. A key
+  outside the engine's field profile (`integrations.api.engine_field_profile("cch_axcess")`:
+  lower-case `<form>.<line>`) is 409 `engine_field_unmapped` (`facts.field_key`).
+- **Import:** an approved values import also writes each engine-computed line it carries onto its
+  worksheet field (`derivation = engine`, same `engine_field_key`) as an `engine_import` version
+  naming the approved import checkpoint; nothing changes before approval.
+- **Tie-out:** on upload, an engine value that differs from Accrued's own worksheet figure for the
+  same key raises one `engine_diagnostic` issue per return and `tieout:<engine_field_key>`.
+- **Sync chip:** a worksheet field edited after the last sync (by anything but an import) reads
+  Out of sync.

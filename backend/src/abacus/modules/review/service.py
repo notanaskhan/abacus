@@ -11,13 +11,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, TargetFacts, authorise
 from abacus.modules.review.models import SignOff
@@ -214,6 +214,18 @@ async def record_sign_off(
 # --- T-01-T18: what a final-approval guard reads -------------------------------------------------
 
 _OPEN_ISSUE_STATUSES: Final = ("open", "in_progress", "reopened", "under_evaluation")
+
+
+async def checkpoint_recorded_at(tenant: TenantContext, checkpoint_id: UUID) -> datetime:
+    """T-04-T30: when a checkpoint was recorded (its values are the ones recorded at or before
+    it); `NotFound` outside the tenant. The caller has authorised a read of its target."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT created_at FROM checkpoints WHERE id = :id"), {"id": checkpoint_id}
+        )
+    if found is None:
+        raise NotFound("checkpoint")
+    return cast(datetime, found)
 
 
 async def current_checkpoint(

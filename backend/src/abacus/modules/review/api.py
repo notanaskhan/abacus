@@ -51,6 +51,7 @@ from abacus.modules.review.field_values import (
     FieldVersionFact,
     PreviousValue,
     changed_since,
+    changed_since_any,
     current_values,
     edited_by_a_person,
     field_timeline,
@@ -58,6 +59,7 @@ from abacus.modules.review.field_values import (
     previous_value,
     record_value,
     typed_value,
+    values_as_of,
 )
 from abacus.modules.review.firm_gates import register_firm_gates
 from abacus.modules.review.gates import (
@@ -107,6 +109,7 @@ from abacus.modules.review.service import (
     SignOffInvalid,
     StaleSignOff,
     blocking_issues,
+    checkpoint_recorded_at,
     current_checkpoint,
     pending_imports,
     record_sign_off,
@@ -280,7 +283,9 @@ __all__ = [
     "canonical_json",
     "card_decision",
     "changed_since",
+    "changed_since_any",
     "checkpoint_deltas",
+    "checkpoint_recorded_at",
     "content_hash",
     "create_issue",  # P-04-T36: the scenario loader acts as the person named (as sign_target)
     "create_issue_in",  # A-06-T11: the finding and its issue in one unit of work
@@ -350,6 +355,7 @@ __all__ = [
     "states_of",
     "system_resolve_dependents",
     "typed_value",
+    "values_as_of",
 ]
 
 
