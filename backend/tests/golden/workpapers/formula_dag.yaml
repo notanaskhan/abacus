@@ -1,0 +1,18 @@
+# T-05-T11 goldens for the workbook formula engine (ADR-078 as amended; ADR-237): written from the
+# screen specs, not the engine. `reviewed_by` stays pending until the tax CPA signs (M18).
+parameter_set: ty2025
+reviewed_by: "pending: tax CPA (docs/quality/golden-reviews/tax_entity.formula_dag@1.md)"
+cases:
+  - name: "01 Trial Balance I18"
+    source: "TXP-02 a2, TXP-11 c; SPEC-651 AC-3.3, AC-4.2"
+    sheet: "01 Trial Balance"
+    cells: {F18: "-75500", G18: "-18500", H18: null}
+    formula: {I18: "=F18+G18+H18"}
+    expect: {I18: "-94000"}
+  - name: "05 Capital row 12 after the fix"
+    source: "TXP-11 B; SPEC-651 AC-4.1, AC-4.2"
+    sheet: "05 Capital"
+    cells: {D12: "1500000", E12: "250000", F12: "312500", G12: "0", I12: "-150000"}
+    other: {"06 Schedule K": {C31: "6200"}}
+    formula: {H12: "='06 Schedule K'!C31*25%", J12: "=SUM(D12:I12)"}
+    expect: {H12: "1550", J12: "1914050"}
