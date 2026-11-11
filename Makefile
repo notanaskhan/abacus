@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-tax-fast evals-completion-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
+.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-tax-fast evals-completion-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -287,6 +287,11 @@ agent-stage:
 
 # Q-02-T50 (DEC-811): the deterministic shadow score for one firm and agent, as JSON with its SHA-256;
 # `make agent-stage ... STAGE=live REPORT_SHA=<sha256> REPORT_AS_OF=<as_of>` names it to go live.
+# Q-04-T136: A-07's dark code shadowed on one engagement, against the firm tool's own dates.
+# `make a07-shadow FIRM=<tenant> WORK_ITEM=<id> FIRM_TOOL=docs/ops/pilot/pf-x1/a07-shadow-firm-tool.yaml`
+a07-shadow:
+	cd backend && uv run python -m abacus_tools.a07_shadow --firm $(FIRM) --work-item $(WORK_ITEM) --firm-tool $(abspath $(FIRM_TOOL)) $(if $(OUT),--out $(abspath $(OUT)))
+
 shadow-report:
 	cd backend && uv run python -m abacus_tools.agent_stage score $(FIRM) $(AGENT)
 
