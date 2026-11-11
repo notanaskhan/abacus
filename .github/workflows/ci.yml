@@ -550,6 +550,9 @@ jobs:
       # P-10-T34: runtime v2's trajectory fast subset, so a tool.<name> prompt change is graded.
       - if: needs.changes.outputs.agents == 'true'
         run: make evals-trajectory-fast
+      # P-10-T41: runtime.conformance's fast subset (DE-3 to DE-6 cases at 1.0; code only).
+      - if: needs.changes.outputs.agents == 'true'
+        run: make evals-conformance-fast
       # T-04-T18: the tax return suite on the fake model, every run (code only, seconds).
       - run: make evals-tax-fast
 

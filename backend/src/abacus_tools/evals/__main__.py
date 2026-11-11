@@ -61,6 +61,10 @@ def main(argv: list[str]) -> int:
 
         subset = "fast" if args.subset == "fast" else "full"
         return trajectory_main(cast(Path, args.out), subset)
+    if args.agent == "runtime_conformance":  # P-10-T41: runtime.conformance's suite (code only)
+        from abacus_tools.evals.runtime_conformance import main as conformance_main
+
+        return conformance_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
     if args.agent == "tax_return":  # T-04-T18: the tax agents' suite, frozen thresholds
         from abacus_tools.evals.tax_return import main as tax_main
 
