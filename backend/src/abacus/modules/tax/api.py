@@ -84,6 +84,12 @@ from abacus.modules.tax.tax_profile import transcript_comparison_lines
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
 from abacus.modules.tax.workbook_contract import workbook_router
 from abacus.modules.tax.workspace_contract import workspace_router
+from abacus.modules.tax.workspace_seed import (
+    SeedField,
+    SeedSection,
+    SeedWorksheet,
+    record_synthetic_workspace,
+)
 
 # T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
 consent_capture.register()
@@ -234,6 +240,9 @@ __all__ = [
     "K1ReleaseWorkflow",
     "ProposedPayment",
     "ReturnDrafterWorkflow",
+    "SeedField",
+    "SeedSection",
+    "SeedWorksheet",
     "StaleReturn",
     "TaxCalendarSweepWorkflow",
     "TransitionRefused",
@@ -254,6 +263,7 @@ __all__ = [
     "prepare_extensions",
     "recompute_unfiled",
     "record_sync_state",
+    "record_synthetic_workspace",
     "register_due_dates_source",
     "register_extension_dates_source",
     "register_final_approval_blocker",

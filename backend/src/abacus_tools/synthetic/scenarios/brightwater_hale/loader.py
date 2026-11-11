@@ -339,6 +339,7 @@ from abacus.modules.review.api import (
     AlreadySigned,
     create_issue,
     decide_card,
+    move_issue,
     raise_decision_card,
     raise_review_note,
     review_note_event,
@@ -391,6 +392,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice a
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
+from abacus_tools.synthetic.scenarios.brightwater_hale import tax_workspace_slice as _txw
 from abacus_tools.synthetic.scenarios.brightwater_hale import usage_slice as _usage
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
@@ -2084,6 +2086,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     _archive.SLICE: _archive.NEEDS,  # A-07-T41: completion to the locked archive
     _collab.SLICE: _collab.NEEDS,  # P-05-T12: Northwind's comment and Marcus's four to-dos
     _usage.SLICE: _usage.NEEDS,  # P-10-T42: ADM-14a's 14,920 and ENG-06a's 412
+    _txw.SLICE: _txw.NEEDS,  # T-04-T28: Feld's worksheets, issues and named checkpoints
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
@@ -6688,6 +6691,73 @@ async def _feld_checkpoint_saved(conn: asyncpg.Connection, _: Scenario, event: E
         )
 
 
+def _feld_return() -> UUID:
+    return UUID(RETURN_BY_LABEL[_txw.RETURN_LABEL].id)
+
+
+async def _feld_workspace_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """T-04-T28: the Feld return's worksheets through tax's synthetic-only recorder."""
+    from abacus.modules.tax.api import record_synthetic_workspace
+
+    await record_synthetic_workspace(
+        await _staff_context(conn, event), _feld_return(), _txw.WORKSHEETS
+    )
+
+
+async def _feld_issue_id(conn: asyncpg.Connection, key: str) -> UUID | None:
+    async with as_tenant(conn, TENANT):
+        return cast(
+            UUID | None,
+            await conn.fetchval(
+                "SELECT id FROM issues WHERE work_item_id = $1 AND source_ref = $2",
+                _feld_return(),
+                f"scenario:feld:{key}",
+            ),
+        )
+
+
+async def _feld_issue_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """T-04-T28 (TAX-06): one of the Feld return's issues, as Kevin Osei raises it."""
+    if await _feld_issue_id(conn, str(event.data["key"])) is not None:
+        return
+    await create_issue(
+        await _staff_context(conn, event),
+        record_type="tax_return",
+        record_id=_feld_return(),
+        kind=str(event.data["kind"]),
+        priority=str(event.data["priority"]),
+        title=str(event.data["title"]),
+        internal_note=None,
+        client_wording=None,
+        client_contact_id=None,
+        assignee_user_id=user_id_of(_SEATS["KO"]),
+        assignee_agent=False,
+        blocks=("final_approval",),
+        source_ref=f"scenario:feld:{event.data['key']}",
+        work_item_id=_feld_return(),
+    )
+
+
+async def _feld_issue_resolved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """T-04-T28 (TAX-06 f): a resolved Feld issue, closed by the person who worked it."""
+    issue = await _feld_issue_id(conn, str(event.data["key"]))
+    if issue is None:
+        return
+    async with as_tenant(conn, TENANT):
+        state = await conn.fetchval("SELECT status FROM issues WHERE id = $1", issue)
+        version = await conn.fetchval("SELECT version FROM issues WHERE id = $1", issue)
+    if state in ("resolved", "verified"):
+        return
+    await move_issue(await _staff_context(conn, event), issue, "resolved", int(version or 1))
+
+
+async def _feld_checkpoint_named(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """T-04-T28 (TAX-07): a named checkpoint of the Feld return, as the person saves it."""
+    await save_checkpoint(
+        await _staff_context(conn, event), "tax_return", _feld_return(), str(event.data["name"])
+    )
+
+
 async def _collaboration_paper(conn: asyncpg.Connection, ctx: AuthContext) -> UUID:
     """Northwind's Internal Control paper, found or created as the completion slice does."""
     engagement = engagement_id_of(BY_LABEL["A1"])
@@ -6977,6 +7047,11 @@ HANDLERS: Final[dict[str, Handler]] = {
     "archive.addition_decided": _archive_addition_decided,
     "archive.going_concern_requested": _archive_going_concern_requested,
     "archive.going_concern_decided": _archive_going_concern_decided,
+    # T-04-T28 (`--slice tax_workspace`): worksheets, then issues, then the named checkpoints.
+    "tax.workspace_seeded": _feld_workspace_seeded,
+    "review.feld_issue_created": _feld_issue_created,
+    "review.feld_issue_resolved": _feld_issue_resolved,
+    "review.feld_checkpoint_named": _feld_checkpoint_named,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}
