@@ -33,7 +33,7 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from typing import Final, Literal, cast
 from uuid import UUID
 
@@ -43,7 +43,12 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.assurance.rep_letters import going_concern_doubt
-from abacus.modules.engagements.api import assurance_item, engagement_hold_facts, get_ref
+from abacus.modules.engagements.api import (
+    assurance_item,
+    engagement_hold_facts,
+    engagement_type_of,
+    get_ref,
+)
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
 from abacus.modules.methodology.api import published_body, published_clauses
 from abacus.modules.review.api import decided_cards, raise_decision_card
@@ -61,6 +66,10 @@ FAMILY: Final[dict[ReportKind, str]] = {
     "review": "review_report",
     "compilation": "compilation_report",
 }
+# A-07-T41 (DEC-3302): the report's kind follows the engagement type (AUD-23 e/f: an AR-C 90
+# review or an AR-C 80 compilation uses its own template and title); every other attest type is
+# an audit report.
+KIND_OF_TYPE: Final[dict[str, ReportKind]] = {"review": "review", "compilation": "compilation"}
 # The C3 card's question key, as `a07_registrations` registers the `opinion` kind (DEC-3028).
 OPINION_KIND: Final = "opinion"
 OPINION_CARD: Final = "opinion"
@@ -95,6 +104,12 @@ class StaleReport(DomainConflict):
 
 class NoReportTemplate(DomainConflict):
     code = "template_missing"
+
+
+class ReportNotDraft(DomainConflict):
+    """The report date and city change only while the report is a draft (A-07-T41)."""
+
+    code = "report_not_draft"
 
 
 @dataclass(frozen=True)
@@ -268,12 +283,18 @@ _VERSIONS = text(
 )
 
 
+async def report_kind_of(tenant: TenantContext, work_item_id: UUID) -> ReportKind:
+    item = await assurance_item(tenant, work_item_id)
+    return KIND_OF_TYPE.get(await engagement_type_of(tenant, item.engagement_id) or "", "audit")
+
+
 async def state(tenant: TenantContext, work_item_id: UUID) -> ReportState:
     async with tenant_session(tenant) as session:
         row = (await session.execute(_REPORT, {"wi": work_item_id})).first()
         versions = (await session.execute(_VERSIONS, {"wi": work_item_id})).all()
     if row is None:
-        return ReportState(None, "audit", "draft", None, None, default_choices(), (), None, 0)
+        kind = await report_kind_of(tenant, work_item_id)
+        return ReportState(None, kind, "draft", None, None, default_choices(), (), None, 0)
     paras = tuple(
         Paragraph(str(p["block_id"]), bool(p["included"]), cast(str | None, p.get("reason_code")))
         for p in cast(list[dict[str, object]], row.paragraphs or [])
@@ -331,11 +352,11 @@ async def set_choice(
                 await tx.session.scalar(
                     text(
                         "INSERT INTO audit_reports (tenant_id, engagement_id, work_item_id, "
-                        "report_kind, template_id, status) VALUES (:t, :e, :wi, 'audit', :tv, "
+                        "report_kind, template_id, status) VALUES (:t, :e, :wi, :kind, :tv, "
                         "'draft') RETURNING id"
                     ),
                     {"t": ctx.tenant_id, "e": engagement_id, "wi": work_item_id,
-                     "tv": template.version_id},
+                     "kind": current.kind, "tv": template.version_id},
                 ),
             )  # fmt: skip
         version_no = (current.version_no or 0) + 1
@@ -370,6 +391,40 @@ async def set_choice(
             "audit_report.choice_set",
             target=Target("audit_report", report_id),
             after=Ref(version_no=version_no, content_hash=digest),  # the field is in the version
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+    return await state(ctx.tenant, work_item_id)
+
+
+async def set_report_date(
+    ctx: AuthContext, work_item_id: UUID, report_date: date, city: str, seen_version: int
+) -> ReportState:
+    """AUD-23's report date and city (A-07-T41; A-07 F5): the date G7's letter is dated as of
+    and the release reads. A draft's fields only (409 `report_not_draft` once approved or
+    released); a person's act (`report.draft`), never the agent's."""
+    engagement_id = await _person(ctx, work_item_id, "report.draft")
+    place = city.strip()
+    if not place or len(place) > 120 or "\n" in place:
+        raise DomainInvalid("city")
+    current = await state(ctx.tenant, work_item_id)
+    if current.report_id is None:
+        raise NotFound("audit_report")
+    if current.row_version != seen_version:
+        raise StaleReport(facts={"version": current.row_version})
+    if current.status != "draft":
+        raise ReportNotDraft(facts={"status": current.status})
+    async with uow(ctx.tenant) as tx:
+        await tx.session.execute(
+            text(
+                "UPDATE audit_reports SET report_date = :d, city = :c, version = version + 1, "
+                "updated_at = clock_timestamp() WHERE id = :r AND version = :v"
+            ),
+            {"d": report_date, "c": place, "r": current.report_id, "v": seen_version},
+        )
+        tx.record(
+            "audit_report.date_set",
+            target=Target("audit_report", current.report_id),
+            after=Ref(report_date=int(report_date.strftime("%Y%m%d"))),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
     return await state(ctx.tenant, work_item_id)

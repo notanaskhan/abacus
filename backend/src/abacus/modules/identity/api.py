@@ -354,6 +354,12 @@ from abacus.modules.identity.settings_registry import (
     register_settings_area,
     stored_value,
 )
+from abacus.modules.identity.settings_registry import (  # A-07-T41: the scenario's ADM-01 save
+    read_section as read_settings_section,
+)
+from abacus.modules.identity.settings_registry import (
+    save_section as save_settings_section,
+)
 from abacus.modules.identity.slots import (
     OFFSHORE_DISCLOSURE,
     InvitationParties,
@@ -755,6 +761,7 @@ __all__ = [
     "portal_scopes",
     "provision_setting",
     "quality_partners",
+    "read_settings_section",  # A-07-T41
     "recipient_relations",
     "reconcile_service_lines",
     "record_tenant_key",
@@ -811,6 +818,7 @@ __all__ = [
     "revoke_invitation",
     "role_codes",
     "router",
+    "save_settings_section",  # A-07-T41
     "scope_facts",
     "security_admins",
     "serving_request",

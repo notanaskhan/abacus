@@ -479,12 +479,14 @@ register_run_record(
 __all__ = [
     "ACTIVITIES",
     "BRING_DOWN_ID_PREFIX",
+    "EQR_REVIEW_TARGET",  # A-07-T41: the archive slice
     "PHASE_GATES",
     "ROUTERS",
     "SCHEDULES",
     "SUBSCRIPTIONS",
     "TIEOUT_ID_PREFIX",
     "WORKFLOWS",
+    "AdditionReason",  # A-07-T41: the archive slice
     "ArchiveLockInput",
     "ArchiveSealResult",
     "AuditSection",
@@ -495,6 +497,7 @@ __all__ = [
     "ExceptionRouter",
     "ExceptionRow",
     "Form5500TieOutWorkflow",
+    "GovernanceKind",  # A-07-T41: the archive slice
     "IndexTag",
     "LetterRendering",
     "MappingConfirmIn",
@@ -519,27 +522,42 @@ __all__ = [
     "VerifyResult",
     "acknowledge_letter",
     "adopt_trial_balance",
+    "archive_state",  # A-07-T41: the archive slice
     "completion_errors",
     "completion_router",
+    "create_archive_addition",  # A-07-T41: the archive slice
     "create_risk",
+    "decide_archive_addition",  # A-07-T41: the archive slice
+    "decide_archive_lock",  # A-07-T41: the archive slice
     "edit_risk",
+    "eqr_concur",  # A-07-T41: the archive slice
+    "eqr_mark_reviewed",  # A-07-T41: the archive slice
+    "eqr_update_checklist",  # A-07-T41: the archive slice
     "exception_route_available",
+    "filings_of",  # A-07-T41: the archive slice
     "finding_to_deficiency",
     "finding_to_misstatement",
     "follows_gate",
     "g4_facts",
+    "g5_blockers",  # A-07-T41: the archive slice
+    "governance_approve_and_send",  # A-07-T41: the archive slice
+    "governance_communication",  # A-07-T41: the archive slice
     "governance_communication_scope",
+    "governance_create",  # A-07-T41: the archive slice
     "governance_letter",
     "governance_letter_pdf",
+    "governance_request_approval",  # A-07-T41: the archive slice
     "governance_rooms",
     "import_grouping_csv",
     "late_remittances",  # A-05-T30: AUD-27 and EBP-07 read the one late remittance
     "mapping_live",
     "materiality_engine",
+    "open_eqr_reviews",  # A-07-T41: the archive slice
     "pass_on_sum",
     "propose_materiality",  # P-04-T36: the scenario loader proposes as the person named
     "publish_grouping_version",
     "reassess_materiality",
+    "record_bring_down",  # A-07-T41: the archive slice
     "record_exceptions",
     "record_finding",
     "record_phase",
@@ -552,16 +570,33 @@ __all__ = [
     "register_index_tag",
     "register_materiality_dependents",
     "register_run_summary",
+    "release_snapshot",  # A-07-T41: the archive slice
+    "rep_letter_approve",  # A-07-T41: the archive slice
+    "rep_letter_edit",  # A-07-T41: the archive slice
+    "rep_letter_mark_sent",  # A-07-T41: the archive slice
+    "rep_letter_record_signature",  # A-07-T41: the archive slice
+    "rep_letter_request_approval",  # A-07-T41: the archive slice
+    "report_set_choice",  # A-07-T41: the archive slice
+    "report_set_date",  # A-07-T41: the archive slice
+    "report_state",  # A-07-T41: the archive slice
+    "request_archive_lock",  # A-07-T41: the archive slice
+    "request_release",  # A-07-T41: the archive slice
     "request_risk_approval",
     "request_severity_decision",
     "request_sum_conclusion",
     "room_letters",
     "route_exception",
     "router",
+    "run_archive_readiness",  # A-07-T41: the archive slice
+    "run_eqr_digest",  # A-07-T41: the archive slice
+    "run_letter_compose",  # A-07-T41: the archive slice
     "seal_matches",
     "set_misstatement_effect",
+    "start_archive_lock",  # A-07-T41: the archive slice
     "start_mapping",
+    "start_release",  # A-07-T41: the archive slice
     "sum_snapshot",
+    "update_filing",  # A-07-T41: the archive slice
     "update_profile",
 ]
 
@@ -632,3 +667,71 @@ from abacus.modules.assurance.governance_room import room_scope  # noqa: E402
 from abacus.modules.assurance.governance_room import rooms as governance_rooms  # noqa: E402
 
 register_scope_resolver("governance_room", room_scope)
+
+# A-07-T41 (DEC-3302): the services the Brightwater Hale `archive` slice calls as the people the
+# design names, completion to the locked archive (each as its route calls it).
+from abacus.modules.assurance.agent_capabilities import (  # noqa: E402
+    archive_readiness as run_archive_readiness,
+)
+from abacus.modules.assurance.agent_capabilities import eqr_digest as run_eqr_digest  # noqa: E402
+from abacus.modules.assurance.agent_capabilities import (  # noqa: E402
+    letter_compose as run_letter_compose,
+)
+from abacus.modules.assurance.agent_capabilities import (  # noqa: E402
+    record_bring_down as record_bring_down,
+)
+from abacus.modules.assurance.archive_additions import (  # noqa: E402
+    AdditionReason as AdditionReason,
+)
+from abacus.modules.assurance.archive_additions import (  # noqa: E402
+    create_addition as create_archive_addition,
+)
+from abacus.modules.assurance.archive_additions import (  # noqa: E402
+    decide_addition as decide_archive_addition,
+)
+from abacus.modules.assurance.archive_gate import archive_state as archive_state  # noqa: E402
+from abacus.modules.assurance.archive_gate import (  # noqa: E402
+    request_lock as request_archive_lock,
+)
+from abacus.modules.assurance.archive_lock import decide_lock as decide_archive_lock  # noqa: E402
+from abacus.modules.assurance.archive_lock import start_lock as start_archive_lock  # noqa: E402
+from abacus.modules.assurance.eqr_service import REVIEW_TARGET as EQR_REVIEW_TARGET  # noqa: E402
+from abacus.modules.assurance.eqr_service import concur as eqr_concur  # noqa: E402
+from abacus.modules.assurance.eqr_service import mark_reviewed as eqr_mark_reviewed  # noqa: E402
+from abacus.modules.assurance.eqr_service import open_reviews as open_eqr_reviews  # noqa: E402
+from abacus.modules.assurance.eqr_service import (  # noqa: E402
+    update_checklist as eqr_update_checklist,
+)
+from abacus.modules.assurance.filings import filings_of as filings_of  # noqa: E402
+from abacus.modules.assurance.filings import update_filing as update_filing  # noqa: E402
+from abacus.modules.assurance.gates import g5_blockers as g5_blockers  # noqa: E402
+from abacus.modules.assurance.governance_comms import Kind as GovernanceKind  # noqa: E402
+from abacus.modules.assurance.governance_comms import (  # noqa: E402
+    approve_and_send as governance_approve_and_send,
+)
+from abacus.modules.assurance.governance_comms import (  # noqa: E402
+    communication as governance_communication,
+)
+from abacus.modules.assurance.governance_comms import create as governance_create  # noqa: E402
+from abacus.modules.assurance.governance_comms import (  # noqa: E402
+    request_approval as governance_request_approval,
+)
+from abacus.modules.assurance.release import request_release as request_release  # noqa: E402
+from abacus.modules.assurance.release import snapshot as release_snapshot  # noqa: E402
+from abacus.modules.assurance.release_workflow import start_release as start_release  # noqa: E402
+from abacus.modules.assurance.rep_letters import approve as rep_letter_approve  # noqa: E402
+from abacus.modules.assurance.rep_letters import (  # noqa: E402
+    edit_paragraph as rep_letter_edit,
+)
+from abacus.modules.assurance.rep_letters import mark_sent as rep_letter_mark_sent  # noqa: E402
+from abacus.modules.assurance.rep_letters import (  # noqa: E402
+    record_signature as rep_letter_record_signature,
+)
+from abacus.modules.assurance.rep_letters import (  # noqa: E402
+    request_approval as rep_letter_request_approval,
+)
+from abacus.modules.assurance.report_builder import set_choice as report_set_choice  # noqa: E402
+from abacus.modules.assurance.report_builder import (  # noqa: E402
+    set_report_date as report_set_date,
+)
+from abacus.modules.assurance.report_builder import state as report_state  # noqa: E402
