@@ -517,9 +517,11 @@ __all__ = [
     "SealVerifySweepWorkflow",
     "SealVerifyWorkflow",
     "SectionState",
+    "ShadowFacts",  # Q-04-T136
     "TieOutCounts",
     "TieOutInput",
     "VerifyResult",
+    "a07_shadow_facts",  # Q-04-T136
     "acknowledge_letter",
     "adopt_trial_balance",
     "archive_state",  # A-07-T41: the archive slice
@@ -735,3 +737,5 @@ from abacus.modules.assurance.report_builder import (  # noqa: E402
     set_report_date as report_set_date,
 )
 from abacus.modules.assurance.report_builder import state as report_state  # noqa: E402
+from abacus.modules.assurance.shadow import ShadowFacts as ShadowFacts  # noqa: E402  # Q-04-T136
+from abacus.modules.assurance.shadow import shadow_facts as a07_shadow_facts  # noqa: E402
