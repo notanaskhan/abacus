@@ -188,11 +188,14 @@ export function TraceDrawer({
   runId,
   onClose,
   initialView = "Timeline",
+  held = false,
 }: {
   runId: string;
   onClose: () => void;
   /** The Segmented view open on arrival (WB-09 a3 Records read, a4 Writes & approvals). */
   initialView?: (typeof VIEWS)[number];
+  /** Drawn in place, no layer (the gallery's parity frame, P-09-T18): the box its host gives. */
+  held?: boolean;
 }): JSX.Element {
   const trace = useQuery({ ...agentRunTraceOptions({ path: { run_id: runId } }), retry: false });
   const [confirm, setConfirm] = useState(false);
@@ -227,6 +230,7 @@ export function TraceDrawer({
     <Drawer
       open
       width={480}
+      {...(held ? { forceState: "open" as const } : {})}
       onOpenChange={(o) => {
         if (!o) onClose();
       }}

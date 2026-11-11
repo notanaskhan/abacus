@@ -39,3 +39,7 @@ why it stays report-only, and axe stays clean.
   AUD-02's DV-13 and Parity table). AUD-03 locks (a, b, c, e, g) hold. Closed as far as it goes:
   a, c, e need the live dock transcript to match the handoff's static one (and DEC-341's order),
   which is screen work, not a lock.
+- 2026-11-11 (re-measured after S35): AUD-02 a 4.50, c 3.96, e 4.49 %, unchanged. The diff is the
+  Source Documents order (DEC-341: the screen sorts as its chip says; the handoff lists received
+  first) and the live dock's thread against the handoff's static one. Neither is a lock to win
+  without reopening DEC-341, so a, c, e stay report-only with their figures; d stays locked.

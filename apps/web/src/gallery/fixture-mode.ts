@@ -23,6 +23,8 @@ export interface FixtureParams {
   contrast?: "reference";
   /** `?w=390`: a screen's 390 layout where its artboards draw the 1400 window (R-01-T31). */
   w?: "390";
+  /** `?held=1`: an overlay drawn in place in its host's box, for a parity crop (P-09-T18). */
+  held?: "1";
 }
 
 function text(value: unknown): string | undefined {
@@ -45,6 +47,7 @@ export function parseFixtureParams(search: Record<string, unknown>): FixturePara
   if (latency !== undefined) out.latency = latency;
   if (text(search.contrast) === "reference") out.contrast = "reference";
   if (text(search.w) === "390") out.w = "390";
+  if (text(search.held) === "1") out.held = "1";
   return out;
 }
 
