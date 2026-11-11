@@ -8,19 +8,19 @@
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TAX-06 …/` |
 | Epic and tasks | T-04 · T-04-T02 (contract), T-04-T07 (fixtures), screen rows per §9 |
 | Priority | P0 |
-| Manifest status | planned |
+| Manifest status | fixture (T-04-T26: `screens/TAX-06`; live wiring with T-04-T29) |
 
 ## States
 | Artboard | Data condition that produces it | Status |
 |---|---|---|
-| a | Default (18A selected; three-way lighting) | planned |
-| b | Action required (Draft K-1, Samuel, What it blocks, Mark as Resolved disabled "Resolves when the final K-1 is released") | planned |
-| c | Waiting on client (estimates; "Requested Sep 1 · Claire Feld is uploading 2 files now") | planned |
-| d | Review point (NYC residency; "Open residency workpaper") | planned |
-| e | Agent fixing (spinner, Pill "In progress", run row) | planned |
-| f | Resolved filter (3 rows, Aug 27–28) | planned |
-| g | Empty ("No open issues.") | planned |
-| loading | skeleton per the handoff | planned |
+| a | Default (18A selected; three-way lighting) | fixture |
+| b | Action required (Draft K-1, Samuel, What it blocks, Mark as Resolved disabled "Resolves when the final K-1 is released") | fixture |
+| c | Waiting on client (estimates; "Requested Sep 1 · Claire Feld is uploading 2 files now") | fixture |
+| d | Review point (NYC residency; "Open residency workpaper") | fixture |
+| e | Agent fixing (spinner, Pill "In progress", run row) | fixture |
+| f | Resolved filter (3 rows, Aug 27–28) | fixture |
+| g | Empty ("No open issues.") | fixture |
+| loading | skeleton per the handoff | fixture |
 | not allowed | walled or out of scope: 404 (INV-3) | planned |
 
 ## API
