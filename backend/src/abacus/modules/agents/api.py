@@ -224,6 +224,7 @@ from abacus.modules.agents.service import (
     proposal_of,
     proposals_for,
     run_outcome,
+    run_v2_status,
     screen,
     screening_results_for,
 )
@@ -630,6 +631,7 @@ __all__ = [
     "run_log_count",
     "run_outcome",
     "run_record_hashes",
+    "run_v2_status",
     "screen",
     "screening_responder",
     "screening_results_for",

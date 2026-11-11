@@ -223,6 +223,14 @@ class RunOutcome:
     screening_result_id: UUID | None
 
 
+async def run_v2_status(tenant: TenantContext, run_id: UUID) -> str | None:
+    """T-04-T29: a run's v2 state for a reader in the run's firm (RLS scopes it), or None."""
+    from abacus.modules.agents.repository import run_v2_state
+
+    async with tenant_session(tenant) as session:
+        return await run_v2_state(session, run_id)
+
+
 async def run_outcome(tenant_id: UUID, run_id: UUID) -> RunOutcome:
     """What a run recorded, for a workflow retry that finds the work already done."""
     async with tenant_session(_reader(tenant_id, f"agent-run:{run_id}")) as session:

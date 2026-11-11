@@ -19,6 +19,8 @@ T-04 AC-4.3 to AC-4.5). PROTECTED (review).
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Final, Literal, cast
 from uuid import UUID
 
@@ -205,6 +207,97 @@ async def resolve_on_approval(
             scope=Scope(engagement_id=current.engagement_id),
         )
     return issue_id
+
+
+# --- T-04-T29: the issue detail's read side (SHL-15 a', a'', d) ----------------------------------
+
+
+@dataclass(frozen=True)
+class FixInstructionsRead:
+    text: str
+    scope: str
+    set_by: UUID | None
+    set_at: datetime
+
+
+@dataclass(frozen=True)
+class FixRunRead:
+    agent_run_id: UUID
+    proposal_id: UUID | None
+
+
+@dataclass(frozen=True)
+class ExplanationRead:
+    id: UUID
+    text: str
+    agent_run_id: UUID
+    explained_at: datetime
+    citation_ids: tuple[UUID, ...]
+
+
+_INSTRUCTIONS_ROW: Final = text(
+    "SELECT fix_instructions_sealed, scope, actor_id, created_at FROM issue_events "
+    "WHERE issue_id = :i AND event = 'fix_instructions_set' "
+    "ORDER BY created_at DESC, id DESC LIMIT 1"
+)
+_LATEST_FIX: Final = text(
+    "SELECT r.agent_run_id, p.proposal_id FROM issue_runs r LEFT JOIN issue_fix_proposals p "
+    "ON p.agent_run_id = r.agent_run_id WHERE r.issue_id = :i AND r.purpose = 'fix' "
+    "ORDER BY r.created_at DESC, r.id DESC LIMIT 1"
+)
+_EXPLANATIONS: Final = text(
+    "SELECT id, agent_run_id, text_sealed, citation_ids, created_at FROM issue_explanations "
+    "WHERE issue_id = :i ORDER BY created_at, id"
+)
+
+
+def _uuid_or_none(raw: object) -> UUID | None:
+    try:
+        return UUID(str(raw))
+    except ValueError:
+        return None
+
+
+async def issue_run_facts(
+    tenant: TenantContext, issue_id: UUID
+) -> tuple[FixInstructionsRead | None, FixRunRead | None, list[ExplanationRead]]:
+    """What the issue's fix and Explain runs left, for a reader the caller already authorised on
+    `issue.read` (the detail route): the instructions, the latest fix run and its proposal, and
+    every explanation with the citations it kept."""
+    async with tenant_session(tenant) as session:
+        instr = (await session.execute(_INSTRUCTIONS_ROW, {"i": issue_id})).first()
+        fix = (await session.execute(_LATEST_FIX, {"i": issue_id})).first()
+        rows = (await session.execute(_EXPLANATIONS, {"i": issue_id})).all()
+    instructions = None
+    if instr is not None and instr.fix_instructions_sealed is not None:
+        instructions = FixInstructionsRead(
+            await open_text(
+                tenant, cast(bytes, instr.fix_instructions_sealed), SUBJECT, issue_id,
+                "fix_instructions",
+            ),
+            str(instr.scope or "this_issue"),
+            _uuid_or_none(instr.actor_id),
+            cast(datetime, instr.created_at),
+        )  # fmt: skip
+    run = None if fix is None else FixRunRead(fix.agent_run_id, fix.proposal_id)
+    explanations = [
+        ExplanationRead(
+            r.id,
+            await open_text(
+                tenant,
+                cast(bytes, r.text_sealed),
+                SUBJECT,
+                issue_id,
+                "explanation",
+                r.agent_run_id,
+            ),
+            r.agent_run_id,
+            cast(datetime, r.created_at),
+            tuple(r.citation_ids or ()),
+        )
+        for r in rows
+    ]
+    return instructions, run, explanations
 
 
 async def on_proposal_decided(event: OutboxEvent) -> None:
