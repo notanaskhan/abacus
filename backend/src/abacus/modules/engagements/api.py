@@ -669,3 +669,10 @@ from abacus.modules.engagements.workflows import (  # noqa: E402
 )
 
 _register_topics()
+
+# Q-03-T235 (DEC-3304): ADM-07 and AUD-29 name this module's targets through the platform slot.
+from abacus.modules.engagements.audit_labels import (  # noqa: E402
+    register as _register_audit_labels,
+)
+
+_register_audit_labels()

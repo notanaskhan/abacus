@@ -163,3 +163,8 @@ __all__ = [
     "validate_pack",
     "work_item_papers",
 ]
+
+# Q-03-T235 (DEC-3304): ADM-07 and AUD-29 name this module's targets through the platform slot.
+from abacus.modules.workpapers.audit_labels import register as _register_audit_labels  # noqa: E402
+
+_register_audit_labels()

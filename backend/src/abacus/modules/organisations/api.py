@@ -383,3 +383,10 @@ __all__ = [
     "standing_conflict_results",
     "tri_consent_verdict",
 ]
+
+# Q-03-T235 (DEC-3304): ADM-07 and AUD-29 name this module's targets through the platform slot.
+from abacus.modules.organisations.audit_labels import (  # noqa: E402
+    register as _register_audit_labels,
+)
+
+_register_audit_labels()

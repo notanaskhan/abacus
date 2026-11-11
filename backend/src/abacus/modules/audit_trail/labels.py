@@ -62,7 +62,7 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from abacus.kernel.db import TenantContext, tenant_connection
 from abacus.kernel.uow.explorer import AUDIT_EVENTS
 from abacus.modules.identity.api import names_of
-from abacus.modules.platform.api import audit_labels
+from abacus.modules.platform.api import audit_labels, audit_noun
 
 BATCH: Final = 2_000  # G-02 §4.9 `audit_label_index_batch`
 SETTLE_SECONDS: Final = 120  # as `kernel.uow.chain.SETTLE_SECONDS`: late commits re-scanned
@@ -146,8 +146,10 @@ async def _label_rows(tenant_id: UUID, rows: Sequence[Row]) -> list[dict[str, ob
         by_type.setdefault(str(row["target_type"]), set()).add(str(row["target_id"]))
     targets: dict[tuple[str, str], str] = {}
     for kind, ids in by_type.items():
-        for target, label in (await audit_labels(None, kind, sorted(ids))).items():
-            targets[(kind, target)] = label.text
+        labelled = await audit_labels(None, kind, sorted(ids), tenant=_indexer(tenant_id))
+        for target in ids:  # Q-03-T235: an unnamed target indexes as its noun, never its id
+            found = labelled.get(target)
+            targets[(kind, target)] = found.text if found is not None else audit_noun(kind)
     out: list[dict[str, object]] = []
     for row in rows:
         actor_user = (
