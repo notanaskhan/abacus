@@ -10,6 +10,7 @@
 // BND-01's own scenario in the fixture project until `binders.engine` is on in E0 (P-06-T16).
 import { DEMO_INSTANT, expect, test } from "../harness";
 import { M13, artboard } from "../signatures/support";
+import { P05_LIVE, nothingBlocks, p05 } from "./p05-support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -150,4 +151,32 @@ test.describe("J16 · Home mentions band", () => {
       });
     },
   );
+});
+
+// P-05-T15 (TASK-7311; P-05 §10 item 1): J16 A1-A2 on SHL-17 and HOME-01's mention band.
+test.describe("J16 collaboration (P-05-T15)", () => {
+  test("j16 A1–A2: Margaret assigns Marcus a to-do; Hannah's Home shows the mention", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", P05_LIVE);
+    await journey.as("margaret-okonkwo", p05("SHL-17", "b", "margaret-okonkwo"));
+    await journey.step(
+      "J16 A1: the new to-do waits for a title and an assignee (SHL-17 b)",
+      async (page) => {
+        await expect(page.locator("[data-screen='SHL-17']").first()).toBeVisible();
+        await expect(page.getByRole("button", { name: "Create to-do" })).toBeDisabled();
+      },
+    );
+    await journey.as("marcus-delaney", p05("SHL-17", "c", "marcus-delaney"));
+    await journey.step("J16 A1: Marcus sees it assigned to him (SHL-17 c)", async (page) => {
+      await expect(
+        page.getByText("Assigned to you by Margaret Okonkwo · 12:36 PM").first(),
+      ).toBeVisible();
+      await nothingBlocks(page);
+    });
+    await journey.as("hannah-leclerc", "/components/screens/HOME-01?st=h&as=hannah-leclerc");
+    await journey.step("J16 A2: Hannah's Home shows Margaret's mention", async (page) => {
+      await expect(page.getByText("Margaret Okonkwo mentioned you").first()).toBeVisible();
+    });
+  });
 });

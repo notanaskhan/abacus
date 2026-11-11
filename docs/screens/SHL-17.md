@@ -28,6 +28,12 @@ the epic's fixture table names Marcus Delaney, so the contract uses marcus-delan
 Parity tier: Tier C (threshold 0.20, ≤ 3%) on a–f, locked at S37; Tier D blocking on drawer 480 and
 header 46.
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a–f | C (locked) | measured by the parity run (gallery `SHL-17`, P-05-T15) | threshold 0.20, at most 3% |
+| host | D | — | drawer 480, header 46 (blocking) |
+
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
 |---|---|---|---|---|

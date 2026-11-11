@@ -246,6 +246,14 @@ import { STATES as AUD18_STATES, scenarios as aud18Scenarios } from "./AUD-18/sc
 import { type CompletionTab, useCompletionCanvas } from "./AUD-19";
 import { STATES as AUD19_STATES, scenarios as aud19Scenarios } from "./AUD-19/scenarios";
 import { RepLetter } from "./AUD-21";
+import { TodoDrawer, STATES as SHL17_STATES, scenarios as shl17Scenarios } from "./SHL-17";
+import {
+  CommentsAndMentions,
+  STATES as SHL18_STATES,
+  scenarios as shl18Scenarios,
+} from "./SHL-18";
+import { ActivityLog, FRAMES as AUD29_FRAMES } from "./AUD-29";
+import { Assistant as Tax08Assistant, FRAMES as TAX08_FRAMES } from "./TAX-08";
 import { FRAMES as AUD25_FRAMES } from "./AUD-25/copy";
 import { POR08 } from "./POR-08";
 import {
@@ -3587,6 +3595,77 @@ registerScreen("AUD-25", {
       <A07Frame state={st}>
         <Archive frame={st} canLock={st !== "a" && st !== "e"} />
       </A07Frame>
+    );
+  },
+});
+
+// P-05-T15 (P-05 §10 items 1, 5): SHL-17, SHL-18 and AUD-29 on the gallery, one artboard per state,
+// each on its own fixture scenario, so the journeys and the parity run open them (DEC-4311).
+function useScreenScenario(
+  scenario: Scenario | undefined,
+  key: string,
+  persona?: string,
+): boolean {
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    if (scenario === undefined) {
+      setReady(key);
+      return () => setReady(null);
+    }
+    const restore = installFixtureMode(scenario, persona === undefined ? {} : { persona });
+    setReady(key);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [scenario, key, persona]);
+  return ready === key;
+}
+
+function Shl17Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = pick(SHL17_STATES, params.st);
+  const ready = useScreenScenario(shl17Scenarios[state], state, params.as);
+  if (!ready) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <TodoDrawer state={state} />
+    </div>
+  );
+}
+
+function Shl18Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = pick(SHL18_STATES, params.st);
+  const ready = useScreenScenario(shl18Scenarios[state], state, params.as);
+  if (!ready) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      <CommentsAndMentions state={state} />
+    </div>
+  );
+}
+
+registerScreen("SHL-17", { title: "To-do drawer", Component: Shl17Artboard });
+registerScreen("SHL-18", { title: "Comments and @mentions", Component: Shl18Artboard });
+registerScreen("AUD-29", {
+  title: "Engagement activity log · cockpit",
+  Component: ({ params }) => {
+    const st = pick(AUD29_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[900px]">
+        <ActivityLog frame={st} allowedActions={st === "a" ? ["export.create"] : []} />
+      </div>
+    );
+  },
+});
+// T-04-T34: TAX-08 on the gallery (the O2 drawer alone; its TAX-05 underlay is the host's).
+registerScreen("TAX-08", {
+  title: "Assistant panel",
+  Component: ({ params }) => {
+    const st = pick(TAX08_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[860px]">
+        <Tax08Assistant frame={st} />
+      </div>
     );
   },
 });

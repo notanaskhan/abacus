@@ -13,6 +13,7 @@ import { DEMO_INSTANT, expect, test } from "../harness";
 import { M13, artboard } from "../signatures/support";
 import { artboardAs, board, noProductName, owner as r02Owner } from "./r02-support";
 import { A07_LIVE, a07, noAgentDecision, onScreen } from "./a07-support";
+import { P05_LIVE, p05 } from "./p05-support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -791,5 +792,29 @@ test.describe("J03 completion to archive (A-07-T50)", () => {
         await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
       },
     );
+  });
+});
+
+// P-05-T15 (TASK-7311; P-05 §10 item 1; block D): J03 step 15 on AUD-29, the via Agent segment,
+// then run #4127's trace (WB-09 b on the cockpit). With it, J03 full is walkable (S37).
+test.describe("J03 activity (P-05-T15)", () => {
+  test("j03 15: Thomas filters Activity to via Agent and opens run #4127's trace before concurring", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", P05_LIVE);
+    await journey.as("thomas-whitcombe", p05("AUD-29", "b", "thomas-whitcombe"));
+    await journey.step("J03 step 15: Activity filtered to via Agent (AUD-29 b)", async (page) => {
+      await onScreen(page, "AUD-29");
+      await expect(page.getByText(/via Agent/).first()).toBeVisible();
+      await noAgentDecision(page);
+    });
+    await journey.as("thomas-whitcombe", "/audits", { scenario: "WB-09:b", clock: DEMO_INSTANT });
+    await journey.step("J03 step 15: run #4127's trace, nothing to decide", async (page) => {
+      const drawer = page.getByRole("dialog").last();
+      await expect(drawer).toBeVisible();
+      for (const verb of ["Approve", "Sign off", "Decide", "Release"]) {
+        await expect(drawer.getByRole("button", { name: new RegExp(`^${verb}`) })).toHaveCount(0);
+      }
+    });
   });
 });
