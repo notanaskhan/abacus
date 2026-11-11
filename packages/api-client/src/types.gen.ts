@@ -55050,6 +55050,10 @@ export type WorksheetSectionOut = {
      */
     key: string;
     /**
+     * Section Id
+     */
+    section_id?: string | null;
+    /**
      * Signed Off
      */
     signed_off?: boolean;

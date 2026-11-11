@@ -247,6 +247,21 @@ def register() -> None:
             (("engagement", "engagement_id"), ("work_item", "work_item_id")),
         ),
     )
+    # T-04-T29: the return workspace's counts ("Review n", "Issues n", "n proposed") and its
+    # sections reach a second tab: document approvals, issue moves, checkpoints and sign-offs
+    # invalidate the engagement (and the return, where the event names it).
+    _engagement = (("engagement", "engagement_id"), ("work_item", "work_item_id"))
+    for event_type, ref_type, ref_field in (
+        ("document_approval.changed", "document_approval", "approval_id"),
+        ("issue.status_changed", "issue", "issue_id"),
+        ("checkpoint.recorded", "checkpoint", "checkpoint_id"),
+        ("checkpoint.approved", "checkpoint", "checkpoint_id"),
+        ("checkpoint.rejected", "checkpoint", "checkpoint_id"),
+        ("sign_off.recorded", "sign_off", "sign_off_id"),
+    ):
+        realtime.register_invalidation(
+            event_type, realtime.Invalidation(ref_type, ref_field, _engagement)
+        )
     realtime.register_invalidation(
         "notification.created",
         realtime.Invalidation("notification", "notification_id", (("user", "user_id"),)),

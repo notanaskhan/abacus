@@ -20,7 +20,8 @@
 | Residency | `GET /v1/tax/returns/{id}/residency` | `residency.read` |
 | Ask for the residency proposal (202 run) | `POST /v1/tax/returns/{id}/residency/proposal-runs` | `residency.request_proposal` |
 | State allocation | `GET /v1/tax/returns/{id}/state-allocation` | `residency.read` |
-Field edits are P-04's `PUT /v1/fields/return_worksheet/…`; approving treatments and confirming
+A section carries `section_id` (T-04-T29, additive), the `return_worksheet_section` sign-off target
+for SHL-12. Field edits are P-04's `PUT /v1/fields/return_worksheet/…`; approving treatments and confirming
 residency go through P-04's proposals, whose appliers also authorise `k1_treatment.approve` and
 `residency.confirm`.
 

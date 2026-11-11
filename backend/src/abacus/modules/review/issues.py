@@ -40,6 +40,7 @@ from abacus.modules.identity.api import (
     authorise,
     names_of,
 )
+from abacus.modules.review.events import IssueStatusChanged
 from abacus.modules.review.sealing import open_text, record_text_reads, seal_text
 from abacus.modules.review.slots import reviewable_facts
 
@@ -343,6 +344,7 @@ async def _write_issue(
         after=Ref(record=record_id),  # kind and priority live on the row (Ref: ids only)
         scope=Scope(engagement_id=engagement_id),
     )
+    tx.emit(IssueStatusChanged(issue_id=issue_id, engagement_id=engagement_id, status="open"))
     if assignee_user_id is not None:
         await _assigned(tx, ctx, issue_id, engagement_id, assignee_user_id)
 
@@ -605,6 +607,9 @@ async def record_rule_issue(
             target=Target(SUBJECT, issue_id),
             after=Ref(record=record_id),
             scope=Scope(engagement_id=engagement_id),
+        )
+        unit.emit(
+            IssueStatusChanged(issue_id=issue_id, engagement_id=engagement_id, status="open")
         )
 
     if tx is not None:

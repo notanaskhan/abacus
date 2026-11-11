@@ -1,4 +1,6 @@
 import { EmptyState, FlagOffState } from "@abacus/ui";
+import { returnRecordOptions } from "@abacus/api-client/query";
+import { useQuery } from "@tanstack/react-query";
 import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { type JSX, type ReactNode, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
@@ -32,10 +34,57 @@ const FIXTURES = import.meta.env.MODE === "test" || import.meta.env.VITE_FIXTURE
 const Prepare = FIXTURES
   ? lazy(async () => ({ default: (await import("../../screens/TAX-04")).TAX04 }))
   : null;
-type WorkspaceSearch = { ov?: "assistant" };
+type WorkspaceSearch = { ov?: string; ws?: string };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// `?ov=` keeps every overlay the host knows (SHL-10, SHL-12, SHL-15 from the live sections, and
+// TAX-08's "assistant"); `?ws=<worksheet id>` opens TXI-01 on one worksheet (T-04-T29).
 function validateSearch(search: Record<string, unknown>): WorkspaceSearch {
-  return search.ov === "assistant" ? { ov: "assistant" } : {};
+  return {
+    ...(typeof search.ov === "string" && search.ov !== "" ? { ov: search.ov } : {}),
+    // A worksheet id goes into an API path: a UUID only, never the URL's raw text.
+    ...(typeof search.ws === "string" && UUID.test(search.ws) ? { ws: search.ws } : {}),
+  };
+}
+
+// T-04-T29 (TASK-6828): a live build hosts each section's live screen inside the frame; a
+// fixture build keeps the artboards (TAX-04's Prepare preset above, "Not built yet" elsewhere).
+const ReviewLive = lazyScreen(async () => (await import("../../screens/TAX-04/live")).ReviewLive);
+const WorksheetsLive = lazyScreen(
+  async () => (await import("../../screens/TAX-05/live")).WorksheetsLive,
+);
+const IssuesLive = lazyScreen(async () => (await import("../../screens/TAX-06/live")).IssuesLive);
+const ActivityLive = lazyScreen(
+  async () => (await import("../../screens/TAX-07/live")).ActivityLive,
+);
+
+/** The return's engagement (the frame's own record read; one cache entry). */
+function useEngagementOf(returnId: string): string | undefined {
+  return useQuery(returnRecordOptions({ path: { return_id: returnId } })).data?.engagement_id;
+}
+
+function LiveSection({
+  section,
+}: {
+  section: "review" | "worksheets" | "issues" | "activity";
+}): JSX.Element {
+  const returnId = useParam("returnId");
+  const engagementId = useEngagementOf(returnId);
+  const search: WorkspaceSearch = useSearch({ strict: false });
+  if (section === "issues") return <IssuesLive returnId={returnId} engagementId={engagementId} />;
+  if (section === "activity") {
+    return <ActivityLive returnId={returnId} engagementId={engagementId} />;
+  }
+  if (section === "worksheets") {
+    return (
+      <WorksheetsLive
+        returnId={returnId}
+        engagementId={engagementId}
+        {...(search.ws === undefined ? {} : { worksheetId: search.ws })}
+      />
+    );
+  }
+  return <ReviewLive returnId={returnId} engagementId={engagementId} />;
 }
 
 function Workspace({
@@ -122,7 +171,12 @@ export const taxReviewRoute = createRoute({
         </div>
       );
     }
-    return <Workspace tab="review" title="Review" />;
+    const section = useParam("section");
+    return (
+      <Workspace tab="review" title="Review">
+        <LiveSection section={section === "worksheets" ? "worksheets" : "review"} />
+      </Workspace>
+    );
   },
 });
 
@@ -131,7 +185,11 @@ export const taxIssuesRoute = createRoute({
   path: "/tax-returns/$returnId/issues",
   validateSearch,
   component: function TaxIssuesPage(): JSX.Element {
-    return <Workspace tab="issues" title="Issues" />;
+    return (
+      <Workspace tab="issues" title="Issues">
+        {FIXTURES ? undefined : <LiveSection section="issues" />}
+      </Workspace>
+    );
   },
 });
 
@@ -140,7 +198,11 @@ export const taxActivityRoute = createRoute({
   path: "/tax-returns/$returnId/activity",
   validateSearch,
   component: function TaxActivityPage(): JSX.Element {
-    return <Workspace tab="activity" title="Activity" />;
+    return (
+      <Workspace tab="activity" title="Activity">
+        {FIXTURES ? undefined : <LiveSection section="activity" />}
+      </Workspace>
+    );
   },
 });
 

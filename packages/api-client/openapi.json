@@ -117118,6 +117118,19 @@
             "title": "Key",
             "type": "string"
           },
+          "section_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Section Id"
+          },
           "signed_off": {
             "cls": "internal",
             "default": false,
