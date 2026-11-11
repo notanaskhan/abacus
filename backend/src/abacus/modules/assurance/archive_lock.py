@@ -81,7 +81,11 @@ async def decide_lock(
 ) -> UUID:
     """After the route's `archive.lock` (manager or EP, fresh MFA). Answers the archive id."""
     from abacus.modules.assurance.archive_gate import archive_state
+    from abacus.modules.assurance.record_auth import fresh_mfa_at
 
+    # The lock is the manager's or EP's act on a fresh second factor; the time stored is the one
+    # they presented, never the clock's (TASK-6881: the record must not claim an MFA nobody did).
+    mfa_at = fresh_mfa_at(ctx)
     state = await archive_state(ctx.tenant, work_item_id)
     archive = state.archive
     if archive is None or archive.status != "assembling":
@@ -112,7 +116,7 @@ async def decide_lock(
                     "roll": then_roll_forward,
                     "snap": json.dumps(snapshot),
                     "sha": state.checklist_sha256,
-                    "mfa": ctx.mfa_at or clock.system_now(),
+                    "mfa": mfa_at,
                 },
             ),
         )
