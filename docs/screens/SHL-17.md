@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SHL-17 To-do drawer/` (README.md, spec.md) |
 | Epic and tasks | P-05 · bundle T02 · stubs T03 · migration T04 · service T06 · seed T12 · screen T13 · journeys T15 · SPEC-650 |
-| Manifest status | planned (fixture with P-05-T03; live with P-05-T13 behind `collaboration.v2`) |
+| Manifest status | fixture (P-05-T13: `screens/SHL-17`; C-30 in `domain/collaboration/todos.tsx`) |
 
 ## States
 Clock is the demo clock (DEC-27), CT. Persona slugs follow F-04.
