@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-18 EQR workspace/` (README.md, spec.md; revision.md wins where present) |
 | Epic and tasks | A-07 · stubs T04 · migration T07 · fixtures T11 · screen T17 · service T18 · gate G6 T15 · agent T32 · parity T48 · SPEC-644 |
-| Manifest status | fixture (final, A-07-T53, S36) |
+| Manifest status | live (S36 fixes, TASK-6830, DEC-3421: `/audits/$auditId/eqr` reads A-07-T18's live routes; the staging walk is open) |
 
 ## States
 Clock is the demo clock (DEC-27): CDT (UTC−5) until Sun Nov 1, 2026, CST (UTC−6) after. Snapshots
@@ -74,12 +74,12 @@ Built on fixtures (A-07-T17); A-07-T18's EQR service is live but the screen has 
 
 | Artboard | Final status |
 |---|---|
-| a | built · fixture-only |
-| b | built · fixture-only |
-| b2 | built · fixture-only |
-| c | built · fixture-only |
-| d | built · fixture-only |
-| e | built · fixture-only |
+| a | built · live route (staging walk open) |
+| b | built · live route (staging walk open) |
+| b2 | built · live route (staging walk open) |
+| c | built · live route (staging walk open) |
+| d | built · live route (staging walk open) |
+| e | built · live route (staging walk open) |
 
 | Deviation | Evidence |
 |---|---|
