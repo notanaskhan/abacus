@@ -39,6 +39,24 @@ async def last_completed_run_at(
     return found if isinstance(found, datetime) else None
 
 
+_LAST_COMPLETED_RUN = text(
+    "SELECT id, finished_at FROM agent_runs WHERE engagement_id = :e "
+    "AND agent_id = :a AND status = 'completed' ORDER BY finished_at DESC, id LIMIT 1"
+)
+
+
+async def last_completed_run(
+    tenant: TenantContext, engagement_id: UUID, agent_id: str
+) -> tuple[UUID, datetime] | None:
+    """S35 follow-up (AUD-19 b's bring-down): the engagement's newest completed run of
+    `agent_id`, its id and finish, or None."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(_LAST_COMPLETED_RUN, {"e": engagement_id, "a": agent_id})
+        ).first()
+    return None if row is None else (row.id, row.finished_at)
+
+
 _RECORD_HASHES = text(
     "SELECT run_id, record_sha256 FROM agent_run_records WHERE engagement_id = :e ORDER BY run_id"
 )

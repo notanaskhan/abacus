@@ -99,8 +99,14 @@ from abacus.modules.review.issues import (
 )
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
+from abacus.modules.review.notes import (
+    NoteRail,
+    note_states,
+    notes_for,
+    open_note_counts,
+    open_notes,
+)
 from abacus.modules.review.notes import note_event as review_note_event
-from abacus.modules.review.notes import notes_for, open_note_counts, open_notes
 from abacus.modules.review.notes import raise_on_target as raise_review_note
 from abacus.modules.review.notes import raise_on_target_in as raise_review_note_in
 from abacus.modules.review.notification_states import register_notification_states
@@ -270,6 +276,7 @@ __all__ = [
     "MfaRequired",
     "NotCanonical",
     "NotPrepared",
+    "NoteRail",
     "NotesOpen",
     "OpenGate",
     "OpenReviewNotes",
@@ -322,6 +329,7 @@ __all__ = [
     "list_checkpoints",
     "list_issues",
     "move_issue",  # A-06-T11: resolve or mark not applicable through the issue
+    "note_states",
     "notes_for",
     "open_note_counts",
     "open_notes",

@@ -8,15 +8,18 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterator
-from typing import cast
+from typing import Literal, cast
 
 import asyncpg
 import pytest
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
+from abacus.modules.assurance import completion_reads as reads
 from abacus.modules.assurance.api import a07_shadow_facts, release_snapshot
+from abacus.modules.identity.api import AuthContext
 from abacus_tools.a07_shadow import compare
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
@@ -26,6 +29,7 @@ from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
 pytestmark = pytest.mark.asyncio
+FirmRole = Literal["firm_admin", "practice_leader", "quality_partner", "security_admin"]
 TENANT = loader.TENANT
 
 
@@ -117,3 +121,50 @@ async def test_ac_northwind_is_ready_to_release_at_10_05_through_the_services(
         "archived_on": "not_yet",
         "gates_at_release": "match",
     }
+    # S35 follow-up (item 3): AUD-18, AUD-19 and AUD-21 read the loaded rows, not fixtures.
+    await _reads_answer_the_loaded_rows(own_db, item)
+
+
+async def _person(seed: Seeder, initials: str) -> AuthContext:
+    seat = next(s for s in loader.SEATS if s.initials == initials)
+    user = loader.user_id_of(seat)
+    role = await seed.value(
+        "SELECT firm_role FROM memberships WHERE tenant_id = $1 AND user_id = $2", TENANT, user
+    )
+    return AuthContext(
+        TenantContext(TENANT, "human", str(user)),
+        user,
+        uuid.UUID(int=0),
+        cast("FirmRole | None", role),  # the membership's own value (NULL for a staff seat)
+        system_now(),
+    )
+
+
+async def _reads_answer_the_loaded_rows(own_db: Database, item: uuid.UUID) -> None:
+    seed = Seeder(own_db.superuser_dsn)
+    manager = await _person(seed, "HL")
+    eqr = await _person(seed, "TW")
+    # AUD-18: Thomas's review, concurred, 10 of 10, both notes cleared; the viewer is the EQR.
+    review = await reads.eqr_review(eqr, item)
+    assert review.status == "concurred" and review.viewer_is_eqr
+    assert (review.checklist_done, review.checklist_total) == (10, 10)
+    assert review.concurrence is not None
+    assert review.concurrence.concurrence_date.isoformat() == "2026-10-05"
+    assert [n.status for n in review.notes] == ["cleared", "cleared"]
+    assert review.blockers == [] and "eqr.concur" not in review.allowed_actions
+    assert not (await reads.eqr_review(manager, item)).viewer_is_eqr
+    # AUD-19 a: every counted item is listed with the firm template's wording.
+    checklist = await reads.completion(manager, item)
+    assert checklist.items and all(i.title != i.item_key for i in checklist.items)
+    assert checklist.total == len(checklist.items) - checklist.not_applicable
+    # AUD-21: the letter as signed on the report date, its paper the composed version's.
+    letter = await reads.representation_letter(manager, item)
+    assert letter.status == "signed" and letter.g7_met
+    assert letter.dated_as_of is not None and letter.dated_as_of.isoformat() == "2026-10-09"
+    assert letter.current_version is not None and letter.watermark == "none"
+    assert letter.paragraphs and all(p.text for p in letter.paragraphs)
+    versions = await reads.letter_versions(manager, item)
+    assert versions[-1].version_no == letter.current_version.version_no
+    # AUD-19 b, c: the reads answer whatever the load recorded, never a 501.
+    await reads.subsequent_events(manager, item)
+    await reads.legal_letter(manager, item)

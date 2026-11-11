@@ -46,6 +46,12 @@ v2 with one sprint of overlap.
 Code: `assurance/completion_contract.py`. Every route answers 501 until A-07-T18 and 404 for a
 firm with `audits.completion` off once A-07-T33 creates it.
 
+The reads are live (S35 follow-up, TASK-6742; DEC-3307): `GET …/eqr`, `…/completion`,
+`…/subsequent-events`, `…/legal-letters` and `…/going-concern` answer from the rows the services
+write (`assurance/completion_reads.py`), titles from the firm's templates. A procedure's title is
+its key until the firm's procedure list carries wording; the bring-down reads `completed` from the
+newest `audit.bring_down` run, `queued` once a report date is set. The writes stay 501.
+
 | Operation | Method and path | Action | Live in |
 |---|---|---|---|
 | The review | `GET /v1/audits/{work_item_id}/eqr` → `EqrReviewOut` | `eqr.read` | T18 |
@@ -82,7 +88,9 @@ to the engagement partner. Refusals: `409 item_derived` (N/A on a projected item
 ## Letters, report, release and archive (AUD-21 to AUD-25) — stub, A-07-T05
 Code: `assurance/release_contract.py`. Every route answers 501 until its task and 404 for a firm
 with its flag off once A-07-T33 creates `audits.letters`, `audits.report_release` and
-`audits.archive`.
+`audits.archive`. The letter's reads (`GET …/representation-letter`, `…/versions`,
+`…/versions/{version_no}`) are live (TASK-6742): the stored representations with the clause
+titles, the included clauses' standard wording or the person's edit, no signers yet (C7 owns them).
 
 | Operation | Method and path | Action | Live in |
 |---|---|---|---|

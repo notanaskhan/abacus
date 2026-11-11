@@ -376,8 +376,10 @@ router = AbacusRouter(prefix="/v1/audits/{work_item_id}", tags=["audit completio
 @router.get("/eqr", action="eqr.read", response_model=EqrReviewOut, errors=(501,))
 async def eqr_review_route(work_item_id: UUID, ctx: Ctx) -> EqrReviewOut:
     """AUD-18: checklist, digest cards, EQR notes and the concurrence blockers (A-07-T18)."""
+    from abacus.modules.assurance.completion_reads import eqr_review
+
     await _gate(ctx, work_item_id, "eqr.read")
-    _not_yet()
+    return await eqr_review(ctx, work_item_id)
 
 
 @router.post(
@@ -475,8 +477,10 @@ async def eqr_request_route(work_item_id: UUID, body: EqrRequestIn, ctx: Ctx) ->
 )
 async def audit_completion_route(work_item_id: UUID, ctx: Ctx) -> AuditCompletionOut:
     """AUD-19 a: the projected checklist (A-07-T22)."""
+    from abacus.modules.assurance.completion_reads import completion
+
     await _gate(ctx, work_item_id, "completion.read")
-    _not_yet()
+    return await completion(ctx, work_item_id)
 
 
 @router.post(
@@ -515,8 +519,10 @@ async def completion_item_reopen_route(
 )
 async def subsequent_events_route(work_item_id: UUID, ctx: Ctx) -> SubsequentEventsOut:
     """AUD-19 b: procedures through the report date, events and the bring-down (A-07-T23)."""
+    from abacus.modules.assurance.completion_reads import subsequent_events
+
     await _gate(ctx, work_item_id, "completion.read")
-    _not_yet()
+    return await subsequent_events(ctx, work_item_id)
 
 
 @router.post(
@@ -565,8 +571,10 @@ async def subsequent_event_route(
     "/legal-letters", action="completion.read", response_model=LegalLetterOut, errors=(501,)
 )
 async def legal_letters_route(work_item_id: UUID, ctx: Ctx) -> LegalLetterOut:
+    from abacus.modules.assurance.completion_reads import legal_letter
+
     await _gate(ctx, work_item_id, "completion.read")
-    _not_yet()
+    return await legal_letter(ctx, work_item_id)
 
 
 @router.put(
@@ -603,8 +611,10 @@ async def legal_letters_request_route(
 )
 async def audit_going_concern_route(work_item_id: UUID, ctx: Ctx) -> GoingConcernOut:
     """AUD-19 d and e: the decided card read-only, "Reserved to Engagement Partner"."""
+    from abacus.modules.assurance.completion_reads import going_concern
+
     await _gate(ctx, work_item_id, "completion.read")
-    _not_yet()
+    return await going_concern(ctx, work_item_id)
 
 
 @router.post(

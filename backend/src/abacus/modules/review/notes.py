@@ -233,6 +233,25 @@ async def open_note_counts(tenant: TenantContext, engagement_id: UUID) -> dict[U
     return counts
 
 
+@dataclass(frozen=True)
+class NoteRail:
+    """A note's state without its body (a rail row; no access event is owed)."""
+
+    id: UUID
+    status: NoteStatus
+    assignee_user_id: UUID | None
+
+
+async def note_states(
+    tenant: TenantContext, engagement_id: UUID, target_type: str, target_id: UUID
+) -> list[NoteRail]:
+    """S35 follow-up (AUD-18's read): the notes on one target, oldest first, without bodies
+    (callers authorised)."""
+    async with tenant_session(tenant) as session:
+        notes = await notes_of(session, engagement_id, target_type, target_id)
+    return [NoteRail(n.id, cast(NoteStatus, n.status), n.assignee_user_id) for n in notes]
+
+
 async def open_notes(tenant: TenantContext, engagement_id: UUID) -> list[tuple[UUID, UUID]]:
     """A-06-T15: each open or responded note (id, target) for G5's blockers (callers
     authorised)."""
