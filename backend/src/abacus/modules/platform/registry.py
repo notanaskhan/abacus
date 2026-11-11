@@ -45,6 +45,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "agent_minute_ledger": frozenset(
         {"tenant_id", "usage_month", "run_id", "engagement_id", "work_item_ref", "service_line"}
         | {"definition_id", "capability", "phase", "minutes", "agent_ms", "cost_usd"}
+        | {"run_number"}  # P-10-T42 (0810)
     ),
     "engagement_agent_budgets": frozenset(
         {"tenant_id", "engagement_id", "minutes_per_usage_month", "alert_pct"}

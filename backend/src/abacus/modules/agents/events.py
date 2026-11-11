@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated, ClassVar, Literal
 from uuid import UUID
 
@@ -224,3 +225,25 @@ class RunFailedV2(DomainEvent):
     run_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
     user_id: Annotated[UUID, classified("internal")]
+
+
+class RunCompleted(DomainEvent):
+    """P-10-T42 (SPEC-647 §3.10; DEC-3401): a v2 run reached a terminal state for the first time;
+    the platform module's ledger posts its agent-minutes (stored once on the run, round-half-up of
+    `agent_ms` ÷ 60,000). Identifiers, codes and integers only; the business date it completed on
+    fixes the usage month whatever the relay's delay."""
+
+    event_type: ClassVar[str] = "agent_run.completed"
+
+    run_id: Annotated[UUID, classified("internal")]
+    state: Annotated[str, classified("internal")]
+    completed_on: Annotated[date, classified("internal")]
+    agent_ms: Annotated[int, classified("internal")]
+    agent_minutes: Annotated[int, classified("internal")]
+    capability: Annotated[str, classified("internal")]
+    service_line: Annotated[str, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
+    run_number: Annotated[int | None, classified("internal")] = None
+    definition_id: Annotated[UUID | None, classified("internal")] = None
+    work_item_ref: Annotated[str | None, classified("internal")] = None
+    cost_usd: Annotated[str, classified("internal")] = "0"

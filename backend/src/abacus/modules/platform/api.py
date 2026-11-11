@@ -90,6 +90,18 @@ from abacus.modules.platform.incidents import WORKFLOWS as INCIDENT_WORKFLOWS
 from abacus.modules.platform.jobs import ACTIVITIES as JOB_ACTIVITIES
 from abacus.modules.platform.jobs import SCHEDULES
 from abacus.modules.platform.jobs import WORKFLOWS as JOB_WORKFLOWS
+from abacus.modules.platform.metering import (
+    SUBSCRIPTIONS as METERING_SUBSCRIPTIONS,
+)
+from abacus.modules.platform.metering import (
+    RunMinutes,
+    agent_minutes,
+    engagement_effort,
+    firm_usage,
+    record_synthetic_minutes,
+    register_usage_labeller,
+    usage_month_of,
+)
 from abacus.modules.platform.pilot_metrics import (
     PLACES as PILOT_PLACES,
 )
@@ -259,7 +271,8 @@ WORKFLOWS = {
     ReferenceSetFanOutWorkflow: "background",  # K-02-T12
 }
 # G-02-T20: `wisp_pack.requested` starts the WISP pack's build.
-SUBSCRIPTIONS: dict[str, Handler] = {**WISP_SUBSCRIPTIONS}
+# P-10-T42: `agent_run.completed` posts the run's agent-minutes to the ledger.
+SUBSCRIPTIONS: dict[str, Handler] = {**WISP_SUBSCRIPTIONS, **METERING_SUBSCRIPTIONS}
 ACTIVITIES: tuple[object, ...] = (
     *FANOUT_ACTIVITIES,  # K-02-T12
     emit_tenant_provisioned_activity,
@@ -360,6 +373,7 @@ __all__ = [
     "ReferenceSetKind",
     "ResolvedReference",
     "RetentionFloor",
+    "RunMinutes",
     "SearchDocument",
     "SpendAnomalyWorkflow",
     "StandardsSetRefused",
@@ -374,6 +388,7 @@ __all__ = [
     "WispPackFailure",
     "WispPackInput",
     "WispPackWorkflow",
+    "agent_minutes",
     "audit_labels",
     "audit_noun",  # Q-03-T235
     "audit_source",
@@ -390,11 +405,13 @@ __all__ = [
     "configure_tenant_key_ops",
     "control_active",
     "cross_firm",
+    "engagement_effort",
     "enrol_pilot",
     "entitlement",
     "expected_route",
     "facts_sha256",
     "finish_propagation",
+    "firm_usage",
     "form_8879_for",
     "home_count",
     "home_count_keys",
@@ -411,6 +428,7 @@ __all__ = [
     "pub1345_tolerances",
     "read_stored",
     "record_incident",
+    "record_synthetic_minutes",
     "reference_value",
     "references_in_effect",
     "register_audit_labeler",
@@ -423,6 +441,7 @@ __all__ = [
     "register_module_review",
     "register_pilot_metric_source",
     "register_search_projection",
+    "register_usage_labeller",
     "register_wisp_document_reader",
     "registered_audit_types",
     "require_entitlement",
@@ -437,6 +456,7 @@ __all__ = [
     "start_provisioning",
     "start_reference_fanout",
     "tenant_key_workflow_id",
+    "usage_month_of",
     "wedge_read",
     "wedge_report",
     "week_snapshots",

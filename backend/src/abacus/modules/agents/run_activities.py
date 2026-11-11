@@ -21,7 +21,8 @@ work, and returns identifiers and codes only, so no client content enters the wo
 - `agents.run_v2.execute_step`: one step row, and for a `tool` or `compute` step its one C17 call
   (`call_tool`, idempotency key `(run, seq, attempt)`). Questions, decisions, approvals and model
   steps are P-10-T32's: until then such a step fails `step_kind_pending`.
-- `agents.run_v2.complete`: the terminal state and `finished_at`.
+- `agents.run_v2.complete`: the terminal state and `finished_at`; at the first terminal state the
+  run's `agent_minutes` (stored once) and `agent_run.completed` for the ledger (P-10-T42).
 """
 
 from __future__ import annotations
@@ -35,11 +36,13 @@ from uuid import UUID
 from sqlalchemy import text
 from temporalio import activity
 
+from abacus.kernel import clock
 from abacus.kernel._flags import AGENT_RUNTIME_V2
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.agents.events import (
+    RunCompleted,
     RunFailedV2,
     RunNeedsInput,
     RunReadyForReview,
@@ -49,12 +52,14 @@ from abacus.modules.agents.run_waits import QUESTION_KINDS, RUN_WAIT_ACTIVITIES,
 from abacus.modules.agents.service import AgentRunNotRunning, load_run_v2_context
 from abacus.modules.agents.tools.registry import registered_tools
 from abacus.modules.agents.tools.runtime import ToolCallIn, call_tool
+from abacus.modules.engagements.api import service_line_of
 from abacus.modules.identity.api import (
     AgentContext,
     agents_paused,
     engagement_resource,
     member_could,
 )
+from abacus.modules.platform.api import agent_minutes
 
 _READER: Final = "agent-run-v2"
 WAIT_KINDS: Final = QUESTION_KINDS | {"decision"}
@@ -437,18 +442,64 @@ async def complete_run_activity(
     tenant = _tenant(tenant_id, run_id)
     run = UUID(run_id)
     async with uow(tenant) as tx:
+        first = (
+            await tx.session.execute(
+                text(
+                    "SELECT agent_ms, finished_at IS NULL AS open FROM agent_runs WHERE id = :run "
+                    "FOR UPDATE"
+                ),
+                {"run": run},
+            )
+        ).first()
+        # P-10-T42 (AC-M1): minutes stored once, at the run's first terminal state.
+        minutes = agent_minutes(int(first.agent_ms)) if first is not None and first.open else None
         await tx.session.execute(
             text(
                 "UPDATE agent_runs SET state = :state, state_reason = :reason, blocked_on = NULL, "
+                "agent_minutes = coalesce(:minutes, agent_minutes), "
                 "finished_at = coalesce(finished_at, clock_timestamp()) WHERE id = :run"
             ),
-            {"state": state, "reason": reason, "run": run},
+            {"state": state, "reason": reason, "minutes": minutes, "run": run},
         )
         tx.record(
             "agent_run.finished",
             target=Target("agent_run", run),
             after=None,
         )
+        if minutes is not None:
+            tx.emit(await _completed(tx, tenant, run, state, minutes))
+
+
+async def _completed(
+    tx: UnitOfWork, tenant: TenantContext, run: UUID, state: str, minutes: int
+) -> RunCompleted:
+    """P-10-T42: the ledger's event, from the run row (identifiers, codes and integers)."""
+    row = (
+        await tx.session.execute(
+            text(
+                "SELECT agent_id, engagement_id, run_number, definition_id, work_item_ref, "
+                "agent_ms, cost_usd FROM agent_runs WHERE id = :run"
+            ),
+            {"run": run},
+        )
+    ).one()
+    line = (
+        await service_line_of(tenant, row.engagement_id) if row.engagement_id is not None else None
+    )
+    return RunCompleted(
+        run_id=run,
+        state=state,
+        completed_on=await clock.today(tenant),
+        agent_ms=int(row.agent_ms),
+        agent_minutes=minutes,
+        capability=row.agent_id,
+        service_line=line or "firm",
+        engagement_id=row.engagement_id,
+        run_number=row.run_number,
+        definition_id=row.definition_id,
+        work_item_ref=row.work_item_ref,
+        cost_usd=str(row.cost_usd),
+    )
 
 
 RUN_V2_ACTIVITIES: Final = (
