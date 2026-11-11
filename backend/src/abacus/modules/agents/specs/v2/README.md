@@ -6,4 +6,5 @@ One `<id>.yaml` per capability, compiled into `../_specs_v2.py` by
 
 The first v2 capability is `tax.return_drafter` v1 (T-04-T25, shape `workflow`: its own
 `ReturnDrafterWorkflow` in `modules/tax/drafter_workflow.py`). `runtime.conformance` v1
-(synthetic-only, never installable) lands with P-10-T40 once its tools (T28, T38) are registered.
+(P-10-T40, shape `loop`; synthetic-only, never installable, `spec_v2.TEST_ONLY`) is the runtime's
+reference over the T28 and T38 tools, run by `modules/agents/conformance.py`.

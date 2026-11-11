@@ -67,7 +67,7 @@ async def _cite(team: Cast) -> uuid.UUID:
             "INSERT INTO citations (tenant_id, engagement_id, cited_from_type, cited_from_id, n, "
             "kind, source_type, source_id, locator, verified, verifier_version, created_by_kind, "
             "created_by_run_id) VALUES ($1, $2, 'proposal_probe', $3, 1, 'record_field', "
-            "'tax_return', $3, '{\"record_type\": \"tax_return\", \"field\": \"line\"}', true, "
+            '\'tax_return\', $3, \'{"record_type": "tax_return", "field": "line"}\', true, '
             "'v1', 'agent', $3) RETURNING id",
             team.tenant,
             team.engagement,
@@ -144,7 +144,9 @@ async def _approve(team: Cast, proposal: uuid.UUID) -> tuple[uuid.UUID, uuid.UUI
     return cast(uuid.UUID, decision[0]["id"]), cast(uuid.UUID, decision[0]["approval_grant_id"])
 
 
-def _input(team: Cast, run_id: uuid.UUID, proposal: uuid.UUID, grant: uuid.UUID) -> ApprovedWriteInput:
+def _input(
+    team: Cast, run_id: uuid.UUID, proposal: uuid.UUID, grant: uuid.UUID
+) -> ApprovedWriteInput:
     return ApprovedWriteInput(str(team.tenant), str(run_id), str(proposal), str(grant), SAVE_TOOL)
 
 
