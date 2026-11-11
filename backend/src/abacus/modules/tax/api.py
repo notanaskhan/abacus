@@ -20,7 +20,9 @@ from abacus.modules.reporting.api import register_k1_rows
 from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax import drafter_workflow as _drafter
+from abacus.modules.tax import explain as _explain
 from abacus.modules.tax import extensions as _extensions
+from abacus.modules.tax import fix_runner as _fix_runner
 from abacus.modules.tax import return_issues as _return_issues
 from abacus.modules.tax import schedule_jobs as _schedule_jobs
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
@@ -168,11 +170,15 @@ WORKFLOWS: dict[type, str] = {
     **k1_release.WORKFLOWS,
     **_schedule_jobs.WORKFLOWS,
     **_drafter.WORKFLOWS,  # T-04-T25: ReturnDrafterWorkflow
+    **_fix_runner.WORKFLOWS,  # T-04-T31: FixRunWorkflow
+    **_explain.WORKFLOWS,  # T-04-T31: IssueExplainWorkflow
 }
 ACTIVITIES: tuple[object, ...] = (
     *k1_release.ACTIVITIES,
     *_schedule_jobs.ACTIVITIES,
     *_drafter.ACTIVITIES,
+    *_fix_runner.ACTIVITIES,
+    *_explain.ACTIVITIES,
 )
 start_draft = _drafter.start_draft
 # T-04-T25: the history recorder's workflow and its types (abacus_tools reaches tax only here).
@@ -304,6 +310,13 @@ from abacus.modules.tax.worksheet_review import (  # noqa: E402
 )
 
 _register_worksheet_review()
+
+# T-04-T31 (DEC-3413): a return's issues are fixed and explained by the tax agents, through P-04's
+# fail-closed slots (keyed by the issue's record type).
+from abacus.modules.review.api import register_explainer, register_fix_runner  # noqa: E402
+
+register_fix_runner(_fix_runner.RECORD_TYPE, _fix_runner.start_fix)
+register_explainer(_fix_runner.RECORD_TYPE, _explain.start_explain)
 
 # T-04-T19 (DEC-3211): the tax tools on C17 register at their module's import.
 from abacus.modules.tax.tools import (  # noqa: E402

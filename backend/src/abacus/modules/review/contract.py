@@ -33,7 +33,7 @@ from abacus.kernel._statuses import (
     ReviewNoteStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.listing import Facet, ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
@@ -1926,8 +1926,10 @@ async def fix_instructions_route(
     errors=(409, 501),
 )
 async def issue_explain_route(issue_id: UUID, ctx: Ctx) -> ExplainAcceptedOut:
-    """SHL-15 d, "Explain…": a person asks the agent to explain; nothing is decided."""
-    raise NotImplementedYet
+    """SHL-15 d, "Explain…": a person asks the agent to explain; nothing is decided. 409
+    `explain_unavailable` when no explainer serves the issue's record (T-04-T31)."""
+    run = await resolutions.explain(ctx, issue_id)
+    return ExplainAcceptedOut(issue_id=issue_id, agent_run_id=run)
 
 
 # --- Checkpoints (SHL-16; ADR-160 clause 9) ----------------------------------------------------

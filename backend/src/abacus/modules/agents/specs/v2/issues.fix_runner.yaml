@@ -1,0 +1,38 @@
+# issues.fix_runner v1, registered for tax returns (T-04-T31; T-04 §6; TASK-6819; DEC-3413).
+# FixRunWorkflow (`modules/tax/fix_runner.py`) reads the person's sealed fix instructions back for
+# its own issue, asks the model only which of code's lines they name, computes each value in code,
+# cites each row to a verified box and proposes once. It never resolves or edits (DF-13). Source of
+# truth: compiled into ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+id: issues.fix_runner
+version: 1
+purpose: Propose the field changes a person's fix instructions describe on a return's issue, each row cited to the return's own documents, for the person to approve.
+shape: workflow
+prompt: issues.fix_runner.tax@v1
+tier: medium
+escalation_tier: medium
+input_schema: FixInput
+output_schema: FixJudgment
+tools:
+  read: [tax.read_return, tax.list_documents, tax.read_worksheet]
+  propose: [tax.propose_field_changes]
+task_scope:
+  - tax_return.read
+  - return_worksheet.read
+  - proposal.create
+  - evidence.read
+limits:
+  max_output_tokens: 400
+  max_cost_usd: "0.05"
+  max_steps: 10
+  max_seconds: 180
+  max_tool_calls: 10
+plan: required_when_writes
+autonomy: propose
+data_classes: [tri]
+untrusted_inputs: [fix_instructions, document_text]
+evaluation_suite: evals/tax_return
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none

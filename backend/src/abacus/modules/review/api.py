@@ -79,6 +79,13 @@ from abacus.modules.review.issue_resolutions import (
     system_resolve_dependents,
 )
 from abacus.modules.review.issue_resolutions import move as move_issue
+from abacus.modules.review.issue_runs import SUBSCRIPTIONS as ISSUE_RUN_SUBSCRIPTIONS
+from abacus.modules.review.issue_runs import (
+    IssueRunMismatch,
+    fix_instructions_of,
+    record_explanation,
+    record_fix_proposal,
+)
 from abacus.modules.review.issues import (
     OPEN_STATUSES,  # T-04-T23
     IssueSource,  # T-04-T23: source kind, category path, system-resolved dependency
@@ -156,6 +163,7 @@ from abacus.modules.review.slots import (
     register_archive_lock,
     register_checkpoint_proposal_hooks,
     register_decision_kind,
+    register_explainer,
     register_field_citations,
     register_field_owner,
     register_fix_runner,
@@ -196,7 +204,10 @@ register_notification_states()
 
 # P-04-T16 (C13): the human-gate projector, on the events its sources may change; P-04-T19:
 # the stale sign-off detector, on the owners' change events (no event is in both).
-SUBSCRIPTIONS = dict(GATE_SUBSCRIPTIONS) | dict(STALE_SUBSCRIPTIONS)
+# T-04-T31 (DEC-3413): an approved fix proposal resolves its issue as the person who approved it.
+SUBSCRIPTIONS = (
+    dict(GATE_SUBSCRIPTIONS) | dict(STALE_SUBSCRIPTIONS) | dict(ISSUE_RUN_SUBSCRIPTIONS)
+)
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
@@ -249,6 +260,7 @@ __all__ = [
     "GateView",
     "Incomplete",
     "IndependencePending",
+    "IssueRunMismatch",
     "IssueSource",
     "IssueSystemResolvedOnly",
     "Json",
@@ -300,6 +312,7 @@ __all__ = [
     "field_owner",
     "field_states",  # A-05-T16 (DEC-2069)
     "field_timeline",
+    "fix_instructions_of",
     "follow_proposal_decision",
     "gate_met",
     "issue_engagement",
@@ -321,6 +334,8 @@ __all__ = [
     "read_issue",
     "rebuild_human_gates",
     "record_engine_issue",
+    "record_explanation",
+    "record_fix_proposal",
     "record_import_proposal",
     "record_rule_issue",
     "record_sign_off",
@@ -330,6 +345,7 @@ __all__ = [
     "register_checkpoint_proposal_hooks",
     "register_client_request_sender",
     "register_decision_kind",
+    "register_explainer",
     "register_field_citations",
     "register_field_owner",
     "register_fix_runner",
