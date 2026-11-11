@@ -183,14 +183,22 @@ only_mutate = [
     "src/abacus/ai_gateway/*",
     "src/abacus/modules/audit_trail/*",
     "src/abacus/*/compute/*",
+    "src/abacus/modules/*/compute/*",  # the compute packages live in their modules (Q-03-T227)
     "src/abacus/modules/signatures/*",
     "src/abacus/modules/review/*",  # P-04-T59 (DEC-2065)
     # A-07-T45: the release and archive red path (mutation.SCOPES["assurance/release_archive"]).
+    # The bare paths are kept (the floors guard refuses a dropped entry); mutmut matches the
+    # `.py` globs beside them (Q-03-T226).
     "src/abacus/modules/assurance/release",
     "src/abacus/modules/assurance/archive_gate",
     "src/abacus/modules/assurance/archive_lock",
     "src/abacus/modules/assurance/archive_seal",
     "src/abacus/modules/assurance/archive_additions",
+    "src/abacus/modules/assurance/release.py",
+    "src/abacus/modules/assurance/archive_gate.py",
+    "src/abacus/modules/assurance/archive_lock.py",
+    "src/abacus/modules/assurance/archive_seal.py",
+    "src/abacus/modules/assurance/archive_additions.py",
 ]
 do_not_mutate = [
     "*/_matrix.py",
