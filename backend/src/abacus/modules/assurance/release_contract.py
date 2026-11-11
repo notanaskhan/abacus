@@ -768,8 +768,10 @@ _GC = "/governance-communications"
 @router.get(_RL, action="rep_letter.read", response_model=RepresentationLetterOut, errors=(501,))
 async def representation_letter_route(work_item_id: UUID, ctx: Ctx) -> RepresentationLetterOut:
     """AUD-21: structure, paper, signers and the G7 date check (A-07-T24)."""
+    from abacus.modules.assurance.completion_reads import representation_letter
+
     await _gate(ctx, work_item_id, "rep_letter.read")
-    _not_yet()
+    return await representation_letter(ctx, work_item_id)
 
 
 @router.get(
@@ -781,8 +783,10 @@ async def representation_letter_route(work_item_id: UUID, ctx: Ctx) -> Represent
 async def representation_letter_versions_route(
     work_item_id: UUID, ctx: Ctx
 ) -> list[RepresentationLetterVersionOut]:
+    from abacus.modules.assurance.completion_reads import letter_versions
+
     await _gate(ctx, work_item_id, "rep_letter.read")
-    _not_yet()
+    return await letter_versions(ctx, work_item_id)
 
 
 @router.get(
@@ -794,8 +798,10 @@ async def representation_letter_versions_route(
 async def representation_letter_version_route(
     work_item_id: UUID, version_no: int, ctx: Ctx
 ) -> RepresentationLetterOut:
+    from abacus.modules.assurance.completion_reads import representation_letter
+
     await _gate(ctx, work_item_id, "rep_letter.read")
-    _not_yet()
+    return await representation_letter(ctx, work_item_id, version_no)
 
 
 @router.post(

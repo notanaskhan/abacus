@@ -122,6 +122,14 @@ def register_eqr_checklist_template(provider: ChecklistTemplate) -> None:
     _TEMPLATE[:] = [provider]
 
 
+async def checklist_wording(tenant: TenantContext, engagement_id: UUID) -> dict[str, str]:
+    """Each checklist item's wording from the firm's template, by key (AUD-18's read); empty
+    when no template is registered."""
+    if not _TEMPLATE:
+        return {}
+    return {i.key: i.text for i in await _TEMPLATE[0](tenant, engagement_id)}
+
+
 @dataclass(frozen=True)
 class ReviewRow:
     id: UUID

@@ -157,6 +157,7 @@ from abacus.modules.agents.run_backfill_workflow import (
     BackfillInput,
 )
 from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, bring-down
+    last_completed_run,
     last_completed_run_at,
     run_log_count,
     run_record_hashes,  # A-07-T37: the archive seal's run-record leaves
@@ -610,6 +611,7 @@ __all__ = [
     "install_fake_reviews",
     "knowledge_context",
     "knowledge_router",
+    "last_completed_run",
     "last_completed_run_at",
     "live_override",
     "load_agent_context",
