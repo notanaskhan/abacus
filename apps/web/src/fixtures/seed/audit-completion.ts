@@ -426,7 +426,7 @@ export function aud24(state: "a" | "b" | "c" | "d" | "e" | "f"): AuditReleaseOut
     can_release: !open && !released,
     viewer_can_release: state === "a" || state === "c",
     engagement_partner_name: "Margaret Okonkwo",
-    released_at: released ? "2026-10-09T16:12:00-05:00" : null,
+    released_at: released ? "2026-10-09T10:07:00-05:00" : null,
     released_by_name: released ? "Margaret Okonkwo" : null,
     documentation_completion_date: released ? "2026-12-08" : null,
     deliverable_ids: [],
@@ -459,10 +459,10 @@ export function aud25(state: "a" | "b" | "b2" | "c" | "d" | "e"): AuditArchiveSt
   return {
     ...ARCHIVE_BASE,
     status: locked ? "locked" : "assembling",
-    days_left: state === "e" ? 5 : state === "b" || state === "b2" ? 12 : locked ? 5 : 47,
+    days_left: state === "a" ? 47 : 5, // Oct 22 → Dec 8; Dec 3 → Dec 8 (A-07-T43)
     checklist_done: locked || state === "b" || state === "b2" ? 9 : 8,
     locked_at: locked ? "2026-12-03T16:18:00-06:00" : null,
-    locked_by_name: locked ? "Margaret Okonkwo" : null,
+    locked_by_name: locked ? "Hannah Leclerc" : null, // A-07 §5.4: Hannah locks Dec 3
     seal_sha256: locked ? SEAL : null,
     allowed_actions: locked ? [] : ["archive.build_index"],
   };

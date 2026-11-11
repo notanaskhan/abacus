@@ -1,0 +1,15 @@
+{
+  "_doc": "A-07-T43 (ADR-078; author notanaskhan): Northwind PY2025 issuance-to-archive figures, transcribed from docs/plan/epics/A-07.md §1, F2, F3, F6 and F7 (AUD-18, AUD-19, AUD-21, AUD-24, AUD-25), never from the code. Read by backend/tests/golden/scenario/test_a07t43_archive_figures.py (content, projector and scenario), backend/tests/integration/test_a07t43_archive_golden.py (the loaded tenant) and apps/web/src/fixtures/contracts/archive-figures.test.ts (the screens' fixtures). Amounts are strings of whole dollars.",
+  "release": {"date": "2026-10-09", "at": "2026-10-09T10:07:00-05:00", "by": "Margaret Okonkwo", "documentation_days": 60, "documentation_completion_date": "2026-12-08"},
+  "assembling": {"on": "2026-10-22", "days_left": 47, "days_elapsed": 13},
+  "lock": {"at": "2026-12-03T16:18:00-06:00", "by": "Hannah Leclerc", "days_left": 5},
+  "retention": {"firm_years": 7, "retention_until": "2033-10-09", "records_floor_years": 5, "records_until": "2031-10-09"},
+  "eqr_checklist": {"done_at_1105": 6, "total": 10, "notes": 2},
+  "completion_checklist": {"rows": 18, "done": 12, "not_applicable": 1, "open": 5, "summary_total": 17, "client_dependent": 2, "due_on_report_date": 2},
+  "archive_checklist": {"done_on_oct_22": 8, "total": 9},
+  "binder": {"workpapers": 26, "sections": [6, 3, 7, 6, 4], "source_documents": 24, "agent_run_logs": 23, "independence": 5},
+  "sum_attachment": {"rollover": "34150", "iron_curtain": "22250", "pm": "189150", "pct_of_pm": "18.1", "paje_1": "35300", "paje_2": "-13050"},
+  "rep_letter": {"general": 11, "specific": [12, 13, 14, 15], "northwind_on": [12, 13, 15], "northwind_off": [14], "triggers": {"12": "late_remittance", "13": "certified_investments", "14": "going_concern_doubt", "15": "related_party_found"}},
+  "eqr": {"concurred_at": "2026-10-05T16:40:00-05:00", "by": "Thomas Whitcombe"},
+  "signature": {"at": "2026-10-09T09:12:00-05:00", "by": "Dana Kowalski", "dated_as_of": "2026-10-09"}
+}
