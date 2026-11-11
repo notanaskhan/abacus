@@ -8,7 +8,7 @@ status: in-review
 branch: s36-t04-t31
 worktree: /Users/ayushkbhatia/Accrued/abacus-s36
 created: 2026-11-11
-updated: 2026-11-11
+updated: 2026-11-12
 plan_key: T-04-T31
 ---
 
@@ -47,3 +47,4 @@ verified citations.
 
 ## Progress log
 - `2026-11-11` — Built (S36). Import smoke-checked; tests written, not run (end pass).
+- `2026-11-12` — The founders approved `resolve_on_approval` as a `member_context` caller (DEC-3418).
