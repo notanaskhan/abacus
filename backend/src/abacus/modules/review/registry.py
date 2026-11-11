@@ -17,12 +17,15 @@ TABLES: frozenset[str] = frozenset(
     | {"decision_card_versions", "decision_analysis_requests"}
     # I-01-T04 (migration 0223): a person's snoozes and reassignments of gates.
     | {"human_gate_snoozes", "human_gate_reassignments"}
+    # T-04-T31 (migration 0812, DEC-3413): an issue's runs, its fix proposals, its explanations.
+    | {"issue_runs", "issue_fix_proposals", "issue_explanations"}
 )
 INSERT_ONLY: frozenset[str] = frozenset(
     {"sign_offs", "reviewable_note_events", "field_value_versions"}
     | {"decisions", "checkpoint_diffs", "checkpoint_decisions", "issue_events", "issue_links"}
     | {"decision_card_versions", "decision_analysis_requests"}
     | {"human_gate_snoozes", "human_gate_reassignments"}  # I-01-T04 (0223)
+    | {"issue_runs", "issue_fix_proposals", "issue_explanations"}  # T-04-T31 (0812)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "sign_offs": frozenset(
@@ -112,6 +115,14 @@ INSERT_COLUMNS["issue_events"] = frozenset(
     {"tenant_id", "issue_id", "event", "fix_instructions_sealed", "scope"}
 )
 INSERT_COLUMNS["issue_links"] = frozenset({"tenant_id", "issue_id", "link_kind", "ref"})
+# T-04-T31 (0812): who started which run, what a fix run proposed, what Explain said.
+INSERT_COLUMNS["issue_runs"] = frozenset({"tenant_id", "issue_id", "agent_run_id", "purpose"})
+INSERT_COLUMNS["issue_fix_proposals"] = frozenset(
+    {"tenant_id", "issue_id", "agent_run_id", "proposal_id"}
+)
+INSERT_COLUMNS["issue_explanations"] = frozenset(
+    {"tenant_id", "issue_id", "agent_run_id", "text_sealed", "citation_ids"}
+)
 UPDATE_COLUMNS["decision_cards"] = frozenset(
     {"status"}
     | {"reserved_user_id"}  # I-01-T04 (0223): the reassign hook, behind its guard trigger

@@ -30,11 +30,17 @@ from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.engagements.api import gate_fact
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.review.issue_runs import record_issue_run
 from abacus.modules.review.issues import SUBJECT, IssueChanged
 from abacus.modules.review.issues import issue_record as _record
 from abacus.modules.review.issues import issue_row as _one
 from abacus.modules.review.sealing import seal_text
-from abacus.modules.review.slots import fix_runner_registered, run_fix
+from abacus.modules.review.slots import (
+    explainer_registered,
+    fix_runner_registered,
+    run_explain,
+    run_fix,
+)
 
 _FROM: Final[dict[str, frozenset[str]]] = {
     "resolved": frozenset({"open", "in_progress", "reopened"}),
@@ -198,11 +204,15 @@ async def set_fix_instructions(
     current = await _one(ctx.tenant, issue_id)
     _, resource, _ = await _record(ctx, current.record_type, current.record_id)
     await authorise(ctx, "fix_instruction.set", resource)
-    if not fix_runner_registered(current.kind):
+    if not fix_runner_registered(current.record_type):
         raise FixRunnerUnavailable
     if current.version != seen_version:
         raise IssueChanged(facts={"version": current.version})
     sealed = await seal_text(ctx.tenant, instructions, SUBJECT, issue_id, "fix_instructions")
+    starts = current.status in (
+        "open",
+        "reopened",
+    )  # T-04-T31 (AC-4.3): the issue goes In progress
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             _EVENT_ROW,
@@ -214,13 +224,52 @@ async def set_fix_instructions(
                 "scope": scope,
             },
         )
+        if starts:
+            moved = await tx.session.execute(
+                _MOVE, {"status": "in_progress", "id": issue_id, "v": seen_version}
+            )
+            if moved.first() is None:
+                raise IssueChanged(facts={"version": current.version})
+            await tx.session.execute(
+                _EVENT_ROW,
+                {
+                    "t": ctx.tenant_id,
+                    "i": issue_id,
+                    "event": "status_changed",
+                    "sealed": None,
+                    "scope": None,
+                },
+            )
         tx.record(
             "issue.fix_instructions_set",
             target=Target(SUBJECT, issue_id),
-            after=Ref(version=current.version),
+            before=Ref(version=current.version),
+            after=Ref(version=current.version + int(starts)),
             scope=Scope(engagement_id=current.engagement_id),
         )
-    return await run_fix(ctx.tenant, current.kind, issue_id)
+    # The run is the person's (their `agent_run.start`); its row ties it to this issue only.
+    run = await run_fix(ctx, current.record_type, issue_id)
+    await record_issue_run(ctx, issue_id, run, "fix")
+    return run
+
+
+class ExplainUnavailable(DomainConflict):
+    """No explainer is registered for the issue's record type (fail closed, T-04-T31)."""
+
+    code = "explain_unavailable"
+
+
+async def explain(ctx: AuthContext, issue_id: UUID) -> UUID:
+    """SHL-15 d, "Explain…" (T-04-T31): a person asks; the record type's explainer runs as their
+    run and stores only verified citations. Nothing is decided and the issue does not move."""
+    current = await _one(ctx.tenant, issue_id)
+    _, resource, _ = await _record(ctx, current.record_type, current.record_id)
+    await authorise(ctx, "issue.explain", resource)
+    if not explainer_registered(current.record_type):
+        raise ExplainUnavailable
+    run = await run_explain(ctx, current.record_type, issue_id)
+    await record_issue_run(ctx, issue_id, run, "explain")
+    return run
 
 
 @dataclass(frozen=True)

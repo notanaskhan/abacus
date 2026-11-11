@@ -162,7 +162,11 @@ FieldValue = Callable[[TenantContext, UUID, str], Awaitable[dict[str, object] | 
 FieldEdit = Callable[
     ["UnitOfWork", "AuthContext", UUID, str, dict[str, object]], Awaitable[str | None]
 ]
-FixRunner = Callable[[TenantContext, UUID], Awaitable[UUID]]  # the agent run it started
+# T-04-T31 (DEC-3413): keyed by the issue's record type (`tax_return`), run for the person who set
+# the instructions (their run, under `agent_run.start`); answers the agent run it started.
+FixRunner = Callable[["AuthContext", UUID], Awaitable[UUID]]
+# T-04-T31: Explain… for an issue on the record type, for the person who asked; answers the run.
+Explainer = Callable[["AuthContext", UUID], Awaitable[UUID]]
 
 
 # --- P-04-T23 (ADR-160 clause 8): what a decision kind's provider computes, in code.
@@ -289,6 +293,7 @@ _DECISION_KINDS: dict[str, DecisionKind] = {}
 _GATE_KINDS: dict[str, GateCheck] = {}
 _FIELD_OWNERS: dict[str, FieldOwner] = {}
 _FIX_RUNNERS: dict[str, FixRunner] = {}
+_EXPLAINERS: dict[str, Explainer] = {}
 _RESERVED_ROLES: Final = frozenset({"engagement_partner", "manager", "eqr_reviewer", "signer"})
 _CODE: Final = re.compile(r"[a-z][a-z_]{0,39}")
 
@@ -436,29 +441,53 @@ def field_citations() -> FieldCitations:
     return _FIELD_CITATIONS[0]
 
 
-def register_fix_runner(issue_kind: str, runner: FixRunner) -> None:
-    known = _FIX_RUNNERS.get(issue_kind)
+def register_fix_runner(record_type: str, runner: FixRunner) -> None:
+    known = _FIX_RUNNERS.get(record_type)
     _register(
         _FIX_RUNNERS,
         "fix runner",
-        issue_kind,
+        record_type,
         runner,
         known is not None and _name(known) == _name(runner),
     )
 
 
-def fix_runner_registered(issue_kind: str) -> bool:
-    """P-04-T31: whether a runner fixes this kind (no runner: 409 `fix_runner_unavailable`)."""
-    return issue_kind in _FIX_RUNNERS
+def fix_runner_registered(record_type: str) -> bool:
+    """P-04-T31: whether a runner fixes issues on this record type (no runner: 409
+    `fix_runner_unavailable`)."""
+    return record_type in _FIX_RUNNERS
 
 
-async def run_fix(tenant: TenantContext, issue_kind: str, issue_id: UUID) -> UUID:
-    """A registered runner applies the fix and answers its agent run; with none, the fix is
-    unavailable (503)."""
-    runner = _FIX_RUNNERS.get(issue_kind)
+async def run_fix(ctx: AuthContext, record_type: str, issue_id: UUID) -> UUID:
+    """A registered runner proposes the fix and answers its agent run; with none, the fix is
+    unavailable (503). Runs always propose (DF-13): the runner never writes a value."""
+    runner = _FIX_RUNNERS.get(record_type)
     if runner is None:
         raise ServiceUnavailable
-    return await runner(tenant, issue_id)
+    return await runner(ctx, issue_id)
+
+
+def register_explainer(record_type: str, explainer: Explainer) -> None:
+    known = _EXPLAINERS.get(record_type)
+    _register(
+        _EXPLAINERS,
+        "explainer",
+        record_type,
+        explainer,
+        known is not None and _name(known) == _name(explainer),
+    )
+
+
+def explainer_registered(record_type: str) -> bool:
+    return record_type in _EXPLAINERS
+
+
+async def run_explain(ctx: AuthContext, record_type: str, issue_id: UUID) -> UUID:
+    """T-04-T31: Explain… through the record type's explainer (none: 503)."""
+    explainer = _EXPLAINERS.get(record_type)
+    if explainer is None:
+        raise ServiceUnavailable
+    return await explainer(ctx, issue_id)
 
 
 # --- P-04-T32 (SHL-16, DEC-804): a checkpoint that came from an SHL-10 proposal is decided

@@ -1,0 +1,35 @@
+# tax.return_analyst v1, mode explain (T-04-T31; T-04 §6; TASK-6819; DEC-3413). The other modes
+# (k1_treatments, residency) join this spec with their rows. IssueExplainWorkflow
+# (`modules/tax/explain.py`) gives the model code's facts and their verified citations only; code
+# keeps verified citations and code's numbers. It decides nothing. Source of truth: compiled into
+# ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+id: tax.return_analyst
+version: 1
+purpose: Explain a return's issue in plain sentences over code's facts and their verified citations, deciding nothing.
+shape: workflow
+prompt: tax.return_analyst.explain@v1
+tier: small
+escalation_tier: medium
+input_schema: ExplainInput
+output_schema: ExplainOutput
+tools:
+  read: [tax.read_return, tax.list_documents]
+task_scope:
+  - tax_return.read
+  - evidence.read
+limits:
+  max_output_tokens: 500
+  max_cost_usd: "0.03"
+  max_steps: 6
+  max_seconds: 60
+  max_tool_calls: 6
+plan: never
+autonomy: propose
+data_classes: [tri]
+untrusted_inputs: [document_text]
+evaluation_suite: evals/tax_return
+work_class: interactive
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none
