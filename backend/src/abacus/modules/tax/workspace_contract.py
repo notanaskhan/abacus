@@ -300,6 +300,32 @@ class K1ActivityOut(BaseModel):
     released_on: Annotated[date | None, Internal] = None
     treatments: Annotated[list[K1TreatmentOut], Internal]
     pending_proposal_id: Annotated[UUID | None, Internal] = None
+    # T-04-T36 (DEC-88): only for a person who can read both engagements; else null.
+    source_package_id: Annotated[UUID | None, Internal] = None
+
+
+def _k1_treatment_out(t: object) -> K1TreatmentOut:
+    return K1TreatmentOut(
+        id=t.id,  # type: ignore[attr-defined]  # a TreatmentView
+        line=t.line,  # type: ignore[attr-defined]
+        treatment=t.treatment,  # type: ignore[attr-defined]
+        status=K1TreatmentStatus(t.status),  # type: ignore[attr-defined]
+        changed_vs_year=t.changed_vs_year,  # type: ignore[attr-defined]
+        decided_by_name=t.decided_by_name,  # type: ignore[attr-defined]
+        version=t.version,  # type: ignore[attr-defined]
+    )
+
+
+def _k1_out(a: object) -> K1ActivityOut:
+    return K1ActivityOut(
+        id=a.id,  # type: ignore[attr-defined]  # an ActivityView
+        label=a.label,  # type: ignore[attr-defined]
+        status=K1ActivityStatus(a.status),  # type: ignore[attr-defined]
+        released_on=a.released_on.date() if a.released_on else None,  # type: ignore[attr-defined]
+        treatments=[_k1_treatment_out(t) for t in a.treatments],  # type: ignore[attr-defined]
+        pending_proposal_id=a.pending_proposal_id,  # type: ignore[attr-defined]
+        source_package_id=a.source_package_id,  # type: ignore[attr-defined]
+    )
 
 
 class K1ActivitiesOut(BaseModel):
@@ -589,22 +615,24 @@ async def worksheet_fields_route(
     f"{_R}/k1-activities",
     action="k1_treatment.read",
     response_model=K1ActivitiesOut,
-    errors=(501,),
 )
 async def k1_activities_route(return_id: UUID, ctx: Ctx) -> K1ActivitiesOut:
+    from abacus.modules.tax.k1_treatments import list_k1_activities
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    return K1ActivitiesOut(items=[_k1_out(a) for a in await list_k1_activities(ctx, return_id)])
 
 
 @workspace_router.get(
     "/k1-activities/{activity_id}",
     action="k1_treatment.read",
     response_model=K1ActivityOut,
-    errors=(501,),
 )
 async def k1_activity_route(activity_id: UUID, ctx: Ctx) -> K1ActivityOut:
+    from abacus.modules.tax.k1_treatments import get_k1_activity
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    return _k1_out(await get_k1_activity(ctx, activity_id))
 
 
 @workspace_router.post(
@@ -624,12 +652,19 @@ async def k1_treatment_run_route(activity_id: UUID, ctx: Ctx) -> ReturnRunAccept
     "/k1-treatments/{treatment_id}/override",
     action="k1_treatment.override",
     response_model=K1TreatmentOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def k1_override_route(treatment_id: UUID, body: K1OverrideIn, ctx: Ctx) -> K1TreatmentOut:
     """422 `reason_required` when the reason is blank (the model enforces 1+ characters)."""
+    from abacus.modules.tax.k1_treatments import get_k1_activity, override_treatment
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    await override_treatment(ctx, treatment_id, body.value, body.reason, body.seen_version)
+    from abacus.modules.tax.k1_treatments import activity_of_treatment
+
+    view = await get_k1_activity(ctx, await activity_of_treatment(ctx, treatment_id))
+    row = next(t for t in view.treatments if t.id == treatment_id)
+    return _k1_treatment_out(row)
 
 
 @workspace_router.get(

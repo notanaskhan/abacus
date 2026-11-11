@@ -8,9 +8,10 @@ transaction's actor and holds the state transitions (0230).
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import cast
 from uuid import UUID
 
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import func, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.agents.models import (
@@ -261,6 +262,19 @@ async def match_decision(session: AsyncSession, match_id: UUID) -> InboxMatchDec
 
 async def insert_match_decision(session: AsyncSession, values: dict[str, object]) -> None:
     await session.execute(insert(InboxMatchDecision).values(values))
+
+
+async def approver_of(session: AsyncSession, proposal_id: UUID) -> UUID | None:
+    """T-04-T36: the person whose newest decision approved the proposal (an applier's subject)."""
+    found = await session.scalar(
+        text(
+            "SELECT decided_by FROM proposal_decisions WHERE proposal_id = :p "
+            "AND decision IN ('approved', 'approved_with_edits') AND undoes_decision_id IS NULL "
+            "ORDER BY created_at DESC LIMIT 1"
+        ),
+        {"p": proposal_id},
+    )
+    return cast(UUID | None, found)
 
 
 async def approved_rows(

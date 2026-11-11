@@ -165,6 +165,17 @@ SUBSCRIPTIONS = {
     # T-04-T23: a released K-1 resolves the receiving returns' Draft K-1 issues (the system's).
     **_return_issues.SUBSCRIPTIONS,
 }
+
+
+async def _k1_package_released(event: OutboxEvent) -> None:
+    """T-04-T23's Draft K-1 issues resolve, then T-04-T36's activities release and diff."""
+    from abacus.modules.tax.k1_treatments import on_package_released
+
+    await _return_issues.on_k1_package_released(event)
+    await on_package_released(event)
+
+
+SUBSCRIPTIONS["k1_package.released"] = _k1_package_released
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
 WORKFLOWS: dict[type, str] = {
     **k1_release.WORKFLOWS,

@@ -432,6 +432,9 @@ from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
 from abacus.modules.agents.proposal_store import (  # noqa: E402
     approved_rows as approved_proposal_rows,
 )
+from abacus.modules.agents.proposal_store import (  # noqa: E402 -- T-04-T36
+    approver_of as proposal_approver,
+)
 from abacus.modules.agents.run_activities import (  # noqa: E402 -- the history recorder's types
     PlanState,
     RunFacts,
@@ -645,6 +648,7 @@ __all__ = [
     "override_rate",
     "pending_suggestion",
     "pending_suggestions",
+    "proposal_approver",
     "recommend",
     "record_code_run",
     "record_synthetic_run",

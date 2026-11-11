@@ -362,7 +362,18 @@ async def _apply_status(table: str, tenant: TenantContext, proposal_id: UUID) ->
 
 
 async def apply_k1_proposal(tenant: TenantContext, proposal_id: UUID) -> None:
+    """T-04-T36 (AC-7.3): link the rows, then approve each for the person who approved."""
+    from abacus.modules.agents.api import proposal_approver
+    from abacus.modules.tax.k1_treatments import apply_approved_treatments
+
     await _apply_status("k1_treatments", tenant, proposal_id)
+    async with tenant_session(tenant) as session:
+        found = await approved_proposal_rows(session, proposal_id)
+        approver = await proposal_approver(session, proposal_id)
+    if found is None:
+        return
+    ids = [UUID(str(r.field_ref["target_id"])) for r in found[1] if r.field_ref.get("target_id")]
+    await apply_approved_treatments(tenant, proposal_id, approver, ids)
 
 
 async def apply_residency_proposal(tenant: TenantContext, proposal_id: UUID) -> None:
