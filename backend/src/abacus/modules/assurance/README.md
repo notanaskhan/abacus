@@ -16,3 +16,23 @@ Will own (docs/plan/03-backend-architecture.md §2.2): materiality, risks, contr
 - **Compute:** `compute/ebp/*.py` (provisions, eligibility, remittance, loans, accounts, expenses, form5500 with `schedule_4i`, estimates): pure Decimal engines stamping `engine_version` and `inputs_hash`; reference data in `compute/ebp/reference/*.yaml` (PROTECTED, CPA-reviewed).
 - **One late-remittance object:** `ebp_late_remittances` (0658), read in place by EBP-04, EBP-07 4a and AUD-27.
 - **Runbook:** `docs/runbooks/ebp-modules.md` (flip, rollback, corrections, recompute, annual reference updates).
+
+## Release and archive (A-07; A-07-T52)
+- **G8, release.** `release.py` and `release_workflow.py`: the engagement partner, a fresh second
+  factor, an approval grant bound to the report version and the gate hash. `ReleaseWorkflow`
+  re-checks G5 to G7 and records `report_releases` in one unit of work. A refusal voids the
+  grant and records nothing. In `assurance_release_mode = external`, `record_release` records a
+  release made outside Accrued.
+- **Clocks.** `clocks.py`: the archive (AU-C 230) and the AU-C 265 letter, each 60 days from
+  the release date, at risk from 7 days, stopped by the lock or the sent letter.
+- **G9, archive.** `archive_gate.py` computes the nine items and the A to H binder index.
+  `archive_lock.py`: a manager or the partner locks at 9 of 9 on the checklist they saw.
+  `ArchiveLockWorkflow` seals (`archive_seal.py`: RFC 8785 manifest, a sorted Merkle root) to
+  `records` in COMPLIANCE mode until release + 5 years, extends evidence GOVERNANCE retention,
+  then sets `locked`.
+- **After lock.** `archive_additions.py`: a person adds, only the partner approves (never the
+  person who added it), and the addition's manifest is sealed before its decision.
+  `SealVerifySweepWorkflow` re-verifies every seal monthly; a mismatch is RB-29.
+- **Immutability** is the kernel's `archived_guard()`. To add a guarded table or an exception
+  kind, follow the backend-module skill's "A guarded table and an archived-write kind".
+- Operations: `docs/runbooks/audit-release-archive.md`.

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Owner | assurance and evidence (A-07; SPEC-644) |
-| Status | skeleton (A-07-T01, 2026-11-04; DEC-2260, DEC-2261); stub sections land with A-07-T04 and A-07-T05; final with A-07-T52 |
+| Status | **v1 final** (A-07-T52, S36, 2026-11-11; DEC-3416). Skeleton A-07-T01 (DEC-2260, DEC-2261); stubs A-07-T04, T05; live handlers T18 to T47 |
 | Code | `backend/src/abacus/modules/assurance/completion_contract.py` (T04), `release_contract.py` (T05) |
 | Tests | `backend/tests/contracts/audit_completion/` (A-07-T06) |
 | Flags | `audits.completion`, `audits.letters`, `audits.report_release`, `audits.archive` (A-07-T33, Thu Jan 27, 2028 train); until then every route answers 501 |
@@ -143,3 +143,32 @@ Refusals: `409 gates_not_met`, `409 content_changed`, `409 approval_required`,
 ## Service API
 `assurance.api.record_acknowledgement(ctx, communication_id)`, called by R-02's portal route
 (`tcwg.acknowledge`, client role `tcwg`, `scope_only` on the governance room).
+
+## Consumer notes (A-07-T52, v1)
+What each consumer may rely on in v1, and what stays with the consumer:
+- **Q-05.** Post-issuance events and reissue write through the `post_issuance` archived-write kind
+  only (ARCHIVE-001). AUD-23 g Reissue is fixture-only until Q-05 (DV-9). ADM-12's retention reads
+  `archives.retention_until`, which is never below release + 5 years.
+- **X-01.** An attest release reuses G8's grammar: one original per work item, a fresh second
+  factor and the engagement partner only. X-01 registers its own gate cards and must not write
+  `report_releases` directly (RELEASE-001).
+- **A-10.** FSP-06's templates replace AUD-23's inline list (DV-8). The report's C11 document and
+  its approval grant stay A-07's.
+- **A-08.** AUD-26's review and compilation reports (SSARS) use the same release and archive. J05
+  step 6 waits on AUD-26 (fixme in `J05-ssars.spec.ts`).
+- **A-09.** Group audits archive per component work item. `archive_state` is per work item.
+- **T-06.** Subscribes to `report.released`. The event carries identifiers only.
+- **R-02.** `record_acknowledgement` for TCWG acknowledgements; C10 publishes the released report's
+  deliverables. Portal text never says "Accrued".
+- **I-01.** HOME-02's gate kinds for G6 to G9 come from C13 (`human_gates`). The projection is
+  exempt from `archived_guard()`.
+
+## Flag retirement (A-07-T52)
+The four rollout flags (`audits.completion`, `audits.letters`, `audits.report_release` and
+`audits.archive`; `expires: 2028-04-26`) retire into the `assurance_completion` entitlement
+after the M16 flip. This is the same path A-06 took (RB-66, migration 0713):
+1. A migration gives every firm with any of the four flags on an `assurance_completion` row.
+2. The routes' `require_live` reads the entitlement instead of the flag.
+3. The flags are deleted on the Tue Apr 25, 2028 train, before they expire.
+
+Until then each flag is renewed per `docs/runbooks/RB-26-flag-expiry-wave.md`.

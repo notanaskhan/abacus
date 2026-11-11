@@ -131,3 +131,14 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
   `forms/<form>/<tax_year>.yaml` (PROTECTED, refreshed yearly, RB-43 §13).
 - The backfill (`python -m abacus_tools.ocr_backfill`) is an operator command run as an ECS one-off
   task, never from a laptop against a shared database; it never changes evidence.
+
+## Archive retention (A-07; A-07-T52)
+- `records.put_record` writes a record (an archive manifest, an addition's manifest) in
+  **COMPLIANCE** mode until a retain-until date that nobody can shorten. The same body again
+  returns the version already there.
+- `retention_anchor.extend_versions_until` extends each evidence object's **GOVERNANCE**
+  retain-until to the archive's retention. It only ever extends, and audits
+  `retention.extended` once.
+- `retention_extend.py` and `destruction.py` are two of the four services allowed past
+  `archived_guard()` (`retention_extend`, `destruction_tombstone`; ARCHIVE-001). Every other
+  write to a locked file's evidence is refused with 409 `archived`.
