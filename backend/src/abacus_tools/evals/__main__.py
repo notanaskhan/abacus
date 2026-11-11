@@ -69,6 +69,14 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.tax_return import main as tax_main
 
         return tax_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+    if args.agent in ("tax_account_mapper", "tax_agreement_reader"):  # T-05-T18, frozen
+        from abacus_tools.evals.tax_entity import main as entity_main
+
+        return entity_main(
+            args.agent,  # pyright: ignore[reportArgumentType] -- one of the two suites
+            cast(Path, args.out),
+            "fast" if args.subset == "fast" else "full",
+        )
     if args.agent == "agent_blocks":  # P-09-T15: the deterministic AgentBlocks conformance suite
         from abacus_tools.evals.agent_blocks import main as blocks_main
 
