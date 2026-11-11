@@ -1,0 +1,120 @@
+# T-05-T11 goldens (ADR-078 as amended: written from the blueprint and the screen specs, not the
+# compute code): Ridgeline Property Partners, LP and Harborview Dental Properties, TY2025. Each case
+# names its `source` (blueprint §9.8 line or screen state) and `parameter_set`; `reviewed_by` stays
+# pending until the tax CPA signs `docs/quality/golden-reviews/tax_entity.<engine>@1.md` (M18).
+# Every amount is exact Decimal text; the Schedule L lines follow DF-34 (pack 08).
+parameter_set: ty2025
+reviewed_by: "pending: tax CPA (docs/quality/golden-reviews/tax_entity.<engine>@1.md)"
+
+tb_pipeline:
+  source: "TXP-02 a, b (Run 2); T-05 §1 'total assets 17,914,500 = liabilities 11,048,300 + capital 6,866,200'"
+  # [account, section, form line, PY, UTB, AJE, TJE, capital role]: TXP-02 verbatim.
+  accounts:
+    - ["1000", assets, "L1", "463067", "693667", "0", "0", null]
+    - ["1100", assets, "L2a", "90200", "96000", "0", "0", null]
+    - ["1200", assets, "L5", "225600", "240000", "0", "0", null]
+    - ["1300", assets, "L13", "148500", "158000", "0", "0", null]
+    - ["1500", assets, "L11", "3600000", "3600000", "0", "0", null]
+    - ["1600", assets, "L9a", "15040000", "15752000", "0", "0", null]
+    - ["1650", assets, "L9b", "-1891667", "-2625167", "0", "0", null]
+    - ["2000", liabilities, "L15", "-112800", "-120000", "0", "0", null]
+    - ["2050", liabilities, "L17", "-88400", "-75500", "-18500", "0", null]
+    - ["2100", liabilities, "L17", "-114500", "-121800", "0", "0", null]
+    - ["2500", liabilities, "L18", "-11400000", "-10712500", "0", "0", null]
+    - ["3000", equity, "L21", "-5129900", "-5960000", "0", "0", beginning]
+    - ["3100", equity, "M-2 2a", "0", "-250000", "0", "0", contributions]
+    - ["3200", equity, "M-2 6a", "560000", "600000", "0", "0", distributions]
+    - ["4000", income, "8825 Rents", "-3549900", "-3776500", "0", "0", null]
+    - ["4100", income, "8825 Rents", "-90600", "-96400", "0", "0", null]
+    - ["4500", income, "K 5", "-17300", "-18400", "0", "0", null]
+    - ["4510", income, "M-3 perm.", "-5800", "-6200", "0", "6200", null]
+    - ["4510-T", income, "K 18a", "0", "0", "0", "-6200", null]
+    - ["5000", deductions, "8825 Repairs", "387600", "412300", "0", "0", null]
+    - ["5100", deductions, "8825 Utilities", "175700", "186900", "0", "0", null]
+    - ["5200", deductions, "8825 Other", "154200", "164000", "0", "0", null]
+    - ["5300", deductions, "8825 Taxes", "374600", "380000", "18500", "0", null]
+    - ["5400", deductions, "8825 Insurance", "114400", "121700", "0", "0", null]
+    - ["5500", deductions, "8825 Interest", "481700", "512400", "0", "0", null]
+    - ["5600", deductions, "8825 Deprec.", "480000", "733500", "0", "0", null]
+    - ["5700", deductions, "8825 Legal/prof.", "45100", "48000", "0", "0", null]
+    - ["5800", deductions, "8825 Other", "60200", "64000", "0", "0", null]
+  expect:
+    atb_total_assets: "17914500"
+    atb_total_liabilities: "11048300"
+    capital_and_income: "6866200"
+    book_income: "1256200"
+    atb_income: "-3897500"
+    atb_deductions: "2641300"
+    rents_8825_ttb: "-3872900"
+  columns_foot_to: "0"
+  run1_unmapped: ["1300"]
+
+schedule_l:
+  source: "SPEC-651 DF-34 resolutions: Schedule L follows pack 08"
+  decided:
+    "1200": "L5"
+    "2500": "L18"
+    "2000": "L15"
+    "2050": "L17"
+
+allocation:
+  source: "TXP-06 A; T-05 §1; SPEC-651 AC-5.3"
+  method: interim_closing
+  convention: monthly
+  year: ["2025-01-01", "2025-12-31"]
+  transfer: "2025-06-30"
+  total: "1256200"
+  segment_amounts: ["628100", "628100"]
+  opening: {"Ridgeline GP LLC": "2", "Meera Shah": "38", "Pell Street Ventures LLC": "35", "Jonah Feld": "25"}
+  after: {"Ridgeline GP LLC": "2", "Meera Shah": "38", "Pell Street Ventures LLC": "30", "Pell Street II LLC": "5", "Jonah Feld": "25"}
+  expect:
+    period_1: {"Ridgeline GP LLC": "12562", "Meera Shah": "238678", "Pell Street Ventures LLC": "219835", "Pell Street II LLC": "0", "Jonah Feld": "157025"}
+    period_2: {"Ridgeline GP LLC": "12562", "Meera Shah": "238678", "Pell Street Ventures LLC": "188430", "Pell Street II LLC": "31405", "Jonah Feld": "157025"}
+    totals: {"Ridgeline GP LLC": "25124", "Meera Shah": "477356", "Pell Street Ventures LLC": "408265", "Pell Street II LLC": "31405", "Jonah Feld": "314050"}
+
+schedule_k:
+  source: "TXP-05 a; T-05 §1 'K = Σ of five K-1s'; SPEC-651 AC-6.1"
+  lines:
+    line_2_net_rental: "1231600"
+    line_5_interest: "18400"
+    line_18a_tax_exempt: "6200"
+    line_19a_distributions: "600000"
+    item_k_liabilities: "11048300"
+  crossfoot:
+    - name: "Pell Street Ventures box 2"
+      expect: "400270"
+      parts: [["35", "615800"], ["30", "615800"]]   # percent × the period's line 2
+
+capital_m2:
+  source: "TXP-07 a3, TXP-11 B; T-05 §1"
+  transfer:
+    expect: "331405"
+    capital: "2319835"
+    points: ["5", "35"]     # 2,319,835 × 5/35
+  section_743b:
+    expect: "28595"
+    price: "360000"
+    transferred_tax_capital: "331405"
+  tax_exempt_fix:
+    parts: ["124", "2356", "2015", "155", "1550"]
+    expect: "6200"
+  ending_after_fix: "6866200"
+  jonah_row_12:
+    parts: ["1500000", "250000", "312500", "0", "1550", "-150000"]
+    expect: "1914050"
+
+harborview_waterfall:
+  source: "TXP-06 B; SPEC-651 F5"
+  rungs:
+    parts: ["4000000", "312000", "78000", "510000"]
+    expect: "4900000"
+  targets:
+    parts: ["280000", "2843077", "1776923"]
+    expect: "4900000"
+  plugs:
+    parts: ["180000", "443077", "276923"]
+    expect: "900000"
+  gp_catch_up:
+    gp: "78000"
+    base: "390000"
+    expect_percent: "20"
