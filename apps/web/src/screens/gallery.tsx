@@ -240,6 +240,12 @@ import { FRAMES as AUD23_FRAMES } from "./AUD-23/copy";
 import { Issuance } from "./AUD-24";
 import { FRAMES as AUD24_FRAMES } from "./AUD-24/copy";
 import { Archive } from "./AUD-25";
+import { COMPLETION_WORK_ITEM, aud21 } from "../fixtures/seed/audit-completion";
+import { EqrWorkspacePage } from "./AUD-18";
+import { STATES as AUD18_STATES, scenarios as aud18Scenarios } from "./AUD-18/scenarios";
+import { type CompletionTab, useCompletionCanvas } from "./AUD-19";
+import { STATES as AUD19_STATES, scenarios as aud19Scenarios } from "./AUD-19/scenarios";
+import { RepLetter } from "./AUD-21";
 import { FRAMES as AUD25_FRAMES } from "./AUD-25/copy";
 import { POR08 } from "./POR-08";
 import {
@@ -3464,6 +3470,81 @@ function A07Frame({ state, children }: { state: string; children: JSX.Element })
 function pick<T extends string>(states: readonly T[], st: string | undefined): T {
   return states.find((s) => s === st) ?? (states[0] as T);
 }
+
+// S36 CI fixes (TASK-6826): AUD-18, AUD-19 and AUD-21 on the gallery, so the A-07 journeys
+// (j03 15–16, j04 12, j18 5) open each artboard on its own scenario like AUD-22 to AUD-25.
+function useA07Scenario(
+  scenario: Parameters<typeof installFixtureMode>[0] | undefined,
+  state: string,
+  persona: string | undefined,
+): boolean {
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    if (scenario === undefined) return undefined;
+    const restore = installFixtureMode(scenario, persona === undefined ? {} : { persona });
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [scenario, state, persona]);
+  return ready === state;
+}
+
+registerScreen("AUD-18", {
+  title: "EQR workspace",
+  Component: ({ params }) => {
+    const st = pick(AUD18_STATES, params.st);
+    const ready = useA07Scenario(aud18Scenarios[st], st, params.as);
+    return ready ? (
+      <A07Frame key={st} state={st}>
+        <EqrWorkspacePage auditId={COMPLETION_WORK_ITEM} concurring={st === "b2"} />
+      </A07Frame>
+    ) : null;
+  },
+});
+
+const AUD19_TAB: Record<string, CompletionTab> = {
+  b: "subsequent_events",
+  c: "legal_letters",
+  d: "going_concern",
+  e: "going_concern",
+};
+
+function Aud19Canvas({ tab }: { tab: CompletionTab }): JSX.Element {
+  const canvas = useCompletionCanvas(COMPLETION_WORK_ITEM, { tab });
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex justify-end gap-[8px] px-[16px] py-[8px]">{canvas.actions}</div>
+      {canvas.children}
+    </div>
+  );
+}
+
+registerScreen("AUD-19", {
+  title: "Completion (checklist · subsequent events · legal letters · going concern)",
+  Component: ({ params }) => {
+    const st = pick(AUD19_STATES, params.st);
+    const ready = useA07Scenario(aud19Scenarios[st], st, params.as);
+    return ready ? (
+      <A07Frame key={st} state={st}>
+        <Aud19Canvas tab={AUD19_TAB[st] ?? "checklist"} />
+      </A07Frame>
+    ) : null;
+  },
+});
+
+registerScreen("AUD-21", {
+  title: "Representation letter builder",
+  Component: ({ params }) => {
+    const st = pick(["a", "a2", "b", "c", "d", "e", "f"] as const, params.st);
+    return (
+      <A07Frame state={st}>
+        <RepLetter letter={aud21(st)} />
+      </A07Frame>
+    );
+  },
+});
 
 registerScreen("AUD-22", {
   title: "Governance communications",

@@ -663,7 +663,8 @@ test.describe("J03 completion to archive (A-07-T50)", () => {
     );
     await journey.as("thomas-whitcombe", a07("AUD-18", "c"));
     await journey.step("j03 15: concurred, G6 recorded (AUD-18 c)", async (page) => {
-      await expect(page.getByText("Concurrence · G6").first()).toBeVisible();
+      // AUD-18 c (handoff spec): the green card reads the concurrence, not the card's title.
+      await expect(page.getByText("Concurred · Oct 5, 2026", { exact: false }).first()).toBeVisible();
       await expect(page.getByText("G6 ✓").first()).toBeVisible();
       await noAgentDecision(page);
     });
@@ -780,12 +781,10 @@ test.describe("J03 completion to archive (A-07-T50)", () => {
       "j03 19: a later change is a post-lock addition only (AUD-25 d)",
       async (page) => {
         await expect(page.getByText("Post-lock additions").first()).toBeVisible();
+        // AUD-25 d draws the logged addition (the empty state's sentence is AUD-25 c's).
+        await expect(page.getByText("Addition logged").first()).toBeVisible();
         await expect(
-          page
-            .getByText(
-              "After the lock, additions need a reason and engagement partner approval. The original stays unchanged.",
-            )
-            .first(),
+          page.getByText("approved by Margaret Okonkwo", { exact: false }).first(),
         ).toBeVisible();
         await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
       },

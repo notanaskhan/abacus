@@ -203,6 +203,11 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "methodology_version.discarded",
         "wall.removed",
         "suggestion.created",  # A-06-T16 seam: a suggested checklist answer lands on its item
+        # S36: P-10-T42 meters a finished run; P-10-T38 runs (or drops) an approved write on
+        # its decision or Undo; T-04-T31 resolves an issue when its fix proposal is approved.
+        "agent_run.completed",
+        "proposal.decided",
+        "proposal.undone",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

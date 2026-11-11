@@ -31496,6 +31496,12 @@
             "title": "Lines",
             "type": "array"
           },
+          "runs": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Runs",
+            "type": "integer"
+          },
           "used_minutes": {
             "cls": "internal",
             "title": "Used Minutes",
@@ -42598,10 +42604,36 @@
             "title": "By Service Line",
             "type": "array"
           },
+          "ends_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ends On"
+          },
           "included_minutes": {
             "cls": "internal",
             "title": "Included Minutes",
             "type": "integer"
+          },
+          "starts_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Starts On"
           },
           "usage_month": {
             "cls": "internal",
@@ -157926,7 +157958,7 @@
     },
     "/v1/engagements/{engagement_id}/auto-mode": {
       "put": {
-        "description": "Standing plan approval per engagement type (ADR-186); refused for real firms in season 1.",
+        "description": "Standing plan approval per engagement type (ADR-186); refused for real firms in season 1\n(T39, DEC-3404: 409 `auto_mode_not_available`).",
         "operationId": "set_auto_mode",
         "parameters": [
           {
@@ -188708,7 +188740,7 @@
     },
     "/v1/engagements/{engagement_id}/runs": {
       "post": {
-        "description": "The engagement run: its plan computed by code from methodology (T39).",
+        "description": "The engagement run: its plan computed by code from methodology (T39, DEC-3404).",
         "operationId": "start_engagement_run",
         "parameters": [
           {
@@ -219036,7 +219068,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "pattern": "^\\d{4}-\\d{2}$",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
                   "type": "string"
                 },
                 {
@@ -225622,7 +225654,7 @@
     },
     "/v1/issues/{issue_id}/explanations": {
       "post": {
-        "description": "SHL-15 d, \"Explain\u2026\": a person asks the agent to explain; nothing is decided.",
+        "description": "SHL-15 d, \"Explain\u2026\": a person asks the agent to explain; nothing is decided. 409\n`explain_unavailable` when no explainer serves the issue's record (T-04-T31).",
         "operationId": "issue_explain",
         "parameters": [
           {

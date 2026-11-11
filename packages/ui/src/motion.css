@@ -191,6 +191,10 @@
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    /* S36 CI (TASK-6827): no transition is created at all, so a colour change that lands while
+       a slow frame is drawn never counts as a running animation (WB-09 c, AC "nothing
+       animating"). Nothing listens for transitionend. */
+    transition-property: none !important;
     scroll-behavior: auto !important;
   }
 }
