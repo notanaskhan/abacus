@@ -8,7 +8,7 @@ status: in-review
 branch: s36-p10-t41
 worktree: /Users/ayushkbhatia/Accrued/abacus-s36
 created: 2026-11-11
-updated: 2026-11-11
+updated: 2026-11-12
 plan_key: P-10-T41
 ---
 
@@ -40,3 +40,4 @@ its unit tests are written and run at the end pass.
 
 ## Progress log
 - `2026-11-11` — Built (S36). Suite validated once by the runner (authoring check); tests not run.
+- `2026-11-12` — The founders approved the protected suite file as merged in #1700 (DEC-3418).
