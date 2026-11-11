@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from dataclasses import dataclass, field
 from typing import Any, Final, cast
 from uuid import UUID
@@ -41,6 +42,7 @@ from abacus.kernel._flags import AGENT_RUNTIME_V2
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
+from abacus.modules.agents.engagement_run import RunStepFacts, is_run_step, run_step_handler
 from abacus.modules.agents.events import (
     RunCompleted,
     RunFailedV2,
@@ -384,6 +386,8 @@ async def execute_step_activity(
             agent = None
     if kind in ("tool", "compute") and tool_name is not None and agent is None:
         outcome = StepOutcome("failed", "run_ended")
+    elif kind in ("tool", "compute") and is_run_step(tool_name) and agent is not None:
+        outcome = await _run_step(agent, run, step, tool_name, arguments)
     elif kind in ("tool", "compute") and tool_name is not None and agent is not None:
         result = await call_tool(
             agent,
@@ -400,6 +404,37 @@ async def execute_step_activity(
     else:
         outcome = StepOutcome("failed", "step_kind_pending")  # model steps: P-10-T40
     return await _finish_step(tenant, run, step_id, seq, outcome)
+
+
+async def _run_step(
+    agent: AgentContext,
+    run: UUID,
+    step: JsonObject,
+    tool_name: str | None,
+    arguments: dict[str, object],
+) -> StepOutcome:
+    """P-10-T39: an engagement-run step through its registered handler (`register_run_step`);
+    an unregistered kind fails the step closed (the start already refused such a plan)."""
+    handler = run_step_handler(tool_name)
+    if handler is None or agent.engagement_id is None:
+        return StepOutcome("failed", "run_step_unavailable")
+    started = time.monotonic()
+    result = await handler(
+        agent,
+        RunStepFacts(
+            run_id=run,
+            engagement_id=agent.engagement_id,
+            step_key=str(step.get("key", "")),
+            level=int(str(step.get("level", 0))),
+            arguments=arguments,
+        ),
+    )
+    return StepOutcome(
+        result.state,
+        result.error_code,
+        result.records_read,
+        int((time.monotonic() - started) * 1000),
+    )
 
 
 async def _finish_step(

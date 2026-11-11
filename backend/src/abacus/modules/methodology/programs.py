@@ -217,6 +217,7 @@ class VersionStep:
     template_refs: tuple[str, ...]
     prepopulates: tuple[str, ...]
     text: str = ""  # A-04-T11: the drafter's context quotes it (firm content, never client data)
+    depends_on: tuple[str, ...] = ()  # P-10-T39: the engagement run's code plan keeps them
 
 
 @dataclass(frozen=True)
@@ -254,6 +255,7 @@ async def version_steps(tenant: TenantContext, version_id: UUID) -> VersionSteps
                 tuple(s.template_refs),
                 tuple(s.prepopulates),
                 s.text,
+                tuple(s.depends_on_step_keys or ()),
             )
             for s, code, position in rows
         )
