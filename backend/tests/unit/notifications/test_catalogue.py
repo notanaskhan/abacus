@@ -37,6 +37,8 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
         "checkpoint.rejected",
         "sign_off.recorded",
     }
+    # T-04-T29 rest (DEC-4318): a stale sign-off and a reassigned issue move the same counts.
+    realtime |= {"sign_off.went_stale", "issue.assigned"}
     assert set(INVALIDATIONS) == realtime
 
 

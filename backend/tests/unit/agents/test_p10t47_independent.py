@@ -16,6 +16,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+import abacus.api.app  # noqa: F401  # pyright: ignore[reportUnusedImport] -- every module's registries
 from abacus.kernel import realtime
 from abacus.modules.notifications import realtime as events
 from abacus.modules.platform.metering import agent_minutes

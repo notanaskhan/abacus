@@ -100,7 +100,7 @@ class SessionCreateIn(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    subject_ref: SessionSubjectRefIn
+    subject_ref: Annotated[SessionSubjectRefIn, Internal]  # a kind and an id
     title: Annotated[str, Field(min_length=1, max_length=200), Confidential] = "Assistant"
 
 
@@ -165,7 +165,9 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
-@sessions_router.get("/{session_id}", action="session.read", response_model=SessionSnapshotOut)
+@sessions_router.get(
+    "/{session_id}", action="session.read", response_model=SessionSnapshotOut, errors=(501,)
+)
 async def get_session_route(session_id: UUID, ctx: Ctx) -> SessionSnapshotOut:
     from abacus.modules.workbench.sessions import get_session
 
@@ -200,7 +202,7 @@ async def get_session_route(session_id: UUID, ctx: Ctx) -> SessionSnapshotOut:
     action="session.create",
     response_model=SessionMessageAcceptedOut,
     status_code=202,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def post_session_message_route(
     session_id: UUID, body: SessionMessageIn, ctx: Ctx, idempotency_key: IdempotencyKey

@@ -677,7 +677,9 @@ async def create_feedback_route(
     return AgentFeedbackOut(id=feedback)
 
 
-@capabilities_router.get("", action="session.read", response_model=AgentCapabilitiesOut)
+@capabilities_router.get(
+    "", action="session.read", response_model=AgentCapabilitiesOut, errors=(501,)
+)
 async def list_capabilities_route(
     ctx: Ctx, engagement_id: Annotated[UUID | None, Query()] = None
 ) -> AgentCapabilitiesOut:

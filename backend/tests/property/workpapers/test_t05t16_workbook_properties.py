@@ -2,7 +2,8 @@
 (Hypothesis): random acyclic workbooks evaluate in an order where every formula follows what it
 reads, the dirty set is exactly the transitive dependents (minimal), recomputing the dirty set
 equals a full evaluation, a back reference is refused as a cycle, and render-then-parse is a round
-trip. The nightly mutation job's `compute` scope covers `workpapers/compute`."""
+trip (render, parse, render is stable). The nightly mutation job's `compute` scope covers
+`workpapers/compute`."""
 
 from __future__ import annotations
 
@@ -84,9 +85,8 @@ def test_the_dirty_set_is_minimal_and_recompute_equals_a_full_evaluation(
 @given(book=workbooks())
 def test_a_back_reference_is_refused_as_a_cycle(book: Workbook) -> None:
     last = max(int(a.split("!")[-1][1:]) for a in book.cells)
-    book.set(SHEET, "A1", CellInput(formula=f"=A{last}+1"))
-    if last == 1:
-        book.set(SHEET, "A1", CellInput(formula="=A1+1"))
+    book.set(SHEET, f"A{last}", CellInput(formula="=A1+1"))  # the last cell reads A1 …
+    book.set(SHEET, "A1", CellInput(formula=f"=A{last}+1"))  # … and A1 reads it back
     with pytest.raises(CycleError):
         build_graph(book)
 
@@ -108,7 +108,8 @@ def formulas(draw: st.DrawFn, depth: int = 3) -> str:
     if kind == "neg":
         return f"-{a}"
     if kind == "pct":
-        return f"({a})%"
+        # `%` is postfix on a number or a reference only (ADR-237 §2: anything else is `type`).
+        return f"{draw(st.integers(0, 100))}%"
     if kind == "fn":
         return f"ROUND({a}, {draw(st.integers(0, 4))})"
     return f"({a})"
@@ -118,4 +119,7 @@ def formulas(draw: st.DrawFn, depth: int = 3) -> str:
 @given(text=formulas())
 def test_render_then_parse_is_a_round_trip(text: str) -> None:
     tree = parse("=" + text)
-    assert parse(render(tree)) == tree
+    once = render(tree)
+    # Rendering drops the parentheses an associative + or * doesn't need (the value is the same),
+    # so the round trip is: what renders parses back to the same rendering.
+    assert render(parse(once)) == once

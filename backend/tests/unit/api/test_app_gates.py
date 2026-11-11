@@ -893,6 +893,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/portal/approvals/{kind}/{item_id}/questions",
         "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/comments",
         "/v1/portal/governance/communications/{communication_id}/questions",
+        # T-04-T37 (DEC-4316): a record-bound session (TAX-08) is a row, so 201.
+        "/v1/workbench/sessions",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

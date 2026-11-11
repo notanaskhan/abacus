@@ -65,6 +65,18 @@ async def _return(seed: Seeder, world: World, who: Person) -> uuid.UUID:
     return item
 
 
+async def _reviewer(seed: Seeder, world: World, item: uuid.UUID, who: Person) -> None:
+    """The matrix's `function_in` for approving and overriding treatments (the work item's)."""
+    await seed.run(
+        "INSERT INTO work_item_assignments (tenant_id, work_item_id, engagement_id, user_id, "
+        "function, assigned_by) VALUES ($1, $2, $3, $4, 'manager_reviewer', $4)",
+        world.tenant_id,
+        item,
+        world.engagement_id,
+        who.user_id,
+    )
+
+
 async def _ridgeline(seed: Seeder, world: World, item: uuid.UUID, samuel: Person) -> uuid.UUID:
     activity = cast(
         uuid.UUID,
@@ -123,6 +135,7 @@ async def test_an_override_without_a_reason_answers_422(
     samuel = await seed.person(world.tenant_id)
     await seed.member(world.engagement_id, samuel, "manager")
     item = await _return(seed, world, samuel)
+    await _reviewer(seed, world, item, samuel)
     activity = await _ridgeline(seed, world, item, samuel)
     treatment = await seed.value(
         "SELECT id FROM k1_treatments WHERE k1_activity_id = $1 AND kind = 'passive_nonpassive'",
@@ -161,14 +174,15 @@ async def test_a_release_that_moves_basis_re_proposes_instead_of_editing(
     # The package, its draft lines and the hand-off's final values (Item L moved).
     issuing = await _return(seed, world, samuel)
     recipient = await seed.value(
-        "INSERT INTO k1_recipients (tenant_id, work_item_id, display_name, recipient_kind, "
-        "is_entity) VALUES ($1, $2, 'Jonah Feld', 'individual', false) RETURNING id",
+        "INSERT INTO k1_recipients (tenant_id, work_item_id, engine_ref, display_name, "
+        "recipient_kind, is_entity) VALUES ($1, $2, 'P-4', 'Jonah Feld', 'lp', false) "
+        "RETURNING id",
         world.tenant_id,
         issuing,
     )
     await seed.run(
-        "INSERT INTO k1_packages (id, tenant_id, recipient_id, work_item_id, form, tax_year) "
-        "VALUES ($1, $2, $3, $4, '1065', 2025)",
+        "INSERT INTO k1_packages (id, tenant_id, recipient_id, work_item_id, form, tax_year, "
+        "version_no) VALUES ($1, $2, $3, $4, '1065', 2025, 1)",
         package,
         world.tenant_id,
         recipient,
@@ -182,7 +196,8 @@ async def test_a_release_that_moves_basis_re_proposes_instead_of_editing(
     )
     await seed.run(
         "INSERT INTO k1_handoffs (tenant_id, package_id, target_work_item_id, status, shared_by, "
-        "final_values) VALUES ($1, $2, $3, 'final_shared', $4, $5::jsonb)",
+        "replaced_at, final_values) VALUES ($1, $2, $3, 'final_replaced', $4, clock_timestamp(), "
+        "$5::jsonb)",
         world.tenant_id,
         package,
         item,

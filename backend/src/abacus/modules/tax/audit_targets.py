@@ -15,9 +15,20 @@ from sqlalchemy import text
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.engagements.api import work_item_engagement
 
-AUDIT_KINDS = frozenset({"tax_return", "work_item", "return_worksheet"})
-# T-04-T15: a worksheet is its own row, owned by its engagement.
-_WORKSHEETS = text("SELECT id, engagement_id FROM return_worksheets WHERE id = ANY(:ids)")
+# T-04-T15: a worksheet is its own row, owned by its engagement. T-04-T36: a K-1 activity and
+# its treatments too (audited as `pass_through_*`: audit names hold no digits).
+_ROWS = {
+    "return_worksheet": text(
+        "SELECT id, engagement_id FROM return_worksheets WHERE id = ANY(:ids)"
+    ),
+    "pass_through_activity": text(
+        "SELECT id, engagement_id FROM k1_activities WHERE id = ANY(:ids)"
+    ),
+    "pass_through_treatment": text(
+        "SELECT id, engagement_id FROM k1_treatments WHERE id = ANY(:ids)"
+    ),
+}
+AUDIT_KINDS = frozenset({"tax_return", "work_item"}) | frozenset(_ROWS)
 _ENTITIES = {
     "tax_authorization": text(
         "SELECT id, client_entity_id FROM tax_authorizations WHERE id = ANY(:ids)"
@@ -35,9 +46,9 @@ ENTITY_KINDS = frozenset(_ENTITIES)
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
     """For `tax_return` and `work_item` rows: their work item id -> its engagement."""
-    if kind == "return_worksheet":
+    if kind in _ROWS:
         async with tenant_session(tenant) as session:
-            found = await session.execute(_WORKSHEETS, {"ids": list(ids)})
+            found = await session.execute(_ROWS[kind], {"ids": list(ids)})
             return {row[0]: row[1] for row in found}
     owned: dict[UUID, UUID] = {}
     for work_item_id in ids:

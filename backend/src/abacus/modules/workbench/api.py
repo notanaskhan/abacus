@@ -6,10 +6,12 @@ P-10-T09: C6 v2's sessions half, a stub; P-10-T04 owns the tables; P-10-T43 the 
 
 from collections.abc import Awaitable, Callable, Mapping
 
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.dispatch import register_work_classes
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.agents.api import register_session_links
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.workbench.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.workbench.run_links import session_links
 from abacus.modules.workbench.session_activities import SESSION_ACTIVITIES
 from abacus.modules.workbench.session_workflow import (
@@ -24,9 +26,11 @@ from abacus.modules.workbench.sessions import (
     get_session,
     open_session,
     post_message,
-    sessions_for_subject,
 )
 from abacus.modules.workbench.sessions_contract import agent_badge_router, sessions_router
+
+# P-10-T43: the audit explorer places a session's events by its engagement (SPEC-304).
+register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (sessions_router, agent_badge_router)
@@ -54,5 +58,4 @@ __all__ = [
     "open_session",
     "post_message",
     "session_workflow_id",
-    "sessions_for_subject",
 ]

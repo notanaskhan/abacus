@@ -110,6 +110,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
         "seal_verify:platform",  # A-07-T42: every locked archive's seal, monthly
         "home_activity_prune:platform",  # I-01-T12 (DEC-900): Home client activity, daily
+        "run_events_prune:platform",  # P-10-T44 (DEC-4302): run_events past retention, daily
         "incident_reminders:platform",  # G-02-T18: the incident register's FTC clock reminders
         "envelope_status_poll:platform",  # N-02-T19: provider status truth, every 5 minutes
         "notification_purge:platform",

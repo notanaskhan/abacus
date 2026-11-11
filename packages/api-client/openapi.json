@@ -93700,7 +93700,8 @@
         "description": "T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the\nrecord's owner authorises the person and names the capability. W-02 adds unbound sessions.",
         "properties": {
           "subject_ref": {
-            "$ref": "#/components/schemas/SessionSubjectRefIn"
+            "$ref": "#/components/schemas/SessionSubjectRefIn",
+            "cls": "internal"
           },
           "title": {
             "cls": "confidential",
@@ -121822,6 +121823,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Capabilities Route",
@@ -274280,6 +274291,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "K1 Activity Route",
@@ -274533,6 +274554,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "K1 Override Route",
@@ -275293,6 +275324,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "K1 Activities Route",
@@ -283077,6 +283118,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Session Route",
@@ -283351,6 +283402,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Post Session Message Route",

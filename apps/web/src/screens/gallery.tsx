@@ -246,7 +246,8 @@ import { STATES as AUD18_STATES, scenarios as aud18Scenarios } from "./AUD-18/sc
 import { type CompletionTab, useCompletionCanvas } from "./AUD-19";
 import { STATES as AUD19_STATES, scenarios as aud19Scenarios } from "./AUD-19/scenarios";
 import { RepLetter } from "./AUD-21";
-import { TodoDrawer, STATES as SHL17_STATES, scenarios as shl17Scenarios } from "./SHL-17";
+import { TodoDrawer, STATES as SHL17_STATES } from "./SHL-17";
+import { scenarios as shl17Scenarios } from "./SHL-17/scenarios";
 import {
   CommentsAndMentions,
   STATES as SHL18_STATES,
@@ -3615,7 +3616,9 @@ function useScreenScenario(
   useEffect(() => {
     if (scenario === undefined) {
       setReady(key);
-      return () => setReady(null);
+      return () => {
+        setReady(null);
+      };
     }
     const restore = installFixtureMode(scenario, persona === undefined ? {} : { persona });
     setReady(key);

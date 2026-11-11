@@ -63,6 +63,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "sampling",  # A-03-T10: the sample draw workflow
         "signatures",  # N-02-T18: an approved envelope is sent after commit
         "tax",  # T-01: consents signed on envelope completion, the return board's projections
+        "workbench",  # P-10-T43: the session workflow and its turn activity (no subscriptions)
     )
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
     # SPEC-022 (TASK-038): automatic retrieval when a client connects or an item is classified.

@@ -118,6 +118,7 @@ def test_acs4_a_write_proposing_plan_names_the_owner_as_approver(
                     "label": "Save the workbook to Files",
                     "tool": "files.save_approved",
                     "write": True,
+                    "arguments": {"artifact_id": "a1"},
                 },
             ]
         },
