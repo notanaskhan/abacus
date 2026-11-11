@@ -26,6 +26,7 @@ from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents import methodology_import
+from abacus.modules.agents.approved_writes import APPROVED_WRITE_ACTIVITIES
 from abacus.modules.agents.engagement_agent import handle as engagement_agent_handle
 from abacus.modules.agents.engagement_agent import next_tick as engagement_agent_next_tick
 from abacus.modules.agents.entry_assess import assess, create_assess_run
@@ -738,4 +739,5 @@ ACTIVITIES = (
     importer_fail_activity,
     backfill_run_batch_activity,  # P-10-T14
     *RUN_V2_ACTIVITIES,  # P-10-T29: AgentRunWorkflow part 1
+    *APPROVED_WRITE_ACTIVITIES,  # P-10-T38: an approved write spends its grant
 )

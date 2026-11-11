@@ -202,6 +202,17 @@ Identifiers, enums and verified items only; an item holding a Restricted field t
 
 Both validate against the schemas in `backend/tests/contracts/c06_v2/test_c06_v2_stub.py`.
 
+**Approved writes (P-10-T38, DEC-3402).** A `file_save` proposal (the run's `files.propose_save`)
+holds its effect: approving it issues an identity grant in the approver's unit of work (subject
+the proposal, action `file.save`, payload the SHA-256 of the one `files.save_approved` call it pays
+for, `not_before` = decided + 10 s, one hour to spend), named on the decision so Undo voids it.
+`ApprovedWriteWorkflow` (`approved_write:<tenant>:<grant>`) sleeps the window and spends the grant
+through C17; the copy is filed "<approver> via Agent" with `file.saved` `after_ref` = the grant
+id. The run's stream gets `proposal.write_saved`, `proposal.write_undone` or
+`proposal.write_failed {reason: approver_lost_action | grant_expired | run_not_writable}`. Each
+decision and Undo re-derives the run: any pending → `succeeded`; all approved → `approved`; all
+rejected → `rejected`; else `partially_approved`. Outbox event `proposal.undone` is new.
+
 **Agent-minutes (P-10-T42, DEC-3401).** `GET /v1/firm/usage?month=YYYY-MM` answers the usage month
 (day 15 to day 14; default the current one) as `used_minutes`, `included_minutes`, `starts_on`,
 `ends_on` and lines by service line, engagement and capability (`{key, label, minutes}`, largest

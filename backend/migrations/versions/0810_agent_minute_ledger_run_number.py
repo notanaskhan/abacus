@@ -23,8 +23,7 @@ depends_on = None
 
 def upgrade() -> None:
     op.execute(
-        "ALTER TABLE agent_minute_ledger "
-        "ADD COLUMN run_number bigint NULL CHECK (run_number > 0)"
+        "ALTER TABLE agent_minute_ledger ADD COLUMN run_number bigint NULL CHECK (run_number > 0)"
     )
     op.execute("GRANT INSERT (run_number) ON agent_minute_ledger TO abacus_app")
 

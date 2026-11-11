@@ -222,3 +222,46 @@ async def consumed_grant_approver(tenant_id: UUID, subject: Target, action: str)
             )
         ).scalar_one_or_none()
     return cast(UUID | None, found)
+
+
+_CONSUMED = text(
+    "SELECT id, approver_user_id FROM approval_grants WHERE subject_type = :subject_type "
+    "AND subject_id = :subject_id AND action = :action AND used_at IS NOT NULL "
+    "AND voided_at IS NULL ORDER BY used_at DESC LIMIT 1"
+)
+_STATUS = text(
+    "SELECT used_at IS NOT NULL AS used, voided_at IS NOT NULL AS voided, "
+    "abacus_now() >= expires_at AS expired FROM approval_grants WHERE id = :id"
+)
+
+
+async def consumed_grant(
+    tenant_id: UUID, subject: Target, action: str
+) -> tuple[UUID, UUID] | None:
+    """P-10-T38: the newest consumed (never voided) grant for `action` on `subject` and its
+    approver, for an approved write's effect, which names both (`after_ref` = the grant id, the
+    actor "<approver> via Agent"). None when nothing was consumed."""
+    system = TenantContext(tenant_id, "system", f"approval_grant:{subject.type}:{subject.id}")
+    async with tenant_session(system) as session:
+        row = (
+            await session.execute(
+                _CONSUMED,
+                {"subject_type": subject.type, "subject_id": subject.id, "action": action},
+            )
+        ).first()
+    return (cast(UUID, row.id), cast(UUID, row.approver_user_id)) if row is not None else None
+
+
+async def grant_status(tenant_id: UUID, grant_id: UUID) -> str:
+    """P-10-T38: why a held write did not run: `voided` (an Undo), `used`, `expired`, `held` (live
+    and unused: the approver lost the action, or another payload) or `unknown`. Codes only."""
+    system = TenantContext(tenant_id, "system", f"approval_grant:{grant_id}")
+    async with tenant_session(system) as session:
+        row = (await session.execute(_STATUS, {"id": grant_id})).first()
+    if row is None:
+        return "unknown"
+    if row.voided:
+        return "voided"
+    if row.used:
+        return "used"
+    return "expired" if row.expired else "held"

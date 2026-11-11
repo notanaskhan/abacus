@@ -1,0 +1,1 @@
+File the copy a person approved. Runs only with their approval, after their Undo window; never call it to save on your own.

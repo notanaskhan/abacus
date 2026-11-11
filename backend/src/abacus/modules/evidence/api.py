@@ -281,6 +281,12 @@ from abacus.modules.evidence.retrieved_copies import (
 )
 from abacus.modules.evidence.reveals import RevealedField, reveal_field
 from abacus.modules.evidence.routes import firm_router, router
+from abacus.modules.evidence.run_files import (
+    WorkbookTooLarge,
+    file_approved_copy,
+    store_workbook,
+    stored_object,
+)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.evidence.screening_facts import (
@@ -646,6 +652,7 @@ __all__ = [
     "UploadProcessing",
     "WithdrawalPurgeInput",
     "Word",
+    "WorkbookTooLarge",
     "add_to_inbox",
     "add_version",
     "anchor_chain",
@@ -689,6 +696,7 @@ __all__ = [
     "extract_isolated",
     "extract_version",
     "extracted_fields_of",
+    "file_approved_copy",
     "file_copy_onto_work_item",
     "file_engine_copy",
     "file_handoff_copy",
@@ -769,6 +777,8 @@ __all__ = [
     "start_ocr_backfill",
     "start_trust_layer_backfill",
     "store_generated",
+    "store_workbook",
+    "stored_object",
     "suggest_by_name",
     "supported_citations",
     "text_ready",

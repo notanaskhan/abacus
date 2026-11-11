@@ -5,7 +5,9 @@
 `undo_window_closed`. In one unit of work it writes the `undone` decision (naming the one it
 undoes), takes the proposal back to `pending` (migration 0273's guard checks both), voids any
 approval grant the decision holds so a held client-visible effect is never delivered, and records
-`proposal.undone`. What the decision wrote is put back:
+`proposal.undone` (and, P-10-T38, emits it, so a run re-derives its outcome). A held-effect
+kind (`file_save`) is undone by its void alone: its approval wrote nothing. What the decision
+wrote is put back:
 
 - **A rejection** wrote nothing else.
 - **An approval that wrote field values** (row appliers): each field gets its previous value back
@@ -32,6 +34,8 @@ from sqlalchemy import text
 from abacus.kernel import clock
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
+from abacus.modules.agents.approved_writes import held_effect
+from abacus.modules.agents.events import ProposalUndone
 from abacus.modules.agents.models import Proposal
 from abacus.modules.agents.proposal_store import (
     insert_proposal_decision,
@@ -119,9 +123,14 @@ async def undo_proposal(ctx: AuthContext, proposal_id: UUID, decision_id: UUID) 
         ):
             raise EffectStarted(facts={"reason": "grant_consumed"})
         if latest.decision != "rejected":
-            if found.kind != FIELD_CHANGE_SET:  # an owner's change-set applier wrote it
+            if held_effect(found.kind) is not None:
+                # P-10-T38: the effect was held on the grant voided above; nothing was written.
+                if latest.approval_grant_id is None:
+                    raise EffectStarted(facts={"reason": "change_set"})
+            elif found.kind != FIELD_CHANGE_SET:  # an owner's change-set applier wrote it
                 raise EffectStarted(facts={"reason": "change_set"})
-            await _restore_fields(tx, found, latest.created_at)
+            else:
+                await _restore_fields(tx, found, latest.created_at)
         undo_id = uuid4()
         await insert_proposal_decision(
             tx.session,
@@ -141,6 +150,15 @@ async def undo_proposal(ctx: AuthContext, proposal_id: UUID, decision_id: UUID) 
             target=Target(SUBJECT, found.id),
             after=Ref(decision=undo_id, undoes=latest.id, version=version),
             scope=Scope(engagement_id=found.engagement_id),
+        )
+        # P-10-T38: the run re-derives its outcome (approved_writes.on_proposal_event).
+        tx.emit(
+            ProposalUndone(
+                proposal_id=found.id,
+                decision_id=undo_id,
+                engagement_id=found.engagement_id,
+                by_user=ctx.user_id,
+            )
         )
 
 

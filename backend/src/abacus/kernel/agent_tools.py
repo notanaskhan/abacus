@@ -57,6 +57,7 @@ class ToolDecl:
     max_rows: int = MAX_ROWS
     paginate: bool = False
     records_read: str | None = None
+    scope_action: str | None = None  # P-10-T38: an approved_write's task-scope reach (C17 §2)
 
     @property
     def description(self) -> str:

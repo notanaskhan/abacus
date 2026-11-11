@@ -31,11 +31,13 @@ from decimal import Decimal
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 
+from abacus.kernel import clock
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
 from abacus.kernel.subject_states import SubjectState, register_subject_state
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.kernel.uow.idempotency import idempotent
+from abacus.modules.agents.approved_writes import grant_window, held_effect, write_digest
 from abacus.modules.agents.events import (
     ProposalCreated,
     ProposalDecided,
@@ -89,6 +91,7 @@ from abacus.modules.identity.api import (
     Resource,
     allowed_actions,
     authorise,
+    issue_grant,
     member_could,
     names_of,
 )
@@ -975,6 +978,26 @@ async def _appliers(
     return {t: suggestion_applier(t) for t in sorted({_field(r)[0] for r in rows})}, None
 
 
+async def _held_grant(
+    tx: UnitOfWork, person: AuthContext, kind: str, proposal_id: UUID, resource: Resource
+) -> UUID | None:
+    """P-10-T38: the grant an approval of a held-effect kind issues, or None for other kinds."""
+    effect = held_effect(kind)
+    if effect is None:
+        return None
+    not_before, expires_at = grant_window(await clock.now(person.tenant))
+    return await issue_grant(
+        tx,
+        person,
+        action=effect.action,
+        resource=resource,
+        subject=Target(SUBJECT, proposal_id),
+        payload_sha256=write_digest(effect, proposal_id),
+        not_before=not_before,
+        expires_at=expires_at,
+    )
+
+
 async def approve_proposal(
     ctx: Actor, proposal_id: UUID, *, seen_version: int, edits: Sequence[Edit]
 ) -> ProposalView:
@@ -983,7 +1006,7 @@ async def approve_proposal(
     `proposal_invalid` for a bad edit; 422 `uncited_change {count, row}`; 503 with no owner to
     write a row. One proposal decision, one suggestion decision and one field value per row."""
     person = _human(ctx, APPROVE)
-    proposal, _ = await _readable(person, proposal_id)
+    proposal, resource = await _readable(person, proposal_id)
     engagement_id = cast(UUID, proposal.engagement_id)
     decision_id = uuid4()
     async with uow(person.tenant) as tx:
@@ -1002,6 +1025,9 @@ async def approve_proposal(
         decision: Literal["approved", "approved_with_edits"] = (
             "approved_with_edits" if edited else "approved"
         )
+        # P-10-T38 (DEC-3402): an approved_write's effect is held on a grant for exactly the call
+        # that will spend it, due after the Undo window; the decision names it (AC-P1, AC-P2).
+        grant_id = await _held_grant(tx, person, locked.kind, locked.id, resource)
         await insert_proposal_decision(
             tx.session,
             {
@@ -1012,6 +1038,7 @@ async def approve_proposal(
                 "edits": [{"n": n, "after": v} for n, (v, _) in sorted(edited.items())] or None,
                 "seen_version": seen_version,
                 "decided_by": person.user_id,
+                "approval_grant_id": grant_id,
             },
         )
         suggestions = await lock_suggestions(

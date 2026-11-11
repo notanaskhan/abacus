@@ -58,6 +58,15 @@ REVIEWED_FALLBACK: Final = frozenset(
         "filing.updated",
         # reviewed 2026-11-11 (S36): P-10-T42 the ledger posted a completed run's minutes
         "agent_minutes.posted",
+        # reviewed 2026-11-11 (S36): P-10-T38 a run's workbook, its Save to Files proposal, the
+        # approved write's outcome on the run's stream and the filed copy ("via Agent")
+        "run_artifact.created",
+        "agent_run.write_proposed",
+        "agent_run.writes_counted",
+        "agent_run.write_saved",
+        "agent_run.write_undone",
+        "agent_run.write_failed",
+        "file.saved",
         # reviewed 2026-11-10 (S34): P-10-T29 AgentRunWorkflow part 1's transitions
         "agent_run.finished",
         "agent_run.plan_proposed",
