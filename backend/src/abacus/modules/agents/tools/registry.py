@@ -83,6 +83,11 @@ class AgentTool:
     max_rows: int = MAX_ROWS
     paginate: bool = False
     records_read: str | None = None
+    # P-10-T38 (DEC-3402): an approved_write's own action is `agent: deny` (only a person's grant
+    # unlocks the effect), so the runtime authorises the agent's reach to the subject with this
+    # task-scope action instead (`file.propose` for `files.save_approved`); the grant's consumer
+    # re-checks the approver's own action.
+    scope_action: str | None = None
 
 
 def has_never_verb(text: str) -> bool:
@@ -171,6 +176,17 @@ def validate_tool(tool: AgentTool) -> None:
         raise ToolInvalid(
             f"tool {tool.name!r}: a final verb can only be approved_write (TOOL-001)"
         )
+    if tool.kind == "approved_write" and (
+        tool.scope_action is None
+        or tool.scope_action == tool.action
+        or has_never_verb(tool.scope_action)
+    ):
+        raise ToolInvalid(
+            f"tool {tool.name!r}: an approved_write declares the task-scope action it reaches "
+            "its subject with (scope_action)"
+        )
+    if tool.kind != "approved_write" and tool.scope_action is not None:
+        raise ToolInvalid(f"tool {tool.name!r}: only an approved_write declares scope_action")
     if tool.max_rows > MAX_ROWS:
         raise ToolInvalid(f"tool {tool.name!r}: at most {MAX_ROWS} rows (ADR-049)")
     if tool.description != f"tool.{tool.name}@v1" and not tool.description.startswith(

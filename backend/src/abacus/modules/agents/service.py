@@ -281,6 +281,32 @@ async def load_run_v2_context(tenant_id: UUID, run_id: UUID) -> AgentContext:
     )
 
 
+# P-10-T38 (DEC-3402): a run that ended "Ready for review" (or already partly decided) still
+# executes the writes its people approved after it ended; nothing else runs for it.
+_RUN_V2_WRITABLE: Final = frozenset({"succeeded", "approved", "partially_approved"})
+
+
+async def load_write_context(tenant_id: UUID, run_id: UUID) -> AgentContext:
+    """P-10-T38: the agent's context for one approved write of a run whose steps have ended, proven
+    from the run's row as `load_run_v2_context` is. Only an approved_write's executor asks; the
+    grant it consumes is a person's, re-checked against their rights at consumption."""
+    async with tenant_session(_reader(tenant_id, f"agent-run:{run_id}")) as session:
+        run = await get_run(session, run_id)
+        state = await run_v2_state(session, run_id)
+    if run is None:
+        raise NotFound("agent_run")
+    if state not in _RUN_V2_WRITABLE:
+        raise AgentRunNotRunning(str(state))
+    return await agent_context_for_run(
+        tenant_id=tenant_id,
+        run_id=run.id,
+        agent_id=run.agent_id,
+        engagement_id=run.engagement_id,
+        task_scope=frozenset(run.task_scope or []),
+        initiator_user_id=run.initiator_user_id,
+    )
+
+
 async def _run(agent: AgentContext) -> AgentRun:
     async with tenant_session(agent.tenant) as session:
         run = await get_run(session, agent.agent_run_id)

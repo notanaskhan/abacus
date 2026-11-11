@@ -12,6 +12,8 @@ from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMus
 from abacus.modules.agents.ai_policy_service import Effective as EffectiveAiPolicy
 from abacus.modules.agents.ai_policy_service import effective_ai_policy
 from abacus.modules.agents.ai_policy_store import policy_autonomy_level
+from abacus.modules.agents.approved_writes import SUBSCRIPTIONS as APPROVED_WRITE_SUBSCRIPTIONS
+from abacus.modules.agents.approved_writes import register_file_writes
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
@@ -310,6 +312,8 @@ from abacus.modules.identity.api import (
 from abacus.modules.platform.api import register_pilot_metric_source, register_usage_labeller
 from abacus.modules.review.api import register_client_request_sender
 
+# P-10-T38: `file_save` proposals hold their effect on a grant (approved_writes.py).
+register_file_writes()
 # P-10-T42: the platform's agent-minute reads name capabilities through this module (ADR-008).
 register_usage_labeller("capability", capability_labels)
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
@@ -352,6 +356,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # Q-02-T08: a firm's changed boundary facts are forgotten in the worker too.
 SUBSCRIPTIONS = {
     **SCREENING_SUBSCRIPTIONS,
+    # P-10-T38: a decided or undone proposal re-derives its run; an approval starts its write.
+    **APPROVED_WRITE_SUBSCRIPTIONS,
     # P-10-T32 (AC-W4): a decided card resumes the run branch held on it.
     "decision.decided": on_decision_decided,
     FollowUpSent.event_type: on_follow_up_sent,

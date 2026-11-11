@@ -123,6 +123,18 @@ class ProposalDecided(DomainEvent):
     by_user: Annotated[UUID, classified("internal")]
 
 
+class ProposalUndone(DomainEvent):
+    """P-10-T38: a person undid their decision inside the Undo window (P-04-T29); a run that
+    proposed it re-derives its outcome, and a held write's grant is already void."""
+
+    event_type: ClassVar[str] = "proposal.undone"
+
+    proposal_id: Annotated[UUID, classified("internal")]
+    decision_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+
+
 class ProposalRouted(DomainEvent):
     """A proposal waits on a named approver (`proposal_routed`): a person sent it (SHL-10 d), or
     the agent's threshold evaluation named them when it proposed (`by_user` is then None)."""

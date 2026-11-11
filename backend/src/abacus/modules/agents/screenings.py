@@ -21,6 +21,7 @@ from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
+from abacus.modules.agents.approved_write_workflow import ApprovedWriteWorkflow
 from abacus.modules.agents.assess_start import WORKFLOWS as ASSESS_WORKFLOWS
 from abacus.modules.agents.draft_start import WORKFLOWS as DRAFT_WORKFLOWS
 from abacus.modules.agents.engagement_agent import agent_on, firm_resumed, to_agent
@@ -80,6 +81,8 @@ WORKFLOWS.update(SECTION_DRAFT_WORKFLOWS)  # A-04-T11
 WORKFLOWS[AgentRunBackfillWorkflow] = "background"
 # P-10-T29: a v2 run (a person started it, so interactive; ADR-071).
 WORKFLOWS[AgentRunWorkflow] = "interactive"
+# P-10-T38: a person approved a write; it runs after their Undo window (interactive, ADR-071).
+WORKFLOWS[ApprovedWriteWorkflow] = "interactive"
 register_work_classes(WORKFLOWS)
 
 

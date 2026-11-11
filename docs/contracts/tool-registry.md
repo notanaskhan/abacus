@@ -39,7 +39,16 @@ async def read_return(agent: AgentContext, args: ReadReturnIn) -> ReadReturnOut:
 | `read` | none | `task_scope` ∩ initiator's live rights ∩ walls and `visible()` ∩ §7216 |
 | `compute` | none: deterministic code over reads | as `read` |
 | `propose` | inserts a suggestion, proposal, draft, issue, to-do proposal or question only | actions the matrix gives agents as `task_scope` |
-| `approved_write` | one specific write | a valid approval grant whose action the approver holds now |
+| `approved_write` | one specific write | a valid approval grant whose action the approver holds now; the agent reaches the subject with the tool's declared `scope_action` (a `task_scope` action), never its own action (`agent: deny`) |
+
+**Additive (P-10-T38, DEC-3402).** `ToolDecl.scope_action` (and `AgentTool.scope_action`): every
+`approved_write` declares the `task_scope` action the runtime authorises the agent's reach to the
+subject with at step 4 (`files.save_approved`: `file.propose`); `register_tool` refuses an
+`approved_write` without one, one equal to its own action, or one holding a final verb, and any
+other kind declaring one. The grant's consumer (step 6) re-checks the approver's own action. The
+first `approved_write` and its siblings: `files.build_workbook` (compute, `file.propose`),
+`files.propose_save` (propose, `file.propose`), `files.save_approved` (approved_write,
+`file.save`).
 
 ## 4. Rules, and who enforces each
 | Rule | Enforced by |

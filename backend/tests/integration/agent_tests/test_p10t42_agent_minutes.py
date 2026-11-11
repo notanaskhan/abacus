@@ -197,9 +197,7 @@ async def test_ac_m2_a_sub_30_second_run_posts_zero_but_counts(
     run_id = await _v2_run(seed, world, agent_ms=29_999)
     await complete_run_activity(str(world.tenant_id), str(run_id), "succeeded", None)
     assert await _deliver(seed, world, run_id) == 1
-    assert await seed.value(
-        "SELECT agent_minutes FROM agent_runs WHERE id = $1", run_id
-    ) == 0
+    assert await seed.value("SELECT agent_minutes FROM agent_runs WHERE id = $1", run_id) == 0
     response = await net.call(
         "GET", f"/v1/engagements/{world.engagement_id}/effort", world.requester
     )
@@ -216,10 +214,7 @@ async def test_ac_m1_minutes_are_stored_once(seed: Seeder, world: World) -> None
     assert await _deliver(seed, world, run_id) == 1  # one event, at the first terminal state
     assert await _deliver(seed, world, run_id) == 1  # redelivered: the ledger keeps one row
     assert (
-        await seed.value(
-            "SELECT count(*) FROM agent_minute_ledger WHERE run_id = $1", run_id
-        )
-        == 1
+        await seed.value("SELECT count(*) FROM agent_minute_ledger WHERE run_id = $1", run_id) == 1
     )
 
 
@@ -227,8 +222,7 @@ async def test_ac_m4_an_open_run_posts_nothing(seed: Seeder, world: World) -> No
     run_id = await _v2_run(seed, world, agent_ms=600_000)
     assert await _deliver(seed, world, run_id) == 0
     assert (
-        await seed.value("SELECT count(*) FROM agent_minute_ledger WHERE run_id = $1", run_id)
-        == 0
+        await seed.value("SELECT count(*) FROM agent_minute_ledger WHERE run_id = $1", run_id) == 0
     )
 
 
@@ -246,4 +240,3 @@ async def test_usage_answers_404_when_the_runtime_is_off(
     grace = await _admin(seed, world)
     response = await net.call("GET", "/v1/firm/usage", grace)
     assert response.status_code == 404, response.text
-

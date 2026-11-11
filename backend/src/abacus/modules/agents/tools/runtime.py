@@ -11,7 +11,9 @@ row, never from a workflow input. In order, before the handler:
 2. every target (the engagements and clients the arguments name; the run's own engagement when
    they name none) is inside the run's pinned `client_scope` (`out_of_scope`: AC-R2). Nothing
    about the refused client is recorded or answered: the refusal carries no id, count or name;
-3. `authorise(agent, tool.action, engagement)` per target: `task_scope`, the initiator's live
+3. `authorise(agent, tool.action, engagement)` per target (an `approved_write`: its declared
+   `scope_action`, P-10-T38; its own action is the approver's, re-checked at step 5):
+   `task_scope`, the initiator's live
    rights, ethical walls and the matrix (ADR-025, ADR-026). A wall, a missing relationship or
    another tenant answers `not_visible` (404 semantics, no count or name: AC-R3); a role the
    agent or its initiator lacks answers `not_permitted`;
@@ -279,9 +281,15 @@ async def _scope_and_rights(
         resources.append(Resource.client(agent.tenant_id, client))
     if not resources:
         resources.append(Resource.firm(agent.tenant_id))
+    # P-10-T38 (DEC-3402): an approved_write's own action is the approver's, never the agent's;
+    # the agent reaches the subject with its declared task-scope action, and step 5's grant
+    # (consumed only while the approver still holds the action) carries the effect.
+    action = the_tool.scope_action if the_tool.kind == "approved_write" else the_tool.action
+    if action is None:
+        return "not_permitted"
     for resource in resources:
         try:
-            await authorise(agent, the_tool.action, resource)
+            await authorise(agent, action, resource)
         except Forbidden as denied:
             return "not_visible" if denied.layer in _HIDDEN else "not_permitted"
     return None

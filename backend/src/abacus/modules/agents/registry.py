@@ -105,6 +105,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "run_artifacts": frozenset(
         {"id", "tenant_id", "run_id", "kind", "name", "size_bytes", "storage_key", "cites"}
+        | {"storage_version_id", "sha256"}  # P-10-T38 (0811)
     ),
     "run_sign_offs": frozenset(
         {"id", "tenant_id", "run_id", "signed_by", "open_issues_ack", "decisions_ack"}
