@@ -324,7 +324,11 @@ function PackageCard({
     });
   };
   const firm = branding.data?.portal_name ?? branding.data?.firm_name ?? "";
-  let sub: ReactNode = `${firm} · ${COPY.waitingSub}`;
+  // The person who released it, where the API names them (R-02-T19); else the firm's words.
+  let sub: ReactNode =
+    item.released_by != null && item.released_at != null
+      ? COPY.releasedBy(item.released_by, firm, when(item.released_at, true))
+      : `${firm} · ${COPY.waitingSub}`;
   if (item.state === "approved") {
     sub = COPY.approvedBy(item.decided_by ?? "", when(item.decided_at, true));
   } else if (item.state === "declined") {

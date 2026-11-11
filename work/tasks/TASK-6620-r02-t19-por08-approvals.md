@@ -64,3 +64,12 @@ and no threshold, materiality or agent word appears.
   `backend/tests/unit/assurance/test_r02t19_ack_parts.py`. Still partial: Card A's released-by and
   released-at, Card B's footer, QBO range pill and total strip, Coming next's sub-line (no API
   field; no provider for the QBO posting range).
+- 2026-11-11 (after S35): Card A's "Released by" line. `ApprovalItem` carries
+  `released_by_user_id` and `released_at` from the send record (`proposed_entry_decisions`
+  `sent_to_client`, `statement_approvals` `sent_for_approval` on the portal channel); the portal
+  answers the person's display name (`released_by`) and the time, never the id. POR-08 a reads
+  "Released by Priya Raman, Brightwater Hale · Sep 14, 4:25 PM" where the API names them, the
+  firm's words otherwise. `fs_package` has no live provider until C-02, so its line is the
+  seed's until then. Still partial: Card B's footer (deciders and the QBO posting), the QBO range
+  pill and the total strip (no posting provider: connectors only read, AGENTS 9), and Coming
+  next's sub-line (`ApprovalContextOut` arrives with the close kinds, C-02).
