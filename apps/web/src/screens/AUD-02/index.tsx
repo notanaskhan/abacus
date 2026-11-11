@@ -60,6 +60,7 @@ import {
   isCompletionLetter,
   useCompletionLetterCanvas,
   useLettersMode,
+  useReleaseArchiveLive,
 } from "./completionLetters";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
@@ -400,11 +401,12 @@ function Cockpit({
   // A-07-T28/T29 (DEC-3030): the checklist's AUD-21 and AUD-22 chips open those letters here.
   const [letter, setLetter] = useState<CompletionLetter | null>(null);
   const lettersMode = useLettersMode();
+  const releaseArchiveLive = useReleaseArchiveLive();
   const completionCanvas = useCompletionCanvas(cockpit.work_item_id, {
     ...completion,
     active: completionOpen && letter === null,
     onLink: (target) => {
-      if (isCompletionLetter(target, lettersMode)) setLetter(target);
+      if (isCompletionLetter(target, lettersMode, releaseArchiveLive)) setLetter(target);
       else completion?.onLink?.(target);
     },
   });

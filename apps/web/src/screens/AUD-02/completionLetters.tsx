@@ -9,8 +9,9 @@ import {
 } from "@abacus/api-client/query";
 import type { CockpitCanvas } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useState } from "react";
+import { type JSX, lazy, Suspense, useState } from "react";
 import { useFlag } from "../../app-core/flags";
+import { RevealStepUp, useLiveArchive, useLiveRelease } from "../../domain/audits";
 
 // Fixture mode only (DEC-3030): both canvases still draw the E0 artboard's words, so a production
 // build must not carry them (SPEC-048 AC-10). The compile-time flag drops the imports there; the
@@ -38,6 +39,66 @@ const RepLetterLive = lazy(async () => ({
 const GovernanceLive = lazy(async () => ({
   default: (await import("../AUD-22/GovernanceLive")).GovernanceLive,
 }));
+// A-07-T47 (DEC-3303): AUD-24 and AUD-25 on the server's data, behind `audits.report_release` and
+// `audits.archive`, polled every 10 s (2 s while the release or the lock runs).
+const IssuanceLive = lazy(async () => ({
+  default: (await import("../AUD-24/IssuanceLive")).IssuanceLive,
+}));
+const ArchiveLive = lazy(async () => ({
+  default: (await import("../AUD-25/ArchiveLive")).ArchiveLive,
+}));
+
+function ReleaseHost({
+  workItemId,
+  onBack,
+}: {
+  workItemId: string;
+  onBack: () => void;
+}): JSX.Element | null {
+  const { release, action } = useLiveRelease(workItemId);
+  if (release.data === undefined) return null;
+  return (
+    <Suspense fallback={null}>
+      <IssuanceLive
+        release={release.data}
+        running={action.running}
+        problem={action.problem}
+        onRelease={() => {
+          void action.run();
+        }}
+        onBack={onBack}
+      />
+      <RevealStepUp open={action.stepUp} onOpenChange={action.setStepUp} />
+    </Suspense>
+  );
+}
+
+function ArchiveHost({
+  workItemId,
+  onBack,
+}: {
+  workItemId: string;
+  onBack: () => void;
+}): JSX.Element | null {
+  const { archive, action } = useLiveArchive(workItemId);
+  if (archive.data === undefined) return null;
+  return (
+    <Suspense fallback={null}>
+      <ArchiveLive
+        archive={archive.data}
+        running={action.running}
+        problem={action.problem}
+        thenRollForward={action.thenRollForward}
+        onThenRollForward={action.setThenRollForward}
+        onLock={() => {
+          void action.run();
+        }}
+        onBack={onBack}
+      />
+      <RevealStepUp open={action.stepUp} onOpenChange={action.setStepUp} />
+    </Suspense>
+  );
+}
 
 /** How the letters open here: the E0 frames (tests, fixture builds), live (`audits.letters`), or
  * not at all (the chips go to the host). */
@@ -50,14 +111,24 @@ export function useLettersMode(): LettersMode {
 }
 
 /** The checklist link targets that open inside the cockpit. */
-export type CompletionLetter = "AUD-21" | "AUD-22" | "AUD-23";
+export type CompletionLetter = "AUD-21" | "AUD-22" | "AUD-23" | "AUD-24" | "AUD-25";
+
+/** AUD-24 and AUD-25 open live with their flags (A-07-T47); fixture builds keep the host's. */
+export function useReleaseArchiveLive(): { release: boolean; archive: boolean } {
+  const release = useFlag("audits.report_release") === true;
+  const archive = useFlag("audits.archive") === true;
+  return { release: !FIXTURES && release, archive: !FIXTURES && archive };
+}
 
 export function isCompletionLetter(
   target: string,
   mode: LettersMode = FIXTURES ? "e0" : null,
+  live: { release: boolean; archive: boolean } = { release: false, archive: false },
 ): target is CompletionLetter {
   // AUD-23 reads the live report (A-07-T34); AUD-21 and AUD-22 open in E0 or live mode (DEC-3144).
   if (target === "AUD-23") return true;
+  if (target === "AUD-24") return live.release;
+  if (target === "AUD-25") return live.archive;
   return mode !== null && (target === "AUD-21" || target === "AUD-22");
 }
 
@@ -115,6 +186,18 @@ export function useCompletionLetterCanvas(
             <RepLetterLive letter={rep.data} onBack={onBack} />
           </Suspense>
         ),
+    };
+  }
+  if (letter === "AUD-24") {
+    return {
+      title: "Issuance & release",
+      children: <ReleaseHost workItemId={workItemId} onBack={onBack} />,
+    };
+  }
+  if (letter === "AUD-25") {
+    return {
+      title: "Assembly & archive",
+      children: <ArchiveHost workItemId={workItemId} onBack={onBack} />,
     };
   }
   if (letter === "AUD-23") {
