@@ -2,7 +2,7 @@
 id: TASK-6810
 title: "T-05-T09: E1 TB pipeline tax/compute/entity/tb_pipeline.py: UTB + AJE + RJE = ATB, ATB + TJE = TTB, column footing, balance-sheet and capital ties, statement roll-ups, grouping by form line, unmapped count and export gate; engine_name, engine_version and inputs_hash on every output"
 spec: SPEC-651
-acceptance_criteria: [AC-1.1]
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 branch: s36-t05-t09

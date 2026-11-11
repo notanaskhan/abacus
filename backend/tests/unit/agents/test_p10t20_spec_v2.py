@@ -163,6 +163,12 @@ def test_the_codegen_refuses_through_the_registry(monkeypatch: pytest.MonkeyPatc
 def test_v1_specs_load_unchanged_and_v2_holds_only_the_drafter_until_t40() -> None:
     assert "evidence.screener" in v1.AGENTS
     assert all(s.shape == "single_call" for s in v1.AGENTS.values())
-    # T-04-T25 lands the first v2 spec (the return drafter); P-10-T40 moves the v1 agents.
-    assert set(spec_v2.AGENTS_V2) == {"tax.return_drafter"}
+    # T-04-T25 lands the first v2 spec (the return drafter); P-10-T40 the reference capability;
+    # T-04-T31 the tax fix runner and the analyst's explain mode. The v1 agents stay v1.
+    assert set(spec_v2.AGENTS_V2) == {
+        "tax.return_drafter",
+        "runtime.conformance",
+        "issues.fix_runner",
+        "tax.return_analyst",
+    }
     assert agent_specs_v2.main(["--check"]) == 0

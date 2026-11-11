@@ -39,6 +39,12 @@ def dispatched(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return started
 
 
+async def _call(net: Net, method: str, path: str, who: Person, body: object) -> httpx.Response:
+    """A write with its Idempotency-Key, as every run route requires."""
+    headers = {**await net.headers(who), "Idempotency-Key": str(uuid.uuid4())}
+    return await net.http.request(method, path, json=body, headers=headers)
+
+
 async def _on(seed: Seeder, world: World) -> None:
     for flag in ("agent_runtime.v2", "engagement_run.enabled"):
         await seed.run(
@@ -67,9 +73,7 @@ async def test_ac_e1_the_run_projects_14_over_5_levels(
 ) -> None:
     await _on(seed, world)
     marcus = await _senior(seed, world)
-    response = await net.call(
-        "POST", f"/v1/engagements/{world.engagement_id}/runs", marcus, body={}
-    )
+    response = await _call(net, "POST", f"/v1/engagements/{world.engagement_id}/runs", marcus, {})
     assert response.status_code == 202, response.text
     run_id = uuid.UUID(cast(dict[str, str], response.json())["run_id"])
     inputs = await seed.value("SELECT inputs FROM agent_runs WHERE id = $1", run_id)
@@ -89,9 +93,7 @@ async def test_ac_e2_an_unregistered_step_kind_answers_409(
     await _on(seed, world)
     monkeypatch.setattr(engagement_run, "_HANDLERS", {})
     marcus = await _senior(seed, world)
-    response = await net.call(
-        "POST", f"/v1/engagements/{world.engagement_id}/runs", marcus, body={}
-    )
+    response = await _call(net, "POST", f"/v1/engagements/{world.engagement_id}/runs", marcus, {})
     assert response.status_code == 409, response.text
     assert "run_step_unavailable" in response.text
 
@@ -101,11 +103,12 @@ async def test_ac_e3_auto_mode_cannot_be_on_for_a_real_firm(
 ) -> None:
     await _on(seed, world)
     hannah = await _manager(seed, world)
-    response = await net.call(
+    response = await _call(
+        net,
         "PUT",
         f"/v1/engagements/{world.engagement_id}/auto-mode",
         hannah,
-        body={"enabled": True, "confirmed": True},
+        {"enabled": True, "confirmed": True},
     )
     assert response.status_code == 409, response.text
     assert "auto_mode_not_available" in response.text
@@ -115,11 +118,12 @@ async def test_ac_e3_a_synthetic_firm_may_turn_it_on(net: Net, seed: Seeder, wor
     await _on(seed, world)
     await seed.run("UPDATE firms SET synthetic = true WHERE tenant_id = $1", world.tenant_id)
     hannah = await _manager(seed, world)
-    response = await net.call(
+    response = await _call(
+        net,
         "PUT",
         f"/v1/engagements/{world.engagement_id}/auto-mode",
         hannah,
-        body={"enabled": True, "confirmed": True},
+        {"enabled": True, "confirmed": True},
     )
     assert response.status_code == 200, response.text
     assert cast(dict[str, object], response.json())["enabled"] is True
@@ -130,7 +134,7 @@ async def test_ac_e4_a_person_off_the_team_cannot_start_it(
 ) -> None:
     await _on(seed, world)
     outsider = await seed.person(world.tenant_id)
-    response = await net.call(
-        "POST", f"/v1/engagements/{world.engagement_id}/runs", outsider, body={}
+    response = await _call(
+        net, "POST", f"/v1/engagements/{world.engagement_id}/runs", outsider, {}
     )
     assert response.status_code in (403, 404), response.text

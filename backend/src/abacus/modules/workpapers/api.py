@@ -166,5 +166,13 @@ __all__ = [
 
 # Q-03-T235 (DEC-3304): ADM-07 and AUD-29 name this module's targets through the platform slot.
 from abacus.modules.workpapers.audit_labels import register as _register_audit_labels  # noqa: E402
+from abacus.modules.workpapers.audit_labels import (  # noqa: E402
+    workpaper_code_exists as workpaper_code_exists,
+)
 
 _register_audit_labels()
+
+# P-10-T39: the engagement run's `workpaper` step is this module's to answer (BOUND-002).
+from abacus.modules.workpapers.run_steps import register as _register_run_steps  # noqa: E402
+
+_register_run_steps()

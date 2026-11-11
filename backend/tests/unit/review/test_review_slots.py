@@ -4,6 +4,7 @@ refused or answers 503 in tests." The review and agents slots fail closed."""
 from __future__ import annotations
 
 import uuid
+from typing import cast
 
 import pytest
 
@@ -16,6 +17,7 @@ from abacus.modules.agents.api import (
     register_proposal_adapter,
     register_suggestion_target,
 )
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.review.api import (
     CardOption,
     CardSubject,
@@ -62,7 +64,7 @@ async def test_unregistered_kinds_are_refused() -> None:
 
 async def test_missing_runners_and_adapters_answer_503() -> None:
     with pytest.raises(ServiceUnavailable):
-        await run_fix(TENANT, "probe_unregistered", uuid.uuid4())
+        await run_fix(cast(AuthContext, TENANT), "probe_unregistered", uuid.uuid4())
     with pytest.raises(ServiceUnavailable):
         await apply_proposal(TENANT, "probe_unregistered", uuid.uuid4())
 

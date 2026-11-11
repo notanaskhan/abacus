@@ -215,7 +215,8 @@ STALE_EVENTS: Final = {
 
 def test_c13_the_event_set_is_fixed() -> None:
     assert set(C13_EVENTS) == EVENTS
-    assert set(review_api.SUBSCRIPTIONS) == EVENTS | STALE_EVENTS
+    # T-04-T31 (DEC-3413): an approved fix proposal resolves its issue as the approver.
+    assert set(review_api.SUBSCRIPTIONS) == EVENTS | STALE_EVENTS | {"proposal.decided"}
     assert not EVENTS & STALE_EVENTS
 
 

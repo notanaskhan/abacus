@@ -89,8 +89,10 @@ def _totals(accounts: Sequence[TbAccount], column: Column) -> dict[Section, Deci
 
 def run(accounts: Sequence[TbAccount]) -> TbResult:
     """The pipeline over one entity's TB (module docstring)."""
-    totals = {c: _totals(accounts, c) for c in COLUMNS}
-    foots = {c: foot([a.value(c) for a in accounts], ZERO, label=f"{c} column") for c in COLUMNS}
+    totals: dict[Column, dict[Section, Decimal]] = {c: _totals(accounts, c) for c in COLUMNS}
+    foots: dict[Column, Tally] = {
+        c: foot([a.value(c) for a in accounts], ZERO, label=f"{c} column") for c in COLUMNS
+    }
     sheet: dict[Column, Tally] = {}
     for c in ("atb", "ttb"):
         t = totals[c]

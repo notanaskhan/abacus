@@ -4,6 +4,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import type { Scenario } from "../../app-core/fixture-mode";
 import { RunStore, ScriptedRunSource } from "../../domain/agents/runSource";
 import { scenarios as txp00 } from "../scenarios/TXP-00";
 import { scenarios as txp01 } from "../scenarios/TXP-01";
@@ -15,7 +16,13 @@ import { scenarios as txp10 } from "../scenarios/TXP-10";
 import { scenarios as txp11 } from "../scenarios/TXP-11";
 import { FIGURES, RUN3_RUNNING, run3Script, TASKS, trialBalance } from "./tax-entity";
 
-const SCREENS = {
+/** The value, or the test fails here (no non-null assertions in tests). */
+function must<T>(v: T | null | undefined): T {
+  if (v === null || v === undefined) throw new Error("expected a value");
+  return v;
+}
+
+const SCREENS: Readonly<Record<string, Readonly<Record<string, Scenario>>>> = {
   "TXP-00": txp00,
   "TXP-01": txp01,
   "TXP-02": txp02,
@@ -30,7 +37,7 @@ const DOCS = join(process.cwd(), "..", "..", "docs", "screens");
 
 function artboards(id: string): string[] {
   const text = readFileSync(join(DOCS, `${id}.md`), "utf8");
-  return [...text.matchAll(/^\| ([a-z][0-9]?) \|/gm)].map((m) => m[1]!);
+  return [...text.matchAll(/^\| ([a-z][0-9]?) \|/gm)].map((m) => m[1] ?? "");
 }
 
 function request(query = "") {
@@ -58,20 +65,20 @@ describe("T-05 fixture scenarios", () => {
     for (const s of Object.values(SCREENS)) {
       for (const scenario of Object.values(s)) {
         expect(scenario.persona).toMatch(/^(olivia-brandt|samuel-ito)$/);
-        expect(Number.isNaN(Date.parse(scenario.clock))).toBe(false);
+        expect(Number.isNaN(Date.parse(scenario.clock ?? ""))).toBe(false);
       }
     }
   });
 
   it("reads answer from the seed with no network call", async () => {
-    const handler = txp02.a.handlers["GET /v1/tax-returns/{return_id}/trial-balance"]!;
+    const handler = must(txp02.a.handlers["GET /v1/tax-returns/{return_id}/trial-balance"]);
     const body = (await (await handler(request())).json()) as {
       rows: unknown[];
       unmapped: number;
     };
     expect(body.rows).toHaveLength(28);
     expect(body.unmapped).toBe(0);
-    const run1 = txp02.e.handlers["GET /v1/tax-returns/{return_id}/trial-balance"]!;
+    const run1 = must(txp02.e.handlers["GET /v1/tax-returns/{return_id}/trial-balance"]);
     const e = (await (await run1(request())).json()) as { unmapped: number };
     expect(e.unmapped).toBe(1);
     const line = (await (await handler(request("view=line"))).json()) as { view: string };
@@ -79,12 +86,14 @@ describe("T-05 fixture scenarios", () => {
   });
 
   it("writes answer 501 like the contract stubs", async () => {
-    const write = txp11.e.handlers["PUT /v1/tax-returns/{return_id}/workbook/cells/{address}"]!;
+    const write = must(
+      txp11.e.handlers["PUT /v1/tax-returns/{return_id}/workbook/cells/{address}"],
+    );
     expect((await write(request())).status).toBe(501);
   });
 
   it("the trial balance carries the server's figures (UTB + AJE = tax basis on 2050)", () => {
-    const row = trialBalance("run2").rows.find((r) => r.account_code === "2050")!;
+    const row = must(trialBalance("run2").rows.find((r) => r.account_code === "2050"));
     expect(row.tax_basis).toBe(FIGURES.i18);
     expect(FIGURES.openItems.reduce((a, b) => a + b, 0)).toBe(11);
   });

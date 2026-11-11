@@ -4,7 +4,7 @@
 // glyphs for neutral events), "{Verb} by {Actor}" titles. Every approval names a person; the
 // agent only proposes and self-checks. A checkpoint row opens SHL-16 (the host); Restore… makes a
 // new checkpoint there, never a rewrite. The kind filter and the live search narrow the rows.
-import { Button, Pill } from "@abacus/ui";
+import { Button, Picker, Pill } from "@abacus/ui";
 import { type JSX, useMemo, useState } from "react";
 import {
   CHECKPOINTS,
@@ -85,7 +85,9 @@ function Row({
         <button
           type="button"
           className="flex w-full items-start gap-[12px] px-[18px] py-[9px] text-left"
-          onClick={() => onOpenLink?.(event.link!)}
+          onClick={() => {
+            if (event.link) onOpenLink?.(event.link);
+          }}
         >
           {body}
         </button>
@@ -222,20 +224,15 @@ export function Activity({
               className="h-[28px] w-[260px] rounded-[6px] bg-nested px-[8px] text-[13px]"
             />
             <span className="text-[14.5px] font-medium">{COPY.activity}</span>
-            <select
-              aria-label="Filter events"
+            <Picker
+              label="Filter events"
+              variant="white"
+              options={FILTERS.map((f) => ({ value: f.key, label: f.label }))}
               value={filter}
-              onChange={(e) => {
-                setFilter(e.target.value as Kind | "all");
+              onChange={(value) => {
+                setFilter(value as Kind | "all");
               }}
-              className="h-[28px] rounded-[6px] bg-nested px-[6px] text-[13px]"
-            >
-              {FILTERS.map((f) => (
-                <option key={f.key} value={f.key}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           {events.length === 0 ? (
             <p className="px-[18px] py-[24px] text-[13px] text-ink-2">{COPY.emptyFilter}</p>

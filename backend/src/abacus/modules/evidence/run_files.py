@@ -69,8 +69,10 @@ async def file_approved_copy(
     stored: storage.StoredObject,
     grant_id: UUID,
     requested_by: UUID,
+    agent_actor_id: str,
 ) -> UUID:
-    """The approved copy as a new Files item and version; returns the version id."""
+    """The approved copy as a new Files item and version; returns the version id. The item is
+    the agent's (`created_by_kind = 'agent'`, `agent_actor_id` its run) on the person's grant."""
     if folder_kind not in FOLDERS:
         raise ValueError(f"folder {folder_kind!r} is not one an agent's copy may be filed in")
     if stored.key != storage.object_key(tenant_id, stored.fingerprint):
@@ -86,7 +88,7 @@ async def file_approved_copy(
             folder_kind=folder_kind,
             title=title,
             created_by_kind="agent",
-            created_by_id=tx.tenant.actor_id,
+            created_by_id=agent_actor_id,
         )
     )
     tx.record(

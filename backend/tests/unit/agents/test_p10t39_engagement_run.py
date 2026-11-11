@@ -66,16 +66,20 @@ def test_ac_e2_an_unregistered_kind_is_named(monkeypatch: pytest.MonkeyPatch) ->
     assert missing_handlers(static_plan()) == ["workpaper"]
 
 
-def test_the_built_in_workpaper_step_is_registered() -> None:
+def test_the_workpaper_step_is_registered_by_its_owner() -> None:
+    import abacus.modules.workpapers.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the step
+
     assert run_step_handler("run_step.workpaper") is not None
     assert run_step_handler("ledger.read_tb") is None
 
 
 def test_register_run_step_refuses_a_bad_or_second_handler() -> None:
+    import abacus.modules.workpapers.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- the first handler
+
     async def other(*_: object) -> object:
         return None
 
     with pytest.raises(ValueError):
-        register_run_step("Bad Kind", other)  # type: ignore[arg-type]
+        register_run_step("Bad Kind", other)  # type: ignore[arg-type]  # a bad kind on purpose
     with pytest.raises(ValueError):
-        register_run_step("workpaper", other)  # type: ignore[arg-type]
+        register_run_step("workpaper", other)  # type: ignore[arg-type]  # a second handler on purpose

@@ -293,6 +293,11 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.AuthorizationRequired
     summary: The consent sheet's authorization toggle was not on (AC-36).
+  auto_mode_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.engagement_run.AutoModeNotAvailable
+    summary: Auto mode is forced off for a real firm until the capability is live (DEC-50).
   basis_required:
     status: 422
     raised_by:
@@ -898,6 +903,11 @@ codes:
     raised_by:
     - abacus.modules.tax.worksheet_review.EngineFieldReadOnly
     summary: An engine-sourced field takes its value from the engine import, never an edit.
+  engine_field_unmapped:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.export_fields.EngineFieldUnmapped
+    summary: A worksheet field's engine key is outside the engine's validated profile (TR-06).
   engine_file_invalid:
     status: 422
     raised_by:
@@ -1026,6 +1036,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.soc_reports.ExceptionNotHigh
     summary: 'AC7.5: only a High-impact exception routes to Findings.'
+  explain_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issue_resolutions.ExplainUnavailable
+    summary: No explainer is registered for the issue's record type (fail closed, T-04-T31).
   export_disabled:
     status: 409
     raised_by:
@@ -1504,6 +1519,11 @@ codes:
     raised_by:
     - abacus.modules.review.issues.IssueChanged
     summary: The issue changed since it was read (`seen_version`).
+  issue_run_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issue_runs.IssueRunMismatch
+    summary: The run writing for an issue is not the run a person started for it.
   issue_status_refused:
     status: 409
     raised_by:
@@ -2767,6 +2787,11 @@ codes:
     raised_by:
     - abacus.modules.agents.run_commands.RunNotEnded
     summary: A whole-run retry is for an ended run; a running one retries its steps.
+  run_step_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.engagement_run.RunStepUnavailable
+    summary: 'A plan step names a run-step kind nobody registered (AC-E2): 409, the kind named.'
   safeguards_person_invalid:
     status: 422
     raised_by:

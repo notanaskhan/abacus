@@ -331,6 +331,10 @@ _DONE = text(
 _RELEASE = text("DELETE FROM agent_tool_calls WHERE id = :id AND state = 'claimed'")
 
 
+class _Held(Exception):
+    """The idempotency key is held by another call (internal to `_claim`)."""
+
+
 @dataclass
 class _Claim:
     id: UUID | None = None
@@ -349,9 +353,11 @@ async def _claim(agent: AgentContext, call: ToolCallIn, sha: str) -> _Claim:
         "tool": call.name,
         "sha": sha,
     }
-    async with uow(agent.tenant) as tx:
-        claimed = (await tx.session.execute(_CLAIM, params)).first()
-        if claimed is not None:
+    try:
+        async with uow(agent.tenant) as tx:
+            claimed = (await tx.session.execute(_CLAIM, params)).first()
+            if claimed is None:
+                raise _Held  # another call holds the key: nothing written, so roll back
             tx.record(
                 "agent_tool.call_claimed",
                 target=Target("agent_run", call.run_id),
@@ -359,7 +365,12 @@ async def _claim(agent: AgentContext, call: ToolCallIn, sha: str) -> _Claim:
                 scope=Scope(engagement_id=agent.engagement_id),
             )
             return _Claim(id=cast(UUID, claimed.id))
-        found = (await tx.session.execute(_FIND, params)).first()
+    except _Held:
+        pass
+    # S36 end pass (DEC-3417): the holder's row is read outside a unit of work. A unit that
+    # writes nothing has no audit event and refuses to commit, which used to fail every replay.
+    async with tenant_session(agent.tenant) as session:
+        found = (await session.execute(_FIND, params)).first()
     if found is None:  # the holder released it between the two statements: the harness retries
         return _Claim(code="tool_failed")
     if found.tool_name != call.name or found.args_hash != sha:

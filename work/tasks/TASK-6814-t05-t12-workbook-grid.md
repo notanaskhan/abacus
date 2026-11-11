@@ -2,7 +2,7 @@
 id: TASK-6814
 title: "T-05-T12: Promote the AUD-09 spreadsheet grid (A-04) to packages/ui WorkbookGrid: column letters, row numbers, hairlines, selected cell, comment corner, cited and proposed cells, name box, formula bar, sheet tabs with the open-issue dot, Sheet!Cell footer, keyboard model, virtualisation above 200 rows; gallery specimen"
 spec: SPEC-651
-acceptance_criteria: [AC-4.1, AC-4.3]
+acceptance_criteria: [AC-4]
 risk_zone: green
 status: in-review
 branch: s36-t05-t12

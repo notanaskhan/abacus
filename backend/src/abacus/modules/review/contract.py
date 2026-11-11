@@ -1711,8 +1711,8 @@ async def _issue_runs_out(
     ctx: AuthContext, issue_id: UUID
 ) -> tuple[IssueFixInstructionsOut | None, IssueFixRunOut | None, list[IssueExplanationOut]]:
     """T-04-T29: SHL-15 a', a'' and d from the issue's own runs (issue_runs.py)."""
-    from abacus.modules.agents.api import run_v2_status
     from abacus.modules.review.issue_runs import issue_run_facts
+    from abacus.modules.review.slots import run_status
 
     instructions, fix, explanations = await issue_run_facts(ctx.tenant, issue_id)
     people = [instructions.set_by] if instructions and instructions.set_by else []
@@ -1730,7 +1730,7 @@ async def _issue_runs_out(
     )
     run_out = None
     if fix is not None:
-        state = await run_v2_status(ctx.tenant, fix.agent_run_id)
+        state = await run_status(ctx.tenant, fix.agent_run_id)
         run_out = IssueFixRunOut(
             agent_run_id=fix.agent_run_id,
             label=instructions.text if instructions is not None else "",

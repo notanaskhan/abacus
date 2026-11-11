@@ -617,4 +617,5 @@ async def record_rule_issue(
 
 # P-04-T31: the part-2 service reads an issue and its record the same way.
 issue_row = _one
+record_of = _record  # T-04-T31: the issue's record, its resource and its label
 issue_record = _record

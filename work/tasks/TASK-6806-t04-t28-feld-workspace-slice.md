@@ -2,7 +2,7 @@
 id: TASK-6806
 title: "T-04-T28: Backend scenario slices (scenarios/brightwater_hale) through service APIs: Feld TY2025 return worksheets and field versions, issues, checkpoints; make fixtures parity test"
 spec: SPEC-649
-acceptance_criteria: [AC-10.1]
+acceptance_criteria: [AC-10]
 risk_zone: amber
 status: in-review
 branch: s36-t04-t28

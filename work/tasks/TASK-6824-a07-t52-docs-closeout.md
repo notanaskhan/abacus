@@ -2,7 +2,7 @@
 id: TASK-6824
 title: "A-07-T52 (partial): A-07 docs, skills and close-out; contract v1, consumer notes, flag retirement plan"
 spec: SPEC-644
-acceptance_criteria: [AC-DOD-8]
+acceptance_criteria: [AC-52]
 risk_zone: red
 status: in-review
 branch: s36-a07-t52

@@ -3,12 +3,11 @@
 // "Wed Sep 16 · 2 days" (nested), "Today" (amber-tint), "Overdue · Sep 18" (red-tint), "Due Sep 28"
 // once the to-do is done. A row opens its to-do; its ring marks it done through the host.
 import type { TodoOut } from "@abacus/api-client";
-import { cn } from "@abacus/ui";
+import { cn, date } from "@abacus/ui";
 import type { JSX, ReactNode } from "react";
 
 const DAY = 86_400_000;
-const WEEKDAY = { weekday: "short", timeZone: "UTC" } as const;
-const MONTH_DAY = { month: "short", day: "numeric", timeZone: "UTC" } as const;
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 function utc(isoDate: string): Date {
   return new Date(`${isoDate}T00:00:00Z`);
@@ -22,13 +21,14 @@ export interface DueWords {
 /** The chip's words for `due_on` seen on `today` (both ISO dates, the firm's business date). */
 export function dueWords(dueOn: string, today: string, done = false, compact = false): DueWords {
   const due = utc(dueOn);
-  const label = due.toLocaleDateString("en-US", MONTH_DAY);
+  // The due date is a calendar date: format it in UTC so the day never shifts (format.ts).
+  const label = date(dueOn, { now: utc(today), tz: "UTC" });
   if (done) return { text: `Due ${label}`, tone: "nested" };
   const days = Math.round((due.getTime() - utc(today).getTime()) / DAY);
   if (days < 0) return { text: `Overdue · ${label}`, tone: "overdue" };
   if (days === 0) return { text: "Today", tone: "today" };
   if (compact) return { text: label, tone: "nested" }; // My to-dos rows: "Sep 16"
-  const weekday = due.toLocaleDateString("en-US", WEEKDAY);
+  const weekday = WEEKDAYS[due.getUTCDay()] ?? "";
   return {
     text: `${weekday} ${label} · ${String(days)} day${days === 1 ? "" : "s"}`,
     tone: "nested",

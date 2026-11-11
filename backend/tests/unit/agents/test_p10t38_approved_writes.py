@@ -60,13 +60,13 @@ def test_the_grant_pays_for_exactly_one_call() -> None:
 
 
 def test_file_save_holds_its_effect_on_file_save() -> None:
-    import abacus.modules.agents.api  # noqa: F401  # registers the held effect
+    import abacus.modules.agents.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the held effect
 
     assert held_effect(FILE_SAVE) == HeldEffect(SAVE_TOOL, SAVE)
 
 
 def test_the_files_tools_are_registered_by_kind() -> None:
-    import abacus.modules.agents.api  # noqa: F401
+    import abacus.modules.agents.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the tools
 
     tools = registered_tools()
     assert tools["files.build_workbook"].kind == "compute"

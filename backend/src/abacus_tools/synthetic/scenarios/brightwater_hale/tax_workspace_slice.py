@@ -30,7 +30,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Final
 
-from abacus.modules.tax.workspace_seed import SeedField, SeedSection, SeedWorksheet
+from abacus.modules.tax.api import SeedField, SeedSection, SeedWorksheet
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event

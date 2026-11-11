@@ -109,6 +109,7 @@ On removal, the hook that evidence registers (`register_member_removed`) release
 - **Its use:** background work the platform starts on a person's standing consent (today only automatic retrieval, for the client admin who connected).
 - **Fails closed:** it returns None once the membership is no longer active.
 - **New callers need the founder's approval.**
+- **Callers (register):** automatic retrieval; T-04-T31's `review.issue_runs.resolve_on_approval`, which resolves a fix issue as the person who just approved its proposal, after re-reading their live membership and `issue.resolve`. That caller awaits notanaskhan's approval (DEC-3417).
 
 ## Self-serve sign-up (SPEC-024 AC-1; TASK-040)
 - **Route:** `POST /v1/signup` (`IDENTITY`: a verified token with a provider-verified email, no membership) with `{code, firm_name}`.

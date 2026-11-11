@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Final, Literal, cast
+from typing import Final, Literal
 from uuid import UUID, uuid5
 
 from sqlalchemy import text
@@ -195,4 +195,4 @@ async def record_synthetic_workspace(
 
 def total(fields: Sequence[SeedField]) -> Decimal:
     """Code foots a worksheet's parts (ADR-050)."""
-    return sum((cast(Decimal, f.value) for f in fields if f.value is not None), Decimal(0))
+    return sum((f.value for f in fields if f.value is not None), Decimal(0))

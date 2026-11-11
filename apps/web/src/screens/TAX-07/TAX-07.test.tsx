@@ -4,6 +4,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Activity } from "./Activity";
 import { CHECKPOINTS, COPY, DELIVERED, EVENTS, FRAMES } from "./copy";
 
+/** The value, or the test fails here (no non-null assertions in tests). */
+function must<T>(v: T | null | undefined): T {
+  if (v === null || v === undefined) throw new Error("expected a value");
+  return v;
+}
+
 afterEach(cleanup);
 
 describe("TAX-07 activity and checkpoints", () => {
@@ -15,7 +21,7 @@ describe("TAX-07 activity and checkpoints", () => {
   it("a: 24 events newest first, Manager review is Current and starred", () => {
     render(<Activity frame="a" />);
     expect(document.querySelectorAll("[data-event]")).toHaveLength(24);
-    expect(EVENTS[0]!.title).toBe("Email received from Claire Feld");
+    expect(must(EVENTS[0]).title).toBe("Email received from Claire Feld");
     const manager = document.querySelector("[data-checkpoint='manager']");
     expect(manager?.getAttribute("data-state")).toBe("current");
     expect(

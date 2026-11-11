@@ -14,6 +14,7 @@ import json
 import uuid
 from typing import cast
 
+import asyncpg
 import httpx
 import pytest
 
@@ -208,7 +209,10 @@ async def test_ac_m2_a_sub_30_second_run_posts_zero_but_counts(
 async def test_ac_m1_minutes_are_stored_once(seed: Seeder, world: World) -> None:
     run_id = await _v2_run(seed, world, agent_ms=161_000)
     await complete_run_activity(str(world.tenant_id), str(run_id), "succeeded", None)
-    await seed.run("UPDATE agent_runs SET agent_ms = 999999 WHERE id = $1", run_id)
+    # A finished run's row is frozen by the database (its own guard), so a replayed completion
+    # cannot change the minutes; the activity's second delivery stores nothing new.
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await seed.run("UPDATE agent_runs SET agent_ms = 999999 WHERE id = $1", run_id)
     await complete_run_activity(str(world.tenant_id), str(run_id), "succeeded", None)
     assert await seed.value("SELECT agent_minutes FROM agent_runs WHERE id = $1", run_id) == 3
     assert await _deliver(seed, world, run_id) == 1  # one event, at the first terminal state

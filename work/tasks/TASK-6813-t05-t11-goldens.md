@@ -2,7 +2,7 @@
 id: TASK-6813
 title: "T-05-T11: Golden fixtures transcribed (ADR-078) into backend/tests/golden/tax_entity/ and backend/tests/golden/workpapers/: TB pipeline, Ridgeline allocation, Harborview waterfall, Schedule K and K-1, capital and M-2, formula DAG and tie-outs"
 spec: SPEC-651
-acceptance_criteria: [AC-14.2]
+acceptance_criteria: [AC-14]
 risk_zone: amber
 status: in-review
 branch: s36-t05-t11

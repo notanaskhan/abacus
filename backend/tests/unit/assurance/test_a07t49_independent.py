@@ -69,6 +69,7 @@ WORK_ITEM, ENGAGEMENT, VERSION = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
 MARGARET = uuid.uuid4()  # the engagement partner
 RELEASED_ON = date(2026, 10, 9)  # the Northwind EBP release (AUD-24 d)
 HUMAN_ONLY = ("report.release", "archive.lock", "archive_addition.approve")
+KEY_ONE, KEY_TWO = "release-one", "release-two"  # Idempotency-Key values
 
 
 def _ctx(
@@ -118,7 +119,7 @@ def _request(gate_hash: str) -> rel.ReleaseRequest:
         draft_document_id=str(uuid.uuid4()),
         draft_hash="c" * 64,
         gate_hash=gate_hash,
-        idempotency_key="release-1",
+        idempotency_key=KEY_ONE,
     )
 
 
@@ -219,7 +220,7 @@ async def test_the_request_is_refused_when_a_gate_is_unmet(
     snap = _snap(gates=_gates(*flags))
     _request_world(monkeypatch, unit, snap)
     with pytest.raises(rel.GatesNotMet):
-        await rel.request_release(_ctx(), WORK_ITEM, snap.sha256, "release-1")
+        await rel.request_release(_ctx(), WORK_ITEM, snap.sha256, KEY_ONE)
     assert unit.recorded == []
 
 
@@ -323,9 +324,9 @@ async def test_a_replay_with_the_same_key_answers_the_stored_release(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     unit = _Unit()
-    done = SimpleNamespace(release_id=uuid.uuid4(), idempotency_key="release-1")
+    done = SimpleNamespace(release_id=uuid.uuid4(), idempotency_key=KEY_ONE)
     _request_world(monkeypatch, unit, _snap(), done)
-    answered = await rel.request_release(_ctx(), WORK_ITEM, _snap().sha256, "release-1")
+    answered = await rel.request_release(_ctx(), WORK_ITEM, _snap().sha256, KEY_ONE)
     assert answered is done
     assert unit.recorded == ["report.release_replayed"]  # no grant, no second release
 
@@ -335,10 +336,10 @@ async def test_a_second_release_under_another_key_is_refused(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     unit = _Unit()
-    done = SimpleNamespace(release_id=uuid.uuid4(), idempotency_key="release-1")
+    done = SimpleNamespace(release_id=uuid.uuid4(), idempotency_key=KEY_ONE)
     _request_world(monkeypatch, unit, _snap(), done)
     with pytest.raises(rel.AlreadyReleased):
-        await rel.request_release(_ctx(), WORK_ITEM, _snap().sha256, "release-2")
+        await rel.request_release(_ctx(), WORK_ITEM, _snap().sha256, KEY_TWO)
     assert unit.recorded == []
 
 

@@ -2,7 +2,7 @@
 id: TASK-6807
 title: "T-04-T26: TAX-06 Issues states a-g in fixture mode on T9 issues-individual"
 spec: SPEC-649
-acceptance_criteria: [AC-4.1, AC-4.2, AC-4.3]
+acceptance_criteria: [AC-4]
 risk_zone: green
 status: in-review
 branch: s36-t04-t26

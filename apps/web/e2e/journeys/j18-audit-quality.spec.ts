@@ -39,15 +39,18 @@ test.describe("J18 G6 to G9 (A-07-T50)", () => {
       await expect(page.getByText("Locked · WORM").first()).toBeVisible();
     });
     await journey.as("marcus-delaney", a07("AUD-25", "d"));
-    await journey.step("J18 step 6: only a post-lock addition is offered (AUD-25 d)", async (page) => {
-      await expect(page.getByText("+ Add after lock…").first()).toBeVisible();
-      await expect(page.getByText("Addition logged").first()).toBeVisible();
-      await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
-      await expect(page.getByRole("button", { name: /^Sign off/ })).toHaveCount(0);
-    });
+    await journey.step(
+      "J18 step 6: only a post-lock addition is offered (AUD-25 d)",
+      async (page) => {
+        await expect(page.getByText("+ Add after lock…").first()).toBeVisible();
+        await expect(page.getByText("Addition logged").first()).toBeVisible();
+        await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
+        await expect(page.getByRole("button", { name: /^Sign off/ })).toHaveCount(0);
+      },
+    );
   });
 
-  test("j18 6: an edit to a locked engagement is refused by the server (409 archived)", async ({
+  test("j18 6: an edit to a locked engagement is refused by the server (409 archived)", ({
     journey,
   }) => {
     // The refusal is the server's (archived_guard, A-07-T13; I-IMMUTABLE): only the full-stack

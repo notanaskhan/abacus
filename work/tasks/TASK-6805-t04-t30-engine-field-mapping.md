@@ -2,7 +2,7 @@
 id: TASK-6805
 title: "T-04-T30: Engine field mapping as new files (tax/export_fields.py and an integrations engine profile): engine_field_key payload of return fields into the W2 file-bridge workbook from an approved checkpoint only; engine-computed lines imported as engine_import versions inside a pending import checkpoint; tie-out differences as engine_diagnostic issues; Out of sync after edits"
 spec: SPEC-649
-acceptance_criteria: [AC-10.1, AC-10.2, AC-10.3, AC-10.4]
+acceptance_criteria: [AC-10]
 risk_zone: red
 status: in-review
 branch: s36-t04-t30

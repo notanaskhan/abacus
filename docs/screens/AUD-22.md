@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-22 Governance communications -AU-C 260 planning letter AU-C 260 265/` (README.md, spec.md; revision.md wins where present) |
 | Epic and tasks | A-07 · stubs T05 · migration T08 · templates T12 · service T26 · screen T29 · clocks T36 · SPEC-644 |
-| Manifest status | live (final, A-07-T53, S36) |
+| Manifest status | planned in the route manifest (final, A-07-T53, S36): built and live inside the AUD-02 cockpit, with no route of its own (DEC-195, DEC-3414) |
 
 ## States
 Clock is the demo clock (DEC-27): CDT (UTC−5) until Sun Nov 1, 2026, CST (UTC−6) after. Snapshots

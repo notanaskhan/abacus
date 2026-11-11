@@ -46,6 +46,8 @@ def _tool(name: str, kind: ToolKind, action: str) -> AgentTool:
         input_model=_In,
         output_model=_Out,
         handler=_handler,
+        # P-10-T38: an approved_write reaches its subject through a task-scope action.
+        scope_action="file.propose" if kind == "approved_write" else None,
     )
 
 

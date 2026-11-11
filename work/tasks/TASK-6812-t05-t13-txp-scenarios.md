@@ -2,7 +2,7 @@
 id: TASK-6812
 title: "T-05-T13: Fixture-mode scenarios for all 57 artboards from the contract stubs: screens/TXP-xx/scenarios.ts, fixtures/handlers/tax-entity.ts, and a ScriptedRunSource for TXP-00 B"
 spec: SPEC-651
-acceptance_criteria: [AC-1.1]
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 branch: s36-t05-t13

@@ -2,7 +2,7 @@
 id: TASK-6823
 title: "A-07-T51 (partial): the M16 runbook docs/runbooks/audit-release-archive.md; rehearsal, shadow, drill and approvals wait for staging"
 spec: SPEC-644
-acceptance_criteria: [AC-DOD-7, AC-DOD-9]
+acceptance_criteria: [AC-51]
 risk_zone: red
 status: in-review
 branch: s36-a07-t51

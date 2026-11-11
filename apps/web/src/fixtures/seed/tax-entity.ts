@@ -13,8 +13,13 @@ import type {
   WorkbookTbRowOut,
   WorkbookTrialBalanceOut,
 } from "@abacus/api-client";
-import type { ScriptStep } from "../../domain/agents/runSource";
 import { stableId } from "./prng";
+
+/** One step of a scripted run (the shape `domain/agents`' ScriptedRunSource reads). */
+export interface ScriptStep {
+  page: RunItemsOut;
+  afterMs: number;
+}
 
 export const RIDGELINE_RETURN_ID = stableId("tax-return:ridgeline-2025-1065");
 export const PERSONAS = { olivia: "olivia-brandt", samuel: "samuel-ito" } as const;

@@ -26,7 +26,9 @@ FIRST = {
 
 def test_the_fifteen_first_tools_are_registered() -> None:
     assert set(registered_tools()) >= FIRST
-    assert {d.name for d in DECLARED} == FIRST
+    # P-10-T38 adds the files tools beside the fifteen (compute, propose and approved_write).
+    files = {"files.build_workbook", "files.propose_save", "files.save_approved"}
+    assert {d.name for d in DECLARED} == FIRST | files
 
 
 @pytest.mark.parametrize("name", sorted(FIRST))

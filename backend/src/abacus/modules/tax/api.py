@@ -186,6 +186,15 @@ DraftInput = _drafter.DraftInput
 DraftOutcome = _drafter.DraftOutcome
 ReturnDrafterWorkflow = _drafter.ReturnDrafterWorkflow
 drafter_workflow_id = _drafter.drafter_workflow_id
+# T-04-T31: the fix and Explain workflows and their types, for the history recorder.
+FixRunInput = _fix_runner.FixRunInput
+FixRunOutcome = _fix_runner.FixRunOutcome
+FixRunWorkflow = _fix_runner.FixRunWorkflow
+fix_workflow_id = _fix_runner.fix_workflow_id
+ExplainRunInput = _explain.ExplainRunInput
+ExplainRunOutcome = _explain.ExplainRunOutcome
+IssueExplainWorkflow = _explain.IssueExplainWorkflow
+explain_workflow_id = _explain.explain_workflow_id
 SCHEDULES = _schedule_jobs.SCHEDULES
 
 
@@ -239,7 +248,13 @@ __all__ = [
     "ApprovalBlocker",
     "DraftInput",
     "DraftOutcome",
+    "ExplainRunInput",
+    "ExplainRunOutcome",
     "FiledReturn",
+    "FixRunInput",
+    "FixRunOutcome",
+    "FixRunWorkflow",
+    "IssueExplainWorkflow",
     "K1DeliveryInput",
     "K1ReleaseFailure",
     "K1ReleaseInput",
@@ -256,9 +271,11 @@ __all__ = [
     "create_estimate_schedule",
     "drafter_workflow_id",
     "estimates_for",
+    "explain_workflow_id",
     "extension_for",
     "filed_returns",
     "final_approval_eligibility",
+    "fix_workflow_id",
     "flag_new_likely",
     "import_engine_file",
     "installments_due",

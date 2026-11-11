@@ -92,7 +92,7 @@ function Queue({
                     <span className="flex min-w-0 flex-col">
                       <span className="line-clamp-2 text-[12.5px] leading-[1.32]">{r.title}</span>
                       <span className="text-[11.5px] text-ink-3">
-                        {r.resolved ? `${r.resolved.on}` : r.kind}
+                        {r.resolved ? r.resolved.on : r.kind}
                       </span>
                     </span>
                     {r.resolved ? (

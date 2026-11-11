@@ -27,7 +27,16 @@ export async function onScreen(page: Page, id: string): Promise<void> {
 /** INV-1 on a person's screen: no agent-owned control carries a decision verb. */
 export async function noAgentDecision(page: Page): Promise<void> {
   const agentControls = page.locator("[data-agent] button, [data-agent-owned] button");
-  for (const verb of ["Approve", "Sign off", "Release", "Send", "Post", "Decide", "Concur", "Lock"]) {
+  for (const verb of [
+    "Approve",
+    "Sign off",
+    "Release",
+    "Send",
+    "Post",
+    "Decide",
+    "Concur",
+    "Lock",
+  ]) {
     await expect(agentControls.filter({ hasText: verb })).toHaveCount(0);
   }
 }

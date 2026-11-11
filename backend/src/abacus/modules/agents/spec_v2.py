@@ -162,7 +162,10 @@ def spec_problems(
     if _ORDER[spec.escalation_tier] < _ORDER[spec.tier]:
         found.append(f"{spec.id}: escalation_tier may not be below tier")
     refused = sorted(a for a in spec.task_scope if not holdable(a))
-    if refused:
+    # An approved_write tool's own grant action is denied to the agent and still sits in
+    # task_scope (the grant names it); `registry_problems` checks that one exception exactly, with
+    # C17's registry, so a spec with approved_write tools defers this check to it (S36, DEC-3417).
+    if refused and not spec.tools.approved_write:
         found.append(f"{spec.id}: task scope may not include {refused}")
     return found
 
