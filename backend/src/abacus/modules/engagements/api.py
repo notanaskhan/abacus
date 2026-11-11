@@ -60,6 +60,7 @@ from abacus.modules.engagements.client_import_activities import (
     WORKFLOWS,
 )
 from abacus.modules.engagements.conditions import (
+    engagement_labels,
     functions_on,
     gates_of,
     service_line_column,
@@ -333,8 +334,10 @@ from abacus.modules.organisations.api import (
     register_overview_section,
     register_screening_evidence,
 )
-from abacus.modules.platform.api import register_pilot_metric_source
+from abacus.modules.platform.api import register_pilot_metric_source, register_usage_labeller
 
+# P-10-T42: the platform's agent-minute reads name engagements through this module (ADR-008).
+register_usage_labeller("engagement", engagement_labels)
 # Identity owns ethical walls; this module owns which client an engagement belongs to (TASK-016).
 register_engagement_client(client_subquery, client_of)
 # G-02-T08 gap (DEC-458): the unit of work places engagement-scoped audit events.

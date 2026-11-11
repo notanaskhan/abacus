@@ -202,6 +202,16 @@ Identifiers, enums and verified items only; an item holding a Restricted field t
 
 Both validate against the schemas in `backend/tests/contracts/c06_v2/test_c06_v2_stub.py`.
 
+**Agent-minutes (P-10-T42, DEC-3401).** `GET /v1/firm/usage?month=YYYY-MM` answers the usage month
+(day 15 to day 14; default the current one) as `used_minutes`, `included_minutes`, `starts_on`,
+`ends_on` and lines by service line, engagement and capability (`{key, label, minutes}`, largest
+first); an engagement the reader may not see is one "Other engagements" line. `GET
+/v1/engagements/{id}/effort` answers `used_minutes`, `budget_minutes` (1,500 by default), `runs`
+and one line per completed run ("Run #4019 · PBC list builder", 46). Integers summed by code; never
+USD; open runs post nothing. Outbox event `agent_run.completed` (run, state, `completed_on`,
+`agent_ms`, `agent_minutes`, capability, service line, engagement, run number) is the ledger's
+trigger.
+
 ### 9.1 Freeze (P-10-T16)
 
 **Snapshot.** `backend/tests/contracts/c06_v2/v2.json` holds the OpenAPI schemas of every v2 model a

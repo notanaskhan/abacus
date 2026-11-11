@@ -268,6 +268,7 @@ from abacus.modules.agents.upload_review import (
     review,
 )
 from abacus.modules.agents.upload_review import model_available as upload_review_available
+from abacus.modules.agents.usage_labels import capability_labels
 from abacus.modules.agents.workflow_types import (
     AgentEvent,
     AgentInput,
@@ -306,9 +307,11 @@ from abacus.modules.identity.api import (
     register_ai_assistants,
     register_autonomy_level_provider,
 )
-from abacus.modules.platform.api import register_pilot_metric_source
+from abacus.modules.platform.api import register_pilot_metric_source, register_usage_labeller
 from abacus.modules.review.api import register_client_request_sender
 
+# P-10-T42: the platform's agent-minute reads name capabilities through this module (ADR-008).
+register_usage_labeller("capability", capability_labels)
 # Evidence owns review decisions; agents owns what was proposed (TASK-019 D1).
 register_proposal_source(proposals_for, proposal_of)
 # A-01-T19 (SPEC-344 §6): screening results are the export's `provenance/screening.csv`.

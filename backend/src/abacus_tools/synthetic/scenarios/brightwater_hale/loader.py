@@ -391,6 +391,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice a
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
+from abacus_tools.synthetic.scenarios.brightwater_hale import usage_slice as _usage
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
     THORNBURY_ANSWERS,
@@ -2082,6 +2083,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     _room.SLICE: _room.NEEDS,  # R-02-T13: Northwind's Benefits Committee room
     _archive.SLICE: _archive.NEEDS,  # A-07-T41: completion to the locked archive
     _collab.SLICE: _collab.NEEDS,  # P-05-T12: Northwind's comment and Marcus's four to-dos
+    _usage.SLICE: _usage.NEEDS,  # P-10-T42: ADM-14a's 14,920 and ENG-06a's 412
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
@@ -3287,6 +3289,51 @@ async def _entitlement_set(conn: asyncpg.Connection, _: Scenario, event: Event) 
         TENANT,
         str(event.data["module"]),
         LOADER,
+    )
+
+
+async def _agent_minutes_included(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """P-10-T42 (ADM-14a "of 20,000 included"): the plan's included agent-minutes on the firm's
+    entitlement row, as the operator console sets them (the app can't write these)."""
+    await conn.execute(
+        "INSERT INTO tenant_entitlements (tenant_id, module, agent_minutes_allowance, valid_from, "
+        "set_by) VALUES ($1, $2, $3, '2000-01-01', $4) ON CONFLICT (tenant_id, module) "
+        "DO UPDATE SET agent_minutes_allowance = EXCLUDED.agent_minutes_allowance",
+        TENANT,
+        str(event.data["module"]),
+        int(cast(int, event.data["minutes"])),
+        LOADER,
+    )
+
+
+async def _agent_minutes_posted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """P-10-T42: one completed run's minutes through the platform's synthetic-only ledger path,
+    the code `agent_run.completed` takes (DEC-1530)."""
+    from abacus.modules.platform.api import RunMinutes, record_synthetic_minutes
+
+    del conn
+    data = event.data
+    engagement = (
+        engagement_id_of(next(a for a in AUDITS if a.client == _usage.NORTHWIND))
+        if data["engagement"] == "northwind"
+        else None
+    )
+    number = data["run_number"]
+    await record_synthetic_minutes(
+        TenantContext(TENANT, "system", "scenario:agent-minutes"),
+        [
+            RunMinutes(
+                run_id=UUID(str(data["run_id"])),
+                completed_on=date.fromisoformat(str(data["completed_on"])),
+                agent_ms=int(cast(int, data["agent_ms"])),
+                minutes=int(cast(int, data["minutes"])),
+                capability=str(data["capability"]),
+                service_line=str(data["service_line"]),
+                engagement_id=engagement,
+                run_number=int(cast(int, number)) if number is not None else None,
+                phase=str(data["phase"]) if data["phase"] else None,
+            )
+        ],
     )
 
 
@@ -6769,6 +6816,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     # Q-02-T39 (`--slice compliance`): flags first, then policies, holds and the incident.
     "platform.flag_set": _flag_set,
     "platform.entitlement_set": _entitlement_set,
+    # P-10-T42 (`--slice agent_minutes`): the plan's included minutes, then the ledger lines.
+    "platform.agent_minutes_included": _agent_minutes_included,
+    "platform.agent_minutes_posted": _agent_minutes_posted,
     "evidence.retention_policy_set": _retention_policy_set,
     "evidence.legal_hold_placed": _legal_hold_placed,
     "platform.incident_recorded": _incident_recorded,

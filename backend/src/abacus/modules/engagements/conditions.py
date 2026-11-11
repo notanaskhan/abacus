@@ -5,6 +5,7 @@ this module."""
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, select, text
@@ -63,3 +64,24 @@ def service_line_column(
         .correlate_except(inner)
         .scalar_subquery()
     )
+
+
+async def engagement_labels(tenant: TenantContext, keys: Sequence[str]) -> Mapping[str, str]:
+    """P-10-T42: engagements' names for the platform's usage reads (ADM-14 "By engagement"),
+    under the reader's row-level security; the platform has already dropped engagements the
+    reader may not see. Unknown or malformed keys are absent."""
+    ids: list[UUID] = []
+    for key in keys:
+        try:
+            ids.append(UUID(key))
+        except ValueError:
+            continue
+    if not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(Engagement.id, Engagement.name).where(Engagement.id.in_(ids))
+            )
+        ).all()
+    return {str(row.id): row.name for row in rows}
