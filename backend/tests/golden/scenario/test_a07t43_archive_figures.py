@@ -183,7 +183,8 @@ def test_ac_df27_general_1_to_11_and_specific_12_to_15_by_trigger() -> None:
     assert [s["n"] for s in specific] == book["specific"]
     assert {str(s["n"]): s["trigger"] for s in specific} == book["triggers"]
     rep_letters.register_rep_triggers()
-    assert {s["trigger"] for s in specific} <= set(rep_letters._TRIGGERS)  # pyright: ignore[reportPrivateUsage]
+    registered = set(rep_letters._TRIGGERS)  # pyright: ignore[reportPrivateUsage] -- the registry the letter composes from
+    assert {s["trigger"] for s in specific} <= registered
     assert sorted(book["northwind_on"] + book["northwind_off"]) == book["specific"]
 
 

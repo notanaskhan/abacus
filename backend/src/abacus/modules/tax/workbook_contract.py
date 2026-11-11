@@ -26,7 +26,7 @@ from abacus.kernel._flags import TAX_ENTITY_WORKSPACE
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context, mask_tins_for
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -563,7 +563,9 @@ async def entity_general_information_route(
     return_id: UUID, ctx: Ctx
 ) -> WorkbookGeneralInformationOut:
     await _flag_on(ctx)
-    _not_yet()
+    # The answer carries EIN and TIN last fours (Restricted, pii_kind tin): masked for an
+    # offshore reader once the stub answers (review 6; S35 round 2 end pass).
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @workbook_router.get(
@@ -571,7 +573,9 @@ async def entity_general_information_route(
 )
 async def entity_partners_route(return_id: UUID, ctx: Ctx) -> WorkbookPartnersOut:
     await _flag_on(ctx)
-    _not_yet()
+    # The answer carries EIN and TIN last fours (Restricted, pii_kind tin): masked for an
+    # offshore reader once the stub answers (review 6; S35 round 2 end pass).
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @workbook_router.put(
@@ -582,7 +586,9 @@ async def entity_ownership_route(
     return_id: UUID, body: WorkbookOwnershipIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> WorkbookPartnersOut:
     await _flag_on(ctx)
-    _not_yet()
+    # The answer carries EIN and TIN last fours (Restricted, pii_kind tin): masked for an
+    # offshore reader once the stub answers (review 6; S35 round 2 end pass).
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @workbook_router.get(

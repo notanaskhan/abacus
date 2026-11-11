@@ -4,6 +4,7 @@
 // them once the providers register (A-07, A-08, C-02) and the batch deploys.
 import type { Page } from "@playwright/test";
 import { type Journey, expect } from "../harness";
+import { PRODUCT_NAME } from "../harness/invariants";
 import type { PersonaSlug } from "../harness/personas";
 
 export type Width = 1400 | 390;
@@ -32,7 +33,7 @@ export function board(page: Page, st: string) {
 
 /** The white-label rule (INV-4, DEC-01): no portal step shows the product's name. */
 export async function noProductName(page: Page, st: string): Promise<void> {
-  await expect(board(page, st)).not.toContainText("Accrued");
+  expect(await board(page, st).innerText()).not.toMatch(PRODUCT_NAME);
 }
 
 export function owner(description: string): { annotation: { type: string; description: string } } {

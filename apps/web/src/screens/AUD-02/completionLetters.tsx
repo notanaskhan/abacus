@@ -9,9 +9,8 @@ import {
 } from "@abacus/api-client/query";
 import type { CockpitCanvas } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { type JSX, lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useFlag } from "../../app-core/flags";
-import { RevealStepUp, useLiveArchive, useLiveRelease } from "../../domain/audits";
 
 // Fixture mode only (DEC-3030): both canvases still draw the E0 artboard's words, so a production
 // build must not carry them (SPEC-048 AC-10). The compile-time flag drops the imports there; the
@@ -41,64 +40,9 @@ const GovernanceLive = lazy(async () => ({
 }));
 // A-07-T47 (DEC-3303): AUD-24 and AUD-25 on the server's data, behind `audits.report_release` and
 // `audits.archive`, polled every 10 s (2 s while the release or the lock runs).
-const IssuanceLive = lazy(async () => ({
-  default: (await import("../AUD-24/IssuanceLive")).IssuanceLive,
-}));
-const ArchiveLive = lazy(async () => ({
-  default: (await import("../AUD-25/ArchiveLive")).ArchiveLive,
-}));
-
-function ReleaseHost({
-  workItemId,
-  onBack,
-}: {
-  workItemId: string;
-  onBack: () => void;
-}): JSX.Element | null {
-  const { release, action } = useLiveRelease(workItemId);
-  if (release.data === undefined) return null;
-  return (
-    <Suspense fallback={null}>
-      <IssuanceLive
-        release={release.data}
-        running={action.running}
-        problem={action.problem}
-        onRelease={() => {
-          void action.run();
-        }}
-        onBack={onBack}
-      />
-      <RevealStepUp open={action.stepUp} onOpenChange={action.setStepUp} />
-    </Suspense>
-  );
-}
-
-function ArchiveHost({
-  workItemId,
-  onBack,
-}: {
-  workItemId: string;
-  onBack: () => void;
-}): JSX.Element | null {
-  const { archive, action } = useLiveArchive(workItemId);
-  if (archive.data === undefined) return null;
-  return (
-    <Suspense fallback={null}>
-      <ArchiveLive
-        archive={archive.data}
-        running={action.running}
-        problem={action.problem}
-        thenRollForward={action.thenRollForward}
-        onThenRollForward={action.setThenRollForward}
-        onLock={() => {
-          void action.run();
-        }}
-        onBack={onBack}
-      />
-      <RevealStepUp open={action.stepUp} onOpenChange={action.setStepUp} />
-    </Suspense>
-  );
-}
+const hosts = () => import("./releaseArchiveHosts");
+const IssuanceHost = lazy(async () => ({ default: (await hosts()).IssuanceHost }));
+const ArchiveHost = lazy(async () => ({ default: (await hosts()).ArchiveHost }));
 
 /** How the letters open here: the E0 frames (tests, fixture builds), live (`audits.letters`), or
  * not at all (the chips go to the host). */
@@ -191,13 +135,21 @@ export function useCompletionLetterCanvas(
   if (letter === "AUD-24") {
     return {
       title: "Issuance & release",
-      children: <ReleaseHost workItemId={workItemId} onBack={onBack} />,
+      children: (
+        <Suspense fallback={null}>
+          <IssuanceHost workItemId={workItemId} onBack={onBack} />
+        </Suspense>
+      ),
     };
   }
   if (letter === "AUD-25") {
     return {
       title: "Assembly & archive",
-      children: <ArchiveHost workItemId={workItemId} onBack={onBack} />,
+      children: (
+        <Suspense fallback={null}>
+          <ArchiveHost workItemId={workItemId} onBack={onBack} />
+        </Suspense>
+      ),
     };
   }
   if (letter === "AUD-23") {

@@ -43,6 +43,7 @@ from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag as FlagDef
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.assurance.eqr_service import TemplateItem, register_eqr_checklist_template
 from abacus.modules.assurance.release import report_release_approval
 from abacus.modules.assurance.sections import (
     Band,
@@ -61,8 +62,10 @@ from abacus.modules.review.api import (
     ComputedCard,
     DecisionKind,
     Reviewable,
+    ReviewableFacts,
     register_decision_kind,
     register_reviewable,
+    register_reviewable_facts,
 )
 from abacus.modules.signatures.api import EnvelopeSource, register_envelope_source
 
@@ -301,6 +304,33 @@ async def report_version_reviewables(
     return []  # off: nothing to cite; A-07-T27 lists the versions
 
 
+async def report_version_facts(tenant: TenantContext, version_id: UUID) -> ReviewableFacts | None:
+    """AUD-23 b's approval: the EP's L4 on one report version's content hash (A-07-T27). Its
+    preparer is the person who wrote the version, so they cannot approve their own (R-SO-2).
+    S35 round 2 end pass: the sign-off refused an unregistered kind, so no report was approved."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT engagement_id, version_no, content_hash, created_by "
+                    "FROM audit_report_versions WHERE id = :v"
+                ),
+                {"v": version_id},
+            )
+        ).first()
+    if row is None:
+        return None
+    return ReviewableFacts(
+        target_type=REPORT_VERSION,
+        target_id=version_id,
+        engagement_id=row.engagement_id,
+        content_hash=str(row.content_hash),
+        version_no=int(row.version_no),
+        preparer_user_ids=frozenset({row.created_by}),
+        required_levels=(1, 4),  # the preparer's L1, then the EP's approval
+    )
+
+
 # --- The export's seal section ---------------------------------------------------------------
 
 
@@ -315,8 +345,23 @@ async def archive_seal_section(
 # --- Registration ----------------------------------------------------------------------------
 
 
+async def eqr_checklist_items(tenant: TenantContext, engagement_id: UUID) -> list[TemplateItem]:
+    """The firm's published EQR checklist for the engagement's type (A-07-T22's import), in
+    order; none until one is published (the review then cannot open, 409 `template_missing`).
+    S35 round 2 end pass: nothing registered this provider, so no review ever opened."""
+    from abacus.modules.engagements.api import engagement_type_of
+    from abacus.modules.methodology.api import published_checklist
+
+    engagement_type = await engagement_type_of(tenant, engagement_id)
+    if engagement_type is None:
+        return []
+    found = await published_checklist(tenant, "eqr", engagement_type)
+    return [] if found is None else [TemplateItem(i.key, i.text) for i in found.items]
+
+
 def register() -> None:
     """At import (assurance/api.py), once; a reload replaces itself."""
+    register_eqr_checklist_template(eqr_checklist_items)
     for key, band, order, route, title, _flag in SECTIONS:
         provider = _STATE_PROVIDERS.setdefault(key, _section_provider(key))
         register_audit_section(key, band, order, route, provider, title=title, link="planned")
@@ -388,6 +433,7 @@ def register() -> None:
         )
     )
     register_reviewable(REPORT_VERSION, report_version_reviewables)
+    register_reviewable_facts(REPORT_VERSION, report_version_facts)
     register_export_section(SEAL_SECTION, archive_seal_section)
 
 

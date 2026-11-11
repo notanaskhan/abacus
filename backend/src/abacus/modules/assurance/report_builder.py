@@ -396,6 +396,29 @@ async def set_choice(
     return await state(ctx.tenant, work_item_id)
 
 
+_CURRENT_VERSION = text("SELECT current_version_id FROM audit_reports WHERE work_item_id = :wi")
+
+
+async def _partner_approved(
+    tenant: TenantContext, work_item_id: UUID, current: ReportState
+) -> bool:
+    """The current version carries the engagement partner's L4 sign-off, not stale (AUD-23 b)."""
+    from abacus.modules.review.api import sign_off_states
+
+    if current.content_hash is None:
+        return False
+    async with tenant_session(tenant) as session:
+        version = await session.scalar(_CURRENT_VERSION, {"wi": work_item_id})
+    if version is None:
+        return False
+    states = await sign_off_states(
+        tenant, "audit_report_version", [version], {version: current.content_hash}
+    )
+    return any(
+        s.level == 4 and s.signed_by is not None and not s.stale for s in states.get(version, [])
+    )
+
+
 async def set_report_date(
     ctx: AuthContext, work_item_id: UUID, report_date: date, city: str, seen_version: int
 ) -> ReportState:
@@ -411,8 +434,12 @@ async def set_report_date(
         raise NotFound("audit_report")
     if current.row_version != seen_version:
         raise StaleReport(facts={"version": current.row_version})
-    if current.status != "draft":
-        raise ReportNotDraft(facts={"status": current.status})
+    if current.status != "draft" or await _partner_approved(ctx.tenant, work_item_id, current):
+        # Security review (S35 round 2): the date is not in the version's hash, so a change after
+        # the partner's L4 would leave her approval standing on a different report date.
+        raise ReportNotDraft(
+            facts={"status": "approved" if current.status == "draft" else current.status}
+        )
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(

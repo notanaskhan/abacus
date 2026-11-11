@@ -78,6 +78,11 @@ TIN_ROUTES = {
     ("PATCH", "/v1/notices/{notice_id}"): "masked",
     ("POST", "/v1/notices/{notice_id}:start"): "masked",
     ("POST", "/v1/notices/{notice_id}/agency-replies"): "masked",
+    # T-05-T06 (S35 stubs; TASK-6740): the entity workbook's general information and partners
+    # carry EIN and TIN last fours, through the offshore mask once the stubs answer.
+    ("GET", "/v1/tax-returns/{return_id}/general-information"): "masked",
+    ("GET", "/v1/tax-returns/{return_id}/partners"): "masked",
+    ("PUT", "/v1/tax-returns/{return_id}/ownership"): "masked",
 }
 
 

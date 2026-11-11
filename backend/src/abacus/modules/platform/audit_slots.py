@@ -192,8 +192,17 @@ def register_audit_labeler(target_type: str, labeler: AuditLabeler) -> None:
     _LABELERS[target_type] = labeler
 
 
+def _same(a: object, b: object) -> bool:
+    """The same function, re-imported (a module reloaded registers its own labeler again)."""
+    return (getattr(a, "__module__", None), getattr(a, "__qualname__", None)) == (
+        getattr(b, "__module__", None),
+        getattr(b, "__qualname__", None),
+    )
+
+
 def register_audit_tenant_labeler(target_type: str, labeler: AuditTenantLabeler) -> None:
-    if target_type in _LABELERS or target_type in _TENANT_LABELERS:
+    found = _TENANT_LABELERS.get(target_type)
+    if target_type in _LABELERS or (found is not None and not _same(found, labeler)):
         raise ValueError(f"audit labeler {target_type!r} is already registered")
     _TENANT_LABELERS[target_type] = labeler
 

@@ -27,7 +27,8 @@ test.describe("J17 practice economics", () => {
       await journey.step(
         "J17 0: one count on the header, the summary and the badge",
         async (page) => {
-          const pane = page.getByRole("region", { name: "Waiting on you" });
+          // The pane and its scroll region share the name (layout/pane.tsx): the pane itself.
+          const pane = page.getByRole("region", { name: "Waiting on you" }).first();
           await expect(pane).toBeVisible();
           await expect(pane.getByText("2 decisions")).toBeVisible();
           await expect(pane.getByText("2 approvals & sends")).toBeVisible();

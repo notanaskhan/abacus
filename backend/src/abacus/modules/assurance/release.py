@@ -756,7 +756,8 @@ async def fail_release(request: ReleaseRequest, reason: str) -> None:
         tx.record(
             "report.release_failed",
             target=Target(RELEASE_SUBJECT, UUID(request.report_version_id)),
-            after=Ref(reason=reason),
+            # Identifiers only (DEC-60): the reason stays with the workflow's failure, not the log.
+            after=Ref(grant=UUID(request.grant_id)),
             scope=Scope(
                 engagement_id=UUID(request.engagement_id),
                 work_item_id=UUID(request.work_item_id),

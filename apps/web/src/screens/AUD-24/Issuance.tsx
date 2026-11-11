@@ -1,4 +1,5 @@
 import { Button, Icon, Pill, Tag } from "@abacus/ui";
+import { useSheetFocus } from "../../domain/sheet-focus";
 import { type JSX, type ReactNode, useState } from "react";
 import {
   ALSO,
@@ -141,9 +142,11 @@ function ReleaseDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }): JSX.Element {
+  const sheet = useSheetFocus<HTMLDivElement>(onCancel);
   const [attested, setAttested] = useState(false);
   return (
     <div
+      ref={sheet}
       role="dialog"
       aria-modal="true"
       aria-label={DIALOG.title}
@@ -207,7 +210,13 @@ export function Issuance({
       </div>
       <div className="flex min-h-0 flex-1 gap-[10px]">
         <main aria-label={TITLE} className="flex w-[696px] flex-col">
-          <div className="flex flex-1 flex-col gap-[10px] overflow-auto p-[10px]">
+          <div
+            // A scrolling region is reachable by keyboard (axe scrollable-region-focusable).
+            tabIndex={0}
+            role="region"
+            aria-label="Canvas"
+            className="flex flex-1 flex-col gap-[10px] overflow-auto p-[10px]"
+          >
             {GATES.map((g) => (
               <GateCard
                 key={g.gate}

@@ -680,7 +680,7 @@ _PUBLISHED_CLAUSES = text(
     SELECT v.id, v.clauses, jsonb_array_length(v.body) AS blocks
       FROM report_template_versions v
       JOIN report_templates t ON t.id = v.template_id
-     WHERE t.family = :family AND (:name IS NULL OR t.name = :name)
+     WHERE t.family = :family AND (CAST(:name AS text) IS NULL OR t.name = CAST(:name AS text))
        AND EXISTS (SELECT 1 FROM report_template_publications p
                     WHERE p.version_id = v.id AND p.action = 'published')
        AND NOT EXISTS (SELECT 1 FROM report_template_publications p

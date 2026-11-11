@@ -580,7 +580,7 @@ def a07_template_events() -> list[Event]:
     for n, (section, kind, engagement_type, name) in enumerate(A07_CHECKLISTS):
         events.append(
             Event(
-                f"assurance-checklist-import:{section}",
+                f"assurance-checklist-import:{section}:{engagement_type}",
                 SETUP_AT + timedelta(minutes=45, seconds=n),
                 "methodology.assurance_checklist_imported",
                 IMPORTER,
@@ -591,7 +591,7 @@ def a07_template_events() -> list[Event]:
         )  # fmt: skip
         events.append(
             Event(
-                f"assurance-checklist-publish:{section}",
+                f"assurance-checklist-publish:{section}:{engagement_type}",
                 SETUP_AT + timedelta(minutes=47, seconds=n),
                 "methodology.assurance_checklist_published",
                 PUBLISHER,

@@ -20,7 +20,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useState } from "react";
-import { errorCode, needsStepUp } from "./exports";
+import { errorCode, needsStepUp } from "../audits/exports";
 
 /** Gate, clock and envelope state: someone else's act (Dana's signature, a teammate's sign-off)
  * shows within 10 s (A-07-T47 acceptance). */

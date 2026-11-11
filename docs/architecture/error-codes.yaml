@@ -1125,6 +1125,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.imports.FilesMissing
     summary: The import has no workbook and no document to read yet.
+  filing_evidence_required:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.filings.FilingEvidenceRequired
+    summary: '`filed` needs the filed date and the EFAST2 acknowledgement of this engagement.'
   final_approval_blocked:
     status: 409
     raised_by:
@@ -2598,6 +2603,11 @@ codes:
     raised_by:
     - abacus.modules.tax.consent_capture.RenewalSpansEntities
     summary: One renewal drafts one envelope, so its consents belong to one taxpayer.
+  report_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.report_builder.ReportNotDraft
+    summary: The report date and city change only while the report is a draft (A-07-T41).
   representation_letter_invalid:
     status: 422
     raised_by:

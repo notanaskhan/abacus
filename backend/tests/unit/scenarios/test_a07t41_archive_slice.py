@@ -43,13 +43,16 @@ def test_northwinds_instants_are_the_designs() -> None:
     assert _at("archive:A1:letter-265-ack").date().isoformat() == "2026-11-24"
     locked = _at("archive:A1:locked")
     assert locked == datetime(2026, 12, 3, 16, 18, tzinfo=CT)
-    assert locked.utcoffset() is not None and locked.utcoffset().total_seconds() == -6 * 3600
+    offset = locked.utcoffset()
+    assert offset is not None and offset.total_seconds() == -6 * 3600  # CST after Nov 1
     assert _at("archive:A1:addition-approved").date().isoformat() == "2027-01-15"
 
 
 def test_granite_peak_and_lakeshore() -> None:
     assert _at("archive:A2:going-concern-decided").date().isoformat() == "2026-10-26"
-    assert _at("archive:A2:release").date().isoformat() == "2026-10-27"
+    assert _at("archive:A2:letter-signed").date().isoformat() == "2026-10-27"
+    # The release waits on Granite Peak's governance body (no slice seeds one yet).
+    assert not [e for e in slice_events(archive.SLICE) if e.label == "archive:A2:release"]
     lakeshore = [e for e in slice_events(archive.SLICE) if e.client == archive.LAKESHORE]
     assert [e.at.date().isoformat() for e in lakeshore] == ["2026-11-10"]
 

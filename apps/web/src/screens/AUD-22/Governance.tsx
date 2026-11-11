@@ -79,7 +79,7 @@ export function Governance(props: GovernanceProps): JSX.Element {
           />
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 gap-[10px] px-[12px] pb-[12px]">
+      <div className="flex min-h-0 flex-1 gap-[10px] pb-[12px]">
         <section
           aria-label="Structure"
           className="w-[470px] shrink-0 overflow-y-auto rounded-pane bg-card shadow-e1"
@@ -152,7 +152,7 @@ export function Governance(props: GovernanceProps): JSX.Element {
           <header className="relative flex h-[46px] items-center justify-center">
             <h2 className="text-[14.5px] font-medium">{paper.title}</h2>
             {sent ? (
-              <span className="absolute right-[10px]" aria-label="Locked">
+              <span className="absolute right-[10px]" role="img" aria-label="Locked">
                 <Icon name="lock" size={12} />
               </span>
             ) : (
@@ -172,16 +172,20 @@ export function Governance(props: GovernanceProps): JSX.Element {
               </div>
             )}
           </header>
-          <div className="min-h-0 flex-1 overflow-y-auto p-[14px]">
+          <div
+            // A scrolling region is reachable by keyboard (axe scrollable-region-focusable).
+            tabIndex={0}
+            role="region"
+            aria-label="Paper content"
+            className="min-h-0 flex-1 overflow-y-auto p-[14px]"
+          >
             <article className="relative mx-auto w-[600px] overflow-hidden rounded-pane bg-card px-[24px] pb-[24px] pt-[20px] text-[12px] leading-[1.55] shadow-e2">
               {!sent && (
                 <span
                   aria-hidden="true"
                   data-watermark="draft"
-                  className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06]"
-                >
-                  DRAFT
-                </span>
+                  className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06] before:content-['DRAFT']"
+                />
               )}
               <p className="text-[13.5px] font-medium">Brightwater Hale LLP</p>
               <p className="text-[11.5px] text-ink-3">311 West Brannock Street, Chicago, IL</p>

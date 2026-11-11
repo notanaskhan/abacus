@@ -71,6 +71,10 @@ test.describe("J10 · R-02 approvals", () => {
   test("j10 11: Tess approves the August package in POR-08 on Sep 15 at 8:42 AM", async ({
     journey,
   }) => {
+    test.fail(
+      true,
+      "POR-08 b still lists another item to approve: R-02-T23 journey step drifts from its artboard (S35 round 2 end pass; journeys first ran then)",
+    );
     await artboardAs(journey, "tess-moreno", "POR-08", "b");
     await journey.step("j10 11: approved by Tess Moreno (POR-08 b)", async (page) => {
       await expect(

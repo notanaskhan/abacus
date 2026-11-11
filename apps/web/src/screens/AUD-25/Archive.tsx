@@ -1,4 +1,5 @@
 import { AgentText, Button, Icon, Pill } from "@abacus/ui";
+import { useSheetFocus } from "../../domain/sheet-focus";
 import { type JSX, type ReactNode, useState } from "react";
 import {
   ADDITIONS,
@@ -83,10 +84,12 @@ function LockSheet({
   onCancel: () => void;
   onConfirm: (roll: boolean) => void;
 }): JSX.Element {
+  const sheet = useSheetFocus<HTMLDivElement>(onCancel);
   const [complete, setComplete] = useState(false);
   const [roll, setRoll] = useState(false);
   return (
     <div
+      ref={sheet}
       role="dialog"
       aria-modal="true"
       aria-label={SHEET.title}
@@ -217,7 +220,13 @@ export function Archive({
               )}
             </div>
           </div>
-          <div className="flex flex-1 flex-col gap-[10px] overflow-auto p-[10px]">
+          <div
+            // A scrolling region is reachable by keyboard (axe scrollable-region-focusable).
+            tabIndex={0}
+            role="region"
+            aria-label="Canvas"
+            className="flex flex-1 flex-col gap-[10px] overflow-auto p-[10px]"
+          >
             <Card>
               {locked ? (
                 <p data-locked="true" className="p-[14px] text-[13px] font-medium">

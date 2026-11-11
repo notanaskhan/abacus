@@ -2219,6 +2219,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         "audit_reports": frozenset(
             {"city", "current_version_id", "report_date", "status", "updated_at", "version"}
+            | {"template_id"}  # 0802 (TASK-6740): a choice follows the newest published template
         ),
         "ebp_compliance_tests": frozenset(
             {

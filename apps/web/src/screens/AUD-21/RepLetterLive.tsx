@@ -66,10 +66,8 @@ export function RepLetterLive({ letter, onBack }: RepLetterLiveProps): JSX.Eleme
               <span
                 aria-hidden="true"
                 data-watermark="draft"
-                className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06]"
-              >
-                DRAFT
-              </span>
+                className="pointer-events-none absolute inset-0 flex -rotate-[30deg] items-center justify-center text-[72px] font-medium text-ink/[.06] before:content-['DRAFT']"
+              />
             )}
             <ol className="list-decimal pl-[18px]">
               {letter.paragraphs.map((p) => (

@@ -228,7 +228,13 @@ export function RepLetter(props: RepLetterProps): JSX.Element {
                 <Primary status={letter.status} props={props} />
               </div>
             </header>
-            <div className="min-h-0 flex-1 overflow-y-auto p-[14px]">
+            <div
+              // A scrolling region is reachable by keyboard (axe scrollable-region-focusable).
+              tabIndex={0}
+              role="region"
+              aria-label="Paper"
+              className="min-h-0 flex-1 overflow-y-auto p-[14px]"
+            >
               {letter.status === "drafting" ? (
                 <div
                   data-drafting="true"

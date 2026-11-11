@@ -27,6 +27,7 @@ from abacus.modules.assurance import (
 )
 from abacus.modules.engagements.api import GateFact
 from abacus.modules.engagements.gate_policy import FAMILY, required_gates
+from abacus.modules.identity.api import Resource
 from abacus.modules.identity.authz import matrix
 from abacus.modules.identity.context import AuthContext
 
@@ -193,7 +194,8 @@ def _review(monkeypatch: pytest.MonkeyPatch, eqr: uuid.UUID) -> None:
 
     class Ref:
         def resource(self) -> object:
-            return object()
+            # A real resource: the service puts the work item on it (`function_in: eqr`).
+            return Resource.engagement(uuid.uuid4(), uuid.uuid4(), archived=False)
 
     async def ref(_ctx: AuthContext, _e: uuid.UUID) -> Ref:
         return Ref()

@@ -600,6 +600,8 @@ async def test_ac4_1_1_every_registered_kind_with_its_default(world: World) -> N
         "governance_comm_overdue",
         "report_released",
         "archive_deadline_risk",
+        # P-05-T06 (P-05 AC-18): "Marcus gets one `todo_assigned` notification and one email".
+        "todo_assigned",
     }
     assert {k: choices[k] for k in emailed} == dict.fromkeys(emailed, (True, True))
     assert {k: v for k, v in choices.items() if k not in emailed} == dict.fromkeys(

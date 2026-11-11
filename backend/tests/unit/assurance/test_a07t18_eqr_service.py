@@ -16,7 +16,7 @@ import pytest
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.assurance import eqr_service as eqr
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, Resource
 
 pytestmark = pytest.mark.asyncio
 NOW = datetime(2026, 10, 8, 15, tzinfo=UTC)
@@ -43,7 +43,10 @@ def patched(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
         return eqr.ReviewRow(REVIEW, ENGAGEMENT, work_item_id, EQR_USER, "in_progress", 3)
 
     async def get_ref(ctx: AuthContext, engagement_id: UUID) -> object:
-        return SimpleNamespace(resource=lambda: None)
+        # A real resource: the service puts the work item on it for `function_in: eqr`.
+        return SimpleNamespace(
+            resource=lambda: Resource.engagement(uuid4(), engagement_id, archived=False)
+        )
 
     async def authorise(ctx: AuthContext, action: str, resource: object) -> None:
         return None

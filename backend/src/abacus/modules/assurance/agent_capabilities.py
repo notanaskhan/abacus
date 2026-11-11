@@ -276,7 +276,12 @@ async def letter_compose(
             drafted = 1
     except Exception as refused:
         async with uow(ctx.tenant) as tx:
-            await fail_code_run(tx, run_id, getattr(refused, "code", "draft_refused"))
+            # A domain refusal names its code; anything else (a database error's `code` is None or
+            # SQLAlchemy's own) ends the run as `draft_refused`, so the failed row always has one.
+            code = getattr(refused, "code", None)
+            ours = type(refused).__module__.startswith("abacus.")
+            failure = code if ours and isinstance(code, str) and code else "draft_refused"
+            await fail_code_run(tx, run_id, failure)
             tx.record("agent_run.failed", target=Target("agent_run", run_id))
         raise
     async with uow(ctx.tenant) as tx:

@@ -26,6 +26,7 @@ from typing import cast
 import httpx
 import pytest
 
+from abacus.kernel.clock import FIRM_ZONE
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity.api import (
     RULES,
@@ -487,7 +488,7 @@ async def test_ac17_a_letter_dated_before_the_g1_decision_answers_409(net: Net) 
     decided = datetime.now(UTC).replace(microsecond=0) - timedelta(days=10)
     engagement, priya = await _accepted(firm, decided)
     copy = await firm.signed_copy(engagement)
-    before = decided.date() - timedelta(days=1)
+    before = decided.astimezone(FIRM_ZONE).date() - timedelta(days=1)  # the firm's date
     facts = _refusal(
         await firm.call(
             "PUT",

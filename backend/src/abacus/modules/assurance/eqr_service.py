@@ -26,7 +26,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from typing import Annotated, ClassVar, Final
 from uuid import UUID
@@ -41,7 +41,7 @@ from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import assurance_item_id, eqr_eligibility, get_ref
 from abacus.modules.identity.api import AuthContext, authorise, team_of
-from abacus.modules.review.api import decided_cards, open_notes
+from abacus.modules.review.api import ReviewableFacts, decided_cards, open_notes
 
 MFA_WINDOW: Final = timedelta(minutes=15)
 REVIEW_TARGET: Final = "eqr_review"
@@ -112,7 +112,8 @@ class TemplateItem:
     text: str
 
 
-ChecklistTemplate = Callable[[TenantContext], Awaitable[Sequence[TemplateItem]]]
+# The checklist for one engagement (its type picks the firm's published EQR checklist, A-07-T22).
+ChecklistTemplate = Callable[[TenantContext, UUID], Awaitable[Sequence[TemplateItem]]]
 _TEMPLATE: list[ChecklistTemplate] = []
 
 
@@ -148,10 +149,36 @@ async def _review(tenant: TenantContext, work_item_id: UUID) -> ReviewRow:
 async def _as_eqr(ctx: AuthContext, work_item_id: UUID, action: str) -> ReviewRow:
     review = await _review(ctx.tenant, work_item_id)
     ref = await get_ref(ctx, review.engagement_id)
-    await authorise(ctx, action, ref.resource())
+    # The work item on the resource, so `function_in: eqr` can read the reviewer's function
+    # (without it the condition fails closed; S35 round 2 end pass).
+    await authorise(ctx, action, replace(ref.resource(), work_item_id=work_item_id))
     if ctx.tenant.actor_kind != "human" or ctx.user_id != review.eqr_user_id:
         raise EqrOnly
     return review
+
+
+async def eqr_review_facts(tenant: TenantContext, review_id: UUID) -> ReviewableFacts | None:
+    """EQR-1 and EQR-2's target (AUD-18): an EQR review takes notes, never sign-offs, so it needs
+    no level and has no preparers; its hash is its row version. Registered for notes only (S35
+    round 2 end pass: the notes refused an unregistered kind), never as a G5 reviewable."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text("SELECT engagement_id, version FROM eqr_reviews WHERE id = :r"),
+                {"r": review_id},
+            )
+        ).first()
+    if row is None:
+        return None
+    return ReviewableFacts(
+        target_type=REVIEW_TARGET,
+        target_id=review_id,
+        engagement_id=row.engagement_id,
+        content_hash="sha256:" + _sha([str(review_id), int(row.version)]),
+        version_no=int(row.version),
+        preparer_user_ids=frozenset(),
+        required_levels=(),
+    )
 
 
 def _sha(value: object) -> str:
@@ -186,7 +213,7 @@ async def open_reviews(tenant: TenantContext, engagement_id: UUID, eqr_user_id: 
         raise EqrNotEligible(facts={k: v for k, v in checks.items() if v == "fail"})
     if not _TEMPLATE:
         raise EqrTemplateMissing
-    template = list(await _TEMPLATE[0](tenant))
+    template = list(await _TEMPLATE[0](tenant, engagement_id))
     if not template:
         raise EqrTemplateMissing
     opened = 0
@@ -387,7 +414,8 @@ async def update_checklist(
         tx.record(
             "eqr_checklist.updated",
             target=Target(REVIEW_TARGET, review.id),
-            after=Ref(item=item_key, status=status),
+            # Identifiers only (DEC-60): the item is the version row; its key is in the table.
+            after=Ref(version=int(version), done=int(status == "done")),
             scope=Scope(engagement_id=review.engagement_id, work_item_id=work_item_id),
         )
     return int(version)

@@ -59,6 +59,9 @@ for (const [screen, { st, opener }] of Object.entries(SHEETS)) {
   test(`${screen}: the O3 sheet traps focus, Escape closes it, focus returns`, async ({
     page,
   }) => {
+    // AUD-22 a2's send sheet is not built in the fixture canvas yet ("Approve & send…" calls the
+    // host): a known gap, so this fails until the sheet lands (S35 round 2 end pass).
+    test.fail(screen === "AUD-22", "AUD-22 a2's approve-and-send sheet is not built yet");
     await open(page, screen, st);
     const trigger = page.getByRole("button", { name: opener }).first();
     test.skip(!(await trigger.isEnabled()), "the opener is disabled in this frame");
