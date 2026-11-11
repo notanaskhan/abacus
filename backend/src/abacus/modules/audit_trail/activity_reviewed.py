@@ -56,6 +56,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "filing.opened",
         "governance_communication.due_set",
         "filing.updated",
+        # reviewed 2026-11-11 (S36): P-10-T39 a person turned an engagement's Auto mode on or off
+        "engagement_ai.auto_mode_set",
         # reviewed 2026-11-11 (S36): P-10-T42 the ledger posted a completed run's minutes
         "agent_minutes.posted",
         # reviewed 2026-11-11 (S36): P-10-T38 a run's workbook, its Save to Files proposal, the

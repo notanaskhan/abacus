@@ -493,9 +493,12 @@ async def run_events_route(
 async def start_engagement_run_route(
     engagement_id: UUID, body: EngagementRunIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunAcceptedOut:
-    """The engagement run: its plan computed by code from methodology (T39)."""
+    """The engagement run: its plan computed by code from methodology (T39, DEC-3404)."""
+    from abacus.modules.agents.engagement_run import start_engagement_run
+
     await _flag_on(ctx, ENGAGEMENT_RUN_ENABLED)
-    _not_yet()
+    started = await start_engagement_run(ctx, engagement_id, work_item_ref=body.work_item_ref)
+    return RunAcceptedOut(run_id=started.run_id, status_url=f"/v1/agent-runs/{started.run_id}")
 
 
 @engagement_runs_v2_router.put(
@@ -507,9 +510,19 @@ async def start_engagement_run_route(
 async def set_auto_mode_route(
     engagement_id: UUID, body: AutoModeIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AutoModeOut:
-    """Standing plan approval per engagement type (ADR-186); refused for real firms in season 1."""
+    """Standing plan approval per engagement type (ADR-186); refused for real firms in season 1
+    (T39, DEC-3404: 409 `auto_mode_not_available`)."""
+    from abacus.modules.agents.engagement_run import set_auto_mode
+    from abacus.modules.identity.api import names_of
+
     await _flag_on(ctx, ENGAGEMENT_RUN_ENABLED)
-    _not_yet()
+    mode = await set_auto_mode(ctx, engagement_id, body.enabled)
+    names = await names_of([ctx.user_id])
+    return AutoModeOut(
+        enabled=mode.enabled,
+        changed_by=names.get(ctx.user_id, ""),
+        changed_at=cast(datetime, mode.changed_at),
+    )
 
 
 @runs_v2_router.post(
