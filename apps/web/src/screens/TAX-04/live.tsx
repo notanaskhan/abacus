@@ -1,7 +1,8 @@
 // T-04-T29 (TASK-6828): TAX-04 Review on a live build. The review tree at the viewer's level
 // (`GET /v1/tax/returns/{id}/review-tree`, "Review n" from the server), Approve at the viewer's
 // level (`POST …/document-approvals` with the version the person saw) and Unapprove of an
-// approval made here (`POST /v1/tax/document-approvals/{id}/reverse`, a reversing row). A
+// approval made here (`POST /v1/tax/document-approvals/{id}/reverse`, a reversing row; the
+// approval's toast offers the same as Undo for 10 s, DEC-24). A
 // mismatch disables Approve with the handoff's helper; every refusal shows its words
 // (`blockerWords`). "Request final approval…" is SHL-12 h's; a refusal names its blockers.
 import {
@@ -11,7 +12,7 @@ import {
   workspaceOptions,
 } from "@abacus/api-client/query";
 import type { DocumentApprovalOut, ReviewDocumentOut } from "@abacus/api-client";
-import { Button, EmptyState, Pill } from "@abacus/ui";
+import { Button, EmptyState, Pill, toast } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { BLOCKER_COPY, blockerWords, RETURN_LIVE_KEYS, useReturnLive } from "./live-core";
@@ -22,6 +23,7 @@ export const REVIEW_LIVE_COPY = {
   approve: "Approve",
   unapprove: "Unapprove",
   approved: (n: number) => `✓ ${String(n)}`,
+  approvedToast: "Document approved",
   mismatch: "Mismatch",
   unapproved: "Unapproved",
   review: (n: number) => `Review ${String(n)}`,
@@ -71,6 +73,17 @@ export function ReviewLive({ returnId, engagementId }: ReviewLiveProps): JSX.Ele
       </div>
     );
   }
+  const onUnapprove = async (doc: ReviewDocumentOut, made: DocumentApprovalOut): Promise<void> => {
+    setRefusal(null);
+    try {
+      await reverse.mutateAsync({ path: { approval_id: made.id }, body: {} });
+      setMine((m) =>
+        Object.fromEntries(Object.entries(m).filter(([key]) => key !== doc.evidence_version_id)),
+      );
+    } catch (error) {
+      setRefusal({ doc: doc.evidence_version_id, words: blockerWords(error) });
+    }
+  };
   const onApprove = async (doc: ReviewDocumentOut): Promise<void> => {
     if (level === undefined) return;
     setRefusal(null);
@@ -84,17 +97,13 @@ export function ReviewLive({ returnId, engagementId }: ReviewLiveProps): JSX.Ele
         },
       });
       setMine((m) => ({ ...m, [doc.evidence_version_id]: made }));
-    } catch (error) {
-      setRefusal({ doc: doc.evidence_version_id, words: blockerWords(error) });
-    }
-  };
-  const onUnapprove = async (doc: ReviewDocumentOut, made: DocumentApprovalOut): Promise<void> => {
-    setRefusal(null);
-    try {
-      await reverse.mutateAsync({ path: { approval_id: made.id }, body: {} });
-      setMine((m) =>
-        Object.fromEntries(Object.entries(m).filter(([key]) => key !== doc.evidence_version_id)),
-      );
+      // DEC-24, DEC-4318: the approval is undoable for 10 s; Undo is the reversal route.
+      toast.undoable({
+        text: REVIEW_LIVE_COPY.approvedToast,
+        undo: () => {
+          void onUnapprove(doc, made);
+        },
+      });
     } catch (error) {
       setRefusal({ doc: doc.evidence_version_id, words: blockerWords(error) });
     }

@@ -6,7 +6,8 @@ import { client } from "@abacus/api-client/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { JSX } from "react";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { toast } from "@abacus/ui";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { type FixtureHandler, installFixtureMode, json } from "../../app-core/fixture-mode";
 import { RealtimeClient, type RealtimeEvent } from "../../app-core/realtime";
 import { newQueryClient } from "../../testing/support";
@@ -150,6 +151,53 @@ describe("TAX-04 Review (live)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Unapprove" }));
     await screen.findByRole("button", { name: "Approve" });
     expect(calls.some((c) => c.key.endsWith("/reverse"))).toBe(true);
+  });
+
+  it("an approval's toast offers Undo for 10 s, and Undo posts the reversal (DEC-24)", async () => {
+    const undoable = vi.spyOn(toast, "undoable");
+    let approved = false;
+    const calls = serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () => json(summary()),
+      "GET /v1/tax/returns/{return_id}/review-tree": () =>
+        json({ items: [doc(approved ? "approved" : "unapproved")], total: 1, review_count: 1 }),
+      "POST /v1/tax/returns/{return_id}/document-approvals": () => {
+        approved = true;
+        return json(
+          {
+            id: "a1",
+            evidence_version_id: DOC,
+            level: "preparer",
+            approved_by_name: "Kevin Park",
+            approved_at: "2026-09-14T09:00:00Z",
+          },
+          201,
+        );
+      },
+      "POST /v1/tax/document-approvals/{approval_id}/reverse": () => {
+        approved = false;
+        return json({
+          id: "a1",
+          evidence_version_id: DOC,
+          level: "preparer",
+          approved_by_name: "Kevin Park",
+          approved_at: "2026-09-14T09:00:00Z",
+          reversed: true,
+        });
+      },
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Approve" }));
+    await waitFor(() => {
+      expect(undoable).toHaveBeenCalledTimes(1);
+    });
+    const offered = undoable.mock.calls[0]?.[0];
+    expect(offered?.text).toBe("Document approved");
+    expect(offered?.undo).toBeTypeOf("function");
+    offered?.undo?.();
+    await waitFor(() => {
+      expect(calls.some((c) => c.key.endsWith("/reverse"))).toBe(true);
+    });
+    undoable.mockRestore();
   });
 
   it("a 409 renders its blocker in words, and nothing moves", async () => {
