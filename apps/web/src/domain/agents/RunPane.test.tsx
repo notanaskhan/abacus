@@ -200,6 +200,41 @@ describe("SHL-13 run pane", () => {
     expect(within(card).getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(true);
   });
 
+  it("frame 5: the card takes focus and a digit sends that option's answer", async () => {
+    const answers: unknown[] = [];
+    const base = routes();
+    const run = SHL13_RUNS[RUN_4127_ASK_ID];
+    const question = run?.items.find((i) => i.kind === "question")?.ref_id;
+    expect(question).toBeTruthy();
+    const { calls } = mockApi({
+      ...base,
+      [`POST /v1/agent-runs/${RUN_4127_ASK_ID}/questions/${String(question)}/answer`]: (c) => {
+        answers.push(c.body);
+        return json({}, 200);
+      },
+    });
+    const Page = (): JSX.Element => (
+      <ClockProvider now={() => DEMO_MS}>
+        <RunPane runId={RUN_4127_ASK_ID} onTrace={() => undefined} />
+      </ClockProvider>
+    );
+    renderRoutes([{ path: "/", component: Page }]);
+    const card = (
+      await screen.findByText("Which population should eligibility testing start from?")
+    ).closest("li") as HTMLElement;
+    await waitFor(() => {
+      expect(card.getAttribute("tabindex")).toBe("0");
+    });
+    expect(card.getAttribute("aria-keyshortcuts")).toMatch(/^1 2/);
+    card.focus();
+    fireEvent.keyDown(card, { key: "2" });
+    await waitFor(() => {
+      expect(answers).toHaveLength(1);
+    });
+    expect((answers[0] as { option_key?: string }).option_key).toBeTruthy();
+    expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/answer"))).toBe(true);
+  });
+
   it("frame 8: Copperleaf's close run counts 6 of 9 with 3 running", async () => {
     renderPane(RUN_CLOSE_COPPERLEAF_ID);
     expect(await screen.findByText("Closing agent is running")).toBeTruthy();

@@ -76,7 +76,9 @@ for (const st of ["a", "b", "c", "d"] as const) {
     expect(900 - (y + h)).toBe(10);
     expect(await style(drawer, "border-top-left-radius")).toBe("14px");
     expect((await box(drawer.locator("header").first())).h).toBe(46);
-    const tabs = drawer.getByRole("tablist");
-    if ((await tabs.count()) > 0) expect((await box(tabs.first())).h).toBe(28);
+    // Segmented small (C-05): each option 28 high inside its 34 track. Wait for the views.
+    const tab = drawer.getByRole("tablist").first().getByRole("tab").first();
+    await expect(tab).toBeVisible();
+    expect((await box(tab)).h).toBe(28);
   });
 }

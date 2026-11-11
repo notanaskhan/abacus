@@ -35,7 +35,9 @@ afterEach(() => {
   cleanup();
   restore?.();
   restore = undefined;
-  toastStore.clear();
+  // reset, not clear: a cleared toast stays listed while it leaves, so the next test's
+  // `find` could pick the last test's Undo and `act` would ignore it (a leaving toast).
+  toastStore.reset();
 });
 
 const GATE_VERBS = /^(Approve|Sign off|Release|Send|Post|Decide)\b/u;

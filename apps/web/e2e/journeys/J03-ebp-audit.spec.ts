@@ -512,17 +512,15 @@ test.describe("J03 · R-02 portal halves", () => {
   test("j03 9b: the Benefits Committee acknowledges the planning letter in the governance room", async ({
     journey,
   }) => {
-    test.fail(
-      true,
-      "POR-15 b still draws an Acknowledge button (the 265 letter's): R-02-T23 journey step drifts from its artboard (S35 round 2 end pass; journeys first ran then)",
-    );
     await artboardAs(journey, "victoria-lam", "POR-15", "a");
     await journey.step(
       "j03 9b: the planning letter, two of three acknowledged (POR-15 a)",
       async (page) => {
         await expect(board(page, "a").getByText("Benefits Committee").first()).toBeVisible();
         await expect(board(page, "a").getByText("Our responsibilities")).toBeVisible();
-        await expect(board(page, "a").getByRole("button", { name: "Acknowledge" })).toBeVisible();
+        await expect(
+          board(page, "a").getByRole("button", { name: "Acknowledge", exact: true }),
+        ).toBeVisible();
         await noProductName(page, "a");
       },
     );
@@ -531,7 +529,9 @@ test.describe("J03 · R-02 portal halves", () => {
       await expect(
         board(page, "b").getByText("Acknowledged by the committee · Sep 21").first(),
       ).toBeVisible();
-      await expect(board(page, "b").getByRole("button", { name: "Acknowledge" })).toHaveCount(0);
+      await expect(
+        board(page, "b").getByRole("button", { name: "Acknowledge", exact: true }),
+      ).toHaveCount(0);
     });
   });
 
@@ -582,10 +582,6 @@ test.describe("J03 · R-02 portal halves", () => {
   test("j03 18: the committee acknowledges the AU-C 265/703 letter on Nov 24", async ({
     journey,
   }) => {
-    test.fail(
-      true,
-      "POR-15 d draws three Acknowledge buttons, one per letter: R-02-T23 journey step drifts from its artboard (S35 round 2 end pass; journeys first ran then)",
-    );
     await artboardAs(journey, "victoria-lam", "POR-15", "d");
     await journey.step("j03 18: the internal control letter is new (POR-15 d)", async (page) => {
       await expect(
@@ -594,17 +590,15 @@ test.describe("J03 · R-02 portal halves", () => {
         ),
       ).toBeVisible();
       await expect(board(page, "d").getByText("Sent Nov 20 · due Dec 8")).toBeVisible();
-      await expect(board(page, "d").getByRole("button", { name: "Acknowledge" })).toBeVisible();
+      await expect(
+        board(page, "d").getByRole("button", { name: "Acknowledge", exact: true }),
+      ).toBeVisible();
     });
   });
 
   test("j03 privacy: Victoria Lam's answers and question stay invisible to Dana Kowalski and Robert Haines", async ({
     journey,
   }) => {
-    test.fail(
-      true,
-      "Dana is a Benefits Committee member, so the room names Victoria Lam: R-02-T23 journey step drifts from its artboard (S35 round 2 end pass; journeys first ran then)",
-    );
     await artboardAs(journey, "victoria-lam", "POR-15", "c");
     await journey.step(
       "j03 privacy: Victoria's two private inquiries (POR-15 c)",

@@ -471,9 +471,21 @@ function QuestionCard({ runId, item }: { runId: string; item: RunItemOut }): JSX
     if (questionId === null) return;
     skip.mutate({ path: { run_id: runId, question_id: questionId }, headers: key() });
   };
+  const keys = optionKeys(item);
   return (
+    // The card takes focus so its digits reach it from the keyboard (SHL-13 frame 5); its
+    // shortcuts are announced. Each digit sends that option's answer; the server decides.
     <li
       data-ask-card="question"
+      tabIndex={can ? 0 : undefined}
+      aria-keyshortcuts={
+        can && keys.length > 0
+          ? keys
+              .slice(0, 9)
+              .map((_, i) => String(i + 1))
+              .join(" ")
+          : undefined
+      }
       className="rounded-[10px] bg-card px-[12px] py-[10px] text-[12.5px] shadow-ask"
       onKeyDown={(e) => {
         if (!can || busy) return;
@@ -481,7 +493,7 @@ function QuestionCard({ runId, item }: { runId: string; item: RunItemOut }): JSX
           e.preventDefault();
           doSkip();
         } else if (/^[1-9]$/.test(e.key) && e.target === e.currentTarget) {
-          const picked = optionKeys(item)[Number(e.key) - 1];
+          const picked = keys[Number(e.key) - 1];
           if (picked === undefined) return;
           e.preventDefault();
           send({ option_key: picked });

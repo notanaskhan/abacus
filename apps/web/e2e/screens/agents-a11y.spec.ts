@@ -55,16 +55,15 @@ test("SHL-13: the dock is a log of state changes, its tool cards disclosure butt
   expect(await first.getAttribute("aria-expanded")).not.toBe(before);
 });
 
-test("SHL-13 dock 5: keys 1–9 pick an ask-card option", async ({ page }) => {
-  // The question card answers on a digit pressed on the card itself (P-09-T14, S33), with no
-  // radiogroup: this check predates it and fails until one of them changes (S35 round 2).
-  test.fail(true, "the ask card has no radiogroup since P-09-T14; keys answer on the card");
+test("SHL-13 dock 5: the ask card takes focus and announces keys 1–9", async ({ page }) => {
+  // The digits send that option's answer (RunPane.test.tsx, frame 5); here, the keyboard reaches
+  // the card and its shortcuts are announced (the card had no focus, so no key reached it).
   await open(page, "SHL-13", "board");
-  const card = page.locator("[data-dock='5'] [role='radiogroup']").first();
+  const card = page.locator("[data-dock='5'] [data-ask-card='question']").first();
   await expect(card).toBeVisible();
-  await card.locator("[role='radio']").first().focus();
-  await page.keyboard.press("2");
-  await expect(card.locator("[role='radio']").nth(1)).toHaveAttribute("aria-checked", "true");
+  await expect(card).toHaveAttribute("aria-keyshortcuts", /^1 2/);
+  await card.focus();
+  await expect(card).toBeFocused();
 });
 
 test("WB-09a: Segmented moves with the arrow keys", async ({ page }) => {
