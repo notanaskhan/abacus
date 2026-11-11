@@ -174,6 +174,7 @@ from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scen
 )
 from abacus.modules.agents.run_stream import badge_stream as agent_badge_stream  # P-10-T26
 from abacus.modules.agents.run_waits import on_decision_decided
+from abacus.modules.agents.run_waits import run_workflow_id as run_workflow_id
 from abacus.modules.agents.run_workflow import AgentRunInput as AgentRunInput
 from abacus.modules.agents.run_workflow import AgentRunWorkflow as AgentRunWorkflow
 from abacus.modules.agents.runs import run_initiators
@@ -234,6 +235,12 @@ from abacus.modules.agents.service import (
     screen,
     screening_results_for,
 )
+
+# P-10-T43 (DEC-4301): a workbench session's turns are runs; workbench runs them inline.
+from abacus.modules.agents.session_turns import TurnOutcome as TurnOutcome
+from abacus.modules.agents.session_turns import open_plan_child_run as open_plan_child_run
+from abacus.modules.agents.session_turns import open_turn_run as open_turn_run
+from abacus.modules.agents.session_turns import run_session_turn as run_session_turn
 from abacus.modules.agents.shadow_score import (
     DecidedNotice,
     OverrideRate,
@@ -570,6 +577,7 @@ __all__ = [
     "ThresholdEvaluation",
     "ThresholdPolicy",
     "ToolFacts",
+    "TurnOutcome",
     "UnregisteredTarget",
     "UploadReviewWorkflow",
     "VerifiedCitation",
@@ -621,6 +629,8 @@ __all__ = [
     "notice_context",
     "open_capability_run",
     "open_deterministic_run",
+    "open_plan_child_run",
+    "open_turn_run",
     "override_rate",
     "pending_suggestion",
     "pending_suggestions",
@@ -650,7 +660,9 @@ __all__ = [
     "run_log_count",
     "run_outcome",
     "run_record_hashes",
+    "run_session_turn",
     "run_v2_status",
+    "run_workflow_id",
     "screen",
     "screening_responder",
     "screening_results_for",

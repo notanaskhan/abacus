@@ -2,8 +2,8 @@
 `docs/contracts/agent-runs.md` §9. List, create, rename and delete are W-02's.
 
 A session is the thread view of one or more runs. A client a viewer can't open answers
-`locked: true` with no figures; a walled client's session is omitted (DEC-87). Every route answers
-the matrix action, then 501 until T26 and T43. Flags arrive on the Jan 27, 2028 train.
+`locked: true` with no figures; a walled client's session is omitted (DEC-87). The snapshot and
+the message post are P-10-T43's (`sessions.py`); the session stream answers 501 until T26's.
 """
 
 from __future__ import annotations
@@ -74,6 +74,9 @@ class SessionMessageIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     body: Annotated[str, Field(min_length=1, max_length=8000), Restricted]
+    # P-10-T43 (DEC-4301): the open question's item this answers; without it the body is a
+    # message (answered first, the question stays open).
+    answers_seq: Annotated[int | None, Field(ge=1), Internal] = None
 
 
 class SessionMessageAcceptedOut(BaseModel):
@@ -92,11 +95,34 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
-@sessions_router.get(
-    "/{session_id}", action="session.read", response_model=SessionSnapshotOut, errors=(501,)
-)
+@sessions_router.get("/{session_id}", action="session.read", response_model=SessionSnapshotOut)
 async def get_session_route(session_id: UUID, ctx: Ctx) -> SessionSnapshotOut:
-    _not_yet()
+    from abacus.modules.workbench.sessions import get_session
+
+    view = await get_session(ctx, session_id)
+    return SessionSnapshotOut(
+        id=view.row.id,
+        title=view.row.title,
+        origin=view.row.origin,  # type: ignore[arg-type]  # the table's CHECK holds the literal
+        state=view.row.state,  # type: ignore[arg-type]  # the table's CHECK holds the literal
+        locked=view.locked,
+        last_item_at=view.row.last_item_at,
+        items=[
+            SessionItemOut(
+                id=i.id,
+                seq=i.seq,
+                kind=i.kind,  # type: ignore[arg-type]  # the table's CHECK holds the literal
+                payload=i.payload,
+                run_id=i.run_id,
+                step_id=i.step_id,
+                actor_kind=i.actor_kind,  # type: ignore[arg-type]  # the table's CHECK
+                actor_name=i.actor_name,
+                created_at=i.created_at,
+            )
+            for i in view.items
+        ],
+        allowed_actions=view.allowed_actions,  # type: ignore[arg-type]  # message, manage
+    )
 
 
 @sessions_router.post(
@@ -104,13 +130,20 @@ async def get_session_route(session_id: UUID, ctx: Ctx) -> SessionSnapshotOut:
     action="session.create",
     response_model=SessionMessageAcceptedOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def post_session_message_route(
     session_id: UUID, body: SessionMessageIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SessionMessageAcceptedOut:
     """A write-proposing turn starts exactly one child run in `awaiting_plan_approval` (AC-S4)."""
-    _not_yet()
+    from abacus.modules.workbench.sessions import post_message
+
+    posted = await post_message(ctx, session_id, body.body, idempotency_key, body.answers_seq)
+    return SessionMessageAcceptedOut(
+        item_id=posted.item_id,
+        run_id=posted.run_id,
+        status_url=f"/v1/workbench/sessions/{session_id}",
+    )
 
 
 @sessions_router.get(

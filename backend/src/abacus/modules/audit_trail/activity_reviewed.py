@@ -12,6 +12,11 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-12 (S37): P-10-T43 workbench sessions and their turns
+        "agent_run.turn_recorded",
+        "session.created",
+        "session.message_posted",
+        "session.turn_recorded",
         # reviewed 2026-11-11 (S35 round 2): A-07-T41 AUD-23's report date and city
         "audit_report.date_set",
         # reviewed 2026-11-10 (S35): A-07-T42 post-lock additions and seal verification
