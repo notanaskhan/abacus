@@ -107,38 +107,77 @@ from abacus.modules.adjustments.api import (
     record_entry_decision,
     send_entries,
 )
-from abacus.modules.assurance.api import (
+from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
+    EQR_REVIEW_TARGET,
     PHASE_GATES,
+    RELEASE_MODE_SETTING,
+    AdditionReason,
     ExceptionRow,
+    GovernanceKind,
     MappingConfirmIn,
     MappingRunIn,
     NewFinding,
     NewRisk,
+    ReleaseRequest,
     RiskEdit,
+    acknowledge_letter,
     adopt_trial_balance,
+    archive_state,
+    create_archive_addition,
     create_risk,
+    decide_archive_addition,
+    decide_archive_lock,
     edit_risk,
+    eqr_concur,
+    eqr_mark_reviewed,
+    eqr_update_checklist,
+    filings_of,
     finding_to_deficiency,
     finding_to_misstatement,
     follows_gate,
+    g5_blockers,
+    governance_approve_and_send,
+    governance_communication,
+    governance_create,
+    governance_letter,
+    governance_request_approval,
     import_grouping_csv,
     mapping_live,
+    open_eqr_reviews,
     pass_on_sum,
     propose_materiality,
     publish_grouping_version,
     reassess_materiality,
+    record_bring_down,
     record_exceptions,
     record_finding,
     record_phase,
     record_prior_year,
     record_sum_factor,
+    release_snapshot,
+    rep_letter_approve,
+    rep_letter_edit,
+    rep_letter_mark_sent,
+    rep_letter_record_signature,
+    rep_letter_request_approval,
+    report_set_choice,
+    report_set_date,
+    report_state,
+    request_archive_lock,
+    request_release,
     request_risk_approval,
     request_severity_decision,
     request_sum_conclusion,
     route_exception,
+    run_archive_readiness,
+    run_eqr_digest,
+    run_letter_compose,
     set_misstatement_effect,
+    start_archive_lock,
     start_mapping,
+    start_release,
     sum_snapshot,
+    update_filing,
     update_profile,
 )
 from abacus.modules.collaboration.api import create_todo, open_thread
@@ -167,6 +206,7 @@ from abacus.modules.engagements.api import (
     create_draft,
     decide_acceptance,
     designate_contact,
+    get_ref,
     remove_from_team,
     send_to_partner,
     start_acceptance,
@@ -188,7 +228,10 @@ from abacus.modules.evidence.api import (
 from abacus.modules.identity.api import (
     AuthContext,
     MemberProfile,
+    authorise,
     provision_setting,
+    read_settings_section,
+    save_settings_section,
     set_demo_clock,
     set_member_profile,
 )
@@ -295,6 +338,7 @@ from abacus.modules.review.api import (
     AlreadySigned,
     create_issue,
     decide_card,
+    raise_decision_card,
     raise_review_note,
     review_note_event,
     reviewable_facts,
@@ -340,6 +384,7 @@ from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale import agent_runs_slice as _runs
+from abacus_tools.synthetic.scenarios.brightwater_hale import archive_slice as _archive
 from abacus_tools.synthetic.scenarios.brightwater_hale import collaboration_slice as _collab
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
@@ -2034,6 +2079,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     _tax_schedules.SLICE: _tax_schedules.NEEDS,  # T-03-T15: organizer v6, TAX-13's rows
     _completion.SLICE: _completion.NEEDS,  # A-06-T28: the ASC 962 checklist
     _room.SLICE: _room.NEEDS,  # R-02-T13: Northwind's Benefits Committee room
+    _archive.SLICE: _archive.NEEDS,  # A-07-T41: completion to the locked archive
     _collab.SLICE: _collab.NEEDS,  # P-05-T12: Northwind's comment and Marcus's four to-dos
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
@@ -4012,6 +4058,642 @@ async def _envelope_recorded(conn: asyncpg.Connection, _: Scenario, event: Event
         return "envelope.recorded", "envelope", str(envelope)
 
     await _bootstrap(conn, event, write)
+
+
+# --- A-07-T41 (`--slice archive`): completion to the locked archive, through the services -----
+
+
+async def _archive_item(conn: asyncpg.Connection, event: Event) -> tuple[UUID, UUID]:
+    """The event's audit (`data.audit`): its engagement and assurance work item."""
+    engagement = engagement_id_of(BY_LABEL[str(event.data["audit"])])
+    item = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
+        engagement,
+    )
+    if item is None:
+        raise LookupError(f"{event.data['audit']} has no assurance work item")
+    return engagement, cast(UUID, item)
+
+
+async def _as_route(ctx: AuthContext, engagement: UUID, action: str) -> None:
+    """The route's own check, where the service relies on its route to authorise (A-07-T37's
+    lock, A-07-T42's additions): the loader calls the service as that route does."""
+    await authorise(ctx, action, (await get_ref(ctx, engagement)).resource())
+
+
+async def _release_mode_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Grace switches the firm to in-app release (ADM-01 Defaults; A-07 §4.9)."""
+    ctx = await _staff_context(conn, event)
+    view = await read_settings_section(ctx, "defaults")
+    await save_settings_section(
+        ctx, "defaults", view.version, {RELEASE_MODE_SETTING.key: str(event.data["mode"])}
+    )
+
+
+async def _archive_letter_composed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-21 f: the letter's next draft, composed by the Agent's code run for the person."""
+    _engagement, item = await _archive_item(conn, event)
+    await run_letter_compose(await _staff_context(conn, event), item)
+
+
+async def _letter_hash(conn: asyncpg.Connection, item: UUID) -> str:
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT content_hash FROM representation_letter_versions WHERE work_item_id = $1 "
+        "ORDER BY version_no DESC LIMIT 1",
+        item,
+    )
+    if found is None:
+        raise LookupError("the representation letter has no version")
+    return str(found)
+
+
+async def _archive_letter_edited(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    _engagement, item = await _archive_item(conn, event)
+    n, wording = _archive.LETTER_EDITS[int(cast(int, event.data["edit"]))]
+    await rep_letter_edit(
+        await _staff_context(conn, event), item, n, wording, await _letter_hash(conn, item)
+    )
+
+
+async def _archive_letter_approval_requested(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    _engagement, item = await _archive_item(conn, event)
+    await rep_letter_request_approval(await _staff_context(conn, event), item)
+
+
+async def _archive_letter_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The EP approves the version she saw (fresh MFA; human only)."""
+    _engagement, item = await _archive_item(conn, event)
+    await rep_letter_approve(
+        await _staff_context(conn, event), item, await _letter_hash(conn, item)
+    )
+
+
+def _rep_envelope(audit: str) -> UUID:
+    return UUID(stable_id(f"envelope:rep-letter:{audit}"))
+
+
+async def _archive_letter_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-21 a2 → c: the approved version out to the plan administrator, dated as of the report
+    date. The envelope is written as the provider and the firm would have written it (as
+    SIG-01's are, DEC-1573); `mark_sent` is the service's own act (DEC-3302)."""
+    audit = str(event.data["audit"])
+    engagement, item = await _archive_item(conn, event)
+    client = cast(
+        UUID,
+        await tenant_value(conn, TENANT, "SELECT client_id FROM engagements WHERE id = $1",
+                           engagement),
+    )  # fmt: skip
+    signer_name = _ARCHIVE_SIGNER[audit]
+    envelope = _rep_envelope(audit)
+    sender = user_id_of(_SEATS[event.actor])
+    viewed = datetime.fromisoformat(str(event.data["viewed"]))
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO envelopes (id, tenant_id, number, purpose, form_code, policy_family, "
+            "client_id, title, provider, status, signer_order, drafted_by_kind, drafted_by, "
+            "sent_by, sent_at, created_at, updated_at, engagement_id) VALUES ($1, $2, $3, "
+            "'rep_letter', NULL, 'general', $4, $5, 'fake', 'sent', 'sequential', 'human', $6, "
+            "$6, $7, $7, $7, $8) ON CONFLICT (id) DO NOTHING",
+            envelope,
+            TENANT,
+            _ARCHIVE_ENVELOPE_NUMBER[audit],
+            client,
+            f"Representation letter · {_ARCHIVE_TITLE[audit]}",
+            sender,
+            event.at,
+            engagement,
+        )
+        contact = UUID(stable_id(f"contact:envelope:rep-letter:{audit}:{signer_name}"))
+        await conn.execute(
+            "INSERT INTO contacts (id, tenant_id, client_id, display_name, contact_kind) "
+            "VALUES ($1, $2, $3, $4, 'client_person') ON CONFLICT (id) DO NOTHING",
+            contact,
+            TENANT,
+            client,
+            signer_name,
+        )
+        signer = UUID(stable_id(f"envelope-signer:rep-letter:{audit}"))
+        await conn.execute(
+            'INSERT INTO envelope_signers (id, tenant_id, envelope_id, "order", routing_group, '
+            "party_kind, contact_id, role, identity_method, status, kba_failures, viewed_at) "
+            "VALUES ($1, $2, $3, 1, 1, 'contact', $4, 'signer', 'email_code', 'pending', 0, $5) "
+            "ON CONFLICT (id) DO NOTHING",
+            signer,
+            TENANT,
+            envelope,
+            contact,
+            viewed,
+        )
+        await _envelope_event(conn, envelope, "envelope.sent", event.at, "firm")
+        await _envelope_event(conn, envelope, "signer.viewed", viewed, "provider_webhook", signer)
+        return "envelope.recorded", "envelope", str(envelope)
+
+    await _bootstrap(conn, event, write)
+    await rep_letter_mark_sent(
+        await _staff_context(conn, event),
+        item,
+        report_date=date.fromisoformat(str(event.data["report_date"])),
+        envelope_id=envelope,
+    )
+
+
+async def _archive_letter_signed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Dana signs in POR-06 (the provider's completion), then G7 with the date check: what the
+    `envelope.completed` consumer calls (`rep_letters.record_signature`)."""
+    audit = str(event.data["audit"])
+    envelope = _rep_envelope(audit)
+    signer = UUID(stable_id(f"envelope-signer:rep-letter:{audit}"))
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "UPDATE envelope_signers SET status = 'signed', signed_at = $2, "
+            "signature_method = 'provider_adopted' WHERE id = $1",
+            signer,
+            event.at,
+        )
+        await conn.execute(
+            "UPDATE envelopes SET status = 'completed', completed_at = $2, updated_at = $2 "
+            "WHERE id = $1",
+            envelope,
+            event.at,
+        )
+        await _envelope_event(
+            conn, envelope, "signer.signed", event.at, "provider_webhook", signer
+        )
+        await _envelope_event(conn, envelope, "envelope.completed", event.at, "provider_webhook")
+        return "envelope.recorded", "envelope", str(envelope)
+
+    await _bootstrap(conn, event, write)
+    await rep_letter_record_signature(
+        TenantContext(TENANT, "system", "rep_letter_g7"),
+        envelope,
+        event.at,
+        event.at.astimezone(_CT).date(),
+    )
+
+
+async def _archive_report_choice(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-23: one structured choice, a new report version."""
+    _engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    current = await report_state(ctx.tenant, item)
+    await report_set_choice(
+        ctx,
+        item,
+        str(event.data["field"]),
+        cast(str | bool | None, event.data["value"]),
+        None,
+        current.row_version,
+    )
+
+
+async def _archive_report_dated(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    _engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    current = await report_state(ctx.tenant, item)
+    if current.report_id is None:  # Granite Peak's report: the template's defaults, v1
+        current = await report_set_choice(
+            ctx, item, "other_information", False, None, current.row_version
+        )
+    await report_set_date(
+        ctx,
+        item,
+        date.fromisoformat(str(event.data["report_date"])),
+        str(event.data["city"]),
+        current.row_version,
+    )
+
+
+async def _archive_report_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-23 b: the EP's L4 sign-off on the report version's content hash (SHL-12)."""
+    _engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    current = await report_state(ctx.tenant, item)
+    version = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT r.current_version_id FROM audit_reports r WHERE r.work_item_id = $1",
+        item,
+    )
+    if version is None or current.content_hash is None:
+        raise LookupError("the report has no version to approve")
+    await sign_target(
+        ctx,
+        "audit_report_version",
+        cast(UUID, version),
+        4,
+        current.content_hash,
+        SIGN_OFF_STATEMENTS[4].version,
+    )
+
+
+async def _eqr_review(conn: asyncpg.Connection, engagement: UUID, item: UUID) -> UUID:
+    """Thomas's review on the work item, opened on his assignment (`eqr.eligibility_approved`);
+    opened here as that consumer does when the assignment predates the checklist template."""
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM eqr_reviews WHERE work_item_id = $1", item
+    )
+    if found is None:
+        await open_eqr_reviews(
+            TenantContext(TENANT, "system", "assurance.eqr"),
+            engagement,
+            user_id_of(_SEATS[_archive.EQR]),
+        )
+        found = await tenant_value(
+            conn, TENANT, "SELECT id FROM eqr_reviews WHERE work_item_id = $1", item
+        )
+    if found is None:
+        raise LookupError("Northwind has no EQR review")
+    return cast(UUID, found)
+
+
+async def _archive_eqr_digest(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-18 d: "Assemble judgments digest", the Agent's code run for Thomas."""
+    engagement, item = await _archive_item(conn, event)
+    await _eqr_review(conn, engagement, item)
+    await run_eqr_digest(await _staff_context(conn, event), item)
+
+
+async def _archive_eqr_checklist(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Thomas works the checklist in its order: the first `done` items are done."""
+    engagement, item = await _archive_item(conn, event)
+    review = await _eqr_review(conn, engagement, item)
+    ctx = await _staff_context(conn, event)
+    rows = await tenant_rows(
+        conn,
+        TENANT,
+        "SELECT item_key, status, version FROM eqr_checklist_items WHERE eqr_review_id = $1 "
+        "ORDER BY position",
+        review,
+    )
+    for row in rows[: int(cast(int, event.data["done"]))]:
+        if row["status"] != "done":
+            await eqr_update_checklist(
+                ctx, item, str(row["item_key"]), "done", None, int(cast(int, row["version"]))
+            )
+
+
+async def _archive_eqr_note_raised(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    engagement, item = await _archive_item(conn, event)
+    review = await _eqr_review(conn, engagement, item)
+    _ref, body, assignee = _archive.EQR_NOTES[int(cast(int, event.data["n"])) - 1]
+    await raise_review_note(
+        await _staff_context(conn, event),
+        EQR_REVIEW_TARGET,
+        review,
+        anchor_kind=None,
+        anchor_ref=None,
+        body=body,
+        assignee=user_id_of(_SEATS[assignee]),
+    )
+
+
+async def _eqr_notes(conn: asyncpg.Connection, review: UUID) -> list[UUID]:
+    rows = await tenant_rows(
+        conn,
+        TENANT,
+        "SELECT id FROM review_notes WHERE target_type = $1 AND target_id = $2 "
+        "ORDER BY created_at, id",
+        EQR_REVIEW_TARGET,
+        review,
+    )
+    return [cast(UUID, r["id"]) for r in rows]
+
+
+async def _archive_eqr_note_responded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    engagement, item = await _archive_item(conn, event)
+    notes = await _eqr_notes(conn, await _eqr_review(conn, engagement, item))
+    n = int(cast(int, event.data["n"]))
+    await review_note_event(
+        await _staff_context(conn, event), notes[n - 1], "responded", _archive.EQR_NOTES[n - 1][1]
+    )
+
+
+async def _archive_eqr_notes_cleared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    for note in await _eqr_notes(conn, await _eqr_review(conn, engagement, item)):
+        await review_note_event(ctx, note, "cleared", None)
+
+
+async def _archive_eqr_cards_reviewed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Thomas marks each digest card reviewed (his own marks; INV-1)."""
+    engagement, item = await _archive_item(conn, event)
+    review = await _eqr_review(conn, engagement, item)
+    ctx = await _staff_context(conn, event)
+    rows = await tenant_rows(
+        conn,
+        TENANT,
+        "SELECT id FROM eqr_digest_cards WHERE eqr_review_id = $1 AND superseded_by IS NULL "
+        "ORDER BY source_ref",
+        review,
+    )
+    for row in rows:
+        await eqr_mark_reviewed(ctx, item, cast(UUID, row["id"]), True)
+
+
+async def _archive_eqr_concurred(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-18 b2 → c: "I was not involved in performing this engagement", step-up, G6."""
+    _engagement, item = await _archive_item(conn, event)
+    await eqr_concur(
+        await _staff_context(conn, event),
+        item,
+        not_involved=True,
+        concurrence_date=event.at.astimezone(_CT).date(),
+    )
+
+
+_SIGNER_OF_LEVEL: Final = {1: "AC", 2: _archive.SENIOR, 3: _archive.MANAGER, 4: _archive.PARTNER,
+                           5: _archive.EQR}  # fmt: skip
+
+
+async def _archive_review_closed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """G5 before release (AUD-24 a): every reviewable's outstanding level signed by the person
+    who holds it on the team, and every open note answered and cleared, through the review
+    grammar (P-04). What is outstanding is G5's own blocker list, so nothing already signed is
+    signed again."""
+    engagement, _item = await _archive_item(conn, event)
+    tenant = TenantContext(TENANT, "system", "archive_scenario")
+    for blocker in await g5_blockers(tenant, engagement):
+        kind, _sep, rest = blocker.partition(":")
+        if kind in ("unsigned", "stale"):
+            target_type, target, level_text = rest.rsplit(":", 2)
+            level = int(level_text.removeprefix("L"))
+            signer = _as_actor(event, _SIGNER_OF_LEVEL[level])
+            ctx = await _staff_context(conn, signer)
+            facts = await reviewable_facts(ctx.tenant, target_type, UUID(target))
+            with suppress(AlreadySigned):
+                await sign_target(
+                    ctx,
+                    target_type,
+                    UUID(target),
+                    level,
+                    facts.content_hash,
+                    SIGN_OFF_STATEMENTS[level].version,
+                )
+    for blocker in await g5_blockers(tenant, engagement):
+        kind, _sep, note = blocker.partition(":")
+        if kind != "review_note":
+            continue
+        status = await tenant_value(
+            conn, TENANT, "SELECT status FROM review_notes WHERE id = $1", UUID(note)
+        )
+        if status == "open":
+            await review_note_event(
+                await _staff_context(conn, _as_actor(event, "AC")), UUID(note), "responded",
+                "Addressed on the workpaper.",
+            )  # fmt: skip
+        await review_note_event(await _staff_context(conn, event), UUID(note), "cleared", None)
+
+
+async def _governance_id(conn: asyncpg.Connection, item: UUID, kind: str) -> UUID:
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM governance_communications WHERE work_item_id = $1 AND kind = $2",
+        item,
+        kind,
+    )
+    if found is None:
+        raise LookupError(f"no {kind} communication")
+    return cast(UUID, found)
+
+
+async def _archive_governance_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-22: the manager drafts the communication (or opens the one release created), then
+    asks the EP to approve it."""
+    _engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    kind = cast(GovernanceKind, str(event.data["letter"]))
+    existing = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM governance_communications WHERE work_item_id = $1 AND kind = $2",
+        item,
+        kind,
+    )
+    communication = (
+        cast(UUID, existing) if existing is not None else await governance_create(ctx, item, kind)
+    )
+    await governance_request_approval(ctx, item, communication)
+
+
+async def _archive_governance_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-22 a2 → b: the EP's approve-and-send to the Benefits Committee's room (fresh MFA)."""
+    _engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    communication = await _governance_id(conn, item, str(event.data["letter"]))
+    current = await governance_communication(ctx, item, communication)
+    await governance_approve_and_send(
+        ctx,
+        item,
+        communication,
+        governance_body_id=UUID(_room.BODY_ID),
+        recipient_contact_ids=[UUID(_room.contact_id_of(name)) for name, _ in _room.MEMBERS],
+        channel="governance_room",
+        seen_hash=str(current.content_hash),
+    )
+
+
+async def _archive_governance_acknowledged(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """POR-15: a committee member acknowledges the sent letter in the governance room."""
+    _engagement, item = await _archive_item(conn, event)
+    communication = await _governance_id(conn, item, str(event.data["letter"]))
+    ctx = await _portal_user_context(conn, str(event.data["member"]))
+    found = await governance_letter(ctx, communication)
+    await acknowledge_letter(ctx, communication, found.seen_hash)
+
+
+async def _portal_user_context(conn: asyncpg.Connection, name: str) -> AuthContext:
+    """An audit_core portal user (a client person on one engagement) signed in with their second
+    step."""
+    person = _PORTAL[name]
+    user = UUID(person.id)
+    async with as_tenant(conn, TENANT):
+        membership = await conn.fetchval(
+            "SELECT id FROM memberships WHERE tenant_id = $1 AND user_id = $2", TENANT, user
+        )
+    return AuthContext(
+        TenantContext(TENANT, "human", str(user)),
+        user,
+        cast(UUID, membership),
+        None,
+        system_now(),
+        client=True,
+        portal_second_step=True,
+    )
+
+
+async def _archive_bring_down(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Run #4240 at 9:04 AM on the report date: the procedures re-checked through the report
+    date, the reconfirmation requests sent, recorded as the EP via Agent (BringDownWorkflow's
+    own recording call; no new events)."""
+    engagement, item = await _archive_item(conn, event)
+    team = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT count(DISTINCT user_id) FROM engagement_members WHERE engagement_id = $1",
+        engagement,
+    )
+    await record_bring_down(
+        TenantContext(TENANT, "system", "bring_down"),
+        item,
+        engagement,
+        procedures=_BRING_DOWN_PROCEDURES,
+        performed=_BRING_DOWN_PROCEDURES,
+        reconfirmations=int(cast(int, team or 0)),
+    )
+
+
+async def _archive_released(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-24 c → d: "I am the engagement partner and I authorize release of this report", a
+    fresh MFA, then ReleaseWorkflow (the route's own dispatch); the load waits for its result."""
+    _engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    snap = await release_snapshot(ctx.tenant, item)
+    outcome = await request_release(ctx, item, snap.sha256, f"scenario-release:{event.id}")
+    if isinstance(outcome, ReleaseRequest):
+        run_id = await start_release(outcome)
+        handle = (await temporal_client()).get_workflow_handle(run_id)
+        await asyncio.wait_for(handle.result(), _WORKFLOW_SECONDS)
+
+
+async def _archive_form_5500_filed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-24 f: Hannah records "Filed Oct 14, 2026" with the EFAST2 acknowledgement as an
+    evidence version; Accrued never files."""
+    engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    await _as_route(ctx, engagement, "filing.update")
+    filing = next(f for f in await filings_of(ctx.tenant, item) if f.form == "form_5500")
+    await update_filing(
+        ctx,
+        item,
+        filing.id,
+        status="filed",
+        filed_on=date.fromisoformat(str(event.data["filed_on"])),
+        ack_evidence_version_id=await _stored_evidence(
+            conn, ctx, item, "EFAST2 acknowledgment Form 5500 PY2025"
+        ),
+        seen_version=filing.version,
+    )
+
+
+async def _archive_readiness(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-25: the archive readiness run (#4302) builds the binder index."""
+    _engagement, item = await _archive_item(conn, event)
+    await run_archive_readiness(await _staff_context(conn, event), item)
+
+
+async def _archive_lock_requested(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    await _as_route(ctx, engagement, "archive.request_lock")
+    await request_archive_lock(ctx, item)
+
+
+async def _archive_locked(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-25 b2 → c: "Assembly is complete", a fresh MFA, then ArchiveLockWorkflow (the seal,
+    the COMPLIANCE manifest, G9); the load waits for it."""
+    engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    await _as_route(ctx, engagement, "archive.lock")
+    state = await archive_state(ctx.tenant, item)
+    archive_id = await decide_archive_lock(
+        ctx, item, then_roll_forward=False, seen_checklist_hash=state.checklist_sha256
+    )
+    run_id = await start_archive_lock(TENANT, item, archive_id)
+    handle = (await temporal_client()).get_workflow_handle(run_id)
+    await asyncio.wait_for(handle.result(), _WORKFLOW_SECONDS)
+
+
+async def _archive_addition_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-25 d: "Add after lock…" with the PI-02 memo as an evidence version."""
+    engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    await _as_route(ctx, engagement, "archive_addition.create")
+    await create_archive_addition(
+        ctx,
+        item,
+        description=_archive.ADDITION_DESCRIPTION,
+        reason_code=cast(AdditionReason, _archive.ADDITION_REASON),
+        evidence_version_id=await _stored_evidence(conn, ctx, item, _archive.ADDITION_TITLE),
+    )
+
+
+async def _archive_addition_decided(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The EP approves the pending addition (fresh MFA): the addition manifest appended, the
+    original seal unchanged."""
+    engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    await _as_route(ctx, engagement, "archive_addition.approve")
+    pending = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM archive_additions WHERE work_item_id = $1 AND status = 'pending' "
+        "ORDER BY created_at LIMIT 1",
+        item,
+    )
+    if pending is None:
+        raise LookupError("no pending addition")
+    await decide_archive_addition(ctx, item, cast(UUID, pending), approve=True)
+
+
+async def _archive_going_concern_requested(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """AUD-19 e: the `going_concern` card for the EP, its options computed by code (A-07-T25's
+    kind; DSCR 1.32 times against the 1.25 covenant)."""
+    engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    await _as_route(ctx, engagement, "going_concern.request_decision")
+    await raise_decision_card(
+        ctx,
+        engagement_id=engagement,
+        kind="going_concern",
+        question_key="going_concern",
+        work_item_id=item,
+        raised_under="going_concern.request_decision",
+    )
+
+
+async def _archive_going_concern_decided(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    engagement, _item = await _archive_item(conn, event)
+    card = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version_no FROM decision_cards WHERE engagement_id = $1 "
+        "AND kind = 'going_concern' AND status = 'awaiting_role' ORDER BY created_at DESC LIMIT 1",
+        engagement,
+    )
+    if card is None:
+        raise LookupError("no going_concern card awaits the EP")
+    await decide_card(
+        await _staff_context(conn, event),
+        cast(UUID, card["id"]),
+        option_key=str(event.data["choice"]),
+        factors=(),
+        rationale=None,
+        seen_version=int(cast(int, card["version_no"])),
+    )
+
+
+_ARCHIVE_SIGNER: Final = {"A1": "Dana Kowalski", "A2": "Luis Ferrante"}
+_ARCHIVE_TITLE: Final = {"A1": "Northwind Robotics 401(k) Plan PY2025",
+                         "A2": "Granite Peak Outdoor Supply FY2026"}  # fmt: skip
+_ARCHIVE_ENVELOPE_NUMBER: Final = {"A1": 4101, "A2": 4102}
+_BRING_DOWN_PROCEDURES: Final = 4  # AUD-19 b: inquiry, minutes, interim statements, legal
+_WORKFLOW_SECONDS: Final = 180.0
 
 
 Handler = Callable[[asyncpg.Connection, Scenario, Event], Awaitable[None]]
@@ -6168,6 +6850,38 @@ HANDLERS: Final[dict[str, Handler]] = {
     "review.northwind_materiality_no_change": _northwind_materiality_no_change,
     "review.ridgeline_issue_created": _ridgeline_issue_created,
     "review.feld_checkpoint_saved": _feld_checkpoint_saved,
+    # A-07-T41 (`--slice archive`): completion to the locked archive, then the addition.
+    "archive.release_mode_set": _release_mode_set,
+    "archive.letter_composed": _archive_letter_composed,
+    "archive.report_choice": _archive_report_choice,
+    "archive.eqr_digest": _archive_eqr_digest,
+    "archive.eqr_checklist": _archive_eqr_checklist,
+    "archive.eqr_note_raised": _archive_eqr_note_raised,
+    "archive.eqr_note_responded": _archive_eqr_note_responded,
+    "archive.letter_edited": _archive_letter_edited,
+    "archive.letter_approval_requested": _archive_letter_approval_requested,
+    "archive.eqr_notes_cleared": _archive_eqr_notes_cleared,
+    "archive.eqr_cards_reviewed": _archive_eqr_cards_reviewed,
+    "archive.eqr_concurred": _archive_eqr_concurred,
+    "archive.letter_approved": _archive_letter_approved,
+    "archive.letter_sent": _archive_letter_sent,
+    "archive.review_closed": _archive_review_closed,
+    "archive.report_dated": _archive_report_dated,
+    "archive.report_approved": _archive_report_approved,
+    "archive.governance_drafted": _archive_governance_drafted,
+    "archive.governance_sent": _archive_governance_sent,
+    "archive.bring_down": _archive_bring_down,
+    "archive.letter_signed": _archive_letter_signed,
+    "archive.released": _archive_released,
+    "archive.form_5500_filed": _archive_form_5500_filed,
+    "archive.readiness": _archive_readiness,
+    "archive.governance_acknowledged": _archive_governance_acknowledged,
+    "archive.lock_requested": _archive_lock_requested,
+    "archive.locked": _archive_locked,
+    "archive.addition_created": _archive_addition_created,
+    "archive.addition_decided": _archive_addition_decided,
+    "archive.going_concern_requested": _archive_going_concern_requested,
+    "archive.going_concern_decided": _archive_going_concern_decided,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}

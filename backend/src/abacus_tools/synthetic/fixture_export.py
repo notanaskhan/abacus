@@ -302,10 +302,38 @@ class Profile:
     server_ids: bool = False  # the reads answer server-made ids, swapped for stand-ins
 
 
+# A-07-T41 (TASK-6735): Northwind on the report date at 10:05 AM (AUD-24 a: G5 to G7 met, the
+# also-required list ticked), read as Margaret Okonkwo: AUD-22's list, AUD-23's report and
+# AUD-24's release state. The load runs with no relay or worker (`wait=False`), so the release at
+# 10:07 and everything after it (AUD-24 d, AUD-25) is `make seed-demo SLICE=archive`'s alone.
+ARCHIVE_SNAPSHOT: Final = "2026-10-09T10:05"
+
+
+def _archive_reads() -> tuple[Read, ...]:
+    from abacus_tools.synthetic.scenarios.brightwater_hale.audits import BY_LABEL
+    from abacus_tools.synthetic.scenarios.brightwater_hale.loader import engagement_id_of
+
+    item = f"work-item:{engagement_id_of(BY_LABEL['A1'])}"
+    return tuple(
+        Read(
+            f"{_NW}-{name}",
+            "margaret-okonkwo",
+            _path(f"/v1/audits/{{0}}/{path}", item),
+            label=f"GET /v1/audits/{{work_item_id}}/{path}",
+        )
+        for name, path in (
+            ("governance", "governance-communications"),
+            ("report", "report"),
+            ("release", "release"),
+        )
+    )
+
+
 PROFILES: Final[dict[str, Profile]] = {
     "E0": Profile(SLICES, FLAGS, READS),
     SAMPLING_SNAPSHOT: Profile(("sampling",), (), _sampling_reads(), server_ids=True),
     RUN_SNAPSHOT: Profile(("agent_runs",), (), _run_reads()),
+    ARCHIVE_SNAPSHOT: Profile(("archive",), (), _archive_reads(), server_ids=True),
 }
 SNAPSHOTS: Final = tuple(PROFILES)
 

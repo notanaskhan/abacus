@@ -1,0 +1,103 @@
+"""A-07-T41 (TASK-6735; DEC-3302) on the loaded Brightwater Hale tenant: the `archive` slice
+loads Northwind to Fri Oct 9, 2026 at 10:05 AM (AUD-24 a) through the services, and the release
+snapshot reads G5, G6 and G7 met with every also-required row ticked, from the gate providers.
+The release at 10:07 and the archive after it need a relay and a worker (`make seed-demo
+SLICE=archive`); this load runs without them (`wait=False`)."""
+
+from __future__ import annotations
+
+import uuid
+from collections.abc import Iterator
+from typing import cast
+
+import asyncpg
+import pytest
+
+from abacus.kernel.config import settings
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.flags import forget_flags
+from abacus.modules.assurance.api import release_snapshot
+from abacus_tools.quality.schema_check import Database, provisioned_database
+from abacus_tools.synthetic.scenarios.brightwater_hale import loader
+from abacus_tools.synthetic.scenarios.brightwater_hale.audits import BY_LABEL
+
+from .agent_tests.support import Seeder
+from .conftest import MigratedDatabase
+
+pytestmark = pytest.mark.asyncio
+TENANT = loader.TENANT
+
+
+async def _row(seed: Seeder, sql: str, *args: object) -> asyncpg.Record | None:
+    found = await seed.rows(sql, *args)
+    return found[0] if found else None
+
+
+@pytest.fixture(scope="module")
+def own_db(migrated_db: MigratedDatabase) -> Iterator[Database]:
+    with provisioned_database(roundtrip=False) as database:
+        yield database
+    configure_engine(migrated_db.app_url)  # hand the session's database back to later tests
+
+
+async def test_ac_northwind_is_ready_to_release_at_10_05_through_the_services(
+    own_db: Database,
+    migrated_db: MigratedDatabase,
+    object_store: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    del migrated_db, object_store
+    monkeypatch.setenv("ABACUS_IDENTITY_DATABASE_URL", own_db.identity_url)
+    settings.cache_clear()
+    forget_flags()
+    await dispose_engine()
+    configure_engine(own_db.app_url)
+    await loader.load(own_db.superuser_dsn, "2026-10-09T10:05", slices=("archive",), wait=False)
+    seed = Seeder(own_db.superuser_dsn)
+    engagement = loader.engagement_id_of(BY_LABEL["A1"])
+    item = cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
+            engagement,
+        ),
+    )
+    # G6: Thomas concurred at 4:40 PM on Oct 5, as a person, with both EQR notes cleared.
+    concurred = await _row(
+        seed,
+        "SELECT concurred_by, actor_kind, concurrence_date FROM eqr_concurrences "
+        "WHERE work_item_id = $1",
+        item,
+    )
+    assert concurred is not None and concurred["actor_kind"] == "human"
+    assert concurred["concurrence_date"].isoformat() == "2026-10-05"
+    # G7: the letter signed on the report date.
+    letter = await _row(
+        seed,
+        "SELECT status, dated_as_of FROM representation_letters WHERE work_item_id = $1",
+        item,
+    )
+    assert letter is not None and letter["status"] == "signed"
+    assert letter["dated_as_of"].isoformat() == "2026-10-09"
+    # The report approved, dated Oct 9 in Chicago; the AU-C 260 completion letter sent.
+    report = await _row(
+        seed, "SELECT report_date, city FROM audit_reports WHERE work_item_id = $1", item
+    )
+    assert report is not None and report["report_date"].isoformat() == "2026-10-09"
+    assert (
+        await seed.value(
+            "SELECT status FROM governance_communications WHERE work_item_id = $1 "
+            "AND kind = 'completion_260'",
+            item,
+        )
+        == "sent"
+    )
+    snap = await release_snapshot(TenantContext(TENANT, "system", "a07t41-test"), item)
+    assert {c.gate: c.met for c in snap.gates} == {"G5": True, "G6": True, "G7": True}, snap
+    assert all(a.met for a in snap.also_required), snap.also_required
+    assert snap.report_approved
+    assert snap.blockers == ()
+    # Nothing released yet at 10:05.
+    assert (
+        await seed.value("SELECT count(*) FROM report_releases WHERE work_item_id = $1", item) == 0
+    )
