@@ -462,14 +462,15 @@ async def resolve_import(
             )
         # T-04-T30 (AC-10.2): the engine-computed lines onto their worksheet fields, inside the
         # same approved import checkpoint.
-        await mirror_engine_lines(
-            tx,
-            ctx.tenant,
-            engagement_id=engagement_id,
-            return_id=row.return_id,
-            taken=taken,
-            checkpoint_id=approved_id,
-        )
+        if approved_id is not None:  # nothing kept: no checkpoint, nothing to mirror
+            await mirror_engine_lines(
+                tx,
+                ctx.tenant,
+                engagement_id=engagement_id,
+                return_id=row.return_id,
+                taken=taken,
+                checkpoint_id=approved_id,
+            )
         status = "rejected" if rejecting else "approved"
         await repo.decide_diff(
             tx.session,

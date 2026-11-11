@@ -513,7 +513,17 @@ async def test_an_approved_write_without_a_grant_is_no_grant(world: World) -> No
         return ProposeOut(suggestion_id=uuid.uuid4(), state="saved")
 
     register_tool(
-        _tool("files.save_approved", "approved_write", "internal", ProposeIn, ProposeOut, save)
+        AgentTool(
+            name="files.save_approved",
+            kind="approved_write",
+            action="file.save",  # the grant's action (agent: deny)
+            scope_action="evidence.read",  # P-10-T38: the task-scope action it reaches with
+            description="tool.files.save_approved@v1",
+            data_class="internal",
+            input_model=ProposeIn,
+            output_model=ProposeOut,
+            handler=save,
+        )
     )
     agent = _agent()
     outcome = await call_tool(agent, _call(agent, "files.save_approved", note="x"))

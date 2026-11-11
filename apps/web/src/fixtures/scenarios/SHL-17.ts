@@ -31,3 +31,7 @@ export const scenarios = defineScenarios({
 
 export type State = keyof typeof scenarios;
 export const STATES = Object.keys(scenarios) as State[];
+
+// The screen's frames read the collaboration seed through this module (screens may reach only
+// their own fixtures/scenarios entry, plan 04 §1.7).
+export { NORTHWIND_TEAM, myTodos, todoFor } from "../seed/collaboration";

@@ -173,6 +173,7 @@ LIVE: Final = frozenset(
         "issue_send_to_client_route",
         "fix_instructions_route",
         "fix_instructions_bulk_route",
+        "issue_explain_route",  # T-04-T31 (DEC-3413): through the record type's explainer
     }
 )
 

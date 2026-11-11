@@ -2,7 +2,7 @@
 id: TASK-6820
 title: "A-07-T50: journey E2E for J03 9b and 15-19, J18 5-6, J04 12 and 14-16, J05 6 (fixme until A-08)"
 spec: SPEC-644
-acceptance_criteria: [AC-DOD-1]
+acceptance_criteria: [AC-50]
 risk_zone: green
 status: in-review
 branch: s36-a07-t50

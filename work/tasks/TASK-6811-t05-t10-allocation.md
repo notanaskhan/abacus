@@ -2,7 +2,7 @@
 id: TASK-6811
 title: "T-05-T10: E5 part 1 tax/compute/entity/allocation.py: ownership periods and interest transfers, straight percentage by period, §706(d) interim closing or proration under Reg. §1.706-4, every split through kernel.numeric.allocate"
 spec: SPEC-651
-acceptance_criteria: [AC-5.3, AC-10.1]
+acceptance_criteria: [AC-5, AC-10]
 risk_zone: amber
 status: in-review
 branch: s36-t05-t10

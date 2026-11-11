@@ -353,17 +353,20 @@ test.describe("J04 completion (A-07-T50)", () => {
   test("j04 12: Margaret decides no substantial doubt for Granite Peak", async ({ journey }) => {
     test.fixme(journey.project !== "fixture", A07_LIVE);
     await journey.as("margaret-okonkwo", a07("AUD-19", "e"));
-    await journey.step("j04 12: the going-concern question for the entity (AUD-19 e)", async (page) => {
-      await expect(
-        page
-          .getByText(
-            "Is there substantial doubt about the entity's ability to continue as a going concern within one year after the financial statements are available to be issued?",
-          )
-          .first(),
-      ).toBeVisible();
-      await expect(page.getByText("No substantial doubt").first()).toBeVisible();
-      await noAgentDecision(page);
-    });
+    await journey.step(
+      "j04 12: the going-concern question for the entity (AUD-19 e)",
+      async (page) => {
+        await expect(
+          page
+            .getByText(
+              "Is there substantial doubt about the entity's ability to continue as a going concern within one year after the financial statements are available to be issued?",
+            )
+            .first(),
+        ).toBeVisible();
+        await expect(page.getByText("No substantial doubt").first()).toBeVisible();
+        await noAgentDecision(page);
+      },
+    );
   });
 
   test.fixme(

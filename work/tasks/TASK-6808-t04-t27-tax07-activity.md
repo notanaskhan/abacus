@@ -2,7 +2,7 @@
 id: TASK-6808
 title: "T-04-T27: TAX-07 Activity and Checkpoints states a, b, b2, c, d, e, e2 and f in fixture mode on the T2 single-pane variant"
 spec: SPEC-649
-acceptance_criteria: [AC-5.1, AC-5.2, AC-5.3, AC-5.4, AC-5.5]
+acceptance_criteria: [AC-5]
 risk_zone: green
 status: in-review
 branch: s36-t04-t27

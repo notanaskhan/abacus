@@ -2,7 +2,7 @@
 id: TASK-6809
 title: "T-05-T08: E13 part 2 workpapers/compute/dag.py and tieouts.py: dependency DAG across sheets with cycle detection, deterministic evaluation order, dirty-set propagation, formula provenance; tie-out checks foot, crossfoot, tie and off-by-n returning tally states"
 spec: SPEC-651
-acceptance_criteria: [AC-3.3, AC-4.2, AC-4.3]
+acceptance_criteria: [AC-3, AC-4]
 risk_zone: amber
 status: in-review
 branch: s36-t05-t08

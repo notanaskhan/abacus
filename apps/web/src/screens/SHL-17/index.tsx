@@ -8,7 +8,7 @@ import type { PersonCandidateOut, TodoOut } from "@abacus/api-client";
 import { Button, Pill } from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { DueChip, Ring, ToDoGroup, ToDoRow } from "../../domain/collaboration";
-import { NORTHWIND_TEAM, myTodos, todoFor } from "../../fixtures/seed/collaboration";
+import { NORTHWIND_TEAM, myTodos, todoFor } from "../../fixtures/scenarios/SHL-17";
 import { COPY } from "./copy";
 import type { State } from "./scenarios";
 
@@ -247,7 +247,7 @@ function MyTodos({
     <div className="flex flex-col">
       <div className="flex gap-[4px] px-[12px] py-[6px] text-[12px]">
         <span className="rounded-[6px] bg-card px-[8px] font-medium shadow-e1">
-          {COPY.segmentOpen(page.counts.open)}
+          {COPY.segmentOpen(page.counts?.open ?? 0)}
         </span>
         <span className="px-[8px] text-ink-2">{COPY.segmentDone}</span>
       </div>
@@ -260,14 +260,14 @@ function MyTodos({
                 key={t.id}
                 todo={t}
                 today={TODAY.f}
-                onOpen={onOpenTodo}
-                onToggle={onComplete}
+                {...(onOpenTodo ? { onOpen: onOpenTodo } : {})}
+                {...(onComplete ? { onToggle: onComplete } : {})}
               />
             ))}
           </ToDoGroup>
         ) : null;
       })}
-      <p className="px-[12px] py-[8px] text-[11.5px] text-ink-3">{`${String(page.counts.open)} open · Northwind PY2025`}</p>
+      <p className="px-[12px] py-[8px] text-[11.5px] text-ink-3">{`${String(page.counts?.open ?? 0)} open · Northwind PY2025`}</p>
     </div>
   );
 }

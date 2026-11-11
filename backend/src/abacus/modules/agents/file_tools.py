@@ -25,6 +25,7 @@ only by the runtime for the call it was issued for (`approved_writes.py`).
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Annotated, Final, Literal, cast
 from uuid import UUID, uuid5
@@ -76,7 +77,7 @@ class SheetIn(BaseModel):
 
     title: Annotated[str, Field(min_length=1, max_length=31), Conf]
     rows: Annotated[list[list[CellValue]], Field(max_length=5_000), classified("restricted")] = (
-        Field(default_factory=list)
+        Field(default_factory=list[list[CellValue]])
     )
 
 
@@ -85,7 +86,9 @@ class BuildWorkbookIn(BaseModel):
 
     name: Annotated[str, Field(min_length=1, max_length=120), Conf]
     sheets: Annotated[list[SheetIn], Field(min_length=1, max_length=12), Conf]
-    citation_ids: Annotated[list[UUID], Field(max_length=200), Int] = Field(default_factory=list)
+    citation_ids: Annotated[list[UUID], Field(max_length=200), Int] = Field(
+        default_factory=list[UUID]
+    )
 
 
 class BuildWorkbookOut(BaseModel):
@@ -180,12 +183,33 @@ _ARTIFACT: Final = text(
 )
 
 
-async def _artifact(tenant: TenantContext, run_id: UUID, artifact_id: UUID) -> object:
+@dataclass(frozen=True)
+class _ArtifactRow:
+    id: UUID
+    name: str
+    size_bytes: int | None
+    storage_key: str | None
+    storage_version_id: str | None
+    sha256: str | None
+    state: str
+    cites: list[str] | None
+
+
+async def _artifact(tenant: TenantContext, run_id: UUID, artifact_id: UUID) -> _ArtifactRow:
     async with tenant_session(tenant) as session:
         row = (await session.execute(_ARTIFACT, {"id": artifact_id, "run": run_id})).first()
     if row is None:
         raise NotFound("run_artifact")
-    return row
+    return _ArtifactRow(
+        row.id,
+        str(row.name),
+        row.size_bytes,
+        row.storage_key,
+        row.storage_version_id,
+        row.sha256,
+        str(row.state),
+        row.cites,
+    )
 
 
 async def artifact_engagement(tenant: TenantContext, artifact_id: UUID) -> UUID | None:
@@ -210,8 +234,8 @@ async def propose_save(caller: ToolCaller, args: ProposeSaveIn) -> ProposeSaveOu
     row = await _artifact(agent.tenant, agent.agent_run_id, args.artifact_id)
     if row.state != "draft":
         raise DomainInvalid("artifact_not_draft")
-    name = cast(str, row.name)
-    cites = tuple(UUID(str(c)) for c in cast(list[str], row.cites or []))
+    name = row.name
+    cites = tuple(UUID(str(c)) for c in row.cites or [])
     proposal = await create_proposal(
         agent,
         engagement_id=engagement,
@@ -291,11 +315,12 @@ async def save_approved(caller: ToolCaller, args: SaveApprovedIn) -> SaveApprove
             tenant_id=agent.tenant_id,
             engagement_id=engagement,
             client_id=client,
-            title=cast(str, row.name),
+            title=row.name,
             folder_kind=ref.get("folder", "deliverables"),
             stored=stored,
             grant_id=grant_id,
             requested_by=approver,
+            agent_actor_id=agent.tenant.actor_id,
         )
         await tx.session.execute(
             text(

@@ -9,8 +9,11 @@ from __future__ import annotations
 
 from dataclasses import replace
 from decimal import Decimal
+from typing import Literal, cast
 
-from abacus.modules.tax.compute.entity.tb_pipeline import COLUMNS, TbAccount, run
+from abacus.modules.tax.compute.entity.tb_pipeline import COLUMNS, Column, Section, TbAccount, run
+
+CapitalRole = Literal["beginning", "contributions", "distributions"] | None
 
 D = Decimal
 
@@ -27,8 +30,16 @@ def _a(
     role: str | None = None,
 ) -> TbAccount:
     return TbAccount(
-        number, name, section, line, D(utb), aje=D(aje), tje=D(tje), py=D(py), capital_role=role
-    )  # type: ignore[arg-type]
+        number,
+        name,
+        cast(Section, section),
+        line,
+        D(utb),
+        aje=D(aje),
+        tje=D(tje),
+        py=D(py),
+        capital_role=cast(CapitalRole, role),
+    )
 
 
 RIDGELINE = (
@@ -107,7 +118,7 @@ def test_ac_atb_total_assets_equal_liabilities_plus_equity_and_income() -> None:
 def test_ac_every_column_foots_to_zero() -> None:
     result = run(RIDGELINE)
     for column in ("utb", "aje", "rje", "atb", "tje", "ttb"):
-        assert result.column_foots[column].ok, column  # type: ignore[index]
+        assert result.column_foots[cast(Column, column)].ok, column
     assert set(result.column_foots) == set(COLUMNS)
 
 

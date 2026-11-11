@@ -212,12 +212,30 @@ def run_minutes_from(payload: Mapping[str, object]) -> RunMinutes:
     )
 
 
+class _NothingNew(Exception):
+    """Every line was posted already (a redelivery): the unit writes nothing and rolls back, so
+    it needs no audit event and the outbox does not retry it."""
+
+
+async def _post_all(tenant: TenantContext, lines: Sequence[RunMinutes]) -> int:
+    posted = 0
+    try:
+        async with uow(tenant) as tx:
+            for line in lines:
+                posted += await _post(tx, tenant.tenant_id, line)
+            if not posted:
+                raise _NothingNew
+    except _NothingNew:
+        return 0
+    return posted
+
+
 async def on_run_completed(event: OutboxEvent) -> None:
-    """`agent_run.completed`: the run's minutes, once, on the month it completed in."""
+    """`agent_run.completed`: the run's minutes, once, on the month it completed in. A
+    redelivered event finds its row and writes nothing (S36 end pass, DEC-3417)."""
     line = run_minutes_from(event.payload)
     tenant = TenantContext(event.tenant_id, "system", f"{_READER}:{line.run_id}")
-    async with uow(tenant) as tx:
-        await _post(tx, event.tenant_id, line)
+    await _post_all(tenant, [line])
 
 
 SUBSCRIPTIONS: Final[dict[str, Handler]] = {"agent_run.completed": on_run_completed}
@@ -229,11 +247,7 @@ async def record_synthetic_minutes(tenant: TenantContext, lines: Sequence[RunMin
     takes. Synthetic firms only (DEC-1530); returns how many lines were new."""
     if not await is_synthetic_firm(tenant):
         raise NotFound("agent_minute_ledger")
-    posted = 0
-    async with uow(tenant) as tx:
-        for line in lines:
-            posted += await _post(tx, tenant.tenant_id, line)
-    return posted
+    return await _post_all(tenant, lines)
 
 
 # --- reads ---------------------------------------------------------------------------------------

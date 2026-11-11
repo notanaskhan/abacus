@@ -149,23 +149,8 @@ def is_run_step(tool: str | None) -> bool:
     return tool is not None and tool.startswith(RUN_STEP_PREFIX)
 
 
-async def _workpaper_ready(agent: AgentContext, facts: RunStepFacts) -> RunStepResult:
-    """The built-in `workpaper` step: its bound workpaper exists on the engagement (a readiness
-    check; preparing the paper is its owner's registered handler's)."""
-    code = facts.arguments.get("workpaper_code")
-    if not isinstance(code, str):
-        return RunStepResult("succeeded")  # a section with no bound paper: nothing to check
-    async with tenant_session(agent.tenant) as session:
-        found = await session.scalar(
-            text("SELECT count(*) FROM workpapers WHERE engagement_id = :e AND code = :c"),
-            {"e": facts.engagement_id, "c": code},
-        )
-    if not found:
-        return RunStepResult("failed", "workpaper_missing")
-    return RunStepResult("succeeded", records_read=1)
-
-
-register_run_step("workpaper", _workpaper_ready)
+# The `workpaper` step's handler is the workpapers module's (`workpapers/run_steps.py`; ADR-008:
+# agents never reads another module's tables or imports it).
 
 
 # --- the code plan (AC-E1, AC-E2) ----------------------------------------------------------------
@@ -315,7 +300,7 @@ async def set_auto_mode(ctx: AuthContext, engagement_id: UUID, enabled: bool) ->
         tx.record(
             "engagement_ai.auto_mode_set",
             target=Target("engagement", engagement_id),
-            after=Ref(enabled=enabled),
+            after=Ref(enabled=int(enabled)),
             scope=Scope(engagement_id=engagement_id),
         )
     return AutoMode(enabled, ctx.user_id, now)

@@ -45,6 +45,11 @@ from abacus.modules.agents.engagement_agent_workflow import (
     NEXT_TICK as ENGAGEMENT_AGENT_NEXT_TICK,
 )
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
+from abacus.modules.agents.engagement_run import (  # P-10-T39: the run-step slot's owners
+    RunStepFacts as RunStepFacts,
+)
+from abacus.modules.agents.engagement_run import RunStepResult as RunStepResult
+from abacus.modules.agents.engagement_run import register_run_step as register_run_step
 from abacus.modules.agents.engagement_runs import (
     ActiveRun,
     active_engagement_runs,
@@ -311,7 +316,7 @@ from abacus.modules.identity.api import (
     register_autonomy_level_provider,
 )
 from abacus.modules.platform.api import register_pilot_metric_source, register_usage_labeller
-from abacus.modules.review.api import register_client_request_sender
+from abacus.modules.review.api import register_client_request_sender, register_run_status_reader
 
 # P-10-T38: `file_save` proposals hold their effect on a grant (approved_writes.py).
 register_file_writes()
@@ -387,6 +392,18 @@ register_intake_candidates(intake_candidates)
 
 register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
 register_client_request_sender(send_issue_to_client)  # P-04-T31 (DEC-828)
+register_run_status_reader(run_v2_status)  # T-04-T29: the issue detail's fix-run state
+
+# P-10-T38: the approved-write workflow and its types, for the history recorder.
+from abacus.modules.agents.approved_write_workflow import (  # noqa: E402
+    ApprovedWriteInput as ApprovedWriteInput,
+)
+from abacus.modules.agents.approved_write_workflow import (  # noqa: E402
+    ApprovedWriteWorkflow as ApprovedWriteWorkflow,
+)
+from abacus.modules.agents.approved_write_workflow import (  # noqa: E402
+    approved_write_id as approved_write_id,
+)
 
 # The C6 v1.1 blocks schema and the spec v2 checks, for their generators (S31 end pass; BOUND-001).
 from abacus.modules.agents.blocks import AgentBlocks, BlocksTurn, Fact  # noqa: E402

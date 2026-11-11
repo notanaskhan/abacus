@@ -294,6 +294,9 @@ _GATE_KINDS: dict[str, GateCheck] = {}
 _FIELD_OWNERS: dict[str, FieldOwner] = {}
 _FIX_RUNNERS: dict[str, FixRunner] = {}
 _EXPLAINERS: dict[str, Explainer] = {}
+# T-04-T29: a run's v2 state, from its owner (agents registers it; review never imports agents).
+RunStatusReader = Callable[[TenantContext, UUID], Awaitable[str | None]]
+_RUN_STATUS: list[RunStatusReader] = []
 _RESERVED_ROLES: Final = frozenset({"engagement_partner", "manager", "eqr_reviewer", "signer"})
 _CODE: Final = re.compile(r"[a-z][a-z_]{0,39}")
 
@@ -465,6 +468,17 @@ async def run_fix(ctx: AuthContext, record_type: str, issue_id: UUID) -> UUID:
     if runner is None:
         raise ServiceUnavailable
     return await runner(ctx, issue_id)
+
+
+def register_run_status_reader(reader: RunStatusReader) -> None:
+    _RUN_STATUS[:] = [reader]
+
+
+async def run_status(tenant: TenantContext, run_id: UUID) -> str | None:
+    """The run's v2 state, or None when no reader is registered (the detail shows it queued)."""
+    if not _RUN_STATUS:
+        return None
+    return await _RUN_STATUS[0](tenant, run_id)
 
 
 def register_explainer(record_type: str, explainer: Explainer) -> None:

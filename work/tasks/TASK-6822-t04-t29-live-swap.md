@@ -2,7 +2,7 @@
 id: TASK-6822
 title: "T-04-T29 (partial): the issue detail's live read side for TAX-06 (fix instructions, fix run, explanations)"
 spec: SPEC-649
-acceptance_criteria: [AC-4.3, AC-4.4, AC-4.5]
+acceptance_criteria: [AC-4]
 risk_zone: green
 status: in-review
 branch: s36-t04-t29

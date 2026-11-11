@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from decimal import Decimal
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -120,13 +120,14 @@ def _install(monkeypatch: pytest.MonkeyPatch, world: _World, judgment: fr.FixJud
         if call.name == "tax.list_documents":
             return SimpleNamespace(ok=True, code=None, result={"documents": [{"id": str(K1)}]})
         if call.name == "tax.read_worksheet":
-            ws, key, value = sheets[call.arguments["worksheet_key"]]
+            ws, key, value = sheets[str(call.arguments["worksheet_key"])]
             row = {"id": str(uuid.uuid4()), "field_key": key, "value": value}
             return SimpleNamespace(
                 ok=True, code=None, result={"worksheet_id": str(ws), "fields": [row]}
             )
         if call.name == "tax.propose_field_changes":
-            world.proposed.extend(call.arguments["changes"])
+            changes = cast(list[dict[str, Any]], call.arguments["changes"])  # Any: JSON
+            world.proposed.extend(changes)
             return SimpleNamespace(ok=True, code=None, result={"proposal_id": str(uuid.uuid4())})
         raise AssertionError(call.name)
 
@@ -142,7 +143,7 @@ def _install(monkeypatch: pytest.MonkeyPatch, world: _World, judgment: fr.FixJud
     async def fields(_t: object, _v: uuid.UUID) -> tuple[object, ...]:
         return (
             SimpleNamespace(
-                field_key="k1_1065.box18a",
+                field_key=fr.CITING_BOXES[0],
                 value_text="1,550",
                 page_no=1,
                 bbox=(0.1, 0.2, 0.3, 0.4),
@@ -261,7 +262,7 @@ def test_set_fix_instructions_moves_the_issue_in_progress_and_records_the_run() 
 
 
 def test_the_runners_are_keyed_by_record_type() -> None:
-    import abacus.modules.tax.api  # noqa: F401 -- the registration
+    import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- the registration
 
     assert slots.fix_runner_registered("tax_return")
     assert slots.explainer_registered("tax_return")
@@ -314,13 +315,13 @@ async def test_the_resolution_is_the_approvers_and_needs_issue_resolve(
 
     monkeypatch.setattr(issue_runs, "tenant_session", session)
     monkeypatch.setattr("abacus.modules.identity.api.member_context", member)
-    monkeypatch.setattr(issue_runs, "_one", one)
-    monkeypatch.setattr(issue_runs, "_record", record)
+    monkeypatch.setattr(issue_runs, "issue_row", one)
+    monkeypatch.setattr(issue_runs, "record_of", record)
     monkeypatch.setattr(issue_runs, "authorise", refuse)
     monkeypatch.setattr(issue_runs, "uow", unit)
     assert await issue_runs.resolve_on_approval(tenant_id, uuid.uuid4(), "approved", by) is None
     assert seen == []  # approving the values is not the right to resolve
-    source = inspect.getsource(issue_runs.resolve_on_approval)
+    source = inspect.getsource(issue_runs._resolve_as)  # pyright: ignore[reportPrivateUsage] -- the step under test
     assert "async with uow(person.tenant)" in source  # as the person, never the system
 
 

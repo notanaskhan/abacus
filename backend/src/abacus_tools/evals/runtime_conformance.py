@@ -100,7 +100,7 @@ class Suite(_Frozen):
     version: int
     min_cases: Annotated[int, Field(ge=40)]
     thresholds: dict[str, Annotated[float, Field(ge=0, le=1)]]
-    de_case_threshold: Literal[1.0]
+    de_case_threshold: Annotated[float, Field(ge=1.0, le=1.0)]  # zero tolerance: exactly 1.0
     cost: dict[str, float]
     cases: list[ConformanceCase]
 

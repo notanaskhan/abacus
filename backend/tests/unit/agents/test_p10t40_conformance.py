@@ -14,10 +14,11 @@ from typing import cast
 
 import pytest
 
-import abacus.modules.agents.api  # noqa: F401  # registers every tool
+import abacus.modules.agents.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers every tool
 from abacus.ai_gateway import providers as p
 from abacus.ai_gateway.prompts import registry as prompts
 from abacus.modules.agents import conformance
+from abacus.modules.agents.api import ToolCallIn
 from abacus.modules.agents.conformance import (
     CAPABILITY,
     ConformanceOutput,
@@ -28,6 +29,7 @@ from abacus.modules.agents.conformance import (
 from abacus.modules.agents.harness import ToolRequest
 from abacus.modules.agents.spec_v2 import TEST_ONLY, spec_problems, spec_v2
 from abacus.modules.agents.tools.runtime import ToolOutcome
+from abacus.modules.identity.api import AgentContext
 
 SRC = Path(__file__).resolve().parents[3] / "src" / "abacus"
 
@@ -54,7 +56,7 @@ def test_its_prompt_and_every_tool_prompt_are_registered() -> None:
     registered = prompts()
     assert "runtime.conformance@v1" in registered
     tools = converse_tools(spec_v2(CAPABILITY))
-    assert len(tools) == 19
+    assert len(tools) == len(spec_v2(CAPABILITY).tools.names()) == 18
     for offered in tools:
         assert offered.spec.description in registered, offered.spec.name
 
@@ -86,14 +88,14 @@ async def test_the_ports_pair_tool_results_with_their_calls(
 ) -> None:
     seen: list[tuple[str, int]] = []
 
-    async def fake_call_tool(agent: object, call: object) -> ToolOutcome:
+    async def fake_call_tool(agent: object, call: ToolCallIn) -> ToolOutcome:
         seen.append((call.name, call.attempt))
         return ToolOutcome(name=call.name, ok=True, result={"id": "x"}, active_ms=1)
 
     monkeypatch.setattr(conformance, "call_tool", fake_call_tool)
     ports = ConversePorts(
-        cast(object, _Agent()), spec_v2(CAPABILITY), 1, "How many requests are open?"
-    )  # type: ignore[arg-type]
+        cast(AgentContext, _Agent()), spec_v2(CAPABILITY), 1, "How many requests are open?"
+    )
     assert ports.messages[0].role == "user"
     for request in (
         ToolRequest("t1", "requests.list_items", {}),
@@ -102,7 +104,7 @@ async def test_the_ports_pair_tool_results_with_their_calls(
         result = await ports.tool(request)
         assert result.ok
     assert seen == [("requests.list_items", 1), ("engagements.read", 2)]
-    ports._flush()  # pyright: ignore[reportPrivateUsage]
+    ports._flush()  # pyright: ignore[reportPrivateUsage] -- the port's own flush under test
     last = ports.messages[-1]
     assert last.role == "user" and len(last.content) == 2
     assert all(isinstance(b, p.ToolResultBlock) for b in last.content)

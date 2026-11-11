@@ -14,6 +14,7 @@ import pytest
 
 from abacus.modules.tax.compute.entity.allocation import (
     AllocationInvalid,
+    Segment,
     allocate_item,
     boundary,
     segments,
@@ -31,7 +32,7 @@ OPENING = {GP: D(2), SHAH: D(38), PSV: D(35), FELD: D(25)}
 AFTER = {GP: D(2), SHAH: D(38), PSV: D(30), PS2: D(5), FELD: D(25)}  # the 6/30/2025 assignment
 
 
-def _ridgeline() -> tuple:
+def _ridgeline() -> tuple[Segment, ...]:
     return segments(
         date(2025, 1, 1),
         date(2025, 12, 31),

@@ -2,7 +2,7 @@
 id: TASK-6819
 title: "T-04-T31: issues.fix_runner for tax returns and Explain… (ghost-value proposals, In progress, resolution as the approver, verified citations only)"
 spec: SPEC-649
-acceptance_criteria: [AC-4.3, AC-4.4, AC-4.5]
+acceptance_criteria: [AC-4]
 risk_zone: red
 status: in-review
 branch: s36-t04-t31

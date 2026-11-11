@@ -30,11 +30,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import OutboxEvent, Ref, Scope, Target, uow
 from abacus.modules.identity.api import AgentContext, AuthContext, Forbidden, authorise
-from abacus.modules.review.issues import (  # pyright: ignore[reportPrivateUsage] -- the module's own
-    SUBJECT,
-    _one,
-    _record,
-)
+from abacus.modules.review.issues import SUBJECT, issue_row, record_of
 from abacus.modules.review.sealing import open_text, seal_text
 
 Purpose = Literal["fix", "explain"]
@@ -109,7 +105,7 @@ async def fix_instructions_of(agent: AgentContext, issue_id: UUID) -> str | None
 async def record_fix_proposal(agent: AgentContext, issue_id: UUID, proposal_id: UUID) -> None:
     """The fix run's proposal, once per run (a replayed activity writes nothing new)."""
     await _run_for(agent, issue_id, "fix")
-    current = await _one(agent.tenant, issue_id)
+    current = await issue_row(agent.tenant, issue_id)
     async with uow(agent.tenant) as tx:
         written = await tx.session.scalar(
             _FIX_PROPOSAL,
@@ -135,7 +131,7 @@ async def record_explanation(
 ) -> UUID:
     """Explain's verified text (the caller kept only verified citations and code's numbers)."""
     await _run_for(agent, issue_id, "explain")
-    current = await _one(agent.tenant, issue_id)
+    current = await issue_row(agent.tenant, issue_id)
     sealed = await seal_text(
         agent.tenant, body, SUBJECT, issue_id, "explanation", agent.agent_run_id
     )
@@ -183,13 +179,20 @@ async def resolve_on_approval(
     person = await member_context(tenant_id, by_user)
     if person is None:  # the approver left the firm since: the issue stays for a person
         return None
+    return await _resolve_as(person, tenant_id, issue_id, proposal_id)
+
+
+async def _resolve_as(
+    person: AuthContext, tenant_id: UUID, issue_id: UUID, proposal_id: UUID
+) -> UUID | None:
+    """The resolution, as the approving person (`issue.resolve` on the issue's record)."""
     try:
-        current = await _one(person.tenant, issue_id)
+        current = await issue_row(person.tenant, issue_id)
     except NotFound:
         return None
     if current.status not in RESOLVABLE:
         return None
-    _, resource, _ = await _record(person, current.record_type, current.record_id)
+    _, resource, _ = await record_of(person, current.record_type, current.record_id)
     try:
         await authorise(person, "issue.resolve", resource)
     except Forbidden:

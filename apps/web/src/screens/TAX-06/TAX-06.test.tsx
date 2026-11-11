@@ -4,6 +4,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { COPY, DETAILS, FRAMES, issuesCsv, OPEN, RESOLVED } from "./copy";
 import { Issues } from "./Issues";
 
+/** The value, or the test fails here (no non-null assertions in tests). */
+function must<T>(v: T | null | undefined): T {
+  if (v === null || v === undefined) throw new Error("expected a value");
+  return v;
+}
+
 afterEach(cleanup);
 
 describe("TAX-06 issues", () => {
@@ -36,7 +42,7 @@ describe("TAX-06 issues", () => {
     const onAccept = vi.fn();
     const { rerender } = render(<Issues frame="a" onAccept={onAccept} />);
     expect(screen.getByText("4")).toBeTruthy();
-    fireEvent.click(screen.getAllByRole("button", { name: COPY.accept })[0]!);
+    fireEvent.click(must(screen.getAllByRole("button", { name: COPY.accept })[0]));
     expect(onAccept).toHaveBeenCalledWith("box18a");
     rerender(<Issues frame="a" openCount={3} />);
     expect(screen.getByText("3")).toBeTruthy();
@@ -45,7 +51,7 @@ describe("TAX-06 issues", () => {
   it("Reject asks a reason", () => {
     const onReject = vi.fn();
     render(<Issues frame="a" onReject={onReject} />);
-    fireEvent.click(screen.getAllByRole("button", { name: COPY.reject })[0]!);
+    fireEvent.click(must(screen.getAllByRole("button", { name: COPY.reject })[0]));
     fireEvent.click(screen.getByRole("menuitem", { name: COPY.rejectReasons[1] }));
     expect(onReject).toHaveBeenCalledWith("box18a", COPY.rejectReasons[1]);
   });
@@ -54,7 +60,7 @@ describe("TAX-06 issues", () => {
     render(<Issues frame="b" />);
     const resolve = screen.getByRole<HTMLButtonElement>("button", { name: `✓ ${COPY.resolve}` });
     expect(resolve.disabled).toBe(true);
-    expect(screen.getByText(DETAILS.draftK1!.resolveDisabled!)).toBeTruthy();
+    expect(screen.getByText(must(must(DETAILS.draftK1).resolveDisabled))).toBeTruthy();
     expect(screen.getByText(COPY.whatItBlocks)).toBeTruthy();
   });
 
@@ -79,7 +85,7 @@ describe("TAX-06 issues", () => {
 
   it("c: waiting on client, already requested", () => {
     render(<Issues frame="c" />);
-    expect(screen.getByText(DETAILS.estimates!.note!)).toBeTruthy();
+    expect(screen.getByText(must(must(DETAILS.estimates).note))).toBeTruthy();
     expect(screen.getByRole("button", { name: "Ask the client…" })).toBeTruthy();
   });
 
@@ -100,7 +106,7 @@ describe("TAX-06 issues", () => {
   });
 
   it("the CSV quotes and never lets a spreadsheet evaluate a cell", () => {
-    const csv = issuesCsv([{ ...OPEN[1]!, title: "=SUM(A1)" }]);
+    const csv = issuesCsv([{ ...must(OPEN[1]), title: "=SUM(A1)" }]);
     expect(csv.split("\n")[0]).toBe(COPY.csvHeader);
     expect(csv).toContain("'=SUM(A1)");
   });

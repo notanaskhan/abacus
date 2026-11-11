@@ -5,6 +5,12 @@ import { dueWords } from "../../domain/collaboration";
 import { COPY } from "./copy";
 import { STATES, TodoDrawer } from "./index";
 
+/** The value, or the test fails here (no non-null assertions in tests). */
+function must<T>(v: T | null | undefined): T {
+  if (v === null || v === undefined) throw new Error("expected a value");
+  return v;
+}
+
 afterEach(cleanup);
 
 describe("SHL-17 to-do drawer", () => {
@@ -35,7 +41,8 @@ describe("SHL-17 to-do drawer", () => {
     render(
       <TodoDrawer state="c" onComplete={onComplete} onReopen={onReopen} onCreate={onCreate} />,
     );
-    fireEvent.click(screen.getByRole("button", { name: COPY.markDone }));
+    // The ring and the footer both mark it done; the footer's is the primary action.
+    fireEvent.click(must(screen.getAllByRole("button", { name: COPY.markDone }).at(-1)));
     expect(onComplete).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: COPY.undo }));
     expect(onReopen).toHaveBeenCalledTimes(1);
@@ -68,7 +75,7 @@ describe("SHL-17 to-do drawer", () => {
     const onReopen = vi.fn();
     render(<TodoDrawer state="e" onReopen={onReopen} />);
     expect(screen.getByText(COPY.doneLine)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: COPY.reopen }));
+    fireEvent.click(must(screen.getAllByRole("button", { name: COPY.reopen }).at(-1)));
     expect(onReopen).toHaveBeenCalled();
   });
 

@@ -33,3 +33,14 @@ async def label_workpapers(tenant: TenantContext, ids: Sequence[str]) -> Mapping
 
 def register() -> None:
     register_audit_tenant_labeler("workpaper", label_workpapers)
+
+
+async def workpaper_code_exists(tenant: TenantContext, engagement_id: UUID, code: str) -> bool:
+    """P-10-T39: whether the engagement's file holds a workpaper with this code (the engagement
+    run's readiness check reads it through the api, OWN-001)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT count(*) FROM workpapers WHERE engagement_id = :e AND code = :c"),
+            {"e": engagement_id, "c": code},
+        )
+    return bool(found)
