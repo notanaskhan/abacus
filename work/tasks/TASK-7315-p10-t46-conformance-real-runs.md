@@ -2,7 +2,7 @@
 id: TASK-7315
 title: "P-10-T46: Real eval runs of runtime.conformance on the direct and Bedrock routes in the evaluation account, HMAC-signed reports, evals/baselines.yaml cost rows"
 spec: SPEC-647
-acceptance_criteria: [AC-EV6]
+acceptance_criteria: [AC-H4]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: red
 status: in-progress
 branch: s37-p10-t46

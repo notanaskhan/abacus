@@ -25774,6 +25774,10 @@ export type K1ActivityOut = {
      * Released On
      */
     released_on?: string | null;
+    /**
+     * Source Package Id
+     */
+    source_package_id?: string | null;
     status: K1ActivityStatus;
     /**
      * Treatments
@@ -43998,6 +44002,20 @@ export type ServiceOrganizationPatchIn = {
 export type ServiceOrganizationStatus = 'pending' | 'gap_found' | 'bridge_letter_received' | 'reliance_concluded' | 'certification_accepted' | 'no_reliance' | 'not_relevant';
 
 /**
+ * SessionCreateIn
+ *
+ * T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the
+ * record's owner authorises the person and names the capability. W-02 adds unbound sessions.
+ */
+export type SessionCreateIn = {
+    subject_ref: SessionSubjectRefIn;
+    /**
+     * Title
+     */
+    title?: string;
+};
+
+/**
  * SessionItemOut
  *
  * One insert-only entry. `payload` has `v` (its schema version) and holds a verified item.
@@ -44044,6 +44062,16 @@ export type SessionItemOut = {
 };
 
 /**
+ * SessionListOut
+ */
+export type SessionListOut = {
+    /**
+     * Items
+     */
+    items: Array<SessionSummaryOut>;
+};
+
+/**
  * SessionMessageAcceptedOut
  */
 export type SessionMessageAcceptedOut = {
@@ -44067,6 +44095,10 @@ export type SessionMessageAcceptedOut = {
  * A question open: this is answered first and the question stays open (AC-S2).
  */
 export type SessionMessageIn = {
+    /**
+     * Answers Seq
+     */
+    answers_seq?: number | null;
     /**
      * Body
      */
@@ -44137,6 +44169,42 @@ export type SessionSnapshotOut = {
      * Origin
      */
     origin: 'manual' | 'schedule' | 'trigger' | 'test' | 'saved_prompt' | 'engagement_run';
+    /**
+     * State
+     */
+    state: 'live' | 'running' | 'awaiting_answer' | 'ready_for_review' | 'complete' | 'failed';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SessionSubjectRefIn
+ */
+export type SessionSubjectRefIn = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: string;
+};
+
+/**
+ * SessionSummaryOut
+ */
+export type SessionSummaryOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Last Item At
+     */
+    last_item_at?: string | null;
     /**
      * State
      */
@@ -57154,10 +57222,6 @@ export type ListCapabilitiesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListCapabilitiesError = ListCapabilitiesErrors[keyof ListCapabilitiesErrors];
@@ -126277,10 +126341,6 @@ export type K1ActivityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type K1ActivityError = K1ActivityErrors[keyof K1ActivityErrors];
@@ -126397,10 +126457,6 @@ export type K1OverrideErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type K1OverrideError = K1OverrideErrors[keyof K1OverrideErrors];
@@ -126751,10 +126807,6 @@ export type K1ActivitiesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type K1ActivitiesError = K1ActivitiesErrors[keyof K1ActivitiesErrors];
@@ -130136,6 +130188,109 @@ export type SumSnapshotResponses = {
 
 export type SumSnapshotResponse = SumSnapshotResponses[keyof SumSnapshotResponses];
 
+export type ListSessionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Subject Ref
+         */
+        subject_ref: string;
+    };
+    url: '/v1/workbench/sessions';
+};
+
+export type ListSessionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
+
+export type ListSessionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionListOut;
+};
+
+export type ListSessionsResponse = ListSessionsResponses[keyof ListSessionsResponses];
+
+export type CreateSessionData = {
+    body: SessionCreateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/workbench/sessions';
+};
+
+export type CreateSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CreateSessionError = CreateSessionErrors[keyof CreateSessionErrors];
+
+export type CreateSessionResponses = {
+    /**
+     * Successful Response
+     */
+    201: SessionSummaryOut;
+};
+
+export type CreateSessionResponse = CreateSessionResponses[keyof CreateSessionResponses];
+
 export type GetSessionData = {
     body?: never;
     headers?: {
@@ -130175,10 +130330,6 @@ export type GetSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetSessionError = GetSessionErrors[keyof GetSessionErrors];
@@ -130301,10 +130452,6 @@ export type PostSessionMessageErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PostSessionMessageError = PostSessionMessageErrors[keyof PostSessionMessageErrors];

@@ -5,8 +5,8 @@ Run: python -m abacus_tools.workflows.record_s37_runs <output-directory>
 Activities are stubbed (no database), so each history pins the command sequence only:
 
 - `session-v1-read-only.json`: one message, one inline turn, then `close`.
-- `session-v1-child-run.json`: one message whose turn proposes writes; the child
-  `AgentRunWorkflow` (a stub here) starts once, abandoned on close.
+- `session-v1-child-run.json`: one message whose turn proposes writes; the child's workflow
+  is started once through the start-child activity (kernel.dispatch).
 - `session-v1-side-queue.json`: a message whose turn asks a question, a second message answered
   while the question stays open, then the answer, then `close`.
 - `run-events-prune-v1.json` (P-10-T44): one prune activity.
@@ -21,13 +21,13 @@ import sys
 from pathlib import Path
 from typing import Any, Final
 
-from temporalio import activity, workflow
+from temporalio import activity
 from temporalio.client import Client
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents.api import AgentRunInput, RunEventsPruneWorkflow
-from abacus.modules.workbench.session_workflow import (
+from abacus.modules.agents.api import RunEventsPruneWorkflow
+from abacus.modules.workbench.api import (
     SessionInput,
     TurnDone,
     WorkbenchSessionWorkflow,
@@ -38,14 +38,7 @@ from abacus_tools.workflows.histories import decoded_and_scrubbed
 
 _TENANT: Final = "00000000-0000-4000-8000-0000000000aa"
 _QUEUE: Final = "record-s37"
-_CHILD: Final = "00000000-0000-4000-8000-0000000000c1"
-
-
-@workflow.defn(name="AgentRunWorkflow")
-class _StubRun:
-    @workflow.run
-    async def run(self, p: AgentRunInput) -> str:
-        return "awaiting_plan_approval"
+_CHILD: Final = "00000000-0000-4000-8000-0000000000c1"  # the child run the turn wrote
 
 
 class _Stubs:
@@ -65,7 +58,11 @@ class _Stubs:
         async def prune() -> int:
             return 3
 
-        return [turn, prune]
+        @activity.defn(name="workbench.session.start_child")
+        async def start_child(tenant_id: str, run_id: str) -> None:
+            return None
+
+        return [turn, start_child, prune]
 
 
 def _session_id(n: int) -> str:
@@ -94,7 +91,7 @@ async def _record(out: Path, stack: Stack) -> None:
         async with Worker(
             client,
             task_queue=queue,
-            workflows=[WorkbenchSessionWorkflow, _StubRun],
+            workflows=[WorkbenchSessionWorkflow],
             activities=_Stubs(scenario).activities(),
         ):
             sid = _session_id(n)

@@ -12,7 +12,12 @@ from abacus.modules.agents.api import register_session_links
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.workbench.run_links import session_links
 from abacus.modules.workbench.session_activities import SESSION_ACTIVITIES
-from abacus.modules.workbench.session_workflow import WorkbenchSessionWorkflow
+from abacus.modules.workbench.session_workflow import (
+    SessionInput,
+    TurnDone,
+    WorkbenchSessionWorkflow,
+    session_workflow_id,
+)
 from abacus.modules.workbench.sessions import (
     SessionLocked,
     SessionSummary,
@@ -40,10 +45,14 @@ __all__ = [
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "SessionInput",
     "SessionLocked",
     "SessionSummary",
+    "TurnDone",
+    "WorkbenchSessionWorkflow",
     "get_session",
     "open_session",
     "post_message",
+    "session_workflow_id",
     "sessions_for_subject",
 ]

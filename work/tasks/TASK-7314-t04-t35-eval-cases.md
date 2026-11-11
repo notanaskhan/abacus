@@ -2,7 +2,7 @@
 id: TASK-7314
 title: "T-04-T35: Eval cases complete, labelled with the tax CPA: drafter mapping and self-check, K-1 treatment labels (8 kinds, SALY changes), residency, explain, fix runner, assistant Q&A"
 spec: SPEC-649
-acceptance_criteria: [AC-T35]
+acceptance_criteria: [AC-9]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: red
 status: in-review
 branch: s37-t04-t35

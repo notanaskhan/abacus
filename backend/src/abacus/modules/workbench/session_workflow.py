@@ -7,8 +7,9 @@ reads nothing else from them. Each is one turn, taken in arrival order from the 
 (`SessionQueue`: a message typed while a question is open is answered first and the question
 stays open, AC-S2). A turn is one activity (`workbench.session.turn`): the run's inline read-only
 harness turn and its items. When the turn proposes writes, the activity has written exactly one
-child run and the workflow starts that child's `AgentRunWorkflow` (abandoned on close, so the run
-outlives the session's workflow), which waits in `awaiting_plan_approval` (AC-S4).
+child run and the workflow asks an activity to start that child's `AgentRunWorkflow` through
+`kernel.dispatch` (so the run outlives the session's workflow), which waits in
+`awaiting_plan_approval` (AC-S4).
 
 The workflow ends after an hour with nothing to do (the next post starts it again), or on
 `close` once nothing waits, and keeps its
@@ -27,7 +28,6 @@ from temporalio.common import RetryPolicy
 from temporalio.exceptions import ActivityError
 
 with workflow.unsafe.imports_passed_through():
-    from abacus.modules.agents.api import AgentRunInput, run_workflow_id
     from abacus.modules.workbench.session_queue import SessionQueue, SessionWork
 
 SESSION_ID_PREFIX: Final = "session:"
@@ -115,12 +115,11 @@ class WorkbenchSessionWorkflow:
                 done = TurnDone()  # the turn's run failed; the session takes the next turn
             self._queue.turn_ended(work, done.asked)
             if done.child_run_id is not None:
-                await self._start_child(p.tenant_id, done.child_run_id)
-
-    async def _start_child(self, tenant_id: str, run_id: str) -> None:
-        await workflow.start_child_workflow(
-            "AgentRunWorkflow",
-            AgentRunInput(tenant_id, run_id),
-            id=run_workflow_id(tenant_id, run_id),
-            parent_close_policy=workflow.ParentClosePolicy.ABANDON,
-        )
+                # The child run's own workflow, started through kernel.dispatch (DISPATCH-001);
+                # it outlives this session's workflow.
+                await workflow.execute_activity(
+                    "workbench.session.start_child",
+                    args=[p.tenant_id, done.child_run_id],
+                    start_to_close_timeout=timedelta(seconds=30),
+                    retry_policy=_RETRY,
+                )

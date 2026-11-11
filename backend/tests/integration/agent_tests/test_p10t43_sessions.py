@@ -178,7 +178,7 @@ async def test_acs4_a_write_proposing_turn_writes_exactly_one_child_run(
     session_id = await _session(seed, world, hannah)
     posted = await _post(net, hannah, session_id, "k-3", {"body": "Save the workbook to Files"})
     assert posted.status_code == 202, posted.text
-    plan = [
+    plan: list[dict[str, object]] = [
         {
             "key": "s1",
             "label": "Save the workbook to Files",

@@ -2,7 +2,7 @@
 id: TASK-7304
 title: "T-05-T17: Migration 0821 tax_entity_core (expand-only): entity_return_profiles, partners, ownership_periods, interest_transfers, allocation_structures (insert-only versions, human-only approval), allocation_rungs, allocation_results (insert-only), k1_packages.partner_id"
 spec: SPEC-651
-acceptance_criteria: [AC-M1]
+acceptance_criteria: [AC-0]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: amber
 status: in-review
 branch: s37-t05-t17

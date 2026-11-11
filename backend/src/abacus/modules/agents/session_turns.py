@@ -32,6 +32,7 @@ from decimal import Decimal
 from typing import Any, Final, cast
 from uuid import UUID
 
+from pydantic import ValidationError
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext
@@ -164,21 +165,50 @@ def _tenant(tenant_id: UUID, run_id: UUID) -> TenantContext:
     return TenantContext(tenant_id, "system", f"{_READER}:{run_id}")
 
 
+class PlanInvalid(ValueError):
+    """A proposed plan code refuses before any child run: a code, never the model's text."""
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+def approved_write_actions(spec: AgentSpecV2) -> Mapping[str, str]:
+    """The spec's approved_write tools and the action a person's grant unlocks for each."""
+    found = registered_tools()
+    return {n: found[n].action for n in spec.tools.names() if found[n].kind == "approved_write"}
+
+
 def plan_steps(
     plan: Mapping[str, object], spec: AgentSpecV2, approver_user_id: UUID
 ) -> list[dict[str, object]]:
-    """A turn's proposed plan as the run's deterministic plan: one step per proposed step, in
-    order (each depends on the one before), a write step naming the action its tool writes and
-    the session owner as its approver. `validate_plan` decides whether it may await approval."""
+    """A turn's proposed plan as the child run's plan (DEC-4301, DEC-4317): one step per proposed
+    step, in order (each depends on the one before), each tool step carrying the model's arguments
+    once they validate against the tool's input model (`PlanInvalid` otherwise, before any run is
+    written). A propose step needs no approver (its proposal is decided in SHL-10); an
+    approved_write step names the action its grant unlocks and the session owner as its approver.
+    `validate_plan` then decides whether the plan may await the person's approval."""
     raw = plan.get("steps")
     steps = cast(list[Mapping[str, object]], raw if isinstance(raw, list) else [])
-    writes = write_actions(spec)
+    found = registered_tools()
+    offered = frozenset(spec.tools.names())
+    grants = approved_write_actions(spec)
     out: list[dict[str, object]] = []
     for index, step in enumerate(steps):
         key = f"s{index + 1}"
         tool = str(step["tool"]) if step.get("tool") else None
-        action = writes.get(tool or "")
-        is_write = bool(step.get("write")) or action is not None
+        arguments: dict[str, object] = {}
+        if tool is not None:
+            if tool not in offered:
+                raise PlanInvalid("tool_not_in_spec")
+            raw_args = step.get("arguments")
+            given = cast(dict[str, object], raw_args) if isinstance(raw_args, dict) else {}
+            try:
+                parsed = found[tool].input_model.model_validate(given)
+            except ValidationError:
+                raise PlanInvalid("invalid_arguments") from None
+            arguments = cast(dict[str, object], parsed.model_dump(mode="json"))
+        action = grants.get(tool or "")
         out.append(
             {
                 "key": key,
@@ -186,10 +216,10 @@ def plan_steps(
                 "level": index,
                 "kind": "tool" if tool else "narration",
                 "tool": tool,
-                "arguments": {},
+                "arguments": arguments,
                 "depends_on": [f"s{index}"] if index else [],
-                "writes": [action] if is_write and action else [],
-                "approver_user_id": str(approver_user_id) if is_write else None,
+                "writes": [action] if action else [],
+                "approver_user_id": str(approver_user_id) if action else None,
                 "reads_clients": [],
             }
         )
@@ -224,11 +254,16 @@ async def run_session_turn(tenant_id: UUID, run_id: UUID, request: str) -> TurnO
             client_scope=clients,
         )
     if outcome.status in ("completed", "plan_proposed"):
+        try:
+            steps = plan_steps(outcome.plan or {}, spec, agent.initiator.user_id)
+        except PlanInvalid as refused:
+            await complete_run_activity(t, r, "failed", refused.code)
+            return TurnOutcome("failed", failure=refused.code, client_scope=clients)
         await complete_run_activity(t, r, "succeeded", None)
         return TurnOutcome(
             outcome.status,
             blocks=dict(outcome.blocks) if outcome.blocks is not None else None,
-            plan=[dict(s) for s in plan_steps(outcome.plan or {}, spec, agent.initiator.user_id)],
+            plan=[dict(x) for x in steps],
             unsupported=len(outcome.unsupported),
             records_read=outcome.records_read,
             client_scope=clients,
@@ -314,3 +349,21 @@ async def open_plan_child_run(
             scope=Scope(engagement_id=parent.engagement_id),
         )
     return child
+
+
+async def dispatch_run(tenant_id: UUID, run_id: UUID) -> None:
+    """Start a child run's `AgentRunWorkflow` through `kernel.dispatch` (DISPATCH-001): the
+    session's workflow asks for it through an activity once the child's row exists."""
+    from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+
+    from abacus.kernel.dispatch import dispatch
+    from abacus.modules.agents.run_waits import run_workflow_id
+    from abacus.modules.agents.run_workflow import AgentRunInput, AgentRunWorkflow
+
+    await dispatch(
+        AgentRunWorkflow,
+        AgentRunInput(str(tenant_id), str(run_id)),
+        id=run_workflow_id(str(tenant_id), str(run_id)),
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )

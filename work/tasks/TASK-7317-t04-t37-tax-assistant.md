@@ -2,7 +2,7 @@
 id: TASK-7317
 title: "T-04-T37: tax.assistant v1 loop capability: spec v2 loop, prompt tax.assistant@v1, workbench session bound to a tax_return, read and compute tools plus propose_field_changes, availability with consent and boundary reasons, History per return"
 spec: SPEC-649
-acceptance_criteria: [AC-T37]
+acceptance_criteria: [AC-6, AC-11]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: red
 status: in-review
 branch: s37-t04-t37
@@ -23,7 +23,7 @@ the agents-off state with no model call.
   document text) compiled into `_specs_v2.py`; prompt `ai_gateway/prompts/tax.assistant/v1.txt`.
 - Inline turns stay read-only (P-10-T43's `ReadOnlyPorts`); a change answers a plan whose one
   child run proposes the field changes (SHL-10 approves; the checkpoint is the review's).
-- `tax/assistant_sessions.py` and routes `POST/GET /v1/tax/returns/{id}/assistant-sessions`
+- `POST/GET /v1/workbench/sessions` with `subject_ref` (the T-04 §4.3 route; tax registers its resolver in `agents.api.register_session_subject`)
   (`session.create`/`session.read`, `tax_return.read` on the return): availability first
   (`agents.api.capability_ready`, P-10-T45's reasons); unavailable answers 409
   `assistant_unavailable` with `facts.reason` and opens nothing.

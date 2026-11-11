@@ -2,7 +2,7 @@
 id: TASK-7303
 title: "P-10-T45: GET /v1/agents/capabilities?engagement_id= from flags, autonomy policy, boundary facts and consent, with no model call"
 spec: SPEC-647
-acceptance_criteria: [AC-T45]
+acceptance_criteria: [AC-R4]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: red
 status: in-review
 branch: s37-p10-t45

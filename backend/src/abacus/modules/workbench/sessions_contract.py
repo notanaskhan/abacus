@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Header, Response
+from fastapi import Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
@@ -87,7 +87,77 @@ class SessionMessageAcceptedOut(BaseModel):
     status_url: Annotated[str, Internal]
 
 
+class SessionSubjectRefIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Annotated[str, Field(pattern=r"^[a-z_]{1,40}$"), Internal]
+    id: Annotated[UUID, Internal]
+
+
+class SessionCreateIn(BaseModel):
+    """T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the
+    record's owner authorises the person and names the capability. W-02 adds unbound sessions."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    subject_ref: SessionSubjectRefIn
+    title: Annotated[str, Field(min_length=1, max_length=200), Confidential] = "Assistant"
+
+
+class SessionSummaryOut(BaseModel):
+    model_config = _frozen()
+
+    id: Annotated[UUID, Internal]
+    title: Annotated[str, Confidential]
+    state: Annotated[SessionState, Internal]
+    last_item_at: Annotated[datetime | None, Internal] = None
+
+
+class SessionListOut(BaseModel):
+    model_config = _frozen()
+
+    items: Annotated[list[SessionSummaryOut], Confidential]
+
+
 sessions_router = AbacusRouter(prefix="/v1/workbench/sessions", tags=["workbench sessions"])
+
+
+@sessions_router.post(
+    "", action="session.create", response_model=SessionSummaryOut, status_code=201, errors=(409,)
+)
+async def create_session_route(body: SessionCreateIn, ctx: Ctx) -> SessionSummaryOut:
+    """409 `capability_unavailable` with `facts.reason` (consent_7216, ai_excluded, paused, …):
+    TAX-08's agents-off state; nothing is opened and no model is called (DF-04)."""
+    from abacus.modules.workbench.sessions import open_subject_session
+
+    session_id = await open_subject_session(
+        ctx, body.subject_ref.kind, body.subject_ref.id, body.title
+    )
+    return SessionSummaryOut(id=session_id, title=body.title, state="live")
+
+
+@sessions_router.get("", action="session.read", response_model=SessionListOut)
+async def list_sessions_route(
+    ctx: Ctx, subject_ref: Annotated[str, Query(pattern=r"^[a-z_]{1,40}:[0-9a-f-]{36}$")]
+) -> SessionListOut:
+    """The person's own sessions on one record (TAX-08 History), newest first."""
+    from abacus.modules.workbench.sessions import subject_sessions
+
+    kind, _, ident = subject_ref.partition(":")
+    rows = await subject_sessions(ctx, kind, UUID(ident))
+    return SessionListOut(
+        items=[
+            SessionSummaryOut(
+                id=r.id,
+                title=r.title,
+                state=r.state,  # type: ignore[arg-type]  # the table's CHECK holds the literal
+                last_item_at=r.last_item_at,
+            )
+            for r in rows
+        ]
+    )
+
+
 agent_badge_router = AbacusRouter(prefix="/v1/me/agent-events", tags=["workbench sessions"])
 
 

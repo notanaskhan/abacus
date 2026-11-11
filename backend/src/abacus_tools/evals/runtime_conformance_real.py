@@ -29,7 +29,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
-from typing import Final
+from typing import Final, cast
 
 import yaml
 
@@ -55,7 +55,9 @@ def median_cost(attempts: Sequence[Attempt]) -> Decimal | None:
 
 
 def baseline(tier: str, path: Path = BASELINES) -> Decimal | None:
-    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    raw = cast(
+        "dict[str, dict[str, object]]", yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    )
     row = raw.get(AGENT) or {}
     value = row.get(tier)
     return Decimal(str(value)) if value is not None else None

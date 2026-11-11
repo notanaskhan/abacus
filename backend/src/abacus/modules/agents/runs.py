@@ -620,10 +620,12 @@ async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
     # P-10-T44 (DEC-4302): an ended v2 run answers its frozen bytes while its rows hold still.
     body = await frozen_body(ctx.tenant, run_id, trace.projection, RENDERER_VERSION, build)
     digest = hashlib.sha256(body).hexdigest()
-    frozen_rows = json.loads(body).get("rows")
+    frozen_rows = cast("dict[str, object]", json.loads(body)).get("rows")
     manifest: dict[str, object] = {
         "run_id": str(run_id),
-        "rows": len(frozen_rows) if isinstance(frozen_rows, list) else len(trace.rows),
+        "rows": len(cast("list[object]", frozen_rows))
+        if isinstance(frozen_rows, list)
+        else len(trace.rows),
         "sha256": digest,
         "renderer_version": RENDERER_VERSION,
         # P-09-T01 (DEC-2801): the export inherits the caller's projection, so an admin's

@@ -2,7 +2,7 @@
 id: TASK-7305
 title: "T-05-T14: E5 part 2, targeted waterfall with hypothetical liquidation at book value (return of capital, preferred return on unreturned LP capital, GP catch-up, promote and residual) and the back-solve plug; preview mode; every check foots exactly"
 spec: SPEC-651
-acceptance_criteria: [AC-5.4]
+acceptance_criteria: [AC-5]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: amber
 status: in-review
 branch: s37-t05-t14

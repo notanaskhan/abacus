@@ -34,7 +34,7 @@ def _person(*, client: bool) -> SimpleNamespace:
 )
 async def test_act9_a_portal_principal_never_holds_a_firm_topic(topic: str) -> None:
     with pytest.raises(events.TopicRefused):
-        await events._authorised(_person(client=True), [topic])  # type: ignore[arg-type]  # pyright: ignore[reportPrivateUsage]
+        await events._authorised(_person(client=True), [topic])  # type: ignore[arg-type]
 
 
 async def test_an_unknown_topic_kind_is_refused_fail_closed() -> None:

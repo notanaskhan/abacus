@@ -34,6 +34,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.tax.k1_treatments import ActivityView, TreatmentView
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Internal = classified("internal")
@@ -304,27 +305,27 @@ class K1ActivityOut(BaseModel):
     source_package_id: Annotated[UUID | None, Internal] = None
 
 
-def _k1_treatment_out(t: object) -> K1TreatmentOut:
+def _k1_treatment_out(t: TreatmentView) -> K1TreatmentOut:
     return K1TreatmentOut(
-        id=t.id,  # type: ignore[attr-defined]  # a TreatmentView
-        line=t.line,  # type: ignore[attr-defined]
-        treatment=t.treatment,  # type: ignore[attr-defined]
-        status=K1TreatmentStatus(t.status),  # type: ignore[attr-defined]
-        changed_vs_year=t.changed_vs_year,  # type: ignore[attr-defined]
-        decided_by_name=t.decided_by_name,  # type: ignore[attr-defined]
-        version=t.version,  # type: ignore[attr-defined]
+        id=t.id,
+        line=t.line,
+        treatment=t.treatment,
+        status=K1TreatmentStatus(t.status),
+        changed_vs_year=t.changed_vs_year,
+        decided_by_name=t.decided_by_name,
+        version=t.version,
     )
 
 
-def _k1_out(a: object) -> K1ActivityOut:
+def _k1_out(a: ActivityView) -> K1ActivityOut:
     return K1ActivityOut(
-        id=a.id,  # type: ignore[attr-defined]  # an ActivityView
-        label=a.label,  # type: ignore[attr-defined]
-        status=K1ActivityStatus(a.status),  # type: ignore[attr-defined]
-        released_on=a.released_on.date() if a.released_on else None,  # type: ignore[attr-defined]
-        treatments=[_k1_treatment_out(t) for t in a.treatments],  # type: ignore[attr-defined]
-        pending_proposal_id=a.pending_proposal_id,  # type: ignore[attr-defined]
-        source_package_id=a.source_package_id,  # type: ignore[attr-defined]
+        id=a.id,
+        label=a.label,
+        status=K1ActivityStatus(a.status),
+        released_on=a.released_on.date() if a.released_on else None,
+        treatments=[_k1_treatment_out(t) for t in a.treatments],
+        pending_proposal_id=a.pending_proposal_id,
+        source_package_id=a.source_package_id,
     )
 
 
@@ -665,64 +666,6 @@ async def k1_override_route(treatment_id: UUID, body: K1OverrideIn, ctx: Ctx) ->
     view = await get_k1_activity(ctx, await activity_of_treatment(ctx, treatment_id))
     row = next(t for t in view.treatments if t.id == treatment_id)
     return _k1_treatment_out(row)
-
-
-class AssistantOpenIn(BaseModel):
-    model_config = _strict()
-
-    title: Annotated[str, Field(min_length=1, max_length=200), Confidential] = "Assistant"
-
-
-class AssistantSessionOut(BaseModel):
-    """T-04-T37 (DEC-4316): one TAX-08 thread; `GET /v1/workbench/sessions/{id}` reads it."""
-
-    model_config = _frozen()
-
-    id: Annotated[UUID, Internal]
-    title: Annotated[str, Confidential]
-    state: Annotated[str, Internal]
-    last_item_at: Annotated[datetime | None, Internal] = None
-
-
-class AssistantHistoryOut(BaseModel):
-    model_config = _frozen()
-
-    items: Annotated[list[AssistantSessionOut], Confidential]
-
-
-@workspace_router.post(
-    f"{_R}/assistant-sessions",
-    action="session.create",
-    response_model=AssistantSessionOut,
-    status_code=201,
-    errors=(409,),
-)
-async def open_assistant_route(
-    return_id: UUID, body: AssistantOpenIn, ctx: Ctx
-) -> AssistantSessionOut:
-    """409 `assistant_unavailable` with `facts.reason` (consent_7216, ai_excluded, paused, …):
-    TAX-08's agents-off state; nothing is opened and no model is called."""
-    from abacus.modules.tax.assistant_sessions import open_assistant
-
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    session_id = await open_assistant(ctx, return_id, body.title)
-    return AssistantSessionOut(id=session_id, title=body.title, state="live")
-
-
-@workspace_router.get(
-    f"{_R}/assistant-sessions", action="session.read", response_model=AssistantHistoryOut
-)
-async def assistant_history_route(return_id: UUID, ctx: Ctx) -> AssistantHistoryOut:
-    from abacus.modules.tax.assistant_sessions import assistant_history
-
-    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    rows = await assistant_history(ctx, return_id)
-    return AssistantHistoryOut(
-        items=[
-            AssistantSessionOut(id=r.id, title=r.title, state=r.state, last_item_at=r.last_item_at)
-            for r in rows
-        ]
-    )
 
 
 @workspace_router.get(

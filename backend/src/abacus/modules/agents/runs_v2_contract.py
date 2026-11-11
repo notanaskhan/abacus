@@ -17,7 +17,7 @@ landed with P-10-T33 (`agents/commands.py`); each keeps 501 in `errors` (the stu
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn, cast, get_args
+from typing import Annotated, Literal, cast, get_args
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import AGENT_RUNTIME_V2, ENGAGEMENT_RUN_ENABLED, REALTIME_SSE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.agents import commands
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
@@ -386,10 +386,6 @@ async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
     action is still declared and checked once the route has a resource (its build task)."""
     if not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 def _plan_out(plan: commands.PlanView) -> RunPlanOut:

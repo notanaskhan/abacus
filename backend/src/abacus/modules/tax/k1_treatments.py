@@ -31,10 +31,10 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import ClassVar, Final, cast
+from typing import Any, ClassVar, Final, cast
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import Row, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.crypto import seal
@@ -126,11 +126,17 @@ class ActivityView:
     source_package_id: UUID | None  # shown only with both engagements readable (DEC-88)
 
 
-_ACTIVITIES = text(
+_ACTIVITIES_OF_RETURN = text(
     "SELECT a.id, a.tax_return_id, a.engagement_id, a.issuer_name, a.issuer_form, "
     "a.ownership_pct, a.source_package_id, a.k1_state, a.released_at, r.tax_year "
     "FROM k1_activities a JOIN tax_returns r ON r.work_item_id = a.tax_return_id "
-    "WHERE {where} ORDER BY a.issuer_name, a.id"
+    "WHERE a.tax_return_id = :r ORDER BY a.issuer_name, a.id"
+)
+_ACTIVITY = text(
+    "SELECT a.id, a.tax_return_id, a.engagement_id, a.issuer_name, a.issuer_form, "
+    "a.ownership_pct, a.source_package_id, a.k1_state, a.released_at, r.tax_year "
+    "FROM k1_activities a JOIN tax_returns r ON r.work_item_id = a.tax_return_id "
+    "WHERE a.id = :a"
 )
 _TREATMENTS = text(
     "SELECT id, k1_activity_id, kind, resolved, prior_year, changed_vs_prior, status, "
@@ -146,6 +152,14 @@ def _value_of(raw: object) -> str | None:
         value = found.get("v", found.get("value"))
         return None if value is None else str(value)
     return None
+
+
+def _saly_year(prior: object) -> int | None:
+    """The SALY year a changed treatment compares with ("Changed vs 2024")."""
+    if not isinstance(prior, dict):
+        return None
+    year = cast(dict[str, object], prior).get("year")
+    return int(str(year)) if year else None
 
 
 def treatment_text(resolved: object, override: object) -> str:
@@ -188,10 +202,12 @@ async def _source_visible(ctx: AuthContext, package_id: UUID | None) -> UUID | N
 
 
 async def _views(
-    ctx: AuthContext, session: AsyncSession, rows: Sequence[object]
+    ctx: AuthContext, session: AsyncSession, rows: Sequence[Row[Any]]
 ) -> list[ActivityView]:
-    ids = [r.id for r in rows]  # type: ignore[attr-defined]  # SQL rows
-    treatments = (await session.execute(_TREATMENTS, {"ids": ids})).all() if ids else []
+    ids = [r.id for r in rows]
+    treatments: Sequence[Row[Any]] = (
+        (await session.execute(_TREATMENTS, {"ids": ids})).all() if ids else []
+    )
     names = await display_names(sorted({t.decided_by for t in treatments if t.decided_by}))
     by_activity: dict[UUID, list[TreatmentView]] = {}
     for t in treatments:
@@ -199,16 +215,10 @@ async def _views(
             TreatmentView(
                 id=t.id,
                 kind=t.kind,
-                line=LINE_OF_KIND.get(t.kind, t.kind),
+                line=LINE_OF_KIND.get(str(t.kind), str(t.kind)),
                 treatment=treatment_text(t.resolved, t.override_value),
                 status=t.status,
-                changed_vs_year=(
-                    int(str(cast(dict[str, object], t.prior_year).get("year")))
-                    if t.changed_vs_prior
-                    and isinstance(t.prior_year, dict)
-                    and cast(dict[str, object], t.prior_year).get("year")
-                    else None
-                ),
+                changed_vs_year=_saly_year(t.prior_year) if t.changed_vs_prior else None,
                 decided_by_name=names.get(t.decided_by) if t.decided_by else None,
                 version=int(t.version_no),
                 proposal_id=t.proposal_id,
@@ -216,21 +226,21 @@ async def _views(
         )
     out: list[ActivityView] = []
     for r in rows:
-        mine = sorted(by_activity.get(r.id, []), key=lambda v: KINDS.index(v.kind))  # type: ignore[attr-defined]
+        mine = sorted(by_activity.get(r.id, []), key=lambda v: KINDS.index(v.kind))
         pending = next(
             (v.proposal_id for v in mine if v.status == "proposed" and v.proposal_id), None
         )
-        pct = r.ownership_pct  # type: ignore[attr-defined]
+        pct = r.ownership_pct
         share = f" · {Decimal(pct).normalize():f}%" if pct is not None else ""
         out.append(
             ActivityView(
-                id=r.id,  # type: ignore[attr-defined]
-                label=f"Schedule K-1 (Form {r.issuer_form}) · {r.issuer_name}{share}",  # type: ignore[attr-defined]
-                status=r.k1_state,  # type: ignore[attr-defined]
-                released_on=r.released_at,  # type: ignore[attr-defined]
+                id=r.id,
+                label=f"Schedule K-1 (Form {r.issuer_form}) · {r.issuer_name}{share}",
+                status=r.k1_state,
+                released_on=r.released_at,
                 treatments=mine,
                 pending_proposal_id=pending,
-                source_package_id=await _source_visible(ctx, r.source_package_id),  # type: ignore[attr-defined]
+                source_package_id=await _source_visible(ctx, r.source_package_id),
             )
         )
     return out
@@ -239,21 +249,13 @@ async def _views(
 async def list_k1_activities(ctx: AuthContext, return_id: UUID) -> list[ActivityView]:
     await _authorised(ctx, return_id)
     async with tenant_session(ctx.tenant) as session:
-        rows = (
-            await session.execute(
-                text(_ACTIVITIES.text.format(where="a.tax_return_id = :r")), {"r": return_id}
-            )
-        ).all()
+        rows = (await session.execute(_ACTIVITIES_OF_RETURN, {"r": return_id})).all()
         return await _views(ctx, session, rows)
 
 
 async def get_k1_activity(ctx: AuthContext, activity_id: UUID) -> ActivityView:
     async with tenant_session(ctx.tenant) as session:
-        rows = (
-            await session.execute(
-                text(_ACTIVITIES.text.format(where="a.id = :a")), {"a": activity_id}
-            )
-        ).all()
+        rows = (await session.execute(_ACTIVITY, {"a": activity_id})).all()
     if not rows:
         raise NotFound("k1_activity")
     await _authorised(ctx, rows[0].tax_return_id)
@@ -607,7 +609,7 @@ async def on_package_released(event: OutboxEvent) -> None:
         receiving = (await session.execute(_RECEIVING, {"p": package})).all()
     final_raw = cast(dict[str, object], raw) if isinstance(raw, dict) else {}
     final = {str(k): Decimal(str(v)) for k, v in final_raw.items() if v is not None}
-    moved = moved_boxes(draft, final) if final else frozenset()
+    moved: frozenset[str] = moved_boxes(draft, final) if final else frozenset[str]()
     for activity in receiving:
         async with uow(tenant) as tx:
             await tx.session.execute(_RELEASE, {"a": activity.id})

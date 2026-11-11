@@ -2,7 +2,7 @@
 id: TASK-7308
 title: "T-05-T18: Eval suites part 1: evals/tax_account_mapper and evals/tax_agreement_reader with Brightwater Hale cases, expert labels (pending the tax CPA), adversarial cases; thresholds frozen"
 spec: SPEC-651
-acceptance_criteria: [AC-T18]
+acceptance_criteria: [AC-0]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: red
 status: in-review
 branch: s37-t05-t18

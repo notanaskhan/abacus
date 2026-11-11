@@ -34,9 +34,9 @@ def test_a_changed_threshold_is_refused(agent: te.Agent, tmp_path: Path) -> None
 
 def test_the_mapper_context_never_carries_an_amount() -> None:
     raw = te.load("tax_account_mapper")
-    cases = [te.MapperCase.model_validate(c) for c in raw["cases"]]  # type: ignore[union-attr]
+    cases = [te.MapperCase.model_validate(c) for c in raw["cases"]]  # type: ignore[union-attr]  # a JSON value or a test double
     clean = [c for c in cases if c.category != "seeded"]
-    published = frozenset(str(k) for k in raw["published_keys"])  # type: ignore[union-attr]
+    published = frozenset(str(k) for k in raw["published_keys"])  # type: ignore[union-attr]  # a JSON value or a test double
     for case in clean:
         grades = {g.grader: g.passed for g in te.mapper_grades(case, published)}
         assert grades["no_amount_in_context"], case.id

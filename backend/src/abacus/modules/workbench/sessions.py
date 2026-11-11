@@ -26,7 +26,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import ClassVar, Final, Literal, cast
+from typing import Any, ClassVar, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -38,7 +38,7 @@ from abacus.kernel.dispatch import signal_with_start
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.agents.api import capability_ready, open_turn_run
+from abacus.modules.agents.api import capability_ready, open_turn_run, subject_engagement
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import (
     AuthContext,
@@ -62,6 +62,12 @@ SYNTHETIC_DEFAULT: Final = "runtime.conformance"
 ITEMS_PAGE: Final = 500
 
 Viewer = Literal["open", "locked", "omitted"]
+
+
+class CapabilityUnavailable(DomainConflict):
+    """DF-04: the session's capability can't run here now (`facts.reason`)."""
+
+    code: ClassVar[str] = "capability_unavailable"
 
 
 class SessionLocked(DomainConflict):
@@ -117,19 +123,37 @@ def ref_of(refs: Sequence[Mapping[str, str]], kind: str) -> str | None:
     return None
 
 
-async def viewer_access(ctx: AuthContext, clients: Sequence[UUID]) -> Viewer:
-    """DEC-87 for one viewer over a session's `client_scope` (AC-S3)."""
+async def viewer_access(
+    ctx: AuthContext, clients: Sequence[UUID], opened: frozenset[UUID] = frozenset()
+) -> Viewer:
+    """DEC-87 for one viewer over a session's `client_scope` (AC-S3). `opened` are the clients the
+    viewer already reads through the session's engagement (its client); any other client needs
+    the viewer's own `client.read`. A wall on any client omits the session."""
     if not clients:
         return "open"
     walls = await walled_from(ctx.tenant, ctx.user_id)
     if any(c in walls for c in clients):
         return "omitted"
     for client in clients:
+        if client in opened:
+            continue
         if not await could(
             ctx, ctx.user_id, "client.read", Resource.client(ctx.tenant_id, client)
         ):
             return "locked"
     return "open"
+
+
+async def _engagement_client(ctx: AuthContext, row: SessionRow) -> frozenset[UUID]:
+    """The session's engagement's client, which a person who may read the session reads."""
+    engagement = ref_of(row.context_refs, "engagement")
+    if engagement is None:
+        return frozenset()
+    try:
+        ref = await get_ref(ctx, UUID(engagement))
+    except NotFound:
+        return frozenset()
+    return frozenset({ref.client_id})
 
 
 async def _readable(ctx: AuthContext, row: SessionRow) -> None:
@@ -174,10 +198,10 @@ async def get_session(ctx: AuthContext, session_id: UUID) -> SessionView:
         if row is None:
             raise NotFound("session")
         await _readable(ctx, row)
-        access = await viewer_access(ctx, row.client_scope)
+        access = await viewer_access(ctx, row.client_scope, await _engagement_client(ctx, row))
         if access == "omitted":
             raise NotFound("session")
-        raw = (
+        raw: Sequence[Any] = (
             []
             if access == "locked"
             else (await session.execute(_ITEMS, {"id": session_id, "page": ITEMS_PAGE})).all()
@@ -258,7 +282,7 @@ async def post_message(
         if row is None or row.deleted:
             raise NotFound("session")
         if row.owner_user_id != ctx.user_id:
-            raise Forbidden("session.create", "not_owner")
+            raise Forbidden("session.create", "attribute")  # only the owner posts
         again = (
             await session.execute(_BY_KEY, {"id": session_id, "kind": kind, "key": key})
         ).first()
@@ -274,7 +298,7 @@ async def post_message(
             )
             if asked is None:
                 raise NotFound("session_question")
-    if await viewer_access(ctx, row.client_scope) != "open":
+    if await viewer_access(ctx, row.client_scope, await _engagement_client(ctx, row)) != "open":
         raise SessionLocked
     engagement = ref_of(row.context_refs, "engagement")
     capability = await capability_of(ctx.tenant, row)
@@ -414,3 +438,25 @@ async def sessions_for_subject(
             )
         ).all()
     return [SessionSummary(r.id, r.title, r.state, r.last_item_at) for r in rows]
+
+
+async def open_subject_session(ctx: AuthContext, kind: str, subject_id: UUID, title: str) -> UUID:
+    """A session bound to one record (T-04-T37): its owner authorises the person and names the
+    capability. Availability is read first; an unavailable one opens nothing (no model call)."""
+    engagement, capability = await subject_engagement(ctx, kind, subject_id)
+    ready, reason = await capability_ready(ctx, engagement, capability)
+    if not ready:
+        raise CapabilityUnavailable(facts={"reason": reason or "capability_unavailable"})
+    return await open_session(
+        ctx,
+        title=title,
+        origin="manual",
+        engagement_id=engagement,
+        capability=capability,
+        subject=(kind, subject_id),
+    )
+
+
+async def subject_sessions(ctx: AuthContext, kind: str, subject_id: UUID) -> list[SessionSummary]:
+    await subject_engagement(ctx, kind, subject_id)  # the person may read the record
+    return await sessions_for_subject(ctx, kind, subject_id)

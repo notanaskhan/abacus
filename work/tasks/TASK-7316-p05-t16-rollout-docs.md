@@ -2,7 +2,7 @@
 id: TASK-7316
 title: "P-05-T16: Rollout and docs: RB-01 flag-flip and rollback section, final contract doc, CL-1 consolidation ticket, flag renewal calendar, canary flip in the Tue Mar 28 window"
 spec: SPEC-650
-acceptance_criteria: [AC-DOD-2, AC-DOD-9]
+acceptance_criteria: [AC-1]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: green
 status: in-progress
 branch: s37-p05-t16

@@ -81,7 +81,7 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.tax_entity import main as entity_main
 
         return entity_main(
-            args.agent,  # pyright: ignore[reportArgumentType] -- one of the two suites
+            args.agent,
             cast(Path, args.out),
             "fast" if args.subset == "fast" else "full",
         )

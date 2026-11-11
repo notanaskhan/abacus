@@ -242,7 +242,12 @@ from abacus.modules.agents.service import (
     screen,
     screening_results_for,
 )
+from abacus.modules.agents.session_subjects import (
+    register_session_subject as register_session_subject,
+)
+from abacus.modules.agents.session_subjects import subject_engagement as subject_engagement
 from abacus.modules.agents.session_turns import TurnOutcome as TurnOutcome
+from abacus.modules.agents.session_turns import dispatch_run as dispatch_run
 from abacus.modules.agents.session_turns import open_plan_child_run as open_plan_child_run
 from abacus.modules.agents.session_turns import open_turn_run as open_turn_run
 from abacus.modules.agents.session_turns import run_session_turn as run_session_turn
@@ -620,6 +625,7 @@ __all__ = [
     "create_screening_run",
     "create_suggestion",
     "deterministic_run_facts",
+    "dispatch_run",
     "draft",
     "draft_follow_ups",
     "effective_ai_policy",
@@ -663,6 +669,7 @@ __all__ = [
     "register_proposal_adapter",
     "register_section_source",
     "register_session_links",
+    "register_session_subject",
     "register_suggestion_applier",
     "register_suggestion_target",
     "register_threshold_policy",
@@ -693,6 +700,7 @@ __all__ = [
     "start_screening",
     "start_section_draft",
     "starts_in_shadow",
+    "subject_engagement",
     "template_drafts_router",
     "text_part",
     "tool_output_for_model",

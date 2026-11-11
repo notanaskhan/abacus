@@ -194,11 +194,11 @@ async def test_a_release_that_moves_basis_re_proposes_instead_of_editing(
     )
     await k1.on_package_released(
         OutboxEvent(
-            id=uuid.uuid4(),
+            event_id=uuid.uuid4(),
             tenant_id=world.tenant_id,
             event_type="k1_package.released",
             payload={"package_id": str(package), "work_item_id": str(issuing)},
-        )  # type: ignore[call-arg]  # the relay's record
+        )
     )
     status = await seed.value(
         "SELECT status FROM k1_treatments WHERE k1_activity_id = $1 AND kind = 'basis_at_risk'",

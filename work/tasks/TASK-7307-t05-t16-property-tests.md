@@ -2,7 +2,7 @@
 id: TASK-7307
 title: "T-05-T16: Property tests (Hypothesis) for E1, E5, E6 and E13: footing, conservation to 100.000000%, idempotence on inputs_hash, Σ K-1 = K for random structures, DAG acyclicity and dirty-set minimality, export-to-parse round trip; mutation floor wired for tax/compute/entity and workpapers/compute"
 spec: SPEC-651
-acceptance_criteria: [AC-T16]
+acceptance_criteria: [AC-0]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: amber
 status: in-review
 branch: s37-t05-t16
