@@ -77,6 +77,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("governance_comm.approve_send", "release", "engagement_partner"),
     ("archive_addition.approve", "sign_off", "engagement_partner"),
     ("report.release", "release", "engagement_partner"),
+    ("archive.lock", "release", "engagement_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),
@@ -107,6 +108,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/audits/{work_item_id}/archive/additions/{addition_id}/reject",
         "archive_addition.approve",
     ),
+    ("POST", "/v1/audits/{work_item_id}/archive/lock", "archive.lock"),
     ("POST", "/v1/audits/{work_item_id}/ebp/participants/{participant_id}/reveals", "pii.reveal"),
     (
         "POST",
@@ -138,6 +140,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "acceptance.complete_review",
     ),
     ("POST", "/v1/engagements/{engagement_id}/audit-events/export", "export.create"),
+    ("POST", "/v1/engagements/{engagement_id}/completion/archive/lock", "archive.lock"),
     ("POST", "/v1/engagements/{engagement_id}/completion/release", "report.release"),
     ("POST", "/v1/engagements/{engagement_id}/independence/conclude", "independence.conclude"),
     ("POST", "/v1/engagements/{engagement_id}/letter/approve", "letter.approve"),

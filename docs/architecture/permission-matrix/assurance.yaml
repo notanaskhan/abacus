@@ -15,7 +15,7 @@ actions:
   eqr.concur:               {reviewer: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # G6: only the assigned EQR (the service checks; 403 eqr_only), never on the team that performed it; A-07-T18 adds function_in(eqr) and mfa_recent with the live handler (DEC-2261)
   report.approve:           {engagement_partner: allow, agent: deny, independence: required}
   report.release:           {engagement_partner: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required, mfa_recent: required}   # G8; the server re-checks G5-G7 in the same unit. A-07-T30 (DEC-3107): fresh MFA with the live handler (DEC-2261). A-07 adds fresh MFA with the step-up flow
-  archive.lock:             {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # G9; afterwards the engagement is archived and read-only
+  archive.lock:             {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required, mfa_recent: required}   # G9 (A-07-T49, DEC-3411: fresh MFA attached with T37's live handler); afterwards the engagement is archived and read-only
   # --- A-07 EQR and completion (docs/contracts/audit-completion.md; A-07-T04, DEC-2230) ---
   # Every final verb denies the agent, the system and every client principal (I-AGENT-NEVER).
   # The EQR's own acts take function_in(eqr): the work item's assignment, never the team.

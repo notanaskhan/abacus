@@ -153,3 +153,6 @@ actions:
   # A-07-T30 (DEC-3107): G8 with its live handler.
   - action: report.release
     group: release
+  # A-07-T49 (DEC-3411): G9, attached with A-07-T37's live lock handler.
+  - action: archive.lock
+    group: release

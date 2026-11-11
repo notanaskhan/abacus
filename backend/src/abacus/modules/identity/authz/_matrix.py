@@ -286,6 +286,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "mfa_recent": "required",
     },
     "archive.read": {
         "engagement_partner": "allow",
