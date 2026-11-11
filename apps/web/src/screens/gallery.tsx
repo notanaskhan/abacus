@@ -2602,6 +2602,22 @@ function Wb09Artboard({ params }: { params: FixtureParams }): JSX.Element | null
   const ready = useAgentScenario(state, params.as);
   if (!ready) return null;
   const open = WB09_OPENS[state];
+  // `held=1` (P-09-T18 parity): the drawer drawn in place in the 480 × 840 box it fills inside
+  // the window (top, right and bottom 10), as the handoff crops it; the live drawer otherwise.
+  if (params.held === "1") {
+    return (
+      <div key={state} data-artboard={state}>
+        <div data-held-drawer className="flex h-[840px] w-[480px]">
+          <TraceDrawer
+            runId={open.runId}
+            held
+            onClose={() => undefined}
+            {...(open.view === undefined ? {} : { initialView: open.view })}
+          />
+        </div>
+      </div>
+    );
+  }
   return (
     <div key={state} data-artboard={state} className="h-[900px]">
       <TraceDrawer

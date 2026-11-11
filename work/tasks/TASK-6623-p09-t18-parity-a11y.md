@@ -58,3 +58,12 @@ and the keyboard and reduced-motion suites pass.
   WB-09 shot is a size mismatch. Per the A-01-T33 rule, `shl-13.window` and `wb-09{a,b,c}.window`
   drop `locked` and carry the measured figure or the reason as their deviation. Follow-up: a WB-09
   gallery frame that draws the WB-01 window behind the drawer, then re-measure and lock a, b, c.
+- 2026-11-11 (WB-09 frame): WB-09 a, b and c are measurable. `TraceDrawer` takes `held` (the C-08
+  drawer's in-place `forceState`), and the gallery's `?held=1` draws it in the 480 × 840 box it
+  fills inside the window; the manifest crops the handoff to the same box ([1860, 60, 2820, 1740]
+  at 2×; WB-01 behind it is not built, so the drawer is compared alone). The live artboard (no
+  `held`) stays the modal drawer that Tier D and the keyboard suite read. The locks wait on the
+  measurement: under 3 % they lock, over it the figure is the deviation (the A-01-T33 rule).
+- 2026-11-11 (measured): WB-09 a 4.98 %, b 4.78 %, c 3.14 % in the held frame; over 3 %, so
+  report-only with the figures (manifest). SHL-13·F 5.01 % unchanged. Tier D 181 passed (TPL-19
+  frame 5 flaked 845 vs 844 under load and passed alone).

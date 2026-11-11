@@ -5325,18 +5325,23 @@
       "deviation": "P-09-T18: report-only: 5.01% measured Nov 10, 2026 (S34 partials pass) on the AUD-02 frame with run #4127 in the dock; over 3%, so the plan's lock is not set (the A-01-T33 rule)"
     },
     "wb-09a.window": {
-      "page": "screens/WB-09?st=a",
-      "selector": "[data-artboard=\"a\"]",
+      "page": "screens/WB-09?st=a&held=1",
+      "selector": "[data-artboard=\"a\"] [data-held-drawer]",
       "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09a.png",
       "sha256": "1cee1a6b5d460cd2f680541b66e9ab6c5c2b47016af8ba07286e24bd223ccb5e",
-      "crop": "window",
+      "crop": [
+        1860,
+        60,
+        2820,
+        1740
+      ],
       "tier": "C",
       "mask": [
         "[data-spinner]",
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "deviation": "P-09-T18: report-only: not measurable at Tier C: the gallery draws the drawer alone, pinned 10 px inside the 1440 x 900 viewport (480 x 880), while the handoff draws it inside the 1400 x 860 window over WB-01 (480 x 840), so the sizes never match; Tier D holds. The plan's lock waits on a gallery frame that draws the WB-01 window behind the drawer"
+      "deviation": "P-09-T18: report-only: 4.98% measured Nov 11, 2026, the drawer held in its 480 x 840 box against the handoff cropped to the same box (WB-01 behind it is not built); over 3%, so not locked"
     },
     "wb-09a2.window": {
       "page": "screens/WB-09?st=a2",
@@ -5379,32 +5384,42 @@
       ]
     },
     "wb-09b.window": {
-      "page": "screens/WB-09?st=b",
-      "selector": "[data-artboard=\"b\"]",
+      "page": "screens/WB-09?st=b&held=1",
+      "selector": "[data-artboard=\"b\"] [data-held-drawer]",
       "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09b.png",
       "sha256": "ce510d68714e426c006589204fcab06c775e846d2dbfc635c2be66ef50fb97e6",
-      "crop": "window",
+      "crop": [
+        1860,
+        60,
+        2820,
+        1740
+      ],
       "tier": "C",
       "mask": [
         "[data-spinner]",
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "deviation": "P-09-T18: report-only: not measurable at Tier C: the gallery draws the drawer alone, pinned 10 px inside the 1440 x 900 viewport (480 x 880), while the handoff draws it inside the 1400 x 860 window over WB-01 (480 x 840), so the sizes never match; Tier D holds. The plan's lock waits on a gallery frame that draws the WB-01 window behind the drawer"
+      "deviation": "P-09-T18: report-only: 4.78% measured Nov 11, 2026, the drawer held in its 480 x 840 box against the handoff cropped to the same box (WB-01 behind it is not built); over 3%, so not locked"
     },
     "wb-09c.window": {
-      "page": "screens/WB-09?st=c",
-      "selector": "[data-artboard=\"c\"]",
+      "page": "screens/WB-09?st=c&held=1",
+      "selector": "[data-artboard=\"c\"] [data-held-drawer]",
       "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09c.png",
       "sha256": "4ba0d02daaf98edb28986656badac091d51e5619ddf477191d7dc9e0165bb7f9",
-      "crop": "window",
+      "crop": [
+        1860,
+        60,
+        2820,
+        1740
+      ],
       "tier": "C",
       "mask": [
         "[data-spinner]",
         "[data-shimmer]",
         "[data-live-dot]"
       ],
-      "deviation": "P-09-T18: report-only: not measurable at Tier C: the gallery draws the drawer alone, pinned 10 px inside the 1440 x 900 viewport (480 x 880), while the handoff draws it inside the 1400 x 860 window over WB-01 (480 x 840), so the sizes never match; Tier D holds. The plan's lock waits on a gallery frame that draws the WB-01 window behind the drawer"
+      "deviation": "P-09-T18: report-only: 3.14% measured Nov 11, 2026, the drawer held in its 480 x 840 box against the handoff cropped to the same box (WB-01 behind it is not built); over 3%, so not locked"
     },
     "wb-09d.window": {
       "page": "screens/WB-09?st=d",
