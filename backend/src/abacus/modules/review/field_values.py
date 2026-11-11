@@ -262,6 +262,51 @@ async def current_values(
     return {str(r.field_key): cast(dict[str, object], r.value) for r in rows}
 
 
+async def values_as_of(
+    tenant: TenantContext, target_type: str, target_ids: Sequence[UUID], at: datetime
+) -> dict[UUID, dict[str, dict[str, object]]]:
+    """T-04-T30: each target's field values as they stood at `at` (the latest version recorded at
+    or before it), by target. An export reads the values its approved checkpoint covered, never a
+    later edit. The caller has authorised a read of the targets."""
+    if not target_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT DISTINCT ON (target_id, field_key) target_id, field_key, value "
+                    "FROM field_value_versions WHERE target_type = :t AND target_id = ANY(:ids) "
+                    "AND created_at <= :at ORDER BY target_id, field_key, seq DESC"
+                ),
+                {"t": target_type, "ids": list(target_ids), "at": at},
+            )
+        ).all()
+    found: dict[UUID, dict[str, dict[str, object]]] = {}
+    for r in rows:
+        found.setdefault(r.target_id, {})[str(r.field_key)] = cast(dict[str, object], r.value)
+    return found
+
+
+async def changed_since_any(
+    tenant: TenantContext, target_type: str, target_ids: Sequence[UUID], since: datetime
+) -> bool:
+    """T-04-T30: whether any of the targets changed after `since` other than by an engine import
+    (a worksheet field edited after the last sync puts the return Out of sync)."""
+    if not target_ids:
+        return False
+    async with tenant_session(tenant) as session:
+        return bool(
+            await session.scalar(
+                text(
+                    "SELECT EXISTS (SELECT 1 FROM field_value_versions WHERE target_type = :t "
+                    "AND target_id = ANY(:ids) AND created_at > :since "
+                    "AND value_source <> 'engine_import')"
+                ),
+                {"t": target_type, "ids": list(target_ids), "since": since},
+            )
+        )
+
+
 async def latest_sources(
     tenant: TenantContext, target_type: str, target_ids: Sequence[UUID]
 ) -> dict[tuple[UUID, str], tuple[str, int]]:

@@ -68,6 +68,11 @@ from abacus.modules.tax.engine_adapter import (
 )
 from abacus.modules.tax.engine_repository import TextRow
 from abacus.modules.tax.engine_sync import EngineSyncFailed, chip_state, facts_for, sync_facts
+from abacus.modules.tax.export_fields import (
+    mirror_engine_lines,
+    raise_tie_outs,
+    worksheets_changed_since,
+)
 
 TARGET: Final = "tax_return"
 CREATE: Final = "engine_import.create"
@@ -368,6 +373,10 @@ async def _import_parsed(
             target=Target(SUBJECT, import_id),
             after=Ref(return_id=return_id, version=parsed.version, rows=len(rows)),
         )
+    # T-04-T30 (AC-10.3): a worksheet figure the engine disagrees with is one engine issue.
+    await raise_tie_outs(
+        ctx, return_id, {r.field_key: {"t": "decimal", "v": r.value} for r in parsed.rows}
+    )
     return await import_view(ctx, import_id)
 
 
@@ -451,6 +460,16 @@ async def resolve_import(
                 cause="import",
                 checkpoint_id=approved_id,
             )
+        # T-04-T30 (AC-10.2): the engine-computed lines onto their worksheet fields, inside the
+        # same approved import checkpoint.
+        await mirror_engine_lines(
+            tx,
+            ctx.tenant,
+            engagement_id=engagement_id,
+            return_id=row.return_id,
+            taken=taken,
+            checkpoint_id=approved_id,
+        )
         status = "rejected" if rejecting else "approved"
         await repo.decide_diff(
             tx.session,
@@ -509,8 +528,9 @@ async def sync_view(ctx: AuthContext, return_id: UUID) -> SyncView:
         found = await sync_facts(session, return_id)
     if found is None:
         raise NotFound(TARGET)
-    changed = found.last_synced_at is not None and bool(
-        await changed_since(ctx.tenant, TARGET, return_id, found.last_synced_at)
+    changed = found.last_synced_at is not None and (
+        bool(await changed_since(ctx.tenant, TARGET, return_id, found.last_synced_at))
+        or await worksheets_changed_since(ctx.tenant, return_id, found.last_synced_at)
     )
     state: SyncState = chip_state(facts_for(found, changed_since_sync=changed))
     may = await allowed_actions(ctx, resource, [CREATE, DECIDE])

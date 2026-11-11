@@ -58,9 +58,10 @@ from abacus.modules.identity.api import (
     latest_grant,
 )
 from abacus.modules.integrations.api import engine_return_id, export_settings, write_capability
-from abacus.modules.review.api import current_checkpoint, current_values
+from abacus.modules.review.api import current_checkpoint
 from abacus.modules.tax import engine_repository as repo
 from abacus.modules.tax.engine_sync import ReadyToTransmit
+from abacus.modules.tax.export_fields import export_values
 
 TARGET: Final = "tax_return"
 EXPORT: Final = "tax_return.export"
@@ -335,7 +336,9 @@ async def export_return(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID) 
         )
         version = 1
     at = datetime(int(facts.tax_year) + 1, 1, 1, tzinfo=UTC)
-    values = await current_values(ctx.tenant, TARGET, return_id)
+    # T-04-T30 (AC-10.1): the values the approved checkpoint covered, worksheet fields by their
+    # engine key; never a later edit.
+    values = await export_values(ctx.tenant, return_id, checkpoint_id)
     content_bytes = workbook(
         engine_id=engine_id,
         tax_year=int(facts.tax_year),

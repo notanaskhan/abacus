@@ -38,6 +38,7 @@ from abacus.modules.integrations.catalog import (
     listing_of,
 )
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
+from abacus.modules.integrations.engine_profile import EngineFieldProfile, engine_field_profile
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.integrations.engine_settings import (
@@ -100,6 +101,7 @@ __all__ = [
     "CatalogDocument",
     "CatalogEntry",
     "CatalogRow",
+    "EngineFieldProfile",
     "EsignInstallExists",
     "ExportSettings",
     "FormatCheck",
@@ -125,6 +127,7 @@ __all__ = [
     "egress_allowlist",
     "egress_hosts_by_connector",
     "egress_read_posts",
+    "engine_field_profile",
     "engine_return_id",
     "erase_secret",
     "esign_install_secret",
