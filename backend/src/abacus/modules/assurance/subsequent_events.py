@@ -122,7 +122,10 @@ async def perform_procedure(
         tx.record(
             "subsequent_event.procedure_performed",
             target=Target("subsequent_event_procedure", procedure_id),
-            after=Ref(status=status, through=performed_through.isoformat()),
+            after=Ref(
+                performed=int(status == "performed"),
+                through=int(performed_through.strftime("%Y%m%d")),
+            ),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
     return int(version)
@@ -231,7 +234,7 @@ async def legal_letter_not_applicable(
         tx.record(
             "legal_letter.recorded",
             target=Target("legal_letter", done),
-            after=Ref(status="not_applicable"),
+            after=Ref(not_applicable=1),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
 
@@ -257,7 +260,7 @@ async def legal_letter_requested(
         tx.record(
             "legal_letter.recorded",
             target=Target("legal_letter", done),
-            after=Ref(status="requested", request_item=request_item_id),
+            after=Ref(requested=1, request_item=request_item_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
 

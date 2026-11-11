@@ -388,7 +388,7 @@ async def mark_not_applicable(ctx: AuthContext, item_id: UUID, basis: str) -> No
         tx.record(
             "completion.item_changed",
             target=Target("completion_item", item_id),
-            after=Ref(status="not_applicable"),
+            after=Ref(not_applicable=1),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
 
