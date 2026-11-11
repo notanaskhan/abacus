@@ -7,7 +7,7 @@ risk_zone: red
 related_adrs: [ADR-004, ADR-005, ADR-007, ADR-016, ADR-032, ADR-033, ADR-036, ADR-042, ADR-050, ADR-066, ADR-078, ADR-089, ADR-090, ADR-111]  # plan decisions P-04, P-07, P-09, P-10, P-14, P-19, P-25, P-26, P-29, P-35, P-43, P-47 in the body
 related_specs: [SPEC-301, SPEC-313, SPEC-314, SPEC-642]
 created: 2026-11-04
-updated: 2026-11-04
+updated: 2026-11-11
 ---
 
 > **Instructions for coding agents**

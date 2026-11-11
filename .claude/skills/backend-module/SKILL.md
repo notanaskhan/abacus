@@ -122,6 +122,39 @@ what today: `docs/architecture/reference/review-slot-consumers.md`. Incidents:
 ## An engine with reference data (A-05-T62)
 A pure engine under `compute/<area>/` stamps `ENGINE_VERSION` and `inputs_hash` on every figure. Reference data it reads (rates, limits) lives beside it in `reference/*.yaml`, PROTECTED and CPA-reviewed: a missing year or quarter is a refusal, never a guess. A version bump recomputes through a checkpoint a person approves; it never rewrites stored figures (`docs/runbooks/ebp-modules.md` §5). Firm-shaped mappings (Schedule H lines) are database content, not YAML.
 
+## A guarded table and an archived-write kind (A-07; A-07-T52)
+A locked work item, or an archived engagement, is read-only at the database:
+`archived_guard()` (migration 0686) fires before every write on a table with a `work_item_id`
+or `engagement_id` column. It raises SQLSTATE `AB409`, which the API maps to
+`kernel.errors.RowArchived`, a 409 `archived` on any route.
+
+**A new table.** Create it with `tenant_table(op, name)` (`kernel/db/migration.py`); the guard is
+attached for you when the table has either column. Nothing else is needed for the common case:
+writes to a locked file are refused. `test_a_new_table_gets_the_guard` proves the hook.
+
+**A table that must change after lock.** Choose one and say why in the diff (a red diff):
+- **Exempt it** when it is not documentation (it governs retention or delivery, or records a
+  read). Add `"table": "the reason"` to `EXEMPT` in `kernel/db/archive_guard.py`.
+  `test_every_exemption_has_a_reason` holds the reason.
+- **Let one kind through** when a reviewed service writes it after lock. Add
+  `"table": ("kind",)` to `ALLOWED_KINDS`. The trigger's arguments are fixed when it is created,
+  so the same change needs a migration that recreates the table's `archived_guard` trigger with
+  `trigger_arguments(table)`.
+
+**A new archived-write kind.**
+1. Add it to `ArchivedWriteKind` in `archive_guard.py`.
+2. Write the one service function that calls `await tx.allow_archived_write("<kind>")` inside its
+   unit of work, after its own authorisation and its human-only checks.
+3. Add that file to ARCHIVE-001's `exclude` in `abacus_tools/quality/banned_patterns.py`. Every
+   other file that sets `app.archived_write` fails `make check-fast`.
+4. Map the kind to its tables in `ALLOWED_KINDS` and ship the migration that recreates those
+   tables' triggers.
+5. Test both ways, as `test_the_kind_lets_only_its_tables_through` does: refused without the kind,
+   allowed with it, and refused on every other table.
+
+The four kinds today: `archive_addition`, `post_issuance`, `retention_extend` and
+`destruction_tombstone`. An audit event is never guarded; the trail goes on after lock.
+
 ## Checklist before done
 - [ ] Cross-tenant test for every repository method (and the regenerated `tests/security/` cases)
 - [ ] Permission tests regenerate cleanly from the matrix
