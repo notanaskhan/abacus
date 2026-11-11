@@ -1,0 +1,69 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-10-09T10:05",
+    "slices": [
+      "archive"
+    ]
+  },
+  "persona": "margaret-okonkwo",
+  "request": "GET /v1/audits/{work_item_id}/report",
+  "body": {
+    "allowed_actions": [],
+    "choices": [
+      {
+        "decision_card_id": null,
+        "field": "opinion_form",
+        "locked_by": null,
+        "reason_code": null,
+        "value": "unmodified"
+      },
+      {
+        "decision_card_id": null,
+        "field": "modification_basis",
+        "locked_by": null,
+        "reason_code": null,
+        "value": null
+      },
+      {
+        "decision_card_id": null,
+        "field": "going_concern",
+        "locked_by": "AUD-19 going concern",
+        "reason_code": null,
+        "value": false
+      },
+      {
+        "decision_card_id": null,
+        "field": "erisa_supplemental_schedules",
+        "locked_by": null,
+        "reason_code": "ERISA-SUPP",
+        "value": true
+      },
+      {
+        "decision_card_id": null,
+        "field": "other_information",
+        "locked_by": null,
+        "reason_code": null,
+        "value": false
+      }
+    ],
+    "current_version": {
+      "approved_at": null,
+      "approved_by_name": null,
+      "city": null,
+      "content_hash": "8dbfc36a173762cbaf3f323f258c49334a998292f3300c0a948cc6f0be4fdbaf",
+      "created_at": "2026-10-02T14:10:00Z",
+      "created_by_name": "",
+      "report_date": null,
+      "version_no": 2
+    },
+    "documents": [],
+    "eqr_required_not_concurred": false,
+    "framework": "",
+    "paragraphs": [],
+    "report_kind": "audit",
+    "status": "draft",
+    "version": 4
+  }
+}

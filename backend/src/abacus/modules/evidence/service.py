@@ -179,6 +179,7 @@ async def add_version(
     requested_by: UUID | None = None,
     upload_note: str | None = None,
     detached: tuple[UUID, DetachedKey] | None = None,
+    post_lock_addition: bool = False,
 ) -> EvidenceVersionRef:
     """Add the next version inside the caller's unit of work. The tenant and actor are the
     transaction's own. The caller has authorised `evidence.upload` for its actor.
@@ -206,7 +207,10 @@ async def add_version(
                 raise ValueError("idempotency key reused for different content or engagement")
             return _ref(existing, created=False)
     engagement = await lock_ref(tx, engagement_id)  # 404 outside the tenant; locked until commit
-    if engagement.archived:
+    # `post_lock_addition`: an archive addition's document (DEC-3308). The database still refuses
+    # it unless the caller's unit set `archived_write = archive_addition`, which only the
+    # allowlisted `archive_additions` service can (ARCHIVE-001).
+    if engagement.archived and not post_lock_addition:
         raise EngagementArchived("engagement is archived")
     if not 1 <= len(media_type) <= 100:
         raise ValueError("media_type must be 1-100 characters")

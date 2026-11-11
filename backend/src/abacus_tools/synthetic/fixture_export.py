@@ -288,8 +288,14 @@ _SERVER_IDS: Final = (
     "WHERE tenant_id = $1",
     "SELECT id, 'sign-off:' || target_type || ':' || target_id || ':' || level || ':' || "
     "created_at FROM sign_offs WHERE tenant_id = $1",
+    # A-07 (S35 follow-up, item 4): AUD-22's rows and AUD-23's versions.
+    "SELECT id, 'governance:' || work_item_id || ':' || kind FROM governance_communications "
+    "WHERE tenant_id = $1",
+    "SELECT id, 'report-version:' || work_item_id || ':' || version_no FROM audit_report_versions "
+    "WHERE tenant_id = $1",
 )
-_HASH_KEYS: Final = frozenset({"content_hash", "seen_hash"})
+# `gate_hash`: AUD-24's G5 to G7 snapshot, made from server ids like the others.
+_HASH_KEYS: Final = frozenset({"content_hash", "seen_hash", "gate_hash"})
 
 
 @dataclass(frozen=True)
@@ -534,7 +540,8 @@ def stable(
     ids = _standard_version_ids(captured["standards"]) if "standards" in captured else {}
     ids |= {raw: stable_id(label) for raw, label in (found or {}).items()}
     bodies = {name: _replaced(body, ids, bool(found)) for name, body in captured.items()}
-    return {name: _hashes(body) for name, body in bodies.items()} if found else bodies
+    # A hash with no id above it (AUD-23's current version) takes the file's name as its owner.
+    return {name: _hashes(body, name) for name, body in bodies.items()} if found else bodies
 
 
 def document(snapshot: str, read: Read, body: Json) -> dict[str, Json]:

@@ -62,8 +62,10 @@ ALLOWED_KINDS: Final[Mapping[str, tuple[ArchivedWriteKind, ...]]] = {
     "archive_addition_decisions": ("archive_addition",),
     "post_issuance_events": ("post_issuance",),
     "archives": ("retention_extend",),
-    "evidence_versions": ("retention_extend", "destruction_tombstone"),
-    "evidence_items": ("destruction_tombstone",),
+    # S35 follow-up (0814, DEC-3308): an addition after lock carries its document as a new
+    # evidence version, written only inside `archive_additions.store_addition_evidence`.
+    "evidence_versions": ("retention_extend", "destruction_tombstone", "archive_addition"),
+    "evidence_items": ("destruction_tombstone", "archive_addition"),
     # R-02-T05 (0710): a reissued report after lock is a new deliverable (AU-C 560 post-issuance).
     "deliverables": ("post_issuance",),
 }

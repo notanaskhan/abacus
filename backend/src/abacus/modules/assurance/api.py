@@ -43,6 +43,7 @@ from abacus.modules.assurance.archive_additions import (
     SealVerifyWorkflow,
     VerifyResult,
     seal_matches,
+    store_addition_evidence,
 )
 from abacus.modules.assurance.archive_gate import SUBSCRIPTIONS as ARCHIVE_SUBSCRIPTIONS
 from abacus.modules.assurance.archive_lock import ACTIVITIES as ARCHIVE_LOCK_ACTIVITIES
@@ -78,6 +79,7 @@ from abacus.modules.assurance.completion_decisions import register_completion_de
 from abacus.modules.assurance.completion_facts import register_completion_facts
 from abacus.modules.assurance.completion_projector import SUBSCRIBED as COMPLETION_SUBSCRIBED
 from abacus.modules.assurance.completion_projector import on_completion_event
+from abacus.modules.assurance.completion_projector import rebuild as rebuild_completion
 from abacus.modules.assurance.completion_readiness_workflow import (
     ACTIVITIES as READINESS_ACTIVITIES,
 )
@@ -559,6 +561,7 @@ __all__ = [
     "propose_materiality",  # P-04-T36: the scenario loader proposes as the person named
     "publish_grouping_version",
     "reassess_materiality",
+    "rebuild_completion",  # S35 follow-up: the archive scenario signs the checklist current
     "record_bring_down",  # A-07-T41: the archive slice
     "record_exceptions",
     "record_finding",
@@ -573,6 +576,7 @@ __all__ = [
     "register_materiality_dependents",
     "register_run_summary",
     "release_snapshot",  # A-07-T41: the archive slice
+    "render_report_document",  # S35 follow-up: the archive slice renders the draft
     "rep_letter_approve",  # A-07-T41: the archive slice
     "rep_letter_edit",  # A-07-T41: the archive slice
     "rep_letter_mark_sent",  # A-07-T41: the archive slice
@@ -598,6 +602,7 @@ __all__ = [
     "start_archive_lock",  # A-07-T41: the archive slice
     "start_mapping",
     "start_release",  # A-07-T41: the archive slice
+    "store_addition_evidence",  # S35 follow-up (DEC-3308): an addition's document after lock
     "sum_snapshot",
     "update_filing",  # A-07-T41: the archive slice
     "update_profile",
@@ -737,6 +742,9 @@ from abacus.modules.assurance.rep_letters import (  # noqa: E402
 )
 from abacus.modules.assurance.rep_letters import (  # noqa: E402
     request_approval as rep_letter_request_approval,
+)
+from abacus.modules.assurance.report_builder import (  # noqa: E402
+    render_document as render_report_document,
 )
 from abacus.modules.assurance.report_builder import set_choice as report_set_choice  # noqa: E402
 from abacus.modules.assurance.report_builder import (  # noqa: E402

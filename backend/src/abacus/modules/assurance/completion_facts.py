@@ -211,7 +211,15 @@ async def sign_offs(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
     link = _link(work_item_id, "sign-offs")
     if engagement_id is None:
         return ItemFact("open", None, link)
-    changed = (await matrix(tenant, engagement_id)).footer.changed_after_sign_off
+    # The checklist's own row is left out: its sign-off is on this item's evidence, so counting
+    # it made signing the checklist change the checklist, and its sign-offs read Changed again
+    # at once (found by A-07-T41's archive load under `make dev`; S35 follow-up).
+    rows = (await matrix(tenant, engagement_id)).rows
+    changed = sum(
+        1
+        for r in rows
+        if r.target_type != "completion_checklist" and any(c.state == "stale" for c in r.cells)
+    )
     if changed == 0:
         return ItemFact("done", "No workpaper changed after sign-off", link)
     return ItemFact("open", f"{changed} changed after sign-off", link)

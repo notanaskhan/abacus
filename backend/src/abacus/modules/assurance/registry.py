@@ -1091,8 +1091,10 @@ INSERT_COLUMNS.update(
         | {"row_leaf_count", "run_record_count", "audit_checkpoint_seq_to"}
         | {"audit_checkpoint_root", "merkle_root", "manifest_sha256", "records_object_key"}
         | {"records_version_id", "compliance_retain_until"},
+        # `id`: the addition manifest names the addition before its row exists (0814, S35
+        # follow-up: the insert was refused without it).
         "archive_additions": _A07_SCOPE
-        | {"archive_id", "description_sealed", "reason_code", "evidence_version_id"}
+        | {"id", "archive_id", "description_sealed", "reason_code", "evidence_version_id"}
         | {"content_sha256", "added_by", "post_issuance_event_id", "addition_manifest_key"},
         "archive_addition_decisions": _A07_SCOPE
         | _A07_ACTOR

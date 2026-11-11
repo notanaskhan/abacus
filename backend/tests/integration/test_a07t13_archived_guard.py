@@ -166,3 +166,23 @@ def test_down_then_up(private_db: sc.Database) -> None:
     assert asyncio.run(seeder.value("SELECT to_regprocedure('archived_guard()')")) is None
     migrate(private_db.owner_url, "head")
     assert asyncio.run(seeder.value("SELECT to_regprocedure('archived_guard()')")) is not None
+
+
+def test_an_addition_s_document_may_join_the_locked_file_and_nothing_else_may(
+    private_db: sc.Database,
+) -> None:
+    """S35 follow-up (0814, DEC-3308): the evidence tables admit `archive_addition`, as the
+    kernel's register says; a workpaper still admits no kind at all."""
+    rows = asyncio.run(
+        Seeder(private_db.superuser_dsn).rows(
+            "SELECT tgrelid::regclass::text AS t, pg_get_triggerdef(oid) AS d FROM pg_trigger "
+            "WHERE tgname = 'archived_guard' AND tgrelid::regclass::text = ANY($1)",
+            ["evidence_items", "evidence_versions", "workpapers"],
+        )
+    )
+    defs = {r["t"]: r["d"] for r in rows}
+    for table in ("evidence_items", "evidence_versions"):
+        assert "'archive_addition'" in defs[table]
+        for kind in ALLOWED_KINDS[table]:
+            assert f"'{kind}'" in defs[table]
+    assert "archived_guard()" in defs["workpapers"]

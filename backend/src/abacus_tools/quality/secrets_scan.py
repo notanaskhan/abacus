@@ -105,6 +105,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         " never a credential (K-02-T18)",
     ),
     (
+        "apps/web/src/fixtures/seed/2026-10-09t1005.northwind-release.json",
+        "SECRET-003",
+        "an also-required row's `key` names the release check (governance_260), never a"
+        " credential (S35 follow-up, TASK-6741)",
+    ),
+    (
         "apps/web/src/fixtures/seed/2026-09-24t1020.*-items.json",
         "SECRET-003",
         "a sample item's `record_key` names its population record (census row NWC-0215, GL line"

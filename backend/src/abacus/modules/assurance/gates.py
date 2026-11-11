@@ -63,6 +63,10 @@ async def g5_blockers(tenant: TenantContext, engagement_id: UUID) -> list[str]:
     if not reviewables:
         return ["no_reviewables"]
     blockers: list[str] = []
+    # L5 is the EQR's level: required only where the engagement has an EQR on its team. The
+    # firm's review_levels standard names L5 for every engagement, so one without an EQR could
+    # never meet G5 (S35 follow-up, DEC-3306: Granite Peak's release). Read once, when needed.
+    has_eqr: bool | None = None
     for r in reviewables:
         facts = await reviewable_facts(tenant, r.target_type, r.target_id)
         states = await sign_off_states(
@@ -70,6 +74,12 @@ async def g5_blockers(tenant: TenantContext, engagement_id: UUID) -> list[str]:
         )
         by_level = {s.level: s for s in states[r.target_id]}
         for level in facts.required_levels:
+            if level == 5:
+                if has_eqr is None:
+                    team = await team_of(tenant.tenant_id, engagement_id)
+                    has_eqr = any(role == "eqr_reviewer" for _u, role in team)
+                if not has_eqr:
+                    continue
             state = by_level.get(level)
             if state is None or state.signed_by is None:
                 blockers.append(f"unsigned:{r.target_type}:{r.target_id}:L{level}")

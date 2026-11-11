@@ -242,7 +242,9 @@ async def bring_down_item(
     (A-07-T30's slot; DEC-3109)."""
     del work_item_id
     at = await last_completed_run_at(tenant, engagement_id, BRING_DOWN)
-    return AlsoRequired("bring_down", at is not None, None if at is None else at.isoformat())
+    # Met or not, with no time on the row: the run's finish is the database's clock, which a demo
+    # load can't reproduce (S35 follow-up); AUD-24's dock shows the run itself.
+    return AlsoRequired("bring_down", at is not None, None)
 
 
 # --- audit.letter_compose ------------------------------------------------------------------------
@@ -315,16 +317,26 @@ async def letter_compose(
 
 
 async def archive_readiness(ctx: AuthContext, work_item_id: UUID) -> UUID:
-    """Build the binder index (code), then record the run with the section counts."""
+    """Record the run with the section counts (its own run log among them), then build the
+    binder index (code). In this order the index lists the run that built it: built first, the
+    run's own log grew section G at once and "Binder index complete" never held after a
+    readiness run (S35 follow-up: the archive load's Dec 3 lock was refused)."""
     from abacus.modules.assurance import archive_gate as ag
+    from abacus.modules.assurance.archive_records import archive_of, latest_binder_index
 
     found = await assurance_item(ctx.tenant, work_item_id)
-    version = await ag.build_binder_index(ctx, work_item_id)
     state = await ag.archive_state(ctx.tenant, work_item_id)
+    archive = await archive_of(ctx.tenant, work_item_id)
+    if archive is None:
+        raise ag.RecordOutOfPhase(facts={"phase": "not_released"})
+    latest = await latest_binder_index(ctx.tenant, archive.id)
+    version = 1 if latest is None else latest[0] + 1
     papers = sum(b.workpapers for b in state.binder)
     documents = sum(b.source_documents for b in state.binder)
-    runs = sum(b.run_logs for b in state.binder)
-    return await _record(
+    runs = sum(b.run_logs for b in state.binder) + 1  # this run's own log
+    # The index item holds once the index below is built; every other item as it stands now.
+    done = sum(1 for i in state.items if i.done or i.key == "binder_index_complete")
+    run_id = await _record(
         ctx.tenant,
         CodeRun(
             agent_id=ARCHIVE_READINESS,
@@ -354,13 +366,15 @@ async def archive_readiness(ctx: AuthContext, work_item_id: UUID) -> UUID:
                 "papers": _count("papers", papers, "binder sections A to E"),
                 "documents": _count("documents", documents, "binder section F"),
                 "runs": _count("runs", runs, "binder section G"),
-                "done": _count("done", state.done, "archive items met"),
+                "done": _count("done", done, "archive items met"),
                 "total": _count("total", len(state.items), "archive items"),
             },
             output={"index_version": version},
             work_item_id=work_item_id,
         ),
     )
+    await ag.build_binder_index(ctx, work_item_id)
+    return run_id
 
 
 def register() -> None:

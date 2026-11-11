@@ -51,10 +51,20 @@ def test_northwinds_instants_are_the_designs() -> None:
 def test_granite_peak_and_lakeshore() -> None:
     assert _at("archive:A2:going-concern-decided").date().isoformat() == "2026-10-26"
     assert _at("archive:A2:letter-signed").date().isoformat() == "2026-10-27"
-    # The release waits on Granite Peak's governance body (no slice seeds one yet).
-    assert not [e for e in slice_events(archive.SLICE) if e.label == "archive:A2:release"]
+    assert _at("archive:A2:release").date().isoformat() == "2026-10-27"
+    body = next(
+        e for e in slice_events(archive.SLICE) if e.kind == "assurance.governance_body_seeded"
+    )
+    assert body.data["client"] == archive.GRANITE and body.data["kind"] == "audit_committee"
+    assert body.at < _at("archive:A2:letter-260-sent")
     lakeshore = [e for e in slice_events(archive.SLICE) if e.client == archive.LAKESHORE]
-    assert [e.at.date().isoformat() for e in lakeshore] == ["2026-11-10"]
+    assert {e.at.date().isoformat() for e in lakeshore} == {"2026-11-10"}
+    # The manager drafts (the matrix's `report.draft`), independent first (S35 follow-up).
+    assert [e.kind for e in lakeshore] == [
+        "engagements.member_independence_confirmed",
+        "archive.report_choice",
+    ]
+    assert {e.actor for e in lakeshore} == {archive.REVIEW_MANAGER}
 
 
 def test_the_eqr_checklist_is_six_of_ten_before_11_05_and_ten_after_the_discussion() -> None:

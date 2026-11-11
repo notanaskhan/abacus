@@ -148,6 +148,7 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     propose_materiality,
     publish_grouping_version,
     reassess_materiality,
+    rebuild_completion,
     record_bring_down,
     record_exceptions,
     record_finding,
@@ -155,6 +156,7 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     record_prior_year,
     record_sum_factor,
     release_snapshot,
+    render_report_document,
     rep_letter_approve,
     rep_letter_edit,
     rep_letter_mark_sent,
@@ -177,6 +179,7 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     start_archive_lock,
     start_mapping,
     start_release,
+    store_addition_evidence,
     sum_snapshot,
     update_filing,
     update_profile,
@@ -242,6 +245,7 @@ from abacus.modules.ledger.api import (
     record_snapshot,
     record_subsequent_snapshot,
 )
+from abacus.modules.ledger.api import MappingExists as LedgerMappingExists
 from abacus.modules.methodology.api import (
     AssuranceChecklistImportIn,
     EngagementType,
@@ -303,11 +307,14 @@ from abacus.modules.portal.api import (
     add_portal_host,
     set_branding,
 )
+from abacus.modules.reporting.api import OwnerRef as C11OwnerRef
 from abacus.modules.reporting.api import (
     TemplateImportIn,
     answer_statements_item,
+    document_of_owner,
     draft_statements,
     import_template_bundle,
+    latest_document_version,
     pick_statements_checklist,
     publish_template,
     record_management_approval,
@@ -1395,14 +1402,16 @@ async def _run_step_advanced(conn: asyncpg.Connection, _: Scenario, event: Event
 
 async def _governance_body_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """R-02-T13 (DEC-3029): Northwind's Benefits Committee, its members as client-person contacts
-    linked to their portal users, and each member's `tcwg` grant on the room."""
-    body = UUID(_room.BODY_ID)
+    linked to their portal users, and each member's `tcwg` grant on the room. A-07-T41 follow-up:
+    another client's body (Granite Peak's audit committee) names its own id and client."""
+    body = UUID(str(event.data.get("body_id", _room.BODY_ID)))
+    client_name = str(event.data.get("client", _room.CLIENT))
     by = user_id_of(_SEATS[event.actor])
     since = date.fromisoformat(str(event.data["since"]))
     members = cast("list[list[str]]", event.data["members"])
 
     async def write() -> tuple[str, str, str]:
-        client = await _client_id(conn, _room.CLIENT)
+        client = await _client_id(conn, client_name)
         await conn.execute(
             "INSERT INTO governance_bodies (id, tenant_id, client_id, name, kind, created_at) "
             "VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
@@ -1415,7 +1424,7 @@ async def _governance_body_seeded(conn: asyncpg.Connection, _: Scenario, event: 
         )
         for name, role in members:
             user = UUID(_PORTAL[name].id)
-            contact = UUID(_room.contact_id_of(name))
+            contact = UUID(_room.contact_id_of(name, client_name))
             await conn.execute(
                 "INSERT INTO contacts (id, tenant_id, client_id, display_name, contact_kind, "
                 "user_id, created_at) VALUES ($1, $2, $3, $4, 'client_person', $5, $6) "
@@ -1439,7 +1448,7 @@ async def _governance_body_seeded(conn: asyncpg.Connection, _: Scenario, event: 
                 since,
                 event.at,
             )
-            grant = UUID(_room.grant_id_of(name))
+            grant = UUID(_room.grant_id_of(name, str(body)))
             inserted = await conn.fetchval(
                 "INSERT INTO client_access_grants (id, tenant_id, user_id, contact_id, role, "
                 "scope_kind, scope_id, granted_by, status, created_at) VALUES ($1, $2, $3, $4, "
@@ -2909,15 +2918,19 @@ async def _granite_mapping_started(conn: asyncpg.Connection, _: Scenario, event:
     )
     if file is None:
         raise LookupError("Granite Peak's FY2025 predecessor mapping has not been uploaded")
-    await mapping_live.run_start(
-        await _staff_context(conn, event),
-        engagement,
-        MappingRunIn(
-            trial_balance_id=await _granite_tb(conn),
-            prior_source="predecessor_file",
-            predecessor_evidence_version_id=cast(UUID, file),
-        ),
-    )
+    # Under `make dev` the relay runs, and TB version 1 has already started the mapping
+    # (`trial_balance.version_created`, A-03): the run exists, so the scenario takes it as it is.
+    # The export and the tests load with no relay, where this start is the first.
+    with suppress(mapping_live.MappingExistsForTb):
+        await mapping_live.run_start(
+            await _staff_context(conn, event),
+            engagement,
+            MappingRunIn(
+                trial_balance_id=await _granite_tb(conn),
+                prior_source="predecessor_file",
+                predecessor_evidence_version_id=cast(UUID, file),
+            ),
+        )
 
 
 async def _granite_mapping_confirmed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -4330,8 +4343,33 @@ async def _archive_report_prepared(
 
 
 async def _archive_report_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    """AUD-23 b: the EP's L4 sign-off on the report version's content hash (SHL-12)."""
+    """AUD-23 b: the EP's L4 sign-off on the report version's content hash (SHL-12), then the
+    manager's "Generate" (the DRAFT render the release finalises; C11 renders it on the worker)."""
     await _report_sign(conn, event, 4)
+    _engagement, item = await _archive_item(conn, event)
+    manager = await _staff_context(conn, _as_actor(event, _archive.MANAGER))
+    current = await report_state(manager.tenant, item)
+    if current.version_no is not None:
+        await render_report_document(manager, item, current.version_no, "pdf")
+
+
+async def _report_rendered(conn: asyncpg.Connection, tenant: TenantContext, item: UUID) -> None:
+    """The release finalises the current version's DRAFT render: wait for the worker to finish
+    it (C11's queue), as the partner waits on AUD-23 before AUD-24's release."""
+    version = await tenant_value(
+        conn, TENANT, "SELECT current_version_id FROM audit_reports WHERE work_item_id = $1", item
+    )
+    if version is None:
+        return
+    owner = C11OwnerRef("audit_report_version", cast(UUID, version))
+    deadline = system_now().timestamp() + _WORKFLOW_SECONDS
+    while True:
+        document = await document_of_owner(tenant, owner, "audit_report")
+        if document is not None and await latest_document_version(tenant, document) is not None:
+            return
+        if system_now().timestamp() > deadline:
+            raise SettleTimeout("the report's draft render did not finish")
+        await asyncio.sleep(0.5)
 
 
 async def _report_sign(conn: asyncpg.Connection, event: Event, level: int) -> None:
@@ -4493,8 +4531,23 @@ async def _archive_eqr_concurred(conn: asyncpg.Connection, _: Scenario, event: E
     )
 
 
-_SIGNER_OF_LEVEL: Final = {1: "AC", 2: _archive.SENIOR, 3: _archive.MANAGER, 4: _archive.PARTNER,
-                           5: _archive.EQR}  # fmt: skip
+# The team role that holds each sign-off level (L1 preparer to L5 EQR); the signer is whoever
+# holds that role on the event's audit (Granite Peak's team is not Northwind's; S35 follow-up).
+_ROLE_OF_LEVEL: Final = {1: "staff", 2: "senior", 3: "manager", 4: "engagement_partner",
+                         5: "reviewer"}  # fmt: skip
+
+
+def _signer_of_level(event: Event, level: int, preparers: frozenset[UUID] = frozenset()) -> str:
+    """The team member holding the level's role; when they prepared the target (segregation),
+    the next role up who did not (Granite Peak's senior drew its sample, so its manager signs
+    the L2)."""
+    audit = BY_LABEL[str(event.data["audit"])]
+    ladder = [_ROLE_OF_LEVEL[n] for n in range(level, 5)] if level < 5 else ["reviewer"]
+    for role in ladder:
+        for initials, held in team_of(audit):
+            if held == role and user_id_of(_SEATS[initials]) not in preparers:
+                return initials
+    raise LookupError(f"{audit.label} has no one to sign L{level}")
 
 
 async def _archive_review_closed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -4502,7 +4555,7 @@ async def _archive_review_closed(conn: asyncpg.Connection, _: Scenario, event: E
     who holds it on the team, and every open note answered and cleared, through the review
     grammar (P-04): the notes first (a sign-off refuses a target with an open note), then the
     levels. What is outstanding is G5's own blocker list, so nothing signed is signed again."""
-    engagement, _item = await _archive_item(conn, event)
+    engagement, item = await _archive_item(conn, event)
     tenant = TenantContext(TENANT, "system", "archive_scenario")
     for blocker in await g5_blockers(tenant, engagement):
         kind, _sep, note = blocker.partition(":")
@@ -4524,14 +4577,37 @@ async def _archive_review_closed(conn: asyncpg.Connection, _: Scenario, event: E
         await review_note_event(
             await _staff_context(conn, _as_actor(event, seat)), UUID(note), "cleared", None
         )
+    # The checklist last, on a projection rebuilt after every other sign-off: its content is the
+    # items, which the other sign-offs (and a projection still in flight from an earlier event,
+    # e.g. the letter's signing under the worker) move; signed first, it read Changed at once
+    # (S35 follow-up: the release stayed refused on G5 under `make dev`).
+    await _archive_sign(conn, event, tenant, engagement, checklist=False)
+    await rebuild_completion(tenant, item)
+    await _archive_sign(conn, event, tenant, engagement, checklist=True)
+
+
+async def _archive_sign(
+    conn: asyncpg.Connection,
+    event: Event,
+    tenant: TenantContext,
+    engagement: UUID,
+    *,
+    checklist: bool,
+) -> None:
+    """Sign G5's outstanding levels, the completion checklist's or every other target's."""
     for blocker in await g5_blockers(tenant, engagement):
         kind, _sep, rest = blocker.partition(":")
         if kind in ("unsigned", "stale"):
             target_type, target, level_text = rest.rsplit(":", 2)
+            if (target_type == "completion_checklist") != checklist:
+                continue
             level = int(level_text.removeprefix("L"))
-            signer = _as_actor(event, _SIGNER_OF_LEVEL[level])
+            facts = await reviewable_facts(tenant, target_type, UUID(target))
+            # L2 and L3 are never the target's preparer (R-SO-3); L1 is the staff seat's
+            # (`sign_off.prepare` is the staff role's in the matrix).
+            barred = facts.preparer_user_ids if level in (2, 3) else frozenset[UUID]()
+            signer = _as_actor(event, _signer_of_level(event, level, barred))
             ctx = await _staff_context(conn, signer)
-            facts = await reviewable_facts(ctx.tenant, target_type, UUID(target))
             with suppress(AlreadySigned):
                 await sign_target(
                     ctx,
@@ -4541,6 +4617,16 @@ async def _archive_review_closed(conn: asyncpg.Connection, _: Scenario, event: E
                     facts.content_hash,
                     SIGN_OFF_STATEMENTS[level].version,
                 )
+
+
+def _archive_body(audit: str) -> tuple[UUID, list[UUID]]:
+    """The audit's TCWG body and its members' contacts (the governance_room slice's for
+    Northwind; the archive slice's own for Granite Peak)."""
+    found = _archive.BODIES[audit]
+    if found is None:
+        return UUID(_room.BODY_ID), [UUID(_room.contact_id_of(n)) for n, _ in _room.MEMBERS]
+    body, members, client = found
+    return UUID(body), [UUID(_room.contact_id_of(n, client)) for n, _ in members]
 
 
 async def _governance_id(conn: asyncpg.Connection, item: UUID, kind: str) -> UUID:
@@ -4572,10 +4658,9 @@ async def _archive_governance_drafted(conn: asyncpg.Connection, _: Scenario, eve
     communication = (
         cast(UUID, existing) if existing is not None else await governance_create(ctx, item, kind)
     )
-    # AUD-22's recipients: the Benefits Committee for Northwind (DEC-93); other clients have none
-    # seeded, so their letters go to no body and stay drafts the EP sends elsewhere.
-    if str(event.data["audit"]) == "A1":
-        await set_governance_recipients(ctx, item, [UUID(_room.BODY_ID)])
+    # AUD-22's recipients (DEC-93): Northwind's Benefits Committee, Granite Peak's audit committee.
+    body, _members = _archive_body(str(event.data["audit"]))
+    await set_governance_recipients(ctx, item, [body])
     await governance_request_approval(ctx, item, communication)
 
 
@@ -4589,8 +4674,8 @@ async def _archive_governance_sent(conn: asyncpg.Connection, _: Scenario, event:
         ctx,
         item,
         communication,
-        governance_body_id=UUID(_room.BODY_ID),
-        recipient_contact_ids=[UUID(_room.contact_id_of(name)) for name, _ in _room.MEMBERS],
+        governance_body_id=_archive_body(str(event.data["audit"]))[0],
+        recipient_contact_ids=_archive_body(str(event.data["audit"]))[1],
         channel="governance_room",
         seen_hash=str(current.content_hash),
     )
@@ -4653,12 +4738,32 @@ async def _archive_released(conn: asyncpg.Connection, _: Scenario, event: Event)
     fresh MFA, then ReleaseWorkflow (the route's own dispatch); the load waits for its result."""
     _engagement, item = await _archive_item(conn, event)
     ctx = await _staff_context(conn, event)
+    await _report_rendered(conn, ctx.tenant, item)
     snap = await release_snapshot(ctx.tenant, item)
     outcome = await request_release(ctx, item, snap.sha256, f"scenario-release:{event.id}")
     if isinstance(outcome, ReleaseRequest):
+        await _worker_clock(event.at)
         run_id = await start_release(outcome)
         handle = (await temporal_client()).get_workflow_handle(run_id)
-        await asyncio.wait_for(handle.result(), _WORKFLOW_SECONDS)
+        _workflow_done(await asyncio.wait_for(handle.result(), _WORKFLOW_SECONDS), "release")
+
+
+async def _worker_clock(at: datetime) -> None:
+    """The worker reads business time from the firm's demo clock, not the loader's frozen
+    instant: stand the firm's clock at the event before handing it work (a grant issued at 10:07
+    reads expired at wall time otherwise). `_finish` sets the clock running at the snapshot."""
+    admin = next(s for s in SEATS if FIRM_ROLES.get(s.initials) == "firm_admin")
+    user = user_id_of(admin)
+    ctx = AuthContext(
+        TenantContext(TENANT, "human", str(user)), user, UUID(int=0), "firm_admin", system_now()
+    )
+    await set_demo_clock(ctx, "frozen", at)
+
+
+def _workflow_done(result: object, what: str) -> None:
+    """A workflow that records its own failure answers `failed:<reason>`: the load stops."""
+    if isinstance(result, str) and result.startswith("failed:"):
+        raise RuntimeError(f"the {what} workflow failed: {result.removeprefix('failed:')}")
 
 
 async def _archive_form_5500_filed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -4704,9 +4809,10 @@ async def _archive_locked(conn: asyncpg.Connection, _: Scenario, event: Event) -
     archive_id = await decide_archive_lock(
         ctx, item, then_roll_forward=False, seen_checklist_hash=state.checklist_sha256
     )
+    await _worker_clock(event.at)
     run_id = await start_archive_lock(TENANT, item, archive_id)
     handle = (await temporal_client()).get_workflow_handle(run_id)
-    await asyncio.wait_for(handle.result(), _WORKFLOW_SECONDS)
+    _workflow_done(await asyncio.wait_for(handle.result(), _WORKFLOW_SECONDS), "archive lock")
 
 
 async def _archive_addition_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -4719,7 +4825,15 @@ async def _archive_addition_created(conn: asyncpg.Connection, _: Scenario, event
         item,
         description=_archive.ADDITION_DESCRIPTION,
         reason_code=cast(AdditionReason, _archive.ADDITION_REASON),
-        evidence_version_id=await _stored_evidence(conn, ctx, item, _archive.ADDITION_TITLE),
+        # The memo, written after the lock, joins the locked file as the addition's own
+        # evidence version (DEC-3308): an ordinary upload is refused on an archived engagement.
+        evidence_version_id=await store_addition_evidence(
+            ctx,
+            item,
+            title=f"{_archive.ADDITION_TITLE}.pdf",
+            content=f"{_archive.ADDITION_TITLE} {item}".encode(),
+            media_type="application/pdf",
+        ),
     )
 
 
@@ -4732,13 +4846,44 @@ async def _archive_addition_decided(conn: asyncpg.Connection, _: Scenario, event
     pending = await tenant_value(
         conn,
         TENANT,
-        "SELECT id FROM archive_additions WHERE work_item_id = $1 AND status = 'pending' "
-        "ORDER BY created_at LIMIT 1",
+        # Pending is "no decision yet": the decision is its own insert-only row (A-07-T42).
+        "SELECT a.id FROM archive_additions a WHERE a.work_item_id = $1 AND NOT EXISTS "
+        "(SELECT 1 FROM archive_addition_decisions d WHERE d.addition_id = a.id) "
+        "ORDER BY a.created_at LIMIT 1",
         item,
     )
     if pending is None:
         raise LookupError("no pending addition")
     await decide_archive_addition(ctx, item, cast(UUID, pending), approve=True)
+
+
+async def _archive_statements_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A-06's draft for an audit other than Northwind (whose drafts are the completion slice's)."""
+    engagement, item = await _archive_item(conn, event)
+    await draft_statements(await _staff_context(conn, event), engagement, item)
+
+
+async def _archive_statements_approved(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """Management's signed approval of the newest version, recorded by the manager (record
+    channel), as the completion slice records Dana's for Northwind."""
+    _engagement, item = await _archive_item(conn, event)
+    ctx = await _staff_context(conn, event)
+    version = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM statement_versions WHERE work_item_id = $1 "
+        "ORDER BY version_no DESC LIMIT 1",
+        item,
+    )
+    if version is None:
+        raise LookupError(f"{event.data['audit']} has no statement version to approve")
+    await record_management_approval(
+        ctx,
+        cast(UUID, version),
+        await _stored_evidence(conn, ctx, item, "Signed statements approval"),
+    )
 
 
 async def _archive_going_concern_requested(
@@ -4777,7 +4922,7 @@ async def _archive_going_concern_decided(
         cast(UUID, card["id"]),
         option_key=str(event.data["choice"]),
         factors=(),
-        rationale=None,
+        rationale=str(event.data["rationale"]) if event.data.get("rationale") else None,
         seen_version=int(cast(int, card["version_no"])),
     )
 
@@ -5752,12 +5897,22 @@ async def _completion_mapping(conn: asyncpg.Connection, _: Scenario, event: Even
         _completion.EBP_GROUPING_KEY,
     )
     engagement = (await _northwind_work_item(conn))[0]
-    await start_mapping(
-        await _staff_context(conn, event),
-        engagement,
-        await _northwind_tb(conn),
-        cast(UUID, version),
-    )
+    tb = await _northwind_tb(conn)
+    # Under `make dev` TB version 1 has already started the mapping (the relay runs A-03's
+    # `trial_balance.version_created`); the scenario takes it. Loads with no relay start it here.
+    # Taken, this event writes nothing and leaves no trace, so a later resume replays it: asking
+    # first keeps that replay from editing an engagement archived since (S35 follow-up).
+    if await tenant_value(
+        conn, TENANT, "SELECT 1 FROM mapping_sets WHERE trial_balance_id = $1", tb
+    ):
+        return
+    with suppress(LedgerMappingExists):
+        await start_mapping(
+            await _staff_context(conn, event),
+            engagement,
+            tb,
+            cast(UUID, version),
+        )
 
 
 async def _completion_tied(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -7045,6 +7200,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "archive.locked": _archive_locked,
     "archive.addition_created": _archive_addition_created,
     "archive.addition_decided": _archive_addition_decided,
+    "archive.statements_drafted": _archive_statements_drafted,
+    "archive.statements_approved": _archive_statements_approved,
     "archive.going_concern_requested": _archive_going_concern_requested,
     "archive.going_concern_decided": _archive_going_concern_decided,
     # T-04-T28 (`--slice tax_workspace`): worksheets, then issues, then the named checkpoints.

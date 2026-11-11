@@ -156,6 +156,11 @@ async def start_clocks(
     return run_id
 
 
+class _Unchanged(Exception):
+    """A step that finds nothing to change: its unit rolls back instead of committing empty (a
+    unit of work that records nothing may not commit; S35 follow-up)."""
+
+
 async def on_report_released(event: OutboxEvent) -> None:
     """`report.released` → the archive, the EBP filing row, the clocks, the retention anchor."""
     from abacus.modules.assurance.archive_gate import on_report_released as open_archive
@@ -182,15 +187,20 @@ async def _open_filing(tenant: TenantContext, engagement_id: UUID, work_item_id:
     label = await engagement_label(tenant, engagement_id)
     if label is None or label.type != "ebp_audit" or label.fiscal_period_end is None:
         return
-    async with uow(tenant) as tx:
-        await open_filing(
-            tx,
-            tenant_id=tenant.tenant_id,
-            engagement_id=engagement_id,
-            work_item_id=work_item_id,
-            filer_name=label.client_entity_name or label.client_name,
-            plan_year_end=label.fiscal_period_end,
-        )
+    try:
+        async with uow(tenant) as tx:
+            opened = await open_filing(
+                tx,
+                tenant_id=tenant.tenant_id,
+                engagement_id=engagement_id,
+                work_item_id=work_item_id,
+                filer_name=label.client_entity_name or label.client_name,
+                plan_year_end=label.fiscal_period_end,
+            )
+            if opened is None:
+                raise _Unchanged  # a redelivery: the row exists, nothing to record
+    except _Unchanged:
+        return
 
 
 async def _letter_due(
@@ -200,6 +210,15 @@ async def _letter_due(
     from abacus.modules.assurance.clocks import deadline
 
     due = deadline("au_c_265", release_date)
+    try:
+        await _set_letter_due(tenant, engagement_id, work_item_id, due)
+    except _Unchanged:
+        return  # already dated, or sent: nothing to record
+
+
+async def _set_letter_due(
+    tenant: TenantContext, engagement_id: UUID, work_item_id: UUID, due: date
+) -> None:
     async with uow(tenant) as tx:
         moved = await tx.session.scalar(
             text(
@@ -209,13 +228,14 @@ async def _letter_due(
             ),
             {"due": due, "wi": work_item_id},
         )
-        if moved is not None:
-            tx.record(
-                "governance_communication.due_set",
-                target=Target("governance_communication", UUID(str(moved))),
-                after=Ref(due_on=int(due.strftime("%Y%m%d"))),
-                scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
-            )
+        if moved is None:
+            raise _Unchanged
+        tx.record(
+            "governance_communication.due_set",
+            target=Target("governance_communication", UUID(str(moved))),
+            after=Ref(due_on=int(due.strftime("%Y%m%d"))),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
 
 
 async def _anchor_retention(
