@@ -15,9 +15,11 @@ from abacus.modules.workbench.session_activities import SESSION_ACTIVITIES
 from abacus.modules.workbench.session_workflow import WorkbenchSessionWorkflow
 from abacus.modules.workbench.sessions import (
     SessionLocked,
+    SessionSummary,
     get_session,
     open_session,
     post_message,
+    sessions_for_subject,
 )
 from abacus.modules.workbench.sessions_contract import agent_badge_router, sessions_router
 
@@ -39,7 +41,9 @@ __all__ = [
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "SessionLocked",
+    "SessionSummary",
     "get_session",
     "open_session",
     "post_message",
+    "sessions_for_subject",
 ]

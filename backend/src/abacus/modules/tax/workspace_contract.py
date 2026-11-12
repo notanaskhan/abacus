@@ -667,6 +667,64 @@ async def k1_override_route(treatment_id: UUID, body: K1OverrideIn, ctx: Ctx) ->
     return _k1_treatment_out(row)
 
 
+class AssistantOpenIn(BaseModel):
+    model_config = _strict()
+
+    title: Annotated[str, Field(min_length=1, max_length=200), Confidential] = "Assistant"
+
+
+class AssistantSessionOut(BaseModel):
+    """T-04-T37 (DEC-4316): one TAX-08 thread; `GET /v1/workbench/sessions/{id}` reads it."""
+
+    model_config = _frozen()
+
+    id: Annotated[UUID, Internal]
+    title: Annotated[str, Confidential]
+    state: Annotated[str, Internal]
+    last_item_at: Annotated[datetime | None, Internal] = None
+
+
+class AssistantHistoryOut(BaseModel):
+    model_config = _frozen()
+
+    items: Annotated[list[AssistantSessionOut], Confidential]
+
+
+@workspace_router.post(
+    f"{_R}/assistant-sessions",
+    action="session.create",
+    response_model=AssistantSessionOut,
+    status_code=201,
+    errors=(409,),
+)
+async def open_assistant_route(
+    return_id: UUID, body: AssistantOpenIn, ctx: Ctx
+) -> AssistantSessionOut:
+    """409 `assistant_unavailable` with `facts.reason` (consent_7216, ai_excluded, paused, …):
+    TAX-08's agents-off state; nothing is opened and no model is called."""
+    from abacus.modules.tax.assistant_sessions import open_assistant
+
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    session_id = await open_assistant(ctx, return_id, body.title)
+    return AssistantSessionOut(id=session_id, title=body.title, state="live")
+
+
+@workspace_router.get(
+    f"{_R}/assistant-sessions", action="session.read", response_model=AssistantHistoryOut
+)
+async def assistant_history_route(return_id: UUID, ctx: Ctx) -> AssistantHistoryOut:
+    from abacus.modules.tax.assistant_sessions import assistant_history
+
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    rows = await assistant_history(ctx, return_id)
+    return AssistantHistoryOut(
+        items=[
+            AssistantSessionOut(id=r.id, title=r.title, state=r.state, last_item_at=r.last_item_at)
+            for r in rows
+        ]
+    )
+
+
 @workspace_router.get(
     f"{_R}/residency", action="residency.read", response_model=ReturnResidencyOut, errors=(501,)
 )

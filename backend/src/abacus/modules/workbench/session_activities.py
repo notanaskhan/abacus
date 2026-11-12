@@ -130,7 +130,10 @@ async def session_turn_activity(tenant_id: str, session_id: str, kind: str, seq:
     payload = cast(dict[str, object], item.payload)
     child: UUID | None = None
     if item.run_id is None:
-        outcome = TurnOutcome("failed", failure="capability_unavailable")
+        # No run was opened: no capability, or availability refused it (consent_7216, paused, …).
+        outcome = TurnOutcome(
+            "failed", failure=str(payload.get("blocked") or "capability_unavailable")
+        )
     else:
         request = await _request(tenant, sid, "answer" if kind == "answer" else "message", payload)
         outcome = await run_session_turn(UUID(tenant_id), item.run_id, request)
