@@ -167,6 +167,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "k1_packages": frozenset(
         {"status", "delivery_contact_id", "e_furnishing_consent", "released_at"}  # + 0566
+        | {"partner_id"}  # T-05-T17 (0821): which partner a draft K-1 is for
     ),
     "k1_handoffs": frozenset(
         {"status", "replaced_at", "final_values", "target_evidence_version_id"}
@@ -478,5 +479,166 @@ UPDATE_COLUMNS.update(
                 "updated_at",
             }
         ),
+    }
+)
+
+# T-05-T17 (0821, DEC-4304): the entity return core (runs dark until the T-05 services).
+TABLES = TABLES | frozenset(
+    {
+        "entity_return_profiles",
+        "partners",
+        "ownership_periods",
+        "interest_transfers",
+        "allocation_structures",
+        "allocation_rungs",
+        "allocation_results",
+    }
+)
+INSERT_ONLY = INSERT_ONLY | frozenset({"allocation_structures", "allocation_results"})
+INSERT_COLUMNS.update(
+    {
+        "entity_return_profiles": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "work_item_id",
+                "id",
+                "principal_activity",
+                "business_code",
+                "accounting_method",
+                "books_basis",
+                "partnership_representative_contact_id",
+                "designated_individual_contact_id",
+                "ledger_source",
+                "prior_year_return_id",
+            }
+        ),
+        "partners": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "work_item_id",
+                "id",
+                "kind",
+                "display_name",
+                "entity_kind",
+                "admitted_on",
+                "withdrawn_on",
+                "related_client_entity_id",
+                "portal_contact_id",
+                "ord",
+            }
+        ),
+        "ownership_periods": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "work_item_id",
+                "id",
+                "partner_id",
+                "period_from",
+                "period_to",
+                "profit_pct",
+                "loss_pct",
+                "capital_pct",
+            }
+        ),
+        "interest_transfers": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "work_item_id",
+                "id",
+                "transfer_date",
+                "from_partner_id",
+                "to_partner_id",
+                "points",
+                "price",
+                "citation_ids",
+            }
+        ),
+        "allocation_structures": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "work_item_id",
+                "id",
+                "version_no",
+                "status",
+                "kind",
+                "method",
+                "convention",
+                "income_to_allocate",
+                "distributable",
+                "proposed_by_kind",
+                "proposal_id",
+                "content_hash",
+                "engine_name",
+                "engine_version",
+                "inputs_hash",
+                "citation_ids",
+                "supersedes_id",
+            }
+        ),
+        "allocation_rungs": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "work_item_id",
+                "id",
+                "structure_id",
+                "priority",
+                "rule_type",
+                "params",
+            }
+        ),
+        "allocation_results": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "work_item_id",
+                "structure_id",
+                "partner_id",
+                "period_key",
+                "rung_priority",
+                "amount",
+            }
+        ),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "entity_return_profiles": frozenset(
+            {
+                "principal_activity",
+                "business_code",
+                "accounting_method",
+                "books_basis",
+                "partnership_representative_contact_id",
+                "designated_individual_contact_id",
+                "ledger_source",
+                "prior_year_return_id",
+                "version_no",
+                "updated_at",
+            }
+        ),
+        "partners": frozenset(
+            {
+                "kind",
+                "display_name",
+                "entity_kind",
+                "admitted_on",
+                "withdrawn_on",
+                "related_client_entity_id",
+                "portal_contact_id",
+                "ord",
+                "updated_at",
+            }
+        ),
+        "ownership_periods": frozenset(
+            {"period_from", "period_to", "profit_pct", "loss_pct", "capital_pct"}
+        ),
+        "interest_transfers": frozenset({"transfer_date", "points", "price", "citation_ids"}),
+        "allocation_rungs": frozenset({"priority", "rule_type", "params"}),
     }
 )
