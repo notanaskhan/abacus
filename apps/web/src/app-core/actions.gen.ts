@@ -512,6 +512,8 @@ export const ACTIONS = [
   "screening.record",
   "screening.request",
   "screening.run",
+  "search.read",
+  "search_recent.record",
   "section_draft.run",
   "security.manage",
   "security.read",

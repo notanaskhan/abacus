@@ -430,6 +430,16 @@ SCREENING_CARD = Flag(
     kind="boolean",
     default="false",
 )
+SEARCH_AGENT_MODE = Flag(
+    name="search.agent_mode",
+    kind="boolean",
+    default="false",
+)
+SEARCH_PALETTE = Flag(
+    name="search.palette",
+    kind="boolean",
+    default="false",
+)
 SECURITY_CENTER_V1 = Flag(
     name="security_center.v1",
     kind="boolean",
@@ -590,6 +600,8 @@ FLAGS: dict[str, Flag] = {
     "run_trace.enabled": RUN_TRACE_ENABLED,
     "sampling.sample_sets": SAMPLING_SAMPLE_SETS,
     "screening.card": SCREENING_CARD,
+    "search.agent_mode": SEARCH_AGENT_MODE,
+    "search.palette": SEARCH_PALETTE,
     "security_center.v1": SECURITY_CENTER_V1,
     "signatures.envelopes": SIGNATURES_ENVELOPES,
     "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,

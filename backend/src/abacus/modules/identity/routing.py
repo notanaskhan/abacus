@@ -160,6 +160,7 @@ _WRITABLE_PATHS: Final = frozenset(
         "/v1/portal/auth/sign-out",
         "/v1/telemetry/errors",
         "/v1/knowledge/search",  # a read, sent as a POST for its body
+        "/v1/search",  # P-02 (ADR-241): a read, sent as a POST so the text never reaches a URL
         "/v1/firm/staff/{user_id}/revoke",
         "/v1/firm/staff/invitations/{invitation_id}/revoke",
     }

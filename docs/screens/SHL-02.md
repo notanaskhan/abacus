@@ -43,7 +43,7 @@ the 28 group labels and the 36 footer.
 |---|---|---|---|---|
 | read | `POST /v1/search` | `SearchQueryIn` `{q, types?, limit_per_group, context?}` → `SearchResultsOut` `{groups, suggestion, total_visible}`; no `hidden_by_wall` field | `search.read` | firm roles; client, agent, system and `platform_support_content` refused (403 `forbidden`); 403 `flag_off`, 422 `q_invalid`, 429 `rate_limited`, 503 `search_unavailable` |
 | read | `GET /v1/search/recents?limit=5` | `SearchRecentsOut` `{items}` | `search.read` | own recents only, re-filtered by `visible()` |
-| write | `POST /v1/search/recents` | `SearchRecentIn` `{object_type, object_id}` → 204 | `search.recent.record` | 404 `not_found` when the viewer may not read the object |
+| write | `POST /v1/search/recents` | `SearchRecentIn` `{object_type, object_id}` → 200 `SearchRecentRecordedOut` (identifiers) | `search_recent.record` | 404 `not_found` when the viewer may not read the object |
 
 Every endpoint is in `docs/contracts/c15-search.md` (P-02-T01); 501 until P-02-T08. Search text
 travels only in the POST body (ADR-241 decision 7).

@@ -194,9 +194,23 @@ from abacus.modules.platform.slots import (
     home_count,
     home_count_keys,
     register_home_count,
-    register_search_projection,
     search_document,
 )
+from abacus.modules.platform.search.routes import router as search_router
+from abacus.modules.platform.search.spec import (
+    GROUP_ORDER as SEARCH_GROUP_ORDER,
+)
+from abacus.modules.platform.search.spec import (
+    RelatedParty,
+    SearchGroup,
+    SearchIndexDocument,
+    SearchProjection,
+    SearchRegistrationInvalid,
+    register_search_projection,
+)
+from abacus.modules.platform.search.spec import ScopeKind as SearchScopeKind
+from abacus.modules.platform.search.spec import projection as search_projection
+from abacus.modules.platform.search.spec import projections as search_projections
 from abacus.modules.platform.tenant_keys import (
     TENANT_KEY_ACTIVITIES,
     InMemoryTenantKeyOps,
@@ -258,6 +272,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     incident_platform_router,  # Q-02-T33 (RB-27): staff propagation
     controls_platform_router,  # G-02-T20: staff import and publish the Pub 4557 definitions
     reference_sets_router,  # C21 part A (K-02-T05)
+    search_router,  # C15 v1 (P-02-T01 stub; P-02-T08 implements it)
 )
 
 # Q-01-T45: the worker loads this module for tenant provisioning (ADR-156); Q-02-T33 adds the
@@ -376,6 +391,15 @@ __all__ = [
     "RetentionFloor",
     "RunMinutes",
     "SearchDocument",
+    "SEARCH_GROUP_ORDER",
+    "RelatedParty",
+    "SearchGroup",
+    "SearchIndexDocument",
+    "SearchProjection",
+    "SearchRegistrationInvalid",
+    "SearchScopeKind",
+    "search_projection",
+    "search_projections",
     "SpendAnomalyWorkflow",
     "StandardsSetRefused",
     "StoredFile",
