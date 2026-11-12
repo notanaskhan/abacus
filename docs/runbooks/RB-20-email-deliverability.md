@@ -47,6 +47,28 @@ Bounce and complaint rates back under the thresholds for 24 hours; SLO-07's queu
 ## 8. Review
 Typical actions: a pre-send check, an alarm earlier on a firm's bounce rate.
 
+## The client-mail gate and firm sender domains (R-01-T27; DEC-950 to DEC-955)
+- **"Nothing reaches our clients" at a real firm:** check the gate before deliverability. Until the
+  platform opens it, every client, third-party and respondent send is recorded `blocked` with
+  `firm_not_client_facing` (`send_templated`); the firm's message list shows them blocked, not
+  bounced. Opening it is a change in the Tuesday window, two people named, as an ECS one-off
+  `abacus-ops` task, never a laptop:
+
+      python -m abacus_tools.client_mail open --tenant <tenant_id> --operator <handle> \
+          --second <handle> --request-ref <change record>
+
+  Rollback (one person): `python -m abacus_tools.client_mail close --tenant <tenant_id>
+  --operator <handle> --request-ref <change record>`. A synthetic firm's mail is open and goes to
+  the sink; do not open the gate to "test" a real firm.
+- **Mail from the firm's domain bounces or lands in spam:** ADM-10's sending domain shows
+  `pending_dns`, `verified` or `failed`. `failed` within 72 hours means the DKIM CNAMEs or the
+  MAIL FROM MX/SPF records were not published or were changed; the firm republishes the five
+  records and runs Check now. Contain by turning `communications.firm_sender_domain` off for the
+  firm: From falls back to the neutral sender under the firm's name, with Reply-To the firm's
+  address while its domain is verified.
+- Suppressed addresses (a hard bounce or a complaint) stay suppressed; `send_templated` refuses
+  them with `suppressed`. Removing one is a support request with the client's confirmation.
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|

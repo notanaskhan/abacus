@@ -116,6 +116,27 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 - **Matcher picks (SPEC-033; TASK-066):** `inbox_file.extracted` follows an inbox file's extraction. Agents registers `register_match_picks`; the inbox listing merges the matcher's shown picks first (`source: matcher`, no reasons, only requests the person may assign), then code's suggestions, at most three. Assignments accept `suggestion_source: matcher`.
 - **General ledger workbooks (SPEC-034; TASK-070, `render_gl.py`):** streaming, deterministic (`render._normalised`): the general ledger ("Reconciliation" then "Detail", "Detail (2)", … before Excel's row limit) and the journal listing (one block per transaction by date, type and reference, or date, type and name; unbalanced blocks marked). Text is never a formula. At 760,000 lines: 24 MB and 29 MB.
 
+## Intake sources, classification and Files (N-01; SPEC-380; `files-browser.md`)
+- **Intake sources** (`intake_sources.py`): an intake attachment (communications' row) runs the
+  same upload steps as a version, through a resolver communications registers; its derived rows
+  carry `inbox_attachment_id` and no engagement (0370) until filed, and filing reuses them.
+- **Detached keys** (`intake_keys.py`, ADR-162 §5): a portal intake upload is stored under a key of
+  its own (`evidence_intake_object_keys`); withdrawing it and 30 days destroy that key, and
+  `storage.get` raises `KeyDestroyed` for the object and everything derived from it.
+- **Classification** (`classifier.py` pure, `classification.py` PROTECTED): code classifies first
+  (form family, code, kind, tax year from the name and the first pages' words, by
+  `classifier_rules.yaml`); the matcher's intake proposal is its own `agent` row. Words never
+  leave the function and are never logged.
+- **Filing** (`intake_filing.py`): a person's Apply files the attachment as a new item (an
+  engagement or the client's permanent file) or the next version of one; superseding keeps the
+  replaced version, struck, and never deletes (ADR-004, ADR-158).
+- **Files** (`files.py`, `files_contract.py`; FIL-01 read-only, DV-10): the tree (permanent file,
+  years, work items, five folder kinds), folders, the drawer (versions, retention, holds, what it
+  supports) and the access log; counts only over rows the viewer may see, walled clients nowhere.
+- **Misfiled documents** are never moved or deleted. A document filed to the wrong request is
+  returned with `wrong_document` (P-06's Return, `…/request-items/{id}/return-to-client`) and the
+  right file goes in by upload on behalf; a filed attachment is not re-filed in N-01 (OQ-5; RB-81).
+
 ## Engagement export (A-01-T17 to T22; SPEC-344; `engagement-export-v1.md`)
 
 - **Routes:** create, list, status and undo (`export_contract.py`, `exports.py`); download with one `Range` (`export_download.py`). `export.create` and `export.download` need an engagement partner or manager with fresh MFA, independence and onshore; download also needs the requester or an `export.create` holder.
