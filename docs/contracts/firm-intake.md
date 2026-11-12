@@ -1,10 +1,10 @@
-# Firm intake: C5 v1.2 intake half (stub)
+# Firm intake: C5 v1.2 intake half
 
 | Field | Value |
 |---|---|
 | Register row | C5 (requests and binders), intake half v1.2 |
 | Version | v1.2 (intake half) |
-| Status | stub (N-01-T02, 2026-10-27); every route 404 with its flag off, 501 `not_implemented` with it on |
+| Status | frozen v1.2 (N-01-T30, 2026-11-12): every route live (N-01-T09, T13, T14, T18); 404 with its flag off. Additive changes only; a breaking change ships as v1.3 with one sprint of overlap. Stub from N-01-T02 (2026-10-27) |
 | Provider epic | N-01 |
 | Consumers | R-01 (POR-03 "Upload something else"), T-02 (TAX-03 "Waiting n"), I-01 (`inbox_waiting` home count), P-11 (classifications), N-02 (signed copies), A-07, N-03 (inbound transport), N-04 and C-01 (destination kinds) |
 | Freeze sprint | S15 Contract Monday (Mon May 17, 2027) |

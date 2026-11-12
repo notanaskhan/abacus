@@ -82,3 +82,31 @@ gate), `docs/runbooks/r01-portal-flip.md`.
   the sink. `close` is the rollback.
 - **Deliveries** (`deliveries.py`): SES events drained every minute, once each; a permanent bounce
   or complaint suppresses the address.
+
+## Firm intake and triage (N-01; SPEC-380; `docs/contracts/firm-intake.md`)
+Flags: `inbox.firm_intake` (firm routes), `portal.intake_upload` (POR-03), `matching.firm_intake`
+(matcher candidates). Runbooks: RB-80 (intake backlog), RB-81 (misfiled document), RB-24 (scanner
+down: intake fails closed), RB-32 (withdrawn portal uploads).
+- **One model, three channels** (`intake.py`, ADR-210 clause 1): `email`, `portal_upload`
+  (`portal_intake.py`) and `staff_logged` (Log received documents). Every message goes through
+  `record_inbound_message`, every file through `add_attachment`: at most 50 MB, typed from the
+  bytes and scanned before it is stored; a scanner outage refuses the file (RB-24), never stores it
+  unscanned.
+- **Matching is code** (never a model): the client a person picked, the named contact's client,
+  the portal principal's scope, or a sender rule on the address's HMAC; else unmatched.
+- **Who reads** (`intake_scope.py`, `inbox_read.py`; DEC-75, DEC-43): an unmatched thread is the
+  intake scope's only, by sender and subject; a matched one is read as its client is (a wall
+  answers 404). Bodies need `inbox.read_content`, original bytes `inbox.download`; both audited.
+- **AttachmentTriage** (`triage_workflow.py`, one run per attachment): evidence's upload steps by
+  name (extraction, word layer, PII scan, masked preview), then classify and flag
+  (`triage_classify.py`, `triage_flags.py`: `block_bulk`, `force_hold`, `info`), then a matched
+  attachment moves New → Waiting. A failed step never undoes the ones before it.
+- **Candidates** (`intake_candidates.py`): the matcher's intake-mode proposals through a slot
+  agents fills; a card names only destinations the reader may file to now.
+- **Apply** (`triage_apply.py`, ADR-210 clause 5): a person's decision per attachment, insert-only
+  (`triage_decisions`, `actor_kind = 'human'` by CHECK), then its effect in the same unit of work:
+  File (evidence's `intake_filing`, a new item or version n+1; superseding never deletes), Hold
+  (ask the client) or Ignore. The agent and the system are denied by the matrix.
+- **Withdrawal** (`intake_purge_workflow.py`): a client's withdrawn portal upload is erased after
+  30 days by destroying its own key (ADR-162 §7); a hold defers it a day at a time.
+- `triage_outcomes.py` feeds the matcher's shadow score (people's decisions, identifiers only).

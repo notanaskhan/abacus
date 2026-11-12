@@ -126,3 +126,16 @@ SHL-09 to SHL-16 settled four deviations. A screen hosting them inherits these; 
   that keeps the page's query (`?binder=`, `?filter=`, `?category=`); ✕, the scrim and Esc return to
   the page; below 768 px a full-screen sheet. Build request-detail sheets this way, not as a new
   page, so the list keeps its place.
+
+## T8 thread rows and the PathPicker (N-01-T30)
+- INB-01 is T8 (filter bar 50 · rail 392 · reading flex), the TPL-08 specimen made live
+  (`apps/web/src/screens/INB-01/index.tsx`). A rail row is one `InboxThreadRow`: subject
+  (`subject_display`), from (`sender_display`, then ` · {client_name}` when matched), received time
+  in the firm's zone, and the thread roll-up glyph from `inbox_item` codes (a ring while any
+  attachment is `new`). Unmatched threads carry the amber "Match client…" chip; ignored rows are
+  muted. Never show the sender's raw address beyond what the API returns.
+- The rail polls every 10 s while visible (DEC-23); the reading pane opens
+  `GET /v1/inbox/threads/{id}`; INB-02 opens over it as `?ov=file&message=<uuid>`.
+- INB-02's destination picker is a tree the server builds per reader (`triage_apply.py`); every
+  node is re-authorised server-side. The client never filters destinations itself, and a
+  candidate is shown only if the server returned it.

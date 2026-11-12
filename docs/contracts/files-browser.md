@@ -1,10 +1,10 @@
-# Files browser (v1, stub)
+# Files browser (v1)
 
 | Field | Value |
 |---|---|
 | Register row | proposed for the register (N-01 §8.1; chapter 01 owns the numbering) |
 | Version | v1 |
-| Status | live (N-01-T19, 2026-10-29; DEC-1051); stub from N-01-T02 (2026-10-27). 404 with `files.browser` off |
+| Status | frozen v1 (N-01-T30, 2026-11-12); live since N-01-T19 (2026-10-29; DEC-1051); stub from N-01-T02 (2026-10-27). 404 with `files.browser` off. Additive changes only; FIL-01's writes arrive as v1.1 |
 | Provider epic | N-01 |
 | Consumers | FIL-01; folder providers and badges from A-07, R-02 and N-02 (signed copies) |
 | Freeze sprint | S16 Contract Monday (Mon May 31, 2027) |

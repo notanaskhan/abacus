@@ -1,13 +1,13 @@
 ---
 id: SPEC-380
 title: "Firm intake and Files: channel-agnostic intake, triage, client-scoped files and the read-only Files browser (N-01)"
-status: approved
+status: done
 owner: founder
 risk_zone: red
 related_adrs: [ADR-004, ADR-005, ADR-024, ADR-031, ADR-050, ADR-052, ADR-110, ADR-145, ADR-147, ADR-158, ADR-162, ADR-210]
 related_specs: [SPEC-023, SPEC-033]
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-11-12
 ---
 
 > **Instructions for coding agents**

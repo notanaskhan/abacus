@@ -215,3 +215,11 @@ invoked. Two rows stay partial outside the repo: R-01-T32 (the journeys on stagi
 (PF-X1 synthetic; real DKIM and MAIL FROM need SES and a live firm). Contracts frozen: C5 section
 `portal-pbc` v1 and C16 v1.1. The Jul 13 per-firm flips and their rollbacks:
 `docs/runbooks/r01-portal-flip.md`.
+## N-01 actuals (N-01-T30, 2026-11-12)
+
+N-01 (firm inbox, triage and files) planned 28.0 task-equivalents in 30 rows (S13–S18); 29 rows
+have a task file on main, all merged, and this row closes the docs. No cut was invoked. Three rows
+stay partial on clauses outside the repo: N-01-T26 (provider-terms entry and Bedrock route parity
+for matcher v3, `docs/plan/status/n01-t26-matcher-v3-clearance.md`), N-01-T27 (the journey legs on
+staging or production) and N-01-T29 (per-firm flips wait on pilot firms; pen-test findings are
+deferred, DEC-1389). Contracts frozen: C5 v1.2 intake half (`firm-intake.md`) and Files browser v1.
