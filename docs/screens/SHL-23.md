@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Route and params | Docked in Home as HOME-05 (`/home?today=open`, I-02-T17); a left drawer over any firm route, `?ov=today` (from the bell and "Open Today ›"); `?ov=today:history:<briefId>` (a read-only past brief) |
+| Route and params | Docked in Home as HOME-05 (`/home?brief=1`, I-02-T17); a left drawer over any firm route, `?ov=today` (from the bell and "Open Today ›"); `?ov=today:history:<briefId>` (a read-only past brief) |
 | Template and host frame | Pane 470 (docked) or a left drawer x10–480, y10–850, radius 14, `--e-modal`, **no scrim** · `Wave 0 - Shell.dc.html#shl23` |
 | Surface | firm, every role, role-shaped (never a client surface, INV-4) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SHL-23 Today brief panel/` (README.md, spec.md; no revision.md; DF-25 binds) |

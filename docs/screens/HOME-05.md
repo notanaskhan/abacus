@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Route and params | `/home` with the brief docked (`?today=open`; collapsed is HOME-01 exactly) |
+| Route and params | `/home?brief=1` with the brief docked (collapsed is HOME-01 exactly; I-02 §3.9) |
 | Template and host frame | T11 (HOME-01) + SHL-23 docked: pane 470 at x12–482, y98–848; right region 896 (tiles 88×99 ×4 at gap 6, Audits 330, Closes 90, Notices 84; queue 506; right column 380) · `Wave 5` canvas `#home05` |
 | Surface | firm (INV-4) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/HOME-05 Home with Today brief/` (README.md, spec.md; no revision.md; DF-25 binds: HOME-05 d is canonical for Margaret; HOME-05 b's to-do reads "Approve the M-2 fix — Ridgeline Capital Accounts", due Sep 15) |

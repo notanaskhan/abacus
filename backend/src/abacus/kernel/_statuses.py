@@ -688,6 +688,19 @@ class WorkbenchSessionStatus(StrEnum):
     FAILED = "failed"
 
 
+class DailyBriefingStatus(StrEnum):
+    BUILDING = "building"
+    READY = "ready"
+    UNVERIFIED = "unverified"
+    FAILED = "failed"
+    UNAVAILABLE = "unavailable"
+
+
+class AttentionItemStatus(StrEnum):
+    pass
+    # derived, never stored: letter_unsigned, missing_support, requests_open
+
+
 class WorkbenchSessionFilterStatus(StrEnum):
     pass
     # derived, never stored: all, mine, via_agent, running, needs_answer
@@ -1890,6 +1903,15 @@ STORED: dict[str, tuple[str, ...]] = {
         "ready_for_review",
         "complete",
         "failed",
+    ),
+    "daily_briefing": (
+        "building",
+        "ready",
+        "unverified",
+        "failed",
+        "unavailable",
+    ),
+    "attention_item": (
     ),
     "workbench_session_filter": (
     ),
