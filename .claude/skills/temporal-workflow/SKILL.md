@@ -71,6 +71,14 @@ Copy `SampleDrawWorkflow` (`sampling/draw_workflow.py`, activity `sample_draw.ru
   `session-v1-*.json`; replay tests `tests/workflows/test_p10t29_agent_run_replay.py`,
   `test_p10t32_agent_run_replay.py`. A new behaviour adds a `v<N+1>` history.
 
+## One run per object, steps by name (AttachmentTriage, N-01-T12; N-01-T30)
+`AttachmentTriage` (`communications/triage_workflow.py`) is the pattern for a per-object pipeline
+across modules: one workflow id per object (`attachment_triage:<tenant>:<id>`, so a restart
+resumes rather than duplicates), activities called by name so communications never imports
+evidence's internals, identifiers only in the history, and a failing step never undoes the ones
+before it. New steps land behind `workflow.patched(...)` (the classify step, N-01-T17). Starting it
+is an outbox subscriber on the domain event (`inbox_attachment.received`), never a direct call.
+
 ## Tests
 - Replay test with recorded histories (required check). Record with `python -m abacus_tools.workflows.record_<name>`; never overwrite a history, add `v<N+1>`.
 - Tracing comes from the shared client's interceptor (`kernel.temporal`); don't add your own.

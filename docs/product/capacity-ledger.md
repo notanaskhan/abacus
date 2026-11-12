@@ -204,3 +204,13 @@ status files; DEC-4414.
 P-10 actuals: every row has a task file. No row of the pre-agreed internal cut list was invoked
 except cut 3 (the PDF trace export's v2 fields, A-07 or G-02 depth). The partial rows' remaining
 steps are listed in `docs/plan/status/P-10-closeout.md`; none blocks a consumer epic's build.
+
+
+## N-01 actuals (N-01-T30, 2026-11-12)
+
+N-01 (firm inbox, triage and files) planned 28.0 task-equivalents in 30 rows (S13–S18); 29 rows
+have a task file on main, all merged, and this row closes the docs. No cut was invoked. Three rows
+stay partial on clauses outside the repo: N-01-T26 (provider-terms entry and Bedrock route parity
+for matcher v3, `docs/plan/status/n01-t26-matcher-v3-clearance.md`), N-01-T27 (the journey legs on
+staging or production) and N-01-T29 (per-firm flips wait on pilot firms; pen-test findings are
+deferred, DEC-1389). Contracts frozen: C5 v1.2 intake half (`firm-intake.md`) and Files browser v1.
