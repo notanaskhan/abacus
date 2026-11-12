@@ -532,7 +532,9 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Learned context | UI label; no "memory", "trained" or "learned" in copy. | `memory_items`, `corrections`, `agent_feedback` | — |
 | Review package | SHL-19. | `review_packages` | — |
 | Screening feedback | A person's thumbs up or down on an evidence screening aggregate (SHL-20f; a `request_batch` screening result). Thumbs down needs a reason code (`wrong_request_match`, `wrong_period`, `unclear_file`, `other`); the note is sealed. Insert-only. It never changes a verdict or a request status, and any learned context it feeds stays a proposal (ADR-068). Distinct from `agent_feedback`. | `screening_feedback` (`thumb`, `reason_code`, `note_sealed`) | — |
-| Today | UI "Today". | `daily_briefings` | — |
+| Today | UI "Today": the viewer's brief for the day (SHL-23, HOME-05). Counts, the fact paragraph, Needs you first and the groups are code; only per-engagement prose (why lines, the drill-in summary, the risk line) is the agent's, verified before display (I-02, SPEC-654). | `daily_briefings` (agents); `practice/today/` | `digest` (the P-5 notification digest), `briefing` in UI copy |
+| Daily briefing | One stored brief row: an engagement briefing (scope `engagement`, model prose by reference) or the viewer's day snapshot (scope `user`, identifiers and integers only). Kept 90 days (record type `daily_briefing`). | `daily_briefings.scope` (`engagement`, `user`) | — |
+| Attention item | An owner-registered condition on an engagement the viewer leads (a letter unsigned, PBC behind the report target, missing support); UI "Needs attention". Never "alert" (I-02-T03). | `engagements.register_attention_provider`; C2 `attention_item` | `alert`, `warning` |
 
 ## New terms: workbench
 

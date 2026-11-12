@@ -26,6 +26,7 @@ from abacus.modules.practice.due_dates_contract import (
 from abacus.modules.practice.due_dates_routes import router as due_dates_router
 from abacus.modules.practice.home_contract import router as home_router
 from abacus.modules.practice.jobs import ACTIVITIES, SCHEDULES, SUBSCRIPTIONS, WORKFLOWS
+from abacus.modules.practice.today.routes import today_router
 from abacus.modules.practice.workflows import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
 from abacus.modules.tax.api import register_due_dates_source, register_extension_dates_source
 
@@ -37,6 +38,7 @@ register_extension_dates_source(due_dates_for_extension)
 ROUTERS: tuple[AbacusRouter, ...] = (
     home_router,
     due_dates_router,  # C21 part A (K-02-T07)
+    today_router,  # I-02-T03: the Today brief (stubs behind today_brief.enabled)
 )
 
 __all__ = [

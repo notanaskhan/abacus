@@ -30,6 +30,7 @@ from abacus.modules.workbench.sessions import (
     post_message,
 )
 from abacus.modules.workbench.sessions_contract import agent_badge_router, sessions_router
+from abacus.modules.workbench.today_questions_contract import today_questions_router
 
 # P-10-T43: the audit explorer places a session's events by its engagement (SPEC-304).
 register_engagement_owners(AUDIT_KINDS, audit_owners)
@@ -42,6 +43,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     # W-02-T02: rename, delete and the context routes (stubs).
     manage_router,
     context_options_router,
+    # I-02-T03: the Today questions route shape (stub).
+    today_questions_router,
 )
 
 # P-10-T14: the legacy run backfill asks which session first named each run.

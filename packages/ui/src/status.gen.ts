@@ -3061,6 +3061,66 @@ export const STATUS_REGISTRY = {
       "disc": "x_brick"
     }
   },
+  "daily_briefing": {
+    "building": {
+      "label": "Building",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "panel": "Building your brief from {n} items, {d} deadlines and {r} runs…"
+      },
+      "disc": "spinner"
+    },
+    "ready": {
+      "label": "Ready",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "footer": "Brief built {time} from your queue, deadlines and runs · every line links to its source"
+      }
+    },
+    "unverified": {
+      "label": "Unverified",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "x_brick"
+    },
+    "unavailable": {
+      "label": "Unavailable",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "attention_item": {
+    "letter_unsigned": {
+      "label": "Letter unsigned",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "missing_support": {
+      "label": "Missing support",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "requests_open": {
+      "label": "{n} requests open",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    }
+  },
   "workbench_session_filter": {
     "all": {
       "label": "All sessions",

@@ -10,6 +10,7 @@ import { clientRecordHandlers } from "./handlers/client-record";
 import { clientHandlers } from "./handlers/clients";
 import { engagementRecordHandlers } from "./handlers/engagement-record";
 import { engagementHandlers } from "./handlers/engagements";
+import { todayHandlers } from "./handlers/today";
 import { workbenchHandlers } from "./handlers/workbench";
 import { DEMO_INSTANT, getSeed } from "./seed";
 
@@ -29,6 +30,8 @@ export function seedScenario(): Scenario {
         ...clientHandlers(),
         // W-02-T08: the workbench-sessions family (WB-01, WB-02, WB-03).
         ...workbenchHandlers(),
+        // I-02-T03: the Today brief (SHL-23, HOME-05).
+        ...todayHandlers(),
       },
     },
   }).e0;

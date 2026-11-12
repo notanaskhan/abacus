@@ -6969,6 +6969,61 @@
         "title": "AssignIn",
         "type": "object"
       },
+      "AssignPrefill": {
+        "description": "One SHL-17 to-do prefill for an open item; the person presses Create (INV-1, INV-5).",
+        "properties": {
+          "anchor_label": {
+            "cls": "confidential",
+            "title": "Anchor Label",
+            "type": "string"
+          },
+          "anchor_ref": {
+            "cls": "internal",
+            "maxLength": 120,
+            "title": "Anchor Ref",
+            "type": "string"
+          },
+          "assignee_name": {
+            "cls": "confidential",
+            "title": "Assignee Name",
+            "type": "string"
+          },
+          "assignee_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Assignee User Id",
+            "type": "string"
+          },
+          "due_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "gate_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gate_id",
+          "assignee_user_id",
+          "assignee_name",
+          "title",
+          "due_on",
+          "anchor_label",
+          "anchor_ref"
+        ],
+        "title": "AssignPrefill",
+        "type": "object"
+      },
       "AssignedOut": {
         "properties": {
           "evidence_version_id": {
@@ -11459,6 +11514,63 @@
         "title": "AutonomySection",
         "type": "object"
       },
+      "Availability": {
+        "description": "Whether the narrative and the ask composer are offered, and why not (DF-04).",
+        "properties": {
+          "ask": {
+            "cls": "internal",
+            "title": "Ask",
+            "type": "boolean"
+          },
+          "ask_reason": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ask Reason"
+          },
+          "narrative": {
+            "cls": "internal",
+            "title": "Narrative",
+            "type": "boolean"
+          },
+          "narrative_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "boundary_refused",
+                  "consent_7216",
+                  "metadata_only",
+                  "budget_soft_limit",
+                  "flag_off"
+                ],
+                "type": "string"
+              },
+              {
+                "const": "not_synthetic",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Narrative Reason"
+          }
+        },
+        "required": [
+          "narrative",
+          "ask"
+        ],
+        "title": "Availability",
+        "type": "object"
+      },
       "BadgePart": {
         "additionalProperties": false,
         "properties": {
@@ -14260,6 +14372,117 @@
           "available"
         ],
         "title": "CapabilityAvailabilityOut",
+        "type": "object"
+      },
+      "Card": {
+        "description": "One engagement the viewer has open gates or attention on, in card order (\u00a73.4).",
+        "properties": {
+          "briefing_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Briefing Id"
+          },
+          "briefing_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "building",
+                  "ready",
+                  "unverified",
+                  "failed",
+                  "unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Briefing Status"
+          },
+          "engagement_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Engagement Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "more": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "More",
+            "type": "integer"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GateRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "summary_blocks": {
+            "cls": "confidential",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Summary Blocks",
+            "type": "array"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "boundary_refused",
+                  "consent_7216",
+                  "metadata_only",
+                  "budget_soft_limit",
+                  "flag_off"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Unavailable Reason"
+          },
+          "work_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Work Item Id"
+          }
+        },
+        "required": [
+          "engagement_id",
+          "label",
+          "rows"
+        ],
+        "title": "Card",
         "type": "object"
       },
       "CardDecideIn": {
@@ -24531,6 +24754,43 @@
         "title": "CorrectionIn",
         "type": "object"
       },
+      "CountCell": {
+        "description": "One Today cell: a C13 band (or Overdue) with its count and the HOME-02 filter it opens.",
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "href": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Href",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "decision",
+              "sign_off",
+              "approval_send",
+              "signature",
+              "needs_attention",
+              "overdue"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "count",
+          "href"
+        ],
+        "title": "CountCell",
+        "type": "object"
+      },
       "CoverageGapsOut": {
         "properties": {
           "areas_with_accounts_without_requests": {
@@ -27883,6 +28143,40 @@
         "title": "DoneOut",
         "type": "object"
       },
+      "DownstreamRow": {
+        "properties": {
+          "deep_link": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Deep Link",
+            "type": "string"
+          },
+          "state_line": {
+            "cls": "confidential",
+            "title": "State Line",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "title",
+          "state_line",
+          "deep_link"
+        ],
+        "title": "DownstreamRow",
+        "type": "object"
+      },
       "DraftCreateIn": {
         "additionalProperties": false,
         "properties": {
@@ -28651,6 +28945,98 @@
         "title": "DrillRowOut",
         "type": "object"
       },
+      "DrillVM": {
+        "description": "`GET /v1/me/today/work-items/{id}`: HOME-05 b / SHL-23 2.",
+        "properties": {
+          "blockers": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GateRow"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "downstream": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/DownstreamRow"
+            },
+            "title": "Downstream",
+            "type": "array"
+          },
+          "not_assignable": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/NotAssignable"
+            },
+            "title": "Not Assignable",
+            "type": "array"
+          },
+          "open_href": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Open Href",
+            "type": "string"
+          },
+          "prefills": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/AssignPrefill"
+            },
+            "title": "Prefills",
+            "type": "array"
+          },
+          "select_refs": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Select Refs",
+            "type": "array"
+          },
+          "summary_blocks": {
+            "cls": "confidential",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Summary Blocks",
+            "type": "array"
+          },
+          "summary_fallback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Summary Fallback"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "title",
+          "blockers",
+          "open_href"
+        ],
+        "title": "DrillVM",
+        "type": "object"
+      },
       "DropAcceptedOut": {
         "description": "202: the file is stored and waits for the sort; its outcome comes from the batch poll.",
         "properties": {
@@ -28779,6 +29165,38 @@
           "file_name"
         ],
         "title": "DropFileOut",
+        "type": "object"
+      },
+      "DueChip": {
+        "properties": {
+          "days": {
+            "cls": "internal",
+            "title": "Days",
+            "type": "integer"
+          },
+          "due_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "tone": {
+            "cls": "internal",
+            "enum": [
+              "red_tint",
+              "amber",
+              "neutral"
+            ],
+            "title": "Tone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "due_on",
+          "days",
+          "tone"
+        ],
+        "title": "DueChip",
         "type": "object"
       },
       "DueDateExtension": {
@@ -45423,6 +45841,104 @@
         "title": "GateOverride",
         "type": "object"
       },
+      "GateRow": {
+        "description": "A highlighted row: one C13 gate with its words and its source.",
+        "properties": {
+          "context_line": {
+            "cls": "confidential",
+            "title": "Context Line",
+            "type": "string"
+          },
+          "deep_link": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Deep Link",
+            "type": "string"
+          },
+          "due": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DueChip"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "folded": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Folded",
+            "type": "integer"
+          },
+          "gate_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "highlight_refs": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Highlight Refs",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "decision",
+              "sign_off",
+              "approval_send",
+              "signature",
+              "needs_attention",
+              "overdue"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "why_blocks": {
+            "cls": "confidential",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Why Blocks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "gate_id",
+          "kind",
+          "title",
+          "deep_link",
+          "context_line"
+        ],
+        "title": "GateRow",
+        "type": "object"
+      },
       "GateRowOut": {
         "description": "One of fieldset A's twelve rows (chapter 05 \u00a75.2.13), from the compiled gate catalogue\ncross-checked against the matrix (AC-32). `approver_rule` is the default human approver as a\ncode the SPA words (\"Named human, one batch\"); `default_approver_roles` the matrix roles it\nresolves to.",
         "properties": {
@@ -47571,6 +48087,150 @@
         "title": "GridRowOut",
         "type": "object"
       },
+      "Group": {
+        "description": "A drill group (\u00a73.5); Late is always present, the others only when not empty.",
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "href": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Href"
+          },
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GroupItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "high_risk",
+              "late",
+              "due_tomorrow",
+              "ready_for_signoff",
+              "needs_attention",
+              "running"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Summary"
+          }
+        },
+        "required": [
+          "key",
+          "count"
+        ],
+        "title": "Group",
+        "type": "object"
+      },
+      "GroupItem": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Actor"
+          },
+          "assignable": {
+            "cls": "internal",
+            "default": false,
+            "title": "Assignable",
+            "type": "boolean"
+          },
+          "deep_link": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deep Link"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
+          "detail_blocks": {
+            "cls": "confidential",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Detail Blocks",
+            "type": "array"
+          },
+          "pills": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Pills",
+            "type": "array"
+          },
+          "ref_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Ref Id",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref_id",
+          "title"
+        ],
+        "title": "GroupItem",
+        "type": "object"
+      },
       "GroupSubtotalOut": {
         "description": "A grouping's subtotal; `off` when the source TB carries a summary line that disagrees.",
         "properties": {
@@ -48413,6 +49073,73 @@
           "outcome"
         ],
         "title": "HistoryEntryOut",
+        "type": "object"
+      },
+      "HistoryPage": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/HistoryRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "HistoryPage",
+        "type": "object"
+      },
+      "HistoryRow": {
+        "properties": {
+          "brief_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Brief Date",
+            "type": "string"
+          },
+          "brief_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Brief Id",
+            "type": "string"
+          },
+          "built_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Built At",
+            "type": "string"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          }
+        },
+        "required": [
+          "brief_id",
+          "brief_date",
+          "built_at",
+          "counts"
+        ],
+        "title": "HistoryRow",
         "type": "object"
       },
       "HomeOut": {
@@ -57760,6 +58487,53 @@
           "form_5330"
         ],
         "title": "LateRemittanceOut",
+        "type": "object"
+      },
+      "LeadFact": {
+        "description": "One fact the frontend's copy templates turn into the fact paragraph (\u00a73.2): integers, dates\nand the short labels of C13 blocker refs; never model text.",
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "lead.overdue",
+              "lead.due_tomorrow",
+              "lead.blocked_signoffs",
+              "lead.decisions_blocking",
+              "lead.signatures_week"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "refs": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Refs",
+            "type": "array"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cls": "confidential",
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "values"
+        ],
+        "title": "LeadFact",
         "type": "object"
       },
       "LeadRowOut": {
@@ -67645,6 +68419,28 @@
           "next_send_at"
         ],
         "title": "NextSendOut",
+        "type": "object"
+      },
+      "NotAssignable": {
+        "properties": {
+          "gate_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "reason": {
+            "cls": "internal",
+            "const": "reserved_to_you",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gate_id",
+          "reason"
+        ],
+        "title": "NotAssignable",
         "type": "object"
       },
       "NotIncludedRow": {
@@ -110282,6 +111078,245 @@
           "value"
         ],
         "title": "TinRevealOut",
+        "type": "object"
+      },
+      "TodayBuildAcceptedOut": {
+        "properties": {
+          "started": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Started",
+            "type": "integer"
+          },
+          "status_url": {
+            "cls": "internal",
+            "title": "Status Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status_url",
+          "started"
+        ],
+        "title": "TodayBuildAcceptedOut",
+        "type": "object"
+      },
+      "TodayBuildIn": {
+        "additionalProperties": false,
+        "properties": {
+          "brief_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Brief Date",
+            "type": "string"
+          },
+          "mode": {
+            "cls": "internal",
+            "default": "missing",
+            "enum": [
+              "missing",
+              "force"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "brief_date"
+        ],
+        "title": "TodayBuildIn",
+        "type": "object"
+      },
+      "TodayQuestionAcceptedOut": {
+        "properties": {
+          "item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "session_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "item_id"
+        ],
+        "title": "TodayQuestionAcceptedOut",
+        "type": "object"
+      },
+      "TodayQuestionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "brief_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Brief Id",
+            "type": "string"
+          },
+          "text": {
+            "cls": "restricted",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "brief_id"
+        ],
+        "title": "TodayQuestionIn",
+        "type": "object"
+      },
+      "TodayVM": {
+        "description": "`GET /v1/me/today`: the viewer's day.",
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/Availability",
+            "cls": "internal"
+          },
+          "brief_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Brief Date",
+            "type": "string"
+          },
+          "brief_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Brief Id"
+          },
+          "building_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Building Counts",
+            "type": "object"
+          },
+          "built_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Built At"
+          },
+          "cards": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Card"
+            },
+            "title": "Cards",
+            "type": "array"
+          },
+          "cells": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/CountCell"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "engagements": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Engagements",
+            "type": "integer"
+          },
+          "first_name": {
+            "cls": "confidential",
+            "title": "First Name",
+            "type": "string"
+          },
+          "groups": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "items": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Items",
+            "type": "integer"
+          },
+          "layout": {
+            "cls": "internal",
+            "default": "focus",
+            "enum": [
+              "focus",
+              "by_engagement"
+            ],
+            "title": "Layout",
+            "type": "string"
+          },
+          "lead_facts": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/LeadFact"
+            },
+            "title": "Lead Facts",
+            "type": "array"
+          },
+          "needs_build": {
+            "cls": "internal",
+            "default": false,
+            "title": "Needs Build",
+            "type": "boolean"
+          },
+          "needs_you_first": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/GateRow"
+            },
+            "title": "Needs You First",
+            "type": "array"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "building",
+              "ready"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "brief_date",
+          "first_name",
+          "items",
+          "engagements",
+          "cells",
+          "lead_facts",
+          "needs_you_first",
+          "cards",
+          "groups",
+          "availability",
+          "status"
+        ],
+        "title": "TodayVM",
         "type": "object"
       },
       "TodoAssignIn": {
@@ -231807,6 +232842,803 @@
           "identity"
         ],
         "x-abacus-action": "own"
+      }
+    },
+    "/v1/me/today": {
+      "get": {
+        "description": "The viewer's day; `status: building` with `needs_build` on the first open (\u00a73.8).",
+        "operationId": "today",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodayVM"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Today Route",
+        "tags": [
+          "today"
+        ],
+        "x-abacus-action": "briefing.read"
+      }
+    },
+    "/v1/me/today/builds": {
+      "post": {
+        "description": "Records the day's snapshot and starts the missing (or, `force`, all) engagement briefings;\n429 `rebuild_limit` after three forced rebuilds a day; 409 `in_progress`.",
+        "operationId": "today_builds",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodayBuildIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodayBuildAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Today Builds Route",
+        "tags": [
+          "today"
+        ],
+        "x-abacus-action": "briefing.rebuild"
+      }
+    },
+    "/v1/me/today/history": {
+      "get": {
+        "description": "Earlier briefs by day, the caller's own, 90 days at most (Q3).",
+        "operationId": "today_history",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Today History Route",
+        "tags": [
+          "today"
+        ],
+        "x-abacus-action": "briefing.read"
+      }
+    },
+    "/v1/me/today/history/{brief_id}": {
+      "get": {
+        "description": "A past brief, read-only; walls re-checked and citations re-verified at read.",
+        "operationId": "today_history_brief",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "brief_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Brief Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodayVM"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Today History Brief Route",
+        "tags": [
+          "today"
+        ],
+        "x-abacus-action": "briefing.read"
+      }
+    },
+    "/v1/me/today/questions": {
+      "post": {
+        "description": "409 `capability_unavailable {reason}` when the assistant is unavailable (DF-04).",
+        "operationId": "today_question",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodayQuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodayQuestionAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Today Question Route",
+        "tags": [
+          "today"
+        ],
+        "x-abacus-action": "briefing.ask"
+      }
+    },
+    "/v1/me/today/work-items/{work_item_id}": {
+      "get": {
+        "description": "The drill-in under `visible(work_item)`; 404 when walled or not the viewer's.",
+        "operationId": "today_drill",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrillVM"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Today Drill Route",
+        "tags": [
+          "today"
+        ],
+        "x-abacus-action": "briefing.read"
       }
     },
     "/v1/metering": {

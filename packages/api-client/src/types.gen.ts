@@ -3301,6 +3301,42 @@ export type AssignIn = {
 };
 
 /**
+ * AssignPrefill
+ *
+ * One SHL-17 to-do prefill for an open item; the person presses Create (INV-1, INV-5).
+ */
+export type AssignPrefill = {
+    /**
+     * Anchor Label
+     */
+    anchor_label: string;
+    /**
+     * Anchor Ref
+     */
+    anchor_ref: string;
+    /**
+     * Assignee Name
+     */
+    assignee_name: string;
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string;
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Gate Id
+     */
+    gate_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * AssignedOut
  */
 export type AssignedOut = {
@@ -5338,6 +5374,30 @@ export type AutonomySection = {
 };
 
 /**
+ * Availability
+ *
+ * Whether the narrative and the ask composer are offered, and why not (DF-04).
+ */
+export type Availability = {
+    /**
+     * Ask
+     */
+    ask: boolean;
+    /**
+     * Ask Reason
+     */
+    ask_reason?: string | null;
+    /**
+     * Narrative
+     */
+    narrative: boolean;
+    /**
+     * Narrative Reason
+     */
+    narrative_reason?: 'boundary_refused' | 'consent_7216' | 'metadata_only' | 'budget_soft_limit' | 'flag_off' | 'not_synthetic' | null;
+};
+
+/**
  * BadgePart
  */
 export type BadgePart = {
@@ -6621,6 +6681,52 @@ export type CapabilityAvailabilityOut = {
      * Reason
      */
     reason?: string | null;
+};
+
+/**
+ * Card
+ *
+ * One engagement the viewer has open gates or attention on, in card order (§3.4).
+ */
+export type Card = {
+    /**
+     * Briefing Id
+     */
+    briefing_id?: string | null;
+    /**
+     * Briefing Status
+     */
+    briefing_status?: 'building' | 'ready' | 'unverified' | 'failed' | 'unavailable' | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * More
+     */
+    more?: number;
+    /**
+     * Rows
+     */
+    rows: Array<GateRow>;
+    /**
+     * Summary Blocks
+     */
+    summary_blocks?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Unavailable Reason
+     */
+    unavailable_reason?: 'boundary_refused' | 'consent_7216' | 'metadata_only' | 'budget_soft_limit' | 'flag_off' | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id?: string | null;
 };
 
 /**
@@ -11381,6 +11487,26 @@ export type CorrectionIn = {
 };
 
 /**
+ * CountCell
+ *
+ * One Today cell: a C13 band (or Overdue) with its count and the HOME-02 filter it opens.
+ */
+export type CountCell = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Href
+     */
+    href: string;
+    /**
+     * Kind
+     */
+    kind: 'decision' | 'sign_off' | 'approval_send' | 'signature' | 'needs_attention' | 'overdue';
+};
+
+/**
  * CoverageGapsOut
  */
 export type CoverageGapsOut = {
@@ -13016,6 +13142,28 @@ export type DoneOut = {
 };
 
 /**
+ * DownstreamRow
+ */
+export type DownstreamRow = {
+    /**
+     * Deep Link
+     */
+    deep_link: string;
+    /**
+     * State Line
+     */
+    state_line: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * DraftCreateIn
  */
 export type DraftCreateIn = {
@@ -13402,6 +13550,56 @@ export type DrillRowOut = {
 };
 
 /**
+ * DrillVM
+ *
+ * `GET /v1/me/today/work-items/{id}`: HOME-05 b / SHL-23 2.
+ */
+export type DrillVm = {
+    /**
+     * Blockers
+     */
+    blockers: Array<GateRow>;
+    /**
+     * Downstream
+     */
+    downstream?: Array<DownstreamRow>;
+    /**
+     * Not Assignable
+     */
+    not_assignable?: Array<NotAssignable>;
+    /**
+     * Open Href
+     */
+    open_href: string;
+    /**
+     * Prefills
+     */
+    prefills?: Array<AssignPrefill>;
+    /**
+     * Select Refs
+     */
+    select_refs?: Array<string>;
+    /**
+     * Summary Blocks
+     */
+    summary_blocks?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Summary Fallback
+     */
+    summary_fallback?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
  * DropAcceptedOut
  *
  * 202: the file is stored and waits for the sort; its outcome comes from the batch poll.
@@ -13468,6 +13666,24 @@ export type DropFileOut = {
      * Request Item Id
      */
     request_item_id?: string | null;
+};
+
+/**
+ * DueChip
+ */
+export type DueChip = {
+    /**
+     * Days
+     */
+    days: number;
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Tone
+     */
+    tone: 'red_tint' | 'amber' | 'neutral';
 };
 
 /**
@@ -21141,6 +21357,53 @@ export type GateOverride = {
 };
 
 /**
+ * GateRow
+ *
+ * A highlighted row: one C13 gate with its words and its source.
+ */
+export type GateRow = {
+    /**
+     * Context Line
+     */
+    context_line: string;
+    /**
+     * Deep Link
+     */
+    deep_link: string;
+    due?: DueChip | null;
+    /**
+     * Folded
+     */
+    folded?: number;
+    /**
+     * Gate Id
+     */
+    gate_id: string;
+    /**
+     * Highlight Refs
+     */
+    highlight_refs?: Array<string>;
+    /**
+     * Kind
+     */
+    kind: 'decision' | 'sign_off' | 'approval_send' | 'signature' | 'needs_attention' | 'overdue';
+    /**
+     * State
+     */
+    state?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Why Blocks
+     */
+    why_blocks?: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+/**
  * GateRowOut
  *
  * One of fieldset A's twelve rows (chapter 05 §5.2.13), from the compiled gate catalogue
@@ -22202,6 +22465,74 @@ export type GridRowOut = {
 };
 
 /**
+ * Group
+ *
+ * A drill group (§3.5); Late is always present, the others only when not empty.
+ */
+export type Group = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Href
+     */
+    href?: string | null;
+    /**
+     * Items
+     */
+    items?: Array<GroupItem>;
+    /**
+     * Key
+     */
+    key: 'high_risk' | 'late' | 'due_tomorrow' | 'ready_for_signoff' | 'needs_attention' | 'running';
+    /**
+     * Summary
+     */
+    summary?: string | null;
+};
+
+/**
+ * GroupItem
+ */
+export type GroupItem = {
+    /**
+     * Actor
+     */
+    actor?: string | null;
+    /**
+     * Assignable
+     */
+    assignable?: boolean;
+    /**
+     * Deep Link
+     */
+    deep_link?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Detail Blocks
+     */
+    detail_blocks?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Pills
+     */
+    pills?: Array<string>;
+    /**
+     * Ref Id
+     */
+    ref_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * GroupSubtotalOut
  *
  * A grouping's subtotal; `off` when the source TB carries a summary line that disagrees.
@@ -22624,6 +22955,44 @@ export type HistoryEntryOut = {
      * Reason Label
      */
     reason_label?: string | null;
+};
+
+/**
+ * HistoryPage
+ */
+export type HistoryPage = {
+    /**
+     * Items
+     */
+    items: Array<HistoryRow>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * HistoryRow
+ */
+export type HistoryRow = {
+    /**
+     * Brief Date
+     */
+    brief_date: string;
+    /**
+     * Brief Id
+     */
+    brief_id: string;
+    /**
+     * Built At
+     */
+    built_at: string;
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
 };
 
 /**
@@ -26977,6 +27346,29 @@ export type LateRemittanceOut = {
      * Status
      */
     status: 'found' | 'pending_vfcp_scc' | 'corrected';
+};
+
+/**
+ * LeadFact
+ *
+ * One fact the frontend's copy templates turn into the fact paragraph (§3.2): integers, dates
+ * and the short labels of C13 blocker refs; never model text.
+ */
+export type LeadFact = {
+    /**
+     * Key
+     */
+    key: 'lead.overdue' | 'lead.due_tomorrow' | 'lead.blocked_signoffs' | 'lead.decisions_blocking' | 'lead.signatures_week';
+    /**
+     * Refs
+     */
+    refs?: Array<string>;
+    /**
+     * Values
+     */
+    values: {
+        [key: string]: number | string;
+    };
 };
 
 /**
@@ -31904,6 +32296,20 @@ export type NextSendOut = {
      * Shifted From
      */
     shifted_from?: string | null;
+};
+
+/**
+ * NotAssignable
+ */
+export type NotAssignable = {
+    /**
+     * Gate Id
+     */
+    gate_id: string;
+    /**
+     * Reason
+     */
+    reason: 'reserved_to_you';
 };
 
 /**
@@ -51799,6 +52205,133 @@ export type TinRevealOut = {
      * Value
      */
     value: string;
+};
+
+/**
+ * TodayBuildAcceptedOut
+ */
+export type TodayBuildAcceptedOut = {
+    /**
+     * Started
+     */
+    started: number;
+    /**
+     * Status Url
+     */
+    status_url: string;
+};
+
+/**
+ * TodayBuildIn
+ */
+export type TodayBuildIn = {
+    /**
+     * Brief Date
+     */
+    brief_date: string;
+    /**
+     * Mode
+     */
+    mode?: 'missing' | 'force';
+};
+
+/**
+ * TodayQuestionAcceptedOut
+ */
+export type TodayQuestionAcceptedOut = {
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Session Id
+     */
+    session_id: string;
+};
+
+/**
+ * TodayQuestionIn
+ */
+export type TodayQuestionIn = {
+    /**
+     * Brief Id
+     */
+    brief_id: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TodayVM
+ *
+ * `GET /v1/me/today`: the viewer's day.
+ */
+export type TodayVm = {
+    availability: Availability;
+    /**
+     * Brief Date
+     */
+    brief_date: string;
+    /**
+     * Brief Id
+     */
+    brief_id?: string | null;
+    /**
+     * Building Counts
+     */
+    building_counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Built At
+     */
+    built_at?: string | null;
+    /**
+     * Cards
+     */
+    cards: Array<Card>;
+    /**
+     * Cells
+     */
+    cells: Array<CountCell>;
+    /**
+     * Engagements
+     */
+    engagements: number;
+    /**
+     * First Name
+     */
+    first_name: string;
+    /**
+     * Groups
+     */
+    groups: Array<Group>;
+    /**
+     * Items
+     */
+    items: number;
+    /**
+     * Layout
+     */
+    layout?: 'focus' | 'by_engagement';
+    /**
+     * Lead Facts
+     */
+    lead_facts: Array<LeadFact>;
+    /**
+     * Needs Build
+     */
+    needs_build?: boolean;
+    /**
+     * Needs You First
+     */
+    needs_you_first: Array<GateRow>;
+    /**
+     * Status
+     */
+    status: 'building' | 'ready';
 };
 
 /**
@@ -107169,6 +107702,361 @@ export type SetPreferencesResponses = {
 };
 
 export type SetPreferencesResponse = SetPreferencesResponses[keyof SetPreferencesResponses];
+
+export type TodayData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Date
+         */
+        date?: string | null;
+    };
+    url: '/v1/me/today';
+};
+
+export type TodayErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TodayError = TodayErrors[keyof TodayErrors];
+
+export type TodayResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodayVm;
+};
+
+export type TodayResponse = TodayResponses[keyof TodayResponses];
+
+export type TodayBuildsData = {
+    body: TodayBuildIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/me/today/builds';
+};
+
+export type TodayBuildsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TodayBuildsError = TodayBuildsErrors[keyof TodayBuildsErrors];
+
+export type TodayBuildsResponses = {
+    /**
+     * Successful Response
+     */
+    202: TodayBuildAcceptedOut;
+};
+
+export type TodayBuildsResponse = TodayBuildsResponses[keyof TodayBuildsResponses];
+
+export type TodayHistoryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Before
+         */
+        before?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/me/today/history';
+};
+
+export type TodayHistoryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TodayHistoryError = TodayHistoryErrors[keyof TodayHistoryErrors];
+
+export type TodayHistoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: HistoryPage;
+};
+
+export type TodayHistoryResponse = TodayHistoryResponses[keyof TodayHistoryResponses];
+
+export type TodayHistoryBriefData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Brief Id
+         */
+        brief_id: string;
+    };
+    query?: never;
+    url: '/v1/me/today/history/{brief_id}';
+};
+
+export type TodayHistoryBriefErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TodayHistoryBriefError = TodayHistoryBriefErrors[keyof TodayHistoryBriefErrors];
+
+export type TodayHistoryBriefResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodayVm;
+};
+
+export type TodayHistoryBriefResponse = TodayHistoryBriefResponses[keyof TodayHistoryBriefResponses];
+
+export type TodayQuestionData = {
+    body: TodayQuestionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/me/today/questions';
+};
+
+export type TodayQuestionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TodayQuestionError = TodayQuestionErrors[keyof TodayQuestionErrors];
+
+export type TodayQuestionResponses = {
+    /**
+     * Successful Response
+     */
+    202: TodayQuestionAcceptedOut;
+};
+
+export type TodayQuestionResponse = TodayQuestionResponses[keyof TodayQuestionResponses];
+
+export type TodayDrillData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: {
+        /**
+         * Date
+         */
+        date?: string | null;
+    };
+    url: '/v1/me/today/work-items/{work_item_id}';
+};
+
+export type TodayDrillErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TodayDrillError = TodayDrillErrors[keyof TodayDrillErrors];
+
+export type TodayDrillResponses = {
+    /**
+     * Successful Response
+     */
+    200: DrillVm;
+};
+
+export type TodayDrillResponse = TodayDrillResponses[keyof TodayDrillResponses];
 
 export type MeteringData = {
     body?: never;
