@@ -371,6 +371,16 @@ codes:
     raised_by:
     - abacus.modules.workbench.sessions.CapabilityUnavailable
     summary: 'DF-04: the session''s capability can''t run here now (`facts.reason`).'
+  cell_address_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.workbook_service.CellAddressInvalid
+    summary: The address is not `<sheet>!<column><row>` on one of the form's sheets.
+  cell_source_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.workbook_service.CellSourceInvalid
+    summary: Written by an engine (formula, engine import, TB link) or by a person, nothing else.
   checklist_answered:
     status: 409
     raised_by:
@@ -1243,6 +1253,11 @@ codes:
     raised_by:
     - abacus.modules.ledger.tax_form_mapping.FormLineKeyUnknown
     summary: The key is not a mappable line of the set version the mapping set names.
+  formula_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.workbook_service.FormulaInvalid
+    summary: The formula does not parse in the workpapers grammar (no code is evaluated).
   fraud_session_invalid:
     status: 422
     raised_by:
@@ -3240,6 +3255,12 @@ codes:
     - abacus.modules.review.issue_resolutions.IssueSystemResolvedOnly
     summary: 'T-04-T23 (TAX-06b, 0800): a dependency issue resolves when its dependency does, by the
       system, never by a person (`POST /v1/issues/{id}/resolve` answers 409).'
+  tax_layer_outside_return:
+    status: 422
+    raised_by:
+    - abacus.modules.adjustments.entries.TaxLayerOutsideReturn
+    summary: '`atb`, `tje` and `ttb` are a tax return''s layers; an audit or other work item reads the
+      four book layers only.'
   tax_only_outside_tje:
     status: 422
     raised_by:

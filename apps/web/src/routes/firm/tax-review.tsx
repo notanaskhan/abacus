@@ -8,6 +8,7 @@ import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 import { to } from "../to";
+import { EntitySection } from "./tax-returns";
 
 // The return's review workspace (T-04-T12; T-04 §5): new routes in new files, each behind the
 // `tax_returns` entitlement and `tax.review_workspace`; with the flag off every one shows F-05's
@@ -192,9 +193,16 @@ export const taxReviewRoute = createRoute({
     }
     const section = useParam("section");
     return (
-      <Workspace tab="review" title="Review">
-        <LiveSection section={section === "worksheets" ? "worksheets" : "review"} />
-      </Workspace>
+      <EntitySection
+        returnId={returnId}
+        slug="review"
+        review={section}
+        fallback={
+          <Workspace tab="review" title="Review">
+            <LiveSection section={section === "worksheets" ? "worksheets" : "review"} />
+          </Workspace>
+        }
+      />
     );
   },
 });
@@ -204,10 +212,17 @@ export const taxIssuesRoute = createRoute({
   path: "/tax-returns/$returnId/issues",
   validateSearch,
   component: function TaxIssuesPage(): JSX.Element {
+    const returnId = useParam("returnId");
     return (
-      <Workspace tab="issues" title="Issues">
-        {FIXTURES ? undefined : <LiveSection section="issues" />}
-      </Workspace>
+      <EntitySection
+        returnId={returnId}
+        slug="issues"
+        fallback={
+          <Workspace tab="issues" title="Issues">
+            {FIXTURES ? undefined : <LiveSection section="issues" />}
+          </Workspace>
+        }
+      />
     );
   },
 });
@@ -217,10 +232,17 @@ export const taxActivityRoute = createRoute({
   path: "/tax-returns/$returnId/activity",
   validateSearch,
   component: function TaxActivityPage(): JSX.Element {
+    const returnId = useParam("returnId");
     return (
-      <Workspace tab="activity" title="Activity">
-        {FIXTURES ? undefined : <LiveSection section="activity" />}
-      </Workspace>
+      <EntitySection
+        returnId={returnId}
+        slug="activity"
+        fallback={
+          <Workspace tab="activity" title="Activity">
+            {FIXTURES ? undefined : <LiveSection section="activity" />}
+          </Workspace>
+        }
+      />
     );
   },
 });

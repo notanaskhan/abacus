@@ -20,6 +20,7 @@ const SPEC_TEXT = readFileSync(
 );
 const SPEC = JSON.parse(SPEC_TEXT) as {
   paths: Record<string, Record<string, { parameters?: { name: string; in: string }[] }>>;
+  components: { schemas: Record<string, { properties: Record<string, { maximum?: number }> }> };
 };
 
 const FELD_RETURN = "6f1d2c3b-4a59-4e6f-8a7b-9c0d1e2f3a4b";
@@ -55,7 +56,7 @@ describe("C15 v1 consumer (SHL-02)", () => {
   });
 
   it("the recents read and write answer identifiers and items only", () => {
-    const recents: SearchRecentsOut = { items: RESULTS.groups[0]!.items };
+    const recents: SearchRecentsOut = { items: RESULTS.groups[0]?.items ?? [] };
     expect(validateResponse("get", "/v1/search/recents", recents)).toEqual([]);
     const recorded: SearchRecentRecordedOut = { object_type: "client", object_id: FELD_CLIENT };
     expect(validateResponse("post", "/v1/search/recents", recorded)).toEqual([]);
@@ -68,9 +69,9 @@ describe("C15 v1 consumer (SHL-02)", () => {
   });
 
   it("caps total_visible at 99", () => {
-    expect(validateSchema("SearchResultsOut", { ...RESULTS, total_visible: 100 })).not.toEqual(
-      [],
-    );
+    // schema-check reads types, enums and lengths, not bounds: the cap is the schema's own.
+    const results = SPEC.components.schemas.SearchResultsOut;
+    expect(results?.properties.total_visible?.maximum).toBe(99);
   });
 
   it("sends search text only in the body", () => {

@@ -228,6 +228,9 @@ only_mutate = [
     "src/abacus/kernel/realtime.py",
     # T-04-T53 (DEC-4513): the individual return's engines and the tax tools (SCOPE tax/individual).
     "src/abacus/modules/tax/compute/individual",
+    "src/abacus/modules/tax/compute/individual/*",
+    "src/abacus/modules/tax/tools",
+    "src/abacus/modules/tax/agent_tools",
     "src/abacus/modules/tax/tools.py",
     "src/abacus/modules/tax/agent_tools.py",
 ]

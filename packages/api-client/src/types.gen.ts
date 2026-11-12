@@ -494,6 +494,10 @@ export type AccountMappingOut = {
      */
     edited_by_initials: string | null;
     /**
+     * Form Line Key
+     */
+    form_line_key?: string | null;
+    /**
      * Fs Line Id
      */
     fs_line_id: string | null;
@@ -907,9 +911,17 @@ export type AdjustedLineOut = {
      */
     account_name: string;
     /**
+     * Account Scope
+     */
+    account_scope?: 'book' | 'tax_only';
+    /**
      * Aje
      */
     aje: string | null;
+    /**
+     * Atb
+     */
+    atb?: string | null;
     /**
      * Final
      */
@@ -918,6 +930,14 @@ export type AdjustedLineOut = {
      * Rje
      */
     rje: string | null;
+    /**
+     * Tje
+     */
+    tje?: string | null;
+    /**
+     * Ttb
+     */
+    ttb?: string | null;
     /**
      * Unadjusted
      */
@@ -933,7 +953,7 @@ export type AdjustedTbOut = {
     /**
      * Layer
      */
-    layer: 'unadjusted' | 'aje' | 'rje' | 'final';
+    layer: 'unadjusted' | 'aje' | 'rje' | 'final' | 'atb' | 'tje' | 'ttb';
     /**
      * Lines
      */
@@ -27603,6 +27623,10 @@ export type LineIn = {
      */
     account_code: string;
     /**
+     * Account Scope
+     */
+    account_scope?: 'book' | 'tax_only';
+    /**
      * Credit
      */
     credit?: number | string;
@@ -30322,6 +30346,10 @@ export type MappingSetSummaryOut = {
      */
     prior_source: 'prior_engagement' | 'predecessor_file' | 'none';
     /**
+     * Reference Set Version Id
+     */
+    reference_set_version_id?: string | null;
+    /**
      * Run Status
      */
     run_status: 'not_started' | 'running' | 'ready' | 'failed';
@@ -30331,6 +30359,10 @@ export type MappingSetSummaryOut = {
     sign_offs: Array<SignOffChipOut>;
     status: MappingSetStatus;
     tallies: MappingTalliesOut;
+    /**
+     * Taxonomy Kind
+     */
+    taxonomy_kind?: 'fs_line' | 'tax_form_line';
     /**
      * Trial Balance Id
      */
@@ -43120,6 +43152,221 @@ export type SdbaRowOut = {
 };
 
 /**
+ * SearchContextIn
+ *
+ * The record the palette was opened on, for context-bound actions ("New to-do on …").
+ */
+export type SearchContextIn = {
+    /**
+     * Object Id
+     */
+    object_id: string;
+    /**
+     * Object Type
+     */
+    object_type: string;
+};
+
+/**
+ * SearchGroupOut
+ *
+ * One canonical group; a group with no rows is omitted, never sent empty.
+ */
+export type SearchGroupOut = {
+    /**
+     * Group
+     */
+    group: 'clients' | 'returns' | 'audits' | 'closes' | 'binders' | 'files' | 'inbox' | 'sessions' | 'todos' | 'saved_prompts' | 'agents';
+    /**
+     * Has More
+     */
+    has_more: boolean;
+    /**
+     * Items
+     */
+    items: Array<SearchItemOut>;
+};
+
+/**
+ * SearchItemOut
+ *
+ * One result row (or one recent). `match_ranges` are `[start, end)` offsets into `title`.
+ */
+export type SearchItemOut = {
+    /**
+     * Context
+     */
+    context?: string | null;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Match Ranges
+     */
+    match_ranges?: Array<[
+        number,
+        number
+    ]>;
+    /**
+     * Object Id
+     */
+    object_id: string;
+    /**
+     * Object Type
+     */
+    object_type: string;
+    status?: SearchStatusOut | null;
+    /**
+     * Tag
+     */
+    tag?: string | null;
+    target: SearchTargetOut;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Use Count
+     */
+    use_count?: number | null;
+};
+
+/**
+ * SearchQueryIn
+ *
+ * `POST /v1/search`. `types: ["agents"]` with an empty `q` lists installed agents (`>` mode,
+ * served only with `search.agent_mode` on); any other query needs 1-100 characters.
+ */
+export type SearchQueryIn = {
+    context?: SearchContextIn | null;
+    /**
+     * Limit Per Group
+     */
+    limit_per_group?: number;
+    /**
+     * Q
+     */
+    q: string;
+    /**
+     * Types
+     */
+    types?: Array<'clients' | 'returns' | 'audits' | 'closes' | 'binders' | 'files' | 'inbox' | 'sessions' | 'todos' | 'saved_prompts' | 'agents'> | null;
+};
+
+/**
+ * SearchRecentIn
+ *
+ * `POST /v1/search/recents`: a record route loaded; identifiers only.
+ */
+export type SearchRecentIn = {
+    /**
+     * Object Id
+     */
+    object_id: string;
+    /**
+     * Object Type
+     */
+    object_type: string;
+};
+
+/**
+ * SearchRecentRecordedOut
+ *
+ * `POST /v1/search/recents`: the record, now first in the viewer's recents.
+ */
+export type SearchRecentRecordedOut = {
+    /**
+     * Object Id
+     */
+    object_id: string;
+    /**
+     * Object Type
+     */
+    object_type: string;
+};
+
+/**
+ * SearchRecentsOut
+ *
+ * `GET /v1/search/recents`: the viewer's own, newest first, re-filtered by `visible()`.
+ */
+export type SearchRecentsOut = {
+    /**
+     * Items
+     */
+    items: Array<SearchItemOut>;
+};
+
+/**
+ * SearchResultsOut
+ *
+ * `POST /v1/search`. No field names, counts or hints at a row the viewer cannot open.
+ */
+export type SearchResultsOut = {
+    /**
+     * Groups
+     */
+    groups: Array<SearchGroupOut>;
+    suggestion?: SearchSuggestionOut | null;
+    /**
+     * Total Visible
+     */
+    total_visible: number;
+};
+
+/**
+ * SearchStatusOut
+ *
+ * The owner's C2 status, as `{code, context}`; the words come from `status.ts`.
+ */
+export type SearchStatusOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Context
+     */
+    context?: string | null;
+};
+
+/**
+ * SearchSuggestionOut
+ *
+ * "Did you mean …?" over visible documents only, sent only when every group is empty.
+ */
+export type SearchSuggestionOut = {
+    /**
+     * Context
+     */
+    context?: string | null;
+    target: SearchTargetOut;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SearchTargetOut
+ *
+ * Where a row opens: a manifest screen and its identifier-only parameters.
+ */
+export type SearchTargetOut = {
+    /**
+     * Params
+     */
+    params: {
+        [key: string]: string;
+    };
+    /**
+     * Screen Id
+     */
+    screen_id: string;
+};
+
+/**
  * SeasonalAccessEndsIn
  *
  * ADM-03a's Seasonal group: one date for every seasonal member, one audit row each.
@@ -55362,6 +55609,10 @@ export type AbacusModulesAdjustmentsContractLineOut = {
      * Account Name
      */
     account_name: string | null;
+    /**
+     * Account Scope
+     */
+    account_scope?: 'book' | 'tax_only';
     /**
      * Credit
      */
@@ -119701,6 +119952,172 @@ export type ScreeningFeedbackResponses = {
 
 export type ScreeningFeedbackResponse = ScreeningFeedbackResponses[keyof ScreeningFeedbackResponses];
 
+export type FirmSearchData = {
+    body: SearchQueryIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/search';
+};
+
+export type FirmSearchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type FirmSearchError = FirmSearchErrors[keyof FirmSearchErrors];
+
+export type FirmSearchResponses = {
+    /**
+     * Successful Response
+     */
+    200: SearchResultsOut;
+};
+
+export type FirmSearchResponse = FirmSearchResponses[keyof FirmSearchResponses];
+
+export type RecentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/search/recents';
+};
+
+export type RecentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RecentsError = RecentsErrors[keyof RecentsErrors];
+
+export type RecentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SearchRecentsOut;
+};
+
+export type RecentsResponse = RecentsResponses[keyof RecentsResponses];
+
+export type RecordRecentData = {
+    body: SearchRecentIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/search/recents';
+};
+
+export type RecordRecentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RecordRecentError = RecordRecentErrors[keyof RecordRecentErrors];
+
+export type RecordRecentResponses = {
+    /**
+     * Successful Response
+     */
+    200: SearchRecentRecordedOut;
+};
+
+export type RecordRecentResponse = RecordRecentResponses[keyof RecordRecentResponses];
+
 export type SignOffLadderData = {
     body?: never;
     headers?: {
@@ -129125,7 +129542,7 @@ export type AdjustedTbData = {
         /**
          * Layer
          */
-        layer?: 'unadjusted' | 'aje' | 'rje' | 'final';
+        layer?: 'unadjusted' | 'aje' | 'rje' | 'final' | 'atb' | 'tje' | 'ttb';
     };
     url: '/v1/work-items/{work_item_id}/adjusted-tb';
 };

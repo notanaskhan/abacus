@@ -6,14 +6,7 @@
 import { EmptyState, RecordHeader, SegmentedGroup } from "@abacus/ui";
 import type { JSX, ReactNode } from "react";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
-import {
-  GROUP_A,
-  GROUP_B,
-  P1_REVIEW,
-  type ReviewTab,
-  type Section,
-  TAB_LABEL,
-} from "../../domain/tax/entityReturn";
+import { GROUP_A, GROUP_B, P1_REVIEW, type Section, TAB_LABEL } from "../../domain/tax";
 
 export interface EntityReturnLayoutProps {
   title: string;
@@ -75,7 +68,7 @@ export function EntityReturnLayout(props: EntityReturnLayoutProps): JSX.Element 
               props.onSection({ tab });
               return;
             }
-            const review = (GROUP_B.find((t) => TAB_LABEL[t] === sub) ?? "summary") as ReviewTab;
+            const review = GROUP_B.find((t) => TAB_LABEL[t] === sub) ?? "summary";
             props.onSection({ tab, review });
           }}
         />

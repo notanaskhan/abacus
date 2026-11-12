@@ -3,7 +3,7 @@ id: TASK-7516
 title: T-04-T52 independent AC tests for T23, T28, T36 and T39 (ADR-078)
 plan_key: T-04-T52
 spec: SPEC-649  # §3.4 (AC-4.1, AC-4.2, AC-4.7), §3.7 (AC-7.3 to AC-7.6), §3.8 (AC-8.x)
-acceptance_criteria: [AC-4.2, AC-7.6, AC-8.4]  # walled user sees no K-1 link; hand resolve of the dependency refused; every decision row names a human
+acceptance_criteria: [AC-4, AC-7, AC-8]  # AC-4.2, AC-7.6, AC-8.4: walled user sees no K-1 link; hand resolve of the dependency refused; every decision row names a human
 risk_zone: amber
 status: in-review
 branch: t04-t52-services-ac

@@ -39,17 +39,22 @@ def _app_dsn(database: sc.Database) -> str:
     return database.app_url.replace("postgresql+asyncpg://", "postgresql://")
 
 
-async def _app_count(database: sc.Database, tenant_id: uuid.UUID, table: str) -> int:
-    connection = await asyncpg.connect(_app_dsn(database))
+# Run as the app under a tenant: divides by zero unless the tenant sees exactly $1 rows.
+_SEES = {
+    "search_documents": "SELECT 1 / (CASE WHEN (SELECT count(*) FROM search_documents) = $1 "
+    "THEN 1 ELSE 0 END)",
+    "search_recents": "SELECT 1 / (CASE WHEN (SELECT count(*) FROM search_recents) = $1 "
+    "THEN 1 ELSE 0 END)",
+}
+
+
+def _app_sees(database: sc.Database, tenant_id: uuid.UUID, table: str, rows: int) -> bool:
+    app = Seeder(_app_dsn(database))
     try:
-        async with connection.transaction():
-            await connection.execute(
-                "SELECT set_config('app.tenant_id', $1, true)", str(tenant_id)
-            )
-            sql = f"SELECT count(*) FROM {table}"  # noqa: S608 -- a fixed table name
-            return int(await connection.fetchval(sql))
-    finally:
-        await connection.close()
+        asyncio.run(app.as_actor(tenant_id, ("system", "s39-test"), _SEES[table], rows))
+    except asyncpg.DivisionByZeroError:
+        return False
+    return True
 
 
 def test_0840_goes_down_and_up_with_forced_rls(private_db: sc.Database) -> None:
@@ -122,9 +127,9 @@ def test_two_tenants_are_isolated_on_both_tables(private_db: sc.Database) -> Non
 
     a, b = asyncio.run(seed_both())
     for table in TABLES:
-        assert asyncio.run(_app_count(private_db, a, table)) == 1, table
-        assert asyncio.run(_app_count(private_db, b, table)) == 1, table
-        assert asyncio.run(_app_count(private_db, uuid.uuid4(), table)) == 0, table
+        assert _app_sees(private_db, a, table, 1), table
+        assert _app_sees(private_db, b, table, 1), table
+        assert _app_sees(private_db, uuid.uuid4(), table, 0), table
 
 
 _INSERT = (

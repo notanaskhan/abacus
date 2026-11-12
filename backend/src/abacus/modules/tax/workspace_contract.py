@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Query, Response
@@ -32,7 +32,7 @@ from abacus.kernel._statuses import (
     ReturnFieldViewStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.tax.k1_treatments import ActivityView, TreatmentView
@@ -75,10 +75,6 @@ async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
     reaches the workspace."""
     if ctx.client or not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 # --- RW-1 models ---------------------------------------------------------------------------------

@@ -33,8 +33,8 @@ import {
   useHome,
   useWaitingOnYou,
 } from "../../domain/home";
-import { HomeBands } from "../../components/screens/HOME-01/HomeBands";
-import { feedHref } from "../../shell/notifications";
+import { HomeBands } from "./HomeBands";
+import { feedHref } from "../../shell/firm/notification-links";
 import { COPY } from "./copy";
 
 // HOME-01 · Home dashboard, the main region (I-01-T06; docs/screens/HOME-01.md). T11

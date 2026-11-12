@@ -19,9 +19,8 @@ import {
   type WorkbenchTab,
 } from "@abacus/ui";
 import { T5Board } from "@abacus/ui/specimens";
-import { type JSX, useEffect, useMemo, useState } from "react";
+import { type JSX, useMemo, useState } from "react";
 import { useSession } from "../../../app-core/session";
-import { RunStore, ScriptedRunSource, useRunStore } from "../../../domain/agents";
 import {
   QUESTION,
   RUN_ID,
@@ -32,7 +31,7 @@ import {
   threadItems,
   tpl04Script,
 } from "../../../fixtures/seed/tpl04-sessions";
-import type { FixtureParams } from "../../fixture-mode";
+import { type FixtureParams, useScriptedRunDone } from "../../fixture-mode";
 import { specimenToolbar } from "../firm-toolbar";
 import { COPY, T4A_PROMPTS, T4F_AGENTS, T4F_DETAIL } from "./copy";
 
@@ -63,7 +62,12 @@ const T4_FRAME: Readonly<Record<Exclude<T4State, "f">, Tpl04Frame>> = {
 /** The gallery's action log: each intent the artboard emits, in order. */
 function useIntentLog(): [readonly string[], (intent: string) => void] {
   const [log, setLog] = useState<string[]>([]);
-  return [log, (intent) => setLog((l) => [...l, intent])];
+  return [
+    log,
+    (intent) => {
+      setLog((l) => [...l, intent]);
+    },
+  ];
 }
 
 function IntentLog({ log }: { log: readonly string[] }): JSX.Element {
@@ -88,19 +92,13 @@ function rowsOf(frame: Tpl04Frame): SessionRow[] {
 function questionOf(items: readonly ThreadItem[]): QuestionPayload | null {
   const asked = [...items].reverse().find((i) => i.kind === "question");
   const answered = items.some((i) => i.kind === "answer");
-  return asked && !answered ? (QUESTION as unknown as QuestionPayload) : null;
+  return asked && !answered ? QUESTION : null;
 }
 
 /** The running frame's run: played, or frozen on its running page under `?static=1`. */
 function useScriptedRun(frame: Tpl04Frame, still: boolean): Tpl04Frame {
-  const store = useMemo(() => new RunStore(), []);
-  useEffect(() => {
-    if (frame !== "c") return undefined;
-    const script = still ? tpl04Script().slice(0, 1) : tpl04Script();
-    return store.connect(new ScriptedRunSource(script, { freeze: still }));
-  }, [frame, still, store]);
-  const feed = useRunStore(store);
-  return frame === "c" && feed.run?.state === "succeeded" ? "d" : frame;
+  const script = useMemo(() => (frame === "c" ? tpl04Script() : null), [frame]);
+  return useScriptedRunDone(script, still) ? "d" : frame;
 }
 
 function SessionsFrame({
@@ -134,7 +132,7 @@ function SessionsFrame({
 
   const answer = (a: QuestionAnswer) => {
     log("skipped" in a ? `answer:${a.question_id}:skipped` : `answer:${a.question_id}:${a.key}`);
-    if (!("skipped" in a) && a.step < (QUESTION.m ?? 1)) return;
+    if (!("skipped" in a) && a.step < QUESTION.m) return;
     setFrame("c");
   };
 
@@ -150,12 +148,16 @@ function SessionsFrame({
           rows={rows}
           selectedId={SESSION_ID}
           still={still}
-          onSelect={(id) => log(`select:${id}`)}
+          onSelect={(id) => {
+            log(`select:${id}`);
+          }}
           onNew={() => {
             log("new-session");
             setFrame("b");
           }}
-          onFilter={() => log("filter")}
+          onFilter={() => {
+            log("filter");
+          }}
         />
       }
       chat={
@@ -171,10 +173,18 @@ function SessionsFrame({
               setPickerKind(null);
               setPickerOpen(true);
             }}
-            onOpenTrace={() => log(`run-trace:${RUN_ID}`)}
-            onRename={() => log("rename")}
-            onDelete={() => log("delete")}
-            onCreateAgent={() => log("edit-agent:new")}
+            onOpenTrace={() => {
+              log(`run-trace:${RUN_ID}`);
+            }}
+            onRename={() => {
+              log("rename");
+            }}
+            onDelete={() => {
+              log("delete");
+            }}
+            onCreateAgent={() => {
+              log("edit-agent:new");
+            }}
           />
           <ChatThread
             items={items}
@@ -198,7 +208,9 @@ function SessionsFrame({
                 <QuestionCard
                   question={question}
                   onAnswer={answer}
-                  onSomethingElse={() => log("answer:other")}
+                  onSomethingElse={() => {
+                    log("answer:other");
+                  }}
                 />
               ) : empty ? (
                 <ContextPicker
@@ -219,12 +231,18 @@ function SessionsFrame({
                 />
               ) : null
             }
-            onRetryStep={(step) => log(`retry:${step}`)}
-            onOpenRun={(run) => log(`open-run:${run}`)}
-            onArtifact={(id, intent) =>
-              log(intent === "save" ? `save-to-files:${id}` : `artifact:${intent}:${id}`)
-            }
-            onSend={(body) => log(`send:${String(body.length)}`)}
+            onRetryStep={(step) => {
+              log(`retry:${step}`);
+            }}
+            onOpenRun={(run) => {
+              log(`open-run:${run}`);
+            }}
+            onArtifact={(id, intent) => {
+              log(intent === "save" ? `save-to-files:${id}` : `artifact:${intent}:${id}`);
+            }}
+            onSend={(body) => {
+              log(`send:${String(body.length)}`);
+            }}
           />
           {empty ? (
             <div className="mx-[16px] mb-[8px]">
@@ -235,7 +253,9 @@ function SessionsFrame({
                   setPickerKind(kind);
                   setPickerOpen(true);
                 }}
-                onRemove={(item) => setAttached((a) => a.filter((x) => x.id !== item.id))}
+                onRemove={(item) => {
+                  setAttached((a) => a.filter((x) => x.id !== item.id));
+                }}
               />
             </div>
           ) : null}
@@ -258,7 +278,9 @@ function AgentListPane({ log }: { log: (intent: string) => void }): JSX.Element 
               type="button"
               data-agent={agent.id}
               aria-current={i === 0 ? "true" : undefined}
-              onClick={() => log(`select-agent:${agent.id}`)}
+              onClick={() => {
+                log(`select-agent:${agent.id}`);
+              }}
               className={`flex h-[48px] w-full items-center gap-[10px] px-[12px] text-left ${
                 i === 0 ? "bg-sel-bg" : ""
               }`}
@@ -285,7 +307,9 @@ function AgentFrame({ log }: { log: (intent: string) => void }): JSX.Element {
     <WorkbenchLayout
       tab="agents"
       variant="agent_detail"
-      onTab={(t) => log(`tab:${t}`)}
+      onTab={(t) => {
+        log(`tab:${t}`);
+      }}
       list={<AgentListPane log={log} />}
       chat={
         <AgentDetail
@@ -296,10 +320,18 @@ function AgentFrame({ log }: { log: (intent: string) => void }): JSX.Element {
           meta={T4F_DETAIL.meta}
           facts={T4F_DETAIL.facts}
           runs={T4F_DETAIL.runs}
-          onEdit={() => log("edit-agent:soc1")}
-          onArchive={() => log("archive-agent:soc1")}
-          onRun={() => log("run-agent:soc1")}
-          onOpenRun={(id) => log(`run-trace:${id}`)}
+          onEdit={() => {
+            log("edit-agent:soc1");
+          }}
+          onArchive={() => {
+            log("archive-agent:soc1");
+          }}
+          onRun={() => {
+            log("run-agent:soc1");
+          }}
+          onOpenRun={(id) => {
+            log(`run-trace:${id}`);
+          }}
         />
       }
     />
@@ -320,7 +352,7 @@ export function T4Artboard({ params }: { params: FixtureParams }): JSX.Element {
     ? (params.st as T4State)
     : "a";
   const [log, push] = useIntentLog();
-  const still = params.static === true;
+  const still = params.static;
   return (
     <div data-specimen="T4" data-state={state} data-artboard={state}>
       <Window firm={firm}>
@@ -353,7 +385,7 @@ export function Tpl04Artboard({ params }: { params: FixtureParams }): JSX.Elemen
         <SessionsFrame
           key={frame}
           initial={frame}
-          still={params.static === true}
+          still={params.static}
           source="tpl04"
           log={push}
         />

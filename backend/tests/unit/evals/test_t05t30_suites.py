@@ -3,6 +3,8 @@ before N starts the prompts." Every grader has a seeded case that it catches."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from abacus_tools.evals import tax_entity_part2 as p2
@@ -16,7 +18,7 @@ def test_the_suite_passes_on_the_fake_model_with_frozen_thresholds(agent: p2.Age
 
 
 @pytest.mark.parametrize("agent", p2.AGENTS)
-def test_a_lowered_threshold_is_refused(agent: p2.Agent, tmp_path) -> None:  # noqa: ANN001
+def test_a_lowered_threshold_is_refused(agent: p2.Agent, tmp_path: Path) -> None:
     raw = (p2.ROOT / agent / "suite.yaml").read_text(encoding="utf-8")
     (tmp_path / agent).mkdir()
     (tmp_path / agent / "suite.yaml").write_text(

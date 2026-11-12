@@ -19,6 +19,7 @@ from typing import cast, get_args
 from abacus.api.export_openapi import document
 from abacus.kernel._statuses import ProposedEntryStatus
 from abacus.modules.adjustments import contract as c8
+from abacus.modules.adjustments.entries import TAX_LAYERS, TaxLayerOutsideReturn
 from abacus.modules.ledger.api import LayerUnavailable, layer_available
 
 Json = dict[str, object]
@@ -36,7 +37,11 @@ def test_c8_carries_the_aje_1_pill_states() -> None:
 
 
 def test_c8_reads_the_four_layers_ebp_06_shows() -> None:
-    assert set(get_args(c8.Layer)) == {"unadjusted", "aje", "rje", "final"}
+    book = {"unadjusted", "aje", "rje", "final"}
+    assert book <= set(get_args(c8.Layer))
+    # T-05-T25 (DEC-4517): the only other layers are a tax return's, refused for an audit's item.
+    assert set(get_args(c8.Layer)) - book == set(TAX_LAYERS) == {"atb", "tje", "ttb"}
+    assert TaxLayerOutsideReturn.code == "tax_layer_outside_return"
     operation = PATHS["/v1/work-items/{work_item_id}/adjusted-tb"]["get"]
     assert operation["x-abacus-action"] == "adjusted_tb.read"
 

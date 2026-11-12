@@ -1,18 +1,7 @@
-import { entityRunsOptions, returnRecordOptions } from "@abacus/api-client/query";
-import { EmptyState, FlagOffState, Spinner } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
-import { createRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
+import { FlagOffState } from "@abacus/ui";
+import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
-import { FeatureGate, useFlag } from "../../app-core/flags";
-import {
-  type Section,
-  SCREEN_OF,
-  isEntityForm,
-  sectionOf,
-  slugOf,
-} from "../../domain/tax/entityReturn";
-import { TXP00, frameOf } from "../../screens/TXP-00";
-import { EntityReturnLayout, NOT_BUILT } from "../../screens/TXP-00/EntityReturnLayout";
+import { FeatureGate } from "../../app-core/flags";
 import { useParam } from "../params";
 import { to } from "../to";
 import { appRoute, lazyScreen } from "../root";
@@ -92,73 +81,48 @@ export const taxReturnsRoute = createRoute({
   },
 });
 
-// T-05-T28 (DEC-4520): `/tax-returns/$returnId` dispatches by form family. With
-// `tax.entity_workspace` on, a 1065 opens the entity layout on its Agent tab (TXP-00); a 1040 or
-// 1041, or any return with the flag off, keeps TAX-02 as today. The entity sections live at
-// `/issues`, `/workpaper`, `/activity` and `/review/$review`; a slug that is not the form's
-// redirects to the Agent tab before load.
-function EntitySection({
+// T-05-T28 (DEC-4520): `/tax-returns/$returnId` dispatches by form family (TXP-00's
+// EntityReturn); TAX-02 stays the overview for a 1040 or 1041, or with `tax.entity_workspace` off.
+const EntityReturn = lazyScreen(
+  async () => (await import("../../screens/TXP-00/EntityReturn")).EntityReturn,
+);
+
+export type EntitySlug = "agent" | "issues" | "workpaper" | "activity" | "review";
+
+export function EntitySection({
   returnId,
-  section,
+  slug,
+  review,
+  fallback,
 }: {
   returnId: string;
-  section: Section;
+  slug: EntitySlug;
+  review?: string;
+  /** The route's own screen for a 1040 or 1041 (default: TAX-02). */
+  fallback?: JSX.Element;
 }): JSX.Element {
   const navigate = useNavigate();
-  const record = useQuery(returnRecordOptions({ path: { return_id: returnId } }));
-  const entityOn = useFlag("tax.entity_workspace") === true;
-  if (record.data === undefined) {
-    return <Spinner label="Loading the return" />;
-  }
-  const form = record.data.row.form;
-  if (!entityOn || !isEntityForm(form)) {
-    return (
-      <ReturnOverview
-        returnId={returnId}
-        onTab={(tab) => {
-          if (tab === "intake") void navigate(to.TAX03({ returnId }));
-        }}
-      />
-    );
-  }
-  const screen = SCREEN_OF[section.review ?? section.tab];
-  return (
-    <EntityReturnLayout
-      title={`${String(record.data.row.tax_year)} Form ${form}`}
-      context={record.data.row.client_name}
-      section={section}
-      onSection={(next) => {
-        if (next.tab === "intake") {
-          void navigate(to.TAX03({ returnId }));
-          return;
-        }
-        void navigate({ to: `/tax-returns/${returnId}${slugOf(next)}` });
+  const overview = fallback ?? (
+    <ReturnOverview
+      returnId={returnId}
+      onTab={(tab) => {
+        if (tab === "intake") void navigate(to.TAX03({ returnId }));
       }}
-    >
-      {section.tab === "agent" ? (
-        <AgentTab returnId={returnId} />
-      ) : (
-        // TXP-10/11/01/02/05/07 land with their rows; until then the planned state, never blank.
-        <EmptyState title={NOT_BUILT} icon="clock">
-          {screen ?? ""}
-        </EmptyState>
-      )}
-    </EntityReturnLayout>
+    />
   );
-}
-
-// T-05-T29: TXP-00 on the return's workbook runs (the newest run sets the frame).
-function AgentTab({ returnId }: { returnId: string }): JSX.Element {
-  const navigate = useNavigate();
-  const runs = useQuery(entityRunsOptions({ path: { return_id: returnId } }));
-  if (runs.data === undefined) return <Spinner label="Loading the workbook runs" />;
-  return (
-    <TXP00
-      frame={frameOf(runs.data.items)}
+  return gated(
+    <EntityReturn
+      returnId={returnId}
+      slug={slug}
+      overview={overview}
+      onOpen={(suffix) => {
+        void navigate({ to: `/tax-returns/${returnId}${suffix}` });
+      }}
       onComposer={() => {
         void navigate({ to: ".", search: { ov: "assistant" } });
       }}
-    />
+      {...(review === undefined ? {} : { review })}
+    />,
   );
 }
 
@@ -167,39 +131,18 @@ export const taxReturnRoute = createRoute({
   path: "/tax-returns/$returnId",
   component: function TaxReturnPage(): JSX.Element {
     const returnId = useParam("returnId");
-    return gated(<EntitySection returnId={returnId} section={{ tab: "agent" }} />);
+    return <EntitySection returnId={returnId} slug="agent" />;
   },
 });
 
-function entitySectionRoute(slug: "issues" | "workpaper" | "activity") {
-  return createRoute({
-    getParentRoute: () => appRoute,
-    path: `/tax-returns/$returnId/${slug}`,
-    component: function EntitySectionPage(): JSX.Element {
-      const returnId = useParam("returnId");
-      return gated(<EntitySection returnId={returnId} section={{ tab: slug }} />);
-    },
-  });
-}
-
-export const entityIssuesRoute = entitySectionRoute("issues");
-export const entityWorkpaperRoute = entitySectionRoute("workpaper");
-export const entityActivityRoute = entitySectionRoute("activity");
-
-export const entityReviewRoute = createRoute({
+// `/workpaper` is the entity return's alone (TXP-11); `/issues`, `/activity` and
+// `/review/$section` are T-04's routes (tax-review.tsx), which dispatch through `EntitySection`.
+export const entityWorkpaperRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: "/tax-returns/$returnId/review/$review",
-  beforeLoad: ({ params }) => {
-    if (sectionOf("review", params.review) === null) {
-      // biome-ignore lint/style/useThrowOnlyError: TanStack's redirect is thrown by design
-      throw redirect({ to: "/tax-returns/$returnId", params: { returnId: params.returnId } });
-    }
-  },
-  component: function EntityReviewPage(): JSX.Element {
+  path: "/tax-returns/$returnId/workpaper",
+  component: function EntityWorkpaperPage(): JSX.Element {
     const returnId = useParam("returnId");
-    const review = useParam("review");
-    const section = sectionOf("review", review) ?? { tab: "agent" };
-    return gated(<EntitySection returnId={returnId} section={section} />);
+    return <EntitySection returnId={returnId} slug="workpaper" />;
   },
 });
 
@@ -271,10 +214,7 @@ export const taxReturnRoutes = [
   taxExtensionsRoute,
   taxReturnsRoute,
   taxReturnRoute,
-  entityIssuesRoute,
   entityWorkpaperRoute,
-  entityActivityRoute,
-  entityReviewRoute,
   taxReturnIntakeRoute,
   taxReturnK1Route,
   taxReturnDeliveryRoute,

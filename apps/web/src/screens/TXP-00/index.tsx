@@ -6,7 +6,7 @@
 // §706(d) answer (the chat-ask QuestionCard above the composer); E the import stopped (Retry ·
 // Reconnect · View run). Running and waiting rows differ in words and glyphs, not colour alone.
 // The composer hands off to TAX-08. Every human verb is the person's; the agent never approves.
-import { Button, Icon, QuestionCard, type QuestionPayload, Spinner, StatusDisc } from "@abacus/ui";
+import { Button, Icon, QuestionCard, Spinner, StatusDisc } from "@abacus/ui";
 import type { JSX } from "react";
 import { COPY, GROUPS, type GroupCopy, QUESTION_706D, type TaskCopy } from "./copy";
 
@@ -98,6 +98,7 @@ function RunCard({ frame, onRun }: { frame: Txp00Frame; onRun?: () => void }): J
         </div>
         {frame === "c" ? (
           <Button variant="primary" size="lg" onClick={onRun}>
+            <Icon name="play" size={12} />
             {COPY.runPrimary}
           </Button>
         ) : frame === "b" ? (
@@ -168,7 +169,7 @@ function TaskGroup({
             {running ? (
               <Spinner size={12} label="Running" showLabel={false} />
             ) : (
-              <Icon name="check" size={11} />
+              <Icon name="check" size={12} />
             )}
           </span>
         ) : null}
@@ -223,6 +224,7 @@ function TaskGroup({
                     variant="ghost"
                     size="sm"
                     disabled={state === "run"}
+                    aria-label={`${COPY.run} ${task.name}`}
                     onClick={() => props.onReRun?.("task", task.key)}
                   >
                     {COPY.run}
@@ -279,9 +281,9 @@ export function TXP00(props: TXP00Props): JSX.Element {
         {frame === "d" ? (
           <div className="mx-[16px] mb-[9px]">
             <QuestionCard
-              question={QUESTION_706D as QuestionPayload}
+              question={QUESTION_706D}
               onAnswer={(a) => props.onAnswer?.(a)}
-              onEscape={props.onComposer}
+              {...(props.onComposer ? { onEscape: props.onComposer } : {})}
             />
           </div>
         ) : null}
@@ -290,7 +292,7 @@ export function TXP00(props: TXP00Props): JSX.Element {
             data-running-pill
             className="absolute bottom-[60px] left-1/2 flex h-[43px] -translate-x-1/2 items-center gap-[8px] rounded-pill bg-card px-[16px] shadow-e3"
           >
-            <Spinner size={14} label="Running" showLabel={false} />
+            <Spinner size={15} label="Running" showLabel={false} />
             <span className="text-[13px]">{COPY.runningPill}</span>
           </div>
         ) : null}

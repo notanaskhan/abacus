@@ -43,7 +43,13 @@ const ASK: QuestionPayload = {
 };
 
 function radios(): HTMLInputElement[] {
-  return screen.getAllByRole("radio") as HTMLInputElement[];
+  return screen.getAllByRole<HTMLInputElement>("radio");
+}
+
+function nth<T>(items: readonly T[], i: number): T {
+  const item = items[i];
+  if (item === undefined) throw new Error(`no item ${String(i)}`);
+  return item;
 }
 
 describe("QuestionCard", () => {
@@ -52,7 +58,7 @@ describe("QuestionCard", () => {
     expect(screen.getByText("Which returns should the report cover?")).toBeTruthy();
     expect(screen.getByText("1 of 2")).toBeTruthy();
     expect(radios().map((r) => r.checked)).toEqual([true, false]);
-    expect((screen.getByRole("button", { name: "Previous" }) as HTMLButtonElement).disabled).toBe(
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Previous" }).disabled).toBe(
       true,
     );
   });
@@ -60,13 +66,13 @@ describe("QuestionCard", () => {
   it("Next emits exactly one answer with the chosen key, then moves to step 2", () => {
     const onAnswer = vi.fn();
     render(<QuestionCard question={ASK} onAnswer={onAnswer} />);
-    fireEvent.click(radios()[1]!);
+    fireEvent.click(nth(radios(), 1));
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(onAnswer).toHaveBeenCalledTimes(1);
     expect(onAnswer).toHaveBeenCalledWith({ question_id: "q-ty2025-scope", step: 1, key: "all" });
     expect(screen.getByText("2 of 2")).toBeTruthy();
     expect(screen.getByText("Where should I save the workbook?")).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Previous" }) as HTMLButtonElement).disabled).toBe(
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Previous" }).disabled).toBe(
       false,
     );
   });
@@ -74,7 +80,7 @@ describe("QuestionCard", () => {
   it("answers the last step once, however often Next is pressed", () => {
     const onAnswer = vi.fn();
     render(
-      <QuestionCard question={{ ...ASK, steps: [ASK.steps[1]!], n: 2 }} onAnswer={onAnswer} />,
+      <QuestionCard question={{ ...ASK, steps: [nth(ASK.steps, 1)], n: 2 }} onAnswer={onAnswer} />,
     );
     const next = screen.getByRole("button", { name: "Next" });
     fireEvent.click(next);

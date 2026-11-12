@@ -644,10 +644,10 @@ async def entity_sheet_route(
     await _flag_on(ctx)
     form, _resource = await _workbook_read(ctx, return_id)
     from abacus.modules.review.api import current_values
-    from abacus.modules.tax.workbook_service import WORKBOOK, project, sheet_or_404
+    from abacus.modules.tax.workbook_service import WORKBOOK, sheet_cells, sheet_or_404
 
     values = await current_values(ctx.tenant, WORKBOOK, return_id)
-    cells, next_range = project(values, sheet_or_404(form, sheet), range_)
+    cells, next_range = sheet_cells(values, sheet_or_404(form, sheet), range_)
     return WorkbookSheetCellsOut(
         sheet=sheet,
         version=1,

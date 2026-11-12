@@ -25,7 +25,7 @@ from abacus.modules.platform.search.spec import SearchGroup
 
 Q_MAX = 100
 TOTAL_VISIBLE_CAP = 99
-ObjectType = Annotated[str, Field(pattern=r"^[a-z][a-z_]{1,39}$")]
+ObjectType = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{1,39}$")]
 ScreenId = Annotated[str, Field(pattern=r"^[A-Z]{2,4}-\d{2}$")]
 # Bidi embeddings, overrides and isolates (U+202A-202E, U+2066-2069), plus every control
 # character (Unicode category Cc and Cf), are dropped from search text (ADR-052).
@@ -108,7 +108,9 @@ class SearchItemOut(BaseModel):
     tag: Annotated[str | None, classified("internal")] = None
     use_count: Annotated[int | None, Field(ge=0), classified("internal")] = None
     target: Annotated[SearchTargetOut, classified("internal")]
-    match_ranges: Annotated[list[MatchRange], classified("internal")] = Field(default_factory=list)
+    match_ranges: Annotated[list[MatchRange], classified("internal")] = Field(
+        default_factory=list[MatchRange]
+    )
 
 
 class SearchGroupOut(BaseModel):

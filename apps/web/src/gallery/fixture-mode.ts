@@ -1,4 +1,5 @@
-import { type ComponentType, useEffect, useState } from "react";
+import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { RunStore, type ScriptStep, ScriptedRunSource, useRunStore } from "../domain/agents";
 
 // The pass-through to F-04-T04's fixture mode (SPEC-048 AC-11): the gallery parses the query
 // parameters once and hands them to the registered screen. With VITE_FIXTURES=1, the Brightwater
@@ -94,4 +95,18 @@ export function unregisterScreen(id: string): void {
 
 export function screenById(id: string): ScreenEntry | undefined {
   return SCREENS.get(id);
+}
+
+/** A specimen's scripted run (F-07-T08): `script` plays through the web's RunStore, or stays on
+ * its first page under `?static=1`; true once the run has succeeded. `null` plays nothing. */
+export function useScriptedRunDone(script: readonly ScriptStep[] | null, still: boolean): boolean {
+  const store = useMemo(() => new RunStore(), []);
+  useEffect(() => {
+    if (script === null) return undefined;
+    return store.connect(
+      new ScriptedRunSource(still ? script.slice(0, 1) : script, { freeze: still }),
+    );
+  }, [script, still, store]);
+  const feed = useRunStore(store);
+  return script !== null && feed.run?.state === "succeeded";
 }

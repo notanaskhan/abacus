@@ -37,3 +37,4 @@ TAX-08.
 
 ## Progress log
 - `2026-11-12` — Built (DEC-4521). Tests run at the S39 end pass.
+- `2026-11-12` — End pass (L2 copy): the handoff's "task" for a run step reads "step" (glossary: "Run step. Never task"): "Re-run this step", "10 of 10 steps", "3 steps running at once.", "Ready to run 10 steps". "▶ Run" is the play icon beside "Run" (L2 bans emoji). The handoff wording is otherwise verbatim.

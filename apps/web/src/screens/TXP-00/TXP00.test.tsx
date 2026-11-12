@@ -52,7 +52,7 @@ describe("TXP-00 Agent tab", () => {
     expect((screen.getAllByRole("radio")[0] as HTMLInputElement).checked).toBe(true);
   });
 
-  it("C: idle rows are Not started and ▶ Run starts the run", () => {
+  it("C: idle rows are Not started and Run starts the run", () => {
     const onRun = vi.fn();
     render(<TXP00 frame="c" onRun={onRun} />);
     expect(screen.getAllByText(COPY.notStarted)).toHaveLength(10);
@@ -86,6 +86,8 @@ describe("TXP-00 Agent tab", () => {
     expect(frameOf([{ state: "waiting_on_inputs" }])).toBe("d");
     expect(frameOf([{ state: "failed" }])).toBe("e");
     expect(frameOf([{ state: "succeeded" }, { state: "failed" }])).toBe("a");
-    expect(rowState("c", GROUPS[0]!.tasks[0]!)).toBe("todo");
+    const first = GROUPS[0]?.tasks[0];
+    expect(first).toBeDefined();
+    if (first) expect(rowState("c", first)).toBe("todo");
   });
 });

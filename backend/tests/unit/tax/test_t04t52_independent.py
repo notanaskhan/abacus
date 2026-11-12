@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -26,6 +26,9 @@ from abacus.modules.identity.api import RULES, AuthContext
 from abacus.modules.review import issue_resolutions
 from abacus.modules.review.api import IssueSystemResolvedOnly
 from abacus.modules.tax import k1_treatments, residency_service, return_issues
+
+_source_visible = k1_treatments._source_visible  # pyright: ignore[reportPrivateUsage] -- the rule under test
+_cell = return_issues._cell  # pyright: ignore[reportPrivateUsage] -- the rule under test
 
 MIGRATION = (
     Path(__file__).resolve().parents[3] / "migrations/versions/0761_tax_individual_workspace.py"
@@ -39,7 +42,7 @@ def _ctx(*, client: bool = False) -> AuthContext:
         TenantContext(uuid.uuid4(), "human", str(user)),
         user,
         uuid.uuid4(),
-        "manager",
+        cast(Any, "manager"),  # Any: a firm role name stand-in
         None,
         client=client,
     )
@@ -51,13 +54,20 @@ def _ctx(*, client: bool = False) -> AuthContext:
 def _fake_session(value: object):  # noqa: ANN202 -- a stand-in tenant_session
     @asynccontextmanager
     async def session(_tenant: object):  # noqa: ANN202
-        yield SimpleNamespace(scalar=lambda *_a, **_k: _ready(value))
+        yield SimpleNamespace(scalar=_scalar(value))
 
     return session
 
 
 async def _ready(value: object) -> object:
     return value
+
+
+def _scalar(value: object):  # noqa: ANN202 -- a session.scalar stand-in
+    def scalar(*_a: object, **_k: object) -> object:
+        return _ready(value)
+
+    return scalar
 
 
 def _wire_source(monkeypatch: pytest.MonkeyPatch, *, walled: bool, may_read: bool = True) -> None:
@@ -81,22 +91,22 @@ def _wire_source(monkeypatch: pytest.MonkeyPatch, *, walled: bool, may_read: boo
 def test_dec88_a_walled_person_sees_no_k1_link(monkeypatch: pytest.MonkeyPatch) -> None:
     """Guard: `_source_visible` hides the source package when the issuing engagement 404s."""
     _wire_source(monkeypatch, walled=True)
-    assert asyncio.run(k1_treatments._source_visible(_ctx(), PACKAGE)) is None
+    assert asyncio.run(_source_visible(_ctx(), PACKAGE)) is None
 
 
 def test_dec88_a_person_without_read_on_the_issuer_sees_no_k1_link(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _wire_source(monkeypatch, walled=False, may_read=False)
-    assert asyncio.run(k1_treatments._source_visible(_ctx(), PACKAGE)) is None
+    assert asyncio.run(_source_visible(_ctx(), PACKAGE)) is None
 
 
 def test_dec88_a_person_who_reads_both_engagements_sees_the_link(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _wire_source(monkeypatch, walled=False)
-    assert asyncio.run(k1_treatments._source_visible(_ctx(), PACKAGE)) == PACKAGE
-    assert asyncio.run(k1_treatments._source_visible(_ctx(), None)) is None
+    assert asyncio.run(_source_visible(_ctx(), PACKAGE)) == PACKAGE
+    assert asyncio.run(_source_visible(_ctx(), None)) is None
 
 
 # --- the Draft K-1 dependency: only the system resolves it ---------------------------------------
@@ -105,7 +115,7 @@ def test_dec88_a_person_who_reads_both_engagements_sees_the_link(
 def test_the_draft_k1_issue_is_system_resolved_only_and_blocks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    seen: dict[str, Any] = {}
+    seen: dict[str, Any] = {}  # Any: the issue kwargs under test
 
     async def create(_ctx: object, **kwargs: object) -> uuid.UUID:
         seen.update(kwargs)
@@ -250,7 +260,7 @@ def test_only_a_person_sends_a_question_to_the_client() -> None:
     "recommended", ["full_year_nys_nyc", "full_year_nys_part_year_nyc", "part_year_nys"]
 )
 def test_the_client_question_is_template_words_only(recommended: str) -> None:
-    title, wording = residency_service.client_question(recommended)  # type: ignore[arg-type]
+    title, wording = residency_service.client_question(recommended)  # type: ignore[arg-type] -- the parametrised option keys
     labels = [o.label for o in residency_service.OPTIONS]
     first = wording.split("\n")[1]
     assert first == f"- {next(o.label for o in residency_service.OPTIONS if o.key == recommended)}"
@@ -275,7 +285,7 @@ def test_the_client_question_is_template_words_only(recommended: str) -> None:
     ],
 )
 def test_csv_cells_are_neutralised_against_formula_injection(value: object, cell: str) -> None:
-    assert return_issues._cell(value) == cell
+    assert _cell(value) == cell
 
 
 def test_the_csv_export_is_a_person_s_audited_export() -> None:

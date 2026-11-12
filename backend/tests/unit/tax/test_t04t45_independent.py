@@ -87,14 +87,25 @@ def test_inv1_autonomy_is_propose_and_plans_are_required_for_writes(capability: 
     assert spec["plan"] == "required_when_writes"
 
 
+# Actions named with a human verb that are not decisions. `k1_treatment.resolve` starts the
+# analyst's treatment run (202, one proposal for SHL-10) or records a K-1 a person uploaded; the
+# decisions on a treatment are `k1_treatment.approve` and `.override` (checked: agent deny).
+NOT_DECISIONS = {"k1_treatment.resolve": ("k1_treatment.approve", "k1_treatment.override")}
+
+
 def test_inv1_the_matrix_never_lets_the_agent_take_a_human_only_tax_or_review_action() -> None:
     """Guard: `agent: deny` (or the agent's absence) on every human-only action of the tax, review
     and issue families: even a task scope listing one could not hold it."""
     families = ("tax_return.", "return_worksheet.", "k1_treatment.", "residency.", "issue.")
     families += ("proposal.", "checkpoint.", "sign_off.", "review_note.")
+    for decisions in NOT_DECISIONS.values():
+        for action in decisions:
+            assert RULES[action].decisions.get("agent") == "deny", action
     checked = 0
     for action, rule in RULES.items():
         if not action.startswith(families) or not _human_only(action):
+            continue
+        if action in NOT_DECISIONS:
             continue
         checked += 1
         assert rule.decisions.get("agent") not in ("allow", "task_scope"), action
@@ -148,10 +159,11 @@ def test_numbers_by_reference_code_computes_the_new_value() -> None:
 def test_numbers_by_reference_the_analyst_drops_any_sentence_with_a_number_not_codes() -> None:
     """Guard: `keep_sentences` keeps a sentence only if every number in it is code's."""
     allowed = frozenset({D(307900), D(2025)})
-    text = "Box 2 is 307,900 for 2025. The deduction is 61,999. It is passive."
-    assert (
-        analyst_modes.keep_sentences(text, allowed) == "Box 2 is 307,900 for 2025. It is passive."
-    )
+    text = "Rental income is 307,900 for 2025. The deduction is 61,999. It is passive."
+    kept = analyst_modes.keep_sentences(text, allowed)
+    assert kept == "Rental income is 307,900 for 2025. It is passive."
+    # A box number is a number too: without code's 2 the sentence goes (fails safe).
+    assert analyst_modes.keep_sentences("Box 2 is 307,900.", allowed) == ""
 
 
 def test_numbers_by_reference_a_k1_rationale_never_changes_a_resolved_value() -> None:
@@ -188,7 +200,8 @@ def test_numbers_by_reference_the_drafter_drops_a_number_in_a_note() -> None:
 
 @pytest.mark.parametrize("capability", CAPABILITIES)
 def test_every_capability_is_bounded(capability: str) -> None:
-    limits = cast(dict[str, Any], SPECS_V2[capability]["limits"])
+    spec = SPECS_V2[capability]
+    limits = cast(dict[str, Any], spec["limits"])  # Any: limits are mixed values
     assert 0 < int(limits["max_steps"]) <= 40
     assert 0 < int(limits["max_tool_calls"]) <= 40
     assert 0 < int(limits["max_seconds"]) <= 600
@@ -197,7 +210,8 @@ def test_every_capability_is_bounded(capability: str) -> None:
 
 
 def test_the_assistant_stops_repeating_itself() -> None:
-    limits = cast(dict[str, Any], SPECS_V2["tax.assistant"]["limits"])
+    spec = SPECS_V2["tax.assistant"]
+    limits = cast(dict[str, Any], spec["limits"])  # Any: limits are mixed values
     assert int(limits["max_repeat_identical_calls"]) <= 2
 
 
@@ -239,7 +253,7 @@ def test_consent_is_checked_on_every_call_so_a_revocation_stops_the_next(
         tri_subjects=(SimpleNamespace(),), engagement_ids=[uuid.uuid4()], client_ids=[]
     )
     monkeypatch.setattr(runtime, "require_tri_consent", require)
-    monkeypatch.setattr(runtime, "default_targets", lambda *_: targets)
+    monkeypatch.setattr(runtime, "default_targets", _returns(targets))
     monkeypatch.setattr(runtime, "_scope_and_rights", in_scope)
     monkeypatch.setattr(runtime, "args_hash", past_gate)
     agent = _agent()
@@ -260,9 +274,29 @@ def test_consent_is_checked_on_every_call_so_a_revocation_stops_the_next(
 
 def _refusing(code: str):  # noqa: ANN202 -- a fake C17
     async def call_tool(_agent: object, call: Any) -> Any:  # noqa: ANN401 -- C17 stand-in
-        return runtime.ToolOutcome(name=call.name, ok=False, code=code)
+        refused = cast(Any, code)  # Any: a refusal code under test
+        return runtime.ToolOutcome(name=call.name, ok=False, code=refused)
 
     return call_tool
+
+
+def _returns(value: object):  # noqa: ANN202 -- a stand-in returning a fixed value
+    def stub(*_: object) -> object:
+        return value
+
+    return stub
+
+
+def _fix_run(a: Any) -> Any:  # noqa: ANN401 -- a run factory
+    return fix_runner.fix(a, uuid.uuid4(), uuid.uuid4(), 2025)
+
+
+def _explain_run(a: Any) -> Any:  # noqa: ANN401 -- a run factory
+    return explain.explain(a, uuid.uuid4(), uuid.uuid4(), 2025)
+
+
+def _k1_mode_run(a: Any) -> Any:  # noqa: ANN401 -- a run factory
+    return analyst_modes.k1_treatments_mode(a, uuid.uuid4(), 2025)
 
 
 def _no_model(*_: object, **__: object) -> object:
@@ -279,9 +313,9 @@ def test_the_drafter_waits_on_inputs_without_a_model_call(monkeypatch: pytest.Mo
 @pytest.mark.parametrize(
     "run",
     [
-        lambda a: fix_runner.fix(a, uuid.uuid4(), uuid.uuid4(), 2025),
-        lambda a: explain.explain(a, uuid.uuid4(), uuid.uuid4(), 2025),
-        lambda a: analyst_modes.k1_treatments_mode(a, uuid.uuid4(), 2025),
+        _fix_run,
+        _explain_run,
+        _k1_mode_run,
     ],
 )
 def test_the_other_runs_wait_on_inputs_when_consent_is_missing(

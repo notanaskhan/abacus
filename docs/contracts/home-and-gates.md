@@ -152,5 +152,5 @@ Nothing in `review`, `practice` or the web app's Home code changes for a new sub
 - **T-08** (amendments, TAX-16): register `amendment_approval` (kind `final_approval`, Approvals & sends) per §12. J19 step 7 (`e2e/journeys/J19-estate-amended.spec.ts`) is `test.fixme` until it lands; remove the fixme in the same change.
 - **I-03, I-04:** a new tile is a home count registered through `platform.register_home_count` (`GET /v1/home` `tiles`), never a gate. A count of work waiting on a person is a gate (§12), so it is counted once.
 - **W-02** (Workbench): agent outputs that wait on a person are `proposal` gates (band Agent outputs). The agent never decides: rows are links to where a person decides (INV-1).
-- **The R2 bands** (To-dos, Mentions) are built unwired (`apps/web/src/components/screens/HOME-01`, I-01-T24) and join HOME-01 after Apr 20, 2028 (P-29 rule 2). They never count into the header.
+- **The R2 bands** (To-dos, Mentions) are built unwired (I-01-T24) and joined HOME-01 behind `collaboration.v2` after Apr 20, 2028 (I-01-T27; P-29 rule 2; `apps/web/src/screens/HOME-01/HomeBands.tsx`). They never count into the header.
 

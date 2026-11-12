@@ -752,6 +752,7 @@ export function TAX02({
   const openOverlay = useOpenOverlay();
   // The Checkpoints chip opens SHL-16 over the return where `review.checkpoints` is on.
   const checkpointsOn = useFlag("review.checkpoints") === true;
+  const reviewOn = useFlag("tax.review_workspace") === true;
   const record = useQuery(returnRecordOptions({ path: { return_id: returnId } }));
   const overview = useQuery(returnOverviewOptions({ path: { return_id: returnId } }));
   const data = record.data;
@@ -809,7 +810,10 @@ export function TAX02({
   };
   // The Review, Issues and Activity tabs open TAX-05, TAX-06 and TAX-07, all planned: drawn
   // disabled where planned screens are, absent in production.
-  const serverTabs = new Set((record.data?.tabs ?? []).map((t) => t.tab));
+  // A T-04 tab is live when the server lists it and the review workspace is on (T-04-T55).
+  const serverTabs = new Set(
+    reviewOn ? (record.data?.tabs ?? []).map((t) => t.tab) : ["overview", "intake"],
+  );
   const tabs = (
     <Tabsbar
       // The return frame's tabsbar is 44 with the default segmented (handoff spec §3; T-02-T33).

@@ -989,6 +989,18 @@
             "cls": "internal",
             "title": "Edited By Initials"
           },
+          "form_line_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form Line Key"
+          },
           "fs_line_id": {
             "anyOf": [
               {
@@ -1842,6 +1854,16 @@
             "title": "Account Name",
             "type": "string"
           },
+          "account_scope": {
+            "cls": "internal",
+            "default": "book",
+            "enum": [
+              "book",
+              "tax_only"
+            ],
+            "title": "Account Scope",
+            "type": "string"
+          },
           "aje": {
             "anyOf": [
               {
@@ -1854,6 +1876,19 @@
             ],
             "cls": "confidential",
             "title": "Aje"
+          },
+          "atb": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Atb"
           },
           "final": {
             "anyOf": [
@@ -1880,6 +1915,32 @@
             ],
             "cls": "confidential",
             "title": "Rje"
+          },
+          "tje": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Tje"
+          },
+          "ttb": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Ttb"
           },
           "unadjusted": {
             "anyOf": [
@@ -1915,7 +1976,10 @@
               "unadjusted",
               "aje",
               "rje",
-              "final"
+              "final",
+              "atb",
+              "tje",
+              "ttb"
             ],
             "title": "Layer",
             "type": "string"
@@ -59016,6 +59080,16 @@
             "title": "Account Code",
             "type": "string"
           },
+          "account_scope": {
+            "cls": "internal",
+            "default": "book",
+            "enum": [
+              "book",
+              "tax_only"
+            ],
+            "title": "Account Scope",
+            "type": "string"
+          },
           "credit": {
             "anyOf": [
               {
@@ -64148,6 +64222,19 @@
             "title": "Prior Source",
             "type": "string"
           },
+          "reference_set_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reference Set Version Id"
+          },
           "run_status": {
             "cls": "internal",
             "enum": [
@@ -64174,6 +64261,16 @@
           "tallies": {
             "$ref": "#/components/schemas/MappingTalliesOut",
             "cls": "internal"
+          },
+          "taxonomy_kind": {
+            "cls": "internal",
+            "default": "fs_line",
+            "enum": [
+              "fs_line",
+              "tax_form_line"
+            ],
+            "title": "Taxonomy Kind",
+            "type": "string"
           },
           "trial_balance_id": {
             "cls": "internal",
@@ -91882,6 +91979,448 @@
         "title": "SdbaRowOut",
         "type": "object"
       },
+      "SearchContextIn": {
+        "additionalProperties": false,
+        "description": "The record the palette was opened on, for context-bound actions (\"New to-do on \u2026\").",
+        "properties": {
+          "object_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Object Id",
+            "type": "string"
+          },
+          "object_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,39}$",
+            "title": "Object Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object_type",
+          "object_id"
+        ],
+        "title": "SearchContextIn",
+        "type": "object"
+      },
+      "SearchGroupOut": {
+        "additionalProperties": false,
+        "description": "One canonical group; a group with no rows is omitted, never sent empty.",
+        "properties": {
+          "group": {
+            "cls": "internal",
+            "enum": [
+              "clients",
+              "returns",
+              "audits",
+              "closes",
+              "binders",
+              "files",
+              "inbox",
+              "sessions",
+              "todos",
+              "saved_prompts",
+              "agents"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "has_more": {
+            "cls": "internal",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/SearchItemOut"
+            },
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "group",
+          "items",
+          "has_more"
+        ],
+        "title": "SearchGroupOut",
+        "type": "object"
+      },
+      "SearchItemOut": {
+        "additionalProperties": false,
+        "description": "One result row (or one recent). `match_ranges` are `[start, end)` offsets into `title`.",
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Context"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "match_ranges": {
+            "cls": "internal",
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Match Ranges",
+            "type": "array"
+          },
+          "object_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Object Id",
+            "type": "string"
+          },
+          "object_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,39}$",
+            "title": "Object Type",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchStatusOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tag"
+          },
+          "target": {
+            "$ref": "#/components/schemas/SearchTargetOut",
+            "cls": "internal"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "use_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Use Count"
+          }
+        },
+        "required": [
+          "object_type",
+          "object_id",
+          "title",
+          "target"
+        ],
+        "title": "SearchItemOut",
+        "type": "object"
+      },
+      "SearchQueryIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/search`. `types: [\"agents\"]` with an empty `q` lists installed agents (`>` mode,\nserved only with `search.agent_mode` on); any other query needs 1-100 characters.",
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchContextIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "limit_per_group": {
+            "cls": "internal",
+            "default": 5,
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Limit Per Group",
+            "type": "integer"
+          },
+          "q": {
+            "cls": "confidential",
+            "maxLength": 400,
+            "title": "Q",
+            "type": "string"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "clients",
+                    "returns",
+                    "audits",
+                    "closes",
+                    "binders",
+                    "files",
+                    "inbox",
+                    "sessions",
+                    "todos",
+                    "saved_prompts",
+                    "agents"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 11,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Types"
+          }
+        },
+        "required": [
+          "q"
+        ],
+        "title": "SearchQueryIn",
+        "type": "object"
+      },
+      "SearchRecentIn": {
+        "additionalProperties": false,
+        "description": "`POST /v1/search/recents`: a record route loaded; identifiers only.",
+        "properties": {
+          "object_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Object Id",
+            "type": "string"
+          },
+          "object_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,39}$",
+            "title": "Object Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object_type",
+          "object_id"
+        ],
+        "title": "SearchRecentIn",
+        "type": "object"
+      },
+      "SearchRecentRecordedOut": {
+        "additionalProperties": false,
+        "description": "`POST /v1/search/recents`: the record, now first in the viewer's recents.",
+        "properties": {
+          "object_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Object Id",
+            "type": "string"
+          },
+          "object_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,39}$",
+            "title": "Object Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object_type",
+          "object_id"
+        ],
+        "title": "SearchRecentRecordedOut",
+        "type": "object"
+      },
+      "SearchRecentsOut": {
+        "additionalProperties": false,
+        "description": "`GET /v1/search/recents`: the viewer's own, newest first, re-filtered by `visible()`.",
+        "properties": {
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/SearchItemOut"
+            },
+            "maxItems": 10,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SearchRecentsOut",
+        "type": "object"
+      },
+      "SearchResultsOut": {
+        "additionalProperties": false,
+        "description": "`POST /v1/search`. No field names, counts or hints at a row the viewer cannot open.",
+        "properties": {
+          "groups": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/SearchGroupOut"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchSuggestionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "total_visible": {
+            "cls": "internal",
+            "maximum": 99.0,
+            "minimum": 0.0,
+            "title": "Total Visible",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "groups",
+          "total_visible"
+        ],
+        "title": "SearchResultsOut",
+        "type": "object"
+      },
+      "SearchStatusOut": {
+        "additionalProperties": false,
+        "description": "The owner's C2 status, as `{code, context}`; the words come from `status.ts`.",
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Context"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "SearchStatusOut",
+        "type": "object"
+      },
+      "SearchSuggestionOut": {
+        "additionalProperties": false,
+        "description": "\"Did you mean \u2026?\" over visible documents only, sent only when every group is empty.",
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Context"
+          },
+          "target": {
+            "$ref": "#/components/schemas/SearchTargetOut",
+            "cls": "internal"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "target"
+        ],
+        "title": "SearchSuggestionOut",
+        "type": "object"
+      },
+      "SearchTargetOut": {
+        "additionalProperties": false,
+        "description": "Where a row opens: a manifest screen and its identifier-only parameters.",
+        "properties": {
+          "params": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "internal",
+            "title": "Params",
+            "type": "object"
+          },
+          "screen_id": {
+            "cls": "internal",
+            "pattern": "^[A-Z]{2,4}-\\d{2}$",
+            "title": "Screen Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "screen_id",
+          "params"
+        ],
+        "title": "SearchTargetOut",
+        "type": "object"
+      },
       "SeasonalAccessEndsIn": {
         "additionalProperties": false,
         "description": "ADM-03a's Seasonal group: one date for every seasonal member, one audit row each.",
@@ -117781,6 +118320,16 @@
             ],
             "cls": "internal",
             "title": "Account Name"
+          },
+          "account_scope": {
+            "cls": "internal",
+            "default": "book",
+            "enum": [
+              "book",
+              "tax_only"
+            ],
+            "title": "Account Scope",
+            "type": "string"
           },
           "credit": {
             "cls": "confidential",
@@ -259448,6 +259997,377 @@
         "x-abacus-action": "screening.feedback"
       }
     },
+    "/v1/search": {
+      "post": {
+        "description": "Grouped, permission-filtered results in canonical order (SHL-02 a, c, d, e, f, g).",
+        "operationId": "firm_search",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchQueryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too soon or too many: retry after Retry-After"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Firm Search Route",
+        "tags": [
+          "search"
+        ],
+        "x-abacus-action": "search.read"
+      }
+    },
+    "/v1/search/recents": {
+      "get": {
+        "description": "The viewer's last opened records, re-filtered by `visible()` (SHL-02 b).",
+        "operationId": "recents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchRecentsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Recents Route",
+        "tags": [
+          "search"
+        ],
+        "x-abacus-action": "search.read"
+      },
+      "post": {
+        "description": "A record route loaded: stored only if the viewer may read the object (404 otherwise).\n200 with the identifiers, not the plan's 204: every route declares a response model\n(DEC-4504).",
+        "operationId": "record_recent",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRecentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchRecentRecordedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Record Recent Route",
+        "tags": [
+          "search"
+        ],
+        "x-abacus-action": "search_recent.record"
+      }
+    },
     "/v1/sign-offs": {
       "get": {
         "description": "SHL-12: the ladder per level, with computed staleness (P-04-T18).",
@@ -270982,6 +271902,7 @@
     },
     "/v1/tax-returns/{return_id}/workbook": {
       "get": {
+        "description": "TXP-11's sheet tabs (T-05-T27): the form's sheets in order and what the viewer may do.",
         "operationId": "workbook",
         "parameters": [
           {
@@ -271360,6 +272281,7 @@
     },
     "/v1/tax-returns/{return_id}/workbook/cells/{address}": {
       "get": {
+        "description": "A cell's provenance (T-05-T27; TXP-11 a, SHL-09): its value, formula, inputs, citations;\nthe version-by-version writer is SHL-09's `GET /v1/fields/tax_workbook/\u2026/provenance`.",
         "operationId": "entity_cell",
         "parameters": [
           {
@@ -271971,6 +272893,7 @@
     },
     "/v1/tax-returns/{return_id}/workbook/sheets/{sheet}": {
       "get": {
+        "description": "One sheet with range paging (T-05-T27): values and formulas, never evaluated text.",
         "operationId": "entity_sheet",
         "parameters": [
           {
@@ -275160,6 +276083,7 @@
     },
     "/v1/tax/returns/{return_id}/draft-runs": {
       "post": {
+        "description": "TAX-02 Run draft and Re-run draft\u2026 (T-04-T55): a person's request starts a\n`tax.return_drafter` run; 409 `draft_not_allowed` past final approval.",
         "operationId": "draft_run",
         "parameters": [
           {
@@ -280400,7 +281324,10 @@
                 "unadjusted",
                 "aje",
                 "rje",
-                "final"
+                "final",
+                "atb",
+                "tje",
+                "ttb"
               ],
               "title": "Layer",
               "type": "string"

@@ -180,6 +180,21 @@ from abacus.modules.platform.safeguards import SUBSCRIPTIONS as WISP_SUBSCRIPTIO
 from abacus.modules.platform.safeguards import open_controls as open_pub4557_controls
 from abacus.modules.platform.safeguards import register_wisp_document_reader
 from abacus.modules.platform.safeguards_routes import controls_platform_router
+from abacus.modules.platform.search.routes import router as search_router
+from abacus.modules.platform.search.spec import (
+    GROUP_ORDER as SEARCH_GROUP_ORDER,
+)
+from abacus.modules.platform.search.spec import (
+    RelatedParty,
+    SearchGroup,
+    SearchIndexDocument,
+    SearchProjection,
+    SearchRegistrationInvalid,
+    register_search_projection,
+)
+from abacus.modules.platform.search.spec import ScopeKind as SearchScopeKind
+from abacus.modules.platform.search.spec import projection as search_projection
+from abacus.modules.platform.search.spec import projections as search_projections
 from abacus.modules.platform.security_center_contract import (
     incident_reads_router,
     safeguards_router,
@@ -196,21 +211,6 @@ from abacus.modules.platform.slots import (
     register_home_count,
     search_document,
 )
-from abacus.modules.platform.search.routes import router as search_router
-from abacus.modules.platform.search.spec import (
-    GROUP_ORDER as SEARCH_GROUP_ORDER,
-)
-from abacus.modules.platform.search.spec import (
-    RelatedParty,
-    SearchGroup,
-    SearchIndexDocument,
-    SearchProjection,
-    SearchRegistrationInvalid,
-    register_search_projection,
-)
-from abacus.modules.platform.search.spec import ScopeKind as SearchScopeKind
-from abacus.modules.platform.search.spec import projection as search_projection
-from abacus.modules.platform.search.spec import projections as search_projections
 from abacus.modules.platform.tenant_keys import (
     TENANT_KEY_ACTIVITIES,
     InMemoryTenantKeyOps,
@@ -323,6 +323,7 @@ __all__ = [
     "PILOT_PLACES",
     "ROUTERS",
     "SCHEDULES",
+    "SEARCH_GROUP_ORDER",
     "SPEND_ANOMALY_ID",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
@@ -387,19 +388,16 @@ __all__ = [
     "ReferenceKindUnknown",
     "ReferencePayloadInvalid",
     "ReferenceSetKind",
+    "RelatedParty",
     "ResolvedReference",
     "RetentionFloor",
     "RunMinutes",
     "SearchDocument",
-    "SEARCH_GROUP_ORDER",
-    "RelatedParty",
     "SearchGroup",
     "SearchIndexDocument",
     "SearchProjection",
     "SearchRegistrationInvalid",
     "SearchScopeKind",
-    "search_projection",
-    "search_projections",
     "SpendAnomalyWorkflow",
     "StandardsSetRefused",
     "StoredFile",
@@ -475,6 +473,8 @@ __all__ = [
     "schedules",
     "screen_and_store",
     "search_document",
+    "search_projection",
+    "search_projections",
     "set_pilot_mode",
     "should_page",
     "start_propagation",

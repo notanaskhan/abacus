@@ -63,7 +63,7 @@ TITLE_MAX: Final = 300
 CONTEXT_MAX: Final = 300
 RELATED_MAX: Final = 20
 IDENTIFIERS_MAX: Final = 20
-_OBJECT_TYPE = re.compile(r"[a-z][a-z_]{1,39}")
+_OBJECT_TYPE = re.compile(r"[a-z][a-z0-9_]{1,39}")
 _SCREEN_ID = re.compile(r"[A-Z]{2,4}-\d{2}")
 _EVENT_TYPE = re.compile(r"[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+")
 # A target parameter is an identifier (a uuid, a slug, a form family, a tax year), never text.

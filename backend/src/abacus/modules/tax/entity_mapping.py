@@ -60,7 +60,10 @@ async def apply_account_mapping_proposal(tenant: TenantContext, proposal_id: UUI
         approver = await proposal_approver(session, proposal_id)
     if found is None:
         return
-    engagement_id, rows = found
+    engagement, rows = found
+    if engagement is None:  # a tax mapping is an engagement's; never applied as a no-op
+        raise NotFound("engagement")
+    engagement_id: UUID = engagement
     mappings = [
         (code, str(row.after.get("v")), UUID(str(row.field_ref["target_id"])))
         for row in rows

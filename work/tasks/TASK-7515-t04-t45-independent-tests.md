@@ -3,7 +3,7 @@ id: TASK-7515
 title: T-04-T45 independent AC tests for T25, T31, T37 and T38 (ADR-078)
 plan_key: T-04-T45
 spec: SPEC-649  # T-04 §6; AC-4.3 to AC-4.5, AC-6.x, AC-9.x
-acceptance_criteria: [AC-9.3]  # the agent never approves, resolves, confirms, signs, sends or requests approval; a revoked consent stops the next tool call
+acceptance_criteria: [AC-9]  # AC-9.3: the agent never approves, resolves, confirms, signs, sends or requests approval; a revoked consent stops the next tool call
 risk_zone: red
 status: in-review
 branch: t04-t45-agent-ac
