@@ -64,6 +64,7 @@ IDENTITY: Final[dict[str, tuple[str, ...]]] = {
     "information_return_thresholds": ("form", "payment_year"),
     "retention_minimums": ("record_type", "service_line"),
     "standards_sets": ("code",),
+    "tax_form_lines": ("key",),  # T-05-T21
 }
 
 

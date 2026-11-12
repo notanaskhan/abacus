@@ -40,6 +40,7 @@ ReferenceSetKind = Literal[
     "information_return_thresholds",
     "retention_minimums",
     "standards_sets",
+    "tax_form_lines",  # T-05-T21 (DEC-4408): Form 1065 line keys per tax year (C21 additive)
 ]
 Jurisdiction = Literal["US", "DC"]
 SetKey = Annotated[str, Field(pattern=r"^[a-z0-9_.]{3,80}$")]
@@ -255,6 +256,35 @@ class StandardsSetsPayload(BaseModel):
     ]
 
 
+# T-05-T21 (DEC-4408): the published Form 1065 line keys the entity workbook maps to (C9's
+# `tax_form_line` taxonomy, T-05-T26) and the mapper may answer with (T-05-T23).
+TaxFormSchedule = Literal["L", "K", "8825", "M-1", "M-2", "M-3"]
+TaxFormLineSide = Literal[
+    "asset", "contra_asset", "liability", "capital", "income", "deduction", "credit", "memo",
+    "total",
+]  # fmt: skip
+
+
+class TaxFormLine(BaseModel):
+    model_config = _frozen()
+
+    key: Annotated[str, Field(min_length=1, max_length=40), classified("public")]  # "L9a"
+    schedule: Annotated[TaxFormSchedule, classified("public")]
+    line: Annotated[str, Field(min_length=1, max_length=10), classified("public")]  # "9a"
+    label: Annotated[str, Field(min_length=1, max_length=200), classified("public")]
+    side: Annotated[TaxFormLineSide, classified("public")]
+    mappable: Annotated[bool, classified("public")] = True  # a total is computed, never mapped
+
+
+class TaxFormLinesPayload(BaseModel):
+    model_config = _frozen()
+
+    kind: Annotated[Literal["tax_form_lines"], classified("public")]
+    form: Annotated[Literal["1065"], classified("public")]
+    tax_year: Annotated[int, Field(ge=2000, le=2100), classified("public")]
+    rows: Annotated[list[TaxFormLine], Field(min_length=1, max_length=500), classified("public")]
+
+
 ReferencePayload = Annotated[
     DueDateRulesPayload
     | LegalHolidaysPayload
@@ -262,7 +292,8 @@ ReferencePayload = Annotated[
     | Form8879SetPayload
     | InformationReturnThresholdsPayload
     | RetentionMinimumsPayload
-    | StandardsSetsPayload,
+    | StandardsSetsPayload
+    | TaxFormLinesPayload,
     Field(discriminator="kind"),
 ]
 
@@ -349,6 +380,7 @@ class ResolvedReference:
         | InformationReturnThresholdsPayload
         | RetentionMinimumsPayload
         | StandardsSetsPayload
+        | TaxFormLinesPayload
     )
     # Additive (K-02-T05): the version's tax year, when the set is per tax year.
     tax_year: int | None = None

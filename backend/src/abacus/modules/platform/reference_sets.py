@@ -19,8 +19,10 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Final, cast
+from uuid import UUID
 
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import RowMapping, text
@@ -46,6 +48,8 @@ from abacus.modules.platform.reference_sets_contract import (
     RetentionMinimumsPayload,
     StandardsSetRow,
     StandardsSetsPayload,
+    TaxFormLine,
+    TaxFormLinesPayload,
     ThresholdFor,
     TolerancesFor,
 )
@@ -62,6 +66,7 @@ Payload = (
     | InformationReturnThresholdsPayload
     | RetentionMinimumsPayload
     | StandardsSetsPayload
+    | TaxFormLinesPayload
 )
 
 # --- the kind registry ---------------------------------------------------------------------------
@@ -74,6 +79,7 @@ KINDS: Final[Mapping[ReferenceSetKind, type[BaseModel]]] = {
     "information_return_thresholds": InformationReturnThresholdsPayload,
     "retention_minimums": RetentionMinimumsPayload,
     "standards_sets": StandardsSetsPayload,
+    "tax_form_lines": TaxFormLinesPayload,
 }
 
 
@@ -307,6 +313,31 @@ async def form_8879_for(
                     reference_set_version_id=found.version_id,
                 )
     raise LookupError(f"form_8879_set:{return_type}:{tax_year}:{jurisdiction}")
+
+
+@dataclass(frozen=True)
+class TaxFormLinesFor:
+    """The published Form 1065 line set for a tax year (T-05-T21), with the version it is read
+    from (C9 pins it as `reference_set_version_id`; the golden fixture pins its hash)."""
+
+    form: str
+    tax_year: int
+    lines: tuple[TaxFormLine, ...]
+    reference_set_version_id: UUID
+
+    @property
+    def mappable_keys(self) -> frozenset[str]:
+        return frozenset(line.key for line in self.lines if line.mappable)
+
+
+async def tax_form_lines_for(form: str, tax_year: int, *, as_of: date) -> TaxFormLinesFor:
+    """The form's line set for the tax year from the set in effect on `as_of` (the latest
+    effective first). None is published: `LookupError` (the mapper abstains on everything)."""
+    for found in await references_in_effect("tax_form_lines", as_of):
+        payload = cast(TaxFormLinesPayload, found.payload)
+        if (payload.form, payload.tax_year) == (form, tax_year):
+            return TaxFormLinesFor(form, tax_year, tuple(payload.rows), found.version_id)
+    raise LookupError(f"tax_form_lines:{form}:{tax_year}")
 
 
 async def pub1345_tolerances(tax_year: int, *, as_of: date) -> TolerancesFor:
