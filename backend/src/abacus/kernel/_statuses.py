@@ -439,6 +439,11 @@ class DueRiskStatus(StrEnum):
     # derived, never stored: overdue, due_soon, approaching, later
 
 
+class FilingDeadlineStatus(StrEnum):
+    pass
+    # derived, never stored: overdue, due_7, due_30, later, done, postponed, extended
+
+
 class DecisionCardStatus(StrEnum):
     AWAITING_ROLE = "awaiting_role"
     DECIDED = "decided"
@@ -1678,6 +1683,8 @@ STORED: dict[str, tuple[str, ...]] = {
         "voided",
     ),
     "due_risk": (
+    ),
+    "filing_deadline": (
     ),
     "decision_card": (
         "awaiting_role",
