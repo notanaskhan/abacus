@@ -18,3 +18,13 @@ export {
   type ThreadItem,
   type ThreadItemKind,
 } from "./thread";
+// F-07-T06: the chat-ask DecisionCard variant above the composer (SPEC-652 AC-5).
+export {
+  QUESTION_CARD_GEOMETRY,
+  type QuestionAnswer,
+  QuestionCard,
+  type QuestionCardProps,
+  type QuestionOption,
+  type QuestionPayload,
+  type QuestionStep,
+} from "./question-card";
