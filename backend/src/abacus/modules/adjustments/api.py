@@ -47,6 +47,10 @@ from abacus.modules.adjustments.decisions import (  # noqa: E402 -- A-06-T28
 )
 from abacus.modules.adjustments.decisions import send as send_entries  # noqa: E402
 from abacus.modules.adjustments.entries import NewEntry, NewLine  # noqa: E402
+
+# T-05-T33 (DEC-4618): the tax layers for the entity TB read model.
+from abacus.modules.adjustments.entries import TaxLayersView as TaxLayersView  # noqa: E402
+from abacus.modules.adjustments.entries import adjusted_tb as adjusted_tb  # noqa: E402
 from abacus.modules.adjustments.entries import propose as propose_entry  # noqa: E402
 
 __all__ = [

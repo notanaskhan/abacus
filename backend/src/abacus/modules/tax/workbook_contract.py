@@ -818,7 +818,6 @@ async def entity_runs_route(return_id: UUID, ctx: Ctx) -> WorkbookRunsOut:
     f"{_R}/trial-balance",
     action="workbook.read",
     response_model=WorkbookTrialBalanceOut,
-    errors=(501,),
 )
 async def entity_trial_balance_route(
     return_id: UUID,
@@ -828,27 +827,60 @@ async def entity_trial_balance_route(
     filter_: Annotated[Literal["unmapped"] | None, Query(alias="filter")] = None,
     version: Annotated[int | None, Query(ge=1)] = None,
 ) -> WorkbookTrialBalanceOut:
+    """T-05-T33 (DEC-4618): C8's tax layers by account or form line; `unmapped` is the whole TB's
+    count (the export gate), whatever the filter."""
+    from abacus.modules.tax.entity_tb import trial_balance
+    from abacus.modules.tax.overview import load_return
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    loaded = await load_return(ctx, return_id)
+    rows, unmapped = await trial_balance(
+        ctx, return_id, loaded.facts.engagement_id, view, statement, filter_ == "unmapped"
+    )
+    return WorkbookTrialBalanceOut(
+        view=view,
+        rows=[WorkbookTbRowOut(**r.__dict__) for r in rows],
+        unmapped=unmapped,
+    )
 
 
 @workbook_router.get(
     f"{_R}/trial-balance/tallies", action="workbook.read", response_model=WorkbookTalliesOut,
-    errors=(501,),
 )  # fmt: skip
 async def entity_tallies_route(return_id: UUID, ctx: Ctx) -> WorkbookTalliesOut:
+    """T-05-T33: each column foots to $0; `unmapped` checks the export gate."""
+    from abacus.modules.tax.entity_tb import tb_tallies
+    from abacus.modules.tax.overview import load_return
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    loaded = await load_return(ctx, return_id)
+    found = await tb_tallies(ctx, return_id, loaded.facts.engagement_id)
+    return WorkbookTalliesOut(
+        items=[
+            WorkbookTallyOut(key=t.key, label=t.label, state=t.state, difference=t.difference)
+            for t in found
+        ]
+    )
 
 
 @workbook_router.get(
     f"{_R}/journal-entries", action="adjusted_tb.read", response_model=WorkbookJournalEntriesOut,
-    errors=(501,),
 )  # fmt: skip
 async def entity_journal_entries_route(return_id: UUID, ctx: Ctx) -> WorkbookJournalEntriesOut:
-    """AJE, RJE and TJE over C8; propose and approve go through A-06's endpoints."""
+    """T-05-T33: C8's AJEs, RJEs and TJEs on the return (proposing and approving are A-06's)."""
+    from abacus.modules.tax.entity_tb import journal_entries
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    return WorkbookJournalEntriesOut(
+        items=[
+            WorkbookJournalEntryOut(id=i, kind=k, reference=ref, amount=amount, state=state)  # type: ignore[arg-type]  # C8's kinds
+            for i, k, ref, amount, state in await journal_entries(ctx, return_id)
+            if k in ("aje", "rje", "tje")
+        ]
+    )
 
 
 @workbook_router.get(
