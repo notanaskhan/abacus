@@ -12,7 +12,11 @@
 - **The final-approval request** refuses while the return has a draft K-1 (409, blocker
   `draft_k1`) or a document is unapproved at manager level (`unapproved_documents`); otherwise it
   is recorded and the gate projection picks it up (`tax_return.final_approval_requested`).
-- **The workspace summary** counts the viewer's review, the K-1 dependency and what they may do.
+- **The workspace summary** counts the viewer's review, the K-1 dependency and what they may do,
+  and names BH-TAX-02's signer for a viewer who may request final approval (TASK-7322).
+- **Unapprove from the tree.** Each document carries its live approval at the shown level (the
+  latest, when several people approved there), so Unapprove reaches an approval made in another
+  session or by a colleague at the same level; `reverse` still checks the viewer holds the level.
 """
 
 from __future__ import annotations
@@ -105,6 +109,8 @@ class Doc:
     approval: Literal["unapproved", "approved", "mismatch"]
     approvals_count: int
     version: int
+    # TASK-7322: the live approval at the shown level (the latest), for Unapprove.
+    approval_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -141,6 +147,21 @@ async def _live(ctx: AuthContext, return_id: UUID) -> dict[tuple[UUID, str], int
     return {(r.evidence_version_id, r.level): int(r.n) for r in rows}
 
 
+LIVE_APPROVAL_IDS: Final = text(
+    "SELECT DISTINCT ON (a.evidence_version_id) a.evidence_version_id, a.id "
+    "FROM document_approvals a WHERE a.tax_return_id = :r AND a.level = :l "
+    "AND a.kind = 'approve' AND NOT EXISTS (SELECT 1 FROM document_approvals b "
+    "WHERE b.reverses_id = a.id) ORDER BY a.evidence_version_id, a.decided_at DESC, a.id DESC"
+)
+
+
+async def _live_ids(ctx: AuthContext, return_id: UUID, level: Level) -> dict[UUID, UUID]:
+    """Each version's latest live approval at `level` (TASK-7322)."""
+    async with tenant_session(ctx.tenant) as session:
+        rows = (await session.execute(LIVE_APPROVAL_IDS, {"r": return_id, "l": level})).all()
+    return {r.evidence_version_id: r.id for r in rows}
+
+
 async def tree(
     ctx: AuthContext, return_id: UUID, *, level: Level | None, q: str | None, category: str | None
 ) -> tuple[list[Doc], int, Level | None]:
@@ -150,6 +171,7 @@ async def tree(
     held = levels_held(await functions_on(ctx.tenant, return_id, ctx.user_id))
     at = level or viewer_level(held)
     live = await _live(ctx, return_id)
+    ids = {} if at is None else await _live_ids(ctx, return_id, at)
     docs: list[Doc] = []
     needle = (q or "").strip().casefold()
     for version_id, _item, title, folder, number, latest in await engagement_documents(
@@ -164,7 +186,15 @@ async def tree(
         approved = at is not None and (version_id, at) in live
         total = sum(n for (v, _lv), n in live.items() if v == version_id)
         docs.append(
-            Doc(version_id, title, folder, "approved" if approved else "unapproved", total, number)
+            Doc(
+                version_id,
+                title,
+                folder,
+                "approved" if approved else "unapproved",
+                total,
+                number,
+                ids.get(version_id) if approved else None,
+            )
         )
     review = sum(1 for d in docs if d.approval != "approved")
     return docs, review, at
@@ -364,10 +394,14 @@ class Summary:
     viewer_level: Level | None
     k1_dependency: str | None
     allowed: list[str]
+    # TASK-7322: BH-TAX-02's signer, for a viewer who may request final approval; else None.
+    final_approver_user_id: UUID | None = None
 
 
 async def summary(ctx: AuthContext, return_id: UUID) -> Summary:
-    _, resource = await _return(ctx, return_id, "tax_return.read")
+    from abacus.modules.tax.approval import signer_for
+
+    engagement, resource = await _return(ctx, return_id, "tax_return.read")
     _docs, review, level = await tree(ctx, return_id, level=None, q=None, category=None)
     async with tenant_session(ctx.tenant) as session:
         state = await session.scalar(
@@ -379,6 +413,15 @@ async def summary(ctx: AuthContext, return_id: UUID) -> Summary:
             {"r": return_id},
         )
     held = await allowed_actions(ctx, resource, WORKSPACE_ACTIONS)
+    signer = (
+        await signer_for(ctx.tenant_id, (await get_ref(ctx, engagement)).client_id)
+        if "tax_return.request_approval" in held
+        else None
+    )
     return Summary(
-        review, level, cast(str | None, state), [a for a in WORKSPACE_ACTIONS if a in held]
+        review,
+        level,
+        cast(str | None, state),
+        [a for a in WORKSPACE_ACTIONS if a in held],
+        signer,
     )

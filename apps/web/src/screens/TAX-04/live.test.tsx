@@ -238,6 +238,169 @@ describe("TAX-04 Review (live)", () => {
     await screen.findByText("Ridgeline Partners K-1");
     expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
   });
+
+  // TASK-7322: the tree names the live approval at the viewer's level, so Unapprove reaches one
+  // made in another session (or by a colleague at the same level), not only one made here.
+  it("Unapprove reaches the tree's live approval, made in another session", async () => {
+    let approved = true;
+    const calls = serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () => json(summary()),
+      "GET /v1/tax/returns/{return_id}/review-tree": () =>
+        json({
+          items: [
+            { ...doc(approved ? "approved" : "unapproved"), approval_id: approved ? "a9" : null },
+          ],
+          total: 1,
+          review_count: approved ? 0 : 1,
+        }),
+      "POST /v1/tax/document-approvals/{approval_id}/reverse": () => {
+        approved = false;
+        return json({
+          id: "a9",
+          evidence_version_id: DOC,
+          level: "preparer",
+          approved_by_name: "Kevin Park",
+          approved_at: "2026-09-13T16:00:00Z",
+          reversed: true,
+        });
+      },
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Unapprove" }));
+    await screen.findByRole("button", { name: "Approve" });
+    const reversed = calls.find((c) => c.key.endsWith("/reverse"));
+    expect(reversed?.body).toEqual({});
+    expect(calls.filter((c) => c.key.endsWith("/reverse"))).toHaveLength(1);
+  });
+
+  it("an approved document without document.approve offers no Unapprove", async () => {
+    serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () => json(summary({ allowed_actions: [] })),
+      "GET /v1/tax/returns/{return_id}/review-tree": () =>
+        json({ items: [{ ...doc("approved"), approval_id: "a9" }], total: 1, review_count: 0 }),
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    await screen.findByText("Ridgeline Partners K-1");
+    expect(screen.queryByRole("button", { name: "Unapprove" })).toBeNull();
+  });
+});
+
+// TASK-7322 (TAX-05 e; SHL-12's level line): with nothing left to review, the request goes to
+// BH-TAX-02's signer, whom the server names; the person confirms it, and a refusal is in words.
+describe("TAX-04 Review (live): Request final approval", () => {
+  const DANIEL = "77777777-7777-4777-8777-777777777777";
+  const done = () =>
+    json({ items: [{ ...doc("approved"), approval_id: "a1" }], total: 1, review_count: 0 });
+  const staff = () =>
+    json({
+      members: [
+        {
+          user_id: DANIEL,
+          display_name: "Daniel Reyes",
+          email: "daniel@brightwaterhale.test",
+          firm_role: null,
+          status: "active",
+        },
+      ],
+    });
+  const asking = (over: Record<string, unknown> = {}) =>
+    summary({
+      review_count: 0,
+      viewer_level: "manager",
+      allowed_actions: ["document.approve", "tax_return.request_approval"],
+      final_approver_user_id: DANIEL,
+      ...over,
+    });
+
+  it("names the signer, and the person's confirm posts the request to them", async () => {
+    const shown = vi.spyOn(toast, "show");
+    const calls = serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () => json(asking()),
+      "GET /v1/tax/returns/{return_id}/review-tree": done,
+      "GET /v1/firm/staff": staff,
+      "POST /v1/tax/returns/{return_id}/final-approval-requests": () =>
+        json({ gate_id: "g1", requested_at: "2026-09-14T10:00:00Z" }, 201),
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Request final approval…" }));
+    await screen.findByText("Partner · final approval (BH-TAX-02)");
+    await screen.findByText("Assignee · Daniel Reyes");
+    expect(calls.some((c) => c.key.endsWith("/final-approval-requests"))).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Request final approval" }));
+    await waitFor(() => {
+      expect(calls.find((c) => c.key.endsWith("/final-approval-requests"))?.body).toEqual({
+        assignee_user_id: DANIEL,
+      });
+    });
+    await waitFor(() => {
+      expect(shown).toHaveBeenCalledWith({ text: "Final approval requested" });
+    });
+    shown.mockRestore();
+  });
+
+  it("is disabled while the K-1 is a draft, and says why", async () => {
+    serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () =>
+        json(asking({ k1_dependency: "draft_pre_release" })),
+      "GET /v1/tax/returns/{return_id}/review-tree": done,
+      "GET /v1/firm/staff": staff,
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    const button = await screen.findByRole("button", { name: "Request final approval…" });
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(BLOCKER_COPY.draft_k1)).toBeTruthy();
+  });
+
+  it("with no signer named in BH-TAX-02 it is disabled and says so", async () => {
+    serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () =>
+        json(asking({ final_approver_user_id: null })),
+      "GET /v1/tax/returns/{return_id}/review-tree": done,
+      "GET /v1/firm/staff": staff,
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    const button = await screen.findByRole("button", { name: "Request final approval…" });
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("No partner is named for this client in BH-TAX-02.")).toBeTruthy();
+  });
+
+  it("a refusal names its blockers in words", async () => {
+    serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () => json(asking()),
+      "GET /v1/tax/returns/{return_id}/review-tree": done,
+      "GET /v1/firm/staff": staff,
+      "POST /v1/tax/returns/{return_id}/final-approval-requests": () =>
+        json({ detail: "final_approval_blocked", facts: { blockers: "blocking_issues" } }, 409),
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Request final approval…" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Request final approval" }));
+    expect((await screen.findByRole("alert")).textContent).toBe(BLOCKER_COPY.blocking_issues);
+  });
+
+  it("is not offered without the request action", async () => {
+    serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () =>
+        json(asking({ allowed_actions: ["document.approve"] })),
+      "GET /v1/tax/returns/{return_id}/review-tree": done,
+      "GET /v1/firm/staff": staff,
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    await screen.findByText("Ridgeline Partners K-1");
+    expect(screen.queryByRole("button", { name: "Request final approval…" })).toBeNull();
+  });
+
+  it("is not offered while a document still needs review", async () => {
+    serve({
+      "GET /v1/tax/returns/{return_id}/workspace": () => json(asking({ review_count: 1 })),
+      "GET /v1/tax/returns/{return_id}/review-tree": () =>
+        json({ items: [doc("unapproved")], total: 1, review_count: 1 }),
+      "GET /v1/firm/staff": staff,
+    });
+    mount(<ReviewLive returnId={RETURN} engagementId={ENGAGEMENT} />);
+    await screen.findByRole("button", { name: "Approve" });
+    expect(screen.queryByRole("button", { name: "Request final approval…" })).toBeNull();
+  });
 });
 
 describe("TAX-05 / TXI-01 Worksheets (live)", () => {

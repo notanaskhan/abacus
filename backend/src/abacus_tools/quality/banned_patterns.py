@@ -2507,6 +2507,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_p10t14_agent_run_backfill.py",
             "tests/integration/test_p10t17_runtime_migrations_independent.py",
             "tests/integration/test_t04t24_individual_workspace_independent.py",  # S35, as above
+            "tests/integration/test_t04t29_live_approval_ids.py",  # TASK-7322: the query, as above
             "tests/integration/test_p10t18_runtime_tables_independent.py",
             "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
             "tests/integration/test_a07t20_immutable_independent.py",
@@ -2698,6 +2699,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_r02t07_download_links.py",
             "tests/integration/test_p10t17_runtime_migrations_independent.py",
             "tests/integration/test_t04t24_individual_workspace_independent.py",  # S35, as above
+            "tests/integration/test_t04t29_live_approval_ids.py",  # TASK-7322: the query, as above
             "tests/integration/test_p10t18_runtime_tables_independent.py",
             "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
             "tests/integration/test_a07t20_immutable_independent.py",
