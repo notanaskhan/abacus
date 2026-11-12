@@ -9,3 +9,12 @@ export {
   sessionMeta,
   type WorkbenchSessionStatus,
 } from "./session-list";
+// F-07-T03: the thread, its rows and the composer (SPEC-652 AC-4).
+export {
+  type ArtifactIntent,
+  ChatThread,
+  type ChatThreadProps,
+  type SlotKind,
+  type ThreadItem,
+  type ThreadItemKind,
+} from "./thread";
