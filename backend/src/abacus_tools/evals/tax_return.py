@@ -170,6 +170,14 @@ class Case(_Frozen):
     capability: Capability
     category: Literal["pass", "seeded", "adversarial"]
     fast: bool = True
+    # T-04-T35 (DEC-4313): where the case comes from, whose label it carries, which dangerous
+    # classes it exercises (DE-3 unsupported fact, DE-4 decision, DE-5 reserved action, DE-6
+    # injection or consent).
+    source: str | None = None
+    label_status: Literal["pending_cpa", "signed"] = "pending_cpa"
+    de_classes: list[Literal["DE-3", "DE-4", "DE-5", "DE-6"]] = Field(
+        default_factory=list[Literal["DE-3", "DE-4", "DE-5", "DE-6"]]
+    )
     expected: tr.Expected = Field(default_factory=tr.Expected)
     trajectory: tr.Trajectory = Field(default_factory=tr.Trajectory)
     output: TaxOutput = Field(default_factory=TaxOutput)
@@ -378,11 +386,21 @@ class ThresholdsChanged(ValueError):
 
 
 def load(path: Path = SUITE) -> tuple[dict[str, dict[str, float]], list[Case]]:
+    """The frozen thresholds and every case: `suite.yaml`'s own, then each `cases/*.yaml` beside
+    it (T-04-T35's labelled cases; thresholds live only in the protected `suite.yaml`)."""
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     thresholds = {k: {m: float(v) for m, v in t.items()} for k, t in raw["thresholds"].items()}
     if thresholds != {k: dict(v) for k, v in FROZEN.items()}:
         raise ThresholdsChanged("suite.yaml thresholds differ from the frozen T-04 §6 set")
-    return thresholds, [Case.model_validate(c) for c in raw["cases"]]
+    cases = [Case.model_validate(c) for c in raw["cases"]]
+    for extra in sorted((path.parent / "cases").glob("*.yaml")):
+        more = yaml.safe_load(extra.read_text(encoding="utf-8"))
+        if "thresholds" in more:
+            raise ThresholdsChanged(f"{extra.name} may not carry thresholds")
+        cases += [Case.model_validate(c) for c in more["cases"]]
+    if len({c.id for c in cases}) != len(cases):
+        raise ValueError("duplicate case id")
+    return thresholds, cases
 
 
 def _rates(results: Sequence[CaseResult], capability: str) -> dict[str, float]:
