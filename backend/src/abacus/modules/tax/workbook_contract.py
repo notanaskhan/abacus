@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_ENTITY_WORKSPACE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -569,6 +569,12 @@ async def _workbook_read(ctx: AuthContext, return_id: UUID) -> tuple[str, Resour
     return str(loaded.row.form), resource
 
 
+class RunInProgress(DomainConflict):
+    """A workbook run of this return is still open: one at a time (TXP-00)."""
+
+    code = "run_in_progress"
+
+
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
@@ -757,22 +763,55 @@ async def entity_import_route(
 
 @workbook_router.post(
     f"{_R}/workbook-runs", action="workbook_run.start", response_model=WorkbookRunAcceptedOut,
-    status_code=202, errors=(409, 501),
+    status_code=202, errors=(409,),
 )  # fmt: skip
 async def entity_start_run_route(
     return_id: UUID, body: WorkbookRunIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> WorkbookRunAcceptedOut:
-    """`run_in_progress` (409); a model step without consent waits on inputs (C19)."""
+    """`run_in_progress` (409); a model step without consent waits on inputs (C19). T-05-T31
+    (DEC-4616): P-10's engagement run on the `tax.entity_workbook` plan for the scope."""
+    from abacus.modules.agents.api import PlanRequest, start_engagement_run, work_item_runs
+    from abacus.modules.tax.entity_run_plan import PROVIDER
+    from abacus.modules.tax.overview import load_return, return_resource
+
     await _flag_on(ctx)
-    _not_yet()
+    loaded = await load_return(ctx, return_id)
+    await authorise(ctx, "workbook_run.start", await return_resource(ctx, loaded))
+    ref = f"tax_return:{return_id}"
+    if any(r.active for r in await work_item_runs(ctx.tenant, ref, 5)):
+        raise RunInProgress(facts={"return_id": str(return_id)})
+    started = await start_engagement_run(
+        ctx,
+        loaded.facts.engagement_id,
+        work_item_ref=ref,
+        provider=PROVIDER,
+        request=PlanRequest(return_id, body.scope, tuple(body.keys)),
+    )
+    return WorkbookRunAcceptedOut(run_id=started.run_id, run_no=started.run_number)
 
 
-@workbook_router.get(
-    f"{_R}/workbook-runs", action="workbook.read", response_model=WorkbookRunsOut, errors=(501,)
-)
+@workbook_router.get(f"{_R}/workbook-runs", action="workbook.read", response_model=WorkbookRunsOut)
 async def entity_runs_route(return_id: UUID, ctx: Ctx) -> WorkbookRunsOut:
+    """TXP-00's run history, newest first (T-05-T31)."""
+    from abacus.modules.agents.api import work_item_runs
+    from abacus.modules.identity.api import display_names
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    runs = await work_item_runs(ctx.tenant, f"tax_return:{return_id}")
+    names = await display_names([r.initiator_user_id for r in runs if r.initiator_user_id])
+    return WorkbookRunsOut(
+        items=[
+            WorkbookRunRowOut(
+                run_id=r.run_id,
+                run_no=r.run_number,
+                started_by=names.get(r.initiator_user_id, "") if r.initiator_user_id else "",
+                started_at=r.created_at,
+                state=r.state,
+            )
+            for r in runs
+        ]
+    )
 
 
 @workbook_router.get(

@@ -24935,6 +24935,8 @@ export const entityRunsQueryKey = (options: Options<EntityRunsData>) => createQu
 
 /**
  * Entity Runs Route
+ *
+ * TXP-00's run history, newest first (T-05-T31).
  */
 export const entityRunsOptions = (options: Options<EntityRunsData>) => queryOptions<EntityRunsResponse, EntityRunsError, EntityRunsResponse, ReturnType<typeof entityRunsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24952,7 +24954,8 @@ export const entityRunsOptions = (options: Options<EntityRunsData>) => queryOpti
 /**
  * Entity Start Run Route
  *
- * `run_in_progress` (409); a model step without consent waits on inputs (C19).
+ * `run_in_progress` (409); a model step without consent waits on inputs (C19). T-05-T31
+ * (DEC-4616): P-10's engagement run on the `tax.entity_workbook` plan for the scope.
  */
 export const entityStartRunMutation = (options?: Partial<Options<EntityStartRunData>>): UseMutationOptions<EntityStartRunResponse, EntityStartRunError, Options<EntityStartRunData>> => {
     const mutationOptions: UseMutationOptions<EntityStartRunResponse, EntityStartRunError, Options<EntityStartRunData>> = {

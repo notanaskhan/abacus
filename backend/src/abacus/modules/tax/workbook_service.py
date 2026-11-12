@@ -50,6 +50,12 @@ _ADDRESS = re.compile(r"^(?:(\d{2})(?: [A-Za-z0-9 &'.-]{1,40})?!)?([A-Z]{1,3})([
 _RANGE = re.compile(r"^([A-Z]{1,3})([1-9][0-9]{0,5}):([A-Z]{1,3})([1-9][0-9]{0,5})$")
 
 
+def engine_may_write(current_source: str | None) -> bool:
+    """T-05-T31 (DEC-4616): a run step writes a cell only where no person wrote the current value:
+    a re-run keeps every human-edited cell (`keep_human`)."""
+    return current_source != "human"
+
+
 class CellAddressInvalid(DomainInvalid):
     """The address is not `<sheet>!<column><row>` on one of the form's sheets."""
 
