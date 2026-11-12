@@ -183,12 +183,16 @@ async def _drawn(app: asyncpg.Connection, w: World) -> tuple[uuid.UUID, uuid.UUI
     return pid, set_id, vid
 
 
-def test_ac13_the_migration_passes_up_down_up(migrated_db: Migrated) -> None:
-    migrate(migrated_db.owner_url, BEFORE, down=True)
-    migrate(migrated_db.owner_url, "head")
-    migrate(migrated_db.owner_url, BEFORE, down=True)
-    migrate(migrated_db.owner_url, "head")
-    assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
+def test_ac13_the_migration_passes_up_down_up() -> None:
+    # Its own database: the session one holds other tests' firms, and an older downgrade's
+    # DELETE runs under forced RLS (it sees no tenant's rows), so a row left by another test
+    # fails that downgrade's CHECK (0671 on a `tax_returns` entitlement, seen on CI).
+    with sc.provisioned_database(roundtrip=False) as db:
+        migrate(db.owner_url, BEFORE, down=True)
+        migrate(db.owner_url, "head")
+        migrate(db.owner_url, BEFORE, down=True)
+        migrate(db.owner_url, "head")
+        assert sc.check(db.owner_url, db.app_url) == []
 
 
 async def test_ac13_every_table_forces_row_level_security(seed: Seeder) -> None:

@@ -43,6 +43,7 @@ IDS = (
     "incident_reminders:platform",  # G-02-T18: FTC clock reminders, every 6 hours
     "notification_purge:platform",
     "pilot_metrics:platform",  # Q-04-T008: last week's pilot metrics, weekly (batch)
+    "run_events_prune:platform",  # P-10-T44: run events past 30 days, daily (batch)
     "seal_verify:platform",  # A-07-T42: every locked archive's seal, monthly (RB-29)
     "ses_events:platform",
     "signatures-evidence-integrity",  # N-02-T38: every envelope's evidence re-hashed, nightly
@@ -123,6 +124,9 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["audit_chain_verify:platform"]["task_queue"] == queue_for("batch")
     assert facts["pilot_metrics:platform"]["workflow_type"] == "PilotMetrics"
     assert facts["pilot_metrics:platform"]["task_queue"] == queue_for("batch")
+    assert facts["run_events_prune:platform"]["workflow_type"] == "RunEventsPrune"
+    assert facts["run_events_prune:platform"]["every_seconds"] == (86400,)
+    assert facts["run_events_prune:platform"]["task_queue"] == queue_for("batch")
     assert facts["audit_anchor:platform"]["workflow_type"] == "AuditAnchor"
     assert facts["audit_anchor:platform"]["every_seconds"] == (86400,)
     assert facts["audit_partitions:platform"]["workflow_type"] == "AuditPartitions"

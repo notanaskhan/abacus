@@ -44,7 +44,7 @@ function FieldRow({
         <span className="truncate">
           {field.label}
           {field.added && frame === "e" ? (
-            <span aria-label="New this year" className="pl-[4px] text-green-ink">
+            <span role="img" aria-label="New this year" className="pl-[4px] text-green-ink">
               +
             </span>
           ) : null}
@@ -140,13 +140,13 @@ export function WorksheetEditor({
               <li
                 key={w.key}
                 data-worksheet={w.key}
-                aria-selected={w.key === (w2 ? "w2" : "it201")}
+                aria-current={w.key === (w2 ? "w2" : "it201") ? "true" : undefined}
                 className={`flex h-[29px] items-center gap-[6px] rounded-[6px] px-[8px] text-[12.5px] ${w.key === (w2 ? "w2" : "it201") ? "bg-sel-bg font-medium" : ""}`}
               >
                 <Icon name="table-2" size={13} className="text-ink-3" />
                 <span className="truncate">{w.title}</span>
                 {"added" in w ? (
-                  <span aria-label="Created this year" className="text-green-ink">
+                  <span role="img" aria-label="Created this year" className="text-green-ink">
                     +
                   </span>
                 ) : null}
@@ -168,7 +168,7 @@ export function WorksheetEditor({
               >
                 <Icon name="table-2" size={13} className="text-ink-3" />
                 <span className="truncate">{COPY.it3601}</span>
-                <span aria-label="Created this year" className="text-green-ink">
+                <span role="img" aria-label="Created this year" className="text-green-ink">
                   +
                 </span>
               </li>

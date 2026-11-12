@@ -5,10 +5,10 @@ Run: python -m abacus_tools.workflows.record_s37_runs <output-directory>
 Activities are stubbed (no database), so each history pins the command sequence only:
 
 - `workbench-session-v1-read-only.json`: one message, one inline turn, then `close`.
-- `workbench-session-v1-child-run.json`: one message whose turn proposes writes; the child's workflow
-  is started once through the start-child activity (kernel.dispatch).
-- `workbench-session-v1-side-queue.json`: a message whose turn asks a question, a second message answered
-  while the question stays open, then the answer, then `close`.
+- `workbench-session-v1-child-run.json`: one message whose turn proposes writes; the child's
+  workflow is started once through the start-child activity (kernel.dispatch).
+- `workbench-session-v1-side-queue.json`: a message whose turn asks a question, a second message
+  answered while the question stays open, then the answer, then `close`.
 - `run-events-prune-v1.json` (P-10-T44): one prune activity.
 
 A history on disk is never overwritten.

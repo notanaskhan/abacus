@@ -18,7 +18,7 @@ describe("TAX-05 review preset", () => {
   it("a: Review 37, the K-1 selected and flagged, box 5 lit with the Interest Income row", () => {
     render(<ReviewPreset frame="a" />);
     expect(screen.getByText("Review 37")).toBeTruthy();
-    expect(document.querySelector("[data-row='k1'][aria-selected='true']")).not.toBeNull();
+    expect(document.querySelector("[data-row='k1'][aria-current='true']")).not.toBeNull();
     expect(screen.getByRole("button", { name: "Flag 1" })).toBeTruthy();
     expect(document.querySelector("[data-box='5'][data-lit='true']")).not.toBeNull();
     expect(
