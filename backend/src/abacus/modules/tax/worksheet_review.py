@@ -422,3 +422,7 @@ def register() -> None:
     register_proposal_adapter("return_field_changes", apply_field_proposal)
     register_proposal_adapter("pass_through_treatments", apply_k1_proposal)
     register_proposal_adapter("residency", apply_residency_proposal)
+    # T-05-T26 (DEC-4518): the account mapper's proposal, applied for the tax reviewer only.
+    from abacus.modules.tax.entity_mapping import KIND, apply_account_mapping_proposal
+
+    register_proposal_adapter(KIND, apply_account_mapping_proposal)

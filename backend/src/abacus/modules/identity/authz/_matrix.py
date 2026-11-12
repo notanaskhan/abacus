@@ -5336,6 +5336,16 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
     },
+    "tax_mapping.approve": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "reviewer": "allow",
+        "function_in": "detail_reviewer,manager_reviewer,signer",
+        "client_admin": "deny",
+        "client_contributor": "deny",
+        "agent": "deny",
+        "system": "deny",
+    },
     "tax_memo.draft": {
         "engagement_partner": "allow",
         "manager": "allow",

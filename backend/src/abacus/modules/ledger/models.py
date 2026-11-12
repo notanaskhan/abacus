@@ -238,6 +238,9 @@ class MappingSet(Base):
     prior_source: Mapped[str] = mapped_column(server_default=FetchedValue())
     predecessor_evidence_version_id: Mapped[UUID | None]
     predecessor_keys: Mapped[dict[str, str] | None] = mapped_column(JSONB(none_as_null=True))
+    # 0842 (T-05-T26): the taxonomy and, for a tax set, the C21 form-line version it maps to.
+    taxonomy_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    reference_set_version_id: Mapped[UUID | None]
 
 
 class MappingSetEdit(Base):
@@ -250,4 +253,5 @@ class MappingSetEdit(Base):
     fs_line_id: Mapped[UUID | None]
     edited_by: Mapped[UUID]
     actor_kind: Mapped[str]
+    form_line_key: Mapped[str | None]  # 0842 (T-05-T26): a tax set's row target
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
