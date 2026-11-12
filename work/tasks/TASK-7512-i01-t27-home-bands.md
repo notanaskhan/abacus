@@ -33,3 +33,4 @@ P-05's `collaboration.v2`, with a written flip and rollback.
 
 ## Progress log
 - `2026-11-12` — Wired (DEC-4512). Tests run at the S39 end pass.
+- `2026-11-12` — End pass (lint, plan 04 §1.7): `HomeBands` (and its copy, now `bandsCopy.ts`, and test) moved from `components/screens/HOME-01` into `screens/HOME-01`; `feedHref` reaches the screen through the firm shell part `shell/firm/notification-links.ts`. C-contract `home-and-gates.md` updated.

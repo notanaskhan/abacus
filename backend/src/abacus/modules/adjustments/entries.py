@@ -33,7 +33,13 @@ from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import attest_of, get_ref, lock_ref, work_item_engagement
+from abacus.modules.engagements.api import (
+    attest_of,
+    get_ref,
+    lock_ref,
+    work_item_engagement,
+    work_item_facts,
+)
 from abacus.modules.identity.api import AuthContext, allowed_actions
 from abacus.modules.ledger.api import (
     AdjustmentEntry,
@@ -67,6 +73,13 @@ _ACTIONS: Final = (
 # approved (never within threshold); a tax-only account (4510-T) lives only in a TJE.
 TAX_LAYERS: Final = frozenset({"atb", "tje", "ttb"})
 AccountScope = Literal["book", "tax_only"]
+
+
+class TaxLayerOutsideReturn(DomainInvalid):
+    """`atb`, `tje` and `ttb` are a tax return's layers; an audit or other work item reads the
+    four book layers only."""
+
+    code = "tax_layer_outside_return"
 
 
 class TaxOnlyOutsideTje(DomainInvalid):
@@ -431,6 +444,10 @@ async def adjusted_tb(ctx: AuthContext, work_item_id: UUID, layer: str) -> objec
     `layer` from the ledger, never stored. The caller shapes the view (C8's `AdjustedTbOut`).
     T-05-T25: `atb`, `tje` and `ttb` are the ledger's final layer plus this work item's approved
     TJEs (`tax_layers`)."""
+    if layer in TAX_LAYERS:
+        returns = {f.work_item_id for f in await work_item_facts(ctx, "tax_return")}
+        if work_item_id not in returns:
+            raise TaxLayerOutsideReturn(facts={"layer": layer})
     engagement_id = await engagement_of(ctx.tenant, work_item_id)
     tbs = await engagement_trial_balances(ctx.tenant, engagement_id)
     if not tbs:
@@ -445,11 +462,11 @@ async def adjusted_tb(ctx: AuthContext, work_item_id: UUID, layer: str) -> objec
         tax_layers(
             [
                 (ln.account_code, ln.account_name, ln.eoy, ln.aje, ln.rje, ln.final)
-                for ln in cast(Any, view).lines
+                for ln in cast(Any, view).lines  # Any: the ledger's view type
             ],
             tjes,
         ),
-        cast(Any, view).pending_entries,
+        cast(Any, view).pending_entries,  # Any: the ledger view is typed in the ledger module
     )
 
 

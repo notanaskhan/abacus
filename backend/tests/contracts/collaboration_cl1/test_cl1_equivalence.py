@@ -11,13 +11,15 @@ marks come off in that PR. What already holds (the window's guards) is asserted 
 
 from __future__ import annotations
 
+import importlib
+from typing import Any
+
 import pytest
 
 from abacus.modules.collaboration import anchors
 from abacus.modules.requests import registry as requests_registry
 
 LEGACY: tuple[str, ...] = ("comments", "comment_mentions", "comment_redactions", "comment_reads")
-CL1 = "Q-03-T258 (CL-1) has not run: it waits for collaboration.v2 on every firm (P-05-T16)"
 
 
 def test_in_the_window_the_live_kinds_are_never_v2_anchors() -> None:
@@ -29,7 +31,7 @@ def test_in_the_window_requests_still_owns_the_legacy_tables() -> None:
     assert set(LEGACY) <= set(requests_registry.TABLES)
 
 
-@pytest.mark.xfail(reason=CL1, strict=True)
+@pytest.mark.xfail(reason="TASK-7522: CL-1 waits for collaboration.v2 (P-05-T16)", strict=True)
 def test_cl1_collaboration_owns_the_legacy_tables() -> None:
     from abacus.modules.collaboration import registry as collaboration_registry
 
@@ -37,30 +39,29 @@ def test_cl1_collaboration_owns_the_legacy_tables() -> None:
     assert not set(LEGACY) & set(requests_registry.TABLES)
 
 
-@pytest.mark.xfail(reason=CL1, strict=True)
+@pytest.mark.xfail(reason="TASK-7522: CL-1 waits for collaboration.v2 (P-05-T16)", strict=True)
 def test_cl1_request_items_and_evidence_versions_are_registered_anchor_kinds() -> None:
     assert not anchors.LIVE_SPEC032_KINDS
-    from abacus.modules.collaboration.anchors import registered_kinds  # type: ignore[attr-defined]
+    registered_kinds: Any = getattr(anchors, "registered_kinds")  # noqa: B009 -- Any: absent until CL-1
 
     assert {"request_item", "evidence_version"} <= set(registered_kinds())
 
 
-@pytest.mark.xfail(reason=CL1, strict=True)
+@pytest.mark.xfail(reason="TASK-7522: CL-1 waits for collaboration.v2 (P-05-T16)", strict=True)
 def test_cl1_a_thread_reads_identically_before_and_after() -> None:
     """On a copy of the canary's threads: each legacy thread's comments, authors, times,
     mentions, redaction markers and read state equal the consolidated thread's, in order, and no
     comment row was updated in place (ids and sealed bytes preserved; insert-only events only)."""
-    from abacus.modules.collaboration.cl1 import (
-        equivalence_report,  # type: ignore[import-not-found]
-    )
+    name = "abacus.modules.collaboration.cl1"
+    cl1: Any = importlib.import_module(name)  # Any: absent until CL-1
 
-    report = equivalence_report()
+    report: Any = cl1.equivalence_report()  # Any: the CL-1 report is not built yet
     assert report.threads_compared > 0
     assert report.differences == []
     assert report.rows_updated_in_place == 0
 
 
-@pytest.mark.xfail(reason=CL1, strict=True)
+@pytest.mark.xfail(reason="TASK-7522: CL-1 waits for collaboration.v2 (P-05-T16)", strict=True)
 def test_cl1_the_comment_mentioned_event_is_retired_for_mention_created() -> None:
     from abacus.modules.collaboration import events
 

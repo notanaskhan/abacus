@@ -56,7 +56,7 @@ def upgrade() -> None:
         f"""
         CREATE TABLE search_documents (
             tenant_id uuid NOT NULL,
-            object_type text NOT NULL CHECK (object_type ~ '^[a-z][a-z_]{{1,39}}$'),
+            object_type text NOT NULL CHECK (object_type ~ '^[a-z][a-z0-9_]{{1,39}}$'),
             object_id uuid NOT NULL,
             group_key text NOT NULL CHECK (group_key IN ({_list(_GROUPS)})),
             scope_kind text NOT NULL CHECK (scope_kind IN ({_list(_SCOPES)})),
@@ -113,7 +113,7 @@ def upgrade() -> None:
         CREATE TABLE search_recents (
             tenant_id uuid NOT NULL,
             user_id uuid NOT NULL REFERENCES users (id),
-            object_type text NOT NULL CHECK (object_type ~ '^[a-z][a-z_]{1,39}$'),
+            object_type text NOT NULL CHECK (object_type ~ '^[a-z][a-z0-9_]{1,39}$'),
             object_id uuid NOT NULL,
             opened_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             PRIMARY KEY (tenant_id, user_id, object_type, object_id)

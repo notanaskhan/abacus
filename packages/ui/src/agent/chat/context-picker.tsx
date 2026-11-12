@@ -54,9 +54,9 @@ export function ContextPicker({
       align="start"
       width={CONTEXT_PICKER_WIDTH}
       label="Add context"
-      open={open}
-      onOpenChange={onOpenChange}
-      forceState={forceState}
+      {...(open !== undefined ? { open } : {})}
+      {...(onOpenChange ? { onOpenChange } : {})}
+      {...(forceState ? { forceState } : {})}
     >
       <div data-kit="ContextPicker" className="flex flex-col gap-[10px]">
         {kinds.map(({ kind: k, label }) => {
@@ -83,7 +83,10 @@ export function ContextPicker({
                           role="menuitemcheckbox"
                           aria-checked={on}
                           data-item={item.id}
-                          onClick={() => (on ? onDetach(item) : onAttach(item))}
+                          onClick={() => {
+                            if (on) onDetach(item);
+                            else onAttach(item);
+                          }}
                           className="flex min-h-[34px] w-full items-center gap-[9px] rounded-[8px] px-[6px] text-left hover:bg-sel-bg"
                         >
                           <span className="flex min-w-0 flex-1 flex-col">
@@ -99,7 +102,7 @@ export function ContextPicker({
                               data-attached
                               className="flex size-[16px] items-center justify-center rounded-pill bg-green text-on-dark"
                             >
-                              <Icon name="check" size={10} />
+                              <Icon name="check" size={12} />
                             </span>
                           ) : null}
                         </button>

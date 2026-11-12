@@ -28,3 +28,4 @@ F-05's T5 specimens; intents for Bug (run-trace), Create Agent… (edit-agent:ne
 
 ## Progress log
 - `2026-11-12` — Built (DEC-4510). Tests run at the S39 end pass.
+- `2026-11-12` — End pass (lint): the specimen's scripted run plays through `useScriptedRunDone` in `gallery/fixture-mode.ts` (specimens may not import `domain/agents`).

@@ -3,6 +3,7 @@ signal and every field is classified, and the routes are declared with one actio
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -28,7 +29,7 @@ def _projection(**overrides: object) -> spec.SearchProjection:
         "target": "CLI-02",
     }
     values.update(overrides)
-    return spec.SearchProjection(**values)  # type: ignore[arg-type]
+    return spec.SearchProjection(**values)  # type: ignore[arg-type] -- overrides are deliberately invalid
 
 
 @pytest.fixture(autouse=True)
@@ -42,6 +43,10 @@ def test_ac1_registration_accepts_a_read_and_is_idempotent() -> None:
     assert spec.projection("p02_probe") is not None
 
 
+def _no_docs(_payload: object) -> list[object]:
+    return []
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [
@@ -51,7 +56,7 @@ def test_ac1_registration_accepts_a_read_and_is_idempotent() -> None:
         ({"read_action": "nothing.read"}, "not in the permission matrix"),
         ({"target": "clients"}, "not a screen id"),
         ({"data_class": "restricted"}, "unknown data class"),
-        ({"triggers": {"rename": lambda p: []}}, "not an event type"),
+        ({"triggers": {"rename": _no_docs}}, "not an event type"),
         ({"object_type": "Client"}, "snake_case"),
     ],
 )
@@ -88,19 +93,21 @@ def test_ac1_documents_are_metadata_only() -> None:
     )
     spec.check_document(projection, doc)
     with pytest.raises(spec.SearchRegistrationInvalid, match="names a client"):
-        spec.check_document(projection, doc.__class__(**{**doc.__dict__, "client_id": None}))
+        spec.check_document(projection, replace(doc, client_id=None))
     with pytest.raises(spec.SearchRegistrationInvalid, match="identifiers only"):
-        spec.check_document(
-            projection, doc.__class__(**{**doc.__dict__, "target_params": {"q": "Jonah Feld"}})
-        )
+        spec.check_document(projection, replace(doc, target_params={"q": "Jonah Feld"}))
     with pytest.raises(spec.SearchRegistrationInvalid, match="title"):
-        spec.check_document(projection, doc.__class__(**{**doc.__dict__, "title": "x" * 301}))
+        spec.check_document(projection, replace(doc, title="x" * 301))
 
 
 def test_ac1_v0_registrations_still_reach_the_slot(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
-    monkeypatch.setattr(spec.slots, "register_search_projection", lambda t, b: calls.append(t))
-    spec.register_search_projection("legacy_type", _build)  # type: ignore[arg-type]
+
+    def slot(object_type: str, _build: object) -> None:
+        calls.append(object_type)
+
+    monkeypatch.setattr(spec.slots, "register_search_projection", slot)
+    spec.register_search_projection("legacy_type", _build)
     assert calls == ["legacy_type"]
 
 
@@ -141,12 +148,12 @@ def test_ac1_total_visible_is_capped() -> None:
 
 
 def test_ac1_routes_take_no_search_text_in_the_url() -> None:
-    routes = {(r.path, tuple(sorted(r.methods))) for r in router.routes}  # type: ignore[attr-defined]
+    routes = {(r.path, tuple(sorted(r.methods))) for r in router.routes}  # type: ignore[attr-defined] -- APIRoute attributes
     assert routes == {
         ("/v1/search", ("POST",)),
         ("/v1/search/recents", ("GET",)),
         ("/v1/search/recents", ("POST",)),
     }
     for route in router.routes:
-        names = {p.name for p in route.dependant.query_params}  # type: ignore[attr-defined]
+        names = {p.name for p in route.dependant.query_params}  # type: ignore[attr-defined] -- APIRoute attributes
         assert "q" not in names

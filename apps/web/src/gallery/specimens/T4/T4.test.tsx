@@ -25,7 +25,7 @@ function params(st: string): FixtureParams {
 
 function log(): string[] {
   const list = document.querySelector("[data-intent-log]");
-  return Array.from(list?.querySelectorAll("li") ?? []).map((li) => li.textContent ?? "");
+  return Array.from(list?.querySelectorAll("li") ?? []).map((li) => li.textContent);
 }
 
 describe("T4 and TPL-04 in the gallery", () => {
@@ -90,7 +90,7 @@ describe("T4 and TPL-04 in the gallery", () => {
   it("a suggested prompt fills the composer and is logged, never sent", () => {
     render(wrap(<Tpl04Artboard params={params("b")} />));
     fireEvent.click(screen.getByText("Status report by office"));
-    const composer = screen.getByRole("textbox", { name: "Message" }) as HTMLTextAreaElement;
+    const composer = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Message" });
     expect(composer.value).toBe("Status report by office");
     expect(log()).toEqual(["prompt"]);
   });

@@ -33,3 +33,4 @@ validation before load.
 
 ## Progress log
 - `2026-11-12` — Built (DEC-4520). Tests run at the S39 end pass.
+- `2026-11-12` — End pass (lint, plan 04 §1.7): the form-family dispatch moved from `routes/firm/tax-returns.tsx` into the screen `screens/TXP-00/EntityReturn.tsx` (the route lazy-imports it and owns the navigations, since the TXP sections have no manifest paths yet); an unknown `/review/$review` slug now goes back to the Agent tab from the screen (`<Navigate {...to.TAX02}>`) instead of in `beforeLoad`. `domain/tax` re-exports `entityReturn`.

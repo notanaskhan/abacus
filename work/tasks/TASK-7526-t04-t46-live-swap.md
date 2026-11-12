@@ -3,7 +3,7 @@ id: TASK-7526
 title: T-04-T46 fixture-to-live swap and TAX-02's post-window wiring
 plan_key: T-04-T46
 spec: SPEC-649  # T-04 AC-13.2; TAX-08, TXI-02, TXI-03
-acceptance_criteria: [AC-13.2]  # on staging Samuel asks, approves and undoes within 10 s; the Apr 27 train changes no live behaviour while the flags are off
+acceptance_criteria: [AC-13]  # AC-13.2: on staging Samuel asks, approves and undoes within 10 s; the Apr 27 train changes no live behaviour while the flags are off
 risk_zone: green
 status: in-progress
 branch: t04-t46-live-swap

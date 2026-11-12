@@ -19,6 +19,10 @@ import pytest
 from abacus.modules.tax import workbook_service as wb
 
 
+def _same_text(text: str) -> str:
+    return text
+
+
 @pytest.mark.parametrize(
     ("text", "key", "row", "col"),
     [
@@ -54,17 +58,17 @@ def test_projection_pages_by_range_and_carries_formulas() -> None:
         "05!D12": {"t": "decimal", "v": "0"},
         "06!C31": {"t": "decimal", "v": "6200"},
     }
-    cells, more = wb.project(values, "05", "A1:J40")
+    cells, more = wb.sheet_cells(values, "05", "A1:J40")
     assert [c.address for c in cells] == ["D12", "J12"]
     assert cells[1].formula == "=D12+E12+F12+G12+H12+I12"
     assert more is None
-    outside, _ = wb.project(values, "05", "A1:E40")
+    outside, _ = wb.sheet_cells(values, "05", "A1:E40")
     assert [c.address for c in outside] == ["D12"]
 
 
 def test_projection_names_the_next_range_past_a_page() -> None:
     values = {f"01!A{r}": {"t": "decimal", "v": str(r)} for r in range(1, wb.PAGE + 6)}
-    cells, more = wb.project(values, "01", "A1:A999")
+    cells, more = wb.sheet_cells(values, "01", "A1:A999")
     assert len(cells) == wb.PAGE
     assert more == f"A{wb.PAGE + 1}:A999"
 
@@ -87,17 +91,17 @@ class _Tx:
 def test_writes_go_through_record_value_with_the_engine_or_person_source(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    seen: list[dict[str, Any]] = []
+    seen: list[dict[str, Any]] = []  # Any: record_value kwargs
 
     async def record(_tx: object, **kwargs: Any) -> int:  # noqa: ANN401 -- record_value stand-in
         seen.append(kwargs)
         return len(seen)
 
     monkeypatch.setattr(wb, "record_value", record)
-    monkeypatch.setattr(wb, "checked_formula", lambda text: text)
+    monkeypatch.setattr(wb, "checked_formula", _same_text)
     written = asyncio.run(
         wb.write_cells(
-            _Tx(),  # type: ignore[arg-type]
+            _Tx(),  # type: ignore[arg-type] -- a unit of work stand-in
             engagement_id=uuid.uuid4(),
             return_id=uuid.uuid4(),
             writes=[
@@ -120,13 +124,13 @@ def test_writes_go_through_record_value_with_the_engine_or_person_source(
 
 def test_an_agent_source_or_a_formula_without_text_is_refused() -> None:
     for write in (
-        wb.CellWrite("05!J12", Decimal(1), "agent_suggested"),  # type: ignore[arg-type]
+        wb.CellWrite("05!J12", Decimal(1), "agent_suggested"),  # type: ignore[arg-type] -- an invalid source under test
         wb.CellWrite("05!J12", Decimal(1), "formula"),
     ):
         with pytest.raises((wb.CellSourceInvalid, wb.FormulaInvalid)):
             asyncio.run(
                 wb.write_cells(
-                    _Tx(),  # type: ignore[arg-type]
+                    _Tx(),  # type: ignore[arg-type] -- a unit of work stand-in
                     engagement_id=uuid.uuid4(),
                     return_id=uuid.uuid4(),
                     writes=[write],

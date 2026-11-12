@@ -52,7 +52,9 @@ function NewSession({ onSend }: { onSend: (body: string) => void }) {
       empty={
         <EmptySession
           prompts={PROMPTS}
-          onPick={(text) => setDraft((d) => ({ text, nonce: (d?.nonce ?? 0) + 1 }))}
+          onPick={(text) => {
+            setDraft((d) => ({ text, nonce: (d?.nonce ?? 0) + 1 }));
+          }}
         />
       }
       above={<ContextChips attached={[]} onAdd={vi.fn()} />}
@@ -73,7 +75,7 @@ describe("EmptySession (T4a, TPL-04b)", () => {
     const onSend = vi.fn();
     render(<NewSession onSend={onSend} />);
     fireEvent.click(screen.getByText("Summarize the Copperleaf August close"));
-    const composer = screen.getByRole("textbox", { name: "Message" }) as HTMLTextAreaElement;
+    const composer = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Message" });
     expect(composer.value).toBe("Summarize the Copperleaf August close");
     expect(onSend).not.toHaveBeenCalled();
     fireEvent.keyDown(composer, { key: "Enter" });
@@ -122,9 +124,11 @@ describe("ContextPicker (O1 380)", () => {
     expect(rows.map((r) => r.getAttribute("data-item"))).toEqual(["c1", "d1"]);
     expect(rows[1]?.getAttribute("aria-checked")).toBe("true");
     expect(screen.getByText("Loading…")).toBeTruthy();
-    fireEvent.click(rows[0]!);
+    const [first, second] = rows;
+    if (first === undefined || second === undefined) throw new Error("two context rows");
+    fireEvent.click(first);
     expect(onAttach).toHaveBeenCalledWith(FELD);
-    fireEvent.click(rows[1]!);
+    fireEvent.click(second);
     expect(onDetach).toHaveBeenCalledWith(W2);
   });
 

@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.listing import ListPage
-from abacus.modules.engagements.api import get_ref, work_item_engagement
+from abacus.modules.engagements.api import get_ref, work_item_engagement, work_item_facts
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
 from abacus.modules.platform.api import entitlement
 
@@ -218,12 +218,14 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, ref.resource())
     # A-06-T37 (DEC-2714): the `assurance_completion` entitlement replaces the retired flag.
-    # T-05-T25 (DEC-4517): a tax firm's return reaches C8 through `tax_returns`.
-    if (
-        await entitlement(ctx.tenant, "assurance_completion") is None
-        and await entitlement(ctx.tenant, "tax_returns") is None
-    ):
-        raise NotFound("assurance_completion")
+    # T-05-T25 (DEC-4517; S39 end pass): a tax firm reaches C8 through `tax_returns` for its tax
+    # returns only; every other work item still needs `assurance_completion`.
+    if await entitlement(ctx.tenant, "assurance_completion") is None:
+        if await entitlement(ctx.tenant, "tax_returns") is None:
+            raise NotFound("assurance_completion")
+        returns = {f.work_item_id for f in await work_item_facts(ctx, "tax_return")}
+        if work_item_id not in returns:
+            raise NotFound("assurance_completion")
 
 
 router = AbacusRouter(prefix="/v1", tags=["adjustments"])

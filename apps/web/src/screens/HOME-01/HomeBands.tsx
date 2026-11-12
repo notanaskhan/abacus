@@ -8,7 +8,7 @@
 import type { NotificationItemOut, TodoOut } from "@abacus/api-client";
 import { Icon } from "@abacus/ui";
 import type { JSX } from "react";
-import { BAND_COPY } from "./copy";
+import { BAND_COPY } from "./bandsCopy";
 
 export interface HomeBandsProps {
   todos: readonly TodoOut[];

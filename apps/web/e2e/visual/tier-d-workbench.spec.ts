@@ -23,7 +23,7 @@ const BOARDS = [
 ];
 
 for (const { screen, st } of BOARDS) {
-  test(`${screen}${st}: tabsbar 60, panes y106–848, list ${st === "f" && screen === "T4" ? 320 : 358}`, async ({
+  test(`${screen}${st}: tabsbar 60, panes y106–848, list ${String(st === "f" && screen === "T4" ? 320 : 358)}`, async ({
     page,
   }) => {
     await openGallery(page, `screens/${screen}?st=${st}`);

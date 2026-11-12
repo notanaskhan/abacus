@@ -45,3 +45,4 @@ tax-reviewer function only (human only).
 
 ## Progress log
 - `2026-11-12` — Built (DEC-4518). Tests run at the S39 end pass.
+- `2026-11-12` — End-pass re-review: `tax/entity_mapping.py` raises `NotFound("engagement")` for an approved mapping proposal with no engagement (was a silent no-op), so an approval never looks applied when nothing was written.

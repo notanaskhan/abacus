@@ -433,8 +433,9 @@ describe("HOME-01 R2 bands wired (I-01-T27)", () => {
       expect(document.querySelector("[data-home='r2-bands']")).not.toBeNull();
     });
     const bands = await bandsShown();
-    expect(within(bands!).getByRole("region", { name: "To-dos" })).toBeTruthy();
-    expect(within(bands!).getByRole("region", { name: "Mentions" })).toBeTruthy();
+    if (bands === null) throw new Error("the R2 bands did not render");
+    expect(within(bands).getByRole("region", { name: "To-dos" })).toBeTruthy();
+    expect(within(bands).getByRole("region", { name: "Mentions" })).toBeTruthy();
     expect(within(pane()).getAllByText("11").length).toBeGreaterThan(0);
   });
 

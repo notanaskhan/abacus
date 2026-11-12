@@ -2,9 +2,9 @@
 // from data, outside HOME-01's live composition.
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BAND_COPY } from "./copy";
+import { BAND_COPY } from "./bandsCopy";
 import { HomeBands } from "./HomeBands";
-import { BAND_SCENARIOS } from "../../../fixtures/scenarios/HOME-01";
+import { BAND_SCENARIOS } from "../../fixtures/scenarios/HOME-01";
 
 const due = (iso: string): string => (iso === "2026-09-16" ? "Sep 16" : iso);
 const time = (iso: string): string => (iso.includes("12:35") ? "12:35 PM" : "8:31 AM");

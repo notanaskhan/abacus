@@ -61,7 +61,9 @@ export function EmptySession({
               <button
                 type="button"
                 data-prompt={prompt.id}
-                onClick={() => onPick(prompt.text ?? prompt.title, prompt)}
+                onClick={() => {
+                  onPick(prompt.text ?? prompt.title, prompt);
+                }}
                 className="flex min-h-[80px] flex-1 flex-col items-start gap-[3px] rounded-[10px] bg-card px-[13px] py-[12px] text-left shadow-e1 hover:shadow-e3"
               >
                 <span className="text-[13px] font-medium leading-[1.35]">{prompt.title}</span>
@@ -127,10 +129,12 @@ export function ContextChips({
               type="button"
               aria-label={`Remove ${item.label}`}
               disabled={locked}
-              onClick={() => onRemove(item)}
+              onClick={() => {
+                onRemove(item);
+              }}
               className="flex size-[18px] items-center justify-center rounded-pill text-ink-3 hover:bg-nested"
             >
-              <Icon name="x" size={11} />
+              <Icon name="x" size={12} />
             </button>
           ) : null}
         </span>
@@ -141,7 +145,9 @@ export function ContextChips({
           type="button"
           data-add-context={kind}
           disabled={locked}
-          onClick={() => onAdd(kind)}
+          onClick={() => {
+            onAdd(kind);
+          }}
           className="flex h-[26px] items-center gap-[5px] rounded-pill bg-card px-[10px] text-[12.5px] shadow-e1"
         >
           <Icon name="plus" size={12} className="text-ink-2" />

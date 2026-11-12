@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from pydantic import BaseModel
@@ -138,7 +138,7 @@ def _ctx(*, client: bool = False, role: str = "manager") -> AuthContext:
         TenantContext(uuid.uuid4(), "human", str(user)),
         user,
         uuid.uuid4(),
-        role,
+        cast(Any, role),  # a firm role name stand-in
         None,
         client=client,
     )

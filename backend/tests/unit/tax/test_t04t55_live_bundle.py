@@ -9,6 +9,7 @@ import asyncio
 import inspect
 import uuid
 from dataclasses import dataclass
+from typing import Any, cast
 
 import pytest
 
@@ -27,10 +28,10 @@ ENGAGEMENT = uuid.UUID("00000000-0000-4000-8000-0000000000bb")
 def _ctx(*, kind: str = "human", client: bool = False, support: bool = False) -> AuthContext:
     user = uuid.uuid4()
     ctx = AuthContext(
-        TenantContext(uuid.uuid4(), kind, str(user)),
+        TenantContext(uuid.uuid4(), cast(Any, kind), str(user)),  # Any: an actor kind under test
         user,
         uuid.uuid4(),
-        "manager",
+        cast(Any, "manager"),  # Any: a firm role name stand-in
         None,
         client=client,
     )

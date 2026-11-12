@@ -3,7 +3,7 @@ id: TASK-7514
 title: T-04-T55 post-window live-path bundle (draft-run entry, return-frame tabs, export hook)
 plan_key: T-04-T55
 spec: SPEC-649  # T-04 AC-13.2
-acceptance_criteria: [AC-13.2]  # merges after the window; live tax-pilot tests green with the flags off
+acceptance_criteria: [AC-13]  # AC-13.2: merges after the window; live tax-pilot tests green with the flags off
 risk_zone: red
 status: in-review
 branch: t04-t55-live-bundle

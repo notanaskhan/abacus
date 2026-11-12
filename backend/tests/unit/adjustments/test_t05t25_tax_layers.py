@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import inspect
 from decimal import Decimal
-from typing import get_args
+from types import SimpleNamespace
+from typing import Any, get_args
 
 import pytest
 
@@ -75,7 +76,7 @@ def test_a_tje_is_always_a_named_humans_approval() -> None:
     """A TJE is never within threshold: it waits for review under the firm's tax JE standard."""
     source = inspect.getsource(entries.propose)
     assert 'if new.kind == "tje"' in source
-    assert entries._PREFIX["tje"] == "TJE"
+    assert entries._PREFIX["tje"] == "TJE"  # pyright: ignore[reportPrivateUsage] -- the rule under test
 
 
 def test_the_contract_carries_the_layers_and_the_scope() -> None:
@@ -84,3 +85,24 @@ def test_the_contract_carries_the_layers_and_the_scope() -> None:
     assert "account_scope" in contract.LineOut.model_fields
     assert contract.LineIn.model_validate({"account_code": "4510-T"}).account_scope == "book"
     assert set(get_args(contract.AccountScope)) == {"book", "tax_only"}
+
+
+def test_an_audits_work_item_never_reads_a_tax_layer(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Guard: `atb`, `tje` and `ttb` are refused (422) for a work item that is not a tax return,
+    before the trial balance is read."""
+    import asyncio
+    import uuid
+
+    async def no_returns(_ctx: object, _kind: str) -> list[object]:
+        return []
+
+    async def unread(*_: object) -> object:
+        raise AssertionError("nothing is read for a refused layer")
+
+    monkeypatch.setattr(entries, "work_item_facts", no_returns)
+    monkeypatch.setattr(entries, "engagement_of", unread)
+    ctx: Any = SimpleNamespace(tenant=None)  # Any: an AuthContext stand-in
+    for layer in ("atb", "tje", "ttb"):
+        with pytest.raises(entries.TaxLayerOutsideReturn) as refused:
+            asyncio.run(entries.adjusted_tb(ctx, uuid.uuid4(), layer))
+        assert refused.value.code == "tax_layer_outside_return"

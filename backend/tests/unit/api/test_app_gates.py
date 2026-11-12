@@ -88,6 +88,10 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # P-02-T01 (C15 v1 stub, DEC-4504): a search reads by POST (the query stays out of URLs and
+    # logs), and recording a recent upserts the person's one row per object, so 200.
+    "/v1/search",
+    "/v1/search/recents",
     # T-05-T06 (tax workbook v1 stub): an allocation preview reads by POST, so 200.
     "/v1/tax-returns/{return_id}/allocation-structure/preview",
     # P-05-T03 (C9 v2 stub, DEC-3104): reads by POST (counts, the AUD-29 query and export) and

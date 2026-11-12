@@ -1,4 +1,11 @@
 // TXP-00 · Return › Agent (entity returns): the handoff's words, verbatim (spec.md A to E).
+
+// Section keys name a form part, never a credential (secrets_scan SECRET-003).
+const INTERIM_706D = "interim_closing_706d";
+const CAPITAL_M2 = "capital_m2";
+const FEDERAL_K1S = "federal_k1s";
+const STATE_K1S_K3S = "state_k1s_k3s";
+
 export const COPY = {
   rail: "General Information",
   links: "Links",
@@ -8,8 +15,10 @@ export const COPY = {
   viewWork: "View work",
   run: "Run",
   runMenu: "Run ⌄",
-  runPrimary: "▶ Run",
-  reRunTask: "Re-run this task",
+  // The handoff's "▶ Run": the glyph is the play icon beside the word (L2 bans emoji).
+  runPrimary: "Run",
+  // Glossary "Run step: never task" wins over the handoff's "task" (L2; TASK-7521 log).
+  reRunTask: "Re-run this step",
   reRunGroup: "Re-run group",
   retry: "Retry",
   reconnect: "Reconnect",
@@ -17,16 +26,16 @@ export const COPY = {
   runningPill: "Running workbook agent",
   notStarted: "Not started",
   completeTitle: "Workbook agent completed",
-  completeSub: "10 of 10 tasks · 11 open items raised · finished Sep 10, 4:12 PM",
+  completeSub: "10 of 10 steps · 11 open items raised · finished Sep 10, 4:12 PM",
   completeProgress: "10 of 10 complete",
   completeStarted: "Started Sep 10, 3:31 PM",
   runningTitle: "Workbook agent is running",
-  runningSub: "3 tasks running at once.",
+  runningSub: "3 steps running at once.",
   runningProgress: "7 of 10 complete",
   runningStarted: "Started 2 minutes ago",
   idleTitle: "Workbook agent",
   idleSub:
-    "Ready to run 10 tasks · sources: QuickBooks Online, 2025 Binder (19 documents), 2024 Form 1065",
+    "Ready to run 10 steps · sources: QuickBooks Online, 2025 Binder (19 documents), 2024 Form 1065",
   waiting: "Waiting on 1 answer",
   failedTitle: "Stopped at Import trial balance",
   failedBody: "QuickBooks Online token expired — reconnect in Workbench › Connect",
@@ -103,13 +112,13 @@ export const GROUPS: readonly GroupCopy[] = [
         open: 0,
       },
       {
-        key: "interim_closing_706d",
+        key: INTERIM_706D,
         name: "§706(d) interim closing — Pell Street transfer 6/30/2025",
         meta: "331,405 of capital moved · §743(b) placeholder 28,595 · 3 open",
         open: 3,
       },
       {
-        key: "capital_m2",
+        key: CAPITAL_M2,
         name: "Capital accounts & Schedule M-2",
         meta: "Item L derives · M-2 off 6,200 · 1 open",
         open: 1,
@@ -133,13 +142,13 @@ export const GROUPS: readonly GroupCopy[] = [
     title: "Draft K-1s",
     tasks: [
       {
-        key: "federal_k1s",
+        key: FEDERAL_K1S,
         name: "Federal K-1s (5)",
         meta: "Σ K-1s = Schedule K · drafts shared with the Feld and Shah 1040s · 1 open",
         open: 1,
       },
       {
-        key: "state_k1s_k3s",
+        key: STATE_K1S_K3S,
         name: "State K-1s & K-3s",
         meta: "IL · CO · NY state K-1s · K-3 for all 5 partners · 1 open",
         open: 1,

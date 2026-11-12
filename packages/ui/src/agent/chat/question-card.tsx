@@ -71,7 +71,7 @@ function Radio({ on }: { on: boolean }): JSX.Element {
         on ? "bg-green text-on-dark" : "bg-card shadow-e1"
       }`}
     >
-      {on ? <Icon name="check" size={11} /> : null}
+      {on ? <Icon name="check" size={12} /> : null}
     </span>
   );
 }
@@ -190,7 +190,9 @@ export function QuestionCard({
                 checked={on}
                 disabled={busy}
                 aria-keyshortcuts={i < 9 ? String(i + 1) : undefined}
-                onChange={() => setChosen(option.key)}
+                onChange={() => {
+                  setChosen(option.key);
+                }}
                 className="sr-only"
               />
               <Radio on={on} />
@@ -229,7 +231,9 @@ export function QuestionCard({
           variant="secondary"
           size="md"
           disabled={busy || index === first}
-          onClick={() => setIndex(index - 1)}
+          onClick={() => {
+            setIndex(index - 1);
+          }}
         >
           Previous
         </Button>

@@ -58,7 +58,7 @@ function RunDisc({ state }: { state: AgentRunState }): JSX.Element {
     case "failed":
       return <Icon name="circle-x" size={16} className="text-red" aria-label="Failed" />;
     case "running":
-      return <Spinner size={14} label="Running" showLabel={false} />;
+      return <Spinner size={15} label="Running" showLabel={false} />;
     default:
       return <Icon name="circle-check" size={16} className="text-green" aria-label="Done" />;
   }

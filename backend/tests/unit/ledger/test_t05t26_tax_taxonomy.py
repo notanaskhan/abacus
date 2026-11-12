@@ -26,6 +26,10 @@ from abacus.modules.tax import entity_mapping
 KEYS = frozenset({"L1a", "L9a", "L14", "K 18a", "L-1", "L-15"})
 
 
+def _same(row: Any, **_: Any) -> Any:  # noqa: ANN401 -- dataclasses.replace stand-in
+    return row
+
+
 def test_prior_year_wins_then_range_then_description() -> None:
     accounts = [
         ("4000", "Rental income"),
@@ -117,7 +121,9 @@ def test_an_approval_without_the_reviewer_function_writes_nothing(
     async def session(_tenant: object):  # noqa: ANN202
         yield SimpleNamespace()
 
-    async def rows(_s: object, _p: object) -> tuple[uuid.UUID, list[Any]]:
+    async def rows(
+        _s: object, _p: object
+    ) -> tuple[uuid.UUID, list[Any]]:  # Any: proposal row stand-ins
         return uuid.uuid4(), [_row("6100", "L9a", target)]
 
     async def approver(_s: object, _p: object) -> uuid.UUID:
@@ -138,7 +144,7 @@ def test_an_approval_without_the_reviewer_function_writes_nothing(
     monkeypatch.setattr(entity_mapping, "approved_proposal_rows", rows)
     monkeypatch.setattr(entity_mapping, "proposal_approver", approver)
     monkeypatch.setattr(entity_mapping, "engagement_resource", resource)
-    monkeypatch.setattr(entity_mapping, "replace", lambda r, **_: r)
+    monkeypatch.setattr(entity_mapping, "replace", _same)
     monkeypatch.setattr(entity_mapping, "member_could", preparer_only)
     monkeypatch.setattr(entity_mapping, "uow", no_write)
     tenant = TenantContext(uuid.uuid4(), "system", "proposal:x")

@@ -50,7 +50,7 @@ async def gate(ctx: AuthContext, action: str) -> None:
     response_model=SearchResultsOut,
     errors=(429, 501, 503),
 )
-async def search_route(body: SearchQueryIn, ctx: Ctx) -> SearchResultsOut:
+async def firm_search_route(body: SearchQueryIn, ctx: Ctx) -> SearchResultsOut:
     """Grouped, permission-filtered results in canonical order (SHL-02 a, c, d, e, f, g)."""
     del body
     await gate(ctx, "search.read")

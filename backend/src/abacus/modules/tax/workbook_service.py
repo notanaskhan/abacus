@@ -51,6 +51,8 @@ _RANGE = re.compile(r"^([A-Z]{1,3})([1-9][0-9]{0,5}):([A-Z]{1,3})([1-9][0-9]{0,5
 
 
 class CellAddressInvalid(DomainInvalid):
+    """The address is not `<sheet>!<column><row>` on one of the form's sheets."""
+
     code = "cell_address_invalid"
 
 
@@ -61,6 +63,8 @@ class CellSourceInvalid(DomainInvalid):
 
 
 class FormulaInvalid(DomainInvalid):
+    """The formula does not parse in the workpapers grammar (no code is evaluated)."""
+
     code = "formula_invalid"
 
 
@@ -194,7 +198,7 @@ class SheetCell:
     formula: str | None
 
 
-def project(
+def sheet_cells(
     values: Mapping[str, Mapping[str, object]], sheet: str, range_: str | None = None
 ) -> tuple[list[SheetCell], str | None]:
     """One sheet's cells in row then column order, within `range_` (`A1:J40`), at most `PAGE`;
@@ -269,14 +273,14 @@ async def workbook_facts(tenant: object, return_id: UUID) -> object:
     from abacus.kernel.db import tenant_session
     from abacus.modules.review.api import ReviewableFacts, current_values
 
-    async with tenant_session(tenant) as session:  # type: ignore[arg-type]
+    async with tenant_session(tenant) as session:  # type: ignore[arg-type] -- the review api takes its own TenantContext alias
         engagement = await session.scalar(
             text("SELECT engagement_id FROM tax_returns WHERE work_item_id = :r"),
             {"r": return_id},
         )
     if engagement is None:
         raise NotFound(WORKBOOK)
-    values = await current_values(tenant, WORKBOOK, return_id)  # type: ignore[arg-type]
+    values = await current_values(tenant, WORKBOOK, return_id)  # type: ignore[arg-type] -- the review api takes its own TenantContext alias
     digest = hashlib.sha256(json.dumps(values, sort_keys=True).encode()).hexdigest()
     return ReviewableFacts(
         target_type=WORKBOOK,
@@ -291,7 +295,7 @@ async def workbook_facts(tenant: object, return_id: UUID) -> object:
 async def cell_value(tenant: object, return_id: UUID, field_key: str) -> dict[str, object] | None:
     from abacus.modules.review.api import current_values
 
-    values = await current_values(tenant, WORKBOOK, return_id)  # type: ignore[arg-type]
+    values = await current_values(tenant, WORKBOOK, return_id)  # type: ignore[arg-type] -- the review api takes its own TenantContext alias
     found = values.get(field_key)
     return None if found is None else dict(found)
 
@@ -305,6 +309,6 @@ def register() -> None:
     )
 
     register_field_owner(
-        FieldOwner(WORKBOOK, cell_value, frozenset({"*"}), label_of=lambda key: key)  # type: ignore[arg-type]
+        FieldOwner(WORKBOOK, cell_value, frozenset({"*"}), label_of=lambda key: key)  # type: ignore[arg-type] -- the owner registry is typed for review-owned values
     )
-    register_reviewable_facts(WORKBOOK, workbook_facts)  # type: ignore[arg-type]
+    register_reviewable_facts(WORKBOOK, workbook_facts)  # type: ignore[arg-type] -- the facts registry is typed for review-owned values
