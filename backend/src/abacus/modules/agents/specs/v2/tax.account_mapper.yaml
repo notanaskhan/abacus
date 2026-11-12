@@ -1,0 +1,37 @@
+# tax.account_mapper v1 (T-05-T23; T-05 §6; TASK-7407; DEC-4406). An entity return's accounts to
+# published Form 1065 line keys: `modules/tax/account_mapper.py` gives the model each account's code
+# and name only (no amounts) and the published key set, keeps a key only when it is published and
+# confident, and turns the kept ones into one proposal through C17. The plan's "single_call" reads
+# as one model call: a v2 single_call lists no tools, so the shape is `workflow` (code's steps, one
+# model call, one propose tool), as tax.return_drafter's. Source of truth: compiled into
+# ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+id: tax.account_mapper
+version: 1
+purpose: Suggest a published Form 1065 line key for each of an entity return's accounts from its code and name, or abstain, for a person to approve.
+shape: workflow
+prompt: tax.map_accounts@v1
+tier: small
+escalation_tier: small
+input_schema: MapAccountsInput
+output_schema: MapAccountsOutput
+tools:
+  propose: [tax.propose_account_mappings]
+task_scope:
+  - tax_return.read
+  - proposal.create
+limits:
+  max_output_tokens: 4000
+  max_cost_usd: "0.05"
+  max_steps: 3
+  max_seconds: 60
+  max_tool_calls: 1
+plan: required_when_writes
+autonomy: propose
+data_classes: [tri]
+untrusted_inputs: [account_names]
+evaluation_suite: evals/tax_account_mapper
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none

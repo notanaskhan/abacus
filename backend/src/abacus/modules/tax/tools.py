@@ -22,6 +22,7 @@ K-1 tools read "pass-through" (`tax.read_pass_through_activity`, …).
 | `tax.propose_field_changes` | propose | `return_field_changes` on worksheet fields |
 | `tax.propose_pass_through_treatments` | propose | `pass_through_treatments` |
 | `tax.propose_residency` | propose | `residency` |
+| `tax.propose_account_mappings` | propose | `tax_account_mapping` on an entity return (T-05-T23) |
 """
 
 from __future__ import annotations
@@ -498,3 +499,45 @@ async def propose_residency(agent: AgentContext, args: ResidencyProposalIn) -> P
         after={"t": "text", "v": args.option}, cause="agent_proposal",
     )  # fmt: skip
     return await _propose(agent, "residency", "Proposed residency", [row])
+
+
+# --- T-05-T23 (DEC-4406): an entity return's account mappings ------------------------------------
+
+ACCOUNT_MAPPING: Final = "tax_account_mapping"
+
+
+class AccountMappingChange(BaseModel):
+    model_config = _cfg()
+
+    account_code: Annotated[str, Field(min_length=1, max_length=40), Tri]
+    form_line_key: Annotated[str, Field(min_length=1, max_length=40), Int]
+    confidence: Annotated[float, Field(ge=0, le=1), Int]
+
+
+class AccountMappingsIn(_Targeted):
+    return_id: Annotated[UUID, Int]
+    mappings: Annotated[list[AccountMappingChange], Field(min_length=1, max_length=MAX), Int]
+
+
+@agent_tool(
+    name="tax.propose_account_mappings", kind="propose", action="proposal.create",
+    data_class="tri", input_model=AccountMappingsIn, output_model=ProposedOut,
+)  # fmt: skip
+async def propose_account_mappings(agent: AgentContext, args: AccountMappingsIn) -> ProposedOut:
+    """One proposal row per account: the return (the target), `account:<code>` and the key. The
+    return must be the run's taxpayer's entity return for the year; codes are not repeated."""
+    _, work_item = await _return_of(agent, args)
+    if work_item != args.return_id:
+        raise NotFound("tax_return")
+    codes = [m.account_code for m in args.mappings]
+    if len(set(codes)) != len(codes):
+        raise NotFound("tax_return")  # a repeated account is no proposal (fail closed)
+    rows = [
+        ProposedRow(
+            target_type=ACCOUNT_MAPPING, target_id=args.return_id,
+            field_key=f"account:{m.account_code}", label=f"Account {m.account_code}",
+            before=None, after={"t": "text", "v": m.form_line_key}, cause="agent_proposal",
+        )
+        for m in args.mappings
+    ]  # fmt: skip
+    return await _propose(agent, ACCOUNT_MAPPING, "Proposed account mappings", rows)

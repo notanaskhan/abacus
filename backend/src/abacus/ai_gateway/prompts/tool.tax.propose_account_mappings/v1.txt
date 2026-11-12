@@ -1,0 +1,1 @@
+Propose form-line mappings for an entity return's accounts, each with its account code, the published Form 1065 line key and the confidence. Creates one proposal for a person to approve; nothing is mapped until they do.
