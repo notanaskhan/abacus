@@ -36,8 +36,8 @@ ROUTES: list[tuple[str, str, str]] = [
     ("get", "/v1/search/recents", "search.read"),
     ("post", "/v1/search/recents", "search_recent.record"),
 ]
-# Built by P-02-T08; until then every route is a stub.
-UNBUILT = {"/v1/search", "/v1/search/recents"}
+# Built by P-02-T08 (DEC-4614): no route is a stub any more.
+UNBUILT: set[str] = set()  # P-02-T08 (DEC-4614): every route is served
 MODELS: list[type[BaseModel]] = [
     v
     for v in vars(contract).values()

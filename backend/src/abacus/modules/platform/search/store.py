@@ -201,6 +201,32 @@ async def stored_hash(
     return hashlib.sha256(json.dumps(flat, sort_keys=True).encode()).hexdigest()
 
 
+async def record_recent(
+    tenant_id: UUID, user_id: UUID, object_type: str, object_id: UUID, keep: int
+) -> None:
+    """The person opened a record they may read: first in their recents, trimmed to `keep`."""
+    async with tenant_connection(_indexer(tenant_id)) as conn:
+        await conn.execute(
+            text(
+                "INSERT INTO search_recents (tenant_id, user_id, object_type, object_id) "
+                "VALUES (:t, :u, :ot, :oi) "
+                "ON CONFLICT (tenant_id, user_id, object_type, object_id) "
+                "DO UPDATE SET opened_at = clock_timestamp()"
+            ),
+            {"t": tenant_id, "u": user_id, "ot": object_type, "oi": object_id},
+        )
+        await conn.execute(
+            text(
+                "DELETE FROM search_recents WHERE user_id = :u "
+                "AND (object_type, object_id) NOT IN "
+                "(SELECT object_type, object_id FROM search_recents WHERE user_id = :u "
+                "ORDER BY opened_at DESC LIMIT :keep)"
+            ),
+            {"u": user_id, "keep": keep},
+        )
+        await conn.commit()
+
+
 async def purge_recents(tenant_id: UUID, user_ids: Sequence[UUID]) -> int:
     """A deactivated member's recents go (P-02 §4.6 `membership.revoked`)."""
     if not user_ids:
