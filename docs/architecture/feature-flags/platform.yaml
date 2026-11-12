@@ -18,3 +18,19 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: search.palette
+    description: 'C15 v1 firm search (P-02, ADR-241): POST /v1/search, the recents routes, ⌘K and the SHL-02 mount. Off: 404. The indexer runs regardless, so a firm''s index is warm before its flip. Off until a founder switches it on per firm; the local seed turns it on for Brightwater Hale. Retired once every live firm has it. P-02-T01, DEC-4504.'
+    owner: notanaskhan
+    created: 2026-11-12
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: search.agent_mode
+    description: 'The palette''s ">" prefix (SHL-02c): installed agents listed for a person to open a Workbench session with; nothing runs until they send (INV-1). Off: ">" is literal search text. Flips per firm only after W-02 ships the WB-01 new-session target. P-02-T01, DEC-4504.'
+    owner: notanaskhan
+    created: 2026-11-12
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false

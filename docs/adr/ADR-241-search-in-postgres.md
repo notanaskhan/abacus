@@ -87,7 +87,7 @@ Postgres. Nothing in the ADRs covers search (chapter 09 P-33).
    Registration fails closed at boot on an unknown group, a non-read action or an unknown scope
    kind. C15 v0 builders (`register_search_projection(object_type, builder)`) keep working through
    an adapter for one sprint after v1 freezes.
-10. **Who may search.** `search.read` and `search.recent.record` are firm-role actions. Client
+10. **Who may search.** `search.read` and `search_recent.record` are firm-role actions. Client
     principals, the agent principal, system principals and `platform_support_content` sessions are
     refused: agents read through their own registered tools (C17), never the palette index, and
     the portal bundle carries no palette code (INV-4). The palette never starts an agent run;
