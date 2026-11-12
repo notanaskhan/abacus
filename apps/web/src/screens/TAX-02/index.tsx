@@ -7,6 +7,7 @@ import type {
   TaxReturnRecordOut,
 } from "@abacus/api-client";
 import {
+  draftRunMutation,
   firmMembersOptions,
   returnAssignMutation,
   returnOverviewOptions,
@@ -554,6 +555,12 @@ function Body({
   overview: TaxReturnOverviewOut;
   now: Date;
 }): JSX.Element {
+  // T-04-T46 (DEC-4526): Run draft goes live where the server offers it (T-04-T55's draft-run
+  // entry: `tax_return.draft_run` in allowed_actions, behind `tax_agents.enabled`); elsewhere the
+  // planned, disabled button stays a fixture-build drawing only.
+  const agentsOn = useFlag("tax_agents.enabled") === true;
+  const canDraft = agentsOn && record.allowed_actions.includes("tax_return.draft_run");
+  const draft = useMutation(draftRunMutation());
   if (record.row.status === "not_started") {
     return (
       <div className="flex min-h-0 flex-1 flex-col gap-[12px]">
@@ -561,21 +568,37 @@ function Body({
         <EmptyState
           icon="sparkles"
           title={COPY.noDraftTitle}
-          {...(PLANNED_VISIBLE
+          {...(canDraft
             ? {
                 action: (
                   <Button
                     variant="primary"
                     size="sm"
                     icon="sparkles"
-                    disabled
-                    title={COPY.binderNotPublished}
+                    loading={draft.isPending}
+                    onClick={() => {
+                      draft.mutate({ path: { return_id: record.work_item_id } });
+                    }}
                   >
                     {COPY.runDraft}
                   </Button>
                 ),
               }
-            : {})}
+            : PLANNED_VISIBLE
+              ? {
+                  action: (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon="sparkles"
+                      disabled
+                      title={COPY.binderNotPublished}
+                    >
+                      {COPY.runDraft}
+                    </Button>
+                  ),
+                }
+              : {})}
         >
           {COPY.noDraftBody}
         </EmptyState>
@@ -786,6 +809,7 @@ export function TAX02({
   };
   // The Review, Issues and Activity tabs open TAX-05, TAX-06 and TAX-07, all planned: drawn
   // disabled where planned screens are, absent in production.
+  const serverTabs = new Set((record.data?.tabs ?? []).map((t) => t.tab));
   const tabs = (
     <Tabsbar
       // The return frame's tabsbar is 44 with the default segmented (handoff spec §3; T-02-T33).
@@ -795,9 +819,11 @@ export function TAX02({
         option("overview", true),
         // TAX-03 is built (T-02-T19): the Intake tab opens it.
         option("intake", true),
-        ...(PLANNED_VISIBLE
-          ? (["review", "issues", "activity"] as const).map((k) => option(k, false))
-          : []),
+        // T-04-T46 (DEC-4526): the frame's tabs follow the server's registry (T-04-T55): a tab the
+        // return frame lists is live; the others stay planned, drawn only where planned screens are.
+        ...(["review", "issues", "activity"] as const)
+          .filter((k) => PLANNED_VISIBLE || serverTabs.has(k))
+          .map((k) => option(k, serverTabs.has(k))),
       ]}
       active={COPY.tabs[tab === "overview" ? "overview" : tab]}
       onChange={(label) => {
