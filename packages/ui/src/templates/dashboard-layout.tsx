@@ -42,6 +42,8 @@ export interface DashboardLayoutProps {
   office?: DashboardOffice;
   /** "3 running": the agent sessions running now, from the server. */
   running?: string;
+  /** Where the running pill opens (WB-01's Running filter, W-02-T08): drawn as a link when set. */
+  runningHref?: string;
   /** After the date (HOME-01 R2): "Open Today →" and the Home segmented control. */
   subbar?: ReactNode;
   /** Inside the app's own shell (the routed screen): the subbar, tiles and panes without a second
@@ -410,6 +412,7 @@ export function DashboardLayout({
   caption,
   office,
   running,
+  runningHref,
   subbar,
   bare = false,
   loading = false,
@@ -441,15 +444,25 @@ export function DashboardLayout({
           {...(office.onChange === undefined ? {} : { onChange: office.onChange })}
         />
       )}
-      {running !== undefined && (
-        <span
-          data-dashboard="running"
-          className="inline-flex h-[29px] flex-none items-center gap-[7px] rounded-pill bg-card pr-[12px] pl-[10px] text-body whitespace-nowrap shadow-e1"
-        >
-          <Ring size={12} width={1.5} track="stroke-chip" rotate={-140} className="text-ink-2" />
-          {running}
-        </span>
-      )}
+      {running !== undefined &&
+        (runningHref === undefined ? (
+          <span
+            data-dashboard="running"
+            className="inline-flex h-[29px] flex-none items-center gap-[7px] rounded-pill bg-card pr-[12px] pl-[10px] text-body whitespace-nowrap shadow-e1"
+          >
+            <Ring size={12} width={1.5} track="stroke-chip" rotate={-140} className="text-ink-2" />
+            {running}
+          </span>
+        ) : (
+          <a
+            data-dashboard="running"
+            href={runningHref}
+            className="inline-flex h-[29px] flex-none items-center gap-[7px] rounded-pill bg-card pr-[12px] pl-[10px] text-body whitespace-nowrap text-ink shadow-e1"
+          >
+            <Ring size={12} width={1.5} track="stroke-chip" rotate={-140} className="text-ink-2" />
+            {running}
+          </a>
+        ))}
     </div>
   );
   const record = (

@@ -68,10 +68,15 @@ const defaultOpener: StreamOpener = ({ topics, signal, onError, maxAttempts }) =
   generated(topics, signal, onError, maxAttempts);
 
 const registries = new Map<string, TopicKeys>();
+const parts = new Map<string, TopicKeys[]>();
 
-/** A domain says which of its query keys a topic kind's events touch (at module load). */
+/** A domain says which of its query keys a topic kind's events touch (at module load). Several
+ * domains may register one kind (TAX-08 and W-02 both read `session:<id>`, W-02-T08): an event
+ * refetches the union of their keys. */
 export function registerTopicKeys(kind: string, keys: TopicKeys): void {
-  registries.set(kind, keys);
+  const list = [...(parts.get(kind) ?? []), keys];
+  parts.set(kind, list);
+  registries.set(kind, (topic, event) => list.flatMap((k) => k(topic, event)));
 }
 
 function kindOf(topic: string): string {
@@ -226,4 +231,5 @@ export function resetRealtime(): void {
   shared?.stop();
   shared = null;
   registries.clear();
+  parts.clear();
 }

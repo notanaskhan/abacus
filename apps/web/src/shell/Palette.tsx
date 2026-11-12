@@ -8,6 +8,7 @@ import { CommandPalette, type PaletteGroup, type PaletteItem } from "@abacus/ui"
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { type JSX, useEffect, useMemo, useState } from "react";
+import { useFlag } from "../app-core/flags";
 
 // SPEC-302 (TASK-303): ⌘K jumps across the firm. Engagements filter on the client; request items
 // and findings come from the server, walls applied. Recent engagements stay in this browser only.
@@ -115,6 +116,8 @@ export function Palette({
   const debounced = useDebounced(q, 200);
   const remote = open && debounced.length >= 2;
   const engagements = useQuery({ ...listEngagementsOptions(), enabled: open });
+  // W-02-T08: SHL-02's "New session…" opens a blank Workbench session (WB-02); nothing is sent.
+  const workbenchOn = useFlag("workbench.enabled") === true;
   const items = useQuery({
     ...searchRequestItemsOptions({ query: { q: debounced } }),
     enabled: remote,
@@ -178,6 +181,17 @@ export function Palette({
         ]
       : []),
     { id: "a-notifications", label: "Open notifications", run: onNotifications },
+    ...(workbenchOn
+      ? [
+          {
+            id: "a-new-session",
+            label: "New session…",
+            run: () => {
+              go("/workbench/sessions/new");
+            },
+          },
+        ]
+      : []),
   ];
   const tabs: PaletteItem[] =
     current === undefined
