@@ -166,3 +166,41 @@ def test_no_column_could_hold_a_tin_amount_or_document_text(private_db: sc.Datab
     names = {str(c["column_name"]) for c in columns}
     for banned in ("tin", "tin_last4", "amount", "body", "text_content", "content"):
         assert banned not in names
+
+
+# --- 0841 (T-05-T25): the adjustments tax layers -------------------------------------------------
+
+
+def test_0841_lines_carry_their_account_scope(private_db: sc.Database) -> None:
+    definition = str(
+        _value(
+            private_db,
+            "SELECT pg_get_constraintdef(c.oid) FROM pg_constraint c "
+            "JOIN pg_class t ON t.oid = c.conrelid WHERE t.relname = 'proposed_entry_lines' "
+            "AND pg_get_constraintdef(c.oid) LIKE '%account_scope%'",
+        )
+    )
+    assert "book" in definition and "tax_only" in definition
+    assert _value(
+        private_db,
+        "SELECT has_column_privilege('abacus_app', 'proposed_entry_lines', 'account_scope', "
+        "'INSERT')",
+    )
+
+
+def test_0841_the_tax_scope_triggers_guard_tjes_and_tax_only_lines(
+    private_db: sc.Database,
+) -> None:
+    for table in ("proposed_entries", "proposed_entry_lines"):
+        found = _value(
+            private_db,
+            "SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid "
+            "WHERE c.relname = $1 AND t.tgname = $2",
+            table,
+            f"{table}_tax_scope",
+        )
+        assert found == 1, table
+    body = str(
+        _value(private_db, "SELECT prosrc FROM pg_proc WHERE proname = 'proposed_entry_tax_scope'")
+    )
+    assert "tax_return" in body and "tax_only" in body

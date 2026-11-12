@@ -3235,6 +3235,11 @@ codes:
     - abacus.modules.review.issue_resolutions.IssueSystemResolvedOnly
     summary: 'T-04-T23 (TAX-06b, 0800): a dependency issue resolves when its dependency does, by the
       system, never by a person (`POST /v1/issues/{id}/resolve` answers 409).'
+  tax_only_outside_tje:
+    status: 422
+    raised_by:
+    - abacus.modules.adjustments.entries.TaxOnlyOutsideTje
+    summary: A tax-only account on an entry that is not a TJE (it would leak into the books).
   tax_profile_file_unavailable:
     status: 409
     raised_by:
