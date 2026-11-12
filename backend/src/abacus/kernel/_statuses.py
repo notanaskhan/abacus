@@ -688,6 +688,11 @@ class WorkbenchSessionStatus(StrEnum):
     FAILED = "failed"
 
 
+class WorkbenchSessionFilterStatus(StrEnum):
+    pass
+    # derived, never stored: all, mine, via_agent, running, needs_answer
+
+
 class IntegrationStatus(StrEnum):
     AVAILABLE = "available"
     CONNECTING = "connecting"
@@ -1885,6 +1890,8 @@ STORED: dict[str, tuple[str, ...]] = {
         "ready_for_review",
         "complete",
         "failed",
+    ),
+    "workbench_session_filter": (
     ),
     "integration": (
         "available",
