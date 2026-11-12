@@ -118,11 +118,10 @@ export function Go({ open, onOpenChange, onOpen, mac = true }: GoProps): JSX.Ele
     }
     const data: SearchResultsOut | undefined = results.data;
     return (data?.groups ?? []).map((g) => ({
-      label: COPY.groups[g.group as keyof typeof COPY.groups] ?? g.group,
+      label: COPY.groups[g.group as keyof typeof COPY.groups],
       items: g.items.map(row).filter((r): r is PaletteItem => r !== null),
     }));
     // `row` reads `record` and `onOpen`, both stable for the palette's life.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, recents.data, results.data]);
 
   const suggestion = results.data?.suggestion;

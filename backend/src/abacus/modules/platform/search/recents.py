@@ -68,8 +68,8 @@ async def read_recents(ctx: AuthContext, limit: int) -> SearchRecentsOut:
             continue
         if found.data_class == "tri":
             try:
-                await authorise(ctx, found.read_action, resource_of(row, ctx.tenant_id))
-            except Forbidden:
+                await authorise(ctx, found.read_action, await resource_of(row, ctx))
+            except (Forbidden, NotFound):  # a gone or walled record drops out of the list
                 continue
         items.append(item_of(found, row, ""))
         if len(items) == limit:
@@ -96,7 +96,7 @@ async def record_recent(ctx: AuthContext, body: SearchRecentIn) -> SearchRecentR
     if row is None:
         raise NotFound("search_document")
     try:
-        await authorise(ctx, found.read_action, resource_of(dict(row), ctx.tenant_id))
+        await authorise(ctx, found.read_action, await resource_of(dict(row), ctx))
     except Forbidden:
         raise NotFound("search_document") from None
     await store.record_recent(ctx.tenant_id, ctx.user_id, body.object_type, body.object_id, KEEP)

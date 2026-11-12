@@ -351,6 +351,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "risk.link",
         "risk.read",
         "risk.route_for_approval",
+        "run_artifact.download",  # W-02-T03 (DEC-4603)
         "run_content.read",  # DEC-87 (TASK-5002)
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)

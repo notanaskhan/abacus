@@ -72,9 +72,10 @@ describe("Today consumer (SHL-23, HOME-05)", () => {
 
   it("reserved items are never prefilled and the agent is never an assignee (INV-1)", () => {
     const drill = ridgelineDrill();
-    const reserved = new Set(drill.not_assignable.map((n) => n.gate_id));
-    expect(drill.prefills.every((p) => !reserved.has(p.gate_id))).toBe(true);
-    expect(drill.prefills.map((p) => p.assignee_name)).toEqual(["Samuel Ito"]);
+    const prefills = drill.prefills ?? [];
+    const reserved = new Set((drill.not_assignable ?? []).map((n) => n.gate_id));
+    expect(prefills.every((p) => !reserved.has(p.gate_id))).toBe(true);
+    expect(prefills.map((p) => p.assignee_name)).toEqual(["Samuel Ito"]);
   });
 
   it("a building brief asks for its build and shows no snapshot", () => {

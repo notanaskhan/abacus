@@ -59,13 +59,14 @@ export function workbenchHandlers(
     },
     "PATCH /v1/workbench/sessions/{session_id}": ({ params, body }) => {
       const at = live.findIndex((r) => r.id === params.session_id);
-      if (at === -1) return json({ detail: "not found" }, 404);
+      const found = live[at];
+      if (found === undefined) return json({ detail: "not found" }, 404);
       const title = (body as { title: string }).title;
       const next: SessionSummaryOut = {
-        ...live[at]!,
+        ...found,
         title,
         title_source: "manual",
-        version: String(Number(live[at]!.version ?? "1") + 1),
+        version: String(Number(found.version ?? "1") + 1),
       };
       live[at] = next;
       return json(next);

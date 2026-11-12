@@ -7,7 +7,8 @@ import { MANIFEST } from "./manifest";
 import { hrefOf, to } from "./to";
 
 async function get(path: string, query: Record<string, string> = {}) {
-  const handler = workbenchHandlers()[`GET ${path}`]!;
+  const handler = workbenchHandlers()[`GET ${path}`];
+  if (handler === undefined) throw new Error(`no fixture handler for GET ${path}`);
   const res = await handler({
     method: "GET",
     path,
@@ -30,7 +31,7 @@ describe("W-02 Workbench routes", () => {
       status: "fixture",
       path: "/workbench/sessions/$sessionId",
     });
-    expect(MANIFEST["WB-04"]?.status).toBe("planned");
+    expect(MANIFEST["WB-04"].status).toBe("planned");
   });
 
   it("links HOME-01's running pill to the Running filter (AC-L2)", () => {

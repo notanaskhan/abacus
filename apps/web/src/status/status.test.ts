@@ -82,8 +82,9 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // added document_approval, return_field_view, k1_activity, k1_treatment,
     // residency_determination and assistant_availability (+6; DEC-3019). T-05-T05 added
     // preparer_memo and allocation_structure (+2; agent_run_step gained labels only). F-07-T25
-    // added filing_deadline (+1; DEC-4507).
-    expect(Object.keys(REGISTRY)).toHaveLength(183); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan
+    // added filing_deadline (+1; DEC-4507). S40 added workbench_session_filter (W-02-T04),
+    // daily_briefing and attention_item (I-02-T03) (+3).
+    expect(Object.keys(REGISTRY)).toHaveLength(186); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -113,7 +114,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // k1_treatment 3, residency_determination 3, assistant_availability 4.
     // +8 (T-05-T05): preparer_memo 4, allocation_structure 4.
     // +7 (F-07-T25, DEC-4507): filing_deadline's seven derived codes.
-    expect(ROWS).toHaveLength(795); // DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows
+    // +13 (S40): workbench_session_filter 5 (W-02-T04), daily_briefing 5, attention_item 3 (I-02-T03).
+    expect(ROWS).toHaveLength(808); // DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

@@ -102,9 +102,7 @@ def parse(source: str) -> list[StatusObject]:
                 raise RegistryError(f"{where}: variant {variant!r} (match is never a status)")
             label = str(fields["label"])
             words = [
-                w
-                for w in re.findall(r"[A-Za-z]+", label)
-                if len(w) > 1 and w not in _PROPER_NOUNS
+                w for w in re.findall(r"[A-Za-z]+", label) if len(w) > 1 and w not in _PROPER_NOUNS
             ]
             title_case = len(words) > 1 and all(w[0].isupper() and not w.isupper() for w in words)
             if not label.strip() or title_case:

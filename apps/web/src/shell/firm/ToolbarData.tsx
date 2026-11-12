@@ -124,7 +124,9 @@ export function useFirmToolbar({
             <CommandPaletteData
               open={go}
               onOpenChange={setGo}
-              mac={typeof navigator !== "undefined" && /Mac|iPhone|iPad/u.test(navigator.platform)}
+              mac={
+                typeof navigator !== "undefined" && /Mac|iPhone|iPad/u.test(navigator.userAgent)
+              }
               onOpen={(href, newTab) => {
                 if (newTab) {
                   window.open(href, "_blank", "noopener");

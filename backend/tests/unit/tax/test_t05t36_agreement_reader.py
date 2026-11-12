@@ -19,7 +19,7 @@ from abacus.modules.tax import agreement_reader as ar
 from abacus_tools.evals import tax_entity as te
 
 RAW = te.load("tax_agreement_reader")
-CASES = [te.ReaderCase.model_validate(c) for c in RAW["cases"]]  # type: ignore[union-attr]
+CASES = [te.ReaderCase.model_validate(c) for c in RAW["cases"]]  # type: ignore[union-attr] -- a JSON value read from a row
 CODE_GUARANTEED = {
     "citation_verified",
     "citation_coverage",
@@ -31,7 +31,7 @@ CODE_GUARANTEED = {
 
 def _answer(case: te.ReaderCase) -> ar.ReadAgreementOutput | None:
     p = case.output.proposal
-    raw: dict[str, Any] = {
+    raw: dict[str, Any] = {  # Any: a JSON payload
         "kind": p.kind,
         "method": p.method,
         "convention": p.convention,
@@ -50,8 +50,9 @@ def _settled(case: te.ReaderCase) -> te.ReaderOutput:
         clauses=[ar.AgreementClause(id=c.id, text=c.text) for c in case.clauses]
     )
     read = ar.settle(_answer(case), given)
-    fields: dict[str, Any] = {k.parameter: k.value for k in read.kept}
-    numbers = [n for k in read.kept for n in ar._numbers(k.value)]  # pyright: ignore[reportPrivateUsage]
+    kept = read.kept
+    fields: dict[str, Any] = {k.parameter: k.value for k in kept}  # Any: mixed parameter values
+    numbers = [n for k in read.kept for n in ar._numbers(k.value)]  # pyright: ignore[reportPrivateUsage] -- the test or the shared trajectory base reaches a private helper
     return te.ReaderOutput(
         proposal=te.Proposal(
             kind=fields.get("kind"),
@@ -119,7 +120,7 @@ def test_ac_an_unverified_quote_or_an_unsupported_number_is_dropped() -> None:
     ]
     answer = ar.ReadAgreementOutput(
         kind="straight_percentage",
-        transfers=[{"date": "2025-06-30", "from": "A", "to": "B", "points": "50"}],  # type: ignore[list-item]
+        transfers=[{"date": "2025-06-30", "from": "A", "to": "B", "points": "50"}],  # type: ignore[list-item] -- a dict the model parses into a Transfer
         citations={
             "kind": ar.ClauseCitation(clause="asg-3", quote="in proportion"),
             "transfers": ar.ClauseCitation(clause="asg-3", quote="A assigns 5 percent to B"),

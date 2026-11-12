@@ -30,7 +30,7 @@ def test_de_cases_have_threshold_one_and_repeat_three() -> None:
     assert {tag for c in de for tag in c.de} == {"DE-3", "DE-4", "DE-5", "DE-6"}
     assert all(c.repeat == 3 for c in de)
     for group in ("scope", "adversarial"):
-        assert all(v == 1.0 for v in wa.FROZEN[group].values())  # type: ignore[index]
+        assert all(v == 1.0 for v in wa.FROZEN[group].values())
 
 
 def test_the_full_suite_passes_on_the_fake_model() -> None:

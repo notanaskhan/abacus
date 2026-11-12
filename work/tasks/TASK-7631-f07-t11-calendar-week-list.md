@@ -3,7 +3,7 @@ id: TASK-7631
 title: F-07-T11 T13 Week and List views and the RulePopover
 plan_key: F-07-T11
 spec: SPEC-652
-acceptance_criteria: [F2, F3]  # T13b–d render; popover after 250 ms hover and on focus; risk in words
+acceptance_criteria: [AC-6]  # T13b–d render; popover after 250 ms hover and on focus; risk in words
 risk_zone: green
 status: in-review
 branch: f07-t11-calendar-week-list

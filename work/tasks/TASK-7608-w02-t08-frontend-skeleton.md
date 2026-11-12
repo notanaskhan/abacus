@@ -1,6 +1,6 @@
 ---
 id: TASK-7608
-title: W-02-T08 frontend skeleton: routes, manifest, domain, screen contracts, palette command
+title: "W-02-T08 frontend skeleton: routes, manifest, domain, screen contracts, palette command"
 plan_key: W-02-T08
 spec: SPEC-653
 acceptance_criteria: [AC-L2, AC-L3, AC-V1, AC-C1, AC-C2, AC-D3]

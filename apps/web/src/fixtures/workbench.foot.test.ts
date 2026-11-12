@@ -8,16 +8,19 @@ import {
   attachedContext,
   contextOptions,
   stageDefinition,
+  stageCounts,
   summaryMatrix,
   wbList,
 } from "./seed/workbench";
+
+const STAGE_INDEX = [0, 1, 2, 3] as const;
 
 describe("W-02 workbench-sessions fixtures", () => {
   it("lists exactly the eight WB-01 rows with via Agent on rows 2 and 5 (AC-L1)", () => {
     const { items, counts } = wbList("wb01-list-e0");
     expect(items).toHaveLength(8);
-    expect(items[0]!.needs_answer).toBe(true);
-    expect(items[1]!.ready_for_review).toBe(true);
+    expect(items[0]?.needs_answer).toBe(true);
+    expect(items[1]?.ready_for_review).toBe(true);
     expect(items.map((r) => r.owner?.via_agent)).toEqual([
       false,
       true,
@@ -34,9 +37,9 @@ describe("W-02 workbench-sessions fixtures", () => {
   it("locks the Copperleaf row and gives it nothing but metadata (AC-V1)", () => {
     const locked = wbList("wb01g-locked-copperleaf").items.filter((r) => r.locked);
     expect(locked.map((r) => r.title)).toEqual(["Explain Copperleaf July→August payroll change"]);
-    expect(locked[0]!.needs_answer || locked[0]!.running || locked[0]!.ready_for_review).toBe(
-      false,
-    );
+    const [only] = locked;
+    if (only === undefined) throw new Error("WB-01 g has a locked row");
+    expect(only.needs_answer || only.running || only.ready_for_review).toBe(false);
   });
 
   it("reads Running 3 at 9:24 and Running 4 from 9:25 (AC-L2)", () => {
@@ -67,6 +70,11 @@ describe("W-02 workbench-sessions fixtures", () => {
       ["New York", 3, 7, 7, 5, 22],
       ["Total", 10, 26, 26, 17, 79],
     ]);
+    // The offices foot down to the Total row, which is the export's own stage counts.
+    const offices = m.slice(0, 3);
+    expect(STAGE_INDEX.map((i) => offices.reduce((a, r) => a + (r.cells[i] ?? 0), 0))).toEqual(
+      stageCounts(),
+    );
     expect(stageDefinition()).toBe(
       "Gather = Not started 2 + Gathering 8 · Prepare = Preparing 9 + Prepared 17 · Review = In review 15 + Action required 11 · Deliver = Ready 7 + Awaiting signature 10",
     );

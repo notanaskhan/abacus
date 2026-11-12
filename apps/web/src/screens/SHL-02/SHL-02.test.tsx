@@ -42,7 +42,7 @@ async function mount(state: Shl02State): Promise<HTMLInputElement> {
       ),
     },
   ]);
-  const input = (await screen.findByRole("combobox")) as HTMLInputElement;
+  const input = await screen.findByRole<HTMLInputElement>("combobox");
   fireEvent.change(input, { target: { value: QUERIES[state] } });
   return input;
 }
@@ -66,7 +66,7 @@ describe("SHL-02 Go…", () => {
     await waitFor(() => {
       expect(groupLabels()).toEqual(["Clients", "Returns", "Binders"]);
     });
-    expect(document.body.textContent ?? "").not.toMatch(/hidden|ethical wall/i);
+    expect(document.body.textContent).not.toMatch(/hidden|ethical wall/i);
   });
 
   it("d: the empty state and one suggestion from visible documents", async () => {
@@ -75,11 +75,14 @@ describe("SHL-02 Go…", () => {
       expect(screen.getByText(COPY.empty("pellstret"))).toBeTruthy();
     });
     expect(screen.getByText(COPY.emptyHint)).toBeTruthy();
-    expect(
-      screen.getByText(
-        COPY.suggestion("Pell Street II LLC", "partner in Ridgeline Property Partners, LP"),
-      ),
-    ).toBeTruthy();
+    // The suggestion arrives with the debounced response, after the empty line.
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          COPY.suggestion("Pell Street II LLC", "partner in Ridgeline Property Partners, LP"),
+        ),
+      ).toBeTruthy();
+    });
   });
 
   it("b: Recent and Create with nothing typed", async () => {

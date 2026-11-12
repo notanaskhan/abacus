@@ -85,7 +85,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     catalogue = importlib.import_module("abacus.modules.notifications.api").CATALOGUE
     # A-07-T22 (DEC-2806): the completion projector follows the facts its checklist reads.
     projector = importlib.import_module("abacus.modules.assurance.completion_projector").SUBSCRIBED
-    assert set(built.handlers) == set(catalogue) | set(projector) | {
+    # P-02-T06 (DEC-4612): the search indexer follows every event a projection names.
+    search = importlib.import_module("abacus.modules.platform.search.indexer").SUBSCRIPTIONS
+    assert set(built.handlers) == set(catalogue) | set(projector) | set(search) | {
         # P-10-T27 (DEC-3117): the real-time invalidations of `/v1/events`.
         "notification.created",
         "request_item.status_changed",
@@ -224,13 +226,16 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         importlib.import_module("abacus.modules.connections.api").on_connection_created
         in built.handlers["connection.created"]
     )
-    assert list(built.handlers[EVIDENCE_VERSION_CREATED]) == [
+    routed = list(built.handlers[EVIDENCE_VERSION_CREATED])
+    assert routed[:2] == [
         worker_main.agents.start_screening,
         # SPEC-029 (TASK-056 D1): every new version is processed, for previews.
         importlib.import_module("abacus.modules.evidence.api").SUBSCRIPTIONS[
             EVIDENCE_VERSION_CREATED
         ],
     ]
+    # P-02-T06 (DEC-4612): then the search indexer, built per lookup (so compared by name).
+    assert len(routed) == 3 and routed[2].__module__ == "abacus.modules.platform.search.indexer"
 
 
 async def test_ac14_the_publisher_runs_every_subscribed_handler_and_ignores_other_events(

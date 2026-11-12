@@ -54,7 +54,6 @@ from abacus.modules.workpapers.api import (
     FormulaError,
     FormulaWorkbook,
     build_formula_graph,
-    canonical_address,
     dirty_cells,
     evaluate_workbook,
 )
@@ -99,11 +98,6 @@ class EditOutcome:
 
 
 # --- pure parts ----------------------------------------------------------------------------------
-
-
-def _dag_key(field_key: str) -> str:
-    sheet, _, a1 = field_key.partition("!")
-    return canonical_address(sheet, a1)
 
 
 def _field_key(dag_key: str) -> str:
@@ -251,8 +245,15 @@ async def edit_cell(
                 formula=None if dependent_formula is None else str(dependent_formula),
             )
         )
+    seqs: dict[str, int] = {}
     async with uow(ctx.tenant) as tx:
-        await write_cells(tx, engagement_id=engagement_id, return_id=return_id, writes=writes)
+        await write_cells(
+            tx, engagement_id=engagement_id, return_id=return_id, writes=writes, seqs=seqs
+        )
+        # Re-checked inside the write's transaction: another edit that landed since the read
+        # makes this one the cell's second version after `expected_version`, and it rolls back.
+        if seqs.get(at.key) != expected_version + 1:
+            raise CellVersionConflict(facts={"current_version": seqs.get(at.key, 1) - 1})
         tx.record(
             "workbook.cell_edited",
             target=Target(WORKBOOK, return_id),

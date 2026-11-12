@@ -1,6 +1,6 @@
 ---
 id: TASK-7611
-title: I-02-T04 protected bundle: briefing matrix rows, today_brief.enabled, module dependencies
+title: "I-02-T04 protected bundle: briefing matrix rows, today_brief.enabled, module dependencies"
 plan_key: I-02-T04
 spec: SPEC-654
 acceptance_criteria: [AC-1]  # allow and deny tests; an agent context refused on all three; flag within its lifetime

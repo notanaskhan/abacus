@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -48,7 +49,7 @@ def test_inv1_download_is_an_export_with_its_conditions() -> None:
 
 @pytest.mark.parametrize("flag", [_flags.WORKBENCH_ENABLED, _flags.WORKBENCH_PLANS])
 def test_flags_default_off_and_expire(flag: _flags.Flag) -> None:
-    assert flag.default is False
+    assert flag.default == "false"  # the generated registry keeps the YAML text
     assert _flags.FLAGS[flag.name] is flag
 
 
@@ -63,9 +64,10 @@ def test_flag_registry_rows_expire_before_the_p02_horizon() -> None:
 
 def _routes(router: object) -> dict[tuple[str, str], str]:
     out: dict[tuple[str, str], str] = {}
-    for route in router.routes:  # type: ignore[attr-defined]
-        for method in route.methods:
-            out[(method, route.path)] = route.openapi_extra[ACTION_KEY]
+    routes = cast(list[Any], getattr(router, "routes"))  # noqa: B009  # Any: FastAPI route objects
+    for route in routes:
+        for method in cast(set[str], route.methods):
+            out[(method, str(route.path))] = str(route.openapi_extra[ACTION_KEY])
     return out
 
 

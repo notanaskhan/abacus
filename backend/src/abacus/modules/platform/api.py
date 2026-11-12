@@ -187,6 +187,7 @@ from abacus.modules.platform.safeguards import register_wisp_document_reader
 from abacus.modules.platform.safeguards_routes import controls_platform_router
 from abacus.modules.platform.search import store as search_store
 from abacus.modules.platform.search.activities import SEARCH_ACTIVITIES
+from abacus.modules.platform.search.activities import drift_firm as search_drift_firm
 from abacus.modules.platform.search.indexer import SUBSCRIPTIONS as SEARCH_SUBSCRIPTIONS
 from abacus.modules.platform.search.indexer import index_object as search_index_object
 from abacus.modules.platform.search.indexer import request_reindex as search_request_reindex
@@ -210,6 +211,8 @@ from abacus.modules.platform.search.workflows import (
     SearchDriftCheckWorkflow,
     SearchReindexWorkflow,
 )
+from abacus.modules.platform.search.workflows import ReindexInput as SearchReindexInput
+from abacus.modules.platform.search.workflows import ReindexPage as SearchReindexPage
 from abacus.modules.platform.security_center_contract import (
     incident_reads_router,
     safeguards_router,
@@ -463,6 +466,8 @@ __all__ = [
     "SearchIndexDocument",
     "SearchProjection",
     "SearchRegistrationInvalid",
+    "SearchReindexInput",
+    "SearchReindexPage",
     "SearchScopeKind",
     "SpendAnomalyWorkflow",
     "StandardsSetRefused",
@@ -540,6 +545,7 @@ __all__ = [
     "schedules",
     "screen_and_store",
     "search_document",
+    "search_drift_firm",
     "search_index_object",
     "search_projection",
     "search_projections",

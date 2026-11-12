@@ -57,7 +57,7 @@ def test_an_agent_client_or_support_principal_holds_nothing(action: str) -> None
 
 def test_the_flag_defaults_off_within_its_lifetime() -> None:
     flag = _flags.FLAGS["today_brief.enabled"]
-    assert flag.default is False
+    assert flag.default == "false"  # the generated registry keeps the YAML text
     rows = yaml.safe_load((ROOT / "docs/architecture/feature-flags/practice.yaml").read_text())
     row = next(r for r in rows["flags"] if r["name"] == "today_brief.enabled")
     created = date.fromisoformat(str(row["created"]))

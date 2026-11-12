@@ -114,17 +114,17 @@ Every route reads only the caller's own brief (`viewer_user_id = caller`), answe
 - Table `daily_briefings` (I-02-T06, `agents`, 0850+): scope `engagement` or `user`, terminal rows
   immutable, identifiers only for the user scope, no TIN or quoted document text.
 
-## Acceptance criteria (the epic's §3, verbatim there)
-- **3.1 Counts equal Home** (I-COUNT): Daniel 3 · 6 · 2 · 0 = 11; Margaret 2 · 0 · 2 · 0 = 4; cells
+## Acceptance criteria (the epic's §3, verbatim there; AC-1 to AC-11 below are 3.1 to 3.11)
+- **AC-1 · 3.1 Counts equal Home** (I-COUNT): Daniel 3 · 6 · 2 · 0 = 11; Margaret 2 · 0 · 2 · 0 = 4; cells
   open HOME-02 filtered; Overdue derived, a subset; no count from model output.
-- **3.2 The fact paragraph**: code-composed sentences from registered facts.
-- **3.3 Engagement briefings**: model why lines, drill-in summary, risk line; verified, by reference.
-- **3.4 Needs you first** and **3.5 Groups**: deterministic order and grouping rules.
-- **3.6 Drill-in and Assign open items**: SHL-17 prefill; reserved items not assignable.
-- **3.7 Ask about your day**: read-only `workbench.assistant` turns bound to the day's brief.
-- **3.8 Building, quiet day, rebuild, history**; **3.9 docked, collapsed, drawer, flag-off**;
-  **3.10 unavailable AI, consent, metadata-only viewers and walls (DF-04, INV-3)**.
-- **3.11 Invariants:** INV-1 to INV-5 and I-COUNT with the tests the epic names.
+- **AC-2 · 3.2 The fact paragraph**: code-composed sentences from registered facts.
+- **AC-3 · 3.3 Engagement briefings**: model why lines, drill-in summary, risk line; verified, by reference.
+- **AC-4 · 3.4 Needs you first** and **AC-5 · 3.5 Groups**: deterministic order and grouping rules.
+- **AC-6 · 3.6 Drill-in and Assign open items**: SHL-17 prefill; reserved items not assignable.
+- **AC-7 · 3.7 Ask about your day**: read-only `workbench.assistant` turns bound to the day's brief.
+- **AC-8 · 3.8 Building, quiet day, rebuild, history**; **AC-9 · 3.9 docked, collapsed, drawer, flag-off**;
+  **AC-10 · 3.10 unavailable AI, consent, metadata-only viewers and walls (DF-04, INV-3)**.
+- **AC-11 · 3.11 Invariants:** INV-1, INV-2, INV-3, INV-4, INV-5 and I-COUNT with the tests the epic names.
 
 ## S40 rows
 T01 (this), T02 screen contracts, T03 Today contract stub, T04 protected bundle, T05 consumer

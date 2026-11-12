@@ -6,7 +6,7 @@ text on screen are removed, and runs of whitespace collapse to one space.
 P-02-T07 (DEC-4613) adds the code-only PII and amount pass: a TIN-shaped token (SSN, ITIN, EIN,
 nine digits run together), any longer digit run (an account number) and a currency amount are
 replaced by `•••`, so no index row holds a TIN or an amount even when a file was named after one
-("Feld 123-45-6789 W-2.pdf"). No model is involved (ADR-050).
+("Feld 900-45-6789 W-2.pdf"). No model is involved (ADR-050).
 """
 
 from __future__ import annotations

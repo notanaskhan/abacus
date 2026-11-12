@@ -10,7 +10,10 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
-from abacus.modules.platform.search.workflows import SearchReindexWorkflow
+from abacus.modules.platform.search.workflows import (
+    SearchDriftCheckWorkflow,
+    SearchReindexWorkflow,
+)
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
 ALL = sorted(HISTORIES.glob("search-reindex-v*.json"))
@@ -24,3 +27,11 @@ def test_the_histories_are_committed() -> None:
 async def test_the_reindex_replays_its_recorded_history(path: Path) -> None:
     history = WorkflowHistory.from_json("search_reindex", path.read_text(encoding="utf-8"))
     await Replayer(workflows=[SearchReindexWorkflow]).replay_workflow(history)
+
+
+DRIFT = HISTORIES / "search-drift-check-v1-nightly.json"
+
+
+async def test_the_drift_check_replays_its_recorded_history() -> None:
+    history = WorkflowHistory.from_json("search_drift", DRIFT.read_text(encoding="utf-8"))
+    await Replayer(workflows=[SearchDriftCheckWorkflow]).replay_workflow(history)

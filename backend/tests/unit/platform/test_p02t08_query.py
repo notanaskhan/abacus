@@ -18,7 +18,11 @@ from abacus.modules.platform.search.errors import SearchQueryInvalid, SearchRate
 def _ctx(role: str = "manager") -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(
-        TenantContext(uuid.uuid4(), "human", str(user)), user, uuid.uuid4(), cast(Any, role), None
+        TenantContext(uuid.uuid4(), "human", str(user)),
+        user,
+        uuid.uuid4(),
+        cast(Any, role),  # Any: the role literal type
+        None,
     )
 
 
@@ -29,7 +33,7 @@ def test_match_ranges_light_each_query_word_once() -> None:
 
 
 def test_a_related_party_match_names_the_party() -> None:
-    row = {
+    row: dict[str, object] = {
         "title": "2025 Form 1065",
         "context": "Ridgeline Property Partners, LP",
         "related": [{"name": "Jonah Feld", "label": "limited partner 25%"}],
@@ -58,7 +62,7 @@ def test_an_unknown_scope_kind_admits_nothing() -> None:
         object_type="p02_odd",
         group="clients",
         read_action="client.read",
-        scope_kind=cast(Any, "portal_scope"),
+        scope_kind=cast(Any, "portal_scope"),  # Any: an invalid scope kind on purpose
         build=build,
         target="CLI-02",
     )

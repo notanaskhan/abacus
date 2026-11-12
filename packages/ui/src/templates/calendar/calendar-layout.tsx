@@ -111,7 +111,13 @@ export function CalendarLayout({
             label={copy.views}
             options={[copy.month, copy.week, copy.list]}
             active={labels[view]}
-            {...(onView === undefined ? {} : { onChange: (l: string) => onView(viewOf(l)) })}
+            {...(onView === undefined
+              ? {}
+              : {
+                  onChange: (l: string) => {
+                    onView(viewOf(l));
+                  },
+                })}
           />
         </div>
         <span className="flex-1" />

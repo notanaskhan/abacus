@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import timedelta
-from uuid import UUID
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
@@ -45,11 +44,6 @@ class ReindexPage:
     object_type: str
     ids: list[str]
     next_cursor: str | None
-
-
-def reindex_workflow_id(tenant_id: UUID, object_type: str | None, client_id: UUID | None) -> str:
-    base = f"search_reindex:{tenant_id}:{object_type or 'all'}"
-    return base if client_id is None else f"{base}:{client_id}"
 
 
 @workflow.defn(name="SearchReindexWorkflow")

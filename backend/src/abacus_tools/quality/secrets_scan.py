@@ -31,6 +31,12 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "backend/src/abacus/modules/tax/entity_run_plan.py",
+        "SECRET-003",
+        "a question step's `question_key` names the question (consent_7216), never a credential"
+        " (T-05-T31)",
+    ),
+    (
         "apps/web/src/screens/TAX-07/copy.ts",
         "SECRET-003",
         "a checkpoint row's `key` names the checkpoint (engineV3), never a credential (T-04-T27)",

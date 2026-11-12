@@ -3,7 +3,7 @@ id: TASK-7601
 title: W-02-T01 SPEC-653 Workbench sessions; ADR check; Q1–Q3, Q6, Q7 settled; upstream inventory
 plan_key: W-02-T01
 spec: SPEC-653
-acceptance_criteria: [AC-1]  # the SPEC names every endpoint, tool, flag and the settled questions
+acceptance_criteria: [AC-L1]  # the SPEC names every endpoint, tool, flag and the settled questions
 risk_zone: red
 status: in-review
 branch: w02-t01-spec

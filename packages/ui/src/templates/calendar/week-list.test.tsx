@@ -19,8 +19,8 @@ const COPY: CalendarCopy = {
   export: "Export",
   previous: "Previous month",
   next: "Next month",
-  more: (n) => `+${n} more`,
-  deadlines: (n) => `${n} deadlines`,
+  more: (n) => `+${String(n)} more`,
+  deadlines: (n) => `${String(n)} deadlines`,
   empty: "No deadlines match these filters.",
   clearFilters: "Clear filters",
   postponed: (d) => `Postponed → ${d}`,
@@ -101,8 +101,12 @@ function Harness(): JSX.Element {
     <div>
       <button
         type="button"
-        onMouseEnter={(e) => p.hover(RIDGELINE, e.currentTarget)}
-        onFocus={(e) => p.focus(RIDGELINE, e.currentTarget)}
+        onMouseEnter={(e) => {
+          p.hover(RIDGELINE, e.currentTarget);
+        }}
+        onFocus={(e) => {
+          p.focus(RIDGELINE, e.currentTarget);
+        }}
         onMouseLeave={p.leave}
       >
         chip

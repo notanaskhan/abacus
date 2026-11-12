@@ -1,6 +1,6 @@
 ---
 id: TASK-7603
-title: W-02-T03 protected bundle: matrix rows, two flags, drill and run-artifact stubs
+title: "W-02-T03 protected bundle: matrix rows, two flags, drill and run-artifact stubs"
 plan_key: W-02-T03
 spec: SPEC-653
 acceptance_criteria: [AC-V4, AC-L5, AC-R3]

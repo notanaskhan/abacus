@@ -154,9 +154,12 @@ async def write_cells(
     return_id: UUID,
     writes: Sequence[CellWrite],
     on_behalf_of_user_id: UUID | None = None,
+    seqs: dict[str, int] | None = None,
 ) -> int:
     """Each cell's next version through `record_value`, in the caller's unit of work (the caller
-    authorised `workbook.edit` or runs a workbook step). Returns the cells written."""
+    authorised `workbook.edit` or runs a workbook step). Returns the cells written; `seqs`, when
+    given, receives each written cell's new version by field key (T-05-T35's in-transaction
+    version check)."""
     written = 0
     for w in writes:
         if w.source not in SOURCES:
@@ -169,7 +172,7 @@ async def write_cells(
             if w.source == "human"
             else ("import" if w.source == "engine_import" else "recompute")
         )
-        await record_value(
+        seq = await record_value(
             tx,
             engagement_id=engagement_id,
             target_type=WORKBOOK,
@@ -182,6 +185,8 @@ async def write_cells(
             citation_ids=w.citation_ids,
             citation_note=w.citation_note,
         )
+        if seqs is not None:
+            seqs[at.key] = seq
         if w.formula:
             await record_value(
                 tx,

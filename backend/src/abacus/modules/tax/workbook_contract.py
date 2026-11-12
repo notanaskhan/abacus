@@ -462,7 +462,7 @@ class WorkbookM2Out(BaseModel):
     ending: Annotated[Decimal, Tri]
     tie: Annotated[TallyState, Internal]
     difference: Annotated[MaybeMoney, Tri] = None
-    lines: Annotated[list[WorkbookM2LineOut], Tri] = Field(default_factory=list)
+    lines: Annotated[list[WorkbookM2LineOut], Tri] = Field(default_factory=list[WorkbookM2LineOut])
     item_l: Annotated[WorkbookItemLOut | None, Tri] = None
 
 
@@ -648,6 +648,16 @@ async def _workbook_read(ctx: AuthContext, return_id: UUID) -> tuple[str, Resour
     return str(loaded.row.form), resource
 
 
+async def _authorise_edit(ctx: AuthContext, resource: Resource) -> None:
+    """A person's cell edit on the return (never an agent's: ADR-005)."""
+    await authorise(ctx, "workbook.edit", resource)
+
+
+async def _authorise_run_start(ctx: AuthContext, resource: Resource) -> None:
+    """A person starts the workbook run (never an agent: ADR-005)."""
+    await authorise(ctx, "workbook_run.start", resource)
+
+
 class RunInProgress(DomainConflict):
     """A workbook run of this return is still open: one at a time (TXP-00)."""
 
@@ -813,7 +823,7 @@ async def entity_edit_cell_route(
 
     await _flag_on(ctx)
     form, resource = await _workbook_read(ctx, return_id)
-    await authorise(ctx, "workbook.edit", resource)
+    await _authorise_edit(ctx, resource)
     loaded = await load_return(ctx, return_id)
     runs = await work_item_runs(ctx.tenant, f"tax_return:{return_id}", 5)
     done = await edit_cell(
@@ -886,7 +896,7 @@ async def entity_start_run_route(
 
     await _flag_on(ctx)
     loaded = await load_return(ctx, return_id)
-    await authorise(ctx, "workbook_run.start", await return_resource(ctx, loaded))
+    await _authorise_run_start(ctx, await return_resource(ctx, loaded))
     ref = f"tax_return:{return_id}"
     if any(r.active for r in await work_item_runs(ctx.tenant, ref, 5)):
         raise RunInProgress(facts={"return_id": str(return_id)})
@@ -990,7 +1000,7 @@ async def entity_journal_entries_route(return_id: UUID, ctx: Ctx) -> WorkbookJou
     await _workbook_read(ctx, return_id)
     return WorkbookJournalEntriesOut(
         items=[
-            WorkbookJournalEntryOut(id=i, kind=k, reference=ref, amount=amount, state=state)  # type: ignore[arg-type]  # C8's kinds
+            WorkbookJournalEntryOut(id=i, kind=k, reference=ref, amount=amount, state=state)
             for i, k, ref, amount, state in await journal_entries(ctx, return_id)
             if k in ("aje", "rje", "tje")
         ]

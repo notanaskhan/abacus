@@ -61,8 +61,8 @@ describe("workbench-sessions consumer (WB-01, WB-02, WB-03)", () => {
 
   it("a locked row carries metadata only (WB-01 g, INV-3)", () => {
     const locked = wbList("wb01g-locked-copperleaf").items.find((r) => r.locked);
-    expect(locked).toBeDefined();
-    expect([locked!.needs_answer, locked!.running, locked!.ready_for_review]).toEqual([
+    if (locked === undefined) throw new Error("WB-01 g has a locked row");
+    expect([locked.needs_answer, locked.running, locked.ready_for_review]).toEqual([
       false,
       false,
       false,

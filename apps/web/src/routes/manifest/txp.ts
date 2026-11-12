@@ -14,7 +14,7 @@ export const txpScreens = {
   "TXP-02": {
     name: "Review › Financials (TB → TTB) · Ridgeline 2025 Form 1065",
     status: "fixture",
-    path: "/tax-returns/$returnId/review/financials",
+    path: "/tax-returns/$returnId/review/$section", // `section: "financials"`
   },
   "TXP-03": {
     name: "Review › Fixed Assets · Ridgeline depreciation register",

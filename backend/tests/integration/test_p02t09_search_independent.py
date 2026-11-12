@@ -19,7 +19,7 @@ import uuid
 from collections.abc import AsyncIterator
 from dataclasses import replace
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import cast
 
 import pytest
 
@@ -155,8 +155,10 @@ class World:
         )
 
 
-def _as(who: Person, role: str = "manager") -> AuthContext:
-    return replace(who.context(), firm_role=cast(Any, role))
+def _as(who: Person) -> AuthContext:
+    """The person as they sign in: no firm role, so engagement membership decides need-to-know
+    (a firm role such as `manager` would read every non-walled engagement, by design)."""
+    return who.context()
 
 
 async def _search(ctx: AuthContext, q: str) -> dict[str, object]:
@@ -176,7 +178,7 @@ async def test_ac_walls_lena_sees_no_ashford_row_count_or_suggestion(world: Worl
     typo = await _search(_as(world.lena), "ashfrd holdngs")
     assert typo["suggestion"] is None
     hannah = await _search(_as(world.hannah), "ashford")
-    assert hannah["total_visible"] >= 1
+    assert cast(int, hannah["total_visible"]) >= 1
 
 
 async def test_ac_walls_the_response_equals_a_corpus_without_the_document(world: World) -> None:
@@ -187,12 +189,12 @@ async def test_ac_walls_the_response_equals_a_corpus_without_the_document(world:
 
 
 async def test_ac_need_to_know_grace_sees_no_engagement_she_is_not_on(world: World) -> None:
-    grace = await _search(_as(world.grace, "staff"), "pbc")
-    assert all(g["group"] != "binders" for g in grace["groups"])  # type: ignore[index, union-attr]
+    grace = await _search(_as(world.grace), "pbc")
+    assert all(g["group"] != "binders" for g in grace["groups"])  # type: ignore[index, union-attr] -- a model_dump JSON value
 
 
 async def test_ac_query_time_wall_removes_the_row_at_once(world: World) -> None:
-    assert (await _search(_as(world.hannah), "feld"))["total_visible"] >= 1
+    assert cast(int, (await _search(_as(world.hannah), "feld"))["total_visible"]) >= 1
     await world.wall(world.hannah, world.feld)
     after = await _search(_as(world.hannah), "feld")
     assert after["groups"] == [] and after["total_visible"] == 0
@@ -215,7 +217,7 @@ async def test_ac_every_result_opens(world: World) -> None:
             found = spec.projection(item.object_type)
             assert found is not None
             await authorise(
-                ctx, found.read_action, query.resource_of(by_id[item.object_id], world.tenant)
+                ctx, found.read_action, await query.resource_of(by_id[item.object_id], ctx)
             )
 
 
@@ -240,11 +242,11 @@ async def test_ac_offshore_tri_rows_are_neither_shown_nor_counted(
 
     async def offshore_refused(ctx: object, action: str, resource: object) -> None:
         if action == "tax_return.read":
-            raise Forbidden(action)
+            raise Forbidden(action, "relationship")
 
     monkeypatch.setattr(query, "authorise", offshore_refused)
     out = await _search(_as(world.hannah), "1040")
-    assert all(g["group"] != "returns" for g in out["groups"])  # type: ignore[index, union-attr]
+    assert all(g["group"] != "returns" for g in out["groups"])  # type: ignore[index, union-attr] -- a model_dump JSON value
     assert out["total_visible"] == 0
 
 
@@ -267,14 +269,14 @@ async def test_ac_a_withdrawn_document_is_deleted(
         == "deleted"
     )
     out = await _search(_as(world.hannah), "feld 2025 pbc")
-    assert all(g["group"] != "binders" for g in out["groups"])  # type: ignore[index, union-attr]
+    assert all(g["group"] != "binders" for g in out["groups"])  # type: ignore[index, union-attr] -- a model_dump JSON value
 
 
 async def test_ac_the_pii_scrub_keeps_a_tin_out_of_a_stored_title(
     world: World, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     async def tin_named(tenant: object, object_id: uuid.UUID) -> SearchIndexDocument | None:
-        return _client_doc(object_id, "Feld 123-45-6789 W-2")
+        return _client_doc(object_id, "Feld 900-45-6789 W-2")
 
     monkeypatch.setattr(spec, "_PROJECTIONS", {})
     spec.register(replace(CLIENTS, build=tin_named))
@@ -282,7 +284,7 @@ async def test_ac_the_pii_scrub_keeps_a_tin_out_of_a_stored_title(
     title = await world.seed.value(
         "SELECT title FROM search_documents WHERE object_id = $1", world.feld
     )
-    assert "123-45-6789" not in str(title) and "6789" not in str(title)
+    assert "900-45-6789" not in str(title) and "6789" not in str(title)
 
 
 async def test_ac_rls_another_firm_sees_nothing(world: World) -> None:

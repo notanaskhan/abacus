@@ -167,7 +167,7 @@ def _ctx() -> AuthContext:
         TenantContext(uuid.uuid4(), "human", str(user)),
         user,
         uuid.uuid4(),
-        cast(Any, "manager"),
+        cast(Any, "manager"),  # Any: the role literal type
         None,
     )
 

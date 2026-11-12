@@ -3,9 +3,7 @@
     "version": "bh-2026.10.3",
     "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
     "snapshot": "2026-09-24T10:20",
-    "slices": [
-      "sampling"
-    ]
+    "slices": ["sampling"]
   },
   "persona": "simone-baptiste",
   "request": "GET /v1/populations/{population_id}",
@@ -29,13 +27,8 @@
       "kind": "general_ledger",
       "pulled_at": "2026-09-24T15:18:00Z",
       "query": {
-        "account_codes": [
-          "1010"
-        ],
-        "kinds": [
-          "Payment",
-          "Bill payment"
-        ],
+        "account_codes": ["1010"],
+        "kinds": ["Payment", "Bill payment"],
         "posted_from": "2026-07-01",
         "posted_to": "2026-09-18",
         "side": "credit"

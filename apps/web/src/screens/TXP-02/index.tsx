@@ -219,7 +219,11 @@ export function TXP02({
           active={VIEW_LABEL[view]}
           {...(onView === undefined
             ? {}
-            : { onChange: (label: string) => onView(label === COPY.byLine ? "line" : "account") })}
+            : {
+                onChange: (label: string) => {
+                  onView(label === COPY.byLine ? "line" : "account");
+                },
+              })}
         />
         <Segmented
           size="small"
@@ -228,7 +232,11 @@ export function TXP02({
           active={STATEMENT_LABEL[statement]}
           {...(onStatement === undefined
             ? {}
-            : { onChange: (label: string) => onStatement(statementOf(label)) })}
+            : {
+                onChange: (label: string) => {
+                  onStatement(statementOf(label));
+                },
+              })}
         />
         {building ? <Spinner size={12} label={COPY.building} showLabel /> : null}
         <span className="flex-1" />

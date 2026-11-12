@@ -21,8 +21,8 @@ const COPY: CalendarCopy = {
   export: "Export",
   previous: "Previous month",
   next: "Next month",
-  more: (n) => `+${n} more`,
-  deadlines: (n) => `${n} deadlines`,
+  more: (n) => `+${String(n)} more`,
+  deadlines: (n) => `${String(n)} deadlines`,
   empty: "No deadlines match these filters.",
   clearFilters: "Clear filters",
   postponed: (d) => `Postponed → ${d}`,
@@ -43,7 +43,7 @@ const chip = (
   ...extra,
 });
 
-const SEP15 = Array.from({ length: 13 }, (_, i) => chip(`c${i}`, "2026-09-15", "due_7"));
+const SEP15 = Array.from({ length: 13 }, (_, i) => chip(`c${String(i)}`, "2026-09-15", "due_7"));
 const CHIPS = [
   ...SEP15,
   chip("Copperleaf", "2026-09-10", "overdue", {

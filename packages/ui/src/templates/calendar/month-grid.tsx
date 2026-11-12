@@ -94,14 +94,30 @@ export function MonthGrid({
   function onKey(e: KeyboardEvent<HTMLDivElement>): void {
     const d = focused;
     const keys: Record<string, () => void> = {
-      ArrowLeft: () => move(addDays(d, -1)),
-      ArrowRight: () => move(addDays(d, 1)),
-      ArrowUp: () => move(addDays(d, -7)),
-      ArrowDown: () => move(addDays(d, 7)),
-      Home: () => move(addDays(d, -weekday(d))),
-      End: () => move(addDays(d, 6 - weekday(d))),
-      PageUp: () => onMonth?.(-1),
-      PageDown: () => onMonth?.(1),
+      ArrowLeft: () => {
+        move(addDays(d, -1));
+      },
+      ArrowRight: () => {
+        move(addDays(d, 1));
+      },
+      ArrowUp: () => {
+        move(addDays(d, -7));
+      },
+      ArrowDown: () => {
+        move(addDays(d, 7));
+      },
+      Home: () => {
+        move(addDays(d, -weekday(d)));
+      },
+      End: () => {
+        move(addDays(d, 6 - weekday(d)));
+      },
+      PageUp: () => {
+        onMonth?.(-1);
+      },
+      PageDown: () => {
+        onMonth?.(1);
+      },
       Enter: () => {
         const n = byDay.get(d)?.length ?? 0;
         if (n > chipsThatFit(cellH, n)) onExpandDay?.(d);
@@ -149,7 +165,7 @@ export function MonthGrid({
                 tabIndex={day === focused ? 0 : -1}
                 aria-label={`${longDay(day)}, ${copy.deadlines(items.length)}`}
                 aria-selected={day === focused}
-                className="flex min-w-0 flex-col gap-[4px] overflow-hidden border-hair border-r-[0.5px] border-b-[0.5px] bg-white p-[4px] outline-none focus-visible:ring-[1.5px] focus-visible:ring-espresso focus-visible:ring-inset"
+                className="flex min-w-0 flex-col gap-[4px] overflow-hidden border-hair border-r-[0.5px] border-b-[0.5px] bg-card p-[4px] outline-none focus-visible:ring-[1.5px] focus-visible:ring-espresso focus-visible:ring-inset"
                 style={{ height: cellH }}
               >
                 <span className="flex h-[22px] items-center gap-[6px]">
@@ -226,7 +242,7 @@ export function DayPopover({
       role="dialog"
       aria-label={day.header}
       data-day-popover={day.date}
-      className="absolute top-[40px] right-[12px] z-10 flex w-[300px] flex-col gap-[6px] rounded-[10px] bg-white p-[12px] shadow-note"
+      className="absolute top-[40px] right-[12px] z-10 flex w-[300px] flex-col gap-[6px] rounded-[10px] bg-card p-[12px] shadow-note"
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose?.();
       }}
