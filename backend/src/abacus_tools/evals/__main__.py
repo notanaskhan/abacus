@@ -61,6 +61,14 @@ def main(argv: list[str]) -> int:
 
         subset = "fast" if args.subset == "fast" else "full"
         return trajectory_main(cast(Path, args.out), subset)
+    if args.agent == "workbench_assistant":  # W-02-T07: workbench.assistant's turn graders
+        from abacus_tools.evals.workbench_assistant import main as workbench_main
+
+        if args.route != "fake":
+            print("workbench_assistant: real routes arrive with W-02-T12 and W-02-T25")
+            return 2
+        subset = "fast" if args.subset == "fast" else "full"
+        return workbench_main(cast(Path, args.out), subset)
     if args.agent == "runtime_conformance" and args.route != "fake":  # P-10-T46: real routes
         from abacus_tools.evals.runtime_conformance_real import real_main as conformance_real
 
