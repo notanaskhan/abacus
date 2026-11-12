@@ -322,7 +322,7 @@ export function T4Artboard({ params }: { params: FixtureParams }): JSX.Element {
   const [log, push] = useIntentLog();
   const still = params.static === true;
   return (
-    <div data-specimen="T4" data-state={state}>
+    <div data-specimen="T4" data-state={state} data-artboard={state}>
       <Window firm={firm}>
         {state === "f" ? (
           <AgentFrame log={push} />
@@ -348,7 +348,7 @@ export function Tpl04Artboard({ params }: { params: FixtureParams }): JSX.Elemen
     : "a";
   const [log, push] = useIntentLog();
   return (
-    <div data-specimen="TPL-04" data-state={frame}>
+    <div data-specimen="TPL-04" data-state={frame} data-artboard={frame}>
       <Window firm={firm}>
         <SessionsFrame
           key={frame}

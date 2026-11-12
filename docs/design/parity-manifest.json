@@ -5854,6 +5854,130 @@
       "mask": [
         "[data-spinner]"
       ]
+    },
+    "tpl-04a.window": {
+      "page": "screens/TPL-04?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-04 Workbench chat specimen - TY2025 season progress by office/screenshots/TPL-04a.png",
+      "sha256": "41759c1313608ed9922cba1b574bb322212f83a3dc48a14e84a51d10a29582ce",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-04b.window": {
+      "page": "screens/TPL-04?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-04 Workbench chat specimen - TY2025 season progress by office/screenshots/TPL-04b.png",
+      "sha256": "25e7054711d14b32ea50de576422ed63533fdd369ace75a69b0213a84fc38cdd",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-04c.window": {
+      "page": "screens/TPL-04?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-04 Workbench chat specimen - TY2025 season progress by office/screenshots/TPL-04c.png",
+      "sha256": "77167294b2b6ef9feaec3faac79079298a1b0dfcdcb7b9f41d3ae9ae7cc840cf",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-04d.window": {
+      "page": "screens/TPL-04?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-04 Workbench chat specimen - TY2025 season progress by office/screenshots/TPL-04d.png",
+      "sha256": "86ee58a47eb2c0ce2a1f2ca6caed0535709d3e2bee5c5c54638f640fa21cd476",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-04e.window": {
+      "page": "screens/TPL-04?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TPL-04 Workbench chat specimen - TY2025 season progress by office/screenshots/TPL-04e.png",
+      "sha256": "720942a5718b4c7f8cc5c86d1725ab01878e928fe445b59b054314d7c8da588a",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "t4a.window": {
+      "page": "screens/T4?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T4 Workbench chat/screenshots/T4a.png",
+      "sha256": "b6ef3304d3d1c7940d56e6a4102235fff9451c84bdd52018c0922a1968edc0cd",
+      "crop": "window",
+      "tier": "D",
+      "deviation": "T4 renders the seed session, not the kit's sample threads (DEC-4510): geometry only, in e2e/visual/tier-d-workbench.spec.ts"
+    },
+    "t4b.window": {
+      "page": "screens/T4?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T4 Workbench chat/screenshots/T4b.png",
+      "sha256": "3d6bf8c4e89acde96c993402d26cea9dac4c092be1d0a276d9716e19c5029a07",
+      "crop": "window",
+      "tier": "D",
+      "deviation": "T4 renders the seed session, not the kit's sample threads (DEC-4510): geometry only, in e2e/visual/tier-d-workbench.spec.ts"
+    },
+    "t4c.window": {
+      "page": "screens/T4?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T4 Workbench chat/screenshots/T4c.png",
+      "sha256": "e62e972947a8a78221a3c57edcd01de548e054fd7067a56d7f0663a5e66951a5",
+      "crop": "window",
+      "tier": "D",
+      "deviation": "T4 renders the seed session, not the kit's sample threads (DEC-4510): geometry only, in e2e/visual/tier-d-workbench.spec.ts"
+    },
+    "t4d.window": {
+      "page": "screens/T4?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T4 Workbench chat/screenshots/T4d.png",
+      "sha256": "1acaa220ce1ad9df133f42e6b0795883a041bf146cdbdc764e3396cee404544e",
+      "crop": "window",
+      "tier": "D",
+      "deviation": "T4 renders the seed session, not the kit's sample threads (DEC-4510): geometry only, in e2e/visual/tier-d-workbench.spec.ts"
+    },
+    "t4e.window": {
+      "page": "screens/T4?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T4 Workbench chat/screenshots/T4e.png",
+      "sha256": "7016187b342020e28f8dc1e69c57e8af09a11c19a5ef9d28b8a30c7792402bc8",
+      "crop": "window",
+      "tier": "D",
+      "deviation": "T4 renders the seed session, not the kit's sample threads (DEC-4510): geometry only, in e2e/visual/tier-d-workbench.spec.ts"
+    },
+    "t4f.window": {
+      "page": "screens/T4?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/T4 Workbench chat/screenshots/T4f.png",
+      "sha256": "1bef1b64de2554edc92346ea31eb50e543a8fce78e61d1b5cc74d37e869ce71f",
+      "crop": "window",
+      "tier": "D",
+      "deviation": "T4 renders the seed session, not the kit's sample threads (DEC-4510): geometry only, in e2e/visual/tier-d-workbench.spec.ts"
     }
   }
 }
