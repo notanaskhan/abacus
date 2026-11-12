@@ -1750,9 +1750,44 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "target_request_item_id",
             }
         ),
+        # T-05-T17 (0821): which partner a draft K-1 is for.
         "k1_packages": frozenset(
-            {"delivery_contact_id", "e_furnishing_consent", "released_at", "status"}
+            {"delivery_contact_id", "e_furnishing_consent", "partner_id", "released_at", "status"}
         ),
+        # T-05-T17 (0821): the entity's return profile, partners, ownership periods, interest
+        # transfers and the allocation waterfall's rungs, edited in place against a version.
+        "entity_return_profiles": frozenset(
+            {
+                "accounting_method",
+                "books_basis",
+                "business_code",
+                "designated_individual_contact_id",
+                "ledger_source",
+                "partnership_representative_contact_id",
+                "principal_activity",
+                "prior_year_return_id",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        "partners": frozenset(
+            {
+                "admitted_on",
+                "display_name",
+                "entity_kind",
+                "kind",
+                "ord",
+                "portal_contact_id",
+                "related_client_entity_id",
+                "updated_at",
+                "withdrawn_on",
+            }
+        ),
+        "ownership_periods": frozenset(
+            {"capital_pct", "loss_pct", "period_from", "period_to", "profit_pct"}
+        ),
+        "interest_transfers": frozenset({"citation_ids", "points", "price", "transfer_date"}),
+        "allocation_rungs": frozenset({"params", "priority", "rule_type"}),
         "k1_recipients": frozenset(
             {
                 "address",

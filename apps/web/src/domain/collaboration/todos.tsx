@@ -126,7 +126,7 @@ export function ToDoRow({
         </span>
       </button>
       {todo.unread ? (
-        <span aria-label="Unread" className="size-[7px] rounded-full bg-red" />
+        <span role="img" aria-label="Unread" className="size-[7px] rounded-full bg-red" />
       ) : null}
       {todo.due_on ? <DueChip dueOn={todo.due_on} today={today} done={done} compact /> : null}
     </li>

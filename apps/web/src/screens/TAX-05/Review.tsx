@@ -146,7 +146,7 @@ export function ReviewPreset({
                         <div
                           key={r.key}
                           data-row={r.key}
-                          aria-selected={r.key === selected}
+                          aria-current={r.key === selected ? "true" : undefined}
                           className={`flex h-[29px] items-center gap-[6px] rounded-[6px] pl-[28px] pr-[4px] text-[12.5px] ${r.key === selected ? "bg-sel-bg font-medium" : ""}`}
                         >
                           <Icon name="file-text" size={13} className="text-ink-3" />

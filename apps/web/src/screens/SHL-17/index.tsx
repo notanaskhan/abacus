@@ -157,11 +157,14 @@ function TodoDetail({
             <dt className="text-ink-2">{COPY.assignee}</dt>
             <dd className="font-medium">{todo.assignee.name}</dd>
           </div>
-          {todo.row_text ? (
-            <p className="px-[12px] py-[8px] text-[12.5px] leading-[1.5] text-ink-2">
-              {todo.row_text}
-            </p>
-          ) : null}
+        </dl>
+        {/* The row's text sits between the two pairs; a <dl> holds only <dt>/<dd> groups. */}
+        {todo.row_text ? (
+          <p className="px-[12px] py-[8px] text-[12.5px] leading-[1.5] text-ink-2">
+            {todo.row_text}
+          </p>
+        ) : null}
+        <dl className="flex flex-col">
           <div className="flex h-[34px] items-center justify-between px-[12px]">
             <dt className="text-ink-2">{COPY.created}</dt>
             <dd className="font-medium">{todo.created_by.name}</dd>

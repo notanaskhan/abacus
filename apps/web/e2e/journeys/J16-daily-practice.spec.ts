@@ -153,9 +153,11 @@ test.describe("J16 · Home mentions band", () => {
   );
 });
 
-// P-05-T15 (TASK-7311; P-05 §10 item 1): J16 A1-A2 on SHL-17 and HOME-01's mention band.
+// P-05-T15 (TASK-7311; P-05 §10 item 1): J16 A1 on SHL-17. A2 (Hannah's Home shows the mention)
+// is "J16 · Home mentions band" above: HOME-01's band stays unwired until Apr 20, 2028 (P-29
+// rule 2), so that step is fixme with I-01 as its owner.
 test.describe("J16 collaboration (P-05-T15)", () => {
-  test("j16 A1–A2: Margaret assigns Marcus a to-do; Hannah's Home shows the mention", async ({
+  test("j16 A1: Margaret assigns Marcus a to-do and nothing blocks sign-off", async ({
     journey,
   }) => {
     test.fixme(journey.project !== "fixture", P05_LIVE);
@@ -173,10 +175,6 @@ test.describe("J16 collaboration (P-05-T15)", () => {
         page.getByText("Assigned to you by Margaret Okonkwo · 12:36 PM").first(),
       ).toBeVisible();
       await nothingBlocks(page);
-    });
-    await journey.as("hannah-leclerc", "/components/screens/HOME-01?st=h&as=hannah-leclerc");
-    await journey.step("J16 A2: Hannah's Home shows Margaret's mention", async (page) => {
-      await expect(page.getByText("Margaret Okonkwo mentioned you").first()).toBeVisible();
     });
   });
 });

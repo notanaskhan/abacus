@@ -276,10 +276,11 @@ test.describe("J06 1040 season · review slice (T-04-T32)", () => {
   });
 
   test("j06 10 final approval blocked by Draft K-1", async ({ journey }) => {
-    await journey.as("samuel-ito", artboard("TAX-05", "f", "samuel-ito"));
+    await journey.as("samuel-ito", artboard("TAX-05", "e", "samuel-ito"));
     await journey.step("J06 step 10: final approval waits on the released K-1", async (page) => {
       await onScreen(page, "TAX-05");
       await expect(page.getByText("Draft K-1 · pre-release").first()).toBeVisible();
+      await expect(page.getByRole("button", { name: "Request final approval…" })).toBeDisabled();
       await noUnapprovedDecision(page);
     });
   });
