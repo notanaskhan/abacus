@@ -126,3 +126,11 @@ export { SigningCeremony } from "./signing-ceremony/SigningCeremony";
 export * from "./document-on-well";
 // T6 WorkbookLayout (F-06-T18): control bar, tally strip and statement panes on the F-05 grammars.
 export * from "./workbook";
+// T4 WorkbenchLayout (F-07-T02; SPEC-652 AC-1).
+export {
+  WORKBENCH_GEOMETRY,
+  WORKBENCH_TABS,
+  WorkbenchLayout,
+  type WorkbenchLayoutProps,
+  type WorkbenchTab,
+} from "./workbench-layout";
