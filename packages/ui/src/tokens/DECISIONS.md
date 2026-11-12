@@ -694,3 +694,17 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 | 2026-10-31 | Paper header | The T10 paper-header strip stays reported (the F-06-T13 review's 2.26 % kit-chrome deviation) on every T10 and TPL-10 state until the kit's header is redrawn                                         |
 | 2026-10-31 | Tier D added | `e2e/visual/tier-d-workbook.spec.ts` (tabsbar 50, control bar 44, tally 52, panes y244–848 for T6 and TPL-06 a–e); `tier-d-document.spec.ts` gains T10c–e (clause rows 34) and TPL-10a–d              |
 | 2026-10-31 | Freeze       | `docs/design/kit-freeze.json` pins the T6 and T10 kits and SignOffSlots; `kit-freeze.test.ts` fails on a change between Sep 1 and Oct 20, 2027; refresh the pins in the last batch before Sep 1       |
+
+### Tier-4 kickoff: T4, T13, T14, T17 (F-07-T01)
+
+| Date       | Item              | Decision                                                                                                                                                                                                 |
+| ---------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-12 | Item kinds        | The handoff's thread kinds (`block`, `error`, `file`) map to C6 v2's `agent_blocks`, a failed `tool_card` and `artifact`; the registry is keyed by C6's eight kinds (SPEC-652 AC-4), never the handoff's |
+| 2026-11-12 | Slot kinds        | `approval`, `decision_ref` and `run_card` are not C6 item kinds; they are consumer slots the host registers. With none registered the neutral row renders                                                |
+| 2026-11-12 | ToolCard          | P-09 shipped no `ToolCard`/`RunCard`/`ProgressCard` in `packages/ui` (the AUD-02 dock draws rows in `domain/agents/RunPane.tsx`); F-07-T03 adds `ToolCardRow` and logs the gap against P-09            |
+| 2026-11-12 | T-board data      | The T4 board's "bank download failed" sample is placeholder; T4 states are built from the TPL-04 fixtures (§11 R5)                                                                                       |
+| 2026-11-12 | Viewers           | TPL-14 is Olivia Brandt on every artboard and TPL-17 Daniel Reyes (the README's client-persona viewers are labelling errors, chapter 09 §9.6.1)                                                          |
+| 2026-11-12 | T14b, T17         | T14b selects Pell Street Ventures LLC (Calder Family Trust is not a Ridgeline partner); T17a uses Jonah Feld and T17b Pell Street II LLC                                                                 |
+| 2026-11-12 | Draft status      | `filing_deadline` words live in `packages/ui/src/tier4/draft-status.ts` until F-07-T25 adds them to C2 (no status-YAML edit inside the window)                                                          |
+| 2026-11-12 | Calendar picker   | T13 does not retrofit the earlier date pickers onto one MonthGrid (§11 R10)                                                                                                                              |
+| 2026-11-12 | Graph layout      | No `@dagrejs/dagre`: a hand-rolled layered layout unless it fails (§11 R9; DEC-16)                                                                                                                       |
