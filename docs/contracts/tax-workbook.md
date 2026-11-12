@@ -54,6 +54,8 @@ The P-10 run API (`/v1/agent-runs/{run}` …), P-04's sign-off, proposal, issue 
 | Opportunities | `GET /v1/tax-returns/{id}/opportunities` | `tax_memo.read` |
 | Accrued vs the engine | `GET /v1/tax-returns/{id}/reconciliation?checkpoint=` | `tax_reconciliation.read` |
 
+Served so far (S40): the trial balance, its tallies and journal entries (T-05-T33, DEC-4618); Schedule K, the Form 8825 breakdown, capital accounts and the M-2 (T-05-T34, DEC-4619). T-05-T34 adds, additively: `WorkbookCapitalRowOut.name`, `WorkbookCapitalAccountsOut.totals` and `.item_l`, `WorkbookM2Out.lines` and `.item_l` (Item L's ending capital against the M-2's line 9: `tie`, or `off` with the difference).
+
 ## 2. Models and classification
 Pydantic models in the code file, every field classified. Every workbook value, formula, memo body, K-1 or partner payload and figure is tax return information (Restricted, `tri`; C19). A partner's TIN is never in a response: `tin_last4` only; the reveal is P-12's logged path (`tin.reveal`, step-up MFA, `not_offshore`). Money is exact `Decimal` with two places.
 
