@@ -35,3 +35,11 @@ floors:
   # profile (abacus_tools.loadtest.a07_budgets, checked on staging): release <= 3 s, lock enqueue
   # <= 500 ms, the Northwind seal <= 2 min, archived_guard() overhead <= 2 ms per row.
   assurance/release_archive: 0
+  # P-10-T52 (DEC-4402): two new scopes, target 75 (ADR-079): runtime v2 (agents/runtime: the plan
+  # rules, AgentRunWorkflow and its activities, waits, commands, the approved write, undo, session
+  # turns, the harness, C17's runtime) and the SSE stream (kernel/realtime). Each floor starts at 0
+  # and is raised to the scope's first weekly baseline after survivor triage, as for `review`.
+  # p95 budgets under the x25 profile (abacus_tools.loadtest.p10_budgets, checked on staging):
+  # plan approve <= 400 ms, stream first byte <= 500 ms.
+  agents/runtime: 0
+  kernel/realtime: 0

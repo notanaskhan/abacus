@@ -32,6 +32,9 @@ line:
   review: 0
   # A-07-T45 (ADR-079): release and archive are a red scope; raised to their first measured baseline.
   assurance/release_archive: 0
+  # P-10-T52 (DEC-4402): runtime v2 and the SSE stream; raised to their first measured baseline.
+  agents/runtime: 0
+  kernel/realtime: 0
 branch:
   identity/authz: 52
   kernel/db: 77
@@ -44,3 +47,5 @@ branch:
   signatures: 0
   review: 0
   assurance/release_archive: 0
+  agents/runtime: 0
+  kernel/realtime: 0
