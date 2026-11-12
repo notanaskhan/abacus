@@ -714,3 +714,4 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 | 2026-11-12 | TAX-11b viewer  | Daniel Reyes is the viewer; "Jonah Feld" names the K-1 recipient (same labelling error as TPL-17e)                                                                                     |
 | 2026-11-12 | Watermark       | DEC-78's "Draft — not for filing", inside the server-rendered page image; the kit never draws or removes it (§11 R4)                                                                      |
 | 2026-11-12 | Saved prompts   | WB-01h/i and WB-02g/h are W-03's WB-12 picker in a consumer slot prefilling the Composer; no T4 prop (DF-43 open)                                                                          |
+| 2026-11-12 | T13 chip fit    | F-07-T10 (DEC-4625): `chipsThatFit(height, n)`: numeral 26 + pad 8 + n × (22 + 4), leaving 18 for "+n more"; 3 at 144 h, cap 4. The done check draws at 12 px (registry floor) |
