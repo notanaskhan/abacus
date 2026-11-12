@@ -122,3 +122,30 @@ with the register's in-SLA ignores.
 Acceptance ("no high or critical dependency or image finding older than its SLA at the quarter's
 end") is met as of 2026-11-12. It stays met only if the js-yaml decision lands by Dec 3 and the
 base digest is refreshed by Dec 7.
+
+## 2028 Q2 (Q-03-T268, run 2026-11-12 on the plan's S40)
+Local runs on the S40 stack (main 09639107a plus the S40 branches #1812–#1849). CI's
+`security.yml` runs once, on the batch's last merge; Trivy (fs, IaC, image) and Inspector need
+built images and are not re-run here.
+- **pip-audit** 2.9.0 on `uv export --locked` with hashes: no known vulnerabilities.
+- **bandit**, high severity at medium confidence, `backend/src`: 1 finding, **B613** (trojan
+  source) in `platform/search/scrub.py`, P-02-T06's hostile-character pattern written with literal
+  bidi and zero-width characters. Fixed the same day as escapes (same character set, asserted);
+  P-02-T06/T07's two tests that carried literal bidi characters in strings are escaped too.
+  Re-run: 0 findings. Register: B613 (scrub.py) seen and closed 2026-11-12.
+- **pnpm audit** (high and above): the 3 high js-yaml findings under `@hey-api/openapi-ts`
+  (build-time only; GHSA-52cp-r559-cp3m, GHSA-5p4m-2wfm-xmqj, GHSA-2883-xcg3-v3hh) still stand.
+  They are due 2026-12-03 and need the protected-manifest override PR, which is the user's call.
+- **CodeQL** (open alerts, read through the API): 3 medium, below the high/critical bar, all false
+  positives:
+  - #28 `py/url-redirection` in `portal/approvals_contract.py`: a same-origin path from the
+    router prefix and a registered kind.
+  - #22 and #10 `py/overly-large-range`: deliberate control-character ranges.
+
+  Dismissing them in code scanning is the user's call.
+- **Trivy image**: CVE-2026-76844 and CVE-2026-85091 (zlib1g in the pinned
+  `python:3.12-slim` digest) are due **2026-12-07**. `supply_chain report --quarter 2026Q4` says
+  they pass their SLA unless the base digest is bumped first, so the digest-bump PR has to land
+  before Dec 7.
+- **uv.lock refresh and base-image digests**: not done here. Both are protected-manifest PRs that
+  need `make check` and the replay histories green.
