@@ -15,7 +15,7 @@ import {
   time,
   weekdayDate,
 } from "@abacus/ui";
-import { meOptions } from "@abacus/api-client/query";
+import { listTodosOptions, meOptions, notificationFeedOptions } from "@abacus/api-client/query";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow, useToday } from "../../app-core/clock";
@@ -33,6 +33,8 @@ import {
   useHome,
   useWaitingOnYou,
 } from "../../domain/home";
+import { HomeBands } from "../../components/screens/HOME-01/HomeBands";
+import { feedHref } from "../../shell/notifications";
 import { COPY } from "./copy";
 
 // HOME-01 · Home dashboard, the main region (I-01-T06; docs/screens/HOME-01.md). T11
@@ -407,9 +409,11 @@ export interface HomeQueueProps {
   office: string | null;
   hrefOf?: (gate: HumanGateOut) => string | undefined;
   work: HomeOut["your_work"] | undefined;
+  /** I-01-T27: HOME-01 R2's To-dos and Mentions bands, after "Approvals & sends" (P-05's flag). */
+  bands?: ReactNode;
 }
 
-function Queue({ counts, gates, office, hrefOf, work }: HomeQueueProps): JSX.Element {
+function Queue({ counts, gates, office, hrefOf, work, bands }: HomeQueueProps): JSX.Element {
   const now = useNow();
   const today = useToday();
   const tz = useSession().tz ?? undefined;
@@ -428,6 +432,7 @@ function Queue({ counts, gates, office, hrefOf, work }: HomeQueueProps): JSX.Ele
           {...(hrefOf === undefined ? {} : { hrefOf })}
         />
       )}
+      {bands}
       {work != null && work.rows.length > 0 && <YourWork work={work} />}
     </>
   );
@@ -455,6 +460,17 @@ export function HOME01({
   const list = useWaitingOnYou();
   const now = useNow();
   const briefOn = useFlag("today_brief.enabled") === true;
+  // I-01-T27 (DEC-4512): R2's bands ride P-05's `collaboration.v2`; off restores the pre-R2
+  // composition exactly. They never count into the header's number.
+  const bandsOn = useFlag("collaboration.v2") === true;
+  const myTodos = useQuery({
+    ...listTodosOptions({ query: { assignee: "me", status: "open" } }),
+    enabled: bandsOn,
+  });
+  const mentions = useQuery({
+    ...notificationFeedOptions({ query: { tab: "mentions", limit: 5, days: 1 } }),
+    enabled: bandsOn,
+  });
   // I-01-T23: a row opens its gate selected in HOME-02 (`home.approvals` retired).
   const rowHref = hrefOf ?? ((gate: HumanGateOut) => approvalsHref(gate.id));
   const tz = session.tz ?? "America/Chicago";
@@ -505,6 +521,20 @@ export function HOME01({
       office={office}
       hrefOf={rowHref}
       work={view?.your_work}
+      bands={
+        bandsOn && myTodos.data !== undefined && mentions.data !== undefined ? (
+          <HomeBands
+            todos={myTodos.data.items}
+            mentions={mentions.data.items.filter((m) => m.kind === "mention")}
+            dueLabel={(iso) => date(iso, { now, tz })}
+            timeLabel={(iso) => time(iso, { tz })}
+            onOpenMention={(item) => {
+              const where = feedHref(item);
+              if (where !== null) open(where.to);
+            }}
+          />
+        ) : undefined
+      }
     />
   );
   return (

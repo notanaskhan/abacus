@@ -37,20 +37,35 @@ import { capabilitiesFor, meV3For, officeIdOf } from "../seed/shell";
 const E0 = seedScenario();
 const seed = getSeed();
 
-function capabilities(persona: string | undefined, brief: boolean): CapabilitiesOut {
+function capabilities(
+  persona: string | undefined,
+  brief: boolean,
+  collaboration = false,
+): CapabilitiesOut {
   const base = capabilitiesFor(seed, persona ?? "daniel-reyes");
   return {
     ...base,
-    flags: { ...base.flags, "today_brief.enabled": brief },
+    flags: {
+      ...base.flags,
+      "today_brief.enabled": brief,
+      // I-01-T27: R2's bands ride P-05's flag; off is the pre-R2 composition.
+      ...(collaboration ? { "collaboration.v2": true } : {}),
+    },
   };
 }
 
 function at(
   state: string,
   persona: string,
-  options: { clock?: string; brief?: boolean; handlers?: Record<string, FixtureHandler> } = {},
+  options: {
+    clock?: string;
+    brief?: boolean;
+    handlers?: Record<string, FixtureHandler>;
+    bands?: BandFrame;
+  } = {},
 ): Scenario {
   const brief = options.brief ?? true;
+  const bands = options.bands;
   return {
     state,
     persona,
@@ -59,7 +74,9 @@ function at(
       ...E0.handlers,
       ...homeHandlers(),
       ...humanGateHandlers(seed),
-      "GET /v1/me/capabilities": ({ persona: who }) => json(capabilities(who, brief)),
+      "GET /v1/me/capabilities": ({ persona: who }) =>
+        json(capabilities(who, brief, bands !== undefined)),
+      ...(bands === undefined ? {} : bandHandlers(bands)),
       // `/v1/me` v3: the firm's offices name the Office chip's options.
       "GET /v1/me": ({ persona: who }) => json(meV3For(seed, who ?? persona)),
       ...options.handlers,
@@ -88,7 +105,30 @@ export const scenarios = defineScenarios({
   "tile-popover": at("tile-popover", "daniel-reyes"),
   "today-brief-off": at("today-brief-off", "daniel-reyes", { brief: false }),
   walled: at("walled", "lena-park"),
+  // I-01-T27: the live composition with `collaboration.v2` on: R2's bands after Approvals & sends.
+  "bands-a2": at("bands-a2", "daniel-reyes", { bands: "a2" }),
+  "bands-h": at("bands-h", "hannah-leclerc", { clock: HOME_AFTERNOON, bands: "h" }),
+  "bands-i": at("bands-i", "marcus-delaney", { clock: HOME_AFTERNOON, bands: "i" }),
 });
+
+/** I-01-T27: P-05's My to-dos and the mentions feed answer the band frame's seeded rows. */
+function bandHandlers(frame: BandFrame): Record<string, FixtureHandler> {
+  return {
+    "GET /v1/todos": () => {
+      const todos = [...BAND_SCENARIOS[frame].todos];
+      return json({ items: todos, total: todos.length, next_cursor: null });
+    },
+    "GET /v1/notifications/feed": () => {
+      const mentions = [...BAND_SCENARIOS[frame].mentions];
+      return json({
+        items: mentions,
+        counts: { approvals: 0, client_activity: 0, mentions: mentions.length },
+        next_cursor: null,
+        unread_count: mentions.filter((m) => !m.read).length,
+      });
+    },
+  };
+}
 
 /** The office each state opens on (null: all offices): office-denver opens on Denver. */
 export const OFFICE: Readonly<Partial<Record<keyof typeof scenarios, string>>> = {

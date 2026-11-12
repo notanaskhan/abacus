@@ -417,3 +417,46 @@ describe("HOME-01 rows open HOME-02 (I-01-T21, T23)", () => {
     }
   });
 });
+
+// I-01-T27 (TASK-7512): R2's To-dos and Mentions bands in the live composition behind P-05's
+// `collaboration.v2`. "HOME-01 shows the h and i bands with the header count unchanged at 11 for
+// Daniel, and turning the flag off restores the pre-R2 composition."
+describe("HOME-01 R2 bands wired (I-01-T27)", () => {
+  async function bandsShown(): Promise<HTMLElement | null> {
+    await settled();
+    return document.querySelector<HTMLElement>("[data-home='r2-bands']");
+  }
+
+  it("a2: Daniel sees both bands empty and the header still 11", async () => {
+    show("bands-a2");
+    await waitFor(() => {
+      expect(document.querySelector("[data-home='r2-bands']")).not.toBeNull();
+    });
+    const bands = await bandsShown();
+    expect(within(bands!).getByRole("region", { name: "To-dos" })).toBeTruthy();
+    expect(within(bands!).getByRole("region", { name: "Mentions" })).toBeTruthy();
+    expect(within(pane()).getAllByText("11").length).toBeGreaterThan(0);
+  });
+
+  it("h: Hannah's mentions band and i: Marcus's to-dos band render from data", async () => {
+    show("bands-h");
+    await waitFor(() => {
+      expect(document.querySelector("[data-home='r2-bands']")).not.toBeNull();
+    });
+    expect(document.querySelectorAll("[data-home-band='Mentions'] li").length).toBeGreaterThan(0);
+    cleanup();
+    restore?.();
+    show("bands-i");
+    await waitFor(() => {
+      expect(document.querySelector("[data-home-band='To-dos'] li")).not.toBeNull();
+    });
+  });
+
+  it("flag off: the pre-R2 composition, and no to-do or feed call", async () => {
+    const seen = show("a");
+    await settled();
+    expect(document.querySelector("[data-home='r2-bands']")).toBeNull();
+    expect(seen.calls.some((c) => c.includes("/v1/todos"))).toBe(false);
+    expect(seen.calls.some((c) => c.includes("/v1/notifications/feed"))).toBe(false);
+  });
+});
