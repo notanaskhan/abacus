@@ -260,6 +260,7 @@ import { ReviewPreset, FRAMES as TAX05_FRAMES } from "./TAX-05";
 import { Issues as Tax06Issues, FRAMES as TAX06_FRAMES } from "./TAX-06";
 import { Activity as Tax07Activity, FRAMES as TAX07_FRAMES } from "./TAX-07";
 import { WorksheetEditor, FRAMES as TXI01_FRAMES } from "./TXI-01";
+import { K1Resolver, FRAMES as TXI02_FRAMES } from "./TXI-02";
 import { FRAMES as AUD25_FRAMES } from "./AUD-25/copy";
 import { POR08 } from "./POR-08";
 import {
@@ -3720,6 +3721,18 @@ registerScreen("TXI-01", {
     return (
       <div data-artboard={st} className="h-[900px]">
         <WorksheetEditor frame={st} />
+      </div>
+    );
+  },
+});
+// T-04-T40: TXI-02 on the gallery, one artboard per state (a–e).
+registerScreen("TXI-02", {
+  title: "K-1 treatment resolver",
+  Component: ({ params }) => {
+    const st = pick(TXI02_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[900px]">
+        <K1Resolver frame={st} />
       </div>
     );
   },
