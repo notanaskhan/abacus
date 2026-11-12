@@ -23,6 +23,7 @@ K-1 tools read "pass-through" (`tax.read_pass_through_activity`, …).
 | `tax.propose_pass_through_treatments` | propose | `pass_through_treatments` |
 | `tax.propose_residency` | propose | `residency` |
 | `tax.propose_account_mappings` | propose | `tax_account_mapping` on an entity return (T-05-T23) |
+| `tax.propose_allocation_structure` | propose | `allocation_structure` on a return (T-05-T36) |
 """
 
 from __future__ import annotations
@@ -557,3 +558,67 @@ async def propose_account_mappings(agent: AgentContext, args: AccountMappingsIn)
         for m in args.mappings
     ]  # fmt: skip
     return await _propose(agent, ACCOUNT_MAPPING, "Proposed account mappings", rows)
+
+
+# --- T-05-T36 (DEC-4621): the agreement reader's allocation structure -------------------------
+
+ALLOCATION_STRUCTURE: Final = "allocation_structure"
+
+
+class StructureParameter(BaseModel):
+    """One verified parameter: code checked the quote is in the cited clause before this call."""
+
+    model_config = _cfg()
+
+    parameter: Annotated[str, Field(pattern=r"^(kind|method|convention|rungs|transfers)$"), Int]
+    value: Annotated[str | list[dict[str, str]], Tri]
+    clause: Annotated[str, Field(min_length=1, max_length=40), Int]
+    quote: Annotated[str, Field(min_length=1, max_length=400), Tri]
+
+
+class AllocationStructureIn(_Targeted):
+    return_id: Annotated[UUID, Int]
+    parameters: Annotated[list[StructureParameter], Field(max_length=5), Tri]
+    question: Annotated[str | None, Field(pattern=r"^convention$"), Int] = None
+
+
+@agent_tool(
+    name="tax.propose_allocation_structure", kind="propose", action="proposal.create",
+    data_class="tri", input_model=AllocationStructureIn, output_model=ProposedOut,
+)  # fmt: skip
+async def propose_allocation_structure(
+    agent: AgentContext, args: AllocationStructureIn
+) -> ProposedOut:
+    """One row per verified parameter on the return (`structure:<parameter>`), its cited
+    clause as the row's rationale (code verified the quote in it before this call); the open
+    §706(d) question is a row of its own. A manager approves the structure at L3 (T-05-T41);
+    nothing is allocated here."""
+    import json
+
+    _, work_item = await _return_of(agent, args)
+    if work_item != args.return_id:
+        raise NotFound("tax_return")
+    names = [p.parameter for p in args.parameters]
+    if len(set(names)) != len(names) or (not names and args.question is None):
+        raise NotFound("tax_return")  # a repeated or empty structure is no proposal (fail closed)
+    rows = [
+        ProposedRow(
+            target_type=ALLOCATION_STRUCTURE, target_id=args.return_id,
+            field_key=f"structure:{p.parameter}", label=p.parameter.capitalize(), before=None,
+            after={
+                "t": "text",
+                "v": p.value if isinstance(p.value, str) else json.dumps(p.value, sort_keys=True),
+            },
+            cause="agent_proposal", rationale_ref=f"clause:{p.clause}",
+        )
+        for p in args.parameters
+    ]  # fmt: skip
+    if args.question is not None:
+        rows.append(
+            ProposedRow(
+                target_type=ALLOCATION_STRUCTURE, target_id=args.return_id,
+                field_key="structure:convention_question", label="Convention question",
+                before=None, after={"t": "text", "v": args.question}, cause="agent_proposal",
+            )
+        )  # fmt: skip
+    return await _propose(agent, ALLOCATION_STRUCTURE, "Proposed allocation structure", rows)

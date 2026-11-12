@@ -1,0 +1,1 @@
+Propose an entity return's allocation structure: kind, method, convention, rungs and transfers, each with the agreement clause and the exact words it rests on, and the convention question when the agreement is silent or conflicting. Creates one proposal for a manager to approve; nothing is allocated until they do.
