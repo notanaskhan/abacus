@@ -1238,6 +1238,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.ebp_form5500.DraftNotTied
+  form_line_key_unknown:
+    status: 422
+    raised_by:
+    - abacus.modules.ledger.tax_form_mapping.FormLineKeyUnknown
+    summary: The key is not a mappable line of the set version the mapping set names.
   fraud_session_invalid:
     status: 422
     raised_by:

@@ -145,7 +145,12 @@ async def catalogue_rows(
 
 
 async def mapping_set_for(session: AsyncSession, tb_id: UUID) -> MappingSet | None:
-    return await session.scalar(select(MappingSet).where(MappingSet.trial_balance_id == tb_id))
+    """The TB's financial-statement set (a tax form-line set beside it is T-05-T26's)."""
+    return await session.scalar(
+        select(MappingSet).where(
+            MappingSet.trial_balance_id == tb_id, MappingSet.taxonomy_kind == "fs_line"
+        )
+    )
 
 
 async def get_mapping_set(session: AsyncSession, mapping_set_id: UUID) -> MappingSet | None:

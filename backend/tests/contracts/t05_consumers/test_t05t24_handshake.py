@@ -103,9 +103,6 @@ def test_c9_the_mapping_set_and_rows_carry_what_the_workbook_reads() -> None:
     )
 
 
-@pytest.mark.xfail(
-    reason="T-05-T26 (C9 tax form-line taxonomy) has not landed (TASK-7408)", strict=True
-)
 def test_c9_a_mapping_set_names_its_taxonomy_and_reference_set() -> None:
     props = _props(c9.MappingSetSummaryOut)
     assert {"taxonomy_kind", "reference_set_version_id"} <= props
@@ -113,9 +110,6 @@ def test_c9_a_mapping_set_names_its_taxonomy_and_reference_set() -> None:
     assert "tax_form_line" in kinds and "fs_line" in kinds
 
 
-@pytest.mark.xfail(
-    reason="T-05-T26 (C9 tax form-line taxonomy) has not landed (TASK-7408)", strict=True
-)
 def test_c9_a_row_maps_to_a_form_line_key() -> None:
     assert "form_line_key" in _props(c9.AccountMappingOut)
 

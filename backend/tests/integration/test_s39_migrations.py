@@ -204,3 +204,22 @@ def test_0841_the_tax_scope_triggers_guard_tjes_and_tax_only_lines(
         _value(private_db, "SELECT prosrc FROM pg_proc WHERE proname = 'proposed_entry_tax_scope'")
     )
     assert "tax_return" in body and "tax_only" in body
+
+
+def test_0842_mapping_sets_carry_one_taxonomy_target(private_db: sc.Database) -> None:
+    names = {
+        str(r["conname"])
+        for r in asyncio.run(
+            Seeder(private_db.superuser_dsn).rows(
+                "SELECT conname FROM pg_constraint c JOIN pg_class t ON t.oid = c.conrelid "
+                "WHERE t.relname IN ('mapping_sets', 'mapping_set_edits')"
+            )
+        )
+    }
+    assert {"mapping_sets_one_taxonomy_target", "mapping_sets_one_per_taxonomy"} <= names
+    assert "mapping_set_edits_one_target" in names
+    assert "mapping_sets_tenant_id_trial_balance_id_key" not in names
+    assert _value(
+        private_db,
+        "SELECT count(*) FROM pg_trigger WHERE tgname = 'mapping_set_edits_taxonomy'",
+    )

@@ -104,10 +104,12 @@ INSERT_COLUMNS.update(
             | {"created_by"}
             # 0582 (DEC-1769): the prior-year source, fixed at insert
             | {"prior_source", "predecessor_evidence_version_id", "predecessor_keys"}
+            | {"taxonomy_kind", "reference_set_version_id"}  # T-05-T26 (0842)
         ),
         "mapping_set_edits": frozenset(
             {"tenant_id", "mapping_set_id", "account_code", "fs_line_id", "edited_by"}
             | {"actor_kind"}
+            | {"form_line_key"}  # T-05-T26 (0842)
         ),
     }
 )

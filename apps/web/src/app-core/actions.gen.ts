@@ -563,6 +563,7 @@ export const ACTIONS = [
   "support_session.read",
   "tax_authorization.manage",
   "tax_election.manage",
+  "tax_mapping.approve",
   "tax_memo.draft",
   "tax_memo.edit",
   "tax_memo.read",

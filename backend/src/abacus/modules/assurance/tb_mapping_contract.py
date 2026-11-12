@@ -161,6 +161,9 @@ class SignOffChipOut(BaseModel):
     stale: Annotated[bool, classified("internal")]
 
 
+TaxonomyKind = Literal["fs_line", "tax_form_line"]  # T-05-T26 (0842)
+
+
 class MappingSetSummaryOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -179,6 +182,9 @@ class MappingSetSummaryOut(BaseModel):
     tallies: Annotated[MappingTalliesOut, classified("internal")]
     sign_offs: Annotated[list[SignOffChipOut], classified("internal")]
     content_hash: Annotated[str, classified("internal")]
+    # T-05-T26 (DEC-4518): the set's taxonomy, and for a tax set the C21 version it maps to.
+    taxonomy_kind: Annotated[TaxonomyKind, classified("internal")] = "fs_line"
+    reference_set_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class AccountMappingOut(BaseModel):
@@ -200,6 +206,8 @@ class AccountMappingOut(BaseModel):
     edited_by_initials: Annotated[str | None, classified("internal")]
     edited_at: Annotated[datetime | None, classified("internal")]
     seen_version: Annotated[int, Field(ge=0), classified("internal")]  # edits so far
+    # T-05-T26: a tax set's row target (a Form 1065 line key: "L9a", "K 18a").
+    form_line_key: Annotated[str | None, classified("internal")] = None
 
 
 class GroupSubtotalOut(BaseModel):
