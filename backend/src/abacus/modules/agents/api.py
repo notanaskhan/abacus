@@ -180,7 +180,11 @@ from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scen
     record_synthetic_run,
 )
 from abacus.modules.agents.run_stream import badge_stream as agent_badge_stream  # P-10-T26
+
+# DEC-4417: an owner's own decision cards held by a run step (planning materiality).
+from abacus.modules.agents.run_waits import HeldCard as HeldCard
 from abacus.modules.agents.run_waits import on_decision_decided
+from abacus.modules.agents.run_waits import register_decision_source as register_decision_source
 from abacus.modules.agents.run_waits import run_workflow_id as run_workflow_id
 from abacus.modules.agents.run_workflow import AgentRunInput as AgentRunInput
 from abacus.modules.agents.run_workflow import AgentRunWorkflow as AgentRunWorkflow
@@ -519,6 +523,7 @@ __all__ = [
     "HandleInput",
     "HandleResult",
     "Handoff",
+    "HeldCard",
     "ImportBatchInput",
     "ImportBatchOutcome",
     "ImportBatchOutput",
@@ -661,6 +666,7 @@ __all__ = [
     "record_code_run",
     "record_synthetic_run",
     "register_change_set_applier",
+    "register_decision_source",
     "register_engagement_run_agent",
     "register_mode_mapping",
     "register_mode_plan",

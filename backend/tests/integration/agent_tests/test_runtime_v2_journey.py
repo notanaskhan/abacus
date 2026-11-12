@@ -581,21 +581,48 @@ async def test_ac_j11_an_agent_context_never_decides_the_plan_or_the_proposal(
 async def test_ac_j23_1_northwind_4127_runs_on_a_persons_plan_approval(
     net: Net, seed: Seeder, world: World, no_temporal: list[tuple[str, str]]
 ) -> None:
-    """J23 step 1 up to the materiality step; that step fails closed until assurance owns it
-    (DEC-4416): the generic decision path may not raise a computed materiality card."""
+    """J23 step 1 before anyone proposes materiality: the step fails closed with
+    `materiality_not_proposed` (DEC-4417; the agent may not propose, a person does)."""
     await _j23(net, seed, world, no_temporal, through_decision=False)
 
 
-@pytest.mark.xfail(
-    reason="DEC-4416: the materiality card is raised only by assurance's propose (its options "
-    "are computed from the trial balance); the engagement run needs an assurance-owned run step "
-    "(TASK-7426)",
-    strict=True,
-)
 async def test_ac_j23_1_northwind_4127_runs_then_blocks_on_margaret_okonkwos_decision(
     net: Net, seed: Seeder, world: World, no_temporal: list[tuple[str, str]]
 ) -> None:
+    """J23 step 1 after Marcus proposes: the run holds on the card reserved to Margaret."""
     await _j23(net, seed, world, no_temporal, through_decision=True)
+
+
+async def _proposed_materiality(world: World, marcus: Person) -> uuid.UUID:
+    """What Marcus's `POST …/materiality/proposals` leaves for the run (A-04-T12): the awaiting
+    `planning_materiality` card on the engagement's assurance item, raised by him through review
+    with assurance's computed options (the provider refuses any other caller), reserved to the
+    engagement partner."""
+    from datetime import UTC, datetime, timedelta
+
+    from abacus.kernel.db import TenantContext
+    from abacus.modules.assurance import materiality
+    from abacus.modules.engagements.api import assurance_item_id
+    from abacus.modules.identity.api import AuthContext
+    from abacus.modules.review.api import CardOption, ComputedCard, raise_decision_card
+
+    ctx = AuthContext(
+        TenantContext(world.tenant_id, "human", str(marcus.user_id)),
+        marcus.user_id,
+        uuid.uuid4(),
+        None,
+        datetime.now(UTC) - timedelta(minutes=1),
+    )
+    item = await assurance_item_id(ctx.tenant, world.engagement_id)
+    card = ComputedCard(options=(CardOption("rate_1_0", "1.0% of total assets"),))
+    with materiality._computed(card):  # pyright: ignore[reportPrivateUsage]  # propose's own context
+        return await raise_decision_card(
+            ctx,
+            engagement_id=world.engagement_id,
+            kind=materiality.PROPOSE_KIND,
+            question_key="materiality.total_assets",
+            work_item_id=item,
+        )
 
 
 async def _j23(
@@ -655,29 +682,40 @@ async def _j23(
     steps = cast(list[dict[str, Json]], json.loads(str(plan)))
     materiality = next(s for s in steps if s.get("kind") == "decision")
     seq = 1 + steps.index(materiality)
-    outcome = await execute_step_activity(t, r, seq, materiality)
     if not through_decision:
-        assert (outcome.state, outcome.error_code) == ("failed", "decision_not_raisable")
+        outcome = await execute_step_activity(t, r, seq, materiality)
+        assert (outcome.state, outcome.error_code) == ("failed", "materiality_not_proposed")
         await _invariants(seed, world, since)
         return
-    assert outcome.state == "blocked" and outcome.wait_ref is not None
+    card = await _proposed_materiality(world, marcus)
+    outcome = await execute_step_activity(t, r, seq, materiality)
+    assert outcome.state == "blocked" and outcome.wait_ref == str(card)
     await set_state_activity(
         t, r, "blocked_on_decision", None, {"kind": "decision", "step_seq": seq}
     )
-    blocked = cast(
-        dict[str, Json],
-        cast(dict[str, Json], (await net.call("GET", f"/v1/agent-runs/{run_id}", hannah)).json())[
-            "run"
-        ],
+    view = cast(
+        dict[str, Json], (await net.call("GET", f"/v1/agent-runs/{run_id}", hannah)).json()
     )
+    blocked = cast(dict[str, Json], view["header"])  # v2's 14 states (C6 v1's `run` maps them)
     assert blocked["state"] == "blocked_on_decision"
     assert blocked["blocked_on"]["kind"] == "decision"
 
-    # "Blocked on a partner decision (Margaret Okonkwo)": the card waits on her, not on Hannah.
-    hers = await _counts(net, seed, world, margaret)
-    assert hers["bands"]["decisions"] >= 1
-    theirs = await _counts(net, seed, world, hannah)
-    assert theirs["bands"]["decisions"] == 0
+    # "Blocked on a partner decision (Margaret Okonkwo)": the held card waits on the engagement
+    # partner's role, which Margaret holds and Hannah does not. (C3 decision cards are not yet a
+    # C13 gate source, so the Home bands do not count them; DEC-4417 records the gap.)
+    held = await seed.rows("SELECT status, reserved_role FROM decision_cards WHERE id = $1", card)
+    assert [(h["status"], h["reserved_role"]) for h in held] == [
+        ("awaiting_role", "engagement_partner")
+    ]
+    roles = {
+        r["user_id"]: r["role"]
+        for r in await seed.rows(
+            "SELECT user_id, role FROM engagement_members WHERE engagement_id = $1",
+            world.engagement_id,
+        )
+    }
+    assert roles[margaret.user_id] == "engagement_partner"
+    assert roles[hannah.user_id] != "engagement_partner"
     await _invariants(seed, world, since)
 
 

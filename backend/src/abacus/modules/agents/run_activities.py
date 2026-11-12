@@ -371,6 +371,8 @@ async def execute_step_activity(
         tx.record("agent_run_step.started", target=Target("agent_run", run), after=Ref(seq=seq))
     if kind in WAIT_KINDS:
         opened = await open_wait(tenant_id, run_id, step_id, step)
+        if opened.state == "succeeded":  # DEC-4417: the owner's decision is already in force
+            return await _finish_step(tenant, run, step_id, seq, StepOutcome("succeeded"))
         if opened.state != "failed":
             return StepOutcome(opened.state, wait_ref=opened.ref)
         return await _finish_step(

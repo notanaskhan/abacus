@@ -22,8 +22,9 @@ Activities return identifiers and codes only; no question text or answer enters 
 from __future__ import annotations
 
 import json
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final, cast
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -53,9 +54,44 @@ def run_workflow_id(tenant_id: str, run_id: str) -> str:
 
 @dataclass(frozen=True)
 class WaitOpened:
-    state: str  # waiting_on_inputs · blocked · failed
+    state: str  # waiting_on_inputs · blocked · failed · succeeded (an owner's decision in force)
     ref: str | None = None  # the question's or the card's id
     error_code: str | None = None
+
+
+# --- DEC-4417: a decision an owner raises itself (ADR-106 slot) ----------------------------------
+#
+# Some decision kinds carry options only their owner may compute (planning materiality: from the
+# trial balance), and the matrix may forbid the agent the action that raises the card
+# (`materiality.propose` is `agent: deny`). For such a kind the owner registers a source: the
+# step holds on the card a person's own action raised, succeeds when the decision is already in
+# force, and fails closed with the owner's code when nothing has been raised yet (a person acts,
+# then retries the step).
+
+
+@dataclass(frozen=True)
+class HeldCard:
+    state: Literal["awaiting", "decided", "none"]
+    card_id: UUID | None = None
+    code: str | None = None  # why nothing is held (`none`), e.g. `materiality_not_proposed`
+
+
+DecisionSource = Callable[[TenantContext, UUID], Awaitable[HeldCard]]
+_SOURCES: dict[str, DecisionSource] = {}
+
+
+def register_decision_source(kind: str, source: DecisionSource) -> None:
+    known = _SOURCES.get(kind)
+    if known is not None and (known.__module__, known.__qualname__) != (
+        source.__module__,
+        source.__qualname__,
+    ):
+        raise ValueError(f"decision source {kind!r} is already registered")
+    _SOURCES[kind] = source
+
+
+def decision_source(kind: str) -> DecisionSource | None:
+    return _SOURCES.get(kind)
 
 
 async def open_wait(
@@ -118,6 +154,23 @@ async def open_wait(
         return WaitOpened("failed", error_code="run_ended")
     if agent.engagement_id is None:
         return WaitOpened("failed", error_code="decision_needs_engagement")
+    decision_kind = str(arguments.get("decision_kind", ""))
+    source = decision_source(decision_kind)
+    if source is not None:
+        held = await source(agent.tenant, agent.engagement_id)
+        if held.state == "decided":
+            return WaitOpened("succeeded")
+        if held.state == "none" or held.card_id is None:
+            return WaitOpened("failed", error_code=held.code or "decision_not_raised")
+        card = held.card_id
+        async with uow(tenant) as tx:
+            await _hold(tx, step_id, "blocked", {"card_id": str(card)})
+            tx.record(
+                "agent_run.decision_held",
+                target=Target("agent_run", run),
+                after=Ref(card=card, step=step_id),
+            )
+        return WaitOpened("blocked", str(card))
     reserved = arguments.get("reserved_user_id")
     recommended = arguments.get("recommended_option_key")
     work_item = arguments.get("work_item_id")
