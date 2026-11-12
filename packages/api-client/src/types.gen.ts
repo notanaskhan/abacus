@@ -121361,10 +121361,6 @@ export type FirmSearchErrors = {
      */
     429: ErrorOut;
     /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
-    /**
      * Service unavailable
      */
     503: ErrorOut;
@@ -121420,10 +121416,6 @@ export type RecentsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecentsError = RecentsErrors[keyof RecentsErrors];
@@ -121471,10 +121463,6 @@ export type RecordRecentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordRecentError = RecordRecentErrors[keyof RecordRecentErrors];

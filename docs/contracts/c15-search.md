@@ -7,7 +7,7 @@
 | Binding | ADR-241 (P-33 Search in Postgres), DEC-43 (404 semantics for walls), DF-14, ADR-027/ADR-145 (`visible()` and scope kinds), ADR-139 (error codes), ADR-031 (classification) |
 | Flags | `search.palette` (routes, ⌘K, the SHL-02 mount; off: 404) · `search.agent_mode` (the `>` prefix) |
 | Consumers | SHL-02 (P-02-T10); every module with findable objects; the consumer suite `backend/tests/contracts/c15_search/` and `apps/web/src/fixtures/contracts/search.contract.test.ts` (P-02-T02) |
-| Status | Stub: every route answers 501 `not_implemented` behind the flag until P-02-T08 |
+| Status | Live behind `search.palette` since P-02-T08 (2026-11-12, DEC-4614): the query and recents services; the indexer (P-02-T06) and the seven projections (P-02-T07) fill the index |
 
 ## 1. Registration (Python, `platform.api`)
 
