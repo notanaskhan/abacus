@@ -40,8 +40,8 @@ the agents-off state with no model call.
 ## Partial
 - Real-model runs of `tax.assistant` (T-04-T43) and its Bedrock clearance (`client_data: none`
   until then).
-- TAX-08's host wiring to these routes and the session stream (T-04-T34's drawer) lands with
-  the T-04-T29 swap.
+- TAX-08's host wiring is built in TASK-7323 (the live drawer, availability in the summary). The
+  session stream (P-10-T26) and the inline proposal card are still open there.
 
 ## Progress log
 - `2026-11-12` — Built (S37). App import smoke, ruff clean, the suite passes on the fake outputs;
