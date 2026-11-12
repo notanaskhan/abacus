@@ -19,7 +19,11 @@ from abacus.modules.platform.search.spec import RelatedParty, SearchIndexDocumen
 
 # C0 and C1 controls, and the bidi embeddings, overrides and isolates (U+202A-U+202E,
 # U+2066-U+2069), the marks U+200E/U+200F and the zero-width joiners and BOM.
-_HOSTILE: Final = re.compile("[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f​-‏‪-‮⁠-⁩﻿]")
+# Written as escapes, never literal characters (bandit B613, trojan source; Q-03-T268).
+_HOSTILE: Final = re.compile(
+    "[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f"
+    "\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]"
+)
 _SPACES: Final = re.compile(r"\s+")
 _MASK: Final = "•••"
 # SSN/ITIN 3-2-4 and EIN 2-7 with or without separators; nine or more digits run together.

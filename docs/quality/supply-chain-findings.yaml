@@ -25,6 +25,13 @@ findings:
     first_seen: 2026-10-25
     closed: 2026-10-25
     note: literal bidirectional control characters in source; written as escapes (ED-057)
+  - id: B613
+    source: bandit
+    severity: high
+    package: backend/src/abacus/modules/platform/search/scrub.py
+    first_seen: 2026-11-12
+    closed: 2026-11-12
+    note: literal bidi and zero-width characters in a regex; written as escapes (Q-03-T268)
   - id: CVE-2026-76844
     source: trivy-image
     severity: high

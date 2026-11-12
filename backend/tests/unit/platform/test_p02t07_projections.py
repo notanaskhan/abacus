@@ -50,7 +50,7 @@ def test_the_groups_come_in_canonical_order() -> None:
         ("Net assets 16,812,400", "Net assets •••"),
         ("PayGrid Contribution Detail 2025.xlsx", "PayGrid Contribution Detail 2025.xlsx"),
         ("BH-FS-430", "BH-FS-430"),
-        ("Ridgeline‮ Property​ Partners, LP", "Ridgeline Property Partners, LP"),
+        ("Ridgeline\u202e Property\u200b Partners, LP", "Ridgeline Property Partners, LP"),
     ],
 )
 def test_the_scrub_masks_tins_digits_and_amounts(raw: str, clean: str) -> None:

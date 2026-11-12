@@ -140,7 +140,7 @@ def test_a_none_builder_deletes_and_a_refused_document_is_not_stored(
 
 
 def test_hostile_characters_are_scrubbed() -> None:
-    doc = _doc(uuid4(), "Feld‮ dlroW\u0000  Holdings")
+    doc = _doc(uuid4(), "Feld\u202e dlroW\u0000  Holdings")
     clean = scrub.scrub_document(doc)
     assert clean.title == "Feld dlroW Holdings"
 
