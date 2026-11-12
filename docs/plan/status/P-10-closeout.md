@@ -24,9 +24,10 @@ Apr 25, 2028 renewal past M17. The flip: `docs/runbooks/runtime-v2-flip.md` (Tue
 | P-10-T53 | The delta pen test | Deferred (DEC-1389) |
 
 ## Hand-off notes
-- **Planning materiality in the engagement run** (DEC-4416): the step fails closed until
-  assurance registers a run step that raises the card through `propose`; J23's blocking step is a
-  strict xfail naming it.
+- **Planning materiality in the engagement run** (DEC-4417, superseding DEC-4416): the step holds
+  on the card a person's proposal raised, succeeds once decided, and fails closed
+  (`materiality_not_proposed`) before anyone proposes. C3 decision cards are not yet a C13 gate
+  source, so Home's decisions band does not count them.
 - **Adapter kinds** (DEC-4415): K-1 treatment and residency approvals apply after commit from
   the `proposal.decided` subscriber; their Undo is refused (`effect_started`).
 - **The `session:` topic** is registered by the workbench (`session_events.py`, TASK-7325):

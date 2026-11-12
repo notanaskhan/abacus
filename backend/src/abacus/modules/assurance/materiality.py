@@ -43,7 +43,13 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.numeric import quantize_half_up
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
-from abacus.modules.agents.api import OptionFact, PriorFact, RecommendFacts
+from abacus.modules.agents.api import (
+    HeldCard,
+    OptionFact,
+    PriorFact,
+    RecommendFacts,
+    register_decision_source,
+)
 from abacus.modules.agents.api import recommend as recommend_option
 from abacus.modules.assurance.compute import materiality as engine
 from abacus.modules.assurance.events import (
@@ -1170,6 +1176,22 @@ async def _apply_reassessment(tx: UnitOfWork, ctx: AuthContext, decided: Applied
         )
 
 
+async def held_card(tenant: TenantContext, engagement_id: UUID) -> HeldCard:
+    """DEC-4417: what the engagement run's "Propose materiality" step holds on. The agent may not
+    propose (`materiality.propose` is `agent: deny`), so a person's proposal raises the card: the
+    step holds on that awaiting card, succeeds once a decision is in force, and fails closed
+    with `materiality_not_proposed` before anyone has proposed (they propose, then retry)."""
+    work_item = await assurance_item_id(tenant, engagement_id)
+    if work_item is None:
+        return HeldCard("none", code="materiality_not_proposed")
+    waiting = await awaiting_cards(tenant, work_item, (PROPOSE_KIND,))
+    if waiting:
+        return HeldCard("awaiting", waiting[0].card_id)
+    if any(v.status in _DECIDED for v in await versions_of(tenant, work_item)):
+        return HeldCard("decided")
+    return HeldCard("none", code="materiality_not_proposed")
+
+
 def register() -> None:
     """The two kinds, reserved to the engagement partner with the matrix's fresh second factor
     and a rationale (C3 refuses a decide without one)."""
@@ -1182,6 +1204,7 @@ def register() -> None:
             apply=_apply_decision,
         )
     )
+    register_decision_source(PROPOSE_KIND, held_card)
     register_decision_kind(
         DecisionKind(
             code=REASSESS_KIND,

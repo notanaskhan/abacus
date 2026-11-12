@@ -908,5 +908,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "residency_determination.confirmed",
         "residency_determination.opened",
         "tax_return.engine_reimport_needed",
+        # DEC-4417: a run step holds on a card a person's own proposal raised (shown on the run).
+        "agent_run.decision_held",
     }
 )
