@@ -366,6 +366,30 @@ class WorkbookCapitalRowOut(BaseModel):
     income: Annotated[Decimal, Tri]
     distributions: Annotated[Decimal, Tri]
     ending: Annotated[Decimal, Tri]
+    name: Annotated[str | None, Confidential] = None  # T-05-T34: the 05 row's partner name
+
+
+class WorkbookCapitalTotalsOut(BaseModel):
+    """T-05-T34: the server's column totals (the screen never sums)."""
+
+    model_config = _cfg()
+
+    beginning: Annotated[Decimal, Tri]
+    contributions: Annotated[Decimal, Tri]
+    income: Annotated[Decimal, Tri]
+    distributions: Annotated[Decimal, Tri]
+    ending: Annotated[Decimal, Tri]
+
+
+class WorkbookItemLOut(BaseModel):
+    """T-05-T34: Item L's ending capital (the partners') against the M-2's line 9."""
+
+    model_config = _cfg()
+
+    capital_ending: Annotated[Decimal, Tri]
+    m2_ending: Annotated[Decimal, Tri]
+    tie: Annotated[TallyState, Internal]
+    difference: Annotated[Decimal, Tri]
 
 
 class WorkbookCapitalAccountsOut(BaseModel):
@@ -375,6 +399,16 @@ class WorkbookCapitalAccountsOut(BaseModel):
     basis: Annotated[Literal["tax", "gaap", "section_704b"], Internal]
     rows: Annotated[list[WorkbookCapitalRowOut], Tri]
     tie: Annotated[TallyState, Internal]
+    totals: Annotated[WorkbookCapitalTotalsOut | None, Tri] = None
+    item_l: Annotated[WorkbookItemLOut | None, Tri] = None
+
+
+class WorkbookM2LineOut(BaseModel):
+    model_config = _cfg()
+
+    line: Annotated[int, Internal]
+    label: Annotated[str, Internal]
+    amount: Annotated[Decimal, Tri]
 
 
 class WorkbookM2Out(BaseModel):
@@ -385,6 +419,8 @@ class WorkbookM2Out(BaseModel):
     ending: Annotated[Decimal, Tri]
     tie: Annotated[TallyState, Internal]
     difference: Annotated[MaybeMoney, Tri] = None
+    lines: Annotated[list[WorkbookM2LineOut], Tri] = Field(default_factory=list)
+    item_l: Annotated[WorkbookItemLOut | None, Tri] = None
 
 
 # --- the allocation structure ------------------------------------------------------------------
@@ -912,7 +948,7 @@ async def entity_mapping_route(
 
 
 @workbook_router.get(
-    f"{_R}/schedules/k", action="workbook.read", response_model=WorkbookScheduleKOut, errors=(501,)
+    f"{_R}/schedules/k", action="workbook.read", response_model=WorkbookScheduleKOut
 )
 async def entity_schedule_k_route(
     return_id: UUID,
@@ -920,24 +956,55 @@ async def entity_schedule_k_route(
     view: Annotated[Literal["federal", "state"], Query()] = "federal",
     version: Annotated[int | None, Query(ge=1)] = None,
 ) -> WorkbookScheduleKOut:
+    """T-05-T34 (DEC-4619): 06's lines with 09's partner shares and a tie per line."""
+    del version  # one live version until checkpoints version the workbook
+    from abacus.modules.tax import entity_schedules as es
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    values = await es.workbook_values(ctx.tenant, return_id)
+    partners = [pid for pid, _n in await es.recipients(ctx.tenant, return_id)]
+    return WorkbookScheduleKOut(
+        view=view,
+        lines=[
+            WorkbookScheduleKLineOut(
+                line=k.line,
+                label=k.label,
+                total=k.total,
+                by_partner=[
+                    WorkbookScheduleKCellOut(partner_id=p, amount=a) for p, a in k.by_partner
+                ],
+                tie=k.tie,
+            )
+            for k in es.schedule_k(values, partners, view)
+        ],
+    )
 
 
 @workbook_router.get(
     f"{_R}/schedules/k/lines/{{line}}/breakdown", action="workbook.read",
-    response_model=WorkbookBreakdownOut, errors=(501,),
+    response_model=WorkbookBreakdownOut,
 )  # fmt: skip
 async def entity_schedule_k_breakdown_route(
     return_id: UUID, line: str, ctx: Ctx
 ) -> WorkbookBreakdownOut:
+    """T-05-T34: Form 8825's per-property amounts behind a Schedule K line (sheet 08)."""
+    from abacus.modules.tax import entity_schedules as es
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    values = await es.workbook_values(ctx.tenant, return_id)
+    return WorkbookBreakdownOut(
+        line=line,
+        rows=[
+            WorkbookBreakdownRowOut(property_name=n, amount=a)
+            for n, a in es.breakdown(values, line)
+        ],
+    )
 
 
 @workbook_router.get(
     f"{_R}/capital-accounts", action="workbook.read", response_model=WorkbookCapitalAccountsOut,
-    errors=(501,),
 )  # fmt: skip
 async def entity_capital_accounts_route(
     return_id: UUID,
@@ -945,20 +1012,62 @@ async def entity_capital_accounts_route(
     view: Annotated[Literal["by_partner", "by_movement"], Query()] = "by_partner",
     version: Annotated[int | None, Query(ge=1)] = None,
 ) -> WorkbookCapitalAccountsOut:
+    """T-05-T34: 05's partner rows (tax basis), server totals and the Item L facts."""
+    del version
+    from abacus.modules.tax import entity_schedules as es
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    values = await es.workbook_values(ctx.tenant, return_id)
+    known = {n: pid for pid, n in await es.recipients(ctx.tenant, return_id)}
+    rows = es.capital_rows(values, return_id, known)
+    totals = es.capital_totals(rows)
+    found = es.item_l(rows, es.m2_as_drafted(values))
+    return WorkbookCapitalAccountsOut(
+        view=view,
+        basis="tax",
+        rows=[
+            WorkbookCapitalRowOut(
+                partner_id=r.partner_id,
+                name=r.name,
+                beginning=r.beginning,
+                contributions=r.contributions,
+                income=r.income,
+                distributions=r.distributions,
+                ending=r.ending,
+            )
+            for r in rows
+        ],
+        tie=es.capital_tie(rows),
+        totals=WorkbookCapitalTotalsOut(**totals.__dict__),
+        item_l=WorkbookItemLOut(**found.__dict__),
+    )
 
 
-@workbook_router.get(
-    f"{_R}/schedules/m2", action="workbook.read", response_model=WorkbookM2Out, errors=(501,)
-)
+@workbook_router.get(f"{_R}/schedules/m2", action="workbook.read", response_model=WorkbookM2Out)
 async def entity_m2_route(
     return_id: UUID,
     ctx: Ctx,
     variant: Annotated[Literal["as_drafted", "with_fix"], Query()] = "as_drafted",
 ) -> WorkbookM2Out:
+    """T-05-T34: 07 as drafted, or rebuilt from 05's partner totals (what the fix writes)."""
+    from abacus.modules.tax import entity_schedules as es
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    values = await es.workbook_values(ctx.tenant, return_id)
+    rows = es.capital_rows(values, return_id, {})
+    m2 = es.m2_as_drafted(values) if variant == "as_drafted" else es.m2_with_fix(values, rows)
+    found = es.item_l(rows, m2)
+    return WorkbookM2Out(
+        variant=variant,
+        beginning=m2.beginning,
+        ending=m2.ending,
+        tie=m2.tie,
+        difference=m2.difference,
+        lines=[WorkbookM2LineOut(line=n, label=label, amount=a) for n, label, a in m2.lines],
+        item_l=WorkbookItemLOut(**found.__dict__),
+    )
 
 
 @workbook_router.get(
