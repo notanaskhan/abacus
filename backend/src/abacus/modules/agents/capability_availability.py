@@ -33,7 +33,9 @@ from abacus.modules.agents.spec_v2 import AGENTS_V2, TEST_ONLY, AgentSpecV2
 from abacus.modules.engagements.api import ai_excluded, engagement_metadata, get_ref
 from abacus.modules.identity.api import (
     AuthContext,
+    Resource,
     agents_paused,
+    authorise,
     could,
     is_synthetic_firm,
 )
@@ -100,8 +102,11 @@ async def capabilities_for(ctx: AuthContext, engagement_id: UUID | None) -> list
     level = await policy_autonomy_level(ctx.tenant_id)
     policy_off = level == 0
     excluded = consent = may_start = False
+    if engagement_id is None:
+        await authorise(ctx, "session.read", Resource.firm(ctx.tenant_id))
     if engagement_id is not None:
         ref = await get_ref(ctx, engagement_id)  # a wall answers 404
+        await authorise(ctx, "session.read", ref.resource())
         async with tenant_session(ctx.tenant) as session:
             paused = paused or bool(await session.scalar(_PAUSED, {"e": engagement_id}))
         excluded = await ai_excluded(ctx.tenant, engagement_id)

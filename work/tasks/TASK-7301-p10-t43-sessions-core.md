@@ -34,7 +34,7 @@ walled, `locked` when the viewer may not open a client).
   `session.turn_recorded`, `agent_run.turn_recorded`); error `session_locked` (catalogue at the
   end pass).
 - No migration (0682's tables and grants suffice), no new flag (`agent_runtime.v2` gates posts).
-- Histories: `session-v1-{read-only, child-run, side-queue}.json` via
+- Histories: `workbench-session-v1-{read-only, child-run, side-queue}.json` via
   `abacus_tools.workflows.record_s37_runs` (end pass).
 - Tests: `tests/unit/workbench/test_p10t43_sessions_core.py`,
   `tests/integration/agent_tests/test_p10t43_sessions.py`, `tests/workflows/test_s37_runs_replay.py`.

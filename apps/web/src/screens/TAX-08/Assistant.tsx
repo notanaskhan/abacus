@@ -144,7 +144,7 @@ function UserBubble({ text }: { text: string }): JSX.Element {
     <div className="flex justify-end">
       <p
         data-bubble="person"
-        className="max-w-[80%] rounded-[14px] bg-ink px-[14px] py-[10px] text-[13px] leading-[1.45] text-white"
+        className="max-w-[80%] rounded-[14px] bg-ink px-[14px] py-[10px] text-[13px] leading-[1.45] text-card"
       >
         {text}
       </p>
@@ -209,7 +209,9 @@ function Proposal({
       policyNote={COPY.policy}
       approveObject={COPY.approveObject}
       rejectLabel={COPY.reject}
-      onReject={() => setRejecting(true)}
+      onReject={() => {
+        setRejecting(true);
+      }}
       onApprove={() => onApprove?.(edits)}
       {...(editing
         ? {
@@ -217,14 +219,22 @@ function Proposal({
               <input
                 aria-label={row.label}
                 value={row.after ?? ""}
-                onChange={(e) => setEdits((prev) => ({ ...prev, [row.key]: e.target.value }))}
+                onChange={(e) => {
+                  setEdits((prev) => ({ ...prev, [row.key]: e.target.value }));
+                }}
                 className="w-[96px] rounded-[6px] bg-card px-[6px] text-right shadow-hair"
               />
             ),
           }
         : {})}
       actions={
-        <Button variant="tonal" opensDialog onClick={() => setEditing(true)}>
+        <Button
+          variant="tonal"
+          opensDialog
+          onClick={() => {
+            setEditing(true);
+          }}
+        >
           {COPY.edit}
         </Button>
       }
@@ -240,7 +250,9 @@ function Proposal({
             <input
               aria-label={COPY.rejectReason}
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => {
+                setReason(e.target.value);
+              }}
               className="flex-1 rounded-[6px] bg-card px-[8px] shadow-hair"
             />
             <Button variant="secondary" type="submit" disabled={!reason.trim()}>
@@ -256,8 +268,12 @@ function Proposal({
 function Applied({ onUndo }: Pick<AssistantProps, "onUndo">): JSX.Element {
   const [undoable, setUndoable] = useState(true);
   useEffect(() => {
-    const timer = setTimeout(() => setUndoable(false), UNDO_MS);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+      setUndoable(false);
+    }, UNDO_MS);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
   return (
     <div data-applied className="flex items-center justify-between text-[12.5px] text-green-ink">
@@ -342,7 +358,9 @@ function Composer({ onAsk }: Pick<AssistantProps, "onAsk">): JSX.Element {
         aria-label={COPY.composer}
         placeholder={COPY.composer}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value);
+        }}
         className="flex-1 bg-transparent text-[13.5px] placeholder:text-ink-3"
       />
       <button
@@ -369,7 +387,7 @@ function Thread(props: AssistantProps): JSX.Element {
         <UserBubble text={COPY.question} />
         <AgentBlock>
           <div data-narration className="flex items-center gap-[8px] text-[13px] text-ink-2">
-            <Spinner />
+            <Spinner label={COPY.thinking} />
             <AgentText inline text={COPY.thinking} />
           </div>
           <Skeleton />

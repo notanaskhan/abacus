@@ -616,6 +616,7 @@ async def worksheet_fields_route(
     f"{_R}/k1-activities",
     action="k1_treatment.read",
     response_model=K1ActivitiesOut,
+    errors=(501,),
 )
 async def k1_activities_route(return_id: UUID, ctx: Ctx) -> K1ActivitiesOut:
     from abacus.modules.tax.k1_treatments import list_k1_activities
@@ -628,6 +629,7 @@ async def k1_activities_route(return_id: UUID, ctx: Ctx) -> K1ActivitiesOut:
     "/k1-activities/{activity_id}",
     action="k1_treatment.read",
     response_model=K1ActivityOut,
+    errors=(501,),
 )
 async def k1_activity_route(activity_id: UUID, ctx: Ctx) -> K1ActivityOut:
     from abacus.modules.tax.k1_treatments import get_k1_activity
@@ -653,7 +655,7 @@ async def k1_treatment_run_route(activity_id: UUID, ctx: Ctx) -> ReturnRunAccept
     "/k1-treatments/{treatment_id}/override",
     action="k1_treatment.override",
     response_model=K1TreatmentOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def k1_override_route(treatment_id: UUID, body: K1OverrideIn, ctx: Ctx) -> K1TreatmentOut:
     """422 `reason_required` when the reason is blank (the model enforces 1+ characters)."""

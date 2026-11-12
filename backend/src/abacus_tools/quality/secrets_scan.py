@@ -36,6 +36,11 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "a checkpoint row's `key` names the checkpoint (engineV3), never a credential (T-04-T27)",
     ),
     (
+        "apps/web/src/screens/TAX-08/copy.ts",
+        "SECRET-003",
+        "a proposal line's `key` names the form line (it201_33), never a credential (T-04-T34)",
+    ),
+    (
         "backend/src/abacus_tools/synthetic/scenarios/brightwater_hale/tax_workspace_slice.py",
         "SECRET-003",
         "`engine_field_key` names a form line (f1040.l2a, it201.line20), never a credential"

@@ -39,7 +39,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.api import capability_ready, open_turn_run, subject_engagement
-from abacus.modules.engagements.api import get_ref
+from abacus.modules.engagements.api import client_of, get_ref
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -47,7 +47,9 @@ from abacus.modules.identity.api import (
     authorise,
     could,
     display_names,
+    firm_role_allows,
     is_synthetic_firm,
+    my_engagement_roles,
     walled_from,
 )
 from abacus.modules.workbench.session_workflow import (
@@ -123,25 +125,35 @@ def ref_of(refs: Sequence[Mapping[str, str]], kind: str) -> str | None:
     return None
 
 
+async def _clients_on_team(ctx: AuthContext) -> frozenset[UUID]:
+    """The clients of every engagement the viewer is on (their own engagement roles)."""
+    found: set[UUID] = set()
+    for engagement in await my_engagement_roles(ctx.tenant, ctx.user_id):
+        client = await client_of(ctx.tenant, engagement)
+        if client is not None:
+            found.add(client)
+    return frozenset(found)
+
+
 async def viewer_access(
     ctx: AuthContext, clients: Sequence[UUID], opened: frozenset[UUID] = frozenset()
 ) -> Viewer:
-    """DEC-87 for one viewer over a session's `client_scope` (AC-S3). `opened` are the clients the
-    viewer already reads through the session's engagement (its client); any other client needs
-    the viewer's own `client.read`. A wall on any client omits the session."""
+    """DEC-87 for one viewer over a session's `client_scope` (AC-S3). A wall on any client omits
+    the session. A client opens for the viewer through the session's engagement (`opened`), a firm
+    role that reads every client, or the viewer's team on one of that client's engagements; any
+    other client locks the session (no items, no figures)."""
     if not clients:
         return "open"
     walls = await walled_from(ctx.tenant, ctx.user_id)
     if any(c in walls for c in clients):
         return "omitted"
-    for client in clients:
-        if client in opened:
-            continue
-        if not await could(
-            ctx, ctx.user_id, "client.read", Resource.client(ctx.tenant_id, client)
-        ):
-            return "locked"
-    return "open"
+    rest = [c for c in clients if c not in opened]
+    # A firm role (never an engagement role) whose matrix cell reads every client it isn't walled
+    # from; identity decides it (AUTHZ-002).
+    if not rest or firm_role_allows(ctx, "client.read"):
+        return "open"
+    team = await _clients_on_team(ctx)
+    return "open" if all(c in team for c in rest) else "locked"
 
 
 async def _engagement_client(ctx: AuthContext, row: SessionRow) -> frozenset[UUID]:
@@ -191,13 +203,22 @@ class SessionView:
     allowed_actions: list[str]
 
 
+async def _session_resource(ctx: AuthContext, row: SessionRow) -> Resource:
+    """Where a session's actions are decided: its engagement when it has one (engagement roles
+    hold `session.*` there), else the firm."""
+    engagement = ref_of(row.context_refs, "engagement")
+    if engagement is None:
+        return Resource.firm(ctx.tenant_id)
+    return (await get_ref(ctx, UUID(engagement))).resource()  # a wall answers 404
+
+
 async def get_session(ctx: AuthContext, session_id: UUID) -> SessionView:
-    await authorise(ctx, "session.read", Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
         row = await load_session(session, session_id)
         if row is None:
             raise NotFound("session")
         await _readable(ctx, row)
+        await authorise(ctx, "session.read", await _session_resource(ctx, row))
         access = await viewer_access(ctx, row.client_scope, await _engagement_client(ctx, row))
         if access == "omitted":
             raise NotFound("session")
@@ -272,7 +293,6 @@ async def post_message(
     idempotency_key: str,
     answers_seq: int | None = None,
 ) -> Posted:
-    await authorise(ctx, "session.create", Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, AGENT_RUNTIME_V2):
         raise NotFound(AGENT_RUNTIME_V2.name)
     kind = "answer" if answers_seq is not None else "user_message"
@@ -281,6 +301,7 @@ async def post_message(
         row = await load_session(session, session_id)
         if row is None or row.deleted:
             raise NotFound("session")
+        await authorise(ctx, "session.create", await _session_resource(ctx, row))
         if row.owner_user_id != ctx.user_id:
             raise Forbidden("session.create", "attribute")  # only the owner posts
         again = (
@@ -373,11 +394,13 @@ async def open_session(
 ) -> UUID:
     """A session for `ctx` (module docstring); its engagement must be readable. `subject` binds it
     to one record (T-04-T37: `("tax_return", id)`), which its owner checked the person may read."""
-    await authorise(ctx, "session.create", Resource.firm(ctx.tenant_id))
     refs: list[dict[str, str]] = []
     clients: list[UUID] = []
-    if engagement_id is not None:
+    if engagement_id is None:
+        await authorise(ctx, "session.create", Resource.firm(ctx.tenant_id))
+    else:
         ref = await get_ref(ctx, engagement_id)
+        await authorise(ctx, "session.create", ref.resource())
         await authorise(ctx, "engagement.read", ref.resource())
         refs.append({"kind": "engagement", "id": str(engagement_id)})
         clients.append(ref.client_id)
@@ -420,12 +443,12 @@ class SessionSummary:
     last_item_at: datetime | None
 
 
-async def sessions_for_subject(
+async def _owned_subject_sessions(
     ctx: AuthContext, kind: str, subject_id: UUID
 ) -> list[SessionSummary]:
     """The person's own sessions bound to one record, newest first (TAX-08 History). The owner of
-    the record has checked the person may read it."""
-    await authorise(ctx, "session.read", Resource.firm(ctx.tenant_id))
+    the record has checked the person may read it; callers go through `subject_sessions`, which
+    authorises `session.read` on the record's engagement."""
     async with tenant_session(ctx.tenant) as session:
         rows = (
             await session.execute(
@@ -458,5 +481,7 @@ async def open_subject_session(ctx: AuthContext, kind: str, subject_id: UUID, ti
 
 
 async def subject_sessions(ctx: AuthContext, kind: str, subject_id: UUID) -> list[SessionSummary]:
-    await subject_engagement(ctx, kind, subject_id)  # the person may read the record
-    return await sessions_for_subject(ctx, kind, subject_id)
+    engagement, _ = await subject_engagement(ctx, kind, subject_id)  # the record is readable
+    ref = await get_ref(ctx, engagement)
+    await authorise(ctx, "session.read", ref.resource())
+    return await _owned_subject_sessions(ctx, kind, subject_id)

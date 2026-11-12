@@ -28,7 +28,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Final, cast
@@ -202,7 +202,9 @@ async def _source_visible(ctx: AuthContext, package_id: UUID | None) -> UUID | N
 
 
 async def _views(
-    ctx: AuthContext, session: AsyncSession, rows: Sequence[Row[Any]]  # Any: SQL rows
+    ctx: AuthContext,
+    session: AsyncSession,
+    rows: Sequence[Row[Any]],  # Any: SQL rows
 ) -> list[ActivityView]:
     ids = [r.id for r in rows]
     treatments: Sequence[Row[Any]] = (  # Any: SQL rows
@@ -301,13 +303,15 @@ async def override_treatment(
     async with tenant_session(ctx.tenant) as session:
         found = (
             await session.execute(
-                text("SELECT engagement_id FROM k1_treatments WHERE id = :t"), {"t": treatment_id}
+                text("SELECT engagement_id, tax_return_id FROM k1_treatments WHERE id = :t"),
+                {"t": treatment_id},
             )
         ).first()
     if found is None or ctx.client:
         raise NotFound("k1_treatment")
     ref = await get_ref(ctx, found.engagement_id)
-    await authorise(ctx, OVERRIDE, ref.resource())
+    # `function_in` (manager_reviewer, signer) is decided on the return's work item.
+    await authorise(ctx, OVERRIDE, replace(ref.resource(), work_item_id=found.tax_return_id))
     sealed = await seal(ctx.tenant_id, reason.strip().encode(), "tax.k1_treatment.override")
     async with uow(ctx.tenant) as tx:
         row = (await tx.session.execute(_TREATMENT, {"t": treatment_id})).one()
@@ -340,8 +344,8 @@ async def override_treatment(
             },
         )
         tx.record(
-            "k1_treatment.overridden",
-            target=Target("k1_treatment", treatment_id),
+            "pass_through_treatment.overridden",
+            target=Target("pass_through_treatment", treatment_id),
             after=Ref(version=version),
             scope=Scope(engagement_id=row.engagement_id),
         )
@@ -370,13 +374,22 @@ async def apply_approved_treatments(
         return 0
     system = TenantContext(tenant.tenant_id, "system", f"proposal:{proposal_id}")
     async with tenant_session(system) as session:
-        engagement = await session.scalar(
-            text("SELECT engagement_id FROM k1_treatments WHERE id = ANY(:ids) LIMIT 1"),
-            {"ids": list(treatment_ids)},
-        )
-    if engagement is None:
+        scope = (
+            await session.execute(
+                text(
+                    "SELECT engagement_id, tax_return_id FROM k1_treatments WHERE id = ANY(:ids) "
+                    "LIMIT 1"
+                ),
+                {"ids": list(treatment_ids)},
+            )
+        ).first()
+    if scope is None:
         return 0
-    resource = await engagement_resource(system, cast(UUID, engagement))
+    engagement = scope.engagement_id
+    resource = replace(
+        await engagement_resource(system, cast(UUID, engagement)),
+        work_item_id=scope.tax_return_id,
+    )
     allowed = await member_could(tenant.tenant_id, approver, APPROVE, resource)
     if not allowed:
         raise LevelNotPermitted
@@ -399,7 +412,7 @@ async def apply_approved_treatments(
                 },
             )
         tx.record(
-            "k1_treatment.approved",
+            "pass_through_treatment.approved",
             target=Target("proposal", proposal_id),
             after=Ref(rows=len(rows), by=approver),
             scope=Scope(engagement_id=cast(UUID, engagement)),
@@ -451,8 +464,8 @@ async def refresh_saly(tenant: TenantContext, activity_id: UUID) -> int:
                 },
             )
         tx.record(
-            "k1_activity.saly_refreshed",
-            target=Target("k1_activity", activity_id),
+            "pass_through_activity.saly_refreshed",
+            target=Target("pass_through_activity", activity_id),
             after=Ref(rows=len(prior)),
         )
     return len(prior)
@@ -507,8 +520,8 @@ async def activity_from_handoff(
         )
         if activity is not None:
             tx.record(
-                "k1_activity.created",
-                target=Target("k1_activity", cast(UUID, activity)),
+                "pass_through_activity.created",
+                target=Target("pass_through_activity", cast(UUID, activity)),
                 after=Ref(package=found.package_id),
                 scope=Scope(engagement_id=engagement),
             )
@@ -550,8 +563,8 @@ async def activity_from_upload(
             ),
         )
         tx.record(
-            "k1_activity.created",
-            target=Target("k1_activity", activity),
+            "pass_through_activity.created",
+            target=Target("pass_through_activity", activity),
             after=Ref(evidence=evidence_version_id),
             scope=Scope(engagement_id=engagement),
         )
@@ -635,8 +648,8 @@ async def on_package_released(event: OutboxEvent) -> None:
                         },
                     )
             tx.record(
-                "k1_activity.released",
-                target=Target("k1_activity", activity.id),
+                "pass_through_activity.released",
+                target=Target("pass_through_activity", activity.id),
                 after=Ref(moved=len(moved), reproposed=len(stale)),
                 scope=Scope(engagement_id=activity.engagement_id),
             )

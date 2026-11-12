@@ -57222,6 +57222,10 @@ export type ListCapabilitiesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ListCapabilitiesError = ListCapabilitiesErrors[keyof ListCapabilitiesErrors];
@@ -126341,6 +126345,10 @@ export type K1ActivityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type K1ActivityError = K1ActivityErrors[keyof K1ActivityErrors];
@@ -126457,6 +126465,10 @@ export type K1OverrideErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type K1OverrideError = K1OverrideErrors[keyof K1OverrideErrors];
@@ -126807,6 +126819,10 @@ export type K1ActivitiesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type K1ActivitiesError = K1ActivitiesErrors[keyof K1ActivitiesErrors];
@@ -130330,6 +130346,10 @@ export type GetSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GetSessionError = GetSessionErrors[keyof GetSessionErrors];
@@ -130452,6 +130472,10 @@ export type PostSessionMessageErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type PostSessionMessageError = PostSessionMessageErrors[keyof PostSessionMessageErrors];

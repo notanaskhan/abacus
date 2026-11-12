@@ -4,10 +4,10 @@ Run: python -m abacus_tools.workflows.record_s37_runs <output-directory>
 
 Activities are stubbed (no database), so each history pins the command sequence only:
 
-- `session-v1-read-only.json`: one message, one inline turn, then `close`.
-- `session-v1-child-run.json`: one message whose turn proposes writes; the child's workflow
+- `workbench-session-v1-read-only.json`: one message, one inline turn, then `close`.
+- `workbench-session-v1-child-run.json`: one message whose turn proposes writes; the child's workflow
   is started once through the start-child activity (kernel.dispatch).
-- `session-v1-side-queue.json`: a message whose turn asks a question, a second message answered
+- `workbench-session-v1-side-queue.json`: a message whose turn asks a question, a second message answered
   while the question stays open, then the answer, then `close`.
 - `run-events-prune-v1.json` (P-10-T44): one prune activity.
 
@@ -79,9 +79,9 @@ async def _save(client: Client, out: Path, name: str, handle: Any) -> None:  # n
 async def _record(out: Path, stack: Stack) -> None:
     client = await connect(stack)
     plan = [
-        ("session-v1-read-only.json", "read-only"),
-        ("session-v1-child-run.json", "child-run"),
-        ("session-v1-side-queue.json", "side-queue"),
+        ("workbench-session-v1-read-only.json", "read-only"),
+        ("workbench-session-v1-child-run.json", "child-run"),
+        ("workbench-session-v1-side-queue.json", "side-queue"),
     ]
     for n, (name, scenario) in enumerate(plan, start=1):
         if (out / name).exists():

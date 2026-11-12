@@ -69,18 +69,19 @@ async def test_acrr2_an_adopted_run_exports_the_same_bytes_after_its_events_are_
     run_id = await _adopted_run(seed, world, hannah)
     path = f"/v1/agent-runs/{run_id}/trace-exports"
     headers = {**await net.headers(hannah), "Idempotency-Key": str(uuid.uuid4())}
-    before = await net.http.post(path, headers=headers)
+    before = await net.http.post(path, json={}, headers=headers)
     assert before.status_code in (200, 201), before.text
     gone = await trace_records.prune_firm(world.tenant_id)
     assert gone >= 1
     assert await seed.value("SELECT count(*) FROM run_events WHERE run_id = $1", run_id) == 0
     headers = {**await net.headers(hannah), "Idempotency-Key": str(uuid.uuid4())}
-    after = await net.http.post(path, headers=headers)
+    after = await net.http.post(path, json={}, headers=headers)
     assert after.status_code in (200, 201), after.text
     first = cast(dict[str, object], before.json())
     second = cast(dict[str, object], after.json())
-    assert first["trace"] == second["trace"]  # byte-identical body
-    assert "files.list" in str(second["trace"]) or "s1" in str(second["trace"])
+    assert first["content"] == second["content"]  # byte-identical body
+    assert first["sha256"] == second["sha256"]
+    assert "files.list" in str(second["content"]) or "s1" in str(second["content"])
     versions = await seed.value("SELECT count(*) FROM agent_run_traces WHERE run_id = $1", run_id)
     assert versions == 1
 
@@ -92,7 +93,10 @@ async def test_acrr5_the_archive_hook_names_each_adopted_runs_frozen_trace(
     await seed.member(world.engagement_id, hannah, "manager")
     run_id = await _adopted_run(seed, world, hannah)
     headers = {**await net.headers(hannah), "Idempotency-Key": str(uuid.uuid4())}
-    await net.http.post(f"/v1/agent-runs/{run_id}/trace-exports", headers=headers)
+    exported = await net.http.post(
+        f"/v1/agent-runs/{run_id}/trace-exports", json={}, headers=headers
+    )
+    assert exported.status_code in (200, 201), exported.text
     from abacus.kernel.db import TenantContext
 
     hooked = await trace_records.adopted_run_traces(

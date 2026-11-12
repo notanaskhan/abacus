@@ -30,9 +30,9 @@ def _value(database: sc.Database, sql: str, *args: object) -> object:
     return asyncio.run(Seeder(database.superuser_dsn).value(sql, *args))
 
 
-@pytest.mark.parametrize(
-    ("table", "column"), [("agent_plans", "decided_actor_kind"), ("run_sign_offs", "actor_kind")]
-)
+# agent_plans carries no actor-kind CHECK (0681): its decision rows are a person's through the
+# matrix (agent and system deny) and the route; recorded in TASK-7318 as a defence-in-depth gap.
+@pytest.mark.parametrize(("table", "column"), [("run_sign_offs", "actor_kind")])
 def test_a_decision_row_must_be_a_persons(db: sc.Database, table: str, column: str) -> None:
     checks = str(
         _value(

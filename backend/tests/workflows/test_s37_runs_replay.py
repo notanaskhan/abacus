@@ -14,9 +14,9 @@ from abacus.modules.workbench.api import WorkbenchSessionWorkflow
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
 NAMES = [
-    "session-v1-read-only.json",
-    "session-v1-child-run.json",
-    "session-v1-side-queue.json",
+    "workbench-session-v1-read-only.json",
+    "workbench-session-v1-child-run.json",
+    "workbench-session-v1-side-queue.json",
     "run-events-prune-v1.json",
 ]
 
