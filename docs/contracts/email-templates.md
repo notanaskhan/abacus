@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C16 in `docs/contracts/README.md` (v1.1, additive; v1 is `notifications.md`, frozen) |
 | Version | v1.1 |
-| Status | stub (R-01-T16, 2026-10-26); list, read, draft, publish and `send_templated` live (R-01-T19, 2026-10-27; DEC-449); preview, test send and import live (R-01-T23, 2026-10-27; DEC-549, DEC-560 to DEC-562); the follow-up policy read live (R-01-T24, 2026-10-27; DEC-563 to DEC-566); sending domains, From selection and the client-mail gate live (R-01-T27, 2026-10-28; DEC-950 to DEC-955) |
+| Status | frozen v1.1 (R-01-T36, 2026-11-12): additive changes only; breaking changes ship as v2 with one sprint of overlap. Stub (R-01-T16, 2026-10-26); list, read, draft, publish and `send_templated` live (R-01-T19, 2026-10-27; DEC-449); preview, test send and import live (R-01-T23, 2026-10-27; DEC-549, DEC-560 to DEC-562); the follow-up policy read live (R-01-T24, 2026-10-27; DEC-563 to DEC-566); sending domains, From selection and the client-mail gate live (R-01-T27, 2026-10-28; DEC-950 to DEC-955) |
 | Provider epic | R-01 (N the email half, AY the screens); T19 drafts and publish, T23 preview, lint, test send and import, T24 follow-up policy, T27 sending domains |
 | Consumers | POR-20, ADM-10 (R-01-T25, T28); P-06 (`request_sent`, `request_returned`, `reminder`); P-08 (`portal.sign_in_code`, platform-locked, same renderer); N-02 (`signature_request`; N-02-T24: `signature_reminder`, `signed_copy`, `rep_letter_sign_today`, `paper_form_follows`); A-02 (`reconnect_request`); A-08 (`confirmation_request`); R-02, A-07, T-02 (`deliverable_ready`); R-03, X-01, X-03, A-09 (DF-40 keys); N-03 (sender domains); Q-04 (import) |
 | Freeze sprint | at the R-01 S12 review (with T19) |
