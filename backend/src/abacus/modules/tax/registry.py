@@ -483,7 +483,7 @@ UPDATE_COLUMNS.update(
 )
 
 # T-05-T17 (0821, DEC-4304): the entity return core (runs dark until the T-05 services).
-TABLES: frozenset[str] = _TABLES_0761 | frozenset(
+_TABLES_0821: frozenset[str] = _TABLES_0761 | frozenset(
     {
         "entity_return_profiles",
         "partners",
@@ -494,7 +494,7 @@ TABLES: frozenset[str] = _TABLES_0761 | frozenset(
         "allocation_results",
     }
 )
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0761 | frozenset(
+_INSERT_ONLY_0821: frozenset[str] = _INSERT_ONLY_0761 | frozenset(
     {"allocation_structures", "allocation_results"}
 )
 INSERT_COLUMNS.update(
@@ -642,5 +642,55 @@ UPDATE_COLUMNS.update(
         ),
         "interest_transfers": frozenset({"transfer_date", "points", "price", "citation_ids"}),
         "allocation_rungs": frozenset({"priority", "rule_type", "params"}),
+    }
+)
+
+# T-05-T20 (0830, DEC-4403): the preparer memo and planning opportunities (dark until T-05-T48).
+TABLES: frozenset[str] = _TABLES_0821 | frozenset(
+    {"preparer_memos", "preparer_memo_versions", "preparer_memo_events", "planning_opportunities"}
+)
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0821 | frozenset(
+    {"preparer_memo_versions", "preparer_memo_events"}
+)
+_SCOPE_0830 = frozenset({"tenant_id", "engagement_id", "work_item_id"})
+INSERT_COLUMNS.update(
+    {
+        "preparer_memos": _SCOPE_0830
+        | frozenset(
+            {
+                "id",
+                "workpaper_id",
+                "current_version_no",
+                "figure_fingerprint",
+                "drafted_run_id",
+                "content_hash",
+            }
+        ),
+        "preparer_memo_versions": _SCOPE_0830
+        | frozenset(
+            {
+                "memo_id",
+                "version_no",
+                "sections",
+                "cause",
+                "created_by_kind",
+                "agent_run_id",
+                "on_behalf_of_user_id",
+                "content_hash",
+                "figure_fingerprint",
+            }
+        ),
+        "preparer_memo_events": _SCOPE_0830 | frozenset({"memo_id", "event", "version_no", "ref"}),
+        "planning_opportunities": _SCOPE_0830
+        | frozenset({"id", "memo_id", "source_kind", "title", "body", "citation_ids"}),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "preparer_memos": frozenset(
+            {"current_version_no", "figure_fingerprint", "drafted_run_id", "content_hash"}
+            | {"updated_at"}
+        ),
+        "planning_opportunities": frozenset({"title", "body", "citation_ids", "updated_at"}),
     }
 )

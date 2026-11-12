@@ -44,6 +44,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         # 0581 (A-04-T03): the structured address, the typed value and its state.
         | {"section_key", "row_key", "col_key", "value", "value_state", "suggestion_id"}
         | {"classification", "updated_version_no"}
+        # 0830 (T-05-T20): a formula cell's source and inputs, and the engine that set it.
+        | {"formula", "formula_inputs", "engine_name", "engine_version"}
     ),
     "workpaper_cell_citations": frozenset(
         {"tenant_id", "workpaper_id", "sheet_key", "cell_key", "evidence_version_id"}
@@ -52,6 +54,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "workpaper_versions": frozenset(
         {"tenant_id", "workpaper_id", "version_no", "content_hash", "content", "created_by"}
         | {"produced_by_kind", "agent_run_id", "on_behalf_of_user_id", "cause"}  # 0581
+        | {"engine_manifest", "inputs_hash"}  # 0830 (T-05-T20): "Version 2 · Run 2"
     ),
     # 0581 (A-04-T03): the scope columns are set by `workpaper_child_scope()` from the workpaper,
     # and the actor kind from the session, never by the caller.
