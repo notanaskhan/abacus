@@ -92,6 +92,7 @@ from abacus.modules.review.issues import (
     IssueSource,  # T-04-T23: source kind, category path, system-resolved dependency
     create_issue,
     create_issue_in,
+    issue_awaits_client,  # T-04-T39: TXI-03's "Asked the client"
     issue_row,
     list_issues,  # T-04-T23: TAX-06 counts and the CSV export
     read_issue,
@@ -324,6 +325,7 @@ __all__ = [
     "fix_instructions_of",
     "follow_proposal_decision",
     "gate_met",
+    "issue_awaits_client",
     "issue_engagement",
     "issue_row",  # A-06-T11: a finding's issue status and version
     "latest_citations",

@@ -21,7 +21,7 @@ describe("TXI-02 K-1 treatment resolver", () => {
 
   it("TXI-02 acceptance: every figure ties", () => {
     const state = parts(row("state")?.resolved ?? "");
-    expect(state[0]! + state[1]! + state[2]!).toBe(307_900);
+    expect(state.slice(0, 3).reduce((a, b) => a + b, 0)).toBe(307_900);
     const ptet = STATEMENT.filter((r) => r.key !== "total").map((r) => n(r.figure));
     expect(ptet.reduce((a, b) => a + b, 0)).toBe(16_025);
     expect(n(STATEMENT.find((r) => r.key === "total")?.figure ?? "")).toBe(16_025);
@@ -87,7 +87,9 @@ describe("TXI-02 K-1 treatment resolver", () => {
   it("the Draft chip stays until the released state", () => {
     for (const frame of FRAMES.filter((f) => f !== "e")) {
       render(<K1Resolver frame={frame} />);
-      expect(document.querySelector("[data-chip-state='draft']")?.textContent).toBe(COPY.draftChip);
+      expect(document.querySelector("[data-chip-state='draft']")?.textContent).toBe(
+        COPY.draftChip,
+      );
       cleanup();
     }
     render(<K1Resolver frame="e" />);

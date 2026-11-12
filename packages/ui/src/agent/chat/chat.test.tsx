@@ -47,7 +47,9 @@ const ROWS: SessionRow[] = [
 
 describe("WorkbenchLayout (T4)", () => {
   it.each(["chat", "agent_detail"] as const)("%s draws the Tier D frame", (variant) => {
-    render(<WorkbenchLayout tab="sessions" variant={variant} list={<p>list</p>} chat={<p>chat</p>} />);
+    render(
+      <WorkbenchLayout tab="sessions" variant={variant} list={<p>list</p>} chat={<p>chat</p>} />,
+    );
     const list = document.querySelector("[data-pane='list']") as HTMLElement;
     const chat = document.querySelector("[data-pane='chat']") as HTMLElement;
     expect(list.style.width).toBe(
@@ -87,7 +89,7 @@ describe("WorkbenchLayout (T4)", () => {
 describe("SessionList", () => {
   it("every meta line comes from formatActor; none names the agent as an owner", () => {
     render(<SessionList rows={ROWS} selectedId="s1" still />);
-    const metas = [...document.querySelectorAll("[data-meta]")].map((m) => m.textContent ?? "");
+    const metas = [...document.querySelectorAll("[data-meta]")].map((m) => m.textContent);
     expect(metas[0]).toBe(`9:21 AM · ${formatActor(hannah)}`);
     expect(metas[1]).toBe("9:00 AM · Hannah Leclerc via Agent");
     expect(metas.every((m) => !m.includes("· Accrued Agent"))).toBe(true);
@@ -97,8 +99,12 @@ describe("SessionList", () => {
   it("row 1 shows the awaiting dot, row 2 the spinner, row 3 says locked", () => {
     render(<SessionList rows={ROWS} still />);
     expect(screen.getByRole("img", { name: "Awaiting your answer" })).toBeTruthy();
-    expect(document.querySelector("[data-session='s2'] [role='status'], [data-session='s2'] svg")).not.toBeNull();
-    expect(document.querySelector("[data-session='s3'][data-locked='true']")?.textContent).toContain("Locked");
+    expect(
+      document.querySelector("[data-session='s2'] [role='status'], [data-session='s2'] svg"),
+    ).not.toBeNull();
+    expect(
+      document.querySelector("[data-session='s3'][data-locked='true']")?.textContent,
+    ).toContain("Locked");
   });
 
   it("a search that matches nothing shows filtered-empty with Clear search", () => {
@@ -118,8 +124,21 @@ describe("SessionList", () => {
 
 describe("ChatHeader", () => {
   it("draws the title and the owner from formatActor and emits each intent", () => {
-    const intents = { onOpenTrace: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(), onCreateAgent: vi.fn() };
-    render(<ChatHeader title="TY2025 season progress by office" owner={hannah} live still {...intents} />);
+    const intents = {
+      onOpenTrace: vi.fn(),
+      onRename: vi.fn(),
+      onDelete: vi.fn(),
+      onCreateAgent: vi.fn(),
+    };
+    render(
+      <ChatHeader
+        title="TY2025 season progress by office"
+        owner={hannah}
+        live
+        still
+        {...intents}
+      />,
+    );
     expect(document.querySelector("[data-owner]")?.textContent).toBe("Hannah Leclerc");
     fireEvent.click(screen.getByRole("button", { name: "Open run trace" }));
     fireEvent.click(screen.getByRole("button", { name: "Rename session" }));
@@ -130,6 +149,7 @@ describe("ChatHeader", () => {
 
   it("a locked session disables every action", () => {
     render(<ChatHeader title="Copperleaf questions" owner={hannah} live={false} locked />);
-    for (const b of screen.getAllByRole("button")) expect((b as HTMLButtonElement).disabled).toBe(true);
+    for (const b of screen.getAllByRole("button"))
+      expect((b as HTMLButtonElement).disabled).toBe(true);
   });
 });

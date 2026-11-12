@@ -162,7 +162,9 @@ function ToolCardRow({
       >
         <Icon name="x" size={14} className="mt-[2px] text-red-ink" />
         <span className="flex flex-1 flex-col">
-          <span className="font-medium text-red-ink">{str(error.title) || `Stopped at ${label}`}</span>
+          <span className="font-medium text-red-ink">
+            {str(error.title) || `Stopped at ${label}`}
+          </span>
           {str(error.body) ? <span className="text-ink-2">{str(error.body)}</span> : null}
         </span>
         <Button
@@ -200,7 +202,11 @@ function ToolCardRow({
       {counters.length > 0 ? (
         <span data-counters className="flex gap-[14px] pl-[19px] text-ink-2">
           {counters.map((c) => (
-            <span key={str(c.label)} data-counter={str(c.label)} className="flex items-center gap-[4px]">
+            <span
+              key={str(c.label)}
+              data-counter={str(c.label)}
+              className="flex items-center gap-[4px]"
+            >
               {str(c.label)}
               {str(c.state) === "succeeded" ? (
                 <Icon name="check" size={12} className="text-green" />
@@ -225,7 +231,10 @@ function FileArtifactRow({
 }): JSX.Element {
   const id = str(item.payload.artifact_id);
   return (
-    <div data-row="artifact" className="flex items-center gap-[10px] rounded-[12px] bg-card px-[14px] py-[10px] shadow-e1">
+    <div
+      data-row="artifact"
+      className="flex items-center gap-[10px] rounded-[12px] bg-card px-[14px] py-[10px] shadow-e1"
+    >
       <Icon name="file-spreadsheet" size={14} />
       <span className="flex flex-1 flex-col">
         <span className="text-[13px] font-medium">{str(item.payload.name)}</span>
@@ -281,7 +290,9 @@ function Composer({
         rows={1}
         value={body}
         disabled={disabled}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(e) => {
+          setBody(e.target.value);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();

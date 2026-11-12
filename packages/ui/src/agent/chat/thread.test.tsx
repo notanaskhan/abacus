@@ -11,11 +11,24 @@ afterEach(() => {
 });
 
 let n = 0;
-function item(kind: string, payload: Record<string, unknown>, actor: ThreadItem["actor_kind"] = "agent"): ThreadItem {
+function item(
+  kind: string,
+  payload: Record<string, unknown>,
+  actor: ThreadItem["actor_kind"] = "agent",
+): ThreadItem {
   n += 1;
-  return { id: `i${String(n)}`, seq: n, kind, payload: { v: 1, ...payload }, actor_kind: actor, run_id: "run-1" };
+  return {
+    id: `i${String(n)}`,
+    seq: n,
+    kind,
+    payload: { v: 1, ...payload },
+    actor_kind: actor,
+    run_id: "run-1",
+  };
 }
-const p = (text: string) => ({ blocks: { version: 1, parts: [{ kind: "p", segments: [{ kind: "text", text }] }] } });
+const p = (text: string) => ({
+  blocks: { version: 1, parts: [{ kind: "p", segments: [{ kind: "text", text }] }] },
+});
 const LINE = "I'll start with read-only discovery of returns, engagements, binders and offices.";
 
 describe("ChatThread", () => {
@@ -31,16 +44,31 @@ describe("ChatThread", () => {
               version: 1,
               parts: [
                 { kind: "p", segments: [{ kind: "text", text: "What I found in Accrued:" }] },
-                { kind: "table", head: ["Item", "Result"], rows: [[{ kind: "text", text: "Tax returns" }, { kind: "text", text: "224" }]] },
+                {
+                  kind: "table",
+                  head: ["Item", "Result"],
+                  rows: [
+                    [
+                      { kind: "text", text: "Tax returns" },
+                      { kind: "text", text: "224" },
+                    ],
+                  ],
+                },
               ],
             },
           }),
         ]}
       />,
     );
-    expect(document.querySelector("[data-bubble='me']")?.textContent).toBe("Build an Excel report");
-    expect(document.querySelector("[data-bubble='line'] [data-actor='agent']")?.textContent).toBe(LINE);
-    expect(document.querySelector("[data-bubble='block'] [data-agent-blocks='v1']")).not.toBeNull();
+    expect(document.querySelector("[data-bubble='me']")?.textContent).toBe(
+      "Build an Excel report",
+    );
+    expect(document.querySelector("[data-bubble='line'] [data-actor='agent']")?.textContent).toBe(
+      LINE,
+    );
+    expect(
+      document.querySelector("[data-bubble='block'] [data-agent-blocks='v1']"),
+    ).not.toBeNull();
   });
 
   it("an unknown kind or a slot kind with no slot renders a neutral row, never the payload", () => {
@@ -48,8 +76,8 @@ describe("ChatThread", () => {
       <ChatThread
         still
         items={[
-          item("hologram", { secret: "RAW-PAYLOAD-123" }),
-          item("approval", { secret: "RAW-APPROVAL" }),
+          item("hologram", { raw: "RAW-PAYLOAD-123" }),
+          item("approval", { raw: "RAW-APPROVAL" }),
           item("plan", { steps: ["RAW-PLAN"] }),
           item("agent_blocks", { blocks: "not blocks" }),
         ]}
@@ -60,7 +88,13 @@ describe("ChatThread", () => {
   });
 
   it("a registered slot renders its item", () => {
-    render(<ChatThread still items={[item("plan", { n: 2 })]} slots={{ plan: () => <p>PLAN SLOT</p> }} />);
+    render(
+      <ChatThread
+        still
+        items={[item("plan", { n: 2 })]}
+        slots={{ plan: () => <p>PLAN SLOT</p> }}
+      />,
+    );
     expect(screen.getByText("PLAN SLOT")).toBeTruthy();
   });
 
@@ -75,9 +109,12 @@ describe("ChatThread", () => {
     vi.useFakeTimers();
     const history = [item("agent_blocks", p("Earlier answer in full."))];
     const { rerender } = render(<ChatThread items={history} />);
-    expect(document.querySelector("[data-bubble='line']")?.textContent).toBe("Earlier answer in full.");
+    expect(document.querySelector("[data-bubble='line']")?.textContent).toBe(
+      "Earlier answer in full.",
+    );
     rerender(<ChatThread items={[...history, item("agent_blocks", p(LINE))]} />);
-    const lines = () => [...document.querySelectorAll("[data-bubble='line']")].map((e) => e.textContent ?? "");
+    const lines = () =>
+      [...document.querySelectorAll("[data-bubble='line']")].map((e) => e.textContent);
     expect(lines()[1]).toBe("");
     const tick = () => {
       act(() => {
@@ -93,7 +130,17 @@ describe("ChatThread", () => {
   it("a failed tool card says what stopped and Retry emits its step once", () => {
     const onRetryStep = vi.fn();
     const onOpenRun = vi.fn();
-    const failed = { ...item("tool_card", { label: "Read binder status", state: "failed", error: { title: "Stopped at Read binder status", body: "CCH Axcess token expired on Sep 12." } }), step_id: "step-7" };
+    const failed = {
+      ...item("tool_card", {
+        label: "Read binder status",
+        state: "failed",
+        error: {
+          title: "Stopped at Read binder status",
+          body: "CCH Axcess token expired on Sep 12.",
+        },
+      }),
+      step_id: "step-7",
+    };
     render(<ChatThread still items={[failed]} onRetryStep={onRetryStep} onOpenRun={onOpenRun} />);
     expect(screen.getByRole("alert").textContent).toContain("CCH Axcess token expired on Sep 12.");
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -109,13 +156,24 @@ describe("ChatThread", () => {
         still
         onArtifact={onArtifact}
         items={[
-          item("agent_blocks", { ...p("Season progress, open returns: Gather 10"), badge: "Report prepared" }),
-          item("artifact", { artifact_id: "a1", name: "TY2025 Season Progress — by office.xlsx", meta: "Excel · 5 tabs" }),
+          item("agent_blocks", {
+            ...p("Season progress, open returns: Gather 10"),
+            badge: "Report prepared",
+          }),
+          item("artifact", {
+            artifact_id: "a1",
+            name: "TY2025 Season Progress — by office.xlsx",
+            meta: "Excel · 5 tabs",
+          }),
         ]}
       />,
     );
     expect(document.querySelector("[data-badge]")?.textContent).toBe("✓ Report prepared");
-    for (const [name, intent] of [["Open", "open"], ["Download", "download"], ["Save to Files", "save"]] as const) {
+    for (const [name, intent] of [
+      ["Open", "open"],
+      ["Download", "download"],
+      ["Save to Files", "save"],
+    ] as const) {
       fireEvent.click(screen.getByRole("button", { name }));
       expect(onArtifact).toHaveBeenLastCalledWith("a1", intent);
     }
@@ -125,7 +183,9 @@ describe("ChatThread", () => {
     const onSend = vi.fn();
     render(<ChatThread still items={[]} onSend={onSend} />);
     const box = screen.getByRole("textbox", { name: "Message" });
-    expect((screen.getByRole("button", { name: "Send message" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Send message" }).disabled).toBe(
+      true,
+    );
     fireEvent.change(box, { target: { value: "How many are open?" } });
     fireEvent.keyDown(box, { key: "Enter", shiftKey: true });
     expect(onSend).not.toHaveBeenCalled();
@@ -150,9 +210,12 @@ describe("ChatThread", () => {
         ]}
       />,
     );
-    const names = screen.getAllByRole("button").map((b) => b.textContent ?? "");
+    const names = screen.getAllByRole("button").map((b) => b.textContent);
     for (const verb of ["Approve", "Reject", "Decide", "Sign off", "Release", "Send"]) {
-      expect(names.some((t) => t.trim().startsWith(verb)), verb).toBe(false);
+      expect(
+        names.some((t) => t.trim().startsWith(verb)),
+        verb,
+      ).toBe(false);
     }
   });
 });

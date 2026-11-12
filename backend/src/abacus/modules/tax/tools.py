@@ -503,11 +503,16 @@ class ResidencyProposalIn(_Targeted):
     data_class="tri", input_model=ResidencyProposalIn, output_model=ProposedOut,
 )  # fmt: skip
 async def propose_residency(agent: AgentContext, args: ResidencyProposalIn) -> ProposedOut:
+    from abacus.modules.tax.residency_service import fact_citations
+
     await _return_of(agent, args)
+    # S38 end pass (TASK-7426): the row carries the determination's facts' citations (code's),
+    # never the model's; SHL-10 refuses an uncited change.
+    cited = await fact_citations(agent.tenant, args.determination_id)
     row = ProposedRow(
         target_type="residency_determination", target_id=args.determination_id,
         field_key="proposed_option", label="proposed option", before=None,
-        after={"t": "text", "v": args.option}, cause="agent_proposal",
+        after={"t": "text", "v": args.option}, cause="agent_proposal", citation_ids=cited,
     )  # fmt: skip
     return await _propose(agent, "residency", "Proposed residency", [row])
 

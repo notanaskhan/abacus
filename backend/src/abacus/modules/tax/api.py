@@ -28,6 +28,12 @@ from abacus.modules.tax import fix_runner as _fix_runner
 from abacus.modules.tax import return_events as _return_events
 from abacus.modules.tax import return_issues as _return_issues
 from abacus.modules.tax import schedule_jobs as _schedule_jobs
+from abacus.modules.tax.analyst_modes import (  # S38: the recorder and replay test (ADR-090)
+    AnalystModeWorkflow,
+    ModeRunInput,
+    ModeRunOutcome,
+    mode_workflow_id,
+)
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
 from abacus.modules.tax.approval import register as register_approval
@@ -271,6 +277,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "TRANSITIONS",
     "WORKFLOWS",
+    "AnalystModeWorkflow",
     "ApprovalBlocker",
     "DraftInput",
     "DraftOutcome",
@@ -285,6 +292,8 @@ __all__ = [
     "K1ReleaseFailure",
     "K1ReleaseInput",
     "K1ReleaseWorkflow",
+    "ModeRunInput",
+    "ModeRunOutcome",
     "ProposedPayment",
     "ReturnDrafterWorkflow",
     "SeedField",
@@ -305,6 +314,7 @@ __all__ = [
     "flag_new_likely",
     "import_engine_file",
     "installments_due",
+    "mode_workflow_id",
     "next_status",
     "patch_extension",
     "patch_installment",

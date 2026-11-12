@@ -91,6 +91,12 @@ def register_proposal_adapter(kind: str, adapter: ProposalAdapter) -> None:
     _ADAPTERS[kind] = adapter
 
 
+def has_proposal_adapter(kind: str) -> bool:
+    """S38 end pass (DEC-4415): the kind's owner applies an approved proposal after the decision
+    commits (`apply_proposal`, from the `proposal.decided` subscriber), not inside it."""
+    return kind in _ADAPTERS
+
+
 async def apply_proposal(tenant: TenantContext, kind: str, proposal_id: UUID) -> None:
     adapter = _ADAPTERS.get(kind)
     if adapter is None:

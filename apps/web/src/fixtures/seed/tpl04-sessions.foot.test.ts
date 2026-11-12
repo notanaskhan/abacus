@@ -96,7 +96,7 @@ describe("TPL-04 fixtures", () => {
 
   it("the running script ticks the tool cards and ends succeeded", () => {
     const script = tpl04Script();
-    expect(script.map((s) => s.page.run?.state)).toEqual(["running", "succeeded"]);
+    expect(script.map((s) => s.page.run.state)).toEqual(["running", "succeeded"]);
     expect(script.at(-1)?.page.items.every((i) => i.outcome === "succeeded" || i.seq === 2)).toBe(
       true,
     );

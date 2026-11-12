@@ -25,7 +25,7 @@ runs: `agents.api.open_turn_run`, `run_session_turn`, `open_plan_child_run` (DEC
   figure (INV-3).
 - Visibility is DEC-87's: a session is its owner's, plus whoever the owner shares it with;
   attribution reads "‹person› via Agent".
-- Real time: the turn's runs reach the dock on the `run:` topic of `GET /v1/events`; the
-  `session:` topic kind is reserved (`kernel.realtime.TOPIC_KINDS`) and not yet registered.
+- Real time: a session's items reach its thread on the `session:<id>` topic of `GET /v1/events`
+  (`session_events.py`, TASK-7325); the turn's runs reach the dock on `run:<id>`.
 
 Will own (docs/plan/03-backend-architecture.md §2.2): Agent definitions and versions, installs, schedules, triggers, workbench sessions and items, saved prompts.

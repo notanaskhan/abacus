@@ -37761,7 +37761,7 @@ export type ReferenceSetOut = {
     /**
      * Kind
      */
-    kind: 'due_date_rules' | 'legal_holidays' | 'disaster_postponements' | 'form_8879_set' | 'information_return_thresholds' | 'retention_minimums' | 'standards_sets';
+    kind: 'due_date_rules' | 'legal_holidays' | 'disaster_postponements' | 'form_8879_set' | 'information_return_thresholds' | 'retention_minimums' | 'standards_sets' | 'tax_form_lines';
     /**
      * Title
      */
@@ -37827,7 +37827,9 @@ export type ReferenceSetVersionOut = {
         kind: 'retention_minimums';
     } & RetentionMinimumsPayload) | ({
         kind: 'standards_sets';
-    } & StandardsSetsPayload);
+    } & StandardsSetsPayload) | ({
+        kind: 'tax_form_lines';
+    } & TaxFormLinesPayload);
     /**
      * Payload Hash
      */
@@ -39189,6 +39191,32 @@ export type RequesterOut = {
 export type ResidencyDeterminationStatus = 'review_point' | 'confirmed' | 'action_required';
 
 /**
+ * ResidencyFactOut
+ *
+ * T-04-T39 (additive): one cited fact as code states it (TRI).
+ */
+export type ResidencyFactOut = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Source Kind
+     */
+    source_kind: string;
+    /**
+     * Value
+     */
+    value: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * ResidencyOptionOut
  */
 export type ResidencyOptionOut = {
@@ -39840,14 +39868,40 @@ export type ReturnResidencyOut = {
      */
     confirmed_by_name?: string | null;
     /**
+     * Conflict
+     */
+    conflict?: boolean;
+    /**
+     * Determination Id
+     */
+    determination_id?: string | null;
+    /**
+     * Fact Rows
+     */
+    fact_rows?: Array<ResidencyFactOut>;
+    /**
      * Facts
      */
     facts: Array<string>;
+    /**
+     * Issue Id
+     */
+    issue_id?: string | null;
     /**
      * Options
      */
     options: Array<ResidencyOptionOut>;
     status: ResidencyDeterminationStatus;
+    /**
+     * Tallies
+     */
+    tallies?: {
+        [key: string]: number;
+    };
+    /**
+     * Version
+     */
+    version?: number;
 };
 
 /**
@@ -46694,6 +46748,30 @@ export type StartOut = {
  */
 export type StateAllocationOut = {
     /**
+     * Addbacks
+     */
+    addbacks?: string | null;
+    /**
+     * Credit
+     */
+    credit?: string | null;
+    /**
+     * Credit Limit
+     */
+    credit_limit?: string | null;
+    /**
+     * Federal Total
+     */
+    federal_total?: string | null;
+    /**
+     * Missing
+     */
+    missing?: Array<string>;
+    /**
+     * Ny Agi
+     */
+    ny_agi?: string | null;
+    /**
      * Rows
      */
     rows: Array<AllocationRowOut>;
@@ -48433,6 +48511,58 @@ export type TaxElectionOut = {
      * Status Code
      */
     status_code: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * TaxFormLine
+ */
+export type TaxFormLine = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line
+     */
+    line: string;
+    /**
+     * Mappable
+     */
+    mappable?: boolean;
+    /**
+     * Schedule
+     */
+    schedule: 'L' | 'K' | '8825' | 'M-1' | 'M-2' | 'M-3';
+    /**
+     * Side
+     */
+    side: 'asset' | 'contra_asset' | 'liability' | 'capital' | 'income' | 'deduction' | 'credit' | 'memo' | 'total';
+};
+
+/**
+ * TaxFormLinesPayload
+ */
+export type TaxFormLinesPayload = {
+    /**
+     * Form
+     */
+    form: '1065';
+    /**
+     * Kind
+     */
+    kind: 'tax_form_lines';
+    /**
+     * Rows
+     */
+    rows: Array<TaxFormLine>;
     /**
      * Tax Year
      */
@@ -117821,7 +117951,7 @@ export type ListReferenceSetsData = {
         /**
          * Kind
          */
-        kind?: 'due_date_rules' | 'legal_holidays' | 'disaster_postponements' | 'form_8879_set' | 'information_return_thresholds' | 'retention_minimums' | 'standards_sets' | null;
+        kind?: 'due_date_rules' | 'legal_holidays' | 'disaster_postponements' | 'form_8879_set' | 'information_return_thresholds' | 'retention_minimums' | 'standards_sets' | 'tax_form_lines' | null;
     };
     url: '/v1/reference-sets';
 };
@@ -127262,6 +127392,64 @@ export type StateAllocationResponses = {
 };
 
 export type StateAllocationResponse = StateAllocationResponses[keyof StateAllocationResponses];
+
+export type StateAllocationXlsxData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/state-allocation.xlsx';
+};
+
+export type StateAllocationXlsxErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StateAllocationXlsxError = StateAllocationXlsxErrors[keyof StateAllocationXlsxErrors];
+
+export type StateAllocationXlsxResponses = {
+    /**
+     * Response State Allocation Xlsx
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type StateAllocationXlsxResponse = StateAllocationXlsxResponses[keyof StateAllocationXlsxResponses];
 
 export type WorksheetsData = {
     body?: never;

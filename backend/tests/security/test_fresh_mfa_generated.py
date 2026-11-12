@@ -93,6 +93,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/firm/safeguards/wisp-pack/{pack_id}", "security.manage"),
     ("GET", "/v1/firm/safeguards/wisp-pack/{pack_id}/download", "security.manage"),
     ("GET", "/v1/tax/returns/{return_id}/issues/export", "export.create"),
+    ("GET", "/v1/tax/returns/{return_id}/state-allocation.xlsx", "export.create"),
     ("GET", "/v1/walls/preview", "wall.create"),
     ("POST", "/v1/agent-runs/{run_id}/trace-exports", "run_trace.export"),
     ("POST", "/v1/audit-events/exports", "audit_event.export"),

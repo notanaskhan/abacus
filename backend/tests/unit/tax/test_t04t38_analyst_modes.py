@@ -20,6 +20,9 @@ from abacus.modules.agents.api import spec_v2
 from abacus.modules.tax import analyst_modes as am
 from abacus.modules.tax import residency_service as rs
 
+Loose = Any  # Any: a stand-in agent context
+
+
 pytestmark = pytest.mark.asyncio
 ENTITY = uuid.uuid4()
 RETURN = uuid.uuid4()
@@ -122,7 +125,7 @@ async def test_ridgeline_proposes_seven_treatments_with_codes_figures_only(
         ]
     )
     _install(monkeypatch, tools, invented)
-    result = await am.k1_treatments_mode(cast(Any, _Agent()), ENTITY, 2025)
+    result = await am.k1_treatments_mode(cast(Loose, _Agent()), ENTITY, 2025)
     assert result.outcome == "proposed" and result.proposed == 7
     (name, arguments) = tools.calls[-1]
     assert name == "tax.propose_pass_through_treatments"
@@ -141,7 +144,7 @@ async def test_without_consent_the_mode_waits_and_proposes_nothing(
 ) -> None:
     tools = FakeTools({"tax.read_prior_year": Outcome(False, code="consent_required")})
     _install(monkeypatch, tools, None)
-    result = await am.k1_treatments_mode(cast(Any, _Agent()), ENTITY, 2025)
+    result = await am.k1_treatments_mode(cast(Loose, _Agent()), ENTITY, 2025)
     assert (result.outcome, result.code) == ("waiting_on_inputs", "consent_required")
     assert [n for n, _ in tools.calls] == ["tax.read_prior_year"]
 
@@ -199,7 +202,7 @@ async def test_the_150_day_variant_is_action_required_with_option_2(
         tools,
         am.ResidencyOutput(rationale="150 NYC days; the main home is Rhinebeck."),
     )
-    result = await am.residency_mode(cast(Any, _Agent()), ENTITY, 2025, RETURN)
+    result = await am.residency_mode(cast(Loose, _Agent()), ENTITY, 2025, RETURN)
     assert result.outcome == "action_required"
     assert result.recommended == "full_year_nys_part_year_nyc"  # option 2
     assert result.client_question is not None
@@ -232,7 +235,7 @@ async def test_281_days_proposes_full_year_without_a_client_question(
         }
     )
     _install(monkeypatch, tools, None)
-    result = await am.residency_mode(cast(Any, _Agent()), ENTITY, 2025, RETURN)
+    result = await am.residency_mode(cast(Loose, _Agent()), ENTITY, 2025, RETURN)
     assert (result.outcome, result.recommended, result.client_question) == (
         "proposed",
         "full_year_nys_nyc",

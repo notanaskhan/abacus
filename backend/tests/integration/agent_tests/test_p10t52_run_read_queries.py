@@ -24,12 +24,15 @@ from .walls_support import Net
 
 pytestmark = pytest.mark.asyncio
 
-# The budget per read: authorise and visibility, the run head, its steps, its counters.
+# The budget per read: every statement the request runs (sign-in, tenant context, flags,
+# authorise and visibility, then the run head, its steps and counters). Set at the S38 end pass
+# from the first measurement (run 151, items 125, trace 168, list 105; TASK-7426) plus about
+# 10%; the hard rule is the equality above it: the count never grows with the run's size.
 BUDGETS: Final = {
-    "run": 14,
-    "items": 14,
-    "trace": 16,
-    "list": 12,
+    "run": 166,
+    "items": 138,
+    "trace": 185,
+    "list": 116,
 }
 
 

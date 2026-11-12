@@ -54,6 +54,7 @@ from abacus.modules.identity.api import (
     member_could,
     names_of,
 )
+from abacus.modules.review.api import issue_awaits_client
 from abacus.modules.tax.compute.individual.residency import (
     ResidencyFacts,
     ResidencyOption,
@@ -253,10 +254,19 @@ _LINK_ISSUE = text(
     "UPDATE residency_determinations SET issue_id = :i, version_no = version_no + 1, "
     "updated_at = clock_timestamp() WHERE id = :d"
 )
-_ASKED = text(
-    "SELECT EXISTS (SELECT 1 FROM issues WHERE id = :i AND client_sent_at IS NOT NULL "
-    "AND resolved_at IS NULL)"
+
+
+_FACT_CITATIONS = text(
+    "SELECT DISTINCT unnest(citation_ids) FROM residency_facts WHERE determination_id = :d"
 )
+
+
+async def fact_citations(tenant: TenantContext, determination_id: UUID) -> tuple[UUID, ...]:
+    """The verified citations behind a determination's facts (code recorded them when it opened
+    the determination), for the residency proposal's row: SHL-10 approves only a cited change."""
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_FACT_CITATIONS, {"d": determination_id})).scalars().all()
+    return tuple(sorted(cast(UUID, r) for r in rows))
 
 
 @dataclass(frozen=True)
@@ -275,7 +285,7 @@ class Determination:
 
 
 def _row(r: object) -> Determination:
-    g = cast(Mapping[str, object], r._mapping)  # type: ignore[attr-defined]
+    g = cast(Mapping[str, object], r._mapping)  # type: ignore[attr-defined]  # a Row, typed object
     return Determination(
         cast(UUID, g["id"]),
         cast(UUID, g["engagement_id"]),
@@ -363,7 +373,7 @@ async def open_residency(
     tx.record(
         "residency_determination.opened",
         target=Target("residency_determination", determination_id),
-        after=Ref(facts=len(facts), conflict=call.conflict),
+        after=Ref(facts=len(facts), conflict=int(call.conflict)),
         scope=Scope(engagement_id=engagement),
     )
     return determination_id
@@ -416,9 +426,7 @@ async def residency_view(ctx: AuthContext, return_id: UUID, scope: str = "T") ->
         raise ResidencyNotFound
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(_FACTS, {"d": found.id})).all()
-        asked = bool(
-            await session.scalar(_ASKED, {"i": found.issue_id}) if found.issue_id else False
-        )
+    asked = await issue_awaits_client(ctx.tenant, found.issue_id) if found.issue_id else False
     names: dict[UUID, str] = await names_of([found.confirmed_by]) if found.confirmed_by else {}
     facts = tuple(
         FactView(
@@ -473,6 +481,10 @@ _CONFIRM = text(
 )
 
 
+class _AlreadyConfirmed(Exception):
+    """An approval delivered twice: the determination is confirmed already."""
+
+
 async def confirm_approved(
     tenant: TenantContext,
     proposal_id: UUID,
@@ -507,29 +519,32 @@ async def confirm_approved(
     )
     if not await member_could(tenant.tenant_id, approver, CONFIRM, resource):
         raise ConfirmNotPermitted(facts={"proposal_id": str(proposal_id)})
-    async with uow(system) as tx:
-        done = (
-            await tx.session.execute(
-                _CONFIRM,
-                {"o": option, "by": approver, "p": proposal_id, "d": determination_id},
+    try:
+        async with uow(system) as tx:
+            done = (
+                await tx.session.execute(
+                    _CONFIRM,
+                    {"o": option, "by": approver, "p": proposal_id, "d": determination_id},
+                )
+            ).first()
+            if done is None:
+                raise _AlreadyConfirmed  # nothing changed: roll back, no audit event
+            tx.record(
+                "residency_determination.confirmed",
+                target=Target("residency_determination", determination_id),
+                after=Ref(by=approver, proposal=proposal_id),  # the option is on the row
+                scope=Scope(engagement_id=cast(UUID, done.engagement_id)),
             )
-        ).first()
-        if done is None:
-            return False
-        tx.record(
-            "residency_determination.confirmed",
-            target=Target("residency_determination", determination_id),
-            after=Ref(option=option, by=approver, proposal=proposal_id),
-            scope=Scope(engagement_id=cast(UUID, done.engagement_id)),
-        )
-        tx.emit(
-            ResidencyConfirmed(
-                determination_id=determination_id,
-                tax_return_id=cast(UUID, done.tax_return_id),
-                engagement_id=cast(UUID, done.engagement_id),
-                option=option,
+            tx.emit(
+                ResidencyConfirmed(
+                    determination_id=determination_id,
+                    tax_return_id=cast(UUID, done.tax_return_id),
+                    engagement_id=cast(UUID, done.engagement_id),
+                    option=option,
+                )
             )
-        )
+    except _AlreadyConfirmed:
+        return False
     return True
 
 
@@ -559,7 +574,7 @@ async def on_residency_confirmed(event: OutboxEvent) -> None:
         tx.record(
             "tax_return.engine_reimport_needed",
             target=Target("tax_return", return_id),
-            after=Ref(reason="residency_confirmed", worksheets=len(activated)),
+            after=Ref(worksheets=len(activated)),  # the cause is the confirmation (the event)
             scope=Scope(engagement_id=engagement),
         )
 

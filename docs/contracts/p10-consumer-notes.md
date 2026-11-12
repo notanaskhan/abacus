@@ -34,7 +34,7 @@ says what P-10 gives, how to use it and what stays the consumer's. How-to:
 - The screen kit is F-07's T4 chat kit (`packages/ui/src/agent/chat`: `WorkbenchLayout`,
   `SessionList`, `ChatHeader`, `ChatThread`), with fixtures in
   `apps/web/src/fixtures/seed/tpl04-sessions.ts`.
-- Not built for W-02: the `session:` realtime topic (reserved, unregistered), the
+- The `session:<id>` realtime topic is registered (TASK-7325). Not built for W-02: the
   `workbench.assistant` capability and its evals, the context picker. J11 b2-b3 stay `test.fixme`
   until WB-01 g lands (P-10-T50).
 

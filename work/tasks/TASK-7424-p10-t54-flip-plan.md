@@ -2,7 +2,7 @@
 id: TASK-7424
 title: "P-10-T54: M17 flip plan: docs/runbooks/runtime-v2-flip.md (rollback is flags off; runs persist), shadow of engagement runs on staging and the canary from Mon Mar 20, both founders' approvals for Tue May 2, 2028"
 spec: SPEC-647
-acceptance_criteria: []
+acceptance_criteria: [AC-T7]  # rollback leaves clients polling; runs persist
 risk_zone: red
 status: in-progress
 branch: s38-p10-t54

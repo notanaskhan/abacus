@@ -1844,21 +1844,23 @@ async def suggestion_engagement_of(session: AsyncSession, suggestion_id: UUID) -
     return found.scalar_one_or_none()
 
 
-# --- P-10-T49 (C13; SPEC-647 §1 outcome 6, J13 step 5b): a v2 run's plan awaiting approval and
-# its proposals as "Waiting on you" rows. Shadow runs never show (SPEC-036 AC-5).
+# --- P-10-T49 (C13; SPEC-647 §1 outcome 6, J13 step 5b): a runtime run's plan awaiting approval
+# and its proposals as "Waiting on you" rows. Shadow runs never show (SPEC-036 AC-5). Only the
+# runtime writes plans and proposals, so neither read filters on `spec_version` (an engagement run
+# has no v2 spec and records 1; S38 end pass).
 
 _PLANS_FOR_GATES = text(
     "SELECT r.id, r.engagement_id, coalesce(r.runs_as_user_id, r.initiator_user_id) "
     "FROM agent_runs r JOIN LATERAL (SELECT p.state FROM agent_plans p WHERE p.run_id = r.id "
     "ORDER BY p.version DESC LIMIT 1) latest ON true "
-    "WHERE r.spec_version = 2 AND r.state = 'awaiting_plan_approval' AND NOT r.shadow "
+    "WHERE r.state = 'awaiting_plan_approval' AND NOT r.shadow "
     "AND r.engagement_id IS NOT NULL AND latest.state IN ('proposed', 'edited') "
     "AND (CAST(:engagement AS uuid) IS NULL OR r.engagement_id = CAST(:engagement AS uuid))"
 )
 _RUN_PROPOSALS_FOR_GATES = text(
     "SELECT p.id, p.engagement_id, coalesce(p.routed_to_user_id, r.runs_as_user_id, "
     "r.initiator_user_id) FROM proposals p JOIN agent_runs r ON r.id = p.agent_run_id "
-    "WHERE r.spec_version = 2 AND NOT r.shadow AND p.state = 'pending' "
+    "WHERE NOT r.shadow AND p.state = 'pending' "
     "AND p.engagement_id IS NOT NULL "
     "AND (CAST(:engagement AS uuid) IS NULL OR p.engagement_id = CAST(:engagement AS uuid))"
 )

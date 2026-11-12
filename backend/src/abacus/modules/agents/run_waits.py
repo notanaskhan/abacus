@@ -31,6 +31,7 @@ from temporalio import activity
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import signal_workflow
+from abacus.kernel.errors import DomainInvalid
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.agents.service import AgentRunNotRunning, load_run_v2_context
@@ -120,15 +121,20 @@ async def open_wait(
     reserved = arguments.get("reserved_user_id")
     recommended = arguments.get("recommended_option_key")
     work_item = arguments.get("work_item_id")
-    card = await raise_decision_card(
-        agent,
-        engagement_id=agent.engagement_id,
-        kind=str(arguments.get("decision_kind", "")),
-        question_key=str(arguments.get("question_key", step.get("key", ""))),
-        work_item_id=UUID(str(work_item)) if work_item else None,
-        reserved_user_id=UUID(str(reserved)) if reserved else None,
-        recommended_option_key=str(recommended) if recommended else None,
-    )
+    try:
+        card = await raise_decision_card(
+            agent,
+            engagement_id=agent.engagement_id,
+            kind=str(arguments.get("decision_kind", "")),
+            question_key=str(arguments.get("question_key", step.get("key", ""))),
+            work_item_id=UUID(str(work_item)) if work_item else None,
+            reserved_user_id=UUID(str(reserved)) if reserved else None,
+            recommended_option_key=str(recommended) if recommended else None,
+        )
+    except DomainInvalid:
+        # DEC-4416: a kind whose owner computes its options (planning materiality) refuses the
+        # generic raise; the step fails closed with a code instead of retrying the activity.
+        return WaitOpened("failed", error_code="decision_not_raisable")
     async with uow(tenant) as tx:
         await _hold(tx, step_id, "blocked", {"card_id": str(card)})
         tx.record(

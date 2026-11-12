@@ -69,9 +69,13 @@ function Table({
                 {row.map((cell, i) => {
                   const column = columns[i] ?? "";
                   const link =
-                    CELL_LINKS[column] ?? (title === COPY.table2 && i === 4 ? CELL_LINKS.PTET : undefined);
+                    CELL_LINKS[column] ??
+                    (title === COPY.table2 && i === 4 ? CELL_LINKS.PTET : undefined);
                   return (
-                    <td key={`${row[0]}-${column}`} className={`px-[8px] ${i > 0 ? "tabular-nums" : ""}`}>
+                    <td
+                      key={`${row[0] ?? ""}-${column}`}
+                      className={`px-[8px] ${i > 0 ? "tabular-nums" : ""}`}
+                    >
                       {link && !total && cell !== "—" && cell !== "" ? (
                         <button type="button" data-cell={link} onClick={() => onCell?.(link)}>
                           {cell}
@@ -115,21 +119,40 @@ export function ResidencyAllocation({
         <span className="flex-1 text-center">
           <span className="font-medium">{COPY.subbar.form}</span>{" "}
           <span className="text-ink-2">{COPY.subbar.client}</span>{" "}
-          <span className="rounded-[999px] bg-surface-2 px-[6px] text-[11.5px]">{COPY.subbar.state}</span>
+          <span className="rounded-[999px] bg-surface-2 px-[6px] text-[11.5px]">
+            {COPY.subbar.state}
+          </span>
         </span>
         <span className="text-ink-2">{COPY.subbar.assistant}</span>
       </div>
-      <nav aria-label="Return tabs" className="flex h-[50px] items-center gap-[12px] px-[12px] text-[13px]">
+      <nav
+        aria-label="Return tabs"
+        className="flex h-[50px] items-center gap-[12px] px-[12px] text-[13px]"
+      >
         <span className="flex gap-[4px]">
           {COPY.tabs.map((t) => (
-            <span key={t} className={t.startsWith("Review") ? "rounded-[7px] bg-surface px-[8px] font-medium shadow-e1" : "px-[8px] text-ink-2"}>
+            <span
+              key={t}
+              className={
+                t.startsWith("Review")
+                  ? "rounded-[7px] bg-surface px-[8px] font-medium shadow-e1"
+                  : "px-[8px] text-ink-2"
+              }
+            >
               {t}
             </span>
           ))}
         </span>
         <span className="flex gap-[4px]">
           {COPY.subtabs.map((t) => (
-            <span key={t} className={t.startsWith("Residency") ? "rounded-[7px] bg-surface px-[8px] font-medium shadow-e1" : "px-[8px] text-ink-2"}>
+            <span
+              key={t}
+              className={
+                t.startsWith("Residency")
+                  ? "rounded-[7px] bg-surface px-[8px] font-medium shadow-e1"
+                  : "px-[8px] text-ink-2"
+              }
+            >
               {t}
             </span>
           ))}
@@ -138,7 +161,14 @@ export function ResidencyAllocation({
       <div className="flex h-[44px] items-center px-[12px] text-[13px]">
         <span className="flex gap-[4px]">
           {COPY.control.map((c) => (
-            <span key={c} className={c === "Residency" ? "rounded-[7px] bg-surface px-[8px] font-medium shadow-e1" : "px-[8px] text-ink-2"}>
+            <span
+              key={c}
+              className={
+                c === "Residency"
+                  ? "rounded-[7px] bg-surface px-[8px] font-medium shadow-e1"
+                  : "px-[8px] text-ink-2"
+              }
+            >
               {c}
             </span>
           ))}
@@ -167,12 +197,20 @@ export function ResidencyAllocation({
       <div className="flex gap-[10px] px-[12px] pb-[12px]">
         <section aria-label="Residency" className="flex w-[560px] flex-col gap-[10px]">
           {confirmed ? (
-            <div role="status" data-banner="confirmed" className="rounded-[10px] bg-green-tint px-[12px] py-[8px] text-[12.5px] text-green-ink">
+            <div
+              role="status"
+              data-banner="confirmed"
+              className="rounded-[10px] bg-green-tint px-[12px] py-[8px] text-[12.5px] text-green-ink"
+            >
               {COPY.confirmed}
             </div>
           ) : null}
           {conflict ? (
-            <div role="alert" data-banner="action_required" className="rounded-[10px] bg-red-tint px-[12px] py-[8px] text-[12.5px] text-red-ink">
+            <div
+              role="alert"
+              data-banner="action_required"
+              className="rounded-[10px] bg-red-tint px-[12px] py-[8px] text-[12.5px] text-red-ink"
+            >
               {COPY.actionRequired}
             </div>
           ) : null}
@@ -181,7 +219,11 @@ export function ResidencyAllocation({
               {COPY.residencyHeader}
             </div>
             {FACTS.map((f) => (
-              <div key={f.key} data-fact={f.key} className="flex min-h-[33px] items-center gap-[8px] px-[12px] text-[12.5px]">
+              <div
+                key={f.key}
+                data-fact={f.key}
+                className="flex min-h-[33px] items-center gap-[8px] px-[12px] text-[12.5px]"
+              >
                 <span className="w-[200px] text-ink-2">{f.label}</span>
                 <span className="flex-1">{f.value}</span>
                 <button
@@ -200,21 +242,30 @@ export function ResidencyAllocation({
               <span className="rounded-[999px] bg-surface-2 px-[6px] text-[12px]">?</span>
               {COPY.askTitle}
             </div>
-            <div role="radiogroup" aria-label={COPY.askTitle} className="flex flex-col gap-[8px] px-[12px] pb-[8px]">
+            <div
+              role="radiogroup"
+              aria-label={COPY.askTitle}
+              className="flex flex-col gap-[8px] px-[12px] pb-[8px]"
+            >
               {OPTIONS.map((o) => (
                 <label key={o.key} data-option={o.key} className="flex gap-[8px]">
                   <input
                     type="radio"
                     name="residency"
                     checked={selected === o.key}
-                    onChange={() => setSelected(o.key)}
+                    onChange={() => {
+                      setSelected(o.key);
+                    }}
                     disabled={confirmed}
                   />
                   <span className="flex flex-col">
                     <span className="text-[13.5px]">
                       {o.title}
                       {o.key === recommendedKey ? (
-                        <span data-recommended className="ml-[6px] rounded-[5px] bg-surface-2 px-[5px] text-[11px] font-medium">
+                        <span
+                          data-recommended
+                          className="ml-[6px] rounded-[5px] bg-surface-2 px-[5px] text-[11px] font-medium"
+                        >
                           {COPY.recommended}
                         </span>
                       ) : null}
@@ -226,11 +277,19 @@ export function ResidencyAllocation({
             </div>
             {confirmed ? null : (
               <div className="flex justify-between px-[12px] py-[10px]">
-                <Button variant={conflict ? "primary" : "secondary"} onClick={() => setAsking(true)}>
+                <Button
+                  variant={conflict ? "primary" : "secondary"}
+                  onClick={() => {
+                    setAsking(true);
+                  }}
+                >
                   {COPY.askClient}
                 </Button>
                 {reviewer ? (
-                  <Button variant={conflict ? "secondary" : "primary"} onClick={() => onConfirm?.(selected)}>
+                  <Button
+                    variant={conflict ? "secondary" : "primary"}
+                    onClick={() => onConfirm?.(selected)}
+                  >
                     {COPY.confirm}
                   </Button>
                 ) : null}
@@ -238,7 +297,12 @@ export function ResidencyAllocation({
             )}
           </div>
           {asking ? (
-            <div role="dialog" aria-label="Ask the client" data-sheet className="rounded-[12px] bg-surface p-[12px] shadow-e2">
+            <div
+              role="dialog"
+              aria-label="Ask the client"
+              data-sheet
+              className="rounded-[12px] bg-surface p-[12px] shadow-e2"
+            >
               <div className="text-[12px] text-ink-3">{COPY.sheetTo}</div>
               <p className="py-[6px] text-[13.5px]">{COPY.sheetQuestion}</p>
               <ul className="flex gap-[8px] text-[12.5px]">
@@ -261,7 +325,11 @@ export function ResidencyAllocation({
             {COPY.allocationHeader}
           </div>
           {loading ? (
-            <div aria-busy="true" data-skeleton className="flex flex-col gap-[6px] rounded-[12px] bg-surface p-[12px] shadow-e1">
+            <div
+              aria-busy="true"
+              data-skeleton
+              className="flex flex-col gap-[6px] rounded-[12px] bg-surface p-[12px] shadow-e1"
+            >
               <span className="text-[12.5px] text-ink-3">{COPY.loading}</span>
               {[0, 1, 2, 3, 4].map((i) => (
                 <span key={i} className="h-[24px] rounded-[6px] bg-surface-2" />
@@ -273,7 +341,10 @@ export function ResidencyAllocation({
               <Table title={COPY.table2} columns={CREDIT_COLUMNS} rows={CREDITS} onCell={onCell} />
               <div className="rounded-[12px] bg-surface shadow-e1">
                 {NOTES.map(([k, v]) => (
-                  <div key={k} className="flex min-h-[33px] gap-[8px] px-[12px] py-[6px] text-[12.5px]">
+                  <div
+                    key={k}
+                    className="flex min-h-[33px] gap-[8px] px-[12px] py-[6px] text-[12.5px]"
+                  >
                     <span className="w-[200px] text-ink-2">{k}</span>
                     <span className="flex-1">{v}</span>
                   </div>

@@ -28,12 +28,17 @@ from abacus.ai_gateway.providers import (
 from abacus.kernel.flags import forget_flags
 from abacus.modules.agents import trace_records
 from abacus.modules.agents.api import TurnOutcome
+from abacus.modules.agents.spec_v2 import AGENTS_V2
 from abacus.modules.evidence.retention import RECORD_TYPES
 from abacus.modules.workbench import session_activities, sessions
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
 from .support import Person, Seeder, World
 from .walls_support import Net
+
+Json = Any  # Any: a decoded JSON response body
+Loose = Any  # Any: a role code the seeder types as a literal
+
 
 pytestmark = pytest.mark.asyncio
 FIGURE: Final = "2,625 records read"  # a figure only a viewer who may open the client may see
@@ -71,7 +76,7 @@ async def _flags(seed: Seeder, world: World) -> None:
 
 async def _member(seed: Seeder, world: World, role: str) -> Person:
     who = await seed.person(world.tenant_id)
-    await seed.member(world.engagement_id, who, cast(Any, role))
+    await seed.member(world.engagement_id, who, cast(Loose, role))
     return who
 
 
@@ -238,7 +243,7 @@ async def test_ac_s3_a_locked_viewer_receives_no_figure(
     await _item(seed, world, session_id, 1, "agent_blocks", blocks)
     seen = await net.call("GET", f"/v1/workbench/sessions/{session_id}", margaret)
     assert seen.status_code == 200, seen.text
-    snapshot = cast(dict[str, Any], seen.json())
+    snapshot = cast(dict[str, Json], seen.json())
     assert snapshot["locked"] is True
     assert snapshot["items"] == [] and snapshot["allowed_actions"] == []
     assert MARKER not in seen.text and FIGURE not in seen.text
@@ -326,11 +331,11 @@ async def _ended_run(seed: Seeder, world: World, who: Person, days: int) -> uuid
     return run_id
 
 
-async def _export(net: Net, who: Person, run_id: uuid.UUID) -> dict[str, Any]:
+async def _export(net: Net, who: Person, run_id: uuid.UUID) -> dict[str, Json]:
     headers = {**await net.headers(who), "Idempotency-Key": str(uuid.uuid4())}
     found = await net.http.post(f"/v1/agent-runs/{run_id}/trace-exports", json={}, headers=headers)
     assert found.status_code in (200, 201), found.text
-    return cast(dict[str, Any], found.json())
+    return cast(dict[str, Json], found.json())
 
 
 async def test_ac_rr2_a_pruned_run_keeps_every_tool_call_in_its_trace(
@@ -345,11 +350,20 @@ async def test_ac_rr2_a_pruned_run_keeps_every_tool_call_in_its_trace(
     assert [r["run_seq"] for r in left] == [3]  # only past the 30-day horizon is pruned
     trace = await net.call("GET", f"/v1/agent-runs/{run_id}/trace", hannah)
     assert trace.status_code == 200, trace.text
-    for tool in TOOLS:
-        assert tool in trace.text or f"s{TOOLS.index(tool) + 1}" in trace.text, tool
+    # The timeline is drawn from the durable steps, not `run_events`: one row per tool call, each
+    # naming its step (tool names are not timeline text; the step detail carries them).
+    steps = {
+        str(r["id"])
+        for r in await seed.rows("SELECT id FROM agent_run_steps WHERE run_id = $1", run_id)
+    }
+    rows = cast(list[dict[str, Json]], cast(dict[str, Json], trace.json())["rows"])
+    assert {str(r["step_id"]) for r in rows if r.get("step_id")} == steps
+    assert len(steps) == len(TOOLS)
     exported = await _export(net, hannah, run_id)
-    for n in range(1, len(TOOLS) + 1):
-        assert f"s{n}" in str(exported["content"]) or TOOLS[n - 1] in str(exported["content"])
+    content = exported["content"]
+    body = cast(dict[str, Json], json.loads(content) if isinstance(content, str) else content)
+    # Every tool call's reads are in the frozen export (10 records each).
+    assert sum(int(r["count"]) for r in body["records_read"]) == 10 * len(TOOLS)
 
 
 async def test_ac_rr3_the_export_and_its_manifest_are_byte_identical_after_the_prune(
@@ -362,9 +376,11 @@ async def test_ac_rr3_the_export_and_its_manifest_are_byte_identical_after_the_p
     second = await _export(net, hannah, run_id)
     assert first["content"] == second["content"]
     assert first["sha256"] == second["sha256"]
-    for key in ("manifest", "signature"):
-        if key in first:
-            assert first[key] == second[key], key
+    if "manifest" in first:
+        assert first["manifest"] == second["manifest"]
+    # An ECDSA signature is randomised per signing: both sign the same manifest, so each is
+    # present; their bytes need not match.
+    assert ("signature" in first) == ("signature" in second)
     # The rows moved (a later step): the next export is a new frozen version, never a rewrite.
     await seed.run(
         "UPDATE agent_run_steps SET records_read = 11 WHERE run_id = $1 AND seq = 1", run_id
@@ -423,7 +439,7 @@ async def test_the_capability_endpoint_calls_no_model_and_writes_no_usage(
         ):
             response = await net.call("GET", path, hannah)
             assert response.status_code == 200, (path, response.text)
-            items = cast(list[dict[str, Any]], response.json()["items"])
+            items = cast(list[dict[str, Json]], response.json()["items"])
             assert items and all(set(i) >= {"capability", "available", "reason"} for i in items)
         assert await seed.value("SELECT count(*) FROM usage_records") == usage
         assert (
@@ -450,10 +466,12 @@ async def test_the_first_reason_wins_in_the_documented_order(
         "GET", f"/v1/agents/capabilities?engagement_id={world.engagement_id}", staff
     )
     assert response.status_code == 200, response.text
-    items = {i["capability"]: i for i in cast(list[dict[str, Any]], response.json()["items"])}
-    for tax in ("tax.return_drafter", "tax.return_analyst"):
-        assert (items[tax]["available"], items[tax]["reason"]) == (False, "consent_7216")
-    others = [i for name, i in items.items() if not name.startswith("tax.")]
+    items = {i["capability"]: i for i in cast(list[dict[str, Json]], response.json()["items"])}
+    tri = {name for name, spec in AGENTS_V2.items() if "tri" in spec.data_classes}
+    assert {"tax.return_drafter", "tax.return_analyst"} <= tri
+    for name in tri & set(items):
+        assert (items[name]["available"], items[name]["reason"]) == (False, "consent_7216")
+    others = [i for name, i in items.items() if name not in tri]
     assert others and all(i["reason"] == "not_on_team" for i in others)
     allowed = {"paused", "ai_policy_off", "ai_excluded", "consent_7216", "not_on_team", None}
     assert {i["reason"] for i in items.values()} <= allowed

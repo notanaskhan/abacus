@@ -380,6 +380,19 @@ async def _one(tenant: TenantContext, issue_id: UUID) -> IssueRow:
     return _row(found)
 
 
+_AWAITS_CLIENT = text(
+    "SELECT EXISTS (SELECT 1 FROM issues WHERE id = :i AND client_sent_at IS NOT NULL "
+    "AND resolved_at IS NULL)"
+)
+
+
+async def issue_awaits_client(tenant: TenantContext, issue_id: UUID) -> bool:
+    """T-04-T39 (TXI-03 d): the issue was sent to the client and is not yet resolved (the
+    "Asked the client" state), read by its owner so tax never queries `issues` (OWN-001)."""
+    async with tenant_session(tenant) as session:
+        return bool(await session.scalar(_AWAITS_CLIENT, {"i": issue_id}))
+
+
 async def update_issue(
     ctx: AuthContext,
     issue_id: UUID,

@@ -27,6 +27,12 @@ _ROWS = {
     "pass_through_treatment": text(
         "SELECT id, engagement_id FROM k1_treatments WHERE id = ANY(:ids)"
     ),
+    # T-05-T22 / T-04-T39 (S38): an entity return's partner (its TIN seal and reveals) and a
+    # return's residency determination, each owned by its engagement.
+    "partner": text("SELECT id, engagement_id FROM partners WHERE id = ANY(:ids)"),
+    "residency_determination": text(
+        "SELECT id, engagement_id FROM residency_determinations WHERE id = ANY(:ids)"
+    ),
 }
 AUDIT_KINDS = frozenset({"tax_return", "work_item"}) | frozenset(_ROWS)
 _ENTITIES = {

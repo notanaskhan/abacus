@@ -61,22 +61,19 @@ SCOPES: Final[dict[str, tuple[str, ...]]] = {
     ),
     # P-10-T52 (ADR-079): runtime v2, the plan rules, the workflow and its activities, waits,
     # commands, the approved write and undo, session turns, the harness and C17's runtime.
-    "agents/runtime": tuple(
-        f"src/abacus/modules/agents/{name}.py"
-        for name in (
-            "run_plan",
-            "run_workflow",
-            "run_activities",
-            "run_waits",
-            "run_commands",
-            "commands",
-            "approved_writes",
-            "approved_write_workflow",
-            "proposal_undo",
-            "session_turns",
-            "harness",
-            "tools/runtime",
-        )
+    "agents/runtime": (  # literal: the floor check reads SCOPES from source
+        "src/abacus/modules/agents/run_plan.py",
+        "src/abacus/modules/agents/run_workflow.py",
+        "src/abacus/modules/agents/run_activities.py",
+        "src/abacus/modules/agents/run_waits.py",
+        "src/abacus/modules/agents/run_commands.py",
+        "src/abacus/modules/agents/commands.py",
+        "src/abacus/modules/agents/approved_writes.py",
+        "src/abacus/modules/agents/approved_write_workflow.py",
+        "src/abacus/modules/agents/proposal_undo.py",
+        "src/abacus/modules/agents/session_turns.py",
+        "src/abacus/modules/agents/harness.py",
+        "src/abacus/modules/agents/tools/runtime.py",
     ),
     # P-10-T52 (ADR-079): the SSE stream, its slots, frames, topics and invalidations.
     "kernel/realtime": ("src/abacus/kernel/realtime.py",),

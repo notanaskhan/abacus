@@ -1,3 +1,13 @@
+---
+id: SPEC-652
+title: "F-07 tier 4: template props as contracts (addendum)"
+status: approved
+owner: ayushkbhatia
+risk_zone: amber
+created: 2026-11-12
+updated: 2026-11-12
+---
+
 # SPEC-652 · F-07 tier 4: template props as contracts (addendum)
 
 | Field | Value |

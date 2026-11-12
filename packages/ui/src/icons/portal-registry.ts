@@ -5,6 +5,7 @@
 // code names an icon missing here, or when an entry differs from ./registry's.
 import {
   Archive,
+  ArrowDown,
   ArrowRight,
   ArrowUp,
   ArrowUpRight,
@@ -14,6 +15,7 @@ import {
   Bold,
   BookOpen,
   Briefcase,
+  Bug,
   Camera,
   Check,
   ChevronDown,
@@ -108,6 +110,7 @@ import type { IconName } from "./names";
 
 const PORTAL_ICONS = {
   archive: Archive,
+  "arrow-down": ArrowDown, // F-07-T03: the chat thread's jump-to-latest
   "arrow-right": ArrowRight,
   "arrow-up": ArrowUp,
   "arrow-up-right": ArrowUpRight,
@@ -117,6 +120,7 @@ const PORTAL_ICONS = {
   bold: Bold,
   "book-open": BookOpen,
   briefcase: Briefcase,
+  bug: Bug, // F-07-T02: the chat header's run trace
   camera: Camera,
   check: Check,
   "chevron-down": ChevronDown,

@@ -2,7 +2,7 @@
 id: TASK-7411
 title: "T-04-T40: TXI-02 K-1 treatment resolver states a-e in fixture mode on the T3 two-pane variant (876, 490)"
 spec: SPEC-649
-acceptance_criteria: [AC-7.1, AC-7.2, AC-7.3, AC-7.4, AC-7.5]
+acceptance_criteria: [AC-7]  # AC-7.1 to AC-7.5
 risk_zone: green
 status: in-review
 branch: s38-t04-t40

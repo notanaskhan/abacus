@@ -2,7 +2,7 @@
 id: TASK-7402
 title: "P-10-T52: Hardening: mutation floors (ADR-079) for the new agents, ai_gateway and kernel/realtime files with survivor triage; p95 budgets (plan approve <= 400 ms, stream first byte <= 500 ms); query-count assertions on run reads"
 spec: SPEC-647
-acceptance_criteria: [AC-1]  # mutation-thresholds.yaml records the floors; p95 budgets hold under x25
+acceptance_criteria: [AC-T8]  # the p95 budgets; mutation-thresholds.yaml records the floors; p95 budgets hold under x25
 risk_zone: red
 status: in-review
 branch: s38-p10-t52

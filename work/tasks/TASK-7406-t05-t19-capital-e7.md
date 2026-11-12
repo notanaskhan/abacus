@@ -2,7 +2,7 @@
 id: TASK-7406
 title: "T-05-T19: E7 tax/compute/entity/capital.py: tax, 704(b) and book capital roll by partner and movement, transferee succession under Reg. §1.704-1(b)(2)(iv)(l), crossfoot, Schedule M-2 lines 1-9 with the tie to Schedule L line 21, and the §743(b) placeholder fact"
 spec: SPEC-651
-acceptance_criteria: [AC-7.1, AC-7.2]
+acceptance_criteria: [AC-7]  # AC-7.1, AC-7.2
 risk_zone: amber
 status: in-review
 branch: s38-t05-t19

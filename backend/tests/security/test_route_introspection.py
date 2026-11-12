@@ -742,6 +742,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/tax/returns/{return_id}/residency", "residency.read"),
     ("GET", "/v1/tax/returns/{return_id}/review-tree", "tax_return.read"),
     ("GET", "/v1/tax/returns/{return_id}/state-allocation", "residency.read"),
+    ("GET", "/v1/tax/returns/{return_id}/state-allocation.xlsx", "export.create"),
     ("GET", "/v1/tax/returns/{return_id}/worksheets", "return_worksheet.read"),
     ("GET", "/v1/tax/returns/{return_id}/workspace", "tax_return.read"),
     ("GET", "/v1/tax/worksheets/{worksheet_id}/fields", "return_worksheet.read"),

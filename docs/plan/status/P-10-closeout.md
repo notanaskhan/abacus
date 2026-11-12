@@ -24,8 +24,13 @@ Apr 25, 2028 renewal past M17. The flip: `docs/runbooks/runtime-v2-flip.md` (Tue
 | P-10-T53 | The delta pen test | Deferred (DEC-1389) |
 
 ## Hand-off notes
-- **The `session:` topic** is reserved, not registered: W-02 registers it with the workbench's
-  authorizer when WB-01 needs live thread updates.
+- **Planning materiality in the engagement run** (DEC-4416): the step fails closed until
+  assurance registers a run step that raises the card through `propose`; J23's blocking step is a
+  strict xfail naming it.
+- **Adapter kinds** (DEC-4415): K-1 treatment and residency approvals apply after commit from
+  the `proposal.decided` subscriber; their Undo is refused (`effect_started`).
+- **The `session:` topic** is registered by the workbench (`session_events.py`, TASK-7325):
+  a session's items reach its thread live.
 - **`presence:{object_ref}`** is reserved for K-03.
 - **The PDF trace export's v2 fields** (cut 3) go to A-07 or G-02.
 - **Statement budgets** for the run reads (P-10-T52) are measured at the S38 end pass and

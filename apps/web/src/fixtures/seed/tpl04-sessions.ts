@@ -98,9 +98,7 @@ export function groupTotals(): Record<keyof typeof GROUPS, number> {
 export interface Tpl04Row {
   id: string;
   title: string;
-  owner:
-    | { kind: "human"; name: string }
-    | { kind: "agent_assisted"; person: string };
+  owner: { kind: "human"; name: string } | { kind: "agent_assisted"; person: string };
   last_at: string;
   /** The meta line's relative word when not today ("Yesterday", "2 Days Ago"). */
   ago?: string;
@@ -242,7 +240,9 @@ function discoveryBlock(): Record<string, unknown> {
       parts: [
         {
           kind: "p",
-          segments: [text("I completed read-only discovery. One scope decision affects every tab.")],
+          segments: [
+            text("I completed read-only discovery. One scope decision affects every tab."),
+          ],
         },
         { kind: "p", segments: [text("What I found in Accrued:")] },
         {
@@ -268,7 +268,10 @@ function discoveryBlock(): Record<string, unknown> {
               ),
             ],
             [text("Binders"), text(`${String(DISCOVERY.binders)} for TY2025`)],
-            [text("Offices"), text("Recorded on every engagement and user: Chicago, Denver, New York")],
+            [
+              text("Offices"),
+              text("Recorded on every engagement and user: Chicago, Denver, New York"),
+            ],
           ],
         },
       ],
@@ -395,7 +398,10 @@ export function threadItems(frame: Tpl04Frame): SessionItemOut[] {
       item(7, "tool_card", {
         label: "Read binder status",
         state: "failed",
-        error: { title: "Stopped at Read binder status", body: "CCH Axcess token expired on Sep 12." },
+        error: {
+          title: "Stopped at Read binder status",
+          body: "CCH Axcess token expired on Sep 12.",
+        },
       }),
     ];
   }

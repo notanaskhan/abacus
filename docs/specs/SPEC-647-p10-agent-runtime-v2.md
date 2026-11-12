@@ -326,7 +326,7 @@ still open. How-to for consumers: `docs/architecture/reference/ai-agent.md` ("Ru
 | 3.4 Runs | `agents/run_workflow.py` (`AgentRunWorkflow`, part 2 behind `agent-run-v2-part-2`), `run_activities.py`, `commands.py`, `runs_v2_contract.py`; plans and proposals are C13 gates (DEC-4401) | — |
 | 3.5 Proposals and approved writes | `agents/proposals.py`, `proposal_slots.py`, `approved_write_workflow.py`; 0750 idempotency ledger | — |
 | 3.6 Engagement run | `agents/engagement_run.py`, `engagement_runs.py`; `register_run_step` (workpapers: `workpaper`) | Section handlers beyond the readiness check are A-04/A-05's |
-| 3.7 Sessions core | `workbench/sessions.py`, `session_queue.py`, `session_workflow.py`, `agents/session_turns.py` | The `session:` realtime topic (reserved); W-02's screens |
+| 3.7 Sessions core | `workbench/sessions.py`, `session_queue.py`, `session_workflow.py`, `agents/session_turns.py` | W-02's screens (the `session:` topic is registered by the workbench, TASK-7325) |
 | 3.8 Real time | `kernel/realtime.py`, `notifications/realtime.py` (`GET /v1/events`), `agents/run_stream.py`; delivery measured per tail read (DEC-4412); edge path RB-65 | The staging load run and the RB-28 rehearsal (T51); the edge apply (T15 partial) |
 | 3.9 Run records, trace, retention | `agents/run_records.py`, `trace.py`, `trace_records.py` (archive hook for A-07), `run_events_prune_workflow.py` | PDF export's v2 fields (cut list item 3) |
 | 3.10 Agent-minute metering | `platform` ledger and rollups, usage read API | — |

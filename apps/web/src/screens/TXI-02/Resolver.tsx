@@ -4,7 +4,7 @@
 // approval card, and the PTET statement in the viewer. Only the PTET row is amber ("Changed vs
 // 2024", with its reason). Approve opens SHL-10 (the host's); the agent never approves, so no
 // control here decides anything: the override needs a reason and is the host's save too.
-import { Button } from "@abacus/ui";
+import { AgentText, Button, Picker } from "@abacus/ui";
 import { type JSX, useState } from "react";
 import {
   CHIPS,
@@ -30,7 +30,10 @@ export interface K1ResolverProps {
 function statusOf(t: Treatment, frame: Frame, overridden: string | null): JSX.Element {
   if (overridden === t.key) {
     return (
-      <span data-status="overridden" className="rounded-[5px] bg-green-tint px-[5px] text-green-ink">
+      <span
+        data-status="overridden"
+        className="rounded-[5px] bg-green-tint px-[5px] text-green-ink"
+      >
         {COPY.overridden}
       </span>
     );
@@ -51,7 +54,10 @@ function statusOf(t: Treatment, frame: Frame, overridden: string | null): JSX.El
   }
   if (t.changed) {
     return (
-      <span data-status="changed" className="rounded-[999px] bg-amber-tint px-[6px] text-amber-ink">
+      <span
+        data-status="changed"
+        className="rounded-[999px] bg-amber-tint px-[6px] text-amber-ink"
+      >
         {COPY.changed}
       </span>
     );
@@ -99,7 +105,7 @@ function Row({
           {overridden === t.key && reasonShown !== null ? COPY.overrideOptions[1] : resolved}
         </td>
         <td className="px-[10px] text-[12px] text-ink-2">
-          {t.rationale}
+          <AgentText inline text={t.rationale} />
           {t.chip ? (
             <button
               type="button"
@@ -133,7 +139,12 @@ function Row({
   );
 }
 
-export function K1Resolver({ frame, onApprove, onOverride, onSource }: K1ResolverProps): JSX.Element {
+export function K1Resolver({
+  frame,
+  onApprove,
+  onOverride,
+  onSource,
+}: K1ResolverProps): JSX.Element {
   const [selected, setSelected] = useState<string>(frame === "c" ? "ptet" : "passive");
   const [editing, setEditing] = useState(frame === "d");
   const [choice, setChoice] = useState<string>(COPY.overrideOptions[1]);
@@ -192,18 +203,28 @@ export function K1Resolver({ frame, onApprove, onOverride, onSource }: K1Resolve
             <span className="text-[13px] text-ink-2">{COPY.back}</span>
             <span className="flex-1 text-center text-[14.5px] font-medium">{COPY.title}</span>
             {released ? (
-              <span data-chip-state="released" className="rounded-[999px] bg-green-tint px-[8px] text-[12px] text-green-ink">
+              <span
+                data-chip-state="released"
+                className="rounded-[999px] bg-green-tint px-[8px] text-[12px] text-green-ink"
+              >
                 {COPY.releasedChip}
               </span>
             ) : (
-              <span data-chip-state="draft" className="rounded-[999px] bg-amber-tint px-[8px] text-[12px] text-amber-ink">
+              <span
+                data-chip-state="draft"
+                className="rounded-[999px] bg-amber-tint px-[8px] text-[12px] text-amber-ink"
+              >
                 {COPY.draftChip}
               </span>
             )}
           </header>
           <div className="flex flex-col gap-[12px] bg-well p-[12px]">
             {released ? (
-              <div role="status" data-banner="released" className="rounded-[10px] bg-green-tint px-[12px] py-[8px] text-[12.5px] text-green-ink">
+              <div
+                role="status"
+                data-banner="released"
+                className="rounded-[10px] bg-green-tint px-[12px] py-[8px] text-[12.5px] text-green-ink"
+              >
                 {COPY.released}
               </div>
             ) : null}
@@ -253,7 +274,9 @@ export function K1Resolver({ frame, onApprove, onOverride, onSource }: K1Resolve
                       selected={selected === t.key}
                       overridden={overridden}
                       reasonShown={savedReason}
-                      onSelect={() => setSelected(t.key)}
+                      onSelect={() => {
+                        setSelected(t.key);
+                      }}
                       onSource={onSource}
                     />
                   ))}
@@ -270,16 +293,12 @@ export function K1Resolver({ frame, onApprove, onOverride, onSource }: K1Resolve
                 >
                   <label className="flex flex-col">
                     <span className="text-ink-3">{TREATMENTS[0]?.label}</span>
-                    <select
-                      aria-label="Treatment"
+                    <Picker
+                      label="Treatment"
                       value={choice}
-                      onChange={(e) => setChoice(e.target.value)}
-                      className="h-[30px] rounded-[7px] bg-surface-2 px-[6px]"
-                    >
-                      {COPY.overrideOptions.map((o) => (
-                        <option key={o}>{o}</option>
-                      ))}
-                    </select>
+                      onChange={setChoice}
+                      options={COPY.overrideOptions.map((o) => ({ value: o, label: o }))}
+                    />
                   </label>
                   <label className="flex flex-1 flex-col">
                     <span className="text-ink-3">{COPY.reasonLabel}</span>
@@ -304,7 +323,10 @@ export function K1Resolver({ frame, onApprove, onOverride, onSource }: K1Resolve
               ) : null}
             </div>
             {approved ? (
-              <div data-approval="collapsed" className="rounded-[12px] bg-surface px-[12px] py-[10px] text-[13px] text-green-ink shadow-e1">
+              <div
+                data-approval="collapsed"
+                className="rounded-[12px] bg-surface px-[12px] py-[10px] text-[13px] text-green-ink shadow-e1"
+              >
                 {COPY.approvedLine}
               </div>
             ) : (
@@ -325,7 +347,12 @@ export function K1Resolver({ frame, onApprove, onOverride, onSource }: K1Resolve
                 </button>
                 <div className="flex justify-end gap-[8px] px-[12px] py-[10px]">
                   <Button variant="secondary">{COPY.reject}</Button>
-                  <Button variant="secondary" onClick={() => setEditing(true)}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setEditing(true);
+                    }}
+                  >
                     {COPY.edit}
                   </Button>
                   <Button onClick={onApprove}>{COPY.approve}</Button>

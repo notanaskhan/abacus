@@ -1782,7 +1782,15 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "updated_at",
                 "withdrawn_on",
             }
+            | {"tin_sealed", "tin_last4", "tin_kind"}  # T-05-T22 (0831): the sealed TIN
         ),
+        # T-05-T20 (0830, DEC-4403): a memo's head moves with its versions; an open planning
+        # opportunity's text is edited until it is decided.
+        "preparer_memos": frozenset(
+            {"content_hash", "current_version_no", "drafted_run_id", "figure_fingerprint"}
+            | {"updated_at"}
+        ),
+        "planning_opportunities": frozenset({"body", "citation_ids", "title", "updated_at"}),
         "ownership_periods": frozenset(
             {"capital_pct", "loss_pct", "period_from", "period_to", "profit_pct"}
         ),

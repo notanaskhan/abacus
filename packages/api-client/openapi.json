@@ -80018,7 +80018,8 @@
               "form_8879_set",
               "information_return_thresholds",
               "retention_minimums",
-              "standards_sets"
+              "standards_sets",
+              "tax_form_lines"
             ],
             "title": "Kind",
             "type": "string"
@@ -80115,7 +80116,8 @@
                 "information_return_thresholds": "#/components/schemas/InformationReturnThresholdsPayload",
                 "legal_holidays": "#/components/schemas/LegalHolidaysPayload",
                 "retention_minimums": "#/components/schemas/RetentionMinimumsPayload",
-                "standards_sets": "#/components/schemas/StandardsSetsPayload"
+                "standards_sets": "#/components/schemas/StandardsSetsPayload",
+                "tax_form_lines": "#/components/schemas/TaxFormLinesPayload"
               },
               "propertyName": "kind"
             },
@@ -80140,6 +80142,9 @@
               },
               {
                 "$ref": "#/components/schemas/StandardsSetsPayload"
+              },
+              {
+                "$ref": "#/components/schemas/TaxFormLinesPayload"
               }
             ],
             "title": "Payload"
@@ -83255,6 +83260,44 @@
         "title": "ResidencyDeterminationStatus",
         "type": "string"
       },
+      "ResidencyFactOut": {
+        "description": "T-04-T39 (additive): one cited fact as code states it (TRI).",
+        "properties": {
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "source_kind": {
+            "cls": "internal",
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "value": {
+            "additionalProperties": true,
+            "cls": "restricted",
+            "title": "Value",
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "citation_ids",
+          "source_kind"
+        ],
+        "title": "ResidencyFactOut",
+        "type": "object"
+      },
       "ResidencyOptionOut": {
         "properties": {
           "key": {
@@ -84743,6 +84786,34 @@
             "cls": "confidential",
             "title": "Confirmed By Name"
           },
+          "conflict": {
+            "cls": "internal",
+            "default": false,
+            "title": "Conflict",
+            "type": "boolean"
+          },
+          "determination_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Determination Id"
+          },
+          "fact_rows": {
+            "cls": "restricted",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ResidencyFactOut"
+            },
+            "title": "Fact Rows",
+            "type": "array"
+          },
           "facts": {
             "cls": "confidential",
             "items": {
@@ -84750,6 +84821,19 @@
             },
             "title": "Facts",
             "type": "array"
+          },
+          "issue_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Issue Id"
           },
           "options": {
             "cls": "confidential",
@@ -84762,6 +84846,21 @@
           "status": {
             "$ref": "#/components/schemas/ResidencyDeterminationStatus",
             "cls": "internal"
+          },
+          "tallies": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "default": {},
+            "title": "Tallies",
+            "type": "object"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -99336,6 +99435,80 @@
       },
       "StateAllocationOut": {
         "properties": {
+          "addbacks": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Addbacks"
+          },
+          "credit": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Credit"
+          },
+          "credit_limit": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Credit Limit"
+          },
+          "federal_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Federal Total"
+          },
+          "missing": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "ny_agi": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Ny Agi"
+          },
           "rows": {
             "cls": "restricted",
             "items": {
@@ -103192,6 +103365,118 @@
           "status_code"
         ],
         "title": "TaxElectionOut",
+        "type": "object"
+      },
+      "TaxFormLine": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "cls": "public",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "public",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "line": {
+            "cls": "public",
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Line",
+            "type": "string"
+          },
+          "mappable": {
+            "cls": "public",
+            "default": true,
+            "title": "Mappable",
+            "type": "boolean"
+          },
+          "schedule": {
+            "cls": "public",
+            "enum": [
+              "L",
+              "K",
+              "8825",
+              "M-1",
+              "M-2",
+              "M-3"
+            ],
+            "title": "Schedule",
+            "type": "string"
+          },
+          "side": {
+            "cls": "public",
+            "enum": [
+              "asset",
+              "contra_asset",
+              "liability",
+              "capital",
+              "income",
+              "deduction",
+              "credit",
+              "memo",
+              "total"
+            ],
+            "title": "Side",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "schedule",
+          "line",
+          "label",
+          "side"
+        ],
+        "title": "TaxFormLine",
+        "type": "object"
+      },
+      "TaxFormLinesPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "form": {
+            "cls": "public",
+            "const": "1065",
+            "title": "Form",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "public",
+            "const": "tax_form_lines",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/TaxFormLine"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          },
+          "tax_year": {
+            "cls": "public",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "form",
+          "tax_year",
+          "rows"
+        ],
+        "title": "TaxFormLinesPayload",
         "type": "object"
       },
       "TaxPlanRowOut": {
@@ -255250,7 +255535,8 @@
                     "form_8879_set",
                     "information_return_thresholds",
                     "retention_minimums",
-                    "standards_sets"
+                    "standards_sets",
+                    "tax_form_lines"
                   ],
                   "type": "string"
                 },
@@ -274338,6 +274624,7 @@
     },
     "/v1/tax/k1-activities/{activity_id}/treatment-runs": {
       "post": {
+        "description": "T-04-T38: the analyst's `k1_treatments` mode on the activity's return (202), as the\nperson's agent; its treatments come back as one proposal for SHL-10.",
         "operationId": "k1_treatment_run",
         "parameters": [
           {
@@ -275747,6 +276034,7 @@
     },
     "/v1/tax/returns/{return_id}/residency": {
       "get": {
+        "description": "T-04-T39 (TXI-03 a to e): facts with citations, options with code's recommendation, the\nstatus and the review point. 404 before a determination is opened.",
         "operationId": "residency",
         "parameters": [
           {
@@ -275863,6 +276151,7 @@
     },
     "/v1/tax/returns/{return_id}/residency/proposal-runs": {
       "post": {
+        "description": "T-04-T38: the analyst's `residency` mode on the return (202), as the person's agent; its\nrecommendation comes back as one proposal, a conflict as Action required.",
         "operationId": "residency_proposal",
         "parameters": [
           {
@@ -276161,6 +276450,7 @@
     },
     "/v1/tax/returns/{return_id}/state-allocation": {
       "get": {
+        "description": "T-04-T39 (TXI-03 allocation): income by jurisdiction, the IT-112-R credit and the IT-225\nadd-backs, computed by code from the return's fields.",
         "operationId": "state_allocation",
         "parameters": [
           {
@@ -276273,6 +276563,125 @@
           "tax workspace"
         ],
         "x-abacus-action": "residency.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/state-allocation.xlsx": {
+      "get": {
+        "description": "T-04-T39: the allocation as a deterministic xlsx; `export.create` needs a fresh MFA.",
+        "operationId": "state_allocation_xlsx",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response State Allocation Xlsx",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "State Allocation Xlsx Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "export.create"
       }
     },
     "/v1/tax/returns/{return_id}/worksheets": {

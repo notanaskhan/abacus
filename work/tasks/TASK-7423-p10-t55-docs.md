@@ -2,7 +2,7 @@
 id: TASK-7423
 title: "P-10-T55: docs, runbooks and skills for runtime v2: SPEC-647 as built, ai-agent.md v2, threat model tool-use rows, agents/workbench/notifications READMEs, skill notes, consumer notes"
 spec: SPEC-647
-acceptance_criteria: []
+acceptance_criteria: [AC-R8]  # the registry and codegen rules the docs teach
 risk_zone: red
 status: done
 branch: s38-p10-t55
