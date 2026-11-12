@@ -39,7 +39,7 @@ from abacus.modules.agents.api import (
     register_proposal_adapter,
     register_suggestion_target,
 )
-from abacus.modules.engagements.api import lock_ref
+from abacus.modules.engagements.api import lock_ref, work_item_engagement
 from abacus.modules.identity.api import AuthContext, authorise
 from abacus.modules.review.api import (
     FieldOwner,
@@ -400,6 +400,8 @@ def register() -> None:
     register_suggestion_target(WORKSHEET, engagement_of=worksheet_engagement)
     register_suggestion_target("pass_through_treatment", engagement_of=k1_engagement)
     register_suggestion_target("residency_determination", engagement_of=residency_engagement)
+    # T-05-T23 (DEC-4406): an entity return's account mappings name the return itself.
+    register_suggestion_target("tax_account_mapping", engagement_of=work_item_engagement)
     register_proposal_adapter("return_field_changes", apply_field_proposal)
     register_proposal_adapter("pass_through_treatments", apply_k1_proposal)
     register_proposal_adapter("residency", apply_residency_proposal)
