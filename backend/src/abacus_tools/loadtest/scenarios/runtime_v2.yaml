@@ -1,0 +1,41 @@
+# P-10-T51 (DEC-4412): the runtime v2 and SSE load test on staging. 1,500 concurrent streams on
+# `GET /v1/events` held for 30 minutes, beside 50 virtual users each starting an engagement run
+# about once a minute (so about 50 runs are in flight: a run plans and works for minutes), plus
+# the run reads a reviewer makes. Targets: the streams' first event (the `stream` hello) p95 under
+# 500 ms (p10_budgets; plan approve is P-10-T52's run), commit to SSE delivery p95 at or under 2 s
+# (the API's `realtime.delivered` lines, read on staging: `SseDeliveryLagMs`), database
+# connections under 70% of max_connections (the `abacus-staging-db-connections-70` alarm stays
+# OK). Mid-run, RB-28's rehearsal drops the stream path (flag `realtime.sse` off) and the clients
+# fall back to polling. Writes: engagement runs on the synthetic firm only (PF-X1, DEC-1530).
+# Vars: engagement_id (a Brightwater Hale engagement with the engagement run enabled), run_id (a
+# run of it for the read group), topic (engagement:<engagement_id>). The streams sign in as 250
+# synthetic staff `loadtest-stream-0000` to `-0249` (6 streams each: the API's per-person cap),
+# each staffed on the engagement so the topic authorises.
+name: runtime_v2
+description: 1,500 SSE streams and 50 parallel engagement runs on staging (P-10-T51).
+duration_seconds: 1800
+users: 50
+think_ms: 60000
+ramp_seconds: 120
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-hannah-leclerc, weight: 1}
+  - {subject: scenario-marcus-delaney, weight: 2}
+groups:
+  - name: start_engagement_run
+    weight: 1
+    steps:
+      - {method: POST, path: "/v1/engagements/{engagement_id}/runs", json_body: {auto: false}, expect: [202], idempotency: true}
+  - name: read_run
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/agent-runs/{run_id}"}
+      - {path: "/v1/agent-runs/{run_id}/items"}
+streams:
+  - name: stream_first_byte
+    path: "/v1/events?topics={topic}"
+    count: 1500
+    hold_seconds: 1800
+    p95_first_event_ms: 500
+    subject_prefix: loadtest-stream

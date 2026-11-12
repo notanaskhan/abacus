@@ -55,7 +55,7 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-25 | Provider-terms register entry nearing `review_by` (AI refused for real firms once past) | ADR-114 | R2 | never | register expiry | to write |
 | RB-26 | Feature-flag expiry wave (fast check red) | ADR-089 | Dec 2026 | never | flag expiry check | drafted |
 | RB-27 | **Accrued-originated incident touching firm data:** notify the firm within 72 hours and create the incident-register entry so the firm's own 30-day clock starts with facts | R-27, R-32 | R2 (tabletop) | never | incident created | drafted (Q-02-T51) |
-| RB-28 | Real-time delivery degraded (event stream down; clients fall back to polling) | P-15 | When P-15 ships | never | SLO-06 | to write |
+| RB-28 | Real-time delivery degraded (event stream down; clients fall back to polling) | P-10-T51 | Apr 2028 (runtime load test) | never | SLO-06 | drafted (P-10-T51) |
 | RB-29 | Integrity alert: evidence fingerprint mismatch, seal mismatch, or broken audit hash chain (SEV1) | ADR-096 | R1 | never | chain mismatch alarm | drafted |
 | RB-30 | Write-capability incident (wrong posting or export; reversal as a new write) | P-16 | Before the first write capability goes live | never | write anomaly | to write |
 | RB-31 | Pause notification email for a firm or every firm (`notifications.email`, the C16 channel's kill switch) | P-01-T17 | R1 | never | none yet (RB-20 points here) | drafted |

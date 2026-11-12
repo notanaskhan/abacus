@@ -27,6 +27,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, TEXT
 from abacus.kernel import realtime, request_context
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainForbidden, NotFound
+from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.identity.api import AuthContext
@@ -37,10 +38,16 @@ _INSERT = text(
     "VALUES (:tenant, :topic, 'invalidate', :ref_type, :ref_id)"
 )
 _AFTER = text(
-    "SELECT seq, topic, type, ref_type, ref_id, version, at FROM realtime_events "
+    "SELECT seq, topic, type, ref_type, ref_id, version, at, "
+    "(EXTRACT(EPOCH FROM (abacus_now() - at)) * 1000)::bigint AS lag_ms FROM realtime_events "
     "WHERE topic = ANY(:topics) AND seq > :after ORDER BY seq LIMIT :limit"
 ).bindparams(bindparam("topics", type_=ARRAY(TEXT)))
 _METADATA_TYPES: Final = frozenset({"notice", "locked", "resync"})
+# P-10-T51 (SLO-06; DEC-4412): one `realtime.delivered` line per read that hands events to a
+# stream, with the oldest event's age on the database clock (no skew with the writer): its row's
+# commit to this read. Counts and milliseconds only. The staging log metric filter takes `lag_ms`
+# and the SSE delivery alarm reads its p95 (RB-28).
+_log = get_logger(__name__)
 
 
 class TopicRefused(DomainForbidden):
@@ -129,6 +136,7 @@ async def events_stream(
     async def source(after: int | None) -> Sequence[realtime.StreamEvent]:
         nonlocal opened
         out: list[realtime.StreamEvent] = []
+        replay = not opened  # the first read replays after Last-Event-ID: not delivery lag
         if not opened:
             opened = True
             out.append(realtime.StreamEvent(after or 0, "stream", {"stream_id": str(stream_id)}))
@@ -145,6 +153,7 @@ async def events_stream(
         if len(rows) > QUEUE_LIMIT:
             raise realtime.GapTooOld  # the client resyncs through REST
         seen: set[tuple[str, str, object]] = set()
+        lag_ms = 0
         for r in rows:
             if current.get(str(r.topic)) == "metadata" and str(r.type) not in _METADATA_TYPES:
                 continue
@@ -152,6 +161,7 @@ async def events_stream(
             if key in seen:
                 continue
             seen.add(key)
+            lag_ms = max(lag_ms, int(r.lag_ms or 0))
             out.append(
                 realtime.StreamEvent(
                     int(r.seq),
@@ -166,6 +176,9 @@ async def events_stream(
                     },
                 )
             )
+        delivered = len(out) - (1 if out and out[0].type == "stream" else 0)
+        if delivered and not replay:
+            _log.info("realtime.delivered", events=delivered, lag_ms=max(lag_ms, 0))
         return out
 
     async def still_allowed() -> bool:

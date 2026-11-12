@@ -76,6 +76,19 @@ class Stream(_Strict):
     count: Annotated[int, Field(ge=1, le=2000)] = 1
     hold_seconds: Annotated[float, Field(gt=0, le=3600)] = 5.0
     p95_first_event_ms: Annotated[float | None, Field(gt=0)] = None
+    # P-10-T51 (DEC-4412): the API holds at most 6 streams per person, so a large count spreads
+    # over synthetic subjects `<subject_prefix>-0000`, `-0001`, … (6 streams each). Unset: every
+    # stream signs in as the scenario's `persona`.
+    subject_prefix: Annotated[str | None, Field(pattern=r"^[a-z][a-z0-9\-]{0,59}$")] = None
+
+    def subjects(self) -> list[str]:
+        """The subject each of the `count` streams signs in as (empty without a prefix)."""
+        if self.subject_prefix is None:
+            return []
+        return [f"{self.subject_prefix}-{i // STREAMS_PER_SUBJECT:04d}" for i in range(self.count)]
+
+
+STREAMS_PER_SUBJECT = 6  # kernel.realtime.MAX_STREAMS_PER_USER (abacus is not imported here)
 
 
 class TemporalOp(_Strict):
