@@ -1,7 +1,7 @@
 ---
 id: ADR-241
 title: "Search in Postgres: a metadata-only search_documents projection with tsvector and pg_trgm, filtered under RLS and visible() at query time, with no hidden-by-wall counts"
-status: proposed
+status: accepted
 date: 2026-11-12
 deciders: ayushkbhatia  # solo edition; acceptance is his (amber ADRs never default on silence)
 risk_zone: amber
@@ -16,8 +16,10 @@ proposal: P-33
 **Status note.** Drafted by P-02-T15 (TASK-7501) from chapter 09 P-33, DEC-42, DEC-43 and DF-14.
 The plan calls this proposal ADR-211; that number is a P-ID alias (`docs/adr/backlog.md`), and the
 S34 to S37 kickoffs reserved ADR-238 to ADR-240, so it takes ADR-241. The P-02 epic (§0.1) needs it
-accepted before the C15 v1 stub (P-02-T01) merges. Until then P-02 builds only what is dark and
-reversible: the stub behind `search.palette` (default off) and the expand-only migration.
+accepted before the C15 v1 stub (P-02-T01) merges; S39 built only what is dark and reversible
+(the stub behind `search.palette`, default off, and the expand-only migration 0840). **Accepted on
+2026-11-12** by ayushkbhatia (DEC-4529), after the S39 batch merged: P-02's live rows (the
+indexer, the query and the palette) build on it, and it is binding from here.
 
 ## Context
 Firm staff move between clients, returns, audits, binders, files, inbox threads and to-dos all

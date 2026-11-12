@@ -29,3 +29,4 @@ Draft ADR P-33 from chapter 09 P-33, DEC-42, DEC-43 and DF-14, number it on `mai
 - `2026-11-12` — ADR-241 drafted (DEC-4501): Postgres FTS + trigram, metadata only, visibility
   at query time, no hidden-by-wall field, POST-only search text, operational recents, C15 v1
   registration, refused principals.
+- `2026-11-12` — ADR-241 accepted by Ayush (DEC-4529) after the S39 batch merged; status `accepted` in the ADR, the index and the backlog.
