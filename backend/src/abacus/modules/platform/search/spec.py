@@ -108,6 +108,10 @@ class SearchIndexDocument:
 
 
 Builder = Callable[[TenantContext, UUID], Awaitable[SearchIndexDocument | None]]
+# P-02-T06 (DEC-4612): a page of the owner's object ids for a full reindex, after `cursor` (the
+# last id of the previous page, or None), at most `limit` ids, in id order. Optional: a type
+# without one reindexes the rows already in the index.
+Lister = Callable[[TenantContext, UUID | None, int], Awaitable[list[UUID]]]
 # An event's payload (identifiers only, ADR-139) to the ids of the objects it reindexes.
 Trigger = Callable[[Mapping[str, object]], Iterable[UUID]]
 
@@ -125,6 +129,7 @@ class SearchProjection:
     data_class: DataClass = "confidential"
     triggers: Mapping[str, Trigger] = field(default_factory=lambda: MappingProxyType({}))
     rank: int = 100  # order within the group when relevance ties; lower first
+    list_ids: Lister | None = None  # P-02-T06: the full reindex's id pages (additive to C15 v1)
 
 
 class SearchRegistrationInvalid(ValueError):

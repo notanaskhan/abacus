@@ -1,8 +1,13 @@
 """Public interface of the platform module; other modules import only this (ADR-008)."""
 
+from collections.abc import Iterator, Mapping
+from datetime import timedelta
+from typing import Final
+from uuid import UUID
+
 from abacus.kernel.controls import ControlName, control_active
 from abacus.kernel.dispatch import PlatformSchedule
-from abacus.kernel.uow import Handler
+from abacus.kernel.uow import Handler, OutboxEvent
 from abacus.modules.identity.api import AbacusRouter, register_posture_source
 from abacus.modules.platform.audit_resolvers import register as register_audit_resolvers
 from abacus.modules.platform.audit_slots import (
@@ -180,6 +185,11 @@ from abacus.modules.platform.safeguards import SUBSCRIPTIONS as WISP_SUBSCRIPTIO
 from abacus.modules.platform.safeguards import open_controls as open_pub4557_controls
 from abacus.modules.platform.safeguards import register_wisp_document_reader
 from abacus.modules.platform.safeguards_routes import controls_platform_router
+from abacus.modules.platform.search import store as search_store
+from abacus.modules.platform.search.activities import SEARCH_ACTIVITIES
+from abacus.modules.platform.search.indexer import SUBSCRIPTIONS as SEARCH_SUBSCRIPTIONS
+from abacus.modules.platform.search.indexer import index_object as search_index_object
+from abacus.modules.platform.search.indexer import request_reindex as search_request_reindex
 from abacus.modules.platform.search.routes import router as search_router
 from abacus.modules.platform.search.spec import (
     GROUP_ORDER as SEARCH_GROUP_ORDER,
@@ -195,6 +205,11 @@ from abacus.modules.platform.search.spec import (
 from abacus.modules.platform.search.spec import ScopeKind as SearchScopeKind
 from abacus.modules.platform.search.spec import projection as search_projection
 from abacus.modules.platform.search.spec import projections as search_projections
+from abacus.modules.platform.search.workflows import (
+    SEARCH_DRIFT_ID,
+    SearchDriftCheckWorkflow,
+    SearchReindexWorkflow,
+)
 from abacus.modules.platform.security_center_contract import (
     incident_reads_router,
     safeguards_router,
@@ -285,10 +300,54 @@ WORKFLOWS = {
     **JOB_WORKFLOWS,
     **CANARY_WORKFLOWS,
     ReferenceSetFanOutWorkflow: "background",  # K-02-T12
+    SearchReindexWorkflow: "batch",  # P-02-T06
+    SearchDriftCheckWorkflow: "batch",  # P-02-T06
 }
+
+
+class _Composed(Mapping[str, Handler]):
+    """Static subscriptions plus a lazily composed mapping, read at worker composition."""
+
+    def __init__(self, fixed: Mapping[str, Handler], lazy: Mapping[str, Handler]) -> None:
+        self._fixed = fixed
+        self._lazy = lazy
+
+    def __getitem__(self, event_type: str) -> Handler:
+        if event_type in self._fixed and event_type in self._lazy:
+            first, second = self._fixed[event_type], self._lazy[event_type]
+
+            async def both(event: OutboxEvent) -> None:
+                await first(event)
+                await second(event)
+
+            return both
+        if event_type in self._fixed:
+            return self._fixed[event_type]
+        return self._lazy[event_type]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(dict.fromkeys((*self._fixed, *self._lazy)))
+
+    def __len__(self) -> int:
+        return len(set(self._fixed) | set(self._lazy))
+
+
+# P-02-T06: the nightly drift check, every firm (`search_drift:platform`).
+SEARCH_DRIFT_SCHEDULE: Final = PlatformSchedule(
+    id=SEARCH_DRIFT_ID,
+    workflow=SearchDriftCheckWorkflow,
+    every=timedelta(days=1),
+    note="P-02-T06: the nightly search drift check, a 1 % sample per type per firm",
+)
+
+
 # G-02-T20: `wisp_pack.requested` starts the WISP pack's build.
 # P-10-T42: `agent_run.completed` posts the run's agent-minutes to the ledger.
-SUBSCRIPTIONS: dict[str, Handler] = {**WISP_SUBSCRIPTIONS, **METERING_SUBSCRIPTIONS}
+# P-02-T06 (DEC-4612): the SearchIndexer, composed from the registered projections' triggers when
+# the worker reads it (after every owner registered), plus `membership.deactivated`.
+SUBSCRIPTIONS: Mapping[str, Handler] = _Composed(
+    {**WISP_SUBSCRIPTIONS, **METERING_SUBSCRIPTIONS}, SEARCH_SUBSCRIPTIONS
+)
 ACTIVITIES: tuple[object, ...] = (
     *FANOUT_ACTIVITIES,  # K-02-T12
     emit_tenant_provisioned_activity,
@@ -300,13 +359,19 @@ ACTIVITIES: tuple[object, ...] = (
     *INCIDENT_ACTIVITIES,  # Q-02-T33: IncidentPropagation
     *JOB_ACTIVITIES,  # Q-01-T26: SpendAnomaly
     *CANARY_ACTIVITIES,  # Q-01-T30: the canary's steps and report
+    *SEARCH_ACTIVITIES,  # P-02-T06: the reindex and drift check
 )
+
+
+async def purge_search_index(tenant_id: UUID) -> int:
+    """Offboarding (P-02-T06): every search row and recent of the firm goes."""
+    return await search_store.purge_tenant(tenant_id)
 
 
 def schedules() -> tuple[PlatformSchedule, ...]:
     """The platform's Schedules (`abacus_tools.schedules ensure`): its jobs, and the canary when
     `canary_tenant_id` is set."""
-    return (*SCHEDULES, *canary_schedules())
+    return (*SCHEDULES, SEARCH_DRIFT_SCHEDULE, *canary_schedules())
 
 
 __all__ = [
@@ -323,6 +388,7 @@ __all__ = [
     "PILOT_PLACES",
     "ROUTERS",
     "SCHEDULES",
+    "SEARCH_DRIFT_SCHEDULE",
     "SEARCH_GROUP_ORDER",
     "SPEND_ANOMALY_ID",
     "SUBSCRIPTIONS",
@@ -449,6 +515,7 @@ __all__ = [
     "propagation_log",
     "provisioning_workflow_id",
     "pub1345_tolerances",
+    "purge_search_index",
     "read_stored",
     "record_incident",
     "record_synthetic_minutes",
@@ -473,8 +540,10 @@ __all__ = [
     "schedules",
     "screen_and_store",
     "search_document",
+    "search_index_object",
     "search_projection",
     "search_projections",
+    "search_request_reindex",
     "set_pilot_mode",
     "should_page",
     "start_propagation",
