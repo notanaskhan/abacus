@@ -33,8 +33,10 @@ export interface DueChipProps {
   chip: DeadlineChip;
   copy: Pick<CalendarCopy, "postponed">;
   onOpen?: (chip: DeadlineChip) => void;
-  /** Hover intent and focus for the RulePopover (F-07-T11). */
+  /** Hover for the RulePopover's 250 ms intent (F-07-T11). */
   onHover?: (chip: DeadlineChip, anchor: HTMLElement) => void;
+  /** Keyboard focus opens the RulePopover at once (F-07-T11); falls back to `onHover`. */
+  onFocusIn?: (chip: DeadlineChip, anchor: HTMLElement) => void;
   onLeave?: () => void;
   tabIndex?: number;
 }
@@ -44,12 +46,16 @@ export function DueChip({
   copy,
   onOpen,
   onHover,
+  onFocusIn,
   onLeave,
   tabIndex = -1,
 }: DueChipProps): JSX.Element {
   const postponed = chip.postponedTo !== undefined;
-  const enter = (e: MouseEvent<HTMLButtonElement> | FocusEvent<HTMLButtonElement>) => {
+  const enter = (e: MouseEvent<HTMLButtonElement>) => {
     onHover?.(chip, e.currentTarget);
+  };
+  const focusIn = (e: FocusEvent<HTMLButtonElement>) => {
+    (onFocusIn ?? onHover)?.(chip, e.currentTarget);
   };
   return (
     <span className="flex min-w-0 items-center gap-[4px]">
@@ -66,7 +72,7 @@ export function DueChip({
         )}
         onClick={() => onOpen?.(chip)}
         onMouseEnter={enter}
-        onFocus={enter}
+        onFocus={focusIn}
         onMouseLeave={onLeave}
         onBlur={onLeave}
       >

@@ -44,6 +44,7 @@ export interface CalendarLayoutProps {
   onCloseDay?: () => void;
   onOpenChip?: (chip: DeadlineChip) => void;
   onHoverChip?: (chip: DeadlineChip, anchor: HTMLElement) => void;
+  onFocusChip?: (chip: DeadlineChip, anchor: HTMLElement) => void;
   onLeaveChip?: () => void;
   className?: string;
 }
@@ -70,6 +71,7 @@ export function CalendarLayout({
   onCloseDay,
   onOpenChip,
   onHoverChip,
+  onFocusChip,
   onLeaveChip,
   className,
 }: CalendarLayoutProps): JSX.Element {
@@ -152,6 +154,7 @@ export function CalendarLayout({
             {...(onMonth === undefined ? {} : { onMonth })}
             {...(onOpenChip === undefined ? {} : { onOpenChip })}
             {...(onHoverChip === undefined ? {} : { onHoverChip })}
+            {...(onFocusChip === undefined ? {} : { onFocusChip })}
             {...(onLeaveChip === undefined ? {} : { onLeaveChip })}
           />
         ) : view === "week" ? (

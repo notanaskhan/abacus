@@ -20,8 +20,11 @@ export {
   type MonthGridProps,
   chipsThatFit,
 } from "./month-grid";
+export { HOVER_INTENT_MS, RulePopover, useRulePopover } from "./rule-popover";
+export { ListView, WEEK_ROW_H, WeekView, riskWords } from "./week-list";
 export type {
   CalendarCopy,
+  CalendarListCopy,
   CalendarFilter,
   CalendarHoliday,
   CalendarView,
