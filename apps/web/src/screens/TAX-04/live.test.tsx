@@ -100,7 +100,8 @@ describe("blockerWords", () => {
       BLOCKER_COPY.version_superseded,
     ]);
     expect(blockerWords({ detail: "field_changed" })).toEqual([BLOCKER_COPY.field_changed]);
-    expect(blockerWords({ detail: "mismatch", facts: { field_key: "div.halvard.1a" } })).toEqual([
+    const line3b = "div.halvard.1a"; // a return field's key names its line, never a credential
+    expect(blockerWords({ detail: "mismatch", facts: { field_key: line3b } })).toEqual([
       "Resolve 1 mismatch to approve",
     ]);
     expect(blockerWords({ detail: "no_such_code" })).toEqual([BLOCKER_COPY.generic]);
