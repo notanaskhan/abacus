@@ -50,3 +50,19 @@ cd backend && uv run python -m abacus_tools.reproject_home_activity <tenant-id>
 ## 5. After an incident
 
 Record the case in `countEquality.test.ts` (a persona and the action that split the counts), and the cause in the task file's progress log.
+
+## R2 bands: To-dos and Mentions (I-01-T27, DEC-4512)
+
+HOME-01's To-dos and Mentions bands sit after "Approvals & sends" and are wired into the live
+composition behind P-05's `collaboration.v2`. They never count into the header's number (Daniel
+Reyes reads 11 with both bands empty at E0).
+
+- **Flip.** Per firm, in the Tuesday 19:00 CT window from Tue May 2, 2028, through Q-04's flip
+  calendar (`make flag-calendar`; the flip row names this section). `collaboration.v2` flips once
+  for P-05's surfaces and the bands together (RB-26's wave); nothing separate is flipped for Home.
+- **Check after the flip.** On the firm: HOME-01 shows both bands; the header count equals the
+  Approvals badge and the HOME-02 total (the count-equality test of I-01-T25 still holds); a to-do
+  row reads the same query as My to-dos (SHL-17); a mention row opens its thread.
+- **Rollback.** Turn `collaboration.v2` off for the firm. HOME-01 returns to the pre-R2
+  composition at once (no `/v1/todos` or `/v1/notifications/feed` call is made while it is off);
+  no data changes, since the bands only read.
