@@ -50,3 +50,35 @@ Messages that leave the platform (ADR-065; SPEC-006). PROTECTED.
 ## Portal sign-in mail and its runbooks (P-08-T28; DEC-456)
 - Sign-in codes (`portal.sign_in_code`), renewed links (`portal.link_renewed`) and the MFA reset notice (`portal.mfa_reset_notice`) are C16 templates imported per environment before the firm's `portal.sign_in_v2` goes on; without one nothing is sent (the miss is logged by id), never a fallback constant.
 - Codes that do not arrive make people retry into the 15-minute lock: RB-35 sends that case to RB-20 (deliverability). A wrong-firm or wrong-branding code email is RB-36's pause.
+
+## Firm email templates, sender domains and the client-mail gate (R-01; C16 v1.1)
+Contract `docs/contracts/email-templates.md` (frozen v1.1). Flags: `portal.settings_editor`
+(template writes), `communications.firm_sender_domain` (sending-domain writes and From),
+`follow_ups.scheduled_send` (system-scheduled reminders). Runbooks: RB-20 (deliverability and the
+gate), `docs/runbooks/r01-portal-flip.md`.
+- **Templates are content** (AGENTS 16): firm rows imported (`template_import.py`, a
+  counsel-approved bundle, dry run first, fresh MFA) or edited in POR-20 (`template_service.py`:
+  drafts at `expected_version`, insert-only versions, publish with fresh MFA). Code holds only the
+  registered keys (`template_keys.py`, `register_email_template`) and the platform defaults' shape.
+- **Rendering is pure** (`render.py`): blocks, whitelisted `{variables}`, every value escaped, one
+  button whose address is the secure `{portal_link}`; the same input gives byte-identical output.
+- **Lint** (`lint.py`): no unregistered variable, amount, TIN, account number, platform name,
+  link outside the button, attachment words or second button; findings name rule and place,
+  never text. Publish, preview (`template_preview.py`) and import all run it.
+- **`send_templated`** (`template_send.py`): resolves the version in use (the firm's published,
+  else the platform default) and refuses, recording `blocked`, with the first reason that applies
+  (`template_missing`, `template_lint_failed`, `out_of_scope`, `firm_not_client_facing`,
+  `suppressed`).
+- **Follow-up policy** (`follow_up_policy.py`, DEC-74): one row per firm or the defaults (every 7
+  days, at most 4, weekdays 9:00 AM recipient time, a person sends); `next_send_at` is the one rule
+  the read and the scheduler share. `send_on_schedule` needs `follow_ups.scheduled_send`.
+- **Sender domains and From** (`sending_domains.py`, PROTECTED, DEC-950 to DEC-955): an SES
+  identity with Easy DKIM and MAIL FROM `bounce.<domain>`, verified within 72 hours or `failed`;
+  From the firm's verified domain when the flag is on, else the neutral sender under the firm's
+  name with Reply-To the firm's address.
+- **The client-mail gate** (`client_mail_open`, DEC-953): a real firm's client, third-party and
+  respondent mail stays closed until the platform opens it with two people
+  (`abacus_tools.client_mail open`, an ops task in the Tuesday window); a synthetic firm's goes to
+  the sink. `close` is the rollback.
+- **Deliveries** (`deliveries.py`): SES events drained every minute, once each; a permanent bounce
+  or complaint suppresses the address.

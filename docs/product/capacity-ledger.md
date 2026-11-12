@@ -204,3 +204,14 @@ status files; DEC-4414.
 P-10 actuals: every row has a task file. No row of the pre-agreed internal cut list was invoked
 except cut 3 (the PDF trace export's v2 fields, A-07 or G-02 depth). The partial rows' remaining
 steps are listed in `docs/plan/status/P-10-closeout.md`; none blocks a consumer epic's build.
+
+
+## R-01 actuals (R-01-T36, 2026-11-12)
+
+R-01 (portal documents, drops, the third-party room, email templates, portal settings and sender
+domains) planned 26.75 task-equivalents in 36 rows (S9–S18); every row is built on main (31 with
+task files; T26 to T28 and T34 cited in their commits), and this row closes the docs. No cut was
+invoked. Two rows stay partial outside the repo: R-01-T32 (the journeys on staging) and R-01-T34
+(PF-X1 synthetic; real DKIM and MAIL FROM need SES and a live firm). Contracts frozen: C5 section
+`portal-pbc` v1 and C16 v1.1. The Jul 13 per-firm flips and their rollbacks:
+`docs/runbooks/r01-portal-flip.md`.
