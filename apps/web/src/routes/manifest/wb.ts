@@ -4,13 +4,25 @@
 import type { Manifest } from "./types";
 
 export const wbScreens = {
-  "WB-01": { name: "Workbench › Sessions", status: "planned", path: null, navArea: "Workbench" },
-  "WB-02": { name: "New session & context picker", status: "planned", path: null },
+  // W-02-T08: the Workbench sessions skeleton on fixtures behind `workbench.enabled`.
+  "WB-01": {
+    name: "Workbench › Sessions",
+    status: "fixture",
+    path: "/workbench",
+    navArea: "Workbench",
+  },
+  "WB-02": {
+    name: "New session & context picker",
+    status: "fixture",
+    path: "/workbench/sessions/new",
+    navArea: "Workbench",
+  },
   "WB-03": {
     name: "Run progress & review-ready results · TY2025 season progress by office",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/workbench/sessions/$sessionId",
     entry: true,
+    navArea: "Workbench",
   },
   "WB-04": { name: "Agents › Library", status: "planned", path: null },
   "WB-06": {

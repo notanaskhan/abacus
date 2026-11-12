@@ -10,6 +10,7 @@ import { clientRecordHandlers } from "./handlers/client-record";
 import { clientHandlers } from "./handlers/clients";
 import { engagementRecordHandlers } from "./handlers/engagement-record";
 import { engagementHandlers } from "./handlers/engagements";
+import { workbenchHandlers } from "./handlers/workbench";
 import { DEMO_INSTANT, getSeed } from "./seed";
 
 export function seedScenario(): Scenario {
@@ -26,6 +27,8 @@ export function seedScenario(): Scenario {
         ...clientRecordHandlers(getSeed()),
         ...seedHandlers(),
         ...clientHandlers(),
+        // W-02-T08: the workbench-sessions family (WB-01, WB-02, WB-03).
+        ...workbenchHandlers(),
       },
     },
   }).e0;

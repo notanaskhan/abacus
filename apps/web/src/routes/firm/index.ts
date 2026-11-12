@@ -12,6 +12,7 @@ import { settingsRoutes } from "./settings";
 import { signatureRoutes } from "./signatures";
 import { taxReturnRoutes } from "./tax-returns";
 import { taxReviewRoutes } from "./tax-review";
+import { workbenchRoutes } from "./workbench";
 // SHL-08 (P-03-T14): registers the `?ov=viewer` drawer for every firm route.
 import "./viewer";
 import "./run-trace";
@@ -31,7 +32,7 @@ export const FIRM_AREAS = [
   { key: "tax_returns", label: "Tax Returns", routes: [...taxReturnRoutes, ...taxReviewRoutes] },
   { key: "files", label: "Files", routes: filesRoutes },
   { key: "knowledge", label: "Knowledge", routes: knowledgeRoutes },
-  { key: "workbench", label: "Workbench", routes: [] },
+  { key: "workbench", label: "Workbench", routes: workbenchRoutes },
   { key: "inbox", label: "Inbox", routes: inboxRoutes },
   { key: "clients", label: "Clients", routes: clientRoutes },
   { key: "binders", label: "Binders", routes: binderRoutes },
@@ -62,6 +63,8 @@ export const firmRoutes = [
   ...signatureRoutes,
   // N-04-T05: NOT-01 to NOT-03 (`notices.workspace` retired at N-04-T27, DEC-2602).
   ...noticeRoutes,
+  // W-02-T08: WB-01 to WB-03 behind `workbench.enabled`.
+  ...workbenchRoutes,
   // P-01-T02: the Engagements index and the flag-off landings of planned areas.
   ...areaRoutes,
 ] as const;

@@ -463,6 +463,7 @@ export function HOME01({
   // I-01-T27 (DEC-4512): R2's bands ride P-05's `collaboration.v2`; off restores the pre-R2
   // composition exactly. They never count into the header's number.
   const bandsOn = useFlag("collaboration.v2") === true;
+  const workbenchOn = useFlag("workbench.enabled") === true;
   const myTodos = useQuery({
     ...listTodosOptions({ query: { assignee: "me", status: "open" } }),
     enabled: bandsOn,
@@ -556,7 +557,13 @@ export function HOME01({
           setOffice(offices.find((o) => o.name === name)?.id ?? null);
         },
       }}
-      {...(view?.running_count == null ? {} : { running: COPY.running(view.running_count) })}
+      {...(view?.running_count == null
+        ? {}
+        : {
+            running: COPY.running(view.running_count),
+            // W-02-T08 (AC-L2): the pill opens WB-01 on its Running filter.
+            ...(workbenchOn ? { runningHref: linkOf(to.WB01(), { filter: "running" }) } : {}),
+          })}
       loading={loading}
       tiles={
         home.isError ? (
