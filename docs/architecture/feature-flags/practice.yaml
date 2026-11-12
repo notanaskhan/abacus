@@ -2,3 +2,11 @@
 # file into kernel/_flags.py by `make regenerate`.
 
 flags:
+  - name: today_brief.enabled
+    description: 'I-02 Today brief (SHL-23, HOME-05): /v1/me/today*, the Today toggle chip, HOME-01''s "Open Today ›" link and the bell entry. Off: 404, no chip, no link, Home is HOME-01 unchanged (HOME-05 f). Retired into Home at I-02-T22, after which capability availability (boundary, consent, AI policy) governs the narrative. I-02-T04, DEC-4610.'
+    owner: notanaskhan
+    created: 2026-11-12
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false

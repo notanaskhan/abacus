@@ -1707,7 +1707,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"communications", "agents", "tax", "methodology", "reporting"},
     "workbench": _BASE | {"organisations", "engagements", "methodology", "agents", "integrations"},
     # T-02-T10: practice registers its due-dates rules into tax (`register_due_dates_source`).
-    "practice": _BASE | {"organisations", "engagements", "integrations", "tax"},
+    # I-02-T04 (DEC-4610): the Today read model reads gates through review, briefings through
+    # agents and request counts through requests; nothing imports practice.
+    "practice": _BASE
+    | {"organisations", "engagements", "integrations", "tax", "review", "agents", "requests"},
     # A-02-T23 (DEC-517, DEC-611): the home's reconnect to-do reads connections.
     "portal": _BASE
     | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}
