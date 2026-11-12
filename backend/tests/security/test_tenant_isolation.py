@@ -478,6 +478,8 @@ TABLES: tuple[str, ...] = (
     "screening_records",
     "screening_rerun_requests",
     "screening_results",
+    "search_documents",
+    "search_recents",
     "secure_links",
     "security_incident_decisions",
     "security_incident_reminders",

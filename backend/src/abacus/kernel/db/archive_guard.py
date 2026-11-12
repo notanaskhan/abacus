@@ -27,6 +27,7 @@ EXEMPT: Final[Mapping[str, str]] = {
     "audit_event_labels": "a trail label, not documentation",
     "notifications": "delivery",
     "home_activity_items": "a rebuildable projection for Home",
+    "search_documents": "a rebuildable search projection (P-02-T05), not documentation",
     "human_gates": "C13's projection; archive.locked itself clears rows here",
     "messages": "delivery; a bounce or receipt arrives after lock",
     "approval_grants": "a send's grant expires or voids after lock",
