@@ -107,7 +107,103 @@ WB-09 trace drawer (`TraceDrawer.tsx`). Both read C6 (`/v1/agent-runs/{id}`, `/i
   control).
 - Behind `agent_dock.enabled` and `run_trace.enabled`; degraded operation is RB-69.
 
+## Runtime v2: capabilities with tools (P-10; SPEC-647; ADR-233, ADR-234)
+v1 above (`call()`, `single_call`, one prompt and one output) keeps running. A capability that
+reads, computes or proposes through tools is a **v2 spec** and runs as an `AgentRunWorkflow`
+(plan, steps, questions, proposals, a person's decision). Worked example: `tax.account_mapper`
+(T-05-T23): one model call between code's steps, one propose tool.
+
+### The v2 spec
+```yaml
+# modules/agents/specs/v2/<id>.yaml (compiled into specs/_specs_v2.py)
+id: tax.account_mapper
+version: 1
+shape: workflow            # single_call lists no tools; a tool needs workflow or loop
+prompt: tax.map_accounts@v1
+tier: small
+tools:
+  propose: [tax.propose_account_mappings]   # read / compute / propose / approved_write
+task_scope: [tax_return.read, proposal.create]  # matrix actions with agent: task_scope only
+limits: {max_output_tokens: 4000, max_cost_usd: "0.05", max_steps: 3, max_seconds: 60, max_tool_calls: 1}
+plan: required_when_writes  # a run that proposes shows its plan to a person first
+autonomy: propose
+data_classes: [tri]
+untrusted_inputs: [account_names]
+evaluation_suite: evals/tax_account_mapper
+work_class: background
+routes: [bedrock, direct]
+client_data: none          # raised only by a signed real-route evaluation (ADR-070, ADR-113)
+```
+Compile with `python -m abacus_tools.codegen.agent_specs_v2`; codegen fails on a tool that is not
+registered, a tool kind the spec does not list it under, or a `task_scope` action the matrix does
+not give agents.
+
+### Register a tool (C17; `docs/contracts/tool-registry.md`)
+1. **The matrix action** the tool reads or proposes under, in
+   `docs/architecture/permission-matrix/<module>.yaml`, with `agent: task_scope` (read, compute,
+   propose) or `agent: deny` (approved_write: it runs only under a person's approval grant).
+2. **Typed models** in the owning module: an input model and an output model, every field
+   `classified(...)`. A read tool answers rows with an `id`, at most 200 (`max_rows`); a paginated
+   one takes `ToolPageIn` and answers `ToolPageOut`. A propose tool answers identifiers and states
+   only (its answer is replayed under the idempotency key).
+3. **The handler**, in the module that owns the data (`modules/<m>/tools.py` or
+   `agent_tools.py`), never in `agents`:
+   ```python
+   from abacus.modules.agents.api import agent_tool
+   from abacus.modules.identity.api import AgentContext
+
+   @agent_tool(
+       name="tax.read_return", kind="read", action="tax_return.read", data_class="tri",
+       input_model=ReturnIn, output_model=ReturnOut, records_read="tax_return",
+   )
+   async def read_return(agent: AgentContext, args: ReturnIn) -> ReturnOut: ...
+   ```
+   Names are `<module>.<verb_noun>`; a final verb (approve, send, post, release, …) is refused
+   unless the kind is `approved_write` (TOOL-001, `register_tool`). Client strings go in fields
+   named by `untrusted=`; the runtime wraps them in `<untrusted>`.
+4. **Register at import**: the module's `api.py` imports the tools module (tax: `api.py` imports
+   `tax.tools`), or lists `ToolDecl` records as `AGENT_TOOLS` for `agents/tools/catalogue.py`.
+5. **The description prompt**: `ai_gateway/prompts/tool.<name>/v1.txt` (what the model reads about
+   the tool; the registry refuses a tool without one).
+6. **Call it** only through `agents.api.call_tool(agent, ToolCallIn(...))`: the runtime authorises
+   each call, pins the run's scope, checks §7216 consent before the query, keys idempotency on
+   `(run_id, step_seq, attempt)` and records reads and access events.
+7. **Tests**: a contract test under `tests/contracts/c17_tools/` or the module's unit tests (the
+   handler on the fake model), and the spec's evaluation suite.
+
+### Register a run-step kind (the engagement run; ADR-106 slot)
+The engagement run's plan is code's (`agents.engagement_run`); a step whose `tool` is
+`run_step.<kind>` is dispatched to the handler its owning module registered:
+```python
+# modules/workpapers/run_steps.py
+from abacus.modules.agents.api import RunStepFacts, RunStepResult, register_run_step
+
+async def workpaper_ready(agent: AgentContext, facts: RunStepFacts) -> RunStepResult:
+    ...  # facts: run_id, engagement_id, step_key, level, arguments (identifiers and codes)
+    return RunStepResult("succeeded", records_read=1)  # or ("failed", "workpaper_missing")
+
+def register() -> None:
+    register_run_step("workpaper", workpaper_ready)
+```
+`kind` is snake_case, registered once (a second handler for the same kind is refused); call
+`register()` from the module's `api.py` import so `agents` never imports the module (ADR-008,
+OWN-001, BOUND-002). The start refuses a plan naming an unregistered kind, and a step whose
+handler is gone fails closed (`run_step_unavailable`). Results are
+states and codes, never text.
+
+### Proposals and approved writes
+A propose tool turns rows into one proposal with `agents.api.create_proposal(...)` (kind, title,
+`ProposedRow`s). The owning module registers where its rows point
+(`register_suggestion_target("return_field", engagement_of=...)`) and how an approved proposal is
+applied (`register_proposal_adapter(kind, adapter)`); the adapter runs on a person's approval in
+their unit of work. An `approved_write` runs in `ApprovedWriteWorkflow` under the person's grant.
+
+### Real time
+Run items, questions and decisions reach the browser on `GET /v1/events` (topics `run:<id>`,
+`engagement:<id>`, …; P-10-T26/T27) with polling as the fallback; a module makes its events
+invalidate a topic with `kernel.realtime.register_invalidation(event_type, Invalidation(...))`.
+Delivery is measured per tail read (`realtime.delivered`, SLO-06, RB-28).
+
 ## Not yet
-- A real provider (it arrives with the spec that enables real calls) and escalation to `escalation_tier`: an escalated run goes to a person today.
-- Multi-step agents and tools (`shape` is `single_call`).
-- Uploads don't pass `requested_by`, so only retrievals are screened.
+- Per-firm flips of v2 capabilities (M17, Tue May 2, 2028; `docs/runbooks/runtime-v2-flip.md`).
+- Real-route evaluation reports for the tax capabilities (the evaluation account's step).

@@ -189,3 +189,34 @@ Agents read `evidence.api.withdrawn_among` / `is_version_withdrawn` and leave a 
 - **Spec** `workpapers.section_drafter` v1: default mode `gap`, modes `risk_narrative`, `risk`, `ic`, `soc1`, all on `workpapers.section_draft@v1` until each mode's prompt lands as a spec version; medium tier, $0.15 per section, background, `client_data: none`, suite `evals/workpapers_section_drafter`.
 - **`section_draft.py`:** `start` (workpapers' route slot: 409 `drafting_not_enabled` for a real firm, `action_cap` over the daily cap; creates the run and starts `SectionDraftWorkflow`) and `draft` (the `section_draft.draft` activity): load context, validate the pack (fails the run `pack_configuration_error` before any model call), one gateway call, citations written as v2 rows anchored `section_draft:<run>`, number provenance by code, `workpaper_cell` suggestions through `create_suggestion`, Unsupported cells in the run output. Reads the paper through `section_sources.register_section_source`, which workpapers fills at import (agents never imports workpapers, BOUND-002); workpapers also registers its own `workpaper_cell` applier and calls `start_section_draft` from its route.
 
+
+## Runtime v2 (P-10; SPEC-647; ADR-233, ADR-234; P-10-T55)
+Additive: the v1 `call()` specialists above keep running. How-to: `docs/architecture/reference/ai-agent.md`
+("Runtime v2"); contracts C6 v2 (`docs/contracts/agent-runs.md`) and C17
+(`docs/contracts/tool-registry.md`).
+- **Specs v2** (`specs/v2/*.yaml`, compiled into `specs/_specs_v2.py` by
+  `abacus_tools.codegen.agent_specs_v2`; `spec_v2.py`): shape (`single_call` lists no tools;
+  `workflow` or `loop` for tools), tools by kind, limits incl. `max_tool_calls`, `plan`,
+  `routes`, `client_data` (raised only by a signed real-route report).
+- **Tools (C17):** `tools/registry.py` (`agent_tool`, `register_tool`, `validate_tool`; four kinds,
+  final verbs only as `approved_write`), `tools/catalogue.py` (modules' `ToolDecl`s),
+  `tools/runtime.py` (`call_tool`: authorise, pin scope, §7216, idempotency, `<untrusted>`).
+  Tools live in the module that owns the data.
+- **Runs:** `run_workflow.py` (`AgentRunWorkflow`: plan, steps, questions, decisions, control),
+  `run_activities.py`, `commands.py` (plan approve/edit/cancel; `agent_run.plan_decided`),
+  `run_plan.py`, `run_waits.py`, `run_stream.py`, `run_views.py` (items), `runs_v2_contract.py`
+  (`/v1/agent-runs/...`, `/v1/engagements/{id}/runs`).
+- **The engagement run** (`engagement_run.py`, `engagement_runs.py`): code's plan from
+  methodology; `register_run_step(kind, handler)` is the slot owners fill (workpapers: `workpaper`).
+- **Proposals** (`proposals.py`, `proposal_slots.py`, `proposal_store.py`, `proposal_undo.py`):
+  `create_proposal`, `register_suggestion_target`, `register_proposal_adapter`; applied only by a
+  person. `approved_write_workflow.py` runs approved writes under a grant.
+- **Human gates (C13):** `gates.py` registers `agent_run_plan` (assigned only) and `run_proposal`
+  (DEC-4401).
+- **Sessions:** turns are runs (`session_turns.py`: `open_turn_run`, `run_session_turn`); the
+  workbench module owns the session (`workbench/README.md`).
+- **Records and metering:** `run_records.py`, `trace.py`, `trace_records.py`, `run_logs.py`,
+  `usage_labels.py`; retention and prune (`run_events_prune_workflow.py`).
+- **Real time:** `realtime_topics.py` registers the `run:` topic on `GET /v1/events`.
+- **Load and hardening:** `abacus_tools.loadtest` (`p10_budgets`, `scenarios/runtime_v2.yaml`),
+  mutation scope `agents/runtime` (P-10-T52); runbooks RB-28 and `runtime-v2-flip.md`.
