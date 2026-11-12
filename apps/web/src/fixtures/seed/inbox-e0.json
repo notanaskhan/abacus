@@ -4,12 +4,7 @@
   "inbox": {
     "waiting": 23,
     "unmatched": 4,
-    "unmatched_rows": [
-      9,
-      13,
-      16,
-      17
-    ],
+    "unmatched_rows": [9, 13, 16, 17],
     "waiting_after_feld_applied": 21,
     "threads": [
       {
@@ -335,11 +330,7 @@
     },
     "ridgeline_source_documents": 12,
     "ridgeline_virtual": 7,
-    "mortgage_statements": [
-      "214600",
-      "168300",
-      "129500"
-    ],
+    "mortgage_statements": ["214600", "168300", "129500"],
     "mortgage_total": "512400",
     "mortgage_account": "5500",
     "iyer_dividends": {

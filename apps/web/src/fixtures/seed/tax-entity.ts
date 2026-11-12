@@ -211,7 +211,7 @@ function byLine(rows: readonly WorkbookTbRowOut[]): WorkbookTbRowOut[] {
     }
     const next: Record<string, unknown> = { ...prev };
     for (const k of AMOUNTS) {
-      next[k] = String(BigInt(String(prev[k] ?? "0")) + BigInt(String(r[k] ?? "0")));
+      next[k] = String(BigInt(prev[k] ?? "0") + BigInt(r[k] ?? "0"));
     }
     lines.set(key, next as unknown as WorkbookTbRowOut);
   }

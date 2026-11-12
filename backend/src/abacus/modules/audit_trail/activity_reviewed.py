@@ -910,5 +910,12 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tax_return.engine_reimport_needed",
         # DEC-4417: a run step holds on a card a person's own proposal raised (shown on the run).
         "agent_run.decision_held",
+        # reviewed 2026-11-13 (S40 end pass): the search index's reindex is an operational record
+        # (explorer only); workbook cell writes show in SHL-09's per-cell provenance and the
+        # checkpoint list, not the engagement feed.
+        "search_index.reindex_completed",
+        "search_index.reindex_requested",
+        "workbook.cell_edited",
+        "workbook.step_written",
     }
 )

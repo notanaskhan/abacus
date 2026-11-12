@@ -69,7 +69,7 @@ Invariants asserted everywhere (F-04 `assertInvariants`): INV-1 the agent never 
 every citation shown is verified; INV-3 walls hold; INV-4 portal scopes are isolated; INV-5
 attribution is correct.
 
-### F1 · Entity return shell and form-family dispatch (TXP-00 rail, all tabs)
+### F1 · Entity return shell and form-family dispatch (TXP-00 rail, all tabs) (AC-F1)
 
 *As Olivia, I want an entity return to open on its Agent tab with the reviewer's tabs in senior-reviewer order.*
 - **AC-1.1** *Given* `tax.entity_workspace` on and a `tax_return` work item with `form = '1065'`, *when* Olivia opens `/tax-returns/$returnId`, *then* the route dispatches to the entity layout and TXP-00 a renders; a 1040 or 1041 still opens TAX-02 (T-02), and with the flag off the 1065 opens TAX-02's coordination view as today.
@@ -78,7 +78,7 @@ attribution is correct.
 - **AC-1.4** *Given* the rail, *then* General Information reads the profile in §1 with the EIN masked; *when* a member with `tin.reveal` clicks Reveal on a partner TIN, *then* step-up MFA runs, the value shows for 30 seconds through P-12's logged reveal, the audit row stores the field and the user but never the value (DEC-60), and an offshore user sees no Reveal control (403 if called).
 - **AC-1.5** *Given* the subbar, *then* it shows "☰ Checkpoints ⌄" (TAX-07/SHL-16, T-04), the T-01 sync chip ("Not yet exported", disabled with "Map every account first" while Unmapped > 0), the centred title with the state pill "In review · Partner" (context label "Working" while preparing, T05), and Assistant (TAX-08).
 
-### F2 · The workbook run (TXP-00 a–e)
+### F2 · The workbook run (TXP-00 a–e) (AC-F2)
 
 *As Olivia, I want the agent to build the workbook from the shoebox and show which task raised which open item.*
 - **AC-2.1** *Given* `tax.workbook_run` on and no prior run, *then* TXP-00 c shows every row with an empty ring "Not started" and the primary ▶ Run; *when* Olivia clicks it, *then* `POST /v1/tax-returns/{id}/workbook-runs {scope: "all"}` answers 202 with a run ID, the run plan is the code plan `tax.entity_workbook` (DEC-57, no model plans it), and the canvas switches to the running card.
@@ -91,7 +91,7 @@ attribution is correct.
 - **AC-2.8** *Given* a partnership without both §7216 consents (`use` and `ai_disclosure`, signed for the partnership; OQ-2), *when* the run reaches a model-backed step, *then* that step waits on inputs with "§7216 AI consent — Ridgeline (1 of 2 signed)", every deterministic step still runs, and no model call is made (`consent_7216`, fail closed).
 - **AC-2.9** *Given* an agent principal, *when* it calls the run start route, *then* 403 (`workbook_run.start`, agent deny).
 
-### F3 · TB → TTB, journal entries and form-line mapping (TXP-02)
+### F3 · TB → TTB, journal entries and form-line mapping (TXP-02) (AC-F3)
 
 *As Samuel, I want the trial balance carried to the tax trial balance with every layer footing and every mapping judgment approved by me.*
 - **AC-3.1** *Given* Run 2, *then* TXP-02 a lists 28 accounts with PY, UTB, AJE, RJE, ATB, TJE and TTB columns, "$" on every cell, each column footing to $0 (tally "tie"), the balance-sheet tie 17,914,500 = 11,048,300 + 6,866,200 (b) and the capital tie 5,960,000 + 250,000 + 1,256,200 − 600,000 = 6,866,200; numbers are never truncated (horizontal scroll).
@@ -102,7 +102,7 @@ attribution is correct.
 - **AC-3.6** *Given* Grouped by Form 1065 line (d), *then* subtotals show Schedule L, Form 8825 (by property), Schedule K, M-2 and M-3, computed by code with server totals.
 - **AC-3.7** *Given* the Building state (f), *then* tallies read Pending and rows are skeletons while `import_trial_balance` runs.
 
-### F4 · The numbered workbook and its formula engine (TXP-11)
+### F4 · The numbered workbook and its formula engine (TXP-11) (AC-F4)
 
 *As Olivia, I want to open the exact cell an issue points at, see its formula and sources, edit or cite it, and open the workbook in Excel.*
 - **AC-4.1** *Given* the M-2 issue, *when* Olivia opens it from TXP-10, *then* TXP-11 a selects `05 Capital!H12`, the name box reads H12, the formula bar reads "(empty) — expected ='06 Schedule K'!C31 × 25% → 1,550", the linked-issue chip shows, cited cells H8:H12, J13 and J15 carry the purple tint, and the footer reads "05 Capital!H12 · empty · Cited by 1 issue · Evidence: 06 Schedule K!C31 · Municipal bond fund statement (Harborline, Dec 2025) p. 1".
@@ -113,7 +113,7 @@ attribution is correct.
 - **AC-4.6** *When* Olivia clicks Open in Excel, *then* `Ridgeline_2025_1065_Workbook_v2.xlsx` downloads with live formulas from the DAG, client strings (account names, memo text) written as text even when they start with "=", and byte-identical output for identical data (P-69, P-19).
 - **AC-4.7** *Given* the version picker, *when* Olivia picks "Version 1 · Run 1", *then* the grid shows that version read-only.
 
-### F5 · Allocation structure and the agreement reader (TXP-06)
+### F5 · Allocation structure and the agreement reader (TXP-06) (AC-F5)
 
 *As Samuel, I want the allocation structure proposed from the partnership agreement with clause citations, and approved by me at L3.*
 - **AC-5.1** *Given* the agreement reader is cleared for the firm and both consents exist, *when* Run 1 reaches `interim_closing_706d`, *then* the reader proposes a straight percentage with a §706(d) interim closing (monthly convention) for the 6/30/2025 transfer, each proposed parameter citing LPA §4.1 or Assignment §3 (`document_text` with bbox), verified before display; instructions inside the agreement are never followed (ADR-052).
@@ -123,7 +123,7 @@ attribution is correct.
 - **AC-5.5** *When* Samuel edits a rung inline (pref 8%, catch-up 20%, promote 20/80) (d), *then* `POST …/allocation-structure/preview` recomputes the right column with no persistence and the back-solve shows Pending; *when* he saves, *then* `PUT …/draft` creates a new draft version that needs an L3 sign-off again.
 - **AC-5.6** *Given* agents off, *then* a manager keys the structure, periods and transfer with citation notes, and code computes the same results.
 
-### F6 · Schedule K and K-1 drafts (TXP-05, sheet 09)
+### F6 · Schedule K and K-1 drafts (TXP-05, sheet 09) (AC-F6)
 
 *As Samuel, I want Schedule K to equal the sum of the K-1s, line by line, with every amount traceable.*
 - **AC-6.1** *Given* the approved structure, *then* TXP-05 a shows K = Σ K-1 on every line (1,231,600 · 18,400 · 6,200 · 600,000) with Items J (beginning and ending percentages), K (11,048,300 split by profit percentage) and L (ending capital), and the Analysis of Net Income excluding tax-exempt income; every row crossfoots (Pell Street Ventures box 2 = 400,270).
@@ -133,7 +133,7 @@ attribution is correct.
 - **AC-6.5** *Given* the `federal_k1s` step, *then* each partner's draft K-1 values are written to sheet 09 and upserted into T-02's `k1_packages` as Draft (pre-release) with a reference (DEC-88); *given* any portal principal, including Meera Shah through her own 1040 scope, *then* no draft value is readable (INV-4).
 - **AC-6.6** *Given* State K-1 amounts (b), *then* the IL, CO and NY figures come from sheet 08 cells with their import or keyed provenance; T-05 computes no state amounts.
 
-### F7 · Capital accounts, M-2 and section sign-off (TXP-07)
+### F7 · Capital accounts, M-2 and section sign-off (TXP-07) (AC-F7)
 
 *As Samuel, I want each partner's capital rolled in three bases with the transfer handled correctly and the M-2 tie shown.*
 - **AC-7.1** *Given* Run 2, *then* TXP-07 a shows Tax, 704(b) and Book (tax basis) per partner; the Tax column omits tax-exempt interest, so the tally reads "M-2 ties · off 6,200" and five cells are amber; 704(b) equals book with no revaluations or §704(c) items.
@@ -143,7 +143,7 @@ attribution is correct.
 - **AC-7.5** *Given* the fix approved (c), *then* the Tax column shows 6,200 in "Other increases", END TOTAL 6,866,200, the tie passes, and an earlier sign-off computes stale.
 - **AC-7.6** *Given* the Computing state (d), *then* tally values fade in 45 ms apart and rows 70 ms apart, and nothing animates under reduced motion; *given* the signed state (e), *then* the header reads "Reviewed · SI".
 
-### F8 · Issues, tie-outs and the fix loop (TXP-10, TXP-11 b and b2)
+### F8 · Issues, tie-outs and the fix loop (TXP-10, TXP-11 b and b2) (AC-F8)
 
 *As Samuel, I want every blocker in one queue, linked to its cells, with fixes that come back for my approval.*
 - **AC-8.1** *Given* any completed run, *then* the `tie_out_check` activity compares M-2 line 9 with Schedule L line 21, the capital tie, Σ K-1 = K and TB footing, and raises or auto-resolves C3 issues deduplicated on `(work_item_id, source_ref)`; *Why this was surfaced* is composed from code facts by a deterministic template (no model text), and `issue_links` point at the cells.
@@ -154,7 +154,7 @@ attribution is correct.
 - **AC-8.6** *Given* the §754 issue (b), *when* Samuel chooses Send to client…, *then* a POR-04 request is created in template wording only, the internal note never appears in it, and Owen Calder sees only that request (INV-4); Send reminder uses the C16 template and is sent by a person; the agent can be an assignee but never resolves or approves its own fix.
 - **AC-8.7** *When* a person resolves an issue without an applied fix, *then* a note is required.
 
-### F9 · Preparer memo (TXP-01)
+### F9 · Preparer memo (TXP-01) (AC-F9)
 
 *As Samuel, I want a cited memo that tells me where to spend review time, and that goes stale when its figures change.*
 - **AC-9.1** *Given* `tax.entity_agents` on and consents in place, *when* Olivia drafts the memo, *then* a run streams the sections (b, skeleton) from code-computed figures only; every figure in the text is a citation or a code fact (number provenance 1.0), and markers [1]–[6] point at verified sources.
@@ -164,27 +164,27 @@ attribution is correct.
 - **AC-9.5** *Given* agents off, *then* Olivia writes each section in place; adoption, approval and staleness work the same.
 - **AC-9.6** *Given* the Opportunities section, *then* "Raise with client…" is a planned link (TAX-15 in T-08, PRJ-01 in T-09).
 
-### F10 · Decisions: the §706(d) question and the §754 card
+### F10 · Decisions: the §706(d) question and the §754 card (AC-F10)
 
 - **AC-10.1** *Given* the `convention_706d` question, *then* its options are computed by code (interim closing calendar-day, semi-monthly or monthly; proration calendar-day only), the recommendation comes from `decisions.recommender` with a cited reason, and only a member holding the step's answer right may answer.
 - **AC-10.2** *Given* the §754 decision card kind `section_754` (SHL-11 g), *then* it is reserved to the engagement partner (Daniel Reyes), its options are Elect and Do not elect, its facts come from code (transfer 6/30/2025, price 360,000, transferred tax capital 331,405, §743(b) placeholder 28,595), and the recommendation is cited; *when* Daniel decides with a rationale, *then* the decision is recorded human-only and HOME-02 removes the row; the client-side question still goes to Owen Calder through the TXP-10 b request.
 
-### F11 · Reconciliation to the engine of record and the export section
+### F11 · Reconciliation to the engine of record and the export section (AC-F11)
 
 - **AC-11.1** *Given* an approved checkpoint and final approval, *when* a reviewer exports to CCH Axcess (TAX-09, T-01), *then* the entity section carries the TTB by CCH line code and the partner allocations by Schedule K line from the **approved checkpoint only**; *given* Unmapped > 0, *then* export is refused; no agent can export.
 - **AC-11.2** *Given* a CCH import checkpoint is approved, *then* reconciliation compares Schedule K totals, each partner's K-1 boxes, ending capital and M-2 with the workbook; *given* a difference, *then* one `engine_diagnostic` issue per difference blocks final approval; *given* none, *then* the reconciliation reads "0 unexplained differences" and Accrued figures that the engine owns are labelled "Accrued tie-out (shadow)".
 
-### F12 · Final-approval guards
+### F12 · Final-approval guards (AC-F12)
 
 - **AC-12.1** *Given* Unmapped > 0, an unapproved allocation structure, an open issue whose `blocks` includes final approval, an off tie-out without a note, or a run in progress, *when* Daniel opens final approval (TAX-05 → SHL-12 h, T-04), *then* the guard in `tax/approval.py` answers 409 with `blockers[]`, each shown in words; *when* all clear, *then* the L4 approval records; an agent principal is refused.
 
-### F13 · Agent-off, consent and entitlement paths
+### F13 · Agent-off, consent and entitlement paths (AC-F13)
 
 - **AC-13.1** *Given* `tax.entity_agents` off, or a capability not yet cleared, *then* every model-backed control is disabled with its reason from `GET /v1/agents/capabilities`, never hidden behind an error, and the J08 P0 steps complete by hand.
 - **AC-13.2** *Given* a firm whose entitlement `tax.entity_returns` is refused (CPA memos unsigned, non-synthetic firm), *then* the return opens the coordination view with a designed locked state, and no workbook route answers.
 - **AC-13.3** *Given* `tax.entity_workspace` off, *then* nothing in the entity layout is reachable and no pane renders blank.
 
-### F14 · Seed, golden figures and CPA review
+### F14 · Seed, golden figures and CPA review (AC-F14)
 
 - **AC-14.1** *Given* `make seed-demo`, *then* the Ridgeline and Harborview slices load through service APIs (never direct inserts) with the run, memo and issue timeline in §1 and the named snapshots Sep 8 10:02 AM, Sep 10 4:12 PM, Sep 14 9:24 AM and 9:52 AM.
 - **AC-14.2** *Given* the golden suites, *then* every figure in §1 is an exact-`Decimal` case transcribed by N from blueprint §9.8 and the specs, the Schedule L conflict is encoded as DF-34 decided, and each case's `reviewed_by` references a signed memo `docs/quality/golden-reviews/tax_entity.<engine>@<version>.md` *(new)* before M18.

@@ -3,7 +3,7 @@ id: TASK-7629
 title: F-07-T24 consumer-state coverage and handoff conflict review
 plan_key: F-07-T24
 spec: SPEC-652
-acceptance_criteria: [F-07-T24]  # every consumer artboard maps to a kit prop or slot; each conflict resolved or DF row
+acceptance_criteria: [AC-1, AC-6]  # every consumer artboard maps to a kit prop or slot; each conflict resolved or DF row
 risk_zone: green
 status: in-review
 branch: f07-t24-consumer-coverage

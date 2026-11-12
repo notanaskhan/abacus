@@ -142,15 +142,15 @@ either a `subject_ref` or nothing (a blank firm-wide session).
 - **Answers (3.4):** AC-A1 grounded $48,600 answer, sums by code; AC-A2 no severity or decision;
   AC-A3 "Nothing was written." by code; AC-A4 unverified shows "Unsupported"; AC-A5 citation opens
   SHL-08; AC-A6 discovery facts (224 · 79 · 145 · 214 · 241 · 3 offices).
-- **Questions (3.5):** AC-Q1 to AC-Q4.
+- **Questions (3.5):** AC-Q1, AC-Q2, AC-Q3, AC-Q4.
 - **Plans (3.6):** AC-P1 plan card, no bulk read before approval; AC-P2 owner-only approve; AC-P3
   edit re-validates; AC-P4 cancel line; AC-P5 `workbench.plans` off gives a notice.
-- **Gathering (3.7):** AC-G1 to AC-G5 (the per-item failure ledger, Retry those 3).
-- **Results (3.8):** AC-R1 to AC-R5 (preview from the stored artifact, audited download, drill
+- **Gathering (3.7):** AC-G1, AC-G2, AC-G3, AC-G4, AC-G5 (the per-item failure ledger, Retry those 3).
+- **Results (3.8):** AC-R1, AC-R2, AC-R3, AC-R4, AC-R5 (preview from the stored artifact, audited download, drill
   without a model call).
-- **Save to Files (3.9):** AC-W1 to AC-W7.
-- **Run log (3.10):** AC-U1 to AC-U3. **Gated (3.11):** AC-D1 to AC-D3.
-- **Invariants (3.12):** INV-1 to INV-5 with the tests the epic names.
+- **Save to Files (3.9):** AC-W1, AC-W2, AC-W3, AC-W4, AC-W5, AC-W6, AC-W7.
+- **Run log (3.10):** AC-U1, AC-U2, AC-U3. **Gated (3.11):** AC-D1, AC-D2, AC-D3.
+- **Invariants (3.12):** INV-1, INV-2, INV-3, INV-4, INV-5 with the tests the epic names.
 
 ## S40 rows
 T01 (this), T02 contract stub, T03 protected bundle, T04 status and glossary rows, T05 consumer

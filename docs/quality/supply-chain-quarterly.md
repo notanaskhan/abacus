@@ -132,7 +132,7 @@ built images and are not re-run here.
   source) in `platform/search/scrub.py`, P-02-T06's hostile-character pattern written with literal
   bidi and zero-width characters. Fixed the same day as escapes (same character set, asserted);
   P-02-T06/T07's two tests that carried literal bidi characters in strings are escaped too.
-  Re-run: 0 findings. Register: B613 (scrub.py) seen and closed 2026-11-12.
+  Re-run: 0 findings. Register: `B613:search-scrub` seen and closed 2026-11-12.
 - **pnpm audit** (high and above): the 3 high js-yaml findings under `@hey-api/openapi-ts`
   (build-time only; GHSA-52cp-r559-cp3m, GHSA-5p4m-2wfm-xmqj, GHSA-2883-xcg3-v3hh) still stand.
   They are due 2026-12-03 and need the protected-manifest override PR, which is the user's call.

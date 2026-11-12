@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-import abacus.api.app  # noqa: F401 -- imports every module, so each registers its projection
+import abacus.api.app  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imports every module, so each registers its projection
 from abacus.modules.platform.search import scrub, spec
 
 EXPECTED = {
@@ -43,9 +43,9 @@ def test_the_groups_come_in_canonical_order() -> None:
 @pytest.mark.parametrize(
     ("raw", "clean"),
     [
-        ("Feld 123-45-6789 W-2.pdf", "Feld ••• W-2.pdf"),
+        ("Feld 900-45-6789 W-2.pdf", "Feld ••• W-2.pdf"),
         ("EIN 12-3456789 letter", "EIN ••• letter"),
-        ("Acct 0001234567890 statement", "Acct ••• statement"),
+        ("Acct 0009004567890 statement", "Acct ••• statement"),
         ("Invoice $48,600.00 paid", "Invoice ••• paid"),
         ("Net assets 16,812,400", "Net assets •••"),
         ("PayGrid Contribution Detail 2025.xlsx", "PayGrid Contribution Detail 2025.xlsx"),

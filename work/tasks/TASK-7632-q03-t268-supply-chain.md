@@ -3,7 +3,7 @@ id: TASK-7632
 title: "Q-03-T268: supply-chain hygiene 2028 Q2: local scans, B613 fix, CodeQL triage"
 plan_key: Q-03-T268
 spec: SPEC-000  # row (Q-03-T268; ADR-099; DEC-366)
-acceptance_criteria: [Q-03-T268]  # no high or critical finding older than its SLA at quarter end
+acceptance_criteria: [AC-20]  # no high or critical finding older than its SLA at quarter end
 risk_zone: red
 status: in-review
 branch: q03-t268-supply-chain

@@ -23,7 +23,7 @@ from abacus.modules.platform.api import (
     search_index_object,
     search_request_reindex,
 )
-from abacus.modules.platform.search.activities import drift_firm
+from abacus.modules.platform.api import search_drift_firm as drift_firm
 
 
 def main(argv: Sequence[str] | None = None) -> int:

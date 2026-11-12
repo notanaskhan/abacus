@@ -2,7 +2,8 @@
 ADR-050, ADR-005; DEC-4616). Code plans, no model: the run is P-10's engagement run with this
 provider's ten steps instead of the methodology's.
 
-Ten step keys in six groups, a DAG (a step depends only on steps of earlier groups):
+Ten step keys in six groups, a DAG. A step's plan level is its dependency depth (`DEPTH`), so
+every dependency sits on a lower level, as P-10's `validate_plan` requires:
 
     1 import       import_trial_balance
     2 map          map_lines                                      ← import
@@ -85,6 +86,20 @@ LEVEL: Final = {group: n for n, group in enumerate(GROUPS, start=1)}
 _BY_KEY: Final = {s.key: s for s in STEPS}
 
 
+def _depths() -> dict[str, int]:
+    """Each step's plan level: one more than its deepest dependency's (P-10's `validate_plan`
+    refuses a dependency at the same or a later level, so `capital_m2` sits after
+    `interim_closing_706d` though both are in the capital group). The group stays in the step's
+    arguments for TXP-00's six headings."""
+    depth: dict[str, int] = {}
+    for step in STEPS:  # STEPS lists every dependency before its dependants
+        depth[step.key] = 1 + max((depth[d] for d in step.depends_on), default=0)
+    return depth
+
+
+DEPTH: Final = _depths()
+
+
 class RunKeysInvalid(DomainInvalid):
     """A group or step key the plan does not have, or a scope without keys."""
 
@@ -139,7 +154,7 @@ def plan_steps(
                 PlanStep(
                     key=step.key,
                     label=step.label,
-                    level=LEVEL[step.group],
+                    level=DEPTH[step.key],
                     kind="question",
                     arguments={
                         "question_key": "consent_7216",
@@ -154,7 +169,7 @@ def plan_steps(
             PlanStep(
                 key=step.key,
                 label=step.label,
-                level=LEVEL[step.group],
+                level=DEPTH[step.key],
                 kind="compute",
                 tool=f"{RUN_STEP}{step.key}",
                 arguments={
@@ -191,6 +206,7 @@ async def entity_workbook_plan(
 register_plan_provider(PROVIDER, entity_workbook_plan)
 
 __all__ = [
+    "DEPTH",
     "GROUPS",
     "PROVIDER",
     "STEPS",

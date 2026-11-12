@@ -297,7 +297,7 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
     expect(planned.map((a) => a.label)).toEqual([
       // Tax Returns is routed by T-02-T12 (TAX-01); its flag-off page is behind the `tax_returns` entitlement.
       // Files is routed by N-01-T16 (FIL-01); its flag-off page is behind `files.browser`.
-      "Workbench",
+      // Workbench is routed by W-02-T08 (WB-01); its flag-off page is behind `workbench.enabled`.
       // Inbox is routed by N-01-T23 (INB-01); its flag-off page is behind `inbox.firm_intake`.
       // Binders is routed by P-06-T09 (BND-01); its flag-off page is BND-01.test.tsx's.
       // Notices is routed by N-04-T05 (NOT-01); `notices.workspace` retired at N-04-T27.

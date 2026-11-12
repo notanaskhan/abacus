@@ -40,8 +40,14 @@ from abacus.modules.platform.search.spec import (
 from abacus.modules.platform.search.workflows import (
     ReindexInput,
     SearchReindexWorkflow,
-    reindex_workflow_id,
 )
+
+
+def reindex_workflow_id(tenant_id: UUID, object_type: str | None, client_id: UUID | None) -> str:
+    """The reindex workflow's id: one per firm, object type and client (dedupes requests)."""
+    base = f"search_reindex:{tenant_id}:{object_type or 'all'}"
+    return base if client_id is None else f"{base}:{client_id}"
+
 
 FANOUT: Final = 200  # ids from one event above this go to the workflow (P-02 §4.6)
 MEMBERSHIP_DEACTIVATED: Final = "membership.deactivated"

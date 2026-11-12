@@ -43,9 +43,18 @@ import { COPY } from "./copy";
 const RETURN_ROUTE =
   /^\/tax-returns\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/u;
 
+const WORKPAPER_ROUTE =
+  /^\/tax-returns\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/workpaper/u;
+
 /** A "Linked to" item as a link where its screen is built: a return line opens TAX-02 for its
- * return (the server's `/tax-returns/<id>`); anything else stays text until its host is routed. */
+ * return (the server's `/tax-returns/<id>`); an entity workbook cell opens TXP-11 (the server's
+ * `/tax-returns/<id>/workpaper…`, "Opens TXP-11 · 01 Trial Balance", T-05-T38); anything else
+ * stays text until its host is routed. */
 export function linkedHref(link: LinkOut): string | undefined {
+  if (link.kind === "workpaper_cell") {
+    const workbook = WORKPAPER_ROUTE.exec(link.route)?.[1];
+    if (workbook !== undefined) return hrefOf(to.TXP11({ returnId: workbook }));
+  }
   const returnId = link.kind === "return_line" ? RETURN_ROUTE.exec(link.route)?.[1] : undefined;
   return returnId === undefined ? undefined : hrefOf(to.TAX02({ returnId }));
 }

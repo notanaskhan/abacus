@@ -63,8 +63,9 @@ describe("TXP-11 Workpaper", () => {
   it("C: 01 Trial Balance, I18 = F18+G18+H18 reads (94,000)", () => {
     const data = sheetCells("run2", "01");
     const i18 = data.cells.find((c) => c.address === "I18");
-    expect(i18?.formula).toBe("=F18+G18+H18");
-    expect(display("01", i18!)).toBe("(94,000)");
+    if (i18 === undefined) throw new Error("01 Trial Balance has I18");
+    expect(i18.formula).toBe("=F18+G18+H18");
+    expect(display("01", i18)).toBe("(94,000)");
     expect(gridCells("01", data).K18?.formula).toBe("=I18+J18");
   });
 

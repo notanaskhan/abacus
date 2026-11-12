@@ -26,7 +26,7 @@ import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from threading import Lock
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
 from sqlalchemy import (
@@ -47,11 +47,13 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.exc import DBAPIError
 
 from abacus.kernel.db import tenant_session
+from abacus.kernel.errors import NotFound
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
     Resource,
     authorise,
+    engagement_resource,
     firm_role_allows,
     not_walled_client,
     visible_scope,
@@ -135,7 +137,7 @@ def take_token(ctx: AuthContext) -> None:
         bucket.at = now
         if bucket.tokens < 1:
             _buckets[key] = bucket
-            raise SearchRateLimited(limit=int(_RATE), retry_after=1)
+            raise SearchRateLimited(facts={"limit": int(_RATE), "retry_after": 1})
         bucket.tokens -= 1
         _buckets[key] = bucket
 
@@ -159,7 +161,7 @@ def visible_for(ctx: AuthContext, projection: SearchProjection) -> ColumnElement
     return false()
 
 
-def match(q: str) -> tuple[ColumnElement[bool], ColumnElement[float]]:
+def text_predicate(q: str) -> tuple[ColumnElement[bool], ColumnElement[float]]:
     """The match predicate and the rank for search text `q` (already cleaned)."""
     prefix = or_(
         docs.c.title.ilike(f"{_escape(q)}%"), docs.c.identifiers_text.ilike(f"{_escape(q)}%")
@@ -187,7 +189,7 @@ def _group_query(
 ) -> Select[tuple[object, ...]] | None:
     if not members:
         return None
-    predicate, rank = match(q)
+    predicate, rank = text_predicate(q)
     per_type = [and_(docs.c.object_type == p.object_type, visible_for(ctx, p)) for p in members]
     return (
         select(docs, rank.label("rank"))
@@ -220,10 +222,10 @@ def context_of(row: dict[str, object], q: str) -> str | None:
     words = [w for w in q.lower().split() if w]
     title = str(row["title"]).lower()
     if words and not any(w in title for w in words):
-        for party in row.get("related") or []:  # type: ignore[union-attr]
-            name = str(party.get("name", ""))  # type: ignore[union-attr]
+        for party in row.get("related") or []:  # type: ignore[union-attr] -- a JSON value read from a row
+            name = str(party.get("name", ""))  # type: ignore[union-attr] -- a JSON value read from a row
             if any(w in name.lower() for w in words):
-                label = str(party.get("label", ""))  # type: ignore[union-attr]
+                label = str(party.get("label", ""))  # type: ignore[union-attr] -- a JSON value read from a row
                 return f"{name}, {label}" if label else name
     raw = row.get("context")
     return None if raw is None else str(raw)
@@ -242,38 +244,38 @@ def item_of(projection: SearchProjection, row: dict[str, object], q: str) -> Sea
             code=str(status),
             context=None if row.get("status_context") is None else str(row["status_context"]),
         ),
-        due_on=row.get("due_on"),  # type: ignore[arg-type]
+        due_on=row.get("due_on"),  # type: ignore[arg-type] -- a test double or the review api's own context alias
         tag=None if row.get("tag") is None else str(row["tag"]),
         use_count=None if row.get("use_count") is None else int(str(row["use_count"])),
         target=SearchTargetOut(
             screen_id=projection.target,
-            params={str(k): str(v) for k, v in dict(row["target_params"] or {}).items()},  # type: ignore[call-overload]
+            params={
+                str(k): str(v)
+                for k, v in cast(dict[str, object], row["target_params"] or {}).items()
+            },  # type: ignore[call-overload] -- the row's target params are a JSON object
         ),
         match_ranges=match_ranges(str(row["title"]), q) if q else [],
     )
 
 
-def resource_of(row: dict[str, object], tenant_id: UUID) -> Resource:
+async def resource_of(row: dict[str, object], ctx: AuthContext) -> Resource:
+    """The row's resource for its read action: an engagement's from the engagement row itself
+    (archived and all, through identity's engagement slot), else its client's or the firm's."""
     engagement = row.get("engagement_id")
     client = row.get("client_id")
     if engagement is not None:
-        return Resource.engagement(
-            tenant_id,
-            UUID(str(engagement)),
-            archived=False,
-            client_id=None if client is None else UUID(str(client)),
-        )
+        return await engagement_resource(ctx.tenant, UUID(str(engagement)))
     if client is not None:
-        return Resource.client(tenant_id, UUID(str(client)))
-    return Resource.firm(tenant_id)
+        return Resource.client(ctx.tenant_id, UUID(str(client)))
+    return Resource.firm(ctx.tenant_id)
 
 
 async def _readable(
     ctx: AuthContext, projection: SearchProjection, row: dict[str, object]
 ) -> bool:
     try:
-        await authorise(ctx, projection.read_action, resource_of(row, ctx.tenant_id))
-    except Forbidden:
+        await authorise(ctx, projection.read_action, await resource_of(row, ctx))
+    except (Forbidden, NotFound):
         return False
     return True
 
@@ -302,7 +304,10 @@ async def search(ctx: AuthContext, body: SearchQueryIn, *, agent_mode: bool) -> 
     try:
         async with tenant_session(ctx.tenant) as session:
             await session.execute(text("SET LOCAL statement_timeout = '1s'"))
-            await session.execute(text(f"SET LOCAL pg_trgm.similarity_threshold = {SIMILARITY}"))
+            await session.execute(
+                text("SELECT set_config('pg_trgm.similarity_threshold', :v, true)"),
+                {"v": str(SIMILARITY)},
+            )
             for group in GROUP_ORDER:
                 members = by_group.get(group, [])
                 tri = any(p.data_class == "tri" for p in members)
@@ -378,16 +383,20 @@ async def _suggest(
         .order_by(score.desc(), docs.c.object_id)
         .limit(1)
     )
-    row = (await session.execute(stmt)).mappings().first()  # type: ignore[attr-defined]
-    if row is None:
+    found = (await session.execute(stmt)).mappings().first()  # type: ignore[attr-defined] -- the session is typed object here
+    if found is None:
         return None
+    row = cast(dict[str, object], found)
     projection = next(p for p in members if p.object_type == row["object_type"])
     return SearchSuggestionOut(
         title=str(row["title"]),
         context=None if row["context"] is None else str(row["context"]),
         target=SearchTargetOut(
             screen_id=projection.target,
-            params={str(k): str(v) for k, v in dict(row["target_params"] or {}).items()},
+            params={
+                str(k): str(v)
+                for k, v in cast(dict[str, object], row["target_params"] or {}).items()
+            },
         ),
     )
 

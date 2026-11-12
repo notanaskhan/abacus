@@ -122,6 +122,7 @@ TABLES: tuple[str, ...] = (
     "control_activities",
     "control_exceptions",
     "cuecs",
+    "daily_briefings",
     "decision_analysis_requests",
     "decision_card_versions",
     "decision_cards",

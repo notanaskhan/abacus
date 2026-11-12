@@ -44,7 +44,7 @@ def registered(monkeypatch: pytest.MonkeyPatch) -> spec.SearchProjection:
         scope_kind="client",
         build=build,
         target="CLI-02",
-        triggers={"client.updated": lambda p: [UUID(str(i)) for i in p["ids"]]},  # type: ignore[union-attr]
+        triggers={"client.updated": lambda p: [UUID(str(i)) for i in p["ids"]]},  # type: ignore[union-attr] -- a JSON value read from a row
     )
     spec.register(projection)
     return projection
@@ -52,6 +52,10 @@ def registered(monkeypatch: pytest.MonkeyPatch) -> spec.SearchProjection:
 
 def _event(event_type: str, payload: dict[str, object]) -> OutboxEvent:
     return OutboxEvent(uuid4(), TENANT, event_type, payload)
+
+
+async def _call(kind: str, event: object) -> None:
+    await indexer.SUBSCRIPTIONS[kind](event)  # type: ignore[arg-type]  # the test's event double
 
 
 def test_subscriptions_compose_the_registered_triggers(registered: spec.SearchProjection) -> None:
@@ -69,7 +73,7 @@ def test_an_event_reindexes_its_ids_inline(
 
     monkeypatch.setattr(store, "upsert", upsert)
     ids = [uuid4(), uuid4()]
-    asyncio.run(indexer.SUBSCRIPTIONS["client.updated"](_event("client.updated", {"ids": ids})))
+    asyncio.run(_call("client.updated", _event("client.updated", {"ids": ids})))
     assert seen == ids
 
 
@@ -79,12 +83,12 @@ def test_a_fanout_goes_to_the_workflow(
     started: list[int] = []
 
     async def reindex(tenant_id: UUID, object_type: str | None, **kw: object) -> str:
-        started.append(len(kw["ids"]))  # type: ignore[arg-type]
+        started.append(len(kw["ids"]))  # type: ignore[arg-type] -- a test double or the review api's own context alias
         return "run"
 
     monkeypatch.setattr(indexer, "request_reindex", reindex)
     ids = [uuid4() for _ in range(indexer.FANOUT + 1)]
-    asyncio.run(indexer.SUBSCRIPTIONS["client.updated"](_event("client.updated", {"ids": ids})))
+    asyncio.run(_call("client.updated", _event("client.updated", {"ids": ids})))
     assert started == [indexer.FANOUT + 1]
 
 
@@ -97,8 +101,9 @@ def test_membership_deactivated_purges_recents(monkeypatch: pytest.MonkeyPatch) 
 
     monkeypatch.setattr(store, "purge_recents", purge)
     user = uuid4()
-    handler = indexer.SUBSCRIPTIONS["membership.deactivated"]
-    asyncio.run(handler(_event("membership.deactivated", {"user_id": str(user)})))
+    asyncio.run(
+        _call("membership.deactivated", _event("membership.deactivated", {"user_id": str(user)}))
+    )
     assert purged == [user]
 
 

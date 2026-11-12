@@ -425,10 +425,14 @@ _workbook_service.register()
 
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
 # T-05-T31 (DEC-4616): the entity workbook run plan provider, registered at import.
-from abacus.modules.tax import entity_run_plan as _entity_run_plan  # noqa: E402, F401
+from abacus.modules.tax import (  # noqa: E402
+    entity_run_plan as _entity_run_plan,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
+)
 
 # T-05-T32 (DEC-4617): the workbook run step handlers, registered at import.
 from abacus.modules.tax import run_steps as _run_steps  # noqa: E402
-from abacus.modules.tax import search as _search  # noqa: E402, F401
+from abacus.modules.tax import (  # noqa: E402
+    search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
+)
 
 _run_steps.register()

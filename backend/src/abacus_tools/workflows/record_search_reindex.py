@@ -6,7 +6,8 @@ Run: python -m abacus_tools.workflows.record_search_reindex <output-directory>
 Records the real `SearchReindexWorkflow` against throwaway containers with its activities replaced
 by stubs (replay never runs activities):
 - `search-reindex-v1-all.json`: every registered type paged (two types, one with two pages);
-- `search-reindex-v1-ids.json`: a fan-out's listed ids for one type.
+- `search-reindex-v1-ids.json`: a fan-out's listed ids for one type;
+- `search-drift-check-v1-nightly.json` (`--drift`): the nightly drift check's one activity.
 Synthetic identifiers only. Refuses to overwrite an existing file.
 """
 
@@ -20,11 +21,9 @@ from temporalio.client import Client, WorkflowHistory
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.platform.search.workflows import (
-    ReindexInput,
-    ReindexPage,
-    SearchReindexWorkflow,
-)
+from abacus.modules.platform.api import SearchDriftCheckWorkflow, SearchReindexWorkflow
+from abacus.modules.platform.api import SearchReindexInput as ReindexInput
+from abacus.modules.platform.api import SearchReindexPage as ReindexPage
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite
@@ -32,6 +31,7 @@ from abacus_tools.workflows.record_retrieval import refuse_overwrite
 _TASK_QUEUE = "abacus-recorder"
 _TENANT = "00000000-0000-4000-8000-0000000005e1"
 _FILES = ("search-reindex-v1-all.json", "search-reindex-v1-ids.json")
+_DRIFT_FILE = "search-drift-check-v1-nightly.json"
 _IDS = [f"00000000-0000-4000-8000-0000000005{n:02x}" for n in range(2, 6)]
 
 
@@ -55,6 +55,27 @@ async def _index(tenant_id: str, object_type: str, ids: list[str]) -> int:
 @activity.defn(name="platform.search_reindex_completed")
 async def _completed(request: ReindexInput, indexed: int) -> None:
     return None
+
+
+@activity.defn(name="platform.search_drift_check")
+async def _drift() -> int:
+    return 2
+
+
+async def _record_drift(out: Path, stack: Stack) -> None:
+    client = await connect(stack)
+    async with Worker(
+        client, task_queue=_TASK_QUEUE, workflows=[SearchDriftCheckWorkflow], activities=[_drift]
+    ):
+        handle = await client.start_workflow(
+            SearchDriftCheckWorkflow.run, id="search_drift:platform", task_queue=_TASK_QUEUE
+        )
+        await handle.result()
+        history = await handle.fetch_history()
+        scrubbed = await decoded_and_scrubbed(history, payload_codec())
+        path = out / _DRIFT_FILE
+        path.write_text(scrubbed.to_json())
+        print(f"recorded {path}")
 
 
 async def _run(client: Client, request: ReindexInput, suffix: str) -> WorkflowHistory:
@@ -89,12 +110,14 @@ async def _record(out: Path, stack: Stack) -> None:
 
 
 def main(argv: list[str]) -> int:
-    out = Path(argv[0]) if argv else Path("tests/workflows/histories")
-    if refuse_overwrite(out, list(_FILES)):
+    drift = "--drift" in argv
+    args = [a for a in argv if a != "--drift"]
+    out = Path(args[0]) if args else Path("tests/workflows/histories")
+    if refuse_overwrite(out, [_DRIFT_FILE] if drift else list(_FILES)):
         return 1
 
     async def record(stack: Stack) -> None:
-        await _record(out, stack)
+        await (_record_drift(out, stack) if drift else _record(out, stack))
 
     run_with_stack(record)
     return 0

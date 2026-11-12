@@ -398,4 +398,6 @@ from abacus.modules.organisations.audit_labels import (  # noqa: E402
 _register_audit_labels()
 
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
-from abacus.modules.organisations import search as _search  # noqa: E402, F401
+from abacus.modules.organisations import (  # noqa: E402
+    search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
+)

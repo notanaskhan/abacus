@@ -545,11 +545,17 @@ def test_ac20_creating_routes_answer_201() -> None:
         # T-05-T06 (tax workbook v1 stub): a workbook run and a memo draft start runs, so 202.
         "/v1/tax-returns/{return_id}/workbook-runs",
         "/v1/tax-returns/{return_id}/memo/draft",
+        # I-02-T03 (SPEC-654): a forced rebuild and an "Ask about your day" turn run later, so 202.
+        "/v1/me/today/builds",
+        "/v1/me/today/questions",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
+        # W-02-T02/T03 (SPEC-653): attaching context and a drill each insert a session item, 201.
+        "/v1/workbench/sessions/{session_id}/context",
+        "/v1/workbench/sessions/{session_id}/drill",
         # A-06-T25 (#1375): a firm's note templates come in as rows.
         "/v1/methodology/statement-note-templates:import",
         # A-07-T22 (DEC-2806): a firm's assurance checklist comes in as rows.

@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   Atom,
   Banknote,
+  Building,
   Bell,
   Bold,
   BookOpen,
@@ -52,6 +53,7 @@ import {
   House,
   Inbox,
   Info,
+  Key,
   Landmark,
   Layers,
   LayoutGrid,
@@ -122,6 +124,7 @@ const PORTAL_ICONS = {
   bold: Bold,
   "book-open": BookOpen,
   briefcase: Briefcase,
+  building: Building, // S40: status code "building" reads as this name (DEC-1006 test)
   bug: Bug, // F-07-T02: the chat header's run trace
   camera: Camera,
   check: Check,
@@ -160,6 +163,7 @@ const PORTAL_ICONS = {
   house: House,
   inbox: Inbox,
   info: Info,
+  key: Key, // F-07-T10: `CalendarFilter["key"]` reads as this name (DEC-1006 test)
   landmark: Landmark,
   layers: Layers,
   "layout-grid": LayoutGrid,

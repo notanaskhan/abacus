@@ -656,9 +656,6 @@ NO_YAML_ENTRY = {
     "RetrievalOut.status": "failed_validation",
     "SupportSessionOut.status": "ended",
     "WallOut.status": "removed",
-    # Q-02-T38 (#395): the firm-export stub's codes; their words are G-02's screen copy, registered
-    # when G-02-T11 adds the ADM-06 card (docs/contracts/compliance-kernel.md).
-    "FirmExportOut.status": "awaiting_approval, building",
     # A-02-T06 (C20 v1 stub): a sync run's codes are RetrievalOut's (`sync_runs.status`), with the
     # same gap; registered with the details drawer's words (A-02-T18).
     "SyncRunRefOut.status": "failed_validation",
@@ -666,9 +663,9 @@ NO_YAML_ENTRY = {
     # R-01-T16 (C16 v1.1 stub): the sender-domain codes; their words ("Pending DNS", "Verified")
     # are a DF-31 addition that must land before R-01-T28 (docs/screens/ADM-10.md, Open gaps).
     "SendingDomainOut.status": "pending_dns, verified, failed, revoked",
-    # G-02-T04 (audit-log stub, DEC-417): the export's `building` and the values' `withheld` and
-    # `unavailable` get their DF-31 entries with the live routes (G-02-T08, G-02-T17).
-    "AuditExport.status": "building",
+    # G-02-T04 (audit-log stub, DEC-417): the values' `withheld` and `unavailable` get their
+    # DF-31 entries with the live routes (G-02-T08, G-02-T17). S40 (W-02-T04, I-02-T03) gave
+    # `building` and `awaiting_approval` entries, so AuditExport and FirmExportOut left this list.
     "AuditValuesOut.status": "withheld, unavailable",
     # Main CI triage 2026-11-01: literals that landed without DF-31 entries, recorded for their
     # owners. T-02-T25 (TXP-12): the K-1 hand-off's codes; N-02-T34 (ENG-04): the consent's
@@ -693,6 +690,9 @@ UNTYPED = {
     # I-01-T01 (HOME contracts, #431): the home rows carry each owner's own status word as a
     # string until the HOME-01 build types them per source; recorded as findings like the rest.
     "DeadlineRowOut.status", "HomeTileOut.by_status", "WorkRowOut.status",
+    # S40 (I-02-T03, P-02-T08): Today's gate rows and search rows carry each owner's own C2 code
+    # (`{code, context}` for search) until the SHL-23 and SHL-02 builds type them per source.
+    "GateRow.state", "SearchItemOut.status",
     # Main CI triage 2026-11-01, recorded for their owners: N-02 (ENG-04 composer, S13) carries
     # the envelope's status as a string; T-02-T18 (TAX-03 intake) and T-02-T25 (TXP-12) carry
     # each source row's own status word until those screens type them.

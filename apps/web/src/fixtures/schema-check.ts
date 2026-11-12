@@ -81,8 +81,12 @@ function check(schema: Schema, value: unknown, at: string, errors: string[]): vo
       return;
     case "array": {
       if (!Array.isArray(value)) return void errors.push(`${at}: expected an array`);
+      // A tuple (`tuple[int, int]` in the backend) is `prefixItems`, one schema per position.
+      const prefix = node.prefixItems as Schema[] | undefined;
       value.forEach((entry, i) => {
-        check(node.items as Schema, entry, `${at}[${String(i)}]`, errors);
+        const item = prefix?.[i] ?? (node.items as Schema | undefined);
+        if (item === undefined) return void errors.push(`${at}[${String(i)}]: beyond the tuple`);
+        check(item, entry, `${at}[${String(i)}]`, errors);
       });
       return;
     }

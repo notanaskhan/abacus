@@ -2395,6 +2395,11 @@ codes:
     - abacus.modules.assurance.ebp_plan.PlanNumberInvalid
     summary: 'Not a Form 5500 plan number (line 1b): three digits 001 to 999, never the recordkeeper''s
       plan ID; `facts.reason` and `facts.helper` say which and where to look.'
+  plan_provider_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.engagement_run.PlanProviderUnavailable
+    summary: No provider is registered under the key the start named (fail closed).
   plan_review_invalid:
     status: 422
     raised_by:
@@ -2523,6 +2528,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.materiality.ProposalPending
     summary: A materiality card already waits on the engagement partner.
+  q_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.platform.search.errors.SearchQueryInvalid
+    summary: '422: the search text is empty or over 100 characters after cleaning, outside agent mode.'
   question_answered:
     status: 409
     raised_by:
@@ -2813,6 +2823,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.commands.RunEnded
+  run_in_progress:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.workbook_contract.RunInProgress
+    summary: 'A workbook run of this return is still open: one at a time (TXP-00).'
+  run_keys_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.entity_run_plan.RunKeysInvalid
+    summary: A group or step key the plan does not have, or a scope without keys.
   run_not_ended:
     status: 409
     raised_by:

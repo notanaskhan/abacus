@@ -54,12 +54,33 @@ def _paths() -> dict[str, dict[str, dict[str, object]]]:
     return cast(dict[str, dict[str, dict[str, object]]], json.loads(document())["paths"])
 
 
+# Built in S40 (T-05-T31 run routes, T-05-T33 TB, T-05-T34 schedules, T-05-T35 cell edit): these
+# publish no 501; every other route still does until its build row.
+_R = "/v1/tax-returns/{return_id}"
+BUILT = {
+    ("PUT", f"{_R}/workbook/cells/{{address}}"),
+    ("POST", f"{_R}/workbook-runs"),
+    ("GET", f"{_R}/workbook-runs"),
+    ("GET", f"{_R}/trial-balance"),
+    ("GET", f"{_R}/trial-balance/tallies"),
+    ("GET", f"{_R}/journal-entries"),
+    ("GET", f"{_R}/schedules/k"),
+    ("GET", f"{_R}/schedules/k/lines/{{line}}/breakdown"),
+    ("GET", f"{_R}/capital-accounts"),
+    ("GET", f"{_R}/schedules/m2"),
+}
+
+
 def test_every_route_is_published_with_a_501_until_built() -> None:
     paths = _paths()
     for route in wb.workbook_router.routes:
         for method in getattr(route, "methods", ()):
             op = paths[route.path][method.lower()]  # type: ignore[attr-defined] -- starlette route attributes
-            assert "501" in cast(dict[str, object], op["responses"]), route.path  # type: ignore[attr-defined] -- starlette route attributes
+            responses = cast(dict[str, object], op["responses"])
+            if (method, route.path) in BUILT:  # type: ignore[attr-defined] -- starlette route attributes
+                assert "501" not in responses, route.path  # type: ignore[attr-defined] -- starlette route attributes
+            else:
+                assert "501" in responses, route.path  # type: ignore[attr-defined] -- starlette route attributes
     assert len(wb.workbook_router.routes) == 32
 
 

@@ -110,7 +110,7 @@ function digitsOf(units: bigint, places: number): string {
 }
 
 const PLACES: Record<AmountStyle, number> = { whole: 0, money: 2, cents: 2, dollars: 0 };
-const SIGNED: ReadonlySet<AmountStyle> = new Set<AmountStyle>(["money", "dollars"]);
+const sign = (style: AmountStyle): string => (style === "money" || style === "dollars" ? "$" : "");
 
 /** An amount for a table cell: `{ text, tone }`. Negatives in parentheses, zero (after
  * rounding) as an em dash, halves rounded away from zero. Tables take their colour from the
@@ -123,7 +123,7 @@ export function amount(
   if (isBlank(v)) return { text: DASH, tone: "blank" };
   const places = PLACES[style];
   const units = roundTo(parseDecimal(v), places);
-  const symbol = SIGNED.has(style) ? "$" : "";
+  const symbol = sign(style);
   if (units === 0n) {
     return {
       text: options.zero === "explicit" ? `${symbol}${digitsOf(0n, places)}` : DASH,
@@ -140,7 +140,7 @@ export function prose(v: Decimal, style: AmountStyle = "money"): string {
   if (isBlank(v)) return DASH;
   const places = PLACES[style];
   const units = roundTo(parseDecimal(v), places);
-  const text = `${SIGNED.has(style) ? "$" : ""}${digitsOf(units, places)}`;
+  const text = `${sign(style)}${digitsOf(units, places)}`;
   return units < 0n ? `-${text}` : text;
 }
 

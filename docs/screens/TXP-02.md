@@ -10,7 +10,7 @@
 | Persona | Olivia Brandt (Tax Senior, preparer) |
 | Flags | `tax.entity_workspace`; mapper suggestions `tax.entity_agents` |
 | Priority | P0 |
-| Manifest status | fixture (T-05-T37) |
+| Manifest status | fixture (T-05-T37; path `/tax-returns/$returnId/review/$section` with `section: "financials"`) |
 
 ## States
 

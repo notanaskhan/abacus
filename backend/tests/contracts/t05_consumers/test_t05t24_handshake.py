@@ -130,6 +130,7 @@ def test_c6_v2_the_run_step_slot_and_the_runs_start_answer() -> None:
     reason="T-05-T32 (the workbook run's step handlers) has not landed (TASK-7408)", strict=True
 )
 def test_c6_v2_the_workbook_runs_ten_steps_are_registered() -> None:
+    import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the steps at import (T-05-T32)
     from abacus.modules.agents.engagement_run import run_step_handler
 
     missing = [k for k in RUN_STEPS if run_step_handler(f"run_step.{k}") is None]

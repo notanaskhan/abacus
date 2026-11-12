@@ -438,4 +438,6 @@ from abacus.modules.requests import (  # noqa: E402
 )
 
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
-from abacus.modules.requests import search as _search  # noqa: E402, F401
+from abacus.modules.requests import (  # noqa: E402
+    search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
+)

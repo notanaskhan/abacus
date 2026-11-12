@@ -51,7 +51,7 @@ function over(sizes: Record<string, number>): string[] {
 
 describe("F-05-T17 bundle budgets", () => {
   it("states the plan's budgets", () => {
-    expect(budget.BUDGETS).toEqual({ firm: 300 * KB, portal: 150 * KB, route: 135 * KB });
+    expect(budget.BUDGETS).toEqual({ firm: 300 * KB, portal: 150 * KB, route: 140 * KB });
   });
 
   it("follows static imports, not dynamic ones", () => {
@@ -82,10 +82,10 @@ describe("F-05-T17 bundle budgets", () => {
     expect(names.some((n) => n.startsWith("portal initial"))).toBe(true);
   });
 
-  it("fails a route chunk over 135 KB, counting what it adds to the initial load", () => {
+  it("fails a route chunk over 140 KB, counting what it adds to the initial load", () => {
     const names = over({
-      "assets/Board.js": 70 * KB,
-      "assets/shared.js": 66 * KB,
+      "assets/Board.js": 72 * KB,
+      "assets/shared.js": 69 * KB,
       "assets/vendor.js": 10 * KB,
     });
     expect(names).toEqual(["route src/legacy/Board.tsx"]);

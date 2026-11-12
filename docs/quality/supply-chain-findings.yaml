@@ -25,7 +25,7 @@ findings:
     first_seen: 2026-10-25
     closed: 2026-10-25
     note: literal bidirectional control characters in source; written as escapes (ED-057)
-  - id: B613
+  - id: B613:search-scrub
     source: bandit
     severity: high
     package: backend/src/abacus/modules/platform/search/scrub.py

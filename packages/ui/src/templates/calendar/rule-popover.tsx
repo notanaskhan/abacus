@@ -61,7 +61,7 @@ export function RulePopover({
     <div
       role="tooltip"
       data-rule-popover={chip.id}
-      className="flex w-[320px] flex-col gap-[6px] rounded-[10px] bg-white p-[12px] shadow-note"
+      className="flex w-[320px] flex-col gap-[6px] rounded-[10px] bg-card p-[12px] shadow-note"
     >
       <p className="text-[12.5px] font-medium text-ink">{chip.title ?? chip.label}</p>
       <dl className="grid grid-cols-[72px_1fr] gap-x-[8px] gap-y-[4px] text-[12px]">

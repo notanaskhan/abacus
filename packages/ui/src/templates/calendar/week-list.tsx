@@ -61,7 +61,7 @@ export function WeekView({
           <section
             key={d}
             aria-label={`${shortDay(d)}, ${copy.deadlines(items.length)}`}
-            className="flex min-w-0 flex-col border-hair border-r-[0.5px] border-b-[0.5px] bg-white"
+            className="flex min-w-0 flex-col border-hair border-r-[0.5px] border-b-[0.5px] bg-card"
           >
             <h3
               className={cn(

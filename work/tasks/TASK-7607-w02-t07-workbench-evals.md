@@ -3,7 +3,7 @@ id: TASK-7607
 title: W-02-T07 evals/workbench_assistant cases and frozen thresholds
 plan_key: W-02-T07
 spec: SPEC-653
-acceptance_criteria: [AC-A1, AC-A3, AC-A6, AC-Q1, AC-P1, AC-V1, AC-V2, AC-D2, INV-1, INV-2, INV-3]
+acceptance_criteria: [AC-A1, AC-A3, AC-A6, AC-Q1, AC-P1, AC-V1, AC-V2, AC-D2]  # and INV-1, INV-2, INV-3
 risk_zone: red
 status: in-review
 branch: w02-t07-evals

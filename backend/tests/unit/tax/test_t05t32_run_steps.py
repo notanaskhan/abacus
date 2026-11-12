@@ -21,7 +21,7 @@ FACTS = RunStepFacts(uuid.uuid4(), uuid.uuid4(), "capital_m2", 4, {"return_id": 
 
 
 class _Agent:
-    tenant: Any = object()
+    tenant: Any = object()  # Any: a stand-in tenant
 
 
 def _cells(rows: dict[str, str]) -> dict[str, dict[str, object]]:
@@ -59,7 +59,7 @@ def test_capital_m2_computes_ending_capital_and_foots_the_m2(
         return values
 
     monkeypatch.setattr(run_steps, "current_values", current)
-    result = asyncio.run(run_steps.capital_m2(_Agent(), FACTS))  # type: ignore[arg-type]
+    result = asyncio.run(run_steps.capital_m2(_Agent(), FACTS))  # type: ignore[arg-type] -- a test double or the review api's own context alias
     assert result.state == "succeeded"
     by = {w.address: w for w in written}
     assert by["05!F2"].value == Decimal("1150000") and by["05!F2"].formula == "=B2+C2-D2+E2"
@@ -74,7 +74,7 @@ def test_capital_without_partner_rows_fails_closed(monkeypatch: pytest.MonkeyPat
         return {}
 
     monkeypatch.setattr(run_steps, "current_values", current)
-    result = asyncio.run(run_steps.capital_m2(_Agent(), FACTS))  # type: ignore[arg-type]
+    result = asyncio.run(run_steps.capital_m2(_Agent(), FACTS))  # type: ignore[arg-type] -- a test double or the review api's own context alias
     assert (result.state, result.error_code) == ("failed", "capital_inputs_missing")
 
 
@@ -86,7 +86,7 @@ def test_a_human_cell_is_kept_on_a_rerun(monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr(run_steps, "latest_sources", sources)
     writes = [CellWrite("05!F2", Decimal(1), "formula"), CellWrite("05!F3", Decimal(2), "formula")]
-    kept = asyncio.run(run_steps._kept(object(), RETURN, writes))  # type: ignore[arg-type]  # pyright: ignore[reportPrivateUsage]
+    kept = asyncio.run(run_steps._kept(object(), RETURN, writes))  # type: ignore[arg-type] -- a test double or the review api's own context alias
     assert [w.address for w in kept] == ["05!F3"]
 
 
@@ -104,6 +104,6 @@ def test_k1_shares_come_from_the_ownership_note(note: str, share: Decimal | None
 
 @pytest.mark.parametrize("kind", run_steps.PART_TWO)
 def test_part_two_steps_answer_needs_attention(kind: str) -> None:
-    handler = run_steps._import_required(kind)  # pyright: ignore[reportPrivateUsage]
-    result = asyncio.run(handler(_Agent(), FACTS))  # type: ignore[arg-type]
+    handler = run_steps._import_required(kind)  # pyright: ignore[reportPrivateUsage] -- the test or the shared trajectory base reaches a private helper
+    result = asyncio.run(handler(_Agent(), FACTS))  # type: ignore[arg-type] -- a test double or the review api's own context alias
     assert (result.state, result.error_code) == ("failed", "import_required")

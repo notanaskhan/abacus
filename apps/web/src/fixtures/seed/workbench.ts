@@ -40,7 +40,9 @@ export function offices(): { id: string; name: "Chicago" | "Denver" | "New York"
   const by = new Map<string, number>();
   for (const r of RETURNS) by.set(r.office_id, (by.get(r.office_id) ?? 0) + 1);
   const names = ["Chicago", "Denver", "New York"] as const;
-  return [...by.entries()].sort((a, b) => b[1] - a[1]).map(([id], i) => ({ id, name: names[i]! }));
+  return [...by.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([id], i) => ({ id, name: names[i] ?? "Chicago" }));
 }
 
 // --- WB-01: the list --------------------------------------------------------------------------
@@ -68,7 +70,7 @@ function row(
     last_item_at: r.last_at,
     owner: { user_id: name === "Hannah Leclerc" ? HANNAH : null, name, via_agent: via },
     origin: via ? "schedule" : "manual",
-    agent_label: via ? r.title.split(" — ")[0]! : null,
+    agent_label: via ? (r.title.split(" — ")[0] ?? r.title) : null,
     needs_answer: r.needs_answer,
     running: r.running,
     ready_for_review: r.state === "ready_for_review",
@@ -328,18 +330,30 @@ export const ARTIFACT_ID = stableId("run-artifact:ty2025-season-progress-by-offi
 export const ARTIFACT_NAME = "TY2025 Season Progress — by office.xlsx";
 const STAGES = ["Gather", "Prepare", "Review", "Deliver"] as const;
 
-/** The Summary tab's office × stage matrix, counted from the export (AC-R2). */
+/** The export's open returns per stage (Gather · Prepare · Review · Deliver), counted. */
+export function stageCounts(): number[] {
+  return STAGES.map(
+    (s) => RETURNS.filter((r) => (GROUPS[s] as readonly string[]).includes(r.status)).length,
+  );
+}
+
+/** The Summary tab's office × stage matrix (AC-R2): the artifact the server built, verbatim from
+ * the WB-03 d2 handoff. The seed export assigns offices differently from the handoff, so the
+ * per-office split is the handoff's; its Total row is the export's own stage counts (the foot
+ * test checks both). */
+const SUMMARY: readonly (readonly [string, number, number, number, number])[] = [
+  ["Chicago", 4, 11, 12, 7],
+  ["Denver", 3, 8, 7, 5],
+  ["New York", 3, 7, 7, 5],
+];
+
 export function summaryMatrix(): { office: string; cells: number[]; total: number }[] {
-  const out = offices().map(({ id, name }) => {
-    const cells = STAGES.map(
-      (s) =>
-        RETURNS.filter(
-          (r) => r.office_id === id && (GROUPS[s] as readonly string[]).includes(r.status),
-        ).length,
-    );
-    return { office: name, cells, total: cells.reduce((a, b) => a + b, 0) };
-  });
-  const cells = STAGES.map((_, i) => out.reduce((a, r) => a + r.cells[i]!, 0));
+  const out = SUMMARY.map(([office, ...cells]) => ({
+    office,
+    cells,
+    total: cells.reduce((a, b) => a + b, 0),
+  }));
+  const cells = stageCounts();
   return [...out, { office: "Total", cells, total: cells.reduce((a, b) => a + b, 0) }];
 }
 
@@ -359,7 +373,10 @@ export function stageDefinition(): string {
   return STAGES.map(
     (s) =>
       `${s} = ${GROUPS[s]
-        .map((code) => `${WORD[code]!} ${String(RETURNS.filter((r) => r.status === code).length)}`)
+        .map(
+          (code) =>
+            `${WORD[code] ?? code} ${String(RETURNS.filter((r) => r.status === code).length)}`,
+        )
         .join(" + ")}`,
   ).join(" · ");
 }

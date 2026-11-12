@@ -41,6 +41,13 @@ const due = (on: string, days: number, tone: "red_tint" | "amber" | "neutral" = 
 const RIDGELINE_ENG = stableId("engagement:ridgeline-2025-1065");
 const RIDGELINE_WI = stableId("work-item:ridgeline-2025-1065");
 
+/** A seed row that must exist (the arrays are literal; a missing index is a seed bug). */
+function row(rows: readonly GateRow[], i: number): GateRow {
+  const found = rows[i];
+  if (found === undefined) throw new Error(`seed row ${String(i)} is missing`);
+  return found;
+}
+
 export const DANIEL_ROWS: GateRow[] = [
   {
     gate_id: gate("ridgeline-754"),
@@ -187,7 +194,7 @@ export function ridgelineDrill(): DrillVm {
     ),
     blockers: [
       {
-        ...DANIEL_ROWS[1]!,
+        ...row(DANIEL_ROWS, 1),
         state: "fix_proposed",
         why_blocks: p(
           "M-2 off 6,200: tax-exempt interest belongs in capital as an other increase. Waiting on Samuel Ito.",
@@ -315,13 +322,13 @@ export function margaretToday(): TodayVm {
       {
         engagement_id: NORTHWIND_ENG,
         label: "Northwind Robotics 401(k) Plan · PY2025",
-        rows: [MARGARET_ROWS[0]!],
+        rows: [row(MARGARET_ROWS, 0)],
         briefing_status: "ready",
       },
       {
         engagement_id: GRANITE_ENG,
         label: "Granite Peak Outdoor Supply, Inc. · FY2026",
-        rows: [MARGARET_ROWS[1]!, MARGARET_ROWS[2]!],
+        rows: [row(MARGARET_ROWS, 1), row(MARGARET_ROWS, 2)],
         briefing_status: "ready",
       },
     ],

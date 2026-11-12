@@ -3,7 +3,7 @@ id: TASK-7630
 title: F-07-T10 T13 CalendarLayout and MonthGrid
 plan_key: F-07-T10
 spec: SPEC-652
-acceptance_criteria: [F1, F4]  # T13a Tier D geometry; role=grid navigation
+acceptance_criteria: [AC-6]  # T13a Tier D geometry; role=grid navigation
 risk_zone: green
 status: in-review
 branch: f07-t10-calendar-month

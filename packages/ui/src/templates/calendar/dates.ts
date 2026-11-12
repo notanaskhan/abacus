@@ -43,30 +43,62 @@ export function monthWeeks(month: string): string[][] {
   return weeks;
 }
 
-const FMT = (options: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat("en-US", { timeZone: "UTC", ...options });
+// Names from fixed tables, not Intl (format.ts owns locale formatting; these are the civil
+// calendar's English names, which the kit's copy uses verbatim).
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+const DAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+function parts(iso: string): { y: number; m: number; d: number; w: number } {
+  const t = new Date(toUtc(iso));
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth(), d: t.getUTCDate(), w: t.getUTCDay() };
+}
+
+const month = (m: number): string => MONTHS[m] ?? "";
+const day = (w: number): string => DAYS[w] ?? "";
 
 /** "September 2026". */
-export function monthTitle(month: string): string {
-  return FMT({ month: "long", year: "numeric" }).format(toUtc(`${month}-01`));
+export function monthTitle(m: string): string {
+  const p = parts(`${m}-01`);
+  return `${month(p.m)} ${String(p.y)}`;
 }
 
 /** "Tuesday, September 15, 2026". */
 export function longDay(iso: string): string {
-  return FMT({ weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(
-    toUtc(iso),
-  );
+  const p = parts(iso);
+  return `${day(p.w)}, ${month(p.m)} ${String(p.d)}, ${String(p.y)}`;
 }
 
 /** "Tue Sep 15, 2026". */
 export function shortDay(iso: string): string {
-  const d = toUtc(iso);
-  return `${FMT({ weekday: "short" }).format(d)} ${FMT({ month: "short", day: "numeric" }).format(d)}, ${FMT({ year: "numeric" }).format(d)}`;
+  const p = parts(iso);
+  return `${day(p.w).slice(0, 3)} ${month(p.m).slice(0, 3)} ${String(p.d)}, ${String(p.y)}`;
 }
 
 /** "Nov 2". */
 export function monthDay(iso: string): string {
-  return FMT({ month: "short", day: "numeric" }).format(toUtc(iso));
+  const p = parts(iso);
+  return `${month(p.m).slice(0, 3)} ${String(p.d)}`;
 }
 
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;

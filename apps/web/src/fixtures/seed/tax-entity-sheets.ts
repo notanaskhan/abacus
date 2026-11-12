@@ -71,23 +71,23 @@ function sheet05(snapshot: Snapshot, proposed: boolean): WorkbookCellOut[] {
   PARTNERS.forEach(([name, b, c, d, e, f, g, i], k) => {
     const row = 8 + k;
     out.push(
-      cell([`A${row}`, name]),
-      cell([`B${row}`, b]),
-      cell([`C${row}`, c]),
-      cell([`D${row}`, d]),
-      cell([`E${row}`, e]),
-      cell([`F${row}`, f]),
-      cell([`G${row}`, g]),
-      cell([`I${row}`, i]),
+      cell([`A${String(row)}`, name]),
+      cell([`B${String(row)}`, b]),
+      cell([`C${String(row)}`, c]),
+      cell([`D${String(row)}`, d]),
+      cell([`E${String(row)}`, e]),
+      cell([`F${String(row)}`, f]),
+      cell([`G${String(row)}`, g]),
+      cell([`I${String(row)}`, i]),
       cell([
-        `J${row}`,
+        `J${String(row)}`,
         (fixed ? J_AFTER : J_BEFORE)[k] ?? "0",
-        `=D${row}+E${row}+F${row}+G${row}+H${row}+I${row}`,
+        `=D${String(row)}+E${String(row)}+F${String(row)}+G${String(row)}+H${String(row)}+I${String(row)}`,
       ]),
-      cell([`K${row}`, "✓"]),
+      cell([`K${String(row)}`, "✓"]),
     );
     if (fixed || proposed) {
-      out.push(cell([`H${row}`, H_FIXED[k] ?? "0"], fixed ? "value" : "flagged"));
+      out.push(cell([`H${String(row)}`, H_FIXED[k] ?? "0"], fixed ? "value" : "flagged"));
     }
   });
   out.push(
@@ -150,17 +150,17 @@ function sheet01(): WorkbookCellOut[] {
   for (const [row, code, name, cat, line, py, utb, aje] of TB_01) {
     const atb = ATB_01[code] ?? utb;
     out.push(
-      cell([`A${row}`, code]),
-      cell([`B${row}`, name]),
-      cell([`C${row}`, cat]),
-      cell([`D${row}`, line]),
-      cell([`E${row}`, py]),
-      cell([`F${row}`, utb]),
-      cell([`G${row}`, aje]),
-      cell([`H${row}`, "0"]),
-      cell([`I${row}`, atb, `=F${row}+G${row}+H${row}`]),
-      cell([`J${row}`, "0"]),
-      cell([`K${row}`, atb, `=I${row}+J${row}`]),
+      cell([`A${String(row)}`, code]),
+      cell([`B${String(row)}`, name]),
+      cell([`C${String(row)}`, cat]),
+      cell([`D${String(row)}`, line]),
+      cell([`E${String(row)}`, py]),
+      cell([`F${String(row)}`, utb]),
+      cell([`G${String(row)}`, aje]),
+      cell([`H${String(row)}`, "0"]),
+      cell([`I${String(row)}`, atb, `=F${String(row)}+G${String(row)}+H${String(row)}`]),
+      cell([`J${String(row)}`, "0"]),
+      cell([`K${String(row)}`, atb, `=I${String(row)}+J${String(row)}`]),
     );
   }
   out.push(

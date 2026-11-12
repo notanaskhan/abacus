@@ -221,7 +221,7 @@ async def trial_balance(
 ) -> tuple[list[TbRow], int]:
     """The rows TXP-02 shows and the unmapped count over the whole TB (the export gate)."""
     layers = await adjusted_tb(ctx, return_id, "ttb")
-    rows = account_rows(layers, await _mapping(ctx, engagement_id))  # type: ignore[arg-type]
+    rows = account_rows(layers, await _mapping(ctx, engagement_id))  # type: ignore[arg-type] -- a test double or the review api's own context alias
     unmapped = sum(1 for r in rows if r.form_line_key is None)
     shown = by_line(rows) if view == "line" else rows
     return narrowed(shown, statement, unmapped_only and view == "account"), unmapped
@@ -231,7 +231,7 @@ async def tb_tallies(
     ctx: AuthContext, return_id: UUID, engagement_id: UUID
 ) -> tuple[list[TbTally], list[TbFigure]]:
     layers = await adjusted_tb(ctx, return_id, "ttb")
-    rows = account_rows(layers, await _mapping(ctx, engagement_id))  # type: ignore[arg-type]
+    rows = account_rows(layers, await _mapping(ctx, engagement_id))  # type: ignore[arg-type] -- a test double or the review api's own context alias
     return tallies(rows), figures(rows)
 
 

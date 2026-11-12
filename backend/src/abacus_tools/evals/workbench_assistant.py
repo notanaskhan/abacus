@@ -95,19 +95,19 @@ class PlanStep(tj._Frozen):  # pyright: ignore[reportPrivateUsage] -- the shared
     depends_on: list[str] = Field(default_factory=list[str])
 
 
-class PlanWrite(tj._Frozen):  # pyright: ignore[reportPrivateUsage]
+class PlanWrite(tj._Frozen):  # pyright: ignore[reportPrivateUsage] -- the test or the shared trajectory base reaches a private helper
     op: str
     target: str
     approver: str | None = None
 
 
-class Plan(tj._Frozen):  # pyright: ignore[reportPrivateUsage]
+class Plan(tj._Frozen):  # pyright: ignore[reportPrivateUsage] -- the test or the shared trajectory base reaches a private helper
     steps: list[PlanStep] = Field(default_factory=list[PlanStep])
     reads: dict[str, int] = Field(default_factory=dict[str, int])
     writes: list[PlanWrite] = Field(default_factory=list[PlanWrite])
 
 
-class Question(tj._Frozen):  # pyright: ignore[reportPrivateUsage]
+class Question(tj._Frozen):  # pyright: ignore[reportPrivateUsage] -- the test or the shared trajectory base reaches a private helper
     q: str
     options: list[str] = Field(default_factory=list[str])
 
@@ -134,11 +134,13 @@ class Expected(tj.Expected):
     injection_targets: list[str] = Field(default_factory=list[str])
 
 
-class Case(tj._Frozen):  # pyright: ignore[reportPrivateUsage]
+class Case(tj._Frozen):  # pyright: ignore[reportPrivateUsage] -- the test or the shared trajectory base reaches a private helper
     id: str
     group: Group
     category: Literal["pass", "seeded"] = "pass"
-    de: list[Literal["DE-3", "DE-4", "DE-5", "DE-6"]] = Field(default_factory=list[str])
+    de: list[Literal["DE-3", "DE-4", "DE-5", "DE-6"]] = Field(
+        default_factory=list[Literal["DE-3", "DE-4", "DE-5", "DE-6"]]
+    )
     fast: bool = False
     repeat: Annotated[int, Field(ge=1, le=3)] = 1
     note: str = ""
