@@ -206,6 +206,21 @@ except cut 3 (the PDF trace export's v2 fields, A-07 or G-02 depth). The partial
 steps are listed in `docs/plan/status/P-10-closeout.md`; none blocks a consumer epic's build.
 
 
+## M15 autonomy recheck (Q-03-T199, 2026-11-12; DEC-4801)
+
+ADR-086 auto-merge is not earned: the rule was never built (Q-03-T045 and T049 cut under the solo
+edition). Chapter 01 §1.8.7's M15 consequence applies:
+
+| Item | Before | After |
+|---|---|---|
+| Learning gain from S39 | +15% if auto-merge earned | **dropped**: S39 onward at the base rate plus the +10% S19 kit-reuse gain |
+| Spill item 1: I-04 practice economics (28 rows, 21.75 task-eq, S70–S73) | in plan | **pre-scheduled to spill** past GA if capacity falls short |
+| Spill item 2: G-03 developer platform (30 rows, 27.25, S69–S73) | in plan | **pre-scheduled to spill** |
+| Spill item 3: X-02 ISO readiness and GRC sync (21 rows, 17.0, S68–S72) | in plan | **pre-scheduled to spill** |
+
+The solo build runs ahead of chapter 01's calendar (S38's rows were built on 2026-11-12, against a
+plan date of Apr 2028), so this changes the order of last resort, not today's work: the three
+epics keep their sprints until a re-plan moves them.
 ## R-01 actuals (R-01-T36, 2026-11-12)
 
 R-01 (portal documents, drops, the third-party room, email templates, portal settings and sender
