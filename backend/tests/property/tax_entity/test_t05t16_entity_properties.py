@@ -77,7 +77,7 @@ def test_e6_k_equals_the_sum_of_the_k1s_on_every_line(
     segs = segments(YEAR_START, YEAR_END, entries, "calendar_day")
     begin, end = entries[0][1], entries[-1][1]
     partners = [
-        KPartner(k, "individual", (begin[k],) * 3, (end[k],) * 3)  # type: ignore[arg-type]
+        KPartner(k, "individual", (begin[k],) * 3, (end[k],) * 3)  # type: ignore[arg-type]  # a JSON value or a test double
         for k in keys
     ]
     lines = [KLine(str(i + 1), D(t)) for i, t in enumerate(totals)]

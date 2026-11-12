@@ -42,7 +42,8 @@ def _patch(
             written.append(params)
 
         yield SimpleNamespace(
-            session=SimpleNamespace(execute=execute), record=lambda *a, **k: None
+            session=SimpleNamespace(execute=execute),
+            record=lambda *_a, **_k: None,  # pyright: ignore[reportUnknownLambdaType] -- a test double
         )
 
     monkeypatch.setattr(trace_records, "source_fingerprint", fingerprint)

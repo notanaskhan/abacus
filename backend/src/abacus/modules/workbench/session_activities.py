@@ -26,7 +26,12 @@ from temporalio import activity
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.agents.api import TurnOutcome, open_plan_child_run, run_session_turn
+from abacus.modules.agents.api import (
+    TurnOutcome,
+    dispatch_run,
+    open_plan_child_run,
+    run_session_turn,
+)
 from abacus.modules.workbench.session_workflow import TurnDone
 
 _READER: Final = "session-turn"
@@ -181,4 +186,10 @@ async def session_turn_activity(tenant_id: str, session_id: str, kind: str, seq:
     return _done_from(written)
 
 
-SESSION_ACTIVITIES: Final = (session_turn_activity,)
+@activity.defn(name="workbench.session.start_child")
+async def start_child_activity(tenant_id: str, run_id: str) -> None:
+    """The child run's workflow (AC-S4); an existing one is reused (USE_EXISTING)."""
+    await dispatch_run(UUID(tenant_id), UUID(run_id))
+
+
+SESSION_ACTIVITIES: Final = (session_turn_activity, start_child_activity)

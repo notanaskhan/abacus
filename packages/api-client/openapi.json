@@ -55245,6 +55245,19 @@
             "cls": "internal",
             "title": "Released On"
           },
+          "source_package_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Package Id"
+          },
           "status": {
             "$ref": "#/components/schemas/K1ActivityStatus",
             "cls": "internal"
@@ -93682,6 +93695,28 @@
         "title": "ServiceOrganizationStatus",
         "type": "string"
       },
+      "SessionCreateIn": {
+        "additionalProperties": false,
+        "description": "T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the\nrecord's owner authorises the person and names the capability. W-02 adds unbound sessions.",
+        "properties": {
+          "subject_ref": {
+            "$ref": "#/components/schemas/SessionSubjectRefIn"
+          },
+          "title": {
+            "cls": "confidential",
+            "default": "Assistant",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_ref"
+        ],
+        "title": "SessionCreateIn",
+        "type": "object"
+      },
       "SessionItemOut": {
         "description": "One insert-only entry. `payload` has `v` (its schema version) and holds a verified item.",
         "properties": {
@@ -93783,6 +93818,23 @@
         "title": "SessionItemOut",
         "type": "object"
       },
+      "SessionListOut": {
+        "properties": {
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/SessionSummaryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SessionListOut",
+        "type": "object"
+      },
       "SessionMessageAcceptedOut": {
         "properties": {
           "item_id": {
@@ -93821,6 +93873,19 @@
         "additionalProperties": false,
         "description": "A question open: this is answered first and the question stays open (AC-S2).",
         "properties": {
+          "answers_seq": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Answers Seq"
+          },
           "body": {
             "cls": "restricted",
             "maxLength": 8000,
@@ -93995,6 +94060,77 @@
           "allowed_actions"
         ],
         "title": "SessionSnapshotOut",
+        "type": "object"
+      },
+      "SessionSubjectRefIn": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "pattern": "^[a-z_]{1,40}$",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "SessionSubjectRefIn",
+        "type": "object"
+      },
+      "SessionSummaryOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_item_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Item At"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "live",
+              "running",
+              "awaiting_answer",
+              "ready_for_review",
+              "complete",
+              "failed"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "state"
+        ],
+        "title": "SessionSummaryOut",
         "type": "object"
       },
       "SessionTokenOut": {
@@ -121583,6 +121719,7 @@
     },
     "/v1/agents/capabilities": {
       "get": {
+        "description": "P-10-T45 (DEC-4303): from flags, policy, boundary facts and consent; no model call.",
         "operationId": "list_capabilities",
         "parameters": [
           {
@@ -121685,16 +121822,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Capabilities Route",
@@ -274153,16 +274280,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "K1 Activity Route",
@@ -274416,16 +274533,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "K1 Override Route",
@@ -275186,16 +275293,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "K1 Activities Route",
@@ -282661,6 +282758,228 @@
         "x-abacus-action": "sum.snapshot"
       }
     },
+    "/v1/workbench/sessions": {
+      "get": {
+        "description": "The person's own sessions on one record (TAX-08 History), newest first.",
+        "operationId": "list_sessions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "subject_ref",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z_]{1,40}:[0-9a-f-]{36}$",
+              "title": "Subject Ref",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "List Sessions Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "session.read"
+      },
+      "post": {
+        "description": "409 `capability_unavailable` with `facts.reason` (consent_7216, ai_excluded, paused, \u2026):\nTAX-08's agents-off state; nothing is opened and no model is called (DF-04).",
+        "operationId": "create_session",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Create Session Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "session.create"
+      }
+    },
     "/v1/workbench/sessions/{session_id}": {
       "get": {
         "operationId": "get_session",
@@ -282758,16 +283077,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Session Route",
@@ -283042,16 +283351,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Post Session Message Route",

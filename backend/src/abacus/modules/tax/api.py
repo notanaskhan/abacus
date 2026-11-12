@@ -12,8 +12,9 @@ from sqlalchemy import text
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import OutboxEvent
+from abacus.modules.agents.api import register_session_subject
 from abacus.modules.engagements.api import register_work_item_kind
-from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
+from abacus.modules.identity.api import AbacusRouter, AuthContext, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
 from abacus.modules.reporting.api import register_k1_rows
@@ -352,3 +353,21 @@ from abacus.modules.tax.tools import (  # noqa: E402
 )
 
 del _tax_tools_loaded
+
+
+# T-04-T37 (DEC-4316): a TAX-08 thread is a workbench session bound to the return; the person must
+# read the return. Workbench may not import tax, so the resolver sits in agents' subject slot.
+async def _assistant_subject(ctx: AuthContext, return_id: UUID) -> UUID:
+    from abacus.kernel.errors import NotFound
+    from abacus.modules.engagements.api import get_ref, work_item_engagement
+    from abacus.modules.identity.api import authorise
+
+    engagement = await work_item_engagement(ctx.tenant, return_id)
+    if engagement is None or ctx.client:
+        raise NotFound("tax_return")
+    ref = await get_ref(ctx, engagement)  # a wall answers 404
+    await authorise(ctx, "tax_return.read", ref.resource())
+    return engagement
+
+
+register_session_subject("tax_return", _assistant_subject, "tax.assistant")

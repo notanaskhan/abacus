@@ -2,7 +2,7 @@
 id: TASK-7310
 title: "T-04-T34: TAX-08 Assistant states a, a2, b, c, d, e and f in fixture mode as an O2 420 drawer over TAX-05 without scrim"
 spec: SPEC-649
-acceptance_criteria: [AC-TAX08]
+acceptance_criteria: [AC-6]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: green
 status: in-review
 branch: s37-t04-t34

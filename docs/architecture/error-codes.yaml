@@ -366,6 +366,11 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.CandidateNotEligible
     summary: The person can't take this gate (not a holder of its role, or walled off).
+  capability_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.workbench.sessions.CapabilityUnavailable
+    summary: 'DF-04: the session''s capability can''t run here now (`facts.reason`).'
   checklist_answered:
     status: 409
     raised_by:
@@ -2532,6 +2537,7 @@ codes:
     raised_by:
     - abacus.modules.reporting.statements.ReasonRequired
     - abacus.modules.requests.binders.ReasonRequired
+    - abacus.modules.tax.k1_treatments.ReasonRequired
     - abacus.modules.workpapers.core.ReasonRequired
     summary: Unpublishing a binder needs a reason.
   recipient_not_contact:
@@ -2882,6 +2888,11 @@ codes:
     - abacus.modules.identity.security_policies.SessionLimitOutOfRange
     summary: A session limit under the floor (60 minutes absolute, 5 idle, 15 for the portal), which
       would leave the firm's people unable to work; `facts.field` names the field.
+  session_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.workbench.sessions.SessionLocked
+    summary: 'The session read a client the person may not open (DEC-87): it takes no message.'
   session_not_open:
     status: 409
     raised_by:
@@ -3117,6 +3128,7 @@ codes:
     - abacus.modules.tax.engine_import.ImportStale
     - abacus.modules.tax.export.ExportStale
     - abacus.modules.tax.k1_release.K1ReleaseStale
+    - abacus.modules.tax.k1_treatments.StaleTreatment
     - abacus.modules.tax.status.StaleReturn
     - abacus.modules.tax.tax_profile.TaxProfileStale
     summary: 'The record changed since it was read: read it again (409).'

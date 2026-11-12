@@ -53,7 +53,7 @@ def test_the_gate_fails_closed_with_its_reason(
     below: list[str], attempts: list[real.Attempt], limit: Decimal | None, reason: str
 ) -> None:
     result = real.clearance("bedrock", below, attempts, limit)
-    assert result["cleared"] is False and reason in result["reasons"]  # type: ignore[operator]
+    assert result["cleared"] is False and reason in result["reasons"]  # type: ignore[operator]  # a JSON value or a test double
 
 
 def test_a_signed_report_verifies_and_a_changed_one_does_not(
@@ -70,4 +70,4 @@ def test_the_real_run_refuses_without_the_evaluation_stack(
 ) -> None:
     monkeypatch.delenv("ABACUS_EVAL_STACK", raising=False)
     with pytest.raises(SystemExit):
-        real.real_main("bedrock", tmp_path)  # type: ignore[arg-type]
+        real.real_main("bedrock", tmp_path)  # type: ignore[arg-type]  # a JSON value or a test double

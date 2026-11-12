@@ -47,6 +47,13 @@ walled, `locked` when the viewer may not open a client).
 - The session stream (`…/events`) stays T26's 501.
 - Session list, create, rename and delete routes are W-02's; `open_session` is the service.
 
+- End pass (DEC-4317): a turn's plan steps carry the model's arguments, validated against each
+  tool's input model before the child run is written (`PlanInvalid`: `invalid_arguments`,
+  `tool_not_in_spec`); AgentRunWorkflow's executor then calls each step through C17 after the
+  person approves the plan. A propose step declares no approver write (SHL-10 decides it).
+- The child run starts through `kernel.dispatch` from the `workbench.session.start_child`
+  activity (end pass, DISPATCH-001), not as a Temporal child workflow.
+
 ## Progress log
 - `2026-11-12` — Built (S37). Import smoke and ruff clean; tests written, not run (end pass);
   histories to record at the end pass.

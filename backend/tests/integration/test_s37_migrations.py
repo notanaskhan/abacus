@@ -1,5 +1,5 @@
 """S37: 0820 (P-10-T44, frozen run traces) and 0821 (T-05-T17, the entity return core) go down to
-0813 and back up with forced row-level security; the app role never deletes; insert-only rows are
+0814 and back up with forced row-level security; the app role never deletes; insert-only rows are
 never updated; inserts are column-granted; an approved allocation structure is a person's row.
 
 Row acceptance (T-05-T17): "RLS, insert-only triggers and the single-head check pass, and the
@@ -18,7 +18,7 @@ from abacus_tools.quality.schema_check import migrate, provisioned_database
 
 from .agent_tests.support import Seeder
 
-BEFORE = "0813"
+BEFORE = "0814"
 TABLES = (
     "agent_run_traces",
     "entity_return_profiles",

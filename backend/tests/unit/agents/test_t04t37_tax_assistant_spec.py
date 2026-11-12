@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import abacus.modules.agents.api  # noqa: F401  # the registries load before the specs
+import abacus.modules.agents.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registries load first
 from abacus.modules.agents.session_turns import read_only_tools, write_actions
 from abacus.modules.agents.spec_v2 import spec_v2
 

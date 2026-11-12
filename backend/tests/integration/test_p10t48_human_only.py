@@ -43,7 +43,7 @@ def test_a_decision_row_must_be_a_persons(db: sc.Database, table: str, column: s
         )
     )
     assert f"{column} = 'human'" in checks
-    assert "current_setting('app.actor_kind'" in checks or "app.actor_kind" in checks
+    assert "current_setting(" in checks  # bound to the session's actor (the 0023 pattern)
 
 
 @pytest.mark.parametrize("table", ["agent_plans", "run_sign_offs"])

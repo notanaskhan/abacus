@@ -2,7 +2,7 @@
 id: TASK-7306
 title: "T-05-T15: E6 tax/compute/entity/schedule_k.py: every Schedule K line by the approved structure, Σ K-1 = K, Items J, K and L, Analysis of Net Income, §199A flags, K-1 count = Item I, state K-1 amounts view"
 spec: SPEC-651
-acceptance_criteria: [AC-6.1, AC-6.2, AC-6.3]
+acceptance_criteria: [AC-6]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: amber
 status: in-review
 branch: s37-t05-t15

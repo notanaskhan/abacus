@@ -39,7 +39,7 @@ def _partners() -> list[WaterfallPartner]:
     targets = [Decimal(t) for t in CASE["targets"]["parts"]]
     plugs = [Decimal(p) for p in CASE["plugs"]["parts"]]
     return [
-        WaterfallPartner(key, kind, target - plug)  # type: ignore[arg-type]  # gp or lp
+        WaterfallPartner(key, kind, target - plug)
         for key, kind, target, plug in zip(KEYS, KINDS, targets, plugs, strict=True)
     ]
 

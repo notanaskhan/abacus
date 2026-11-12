@@ -231,7 +231,7 @@ UPDATE_COLUMNS["estimate_installments"] = frozenset(
 )
 
 # T-04-T10 (0761, DEC-3123): the individual return workspace.
-TABLES: frozenset[str] = _TABLES_0720 | frozenset(
+_TABLES_0761: frozenset[str] = _TABLES_0720 | frozenset(
     {
         "return_worksheets",
         "return_worksheet_sections",
@@ -244,7 +244,7 @@ TABLES: frozenset[str] = _TABLES_0720 | frozenset(
         "residency_facts",
     }
 )
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0720 | frozenset(
+_INSERT_ONLY_0761: frozenset[str] = _INSERT_ONLY_0720 | frozenset(
     {"document_approvals", "k1_treatment_events", "residency_facts"}
 )
 INSERT_COLUMNS.update(
@@ -483,7 +483,7 @@ UPDATE_COLUMNS.update(
 )
 
 # T-05-T17 (0821, DEC-4304): the entity return core (runs dark until the T-05 services).
-TABLES = TABLES | frozenset(
+TABLES: frozenset[str] = _TABLES_0761 | frozenset(
     {
         "entity_return_profiles",
         "partners",
@@ -494,7 +494,9 @@ TABLES = TABLES | frozenset(
         "allocation_results",
     }
 )
-INSERT_ONLY = INSERT_ONLY | frozenset({"allocation_structures", "allocation_results"})
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0761 | frozenset(
+    {"allocation_structures", "allocation_results"}
+)
 INSERT_COLUMNS.update(
     {
         "entity_return_profiles": frozenset(

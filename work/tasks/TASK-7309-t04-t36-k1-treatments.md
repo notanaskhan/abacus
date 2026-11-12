@@ -2,7 +2,7 @@
 id: TASK-7309
 title: "T-04-T36: K-1 activities and treatments service: activities from the TXP-12 hand-off (DEC-88) and third-party uploads; SALY; changed_vs_prior; override with a required reason; multi-change approval; k1_package.released consumer diffing draft and final (DEC-84)"
 spec: SPEC-649
-acceptance_criteria: [AC-7.1, AC-7.3, AC-7.4, AC-7.5, AC-7.6]
+acceptance_criteria: [AC-7]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: amber
 status: in-review
 branch: s37-t04-t36

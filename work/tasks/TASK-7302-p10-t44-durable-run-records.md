@@ -2,7 +2,7 @@
 id: TASK-7302
 title: "P-10-T44: Durable run records: frozen trace v2 exports behind P-09's handlers, retention class, run_events prune at 30 days, hash-chain coverage, A-07 archive hook"
 spec: SPEC-647
-acceptance_criteria: [AC-RR2, AC-RR3, AC-RR4, AC-RR5]
+acceptance_criteria: [AC-T1, AC-H4]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: red
 status: in-review
 branch: s37-p10-t44

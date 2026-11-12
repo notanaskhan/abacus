@@ -52,7 +52,7 @@ def _partners() -> list[KPartner]:
     for name, kind in KINDS.items():
         begin = OPENING.get(name, D(0))
         end = AFTER[name]
-        out.append(KPartner(name, kind, (begin, begin, begin), (end, end, end)))  # type: ignore[arg-type]
+        out.append(KPartner(name, kind, (begin, begin, begin), (end, end, end)))  # type: ignore[arg-type]  # a JSON value or a test double
     return out
 
 

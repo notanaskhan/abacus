@@ -2,7 +2,7 @@
 id: TASK-7311
 title: "P-05-T15: Journey E2E and parity: j23 step 6, j16 A1-A2, j03 step 15, j18 step 5, j27 step 4 with INV-1..5 and axe; lock SHL-17 and SHL-18 at Tier C"
 spec: SPEC-650
-acceptance_criteria: [AC-DOD-1, AC-DOD-5, AC-DOD-6]
+acceptance_criteria: [AC-1, AC-23]  # the spec's section ids (validate_docs reads AC-<n>)
 risk_zone: green
 status: in-review
 branch: s37-p05-t15

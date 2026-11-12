@@ -1,6 +1,6 @@
 """T-04-T37 (TASK-7317; T-04 §6; TAX-08; DF-04; DEC-4316): the return's assistant sessions.
 
-An unconsented taxpayer gets the agents-off state (409 `assistant_unavailable`, reason
+An unconsented taxpayer gets the agents-off state (409 `capability_unavailable`, reason
 `consent_7216`) with no session and no model call (no usage row)."""
 
 from __future__ import annotations
@@ -69,11 +69,14 @@ async def test_an_unconsented_taxpayer_gets_the_agents_off_state_with_no_model_c
     item = await _return(seed, world, samuel)
     usage = await seed.value("SELECT count(*) FROM usage_records")
     response = await net.call(
-        "POST", f"/v1/tax/returns/{item}/assistant-sessions", samuel, body={"title": "Assistant"}
+        "POST",
+        "/v1/workbench/sessions",
+        samuel,
+        body={"subject_ref": {"kind": "tax_return", "id": str(item)}, "title": "Assistant"},
     )
     assert response.status_code == 409, response.text
     body = cast(dict[str, object], response.json())
-    assert "assistant_unavailable" in str(body) and "consent_7216" in str(body)
+    assert "capability_unavailable" in str(body) and "consent_7216" in str(body)
     assert await seed.value("SELECT count(*) FROM workbench_sessions") == 0
     assert await seed.value("SELECT count(*) FROM usage_records") == usage
 
@@ -95,6 +98,6 @@ async def test_history_lists_only_the_persons_threads_on_the_return(
         samuel.user_id,
         refs,
     )
-    seen = await net.call("GET", f"/v1/tax/returns/{item}/assistant-sessions", samuel)
+    seen = await net.call("GET", f"/v1/workbench/sessions?subject_ref=tax_return:{item}", samuel)
     assert seen.status_code == 200, seen.text
     assert len(cast(list[object], seen.json()["items"])) == 1

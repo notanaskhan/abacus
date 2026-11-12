@@ -332,8 +332,8 @@ def run_suite(
     seeded_graders: set[str] = set()
     extra: dict[str, float] = {}
     if agent == "tax_account_mapper":
-        published = frozenset(str(k) for k in raw["published_keys"])  # type: ignore[union-attr]
-        cases = [MapperCase.model_validate(c) for c in raw["cases"]]  # type: ignore[union-attr]
+        published = frozenset(str(k) for k in raw["published_keys"])  # type: ignore[union-attr]  # a JSON value or a test double
+        cases = [MapperCase.model_validate(c) for c in raw["cases"]]  # type: ignore[union-attr]  # a JSON value or a test double
         chosen = [c for c in cases if subset == "full" or c.fast]
         for c in chosen:
             results.append(
@@ -342,7 +342,7 @@ def run_suite(
             seeded_graders |= set(c.seeded_failures)
         extra["calibration"] = calibration(chosen)
     else:
-        readers = [ReaderCase.model_validate(c) for c in raw["cases"]]  # type: ignore[union-attr]
+        readers = [ReaderCase.model_validate(c) for c in raw["cases"]]  # type: ignore[union-attr]  # a JSON value or a test double
         chosen_r = [c for c in readers if subset == "full" or c.fast]
         for c in chosen_r:
             results.append(_result(c.id, c.category, reader_grades(c), c.seeded_failures))

@@ -21,7 +21,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
 from typing import Final
 from uuid import UUID
 
@@ -31,7 +30,7 @@ from abacus.kernel.clock import now
 from abacus.kernel.db import tenant_session
 from abacus.modules.agents.ai_policy_store import policy_autonomy_level
 from abacus.modules.agents.spec_v2 import AGENTS_V2, TEST_ONLY, AgentSpecV2
-from abacus.modules.engagements.api import ai_excluded, get_ref
+from abacus.modules.engagements.api import ai_excluded, engagement_metadata, get_ref
 from abacus.modules.identity.api import (
     AuthContext,
     agents_paused,
@@ -56,11 +55,8 @@ class Availability:
     reason: str | None = None
 
 
-_ENGAGEMENT = text(
-    "SELECT e.client_entity_id, e.fiscal_period_end, "
-    "(SELECT a.paused_at IS NOT NULL FROM engagement_agents a WHERE a.engagement_id = e.id) "
-    "AS paused FROM engagements e WHERE e.id = :e"
-)
+# The engagement agent's pause is this module's own row (SPEC-027); the period is engagements'.
+_PAUSED = text("SELECT paused_at IS NOT NULL FROM engagement_agents WHERE engagement_id = :e")
 
 
 def _tri(spec: AgentSpecV2) -> bool:
@@ -107,13 +103,13 @@ async def capabilities_for(ctx: AuthContext, engagement_id: UUID | None) -> list
     if engagement_id is not None:
         ref = await get_ref(ctx, engagement_id)  # a wall answers 404
         async with tenant_session(ctx.tenant) as session:
-            row = (await session.execute(_ENGAGEMENT, {"e": engagement_id})).one()
-        paused = paused or bool(row.paused)
+            paused = paused or bool(await session.scalar(_PAUSED, {"e": engagement_id}))
         excluded = await ai_excluded(ctx.tenant, engagement_id)
-        year = row.fiscal_period_end.year if isinstance(row.fiscal_period_end, date) else None
-        if year is not None and any(_tri(s) for s in specs):
+        period = (await engagement_metadata(ctx, engagement_id)).engagement.fiscal_period_end
+        year = period.year
+        if any(_tri(s) for s in specs):
             covering = await covering_consents(
-                ctx.tenant, [TriSubject(row.client_entity_id, year)], await now(ctx.tenant)
+                ctx.tenant, [TriSubject(ref.client_entity_id, year)], await now(ctx.tenant)
             )
             consent = covering is not None
         may_start = await could(ctx, ctx.user_id, "agent_run.start", ref.resource())

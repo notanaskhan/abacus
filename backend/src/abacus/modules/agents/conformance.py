@@ -76,6 +76,9 @@ class ConformancePlanStep(BaseModel):
     label: Annotated[str, Field(min_length=1, max_length=200), Conf]
     tool: Annotated[str | None, Field(max_length=80), Int] = None
     write: Annotated[bool, Int] = False
+    # S37 end pass (DEC-4317): the tool's arguments, validated against its input model before a
+    # child run is written, shown in the plan the person approves, checked again by C17 per call.
+    arguments: Annotated[dict[str, object] | None, Conf] = None  # a JSON object
 
 
 class ConformancePlan(BaseModel):
