@@ -93,3 +93,22 @@ YAML changes in S34. Recorded 2026-11-10 (DEC-3212).
 | `run_trace.enabled` | notanaskhan | 2027-05-07 | **Thu Apr 22, 2027** | **Renew** to Wed Jul 21, 2027 | The same PR. Retire with the dock; the drawer's v1 trace path and the step route's 404 branch go together |
 
 Apr 22, 2027 is the first renewal day after the freeze, and Jul 21, 2027 is 90 days on.
+
+## The P-10 runtime v2 flags (P-10-T56)
+
+P-10 §4.6, ADR-089: `agent_runtime.v2`, `realtime.sse` and `engagement_run.enabled` were created
+2026-11-09 and expire 2027-05-07 under the DEC-137 override (`agents.yaml`). The plan's own
+renewal is on the **Tue Apr 25, 2028** train, a week before M17 (Tue May 2, 2028); on today's
+expiries the flags must be renewed on every train before that, each renewal at most 90 days and
+outside the freeze windows (Sep 1 – Oct 20 and Jan 1 – Apr 20). The M17 plan check
+(`abacus_tools.runtime_v2_flip check`) refuses the flip while any of the three expires on or
+before the slot. Each flag now names the J11 and J23 journeys (`journeys:`), so every flip of it
+needs both green on staging within 24 hours. Recorded 2026-11-12 (DEC-4414).
+
+| Flag | Owner | Expires | Due | Action | Condition |
+|---|---|---|---|---|---|
+| `agent_runtime.v2` | ayushkbhatia | 2027-05-07 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | Renew on each train before expiry (every 90 days at most) until M17; on the **Tue Apr 25, 2028** train renew to at most Mon Jul 24, 2028, past M17. Retire (delete the flag and the v1 path's branches in one change) once runtime v2 is on for every live firm |
+| `realtime.sse` | ayushkbhatia | 2027-05-07 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | The per-firm kill switch for the stream (RB-28), so it outlives the rollout as `notifications.email` does: renew on each train, the Tue Apr 25, 2028 one to at most Mon Jul 24, 2028, until a platform kill-switch register (P-66) takes it over |
+| `engagement_run.enabled` | ayushkbhatia | 2027-05-07 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | As `agent_runtime.v2`; retire after K-04's triggers (P-8) start engagement runs for every live firm |
+
+A renewal restarts `created` on the day it is made and may reach at most 90 days (ADR-089); record the outcome of each row here.
