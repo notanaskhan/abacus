@@ -50,6 +50,7 @@ from abacus.modules.platform.api import (
     provisioning_workflow_id,
     start_provisioning,
 )
+from abacus.modules.tax.api import individual_review_signed
 from abacus_tools import flags as flags_tool
 from abacus_tools import flip_guard
 from abacus_tools.db_connect import connect as connect_db
@@ -229,6 +230,17 @@ async def set_entitlement(
             )
             if today is None:
                 raise Refused("no such firm")
+            # T-04-T49 (DEC-4524): the individual return engines need the tax CPA's signed memo
+            # before a firm that isn't synthetic gets Tax Returns (tax-individual@v1).
+            if module == "tax_returns" and enabled and not individual_review_signed():
+                synthetic = await connection.fetchval(
+                    "SELECT synthetic FROM firms WHERE tenant_id = $1", firm
+                )
+                if not synthetic:
+                    raise Refused(
+                        "tax_returns needs the tax CPA's signed tax-individual@v1 memo for a firm "
+                        "that isn't synthetic"
+                    )
             await connection.execute(
                 "INSERT INTO tenant_entitlements (tenant_id, module, enabled, seats, set_by, "
                 "valid_from) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (tenant_id, module) "

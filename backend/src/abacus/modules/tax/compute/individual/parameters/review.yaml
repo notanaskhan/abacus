@@ -1,0 +1,8 @@
+# The individual return engines' CPA review (T-04-T49; ADR P-28; chapter 10 §10.9.4). PROTECTED:
+# changed only when the tax CPA signs docs/quality/golden-reviews/tax-individual@v1.md, in the same
+# PR, with the vault reference of the signed memo (never the reviewer's name). Until
+# `signed: true`, the T-04 workspace refuses every firm that isn't synthetic (DEC-4524).
+memo: tax-individual@v1
+signed: false
+signed_on: null
+vault_ref: null
