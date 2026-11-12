@@ -94,7 +94,7 @@ def test_t19_every_tax_tool_pins_its_scope_to_the_runs_engagement() -> None:
         tax_year=2025,
         changes=[FieldChange(worksheet_id=uuid.uuid4(), field_key="l20", after=Decimal(1550))],
     )
-    targets = args.tool_targets(_Agent())  # type: ignore[arg-type]
+    targets = args.tool_targets(_Agent())  # type: ignore[arg-type]  # a stand-in agent
     assert targets.engagement_ids == (_Agent.engagement_id,)
     assert [(s.entity_id, s.tax_year) for s in targets.tri_subjects] == [(taxpayer, 2025)]
     with pytest.raises(ValueError):  # extra fields (another engagement) are refused

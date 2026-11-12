@@ -55,6 +55,7 @@ from abacus.modules.agents.proposal_slots import (
     ThresholdEvaluation,
     change_set_applier,
     check_suggestion_target,
+    has_proposal_adapter,
     suggestion_applier,
     target_on_engagement,
     threshold_policy,
@@ -969,11 +970,21 @@ def _value_of(
     return dict(row.after or {"t": _kind_of(row), "v": None}), None
 
 
+async def _applied_after_commit(
+    tx: UnitOfWork, person: AuthContext, change: ApprovedChangeSet
+) -> None:
+    """An adapter kind (DEC-4415): nothing is written in the decision's unit of work."""
+
+
 async def _appliers(
     kind: str, rows: Sequence[ProposalRow]
 ) -> tuple[dict[str, SuggestionApplier], ChangeSetApplier | None]:
-    """Every owner that will write, found before anything is written (503 when one is missing)."""
+    """Every owner that will write, found before anything is written (503 when one is missing).
+    A kind whose owner registered a proposal adapter writes nothing here: the adapter applies the
+    approved proposal once the decision commits (DEC-4415)."""
     if kind != FIELD_CHANGE_SET:
+        if has_proposal_adapter(kind):
+            return {}, _applied_after_commit
         return {}, change_set_applier(kind)
     return {t: suggestion_applier(t) for t in sorted({_field(r)[0] for r in rows})}, None
 

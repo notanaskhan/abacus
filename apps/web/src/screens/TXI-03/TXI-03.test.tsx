@@ -44,14 +44,16 @@ describe("TXI-03 state residency and allocation", () => {
   it("the tables carry no $", () => {
     render(<ResidencyAllocation frame="a" />);
     for (const table of document.querySelectorAll("table")) {
-      expect(table.textContent ?? "").not.toContain("$");
+      expect(table.textContent).not.toContain("$");
     }
   });
 
   it("a: the review point, the agent's recommendation, Confirm for a reviewer", () => {
     const onConfirm = vi.fn();
     render(<ResidencyAllocation frame="a" onConfirm={onConfirm} />);
-    expect(document.querySelector("[data-tally='residency']")?.textContent).toContain("Review point");
+    expect(document.querySelector("[data-tally='residency']")?.textContent).toContain(
+      "Review point",
+    );
     expect(
       document.querySelector("[data-option='full_year_nys_nyc'] [data-recommended]"),
     ).not.toBeNull();

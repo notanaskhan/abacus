@@ -44,6 +44,7 @@ from temporalio.exceptions import WorkflowAlreadyStartedError
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import dispatch
+from abacus.kernel.errors import DomainForbidden
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
 from abacus.modules.agents.approved_write_workflow import (
@@ -52,6 +53,7 @@ from abacus.modules.agents.approved_write_workflow import (
     ApprovedWriteWorkflow,
     approved_write_id,
 )
+from abacus.modules.agents.proposal_slots import apply_proposal, has_proposal_adapter
 
 _READER: Final = "approved-write"
 GRANT_LIFETIME: Final = timedelta(hours=1)
@@ -269,7 +271,22 @@ async def on_proposal_event(event: OutboxEvent) -> None:
     tenant = _tenant(event.tenant_id, str(proposal_id))
     async with tenant_session(tenant) as session:
         row = (await session.execute(_PROPOSAL, {"id": proposal_id})).first()
-    if row is None or row.agent_run_id is None:
+    if row is None:
+        return
+    # DEC-4415: an approved proposal of an adapter kind is applied by its owner after the
+    # decision commits, once per delivery (adapters are idempotent: a redelivery changes nothing).
+    if (
+        event.event_type == "proposal.decided"
+        and row.decision in _APPROVED
+        and has_proposal_adapter(str(row.kind))
+    ):
+        try:
+            await apply_proposal(tenant, str(row.kind), proposal_id)
+        except DomainForbidden as refused:
+            # The approver lost the right between approval and apply: nothing is written and a
+            # retry would refuse again, so the event is done (codes only in the log).
+            _log.warning("proposal.apply_refused", kind=str(row.kind), code=type(refused).code)
+    if row.agent_run_id is None:
         return
     run_id = cast(UUID, row.agent_run_id)
     await rederive_run(event.tenant_id, run_id)

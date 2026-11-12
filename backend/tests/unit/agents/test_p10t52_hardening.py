@@ -84,13 +84,14 @@ def test_the_budgets_and_their_breaches() -> None:
     assert {b.name: b.p95_ms for b in p10_budgets.BUDGETS} == {
         "plan_approve": Decimal(400),
         "stream_first_byte": Decimal(500),
+        "sse_commit_to_event": Decimal(2000),  # P-10-T51 (DEC-4412)
     }
     ok = {b.name: b.p95_ms for b in p10_budgets.BUDGETS}
     assert p10_budgets.breaches(ok) == []
     slow = {**ok, "plan_approve": Decimal(401)}
     assert p10_budgets.breaches(slow) == ["plan_approve: p95 401 ms > 400 ms"]
     missing = p10_budgets.breaches({"plan_approve": Decimal(1)})
-    assert missing == ["stream_first_byte: not measured"]
+    assert missing == ["stream_first_byte: not measured", "sse_commit_to_event: not measured"]
 
 
 # --- validate_plan: every code, once, in step order ----------------------------------------------

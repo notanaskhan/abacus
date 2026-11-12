@@ -57,13 +57,13 @@ def test_each_failing_condition_keeps_client_data_none(
         "issues.fix_runner",
         str(args["route"]),
         _rates("issues.fix_runner"),
-        args["attempts"],  # type: ignore[arg-type]
-        args["limit"],  # type: ignore[arg-type]
-        last_parity=args["last_parity"],  # type: ignore[arg-type]
+        args["attempts"],  # type: ignore[arg-type]  # the parametrized overrides
+        args["limit"],  # type: ignore[arg-type]  # the parametrized overrides
+        last_parity=args["last_parity"],  # type: ignore[arg-type]  # the parametrized overrides
         today=TODAY,
     )
     assert found["client_data"] == "none"
-    assert reason in found["reasons"]  # type: ignore[operator]
+    assert reason in found["reasons"]  # type: ignore[operator]  # reasons is a list here
 
 
 def test_a_threshold_below_its_frozen_floor_or_unmeasured_is_named() -> None:

@@ -74,12 +74,14 @@ async def _return(seed: Seeder, world: World, who: Person) -> uuid.UUID:
         world.engagement_id,
         world.entity_id,
     )
-    await seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'tax.review_workspace', 'true', 't04-t39', 'T-04-T39') "
-        "ON CONFLICT DO NOTHING",
-        world.tenant_id,
-    )
+    # The workspace, and SHL-10's approval (off: the decision routes answer 404).
+    for flag in ("tax.review_workspace", "review.approve_agent_output"):
+        await seed.run(
+            "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+            "VALUES ($1, $2, 'true', 't04-t39', 'T-04-T39') ON CONFLICT DO NOTHING",
+            world.tenant_id,
+            flag,
+        )
     forget_flags()
     return item
 
@@ -100,18 +102,39 @@ async def _samuel(seed: Seeder, world: World, item: uuid.UUID) -> Person:
     return samuel
 
 
-def _sources(days: int, home: str) -> list[rs.Source]:
+async def _cite(seed: Seeder, world: World, item: uuid.UUID) -> uuid.UUID:
+    """A C4 citation on the engagement, verified by code (SHL-10 approves only cited rows)."""
+    return cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO citations (tenant_id, engagement_id, cited_from_type, cited_from_id, n, "
+            "kind, source_type, source_id, locator, verified, verifier_version, created_by_kind, "
+            "created_by_run_id) VALUES ($1, $2, 'residency_probe', $3, 1, 'record_field', "
+            '\'tax_return\', $3, \'{"record_type": "tax_return", "field": "residency"}\', '
+            "true, 'v1', 'agent', $3) RETURNING id",
+            world.tenant_id,
+            world.engagement_id,
+            item,
+        ),
+    )
+
+
+async def _sources(
+    seed: Seeder, world: World, item: uuid.UUID, days: int, home: str
+) -> list[rs.Source]:
+    organizer, coop, w2 = [await _cite(seed, world, item) for _ in range(3)]
     return [
-        rs.Source("organizer", uuid.uuid4(), {"nyc_days": days, "main_home": home}),
-        rs.Source("coop_statement", uuid.uuid4(), {"place": "New York City"}),
-        rs.Source("w2_box20", uuid.uuid4(), {"locality": "NYC"}),
+        rs.Source("organizer", organizer, {"nyc_days": days, "main_home": home}),
+        rs.Source("coop_statement", coop, {"place": "New York City"}),
+        rs.Source("w2_box20", w2, {"locality": "NYC"}),
     ]
 
 
 async def _opened(seed: Seeder, world: World, item: uuid.UUID, who: Person) -> uuid.UUID:
     ctx = _ctx(who)
+    sources = await _sources(seed, world, item, 281, "New York City")
     async with uow(ctx.tenant) as tx:
-        return await rs.open_residency(tx, ctx, item, _sources(281, "New York City"), 2025)
+        return await rs.open_residency(tx, ctx, item, sources, 2025)
 
 
 async def _agents_proposal(
@@ -144,6 +167,7 @@ async def _agents_proposal(
         before=None,
         after={"t": "text", "v": option},
         cause="agent_proposal",
+        citation_ids=await rs.fact_citations(agent.tenant, determination),  # as the tool cites
     )
     return await create_proposal(
         agent, engagement_id=world.engagement_id, kind="residency", title="Proposed residency",

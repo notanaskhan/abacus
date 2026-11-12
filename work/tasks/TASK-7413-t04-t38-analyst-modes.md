@@ -2,7 +2,7 @@
 id: TASK-7413
 title: "T-04-T38: tax.return_analyst v1 modes k1_treatments and residency: code facts in, rationale and verified citations out; SALY comparison; residency options with a recommendation, conflict flag and an internal client-question draft; propose-only"
 spec: SPEC-649
-acceptance_criteria: [AC-7.1, AC-7.3, AC-8.2, AC-8.4]
+acceptance_criteria: [AC-7, AC-8]  # AC-7.1, AC-7.3, AC-8.2, AC-8.4
 risk_zone: red
 status: in-review
 branch: s38-t04-t38

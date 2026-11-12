@@ -2,7 +2,7 @@
 id: TASK-7403
 title: "P-10-T57: Independent AC tests (ADR-078) for the sessions core, run records and capability endpoint (T43, T44, T45) and the T08 matrix rows"
 spec: SPEC-647
-acceptance_criteria: [AC-S2, AC-S3, AC-S4, AC-RR2, AC-RR3, AC-RR4]
+acceptance_criteria: [AC-S2, AC-S3, AC-S4]  # and SPEC-647 AC-RR2 to AC-RR4 (run records)
 risk_zone: red
 status: in-review
 branch: s38-p10-t57

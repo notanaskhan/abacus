@@ -2,7 +2,7 @@
 id: TASK-7425
 title: "P-10-T56: close-out: flag renewal calendar to the Tue Apr 25, 2028 train, capacity ledger and actuals, C6 and C17 register entries, hand-off notes"
 spec: SPEC-647
-acceptance_criteria: []
+acceptance_criteria: [AC-T7]  # the kill switch outlives the rollout; renewals calendared
 risk_zone: green
 status: done
 branch: s38-p10-t56

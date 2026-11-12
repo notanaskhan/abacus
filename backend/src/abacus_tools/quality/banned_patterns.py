@@ -1541,6 +1541,9 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/agents/repository.py", "latest_upload_reviews_for_gates"),
         ("src/abacus/modules/agents/repository.py", "latest_matches_for_gates"),
         ("src/abacus/modules/agents/repository.py", "undecided_drafts_for_gates"),
+        # P-10-T49 (DEC-4401): the v2 plan and proposal gate sources, the same projector reads.
+        ("src/abacus/modules/agents/repository.py", "run_plans_for_gates"),
+        ("src/abacus/modules/agents/repository.py", "run_proposals_for_gates"),
     }
 )
 

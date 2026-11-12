@@ -24,6 +24,9 @@ from abacus.modules.tax import entity_tri, partner_tins
 
 from .support import Person, Seeder, World
 
+Loose = Any  # Any: a seeder value (asyncpg record field)
+
+
 pytestmark = pytest.mark.asyncio
 TIN = "12-3456789"
 
@@ -121,8 +124,8 @@ async def test_an_invalid_tin_or_kind_is_refused_without_echoing_it(
     item = await _entity_return(seed, world)
     partner = await _partner(seed, world, item)
     ctx = _ctx(await _manager(seed, world))
-    async with uow(ctx.tenant) as tx:
-        with pytest.raises(TinInvalid) as refused:
+    with pytest.raises(TinInvalid) as refused:  # the refusal rolls the unit of work back
+        async with uow(ctx.tenant) as tx:
             await partner_tins.seal_partner_tin(tx, ctx, partner, "000-00-0000", "ssn")
     assert "000" not in str(refused.value.facts or {})
 
@@ -228,12 +231,15 @@ async def test_the_workbook_and_memo_are_kept_while_on_hold_or_without_a_policy(
         # No policy and no floor loaded: never releasable (fail closed).
         assert await entity_tri.releasable(tenant, item, record, filed, later) is False
     assert await entity_tri.on_hold(tenant, item) is False
-    client: Any = await seed.value(
+    client: Loose = await seed.value(
         "SELECT client_id FROM engagements WHERE id = $1", world.engagement_id
     )
-    await seed.run(
-        "INSERT INTO legal_holds (tenant_id, scope_kind, client_id, engagement_id, status, "
-        "reason_code, placed_by) VALUES ($1, 'engagement', $2, $3, 'active', 'litigation', $4)",
+    # A hold starts `applying`, placed by the session's own person (0126's guard).
+    await seed.as_actor(
+        world.tenant_id,
+        ("human", str(world.requester.user_id)),
+        "INSERT INTO legal_holds (tenant_id, scope_kind, client_id, engagement_id, "
+        "reason_code, placed_by) VALUES ($1, 'engagement', $2, $3, 'litigation', $4)",
         world.tenant_id,
         client,
         world.engagement_id,

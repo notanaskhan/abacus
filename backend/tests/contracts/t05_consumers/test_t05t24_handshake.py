@@ -33,9 +33,6 @@ from abacus.modules.tax import workbook_contract as wb
 Json = dict[str, object]
 DOC = cast(Json, json.loads(document()))
 PATHS = cast(dict[str, dict[str, Json]], DOC["paths"])
-PENDING_T25: Final = "T-05-T25 (C8 tax layers) has not landed"
-PENDING_T26: Final = "T-05-T26 (C9 tax form-line taxonomy) has not landed"
-PENDING_T32: Final = "T-05-T32 (the workbook run's step handlers) has not landed"
 RUN_STEPS: Final = (
     "import_trial_balance",
     "map_lines",
@@ -77,19 +74,21 @@ def test_c8_entries_carry_what_txp02s_drawer_reads() -> None:
 
 
 def test_c8_has_the_tje_kind_and_its_numbering() -> None:
-    from abacus.modules.adjustments.entries import _PREFIX  # pyright: ignore[reportPrivateUsage]
+    from abacus.modules.adjustments.entries import (
+        _PREFIX,  # pyright: ignore[reportPrivateUsage]  # pinned
+    )
 
     assert "tje" in get_args(EntryKind)
     assert _PREFIX["tje"] == "TJE"
 
 
-@pytest.mark.xfail(reason=PENDING_T25, strict=True)
+@pytest.mark.xfail(reason="T-05-T25 (C8 tax layers) has not landed (TASK-7408)", strict=True)
 def test_c8_the_adjusted_tb_has_the_tax_layers() -> None:
     assert {"atb", "tje", "ttb"} <= set(get_args(Layer))
     assert {"atb", "tje", "ttb"} <= _props(c8.AdjustedLineOut)
 
 
-@pytest.mark.xfail(reason=PENDING_T25, strict=True)
+@pytest.mark.xfail(reason="T-05-T25 (C8 tax layers) has not landed (TASK-7408)", strict=True)
 def test_c8_a_line_names_its_account_scope() -> None:
     assert "account_scope" in _props(c8.LineOut)
     scope = c8.LineOut.model_fields["account_scope"].annotation
@@ -106,7 +105,9 @@ def test_c9_the_mapping_set_and_rows_carry_what_the_workbook_reads() -> None:
     )
 
 
-@pytest.mark.xfail(reason=PENDING_T26, strict=True)
+@pytest.mark.xfail(
+    reason="T-05-T26 (C9 tax form-line taxonomy) has not landed (TASK-7408)", strict=True
+)
 def test_c9_a_mapping_set_names_its_taxonomy_and_reference_set() -> None:
     props = _props(c9.MappingSetSummaryOut)
     assert {"taxonomy_kind", "reference_set_version_id"} <= props
@@ -114,7 +115,9 @@ def test_c9_a_mapping_set_names_its_taxonomy_and_reference_set() -> None:
     assert "tax_form_line" in kinds and "fs_line" in kinds
 
 
-@pytest.mark.xfail(reason=PENDING_T26, strict=True)
+@pytest.mark.xfail(
+    reason="T-05-T26 (C9 tax form-line taxonomy) has not landed (TASK-7408)", strict=True
+)
 def test_c9_a_row_maps_to_a_form_line_key() -> None:
     assert "form_line_key" in _props(c9.AccountMappingOut)
 
@@ -125,13 +128,15 @@ def test_c9_a_row_maps_to_a_form_line_key() -> None:
 def test_c6_v2_the_run_step_slot_and_the_runs_start_answer() -> None:
     assert callable(register_run_step)
     with pytest.raises(ValueError, match="snake_case"):
-        register_run_step("Not Snake", lambda *_: None)  # type: ignore[arg-type]
+        register_run_step("Not Snake", lambda *_: None)  # type: ignore[arg-type]  # refused first
     assert {"run_id", "run_no"} <= _props(wb.WorkbookRunAcceptedOut)
     start = PATHS["/v1/tax-returns/{return_id}/workbook-runs"]["post"]
     assert "202" in cast(Json, start["responses"])
 
 
-@pytest.mark.xfail(reason=PENDING_T32, strict=True)
+@pytest.mark.xfail(
+    reason="T-05-T32 (the workbook run's step handlers) has not landed (TASK-7408)", strict=True
+)
 def test_c6_v2_the_workbook_runs_ten_steps_are_registered() -> None:
     from abacus.modules.agents.engagement_run import run_step_handler
 

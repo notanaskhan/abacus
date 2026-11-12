@@ -91,8 +91,8 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
     # the reviewer's (SPEC-030), matcher's (033), drafter's (035), entry assessor's (TASK-085),
     # the matcher's intake mode (N-01-T22), the methodology importer (K-01-T21) and the section
     # drafter (A-04-T11), the agent-run backfill (P-10-T14), the run v2 workflow (P-10-T29) and
-    # the approved write (P-10-T38)
-    assert len(WORKFLOWS) == 13
+    # the approved write (P-10-T38) and the run_events prune (P-10-T44)
+    assert len(WORKFLOWS) == 14
     # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps;
     # SPEC-027 adds the engagement agent's two (handle; TASK-051's next tick); SPEC-030 the
     # reviewer's two (create_run, review); SPEC-033 (TASK-066) the matcher's two; SPEC-035
@@ -103,8 +103,9 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
     # (TASK-6105) adds the agent-run backfill's one (`backfill_batch`). P-10-T29 (TASK-6607) adds
     # the run v2 workflow's seven (load, record_plan, plan_state, set_state, paused,
     # execute_step, complete). P-10-T32 adds part 2's two (wait_state, cancel_held). P-10-T38
-    # adds the approved write's one (`agents.approved_write.execute`).
-    assert len(ACTIVITIES) == 36
+    # adds the approved write's one (`agents.approved_write.execute`); P-10-T44 the prune's one
+    # (`agents.run_events.prune`).
+    assert len(ACTIVITIES) == 37
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

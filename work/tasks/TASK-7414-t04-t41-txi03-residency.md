@@ -2,7 +2,7 @@
 id: TASK-7414
 title: "T-04-T41: TXI-03 State residency and allocation states a-e in fixture mode on T6 two-pane (560, 806)"
 spec: SPEC-649
-acceptance_criteria: [AC-8.1, AC-8.2, AC-8.3, AC-8.4, AC-8.5]
+acceptance_criteria: [AC-8]  # AC-8.1 to AC-8.5
 risk_zone: green
 status: in-review
 branch: s38-t04-t41

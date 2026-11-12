@@ -116,7 +116,7 @@ def test_the_spec_is_wired_and_runs_dark_for_client_data() -> None:
 
 
 def test_the_suites_recorded_outputs_settle_to_their_labels() -> None:
-    suite = cast(dict[str, Any], yaml.safe_load(SUITE.read_text(encoding="utf-8")))
+    suite = cast(dict[str, Any], yaml.safe_load(SUITE.read_text(encoding="utf-8")))  # Any: YAML
     keys = list(suite["published_keys"])
     agreed = 0
     graded = 0

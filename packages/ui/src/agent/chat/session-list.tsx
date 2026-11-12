@@ -10,6 +10,7 @@ import { IconButton } from "../../components/button";
 import { SearchField } from "../../components/inputs";
 import { Spinner } from "../../components/motion";
 import { ViewStateBody } from "../../components/view-state";
+import { time as clockTime } from "../../format";
 import { Icon } from "../../icons";
 import type { RegistryCode } from "../../status";
 
@@ -44,12 +45,7 @@ export interface SessionListProps {
 export const SESSION_LIST_GEOMETRY = { header: 46, search: 42, row: 48 } as const;
 
 export function sessionMeta(row: SessionRow, timeZone = "America/Chicago"): string {
-  const time = new Date(row.last_at).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone,
-  });
-  return `${time} · ${formatActor(row.owner)}`;
+  return `${clockTime(row.last_at, { tz: timeZone })} · ${formatActor(row.owner)}`;
 }
 
 export function SessionList({

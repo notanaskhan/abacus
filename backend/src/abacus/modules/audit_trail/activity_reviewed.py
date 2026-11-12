@@ -901,5 +901,12 @@ REVIEWED_FALLBACK: Final = frozenset(
         "soc_exception.routed",
         "sum.factor_recorded",
         "sum.snapshot_frozen",
+        # reviewed 2026-11-12 (S38 end pass, TASK-7426): TIN seal and reveal stay in the audit
+        # explorer only; residency and the engine sync chip show on their own screens.
+        "partner.updated",
+        "partner_tin.revealed",
+        "residency_determination.confirmed",
+        "residency_determination.opened",
+        "tax_return.engine_reimport_needed",
     }
 )

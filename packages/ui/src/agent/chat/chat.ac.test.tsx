@@ -5,7 +5,13 @@
 // without an explicit Skip."
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ChatHeader, ChatThread, SessionList, type ThreadItem, WorkbenchLayout } from "../../index";
+import {
+  ChatHeader,
+  ChatThread,
+  SessionList,
+  type ThreadItem,
+  WorkbenchLayout,
+} from "../../index";
 
 afterEach(() => {
   cleanup();
@@ -16,11 +22,24 @@ const VERBS = ["Approve", "Sign off", "Release", "Send"] as const;
 const SENTINEL = "Sentinel agent sentence 4729";
 
 let n = 0;
-function item(kind: string, payload: Record<string, unknown>, actor: ThreadItem["actor_kind"] = "agent"): ThreadItem {
+function item(
+  kind: string,
+  payload: Record<string, unknown>,
+  actor: ThreadItem["actor_kind"] = "agent",
+): ThreadItem {
   n += 1;
-  return { id: `ac${String(n)}`, seq: n, kind, payload: { v: 1, ...payload }, actor_kind: actor, run_id: "r" };
+  return {
+    id: `ac${String(n)}`,
+    seq: n,
+    kind,
+    payload: { v: 1, ...payload },
+    actor_kind: actor,
+    run_id: "r",
+  };
 }
-const para = (text: string) => ({ blocks: { version: 1, parts: [{ kind: "p", segments: [{ kind: "text", text }] }] } });
+const para = (text: string) => ({
+  blocks: { version: 1, parts: [{ kind: "p", segments: [{ kind: "text", text }] }] },
+});
 
 function everything(extra: ThreadItem[] = []): ThreadItem[] {
   return [
@@ -31,16 +50,39 @@ function everything(extra: ThreadItem[] = []): ThreadItem[] {
         version: 1,
         parts: [
           { kind: "p", segments: [{ kind: "text", text: `${SENTINEL} in a block` }] },
-          { kind: "table", head: ["Item", "Result"], rows: [[{ kind: "text", text: "Tax returns" }, { kind: "text", text: `${SENTINEL} 224` }]] },
+          {
+            kind: "table",
+            head: ["Item", "Result"],
+            rows: [
+              [
+                { kind: "text", text: "Tax returns" },
+                { kind: "text", text: `${SENTINEL} 224` },
+              ],
+            ],
+          },
         ],
       },
       badge: "Report prepared",
     }),
     item("tool_card", { label: "Read 79 open returns", state: "succeeded" }),
-    item("tool_card", { label: "Read binder status", state: "failed", error: { title: "Stopped at Read binder status", body: "CCH Axcess token expired on Sep 12." } }),
-    item("artifact", { artifact_id: "a", name: "TY2025 Season Progress — by office.xlsx", meta: "Excel · 5 tabs" }),
+    item("tool_card", {
+      label: "Read binder status",
+      state: "failed",
+      error: {
+        title: "Stopped at Read binder status",
+        body: "CCH Axcess token expired on Sep 12.",
+      },
+    }),
+    item("artifact", {
+      artifact_id: "a",
+      name: "TY2025 Season Progress — by office.xlsx",
+      meta: "Excel · 5 tabs",
+    }),
     item("notice", { text: "§7216 consent required" }, "system"),
-    item("question", { steps: [{ q: "Which returns should the report cover?", preselect: "open" }], skipDefault: "open" }),
+    item("question", {
+      steps: [{ q: "Which returns should the report cover?", preselect: "open" }],
+      skipDefault: "open",
+    }),
     item("approval", { decision: "approve" }),
     item("decision_ref", { decision: "decide" }),
     item("run_card", { run: "r" }),
@@ -56,20 +98,40 @@ describe("T4 chat kit: independent acceptance (ADR-078)", () => {
         list={
           <SessionList
             still
-            rows={[{ id: "s", title: "Season progress", owner: { kind: "agent_assisted", person: "Hannah Leclerc" }, last_at: "2026-09-14T14:00:00Z", state: "awaiting_answer", needs_answer: true, running: false, locked: false }]}
+            rows={[
+              {
+                id: "s",
+                title: "Season progress",
+                owner: { kind: "agent_assisted", person: "Hannah Leclerc" },
+                last_at: "2026-09-14T14:00:00Z",
+                state: "awaiting_answer",
+                needs_answer: true,
+                running: false,
+                locked: false,
+              },
+            ]}
           />
         }
         chat={
           <>
-            <ChatHeader title="TY2025 season progress by office" owner={{ kind: "human", name: "Hannah Leclerc" }} live still />
+            <ChatHeader
+              title="TY2025 season progress by office"
+              owner={{ kind: "human", name: "Hannah Leclerc" }}
+              live
+              still
+            />
             <ChatThread still items={everything()} />
           </>
         }
       />,
     );
-    const controls = [...screen.getAllByRole("button"), ...screen.queryAllByRole("link"), ...screen.queryAllByRole("menuitem")];
+    const controls = [
+      ...screen.getAllByRole("button"),
+      ...screen.queryAllByRole("link"),
+      ...screen.queryAllByRole("menuitem"),
+    ];
     for (const c of controls) {
-      const name = (c.getAttribute("aria-label") ?? c.textContent ?? "").trim();
+      const name = (c.getAttribute("aria-label") ?? c.textContent).trim();
       for (const verb of VERBS) {
         // "Send message" is the person's own composer, not a decision on agent output.
         if (name === "Send message") continue;
@@ -95,7 +157,9 @@ describe("T4 chat kit: independent acceptance (ADR-078)", () => {
   });
 
   it("a person's message is never drawn as agent text", () => {
-    render(<ChatThread still items={[item("user_message", { body: "Person words 818" }, "human")]} />);
+    render(
+      <ChatThread still items={[item("user_message", { body: "Person words 818" }, "human")]} />,
+    );
     const el = screen.getByText("Person words 818");
     expect(el.closest("[data-actor='agent']")).toBeNull();
   });
@@ -106,13 +170,23 @@ describe("T4 chat kit: independent acceptance (ADR-078)", () => {
         tab="sessions"
         viewState="restricted"
         list={<SessionList rows={[]} />}
-        chat={<ChatThread locked items={everything([item("agent_blocks", para("Copperleaf payroll 2,625,000"))])} />}
+        chat={
+          <ChatThread
+            locked
+            items={everything([item("agent_blocks", para("Copperleaf payroll 2,625,000"))])}
+          />
+        }
       />,
     );
-    expect(document.body.textContent ?? "").not.toMatch(/\d{2,}/);
+    expect(document.body.textContent).not.toMatch(/\d{2,}/);
     cleanup();
-    render(<ChatThread locked items={everything([item("agent_blocks", para("Copperleaf payroll 2,625,000"))])} />);
-    expect(document.body.textContent ?? "").not.toMatch(/2,625,000|224|79/);
+    render(
+      <ChatThread
+        locked
+        items={everything([item("agent_blocks", para("Copperleaf payroll 2,625,000"))])}
+      />,
+    );
+    expect(document.body.textContent).not.toMatch(/2,625,000|224|79/);
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 
@@ -122,7 +196,16 @@ describe("T4 chat kit: independent acceptance (ADR-078)", () => {
     const answers: unknown[] = [];
     const question = item("question", {
       question_id: "q1",
-      steps: [{ q: "Which returns should the report cover?", preselect: "open", options: [{ key: "open", title: "Open returns only" }, { key: "all", title: "All TY2025 returns" }] }],
+      steps: [
+        {
+          q: "Which returns should the report cover?",
+          preselect: "open",
+          options: [
+            { key: "open", title: "Open returns only" },
+            { key: "all", title: "All TY2025 returns" },
+          ],
+        },
+      ],
       skipText: "Skip",
       skipDefault: "open",
     });
@@ -150,12 +233,30 @@ describe("T4 chat kit: independent acceptance (ADR-078)", () => {
       <SessionList
         still
         rows={[
-          { id: "1", title: "a", owner: { kind: "human", name: "Marcus Delaney" }, last_at: "2026-09-13T15:00:00Z", state: "live", needs_answer: false, running: false, locked: false },
-          { id: "2", title: "b", owner: { kind: "agent_assisted", person: "Grace Holloway" }, last_at: "2026-09-13T13:00:00Z", state: "complete", needs_answer: false, running: false, locked: false },
+          {
+            id: "1",
+            title: "a",
+            owner: { kind: "human", name: "Marcus Delaney" },
+            last_at: "2026-09-13T15:00:00Z",
+            state: "live",
+            needs_answer: false,
+            running: false,
+            locked: false,
+          },
+          {
+            id: "2",
+            title: "b",
+            owner: { kind: "agent_assisted", person: "Grace Holloway" },
+            last_at: "2026-09-13T13:00:00Z",
+            state: "complete",
+            needs_answer: false,
+            running: false,
+            locked: false,
+          },
         ]}
       />,
     );
-    const metas = [...document.querySelectorAll("[data-meta]")].map((m) => m.textContent ?? "");
+    const metas = [...document.querySelectorAll("[data-meta]")].map((m) => m.textContent);
     expect(metas.some((m) => m.endsWith("Grace Holloway via Agent"))).toBe(true);
     expect(metas.every((m) => !m.endsWith("Accrued Agent"))).toBe(true);
   });

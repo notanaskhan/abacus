@@ -90,6 +90,15 @@ EVENTS: Final = {
     # N-02-T33: a letter waits on each partner's approval.
     "letter.approval_requested",
     "letter.approved",
+    # P-10-T49 (DEC-4401): a v2 run's plan awaiting approval and its SHL-10 proposals.
+    "agent_run.needs_input",
+    "agent_run.plan_decided",
+    "agent_run.ready_for_review",
+    "agent_run.failed_v2",
+    "agent_run.completed",
+    "proposal.created",
+    "proposal.decided",
+    "proposal.undone",
 }
 # Contract §2: firm admin, practice leader (in scope), quality partner, engagement partner,
 # manager, senior, staff, reviewer, EQR reviewer.

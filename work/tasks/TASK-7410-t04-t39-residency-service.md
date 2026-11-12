@@ -2,7 +2,7 @@
 id: TASK-7410
 title: "T-04-T39: Residency and state allocation service: facts with citations, option set and conflict rules in code, confirmation as an SHL-10 proposal, client question via issue.send_to_client, allocation read model and xlsx export"
 spec: SPEC-649
-acceptance_criteria: [AC-8.1, AC-8.2, AC-8.3, AC-8.4, AC-8.6]
+acceptance_criteria: [AC-8]  # AC-8.1 to AC-8.4, AC-8.6
 risk_zone: amber
 status: in-review
 branch: s38-t04-t39

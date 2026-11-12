@@ -18,7 +18,9 @@ describe("C8: the trial balance's tax layers", () => {
 
   it("states every row's tax basis as UTB + AJE + RJE + TJE", () => {
     for (const r of rows) {
-      expect(n(r.tax_basis), r.account_code).toBe(n(r.unadjusted) + n(r.aje) + n(r.rje) + n(r.tje));
+      expect(n(r.tax_basis), r.account_code).toBe(
+        n(r.unadjusted) + n(r.aje) + n(r.rje) + n(r.tje),
+      );
     }
   });
 

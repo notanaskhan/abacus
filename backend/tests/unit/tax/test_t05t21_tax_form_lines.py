@@ -20,8 +20,8 @@ GOLDEN = ROOT / "backend" / "tests" / "golden" / "reference_sets" / "tax_form_li
 SUITE = ROOT / "evals" / "tax_account_mapper" / "suite.yaml"
 
 
-def _golden() -> dict[str, Any]:
-    return cast(dict[str, Any], json.loads(GOLDEN.read_text(encoding="utf-8")))
+def _golden() -> dict[str, Any]:  # Any: the golden file is untyped JSON
+    return cast(dict[str, Any], json.loads(GOLDEN.read_text(encoding="utf-8")))  # Any: JSON
 
 
 def _payload(*rows: dict[str, object]) -> dict[str, object]:
@@ -88,7 +88,7 @@ def test_the_golden_fixture_pins_both_drafts_hashes() -> None:
 
 def test_every_key_the_mapper_suite_uses_is_published_and_mappable() -> None:
     golden = _golden()
-    suite = cast(dict[str, Any], yaml.safe_load(SUITE.read_text(encoding="utf-8")))
+    suite = cast(dict[str, Any], yaml.safe_load(SUITE.read_text(encoding="utf-8")))  # Any: YAML
     assert set(suite["published_keys"]) <= set(golden["mappable_keys"])
     assert not set(golden["mappable_keys"]) & set(golden["totals"])
     assert {"L14", "L22", "M-2 5", "M-2 8", "M-2 9", "K 4c", "M-1 9"} <= set(golden["totals"])

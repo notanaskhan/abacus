@@ -66,7 +66,7 @@ A kind is one row of a person's feed, of one code. Adding one is a code change i
 - `realtime.py` is the stream and the outbox subscriber; the kernel half is `kernel/realtime.py`
   (framing, heartbeats, the 6-streams-per-person cap, wakes, re-auth every read on a wake).
 - **A topic** (`engagement:<id>`, `work_item:<id>`, `run:<id>`, `user:<id>`, `firm:<id>`,
-  `portal:<scope>`; `session:` is reserved) is authorised by the owner that registered it
+  `portal:<scope>`, `session:<id>`) is authorised by the owner that registered it
   (`kernel.realtime.register_topic(kind, authorizer)`, answering `content`, `metadata` or None).
 - **An invalidation:** a module makes one of its outbox events reach topics with
   `kernel.realtime.register_invalidation(event_type, Invalidation(ref_type, ref_field,

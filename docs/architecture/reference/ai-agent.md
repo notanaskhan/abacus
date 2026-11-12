@@ -195,8 +195,8 @@ states and codes, never text.
 A propose tool turns rows into one proposal with `agents.api.create_proposal(...)` (kind, title,
 `ProposedRow`s). The owning module registers where its rows point
 (`register_suggestion_target("return_field", engagement_of=...)`) and how an approved proposal is
-applied (`register_proposal_adapter(kind, adapter)`); the adapter runs on a person's approval in
-their unit of work. An `approved_write` runs in `ApprovedWriteWorkflow` under the person's grant.
+applied (`register_proposal_adapter(kind, adapter)`); the adapter runs after a person's approval,
+re-checks that person's own right and records them as the decider. An `approved_write` runs in `ApprovedWriteWorkflow` under the person's grant.
 
 ### Real time
 Run items, questions and decisions reach the browser on `GET /v1/events` (topics `run:<id>`,

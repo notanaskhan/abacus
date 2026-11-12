@@ -167,6 +167,7 @@ def test_v1_specs_load_unchanged_and_v2_holds_only_the_drafter_until_t40() -> No
     # T-04-T31 the tax fix runner and the analyst's explain mode; T-04-T37 the TAX-08 assistant
     # (DEC-4316). The v1 agents stay v1.
     assert set(spec_v2.AGENTS_V2) == {
+        "tax.account_mapper",  # T-05-T23 (DEC-4406)
         "tax.return_drafter",
         "runtime.conformance",
         "issues.fix_runner",

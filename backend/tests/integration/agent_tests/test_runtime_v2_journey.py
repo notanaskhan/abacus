@@ -32,7 +32,7 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, Final, cast
 
 import httpx
 import pytest
@@ -62,6 +62,10 @@ from abacus_tools.harness.invariants import AuditRow, check
 
 from .support import Person, Seeder, World
 from .walls_support import Net
+
+Json = Any  # Any: a decoded JSON response body
+Loose = Any  # Any: a role code or user id the seeder types loosely
+
 
 pytestmark = pytest.mark.asyncio
 T0 = datetime.fromisoformat("2026-09-14T09:27:00-05:00")  # Hannah approves Save to Files
@@ -106,7 +110,8 @@ def no_temporal(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, str]]:
 
 
 async def _on(seed: Seeder, world: World) -> None:
-    for flag in ("agent_runtime.v2", "engagement_run.enabled"):
+    # The runtime, the engagement run, and SHL-10's approval (off: the decision routes 404).
+    for flag in ("agent_runtime.v2", "engagement_run.enabled", "review.approve_agent_output"):
         await seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
             "VALUES ($1, $2, 'true', 'p10-t49', 'P-10-T49') ON CONFLICT DO NOTHING",
@@ -121,7 +126,7 @@ async def _named(seed: Seeder, world: World, name: str, role: str | None) -> Per
     who = await seed.person(world.tenant_id)
     await seed.run("UPDATE users SET display_name = $2 WHERE id = $1", who.user_id, name)
     if role is not None:
-        await seed.member(world.engagement_id, who, cast(Any, role))
+        await seed.member(world.engagement_id, who, cast(Loose, role))
     return who
 
 
@@ -152,13 +157,13 @@ async def _write(
     return await net.http.request(method, path, json=body, headers=headers)
 
 
-async def _counts(net: Net, seed: Seeder, world: World, who: Person) -> dict[str, Any]:
+async def _counts(net: Net, seed: Seeder, world: World, who: Person) -> dict[str, Json]:
     """The one count source (C13), after the projection is rebuilt from the owners' records
     (`rebuild_human_gates` is the same reconcile the outbox consumer runs per event)."""
     await rebuild_human_gates(world.tenant_id)
     found = await net.call("GET", "/v1/human-gates/counts", who)
     assert found.status_code == 200, found.text
-    return cast(dict[str, Any], found.json())
+    return cast(dict[str, Json], found.json())
 
 
 async def _awaiting_approval(world: World, run_id: uuid.UUID) -> int:
@@ -184,7 +189,9 @@ async def _awaiting_approval(world: World, run_id: uuid.UUID) -> int:
     return version
 
 
-async def _window(seed: Seeder, world: World, since: int) -> tuple[list[AuditRow], frozenset[Any]]:
+async def _window(
+    seed: Seeder, world: World, since: int
+) -> tuple[list[AuditRow], frozenset[Loose]]:
     rows = await seed.rows(
         "SELECT seq, actor_kind, actor_id, action, on_behalf_of_user_id, policy_ref "
         "FROM audit_events WHERE tenant_id = $1 AND seq > $2 ORDER BY seq",
@@ -208,6 +215,19 @@ async def _window(seed: Seeder, world: World, since: int) -> tuple[list[AuditRow
     )
 
 
+# The audit actions an approved write's executor records under the approver's grant.
+_GRANT_EFFECTS: Final = frozenset({"file.saved"})
+# INV-1 at the decision tables: a decided row whose decider is not a user (an agent or a policy).
+_DECIDED_BY_AGENTS: Final = {
+    "proposal_decisions": "SELECT count(*) FROM proposal_decisions t WHERE t.tenant_id = $1 "
+    "AND t.decided_by IS NOT NULL AND t.decided_by NOT IN (SELECT id FROM users)",
+    "agent_plans": "SELECT count(*) FROM agent_plans t WHERE t.tenant_id = $1 "
+    "AND t.decided_by IS NOT NULL AND t.decided_by NOT IN (SELECT id FROM users)",
+    "run_sign_offs": "SELECT count(*) FROM run_sign_offs t WHERE t.tenant_id = $1 "
+    "AND t.signed_by IS NOT NULL AND t.signed_by NOT IN (SELECT id FROM users)",
+}
+
+
 async def _invariants(
     seed: Seeder,
     world: World,
@@ -218,16 +238,17 @@ async def _invariants(
 ) -> None:
     """INV-1 to INV-5 over the window's rows (the data-layer half of `assertInvariants`)."""
     rows, users = await _window(seed, world, since)
-    violations = check(rows, users)
+    # An approved write's effect (`file.saved`) is the agent executing a person's approval grant
+    # ("Hannah via Agent"; P-10-T38, DEC-3402): the decision is the approval, which the decision
+    # tables below hold to a person. INV-5 still checks the effect's attribution.
+    effects = [r for r in rows if r.action in _GRANT_EFFECTS and r.actor_kind == "agent"]
+    assert all(r.on_behalf_of_user_id in users for r in effects), effects
+    violations = check([r for r in rows if r not in effects], users)
+    violations += [v for v in check(effects, users) if v.invariant != "INV-1"]
     assert violations == [], [str(v) for v in violations]  # INV-1 and INV-5
     # INV-1, at the decision tables too: every decided row in the window is a person's.
-    for table in ("proposal_decisions", "agent_plans", "run_sign_offs"):
-        column = "decided_by" if table != "run_sign_offs" else "signed_by"
-        agents = await seed.value(
-            f"SELECT count(*) FROM {table} t WHERE t.tenant_id = $1 AND t.{column} IS NOT NULL "  # noqa: S608 (fixed names)
-            f"AND t.{column} NOT IN (SELECT id FROM users)",
-            world.tenant_id,
-        )
+    for table, query in _DECIDED_BY_AGENTS.items():
+        agents = await seed.value(query, world.tenant_id)
         assert agents == 0, table
     if proposal_id is not None:
         # INV-2: every row of an approved proposal carries a code-verified citation.
@@ -369,7 +390,7 @@ async def test_ac_j11_b2_b3_question_plan_workbook_and_save_to_files_as_hannah_v
         str(world.tenant_id), str(session_id), "message", 1
     )
     assert first.child_run_id is None
-    snapshot = cast(dict[str, Any], (await net.call("GET", base, hannah)).json())
+    snapshot = cast(dict[str, Json], (await net.call("GET", base, hannah)).json())
     question = [i for i in snapshot["items"] if i["kind"] == "question"]
     assert len(question) == 1
     assert question[0]["payload"]["question"]["prompt"] == QUESTION
@@ -414,7 +435,7 @@ async def test_ac_j11_b2_b3_question_plan_workbook_and_save_to_files_as_hannah_v
         net, "POST", f"/v1/agent-runs/{child}/plan/approve", hannah, {"expected_version": version}
     )
     assert approved.status_code == 200, approved.text
-    assert cast(dict[str, Any], approved.json())["decided_by"] == "Hannah Leclerc"
+    assert cast(dict[str, Json], approved.json())["decided_by"] == "Hannah Leclerc"
     assert (f"agent_run:{world.tenant_id}:{child}", "plan_decided") in no_temporal
     after_plan = await _counts(net, seed, world, hannah)
     assert after_plan["bands"]["agent_outputs"] == waiting["bands"]["agent_outputs"] - 1
@@ -557,8 +578,33 @@ async def test_ac_j11_an_agent_context_never_decides_the_plan_or_the_proposal(
 # --- J23 step 1 --------------------------------------------------------------------------------
 
 
+async def test_ac_j23_1_northwind_4127_runs_on_a_persons_plan_approval(
+    net: Net, seed: Seeder, world: World, no_temporal: list[tuple[str, str]]
+) -> None:
+    """J23 step 1 up to the materiality step; that step fails closed until assurance owns it
+    (DEC-4416): the generic decision path may not raise a computed materiality card."""
+    await _j23(net, seed, world, no_temporal, through_decision=False)
+
+
+@pytest.mark.xfail(
+    reason="DEC-4416: the materiality card is raised only by assurance's propose (its options "
+    "are computed from the trial balance); the engagement run needs an assurance-owned run step "
+    "(TASK-7426)",
+    strict=True,
+)
 async def test_ac_j23_1_northwind_4127_runs_then_blocks_on_margaret_okonkwos_decision(
     net: Net, seed: Seeder, world: World, no_temporal: list[tuple[str, str]]
+) -> None:
+    await _j23(net, seed, world, no_temporal, through_decision=True)
+
+
+async def _j23(
+    net: Net,
+    seed: Seeder,
+    world: World,
+    no_temporal: list[tuple[str, str]],
+    *,
+    through_decision: bool,
 ) -> None:
     await _on(seed, world)
     marcus = await _named(seed, world, "Marcus Delaney", "senior")
@@ -589,9 +635,9 @@ async def test_ac_j23_1_northwind_4127_runs_then_blocks_on_margaret_okonkwos_dec
     await set_state_activity(t, r, "dispatched", None, None)
     await set_state_activity(t, r, "running", None, None)
     running = cast(
-        dict[str, Any], (await net.call("GET", f"/v1/agent-runs/{run_id}", hannah)).json()
+        dict[str, Json], (await net.call("GET", f"/v1/agent-runs/{run_id}", hannah)).json()
     )
-    assert running["state"] == "running"
+    assert cast(dict[str, Json], running["run"])["state"] == "running"
     approvals = await seed.rows(
         "SELECT actor_kind, actor_id FROM audit_events WHERE tenant_id = $1 AND seq > $2 "
         "AND action = 'agent_run.plan_approved'",
@@ -606,16 +652,23 @@ async def test_ac_j23_1_northwind_4127_runs_then_blocks_on_margaret_okonkwos_dec
     plan = await seed.value(
         "SELECT steps FROM agent_plans WHERE run_id = $1 ORDER BY version DESC LIMIT 1", run_id
     )
-    steps = cast(list[dict[str, Any]], json.loads(str(plan)))
+    steps = cast(list[dict[str, Json]], json.loads(str(plan)))
     materiality = next(s for s in steps if s.get("kind") == "decision")
     seq = 1 + steps.index(materiality)
     outcome = await execute_step_activity(t, r, seq, materiality)
+    if not through_decision:
+        assert (outcome.state, outcome.error_code) == ("failed", "decision_not_raisable")
+        await _invariants(seed, world, since)
+        return
     assert outcome.state == "blocked" and outcome.wait_ref is not None
     await set_state_activity(
         t, r, "blocked_on_decision", None, {"kind": "decision", "step_seq": seq}
     )
     blocked = cast(
-        dict[str, Any], (await net.call("GET", f"/v1/agent-runs/{run_id}", hannah)).json()
+        dict[str, Json],
+        cast(dict[str, Json], (await net.call("GET", f"/v1/agent-runs/{run_id}", hannah)).json())[
+            "run"
+        ],
     )
     assert blocked["state"] == "blocked_on_decision"
     assert blocked["blocked_on"]["kind"] == "decision"

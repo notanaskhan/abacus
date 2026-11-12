@@ -10,9 +10,9 @@
 - `reveal_partner_tin` is the only path that opens a partner's envelope: a live, onshore person
   with recent MFA and a reason code holding `tin.reveal` on the return's engagement (the matrix's
   `mfa_recent` and `not_offshore` conditions, enforced by `authorise`). One `partner_tin_reveals`
-  row and one `partner_tin.revealed` audit event (the reason, never the value) in the same unit of
-  work; at most `REVEAL_LIMIT` partner reveals per person in a rolling hour (DEC-232's cap). The
-  agent, the system and portal principals never reveal (matrix deny; INV-4).
+  row (with the reason) and one `partner_tin.revealed` audit event (its id, never the value) in
+  the same unit of work; at most `REVEAL_LIMIT` partner reveals per person in a rolling hour
+  (DEC-232's cap). The agent, the system and portal principals never reveal (matrix deny; INV-4).
 """
 
 from __future__ import annotations
@@ -212,7 +212,7 @@ async def reveal_partner_tin(
         tx.record(
             "partner_tin.revealed",
             target=Target("partner", partner_id),
-            after=Ref(reveal=reveal_id, reason=reason),
+            after=Ref(reveal_id=reveal_id),  # the reason code is on the reveal row
             scope=Scope(engagement_id=found.engagement_id),
         )
     value = (await open_sealed(ctx.tenant_id, found.sealed, _aad(partner_id))).decode()

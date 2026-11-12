@@ -89,6 +89,10 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # P-10-T27 (DEC-3117): the real-time invalidations of `/v1/events`.
         "notification.created",
         "request_item.status_changed",
+        "agent_run.plan_decided",  # P-10-T49 (DEC-4401): the plan's C13 gate closes
+        "proposal.created",  # P-10-T49: a v2 run's proposal opens its C13 gate
+        "residency_determination.confirmed",  # T-04-T39: the option's worksheets activate
+        "session.items_changed",  # TASK-7325: a session's items reach its topic
         EVIDENCE_VERSION_CREATED,
         "knowledge_document.added",
         "client_invitation.issued",  # SPEC-015
