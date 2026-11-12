@@ -116743,6 +116743,18 @@
             "title": "Basis",
             "type": "string"
           },
+          "item_l": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookItemLOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "x-tri": true
+          },
           "rows": {
             "cls": "restricted",
             "items": {
@@ -116764,6 +116776,18 @@
             ],
             "title": "Tie",
             "type": "string"
+          },
+          "totals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookCapitalTotalsOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "x-tri": true
           },
           "view": {
             "cls": "internal",
@@ -116822,6 +116846,18 @@
             "type": "string",
             "x-tri": true
           },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Name"
+          },
           "partner_id": {
             "cls": "internal",
             "format": "uuid",
@@ -116838,6 +116874,56 @@
           "ending"
         ],
         "title": "WorkbookCapitalRowOut",
+        "type": "object"
+      },
+      "WorkbookCapitalTotalsOut": {
+        "additionalProperties": false,
+        "description": "T-05-T34: the server's column totals (the screen never sums).",
+        "properties": {
+          "beginning": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Beginning",
+            "type": "string",
+            "x-tri": true
+          },
+          "contributions": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Contributions",
+            "type": "string",
+            "x-tri": true
+          },
+          "distributions": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Distributions",
+            "type": "string",
+            "x-tri": true
+          },
+          "ending": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Ending",
+            "type": "string",
+            "x-tri": true
+          },
+          "income": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Income",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "beginning",
+          "contributions",
+          "income",
+          "distributions",
+          "ending"
+        ],
+        "title": "WorkbookCapitalTotalsOut",
         "type": "object"
       },
       "WorkbookCellEditIn": {
@@ -116903,6 +116989,19 @@
             "title": "Author",
             "type": "string"
           },
+          "checkpoint_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checkpoint Id"
+          },
           "citation_ids": {
             "cls": "internal",
             "items": {
@@ -116924,6 +117023,27 @@
             "cls": "restricted",
             "title": "Formula",
             "x-tri": true
+          },
+          "proposal_note_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposal Note Id"
+          },
+          "recomputed": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Recomputed",
+            "type": "array"
           },
           "state": {
             "cls": "internal",
@@ -117001,6 +117121,36 @@
           "writer"
         ],
         "title": "WorkbookCellProvenanceOut",
+        "type": "object"
+      },
+      "WorkbookFigureOut": {
+        "additionalProperties": false,
+        "description": "T-05-T37: a figure card's amount (gross rents, total deductions, \u2026), the server's.",
+        "properties": {
+          "amount": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string",
+            "x-tri": true
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "amount"
+        ],
+        "title": "WorkbookFigureOut",
         "type": "object"
       },
       "WorkbookFormLineOut": {
@@ -117286,6 +117436,54 @@
         "title": "WorkbookInterestTransferOut",
         "type": "object"
       },
+      "WorkbookItemLOut": {
+        "additionalProperties": false,
+        "description": "T-05-T34: Item L's ending capital (the partners') against the M-2's line 9.",
+        "properties": {
+          "capital_ending": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Capital Ending",
+            "type": "string",
+            "x-tri": true
+          },
+          "difference": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Difference",
+            "type": "string",
+            "x-tri": true
+          },
+          "m2_ending": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "M2 Ending",
+            "type": "string",
+            "x-tri": true
+          },
+          "tie": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "off",
+              "check",
+              "pending",
+              "ties_once_posted",
+              "reconciled"
+            ],
+            "title": "Tie",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capital_ending",
+          "m2_ending",
+          "tie",
+          "difference"
+        ],
+        "title": "WorkbookItemLOut",
+        "type": "object"
+      },
       "WorkbookJournalEntriesOut": {
         "additionalProperties": false,
         "properties": {
@@ -117352,6 +117550,35 @@
         "title": "WorkbookJournalEntryOut",
         "type": "object"
       },
+      "WorkbookM2LineOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string",
+            "x-tri": true
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "line": {
+            "cls": "internal",
+            "title": "Line",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "line",
+          "label",
+          "amount"
+        ],
+        "title": "WorkbookM2LineOut",
+        "type": "object"
+      },
       "WorkbookM2Out": {
         "additionalProperties": false,
         "properties": {
@@ -117381,6 +117608,27 @@
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Ending",
             "type": "string",
+            "x-tri": true
+          },
+          "item_l": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookItemLOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "x-tri": true
+          },
+          "lines": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookM2LineOut"
+            },
+            "title": "Lines",
+            "type": "array",
             "x-tri": true
           },
           "tie": {
@@ -118679,6 +118927,15 @@
       "WorkbookTalliesOut": {
         "additionalProperties": false,
         "properties": {
+          "figures": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookFigureOut"
+            },
+            "title": "Figures",
+            "type": "array",
+            "x-tri": true
+          },
           "items": {
             "cls": "restricted",
             "items": {
@@ -118757,6 +119014,20 @@
             "title": "Account Name",
             "type": "string"
           },
+          "adjusted": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Adjusted",
+            "x-tri": true
+          },
           "aje": {
             "cls": "restricted",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
@@ -118775,6 +119046,40 @@
             ],
             "cls": "internal",
             "title": "Form Line Key"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "enum": [
+                  "assets",
+                  "liabilities",
+                  "equity",
+                  "income",
+                  "deductions",
+                  "unmapped"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Group"
+          },
+          "prior_year": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Prior Year",
+            "x-tri": true
           },
           "rje": {
             "cls": "restricted",
@@ -118817,6 +119122,90 @@
         "title": "WorkbookTbRowOut",
         "type": "object"
       },
+      "WorkbookTbTotalOut": {
+        "additionalProperties": false,
+        "description": "T-05-T37: a section's totals or the TB total, computed by the server.",
+        "properties": {
+          "adjusted": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Adjusted",
+            "type": "string",
+            "x-tri": true
+          },
+          "aje": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Aje",
+            "type": "string",
+            "x-tri": true
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "prior_year": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Prior Year",
+            "x-tri": true
+          },
+          "rje": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Rje",
+            "type": "string",
+            "x-tri": true
+          },
+          "tax_basis": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Tax Basis",
+            "type": "string",
+            "x-tri": true
+          },
+          "tje": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Tje",
+            "type": "string",
+            "x-tri": true
+          },
+          "unadjusted": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unadjusted",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "unadjusted",
+          "aje",
+          "rje",
+          "adjusted",
+          "tje",
+          "tax_basis"
+        ],
+        "title": "WorkbookTbTotalOut",
+        "type": "object"
+      },
       "WorkbookTrialBalanceOut": {
         "additionalProperties": false,
         "properties": {
@@ -118826,6 +119215,15 @@
               "$ref": "#/components/schemas/WorkbookTbRowOut"
             },
             "title": "Rows",
+            "type": "array",
+            "x-tri": true
+          },
+          "totals": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookTbTotalOut"
+            },
+            "title": "Totals",
             "type": "array",
             "x-tri": true
           },
@@ -269621,6 +270019,7 @@
     },
     "/v1/tax-returns/{return_id}/capital-accounts": {
       "get": {
+        "description": "T-05-T34: 05's partner rows (tax basis), server totals and the Item L facts.",
         "operationId": "entity_capital_accounts",
         "parameters": [
           {
@@ -269747,16 +270146,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Capital Accounts Route",
@@ -271444,7 +271833,7 @@
     },
     "/v1/tax-returns/{return_id}/journal-entries": {
       "get": {
-        "description": "AJE, RJE and TJE over C8; propose and approve go through A-06's endpoints.",
+        "description": "T-05-T33: C8's AJEs, RJEs and TJEs on the return (proposing and approving are A-06's).",
         "operationId": "entity_journal_entries",
         "parameters": [
           {
@@ -271540,16 +271929,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Journal Entries Route",
@@ -273404,6 +273783,7 @@
     },
     "/v1/tax-returns/{return_id}/schedules/k": {
       "get": {
+        "description": "T-05-T34 (DEC-4619): 06's lines with 09's partner shares and a tie per line.",
         "operationId": "entity_schedule_k",
         "parameters": [
           {
@@ -273530,16 +273910,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Schedule K Route",
@@ -273551,6 +273921,7 @@
     },
     "/v1/tax-returns/{return_id}/schedules/k/lines/{line}/breakdown": {
       "get": {
+        "description": "T-05-T34: Form 8825's per-property amounts behind a Schedule K line (sheet 08).",
         "operationId": "entity_schedule_k_breakdown",
         "parameters": [
           {
@@ -273655,16 +274026,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Schedule K Breakdown Route",
@@ -273676,6 +274037,7 @@
     },
     "/v1/tax-returns/{return_id}/schedules/m2": {
       "get": {
+        "description": "T-05-T34: 07 as drafted, or rebuilt from 05's partner totals (what the fix writes).",
         "operationId": "entity_m2",
         "parameters": [
           {
@@ -273785,16 +274147,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity M2 Route",
@@ -274344,6 +274696,7 @@
     },
     "/v1/tax-returns/{return_id}/trial-balance": {
       "get": {
+        "description": "T-05-T33 (DEC-4618): C8's tax layers by account or form line; `unmapped` is the whole TB's\ncount (the export gate), whatever the filter.",
         "operationId": "entity_trial_balance",
         "parameters": [
           {
@@ -274502,16 +274855,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Trial Balance Route",
@@ -274523,6 +274866,7 @@
     },
     "/v1/tax-returns/{return_id}/trial-balance/tallies": {
       "get": {
+        "description": "T-05-T33: each column foots to $0; `unmapped` checks the export gate.",
         "operationId": "entity_tallies",
         "parameters": [
           {
@@ -274618,16 +274962,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Tallies Route",
@@ -275140,7 +275474,7 @@
         "x-abacus-action": "workbook.read"
       },
       "put": {
-        "description": "`cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422).",
+        "description": "`cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422). T-05-T35\n(DEC-4620): the preparer's edit recomputes its dependents and saves a checkpoint; a\nreviewer's edit becomes a proposal note on the cell and the cell does not change.",
         "operationId": "entity_edit_cell",
         "parameters": [
           {
@@ -275276,16 +275610,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Edit Cell Route",

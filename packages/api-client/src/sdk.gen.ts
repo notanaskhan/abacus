@@ -14801,6 +14801,8 @@ export const returnAssign = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Entity Capital Accounts Route
+ *
+ * T-05-T34: 05's partner rows (tax basis), server totals and the Item L facts.
  */
 export const entityCapitalAccounts = <ThrowOnError extends boolean = false>(options: Options<EntityCapitalAccountsData, ThrowOnError>): RequestResult<EntityCapitalAccountsResponses, EntityCapitalAccountsErrors, ThrowOnError> => (options.client ?? client).get<EntityCapitalAccountsResponses, EntityCapitalAccountsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -14965,7 +14967,7 @@ export const entityIssues = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Entity Journal Entries Route
  *
- * AJE, RJE and TJE over C8; propose and approve go through A-06's endpoints.
+ * T-05-T33: C8's AJEs, RJEs and TJEs on the return (proposing and approving are A-06's).
  */
 export const entityJournalEntries = <ThrowOnError extends boolean = false>(options: Options<EntityJournalEntriesData, ThrowOnError>): RequestResult<EntityJournalEntriesResponses, EntityJournalEntriesErrors, ThrowOnError> => (options.client ?? client).get<EntityJournalEntriesResponses, EntityJournalEntriesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15146,6 +15148,8 @@ export const entityReconciliation = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Entity Schedule K Route
+ *
+ * T-05-T34 (DEC-4619): 06's lines with 09's partner shares and a tie per line.
  */
 export const entityScheduleK = <ThrowOnError extends boolean = false>(options: Options<EntityScheduleKData, ThrowOnError>): RequestResult<EntityScheduleKResponses, EntityScheduleKErrors, ThrowOnError> => (options.client ?? client).get<EntityScheduleKResponses, EntityScheduleKErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15155,6 +15159,8 @@ export const entityScheduleK = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Entity Schedule K Breakdown Route
+ *
+ * T-05-T34: Form 8825's per-property amounts behind a Schedule K line (sheet 08).
  */
 export const entityScheduleKBreakdown = <ThrowOnError extends boolean = false>(options: Options<EntityScheduleKBreakdownData, ThrowOnError>): RequestResult<EntityScheduleKBreakdownResponses, EntityScheduleKBreakdownErrors, ThrowOnError> => (options.client ?? client).get<EntityScheduleKBreakdownResponses, EntityScheduleKBreakdownErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15164,6 +15170,8 @@ export const entityScheduleKBreakdown = <ThrowOnError extends boolean = false>(o
 
 /**
  * Entity M2 Route
+ *
+ * T-05-T34: 07 as drafted, or rebuilt from 05's partner totals (what the fix writes).
  */
 export const entityM2 = <ThrowOnError extends boolean = false>(options: Options<EntityM2Data, ThrowOnError>): RequestResult<EntityM2Responses, EntityM2Errors, ThrowOnError> => (options.client ?? client).get<EntityM2Responses, EntityM2Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15231,6 +15239,9 @@ export const recordTransmission = <ThrowOnError extends boolean = false>(options
 
 /**
  * Entity Trial Balance Route
+ *
+ * T-05-T33 (DEC-4618): C8's tax layers by account or form line; `unmapped` is the whole TB's
+ * count (the export gate), whatever the filter.
  */
 export const entityTrialBalance = <ThrowOnError extends boolean = false>(options: Options<EntityTrialBalanceData, ThrowOnError>): RequestResult<EntityTrialBalanceResponses, EntityTrialBalanceErrors, ThrowOnError> => (options.client ?? client).get<EntityTrialBalanceResponses, EntityTrialBalanceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15240,6 +15251,8 @@ export const entityTrialBalance = <ThrowOnError extends boolean = false>(options
 
 /**
  * Entity Tallies Route
+ *
+ * T-05-T33: each column foots to $0; `unmapped` checks the export gate.
  */
 export const entityTallies = <ThrowOnError extends boolean = false>(options: Options<EntityTalliesData, ThrowOnError>): RequestResult<EntityTalliesResponses, EntityTalliesErrors, ThrowOnError> => (options.client ?? client).get<EntityTalliesResponses, EntityTalliesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15300,7 +15313,9 @@ export const entityCell = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Entity Edit Cell Route
  *
- * `cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422).
+ * `cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422). T-05-T35
+ * (DEC-4620): the preparer's edit recomputes its dependents and saves a checkpoint; a
+ * reviewer's edit becomes a proposal note on the cell and the cell does not change.
  */
 export const entityEditCell = <ThrowOnError extends boolean = false>(options: Options<EntityEditCellData, ThrowOnError>): RequestResult<EntityEditCellResponses, EntityEditCellErrors, ThrowOnError> => (options.client ?? client).put<EntityEditCellResponses, EntityEditCellErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

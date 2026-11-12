@@ -12,6 +12,7 @@ import { useFlag } from "../../app-core/flags";
 import { SCREEN_OF, type Section, isEntityForm, sectionOf, slugOf } from "../../domain/tax";
 import { to } from "../../routes/to";
 import { EntityReturnLayout, NOT_BUILT } from "./EntityReturnLayout";
+import { Financials } from "../TXP-02/Financials";
 import { TXP00, frameOf } from "./index";
 
 export type EntitySlug = "agent" | "issues" | "workpaper" | "activity" | "review";
@@ -72,8 +73,10 @@ export function EntityReturn({
     >
       {section.tab === "agent" ? (
         <AgentTab returnId={returnId} onComposer={onComposer} />
+      ) : section.review === "financials" ? (
+        <Financials returnId={returnId} />
       ) : (
-        // TXP-10/11/01/02/05/07 land with their rows; until then the planned state, never blank.
+        // TXP-10/11/01/05/07 land with their rows; until then the planned state, never blank.
         <EmptyState title={NOT_BUILT} icon="clock">
           {screen ?? ""}
         </EmptyState>

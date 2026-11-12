@@ -252,6 +252,29 @@ class WorkbookTbRowOut(BaseModel):
     rje: Annotated[Decimal, Tri]
     tje: Annotated[Decimal, Tri]
     tax_basis: Annotated[Decimal, Tri]
+    # T-05-T37 (DEC-4622), additive: ATB, the prior year's TB once imported, and the section
+    adjusted: Annotated[MaybeMoney, Tri] = None
+    prior_year: Annotated[MaybeMoney, Tri] = None
+    group: Annotated[
+        Literal["assets", "liabilities", "equity", "income", "deductions", "unmapped"] | None,
+        Internal,
+    ] = None
+
+
+class WorkbookTbTotalOut(BaseModel):
+    """T-05-T37: a section's totals or the TB total, computed by the server."""
+
+    model_config = _cfg()
+
+    key: Annotated[str, Internal]  # "assets" … "deductions", "tb_total"
+    label: Annotated[str, Internal]
+    unadjusted: Annotated[Decimal, Tri]
+    aje: Annotated[Decimal, Tri]
+    rje: Annotated[Decimal, Tri]
+    adjusted: Annotated[Decimal, Tri]
+    tje: Annotated[Decimal, Tri]
+    tax_basis: Annotated[Decimal, Tri]
+    prior_year: Annotated[MaybeMoney, Tri] = None
 
 
 class WorkbookTrialBalanceOut(BaseModel):
@@ -260,6 +283,9 @@ class WorkbookTrialBalanceOut(BaseModel):
     view: Annotated[Literal["account", "line"], Internal]
     rows: Annotated[list[WorkbookTbRowOut], Tri]
     unmapped: Annotated[int, Field(ge=0), Internal]
+    totals: Annotated[list[WorkbookTbTotalOut], Tri] = Field(
+        default_factory=list[WorkbookTbTotalOut]
+    )
 
 
 class WorkbookTallyOut(BaseModel):
@@ -271,10 +297,23 @@ class WorkbookTallyOut(BaseModel):
     difference: Annotated[MaybeMoney, Tri] = None
 
 
+class WorkbookFigureOut(BaseModel):
+    """T-05-T37: a figure card's amount (gross rents, total deductions, …), the server's."""
+
+    model_config = _cfg()
+
+    key: Annotated[str, Internal]
+    label: Annotated[str, Internal]
+    amount: Annotated[Decimal, Tri]
+
+
 class WorkbookTalliesOut(BaseModel):
     model_config = _cfg()
 
     items: Annotated[list[WorkbookTallyOut], Tri]
+    figures: Annotated[list[WorkbookFigureOut], Tri] = Field(
+        default_factory=list[WorkbookFigureOut]
+    )
 
 
 class WorkbookJournalEntryOut(BaseModel):
@@ -909,10 +948,13 @@ async def entity_trial_balance_route(
     rows, unmapped = await trial_balance(
         ctx, return_id, loaded.facts.engagement_id, view, statement, filter_ == "unmapped"
     )
+    from abacus.modules.tax.entity_tb import totals
+
     return WorkbookTrialBalanceOut(
         view=view,
         rows=[WorkbookTbRowOut(**r.__dict__) for r in rows],
         unmapped=unmapped,
+        totals=[WorkbookTbTotalOut(**t.__dict__) for t in totals(rows)],
     )
 
 
@@ -927,12 +969,13 @@ async def entity_tallies_route(return_id: UUID, ctx: Ctx) -> WorkbookTalliesOut:
     await _flag_on(ctx)
     await _workbook_read(ctx, return_id)
     loaded = await load_return(ctx, return_id)
-    found = await tb_tallies(ctx, return_id, loaded.facts.engagement_id)
+    found, cards = await tb_tallies(ctx, return_id, loaded.facts.engagement_id)
     return WorkbookTalliesOut(
         items=[
             WorkbookTallyOut(key=t.key, label=t.label, state=t.state, difference=t.difference)
             for t in found
-        ]
+        ],
+        figures=[WorkbookFigureOut(key=f.key, label=f.label, amount=f.amount) for f in cards],
     )
 
 
