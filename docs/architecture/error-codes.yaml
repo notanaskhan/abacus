@@ -784,6 +784,11 @@ codes:
     - abacus.modules.engagements.drafts.DraftIncomplete
     - abacus.modules.engagements.intake.IntakeIncomplete
     summary: 'A step of the draft still has a problem (`facts.step`): validate it to see which.'
+  draft_not_allowed:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.draft_entry.DraftNotAllowed
+    summary: '409: the return is past final approval; a draft would rewrite the signer''s record.'
   draft_without_watermark:
     status: 422
     raised_by:

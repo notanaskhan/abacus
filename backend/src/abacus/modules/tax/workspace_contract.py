@@ -627,9 +627,13 @@ async def final_approval_request_route(
     errors=(409, 501),
 )
 async def draft_run_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
+    """TAX-02 Run draft and Re-run draft… (T-04-T55): a person's request starts a
+    `tax.return_drafter` run; 409 `draft_not_allowed` past final approval."""
+    from abacus.modules.tax.draft_entry import run_draft
+
     await _flag_on(ctx, TAX_AGENTS_ENABLED)
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    return ReturnRunAcceptedOut(agent_run_id=await run_draft(ctx, return_id))
 
 
 @workspace_router.get(
