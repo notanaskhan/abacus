@@ -48,4 +48,6 @@ falling back to polling.
   not in `lag_ms`.
 
 ## Progress log
+- 2026-11-12 (TASK-7428): the stream subjects' loader and the verdict tool are built; what is left
+  is the run itself on the perf stack and RB-28's rehearsal.
 - 2026-11-12: built; unit and infra tests pass (16 + 4); integration test left for the end pass.

@@ -66,16 +66,22 @@ firm with `make flag FIRM=<tenant_id> FLAG=realtime.sse VALUE=false OPERATOR=<na
 risk either way.
 
 ## Rehearsal (P-10-T51, on staging)
-Run during the runtime load test (`python -m abacus_tools.loadtest.run runtime_v2`, the
-synthetic firm PF-X1 only):
+Run during the runtime load test on the perf stack (QD-6: the runner never targets a shared
+hosted build), the synthetic firm PF-X1 only:
+0. Load the stream subjects once: `python -m abacus_tools.loadtest.stream_subjects --engagement
+   <the Northwind audit A1 id> --staging` (250 staff at the API's 6 streams each, staffed on the
+   engagement), then run `python -m abacus_tools.loadtest.run --profile runtime_v2 …`.
 1. At minute 10, with 1,500 streams open, turn `realtime.sse` off.
 2. Expect: streams close, `realtime.delivered` lines stop, clients poll (the API's request rate
    on the list routes rises), no 5xx on the list routes, no error in the browser console of an
    open run dock.
 3. At minute 15 turn it back on. Expect: clients reconnect with `Last-Event-ID`, receive what they
    missed in order, and `SseDeliveryLagMs` p95 returns under 2,000 ms within 5 minutes.
-4. Record the times, the peak `DatabaseConnections` and the p95s in the load report, set
-   `last_rehearsed` above, and file a dated fix for any target missed.
+4. Write the verdict: `python -m abacus_tools.loadtest.runtime_report --report
+   <runtime_v2-*.json> --api-log <the API's log for the window> --peak-connections <n>
+   --max-connections <n>` (first event, commit to delivery from `realtime.delivered`, the 70%
+   ceiling). Paste its table into the load report, set `last_rehearsed` above, and file a
+   dated fix for any target missed.
 
 ## Roll back
 The alarms and the metric filter are `infra/envs/staging/realtime_slo.tf`; removing them is a
