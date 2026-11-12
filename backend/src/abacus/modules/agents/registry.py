@@ -52,6 +52,7 @@ TABLES: frozenset[str] = frozenset(
         "engagement_ai_settings",
         "agent_tool_calls",  # P-10-T22 (0750): C17's idempotency key, claimed then done once
         "agent_run_traces",  # P-10-T44 (0820): a v2 run's frozen trace export, by version
+        "daily_briefings",  # I-02-T06 (0851): the Today brief's briefings and day snapshots
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -88,6 +89,13 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # I-02-T06 (0851): an engagement briefing or the viewer's day snapshot.
+    "daily_briefings": frozenset(
+        {"id", "tenant_id", "scope", "viewer_user_id", "engagement_id", "work_item_ids"}
+        | {"brief_date", "seq", "status", "unavailable_reason", "facts_hash", "blocks"}
+        | {"citation_ids", "agent_run_id", "prompt_ref", "capability_version", "counts"}
+        | {"lead_facts", "card_refs", "built_at"}
+    ),
     # P-10-T44 (0820): the frozen trace export; the record class and the time are the database's.
     "agent_run_traces": frozenset(
         {"id", "tenant_id", "run_id", "engagement_id", "projection", "version"}
@@ -255,6 +263,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # I-02-T06 (0851): a building row reaches its terminal state once (trigger).
+    "daily_briefings": frozenset(
+        {"status", "unavailable_reason", "blocks", "citation_ids", "agent_run_id", "counts"}
+        | {"lead_facts", "card_refs", "built_at"}
+    ),
     "autonomy_policy_drafts": frozenset(
         {"base_version_no", "sections", "schema_version", "version", "updated_at", "updated_by"}
     ),
