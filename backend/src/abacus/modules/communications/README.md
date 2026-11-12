@@ -50,3 +50,63 @@ Messages that leave the platform (ADR-065; SPEC-006). PROTECTED.
 ## Portal sign-in mail and its runbooks (P-08-T28; DEC-456)
 - Sign-in codes (`portal.sign_in_code`), renewed links (`portal.link_renewed`) and the MFA reset notice (`portal.mfa_reset_notice`) are C16 templates imported per environment before the firm's `portal.sign_in_v2` goes on; without one nothing is sent (the miss is logged by id), never a fallback constant.
 - Codes that do not arrive make people retry into the 15-minute lock: RB-35 sends that case to RB-20 (deliverability). A wrong-firm or wrong-branding code email is RB-36's pause.
+
+## Firm email templates, sender domains and the client-mail gate (R-01; C16 v1.1)
+Contract `docs/contracts/email-templates.md` (frozen v1.1). Flags: `portal.settings_editor`
+(template writes), `communications.firm_sender_domain` (sending-domain writes and From),
+`follow_ups.scheduled_send` (system-scheduled reminders). Runbooks: RB-20 (deliverability and the
+gate), `docs/runbooks/r01-portal-flip.md`.
+- **Templates are content** (AGENTS 16): firm rows imported (`template_import.py`, a
+  counsel-approved bundle, dry run first, fresh MFA) or edited in POR-20 (`template_service.py`:
+  drafts at `expected_version`, insert-only versions, publish with fresh MFA). Code holds only the
+  registered keys (`template_keys.py`, `register_email_template`) and the platform defaults' shape.
+- **Rendering is pure** (`render.py`): blocks, whitelisted `{variables}`, every value escaped, one
+  button whose address is the secure `{portal_link}`; the same input gives byte-identical output.
+- **Lint** (`lint.py`): no unregistered variable, amount, TIN, account number, platform name,
+  link outside the button, attachment words or second button; findings name rule and place,
+  never text. Publish, preview (`template_preview.py`) and import all run it.
+- **`send_templated`** (`template_send.py`): resolves the version in use (the firm's published,
+  else the platform default) and refuses, recording `blocked`, with the first reason that applies
+  (`template_missing`, `template_lint_failed`, `out_of_scope`, `firm_not_client_facing`,
+  `suppressed`).
+- **Follow-up policy** (`follow_up_policy.py`, DEC-74): one row per firm or the defaults (every 7
+  days, at most 4, weekdays 9:00 AM recipient time, a person sends); `next_send_at` is the one rule
+  the read and the scheduler share. `send_on_schedule` needs `follow_ups.scheduled_send`.
+- **Sender domains and From** (`sending_domains.py`, PROTECTED, DEC-950 to DEC-955): an SES
+  identity with Easy DKIM and MAIL FROM `bounce.<domain>`, verified within 72 hours or `failed`;
+  From the firm's verified domain when the flag is on, else the neutral sender under the firm's
+  name with Reply-To the firm's address.
+- **The client-mail gate** (`client_mail_open`, DEC-953): a real firm's client, third-party and
+  respondent mail stays closed until the platform opens it with two people
+  (`abacus_tools.client_mail open`, an ops task in the Tuesday window); a synthetic firm's goes to
+  the sink. `close` is the rollback.
+- **Deliveries** (`deliveries.py`): SES events drained every minute, once each; a permanent bounce
+  or complaint suppresses the address.
+
+## Firm intake and triage (N-01; SPEC-380; `docs/contracts/firm-intake.md`)
+Flags: `inbox.firm_intake` (firm routes), `portal.intake_upload` (POR-03), `matching.firm_intake`
+(matcher candidates). Runbooks: RB-80 (intake backlog), RB-81 (misfiled document), RB-24 (scanner
+down: intake fails closed), RB-32 (withdrawn portal uploads).
+- **One model, three channels** (`intake.py`, ADR-210 clause 1): `email`, `portal_upload`
+  (`portal_intake.py`) and `staff_logged` (Log received documents). Every message goes through
+  `record_inbound_message`, every file through `add_attachment`: at most 50 MB, typed from the
+  bytes and scanned before it is stored; a scanner outage refuses the file (RB-24), never stores it
+  unscanned.
+- **Matching is code** (never a model): the client a person picked, the named contact's client,
+  the portal principal's scope, or a sender rule on the address's HMAC; else unmatched.
+- **Who reads** (`intake_scope.py`, `inbox_read.py`; DEC-75, DEC-43): an unmatched thread is the
+  intake scope's only, by sender and subject; a matched one is read as its client is (a wall
+  answers 404). Bodies need `inbox.read_content`, original bytes `inbox.download`; both audited.
+- **AttachmentTriage** (`triage_workflow.py`, one run per attachment): evidence's upload steps by
+  name (extraction, word layer, PII scan, masked preview), then classify and flag
+  (`triage_classify.py`, `triage_flags.py`: `block_bulk`, `force_hold`, `info`), then a matched
+  attachment moves New → Waiting. A failed step never undoes the ones before it.
+- **Candidates** (`intake_candidates.py`): the matcher's intake-mode proposals through a slot
+  agents fills; a card names only destinations the reader may file to now.
+- **Apply** (`triage_apply.py`, ADR-210 clause 5): a person's decision per attachment, insert-only
+  (`triage_decisions`, `actor_kind = 'human'` by CHECK), then its effect in the same unit of work:
+  File (evidence's `intake_filing`, a new item or version n+1; superseding never deletes), Hold
+  (ask the client) or Ignore. The agent and the system are denied by the matrix.
+- **Withdrawal** (`intake_purge_workflow.py`): a client's withdrawn portal upload is erased after
+  30 days by destroying its own key (ADR-162 §7); a hold defers it a day at a time.
+- `triage_outcomes.py` feeds the matcher's shadow score (people's decisions, identifiers only).

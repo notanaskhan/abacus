@@ -115,3 +115,27 @@ SHL-09 to SHL-16 settled four deviations. A screen hosting them inherits these; 
 - **DF-13.** No "Propose changes for my approval" checkbox: every fix ends in a proposal a person accepts (`docs/plan/09-decisions-adrs.md`, DEC-53; `docs/screens/SHL-15.md`).
 - **Field ticks are sign-offs.** An L1 tick on a field records through the sign-off service at the field's target, so the ladder and the stale rule are one (`docs/screens/SHL-12.md`). Tick over the hash the server sent, never one the browser computed; EBP-02's value cells are the example (`DV-EBP-02-4`).
 - **Import-author variant.** An import's approval is the checkpoint's author's ladder, never the modal's preparer rule, and the modal reads the checkpoint's own facts (`docs/screens/SHL-12.md`, `docs/screens/SHL-16.md`; DEC-1970). This variant has no artboard, so its parity is report-only.
+
+## The room and the sheet compositions (R-01-T36)
+- **The room** (`apps/web/src/domain/portal/ScopedRequestRoom.tsx`, POR-14 on T7 reduced 720 and
+  T7-M 390): a scoped list of only the requests the server returned for the principal, in bands,
+  with "n of N" computed by the server; one expanded row carries the firm's guidance, the comment
+  thread and the upload. Reuse it for any audience that sees a slice of an engagement (A-09's
+  POR-23); never filter scope in the client, never show a request count the server did not send.
+- **The sheet** (POR-04): an O3 `SheetModal` 500 wide from y52 over the T7 page, a modal route
+  that keeps the page's query (`?binder=`, `?filter=`, `?category=`); ✕, the scrim and Esc return to
+  the page; below 768 px a full-screen sheet. Build request-detail sheets this way, not as a new
+  page, so the list keeps its place.
+
+## T8 thread rows and the PathPicker (N-01-T30)
+- INB-01 is T8 (filter bar 50 · rail 392 · reading flex), the TPL-08 specimen made live
+  (`apps/web/src/screens/INB-01/index.tsx`). A rail row is one `InboxThreadRow`: subject
+  (`subject_display`), from (`sender_display`, then ` · {client_name}` when matched), received time
+  in the firm's zone, and the thread roll-up glyph from `inbox_item` codes (a ring while any
+  attachment is `new`). Unmatched threads carry the amber "Match client…" chip; ignored rows are
+  muted. Never show the sender's raw address beyond what the API returns.
+- The rail polls every 10 s while visible (DEC-23); the reading pane opens
+  `GET /v1/inbox/threads/{id}`; INB-02 opens over it as `?ov=file&message=<uuid>`.
+- INB-02's destination picker is a tree the server builds per reader (`triage_apply.py`); every
+  node is re-authorised server-side. The client never filters destinations itself, and a
+  candidate is shown only if the server returned it.

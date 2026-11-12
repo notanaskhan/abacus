@@ -81,6 +81,13 @@ Anything else (database, KMS or storage unavailable; a raised exception in the a
 ## 8. Review
 Open the blameless review (ADR-097). Each action becomes a test, a lint rule, an alert or an ADR. The first likely action: an alarm on `evidence_withdrawals` rows with `block_reason = 'no_hold_check'`, or with `erased_at` null more than a day past `erase_after` and no hold, linked here. Update this runbook and set "Last reviewed against an incident".
 
+## Portal intake uploads (N-01-T14)
+A client's withdrawn "Upload something else" file is erased the same way by
+`IntakeWithdrawalPurge` (`intake_withdrawal:<tenant>:<upload>`, `communications/
+intake_purge_workflow.py`): 30 days on a durable timer, then its own key in
+`evidence_intake_object_keys` is destroyed; a hold, or no hold check registered, defers it a day
+at a time (fail closed). A misfiled intake document is not withdrawn: RB-81.
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|
