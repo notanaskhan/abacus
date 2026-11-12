@@ -54,6 +54,8 @@ const WorksheetsLive = lazyScreen(
   async () => (await import("../../screens/TAX-05/live")).WorksheetsLive,
 );
 const IssuesLive = lazyScreen(async () => (await import("../../screens/TAX-06/live")).IssuesLive);
+// T-04-T40: TXI-02 in fixture mode.
+const K1Resolver = lazyScreen(async () => (await import("../../screens/TXI-02")).K1Resolver);
 const ActivityLive = lazyScreen(
   async () => (await import("../../screens/TAX-07/live")).ActivityLive,
 );
@@ -224,7 +226,12 @@ export const taxK1ResolverRoute = createRoute({
   path: "/tax-returns/$returnId/k1-resolver/$activityId",
   validateSearch,
   component: function TaxK1ResolverPage(): JSX.Element {
-    return <Workspace tab="review" title="K-1 treatment" />;
+    // T-04-T40: the resolver in fixture mode (TXI-02 a); the live host lands with T-04-T38.
+    return (
+      <Workspace tab="review" title="K-1 treatment">
+        {FIXTURES ? <K1Resolver frame="a" /> : undefined}
+      </Workspace>
+    );
   },
 });
 
