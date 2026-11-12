@@ -115,6 +115,10 @@ register_citable("workpaper_cell", verify_workpaper_cell, display_workpaper_cell
 register_section_source(SECTION_SOURCE)
 register_suggestion_applier(CELL_TARGET, apply_cell_suggestion, engagement_of=paper_engagement)
 
+# T-05-T27 (DEC-4519): the closed formula grammar (ADR-237), for the tax workbook's write path.
+from abacus.modules.workpapers.compute.formula import FormulaError  # noqa: E402
+from abacus.modules.workpapers.compute.formula import parse as parse_formula  # noqa: E402
+from abacus.modules.workpapers.compute.formula import render as render_formula  # noqa: E402
 from abacus.modules.workpapers.service import CellEdit, set_cells  # noqa: E402 -- A-06-T28
 
 __all__ = [
@@ -127,6 +131,7 @@ __all__ = [
     "CodeTaken",
     "DesignedLayout",
     "ExceptionPrefill",
+    "FormulaError",
     "Grid",
     "IssueLink",
     "NoAssuranceItem",
@@ -153,9 +158,11 @@ __all__ = [
     "paper_engagement",
     "paper_id_of_kind",
     "paper_of_kind",
+    "parse_formula",
     "record_agent_result",
     "register_designed_layout",
     "register_sign_off_guard",  # A-05-T16 (DEC-2069)
+    "render_formula",
     "resolve",
     "router",
     "set_cells",

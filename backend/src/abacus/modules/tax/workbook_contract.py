@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast, get_args
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -26,7 +26,15 @@ from abacus.kernel._flags import TAX_ENTITY_WORKSPACE
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context, mask_tins_for
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Resource,
+    allowed_actions,
+    authorise,
+    current_context,
+    mask_tins_for,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -551,6 +559,16 @@ async def _flag_on(ctx: AuthContext) -> None:
         raise NotFound(TAX_ENTITY_WORKSPACE.name)
 
 
+async def _workbook_read(ctx: AuthContext, return_id: UUID) -> tuple[str, Resource]:
+    """The return as the viewer may see it (404 otherwise) and `workbook.read` on it."""
+    from abacus.modules.tax.overview import load_return, return_resource
+
+    loaded = await load_return(ctx, return_id)
+    resource = await return_resource(ctx, loaded)
+    await authorise(ctx, "workbook.read", resource)
+    return str(loaded.row.form), resource
+
+
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
@@ -595,8 +613,18 @@ async def entity_ownership_route(
     f"{_R}/workbook", action="workbook.read", response_model=WorkbookOut, errors=(501,)
 )
 async def workbook_route(return_id: UUID, ctx: Ctx) -> WorkbookOut:
+    """TXP-11's sheet tabs (T-05-T27): the form's sheets in order and what the viewer may do."""
     await _flag_on(ctx)
-    _not_yet()
+    form, resource = await _workbook_read(ctx, return_id)
+    from abacus.modules.tax.workbook_service import sheets_of
+
+    held = await allowed_actions(ctx, resource, get_args(WorkbookAction))
+    return WorkbookOut(
+        return_id=return_id,
+        version=1,
+        sheets=[WorkbookSheetOut(key=n, title=t) for n, t in sheets_of(form)],
+        allowed_actions=[cast(WorkbookAction, a) for a in get_args(WorkbookAction) if a in held],
+    )
 
 
 @workbook_router.get(
@@ -611,8 +639,31 @@ async def entity_sheet_route(
     version: Annotated[int | None, Query(ge=1)] = None,
     range_: Annotated[str | None, Query(alias="range", max_length=40)] = None,
 ) -> WorkbookSheetCellsOut:
+    """One sheet with range paging (T-05-T27): values and formulas, never evaluated text."""
+    del version  # one live version until the workbook run versions it (T-05-T32)
     await _flag_on(ctx)
-    _not_yet()
+    form, _resource = await _workbook_read(ctx, return_id)
+    from abacus.modules.review.api import current_values
+    from abacus.modules.tax.workbook_service import WORKBOOK, project, sheet_or_404
+
+    values = await current_values(ctx.tenant, WORKBOOK, return_id)
+    cells, next_range = project(values, sheet_or_404(form, sheet), range_)
+    return WorkbookSheetCellsOut(
+        sheet=sheet,
+        version=1,
+        cells=[
+            WorkbookCellOut(
+                address=c.address,
+                value=c.value,
+                formula=c.formula,
+                author="formula" if c.formula else "person",
+                state="formula" if c.formula else "value",
+                version=1,
+            )
+            for c in cells
+        ],
+        next_range=next_range,
+    )
 
 
 @workbook_router.get(
@@ -625,8 +676,36 @@ async def entity_cell_route(
     ctx: Ctx,
     version: Annotated[int | None, Query(ge=1)] = None,
 ) -> WorkbookCellProvenanceOut:
+    """A cell's provenance (T-05-T27; TXP-11 a, SHL-09): its value, formula, inputs, citations;
+    the version-by-version writer is SHL-09's `GET /v1/fields/tax_workbook/…/provenance`."""
+    del version
     await _flag_on(ctx)
-    _not_yet()
+    _form, _resource = await _workbook_read(ctx, return_id)
+    from abacus.modules.review.api import current_values, field_states
+    from abacus.modules.tax.workbook_service import WORKBOOK, inputs_of
+    from abacus.modules.tax.workbook_service import address as cell_address
+
+    at = cell_address(address)
+    values = await current_values(ctx.tenant, WORKBOOK, return_id)
+    value = values.get(at.key)
+    if value is None:
+        raise NotFound("workbook_cell")
+    formula = values.get(at.formula_key, {}).get("v")
+    state = (await field_states(ctx.tenant, WORKBOOK, return_id, [at.key]))[at.key]
+    raw = value.get("v")
+    return WorkbookCellProvenanceOut(
+        cell=WorkbookCellOut(
+            address=at.a1,
+            value=None if raw is None else str(raw),
+            formula=None if formula is None else str(formula),
+            author="formula" if formula else "person",
+            state="formula" if formula else "value",
+            citation_ids=list(state.citation_ids),
+            version=1,
+        ),
+        writer="Formula" if formula else "Person",
+        inputs=inputs_of(None if formula is None else str(formula)),
+    )
 
 
 @workbook_router.put(
