@@ -12,6 +12,12 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-12 (S37): T-04-T36 K-1 activities and treatments
+        "k1_activity.created",
+        "k1_activity.released",
+        "k1_activity.saly_refreshed",
+        "k1_treatment.approved",
+        "k1_treatment.overridden",
         # reviewed 2026-11-12 (S37): P-10-T44 frozen traces and the run_events prune
         "agent_run.trace_frozen",
         "run_events.pruned",
