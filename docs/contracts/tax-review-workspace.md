@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (T-04-T05, 2026-11-09, DEC-3020); live as built: workspace, review tree, approvals, final-approval request (T-04-T17, T-04-T29), leadsheets, Sch E – K-1 matrix and links (TASK-7330, DEC-4330), K-1 activities and treatments (T-04-T36). Draft runs, K-1 treatment runs, residency and state allocation still answer 501 |
+| Status | **final (T-04-T50, S39, 2026-11-12; DEC-4528)**: every route is served. Built in S33–S39: workspace, review tree, approvals and Undo, final-approval request (T-04-T17, T-04-T29), leadsheets, Sch E – K-1 matrix and links (TASK-7330), K-1 activities and treatments and their runs (T-04-T36, T-04-T38), residency and state allocation (T-04-T39), the draft-run entry (T-04-T55: a person only, 409 `draft_not_allowed` from final approval on). The return frame lists its tabs from `tax.return_tabs` (T-04-T55). Additive changes only from here; a breaking change is v2 |
 | Provider epic | T-04 (SPEC-649) |
 | Consumers | TAX-04, TAX-05, TAX-06, TAX-07, TAX-08 screens (T-04 FE rows); T-05 (entity returns, read-only) |
 | Flag | `tax.review_workspace` (T-04-T09) |
@@ -55,3 +55,16 @@ T-01's `tax_return.approve`.
   the field citing it reads `approval: "mismatch"` in the review tree with `mismatch_field_key`;
   `POST …/document-approvals` on it answers 409 `mismatch` with `facts.field_key` and writes
   nothing. An approval made before the mismatch stays approved.
+
+
+## Close-out (T-04-T50, S39; DEC-4528)
+- **Consumers.** T-05 (entity returns) registers its frame tabs with `register_return_tab` and
+  reuses the review grammar (C3) and TAX-08's assistant; T-06 (fiduciary and states) adds its
+  worksheets through `tax-worksheets.md`'s form registry; T-07 (planning) reads approved fields
+  only through `review.api.values_as_of`; T-08 (filing) reads the final-approval checkpoint and
+  `allowed_actions`, never the workspace's tables; W-02 (Workbench) opens TAX-08's session by
+  `return_id`.
+- **Adding a return tab:** `tax.api.register_return_tab(tab, flag, order=, forms=)` at import; the
+  frame lists it only while the flag is on (DEC-4514), and the tab's route answers 404 otherwise.
+- **Gates:** the CPA memo `tax-individual@v1` (T-04-T49), the mutation scope `tax/individual` and
+  the p95 budgets (T-04-T53), the flip runbook `tax-workspace-flip.md` (T-04-T54).
