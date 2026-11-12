@@ -134,3 +134,5 @@ export {
   type WorkbenchLayoutProps,
   type WorkbenchTab,
 } from "./workbench-layout";
+// T13 CalendarLayout and MonthGrid (F-07-T10; SPEC-652 AC-6).
+export * from "./calendar";
