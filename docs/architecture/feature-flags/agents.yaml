@@ -93,6 +93,7 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+    journeys: [j11-workbench, j23-audit-partner-morning]  # P-10-T56: the M17 flip's journeys
   - name: realtime.sse
     description: 'P-10 real time (ADR-232 proposed): GET /v1/events and the run, session and badge streams. Off: 404 and every client polls; this flag is the kill switch. Per firm, default off. P-10-T24, DEC-3110.'
     owner: ayushkbhatia
@@ -101,6 +102,7 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+    journeys: [j11-workbench, j23-audit-partner-morning]  # P-10-T56: the M17 flip's journeys
   - name: engagement_run.enabled
     description: 'P-10 engagement runs (SHL-13 Run on an engagement): POST/PUT /v1/engagements/{id}/agent-run*. Off: 404 and the dock shows no Run. Per firm, default off. P-10-T24, DEC-3110.'
     owner: ayushkbhatia
@@ -109,3 +111,4 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+    journeys: [j11-workbench, j23-audit-partner-morning]  # P-10-T56: the M17 flip's journeys

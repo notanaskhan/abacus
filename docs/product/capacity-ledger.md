@@ -187,3 +187,20 @@ P-04 actuals: every row has a task file and built code or docs; no row is deferr
 carried by the in-review rows are listed in their task files (staging flips on PF-X1, the RB rehearsal
 for the review grammar). `review.grammar_api` is retired; `review.approve_agent_output` and
 `review.checkpoints` are renewed to May 1, 2027.
+
+## P-10 Agent runtime v2 and real time (close-out, 2026-11-12, P-10-T56)
+
+Plan: 58 rows, 55.75 task-equivalents, S29 to S38 (chapter 01 dates Dec 2027 – Apr 2028); built
+in the solo calendar from 2026-11-06 to 2026-11-12. Counted from the task files and the S29–S38
+status files; DEC-4414.
+
+| State | Rows | Task-equivalents | Rows |
+|---|---|---|---|
+| done | 50 | 50.75 | T01 to T12, T16 to T45, T47 to T49, T52, T55 to T58 |
+| partial (built; a staging, evaluation-account or founder step left) | 7 | 4.5 | T13 (committed parity reports), T14 (production-sized run), T15 (edge apply), T46 (real evaluation runs), T50 (staging runs), T51 (staging load run and RB-28 rehearsal), T54 (rehearsal, shadow, canary) |
+| deferred | 1 | 0.5 | T53 delta pen test (DEC-1389) |
+| not started | 0 | 0 | — |
+
+P-10 actuals: every row has a task file. No row of the pre-agreed internal cut list was invoked
+except cut 3 (the PDF trace export's v2 fields, A-07 or G-02 depth). The partial rows' remaining
+steps are listed in `docs/plan/status/P-10-closeout.md`; none blocks a consumer epic's build.
