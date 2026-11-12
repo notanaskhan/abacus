@@ -1,7 +1,7 @@
 ---
 id: TASK-7801
 title: "N-01-T30: N-01 docs: READMEs, frozen contracts, SPEC done, intake runbooks, skill notes, capacity ledger"
-spec: none (backlog row N-01-T30; SPEC-380)
+spec: none (backlog row N-01-T30)
 acceptance_criteria: [N-01-T30]
 risk_zone: red
 status: in-review
