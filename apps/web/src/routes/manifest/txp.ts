@@ -50,8 +50,8 @@ export const txpScreens = {
   "TXP-10": { name: "Return › Issues · Ridgeline 2025 Form 1065", status: "planned", path: null },
   "TXP-11": {
     name: "Workpaper · Ridgeline workbook, sheet 05 Capital",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/tax-returns/$returnId/workpaper",
   },
   // T-02-T25: A–F on fixtures over T-02-T20/T21's routes behind the `tax_returns` entitlement.
   "TXP-12": {

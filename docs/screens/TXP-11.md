@@ -10,21 +10,21 @@
 | Persona | Olivia Brandt (Tax Senior, preparer) |
 | Flags | `tax.entity_workspace` |
 | Priority | P0 |
-| Manifest status | planned |
+| Manifest status | fixture (T-05-T38) |
 
 ## States
 
 | Artboard | State | Data condition that produces it | Demo clock | Snapshot | Parity tier | Status |
 |---|---|---|---|---|---|---|
-| a | Cell selected from issue | `05 Capital!H12` selected from the M-2 issue; formula bar "(empty) — expected ='06 Schedule K'!C31 × 25% → 1,550"; H8:H12, J13, J15 cited | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only, **lock proposed** | planned |
+| a | Cell selected from issue | `05 Capital!H12` selected from the M-2 issue; formula bar "(empty) — expected ='06 Schedule K'!C31 × 25% → 1,550"; H8:H12, J13, J15 cited | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only, **lock proposed** | fixture |
 | a2 | Citation · SHL-07 | D12 citation → 2024 K-1 Item L | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only | planned |
 | a3 | Field provenance · SHL-09 | Provenance on J12 | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only | planned |
-| b | Fix proposed | Proposed pills on H8:H12 = 124 · 2,356 · 2,015 · 155 · 1,550 | Mon Sep 14, 2026, 9:24 AM CT | proposal open | D (blocking) · C report-only | planned |
-| b2 | Fix approved | Pills turn "✓ SI"; J13 = 6,866,200 = J15; the tab's amber dot clears | Mon Sep 14, 2026, 9:24 AM CT | after approval | D (blocking) · C report-only | planned |
-| c | 01 Trial Balance | Sheet 01; `I18 = F18+G18+H18` → (94,000) | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only | planned |
+| b | Fix proposed | Proposed pills on H8:H12 = 124 · 2,356 · 2,015 · 155 · 1,550 | Mon Sep 14, 2026, 9:24 AM CT | proposal open | D (blocking) · C report-only | fixture |
+| b2 | Fix approved | Pills turn "✓ SI"; J13 = 6,866,200 = J15; the tab's amber dot clears | Mon Sep 14, 2026, 9:24 AM CT | after approval | D (blocking) · C report-only | fixture |
+| c | 01 Trial Balance | Sheet 01; `I18 = F18+G18+H18` → (94,000) | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only | fixture |
 | d | Linked evidence · SHL-08 | Harborline municipal bond fund statement, Dec 2025, p. 1 | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only | planned |
-| e | Editing | H12 edited in the cell and the formula bar by Olivia (saves checkpoint "Edited 05 Capital!H12 by Olivia Brandt") | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only | planned |
-| loading | — | skeleton per the handoff (the screen's Building state where it has one) | — | — | D | planned |
+| e | Editing | H12 edited in the cell and the formula bar by Olivia (saves checkpoint "Edited 05 Capital!H12 by Olivia Brandt") | Mon Sep 14, 2026, 9:24 AM CT | Version 2 · Run 2 | D (blocking) · C report-only | fixture |
+| loading | — | skeleton per the handoff (the screen's Building state where it has one) | — | — | D | fixture |
 | not allowed | — | walled or out of scope: 404, no counts (INV-3) | — | — | — | planned |
 | flag off | — | designed in T-05-T03 (never blank) | — | — | — | planned |
 
@@ -78,3 +78,8 @@ Every string above with no handoff source is undesigned (T-05-T03) and is replac
 ## Acceptance
 
 SPEC-651's criteria for this screen; each becomes a test named "TXP-11 acceptance: <criterion>".
+
+### Build notes (T-05-T38, DEC-4623)
+
+- Built on the kit's WorkbookGrid: a (H12 selected, H8:H12 · J13 · J15 lit, the linked-issue chip, the 05 tab's amber dot), b (H8:H12 "Proposed"), b2 (after the fix, no open issue), c (01 Trial Balance, I18 `=F18+G18+H18` → (94,000)) and e (in-cell edit through `PUT …/workbook/cells/{sheet!A1}` with the cell's version; a 409 reads the undesigned conflict line with Reload).
+- Partial: a2 (SHL-07 on a cited cell), a3 (SHL-09) and d (SHL-08 drawer) are the shell overlays' wiring, not in this row. The version picker is a read-only label ("Version 2 · Run 2"); choosing a prior run lands with checkpoints versioning the workbook. The sheet tabs use the handoff's titles; the server's `SHEETS_1065` titles (02 Adjustments, 03 Form Lines, 04 Allocation) differ and are reconciled with T-05-T27's owner. "Open in Excel" raises a callback; the export route is T-05-T60's.

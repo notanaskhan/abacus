@@ -5,12 +5,12 @@ import { defineScenarios } from "../../app-core/fixture-mode";
 import { taxEntityHandlers } from "../handlers/tax-entity";
 import { CLOCKS, PERSONAS, type Snapshot } from "../seed/tax-entity";
 
-function at(state: string, clock: keyof typeof CLOCKS, snapshot: Snapshot) {
+function at(state: string, clock: keyof typeof CLOCKS, snapshot: Snapshot, proposed = false) {
   return {
     state,
     persona: PERSONAS.olivia,
     clock: CLOCKS[clock],
-    handlers: taxEntityHandlers(snapshot),
+    handlers: taxEntityHandlers(snapshot, { proposed }),
   };
 }
 
@@ -18,7 +18,7 @@ export const scenarios = defineScenarios({
   a: at("a", "e0", "run2"), // Cell selected from issue
   a2: at("a2", "e0", "run2"), // Citation · SHL-07
   a3: at("a3", "e0", "run2"), // Field provenance · SHL-09
-  b: at("b", "e0", "run2"), // Fix proposed
+  b: at("b", "e0", "run2", true), // Fix proposed
   b2: at("b2", "e0", "afterFix"), // Fix approved
   c: at("c", "e0", "run2"), // 01 Trial Balance
   d: at("d", "e0", "run2"), // Linked evidence · SHL-08
