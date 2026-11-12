@@ -36,6 +36,7 @@ from abacus.modules.agents.methodology_import_workflow import MethodologyImportW
 from abacus.modules.agents.review_start import WORKFLOWS as REVIEW_WORKFLOWS
 from abacus.modules.agents.review_start import start_upload_review
 from abacus.modules.agents.run_backfill_workflow import AgentRunBackfillWorkflow
+from abacus.modules.agents.run_events_prune_workflow import RunEventsPruneWorkflow
 from abacus.modules.agents.run_workflow import AgentRunWorkflow
 from abacus.modules.agents.screening_aggregate import on_version_event, on_version_withdrawn
 from abacus.modules.agents.section_draft import WORKFLOWS as SECTION_DRAFT_WORKFLOWS
@@ -83,6 +84,8 @@ WORKFLOWS[AgentRunBackfillWorkflow] = "background"
 WORKFLOWS[AgentRunWorkflow] = "interactive"
 # P-10-T38: a person approved a write; it runs after their Undo window (interactive, ADR-071).
 WORKFLOWS[ApprovedWriteWorkflow] = "interactive"
+# P-10-T44: the daily run_events prune (a platform Schedule).
+WORKFLOWS[RunEventsPruneWorkflow] = "batch"
 register_work_classes(WORKFLOWS)
 
 

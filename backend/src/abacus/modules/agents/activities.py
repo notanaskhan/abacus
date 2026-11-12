@@ -55,6 +55,7 @@ from abacus.modules.agents.service import (
     running_engagement,
     screen,
 )
+from abacus.modules.agents.trace_records import PRUNE_ACTIVITIES
 from abacus.modules.agents.upload_review import TERMINAL as REVIEW_TERMINAL
 from abacus.modules.agents.upload_review import create_review_run, review
 from abacus.modules.agents.workflow_types import (
@@ -740,4 +741,5 @@ ACTIVITIES = (
     backfill_run_batch_activity,  # P-10-T14
     *RUN_V2_ACTIVITIES,  # P-10-T29: AgentRunWorkflow part 1
     *APPROVED_WRITE_ACTIVITIES,  # P-10-T38: an approved write spends its grant
+    *PRUNE_ACTIVITIES,  # P-10-T44: the daily run_events prune
 )

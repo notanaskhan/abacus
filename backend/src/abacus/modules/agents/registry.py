@@ -51,6 +51,7 @@ TABLES: frozenset[str] = frozenset(
         "run_sign_offs",
         "engagement_ai_settings",
         "agent_tool_calls",  # P-10-T22 (0750): C17's idempotency key, claimed then done once
+        "agent_run_traces",  # P-10-T44 (0820): a v2 run's frozen trace export, by version
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -61,6 +62,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "agent_plans",
         "run_events",
         "run_sign_offs",
+        "agent_run_traces",  # P-10-T44 (0820): a moved run gets a new version
         "agent_feedback",
         "agent_activity",  # SPEC-027 (TASK-050): the feed is never rewritten
         "upload_reviews",  # SPEC-030 (TASK-058): proposals, as made
@@ -86,6 +88,11 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # P-10-T44 (0820): the frozen trace export; the record class and the time are the database's.
+    "agent_run_traces": frozenset(
+        {"id", "tenant_id", "run_id", "engagement_id", "projection", "version"}
+        | {"renderer_version", "body", "body_sha256", "source_sha256"}
+    ),
     "agent_plans": frozenset(
         {"id", "tenant_id", "run_id", "version", "steps", "sources", "state", "decided_by"}
         | {"decided_at", "standing_schedule_id"}

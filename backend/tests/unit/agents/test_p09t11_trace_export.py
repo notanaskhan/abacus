@@ -45,6 +45,11 @@ async def test_two_exports_are_byte_identical_and_audited(monkeypatch: pytest.Mo
     monkeypatch.setattr(runs, "_run", run)
     monkeypatch.setattr(runs, "canonical", canonical)
     monkeypatch.setattr(runs, "uow", unit)
+
+    async def unfrozen(_t: object, _r: object, _p: str, _v: str, build: object) -> bytes:
+        return await build()  # type: ignore[operator]  # P-10-T44: a run still open is built
+
+    monkeypatch.setattr(runs, "frozen_body", unfrozen)
     monkeypatch.setattr(
         "abacus.kernel.crypto.signing.export_signer", lambda: LocalExportSigner(b"k" * 32)
     )

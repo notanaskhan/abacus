@@ -58,6 +58,7 @@ from abacus.modules.agents.trace import (
     steps_of,
     timeline,
 )
+from abacus.modules.agents.trace_records import frozen_body
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import decisions_on_screenings, withdrawn_among
 from abacus.modules.identity.api import (
@@ -612,11 +613,17 @@ async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
 
     trace = await trace_for(ctx, run_id)
     run = await _run(ctx, run_id, "run_trace.export")
-    body = canonical(trace)
+
+    async def build() -> bytes:
+        return canonical(trace)
+
+    # P-10-T44 (DEC-4302): an ended v2 run answers its frozen bytes while its rows hold still.
+    body = await frozen_body(ctx.tenant, run_id, trace.projection, RENDERER_VERSION, build)
     digest = hashlib.sha256(body).hexdigest()
+    frozen_rows = json.loads(body).get("rows")
     manifest: dict[str, object] = {
         "run_id": str(run_id),
-        "rows": len(trace.rows),
+        "rows": len(frozen_rows) if isinstance(frozen_rows, list) else len(trace.rows),
         "sha256": digest,
         "renderer_version": RENDERER_VERSION,
         # P-09-T01 (DEC-2801): the export inherits the caller's projection, so an admin's

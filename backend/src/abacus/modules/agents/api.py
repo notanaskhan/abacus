@@ -156,6 +156,9 @@ from abacus.modules.agents.run_backfill_workflow import (
     BackfillBatch,
     BackfillInput,
 )
+from abacus.modules.agents.run_events_prune_workflow import (
+    RunEventsPruneWorkflow as RunEventsPruneWorkflow,
+)
 from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, bring-down
     last_completed_run,
     last_completed_run_at,
@@ -235,8 +238,6 @@ from abacus.modules.agents.service import (
     screen,
     screening_results_for,
 )
-
-# P-10-T43 (DEC-4301): a workbench session's turns are runs; workbench runs them inline.
 from abacus.modules.agents.session_turns import TurnOutcome as TurnOutcome
 from abacus.modules.agents.session_turns import open_plan_child_run as open_plan_child_run
 from abacus.modules.agents.session_turns import open_turn_run as open_turn_run
@@ -277,6 +278,12 @@ from abacus.modules.agents.tools.runtime import ToolOutcome as ToolOutcome
 from abacus.modules.agents.tools.runtime import ToolTargets as ToolTargets
 from abacus.modules.agents.tools.runtime import call_tool as call_tool
 from abacus.modules.agents.tools.runtime import for_model as tool_output_for_model
+
+# P-10-T43 (DEC-4301): a workbench session's turns are runs; workbench runs them inline.
+# P-10-T44 (DEC-4302): frozen trace exports, the run_events prune and A-07's archive hook.
+from abacus.modules.agents.trace_records import PRUNE_SCHEDULES as SCHEDULES
+from abacus.modules.agents.trace_records import AdoptedTrace as AdoptedTrace
+from abacus.modules.agents.trace_records import adopted_run_traces as adopted_run_traces
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
@@ -453,11 +460,13 @@ __all__ = [
     "RECOMMENDER",
     "REVIEWER",
     "ROUTERS",
+    "SCHEDULES",
     "SCREENER",
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "ActiveRun",
+    "AdoptedTrace",
     "AdoptedValue",
     "AgentBlocks",
     "AgentEvent",
@@ -545,6 +554,7 @@ __all__ = [
     "ReservedAction",
     "ReviewOutcome",
     "ReviewUnavailable",
+    "RunEventsPruneWorkflow",
     "RunFacts",
     "RunInput",
     "RunOutcome",
@@ -583,6 +593,7 @@ __all__ = [
     "VerifiedCitation",
     "WaitState",
     "active_engagement_runs",
+    "adopted_run_traces",
     "advance_synthetic_step",
     "agent_badge_stream",
     "analyze_notice",
