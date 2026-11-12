@@ -67,8 +67,10 @@ function withQuery(path: string, params: Record<string, string>): string {
 }
 
 /** With the SPA's own session (its sessionStorage token and tenant): the status `path` answers. */
-async function probeInPage(page: Page, path: string): Promise<number> {
-  const headers = await page.evaluate(() => {
+/** The signed-in SPA's API headers (its bearer token and tenant), for a request a step makes
+ * as the persona (an INV probe, or a lookup of a seeded record's id). */
+export async function authHeaders(page: Page): Promise<Record<string, string>> {
+  return page.evaluate(() => {
     const read = (key: string): string | null => sessionStorage.getItem(key);
     const session = JSON.parse(read("abacus.session") ?? "null") as {
       accessToken?: string;
@@ -79,6 +81,10 @@ async function probeInPage(page: Page, path: string): Promise<number> {
     if (tenant !== null) out["X-Abacus-Tenant"] = tenant;
     return out;
   });
+}
+
+async function probeInPage(page: Page, path: string): Promise<number> {
+  const headers = await authHeaders(page);
   const response = await page.request.get(path, { headers, failOnStatusCode: false });
   return response.status();
 }
@@ -171,10 +177,15 @@ const fullstack: PersonaAdapter = {
   async open(page, persona, path) {
     await page.goto("/");
     const choose = page.getByRole("button", { name: new RegExp(`\\b${persona.name}\\b`) });
+    const email = page.getByLabel("Work email");
+    // TASK-7324: the SPA redirects to the sign-in server after "/" loads, so wait for one of the
+    // three outcomes (the chooser, the email form, or the signed-in shell) before reading which.
+    const shell = page.getByRole("navigation", { name: "Modules" });
+    await choose.or(email).or(shell).first().waitFor();
     if ((await choose.count()) > 0) {
       await choose.first().click();
       await page.getByText(persona.name).first().waitFor();
-    } else if (persona.kind === "staff" && (await page.getByLabel("Work email").count()) > 0) {
+    } else if (persona.kind === "staff" && (await email.count()) > 0) {
       // The scenario's staff (make seed-demo) are not on the chooser: they sign in by email code.
       await signInWithEmailCode(page, persona);
     }

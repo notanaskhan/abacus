@@ -26,7 +26,7 @@ and Thornbury rows are not here yet (T-04-T28 partial). Opt-in (`--slice tax_wor
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Final
 
@@ -216,10 +216,32 @@ CHECKPOINTS: Final = (
     ("SI", "Manager review", datetime(2026, 9, 15, 16, 30, tzinfo=CT)),
 )
 SEEDED_AT: Final = datetime(2026, 8, 25, 10, 0, tzinfo=CT)
+# TASK-7324 (T-04-T32): the workspace's routes answer 404 with these off, so the full-stack J06
+# slice needs them on for the synthetic firm (the review tree and issues; the worksheets).
+FLAGS: Final = ("tax.review_workspace", "tax.individual_workpapers")
+# TASK-7324: the firm, the Feld engagement and its return are created at the scenario's setup
+# instant (Sep 1, 8:00 AM), and the loader replays by `at`. So an event whose business time is
+# before setup (the Aug 25 to 28 issues, the "Initial draft" checkpoint) replays one second apart
+# just after it, in its business order. It carries its business time as `data["at"]`, and the
+# handler stands the clock there, as the review slice's `saved_at` does.
+REPLAY_FROM: Final = datetime(2026, 9, 1, 8, 1, tzinfo=CT)
+
+
+def _replayed(events: list[Event]) -> list[Event]:
+    out: list[Event] = []
+    for i, e in enumerate(sorted(events, key=lambda e: (e.at, e.label))):
+        at = max(e.at, REPLAY_FROM + timedelta(seconds=i))
+        data = {**e.data, "at": e.at.isoformat()}
+        out.append(Event(e.label, at, e.kind, e.actor, e.slice, data, client=e.client))
+    return out
 
 
 @register_slice(SLICE)
 def tax_workspace_events() -> list[Event]:
+    flags = [
+        Event(f"flag:{flag}", REPLAY_FROM, "platform.flag_set", "system", SLICE, {"flag": flag})
+        for flag in FLAGS
+    ]
     events = [
         Event(
             "tax-workspace:feld:worksheets",
@@ -267,4 +289,4 @@ def tax_workspace_events() -> list[Event]:
                 client=FELD,
             )
         )
-    return events
+    return flags + _replayed(events)
