@@ -1,4 +1,4 @@
-import { returnRecordOptions } from "@abacus/api-client/query";
+import { entityRunsOptions, returnRecordOptions } from "@abacus/api-client/query";
 import { EmptyState, FlagOffState, Spinner } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
@@ -11,6 +11,7 @@ import {
   sectionOf,
   slugOf,
 } from "../../domain/tax/entityReturn";
+import { TXP00, frameOf } from "../../screens/TXP-00";
 import { EntityReturnLayout, NOT_BUILT } from "../../screens/TXP-00/EntityReturnLayout";
 import { useParam } from "../params";
 import { to } from "../to";
@@ -134,12 +135,30 @@ function EntitySection({
         void navigate({ to: `/tax-returns/${returnId}${slugOf(next)}` });
       }}
     >
-      {/* The section screens land with their rows (TXP-00 T-05-T29, TXP-10/11/01/02/05/07
-          later); until then the frame shows the planned state, never a blank pane. */}
-      <EmptyState title={NOT_BUILT} icon="clock">
-        {screen ?? ""}
-      </EmptyState>
+      {section.tab === "agent" ? (
+        <AgentTab returnId={returnId} />
+      ) : (
+        // TXP-10/11/01/02/05/07 land with their rows; until then the planned state, never blank.
+        <EmptyState title={NOT_BUILT} icon="clock">
+          {screen ?? ""}
+        </EmptyState>
+      )}
     </EntityReturnLayout>
+  );
+}
+
+// T-05-T29: TXP-00 on the return's workbook runs (the newest run sets the frame).
+function AgentTab({ returnId }: { returnId: string }): JSX.Element {
+  const navigate = useNavigate();
+  const runs = useQuery(entityRunsOptions({ path: { return_id: returnId } }));
+  if (runs.data === undefined) return <Spinner label="Loading the workbook runs" />;
+  return (
+    <TXP00
+      frame={frameOf(runs.data.items)}
+      onComposer={() => {
+        void navigate({ to: ".", search: { ov: "assistant" } });
+      }}
+    />
   );
 }
 
