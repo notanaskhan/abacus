@@ -9,6 +9,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel._flags import TAX_REVIEW_WORKSPACE
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import OutboxEvent
@@ -21,12 +22,14 @@ from abacus.modules.reporting.api import register_k1_rows
 from abacus.modules.tax import analyst_modes as _analyst_modes
 from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
+from abacus.modules.tax import draft_entry as _draft_entry
 from abacus.modules.tax import drafter_workflow as _drafter
 from abacus.modules.tax import explain as _explain
 from abacus.modules.tax import extensions as _extensions
 from abacus.modules.tax import fix_runner as _fix_runner
 from abacus.modules.tax import return_events as _return_events
 from abacus.modules.tax import return_issues as _return_issues
+from abacus.modules.tax import return_tabs as _return_tabs
 from abacus.modules.tax import schedule_jobs as _schedule_jobs
 from abacus.modules.tax.analyst_modes import (  # S38: the recorder and replay test (ADR-090)
     AnalystModeWorkflow,
@@ -213,6 +216,15 @@ ACTIVITIES: tuple[object, ...] = (
     *_analyst_modes.ACTIVITIES,
 )
 start_draft = _drafter.start_draft
+# T-04-T55 (DEC-4514): the draft-run entry (TAX-02 Run draft) and the return frame's tab seam.
+run_draft = _draft_entry.run_draft
+DraftNotAllowed = _draft_entry.DraftNotAllowed
+register_return_tab = _return_tabs.register_return_tab
+# T-04's workspace tabs on the shared return frame, each behind the flag that gates its screen.
+for _order, _tab in enumerate(("review", "issues", "activity"), start=10):
+    register_return_tab(
+        _tab, TAX_REVIEW_WORKSPACE, order=_order, forms=frozenset({"1040", "1040x"})
+    )
 # T-04-T25: the history recorder's workflow and its types (abacus_tools reaches tax only here).
 DraftInput = _drafter.DraftInput
 DraftOutcome = _drafter.DraftOutcome
@@ -280,6 +292,7 @@ __all__ = [
     "AnalystModeWorkflow",
     "ApprovalBlocker",
     "DraftInput",
+    "DraftNotAllowed",
     "DraftOutcome",
     "ExplainRunInput",
     "ExplainRunOutcome",
@@ -326,8 +339,10 @@ __all__ = [
     "register_due_dates_source",
     "register_extension_dates_source",
     "register_final_approval_blocker",
+    "register_return_tab",
     "request_estimate_confirmation",
     "rule_texts",
+    "run_draft",
     "send_confirmation",
     "set_extended",
     "share_k1_internal",

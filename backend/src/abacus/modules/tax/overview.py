@@ -48,6 +48,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.organisations.api import consent_state
 from abacus.modules.review.api import Json, content_hash, sign_off_states
 from abacus.modules.tax import board, k1_packages
+from abacus.modules.tax.return_tabs import frame_tabs
 from abacus.modules.tax.returns_contract import (
     EngineSummaryLineOut,
     FilingRowOut,
@@ -55,7 +56,6 @@ from abacus.modules.tax.returns_contract import (
     LadderStepOut,
     PersonChipOut,
     PipelineStepOut,
-    TabCountOut,
     TaxReturnOverviewOut,
     TaxReturnRecordOut,
 )
@@ -65,7 +65,12 @@ from abacus.modules.tax.transitions import apply_transition
 KIND: Final = "tax_return"
 METADATA: Final = "tax_return.read_metadata"
 CONTENT: Final = "tax_return.read"
-ACTIONS: Final = ("tax_return.assign", "tax_return.status_change", "tax_return.approve")
+ACTIONS: Final = (
+    "tax_return.assign",
+    "tax_return.status_change",
+    "tax_return.approve",
+    "tax_return.draft_run",  # T-04-T55: TAX-02's Run draft (the draft-run entry route)
+)
 # The ladder's rungs: (step, sign-off level, the assignment functions that hold it).
 _RUNGS: Final = (
     ("preparer", 1, ("preparer",)),
@@ -152,7 +157,8 @@ async def record(ctx: AuthContext, return_id: UUID) -> TaxReturnRecordOut:
         work_item_id=return_id,
         engine_return_id=loaded.engine_return_id,
         approval_policy_version_id=loaded.policy_version_id,
-        tabs=[TabCountOut(tab="overview", count=None), TabCountOut(tab="intake", count=None)],
+        # T-04-T55 (DEC-4514): T-02's tabs, then the workspace tabs registered with their flags.
+        tabs=await frame_tabs(ctx.tenant, str(loaded.row.form)),
         allowed_actions=sorted(may),
     )
 
