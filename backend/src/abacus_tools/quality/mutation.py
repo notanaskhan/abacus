@@ -59,6 +59,27 @@ SCOPES: Final[dict[str, tuple[str, ...]]] = {
         "src/abacus/modules/assurance/archive_seal.py",
         "src/abacus/modules/assurance/archive_additions.py",
     ),
+    # P-10-T52 (ADR-079): runtime v2, the plan rules, the workflow and its activities, waits,
+    # commands, the approved write and undo, session turns, the harness and C17's runtime.
+    "agents/runtime": tuple(
+        f"src/abacus/modules/agents/{name}.py"
+        for name in (
+            "run_plan",
+            "run_workflow",
+            "run_activities",
+            "run_waits",
+            "run_commands",
+            "commands",
+            "approved_writes",
+            "approved_write_workflow",
+            "proposal_undo",
+            "session_turns",
+            "harness",
+            "tools/runtime",
+        )
+    ),
+    # P-10-T52 (ADR-079): the SSE stream, its slots, frames, topics and invalidations.
+    "kernel/realtime": ("src/abacus/kernel/realtime.py",),
 }
 # Generated files are regenerated, never mutated.
 GENERATED: Final = (
