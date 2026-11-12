@@ -56,6 +56,10 @@ const WorksheetsLive = lazyScreen(
 const IssuesLive = lazyScreen(async () => (await import("../../screens/TAX-06/live")).IssuesLive);
 // T-04-T40: TXI-02 in fixture mode.
 const K1Resolver = lazyScreen(async () => (await import("../../screens/TXI-02")).K1Resolver);
+// T-04-T41: TXI-03 in fixture mode.
+const ResidencyAllocation = lazyScreen(
+  async () => (await import("../../screens/TXI-03")).ResidencyAllocation,
+);
 const ActivityLive = lazyScreen(
   async () => (await import("../../screens/TAX-07/live")).ActivityLive,
 );
@@ -240,7 +244,12 @@ export const taxResidencyRoute = createRoute({
   path: "/tax-returns/$returnId/residency",
   validateSearch,
   component: function TaxResidencyPage(): JSX.Element {
-    return <Workspace tab="review" title="Residency" />;
+    // T-04-T41: TXI-03 in fixture mode (a); the live host reads GET …/residency (T-04-T39).
+    return (
+      <Workspace tab="review" title="Residency">
+        {FIXTURES ? <ResidencyAllocation frame="a" /> : undefined}
+      </Workspace>
+    );
   },
 });
 
