@@ -35,6 +35,8 @@ line:
   # P-10-T52 (DEC-4402): runtime v2 and the SSE stream; raised to their first measured baseline.
   agents/runtime: 0
   kernel/realtime: 0
+  # T-04-T53 (DEC-4513): the individual return's engines and the tax tools.
+  tax/individual: 0
 branch:
   identity/authz: 52
   kernel/db: 77
@@ -49,3 +51,4 @@ branch:
   assurance/release_archive: 0
   agents/runtime: 0
   kernel/realtime: 0
+  tax/individual: 0

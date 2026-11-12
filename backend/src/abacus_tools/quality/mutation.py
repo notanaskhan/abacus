@@ -47,6 +47,13 @@ SCOPES: Final[dict[str, tuple[str, ...]]] = {
     "evidence": ("src/abacus/modules/evidence/*.py",),
     "ai_gateway": ("src/abacus/ai_gateway/*.py",),
     "audit_trail": ("src/abacus/modules/audit_trail/*.py",),
+    # T-04-T53 (ADR-079; DEC-4513): the individual return's compute engines and the tax tools,
+    # matched before the broad `compute` glob so they carry their own floor.
+    "tax/individual": (
+        "src/abacus/modules/tax/compute/individual/*.py",
+        "src/abacus/modules/tax/tools.py",
+        "src/abacus/modules/tax/agent_tools.py",
+    ),
     "compute": ("src/abacus/*/compute/*.py",),
     "signatures": ("src/abacus/modules/signatures/*.py",),  # N-02-T47 (ADR-079)
     "review": ("src/abacus/modules/review/*.py",),  # P-04-T59 (ADR-079; DEC-2065)

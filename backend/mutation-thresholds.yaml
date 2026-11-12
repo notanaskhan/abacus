@@ -43,3 +43,9 @@ floors:
   # plan approve <= 400 ms, stream first byte <= 500 ms.
   agents/runtime: 0
   kernel/realtime: 0
+  # T-04-T53 (DEC-4513): the individual return's compute engines (tax/compute/individual) and the
+  # tax tools, target 75 (ADR-079). The floor starts at 0 and is raised to the scope's first weekly
+  # baseline after survivor triage, as for `agents/runtime`. p95 budgets under the busy-season
+  # profile (abacus_tools.loadtest.t04_budgets, checked on staging): review tree <= 300 ms for 41
+  # documents, worksheet fields <= 250 ms, approve <= 500 ms.
+  tax/individual: 0
