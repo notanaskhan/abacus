@@ -377,7 +377,24 @@ async def apply_k1_proposal(tenant: TenantContext, proposal_id: UUID) -> None:
 
 
 async def apply_residency_proposal(tenant: TenantContext, proposal_id: UUID) -> None:
+    """T-04-T39 (AC-8.3): link the determination, then confirm it for the person who approved
+    the proposal, with the option its row names (`residency.confirm` checked there)."""
+    from abacus.modules.agents.api import proposal_approver
+    from abacus.modules.tax.residency_service import confirm_approved
+
     await _apply_status("residency_determinations", tenant, proposal_id)
+    async with tenant_session(tenant) as session:
+        found = await approved_proposal_rows(session, proposal_id)
+        approver = await proposal_approver(session, proposal_id)
+    if found is None:
+        return
+    for row in found[1]:
+        target = row.field_ref.get("target_id")
+        after = row.after if isinstance(row.after, dict) else {}
+        option = after.get("v")
+        if target is None or option is None:
+            continue
+        await confirm_approved(tenant, proposal_id, approver, UUID(str(target)), str(option))
 
 
 def register() -> None:

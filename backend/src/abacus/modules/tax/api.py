@@ -178,6 +178,16 @@ async def _k1_package_released(event: OutboxEvent) -> None:
 
 
 SUBSCRIPTIONS["k1_package.released"] = _k1_package_released
+
+
+async def _residency_confirmed(event: OutboxEvent) -> None:
+    """T-04-T39 (AC-8.6): the option's worksheets activate and the re-import is flagged."""
+    from abacus.modules.tax.residency_service import on_residency_confirmed
+
+    await on_residency_confirmed(event)
+
+
+SUBSCRIPTIONS["residency_determination.confirmed"] = _residency_confirmed
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
 WORKFLOWS: dict[type, str] = {
     **k1_release.WORKFLOWS,
