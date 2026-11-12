@@ -1,7 +1,8 @@
 """Flip ops requests (Q-04-T010; SPEC-403 AC-12; Q-04 AC-4.1; P-29 rule 3; DEC-809).
 
 A per-firm flip in production is a reviewed PR that adds one file,
-`deploy/production/ops-requests/flip-<yyyy-mm-dd>-<pilot code>.yaml`:
+`deploy/production/ops-requests/flip-<yyyy-mm-dd>-<pilot code>[-<n>].yaml` (`-<n>` orders several
+requests in one slot):
 
     kind: flag_flip
     tenant: 00000000-0000-4000-8000-0000000000a1     # PF-A1
@@ -42,8 +43,9 @@ import yaml
 from abacus.kernel.clock import system_now
 from abacus_tools import release_windows
 
+# P-10-T54 (DEC-4413): an optional `-<n>` orders one-flag requests sharing a slot (M17's three).
 _FILE: Final = re.compile(
-    r"flip-(\d{4}-\d{2}-\d{2})-(PF-[A-Z][0-9]{1,3}|PC[0-9]{2}-[0-9]{2,3})\.yaml"
+    r"flip-(\d{4}-\d{2}-\d{2})-(PF-[A-Z][0-9]{1,3}|PC[0-9]{2}-[0-9]{2,3})(?:-[1-9])?\.yaml"
 )
 _HANDLE: Final = re.compile(r"[a-z][a-z0-9._-]{0,60}")
 _JOURNEY: Final = re.compile(r"[a-z0-9][a-z0-9-]{0,60}")
@@ -91,7 +93,7 @@ def parse(raw: object, file: str) -> FlipRequest:
     """The request, or `RequestError` naming the first field that is wrong."""
     match = _FILE.fullmatch(Path(file).name)
     if match is None:
-        raise RequestError("the file is flip-<yyyy-mm-dd>-<pilot code>.yaml")
+        raise RequestError("the file is flip-<yyyy-mm-dd>-<pilot code>[-<n>].yaml")
     if not isinstance(raw, dict):
         raise RequestError("a flip request is a mapping")
     data = cast(dict[str, object], raw)
