@@ -39,3 +39,15 @@ A step whose screen is still planned is `test.fixme` with an `owner` annotation:
 and its sprint end date. CI (F-04-T28): pull requests run the `fixture` project when the SPA, the
 portal, the UI library or the journeys change; the nightly runs `fullstack` on the runner's own
 stack; the staging job is off until staging exists (`STAGING_JOURNEYS`).
+
+## P-10-T50: the run stream (`e2e/agents/run-stream.spec.ts`)
+
+- j23 1-run (Northwind #4127 Running, then waiting on Margaret Okonkwo's materiality decision) on
+  AUD-02 c and d in the fixture project; `test.fixme` on the hosted projects until the run's live
+  dock reaches staging (owner P-10).
+- The dock over SSE, the polling fallback after three failed streams, and the locked session run on
+  staging and the canary only (skipped where `ABACUS_STAGING_URL` is unset); the locked session is
+  `test.fixme` until W-02 builds WB-01 g.
+- j11 b2 and b3 on the runtime: `test.fixme` until W-02 (S40–S45) builds WB-01/02/03; their
+  API-level walk is `backend/tests/integration/agent_tests/test_runtime_v2_journey.py` (P-10-T49).
+
