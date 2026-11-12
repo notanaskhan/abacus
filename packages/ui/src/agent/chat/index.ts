@@ -28,3 +28,25 @@ export {
   type QuestionPayload,
   type QuestionStep,
 } from "./question-card";
+// F-07-T07: the empty session, the context row and picker, and WB-06's agent detail.
+export {
+  AGENT_DETAIL_GEOMETRY,
+  AgentDetail,
+  type AgentDetailProps,
+  type AgentFact,
+  type AgentRecentRun,
+  type AgentRunState,
+} from "./agent-detail";
+export { CONTEXT_PICKER_WIDTH, ContextPicker, type ContextPickerProps } from "./context-picker";
+export {
+  CONTEXT_KINDS,
+  ContextChips,
+  type ContextChipsProps,
+  type ContextItem,
+  type ContextKind,
+  EMPTY_SESSION_COPY,
+  EMPTY_SESSION_GEOMETRY,
+  EmptySession,
+  type EmptySessionProps,
+  type SuggestedPrompt,
+} from "./empty-session";
