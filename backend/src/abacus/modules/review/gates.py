@@ -135,6 +135,15 @@ C13_EVENTS: Final = frozenset(
         "archive_addition.decided",
         "proposal.recorded",  # agents: a screening, upload review, match or guidance draft
         "guidance_draft.decided",  # agents: a person approved or discarded a draft
+        # P-10-T49 (agents): a v2 run's plan awaiting approval and its SHL-10 proposals.
+        "agent_run.needs_input",
+        "agent_run.plan_decided",
+        "agent_run.ready_for_review",
+        "agent_run.failed_v2",
+        "agent_run.completed",
+        "proposal.created",
+        "proposal.decided",
+        "proposal.undone",
         "review_decision.recorded",  # evidence: a decision on a version, or its undo
         # I-01-T08: SPEC-004's review queue as `evidence_review` gates (evidence/review_gates).
         "evidence.uploaded",

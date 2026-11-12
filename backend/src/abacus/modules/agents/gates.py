@@ -9,6 +9,10 @@ of a run in shadow is never a gate (SPEC-036 AC-5).
 - `upload_review`: the newest review of each version that raised a concern, likewise.
 - `inbox_match`: the newest run of each inbox file that showed a proposal, while the file waits.
 - `guidance_draft`: the newest draft of each request item that passed the checks, undecided.
+- `agent_run_plan` (P-10-T49): a v2 run's plan awaiting approval, assigned to the person the run
+  runs as (else its initiator); done once a person decides the plan or the run ends.
+- `run_proposal` (P-10-T49): a v2 run's pending proposal (SHL-10), assigned to its routed
+  approver, else the person the run runs as; done once a person decides it (undo reopens it).
 """
 
 from __future__ import annotations
@@ -23,6 +27,8 @@ from abacus.modules.agents.repository import (
     latest_matches_for_gates,
     latest_screenings_for_gates,
     latest_upload_reviews_for_gates,
+    run_plans_for_gates,
+    run_proposals_for_gates,
     suggestion_engagement_of,
     undecided_drafts_for_gates,
 )
@@ -75,6 +81,24 @@ async def open_drafts(tenant: TenantContext, engagement_id: UUID | None) -> list
     return [OpenGate(r[0], r[1]) for r in rows]
 
 
+async def _assigned(
+    tenant: TenantContext,
+    engagement_id: UUID | None,
+    read: Callable[[AsyncSession, UUID | None], Awaitable[Rows]],
+) -> list[OpenGate]:
+    rows = await _rows(tenant, engagement_id, read)
+    return [OpenGate(r[0], r[1], assignee_user_id=r[2]) for r in rows]
+
+
+async def open_run_plans(tenant: TenantContext, engagement_id: UUID | None) -> list[OpenGate]:
+    return await _assigned(tenant, engagement_id, run_plans_for_gates)
+
+
+async def open_run_proposals(tenant: TenantContext, engagement_id: UUID | None) -> list[OpenGate]:
+    return await _assigned(tenant, engagement_id, run_proposals_for_gates)
+
+
+_RUN_ENDS = frozenset({"agent_run.ready_for_review", "agent_run.failed_v2", "agent_run.completed"})
 _ON_VERSIONS = frozenset(
     {"proposal.recorded", "review_decision.recorded", "evidence_version.withdrawn"}
     | {"fulfilment.voided"}  # R-01 Story 2.2: its version is retired, as a withdrawal is
@@ -97,6 +121,21 @@ SOURCES = (
         "guidance_draft.read",
         frozenset({"proposal.recorded", "guidance_draft.decided"}),
         open_drafts,
+    ),
+    GateSource(
+        "agent_run_plan",
+        "proposal",
+        "agent_run.read",
+        frozenset({"agent_run.needs_input", "agent_run.plan_decided"}) | _RUN_ENDS,
+        open_run_plans,
+        assigned_only=True,
+    ),
+    GateSource(
+        "run_proposal",
+        "proposal",
+        "proposal.read",
+        frozenset({"proposal.created", "proposal.decided", "proposal.undone"}) | _RUN_ENDS,
+        open_run_proposals,
     ),
 )
 

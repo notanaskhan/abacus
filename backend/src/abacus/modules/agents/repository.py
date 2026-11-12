@@ -1842,3 +1842,41 @@ async def suggestion_engagement_of(session: AsyncSession, suggestion_id: UUID) -
         text("SELECT engagement_id FROM suggestions WHERE id = :id"), {"id": suggestion_id}
     )
     return found.scalar_one_or_none()
+
+
+# --- P-10-T49 (C13; SPEC-647 §1 outcome 6, J13 step 5b): a v2 run's plan awaiting approval and
+# its proposals as "Waiting on you" rows. Shadow runs never show (SPEC-036 AC-5).
+
+_PLANS_FOR_GATES = text(
+    "SELECT r.id, r.engagement_id, coalesce(r.runs_as_user_id, r.initiator_user_id) "
+    "FROM agent_runs r JOIN LATERAL (SELECT p.state FROM agent_plans p WHERE p.run_id = r.id "
+    "ORDER BY p.version DESC LIMIT 1) latest ON true "
+    "WHERE r.spec_version = 2 AND r.state = 'awaiting_plan_approval' AND NOT r.shadow "
+    "AND r.engagement_id IS NOT NULL AND latest.state IN ('proposed', 'edited') "
+    "AND (CAST(:engagement AS uuid) IS NULL OR r.engagement_id = CAST(:engagement AS uuid))"
+)
+_RUN_PROPOSALS_FOR_GATES = text(
+    "SELECT p.id, p.engagement_id, coalesce(p.routed_to_user_id, r.runs_as_user_id, "
+    "r.initiator_user_id) FROM proposals p JOIN agent_runs r ON r.id = p.agent_run_id "
+    "WHERE r.spec_version = 2 AND NOT r.shadow AND p.state = 'pending' "
+    "AND p.engagement_id IS NOT NULL "
+    "AND (CAST(:engagement AS uuid) IS NULL OR p.engagement_id = CAST(:engagement AS uuid))"
+)
+
+
+async def run_plans_for_gates(
+    session: AsyncSession, engagement_id: UUID | None
+) -> Sequence[tuple[UUID, UUID, UUID]]:
+    """(run, engagement, the person it waits on): a v2 run in `awaiting_plan_approval` whose
+    newest plan is still undecided, waiting on the person it runs as (else its initiator)."""
+    rows = await session.execute(_PLANS_FOR_GATES, {"engagement": engagement_id})
+    return [(r[0], r[1], r[2]) for r in rows.all()]
+
+
+async def run_proposals_for_gates(
+    session: AsyncSession, engagement_id: UUID | None
+) -> Sequence[tuple[UUID, UUID, UUID]]:
+    """(proposal, engagement, the person it waits on): a v2 run's pending proposal, routed to its
+    approver, else waiting on the person the run runs as (else its initiator)."""
+    rows = await session.execute(_RUN_PROPOSALS_FOR_GATES, {"engagement": engagement_id})
+    return [(r[0], r[1], r[2]) for r in rows.all()]
