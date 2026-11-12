@@ -6786,6 +6786,83 @@
         "title": "AreaOut",
         "type": "object"
       },
+      "ArtifactPreviewOut": {
+        "description": "WB-03 d2: the sheet tabs, the open sheet's header and rows, from the stored artifact.",
+        "properties": {
+          "artifact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "columns": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "footnote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Footnote"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/PreviewCellOut"
+              },
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "sha256": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "sheet": {
+            "cls": "confidential",
+            "title": "Sheet",
+            "type": "string"
+          },
+          "sheets": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Sheets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "file_name",
+          "sheets",
+          "sheet",
+          "columns",
+          "rows",
+          "sha256"
+        ],
+        "title": "ArtifactPreviewOut",
+        "type": "object"
+      },
       "AssessIn": {
         "additionalProperties": false,
         "properties": {
@@ -23825,6 +23902,235 @@
         "title": "ContactsPage",
         "type": "object"
       },
+      "ContextAttachIn": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ContextRefIn"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ContextAttachIn",
+        "type": "object"
+      },
+      "ContextItemOut": {
+        "description": "One attached item: the chip and the stack card (WB-02 c, d). `summary_lines` are computed\nby code (AC-C4): \"24 requests \u00b7 12 received \u00b7 3 files in use\".",
+        "properties": {
+          "card_title": {
+            "cls": "internal",
+            "enum": [
+              "Client record",
+              "Documents",
+              "Workpapers"
+            ],
+            "title": "Card Title",
+            "type": "string"
+          },
+          "chip_label": {
+            "cls": "confidential",
+            "title": "Chip Label",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_entity",
+              "engagement",
+              "request_set",
+              "document",
+              "workpaper_set",
+              "workpaper"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Ref Id",
+            "type": "string"
+          },
+          "summary_lines": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Summary Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "ref_id",
+          "card_title",
+          "chip_label",
+          "summary_lines"
+        ],
+        "title": "ContextItemOut",
+        "type": "object"
+      },
+      "ContextItemsOut": {
+        "description": "The session's context after the change; empty means firm-wide, read-only.",
+        "properties": {
+          "firm_wide": {
+            "cls": "internal",
+            "title": "Firm Wide",
+            "type": "boolean"
+          },
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ContextItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "session_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "firm_wide",
+          "items"
+        ],
+        "title": "ContextItemsOut",
+        "type": "object"
+      },
+      "ContextOptionOut": {
+        "description": "A picker row (WB-02 b): a record the viewer can open, with its sub line.",
+        "properties": {
+          "attached": {
+            "cls": "internal",
+            "default": false,
+            "title": "Attached",
+            "type": "boolean"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_entity",
+              "engagement",
+              "request_set",
+              "document",
+              "workpaper_set",
+              "workpaper"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Ref Id",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ref_id",
+          "title"
+        ],
+        "title": "ContextOptionOut",
+        "type": "object"
+      },
+      "ContextOptionsOut": {
+        "properties": {
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ContextOptionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "tab": {
+            "cls": "internal",
+            "enum": [
+              "client_record",
+              "documents",
+              "workpapers"
+            ],
+            "title": "Tab",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab",
+          "items"
+        ],
+        "title": "ContextOptionsOut",
+        "type": "object"
+      },
+      "ContextRefIn": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "client_entity",
+              "engagement",
+              "request_set",
+              "document",
+              "workpaper_set",
+              "workpaper"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Ref Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ref_id"
+        ],
+        "title": "ContextRefIn",
+        "type": "object"
+      },
       "ControlDesignStatus": {
         "enum": [
           "effective",
@@ -28230,6 +28536,119 @@
           "allowed_actions"
         ],
         "title": "DrawerOut",
+        "type": "object"
+      },
+      "DrillIn": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "group_key": {
+            "cls": "internal",
+            "pattern": "^[a-z_]{1,40}:[a-z0-9_]{1,60}$",
+            "title": "Group Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "group_key"
+        ],
+        "title": "DrillIn",
+        "type": "object"
+      },
+      "DrillOut": {
+        "properties": {
+          "group_key": {
+            "cls": "internal",
+            "title": "Group Key",
+            "type": "string"
+          },
+          "item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/DrillRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_id",
+          "group_key",
+          "title",
+          "total",
+          "rows"
+        ],
+        "title": "DrillOut",
+        "type": "object"
+      },
+      "DrillRowOut": {
+        "description": "One record of the group: its link target and the words shown; names are resolved under the\nviewer's `visible()` at read time (DEC-61), never taken from model context.",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Detail"
+          },
+          "href": {
+            "cls": "internal",
+            "title": "Href",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "ref_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Ref Id",
+            "type": "string"
+          },
+          "ref_type": {
+            "cls": "internal",
+            "const": "tax_return",
+            "title": "Ref Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref_type",
+          "ref_id",
+          "label",
+          "href"
+        ],
+        "title": "DrillRowOut",
         "type": "object"
       },
       "DropAcceptedOut": {
@@ -75841,6 +76260,41 @@
         "title": "PreferencesOut",
         "type": "object"
       },
+      "PreviewCellOut": {
+        "description": "One cell as stored: `value` is the rendered text the workbook holds; numbers are never\nrecomputed here (ADR-050).",
+        "properties": {
+          "bold": {
+            "cls": "internal",
+            "default": false,
+            "title": "Bold",
+            "type": "boolean"
+          },
+          "kind": {
+            "cls": "internal",
+            "default": "text",
+            "enum": [
+              "text",
+              "number",
+              "money",
+              "percent",
+              "date",
+              "blank"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "cls": "confidential",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "PreviewCellOut",
+        "type": "object"
+      },
       "PreviewOut": {
         "properties": {
           "kind": {
@@ -94348,10 +94802,17 @@
       },
       "SessionCreateIn": {
         "additionalProperties": false,
-        "description": "T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the\nrecord's owner authorises the person and names the capability. W-02 adds unbound sessions.",
+        "description": "T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the\nrecord's owner authorises the person and names the capability. W-02-T02: no `subject_ref` is\na blank session with the context `firm_wide` and the title \"New session\" until the first\nmessage names it (AC-C1, AC-L6).",
         "properties": {
           "subject_ref": {
-            "$ref": "#/components/schemas/SessionSubjectRefIn",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessionSubjectRefIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal"
           },
           "title": {
@@ -94363,10 +94824,30 @@
             "type": "string"
           }
         },
-        "required": [
-          "subject_ref"
-        ],
         "title": "SessionCreateIn",
+        "type": "object"
+      },
+      "SessionDeletedOut": {
+        "description": "The row leaves the list; its items, runs and trace stay (soft delete).",
+        "properties": {
+          "deleted_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Deleted At",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "deleted_at"
+        ],
+        "title": "SessionDeletedOut",
         "type": "object"
       },
       "SessionItemOut": {
@@ -94470,8 +94951,41 @@
         "title": "SessionItemOut",
         "type": "object"
       },
-      "SessionListOut": {
+      "SessionListCountsOut": {
+        "description": "The filter menu's counts over the viewer's rows; walled rows are never counted and no\n\"n hidden\" figure exists anywhere (DEC-43).",
         "properties": {
+          "needs_answer": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Needs Answer",
+            "type": "integer"
+          },
+          "running": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Running",
+            "type": "integer"
+          }
+        },
+        "title": "SessionListCountsOut",
+        "type": "object"
+      },
+      "SessionListOut": {
+        "description": "The P-36 envelope's fields W-02 uses; additive to the TAX-08 shape (items only).",
+        "properties": {
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessionListCountsOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "items": {
             "cls": "confidential",
             "items": {
@@ -94479,6 +94993,25 @@
             },
             "title": "Items",
             "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
@@ -94594,6 +95127,57 @@
           "approved_at"
         ],
         "title": "SessionOut",
+        "type": "object"
+      },
+      "SessionOwnerOut": {
+        "description": "Who a row is attributed to. `via_agent` rows read \"<person> via Agent\" through\n`formatActor` (INV-5); the agent is never an owner.",
+        "properties": {
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "User Id"
+          },
+          "via_agent": {
+            "cls": "internal",
+            "default": false,
+            "title": "Via Agent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "SessionOwnerOut",
+        "type": "object"
+      },
+      "SessionRenameIn": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "SessionRenameIn",
         "type": "object"
       },
       "SessionSignedOutOut": {
@@ -94738,7 +95322,20 @@
         "type": "object"
       },
       "SessionSummaryOut": {
+        "description": "One list row. W-02-T02 adds the WB-01 fields; the TAX-08 subject list leaves them at\ntheir defaults. A `locked` row carries metadata only (DEC-87): no thread item, figure or\ncount.",
         "properties": {
+          "agent_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Agent Label"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -94758,6 +95355,61 @@
             "cls": "internal",
             "title": "Last Item At"
           },
+          "locked": {
+            "cls": "internal",
+            "default": false,
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "needs_answer": {
+            "cls": "internal",
+            "default": false,
+            "title": "Needs Answer",
+            "type": "boolean"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "enum": [
+                  "manual",
+                  "schedule",
+                  "trigger",
+                  "test",
+                  "saved_prompt",
+                  "engagement_run"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Origin"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessionOwnerOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "ready_for_review": {
+            "cls": "internal",
+            "default": false,
+            "title": "Ready For Review",
+            "type": "boolean"
+          },
+          "running": {
+            "cls": "internal",
+            "default": false,
+            "title": "Running",
+            "type": "boolean"
+          },
           "state": {
             "cls": "internal",
             "enum": [
@@ -94775,6 +95427,35 @@
             "cls": "confidential",
             "title": "Title",
             "type": "string"
+          },
+          "title_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "manual"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Title Source"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
           }
         },
         "required": [
@@ -258700,6 +259381,260 @@
         "x-abacus-action": "review_note.withdraw"
       }
     },
+    "/v1/run-artifacts/{artifact_id}/download": {
+      "get": {
+        "description": "The stored bytes with their content type; writes `run_artifact.downloaded`.",
+        "operationId": "artifact_download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Artifact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Artifact Download",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Artifact Download Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "run_artifact.download"
+      }
+    },
+    "/v1/run-artifacts/{artifact_id}/preview": {
+      "get": {
+        "description": "404 when the artifact's run is not readable (no existence leak, DEC-43).",
+        "operationId": "artifact_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Artifact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sheet",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 31,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sheet"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Artifact Preview Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "run_content.read"
+      }
+    },
     "/v1/sample-sets/{sample_set_id}": {
       "get": {
         "operationId": "sample_set",
@@ -284161,19 +285096,234 @@
         "x-abacus-action": "sum.snapshot"
       }
     },
+    "/v1/workbench/context-options": {
+      "get": {
+        "description": "Only records the viewer can open (AC-C3).",
+        "operationId": "context_options",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tab",
+            "required": true,
+            "schema": {
+              "enum": [
+                "client_record",
+                "documents",
+                "workpapers"
+              ],
+              "title": "Tab",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "session_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextOptionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Context Options Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "session.create"
+      }
+    },
     "/v1/workbench/sessions": {
       "get": {
-        "description": "The person's own sessions on one record (TAX-08 History), newest first.",
+        "description": "With `subject_ref`: the person's own sessions on one record (TAX-08 History), newest\nfirst. Without: WB-01's list under DEC-87 membership (DEC-4601), filtered, searched by title\nonly (never thread content), with the filter counts (W-02-T09; 404 behind\n`workbench.enabled`).",
         "operationId": "list_sessions",
         "parameters": [
           {
             "in": "query",
             "name": "subject_ref",
-            "required": true,
+            "required": false,
             "schema": {
-              "pattern": "^[a-z_]{1,40}:[0-9a-f-]{36}$",
-              "title": "Subject Ref",
+              "anyOf": [
+                {
+                  "pattern": "^[a-z_]{1,40}:[0-9a-f-]{36}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Ref"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "mine",
+                "via_agent",
+                "running",
+                "needs_answer"
+              ],
+              "title": "Filter",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
             }
           },
           {
@@ -284259,6 +285409,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Sessions Route",
@@ -284268,7 +285428,7 @@
         "x-abacus-action": "session.read"
       },
       "post": {
-        "description": "409 `capability_unavailable` with `facts.reason` (consent_7216, ai_excluded, paused, \u2026):\nTAX-08's agents-off state; nothing is opened and no model is called (DF-04).",
+        "description": "409 `capability_unavailable` with `facts.reason` (consent_7216, ai_excluded, paused, \u2026):\nTAX-08's agents-off state; nothing is opened and no model is called (DF-04). No\n`subject_ref`: a blank Workbench session (W-02-T09; 404 behind `workbench.enabled`).",
         "operationId": "create_session",
         "parameters": [
           {
@@ -284374,6 +285534,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Create Session Route",
@@ -284384,6 +285554,132 @@
       }
     },
     "/v1/workbench/sessions/{session_id}": {
+      "delete": {
+        "description": "Soft delete; `workbench_session.deleted`; items, runs and trace are kept.",
+        "operationId": "delete_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionDeletedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Delete Session Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "session.manage"
+      },
       "get": {
         "operationId": "get_session",
         "parameters": [
@@ -284497,6 +285793,566 @@
           "workbench sessions"
         ],
         "x-abacus-action": "session.read"
+      },
+      "patch": {
+        "description": "The owner's rename; `title_source` becomes `manual`; 409 `stale_version` when `If-Match`\nis not the row's version; one `workbench_session.renamed` audit event (titles by hash).",
+        "operationId": "rename_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "minLength": 1,
+              "title": "If-Match",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionRenameIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Rename Session Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "session.manage"
+      }
+    },
+    "/v1/workbench/sessions/{session_id}/context": {
+      "post": {
+        "description": "One `context_added` item and audit event per record; a record the owner can't open is\n404 (no existence leak).",
+        "operationId": "attach_context",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextAttachIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextItemsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Attach Context Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "session.manage"
+      }
+    },
+    "/v1/workbench/sessions/{session_id}/context/{item_id}": {
+      "delete": {
+        "description": "`context_removed`; later turns leave the record out of `client_scope` (AC-C5).",
+        "operationId": "remove_context",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextItemsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Remove Context Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "session.manage"
+      }
+    },
+    "/v1/workbench/sessions/{session_id}/drill": {
+      "post": {
+        "description": "The session owner's; no model call; rows filtered by `visible()` (AC-R4, INV-3).",
+        "operationId": "session_drill",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DrillIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Session Drill Route",
+        "tags": [
+          "workbench sessions"
+        ],
+        "x-abacus-action": "session.manage"
       }
     },
     "/v1/workbench/sessions/{session_id}/events": {

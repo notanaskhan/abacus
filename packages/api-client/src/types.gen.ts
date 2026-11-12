@@ -3205,6 +3205,46 @@ export type AreaOut = {
 };
 
 /**
+ * ArtifactPreviewOut
+ *
+ * WB-03 d2: the sheet tabs, the open sheet's header and rows, from the stored artifact.
+ */
+export type ArtifactPreviewOut = {
+    /**
+     * Artifact Id
+     */
+    artifact_id: string;
+    /**
+     * Columns
+     */
+    columns: Array<string>;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Footnote
+     */
+    footnote?: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<Array<PreviewCellOut>>;
+    /**
+     * Sha256
+     */
+    sha256: string;
+    /**
+     * Sheet
+     */
+    sheet: string;
+    /**
+     * Sheets
+     */
+    sheets: Array<string>;
+};
+
+/**
  * AssessIn
  */
 export type AssessIn = {
@@ -11079,6 +11119,125 @@ export type ContactsPage = {
 };
 
 /**
+ * ContextAttachIn
+ */
+export type ContextAttachIn = {
+    /**
+     * Items
+     */
+    items: Array<ContextRefIn>;
+};
+
+/**
+ * ContextItemOut
+ *
+ * One attached item: the chip and the stack card (WB-02 c, d). `summary_lines` are computed
+ * by code (AC-C4): "24 requests · 12 received · 3 files in use".
+ */
+export type ContextItemOut = {
+    /**
+     * Card Title
+     */
+    card_title: 'Client record' | 'Documents' | 'Workpapers';
+    /**
+     * Chip Label
+     */
+    chip_label: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'client_entity' | 'engagement' | 'request_set' | 'document' | 'workpaper_set' | 'workpaper';
+    /**
+     * Ref Id
+     */
+    ref_id: string;
+    /**
+     * Summary Lines
+     */
+    summary_lines: Array<string>;
+};
+
+/**
+ * ContextItemsOut
+ *
+ * The session's context after the change; empty means firm-wide, read-only.
+ */
+export type ContextItemsOut = {
+    /**
+     * Firm Wide
+     */
+    firm_wide: boolean;
+    /**
+     * Items
+     */
+    items: Array<ContextItemOut>;
+    /**
+     * Session Id
+     */
+    session_id: string;
+};
+
+/**
+ * ContextOptionOut
+ *
+ * A picker row (WB-02 b): a record the viewer can open, with its sub line.
+ */
+export type ContextOptionOut = {
+    /**
+     * Attached
+     */
+    attached?: boolean;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'client_entity' | 'engagement' | 'request_set' | 'document' | 'workpaper_set' | 'workpaper';
+    /**
+     * Ref Id
+     */
+    ref_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ContextOptionsOut
+ */
+export type ContextOptionsOut = {
+    /**
+     * Items
+     */
+    items: Array<ContextOptionOut>;
+    /**
+     * Tab
+     */
+    tab: 'client_record' | 'documents' | 'workpapers';
+};
+
+/**
+ * ContextRefIn
+ */
+export type ContextRefIn = {
+    /**
+     * Kind
+     */
+    kind: 'client' | 'client_entity' | 'engagement' | 'request_set' | 'document' | 'workpaper_set' | 'workpaper';
+    /**
+     * Ref Id
+     */
+    ref_id: string;
+};
+
+/**
  * ControlDesignStatus
  */
 export type ControlDesignStatus = 'effective' | 'deficient' | 'not_assessed';
@@ -13171,6 +13330,75 @@ export type DrawerOut = {
      * Virtual Children
      */
     virtual_children: Array<VirtualChild>;
+};
+
+/**
+ * DrillIn
+ */
+export type DrillIn = {
+    /**
+     * Artifact Id
+     */
+    artifact_id: string;
+    /**
+     * Group Key
+     */
+    group_key: string;
+};
+
+/**
+ * DrillOut
+ */
+export type DrillOut = {
+    /**
+     * Group Key
+     */
+    group_key: string;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Rows
+     */
+    rows: Array<DrillRowOut>;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * DrillRowOut
+ *
+ * One record of the group: its link target and the words shown; names are resolved under the
+ * viewer's `visible()` at read time (DEC-61), never taken from model context.
+ */
+export type DrillRowOut = {
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Href
+     */
+    href: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Ref Id
+     */
+    ref_id: string;
+    /**
+     * Ref Type
+     */
+    ref_type: 'tax_return';
 };
 
 /**
@@ -35775,6 +36003,27 @@ export type PreferencesOut = {
 };
 
 /**
+ * PreviewCellOut
+ *
+ * One cell as stored: `value` is the rendered text the workbook holds; numbers are never
+ * recomputed here (ADR-050).
+ */
+export type PreviewCellOut = {
+    /**
+     * Bold
+     */
+    bold?: boolean;
+    /**
+     * Kind
+     */
+    kind?: 'text' | 'number' | 'money' | 'percent' | 'date' | 'blank';
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * PreviewOut
  */
 export type PreviewOut = {
@@ -44310,14 +44559,32 @@ export type ServiceOrganizationStatus = 'pending' | 'gap_found' | 'bridge_letter
  * SessionCreateIn
  *
  * T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the
- * record's owner authorises the person and names the capability. W-02 adds unbound sessions.
+ * record's owner authorises the person and names the capability. W-02-T02: no `subject_ref` is
+ * a blank session with the context `firm_wide` and the title "New session" until the first
+ * message names it (AC-C1, AC-L6).
  */
 export type SessionCreateIn = {
-    subject_ref: SessionSubjectRefIn;
+    subject_ref?: SessionSubjectRefIn | null;
     /**
      * Title
      */
     title?: string;
+};
+
+/**
+ * SessionDeletedOut
+ *
+ * The row leaves the list; its items, runs and trace stay (soft delete).
+ */
+export type SessionDeletedOut = {
+    /**
+     * Deleted At
+     */
+    deleted_at: string;
+    /**
+     * Id
+     */
+    id: string;
 };
 
 /**
@@ -44367,13 +44634,41 @@ export type SessionItemOut = {
 };
 
 /**
+ * SessionListCountsOut
+ *
+ * The filter menu's counts over the viewer's rows; walled rows are never counted and no
+ * "n hidden" figure exists anywhere (DEC-43).
+ */
+export type SessionListCountsOut = {
+    /**
+     * Needs Answer
+     */
+    needs_answer?: number;
+    /**
+     * Running
+     */
+    running?: number;
+};
+
+/**
  * SessionListOut
+ *
+ * The P-36 envelope's fields W-02 uses; additive to the TAX-08 shape (items only).
  */
 export type SessionListOut = {
+    counts?: SessionListCountsOut | null;
     /**
      * Items
      */
     items: Array<SessionSummaryOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total?: number;
 };
 
 /**
@@ -44426,6 +44721,37 @@ export type SessionOut = {
      * Plan
      */
     plan: Array<PlanStepOut>;
+};
+
+/**
+ * SessionOwnerOut
+ *
+ * Who a row is attributed to. `via_agent` rows read "<person> via Agent" through
+ * `formatActor` (INV-5); the agent is never an owner.
+ */
+export type SessionOwnerOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id?: string | null;
+    /**
+     * Via Agent
+     */
+    via_agent?: boolean;
+};
+
+/**
+ * SessionRenameIn
+ */
+export type SessionRenameIn = {
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -44500,8 +44826,16 @@ export type SessionSubjectRefIn = {
 
 /**
  * SessionSummaryOut
+ *
+ * One list row. W-02-T02 adds the WB-01 fields; the TAX-08 subject list leaves them at
+ * their defaults. A `locked` row carries metadata only (DEC-87): no thread item, figure or
+ * count.
  */
 export type SessionSummaryOut = {
+    /**
+     * Agent Label
+     */
+    agent_label?: string | null;
     /**
      * Id
      */
@@ -44511,6 +44845,27 @@ export type SessionSummaryOut = {
      */
     last_item_at?: string | null;
     /**
+     * Locked
+     */
+    locked?: boolean;
+    /**
+     * Needs Answer
+     */
+    needs_answer?: boolean;
+    /**
+     * Origin
+     */
+    origin?: 'manual' | 'schedule' | 'trigger' | 'test' | 'saved_prompt' | 'engagement_run' | null;
+    owner?: SessionOwnerOut | null;
+    /**
+     * Ready For Review
+     */
+    ready_for_review?: boolean;
+    /**
+     * Running
+     */
+    running?: boolean;
+    /**
      * State
      */
     state: 'live' | 'running' | 'awaiting_answer' | 'ready_for_review' | 'complete' | 'failed';
@@ -44518,6 +44873,14 @@ export type SessionSummaryOut = {
      * Title
      */
     title: string;
+    /**
+     * Title Source
+     */
+    title_source?: 'auto' | 'manual' | null;
+    /**
+     * Version
+     */
+    version?: string | null;
 };
 
 /**
@@ -119369,6 +119732,125 @@ export type ReviewNoteWithdrawResponses = {
 
 export type ReviewNoteWithdrawResponse = ReviewNoteWithdrawResponses[keyof ReviewNoteWithdrawResponses];
 
+export type ArtifactDownloadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Artifact Id
+         */
+        artifact_id: string;
+    };
+    query?: never;
+    url: '/v1/run-artifacts/{artifact_id}/download';
+};
+
+export type ArtifactDownloadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ArtifactDownloadError = ArtifactDownloadErrors[keyof ArtifactDownloadErrors];
+
+export type ArtifactDownloadResponses = {
+    /**
+     * Response Artifact Download
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ArtifactDownloadResponse = ArtifactDownloadResponses[keyof ArtifactDownloadResponses];
+
+export type ArtifactPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Artifact Id
+         */
+        artifact_id: string;
+    };
+    query?: {
+        /**
+         * Sheet
+         */
+        sheet?: string | null;
+    };
+    url: '/v1/run-artifacts/{artifact_id}/preview';
+};
+
+export type ArtifactPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ArtifactPreviewError = ArtifactPreviewErrors[keyof ArtifactPreviewErrors];
+
+export type ArtifactPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ArtifactPreviewOut;
+};
+
+export type ArtifactPreviewResponse = ArtifactPreviewResponses[keyof ArtifactPreviewResponses];
+
 export type SampleSetData = {
     body?: never;
     headers?: {
@@ -130817,7 +131299,7 @@ export type SumSnapshotResponses = {
 
 export type SumSnapshotResponse = SumSnapshotResponses[keyof SumSnapshotResponses];
 
-export type ListSessionsData = {
+export type ContextOptionsData = {
     body?: never;
     headers?: {
         /**
@@ -130832,9 +131314,85 @@ export type ListSessionsData = {
     path?: never;
     query: {
         /**
+         * Tab
+         */
+        tab: 'client_record' | 'documents' | 'workpapers';
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Session Id
+         */
+        session_id?: string | null;
+    };
+    url: '/v1/workbench/context-options';
+};
+
+export type ContextOptionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ContextOptionsError = ContextOptionsErrors[keyof ContextOptionsErrors];
+
+export type ContextOptionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContextOptionsOut;
+};
+
+export type ContextOptionsResponse = ContextOptionsResponses[keyof ContextOptionsResponses];
+
+export type ListSessionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
          * Subject Ref
          */
-        subject_ref: string;
+        subject_ref?: string | null;
+        /**
+         * Filter
+         */
+        filter?: 'all' | 'mine' | 'via_agent' | 'running' | 'needs_answer';
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
     };
     url: '/v1/workbench/sessions';
 };
@@ -130856,6 +131414,10 @@ export type ListSessionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
@@ -130907,6 +131469,10 @@ export type CreateSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type CreateSessionError = CreateSessionErrors[keyof CreateSessionErrors];
@@ -130919,6 +131485,66 @@ export type CreateSessionResponses = {
 };
 
 export type CreateSessionResponse = CreateSessionResponses[keyof CreateSessionResponses];
+
+export type DeleteSessionData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/workbench/sessions/{session_id}';
+};
+
+export type DeleteSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeleteSessionError = DeleteSessionErrors[keyof DeleteSessionErrors];
+
+export type DeleteSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionDeletedOut;
+};
+
+export type DeleteSessionResponse = DeleteSessionResponses[keyof DeleteSessionResponses];
 
 export type GetSessionData = {
     body?: never;
@@ -130975,6 +131601,254 @@ export type GetSessionResponses = {
 };
 
 export type GetSessionResponse = GetSessionResponses[keyof GetSessionResponses];
+
+export type RenameSessionData = {
+    body: SessionRenameIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/workbench/sessions/{session_id}';
+};
+
+export type RenameSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RenameSessionError = RenameSessionErrors[keyof RenameSessionErrors];
+
+export type RenameSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionSummaryOut;
+};
+
+export type RenameSessionResponse = RenameSessionResponses[keyof RenameSessionResponses];
+
+export type AttachContextData = {
+    body: ContextAttachIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/workbench/sessions/{session_id}/context';
+};
+
+export type AttachContextErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AttachContextError = AttachContextErrors[keyof AttachContextErrors];
+
+export type AttachContextResponses = {
+    /**
+     * Successful Response
+     */
+    201: ContextItemsOut;
+};
+
+export type AttachContextResponse = AttachContextResponses[keyof AttachContextResponses];
+
+export type RemoveContextData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/workbench/sessions/{session_id}/context/{item_id}';
+};
+
+export type RemoveContextErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RemoveContextError = RemoveContextErrors[keyof RemoveContextErrors];
+
+export type RemoveContextResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContextItemsOut;
+};
+
+export type RemoveContextResponse = RemoveContextResponses[keyof RemoveContextResponses];
+
+export type SessionDrillData = {
+    body: DrillIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/workbench/sessions/{session_id}/drill';
+};
+
+export type SessionDrillErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SessionDrillError = SessionDrillErrors[keyof SessionDrillErrors];
+
+export type SessionDrillResponses = {
+    /**
+     * Successful Response
+     */
+    201: DrillOut;
+};
+
+export type SessionDrillResponse = SessionDrillResponses[keyof SessionDrillResponses];
 
 export type SessionEventsData = {
     body?: never;

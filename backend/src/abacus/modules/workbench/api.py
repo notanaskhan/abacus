@@ -12,6 +12,7 @@ from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.agents.api import register_session_links
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.workbench.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.workbench.list_contract import context_options_router, manage_router
 from abacus.modules.workbench.run_links import session_links
 from abacus.modules.workbench.session_activities import SESSION_ACTIVITIES
 from abacus.modules.workbench.session_events import register as _register_session_topic
@@ -35,7 +36,13 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 _register_session_topic()  # TASK-7325: `session:<id>` and `session.items_changed`
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[AbacusRouter, ...] = (sessions_router, agent_badge_router)
+ROUTERS: tuple[AbacusRouter, ...] = (
+    sessions_router,
+    agent_badge_router,
+    # W-02-T02: rename, delete and the context routes (stubs).
+    manage_router,
+    context_options_router,
+)
 
 # P-10-T14: the legacy run backfill asks which session first named each run.
 register_session_links(session_links)
