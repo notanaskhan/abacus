@@ -1,8 +1,8 @@
 ---
 id: TASK-7800
 title: "Q-04-T035: firm exit runbook, the export check and the exit certificate, rehearsed on a rehearsal tenant"
-spec: none (backlog row Q-04-T035; ADR-034, ADR-156, ADR-179; DEC-72)
-acceptance_criteria: [Q-04-T035]
+spec: SPEC-000  # row (Q-04-T035; ADR-034, ADR-156, ADR-179; DEC-72)
+acceptance_criteria: [AC-20]  # the row's acceptance, below
 risk_zone: red
 status: in-review
 branch: lo38-q04-t035-firm-exit
