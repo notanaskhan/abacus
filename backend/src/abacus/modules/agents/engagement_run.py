@@ -126,7 +126,8 @@ class RunStepResult:
 
 RunStepHandler = Callable[[AgentContext, RunStepFacts], Awaitable[RunStepResult]]
 _HANDLERS: dict[str, RunStepHandler] = {}
-_KIND: Final = re.compile(r"[a-z][a-z_]{0,39}")
+# T-05-T32 (DEC-4617): digits allowed after the first letter (`capital_m2`, `federal_k1s`).
+_KIND: Final = re.compile(r"[a-z][a-z0-9_]{0,39}")
 
 
 def register_run_step(kind: str, handler: RunStepHandler) -> None:

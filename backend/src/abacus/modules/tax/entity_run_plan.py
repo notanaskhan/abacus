@@ -126,7 +126,9 @@ def selected(scope: str, keys: Sequence[str]) -> list[EntityStep]:
     return [s for s in STEPS if s.key in chosen]
 
 
-def plan_steps(chosen: Sequence[EntityStep], *, consent: bool) -> list[PlanStep]:
+def plan_steps(
+    chosen: Sequence[EntityStep], *, consent: bool, return_id: UUID | None = None
+) -> list[PlanStep]:
     """The run's plan: dependencies outside the chosen set are dropped (their results stand)."""
     keys = {s.key for s in chosen}
     out: list[PlanStep] = []
@@ -155,7 +157,11 @@ def plan_steps(chosen: Sequence[EntityStep], *, consent: bool) -> list[PlanStep]
                 level=LEVEL[step.group],
                 kind="compute",
                 tool=f"{RUN_STEP}{step.key}",
-                arguments={"group": step.group, "keep_human": True},
+                arguments={
+                    "group": step.group,
+                    "keep_human": True,
+                    **({} if return_id is None else {"return_id": str(return_id)}),
+                },
                 depends_on=depends,
             )
         )
@@ -179,7 +185,7 @@ async def entity_workbook_plan(
     del engagement_id  # the work item names the return; the engagement was authorised already
     chosen = selected(request.scope, request.keys)
     consent = await consent_in_force(tenant, request.work_item_id)
-    return plan_steps(chosen, consent=consent)
+    return plan_steps(chosen, consent=consent, return_id=request.work_item_id)
 
 
 register_plan_provider(PROVIDER, entity_workbook_plan)
