@@ -4,6 +4,12 @@
 A session is the thread view of one or more runs. A client a viewer can't open answers
 `locked: true` with no figures; a walled client's session is omitted (DEC-87). The snapshot and
 the message post are P-10-T43's (`sessions.py`); the session stream answers 501 until T26's.
+
+W-02-T02 (SPEC-653; DEC-4604) extends both routes additively: the list answers the filtered,
+P-36-enveloped Workbench list when no `subject_ref` is given, and create accepts an empty body
+(a blank firm-wide session). Both W-02 paths sit behind `workbench.enabled` (off: 404) and answer
+501 until W-02-T09; the TAX-08 subject paths are unchanged. The rest of the family (rename,
+delete, context) is `list_contract.py`'s.
 """
 
 from __future__ import annotations
@@ -96,39 +102,104 @@ class SessionSubjectRefIn(BaseModel):
 
 class SessionCreateIn(BaseModel):
     """T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the
-    record's owner authorises the person and names the capability. W-02 adds unbound sessions."""
+    record's owner authorises the person and names the capability. W-02-T02: no `subject_ref` is
+    a blank session with the context `firm_wide` and the title "New session" until the first
+    message names it (AC-C1, AC-L6)."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    subject_ref: Annotated[SessionSubjectRefIn, Internal]  # a kind and an id
+    subject_ref: Annotated[SessionSubjectRefIn | None, Internal] = None  # a kind and an id
     title: Annotated[str, Field(min_length=1, max_length=200), Confidential] = "Assistant"
 
 
+SessionListFilter = Literal["all", "mine", "via_agent", "running", "needs_answer"]
+
+
+class SessionOwnerOut(BaseModel):
+    """Who a row is attributed to. `via_agent` rows read "<person> via Agent" through
+    `formatActor` (INV-5); the agent is never an owner."""
+
+    model_config = _frozen()
+
+    user_id: Annotated[UUID | None, Internal] = None
+    name: Annotated[str, Confidential]
+    via_agent: Annotated[bool, Internal] = False
+
+
 class SessionSummaryOut(BaseModel):
+    """One list row. W-02-T02 adds the WB-01 fields; the TAX-08 subject list leaves them at
+    their defaults. A `locked` row carries metadata only (DEC-87): no thread item, figure or
+    count."""
+
     model_config = _frozen()
 
     id: Annotated[UUID, Internal]
     title: Annotated[str, Confidential]
     state: Annotated[SessionState, Internal]
     last_item_at: Annotated[datetime | None, Internal] = None
+    owner: Annotated[SessionOwnerOut | None, Confidential] = None
+    origin: Annotated[SessionOrigin | None, Internal] = None
+    # The definition's name on a via-Agent row ("Season Progress Reporter"), resolved at read.
+    agent_label: Annotated[str | None, Confidential] = None
+    needs_answer: Annotated[bool, Internal] = False
+    running: Annotated[bool, Internal] = False
+    ready_for_review: Annotated[bool, Internal] = False
+    locked: Annotated[bool, Internal] = False
+    title_source: Annotated[Literal["auto", "manual"] | None, Internal] = None
+    # The row's version for `If-Match` on rename (W-02-T09).
+    version: Annotated[str | None, Field(max_length=40), Internal] = None
+
+
+class SessionListCountsOut(BaseModel):
+    """The filter menu's counts over the viewer's rows; walled rows are never counted and no
+    "n hidden" figure exists anywhere (DEC-43)."""
+
+    model_config = _frozen()
+
+    running: Annotated[int, Field(ge=0), Internal] = 0
+    needs_answer: Annotated[int, Field(ge=0), Internal] = 0
 
 
 class SessionListOut(BaseModel):
+    """The P-36 envelope's fields W-02 uses; additive to the TAX-08 shape (items only)."""
+
     model_config = _frozen()
 
     items: Annotated[list[SessionSummaryOut], Confidential]
+    next_cursor: Annotated[str | None, Internal] = None
+    total: Annotated[int, Field(ge=0), Internal] = 0
+    counts: Annotated[SessionListCountsOut | None, Internal] = None
 
 
 sessions_router = AbacusRouter(prefix="/v1/workbench/sessions", tags=["workbench sessions"])
 
 
+async def workbench_gate(ctx: AuthContext) -> None:
+    """`workbench.enabled` off: 404 named after the flag (the repository's answer)."""
+    from abacus.kernel._flags import WORKBENCH_ENABLED
+    from abacus.kernel.errors import NotFound
+    from abacus.kernel.flags import flag_enabled
+
+    if not await flag_enabled(ctx.tenant, WORKBENCH_ENABLED):
+        raise NotFound(WORKBENCH_ENABLED.name)
+
+
 @sessions_router.post(
-    "", action="session.create", response_model=SessionSummaryOut, status_code=201, errors=(409,)
+    "",
+    action="session.create",
+    response_model=SessionSummaryOut,
+    status_code=201,
+    errors=(409, 501),
 )
 async def create_session_route(body: SessionCreateIn, ctx: Ctx) -> SessionSummaryOut:
     """409 `capability_unavailable` with `facts.reason` (consent_7216, ai_excluded, paused, …):
-    TAX-08's agents-off state; nothing is opened and no model is called (DF-04)."""
+    TAX-08's agents-off state; nothing is opened and no model is called (DF-04). No
+    `subject_ref`: a blank Workbench session (W-02-T09; 404 behind `workbench.enabled`)."""
     from abacus.modules.workbench.sessions import open_subject_session
+
+    if body.subject_ref is None:
+        await workbench_gate(ctx)
+        _not_yet()
 
     session_id = await open_subject_session(
         ctx, body.subject_ref.kind, body.subject_ref.id, body.title
@@ -136,12 +207,23 @@ async def create_session_route(body: SessionCreateIn, ctx: Ctx) -> SessionSummar
     return SessionSummaryOut(id=session_id, title=body.title, state="live")
 
 
-@sessions_router.get("", action="session.read", response_model=SessionListOut)
+@sessions_router.get("", action="session.read", response_model=SessionListOut, errors=(501,))
 async def list_sessions_route(
-    ctx: Ctx, subject_ref: Annotated[str, Query(pattern=r"^[a-z_]{1,40}:[0-9a-f-]{36}$")]
+    ctx: Ctx,
+    subject_ref: Annotated[str | None, Query(pattern=r"^[a-z_]{1,40}:[0-9a-f-]{36}$")] = None,
+    filter: Annotated[SessionListFilter, Query()] = "all",
+    q: Annotated[str | None, Query(min_length=1, max_length=120)] = None,
+    cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> SessionListOut:
-    """The person's own sessions on one record (TAX-08 History), newest first."""
+    """With `subject_ref`: the person's own sessions on one record (TAX-08 History), newest
+    first. Without: WB-01's list under DEC-87 membership (DEC-4601), filtered, searched by title
+    only (never thread content), with the filter counts (W-02-T09; 404 behind
+    `workbench.enabled`)."""
     from abacus.modules.workbench.sessions import subject_sessions
+
+    if subject_ref is None:
+        await workbench_gate(ctx)
+        _not_yet()
 
     kind, _, ident = subject_ref.partition(":")
     rows = await subject_sessions(ctx, kind, UUID(ident))
