@@ -681,11 +681,20 @@ async def create_feedback_route(
     return AgentFeedbackOut(id=feedback)
 
 
-@capabilities_router.get(
-    "", action="session.read", response_model=AgentCapabilitiesOut, errors=(501,)
-)
+@capabilities_router.get("", action="session.read", response_model=AgentCapabilitiesOut)
 async def list_capabilities_route(
     ctx: Ctx, engagement_id: Annotated[UUID | None, Query()] = None
 ) -> AgentCapabilitiesOut:
+    """P-10-T45 (DEC-4303): from flags, policy, boundary facts and consent; no model call."""
+    from abacus.modules.agents.capability_availability import capabilities_for
+
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    _not_yet()
+    found = await capabilities_for(ctx, engagement_id)
+    return AgentCapabilitiesOut(
+        items=[
+            CapabilityAvailabilityOut(
+                capability=a.capability, available=a.available, reason=a.reason
+            )
+            for a in found
+        ]
+    )
