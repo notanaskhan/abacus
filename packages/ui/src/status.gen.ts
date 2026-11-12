@@ -62,13 +62,19 @@ export const STATUS_REGISTRY = {
       "label": "Not started",
       "variant": "neutral",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "season_stage": "Gather"
+      }
     },
     "gathering": {
       "label": "Gathering",
       "variant": "state",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "season_stage": "Gather"
+      }
     },
     "preparing": {
       "label": "Preparing",
@@ -77,7 +83,8 @@ export const STATUS_REGISTRY = {
       "derived": false,
       "contextLabels": {
         "subbar_1040_1041": "Draft",
-        "subbar_entity_returns": "Working"
+        "subbar_entity_returns": "Working",
+        "season_stage": "Prepare"
       }
     },
     "prepared": {
@@ -85,6 +92,9 @@ export const STATUS_REGISTRY = {
       "variant": "neutral",
       "terminal": false,
       "derived": false,
+      "contextLabels": {
+        "season_stage": "Prepare"
+      },
       "contextVariants": {
         "subbar": "state"
       }
@@ -96,7 +106,8 @@ export const STATUS_REGISTRY = {
       "derived": false,
       "contextLabels": {
         "subbar_rail_rows": "In review · {level}",
-        "tax_board_rows": "In review · {level}"
+        "tax_board_rows": "In review · {level}",
+        "season_stage": "Review"
       }
     },
     "action_required": {
@@ -105,7 +116,8 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false,
       "contextLabels": {
-        "home_and_tax_tiles": "Issues"
+        "home_and_tax_tiles": "Issues",
+        "season_stage": "Review"
       }
     },
     "approved": {
@@ -115,38 +127,54 @@ export const STATUS_REGISTRY = {
       "derived": false,
       "contextLabels": {
         "home_and_tax_tiles": "Ready",
-        "tax_board_rows": "Ready"
+        "tax_board_rows": "Ready",
+        "season_stage": "Deliver"
       }
     },
     "awaiting_signature": {
       "label": "Awaiting signature",
       "variant": "amber",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "season_stage": "Deliver"
+      }
     },
     "filed": {
       "label": "Filed",
       "variant": "green-tint",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "season_stage": "Done"
+      }
     },
     "accepted": {
       "label": "Accepted",
       "variant": "green",
       "terminal": true,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "season_stage": "Done"
+      }
     },
     "rejected": {
       "label": "Rejected",
       "variant": "red-tint",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "season_stage": "Deliver"
+      }
     },
     "fixing": {
       "label": "Fixing",
       "variant": "state",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "season_stage": "Deliver"
+      }
     }
   },
   "return_flag": {
@@ -2816,7 +2844,11 @@ export const STATUS_REGISTRY = {
       "label": "Ready for review",
       "variant": "state",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "approval_card_owner": "Waiting on you",
+        "approval_card_other": "Waiting on {person}"
+      }
     },
     "approved": {
       "label": "Approved",
@@ -2825,7 +2857,8 @@ export const STATUS_REGISTRY = {
       "derived": false,
       "contextLabels": {
         "attribution": "Approved by {person}",
-        "under_policy": "✓ Approved by {person} under {policy} · {time}"
+        "under_policy": "✓ Approved by {person} under {policy} · {time}",
+        "approval_card": "✓ Approved by {person} · {time}"
       }
     },
     "approved_with_edits": {
@@ -3026,6 +3059,38 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false,
       "disc": "x_brick"
+    }
+  },
+  "workbench_session_filter": {
+    "all": {
+      "label": "All sessions",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "mine": {
+      "label": "Mine",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "via_agent": {
+      "label": "Via Agent",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "running": {
+      "label": "Running {n}",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "needs_answer": {
+      "label": "Needs your answer {n}",
+      "variant": null,
+      "terminal": false,
+      "derived": true
     }
   },
   "integration": {

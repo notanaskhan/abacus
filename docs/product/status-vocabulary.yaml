@@ -46,18 +46,18 @@ objects:
   return:
     source: "blueprint 3.3.1"
     codes:
-      not_started:     {label: "Not started", variant: neutral, terminal: false, derived: false}
-      gathering:       {label: "Gathering",   variant: state,   terminal: false, derived: false}
-      preparing:       {label: "Preparing",   variant: state,   terminal: false, derived: false, context_labels: {subbar_1040_1041: "Draft", subbar_entity_returns: "Working"}}   # Working = 1065/1120-S/1120/990 while the Agent tab builds the workbook
-      prepared:        {label: "Prepared",    variant: neutral, terminal: false, derived: false, context_variants: {subbar: state}}
-      in_review:       {label: "In review",   variant: state,   terminal: false, derived: false, context_labels: {subbar_rail_rows: "In review · {level}", tax_board_rows: "In review · {level}"}}   # level: Detail, Manager, Partner; tax_board_rows: TPL-01/TAX-01 rows (DEC-1182)
-      action_required: {label: "Action required", variant: red-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Issues"}}
-      approved:        {label: "Approved",    variant: green-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Ready", tax_board_rows: "Ready"}}   # T-02-T04: the TAX-01 tile word; the board's rows say it too (DEC-1182)
-      awaiting_signature: {label: "Awaiting signature", variant: amber, terminal: false, derived: false}
-      filed:           {label: "Filed",       variant: green-tint, terminal: false, derived: false}   # transmitted, acknowledgement pending
-      accepted:        {label: "Accepted",    variant: green,  terminal: true,  derived: false}
-      rejected:        {label: "Rejected",    variant: red-tint, terminal: false, derived: false}
-      fixing:          {label: "Fixing",      variant: state,  terminal: false, derived: false}
+      not_started:     {label: "Not started", variant: neutral, terminal: false, derived: false, context_labels: {season_stage: "Gather"}}
+      gathering:       {label: "Gathering",   variant: state,   terminal: false, derived: false, context_labels: {season_stage: "Gather"}}
+      preparing:       {label: "Preparing",   variant: state,   terminal: false, derived: false, context_labels: {subbar_1040_1041: "Draft", subbar_entity_returns: "Working", season_stage: "Prepare"}}   # Working = 1065/1120-S/1120/990 while the Agent tab builds the workbook
+      prepared:        {label: "Prepared",    variant: neutral, terminal: false, derived: false, context_variants: {subbar: state}, context_labels: {season_stage: "Prepare"}}
+      in_review:       {label: "In review",   variant: state,   terminal: false, derived: false, context_labels: {subbar_rail_rows: "In review · {level}", tax_board_rows: "In review · {level}", season_stage: "Review"}}   # level: Detail, Manager, Partner; tax_board_rows: TPL-01/TAX-01 rows (DEC-1182)
+      action_required: {label: "Action required", variant: red-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Issues", season_stage: "Review"}}
+      approved:        {label: "Approved",    variant: green-tint, terminal: false, derived: false, context_labels: {home_and_tax_tiles: "Ready", tax_board_rows: "Ready", season_stage: "Deliver"}}   # T-02-T04: the TAX-01 tile word; the board's rows say it too (DEC-1182)
+      awaiting_signature: {label: "Awaiting signature", variant: amber, terminal: false, derived: false, context_labels: {season_stage: "Deliver"}}
+      filed:           {label: "Filed",       variant: green-tint, terminal: false, derived: false, context_labels: {season_stage: "Done"}}   # transmitted, acknowledgement pending
+      accepted:        {label: "Accepted",    variant: green,  terminal: true,  derived: false, context_labels: {season_stage: "Done"}}
+      rejected:        {label: "Rejected",    variant: red-tint, terminal: false, derived: false, context_labels: {season_stage: "Deliver"}}   # season_stage inferred: a rejection is fixed and re-transmitted before it is delivered (W-02-T04, DEC-4602)
+      fixing:          {label: "Fixing",      variant: state,  terminal: false, derived: false, context_labels: {season_stage: "Deliver"}}
 
   return_flag:   # side flags on a return, not part of the main flow
     source: "blueprint 3.3.1 (Return side flags)"
@@ -781,8 +781,8 @@ objects:
   proposal:   # agents.proposals, the SHL-10 change set (ADR-161 clause 2); the human act is a proposal_decisions row; approving a linked checkpoint is the same decision
     source: "P-04 section 4 (proposals.state); SHL-10; SHL-16"
     codes:
-      pending:             {label: "Ready for review", variant: state, terminal: false, derived: false}   # SHL-10 head pill
-      approved:            {label: "Approved", variant: green, terminal: true, derived: false, context_labels: {attribution: "Approved by {person}", under_policy: "✓ Approved by {person} under {policy} · {time}"}}   # a named human; never the agent (L5/L6); SHL-10 e′
+      pending:             {label: "Ready for review", variant: state, terminal: false, derived: false, context_labels: {approval_card_owner: "Waiting on you", approval_card_other: "Waiting on {person}"}}   # SHL-10 head pill; WB-03 d ApprovalCard (W-02-T04)
+      approved:            {label: "Approved", variant: green, terminal: true, derived: false, context_labels: {attribution: "Approved by {person}", under_policy: "✓ Approved by {person} under {policy} · {time}", approval_card: "✓ Approved by {person} · {time}"}}   # a named human; never the agent (L5/L6); SHL-10 e′; WB-03 e
       approved_with_edits: {label: "Approved with edits", variant: green, terminal: true, derived: false}   # from the SHL-10 CTA "Approve with edits"; label not verbatim
       rejected:            {label: "Rejected", variant: red-tint, terminal: true, derived: false, context_labels: {attribution: "Rejected by {person} · reason: {reason}"}}   # SHL-10 f; SHL-16 e
       superseded:          {label: "Superseded", variant: soon, terminal: true, derived: false}   # no source wording; the document and return pattern
@@ -826,6 +826,15 @@ objects:
       ready_for_review: {label: "Ready for review", variant: state, terminal: false, derived: false}
       complete:         {label: "Complete", variant: null, disc: check_olive, terminal: true, derived: false}
       failed:           {label: "Failed", variant: null, disc: x_brick, terminal: false, derived: false}
+
+  workbench_session_filter:   # WB-01's FilterButton menu (W-02-T04, chapter 05 §5.2.4): a list filter, never a stored state; {n} is the server's count, walled rows never counted (DEC-43)
+    source: "chapter 05 §5.2.4; WB-01 c"
+    codes:
+      all:          {label: "All sessions", variant: null, terminal: false, derived: true}
+      mine:         {label: "Mine", variant: null, terminal: false, derived: true}
+      via_agent:    {label: "Via Agent", variant: null, terminal: false, derived: true}
+      running:      {label: "Running {n}", variant: null, terminal: false, derived: true}
+      needs_answer: {label: "Needs your answer {n}", variant: null, terminal: false, derived: true}
 
   integration:   # catalogue and connection (repo object: connection)
     source: "blueprint 3.3.1; 9.5.6"

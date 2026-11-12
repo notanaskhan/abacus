@@ -544,6 +544,11 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Session item | One insert-only, schema-versioned entry of a session's thread. | `session_items` | — |
 | Saved prompt | A user's saved request text. Never a bare `prompt`. | `saved_prompts` | — |
 | Schedule / trigger | P-50, P-51. | `agent_schedules`, `triggers` | — |
+| Suggested prompt | Static product copy offered on an empty session (WB-02 a, f): clicking one fills the composer and sends nothing. Never a saved prompt and never firm content (W-02-T04). | `screens/WB-02/copy.ts` (`SUGGESTED_PROMPTS`) | `saved prompt` (for these), `template` |
+| Context item | A record attached to a session as grounding (WB-02 b–d): a client record, documents or workpapers the person can open, shown as a chip with a code-computed summary line. Attaching or removing one is an insert-only session item. | `workbench_sessions.context_refs`; `session_items` kinds `context_added`, `context_removed` | `attachment`, `source` |
+| Session drill | A code-rendered table of one result group's records appended to the thread (WB-03 d "Action required 11"), filtered by `visible()`; no model call. | `POST /v1/workbench/sessions/{id}/drill`; `session_items` kind `drill` | `drilldown` |
+| Run artifact preview | A sheet of a run's stored artifact shown in the O4 overlay (WB-03 d2), served from the stored bytes and never recomputed in the browser. | `GET /v1/run-artifacts/{id}/preview` | `workbook viewer` |
+| Season stage | Gather · Prepare · Review · Deliver: a context label over return statuses (Gather = Not started + Gathering; Prepare = Preparing + Prepared; Review = In review + Action required; Deliver = Ready + Awaiting signature; Done = Filed + Accepted). Product vocabulary, never firm content (W-02 Q7). | `season_stage` context label (`status-vocabulary.yaml`, object `return`) | `phase` |
 
 ## New terms: portal approvals and deliverables
 

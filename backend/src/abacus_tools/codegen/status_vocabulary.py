@@ -31,6 +31,9 @@ SOURCE = ROOT / "docs" / "product" / "status-vocabulary.yaml"
 PY_TARGET = BACKEND / "src" / "abacus" / "kernel" / "_statuses.py"
 TS_TARGET = ROOT / "packages" / "ui" / "src" / "status.gen.ts"
 _CODE = re.compile(r"^[a-z][a-z0-9_]*$")
+# Proper nouns keep their capital in a sentence-case label: the Accrued Agent is one named actor
+# ("Via Agent", WB-01 c; W-02-T04, DEC-4602).
+_PROPER_NOUNS = frozenset({"Agent"})
 _RETIRED_CODE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,2}$")
 _VARIANTS = {
     "state",
@@ -98,7 +101,11 @@ def parse(source: str) -> list[StatusObject]:
             if variant is not None and variant not in _VARIANTS:
                 raise RegistryError(f"{where}: variant {variant!r} (match is never a status)")
             label = str(fields["label"])
-            words = [w for w in re.findall(r"[A-Za-z]+", label) if len(w) > 1]
+            words = [
+                w
+                for w in re.findall(r"[A-Za-z]+", label)
+                if len(w) > 1 and w not in _PROPER_NOUNS
+            ]
             title_case = len(words) > 1 and all(w[0].isupper() and not w.isupper() for w in words)
             if not label.strip() or title_case:
                 raise RegistryError(f"{where}: a label is sentence case, not Title Case")
