@@ -495,6 +495,11 @@ TAX_AGENTS_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+TODAY_BRIEF_ENABLED = Flag(
+    name="today_brief.enabled",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -623,6 +628,7 @@ FLAGS: dict[str, Flag] = {
     "tax.review_workspace": TAX_REVIEW_WORKSPACE,
     "tax.workbook_run": TAX_WORKBOOK_RUN,
     "tax_agents.enabled": TAX_AGENTS_ENABLED,
+    "today_brief.enabled": TODAY_BRIEF_ENABLED,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
     "workbench.enabled": WORKBENCH_ENABLED,

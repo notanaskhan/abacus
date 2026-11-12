@@ -346,6 +346,14 @@ modules = [
 ]
 
 [[tool.importlinter.contracts]]
+# I-02-T04 (DEC-4610; chapter 03 §2.3 rule 1): practice reads review, agents and requests for the
+# Today brief; none of them may import practice back, so the module graph stays acyclic.
+name = "Nothing practice reads imports practice (I-02)"
+type = "forbidden"
+source_modules = ["abacus.modules.review", "abacus.modules.agents", "abacus.modules.requests"]
+forbidden_modules = ["abacus.modules.practice"]
+
+[[tool.importlinter.contracts]]
 name = "In-module layering: routes -> service -> repository (ADR-012)"
 type = "layers"
 layers = ["(routes)", "(retrievals)", "(service)", "(repository)"]
