@@ -1,0 +1,24 @@
+# The workbench module's flags (ADR-089; P-39). Compiled with every other module's file into
+# kernel/_flags.py by `make regenerate`.
+#
+# W-02-T03 (SPEC-653, DEC-4603): the epic's calendar has them created Thu May 4, 2028 and expiring
+# 2028-07-31; in the repository's calendar they follow the P-02 flags (created on the day, renewed
+# once under DEC-137). W-02-T28 retires both into the `workbench` module entitlement (ADR P-28).
+
+flags:
+  - name: workbench.enabled
+    description: 'W-02 Workbench sessions (WB-01, WB-02, WB-03): GET/POST /v1/workbench/sessions (the list and blank create), PATCH and DELETE /v1/workbench/sessions/{id}, the context routes, the drill and the run-artifact preview and download, the /workbench screens and read-only assistant turns. Off: 404 and the designed flag-off state, never a blank pane. TAX-08 subject sessions (T-04) are not gated by it. W-02-T03, DEC-4603.'
+    owner: notanaskhan
+    created: 2026-11-12
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: workbench.plans
+    description: 'Plans and writes in Workbench sessions: off, the session workflow withholds the propose and approved_write tools, so a request that needs a write gets a designed notice instead of a plan (AC-P5). Needs workbench.enabled. W-02-T03, DEC-4603.'
+    owner: notanaskhan
+    created: 2026-11-12
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false

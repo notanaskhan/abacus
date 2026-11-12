@@ -663,6 +663,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/review-notes", "review_note.read"),
     ("GET", "/v1/review-notes/bands", "review_note.read"),
     ("GET", "/v1/review-notes/{note_id}", "review_note.read"),
+    ("GET", "/v1/run-artifacts/{artifact_id}/download", "run_artifact.download"),
+    ("GET", "/v1/run-artifacts/{artifact_id}/preview", "run_content.read"),
     ("GET", "/v1/sample-sets/{sample_set_id}", "sample_set.read"),
     ("GET", "/v1/sample-sets/{sample_set_id}/versions/{version_no}/draw", "sample_set.read"),
     (
@@ -2031,6 +2033,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/work-items/{work_item_id}/sum/request-conclusion", "sum.request_conclusion"),
     ("POST", "/v1/work-items/{work_item_id}/sum/snapshots", "sum.snapshot"),
     ("POST", "/v1/workbench/sessions", "session.create"),
+    ("POST", "/v1/workbench/sessions/{session_id}/drill", "session.manage"),
     ("POST", "/v1/workbench/sessions/{session_id}/messages", "session.create"),
     (
         "PUT",

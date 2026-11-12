@@ -4,6 +4,16 @@
 # Sessions (P-10-T08; P-10 §4.3; ADR P-23; DEC-87): every firm person's own, plus what a team may
 # read; the service applies DEC-87's visibility (walled rows omitted, a client they can't open is
 # `locked`). Portal principals hold none. A session holds no decision action.
+#
+# W-02-T03 (SPEC-653, DEC-4601, DEC-4603): the cells grant the route; the service narrows it.
+# - session.read lists DEC-87's membership (Q1): sessions I own or initiated, sessions whose owner
+#   shares a team or an office with me, sessions on work items whose team I am on. A row whose
+#   `client_scope` holds a client walled from me is omitted with no count (DEC-43, 404 semantics);
+#   a non-walled client I can't open lists metadata only and answers `locked: true` on open.
+# - session.manage is the session owner's only (rename, delete, context, drill): anyone else gets
+#   403 and the snapshot's `allowed_actions` omits `manage` (AC-L5).
+# - Both flags gate the routes: `workbench.enabled` (list, create, rename, delete, context; off
+#   404) and `workbench.plans` (the session workflow withholds propose and approved_write tools).
 
 actions:
   session.create:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, specialist: allow, agent: deny, system: deny}

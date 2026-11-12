@@ -153,6 +153,10 @@ from abacus.modules.agents.routes import (
 from abacus.modules.agents.run_activities import PlanState as RunV2PlanState
 from abacus.modules.agents.run_activities import RunFacts as RunV2Facts
 from abacus.modules.agents.run_activities import StepOutcome as RunV2StepOutcome
+from abacus.modules.agents.run_artifacts_contract import (
+    run_artifacts_router,
+    session_drill_router,
+)
 from abacus.modules.agents.run_backfill import register_session_links
 from abacus.modules.agents.run_backfill_workflow import (
     BACKFILL_ID_PREFIX,
@@ -373,6 +377,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     runs_v2_router,
     feedback_router,
     capabilities_router,
+    # W-02-T03: run-artifact preview and download, the session drill (stubs).
+    run_artifacts_router,
+    session_drill_router,
     # C3 (P-04-T08; ADR-161); `review.grammar_api` retired (P-04-T62).
     proposals_router,
     suggestions_router,

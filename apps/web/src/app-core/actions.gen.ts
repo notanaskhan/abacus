@@ -500,6 +500,7 @@ export const ACTIONS = [
   "risk.route_for_approval",
   "roll_forward.create",
   "roll_forward.read",
+  "run_artifact.download",
   "run_content.read",
   "run_trace.export",
   "sample.approve",
