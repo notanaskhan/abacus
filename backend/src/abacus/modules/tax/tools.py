@@ -254,6 +254,16 @@ class TreatmentRow(BaseModel):
     current: Annotated[Decimal | None, Tri] = None
     prior_year: Annotated[Decimal | None, Tri] = None
     changed: Annotated[bool, Int] = False
+    # T-04-T38 (additive): code's resolved words ("Passive", "IL 7,011 · CO 4,268 · NY 4,746").
+    resolved_text: Annotated[str | None, Tri] = None
+    prior_text: Annotated[str | None, Tri] = None
+
+
+def _text(value: object) -> str | None:
+    if isinstance(value, dict):
+        raw = cast(dict[str, object], value).get("v")
+        return None if raw is None else str(raw)[:200]
+    return None
 
 
 class TreatmentsOut(BaseModel):
@@ -281,6 +291,7 @@ async def _treatments(agent: AgentContext, args: ReturnIn) -> list[TreatmentRow]
             TreatmentRow(
                 id=r.id, kind=r.kind, status=r.status, current=current, prior_year=prior,
                 changed=bool(r.changed_vs_prior) or current != prior,
+                resolved_text=_text(r.resolved), prior_text=_text(r.prior_year),
             )
         )  # fmt: skip
     return out

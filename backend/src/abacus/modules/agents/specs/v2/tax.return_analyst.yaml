@@ -1,5 +1,7 @@
-# tax.return_analyst v1, mode explain (T-04-T31; T-04 §6; TASK-6819; DEC-3413). The other modes
-# (k1_treatments, residency) join this spec with their rows. IssueExplainWorkflow
+# tax.return_analyst v1, modes explain (T-04-T31; T-04 §6; TASK-6819; DEC-3413), k1_treatments and
+# residency (T-04-T38; TASK-7413; DEC-4410: `modules/tax/analyst_modes.py`, prompts
+# tax.return_analyst.{k1_treatments,residency}@v1). Every mode reads through C17, code computes,
+# the model explains; the two propose tools write proposals only. IssueExplainWorkflow
 # (`modules/tax/explain.py`) gives the model code's facts and their verified citations only; code
 # keeps verified citations and code's numbers. It decides nothing. Source of truth: compiled into
 # ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
@@ -13,17 +15,22 @@ escalation_tier: medium
 input_schema: ExplainInput
 output_schema: ExplainOutput
 tools:
-  read: [tax.read_return, tax.list_documents]
+  read: [tax.read_return, tax.list_documents, tax.read_prior_year, tax.read_pass_through_activity]
+  compute: [tax.compute_residency_facts, tax.compare_years]
+  propose: [tax.propose_pass_through_treatments, tax.propose_residency]
 task_scope:
   - tax_return.read
   - evidence.read
+  - k1_treatment.read
+  - residency.read
+  - proposal.create
 limits:
   max_output_tokens: 500
   max_cost_usd: "0.03"
-  max_steps: 6
+  max_steps: 8
   max_seconds: 60
-  max_tool_calls: 6
-plan: never
+  max_tool_calls: 8
+plan: required_when_writes
 autonomy: propose
 data_classes: [tri]
 untrusted_inputs: [document_text]
