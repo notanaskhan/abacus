@@ -223,6 +223,18 @@ USD; open runs post nothing. Outbox event `agent_run.completed` (run, state, `co
 `agent_ms`, `agent_minutes`, capability, service line, engagement, run number) is the ledger's
 trigger.
 
+**Sessions core (P-10-T43, DEC-4301).** `GET /v1/workbench/sessions/{id}` answers the snapshot
+(the newest 500 items, oldest first). The owner reads their own; anyone else only through the
+session's engagement. Over its `client_scope`: a walled client omits the session (404), a client the
+viewer may not open answers `locked: true` with no items and no actions. `POST …/messages` (202,
+owner only, `agent_runtime.v2`) takes `{body, answers_seq?}`: with `answers_seq` (an open question's
+item) the body answers it; without, it is a message, answered first while the question stays open.
+It answers `{item_id, run_id, status_url}`; the same `Idempotency-Key` answers the same item; a
+locked session answers 409 `session_locked`. Each post is one turn's run (`session_id` set, read
+tools only); a turn that proposes writes adds a `plan` item naming exactly one child run, which
+waits in `awaiting_plan_approval`. Item kinds are the table's; `notice` carries a code
+(`capability_unavailable`, `empty_plan`, a harness limit).
+
 ### 9.1 Freeze (P-10-T16)
 
 **Snapshot.** `backend/tests/contracts/c06_v2/v2.json` holds the OpenAPI schemas of every v2 model a
