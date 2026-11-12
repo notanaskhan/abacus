@@ -261,6 +261,7 @@ import { Issues as Tax06Issues, FRAMES as TAX06_FRAMES } from "./TAX-06";
 import { Activity as Tax07Activity, FRAMES as TAX07_FRAMES } from "./TAX-07";
 import { WorksheetEditor, FRAMES as TXI01_FRAMES } from "./TXI-01";
 import { K1Resolver, FRAMES as TXI02_FRAMES } from "./TXI-02";
+import { ResidencyAllocation, FRAMES as TXI03_FRAMES } from "./TXI-03";
 import { FRAMES as AUD25_FRAMES } from "./AUD-25/copy";
 import { POR08 } from "./POR-08";
 import {
@@ -3733,6 +3734,18 @@ registerScreen("TXI-02", {
     return (
       <div data-artboard={st} className="h-[900px]">
         <K1Resolver frame={st} />
+      </div>
+    );
+  },
+});
+// T-04-T41: TXI-03 on the gallery, one artboard per state (a–e).
+registerScreen("TXI-03", {
+  title: "State residency & allocation",
+  Component: ({ params }) => {
+    const st = pick(TXI03_FRAMES, params.st);
+    return (
+      <div data-artboard={st} className="h-[900px]">
+        <ResidencyAllocation frame={st} />
       </div>
     );
   },
