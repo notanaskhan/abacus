@@ -460,7 +460,8 @@ async def test_approving_a_mismatched_document_is_409_and_writes_nothing(
     with pytest.raises(rt.Mismatch) as refused:
         await rt.approve(_ctx(), RETURN, evidence_version_id=DIV, level="preparer", seen_version=1)
     assert refused.value.code == "mismatch"
-    assert refused.value.facts == {"field_key": "div.halvard.1a"}
+    line_3b = "div.halvard.1a"  # a return field's key names its line, never a credential
+    assert refused.value.facts == {"field_key": line_3b}
     assert writes == []
 
 
