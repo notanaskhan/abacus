@@ -1,0 +1,38 @@
+# tax.agreement_reader v1 (T-05-T36; T-05 §6.4, F5; TASK-7626; DEC-4621). A partnership agreement's
+# clauses to a proposed allocation structure: `modules/tax/agreement_reader.py` gives the model the
+# clauses as untrusted text, verifies every citation and number by code, raises the §706(d)
+# convention question when the clauses are silent or conflicting, and proposes the kept parameters
+# through C17. Workflow shape (code's steps, one model call, one propose tool), as
+# tax.account_mapper's. Source of truth: compiled into ../_specs_v2.py by
+# `python -m abacus_tools.codegen.agent_specs_v2`.
+id: tax.agreement_reader
+version: 1
+purpose: Read a partnership agreement's clauses and propose its allocation structure with a clause citation for every parameter, for a manager to approve.
+shape: workflow
+prompt: tax.agreement_reader@v1
+tier: medium
+escalation_tier: medium
+input_schema: ReadAgreementInput
+output_schema: ReadAgreementOutput
+tools:
+  propose: [tax.propose_allocation_structure]
+task_scope:
+  - tax_return.read
+  - allocation_structure.read
+  - proposal.create
+limits:
+  max_output_tokens: 4000
+  max_cost_usd: "0.20"
+  max_steps: 3
+  max_seconds: 90
+  max_tool_calls: 1
+plan: required_when_writes
+autonomy: propose
+data_classes: [tri]
+untrusted_inputs: [agreement_clauses]
+evaluation_suite: evals/tax_agreement_reader
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none
