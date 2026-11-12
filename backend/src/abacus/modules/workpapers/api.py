@@ -116,6 +116,15 @@ register_section_source(SECTION_SOURCE)
 register_suggestion_applier(CELL_TARGET, apply_cell_suggestion, engagement_of=paper_engagement)
 
 # T-05-T27 (DEC-4519): the closed formula grammar (ADR-237), for the tax workbook's write path.
+# T-05-T35 (DEC-4620): the workbook DAG (ADR-237 §3), for the tax workbook's bounded recompute.
+from abacus.modules.workpapers.compute.dag import CellInput as FormulaCellInput  # noqa: E402
+from abacus.modules.workpapers.compute.dag import CycleError as FormulaCycleError  # noqa: E402
+from abacus.modules.workpapers.compute.dag import Workbook as FormulaWorkbook  # noqa: E402
+from abacus.modules.workpapers.compute.dag import build_graph as build_formula_graph  # noqa: E402
+from abacus.modules.workpapers.compute.dag import canonical as canonical_address  # noqa: E402
+from abacus.modules.workpapers.compute.dag import dirty as dirty_cells  # noqa: E402
+from abacus.modules.workpapers.compute.dag import evaluate as evaluate_workbook  # noqa: E402
+from abacus.modules.workpapers.compute.dag import recompute as recompute_workbook  # noqa: E402
 from abacus.modules.workpapers.compute.formula import FormulaError  # noqa: E402
 from abacus.modules.workpapers.compute.formula import parse as parse_formula  # noqa: E402
 from abacus.modules.workpapers.compute.formula import render as render_formula  # noqa: E402
@@ -131,7 +140,10 @@ __all__ = [
     "CodeTaken",
     "DesignedLayout",
     "ExceptionPrefill",
+    "FormulaCellInput",
+    "FormulaCycleError",
     "FormulaError",
+    "FormulaWorkbook",
     "Grid",
     "IssueLink",
     "NoAssuranceItem",
@@ -142,12 +154,16 @@ __all__ = [
     "WorkpaperInvalid",
     "apply_cell_suggestion",
     "bound_steps",
+    "build_formula_graph",
+    "canonical_address",
     "checks_for",
     "checks_router",
     "create_test",
     "create_workpaper",  # A-04-T28: the planning slice opens EBP-140 through the service
     "designed_layout",
+    "dirty_cells",
     "draft_paper",
+    "evaluate_workbook",
     "exception_prefill",
     "grid",
     "latest_test_of_variant",
@@ -159,6 +175,7 @@ __all__ = [
     "paper_id_of_kind",
     "paper_of_kind",
     "parse_formula",
+    "recompute_workbook",
     "record_agent_result",
     "register_designed_layout",
     "register_sign_off_guard",  # A-05-T16 (DEC-2069)
