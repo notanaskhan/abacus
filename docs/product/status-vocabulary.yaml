@@ -527,6 +527,17 @@ objects:
       approaching: {label: "{date} · {n} days", variant: state, terminal: false, derived: true}   # 8 to 14 days
       later:       {label: "{date}", variant: neutral, terminal: false, derived: true}   # beyond 14 days
 
+  filing_deadline:   # F-07-T25 (DEC-4507): T13's deadline chip on a return's filing deadline, computed by code on kernel.clock from the due date and any postponement or extension, never stored
+    source: "F-07 section 4 (T13 deadline chip); TPL-13; K-02 disaster postponements (C21)"
+    codes:
+      overdue:   {label: "Past due", variant: red, terminal: false, derived: true}   # solid brick
+      due_7:     {label: "Due this week", variant: red-tint, terminal: false, derived: true}   # 0 to 7 days
+      due_30:    {label: "Due this month", variant: amber, terminal: false, derived: true}   # 8 to 30 days
+      later:     {label: "Upcoming", variant: neutral, terminal: false, derived: true}   # beyond 30 days
+      done:      {label: "Done", variant: green-tint, disc: check_olive, terminal: true, derived: true}   # filed or accepted
+      postponed: {label: "Postponed → {date}", variant: neutral, terminal: false, derived: true}   # a published disaster postponement moved the date
+      extended:  {label: "Extended to {date}", variant: neutral, terminal: false, derived: true}   # an accepted extension moved the date
+
   decision_card:   # SHL-11; the human act is an insert-only `decisions` row; options are computed by code
     source: "P-04 section 4 (decision_cards.status); ADR-160 clause 8; SHL-11"
     codes:

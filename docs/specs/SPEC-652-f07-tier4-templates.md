@@ -114,7 +114,7 @@ on an explicit Skip (never on timeout, blur or navigation); Esc returns focus to
 ## AC-6. T13, T14, T17 (S40–S43)
 
 Recorded here for the consumer epics and refined by their rows: `CalendarLayout {view: "month" |
-"week" | "list", month, today, chips:[{id, date, label, tier: FilingDeadlineDraftStatus, rule}],
+"week" | "list", month, today, chips:[{id, date, label, tier: RegistryCode<"filing_deadline">, rule}],
 onFilter, onExpandDay}`; `GraphCanvasLayout {nodes:[{id, kind, label, x, y, external, masked_tin}],
 edges:[{from, to, label, solid}], selectedId, view: "graph" | "list", onSelect, onMove}`;
 `FormRendererLayout {pages:[{n, image_url}], selectedPage, schedules:[{key, label, diagnostics}],

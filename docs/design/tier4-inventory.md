@@ -38,10 +38,9 @@ file; "Missing" is built by F-07 inside the named row and logged against its own
 
 Present: `workbench_session` (live, running, awaiting_answer, ready_for_review, complete, failed),
 `agent_run_step`, `agent_question`, `k1_package` (Draft K-1 · pre-release, Released {date}).
-Missing: a `filing_deadline` object (T13: due, due soon, overdue, done, postponed, extended). Held as
-the kit-local draft type `FilingDeadlineDraftStatus` in `packages/ui/src/tier4/draft-status.ts`
-and listed for F-07-T25 (Tue Apr 25, 2028 train: no status-YAML edit inside the Jan 1 – Apr 20
-window).
+F-07-T25 (DEC-4507) added the `filing_deadline` object to C2 (overdue "Past due", due_7, due_30,
+later, done, postponed "Postponed → {date}", extended "Extended to {date}"; all derived) and
+removed the kit-local draft type; nothing tier 4 needs is missing from C2 now.
 
 ## Decisions confirmed at the S38 Contract Monday
 

@@ -1876,6 +1876,51 @@ export const STATUS_REGISTRY = {
       "derived": true
     }
   },
+  "filing_deadline": {
+    "overdue": {
+      "label": "Past due",
+      "variant": "red",
+      "terminal": false,
+      "derived": true
+    },
+    "due_7": {
+      "label": "Due this week",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "due_30": {
+      "label": "Due this month",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "later": {
+      "label": "Upcoming",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    },
+    "done": {
+      "label": "Done",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true,
+      "disc": "check_olive"
+    },
+    "postponed": {
+      "label": "Postponed → {date}",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    },
+    "extended": {
+      "label": "Extended to {date}",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    }
+  },
   "decision_card": {
     "awaiting_role": {
       "label": "Waiting on {person}",
