@@ -442,6 +442,21 @@ async def holds_covering(tenant: TenantContext, version_ids: Sequence[UUID]) -> 
     return frozenset(held)
 
 
+async def engagement_on_hold(tenant: TenantContext, engagement_id: UUID) -> bool:
+    """T-05-T22: whether an open hold's scope covers the engagement (its engagement, a work item
+    of it, its client, or its client's tax year), for records kept outside evidence versions (a
+    tax workbook's and a memo's versions). Unknown facts read held (fail closed)."""
+    system = _system(tenant.tenant_id)
+    async with tenant_session(system) as session:
+        open_holds = [dict(r) for r in (await session.execute(_OPEN_HOLDS)).mappings().all()]
+    if not open_holds:
+        return False
+    known = await engagement_hold_facts(system, engagement_id)
+    if known is None:
+        return True
+    return any(_covers(h, engagement_id, known.client_id, known.years) for h in open_holds)
+
+
 register_hold_check(holds_covering)
 
 

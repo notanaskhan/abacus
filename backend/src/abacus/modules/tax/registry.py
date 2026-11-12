@@ -646,10 +646,10 @@ UPDATE_COLUMNS.update(
 )
 
 # T-05-T20 (0830, DEC-4403): the preparer memo and planning opportunities (dark until T-05-T48).
-TABLES: frozenset[str] = _TABLES_0821 | frozenset(
+_TABLES_0830: frozenset[str] = _TABLES_0821 | frozenset(
     {"preparer_memos", "preparer_memo_versions", "preparer_memo_events", "planning_opportunities"}
 )
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0821 | frozenset(
+_INSERT_ONLY_0830: frozenset[str] = _INSERT_ONLY_0821 | frozenset(
     {"preparer_memo_versions", "preparer_memo_events"}
 )
 _SCOPE_0830 = frozenset({"tenant_id", "engagement_id", "work_item_id"})
@@ -693,4 +693,18 @@ UPDATE_COLUMNS.update(
         ),
         "planning_opportunities": frozenset({"title", "body", "citation_ids", "updated_at"}),
     }
+)
+
+# T-05-T22 (0831, DEC-4404): partner TINs (sealed, by column grant) and their reveals.
+TABLES: frozenset[str] = _TABLES_0830 | frozenset({"partner_tin_reveals"})
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0830 | frozenset({"partner_tin_reveals"})
+INSERT_COLUMNS["partners"] = INSERT_COLUMNS["partners"] | frozenset(
+    {"tin_sealed", "tin_last4", "tin_kind"}
+)
+UPDATE_COLUMNS["partners"] = UPDATE_COLUMNS["partners"] | frozenset(
+    {"tin_sealed", "tin_last4", "tin_kind"}
+)
+INSERT_COLUMNS["partner_tin_reveals"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "partner_id", "user_id", "reason_code"}
+    | {"mfa_at"}
 )

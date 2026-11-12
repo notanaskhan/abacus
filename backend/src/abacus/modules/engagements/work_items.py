@@ -677,6 +677,24 @@ async def client_tax_years(tenant: TenantContext, client_id: UUID) -> frozenset[
         return frozenset(end.year for end in ends if end is not None)
 
 
+async def work_item_tri_subject(tenant: TenantContext, work_item_id: UUID) -> DataSubject | None:
+    """T-05-T22: a tax-return work item's TRI data subject (§7216), as (filing entity, tax year):
+    for an entity return the partnership (its client entity), whose consents cover the return.
+    None when the item is not a tax return; a subject with no entity or period is returned as it
+    is, and the gateway refuses it (C19 condition 6 fails closed)."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                select(WorkItem.client_entity_id, WorkItem.period_end).where(
+                    WorkItem.id == work_item_id, WorkItem.kind == "tax_return"
+                )
+            )
+        ).first()
+    if row is None:
+        return None
+    return DataSubject(row.client_entity_id, row.period_end.year if row.period_end else None)
+
+
 async def client_tri_subjects(tenant: TenantContext, client_id: UUID) -> tuple[DataSubject, ...]:
     """N-01-T22: the TRI data subjects (§7216) of the client's active tax-return work items, as
     (filing entity, tax year); an item with no entity or period is a subject the gateway refuses
