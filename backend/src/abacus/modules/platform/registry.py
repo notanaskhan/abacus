@@ -28,6 +28,8 @@ TABLES: frozenset[str] = frozenset(
     | {"reference_sets", "reference_set_versions", "reference_set_publications"}
     # P-10-T06 (0684, ADR-148): agent-minute metering.
     | {"agent_minute_ledger", "engagement_agent_budgets", "usage_month_rollups"}
+    # P-02-T05 (0840, ADR-241): the firm search index and the people's recents (C15 v1).
+    | {"search_documents", "search_recents"}
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 # G-02-T18 (0240): an incident's status changes only with its decisions (column grants and the
