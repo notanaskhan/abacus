@@ -46,6 +46,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
             "fs_line_key",
             "debit",
             "credit",
+            "account_scope",  # T-05-T25 (0841): book or tax_only
         }
     ),
     "proposed_entry_decisions": frozenset(

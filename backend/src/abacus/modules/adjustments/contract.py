@@ -51,7 +51,9 @@ AdjustmentAction = Literal[
     "approval_batch.create",
 ]
 Actions = Annotated[list[AdjustmentAction], classified("internal")]
-Layer = Literal["unadjusted", "aje", "rje", "final"]
+Layer = Literal["unadjusted", "aje", "rje", "final", "atb", "tje", "ttb"]
+# T-05-T25 (DEC-4517): `atb`, `tje`, `ttb` are a tax return's layers; `book` or `tax_only` (4510-T)
+AccountScope = Literal["book", "tax_only"]
 
 
 class LineIn(BaseModel):
@@ -60,6 +62,8 @@ class LineIn(BaseModel):
     account_code: Annotated[str, Field(min_length=1, max_length=64), classified("internal")]
     debit: Money = Decimal(0)
     credit: Money = Decimal(0)
+    # T-05-T25: a tax-only account (4510-T) on a TJE only (422 `tax_only_outside_tje`).
+    account_scope: Annotated[AccountScope, classified("internal")] = "book"
 
 
 class LineOut(BaseModel):
@@ -71,6 +75,7 @@ class LineOut(BaseModel):
     fs_line_key: Annotated[str | None, classified("internal")]
     debit: Money
     credit: Money
+    account_scope: Annotated[AccountScope, classified("internal")] = "book"
 
 
 class EntryOut(BaseModel):
@@ -187,6 +192,11 @@ class AdjustedLineOut(BaseModel):
     aje: Annotated[Decimal | None, classified("confidential")]
     rje: Annotated[Decimal | None, classified("confidential")]
     final: Annotated[Decimal | None, classified("confidential")]
+    # T-05-T25: the tax layers (a tax return's `atb`, `tje`, `ttb` reads; null on the book layers).
+    atb: Annotated[Decimal | None, classified("confidential")] = None
+    tje: Annotated[Decimal | None, classified("confidential")] = None
+    ttb: Annotated[Decimal | None, classified("confidential")] = None
+    account_scope: Annotated[AccountScope, classified("internal")] = "book"
 
 
 class AdjustedTbOut(BaseModel):
@@ -208,7 +218,11 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, ref.resource())
     # A-06-T37 (DEC-2714): the `assurance_completion` entitlement replaces the retired flag.
-    if await entitlement(ctx.tenant, "assurance_completion") is None:
+    # T-05-T25 (DEC-4517): a tax firm's return reaches C8 through `tax_returns`.
+    if (
+        await entitlement(ctx.tenant, "assurance_completion") is None
+        and await entitlement(ctx.tenant, "tax_returns") is None
+    ):
         raise NotFound("assurance_completion")
 
 
@@ -237,6 +251,7 @@ def _entry_out(found: object) -> EntryOut:
                 fs_line_key=ln.fs_line_key,
                 debit=ln.debit,
                 credit=ln.credit,
+                account_scope=ln.account_scope,
             )
             for ln in e.lines
         ],
@@ -280,7 +295,10 @@ async def proposed_entry_create_route(
         kind=body.kind,
         description=body.description,
         misstatement_id=body.misstatement_id,
-        lines=tuple(entries.NewLine(ln.account_code, ln.debit, ln.credit) for ln in body.lines),
+        lines=tuple(
+            entries.NewLine(ln.account_code, ln.debit, ln.credit, ln.account_scope)
+            for ln in body.lines
+        ),
     )
     return _entry_out(await entries.propose(ctx, work_item_id, new))
 
@@ -429,6 +447,10 @@ async def adjusted_tb_route(work_item_id: UUID, ctx: Ctx, layer: Layer = "final"
                 aje=ln.aje,
                 rje=ln.rje,
                 final=ln.final,
+                atb=getattr(ln, "atb", None),
+                tje=getattr(ln, "tje", None),
+                ttb=getattr(ln, "ttb", None),
+                account_scope=getattr(ln, "account_scope", "book"),
             )
             for ln in view.lines
         ],

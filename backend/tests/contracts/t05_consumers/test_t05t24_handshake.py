@@ -82,13 +82,11 @@ def test_c8_has_the_tje_kind_and_its_numbering() -> None:
     assert _PREFIX["tje"] == "TJE"
 
 
-@pytest.mark.xfail(reason="T-05-T25 (C8 tax layers) has not landed (TASK-7408)", strict=True)
 def test_c8_the_adjusted_tb_has_the_tax_layers() -> None:
     assert {"atb", "tje", "ttb"} <= set(get_args(Layer))
     assert {"atb", "tje", "ttb"} <= _props(c8.AdjustedLineOut)
 
 
-@pytest.mark.xfail(reason="T-05-T25 (C8 tax layers) has not landed (TASK-7408)", strict=True)
 def test_c8_a_line_names_its_account_scope() -> None:
     assert "account_scope" in _props(c8.LineOut)
     scope = c8.LineOut.model_fields["account_scope"].annotation

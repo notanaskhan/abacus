@@ -23,7 +23,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Final, Literal, cast
+from typing import Any, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -63,6 +63,18 @@ _ACTIONS: Final = (
 )
 
 
+# T-05-T25 (DEC-4517): the tax layers. A TJE is a tax return's own entry, always named-human
+# approved (never within threshold); a tax-only account (4510-T) lives only in a TJE.
+TAX_LAYERS: Final = frozenset({"atb", "tje", "ttb"})
+AccountScope = Literal["book", "tax_only"]
+
+
+class TaxOnlyOutsideTje(DomainInvalid):
+    """A tax-only account on an entry that is not a TJE (it would leak into the books)."""
+
+    code = "tax_only_outside_tje"
+
+
 class UnbalancedEntry(DomainInvalid):
     """An entry's debits and credits differ (or a line has both or neither side)."""
 
@@ -74,6 +86,7 @@ class NewLine:
     account_code: str
     debit: Decimal
     credit: Decimal
+    account_scope: AccountScope = "book"
 
 
 @dataclass(frozen=True)
@@ -92,6 +105,7 @@ class Line:
     fs_line_key: str | None
     debit: Decimal
     credit: Decimal
+    account_scope: AccountScope = "book"
 
 
 @dataclass(frozen=True)
@@ -161,9 +175,17 @@ async def _accounts(
     return {ln.account_code: (ln.account_name, ln.area) for ln in view.lines}
 
 
+def check_scope(kind: EntryKind, lines: Sequence[NewLine]) -> None:
+    """A tax-only line only on a TJE (422 `tax_only_outside_tje`; the 0841 trigger holds it too).
+    A TJE may reclass between lines with a zero net: it only has to balance (`balance`)."""
+    if kind != "tje" and any(ln.account_scope == "tax_only" for ln in lines):
+        raise TaxOnlyOutsideTje(facts={"kind": kind})
+
+
 async def propose(ctx: AuthContext, work_item_id: UUID, new: NewEntry) -> Entry:
     """`POST …/proposed-entries` (the route authorised `proposed_entry.create`)."""
     amount = balance(new.lines)
+    check_scope(new.kind, new.lines)
     engagement_id = await engagement_of(ctx.tenant, work_item_id)
     attest = bool(await attest_of(ctx.tenant, engagement_id))
     accounts = await _accounts(ctx.tenant, engagement_id)
@@ -176,9 +198,14 @@ async def propose(ctx: AuthContext, work_item_id: UUID, new: NewEntry) -> Entry:
         attest_client=attest,
         as_of=await today(ctx.tenant),
     )
+    # T-05-T25: a TJE is approved by a named human under the firm's tax JE standard; it is never
+    # batched as within threshold.
     result: Literal["within_threshold", "review_required"] = (
         "review_required"
-        if attest or classified is None or classified.outcome != "within_threshold"
+        if new.kind == "tje"
+        or attest
+        or classified is None
+        or classified.outcome != "within_threshold"
         else "within_threshold"
     )
     policy = None if classified is None else classified.policy.version_id
@@ -229,8 +256,9 @@ async def propose(ctx: AuthContext, work_item_id: UUID, new: NewEntry) -> Entry:
             await tx.session.execute(
                 text(
                     "INSERT INTO proposed_entry_lines (tenant_id, engagement_id, work_item_id, "
-                    "entry_id, line_no, account_code, account_name, fs_line_key, debit, credit) "
-                    "VALUES (:t, :e, :w, :id, :n, :code, :name, :fs, :dr, :cr)"
+                    "entry_id, line_no, account_code, account_name, fs_line_key, debit, credit, "
+                    "account_scope) VALUES (:t, :e, :w, :id, :n, :code, :name, :fs, :dr, :cr, "
+                    ":scope)"
                 ),
                 {
                     "t": ctx.tenant_id,
@@ -243,6 +271,7 @@ async def propose(ctx: AuthContext, work_item_id: UUID, new: NewEntry) -> Entry:
                     "fs": area,
                     "dr": ln.debit,
                     "cr": ln.credit,
+                    "scope": ln.account_scope,
                 },
             )
         if new.misstatement_id is not None:
@@ -277,7 +306,7 @@ async def _lines(tenant: TenantContext, ids: Sequence[UUID]) -> dict[UUID, list[
             await session.execute(
                 text(
                     "SELECT entry_id, line_no, account_code, account_name, fs_line_key, debit, "
-                    "credit FROM proposed_entry_lines WHERE entry_id = ANY(:ids) "
+                    "credit, account_scope FROM proposed_entry_lines WHERE entry_id = ANY(:ids) "
                     "ORDER BY entry_id, line_no"
                 ),
                 {"ids": list(ids)},
@@ -286,7 +315,7 @@ async def _lines(tenant: TenantContext, ids: Sequence[UUID]) -> dict[UUID, list[
         for r in rows:
             out[r["entry_id"]].append(
                 Line(r["line_no"], r["account_code"], r["account_name"], r["fs_line_key"],
-                     r["debit"], r["credit"])
+                     r["debit"], r["credit"], r["account_scope"])
             )  # fmt: skip
     return out
 
@@ -399,13 +428,106 @@ async def recorded_entries(tenant: TenantContext, engagement_id: UUID) -> EntryS
 
 async def adjusted_tb(ctx: AuthContext, work_item_id: UUID, layer: str) -> object:
     """`GET …/adjusted-tb` (the route authorised `adjusted_tb.read`): the current trial balance's
-    `layer` from the ledger, never stored. The caller shapes the view (C8's `AdjustedTbOut`)."""
+    `layer` from the ledger, never stored. The caller shapes the view (C8's `AdjustedTbOut`).
+    T-05-T25: `atb`, `tje` and `ttb` are the ledger's final layer plus this work item's approved
+    TJEs (`tax_layers`)."""
     engagement_id = await engagement_of(ctx.tenant, work_item_id)
     tbs = await engagement_trial_balances(ctx.tenant, engagement_id)
     if not tbs:
         raise NotFound("trial_balance")
     current = max(tbs, key=lambda t: t.period_end)
-    return await trial_balance_view(ctx.tenant, engagement_id, current.id, layer=layer)
+    ledger_layer = "final" if layer in TAX_LAYERS else layer
+    view = await trial_balance_view(ctx.tenant, engagement_id, current.id, layer=ledger_layer)
+    if layer not in TAX_LAYERS:
+        return view
+    tjes = await _recorded_tjes(ctx.tenant, work_item_id)
+    return TaxLayersView(
+        tax_layers(
+            [
+                (ln.account_code, ln.account_name, ln.eoy, ln.aje, ln.rje, ln.final)
+                for ln in cast(Any, view).lines
+            ],
+            tjes,
+        ),
+        cast(Any, view).pending_entries,
+    )
+
+
+@dataclass(frozen=True)
+class TaxLayerLine:
+    """One account through the tax layers: the book columns, ATB, TJE and TTB."""
+
+    account_code: str
+    account_name: str
+    eoy: Decimal | None
+    aje: Decimal | None
+    rje: Decimal | None
+    final: Decimal | None
+    atb: Decimal
+    tje: Decimal | None
+    ttb: Decimal
+    account_scope: AccountScope
+
+
+@dataclass(frozen=True)
+class TaxLayersView:
+    lines: tuple[TaxLayerLine, ...]
+    pending_entries: int
+
+
+BookRow = tuple[str, str, Decimal | None, Decimal | None, Decimal | None, Decimal | None]
+
+
+def tax_layers(book: Sequence[BookRow], tjes: Sequence[Line]) -> tuple[TaxLayerLine, ...]:
+    """ATB = the ledger's final (UTB + AJE + RJE); TJE = each account's approved TJE net (debit
+    minus credit); TTB = ATB + TJE. A tax-only account (4510-T) appears only here, with ATB 0.
+    Code computes (ADR-050); every column foots to zero when the TB does and every TJE balances."""
+    net: dict[str, Decimal] = {}
+    names: dict[str, str] = {}
+    scopes: dict[str, AccountScope] = {}
+    for ln in tjes:
+        net[ln.account_code] = net.get(ln.account_code, Decimal(0)) + ln.debit - ln.credit
+        names.setdefault(ln.account_code, ln.account_name or ln.account_code)
+        if ln.account_scope == "tax_only":
+            scopes[ln.account_code] = "tax_only"
+    out: list[TaxLayerLine] = []
+    seen: set[str] = set()
+    for code, name, eoy, aje, rje, final in book:
+        seen.add(code)
+        atb = final if final is not None else Decimal(0)
+        tje = net.get(code)
+        out.append(
+            TaxLayerLine(
+                code, name, eoy, aje, rje, final, atb, tje, atb + (tje or Decimal(0)), "book"
+            )
+        )
+    for code in sorted(c for c in net if c not in seen):
+        out.append(
+            TaxLayerLine(
+                code, names[code], None, None, None, None, Decimal(0), net[code], net[code],
+                scopes.get(code, "book"),
+            )
+        )  # fmt: skip
+    return tuple(out)
+
+
+async def _recorded_tjes(tenant: TenantContext, work_item_id: UUID) -> list[Line]:
+    """The work item's approved TJE lines (a proposed TJE is pending, never in TTB)."""
+    async with tenant_session(tenant) as session:
+        ids = [
+            r[0]
+            for r in (
+                await session.execute(
+                    text(
+                        "SELECT id FROM proposed_entries WHERE work_item_id = :w AND kind = 'tje' "
+                        "AND status = ANY(:recorded) ORDER BY number"
+                    ),
+                    {"w": work_item_id, "recorded": sorted(RECORDED)},
+                )
+            ).all()
+        ]
+    by_entry = await _lines(tenant, ids)
+    return [ln for i in ids for ln in by_entry[i]]
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
