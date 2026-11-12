@@ -32,8 +32,8 @@ A-08-T10,partial,"sampling/selection.py rules_for: large, round, near_year_end, 
 A-08-T12,partial,"fieldwork/{service,selecting,workflows,workpaper}.py, models procedures/selected_items/item_results; no je_tests/je_scores tables, JeScoringWorkflow or 412k run"
 A-08-T27,partial,"screens/Fieldwork.tsx + spec037fieldwork.test.tsx (tie-out, exception, support, sign); states a-h and Open in Excel not mapped one to one"
 P-06-T14,done,follow_ups migrations and the v2 service (re-verified 2026-10-29)
-F-03-T16,not-started,TASK-104 left names alone; modules/agents/reminders.py and /reminders routes remain
-F-03-T15,not-started,TASK-105 changed words only (packages/ui/src/status.tsx STATUS.request); no request-status migration
+F-03-T16,done,"80f618204 TASK-378 [mig 0087]: reminders renamed to follow-ups in tables, routes and identifiers; L12 bans `reminder` (glossary Follow-up row); work/tasks/TASK-378-follow-up-rename.md done (S0-S38 inventory, DEC-4803)"
+F-03-T15,done,"83980479c TASK-312 [mig 0071]: request status v2; banned rule _RETIRED_REQUEST_CODES in abacus_tools/quality/banned_patterns.py; work/tasks/TASK-312-request-status-v2.md done (S0-S38 inventory, DEC-4803)"
 R-01-T08,done,requests/client_responses.py ignore and undo (re-verified 2026-10-29)
 A-06-T04,partial,"TASK-107: migration 0064 findings + misstatements, insert-only; no deficiencies, issue_id or framework column"
 A-06-T07,partial,"TASK-107: fieldwork/findings.py summarise() against materiality; no rollover, iron curtain, engine_version or inputs_hash"
@@ -604,3 +604,10 @@ Q-04-T088,partial,"2c534ea67 TASK-3041 Q-04-T088: M14 ops retro part N on PF-X1;
 Q-04-T089,partial,"dcaf97092 TASK-3038 Q-04-T089: S25 N-lane on-call on PF-X1, hours logged (#1119); TASK-3038; work/tasks/TASK-3038-q04-t089-n-lane-on-call.md; open: recorded partial at its build (S25-close.md) (S0-S25 closeout, DEC-4200)"
 Q-04-T090,partial,"4a3c48db6 TASK-3039 Q-04-T090: S25 N-lane fixes and slot duty on PF-X1, RB-16 rehearsal step; TASK-3039; work/tasks/TASK-3039-q04-t090-n-lane-fixes.md; open: recorded partial at its build (S25-close.md) (S0-S25 closeout, DEC-4200)"
 Q-04-T091,partial,"7f16bdff0 TASK-3037 Q-04-T091: S25 AY support lane on PF-X1, hours logged, flag hygiene (#; TASK-3037; work/tasks/TASK-3037-q04-t091-ay-lane.md; open: recorded partial at its build (S25-close.md) (S0-S25 closeout, DEC-4200)"
+F-03-T06,done,"edd8f2627 F-03-T06: Brightwater Hale E0 example payloads in the C1 contract doc (#457); C1 routes behind engagements.work_items_api (S0-S38 inventory, DEC-4803)"
+Q-04-T035,partial,"TASK-7800 (#1798): abacus_tools.firm_exit (verify, certificate), docs/runbooks/firm-exit.md, rehearsal tests/integration/test_q04t035_firm_exit_rehearsal.py (DEC-4800); open: the key custodian's real ScheduleKeyDeletion on AWS (no production stack) and counsel's exit terms"
+N-01-T30,done,"TASK-7801 (#1801): communications and evidence READMEs, SPEC-380 done, firm-intake.md v1.2 and files-browser.md v1 frozen, RB-80, RB-81, RB-24 and RB-32 intake sections, skill notes, capacity ledger N-01 actuals"
+R-01-T36,done,"TASK-7802 (#1805): portal and communications READMEs, portal-pbc.md and email-templates.md frozen, RB-20 gate and RB-43 drop-sort sections, docs/runbooks/r01-portal-flip.md (a rollback per flag), flag renewals, skill notes, capacity ledger R-01 actuals"
+Q-03-T199,done,"TASK-7803 (#1806): docs/ops/gates/M15-season-ready-2028.md (auto-merge not earned), capacity ledger M15 autonomy recheck (DEC-4801)"
+F-09-T192,partial,"TASK-7804 (#1807): docs/ops/onboarding/2028-season-content.md, content list and PF-X1 load date (synthetic, DEC-4100); open: each real firm's row once F-09-T163 or F-09-T189 files an agreement"
+Q-03-T148,done,"TASK-7805 (#1808): pip-audit clean, bandit 0 high, CodeQL 21 high triaged (3 polynomial regexes fixed and registered closed, 18 false positives listed), quarter record 2027 Q3 (DEC-4802); open inside SLA: js-yaml (Dec 3, override decision) and the zlib1g base digest (Dec 7)"
