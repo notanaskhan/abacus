@@ -217,6 +217,11 @@ ACTIVITIES: tuple[object, ...] = (
     *_analyst_modes.ACTIVITIES,
 )
 start_draft = _drafter.start_draft
+# T-04-T49 (DEC-4524): the individual engines' CPA review (`make entitlement` reads it).
+from abacus.modules.tax.compute.individual.review import (  # noqa: E402
+    review_signed as individual_review_signed,
+)
+
 # T-04-T55 (DEC-4514): the draft-run entry (TAX-02 Run draft) and the return frame's tab seam.
 run_draft = _draft_entry.run_draft
 DraftNotAllowed = _draft_entry.DraftNotAllowed
@@ -327,6 +332,7 @@ __all__ = [
     "fix_workflow_id",
     "flag_new_likely",
     "import_engine_file",
+    "individual_review_signed",
     "installments_due",
     "mode_workflow_id",
     "next_status",
