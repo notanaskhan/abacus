@@ -61,3 +61,11 @@ mis-release). Open: a route to revoke one package's `k1_recipient` grant.
   ERO's transmission record (never a transmission, R-04) and acks.
 - **TRI** (`tri.py`): every model read of return information goes through C19's condition 6.
 Runbooks: RB-17 (consents), RB-19 (bridge failure).
+
+
+## The individual return workspace, closed (T-04, S32–S39; DEC-4528)
+- Contracts final: `docs/contracts/tax-review-workspace.md`, `docs/contracts/tax-worksheets.md`.
+- Live-path seams (T-04-T55): `draft_entry.run_draft` (TAX-02 Run draft) and `return_tabs`
+  (the frame's tabs, flag-gated); the export's field-profile hook is `export_fields`.
+- Engines: `compute/individual` (mutation scope `tax/individual`, CPA memo `tax-individual@v1`).
+- Flip and rollback: `docs/runbooks/tax-workspace-flip.md`.
