@@ -71,5 +71,18 @@ def test_every_engine_key_is_in_the_profile() -> None:
 def test_events_are_ordered_unique_and_handled() -> None:
     events = ordered(slice_.tax_workspace_events())
     assert {e.kind for e in events} <= set(loader.HANDLERS)
-    assert len(events) == 1 + 6 + 3 + 3
+    assert len(events) == 2 + 1 + 6 + 3 + 3  # flags, worksheets, issues, resolved, checkpoints
     assert loader.SLICE_NEEDS[slice_.SLICE] == slice_.NEEDS
+
+
+def test_no_event_replays_before_the_firm_and_the_return_exist() -> None:
+    # TASK-7324: the loader replays by `at`, and the firm, Feld's engagement and its return are
+    # created at setup (Sep 1, 8:00 AM). A business time before that rides in `data["at"]`.
+    events = ordered(slice_.tax_workspace_events())
+    assert min(e.at for e in events) >= slice_.REPLAY_FROM
+    issue = next(e for e in events if e.label == "tax-workspace:feld:issue:digital_assets")
+    assert issue.data["at"] == "2026-08-25T10:08:00-05:00"
+    resolved = next(e for e in events if e.label.endswith("digital_assets:resolved"))
+    assert issue.at < resolved.at  # raised before it is resolved, in the business order
+    later = next(e for e in events if e.label == "tax-workspace:feld:checkpoint:Manager review")
+    assert later.at == later.data["at"] or later.at.isoformat() == later.data["at"]

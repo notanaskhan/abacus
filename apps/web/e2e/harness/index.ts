@@ -26,7 +26,12 @@ import { type InvariantContext, assertInvariants } from "./invariants";
 import { type Persona, type PersonaSlug, persona as personaOf } from "./personas";
 
 export { expect } from "@playwright/test";
-export { HARNESS_PROJECTS, type HarnessProject, registerHostedSignIn } from "./adapters";
+export {
+  HARNESS_PROJECTS,
+  type HarnessProject,
+  authHeaders,
+  registerHostedSignIn,
+} from "./adapters";
 export { assertStill, axeStep, settle } from "./axe";
 export { AGENT_APPROVER, HUMAN_VERBS, assertInvariants, violations } from "./invariants";
 export { DEMO_INSTANT, PERSONAS, type Persona, type PersonaSlug } from "./personas";

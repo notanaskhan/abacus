@@ -6850,13 +6850,20 @@ def _feld_return() -> UUID:
     return UUID(RETURN_BY_LABEL[_txw.RETURN_LABEL].id)
 
 
+def _feld_at(event: Event) -> datetime:
+    """TASK-7324: the business time a `tax_workspace` event carries (it replays after setup)."""
+    at = event.data.get("at")
+    return datetime.fromisoformat(at) if isinstance(at, str) else event.at
+
+
 async def _feld_workspace_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """T-04-T28: the Feld return's worksheets through tax's synthetic-only recorder."""
     from abacus.modules.tax.api import record_synthetic_workspace
 
-    await record_synthetic_workspace(
-        await _staff_context(conn, event), _feld_return(), _txw.WORKSHEETS
-    )
+    with frozen(_feld_at(event)):
+        await record_synthetic_workspace(
+            await _staff_context(conn, event), _feld_return(), _txw.WORKSHEETS
+        )
 
 
 async def _feld_issue_id(conn: asyncpg.Connection, key: str) -> UUID | None:
@@ -6875,6 +6882,11 @@ async def _feld_issue_created(conn: asyncpg.Connection, _: Scenario, event: Even
     """T-04-T28 (TAX-06): one of the Feld return's issues, as Kevin Osei raises it."""
     if await _feld_issue_id(conn, str(event.data["key"])) is not None:
         return
+    with frozen(_feld_at(event)):
+        await _feld_create_issue(conn, event)
+
+
+async def _feld_create_issue(conn: asyncpg.Connection, event: Event) -> None:
     await create_issue(
         await _staff_context(conn, event),
         record_type="tax_return",
@@ -6903,14 +6915,19 @@ async def _feld_issue_resolved(conn: asyncpg.Connection, _: Scenario, event: Eve
         version = await conn.fetchval("SELECT version FROM issues WHERE id = $1", issue)
     if state in ("resolved", "verified"):
         return
-    await move_issue(await _staff_context(conn, event), issue, "resolved", int(version or 1))
+    with frozen(_feld_at(event)):
+        await move_issue(await _staff_context(conn, event), issue, "resolved", int(version or 1))
 
 
 async def _feld_checkpoint_named(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """T-04-T28 (TAX-07): a named checkpoint of the Feld return, as the person saves it."""
-    await save_checkpoint(
-        await _staff_context(conn, event), "tax_return", _feld_return(), str(event.data["name"])
-    )
+    with frozen(_feld_at(event)):
+        await save_checkpoint(
+            await _staff_context(conn, event),
+            "tax_return",
+            _feld_return(),
+            str(event.data["name"]),
+        )
 
 
 async def _collaboration_paper(conn: asyncpg.Connection, ctx: AuthContext) -> UUID:

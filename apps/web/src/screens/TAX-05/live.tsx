@@ -11,7 +11,7 @@ import {
   worksheetsOptions,
 } from "@abacus/api-client/query";
 import type { WorksheetFieldOut, WorksheetNodeOut } from "@abacus/api-client";
-import { Button, EmptyState, Pill } from "@abacus/ui";
+import { Button, EmptyState, Pill, amount } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useOpenOverlay } from "../../app-core/open";
@@ -105,7 +105,8 @@ function FieldRow({
           />
         ) : (
           <span className="w-[110px] text-right text-[13px] tabular-nums">
-            {field.value ?? ""}
+            {/* TASK-7324: the form's whole dollars, grouped ("307,900"), as the artboards show. */}
+            {field.value == null ? "" : amount(field.value, "whole").text}
           </span>
         )}
         {engine ? null : editing ? null : (

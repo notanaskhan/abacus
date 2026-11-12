@@ -422,7 +422,7 @@ describe("TAX-05 / TXI-01 Worksheets (live)", () => {
           {
             field_key: "l11",
             label: "11 Adjusted gross income",
-            value: "598,030",
+            value: "598030.00", // the API's Decimal string (MaybeMoney)
             state: "imported",
             seen_seq: 2,
             engine_label: "CCH",
@@ -439,7 +439,7 @@ describe("TAX-05 / TXI-01 Worksheets (live)", () => {
         json({ items: [{ worksheet_id: SHEET, title: "Form 1040", group: "Federal" }] }),
       "GET /v1/tax/worksheets/{worksheet_id}/fields": () => json(fields(value)),
       "PUT /v1/fields/{target_type}/{target_id}/{field_key}/value": () => {
-        value = "1,550";
+        value = "1550.00"; // the API's Decimal string
         return json({ ok: true });
       },
     });
@@ -476,6 +476,9 @@ describe("TAX-05 / TXI-01 Worksheets (live)", () => {
     });
     mount(<WorksheetsLive returnId={RETURN} engagementId={ENGAGEMENT} />);
     expect(await screen.findByRole("button", { name: "Sign off…" })).toBeTruthy();
+    // TASK-7324: the API's Decimal string reads as the form's grouped whole dollars.
+    expect(screen.getByText("598,030")).toBeTruthy();
+    expect(screen.queryByText("598030.00")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Edit" }));
     fireEvent.change(screen.getByLabelText("Reason for the change"), {
       target: { value: "typo" },

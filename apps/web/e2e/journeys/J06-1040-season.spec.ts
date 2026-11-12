@@ -285,3 +285,86 @@ test.describe("J06 1040 season · review slice (T-04-T32)", () => {
     });
   });
 });
+
+// T-04-T32 (TASK-7324): the same slice on the full stack, against `make seed-demo` with the
+// `tax_workspace` slice (Feld's worksheets, issues and named checkpoints; T-04-T28). j06 8 and 8b
+// walk T-04-T29's live hosts on seeded data. j06 6, 7 and 10 stay fixme: the seed has no drafter
+// run, no approval timeline for the 41 documents and no Ridgeline draft K-1 activity (T-04-T28's
+// partial). Staging (three nights with the fake CCH and fake Textract) waits for staging.
+const T28_SEED =
+  "T-04-T28's seed: the drafter's run, the 41 documents' approval timeline and the Ridgeline draft K-1 activity";
+const STAGING = "staging with the fake CCH and fake Textract (shadow flip, Tue Mar 28, 2028)";
+const FELD = "Jonah & Claire Feld";
+const NO_SLICE =
+  "the stack was seeded without `--slice tax_workspace` (Feld's worksheets and issues)";
+
+/** Feld's 2025 1040 on the seeded firm, opened from the returns board the way a person opens
+ * it (the id is the URL's), or null when the stack was seeded without the `tax_workspace` slice
+ * (the nightly's E0 default): then the step is fixme, not failed. */
+async function feldReturn(page: Page): Promise<string | null> {
+  await page.goto("/tax-returns");
+  const row = page.getByRole("row").filter({ hasText: FELD }).filter({ hasText: "1040" }).first();
+  try {
+    await row.waitFor({ timeout: 15_000 });
+  } catch {
+    return null;
+  }
+  await row.getByRole("button", { name: "Open row" }).click();
+  await page.waitForURL(/\/tax-returns\/[0-9a-f-]{36}/u);
+  return /\/tax-returns\/([0-9a-f-]{36})/u.exec(page.url())?.[1] ?? null;
+}
+
+test.describe("J06 1040 season · review slice, full stack (T-04-T32)", () => {
+  test.beforeEach(({ journey }) => {
+    test.skip(journey.project === "fixture", "the artboard describe above walks fixture mode");
+    test.fixme(journey.project !== "fullstack", STAGING);
+  });
+
+  test("j06 6 and 7 on the full stack", () => {
+    test.fixme(true, T28_SEED);
+  });
+
+  test("j06 8: Samuel works Feld's open issues (TAX-06 live)", async ({ journey }) => {
+    await journey.as("samuel-ito", "/");
+    const id = await feldReturn(journey.page);
+    test.fixme(id === null, NO_SLICE);
+    if (id === null) return;
+    await journey.as("samuel-ito", `/tax-returns/${id}/issues`);
+    await journey.step("J06 step 8: the box 18A issue is open on Feld's return", async (page) => {
+      await onScreen(page, "TAX-06");
+      await expect(
+        page.getByText("Source K-1 box 18A 'Tax-exempt interest' is not on the worksheet").first(),
+      ).toBeVisible();
+      await noUnapprovedDecision(page);
+    });
+  });
+
+  test("j06 8b: the Ridgeline worksheet's fields and section sign-off (TAX-05 Worksheets live)", async ({
+    journey,
+  }) => {
+    await journey.as("samuel-ito", "/");
+    const id = await feldReturn(journey.page);
+    test.fixme(id === null, NO_SLICE);
+    if (id === null) return;
+    await journey.as("samuel-ito", `/tax-returns/${id}/review/worksheets`);
+    await journey.step("J06 step 8b: Sch E p2 — Ridgeline, from the seed", async (page) => {
+      await page
+        .getByRole("navigation", { name: "Worksheets" })
+        .getByText("Sch E p2 — Ridgeline")
+        .click();
+      await expect(page.locator("[data-screen='TAX-05'][data-live]")).toBeVisible();
+      await expect(page.getByRole("button", { name: "Sch E p2 — Ridgeline" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      await expect(page.getByText("Net rental real estate income").first()).toBeVisible();
+      await expect(page.getByText("307,900").first()).toBeVisible();
+      await expect(page.getByRole("button", { name: "Sign off…" }).first()).toBeVisible();
+      await noUnapprovedDecision(page);
+    });
+  });
+
+  test("j06 10 on the full stack", () => {
+    test.fixme(true, T28_SEED);
+  });
+});
