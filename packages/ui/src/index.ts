@@ -469,6 +469,8 @@ export {
   type AgentTone,
   IconTile,
 } from "./agent/agent-card";
+// T4 Workbench chat kit (F-07-T02): SessionList and ChatHeader.
+export * from "./agent/chat";
 export {
   type ConnectionStatus,
   ConnectionTile,
