@@ -201,7 +201,7 @@ async def get_session(ctx: AuthContext, session_id: UUID) -> SessionView:
         access = await viewer_access(ctx, row.client_scope, await _engagement_client(ctx, row))
         if access == "omitted":
             raise NotFound("session")
-        raw: Sequence[Any] = (
+        raw: Sequence[Any] = (  # Any: SQL rows
             []
             if access == "locked"
             else (await session.execute(_ITEMS, {"id": session_id, "page": ITEMS_PAGE})).all()

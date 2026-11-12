@@ -202,10 +202,10 @@ async def _source_visible(ctx: AuthContext, package_id: UUID | None) -> UUID | N
 
 
 async def _views(
-    ctx: AuthContext, session: AsyncSession, rows: Sequence[Row[Any]]
+    ctx: AuthContext, session: AsyncSession, rows: Sequence[Row[Any]]  # Any: SQL rows
 ) -> list[ActivityView]:
     ids = [r.id for r in rows]
-    treatments: Sequence[Row[Any]] = (
+    treatments: Sequence[Row[Any]] = (  # Any: SQL rows
         (await session.execute(_TREATMENTS, {"ids": ids})).all() if ids else []
     )
     names = await display_names(sorted({t.decided_by for t in treatments if t.decided_by}))

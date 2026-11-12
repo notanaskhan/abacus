@@ -24,6 +24,7 @@ from abacus.modules.tax import drafter_workflow as _drafter
 from abacus.modules.tax import explain as _explain
 from abacus.modules.tax import extensions as _extensions
 from abacus.modules.tax import fix_runner as _fix_runner
+from abacus.modules.tax import return_events as _return_events
 from abacus.modules.tax import return_issues as _return_issues
 from abacus.modules.tax import schedule_jobs as _schedule_jobs
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
@@ -371,3 +372,6 @@ async def _assistant_subject(ctx: AuthContext, return_id: UUID) -> UUID:
 
 
 register_session_subject("tax_return", _assistant_subject, "tax.assistant")
+
+# T-04-T29 (DEC-4318): the return's counts reach its topics on `/v1/events`.
+_return_events.register()
