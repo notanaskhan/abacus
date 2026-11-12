@@ -115,7 +115,7 @@ import { T9Specimen } from "./t9";
 import { T8Specimen } from "./t8";
 import { Tpl08Specimen } from "./tpl08";
 import { Tpl09Specimen } from "./tpl09";
-import { T5Specimen, Tpl05Specimen } from "./t5";
+import { T5Board, T5Specimen, Tpl05Specimen } from "./t5";
 import {
   CalcTreeSpecimen,
   FieldRowsSpecimen,
@@ -489,4 +489,6 @@ export function specimenById(id: string): Specimen | undefined {
 export * as SPECIMEN_SEED from "./seed-figures";
 // P-03-T07: the synthetic page images, for the C4 fixture handlers' page route.
 export { FORM_PAGE_PNG, STATEMENT_PAGE_PNG } from "./viewer-pages";
+// F-07-T08: one T5 artboard on its own, for the T4 gallery's Agents and Connect tabs.
+export { T5Board };
 export { TPL08_CLIENTS, type Tpl08Message, tpl08Messages } from "./tpl08-data";

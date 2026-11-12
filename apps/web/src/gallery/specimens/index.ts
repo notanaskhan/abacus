@@ -8,6 +8,7 @@ import { Tpl06Artboard } from "./TPL-06";
 import { Tpl10Artboard } from "./TPL-10";
 import { Tpl16Artboard } from "./TPL-16";
 import { Tpl19Artboard } from "./TPL-19";
+import { T4Artboard, Tpl04Artboard } from "./T4";
 
 registerScreen("TPL-16", {
   title: "Signing ceremony · Form 8879, Dev & Mira Kapoor",
@@ -48,4 +49,14 @@ registerScreen("T6", {
 registerScreen("TPL-06", {
   title: "Workbook grid specimen · Ridgeline capital accounts",
   Component: Tpl06Artboard,
+});
+
+// F-07-T08: the T4 Workbench chat template (a–f) and the TPL-04 specimen (a–e).
+registerScreen("T4", {
+  title: "Workbench chat · T4 template",
+  Component: T4Artboard,
+});
+registerScreen("TPL-04", {
+  title: "Workbench chat specimen · TY2025 season progress by office",
+  Component: Tpl04Artboard,
 });
