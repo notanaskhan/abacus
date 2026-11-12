@@ -9,6 +9,8 @@
 // the fake CCH are on that stack (T-01-T23, T-01-T22) and staging's URL is set (F-04-T28); until
 // then they are fixme, never skipped.
 import { DEMO_INSTANT, expect, test } from "../harness";
+import type { Page } from "@playwright/test";
+import { noAgentDecision, onScreen } from "./a07-support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -196,6 +198,89 @@ test.describe("J06 1040 season · coordination slice (T-01-T29)", () => {
     });
     await journey.step("J06 step 13: Feld Filed, Varga Rejected with its code", async (page) => {
       await expect(page.getByText("IND-031-04")).toBeVisible();
+    });
+  });
+});
+
+// T-04-T32 (TASK-7320; T-04 §10; DEC-4319): J06's journey slice for the 1040 shadow flip, steps
+// j06 6, 7, 8, 8b and "j06 10 final approval blocked by Draft K-1", on the return review
+// artboards in fixture mode (the gallery; personas and the demo clock from each scenario). Every
+// step runs axe and INV-1 to INV-5 through the harness. The full stack and staging walks, with the
+// fake CCH and fake Textract, wait for T-04-T29's live hosts and staging, so they are fixme there.
+
+const T04_LIVE =
+  "T-04-T29's live hosts for TAX-04 to TAX-07 and TXI-01, and staging with the fake CCH and fake Textract (shadow flip, Tue Mar 28, 2028)";
+
+function artboard(id: string, state: string, persona: string): string {
+  return `/components/screens/${id}?st=${state}&as=${persona}`;
+}
+
+async function noUnapprovedDecision(page: Page): Promise<void> {
+  await noAgentDecision(page);
+  await expect(page.getByText(/I approved|I changed/u)).toHaveCount(0);
+}
+
+test.describe("J06 1040 season · review slice (T-04-T32)", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(journey.project !== "fixture", T04_LIVE);
+  });
+
+  test("j06 6: the Return Drafter's draft lands as a proposed checkpoint (TAX-07, SHL-16)", async ({
+    journey,
+  }) => {
+    await journey.as("kevin-osei", artboard("TAX-07", "b", "kevin-osei"));
+    await journey.step(
+      "J06 step 6: the drafter's checkpoint is proposed, not applied",
+      async (page) => {
+        await onScreen(page, "TAX-07");
+        await noUnapprovedDecision(page);
+      },
+    );
+    await journey.as("kevin-osei", artboard("TAX-07", "b2", "kevin-osei"));
+    await journey.step("J06 step 6: the checkpoint's steps (old → new, cause)", async (page) => {
+      await onScreen(page, "TAX-07");
+    });
+  });
+
+  test("j06 7: Kevin approves documents at his level and Review counts down", async ({
+    journey,
+  }) => {
+    await journey.as("kevin-osei", artboard("TAX-04", "a", "kevin-osei"));
+    await journey.step("J06 step 7: the prepare preset (TAX-04 a)", async (page) => {
+      await onScreen(page, "TAX-04");
+      await noUnapprovedDecision(page);
+    });
+    await journey.as("samuel-ito", artboard("TAX-05", "a", "samuel-ito"));
+    await journey.step("J06 step 7: the review preset (TAX-05 a)", async (page) => {
+      await onScreen(page, "TAX-05");
+    });
+  });
+
+  test("j06 8: the issues, with fix instructions only a person sets", async ({ journey }) => {
+    await journey.as("samuel-ito", artboard("TAX-06", "a", "samuel-ito"));
+    await journey.step("J06 step 8: the 18A issue selected (TAX-06 a)", async (page) => {
+      await onScreen(page, "TAX-06");
+      await expect(page.locator("[data-issue='box18a']").first()).toBeVisible();
+      await noUnapprovedDecision(page);
+    });
+  });
+
+  test("j06 8b: field provenance and section sign-off on the worksheet (TXI-01)", async ({
+    journey,
+  }) => {
+    await journey.as("samuel-ito", artboard("TXI-01", "b", "samuel-ito"));
+    await journey.step("J06 step 8b: field provenance (TXI-01 b)", async (page) => {
+      await onScreen(page, "TXI-01");
+      await noUnapprovedDecision(page);
+    });
+  });
+
+  test("j06 10 final approval blocked by Draft K-1", async ({ journey }) => {
+    await journey.as("samuel-ito", artboard("TAX-05", "f", "samuel-ito"));
+    await journey.step("J06 step 10: final approval waits on the released K-1", async (page) => {
+      await onScreen(page, "TAX-05");
+      await expect(page.getByText("Draft K-1 · pre-release").first()).toBeVisible();
+      await noUnapprovedDecision(page);
     });
   });
 });
