@@ -505,6 +505,16 @@ UPLOADS_PROCESSING = Flag(
     kind="boolean",
     default="false",
 )
+WORKBENCH_ENABLED = Flag(
+    name="workbench.enabled",
+    kind="boolean",
+    default="false",
+)
+WORKBENCH_PLANS = Flag(
+    name="workbench.plans",
+    kind="boolean",
+    default="false",
+)
 WORKPAPERS_CORE = Flag(
     name="workpapers.core",
     kind="boolean",
@@ -615,6 +625,8 @@ FLAGS: dict[str, Flag] = {
     "tax_agents.enabled": TAX_AGENTS_ENABLED,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
+    "workbench.enabled": WORKBENCH_ENABLED,
+    "workbench.plans": WORKBENCH_PLANS,
     "workpapers.core": WORKPAPERS_CORE,
     "workpapers.drafting": WORKPAPERS_DRAFTING,
 }
