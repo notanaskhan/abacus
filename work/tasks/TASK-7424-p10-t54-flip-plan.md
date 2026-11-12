@@ -37,4 +37,6 @@ evidence and both approvals.
   refuses the plan until P-10-T56's renewal (that is by design).
 
 ## Progress log
+- 2026-11-12 (TASK-7429): `runtime_v2_flip shadow` builds shadow.json from the database; left:
+  the staging rehearsal, the shadow window itself, the canary and both approvals.
 - 2026-11-12: built; tests pass.

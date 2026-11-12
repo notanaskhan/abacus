@@ -56,7 +56,13 @@ train with an expiry after the window. Until then `runtime_v2_flip check` refuse
   {"shadow_from": "2028-03-01", "shadow_to": "2028-04-20", "runs": 64,
    "invariant_failures": 0, "canary_from": "2028-03-20"}
   ```
-  Floors: 14 days, 50 runs, zero invariant failures.
+  Floors: 14 days, 50 runs, zero invariant failures. Build the file from the database rather
+  than by hand:
+  ```bash
+  python -m abacus_tools.runtime_v2_flip shadow --firm <PF-X1 tenant> --from 2028-03-01 --to 2028-04-20 --canary-from 2028-03-20 --staging > shadow.json
+  ```
+  It counts the firm's `engagements.run` runs started in the window and runs INV-1 and INV-5 over
+  its audit events; it refuses a firm that is not synthetic and exits 1 when a floor is missed.
 - **Canary from Mon Mar 20, 2028:** the staging canary (SLO-10's 15-minute flow) adds one
   runtime v2 run on PF-X1: start, plan approval by the canary person, completion, and the dock's
   stream. `canary_from` is its first green.

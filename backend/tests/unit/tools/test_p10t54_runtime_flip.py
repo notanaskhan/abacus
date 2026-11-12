@@ -7,6 +7,7 @@ of engagement runs on staging and the canary from Mon Mar 20, both founders' app
 
 from __future__ import annotations
 
+import json
 from datetime import date
 from pathlib import Path
 from uuid import UUID
@@ -166,3 +167,11 @@ def test_the_runbook_names_the_order_the_rollback_and_both_approvals() -> None:
     for needle in (*flip.FLAGS_ON, "## Rollback", "notanaskhan", "ayushkbhatia",
                    "Tue May 2, 2028", "Mon Mar 20, 2028", "runs persist"):  # fmt: skip
         assert needle in text, needle
+
+
+def test_the_shadow_builder_writes_what_check_reads() -> None:
+    found = flip.ShadowEvidence(date(2028, 3, 1), date(2028, 4, 20), 64, 0, date(2028, 3, 20))
+    again = flip.ShadowEvidence.from_json(json.loads(flip.evidence_json(found)))
+    assert again == found
+    none = flip.ShadowEvidence(date(2028, 3, 1), date(2028, 4, 20), 64, 0, None)
+    assert flip.ShadowEvidence.from_json(json.loads(flip.evidence_json(none))) == none

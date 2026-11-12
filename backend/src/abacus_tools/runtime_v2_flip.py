@@ -23,6 +23,13 @@ This module checks the plan, beyond what `flip_request.precheck` checks per file
 
     python -m abacus_tools.runtime_v2_flip render --firm <tenant> --code PF-A1 --shadow-run <link>
     python -m abacus_tools.runtime_v2_flip check <flip files>... --shadow shadow.json
+    python -m abacus_tools.runtime_v2_flip shadow --firm <PF-X1 tenant> --from <date> --to <date> \
+        [--canary-from <date>] [--staging] > shadow.json
+
+`shadow` (TASK-7429) builds the evidence from the database instead of by hand: the firm's
+engagement runs (`engagements.run`) started in the window, and INV-1 and INV-5
+(`abacus_tools.harness.invariants`) over the firm's audit events in it. The synthetic firm only;
+the same guards as the load profiles. `canary_from` is the canary job's first green (SLO-10).
 """
 
 from __future__ import annotations
@@ -37,6 +44,7 @@ from pathlib import Path
 from typing import Final, cast
 from uuid import UUID
 
+import asyncpg
 import yaml
 
 from abacus_tools import flip_request
@@ -76,6 +84,67 @@ class ShadowEvidence:
             int(cast(int, raw["invariant_failures"])),
             None if canary is None else date.fromisoformat(str(canary)),
         )
+
+
+ENGAGEMENT_RUN: Final = "engagements.run"
+
+
+async def shadow_evidence(
+    conn: asyncpg.Connection,
+    tenant: UUID,
+    start: date,
+    end: date,
+    canary_from: date | None,
+) -> ShadowEvidence:
+    """The window's engagement runs and invariant failures for one synthetic firm."""
+    from abacus_tools.harness.invariants import AuditRow, check
+
+    synthetic = await conn.fetchval("SELECT synthetic FROM firms WHERE tenant_id = $1", tenant)
+    if synthetic is not True:
+        raise ValueError("the shadow is read for the synthetic firm (PF-X1) only")
+    upper = end + timedelta(days=1)
+    runs = await conn.fetchval(
+        "SELECT count(*) FROM agent_runs WHERE tenant_id = $1 AND agent_id = $2 "
+        "AND started_at >= $3 AND started_at < $4",
+        tenant,
+        ENGAGEMENT_RUN,
+        start,
+        upper,
+    )
+    records = await conn.fetch(
+        "SELECT seq, actor_kind, actor_id, action, on_behalf_of_user_id, policy_ref "
+        "FROM audit_events WHERE tenant_id = $1 AND occurred_at >= $2 AND occurred_at < $3 "
+        "ORDER BY seq",
+        tenant,
+        start,
+        upper,
+    )
+    users = frozenset(cast(UUID, u["id"]) for u in await conn.fetch("SELECT id FROM users"))
+    rows = [
+        AuditRow(
+            seq=int(r["seq"]),
+            actor_kind=str(r["actor_kind"]),
+            actor_id=cast(str | None, r["actor_id"]),
+            action=str(r["action"]),
+            on_behalf_of_user_id=cast(UUID | None, r["on_behalf_of_user_id"]),
+            policy_ref=cast(str | None, r["policy_ref"]),
+        )
+        for r in records
+    ]
+    return ShadowEvidence(start, end, int(runs or 0), len(check(rows, users)), canary_from)
+
+
+def evidence_json(shadow: ShadowEvidence) -> str:
+    return json.dumps(
+        {
+            "shadow_from": shadow.shadow_from.isoformat(),
+            "shadow_to": shadow.shadow_to.isoformat(),
+            "runs": shadow.runs,
+            "invariant_failures": shadow.invariant_failures,
+            "canary_from": None if shadow.canary_from is None else shadow.canary_from.isoformat(),
+        },
+        sort_keys=True,
+    )
 
 
 def shadow_findings(shadow: ShadowEvidence) -> list[str]:
@@ -169,6 +238,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     make.add_argument("--code", required=True)
     make.add_argument("--shadow-run", required=True)
     make.add_argument("--out", type=Path, help="write the files here instead of stdout")
+    shadow = sub.add_parser("shadow")
+    shadow.add_argument("--firm", required=True, type=UUID)
+    shadow.add_argument("--from", dest="start", required=True, type=date.fromisoformat)
+    shadow.add_argument("--to", dest="end", required=True, type=date.fromisoformat)
+    shadow.add_argument("--canary-from", type=date.fromisoformat, default=None)
+    shadow.add_argument("--staging", action="store_true")
     check = sub.add_parser("check")
     check.add_argument("files", nargs="+", type=Path)
     check.add_argument("--shadow", required=True, type=Path)
@@ -180,6 +255,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             else:
                 (args.out / name).write_text(body, encoding="utf-8")
         return 0
+    if args.command == "shadow":
+        return _shadow_main(args)
     order = sorted(cast(list[Path], args.files), key=lambda p: p.name)
     requests: list[FlipRequest] = []
     for path in order:
@@ -194,6 +271,43 @@ def main(argv: Sequence[str] | None = None) -> int:
     for reason in found:
         sys.stdout.write(f"{reason}\n")
     return 1 if found else 0
+
+
+def _shadow_main(args: argparse.Namespace) -> int:
+    import asyncio
+    import os
+
+    from abacus.kernel.config import settings
+    from abacus_tools.db_connect import connect as connect_db
+    from abacus_tools.synthetic.scenarios.brightwater_hale.loader import (
+        DEFAULT_SUPERUSER,
+        SUPERUSER_ENV,
+        LoadRefused,
+        guard,
+    )
+
+    owner = settings().migrations_database_url
+    dsn = (
+        owner.get_secret_value()
+        if args.staging and owner is not None
+        else os.environ.get(SUPERUSER_ENV, DEFAULT_SUPERUSER)
+    )
+
+    async def read() -> ShadowEvidence:
+        guard(dsn, staging=bool(args.staging))
+        conn = await connect_db(dsn)
+        try:
+            return await shadow_evidence(conn, args.firm, args.start, args.end, args.canary_from)
+        finally:
+            await conn.close()
+
+    try:
+        found = asyncio.run(read())
+    except (LoadRefused, ValueError) as refused:
+        sys.stderr.write(f"refused: {refused}\n")
+        return 2
+    sys.stdout.write(evidence_json(found) + "\n")
+    return 1 if shadow_findings(found) else 0
 
 
 if __name__ == "__main__":
