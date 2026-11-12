@@ -23,6 +23,12 @@
 Parity tier: Tier C report-only (P1) on a–f; Tier D blocking on audit bar 59, rail 330, pane header
 46, Timeline when-column 76 and mark 20.
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a–f | C | reported (gallery `AUD-29`, P-05-T15) | P1, report-only |
+| host | D | — | audit bar 59, rail 330, pane header 46, Timeline when-column 76 and mark 20 (blocking) |
+
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
 |---|---|---|---|---|

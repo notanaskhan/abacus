@@ -24,6 +24,13 @@
 Parity tier: Tier C on a, b, b2, c, locked at S37; d, e, f report-only until their host epics; Tier D
 blocking on popover 420 and picker 300.
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, b, b2, c | C (locked) | measured by the parity run (gallery `SHL-18`, P-05-T15) | threshold 0.20 |
+| d, e, f | C | reported | report-only until their host epics (A-10, F-08/K-03, A-09) |
+| host | D | — | popover 420, dock tab 360, drawer tab 480 (blocking) |
+
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
 |---|---|---|---|---|

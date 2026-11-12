@@ -127,6 +127,11 @@ export const BUILT_PLANNED: readonly string[] = [
   // screens open them (A-04's AUD-07, the workpaper headers); the suites measure them all the same.
   "SHL-11",
   "SHL-12",
+  // P-05-T15 (DEC-4311): SHL-17, SHL-18 and AUD-29 stay `planned` until their hosts mount them
+  // (the AUD-09 rows, the cockpit rail); the gallery artboards measure them all the same.
+  "SHL-17",
+  "SHL-18",
+  "AUD-29",
   // A-05-T61 close (S31; DEC-2825): the EBP and AUD-27 canvases are AUD-02 sections, `planned`
   // until their links have builders; their gallery artboards measure them all the same.
   "EBP-01",
