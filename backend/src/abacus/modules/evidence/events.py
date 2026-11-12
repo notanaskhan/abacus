@@ -106,6 +106,8 @@ class EvidenceVersionWithdrawn(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     evidence_version_id: Annotated[UUID, classified("internal")]
     request_item_id: Annotated[UUID | None, classified("internal")] = None
+    # P-02-T07 (DEC-4613): the item, so the search index drops the file at once (additive).
+    evidence_item_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class EvidenceWithdrawalErased(DomainEvent):

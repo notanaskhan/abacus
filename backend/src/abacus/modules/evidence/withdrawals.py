@@ -281,6 +281,7 @@ async def withdraw(ctx: AuthContext, engagement_id: UUID, version_id: UUID) -> W
                     engagement_id=engagement_id,
                     evidence_version_id=version_id,
                     request_item_id=item_id,
+                    evidence_item_id=version.evidence_item_id,
                 )
             )
     except IntegrityError:  # a concurrent withdrawal committed first: as if it never existed

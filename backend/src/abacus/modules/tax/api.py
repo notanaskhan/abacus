@@ -422,3 +422,6 @@ register_session_subject("tax_return", _assistant_subject, "tax.assistant")
 _return_events.register()
 # T-05-T27 (DEC-4519): the workbook's cells are review fields; SHL-09 reads their provenance.
 _workbook_service.register()
+
+# P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
+from abacus.modules.tax import search as _search  # noqa: E402, F401
