@@ -82,15 +82,22 @@ MAX_BYTES: Final = 512 * 1024
 # The six a firm template may choose; `financial_statements` (DEC-2615) is code's, never theirs.
 LAYOUTS: Final = frozenset(get_args(LayoutKey))
 # AC-2: markup, a URL or a template expression anywhere in firm wording.
+# A tag is an opener (`<`, optional `/`, then a letter, `!` or `?`) with a `>` anywhere after it.
+# The opener is matched alone and the `>` looked up once after the first opener, so the check is
+# linear (Q-03-T148, CodeQL py/polynomial-redos); it finds exactly the texts
+# `<\s*/?\s*[a-z!?][^>]*>` found: if any opener has a `>` after it, the first opener does too.
+_TAG_OPEN: Final = re.compile(r"<\s*+/?\s*+[a-z!?]", re.IGNORECASE)
 _MARKUP: Final = re.compile(
-    r"<\s*/?\s*[a-z!?][^>]*>|<%|\{\{|\{%|\$\{|\b(?:https?|ftp|file|data|javascript|mailto):"
-    r"|\bwww\.",
+    r"<%|\{\{|\{%|\$\{|\b(?:https?|ftp|file|data|javascript|mailto):|\bwww\.",
     re.IGNORECASE,
 )
 
 
 def has_markup(text: str) -> bool:
-    return _MARKUP.search(text) is not None
+    if _MARKUP.search(text) is not None:
+        return True
+    opener = _TAG_OPEN.search(text)
+    return opener is not None and ">" in text[opener.end() :]
 
 
 def canonical(value: object) -> bytes:

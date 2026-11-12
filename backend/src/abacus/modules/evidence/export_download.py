@@ -73,7 +73,9 @@ _RECENT = text(
 )
 _CREATE: Final = "export.create"
 # One range only, digits bounded: `bytes=a-b`, `bytes=a-`, `bytes=-n` (whitespace tolerated).
-_RANGE: Final = re.compile(r"\s*bytes\s*=\s*(\d{0,19})\s*-\s*(\d{0,19})\s*")
+# Possessive, so a header of spaces cannot backtrack (Q-03-T148, CodeQL py/polynomial-redos); the
+# same headers match as before: no whitespace run can give up a character to a digit or `-`.
+_RANGE: Final = re.compile(r"\s*+bytes\s*+=\s*+(\d{0,19}+)\s*+-\s*+(\d{0,19}+)\s*+")
 
 
 class ExportNotReady(DomainConflict):
