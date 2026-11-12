@@ -2435,6 +2435,9 @@ RULES: list[Rule | TreeRule] = [
             # G-02-T10 (DEC-436): the audit label index, a rebuildable projection of the audit
             # trail; auditing its own writes would feed itself, as the hash chain's would.
             "src/abacus/modules/audit_trail/labels.py",
+            # P-02-T06 (DEC-4612; ADR-241 decisions 3 and 8): the search index and recents, a
+            # rebuildable projection and operational UI state; the reindex itself is audited.
+            "src/abacus/modules/platform/search/store.py",
             "tests/integration/test_tenancy.py",
             "tests/integration/test_uow_session_rollback.py",
             # Calls the slot ledger's functions as the app, one committed call at a time.
@@ -2661,6 +2664,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/kernel/slots.py",  # see UOW-001
             "src/abacus/ai_gateway/admission.py",  # see UOW-001
             "src/abacus/modules/audit_trail/labels.py",  # see UOW-001 (DEC-436)
+            "src/abacus/modules/platform/search/store.py",  # see UOW-001 (DEC-4612)
             "tests/integration/*",
             "tests/security/conftest.py",  # the suite's database (as integration's conftest)
             "tests/contracts/undo/conftest.py",  # P-04-T13: the Undo suite's own database
