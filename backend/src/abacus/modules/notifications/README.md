@@ -61,3 +61,18 @@ A kind is one row of a person's feed, of one code. Adding one is a code change i
 ## Pausing notification email
 
 `notifications.email` is the per-firm kill switch for the channel. Turning it off settles new deliveries and any in-flight send as `suppressed`; the in-app feed is unaffected. Procedure: `docs/runbooks/RB-31-notification-email-pause.md`.
+
+## Real time: `GET /v1/events` (P-10-T26/T27; SPEC-647 §3.8; ADR-232; P-10-T55)
+- `realtime.py` is the stream and the outbox subscriber; the kernel half is `kernel/realtime.py`
+  (framing, heartbeats, the 6-streams-per-person cap, wakes, re-auth every read on a wake).
+- **A topic** (`engagement:<id>`, `work_item:<id>`, `run:<id>`, `user:<id>`, `firm:<id>`,
+  `portal:<scope>`; `session:` is reserved) is authorised by the owner that registered it
+  (`kernel.realtime.register_topic(kind, authorizer)`, answering `content`, `metadata` or None).
+- **An invalidation:** a module makes one of its outbox events reach topics with
+  `kernel.realtime.register_invalidation(event_type, Invalidation(ref_type, ref_field,
+  ((topic_kind, payload_field), ...)))`. The subscriber writes one `realtime_events` row per topic
+  (identifiers and enums only) and wakes it; the client refetches through REST.
+- **Delivery (SLO-06):** each tail read that sends events logs `realtime.delivered` (count, and
+  `lag_ms`: the oldest row's age on the database clock); a `Last-Event-ID` replay is not counted.
+  Staging alarms on its p95 (`infra/envs/staging/realtime_slo.tf`; RB-28, DEC-4412).
+- **Off:** the flag `realtime.sse` off answers 404 and every client polls (RB-28).

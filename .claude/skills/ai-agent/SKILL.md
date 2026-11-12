@@ -28,3 +28,22 @@ description: How to add or change an AI agent or model step — spec, prompt, co
 - A new agent's runs show in the SHL-13 dock and the WB-09 trace with no screen work: emit run items
   and trace rows through `agents.runs`; never render model text outside `AgentBlocks`/`AgentText`.
 - Degraded dock or trace: RB-69 (poll rate and trace latency signals; per-firm flags).
+
+## Runtime v2: tools, runs, proposals (P-10; P-10-T55)
+Reference: `docs/architecture/reference/ai-agent.md` ("Runtime v2"), C17
+`docs/contracts/tool-registry.md`, C6 v2 `docs/contracts/agent-runs.md`.
+1. **v2 spec** in `modules/agents/specs/v2/<id>.yaml`; compile with
+   `python -m abacus_tools.codegen.agent_specs_v2`. `single_call` lists no tools: a tool needs
+   `workflow` or `loop`. `plan: required_when_writes` for anything that proposes.
+2. **Tools** in the owning module with `@agent_tool(name, kind, action, data_class, input_model,
+   output_model, untrusted=..., records_read=...)`, a matrix action (`agent: task_scope`, or
+   `agent: deny` for `approved_write`), a description prompt `ai_gateway/prompts/tool.<name>/v1.txt`,
+   registered at the module's `api.py` import. Call only through `agents.api.call_tool`.
+3. **Run steps** of the engagement run: `agents.api.register_run_step(kind, handler)` from the
+   owning module's `api.py` import; the handler answers `RunStepResult(state, error_code,
+   records_read)`, never text.
+4. **Proposals**: `create_proposal(...)` from a propose tool; the owner registers
+   `register_suggestion_target(...)` and `register_proposal_adapter(kind, adapter)`. A person
+   applies; the agent never does.
+5. Threat model rows TU-01 to TU-09 (`docs/architecture/ai-threat-model.md`) must still hold; copy
+   the update checklist into the PR.

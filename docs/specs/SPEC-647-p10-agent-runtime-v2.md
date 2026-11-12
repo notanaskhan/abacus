@@ -7,14 +7,14 @@ risk_zone: red
 related_adrs: [ADR-005, ADR-019, ADR-025, ADR-047, ADR-048, ADR-050, ADR-052, ADR-057, ADR-063, ADR-090, ADR-148, ADR-161, ADR-169, ADR-186, ADR-230, ADR-232, ADR-233, ADR-234, ADR-235]
 related_specs: [SPEC-644, SPEC-646]
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-12
 ---
 
 > **Instructions for coding agents**
 > - P-10's own SPEC (P-10-T01). §3 and §4 are P-10 §3 and §4 verbatim (`docs/plan/epics/P-10.md`);
 >   task rows are `docs/plan/epics/P-10.tasks.csv`; chapter 05 §5.3 to §5.6 is the design.
 > - Additive path: the live `call()` specialists keep running untouched during the 2028 window.
-> - Contracts provided: C6 v2 (`docs/contracts/c06-agent-runs.md`, T09), C17
+> - Contracts provided: C6 v2 (`docs/contracts/agent-runs.md`, T09), C17
 >   (`docs/contracts/tool-registry.md`, T10).
 
 ## 1. Summary
@@ -223,7 +223,7 @@ All routes go through `AbacusRouter` with one action each. Lists use the P-36 en
 | `GET /v1/firm/usage?month=` | Agent-minutes by service line, engagement and capability (no USD) | `usage.read` (firm admin, practice leader, partners) | T42 |
 | `GET /v1/engagements/{id}/effort` | Engagement agent-minutes (ENG-06's AI part) | `engagement.read` | T42 |
 
-**One owner per C6 route** (recorded in `docs/contracts/c06-agent-runs.md`): P-09 owns the run view, items feed, engagement run list (`GET /v1/engagements/{id}/agent-runs`), trace and trace export; P-10 owns the SSE streams, run commands and sessions above. C6 has one run list; WB-08 (W-03) extends P-09's list handler rather than adding `GET /v1/agent-runs?…`.
+**One owner per C6 route** (recorded in `docs/contracts/agent-runs.md`): P-09 owns the run view, items feed, engagement run list (`GET /v1/engagements/{id}/agent-runs`), trace and trace export; P-10 owns the SSE streams, run commands and sessions above. C6 has one run list; WB-08 (W-03) extends P-09's list handler rather than adding `GET /v1/agent-runs?…`.
 
 **Not built here:** `GET/POST/PATCH/DELETE /v1/workbench/sessions` (list, create, rename, delete) and `/context-options` (W-02); `/v1/agents/library`, definitions and schedules (W-03); `/v1/engagements/{id}/triggers` (K-04); `/v1/me/today` (I-02); `PUT /v1/presence` (K-03); usage alerts (G-04).
 
@@ -311,3 +311,29 @@ Facts are resolved at read time (DEC-61), and each kind is actionable with an op
 | `feature-flags.yaml` | policy | Thu Jan 27, 2028 | T24 |
 | `EngagementAgent`, specialist workflows, `AbacusRouter`, `kernel/uow`, `kernel/dispatch.py` | live | **not changed in P-10** | — |
 | Per-firm flips | — | Tue May 2, 2028 (M17), after the window, with both approvals | T54 |
+
+## 5. As built (P-10-T55, 2026-11-12)
+
+The SPEC as it stands at the end of the build (S29–S38). Each §3 area, where it lives, and what is
+still open. How-to for consumers: `docs/architecture/reference/ai-agent.md` ("Runtime v2") and
+`docs/contracts/p10-consumer-notes.md`.
+
+| §3 area | Built in | Open |
+|---|---|---|
+| 3.1 Gateway conversations | `ai_gateway/converse.py`, `context_v2.py`, routes `bedrock`/`direct` with parity (`routes/parity.py`) | Route parity's committed reports (T13 partial); real-route evaluation reports (T46, the evaluation account) |
+| 3.2 Specs v2 and C17 | `agents/spec_v2.py`, `specs/v2/*.yaml`, `abacus_tools.codegen.agent_specs_v2`; `agents/tools/{registry,catalogue,runtime}.py`; C17 v1 frozen | — |
+| 3.3 Loop harness | `agents/harness.py` | — |
+| 3.4 Runs | `agents/run_workflow.py` (`AgentRunWorkflow`, part 2 behind `agent-run-v2-part-2`), `run_activities.py`, `commands.py`, `runs_v2_contract.py`; plans and proposals are C13 gates (DEC-4401) | — |
+| 3.5 Proposals and approved writes | `agents/proposals.py`, `proposal_slots.py`, `approved_write_workflow.py`; 0750 idempotency ledger | — |
+| 3.6 Engagement run | `agents/engagement_run.py`, `engagement_runs.py`; `register_run_step` (workpapers: `workpaper`) | Section handlers beyond the readiness check are A-04/A-05's |
+| 3.7 Sessions core | `workbench/sessions.py`, `session_queue.py`, `session_workflow.py`, `agents/session_turns.py` | The `session:` realtime topic (reserved); W-02's screens |
+| 3.8 Real time | `kernel/realtime.py`, `notifications/realtime.py` (`GET /v1/events`), `agents/run_stream.py`; delivery measured per tail read (DEC-4412); edge path RB-65 | The staging load run and the RB-28 rehearsal (T51); the edge apply (T15 partial) |
+| 3.9 Run records, trace, retention | `agents/run_records.py`, `trace.py`, `trace_records.py` (archive hook for A-07), `run_events_prune_workflow.py` | PDF export's v2 fields (cut list item 3) |
+| 3.10 Agent-minute metering | `platform` ledger and rollups, usage read API | — |
+| 3.11 Invariants | `abacus_tools.harness.invariants`; journeys J11 b1 and J23 step 1 (`test_runtime_v2_journey.py`), Playwright `e2e/agents/run-stream.spec.ts` | J11 b2–b3 `test.fixme` until W-02 (T50); staging runs |
+
+Cross-cutting: threat model rows TU-01 to TU-09 (`docs/architecture/ai-threat-model.md`); mutation
+scopes `agents/runtime` and `kernel/realtime` (T52); runbooks RB-28, RB-65 and
+`docs/runbooks/runtime-v2-flip.md` (T54). The delta pen test (T53) is deferred under DEC-1389.
+The legacy run backfill (T14) is partial. Per-firm flips are M17 (Tue May 2, 2028), with both
+founders' approvals.

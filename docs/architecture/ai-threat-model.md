@@ -156,6 +156,24 @@ Delta #2 was planned for Aug 2 – 11, 2027 on the Thu Jul 29 train build, befor
 | TL-10 | TB3 | A prompt or model is changed without evaluation, or a cheaper tier is used where it is not eligible | Versioned, immutable prompt registry; tier eligibility is keyed to the agent's own suite and fails closed; evaluations run on prompt or model change (ADR-074, ADR-081) | Tested: `backend/tests/unit/ai_gateway/test_prompt_registry.py`, `backend/tests/unit/ai_gateway/test_tier_eligibility.py` |
 | TL-11 | TB3, TB4 | Denial of wallet: bulk hostile uploads run up cost or starve other firms | Per-firm and platform budgets; work classes with fair share; admission control degrades instead of failing silently (ADR-069, ADR-071, ADR-072) | Tested: `backend/tests/integration/agent_tests/test_gateway_call.py`, `backend/tests/integration/test_work_class_queues.py` |
 
+### Tool use under runtime v2 (C17; ADR-064, ADR-233, ADR-234; P-10-T55)
+
+Runtime v2 lets a capability call tools in a run (`AgentRunWorkflow`, the loop harness). The tool
+layer is the C17 registry (`agents/tools/registry.py`, `tools/runtime.py`;
+`docs/contracts/tool-registry.md`). TL-04 still holds: there is no generic query, HTTP or file tool.
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| TU-01 | TB6 | An injected instruction gets an agent to call a final verb (approve, send, post, release, decide, …) through a tool | A final verb can only be an `approved_write` tool, whose matrix action is `agent: deny`; it runs only under a person's approval grant; `register_tool`, TOOL-001 and `abacus_tools.quality.tool_registry` refuse anything else | Tested: `backend/tests/contracts/c17_tools/test_c17_stub.py`, `backend/tests/contracts/c17_tools/test_c17_runtime.py` (`no_grant`), `backend/tests/integration/test_p10t38_approved_writes.py` |
+| TU-02 | TB6 | A tool call reads outside the run: another engagement, client or run | Every call is authorised as the initiator's live rights intersected with the agent role and task scope, and pinned to the run's scope; walls answer `not_visible` | Tested: `backend/tests/contracts/c17_tools/test_c17_runtime.py` (AC-R2, AC-R3), `backend/tests/integration/test_p10t22_agent_tool_calls.py` |
+| TU-03 | TB6, TRI | A tool reads tax return information without §7216 consent, or returns a full TIN | Consent is checked before the query (`consent_required`); TINs are scrubbed from every result; TRI reads are recorded as restricted access | Tested: `backend/tests/contracts/c17_tools/test_c17_runtime.py` (AC-R4, AC-R6) |
+| TU-04 | TB6 | Client strings returned by a tool carry instructions into the next turn | Fields named `untrusted` are rendered in `<untrusted>` blocks; a refusal reaches the model as its code alone | Tested: `backend/tests/contracts/c17_tools/test_c17_runtime.py` (AC-R5) |
+| TU-05 | TB6 | A retried or replayed step writes twice, or a replay swaps arguments | Idempotency on `(run_id, step_seq, attempt)` with an argument hash (0750); a write answers identifiers only, replayed from the ledger | Tested: `backend/tests/contracts/c17_tools/test_c17_runtime.py` (AC-R7) |
+| TU-06 | TB6 | A run proposes changes no person saw planned | `plan: required_when_writes`: a run that proposes waits on its plan; plans and proposals are human gates on C13 (DEC-4401); a proposal is applied only by a person, through the owner's adapter, inside their unit of work, and can be undone in its window | Tested: `backend/tests/integration/agent_tests/test_runtime_v2_journey.py`, `backend/tests/integration/test_proposal_undo_window.py`, `backend/tests/integration/test_p04t24_proposals.py` |
+| TU-07 | TB3, TB4 | A loop runs away: unbounded steps, calls or spend | Spec limits (`max_steps`, `max_tool_calls`, `max_cost_usd`, `max_seconds`) are enforced by the harness; budgets and admission as TL-11 | Tested: `backend/tests/unit/agents/test_p10t25_harness.py` |
+| TU-08 | TB6 | A tool returns more than a person could review, or a model counts rows itself | At most 200 rows (`row_limit`); totals and pages are code's (`ToolPageOut.total`); code computes, the model judges (ADR-050) | Tested: `backend/tests/contracts/c17_tools/test_c17_runtime.py` (AC-R6) |
+| TU-09 | TB6 | An engagement-run step kind is hijacked by another module or runs with no owner | `register_run_step` refuses a second handler for a kind; the start refuses a plan naming an unregistered kind; handlers answer states and codes only | Tested: `backend/tests/integration/agent_tests/test_runtime_v2_journey.py` (J23 step 1). Planned: P-10-T56 close-out review |
+
 ### Cross-tenant exposure
 
 | ID | Boundary | Threat | Mitigation | Coverage |
@@ -365,6 +383,7 @@ Each gap is a row above whose evidence is an ADR only. None is a new decision; e
 
 | Date | Reviewer | Scope | Result |
 |---|---|---|---|
+| 2026-11-12 | P-10-T55 (TASK-7423; self-review) | New section: tool use under runtime v2, rows TU-01 to TU-09; every cited test path opened on the branch | No gap added; TU-09's review is P-10-T56's |
 | 2026-11-01 | Q-03-T123 delta #2 refresh (TASK-2536; self-review; N's review is still open) | The delta #2 scope table; new rows TR2-01 to TR2-03, CG-01, CG-02, SG-01 to SG-04, BR-01 to BR-04, KR-01 to KR-04; the consent gate moved to built in the short version. Every cited test path was opened and found on `main` | Two gaps added (no booked window; the e-furnishing disclosure). PS-01 and PS-02 are now covered by SG-01 to SG-03 |
 | 2026-10-29 | Q-03-T091 delta #1 refresh (TASK-2129; self-review; N's review is the row's acceptance and is still open) | The delta #1 scope table; new rows PD-01 to PD-04, PS-01, PS-02, TP-01 to TP-03, LC-01 to LC-04, IX-01 to IX-04. Every cited test path was opened and found; build state read from `main` (the flags, the route stubs) | Two gaps added. Stubs named as such: portal intake, portal signing |
 | 2026-10-24 | Q-03-T018 second pass after the S7 batch (TASK-1178; self-review; N's review is still open) | TRI-01, TRI-03 and TRI-04 moved to Tested (ADR-167); new rows AU-09, AU-10, IN-01 to IN-04, G2-01, G2-02, EV-04 to EV-06, CR-05; EV-01, EV-03, CR-02 and AU-08 revised; scope table rows for invitations v2, G2 v2, the TIN refusal and the live viewer; the upload policy recorded as the intended control. Every new test path was opened, and each named test was found | Five gaps added; one closed (the viewer is no longer a stub) |
@@ -372,6 +391,8 @@ Each gap is a row above whose evidence is an ADR only. None is a new decision; e
 | 2026-10-20 | Authoring session (self-review). The security reviewer subagent (`.claude/agents/security-reviewer.md`) has not been run; it is optional under the solo amendment and blocks nothing | Walked the reviewer's checklist items 5 to 12, 17 and 19 against this file; checked that every cited test path exists and every cited task id is in `docs/plan/epics/Q-02.tasks.csv`; checked that no row names a firm, a person, an amount or a secret | No threat row lacks a coverage entry. Six gaps listed above. Rows TRI-01 to TRI-05 are plan-only until Q-02-T25 and Q-02-T32 land |
 
 ## Update checklist (copy into the pull request that adds an agent, tool or data source)
+
+- [ ] Is it a v2 capability? Its tools are registered in the owning module (C17), each with a matrix action, a kind and a description prompt; TU-01 to TU-09 hold.
 
 - [ ] Which strings from clients or client systems does it read? Each is named as untrusted in the agent spec.
 - [ ] Which tools does it call? Each is narrow and typed, and authorises against the agent context.

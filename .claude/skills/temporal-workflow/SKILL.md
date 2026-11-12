@@ -53,6 +53,24 @@ Copy `SampleDrawWorkflow` (`sampling/draw_workflow.py`, activity `sample_draw.ru
 - On staging or production it runs as an ECS one-off task, never from a laptop against a shared
   database.
 
+## Agent runs and sessions (runtime v2, P-10; P-10-T55)
+- **`AgentRunWorkflow`** (`agents/run_workflow.py`): one run, its plan, steps, questions, decisions
+  and control signals. Started only through `kernel.dispatch` with id `agent_run:<tenant>:<run>`; the
+  workflow reads identifiers from signals and everything else through activities
+  (`run_activities.py`). Part 2 (questions, approvals) sits behind
+  `workflow.patched("agent-run-v2-part-2")`: copy that for any change to what it schedules.
+- **Waits** are durable: a plan awaiting approval or a question awaiting an answer is a
+  `workflow.wait_condition` on a signal, never a poll; the default answer is applied only by an
+  explicit Skip (never by time).
+- **`ApprovedWriteWorkflow`** runs a person's approved write under their grant; **child runs**
+  started from a session turn are started by an activity through `kernel.dispatch` so they outlive
+  the session's workflow.
+- **`WorkbenchSessionWorkflow`** (`workbench/session_workflow.py`): one turn at a time from a side
+  queue, idle end after an hour, continue-as-new carrying the queue and the open question.
+- Histories: `agent-run-v1-*.json`, `agent-run-v2-*.json`, `approved-write-v1-*.json`,
+  `session-v1-*.json`; replay tests `tests/workflows/test_p10t29_agent_run_replay.py`,
+  `test_p10t32_agent_run_replay.py`. A new behaviour adds a `v<N+1>` history.
+
 ## Tests
 - Replay test with recorded histories (required check). Record with `python -m abacus_tools.workflows.record_<name>`; never overwrite a history, add `v<N+1>`.
 - Tracing comes from the shared client's interceptor (`kernel.temporal`); don't add your own.
