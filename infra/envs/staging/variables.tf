@@ -195,3 +195,22 @@ variable "textract_quota_requests" {
   type        = map(number)
   default     = {}
 }
+
+# P-10-T51 (DEC-4412): the realtime SLO alarms (realtime_slo.tf; RB-28).
+variable "sse_delivery_p95_ms" {
+  description = "SLO-06: the SSE delivery p95 the alarm allows, in milliseconds."
+  type        = number
+  default     = 5000
+}
+
+variable "db_max_connections" {
+  description = "The database's max_connections (db.t4g.micro: about 87); the alarm fires above 70% of it."
+  type        = number
+  default     = 87
+}
+
+variable "alarm_topic_arns" {
+  description = "SNS topics the realtime alarms notify (none until the paging topic exists)."
+  type        = list(string)
+  default     = []
+}

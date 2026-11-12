@@ -124,9 +124,11 @@ async def run(
     tokens: Mapping[str, str] | None = None,
     temporal: TemporalCall | None = None,
     variables: Mapping[str, str] | None = None,
+    stream_tokens: Mapping[str, str] | None = None,
 ) -> Report:
     """Play `scenario` with `client` (its base URL set) and report per group. `token` signs the
-    one `persona` in; `tokens` maps each weighted persona's subject to its token (Q-03-T044)."""
+    one `persona` in; `tokens` maps each weighted persona's subject to its token (Q-03-T044);
+    `stream_tokens` maps each stream subject (`Stream.subjects`, P-10-T51) to its token."""
     given = dict(variables or {})
     _paths(scenario, given)
     if scenario.temporal and temporal is None:
@@ -136,6 +138,10 @@ async def run(
     if missing:
         raise ValueError(f"no token for persona {missing[0]}")
     auth = {"Authorization": f"Bearer {token}"} if token else {}
+    by_stream = dict(stream_tokens or {})
+    unsigned = [x for s in scenario.streams for x in s.subjects() if x not in by_stream]
+    if unsigned:
+        raise ValueError(f"no token for stream subject {unsigned[0]}")
     samples: dict[str, Samples] = {g.name: Samples("http", g.p95_ms) for g in scenario.groups}
     for s in scenario.streams:
         samples[s.name] = Samples("sse", s.p95_first_event_ms)
@@ -188,10 +194,11 @@ async def run(
             if scenario.think_ms:
                 await asyncio.sleep(scenario.think_ms / 1000)
 
-    async def stream(spec: Stream) -> None:
+    async def stream(spec: Stream, subject: str | None = None) -> None:
         found = samples[spec.name]
         start = time.perf_counter()
-        headers = {**auth, "Accept": "text/event-stream"}
+        signed_as = {"Authorization": f"Bearer {by_stream[subject]}"} if subject else auth
+        headers = {**signed_as, "Accept": "text/event-stream"}
         first: float | None = None
         try:
             async with client.stream("GET", _fill(spec.path, given), headers=headers) as resp:
@@ -227,7 +234,9 @@ async def run(
             await asyncio.sleep(max(0.0, due - time.perf_counter()))
 
     tasks: list[Awaitable[None]] = [user(n) for n in range(scenario.users)]
-    tasks += [stream(s) for s in scenario.streams for _ in range(s.count)]
+    for s in scenario.streams:
+        who = s.subjects()
+        tasks += [stream(s, who[i] if who else None) for i in range(s.count)]
     if temporal is not None:
         tasks += [operate(op, temporal) for op in scenario.temporal]
     await asyncio.gather(*tasks)
@@ -348,6 +357,7 @@ async def _main(args: argparse.Namespace, scenario: Scenario) -> Report:
     async with httpx.AsyncClient(base_url=args.base_url, timeout=30.0, limits=limits) as client:
         seconds = scenario.duration_seconds
         signed = {p.subject: _token(p.subject, seconds) or "" for p in scenario.personas}
+        streams = {x: _token(x, seconds) or "" for s in scenario.streams for x in s.subjects()}
         return await run(
             scenario,
             client,
@@ -355,6 +365,7 @@ async def _main(args: argparse.Namespace, scenario: Scenario) -> Report:
             tokens=signed,
             temporal=temporal,
             variables=dict(v.split("=", 1) for v in args.var),
+            stream_tokens=streams,
         )
 
 
