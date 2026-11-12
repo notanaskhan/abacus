@@ -96,6 +96,8 @@ class WorkspaceSummaryOut(BaseModel):
     k1_dependency: Annotated[K1ActivityStatus | None, Internal] = None
     assistant: Annotated[AssistantAvailability, Internal]
     allowed_actions: Annotated[list[WorkspaceAction], Internal]
+    # TASK-7322: BH-TAX-02's signer, named only to a viewer who may request final approval.
+    final_approver_user_id: Annotated[UUID | None, Internal] = None
 
 
 class ReviewDocumentOut(BaseModel):
@@ -110,6 +112,8 @@ class ReviewDocumentOut(BaseModel):
     flagged: Annotated[bool, Internal] = False
     mismatch_field_key: Annotated[str | None, Internal] = None
     version: Annotated[int, Internal]
+    # TASK-7322: the live approval at the shown level (the latest), for Unapprove.
+    approval_id: Annotated[UUID | None, Internal] = None
 
 
 class ReviewTreeOut(BaseModel):
@@ -407,6 +411,7 @@ async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
         else K1ActivityStatus(found.k1_dependency),
         assistant="agents_off",
         allowed_actions=cast(list[WorkspaceAction], found.allowed),
+        final_approver_user_id=found.final_approver_user_id,
     )
 
 
@@ -434,6 +439,7 @@ async def review_tree_route(
                 approval=d.approval,
                 approvals_count=d.approvals_count,
                 version=d.version,
+                approval_id=d.approval_id,
             )
             for d in docs
         ],

@@ -84905,6 +84905,19 @@
             "title": "Approval",
             "type": "string"
           },
+          "approval_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approval Id"
+          },
           "approvals_count": {
             "cls": "internal",
             "default": 0,
@@ -117344,6 +117357,19 @@
             "minimum": 0.0,
             "title": "Checkpoints Proposed",
             "type": "integer"
+          },
+          "final_approver_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Final Approver User Id"
           },
           "issues_open": {
             "cls": "internal",

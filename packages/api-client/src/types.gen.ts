@@ -39920,6 +39920,10 @@ export type ReviewDocumentOut = {
      */
     approval: 'unapproved' | 'approved' | 'mismatch';
     /**
+     * Approval Id
+     */
+    approval_id?: string | null;
+    /**
      * Approvals Count
      */
     approvals_count?: number;
@@ -55159,6 +55163,10 @@ export type WorkspaceSummaryOut = {
      * Checkpoints Proposed
      */
     checkpoints_proposed?: number;
+    /**
+     * Final Approver User Id
+     */
+    final_approver_user_id?: string | null;
     /**
      * Issues Open
      */

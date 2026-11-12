@@ -30,8 +30,9 @@ shadowed main's `live.tsx` in module resolution. What stays:
 - Test: `screens/TAX-04/live.test.tsx` "an approval's toast offers Undo for 10 s".
 
 ## Partial
-- TASK-6828's partials stand (staging walk, final approval waits on SHL-12 h's picker, TAX-04's
-  501 routes, artboard parity under T-04-T47).
+- TASK-6828's partials stand: the staging walk, TAX-04's 501 routes, and artboard parity under
+  T-04-T47. The final-approval request and Unapprove of any live approval are built in TASK-7322
+  (DEC-4320).
 
 ## Progress log
 - `2026-11-12` — Built (S37). Prettier clean; vitest written, run at the end pass.
