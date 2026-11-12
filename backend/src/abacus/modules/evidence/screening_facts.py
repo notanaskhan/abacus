@@ -11,10 +11,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
+from typing import cast
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.evidence.repository import (
+    citation_boxes_among,
     citation_versions_among,
     get_item,
     get_version,
@@ -89,3 +91,47 @@ async def citation_sources(
     """P-04-T24: citation id -> the evidence version it quotes, for SHL-10's evidence list."""
     async with tenant_session(tenant) as session:
         return await citation_versions_among(session, citation_ids)
+
+
+@dataclass(frozen=True)
+class CitationBox:
+    """A verified document box (T-04-T17): where a cited figure sits, and what it printed."""
+
+    citation_id: UUID
+    evidence_version_id: UUID
+    page: int
+    bbox: tuple[float, float, float, float]
+    match_id: str
+    value_text: str | None  # TRI or Confidential: compare in code, never log
+
+
+def _box(raw: object) -> tuple[float, float, float, float] | None:
+    if not isinstance(raw, list):
+        return None
+    parts = cast(list[object], raw)
+    if len(parts) != 4 or not all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in parts
+    ):
+        return None
+    a, b, c, d = (float(cast(float, v)) for v in parts)
+    return (a, b, c, d)
+
+
+async def citation_boxes(
+    tenant: TenantContext, engagement_id: UUID, citation_ids: Sequence[UUID]
+) -> list[CitationBox]:
+    """T-04-T17 (INV-2): the live, verified document boxes among `citation_ids` on
+    `engagement_id`; a citation without a page, a box or a match id is left out. For a caller
+    authorised on the engagement."""
+    async with tenant_session(tenant) as session:
+        rows = await citation_boxes_among(session, engagement_id, citation_ids)
+    out: list[CitationBox] = []
+    for row in rows:
+        page = row.locator.get("page")
+        box = _box(row.locator.get("bbox"))
+        if not isinstance(page, int) or isinstance(page, bool) or page < 1:
+            continue
+        if box is None or row.match_id is None:
+            continue
+        out.append(CitationBox(row.id, row.source_id, page, box, row.match_id, row.value_text))
+    return out

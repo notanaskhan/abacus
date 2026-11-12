@@ -65,9 +65,9 @@ interface ApiProblem {
 }
 
 function sentence(code: string): string {
-  return code !== "mismatch" && code in BLOCKER_COPY
-    ? BLOCKER_COPY[code as Sentence]
-    : BLOCKER_COPY.generic;
+  // TASK-7330 (AC-1.4): a forced approve of a mismatched document answers 409 `mismatch`.
+  if (code === "mismatch") return BLOCKER_COPY.mismatch(1);
+  return code in BLOCKER_COPY ? BLOCKER_COPY[code as Sentence] : BLOCKER_COPY.generic;
 }
 
 /** The words for a refusal: one sentence per blocker, in the server's order. The final-approval

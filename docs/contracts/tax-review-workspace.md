@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (T-04-T05, 2026-11-09, DEC-3020): every route answers 501 under its one action |
+| Status | stub (T-04-T05, 2026-11-09, DEC-3020); live as built: workspace, review tree, approvals, final-approval request (T-04-T17, T-04-T29), leadsheets, Sch E – K-1 matrix and links (TASK-7330, DEC-4330), K-1 activities and treatments (T-04-T36). Draft runs, K-1 treatment runs, residency and state allocation still answer 501 |
 | Provider epic | T-04 (SPEC-649) |
 | Consumers | TAX-04, TAX-05, TAX-06, TAX-07, TAX-08 screens (T-04 FE rows); T-05 (entity returns, read-only) |
 | Flag | `tax.review_workspace` (T-04-T09) |
@@ -39,3 +39,19 @@ T-01's `tax_return.approve`.
 ## Audit events
 `document.approved`, `document.approval_reversed`, `tax_return.final_approval_requested`,
 `tax_return.draft_run_started` (labels in T-04's ACTIVITY_KINDS with the build rows).
+
+## Leadsheets, the matrix and links (TASK-7330, DEC-4330)
+- `GET …/leadsheets?form=1040`: one card per section of the form's active worksheets; one line per
+  `line_ref` as `{form}.{line_ref}`, the amount summed in code, the contributing field keys, and
+  `mismatch` when a box a field cites printed another figure.
+- `GET …/matrices/sch-e-k1`: per K-1 activity, its worksheet's amount lines with the prior-year
+  K-1's figure for the same field key (`prior_year` is null for a viewer who may not read last
+  year's engagement, or when last year had no such line); `tax_year` and `prior_year` from the
+  return.
+- `GET …/links?evidence_version_id=`: each field's latest version's verified `document_text`
+  citations with a page and a box: `match_id`, the evidence version, the page, the box, the field
+  and its line. A withdrawn, moved or shadow citation is never a link (INV-2).
+- The code mismatch check (SPEC-649 AC-1.4): a document a box of which printed a figure other than
+  the field citing it reads `approval: "mismatch"` in the review tree with `mismatch_field_key`;
+  `POST …/document-approvals` on it answers 409 `mismatch` with `facts.field_key` and writes
+  nothing. An approval made before the mismatch stays approved.

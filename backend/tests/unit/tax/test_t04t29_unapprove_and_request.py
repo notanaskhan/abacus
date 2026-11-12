@@ -94,6 +94,11 @@ def _wire(
     monkeypatch.setattr(review_tree, "get_ref", get_ref)
     monkeypatch.setattr(review_tree, "tenant_session", _session)
 
+    async def no_mismatch(*_a: object) -> dict[uuid.UUID, str]:
+        return {}  # TASK-7330: no field cites these documents' boxes
+
+    monkeypatch.setattr(review_tree, "mismatched_documents", no_mismatch)
+
     async def capability_ready(
         _ctx: object, engagement: uuid.UUID, capability: str
     ) -> tuple[bool, str | None]:

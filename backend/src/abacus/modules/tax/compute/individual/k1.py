@@ -83,3 +83,33 @@ def ptet_share(entity_ptet: Sequence[tuple[str, Decimal]], tax_year: int) -> Pte
     return PtetShares(
         shares, sum((v for _, v in shares), Decimal(0)), stamp("k1.ptet_share", inputs)
     )
+
+
+@dataclass(frozen=True)
+class MatrixLine:
+    field_key: str
+    label: str
+    current_year: Decimal | None
+    prior_year: Decimal | None
+
+
+@dataclass(frozen=True)
+class SchEMatrix:
+    lines: tuple[MatrixLine, ...]
+    stamp: Stamp
+
+
+def sch_e_matrix(
+    current: Sequence[tuple[str, str, Decimal | None]],
+    prior: Sequence[tuple[str, Decimal | None]],
+) -> SchEMatrix:
+    """The Sch E - K-1 matrix (T-04-T17, AC-2.3): the K-1's amount lines in order, each with the
+    prior-year K-1's figure for the same line (the PY column; None when last year had no such
+    line). The figures are the K-1's own; nothing is summed here (the K-1's lines already foot)."""
+    last_year = dict(prior)
+    lines = tuple(MatrixLine(k, label, cy, last_year.get(k)) for k, label, cy in current)
+    inputs = {
+        "current": [[k, label, cy] for k, label, cy in current],
+        "prior": [[k, py] for k, py in prior],
+    }
+    return SchEMatrix(lines, stamp("k1.sch_e_matrix", inputs))
