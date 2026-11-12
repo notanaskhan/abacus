@@ -68,6 +68,8 @@ async def test_an_unconsented_taxpayer_gets_the_agents_off_state_with_no_model_c
     await seed.member(world.engagement_id, samuel, "manager")
     item = await _return(seed, world, samuel)
     usage = await seed.value("SELECT count(*) FROM usage_records")
+    # The session database is shared: other tests' sessions are already there (TASK-7325).
+    sessions = await seed.value("SELECT count(*) FROM workbench_sessions")
     response = await net.call(
         "POST",
         "/v1/workbench/sessions",
@@ -77,7 +79,7 @@ async def test_an_unconsented_taxpayer_gets_the_agents_off_state_with_no_model_c
     assert response.status_code == 409, response.text
     body = cast(dict[str, object], response.json())
     assert "capability_unavailable" in str(body) and "consent_7216" in str(body)
-    assert await seed.value("SELECT count(*) FROM workbench_sessions") == 0
+    assert await seed.value("SELECT count(*) FROM workbench_sessions") == sessions
     assert await seed.value("SELECT count(*) FROM usage_records") == usage
 
 

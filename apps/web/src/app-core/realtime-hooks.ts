@@ -2,7 +2,7 @@
 // and give a query its `refetchInterval` (false while the stream is live; its poll otherwise).
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useFlag } from "./flags";
 import { type PollKind, POLL_MS, type RealtimeStatus, realtimeClient } from "./realtime";
 
@@ -16,20 +16,19 @@ export function useRealtimeStatus(): RealtimeStatus {
   );
 }
 
-/** Connect for `topics` while `realtime.sse` is on (one stream per tab; topics replace). */
+/** Connect for `topics` while `realtime.sse` is on. One stream per tab carries the union of
+ * every mounted surface's topics (TASK-7325), so a drawer adds to the page's and leaves it. */
 export function useRealtimeStream(topics: readonly string[]): RealtimeStatus {
   const queryClient = useQueryClient();
   const enabled = useFlag("realtime.sse") === true;
   const key = topics.join(",");
+  const owner = useRef(Symbol("realtime-surface"));
   useEffect(() => {
     const live = realtimeClient(queryClient);
-    if (!enabled || key === "") {
-      live.stop();
-      return undefined;
-    }
-    void live.start(key.split(","));
+    const me = owner.current;
+    live.want(me, !enabled || key === "" ? [] : key.split(","));
     return () => {
-      live.stop();
+      live.unwant(me);
     };
   }, [queryClient, enabled, key]);
   return useRealtimeStatus();

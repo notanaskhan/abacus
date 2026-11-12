@@ -32,6 +32,7 @@ from abacus.modules.agents.api import (
     open_plan_child_run,
     run_session_turn,
 )
+from abacus.modules.workbench.session_events import SessionItemsChanged
 from abacus.modules.workbench.session_workflow import TurnDone
 
 _READER: Final = "session-turn"
@@ -183,6 +184,7 @@ async def session_turn_activity(tenant_id: str, session_id: str, kind: str, seq:
             target=Target("workbench_session", sid),
             after=Ref(seq=last, turn=seq),
         )
+        tx.emit(SessionItemsChanged(session_id=sid, seq=last))
     return _done_from(written)
 
 

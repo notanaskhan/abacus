@@ -117,3 +117,56 @@ describe("the real-time client", () => {
     expect(invalidated(queries, ["engagements", GRANITE])).toBe(true);
   });
 });
+
+// TASK-7325: one stream per tab carries every mounted surface's topics.
+describe("the tab's topics are the union of its surfaces'", () => {
+  function recording(): { opener: StreamOpener; opened: string[][]; aborted: boolean[] } {
+    const opened: string[][] = [];
+    const aborted: boolean[] = [];
+    const opener: StreamOpener = ({ topics, signal }) => {
+      const index = opened.length;
+      opened.push([...topics]);
+      aborted.push(false);
+      signal.addEventListener("abort", () => {
+        aborted[index] = true;
+      });
+      return (async function* (): AsyncGenerator<RealtimeEvent> {
+        // Open until aborted: a live stream that sends nothing.
+        await new Promise<void>((resolve) => {
+          signal.addEventListener("abort", () => {
+            resolve();
+          });
+        });
+        yield* [];
+      })();
+    };
+    return { opener, opened, aborted };
+  }
+
+  it("a drawer adds its topic beside the page's, and leaving removes only its own", () => {
+    const { opener, opened, aborted } = recording();
+    const live = new RealtimeClient(new QueryClient(), opener);
+    const page = Symbol("page");
+    const drawer = Symbol("drawer");
+    live.want(page, [`engagement:${NORTHWIND}`]);
+    live.want(drawer, ["session:s1"]);
+    expect(opened).toEqual([
+      [`engagement:${NORTHWIND}`],
+      [`engagement:${NORTHWIND}`, "session:s1"],
+    ]);
+    live.unwant(drawer);
+    expect(opened.at(-1)).toEqual([`engagement:${NORTHWIND}`]);
+    expect(live.state).toBe("connecting");
+    live.unwant(page);
+    expect(aborted.every(Boolean)).toBe(true);
+    expect(live.state).toBe("off");
+  });
+
+  it("the same union reopens nothing", () => {
+    const { opener, opened } = recording();
+    const live = new RealtimeClient(new QueryClient(), opener);
+    live.want(Symbol("a"), ["user:me"]);
+    live.want(Symbol("b"), ["user:me"]);
+    expect(opened).toHaveLength(1);
+  });
+});

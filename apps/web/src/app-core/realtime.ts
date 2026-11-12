@@ -85,6 +85,10 @@ export class RealtimeClient {
   private abort: AbortController | null = null;
   private topics: string[] = [];
   private readonly listeners = new Set<(status: RealtimeStatus) => void>();
+  // TASK-7325: each surface's topics; the tab streams their union (a drawer over the workspace
+  // adds its `session:` topic beside the workspace's `engagement:` one, and leaving removes it).
+  private readonly wanted = new Map<symbol, readonly string[]>();
+  private union = "";
 
   constructor(
     private readonly queryClient: QueryClient,
@@ -148,7 +152,33 @@ export class RealtimeClient {
   stop(): void {
     this.abort?.abort();
     this.abort = null;
+    this.union = "";
     if (this.status !== "locked") this.set("off");
+  }
+
+  /** A surface wants `topics` (replacing what it wanted before); the stream follows the union. */
+  want(owner: symbol, topics: readonly string[]): void {
+    if (topics.length === 0) this.wanted.delete(owner);
+    else this.wanted.set(owner, [...topics]);
+    this.follow();
+  }
+
+  /** The surface left: its topics go, and the stream stops when no surface wants any. */
+  unwant(owner: symbol): void {
+    this.wanted.delete(owner);
+    this.follow();
+  }
+
+  private follow(): void {
+    const union = [...new Set([...this.wanted.values()].flat())].sort();
+    const key = union.join(",");
+    if (key === this.union) return;
+    if (key === "") {
+      this.stop();
+      return;
+    }
+    void this.start(union);
+    this.union = key;
   }
 
   /** Refetch only the query keys the event's topic maps to (AC-T1). */

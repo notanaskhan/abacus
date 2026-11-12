@@ -39,6 +39,8 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
     }
     # T-04-T29 rest (DEC-4318): a stale sign-off and a reassigned issue move the same counts.
     realtime |= {"sign_off.went_stale", "issue.assigned"}
+    # TASK-7325: a session's items refetch its thread on a second surface.
+    realtime |= {"session.items_changed"}
     assert set(INVALIDATIONS) == realtime
 
 
