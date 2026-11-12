@@ -15260,6 +15260,8 @@ export const workbook = <ThrowOnError extends boolean = false>(options: Options<
 
 /**
  * Entity Runs Route
+ *
+ * TXP-00's run history, newest first (T-05-T31).
  */
 export const entityRuns = <ThrowOnError extends boolean = false>(options: Options<EntityRunsData, ThrowOnError>): RequestResult<EntityRunsResponses, EntityRunsErrors, ThrowOnError> => (options.client ?? client).get<EntityRunsResponses, EntityRunsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15270,7 +15272,8 @@ export const entityRuns = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Entity Start Run Route
  *
- * `run_in_progress` (409); a model step without consent waits on inputs (C19).
+ * `run_in_progress` (409); a model step without consent waits on inputs (C19). T-05-T31
+ * (DEC-4616): P-10's engagement run on the `tax.entity_workbook` plan for the scope.
  */
 export const entityStartRun = <ThrowOnError extends boolean = false>(options: Options<EntityStartRunData, ThrowOnError>): RequestResult<EntityStartRunResponses, EntityStartRunErrors, ThrowOnError> => (options.client ?? client).post<EntityStartRunResponses, EntityStartRunErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

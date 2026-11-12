@@ -126784,10 +126784,6 @@ export type EntityRunsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityRunsError = EntityRunsErrors[keyof EntityRunsErrors];
@@ -126848,10 +126844,6 @@ export type EntityStartRunErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityStartRunError = EntityStartRunErrors[keyof EntityStartRunErrors];

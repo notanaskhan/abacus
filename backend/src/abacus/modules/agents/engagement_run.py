@@ -231,6 +231,48 @@ async def code_plan(tenant: TenantContext, methodology_version_id: UUID | None) 
     return static_plan()
 
 
+# --- the plan-provider slot (T-05-T31; DEC-4616) ---------------------------------------------
+#
+# A work item's owner may supply the run's code plan instead of the methodology: `tax` registers
+# `tax.entity_workbook` (the entity return's ten steps). A provider is code, deterministic, and its
+# steps still name registered run-step kinds (or decision and question steps); the start refuses a
+# plan naming a kind with no handler exactly as for the methodology plan.
+
+
+@dataclass(frozen=True)
+class PlanRequest:
+    """What the start asks a provider for: the whole plan, some groups, or some steps (each with
+    its dependants), for one work item."""
+
+    work_item_id: UUID
+    scope: str  # all · group · task
+    keys: tuple[str, ...] = ()
+
+
+PlanProvider = Callable[[TenantContext, UUID, PlanRequest], Awaitable[list[PlanStep]]]
+_PROVIDERS: dict[str, PlanProvider] = {}
+_PROVIDER_KEY: Final = re.compile(r"[a-z][a-z_]{0,30}\.[a-z][a-z_]{0,40}")
+
+
+def register_plan_provider(key: str, provider: PlanProvider) -> None:
+    if not _PROVIDER_KEY.fullmatch(key):
+        raise ValueError(f"plan provider {key!r} must be <module>.<name>")
+    known = _PROVIDERS.get(key)
+    if known is not None and known is not provider:
+        raise ValueError(f"plan provider {key!r} is already registered")
+    _PROVIDERS[key] = provider
+
+
+def plan_provider(key: str) -> PlanProvider | None:
+    return _PROVIDERS.get(key)
+
+
+class PlanProviderUnavailable(DomainConflict):
+    """No provider is registered under the key the start named (fail closed)."""
+
+    code = "plan_provider_unavailable"
+
+
 def projection(plan: Sequence[PlanStep]) -> list[int]:
     """Steps per run level, Foundation to Completion (AC-E1: [1, 5, 1, 4, 3])."""
     return [sum(1 for s in plan if s.level == n) for n in range(1, len(LEVEL_NAMES) + 1)]
@@ -332,15 +374,28 @@ class StartedRun:
 
 
 async def start_engagement_run(
-    ctx: AuthContext, engagement_id: UUID, *, work_item_ref: str | None = None
+    ctx: AuthContext,
+    engagement_id: UUID,
+    *,
+    work_item_ref: str | None = None,
+    provider: str | None = None,
+    request: PlanRequest | None = None,
 ) -> StartedRun:
-    """The engagement run for a person (module docstring); the workflow is dispatched here."""
+    """The engagement run for a person (module docstring); the workflow is dispatched here. With
+    `provider` (T-05-T31) the plan is the registered provider's for `request`, not the
+    methodology's."""
     from abacus.modules.agents.run_workflow import AgentRunInput, AgentRunWorkflow
 
     _person(ctx, START)
     ref = await get_ref(ctx, engagement_id)  # a wall answers 404
     await authorise(ctx, START, ref.resource())
-    plan = await code_plan(ctx.tenant, ref.methodology_version_id)
+    if provider is not None:
+        supplier = plan_provider(provider)
+        if supplier is None or request is None:
+            raise PlanProviderUnavailable(facts={"provider": provider})
+        plan = await supplier(ctx.tenant, engagement_id, request)
+    else:
+        plan = await code_plan(ctx.tenant, ref.methodology_version_id)
     missing = missing_handlers(plan)
     if missing:
         raise RunStepUnavailable(facts={"kind": missing[0]})
@@ -349,6 +404,13 @@ async def start_engagement_run(
         "plan": [s.dump() for s in plan],
         "max_parallel_steps": MAX_PARALLEL,
     }
+    if provider is not None and request is not None:
+        inputs |= {
+            "plan_provider": provider,
+            "scope": request.scope,
+            "keys": list(request.keys),
+            "work_item_id": str(request.work_item_id),
+        }
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(_SEED, {"t": ctx.tenant_id})
         number = cast(int, await tx.session.scalar(_NEXT))
@@ -396,3 +458,48 @@ async def engagement_of_run(tenant: TenantContext, run_id: UUID) -> UUID:
     if found is None:
         raise NotFound("agent_run")
     return cast(UUID, found)
+
+
+# --- a work item's engagement runs (T-05-T31: TXP-00's Run history and the in-progress guard) ----
+
+_TERMINAL: Final = frozenset({"succeeded", "approved", "partially_approved", "rejected", "failed"})
+_TERMINAL_ALL: Final = _TERMINAL | {"cancelled"}
+
+
+@dataclass(frozen=True)
+class WorkItemRun:
+    run_id: UUID
+    run_number: int
+    initiator_user_id: UUID | None
+    created_at: datetime
+    state: str
+
+    @property
+    def active(self) -> bool:
+        return self.state not in _TERMINAL_ALL
+
+
+_WORK_ITEM_RUNS: Final = text(
+    "SELECT id, run_number, initiator_user_id, created_at, state FROM agent_runs "
+    "WHERE agent_id = :agent AND work_item_ref = :ref ORDER BY created_at DESC LIMIT :limit"
+)
+
+
+async def work_item_runs(
+    tenant: TenantContext, work_item_ref: str, limit: int = 50
+) -> list[WorkItemRun]:
+    """The engagement runs started for one work item (`tax_return:<id>`), newest first."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            _WORK_ITEM_RUNS, {"agent": AGENT_ID, "ref": work_item_ref, "limit": limit}
+        )
+        return [
+            WorkItemRun(
+                UUID(str(r.id)),
+                int(r.run_number),
+                None if r.initiator_user_id is None else UUID(str(r.initiator_user_id)),
+                r.created_at,
+                str(r.state),
+            )
+            for r in rows
+        ]

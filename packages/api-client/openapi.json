@@ -274756,6 +274756,7 @@
     },
     "/v1/tax-returns/{return_id}/workbook-runs": {
       "get": {
+        "description": "TXP-00's run history, newest first (T-05-T31).",
         "operationId": "entity_runs",
         "parameters": [
           {
@@ -274851,16 +274852,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Runs Route",
@@ -274870,7 +274861,7 @@
         "x-abacus-action": "workbook.read"
       },
       "post": {
-        "description": "`run_in_progress` (409); a model step without consent waits on inputs (C19).",
+        "description": "`run_in_progress` (409); a model step without consent waits on inputs (C19). T-05-T31\n(DEC-4616): P-10's engagement run on the `tax.entity_workbook` plan for the scope.",
         "operationId": "entity_start_run",
         "parameters": [
           {
@@ -274997,16 +274988,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Start Run Route",

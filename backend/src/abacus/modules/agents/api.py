@@ -49,11 +49,19 @@ from abacus.modules.agents.engagement_agent_workflow import (
     NEXT_TICK as ENGAGEMENT_AGENT_NEXT_TICK,
 )
 from abacus.modules.agents.engagement_agent_workflow import EngagementAgent
+from abacus.modules.agents.engagement_run import PlanProviderUnavailable as PlanProviderUnavailable
+
+# T-05-T31 (DEC-4616): a work item's owner supplies the run's code plan.
+from abacus.modules.agents.engagement_run import PlanRequest as PlanRequest
 from abacus.modules.agents.engagement_run import (  # P-10-T39: the run-step slot's owners
     RunStepFacts as RunStepFacts,
 )
 from abacus.modules.agents.engagement_run import RunStepResult as RunStepResult
+from abacus.modules.agents.engagement_run import WorkItemRun as WorkItemRun
+from abacus.modules.agents.engagement_run import register_plan_provider as register_plan_provider
 from abacus.modules.agents.engagement_run import register_run_step as register_run_step
+from abacus.modules.agents.engagement_run import start_engagement_run as start_engagement_run
+from abacus.modules.agents.engagement_run import work_item_runs as work_item_runs
 from abacus.modules.agents.engagement_runs import (
     ActiveRun,
     active_engagement_runs,
@@ -173,6 +181,7 @@ from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, 
     run_log_count,
     run_record_hashes,  # A-07-T37: the archive seal's run-record leaves
 )
+from abacus.modules.agents.run_plan import PlanStep as PlanStep
 from abacus.modules.agents.run_plan import reserved as reserved_plan_tools
 
 # P-10-T22 (C17 v1, frozen): the runtime the harness calls, and the shapes a tool declares.
