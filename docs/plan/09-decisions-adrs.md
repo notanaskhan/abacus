@@ -754,6 +754,7 @@ Until CLI-03 ships, the CLI-02 "Relationships" tab is a list. Graph layout uses 
 | DF-40 | Missing email templates | Add POR-20 templates for: the governance letter (POR-15); POR-21/22/23 invitations and requests; the POR-18 resume-intake link. All are firm-editable DB content in ADM-10, never code | EP-19, EP-23, EP-27 | Fri 15 Jan 2027 | PF |
 | DF-41 | Copy rules to confirm | Title Case labels for new copy (DEC-15). "Task" only in close runs. "Accrual" allowed as an accounting term through the constant (G-C07). The Accrued mark appears only on SHL-06, PLT-01 and the optional portal footer (G-D11) | EP-02 | Fri 23 Oct | PF |
 | DF-42 | Journey stills | Treat the journeys canvas as narrative only. J2/J5 say the emails "aren't drawn yet", but POR-20e–h exist. Re-take the stills before sharing them externally | — | Before any external demo | PF |
+| DF-43 | Saved prompts inside the Workbench | WB-01h, WB-01i, WB-02g and WB-02h: W-03's WB-12 picker opens from the Composer and prefills it; "Save to saved prompts" is a W-03 O3; the T4 kit gains no prop (F-07-T24, DEC-4624) | EP-21 · WB-01, WB-02, WB-12 | S41 (W-03) | PF |
 
 ---
 
