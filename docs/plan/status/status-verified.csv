@@ -2,11 +2,11 @@ task_id,status,evidence
 F-01-T05,partial,"Dated exception is backend/coverage-exception.toml (DEC-10; read by abacus_tools.ci.coverage_floor): 70% from 2026-10-20, 78% by 2026-11-06, 87% by 2026-11-20, expires 2026-12-01 when fail_under=95 applies; ADR-116 dropped by the solo edition. Open until coverage holds at 95 (re-verified 2026-10-29)"
 F-01-T06,partial,".github/workflows/ci.yml has merge_group, draft gating, changes job, frontend job; Makefile check-heads/check-generated; 5 green runs and ruleset not judgeable"
 F-01-T07,partial,abacus_tools/ci/paths.py + tests/unit/tools/test_paths.py; ci.yml frontend and evals-fast gates; 6-minute clause unmeasured (frontend job timeout 10)
-F-01-T09,partial,"tools/local/db_guard+worktree_env tests, .claude/hooks (test_hooks generated-file test), Makefile dev-fixtures; VITE_FIXTURES read nowhere in apps/web/src"
+F-01-T09,done,"TASK-080/081: worktree isolation, guards, dev-fixtures; VITE_FIXTURES now read (app-core/clock.tsx, make dev-fixtures); code probe 2026-11-12 (DEC-4804); tests not re-run here"
 F-01-T10,not-started,"Obsolete: SU-06 removed number blocks (test_validate_docs.py ""any free number, any deciders""); no .github/ISSUE_TEMPLATE; only duplicate-id check remains (validate_docs.py:133)"
-Q-02-T06,partial,"Matrix rows firm.ai_client_data, engagement.ai_exclude in docs/architecture/permission-matrix.yaml:55-56; no agent_stage.set row, flag agents.client_data_optin, glossary rows or fresh-mfa/human-only yaml"
-Q-02-T07,partial,"Migration 0056, identity/routes.py:633-644, engagements/routes.py:903, ai_gateway/boundary.py, abacus_tools/agent_stage.py, tests/unit/ai_gateway/test_client_data_boundary.py; no make agent-stage, no route integration tests"
-Q-02-T08,partial,"Shadow hidden in agents/{screenings,upload_review,inbox_match,guidance_draft}.py; test_board_reads_api.py:138; no re-opt-in on register change, no outbox cache clear"
+Q-02-T06,done,"TASK-1209 and #447: matrix rows firm.ai_client_data, engagement.ai_exclude, firm.read_settings with security_admin, flag agents.client_data_optin; the stage is set through the staff route (#447), not a matrix row; the approval file is void (AMENDMENT-solo); code probe 2026-11-12 (DEC-4804); tests not re-run here"
+Q-02-T07,done,"TASK-1318 (#447): staff stage route and make agent-stage; boundary refuses by firm, engagement and stage (ai_gateway/boundary.py); code probe 2026-11-12 (DEC-4804); tests not re-run here"
+Q-02-T08,done,"TASK-1210 and #447: shadow reads hidden; opt-in checked against the current material terms (identity.ai_client_data_opted_in), worker holds boundary facts 0 s (DEC-337); code probe 2026-11-12 (DEC-4804); tests not re-run here"
 F-05-T03,done,"packages/ui/src/tokens/ (tokens.ts), contrast.css exported by @abacus/ui (re-verified 2026-10-29)"
 F-05-T04,done,"packages/ui/src/fonts.css, fonts-doc.css (Arimo, Gelasio) exported by @abacus/ui (re-verified 2026-10-29)"
 F-05-T09,done,VITE_UI_GALLERY in apps/web/vite.config.ts and src/gallery (re-verified 2026-10-29)
@@ -25,38 +25,38 @@ P-07-T27,done,screens/ENG-01 with the service-line segmented (re-verified 2026-1
 G-01-T07,done,/settings routes (ADM-01) (re-verified 2026-10-29)
 I-01-T06,done,"screens/HOME-01 main region (S11 lane 8) plus client activity rows (#624, DEC-1001); h/i bands are I-01-T24 (S35) (re-verified 2026-10-29)"
 P-04-T21,done,"review notes with withdraw (S11 lane 1, #477) (re-verified 2026-10-29)"
-A-03-T04,partial,"sampling/selection.py seeded_v1 (random.random partial Fisher-Yates), test_selection.py:129-137; no v2.3 getrandbits, strata, attribute_size, udl, project, versions"
-A-03-T07,partial,"sampling/population.py build_population/tie_out from gl_entries, test_selection.py:148; no upload source, column map, check-number gaps or population routes"
-A-04-T08,partial,"fieldwork/service.py set_materiality/MaterialityInvalid, models engagement_materiality; no pure engine, benchmarks, rounding policy or versions"
+A-03-T04,done,"TASK-2502 (#845): sampler v2.3, attribute_size and udl in sampling compute, test_ac8_the_designed_size_limits_and_projection; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-03-T07,done,"TASK-2611 (#918): populations and ties, 422 restricted_column; HTTP integration 6 passed at its build; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-04-T08,done,TASK-2800 (#967): pure materiality engine with inputs_hash; every AC figure smoke-checked at its build; code probe 2026-11-12 (DEC-4804); tests not re-run here
 A-08-T10,partial,"sampling/selection.py rules_for: large, round, near_year_end, manual, rare_account, weekend, keywords with reasons; no holiday, post-close, score or inputs_hash"
 A-08-T12,partial,"fieldwork/{service,selecting,workflows,workpaper}.py, models procedures/selected_items/item_results; no je_tests/je_scores tables, JeScoringWorkflow or 412k run"
 A-08-T27,partial,"screens/Fieldwork.tsx + spec037fieldwork.test.tsx (tie-out, exception, support, sign); states a-h and Open in Excel not mapped one to one"
 P-06-T14,done,follow_ups migrations and the v2 service (re-verified 2026-10-29)
-F-03-T16,not-started,TASK-104 left names alone; modules/agents/reminders.py and /reminders routes remain
-F-03-T15,not-started,TASK-105 changed words only (packages/ui/src/status.tsx STATUS.request); no request-status migration
+F-03-T16,done,"80f618204 TASK-378 [mig 0087]: reminders renamed to follow-ups in tables, routes and identifiers; L12 bans `reminder` (glossary Follow-up row); work/tasks/TASK-378-follow-up-rename.md done (S0-S38 inventory, DEC-4803)"
+F-03-T15,done,"83980479c TASK-312 [mig 0071]: request status v2; banned rule _RETIRED_REQUEST_CODES in abacus_tools/quality/banned_patterns.py; work/tasks/TASK-312-request-status-v2.md done (S0-S38 inventory, DEC-4803)"
 R-01-T08,done,requests/client_responses.py ignore and undo (re-verified 2026-10-29)
-A-06-T04,partial,"TASK-107: migration 0064 findings + misstatements, insert-only; no deficiencies, issue_id or framework column"
-A-06-T07,partial,"TASK-107: fieldwork/findings.py summarise() against materiality; no rollover, iron curtain, engine_version or inputs_hash"
-A-06-T11,partial,"TASK-107: findings.py raise_finding/findings_for, Findings tab, test_findings.py; no review issue, severity bands, agent producers"
+A-06-T04,done,TASK-2916 (#1064): migration 0644 assurance_completion with deficiencies; code probe 2026-11-12 (DEC-4804); tests not re-run here
+A-06-T07,done,"TASK-2917 (#1065): SUM library, rollover and iron curtain; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-06-T11,done,"TASK-3014 (#1088, DEC-2063) and TASK-5302 (#1324): findings service, why_surfaced; code probe 2026-11-12 (DEC-4804); tests not re-run here"
 P-04-T18,done,"#429 (85d6c961): /v1/sign-offs service, stale detection and re-sign"
 P-08-T15,done,screens/POR-02 with the household card (re-verified 2026-10-29)
 A-02-T07,done,"TASK-320/322/1285: ledger/trial_balances.py adopt and re-version with prior-snapshot pairing and display_unit, fail-closed register_adjustment_source, layer_totals/require_balanced (layer_unbalanced) for all four layers, AreaRule leadsheet rollup, outbox trial_balance.version_created (ledger/events.py); goldens tests/golden/ledger/tb_layers.yaml (Northwind 16,812,400.00 / 14,228,500.00, AJE-1 Final 16,861,000.00; Granite Peak 26,410,000 / 23,200,000, 71,910,000); tests/integration/test_tb_versions.py (v2 leaves v1 and every snapshot untouched; layer_unavailable). Methodology rules reach the live view with A-02-T10"
 A-02-T17,done,"workpapers tie engine with roll-forward (S11 lane 2, #478) (re-verified 2026-10-29)"
-A-06-T09,partial,TASK-322: apply_entries per layer (unadjusted/aje/rje/final) and uncorrected_for; no methodology.classify_entry thresholds or proposal flow
-A-06-T25,partial,"TASK-345: ledger/mapping.py build_statements: draft statements from the mapped final TB (SPEC-316); no note templates, C4 lineage or TieOutWorkflow"
-A-03-T06,partial,"TASK-345: mig 0079 grouping_sets, grouping_set_versions (frozen on publish), groupings, fs_lines, fs_line_range_rules, mapping_sets, mapping_set_edits; parse_grouping_set import/publish"
-A-03-T08,partial,"TASK-345: rule_line number-range rules first-rule-wins, human edits (mapping_set.edit), mapping sign-offs; no prior-year match or tallies"
-A-03-T12,partial,TASK-345: legacy/TbMapping.tsx and GroupingSets.tsx on the legacy shell; not the AUD-31 MappingTable/Focus layout
-A-07-T07,partial,"TASK-332: mig 0077 eqr_concurrences (insert-only), completion_records; no eqr_reviews, checklist or digest cards"
-A-07-T09,partial,TASK-332: mig 0077 archives with Merkle seal; no documentation_completion_date clock
-A-07-T15,partial,TASK-332: G6-G9 providers in assurance registered via register_gate_provider; not table-driven per engagement type
-A-07-T30,partial,"TASK-332: completion_routes release (releases table, lock_engagement); no Idempotency-Key, fresh MFA or /v1/audits path"
-A-07-T37,partial,TASK-332: archive lock and Merkle seal (lock_archive); no worker-batch workflow or 9-of-9 checklist
+A-06-T09,done,"TASK-3012 (#1086, DEC-2061): adjustments part 1, within_threshold / review_required; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-06-T25,done,"TASK-3305/3381/3390/3391 (#1235, #1333, #1375, #1376): statements, lineage, TieOutWorkflow, note templates, checklist; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-03-T06,done,"TASK-2506 (#856, mig 0521): taxonomy service, test_ac17_* in tests/unit/ledger/test_a03t06_taxonomy.py; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-03-T08,done,"TASK-2612 (#922): mapping rules and service, 409 unmapped_accounts (assurance/mapping.py); code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-03-T12,done,"TASK-2703 (#959, DEC-1753): AUD-31, MappingTable kit, AUD-06 by FS line; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-07-T07,done,"TASK-3251 (#1180, mig 0664): eqr_reviews, checklist and digest cards; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-07-T09,done,"TASK-3303 (#1233, mig 0669): the evidence archive with documentation_completion_date; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-07-T15,done,TASK-5119 (#1334): gate providers G6-G9 by release mode and per-type policy; code probe 2026-11-12 (DEC-4804); tests not re-run here
+A-07-T30,done,"TASK-6507 (#1538, DEC-3107): in-app release transaction and ReleaseWorkflow (closed by S33 bookkeeping #1626); code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-07-T37,done,TASK-6610 (#1598): ArchiveLockWorkflow and the seal; code probe 2026-11-12 (DEC-4804); tests not re-run here
 Q-02-T45,done,"agents/runs_routes.py /v1/agent-runs (C6 v1, #510) (re-verified 2026-10-29)"
-P-09-T07,partial,"TASK-461: engagement run list read model, visible() on agent_run.read, shadow excluded; no projection by level, items feed or allowed_actions"
-P-09-T08,partial,"TASK-461: GET /v1/agent-runs/{id}/trace: summary, timeline, records read in one response; no steps/records-read/writes sub-resources or metadata projection"
-P-09-T10,partial,"TASK-461: legacy/AgentRuns.tsx TraceDrawer 480 with summary, timeline, records read, Export JSON; no ?ov= registration, Segmented tabs or Copy link"
-P-09-T11,partial,"TASK-461, TASK-901: POST /v1/agent-runs/{id}/trace-exports canonical JSON + SHA-256 manifest, audited agent_run.trace_exported, fresh MFA; PDF not built (needs C11 run_trace_v1 template)"
+P-09-T07,done,TASK-6304 (#1497): run read model with items feed; code probe 2026-11-12 (DEC-4804); tests not re-run here
+P-09-T08,partial,"TASK-6305 (#1498): trace read model live; open: no module registers trace samples (register_trace_samples has no caller), so step samples stay empty; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+P-09-T10,done,"TASK-6307 (#1500) and remainders #1522 (DEC-3024), #1574 (DEC-3136): WB-09 registered, a2 and Approve on a waiting write; ""Open CCH Axcess Tax"" waits on WB-11 (W-01), outside the row; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+P-09-T11,partial,"TASK-6518 (#1549, DEC-3118): JSON trace export with signed manifest; open: the PDF format needs C11 run_trace_v1; code probe 2026-11-12 (DEC-4804); tests not re-run here"
 K-04-T33,partial,"TASK-460: assurance/dashboard.py: gates, tiles from progress sources, sign-offs, requests, next-up via could() (SPEC-317, dashboard.read); no lenses, C14 provider, basis strings or health rule"
 K-04-T40,partial,"TASK-460: legacy/EngagementDashboard.tsx tab; not the ENG-12 T21 record variant, lenses or milestones"
 A-01-T18,done,"#450 (dc46552b): engagement_exports create/undo/history behind a 10-s grant, migration 0191"
@@ -149,7 +149,7 @@ F-09-T93,done,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/pilot-0.md: top
 F-09-T101,partial,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/pilot-0.md: KNW-01 catalog walk passed; nothing to retest; the workbook re-import through KNW-01 not run"
 F-09-T109,done,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/pilot-0.md: fake CCH import of a synthetic export, 30 passed, no difference logged"
 F-09-T113,partial,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/pilot-0.md: no format difference to close; the K-1 release walkthrough not walked"
-A-01-T27,partial,"synthetic (PF-X1), DEC-4100: firm part only: docs/ops/pilot/pf-x1/pilot-0.md, the synthetic top-10 has no A-01 item; the C6 v1 code part is not judged here"
+A-01-T27,done,TASK-1622 (S13 batch 4a102c47e): C6 v1 run badges; firm part synthetic on PF-X1 (DEC-4100); code probe 2026-11-12 (DEC-4804); tests not re-run here
 F-09-T121,partial,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/pilot-0.md: top-10 empty, ledger choice recorded; template approvals are counsel's"
 F-09-T122,done,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/pilot-0.md: Feld 2025 return and Northwind PY2025 EBP audit enrolled; generated data, no PHI"
 F-09-T126,partial,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/pilot-0.md: retro and W4-W7 signed off by the synthetic champion; W4-W8 not in thresholds.md (F-09-T62)"
@@ -604,3 +604,19 @@ Q-04-T088,partial,"2c534ea67 TASK-3041 Q-04-T088: M14 ops retro part N on PF-X1;
 Q-04-T089,partial,"dcaf97092 TASK-3038 Q-04-T089: S25 N-lane on-call on PF-X1, hours logged (#1119); TASK-3038; work/tasks/TASK-3038-q04-t089-n-lane-on-call.md; open: recorded partial at its build (S25-close.md) (S0-S25 closeout, DEC-4200)"
 Q-04-T090,partial,"4a3c48db6 TASK-3039 Q-04-T090: S25 N-lane fixes and slot duty on PF-X1, RB-16 rehearsal step; TASK-3039; work/tasks/TASK-3039-q04-t090-n-lane-fixes.md; open: recorded partial at its build (S25-close.md) (S0-S25 closeout, DEC-4200)"
 Q-04-T091,partial,"7f16bdff0 TASK-3037 Q-04-T091: S25 AY support lane on PF-X1, hours logged, flag hygiene (#; TASK-3037; work/tasks/TASK-3037-q04-t091-ay-lane.md; open: recorded partial at its build (S25-close.md) (S0-S25 closeout, DEC-4200)"
+F-03-T06,done,"edd8f2627 F-03-T06: Brightwater Hale E0 example payloads in the C1 contract doc (#457); C1 routes behind engagements.work_items_api (S0-S38 inventory, DEC-4803)"
+Q-04-T035,partial,"TASK-7800 (#1798): abacus_tools.firm_exit (verify, certificate), docs/runbooks/firm-exit.md, rehearsal tests/integration/test_q04t035_firm_exit_rehearsal.py (DEC-4800); open: the key custodian's real ScheduleKeyDeletion on AWS (no production stack) and counsel's exit terms"
+N-01-T30,done,"TASK-7801 (#1801): communications and evidence READMEs, SPEC-380 done, firm-intake.md v1.2 and files-browser.md v1 frozen, RB-80, RB-81, RB-24 and RB-32 intake sections, skill notes, capacity ledger N-01 actuals"
+R-01-T36,done,"TASK-7802 (#1805): portal and communications READMEs, portal-pbc.md and email-templates.md frozen, RB-20 gate and RB-43 drop-sort sections, docs/runbooks/r01-portal-flip.md (a rollback per flag), flag renewals, skill notes, capacity ledger R-01 actuals"
+Q-03-T199,done,"TASK-7803 (#1806): docs/ops/gates/M15-season-ready-2028.md (auto-merge not earned), capacity ledger M15 autonomy recheck (DEC-4801)"
+F-09-T192,partial,"TASK-7804 (#1807): docs/ops/onboarding/2028-season-content.md, content list and PF-X1 load date (synthetic, DEC-4100); open: each real firm's row once F-09-T163 or F-09-T189 files an agreement"
+Q-03-T148,done,"TASK-7805 (#1808): pip-audit clean, bandit 0 high, CodeQL 21 high triaged (3 polynomial regexes fixed and registered closed, 18 false positives listed), quarter record 2027 Q3 (DEC-4802); open inside SLA: js-yaml (Dec 3, override decision) and the zlib1g base digest (Dec 7)"
+A-07-T27,done,"TASK-6312 (#1506) and remainder #1526 (DEC-3028): request-decision and documents routes live; out-of-row items (L4 target, reissue Q-05, word compare) stay with their rows; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-07-T28,done,"TASK-6314 (#1508) and remainders #1528 (DEC-3030), #1576 (DEC-3137): AUD-21 in fixture mode, mounted in the AUD-02 cockpit, live behind audits.letters; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+A-07-T29,done,"TASK-6315 (#1509) and remainders #1528, #1576: AUD-22 in fixture mode, mounted and live; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+R-02-T11,done,TASK-6309 (#1502) and remainder #1523 (DEC-3025): C18 approvals service with client-grant listing and the live service test; period contexts are C-02; code probe 2026-11-12 (DEC-4804); tests not re-run here
+R-02-T12,done,"TASK-6310 (#1503) and remainders #1524 (DEC-3026), #1581 (DEC-3146): governance room, tcwg grants at send, the letter PDF through C10; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+T-04-T03,done,TASK-6318 (#1512): protected bundle; T-04 table owners now in schema_check TABLE_OWNERS; code probe 2026-11-12 (DEC-4804); tests not re-run here
+T-04-T07,done,"TASK-6322 (#1516) and remainder (DEC-3031): fixtures on the generated client; every in-scope screen (TAX-04..08, TXI-01..03) built with its tests in S33+; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+P-09-T09,partial,"TASK-6306 (#1499) and remainder #1521 (DEC-3023): frames 1, 2, 5, 8; open: frames 9 and 10 as fixtures not confirmed; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+R-02-T13,partial,TASK-6313 (#1507) and remainder #1527 (DEC-3029): portal and governance seed slices; open: make seed-demo and fixture equivalence not shown; code probe 2026-11-12 (DEC-4804); tests not re-run here
