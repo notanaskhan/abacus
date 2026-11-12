@@ -39,8 +39,7 @@ export interface QuestionPayload {
 }
 
 export type QuestionAnswer =
-  | { question_id: string; step: number; key: string }
-  | { question_id: string; skipped: true };
+  { question_id: string; step: number; key: string } | { question_id: string; skipped: true };
 
 export interface QuestionCardProps {
   question: QuestionPayload;
@@ -171,7 +170,11 @@ export function QuestionCard({
           </span>
         ) : null}
       </div>
-      <div role="radiogroup" aria-labelledby={`${groupId}-q`} className="px-[14px] pt-[8px] pb-[9px]">
+      <div
+        role="radiogroup"
+        aria-labelledby={`${groupId}-q`}
+        className="px-[14px] pt-[8px] pb-[9px]"
+      >
         {step.options.map((option, i) => {
           const on = option.key === chosen;
           return (

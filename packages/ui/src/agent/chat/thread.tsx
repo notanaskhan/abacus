@@ -51,6 +51,11 @@ export interface ChatThreadProps {
   /** The question card's place above the composer (F-07-T06's QuestionCard, through a slot). */
   above?: ReactNode;
   composerPlaceholder?: string;
+  /** F-07-T07: what a session with no items shows in the thread (EmptySession, T4a). */
+  empty?: ReactNode;
+  /** F-07-T07: text placed in the composer (a suggested prompt), never sent by itself. A new
+   * `nonce` replaces what is there and focuses the composer. */
+  draft?: { text: string; nonce: number } | null;
   onRetryStep?: (stepId: string) => void;
   onOpenRun?: (runId: string) => void;
   onArtifact?: (artifactId: string, intent: ArtifactIntent) => void;
@@ -265,13 +270,22 @@ function NoticeRow({ item }: { item: ThreadItem }): JSX.Element {
 function Composer({
   placeholder,
   disabled,
+  draft,
   onSend,
 }: {
   placeholder: string;
   disabled: boolean;
+  draft?: { text: string; nonce: number } | null | undefined;
   onSend?: ((body: string) => void) | undefined;
 }): JSX.Element {
   const [body, setBody] = useState("");
+  const field = useRef<HTMLTextAreaElement | null>(null);
+  // A suggested prompt fills the composer; only the person's Enter or the send button sends it.
+  useEffect(() => {
+    if (draft == null) return;
+    setBody(draft.text);
+    field.current?.focus();
+  }, [draft?.nonce]);
   const send = (): void => {
     const text = body.trim();
     if (!text) return;
@@ -285,6 +299,7 @@ function Composer({
     >
       <Icon name="paperclip" size={14} className="text-ink-3" />
       <textarea
+        ref={field}
         aria-label="Message"
         placeholder={placeholder}
         rows={1}
@@ -400,6 +415,7 @@ export function ChatThread(props: ChatThreadProps): JSX.Element {
         }}
         className="flex min-h-0 flex-1 flex-col gap-[11px] overflow-y-auto px-[16px] pt-[16px]"
       >
+        {items.length === 0 && props.empty ? props.empty : null}
         {items.map((item) => (
           <div key={item.id} data-item={item.kind} data-seq={item.seq} className="flex flex-col">
             {render(item, props, revealed)}
@@ -425,7 +441,12 @@ export function ChatThread(props: ChatThreadProps): JSX.Element {
         </button>
       ) : null}
       {above ? <div className="mx-[16px] mb-[9px]">{above}</div> : null}
-      <Composer placeholder={composerPlaceholder} disabled={false} onSend={onSend} />
+      <Composer
+        placeholder={composerPlaceholder}
+        disabled={false}
+        draft={props.draft}
+        onSend={onSend}
+      />
     </div>
   );
 }

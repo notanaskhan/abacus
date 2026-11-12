@@ -73,12 +73,18 @@ describe("QuestionCard", () => {
 
   it("answers the last step once, however often Next is pressed", () => {
     const onAnswer = vi.fn();
-    render(<QuestionCard question={{ ...ASK, steps: [ASK.steps[1]!], n: 2 }} onAnswer={onAnswer} />);
+    render(
+      <QuestionCard question={{ ...ASK, steps: [ASK.steps[1]!], n: 2 }} onAnswer={onAnswer} />,
+    );
     const next = screen.getByRole("button", { name: "Next" });
     fireEvent.click(next);
     fireEvent.click(next);
     expect(onAnswer).toHaveBeenCalledTimes(1);
-    expect(onAnswer).toHaveBeenCalledWith({ question_id: "q-ty2025-scope", step: 2, key: "files" });
+    expect(onAnswer).toHaveBeenCalledWith({
+      question_id: "q-ty2025-scope",
+      step: 2,
+      key: "files",
+    });
   });
 
   it("keys 1-9 choose, Enter is Next and Esc returns focus to the composer", () => {
