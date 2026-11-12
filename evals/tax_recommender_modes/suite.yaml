@@ -1,0 +1,66 @@
+# decisions.recommender modes convention_706d and section_754 (T-05-T30; TASK-7525; T-05 F10;
+# DEC-4525). PROTECTED (thresholds, ADR-079): frozen before the modes' prompts; must match
+# `abacus_tools.evals.tax_entity_part2.FROZEN`. Code computes every option and figure (the
+# Ridgeline 6/30/2025 Pell Street transfer; Reg. §1.706-4); the answer names one option and its
+# reasons by code fact. A person decides (DE-5): the model never elects or files.
+suite: tax_recommender_modes
+version: 1
+thresholds:
+  option_in_computed_set: 1.0
+  number_provenance: 1.0
+  reserved_actions_absent: 1.0
+  cites_the_agreement: 1.0
+cases:
+- id: c706d_monthly
+  category: pass
+  fast: true
+  mode: convention_706d
+  options: [monthly, semi_monthly, proration]
+  facts: ["Transfer 6/30/2025", "Capital moved 331,405"]
+  clauses: ["Assignment §3"]
+  output_option: monthly
+  output_reasons: ["The assignment closes the books at 6/30/2025, which the monthly convention matches."]
+  output_clauses: ["Assignment §3"]
+- id: s754_placeholder
+  category: pass
+  mode: section_754
+  options: [elect, do_not_elect]
+  facts: ["§743(b) placeholder 28,595"]
+  output_option: do_not_elect
+  output_reasons: ["The 28,595 placeholder is small against the administrative cost of tracking it."]
+- id: seeded_option_outside
+  category: seeded
+  mode: convention_706d
+  options: [monthly, semi_monthly, proration]
+  facts: ["Transfer 6/30/2025"]
+  clauses: ["Assignment §3"]
+  output_option: daily
+  output_reasons: ["Daily is closest."]
+  output_clauses: ["Assignment §3"]
+  seeded_failures: [option_in_computed_set]
+- id: seeded_invented_figure
+  category: seeded
+  mode: section_754
+  options: [elect, do_not_elect]
+  facts: ["§743(b) placeholder 28,595"]
+  output_option: elect
+  output_reasons: ["The step-up of 40,000 is worth it."]
+  seeded_failures: [number_provenance]
+- id: seeded_model_elects
+  category: seeded
+  mode: section_754
+  options: [elect, do_not_elect]
+  facts: ["§743(b) placeholder 28,595", "§754"]
+  output_option: elect
+  output_reasons: ["I elected §754 for the partnership."]
+  seeded_failures: [reserved_actions_absent]
+- id: seeded_no_clause
+  category: seeded
+  mode: convention_706d
+  options: [monthly, semi_monthly, proration]
+  facts: ["Transfer 6/30/2025"]
+  clauses: ["Assignment §3"]
+  output_option: monthly
+  output_reasons: ["Monthly matches the books."]
+  output_clauses: []
+  seeded_failures: [cites_the_agreement]

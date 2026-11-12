@@ -1,0 +1,108 @@
+# tax.memo_drafter's suite (T-05-T30; TASK-7525; T-05 §6.4; DEC-4525). PROTECTED (thresholds,
+# ADR-079): frozen before any prompt work; `abacus_tools.evals.tax_entity_part2.FROZEN` must
+# match. Deterministic on the fake model: each case is the capability's recorded draft of the
+# Ridgeline 2025 preparer memo (Brightwater Hale, synthetic) over code's figures and the return's
+# sources. Labels by AY with the tax CPA; `label_status` pending_cpa until signed.
+suite: tax_memo_drafter
+version: 1
+thresholds:
+  number_provenance: 1.0
+  citation_verified: 1.0
+  citation_coverage: 0.95
+  section_completeness: 1.0
+  human_sections_untouched: 1.0
+  regenerate_affected_only: 1.0
+  judge_calibration: 0.85
+cases:
+- id: memo_ridgeline_initial
+  category: pass
+  fast: true
+  facts: ["Total assets 17,914,500", "Liabilities 11,048,300", "Capital 6,866,200", "Tax-exempt interest 6,200", "Schedule M-2"]
+  sources:
+    tb: "Total assets 17,914,500; liabilities 11,048,300; partners' capital 6,866,200"
+    harborline: "Municipal bond fund interest, tax-exempt, 6,200"
+  required_sections: [overview, balance_sheet, capital, open_items]
+  output:
+  - {key: overview, text: "Ridgeline Property Partners, LP files its partnership return for the year.", citations: []}
+  - key: balance_sheet
+    text: "Total assets are 17,914,500 against liabilities of 11,048,300 and capital of 6,866,200."
+    citations: [{source: tb, quote: "Total assets 17,914,500"}]
+  - key: capital
+    text: "Tax-exempt interest of 6,200 is an other increase on Schedule M-2."
+    citations: [{source: harborline, quote: "tax-exempt, 6,200"}]
+  - {key: open_items, text: "The capital tie is open until the fix is approved.", citations: []}
+- id: memo_regenerate_after_fix
+  category: pass
+  facts: ["Capital 6,866,200", "Tax-exempt interest 6,200", "Schedule M-2"]
+  sources: {harborline: "Municipal bond fund interest, tax-exempt, 6,200"}
+  required_sections: [capital, open_items]
+  output:
+  - key: capital
+    text: "Schedule M-2 now ties at 6,866,200 after the 6,200 increase."
+    citations: [{source: harborline, quote: "tax-exempt, 6,200"}]
+    redrafted: true
+  - {key: open_items, text: "No open items remain on capital.", citations: [], redrafted: false, inputs_changed: false}
+- id: memo_human_edited_kept
+  category: pass
+  facts: ["Capital 6,866,200"]
+  sources: {tb: "partners' capital 6,866,200"}
+  required_sections: [capital]
+  output:
+  - {key: capital, text: "Olivia's note: capital reconciles; see 05 Capital.", citations: [], edited_by_human: true, redrafted: false}
+- id: seeded_invented_number
+  category: seeded
+  facts: ["Capital 6,866,200"]
+  sources: {tb: "partners' capital 6,866,200"}
+  required_sections: [capital]
+  output:
+  - key: capital
+    text: "Capital is 6,900,000."
+    citations: [{source: tb, quote: "partners' capital 6,866,200"}]
+  seeded_failures: [number_provenance]
+- id: seeded_unverified_quote
+  category: seeded
+  facts: ["Capital 6,866,200"]
+  sources: {tb: "partners' capital 6,866,200"}
+  required_sections: [capital]
+  output:
+  - key: capital
+    text: "Capital is 6,866,200."
+    citations: [{source: tb, quote: "capital per K-1s 6,866,200"}]
+  seeded_failures: [citation_verified]
+- id: seeded_uncited_figure
+  category: seeded
+  facts: ["Capital 6,866,200"]
+  sources: {tb: "partners' capital 6,866,200"}
+  required_sections: [capital]
+  output:
+  - {key: capital, text: "Capital is 6,866,200.", citations: []}
+  seeded_failures: [citation_coverage]
+- id: seeded_missing_section
+  category: seeded
+  facts: ["Capital 6,866,200"]
+  sources: {tb: "partners' capital 6,866,200"}
+  required_sections: [capital, open_items]
+  output:
+  - key: capital
+    text: "Capital is 6,866,200."
+    citations: [{source: tb, quote: "partners' capital 6,866,200"}]
+  seeded_failures: [section_completeness]
+- id: seeded_human_section_redrafted
+  category: seeded
+  facts: ["Capital 6,866,200"]
+  sources: {tb: "partners' capital 6,866,200"}
+  required_sections: [capital]
+  output:
+  - {key: capital, text: "Capital reconciles.", citations: [], edited_by_human: true, redrafted: true}
+  seeded_failures: [human_sections_untouched]
+- id: seeded_unchanged_section_rewritten
+  category: seeded
+  facts: ["Capital 6,866,200"]
+  sources: {tb: "partners' capital 6,866,200"}
+  required_sections: [capital]
+  output:
+  - {key: capital, text: "Capital reconciles.", citations: [], redrafted: true, inputs_changed: false}
+  seeded_failures: [regenerate_affected_only]
+- {id: calibration_1, category: calibration, facts: [], sources: {}, required_sections: [], output: [], judge_agrees: true}
+- {id: calibration_2, category: calibration, facts: [], sources: {}, required_sections: [], output: [], judge_agrees: true}
+- {id: calibration_3, category: calibration, facts: [], sources: {}, required_sections: [], output: [], judge_agrees: true}
