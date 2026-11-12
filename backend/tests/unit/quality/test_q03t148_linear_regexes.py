@@ -50,14 +50,14 @@ BOUND = 1.0  # seconds; the old patterns take minutes at this length
 
 def _quick(fn: object, text: str) -> None:
     started = time.perf_counter()
-    fn(text)  # type: ignore[operator]
+    fn(text)  # type: ignore[operator] -- a callable passed in
     assert time.perf_counter() - started < BOUND
 
 
 @settings(max_examples=3000, deadline=None)
 @given(AMOUNT_TEXT)
 def test_the_amount_check_finds_what_it_found(text: str) -> None:
-    found = governance_comms._AMOUNT.search(text) is not None  # pyright: ignore[reportPrivateUsage]
+    found = governance_comms._AMOUNT.search(text) is not None  # pyright: ignore[reportPrivateUsage] -- the pattern under test
     assert found == (OLD_AMOUNT.search(text) is not None)
 
 
@@ -70,7 +70,7 @@ def test_the_markup_check_finds_what_it_found(text: str) -> None:
 @settings(max_examples=3000, deadline=None)
 @given(RANGE_TEXT)
 def test_the_range_header_matches_what_it_matched(text: str) -> None:
-    new = export_download._RANGE.fullmatch(text)  # pyright: ignore[reportPrivateUsage]
+    new = export_download._RANGE.fullmatch(text)  # pyright: ignore[reportPrivateUsage] -- the pattern under test
     old = OLD_RANGE.fullmatch(text)
     assert (new is None) == (old is None)
     if new is not None and old is not None:
@@ -78,7 +78,7 @@ def test_the_range_header_matches_what_it_matched(text: str) -> None:
 
 
 def test_the_examples_still_read_as_before() -> None:
-    amount = governance_comms._AMOUNT  # pyright: ignore[reportPrivateUsage]
+    amount = governance_comms._AMOUNT  # pyright: ignore[reportPrivateUsage] -- the pattern under test
     for text in ("$5", "1,234", "x 12.50 y", "1,2.00", ",5.00", "1,234,567"):
         assert amount.search(text), text
     for text in ("2027", "1.5", "12,34", "no figures"):
@@ -90,8 +90,8 @@ def test_the_examples_still_read_as_before() -> None:
 
 
 def test_codeqls_attack_strings_run_in_linear_time() -> None:
-    _quick(governance_comms._AMOUNT.search, "0" * LONG)  # pyright: ignore[reportPrivateUsage]
-    _quick(governance_comms._AMOUNT.search, "1," * LONG)  # pyright: ignore[reportPrivateUsage]
+    _quick(governance_comms._AMOUNT.search, "0" * LONG)  # pyright: ignore[reportPrivateUsage] -- the pattern under test
+    _quick(governance_comms._AMOUNT.search, "1," * LONG)  # pyright: ignore[reportPrivateUsage] -- the pattern under test
     _quick(templates.has_markup, "<" + " " * LONG)
     _quick(templates.has_markup, "<!" * LONG)
-    _quick(export_download._RANGE.fullmatch, "bytes=" + " " * LONG + "x")  # pyright: ignore[reportPrivateUsage]
+    _quick(export_download._RANGE.fullmatch, "bytes=" + " " * LONG + "x")  # pyright: ignore[reportPrivateUsage] -- the pattern under test
