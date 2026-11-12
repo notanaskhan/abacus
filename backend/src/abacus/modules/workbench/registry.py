@@ -22,5 +22,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "workbench_sessions": frozenset(
         {"title", "state", "context_refs", "client_scope", "last_item_at", "item_seq"}
         | {"deleted_at"}
+        # W-02-T06 (0850): rename and delete attribution.
+        | {"title_source", "renamed_by", "renamed_at", "deleted_by"}
     ),
 }
