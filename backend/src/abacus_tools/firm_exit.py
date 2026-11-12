@@ -48,6 +48,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Final, cast
 
+from abacus.kernel.clock import system_now
 from abacus_tools import package_check
 
 FORMAT: Final = "accrued-firm-export"
@@ -303,7 +304,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             _load(args.verification),
             _load(args.key_deletion),
             firm=args.firm,
-            issued_at=datetime.now(UTC),
+            issued_at=system_now(),
         )
     except (ExitRefused, ValueError) as exc:
         print(json.dumps({"ok": False, "refused": str(exc)}), file=sys.stderr)

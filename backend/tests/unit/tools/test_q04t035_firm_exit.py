@@ -101,7 +101,7 @@ def _archive(
 
 
 def _report(tmp_path: Path, **kwargs: object) -> firm_exit.Report:
-    archive, manifest_sha = _archive(tmp_path / "export.zip", **kwargs)  # type: ignore[arg-type]
+    archive, manifest_sha = _archive(tmp_path / "export.zip", **kwargs)  # type: ignore[arg-type] -- test kwargs
     return firm_exit.verify(
         archive,
         tmp_path / "out",

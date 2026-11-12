@@ -24,7 +24,7 @@ from abacus_tools import firm_exit
 
 from .test_q02t47_firm_export_packages import (  # the same synthetic firm and build
     Firm,
-    _ready_archive,  # pyright: ignore[reportPrivateUsage]
+    _ready_archive,  # pyright: ignore[reportPrivateUsage] -- Q-02-T47's own build helper, shared
     firm,
     raw,
     wired,
