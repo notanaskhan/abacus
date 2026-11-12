@@ -73,6 +73,14 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.runtime_conformance import main as conformance_main
 
         return conformance_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+    if args.agent == "tax_return" and args.route != "fake":  # T-04-T43: real routes
+        from abacus_tools.evals.tax_return_real import real_main as tax_real
+
+        return tax_real(
+            cast(str, args.route),
+            cast(Path, args.out),
+            "fast" if args.subset == "fast" else "full",
+        )
     if args.agent == "tax_return":  # T-04-T18: the tax agents' suite, frozen thresholds
         from abacus_tools.evals.tax_return import main as tax_main
 
