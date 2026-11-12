@@ -58,6 +58,8 @@ Served so far (S40): the trial balance, its tallies and journal entries (T-05-T3
 
 The cell edit (T-05-T35, DEC-4620) is served. The cell path names the sheet (`05!H12`, URL-encoded). The preparer's edit recomputes its dependents synchronously, up to 500 cells; beyond that it answers 422 `recompute_too_large`. It then saves a checkpoint named "Edited 05 Capital!H12 by ‹person›". A reviewer's edit becomes a review note anchored on the cell: the response has state `flagged` and carries `proposal_note_id`, and the cell does not change. A person with neither function gets 403 `preparer_function_required`. The other errors are 409 `cell_version_conflict` or `cells_locked_by_run`, and 422 `formula_invalid` for grammar errors and cycles. `WorkbookCellOut` gains `recomputed`, `proposal_note_id` and `checkpoint_id`, all additive.
 
+T-05-T37 (DEC-4622) adds, additively, `WorkbookTbRowOut.adjusted`, `.prior_year` and `.group`; `WorkbookTrialBalanceOut.totals` (`WorkbookTbTotalOut` per section, then `tb_total`); and `WorkbookTalliesOut.figures` (`gross_rents`, `total_deductions`, `net_rental_income`, `book_total_assets`), all computed by the server.
+
 ## 2. Models and classification
 Pydantic models in the code file, every field classified. Every workbook value, formula, memo body, K-1 or partner payload and figure is tax return information (Restricted, `tri`; C19). A partner's TIN is never in a response: `tin_last4` only; the reveal is P-12's logged path (`tin.reveal`, step-up MFA, `not_offshore`). Money is exact `Decimal` with two places.
 

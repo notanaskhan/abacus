@@ -18,7 +18,8 @@ export type AmountTone = "pos" | "neg" | "zero" | "blank";
 
 /** `whole`: statements (1,379,849). `money`: workpaper, ledger and TB cells ($1,462,726.47).
  * `cents`: the same two decimals with no symbol, for columns whose header names the unit. */
-export type AmountStyle = "whole" | "money" | "cents";
+/** `dollars` (T-05-T37): the TB grammar's "$" on whole dollars (TXP-02, the only TXP screen). */
+export type AmountStyle = "whole" | "money" | "cents" | "dollars";
 
 export interface AmountOptions {
   /** `dash` (default): zero is an em dash. `explicit`: zero prints as 0, 0.00 or $0.00. */
@@ -108,7 +109,8 @@ function digitsOf(units: bigint, places: number): string {
   return places === 0 ? whole : `${whole}.${abs.slice(abs.length - places)}`;
 }
 
-const PLACES: Record<AmountStyle, number> = { whole: 0, money: 2, cents: 2 };
+const PLACES: Record<AmountStyle, number> = { whole: 0, money: 2, cents: 2, dollars: 0 };
+const SIGNED: ReadonlySet<AmountStyle> = new Set<AmountStyle>(["money", "dollars"]);
 
 /** An amount for a table cell: `{ text, tone }`. Negatives in parentheses, zero (after
  * rounding) as an em dash, halves rounded away from zero. Tables take their colour from the
@@ -121,7 +123,7 @@ export function amount(
   if (isBlank(v)) return { text: DASH, tone: "blank" };
   const places = PLACES[style];
   const units = roundTo(parseDecimal(v), places);
-  const symbol = style === "money" ? "$" : "";
+  const symbol = SIGNED.has(style) ? "$" : "";
   if (units === 0n) {
     return {
       text: options.zero === "explicit" ? `${symbol}${digitsOf(0n, places)}` : DASH,
@@ -138,7 +140,7 @@ export function prose(v: Decimal, style: AmountStyle = "money"): string {
   if (isBlank(v)) return DASH;
   const places = PLACES[style];
   const units = roundTo(parseDecimal(v), places);
-  const text = `${style === "money" ? "$" : ""}${digitsOf(units, places)}`;
+  const text = `${SIGNED.has(style) ? "$" : ""}${digitsOf(units, places)}`;
   return units < 0n ? `-${text}` : text;
 }
 

@@ -54898,6 +54898,7 @@ export type WorkbookCapitalAccountsOut = {
      * Basis
      */
     basis: 'tax' | 'gaap' | 'section_704b';
+    item_l?: WorkbookItemLOut | null;
     /**
      * Rows
      */
@@ -54906,6 +54907,7 @@ export type WorkbookCapitalAccountsOut = {
      * Tie
      */
     tie: 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
+    totals?: WorkbookCapitalTotalsOut | null;
     /**
      * View
      */
@@ -54937,9 +54939,41 @@ export type WorkbookCapitalRowOut = {
      */
     income: string;
     /**
+     * Name
+     */
+    name?: string | null;
+    /**
      * Partner Id
      */
     partner_id: string;
+};
+
+/**
+ * WorkbookCapitalTotalsOut
+ *
+ * T-05-T34: the server's column totals (the screen never sums).
+ */
+export type WorkbookCapitalTotalsOut = {
+    /**
+     * Beginning
+     */
+    beginning: string;
+    /**
+     * Contributions
+     */
+    contributions: string;
+    /**
+     * Distributions
+     */
+    distributions: string;
+    /**
+     * Ending
+     */
+    ending: string;
+    /**
+     * Income
+     */
+    income: string;
 };
 
 /**
@@ -54973,6 +55007,10 @@ export type WorkbookCellOut = {
      */
     author: 'run_step' | 'engine_import' | 'person' | 'formula';
     /**
+     * Checkpoint Id
+     */
+    checkpoint_id?: string | null;
+    /**
      * Citation Ids
      */
     citation_ids?: Array<string>;
@@ -54980,6 +55018,14 @@ export type WorkbookCellOut = {
      * Formula
      */
     formula?: string | null;
+    /**
+     * Proposal Note Id
+     */
+    proposal_note_id?: string | null;
+    /**
+     * Recomputed
+     */
+    recomputed?: Array<string>;
     /**
      * State
      */
@@ -55011,6 +55057,26 @@ export type WorkbookCellProvenanceOut = {
      * Writer
      */
     writer: string;
+};
+
+/**
+ * WorkbookFigureOut
+ *
+ * T-05-T37: a figure card's amount (gross rents, total deductions, …), the server's.
+ */
+export type WorkbookFigureOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
 };
 
 /**
@@ -55150,6 +55216,30 @@ export type WorkbookInterestTransferOutOutput = {
 };
 
 /**
+ * WorkbookItemLOut
+ *
+ * T-05-T34: Item L's ending capital (the partners') against the M-2's line 9.
+ */
+export type WorkbookItemLOut = {
+    /**
+     * Capital Ending
+     */
+    capital_ending: string;
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * M2 Ending
+     */
+    m2_ending: string;
+    /**
+     * Tie
+     */
+    tie: 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
+};
+
+/**
  * WorkbookJournalEntriesOut
  */
 export type WorkbookJournalEntriesOut = {
@@ -55186,6 +55276,24 @@ export type WorkbookJournalEntryOut = {
 };
 
 /**
+ * WorkbookM2LineOut
+ */
+export type WorkbookM2LineOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line
+     */
+    line: number;
+};
+
+/**
  * WorkbookM2Out
  */
 export type WorkbookM2Out = {
@@ -55201,6 +55309,11 @@ export type WorkbookM2Out = {
      * Ending
      */
     ending: string;
+    item_l?: WorkbookItemLOut | null;
+    /**
+     * Lines
+     */
+    lines?: Array<WorkbookM2LineOut>;
     /**
      * Tie
      */
@@ -55852,6 +55965,10 @@ export type WorkbookSignOffRecordedOut = {
  */
 export type WorkbookTalliesOut = {
     /**
+     * Figures
+     */
+    figures?: Array<WorkbookFigureOut>;
+    /**
      * Items
      */
     items: Array<WorkbookTallyOut>;
@@ -55892,6 +56009,10 @@ export type WorkbookTbRowOut = {
      */
     account_name: string;
     /**
+     * Adjusted
+     */
+    adjusted?: string | null;
+    /**
      * Aje
      */
     aje: string;
@@ -55899,6 +56020,58 @@ export type WorkbookTbRowOut = {
      * Form Line Key
      */
     form_line_key?: string | null;
+    /**
+     * Group
+     */
+    group?: 'assets' | 'liabilities' | 'equity' | 'income' | 'deductions' | 'unmapped' | null;
+    /**
+     * Prior Year
+     */
+    prior_year?: string | null;
+    /**
+     * Rje
+     */
+    rje: string;
+    /**
+     * Tax Basis
+     */
+    tax_basis: string;
+    /**
+     * Tje
+     */
+    tje: string;
+    /**
+     * Unadjusted
+     */
+    unadjusted: string;
+};
+
+/**
+ * WorkbookTbTotalOut
+ *
+ * T-05-T37: a section's totals or the TB total, computed by the server.
+ */
+export type WorkbookTbTotalOut = {
+    /**
+     * Adjusted
+     */
+    adjusted: string;
+    /**
+     * Aje
+     */
+    aje: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Prior Year
+     */
+    prior_year?: string | null;
     /**
      * Rje
      */
@@ -55925,6 +56098,10 @@ export type WorkbookTrialBalanceOut = {
      * Rows
      */
     rows: Array<WorkbookTbRowOut>;
+    /**
+     * Totals
+     */
+    totals?: Array<WorkbookTbTotalOut>;
     /**
      * Unmapped
      */
@@ -124454,10 +124631,6 @@ export type EntityCapitalAccountsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityCapitalAccountsError = EntityCapitalAccountsErrors[keyof EntityCapitalAccountsErrors];
@@ -125280,10 +125453,6 @@ export type EntityJournalEntriesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityJournalEntriesError = EntityJournalEntriesErrors[keyof EntityJournalEntriesErrors];
@@ -126182,10 +126351,6 @@ export type EntityScheduleKErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityScheduleKError = EntityScheduleKErrors[keyof EntityScheduleKErrors];
@@ -126242,10 +126407,6 @@ export type EntityScheduleKBreakdownErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityScheduleKBreakdownError = EntityScheduleKBreakdownErrors[keyof EntityScheduleKBreakdownErrors];
@@ -126303,10 +126464,6 @@ export type EntityM2Errors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityM2Error = EntityM2Errors[keyof EntityM2Errors];
@@ -126616,10 +126773,6 @@ export type EntityTrialBalanceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityTrialBalanceError = EntityTrialBalanceErrors[keyof EntityTrialBalanceErrors];
@@ -126672,10 +126825,6 @@ export type EntityTalliesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityTalliesError = EntityTalliesErrors[keyof EntityTalliesErrors];
@@ -126973,10 +127122,6 @@ export type EntityEditCellErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityEditCellError = EntityEditCellErrors[keyof EntityEditCellErrors];

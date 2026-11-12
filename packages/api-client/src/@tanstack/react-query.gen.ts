@@ -24190,6 +24190,8 @@ export const entityCapitalAccountsQueryKey = (options: Options<EntityCapitalAcco
 
 /**
  * Entity Capital Accounts Route
+ *
+ * T-05-T34: 05's partner rows (tax basis), server totals and the Item L facts.
  */
 export const entityCapitalAccountsOptions = (options: Options<EntityCapitalAccountsData>) => queryOptions<EntityCapitalAccountsResponse, EntityCapitalAccountsError, EntityCapitalAccountsResponse, ReturnType<typeof entityCapitalAccountsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24465,7 +24467,7 @@ export const entityJournalEntriesQueryKey = (options: Options<EntityJournalEntri
 /**
  * Entity Journal Entries Route
  *
- * AJE, RJE and TJE over C8; propose and approve go through A-06's endpoints.
+ * T-05-T33: C8's AJEs, RJEs and TJEs on the return (proposing and approving are A-06's).
  */
 export const entityJournalEntriesOptions = (options: Options<EntityJournalEntriesData>) => queryOptions<EntityJournalEntriesResponse, EntityJournalEntriesError, EntityJournalEntriesResponse, ReturnType<typeof entityJournalEntriesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24746,6 +24748,8 @@ export const entityScheduleKQueryKey = (options: Options<EntityScheduleKData>) =
 
 /**
  * Entity Schedule K Route
+ *
+ * T-05-T34 (DEC-4619): 06's lines with 09's partner shares and a tie per line.
  */
 export const entityScheduleKOptions = (options: Options<EntityScheduleKData>) => queryOptions<EntityScheduleKResponse, EntityScheduleKError, EntityScheduleKResponse, ReturnType<typeof entityScheduleKQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24764,6 +24768,8 @@ export const entityScheduleKBreakdownQueryKey = (options: Options<EntitySchedule
 
 /**
  * Entity Schedule K Breakdown Route
+ *
+ * T-05-T34: Form 8825's per-property amounts behind a Schedule K line (sheet 08).
  */
 export const entityScheduleKBreakdownOptions = (options: Options<EntityScheduleKBreakdownData>) => queryOptions<EntityScheduleKBreakdownResponse, EntityScheduleKBreakdownError, EntityScheduleKBreakdownResponse, ReturnType<typeof entityScheduleKBreakdownQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24782,6 +24788,8 @@ export const entityM2QueryKey = (options: Options<EntityM2Data>) => createQueryK
 
 /**
  * Entity M2 Route
+ *
+ * T-05-T34: 07 as drafted, or rebuilt from 05's partner totals (what the fix writes).
  */
 export const entityM2Options = (options: Options<EntityM2Data>) => queryOptions<EntityM2Response, EntityM2Error, EntityM2Response, ReturnType<typeof entityM2QueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24879,6 +24887,9 @@ export const entityTrialBalanceQueryKey = (options: Options<EntityTrialBalanceDa
 
 /**
  * Entity Trial Balance Route
+ *
+ * T-05-T33 (DEC-4618): C8's tax layers by account or form line; `unmapped` is the whole TB's
+ * count (the export gate), whatever the filter.
  */
 export const entityTrialBalanceOptions = (options: Options<EntityTrialBalanceData>) => queryOptions<EntityTrialBalanceResponse, EntityTrialBalanceError, EntityTrialBalanceResponse, ReturnType<typeof entityTrialBalanceQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24897,6 +24908,8 @@ export const entityTalliesQueryKey = (options: Options<EntityTalliesData>) => cr
 
 /**
  * Entity Tallies Route
+ *
+ * T-05-T33: each column foots to $0; `unmapped` checks the export gate.
  */
 export const entityTalliesOptions = (options: Options<EntityTalliesData>) => queryOptions<EntityTalliesResponse, EntityTalliesError, EntityTalliesResponse, ReturnType<typeof entityTalliesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24995,7 +25008,9 @@ export const entityCellOptions = (options: Options<EntityCellData>) => queryOpti
 /**
  * Entity Edit Cell Route
  *
- * `cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422).
+ * `cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422). T-05-T35
+ * (DEC-4620): the preparer's edit recomputes its dependents and saves a checkpoint; a
+ * reviewer's edit becomes a proposal note on the cell and the cell does not change.
  */
 export const entityEditCellMutation = (options?: Partial<Options<EntityEditCellData>>): UseMutationOptions<EntityEditCellResponse, EntityEditCellError, Options<EntityEditCellData>> => {
     const mutationOptions: UseMutationOptions<EntityEditCellResponse, EntityEditCellError, Options<EntityEditCellData>> = {

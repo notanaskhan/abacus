@@ -13,8 +13,8 @@ export const txpScreens = {
   "TXP-01": { name: "Review › Summary · Ridgeline preparer memo", status: "planned", path: null },
   "TXP-02": {
     name: "Review › Financials (TB → TTB) · Ridgeline 2025 Form 1065",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/tax-returns/$returnId/review/financials",
   },
   "TXP-03": {
     name: "Review › Fixed Assets · Ridgeline depreciation register",

@@ -16,6 +16,7 @@ TJE, TTB per account, computed and never stored), the trial balance's tax form-l
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal
@@ -41,6 +42,92 @@ class TbRow:
     rje: Decimal
     tje: Decimal
     tax_basis: Decimal
+    adjusted: Decimal | None = None  # ATB (C8's, never summed here); line rows sum it
+    group: str = "unmapped"
+
+
+Group = Literal["assets", "liabilities", "equity", "income", "deductions", "unmapped"]
+GROUPS: Final[tuple[tuple[Group, str], ...]] = (
+    ("assets", "Total assets"),
+    ("liabilities", "Total liabilities"),
+    ("equity", "Total equity"),
+    ("income", "Total income"),
+    ("deductions", "Total deductions"),
+    ("unmapped", "Total unmapped"),
+)
+_SCHEDULE_L: Final = re.compile(r"^L(\d{1,2})[a-z]?$")
+_INCOME: Final = ("8825 Rents", "K ", "M-3")
+
+
+def group_of(form_line_key: str | None) -> Group:
+    """TXP-02's sections from the form line (T-05-T37): Schedule L lines 1 to 14 are assets, 15
+    to 20 liabilities, 21 and M-2 equity; Form 8825 rents, Schedule K and M-3 lines are income;
+    every other mapped line (Form 8825's expense lines) is a deduction."""
+    if form_line_key is None:
+        return "unmapped"
+    found = _SCHEDULE_L.match(form_line_key)
+    if found is not None:
+        n = int(found.group(1))
+        return "assets" if n <= 14 else ("liabilities" if n <= 20 else "equity")
+    if form_line_key.startswith("M-2"):
+        return "equity"
+    if form_line_key.startswith(_INCOME):
+        return "income"
+    return "deductions"
+
+
+@dataclass(frozen=True)
+class TbTotal:
+    key: str
+    label: str
+    unadjusted: Decimal
+    aje: Decimal
+    rje: Decimal
+    adjusted: Decimal
+    tje: Decimal
+    tax_basis: Decimal
+
+
+def _total(key: str, label: str, rows: Sequence[TbRow]) -> TbTotal:
+    def col(name: str) -> Decimal:
+        return sum((getattr(r, name) or ZERO for r in rows), ZERO)
+
+    return TbTotal(
+        key, label, col("unadjusted"), col("aje"), col("rje"), col("adjusted"), col("tje"),
+        col("tax_basis"),
+    )  # fmt: skip
+
+
+def totals(rows: Sequence[TbRow]) -> list[TbTotal]:
+    """Each section's totals, then the TB total (debits less credits), all computed here."""
+    out = [
+        _total(key, label, [r for r in rows if r.group == key])
+        for key, label in GROUPS
+        if any(r.group == key for r in rows)
+    ]
+    out.append(_total("tb_total", "TB total (debits less credits)", rows))
+    return out
+
+
+@dataclass(frozen=True)
+class TbFigure:
+    key: str
+    label: str
+    amount: Decimal
+
+
+def figures(rows: Sequence[TbRow]) -> list[TbFigure]:
+    """TXP-02's figure cards, from the tax basis: gross rents (Form 8825 rents, shown positive),
+    total deductions, net rental real estate income (rents less deductions), book total assets."""
+    rents = -sum((r.tax_basis for r in rows if (r.form_line_key or "") == "8825 Rents"), ZERO)
+    deductions = sum((r.tax_basis for r in rows if r.group == "deductions"), ZERO)
+    assets = sum((r.tax_basis for r in rows if r.group == "assets"), ZERO)
+    return [
+        TbFigure("gross_rents", "Gross rents", rents),
+        TbFigure("total_deductions", "Total deductions", deductions),
+        TbFigure("net_rental_income", "Net rental RE income", rents - deductions),
+        TbFigure("book_total_assets", "Book total assets", assets),
+    ]
 
 
 @dataclass(frozen=True)
@@ -75,6 +162,8 @@ def account_rows(layers: TaxLayersView, mapping: dict[str, str | None]) -> list[
             rje=_d(ln.rje),
             tje=_d(ln.tje),
             tax_basis=ln.ttb,
+            adjusted=ln.atb,
+            group=group_of(mapping.get(ln.account_code)),
         )
         for ln in layers.lines
     ]
@@ -86,11 +175,11 @@ def by_line(rows: Sequence[TbRow]) -> list[TbRow]:
     for r in rows:
         if r.form_line_key is None:
             continue
-        acc = sums.setdefault(r.form_line_key, [ZERO] * 5)
-        for i, v in enumerate((r.unadjusted, r.aje, r.rje, r.tje, r.tax_basis)):
-            acc[i] += v
+        acc = sums.setdefault(r.form_line_key, [ZERO] * 6)
+        for i, v in enumerate((r.unadjusted, r.aje, r.rje, r.tje, r.tax_basis, r.adjusted)):
+            acc[i] += v or ZERO
     return [
-        TbRow(key, key, key, *vals)  # type: ignore[arg-type]  # five Decimal columns
+        TbRow(key, key, key, *vals[:5], adjusted=vals[5], group=group_of(key))
         for key, vals in sorted(sums.items())
     ]
 
@@ -138,9 +227,12 @@ async def trial_balance(
     return narrowed(shown, statement, unmapped_only and view == "account"), unmapped
 
 
-async def tb_tallies(ctx: AuthContext, return_id: UUID, engagement_id: UUID) -> list[TbTally]:
+async def tb_tallies(
+    ctx: AuthContext, return_id: UUID, engagement_id: UUID
+) -> tuple[list[TbTally], list[TbFigure]]:
     layers = await adjusted_tb(ctx, return_id, "ttb")
-    return tallies(account_rows(layers, await _mapping(ctx, engagement_id)))  # type: ignore[arg-type]
+    rows = account_rows(layers, await _mapping(ctx, engagement_id))  # type: ignore[arg-type]
+    return tallies(rows), figures(rows)
 
 
 async def journal_entries(
@@ -151,12 +243,18 @@ async def journal_entries(
 
 
 __all__ = [
+    "GROUPS",
+    "TbFigure",
     "TbRow",
     "TbTally",
+    "TbTotal",
     "by_line",
+    "figures",
+    "group_of",
     "journal_entries",
     "narrowed",
     "tallies",
     "tb_tallies",
+    "totals",
     "trial_balance",
 ]
