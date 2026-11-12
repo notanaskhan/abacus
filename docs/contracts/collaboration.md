@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (P-05-T03, 2026-11-09, DEC-3104): every route answers 501 under its one action |
+| Status | final (P-05-T16, 2026-11-12, DEC-4315): every route live behind `collaboration.v2` (P-05-T05 to T09; AUD-29 behind `audit_trail.engagement_activity`, P-05-T11); additive changes only from here |
 | Provider epic | P-05 (SPEC-650; ADR-236 proposed) |
 | Consumers | SHL-17, SHL-18 (P-05-T10, T13); host epics that register anchors (A-04 AUD-09 rows, A-09, A-10, K-03, X-01, F-08 row drawer) |
 | Flag | `collaboration.v2` (P-05-T02): off → 404 |

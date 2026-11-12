@@ -65,6 +65,26 @@ Open the blameless review. Typical actions: a test that would have caught the ch
 ## Flag flips and their rollback (R-02-T25)
 A per-firm feature flag is not a deploy: flipping it back is the rollback, and a code rollback is not needed. Each rollout runbook names its flags, its order and what stays after a flag goes off (decisions, publications and audit rows are never undone). The R-02 portal flags are `RB-71-portal-r02-rollout.md`. A flag flip needs both founders' approval in its Tuesday window (P-29), and the staging journeys named there green within 24 hours.
 
+### P-05 collaboration: `collaboration.v2` and `audit_trail.engagement_activity` (P-05-T16)
+- **What they turn on.** `collaboration.v2`: comments v2 (SHL-18), to-dos (SHL-17) and their
+  notifications; off, every `/v1/comment-threads` and `/v1/todos` route answers the P-36 flag-off
+  error and the screens show their designed flag-off state. `audit_trail.engagement_activity`:
+  AUD-29's engagement activity log and its CSV export; off, the same.
+- **Order.** `audit_trail.engagement_activity` first (read-only), then `collaboration.v2`, for the
+  canary tenant only, in the Tue Mar 28, 2028 7 pm CT slot (both founders' approval in the slot's
+  ticket). Real firms follow from Tue Apr 25, 2028, one Tuesday per firm, each after a shadow run on
+  its own engagements.
+- **Before the flip.** The five P-05 journeys (`j23 6`, `j16 A1–A2`, `j03 15`, `j18 5`, `j27 4`)
+  green on staging with real auth within 24 hours; `make seed-demo` and fixture mode identical
+  (4 = 1 + 1 + 2 My to-dos, 23 = 12 + 11 + 0 Activity).
+- **Rollback.** Flip `collaboration.v2` off first, then the activity flag. Nothing is deleted:
+  threads, comments, corrections, redactions, to-dos and their events stay (insert-only), and come
+  back as they were when the flag returns. Notifications already sent stay sent. Rehearse on
+  staging: flip on, create a comment and a to-do, flip off (routes answer flag-off, rows stay),
+  flip on (both read back unchanged), and log it below.
+- **After.** File CL-1 (the consolidation of the legacy SPEC-032 comments into threads, P-05 §2.3)
+  and the flag renewal for Apr 13, 2028 (`RB-26-flag-expiry-wave.md`'s calendar).
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|
