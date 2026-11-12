@@ -10,12 +10,18 @@ import {
   tallies,
   trialBalance,
 } from "../seed/tax-entity";
+import { sheetCells } from "../seed/tax-entity-sheets";
 
 const notYet = () => json({ detail: "not_implemented" }, 501);
 const R = "/v1/tax-returns/{return_id}";
 
-export function taxEntityHandlers(snapshot: Snapshot): Record<string, FixtureHandler> {
+export function taxEntityHandlers(
+  snapshot: Snapshot,
+  options: { proposed?: boolean } = {},
+): Record<string, FixtureHandler> {
   return {
+    [`GET ${R}/workbook/sheets/{sheet}`]: (req) =>
+      json(sheetCells(snapshot, req.params.sheet ?? "05", options.proposed === true)),
     [`GET ${R}/trial-balance`]: (req) => {
       const view = req.query.get("view") === "line";
       const statement = (req.query.get("statement") ?? "full") as Statement;

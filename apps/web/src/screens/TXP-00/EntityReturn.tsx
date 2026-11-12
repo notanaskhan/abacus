@@ -13,6 +13,7 @@ import { SCREEN_OF, type Section, isEntityForm, sectionOf, slugOf } from "../../
 import { to } from "../../routes/to";
 import { EntityReturnLayout, NOT_BUILT } from "./EntityReturnLayout";
 import { Financials } from "../TXP-02/Financials";
+import { Workpaper } from "../TXP-11/Workpaper";
 import { TXP00, frameOf } from "./index";
 
 export type EntitySlug = "agent" | "issues" | "workpaper" | "activity" | "review";
@@ -75,8 +76,10 @@ export function EntityReturn({
         <AgentTab returnId={returnId} onComposer={onComposer} />
       ) : section.review === "financials" ? (
         <Financials returnId={returnId} />
+      ) : section.tab === "workpaper" ? (
+        <Workpaper returnId={returnId} />
       ) : (
-        // TXP-10/11/01/05/07 land with their rows; until then the planned state, never blank.
+        // TXP-10/01/05/07 land with their rows; until then the planned state, never blank.
         <EmptyState title={NOT_BUILT} icon="clock">
           {screen ?? ""}
         </EmptyState>
