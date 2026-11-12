@@ -409,7 +409,7 @@ async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
         k1_dependency=None
         if found.k1_dependency is None
         else K1ActivityStatus(found.k1_dependency),
-        assistant="agents_off",
+        assistant=cast(AssistantAvailability, found.assistant),
         allowed_actions=cast(list[WorkspaceAction], found.allowed),
         final_approver_user_id=found.final_approver_user_id,
     )

@@ -51,7 +51,11 @@ async def _session(_tenant: object) -> AsyncGenerator[_Session]:
 
 
 def _wire(
-    monkeypatch: pytest.MonkeyPatch, *, held: frozenset[str], allowed: set[str]
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    held: frozenset[str],
+    allowed: set[str],
+    ready: tuple[bool, str | None] = (True, None),
 ) -> list[str]:
     asked: list[str] = []
 
@@ -89,7 +93,15 @@ def _wire(
     monkeypatch.setattr(review_tree, "allowed_actions", allowed_actions)
     monkeypatch.setattr(review_tree, "get_ref", get_ref)
     monkeypatch.setattr(review_tree, "tenant_session", _session)
+
+    async def capability_ready(
+        _ctx: object, engagement: uuid.UUID, capability: str
+    ) -> tuple[bool, str | None]:
+        asked.append(f"capability:{capability}:{engagement}")
+        return ready
+
     monkeypatch.setattr(approval, "signer_for", signer_for)
+    monkeypatch.setattr(review_tree, "capability_ready", capability_ready)
     return asked
 
 
@@ -147,3 +159,28 @@ async def test_the_summary_names_no_signer_without_the_request_action(
     found = await review_tree.summary(_ctx(), RETURN)
     assert found.final_approver_user_id is None
     assert not any(a.startswith("signer:") for a in asked)
+
+
+# TASK-7323 (SPEC-649 AC-6.1, AC-6.8): the workspace's `assistant` reads tax.assistant's
+# availability for this person, never a constant.
+@pytest.mark.parametrize(
+    ("ready", "word"),
+    [
+        ((True, None), "available"),
+        ((False, "consent_7216"), "consent_required"),
+        ((False, "paused"), "agents_off"),
+        ((False, "ai_policy_off"), "agents_off"),
+        ((False, "ai_excluded"), "ai_unavailable"),
+        ((False, "not_on_team"), "ai_unavailable"),
+        ((False, "capability_unavailable"), "ai_unavailable"),
+    ],
+)
+async def test_the_summary_reads_the_assistants_availability(
+    monkeypatch: pytest.MonkeyPatch, ready: tuple[bool, str | None], word: str
+) -> None:
+    asked = _wire(
+        monkeypatch, held=frozenset({"preparer"}), allowed={"document.approve"}, ready=ready
+    )
+    found = await review_tree.summary(_ctx(), RETURN)
+    assert found.assistant == word
+    assert f"capability:tax.assistant:{ENGAGEMENT}" in asked

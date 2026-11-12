@@ -57,6 +57,10 @@ const IssuesLive = lazyScreen(async () => (await import("../../screens/TAX-06/li
 const ActivityLive = lazyScreen(
   async () => (await import("../../screens/TAX-07/live")).ActivityLive,
 );
+// TASK-7323: TAX-08's live drawer on `?ov=assistant` (a fixture build keeps the artboards).
+const AssistantLive = lazyScreen(
+  async () => (await import("../../screens/TAX-08/live")).AssistantLive,
+);
 
 /** The return's engagement (the frame's own record read; one cache entry). */
 function useEngagementOf(returnId: string): string | undefined {
@@ -135,6 +139,15 @@ function Workspace({
           >
             {children ?? (PLANNED_VISIBLE ? <EmptyState title="Not built yet" /> : null)}
           </WorkspaceScreen>
+          {!FIXTURES && search.ov === "assistant" ? (
+            <AssistantLive
+              returnId={returnId}
+              open
+              onClose={() => {
+                void navigate({ to: ".", search: {} });
+              }}
+            />
+          ) : null}
         </FeatureGate>
       </FeatureGate>
     </div>

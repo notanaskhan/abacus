@@ -35,6 +35,7 @@ from abacus.kernel.crypto import seal
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
+from abacus.modules.agents.api import capability_ready
 from abacus.modules.engagements.api import functions_on, get_ref, work_item_engagement
 from abacus.modules.evidence.api import engagement_documents
 from abacus.modules.identity.api import AuthContext, Resource, allowed_actions, authorise, names_of
@@ -396,6 +397,23 @@ class Summary:
     allowed: list[str]
     # TASK-7322: BH-TAX-02's signer, for a viewer who may request final approval; else None.
     final_approver_user_id: UUID | None = None
+    # TASK-7323: TAX-08's availability for this person on the return's engagement.
+    assistant: str = "agents_off"
+
+
+# TASK-7323 (SPEC-649 AC-6.1, AC-6.8): `tax.assistant`'s availability reason, as the workspace's
+# `assistant` word. Consent shows the chip (the drawer says why); a firm-wide stop hides it.
+_ASSISTANT_OF: Final[dict[str, str]] = {
+    "consent_7216": "consent_required",
+    "paused": "agents_off",
+    "ai_policy_off": "agents_off",
+}
+
+
+def assistant_word(ready: bool, reason: str | None) -> str:
+    if ready:
+        return "available"
+    return _ASSISTANT_OF.get(reason or "", "ai_unavailable")
 
 
 async def summary(ctx: AuthContext, return_id: UUID) -> Summary:
@@ -413,6 +431,7 @@ async def summary(ctx: AuthContext, return_id: UUID) -> Summary:
             {"r": return_id},
         )
     held = await allowed_actions(ctx, resource, WORKSPACE_ACTIONS)
+    ready, reason = await capability_ready(ctx, engagement, "tax.assistant")
     signer = (
         await signer_for(ctx.tenant_id, (await get_ref(ctx, engagement)).client_id)
         if "tax_return.request_approval" in held
@@ -424,4 +443,5 @@ async def summary(ctx: AuthContext, return_id: UUID) -> Summary:
         cast(str | None, state),
         [a for a in WORKSPACE_ACTIONS if a in held],
         signer,
+        assistant_word(ready, reason),
     )
