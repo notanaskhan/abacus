@@ -44,6 +44,7 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.dispatch import signal_workflow
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.agents.events import RunPlanDecided
 from abacus.modules.agents.run_commands import RunNotEnded, retry_step, wake
 from abacus.modules.agents.run_plan import PlanStep
 from abacus.modules.agents.run_views import TERMINAL
@@ -222,6 +223,13 @@ async def _decide(
             _PLAN_ACTION[state],
             target=Target("agent_run", run_id),
             after=Ref(version=version, steps=len(current)),
+        )
+        # P-10-T49 (C13): the plan's "Waiting on you" row closes on the decision itself, not on
+        # the workflow's later state change.
+        tx.emit(
+            RunPlanDecided(
+                run_id=run_id, engagement_id=head.engagement_id, state=state, version=version
+            )
         )
     workflow = run_workflow_id(str(ctx.tenant_id), str(run_id))
     if head.state == _AWAITING:

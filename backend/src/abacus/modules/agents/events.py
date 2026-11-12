@@ -219,6 +219,18 @@ class RunNeedsInput(DomainEvent):
     user_id: Annotated[UUID, classified("internal")]
 
 
+class RunPlanDecided(DomainEvent):
+    """P-10-T49 (SPEC-647 AC-W2; C13): a person approved, edited or cancelled a run's plan; the
+    human-gate projector closes the plan's "Waiting on you" row (identifiers and codes only)."""
+
+    event_type: ClassVar[str] = "agent_run.plan_decided"
+
+    run_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    state: Annotated[str, classified("internal")]
+    version: Annotated[int, classified("internal")]
+
+
 class RunReadyForReview(DomainEvent):
     """P-10-T33: a v2 run succeeded ("Ready for review"); C16 `run_finished`, to its initiator."""
 
