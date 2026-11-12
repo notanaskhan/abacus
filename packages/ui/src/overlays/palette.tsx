@@ -28,6 +28,14 @@ export interface PaletteItem {
   hint?: string;
   icon?: ReactNode;
   run: () => void;
+  /** P-02-T10 (SHL-02): the context after "·" ("Household · Brooklyn, NY"). */
+  context?: string | null;
+  /** `[start, end)` offsets into `label` drawn at weight 500 (the matched substring). */
+  ranges?: readonly (readonly [number, number])[];
+  /** A status word or chip at the right (the owner's C2 word, a due chip). */
+  status?: ReactNode;
+  /** ⌘↵ / Ctrl+↵: open in a new tab; the palette stays open. */
+  runNewTab?: () => void;
 }
 
 export interface PaletteGroup {
@@ -47,10 +55,39 @@ export interface CommandPaletteProps {
   empty?: ReactNode;
   /** Hold the palette open in place for a specimen: no layer, no scrim, no trap. */
   forceState?: "open";
+  /** P-02-T10: `go` is SHL-02's frame (640 wide, 88 from the top, 40-high rows, 28-high group
+   * labels, a 36-high footer with the new-tab hint); `frame` is O5 as F-05-T20 drew it. */
+  variant?: "frame" | "go";
+  /** The layer's accessible name ("Go…" for SHL-02; never "Command palette" in its copy). */
+  title?: string;
+  /** The footer's key words, verbatim per platform ("Open in new tab", "Close"). */
+  hints?: { navigate: string; open: string; newTab?: string; newTabKey?: string; close?: string };
+  /** The polite live region's text ("6 results"). */
+  liveText?: string;
+}
+
+function Label({ text, ranges }: { text: string; ranges?: PaletteItem["ranges"] }): JSX.Element {
+  if (ranges === undefined || ranges.length === 0) return <>{text}</>;
+  const parts: ReactNode[] = [];
+  let at = 0;
+  for (const [start, end] of [...ranges].sort((a, b) => a[0] - b[0])) {
+    if (start < at || end > text.length) continue;
+    if (start > at) parts.push(text.slice(at, start));
+    parts.push(
+      <span key={start} data-match="" className="font-medium">
+        {text.slice(start, end)}
+      </span>,
+    );
+    at = end;
+  }
+  if (at < text.length) parts.push(text.slice(at));
+  return <>{parts}</>;
 }
 
 const BOX =
   "flex w-[560px] max-w-full flex-col gap-[4px] rounded-menu bg-nested p-[4px] shadow-menu";
+const GO_BOX =
+  "flex w-[640px] max-w-full flex-col gap-[4px] rounded-menu bg-nested p-[4px] shadow-menu";
 
 function Keycap({ children }: { children: ReactNode }): JSX.Element {
   return (
@@ -69,11 +106,19 @@ function Palette({
   empty,
   onPick,
   live,
+  variant = "frame",
+  hints,
+  liveText,
+  title = "Command palette",
 }: Required<Pick<CommandPaletteProps, "query" | "onQueryChange" | "groups" | "loading">> &
-  Pick<CommandPaletteProps, "placeholder" | "empty"> & {
+  Pick<
+    CommandPaletteProps,
+    "placeholder" | "empty" | "variant" | "hints" | "liveText" | "title"
+  > & {
     onPick: (item: PaletteItem) => void;
     live: boolean;
   }): JSX.Element {
+  const go = variant === "go";
   const listId = useId();
   const shown = useMemo(() => groups.filter((g) => g.items.length > 0), [groups]);
   const flat = useMemo(() => shown.flatMap((g) => g.items), [shown]);
@@ -91,13 +136,22 @@ function Palette({
       setActive((i) => Math.min(flat.length - 1, Math.max(0, i + step)));
     } else if (e.key === "Enter" && current !== undefined) {
       e.preventDefault();
+      if ((e.metaKey || e.ctrlKey) && current.runNewTab !== undefined) {
+        current.runNewTab();
+        return;
+      }
       onPick(current);
     }
   };
 
   return (
     <>
-      <FrameTitle className="sr-only">Command palette</FrameTitle>
+      <FrameTitle className="sr-only">{title}</FrameTitle>
+      {liveText !== undefined && (
+        <span role="status" aria-live="polite" className="sr-only">
+          {liveText}
+        </span>
+      )}
       <div className="overflow-hidden rounded-menu-inner bg-card">
         <div className="flex h-[46px] items-center gap-[10px] border-b-[0.5px] border-hair pr-[12px] pl-[14px]">
           <Icon name="search" size={15} className="text-ink-3" />
@@ -133,7 +187,14 @@ function Palette({
           ) : (
             shown.map((g) => (
               <div key={g.label} role="group" aria-label={g.label}>
-                <div className="px-[10px] pt-[9px] pb-[4px] text-meta text-ink-3">{g.label}</div>
+                <div
+                  className={cn(
+                    "px-[10px] text-meta text-ink-3",
+                    go ? "flex h-[28px] items-end pb-[4px]" : "pt-[9px] pb-[4px]",
+                  )}
+                >
+                  {g.label}
+                </div>
                 {g.items.map((item) => {
                   const on = item === current;
                   return (
@@ -149,7 +210,8 @@ function Palette({
                         onPick(item);
                       }}
                       className={cn(
-                        "flex h-[36px] w-full cursor-pointer items-center gap-[10px] rounded-tile px-[10px] text-body transition-colors",
+                        "flex w-full cursor-pointer items-center gap-[10px] rounded-tile px-[10px] text-body transition-colors",
+                        go ? "h-[40px]" : "h-[36px]",
                         on && "bg-nav-fill",
                       )}
                     >
@@ -158,7 +220,18 @@ function Palette({
                           {item.icon}
                         </span>
                       )}
-                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        <Label
+                          text={item.label}
+                          {...(item.ranges === undefined ? {} : { ranges: item.ranges })}
+                        />
+                        {item.context != null && item.context !== "" && (
+                          <span className="text-ink-3"> · {item.context}</span>
+                        )}
+                      </span>
+                      {item.status !== undefined && (
+                        <span className="flex flex-none items-center">{item.status}</span>
+                      )}
                       {item.hint !== undefined && (
                         <span className="max-w-[45%] truncate text-meta text-ink-3">
                           {item.hint}
@@ -172,13 +245,32 @@ function Palette({
           )}
         </div>
       </div>
-      <div className="flex h-[32px] items-center justify-between pr-[10px] pl-[12px]">
+      <div
+        className={cn(
+          "flex items-center justify-between pr-[10px] pl-[12px]",
+          go ? "h-[36px]" : "h-[32px]",
+        )}
+      >
         <Wordmark size={12.5} />
         <div className="flex items-center gap-[6px] text-meta text-ink-3">
           <Keycap>↑↓</Keycap>
-          <span className="mr-[6px]">Navigate</span>
+          <span className="mr-[6px]">{hints?.navigate ?? "Navigate"}</span>
           <Keycap>↵</Keycap>
-          <span>Open</span>
+          <span className={hints?.newTab === undefined ? "" : "mr-[6px]"}>
+            {hints?.open ?? "Open"}
+          </span>
+          {hints?.newTab !== undefined && (
+            <>
+              <Keycap>{hints.newTabKey ?? "⌘↵"}</Keycap>
+              <span className="mr-[6px]">{hints.newTab}</span>
+            </>
+          )}
+          {hints?.close !== undefined && (
+            <>
+              <Keycap>esc</Keycap>
+              <span>{hints.close}</span>
+            </>
+          )}
         </div>
       </div>
     </>
@@ -195,7 +287,12 @@ export function CommandPalette({
   placeholder = "Search clients, engagements and actions",
   empty,
   forceState,
+  variant = "frame",
+  title = "Command palette",
+  hints,
+  liveText,
 }: CommandPaletteProps): JSX.Element {
+  const box = variant === "go" ? GO_BOX : BOX;
   const body = (live: boolean, onPick: (item: PaletteItem) => void): JSX.Element => (
     <Palette
       query={query}
@@ -206,11 +303,15 @@ export function CommandPalette({
       empty={empty}
       onPick={onPick}
       live={live}
+      variant={variant}
+      title={title}
+      {...(hints === undefined ? {} : { hints })}
+      {...(liveText === undefined ? {} : { liveText })}
     />
   );
   if (forceState === "open") {
     return (
-      <div role="group" aria-label="Command palette" className={BOX}>
+      <div role="group" aria-label={title} className={box}>
         <FrameMode live={false}>{body(false, () => undefined)}</FrameMode>
       </div>
     );
@@ -220,11 +321,14 @@ export function CommandPalette({
       kind="palette"
       open={open}
       onOpenChange={onOpenChange}
-      title="Command palette"
+      title={title}
       scrim="dialog"
       centred
-      scrimClassName="flex items-start justify-center pt-[96px]"
-      className={BOX}
+      scrimClassName={cn(
+        "flex items-start justify-center",
+        variant === "go" ? "pt-[88px]" : "pt-[96px]",
+      )}
+      className={box}
       motion="motion-reveal data-[state=closed]:motion-fade-out"
       initialFocus="field"
       noDescription

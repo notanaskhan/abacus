@@ -15,6 +15,10 @@ import { InterimSupport } from "./InterimSupport";
 
 // Go… is its own chunk, loaded the first time it opens, then kept mounted (F-05-T17, TASK-1368).
 const InterimGo = lazy(async () => ({ default: (await import("./InterimGo")).InterimGo }));
+// P-02-T10 (DEC-4615): SHL-02 replaces the interim frame while `search.palette` is on.
+const CommandPaletteData = lazy(async () => ({
+  default: (await import("../../screens/SHL-02")).Go,
+}));
 
 // The firm toolbar's data (P-01-T02; SHL-01). The Toolbar (F-05-T18) draws; this decides what it
 // draws: the 13 items of nav.ts in order, the lit item from the manifest's `navArea` (b, g) or
@@ -68,6 +72,7 @@ export function useFirmToolbar({
   const unread = useUnreadCount();
   // R2's second tooltip line names SHL-02's actions; it shows once they exist (AC 1.1.8).
   const palette = useFlag("palette") === true;
+  const searchOn = useFlag("search.palette") === true;
   const [go, setGo] = useState(false);
   const [goLoaded, setGoLoaded] = useState(false);
   if (go && !goLoaded) setGoLoaded(true);
@@ -115,7 +120,23 @@ export function useFirmToolbar({
     <>
       {goLoaded && (
         <Suspense fallback={null}>
-          <InterimGo open={go} onOpenChange={setGo} onArea={goTo} />
+          {searchOn ? (
+            <CommandPaletteData
+              open={go}
+              onOpenChange={setGo}
+              mac={typeof navigator !== "undefined" && /Mac|iPhone|iPad/u.test(navigator.platform)}
+              onOpen={(href, newTab) => {
+                if (newTab) {
+                  window.open(href, "_blank", "noopener");
+                  return;
+                }
+                setGo(false);
+                navigate(href);
+              }}
+            />
+          ) : (
+            <InterimGo open={go} onOpenChange={setGo} onArea={goTo} />
+          )}
         </Suspense>
       )}
       <InterimSupport open={support} onOpenChange={setSupport} />
