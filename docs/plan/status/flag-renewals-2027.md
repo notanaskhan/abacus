@@ -34,6 +34,25 @@ N-01 §0, ADR-089: `inbox.firm_intake`, `files.browser`, `portal.intake_upload` 
 
 A renewal restarts `created` on the day it is made and may reach at most 90 days (ADR-089); record the outcome of each row here.
 
+## The R-01 portal and client-mail flags (R-01-T36)
+
+R-01 §0 and ADR-089: `portal.drop_sort`, `portal.third_party_room`, `portal.settings_editor`,
+`communications.firm_sender_domain` and `follow_ups.scheduled_send` each carry a calendared renewal
+or retirement. All five were created 2026-10-24 to 10-26 and expire 2027-04-21 under the DEC-137
+override (`portal.yaml`, `communications.yaml`), so they ride the S9 renewal bundle with the flags
+above. Each is flipped per firm by `docs/runbooks/r01-portal-flip.md` in the Tue Jul 13, 2027
+window, which waits on M10's "delta #1 closed" (DEC-1389) and a live firm (DEC-1391).
+
+| Flag | Owner | Expires | Due | Action | Condition |
+|---|---|---|---|---|---|
+| `portal.settings_editor` | ayushkbhatia | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | Gates template and settings writes. Renew on May 26 to at most Tue Aug 24, 2027 (past the Jul 13 window); retire in a train before Sep 1 once on for every live firm |
+| `communications.firm_sender_domain` | notanaskhan | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | The per-firm switch between the firm's domain and the neutral sender (RB-20's containment), so it outlives the rollout: renew each quarter while any firm's domain is unverified |
+| `portal.drop_sort` | notanaskhan | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | RB-43 §15's containment for automatic linking. Renew on May 26 to at most Aug 24; retire once on for every live firm for one season without a wrong link |
+| `portal.third_party_room` | ayushkbhatia | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | Gates POR-14 and invitations on delegation. Renew on May 26 to at most Aug 24; retire once on for every live firm |
+| `follow_ups.scheduled_send` | notanaskhan | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | System-scheduled reminders (DEC-74's non-default mode). A firm choice that stays a switch: renew each quarter; never retire while `draft_for_person` is the default |
+
+A renewal restarts `created` on the day it is made and may reach at most 90 days (ADR-089); record the outcome of each row here.
+
 ## Q-02's firm export flag (Q-04-T350)
 
 Q-04-T350 retires `compliance.firm_export` in the **Thu Aug 5, 2027** train, before its **Wed Aug 25, 2027** expiry, once on-demand firm export works at every live firm (Q-02 hand-off, Q-02-T51). No live firm exists (DEC-1391), so its retirement condition cannot hold: under that decision's rule 3 the flag is renewed on its calendar instead. Created 2026-10-24, it expires 2027-04-21 under the DEC-137 override (`docs/architecture/feature-flags/evidence.yaml`).

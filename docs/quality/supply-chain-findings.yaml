@@ -37,3 +37,24 @@ findings:
     package: zlib1g 1:1.3.dfsg+really1.3.1-1+b1 (python:3.12-slim@sha256:4840d514)
     first_seen: 2026-11-07
     note: Debian fixed in 1:1.3.dfsg+really1.3.1-1+deb13u1; runtime image upgrades zlib1g; base digest not yet rebuilt
+  - id: py/polynomial-redos:alert-21
+    source: codeql
+    severity: high
+    package: backend/src/abacus/modules/evidence/export_download.py (alert 21, the Range header)
+    first_seen: 2026-10-27
+    closed: 2026-11-12
+    note: quadratic on a header of spaces; possessive quantifiers, same headers match (Q-03-T148, TASK-7805)
+  - id: py/polynomial-redos:alert-24
+    source: codeql
+    severity: high
+    package: backend/src/abacus/modules/reporting/templates.py (alert 24, has_markup)
+    first_seen: 2026-10-30
+    closed: 2026-11-12
+    note: quadratic on "<" and spaces or repeated "<!"; opener matched alone, one ">" lookup (Q-03-T148, TASK-7805)
+  - id: py/polynomial-redos:alert-27
+    source: codeql
+    severity: high
+    package: backend/src/abacus/modules/assurance/governance_comms.py (alert 27, the amount check)
+    first_seen: 2026-11-09
+    closed: 2026-11-12
+    note: quadratic on a run of digits; search-equivalent linear pattern (Q-03-T148, TASK-7805)

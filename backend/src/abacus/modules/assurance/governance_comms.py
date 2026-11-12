@@ -82,7 +82,11 @@ STANDARD: Final[dict[str, str]] = {
 }
 REQUIRED: Final = frozenset({"planning_260", "completion_260"})
 DUE_AFTER_RELEASE: Final = timedelta(days=60)
-_AMOUNT: Final = re.compile(r"\$\s?\d|\d[\d,]*\.\d{2}\b|\b\d{1,3}(,\d{3})+\b")
+# Read with `.search` only (is there an amount?). Written so a search is linear (Q-03-T148,
+# CodeQL py/polynomial-redos): `\d,*\.\d{2}\b` finds exactly the texts `\d[\d,]*\.\d{2}\b` found
+# (take the last digit before the cents), and `\b\d{1,3},\d{3}\b` exactly those
+# `\b\d{1,3}(,\d{3})+\b` found (take the last two groups).
+_AMOUNT: Final = re.compile(r"\$\s?\d|\d,*\.\d{2}\b|\b\d{1,3},\d{3}\b")
 _MATERIALITY: Final = re.compile(r"\bmateriality\b", re.IGNORECASE)
 _SAS_114: Final = re.compile(r"\bSAS\s*114\b", re.IGNORECASE)
 
