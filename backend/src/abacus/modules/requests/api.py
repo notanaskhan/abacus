@@ -436,3 +436,6 @@ _register_effects()
 from abacus.modules.requests import (  # noqa: E402
     questionnaire_editor as _questionnaire_editor,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
 )
+
+# P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
+from abacus.modules.requests import search as _search  # noqa: E402, F401

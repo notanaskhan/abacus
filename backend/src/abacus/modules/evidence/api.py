@@ -819,6 +819,8 @@ register_wisp_document_reader(latest_document)
 register_file_store(screen_for_store, read_staged)
 
 # S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+# P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
+from abacus.modules.evidence import search as _search  # noqa: E402, F401
 from abacus.modules.evidence.form_extraction import Extracted as ExtractedField  # noqa: E402
 from abacus.modules.evidence.form_extraction import extract as extract_form  # noqa: E402
 from abacus.modules.evidence.form_extraction import identify as identify_form  # noqa: E402

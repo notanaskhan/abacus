@@ -52,3 +52,6 @@ __all__ = [
     "register_client_policy",
     "registered_kinds",
 ]
+
+# P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
+from abacus.modules.collaboration import search as _search  # noqa: E402, F401

@@ -427,3 +427,6 @@ __all__ = [
     "waiting_for_work_item",
     "write_follow_up_policy",
 ]
+
+# P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
+from abacus.modules.communications import search as _search  # noqa: E402, F401

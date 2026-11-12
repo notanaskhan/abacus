@@ -683,3 +683,6 @@ from abacus.modules.engagements.audit_labels import (  # noqa: E402
 )
 
 _register_audit_labels()
+
+# P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
+from abacus.modules.engagements import search as _search  # noqa: E402, F401
