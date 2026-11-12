@@ -225,6 +225,21 @@ On staging with the synthetic test firm PF-X1 (Brightwater Hale; DEC-1530), from
    fields appear (with `evidence.form_extraction` covering tax forms).
 3. Record the drill in the rehearsal log below with the times.
 
+## 15. Portal drops that do not sort (R-01-T09; `portal.drop_sort`)
+A client's drop is sorted by code after extraction (`evidence/drops.py`, `upload_processing`
+`patched("portal_drop_sort")`). A drop that is not linked is not lost: it stays `waiting` on the
+binder and the engagement's leads get `portal.drop_unsorted`.
+1. **Many drops waiting at one firm:** expected when files are ambiguous (the top request must
+   match on kind plus a date or account and score twice the next). The leads file them; nothing to
+   fix. Check the drop poll (`GET /v1/portal/drops/{batch_id}`) shows them received.
+2. **No drop sorts anywhere:** the extraction step is failing (§4 and §6 above) or the
+   upload-processing worker is down (RB-23): the sort runs only after extraction.
+3. **A drop linked to the wrong request:** it was a rule fulfilment, a suggestion; the firm voids
+   it with a reason (`POST …/fulfilments/{id}/void`) and links the right one. Never delete the
+   version. If the dropper could not see the request it was linked to, that is RB-08.
+4. **Contain:** `portal.drop_sort` off for the firm. Drops are still accepted and wait for the firm;
+   only the automatic link stops.
+
 ## Rehearsal log
 
 | Date | Who | Drill | Result |
