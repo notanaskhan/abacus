@@ -168,6 +168,10 @@ class WorkbookCellOut(BaseModel):
     state: Annotated[CellState, Internal]
     citation_ids: Annotated[list[UUID], Internal] = Field(default_factory=list[UUID])
     version: Annotated[int, Internal]
+    # T-05-T35 (DEC-4620): an edit's dependents recomputed, and a reviewer's proposal note
+    recomputed: Annotated[list[str], Internal] = Field(default_factory=list[str])
+    proposal_note_id: Annotated[UUID | None, Internal] = None
+    checkpoint_id: Annotated[UUID | None, Internal] = None
 
 
 class WorkbookSheetCellsOut(BaseModel):
@@ -752,7 +756,7 @@ async def entity_cell_route(
 
 @workbook_router.put(
     f"{_R}/workbook/cells/{{address}}", action="workbook.edit", response_model=WorkbookCellOut,
-    errors=(409, 501),
+    errors=(409,),
 )  # fmt: skip
 async def entity_edit_cell_route(
     return_id: UUID,
@@ -761,9 +765,40 @@ async def entity_edit_cell_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> WorkbookCellOut:
-    """`cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422)."""
+    """`cell_version_conflict`, `cells_locked_by_run` (409); `formula_invalid` (422). T-05-T35
+    (DEC-4620): the preparer's edit recomputes its dependents and saves a checkpoint; a
+    reviewer's edit becomes a proposal note on the cell and the cell does not change."""
+    from abacus.modules.agents.api import work_item_runs
+    from abacus.modules.tax.cell_edit import edit_cell
+    from abacus.modules.tax.overview import load_return
+
     await _flag_on(ctx)
-    _not_yet()
+    form, resource = await _workbook_read(ctx, return_id)
+    await authorise(ctx, "workbook.edit", resource)
+    loaded = await load_return(ctx, return_id)
+    runs = await work_item_runs(ctx.tenant, f"tax_return:{return_id}", 5)
+    done = await edit_cell(
+        ctx,
+        return_id=return_id,
+        engagement_id=loaded.facts.engagement_id,
+        form=form,
+        address_text=address,
+        expected_version=body.expected_version,
+        value=body.value,
+        formula=body.formula,
+        run_open=any(r.active for r in runs),
+    )
+    return WorkbookCellOut(
+        address=done.address.partition("!")[2],
+        value=done.value,
+        formula=done.formula,
+        author="person",
+        state="flagged" if done.proposal_note_id else ("formula" if done.formula else "value"),
+        version=done.version,
+        recomputed=list(done.recomputed),
+        proposal_note_id=done.proposal_note_id,
+        checkpoint_id=done.checkpoint_id,
+    )
 
 
 @workbook_router.get(

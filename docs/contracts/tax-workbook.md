@@ -56,6 +56,8 @@ The P-10 run API (`/v1/agent-runs/{run}` …), P-04's sign-off, proposal, issue 
 
 Served so far (S40): the trial balance, its tallies and journal entries (T-05-T33, DEC-4618); Schedule K, the Form 8825 breakdown, capital accounts and the M-2 (T-05-T34, DEC-4619). T-05-T34 adds, additively: `WorkbookCapitalRowOut.name`, `WorkbookCapitalAccountsOut.totals` and `.item_l`, `WorkbookM2Out.lines` and `.item_l` (Item L's ending capital against the M-2's line 9: `tie`, or `off` with the difference).
 
+The cell edit (T-05-T35, DEC-4620) is served. The cell path names the sheet (`05!H12`, URL-encoded). The preparer's edit recomputes its dependents synchronously, up to 500 cells; beyond that it answers 422 `recompute_too_large`. It then saves a checkpoint named "Edited 05 Capital!H12 by ‹person›". A reviewer's edit becomes a review note anchored on the cell: the response has state `flagged` and carries `proposal_note_id`, and the cell does not change. A person with neither function gets 403 `preparer_function_required`. The other errors are 409 `cell_version_conflict` or `cells_locked_by_run`, and 422 `formula_invalid` for grammar errors and cycles. `WorkbookCellOut` gains `recomputed`, `proposal_note_id` and `checkpoint_id`, all additive.
+
 ## 2. Models and classification
 Pydantic models in the code file, every field classified. Every workbook value, formula, memo body, K-1 or partner payload and figure is tax return information (Restricted, `tri`; C19). A partner's TIN is never in a response: `tin_last4` only; the reveal is P-12's logged path (`tin.reveal`, step-up MFA, `not_offshore`). Money is exact `Decimal` with two places.
 

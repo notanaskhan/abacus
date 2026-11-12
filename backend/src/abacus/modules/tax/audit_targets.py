@@ -34,7 +34,9 @@ _ROWS = {
         "SELECT id, engagement_id FROM residency_determinations WHERE id = ANY(:ids)"
     ),
 }
-AUDIT_KINDS = frozenset({"tax_return", "work_item"}) | frozenset(_ROWS)
+# T-05-T35 (DEC-4620): the entity workbook's events (`workbook.step_written`,
+# `workbook.cell_edited`) target the return's work item, like `tax_return`.
+AUDIT_KINDS = frozenset({"tax_return", "work_item", "tax_workbook"}) | frozenset(_ROWS)
 _ENTITIES = {
     "tax_authorization": text(
         "SELECT id, client_entity_id FROM tax_authorizations WHERE id = ANY(:ids)"
