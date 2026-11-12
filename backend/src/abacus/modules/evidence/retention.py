@@ -295,6 +295,9 @@ RECORD_TYPES: Final = frozenset(
     # the filing date (7 years from filing by policy; chapter 06's floor is 3 years under
     # §6501(a), 6 for a substantial omission). Years are content like every other's.
     | {"tax_workbook", "preparer_memo"}
+    # I-02-T06 (DEC-4611; I-02 Q3, DEC-71): the Today brief's rows, not decision-relevant; their
+    # 90-day default is content (the published defaults set), never a literal here.
+    | {"daily_briefing"}
 )
 _DAYS_PER_YEAR: Final = Decimal("365.25")
 _EFFECTIVE_YEARS = text(
