@@ -17,6 +17,10 @@
 - **Unapprove from the tree.** Each document carries its live approval at the shown level (the
   latest, when several people approved there), so Unapprove reaches an approval made in another
   session or by a colleague at the same level; `reverse` still checks the viewer holds the level.
+- **The code mismatch check** (SPEC-649 AC-1.4, TASK-7330): a document a box of which printed a
+  figure other than the field citing it reads `mismatch` (with the field's key) until the field is
+  fixed, and approving it answers 409 `mismatch` with `facts.field_key`. An approval made before
+  the mismatch stays approved; Unapprove still works.
 """
 
 from __future__ import annotations
@@ -39,6 +43,7 @@ from abacus.modules.agents.api import capability_ready
 from abacus.modules.engagements.api import functions_on, get_ref, work_item_engagement
 from abacus.modules.evidence.api import engagement_documents
 from abacus.modules.identity.api import AuthContext, Resource, allowed_actions, authorise, names_of
+from abacus.modules.tax.leadsheets import mismatched_documents
 
 Level = Literal["preparer", "detail", "manager"]
 LEVELS: Final[tuple[Level, ...]] = ("preparer", "detail", "manager")
@@ -81,6 +86,13 @@ class VersionSuperseded(DomainConflict):
     code = "version_superseded"
 
 
+class Mismatch(DomainConflict):
+    """SPEC-649 AC-1.4: a box of the document printed a figure other than the field citing it;
+    `facts.field_key` names the field. Fix the field (or raise an issue) before approving."""
+
+    code = "mismatch"
+
+
 class AlreadyReversed(DomainConflict):
     code = "already_reversed"
 
@@ -112,6 +124,8 @@ class Doc:
     version: int
     # TASK-7322: the live approval at the shown level (the latest), for Unapprove.
     approval_id: UUID | None = None
+    # TASK-7330 (AC-1.4): the field whose figure disagrees with this document's box.
+    mismatch_field_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -173,6 +187,7 @@ async def tree(
     at = level or viewer_level(held)
     live = await _live(ctx, return_id)
     ids = {} if at is None else await _live_ids(ctx, return_id, at)
+    mismatched = await mismatched_documents(ctx, engagement, return_id)
     docs: list[Doc] = []
     needle = (q or "").strip().casefold()
     for version_id, _item, title, folder, number, latest in await engagement_documents(
@@ -186,15 +201,20 @@ async def tree(
             continue
         approved = at is not None and (version_id, at) in live
         total = sum(n for (v, _lv), n in live.items() if v == version_id)
+        field_key = mismatched.get(version_id)
+        state: Literal["unapproved", "approved", "mismatch"] = (
+            "approved" if approved else "mismatch" if field_key is not None else "unapproved"
+        )
         docs.append(
             Doc(
                 version_id,
                 title,
                 folder,
-                "approved" if approved else "unapproved",
+                state,
                 total,
                 number,
                 ids.get(version_id) if approved else None,
+                field_key if state == "mismatch" else None,
             )
         )
     review = sum(1 for d in docs if d.approval != "approved")
@@ -223,6 +243,11 @@ async def approve(
     number, latest = found
     if not latest or number != seen_version:
         raise VersionSuperseded
+    field_key = (await mismatched_documents(ctx, engagement, return_id)).get(evidence_version_id)
+    if field_key is not None:
+        # A field key may run to 100 characters; a fact to 64 (check_facts). Longer keys are
+        # left out of the facts rather than turning the 409 into a 500.
+        raise Mismatch(facts={"field_key": field_key} if len(field_key) <= 64 else None)
     fn = next(
         (
             f

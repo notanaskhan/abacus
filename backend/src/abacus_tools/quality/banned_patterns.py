@@ -1249,6 +1249,7 @@ LIST_EXEMPT = frozenset(
         # engagement (a proposal's rows, re-verified at approval; SHL-10's evidence list).
         ("src/abacus/modules/evidence/repository.py", "supported_citations_among"),
         ("src/abacus/modules/evidence/repository.py", "citation_versions_among"),
+        ("src/abacus/modules/evidence/repository.py", "citation_boxes_among"),  # TASK-7330
         ("src/abacus/modules/evidence/repository.py", "decisions_for_screenings"),
         # SPEC-035 Q3 (TASK-074): a template version's drafts are firm-wide, read after
         # `authorise(template_guidance.read)` on the firm; no engagement rows.
@@ -2508,6 +2509,7 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_p10t17_runtime_migrations_independent.py",
             "tests/integration/test_t04t24_individual_workspace_independent.py",  # S35, as above
             "tests/integration/test_t04t29_live_approval_ids.py",  # TASK-7322: the query, as above
+            "tests/integration/test_t04t17_leadsheets_matrix_links.py",  # TASK-7330: the queries
             "tests/integration/test_p10t18_runtime_tables_independent.py",
             "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
             "tests/integration/test_a07t20_immutable_independent.py",

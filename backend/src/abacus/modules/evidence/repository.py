@@ -1516,6 +1516,30 @@ async def citation_versions_among(
     return {r.id: r.source_id for r in rows.all()}
 
 
+async def citation_boxes_among(
+    session: AsyncSession, engagement_id: UUID, citation_ids: Sequence[UUID]
+) -> list[Citation]:
+    """T-04-T17 (INV-2): the document boxes among these citations: verified by code, shown,
+    on this engagement, never moved, broken or relinked, a `document_text` claim on an evidence
+    version. LIST_EXEMPT: by id, for a caller authorised on the engagement."""
+    if not citation_ids:
+        return []
+    rows = await session.execute(
+        select(Citation)
+        .where(
+            Citation.id.in_(list(citation_ids)),
+            Citation.engagement_id == engagement_id,
+            Citation.verified.is_(True),
+            Citation.kind == "document_text",
+            Citation.source_type == "evidence_version",
+            shown_citation(),
+            ~select(CitationEvent.id).where(CitationEvent.citation_id == Citation.id).exists(),
+        )
+        .order_by(Citation.created_at, Citation.id)
+    )
+    return list(rows.scalars().all())
+
+
 # --- The portal PBC read model (R-01-T07) --------------------------------------------------------
 
 

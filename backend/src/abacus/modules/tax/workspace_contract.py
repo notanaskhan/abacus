@@ -440,6 +440,7 @@ async def review_tree_route(
                 approvals_count=d.approvals_count,
                 version=d.version,
                 approval_id=d.approval_id,
+                mismatch_field_key=d.mismatch_field_key,
             )
             for d in docs
         ],
@@ -500,7 +501,27 @@ async def return_leadsheets_route(
     return_id: UUID, ctx: Ctx, form: Annotated[str, Query(max_length=20)] = "1040"
 ) -> LeadsheetsOut:
     await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
-    _not_yet()
+    from abacus.modules.tax.leadsheets import leadsheets
+
+    return LeadsheetsOut(
+        items=[
+            ReturnLeadsheetOut(
+                form=card.form,
+                title=card.title,
+                lines=[
+                    LeadsheetLineOut(
+                        line_key=line.line_key,
+                        label=line.label,
+                        amount=line.amount,
+                        contributing_field_keys=list(line.contributing_field_keys),
+                        mismatch=line.mismatch,
+                    )
+                    for line in card.lines
+                ],
+            )
+            for card in await leadsheets(ctx, return_id, form)
+        ]
+    )
 
 
 @workspace_router.get(
@@ -511,7 +532,23 @@ async def return_leadsheets_route(
 )
 async def sch_e_k1_matrix_route(return_id: UUID, ctx: Ctx) -> K1MatrixOut:
     await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
-    _not_yet()
+    from abacus.modules.tax.leadsheets import k1_matrix
+
+    found = await k1_matrix(ctx, return_id)
+    return K1MatrixOut(
+        rows=[
+            K1MatrixRowOut(
+                activity_id=r.activity_id,
+                label=r.label,
+                current_year=r.current_year,
+                prior_year=r.prior_year,
+                status=K1ActivityStatus(r.status),
+            )
+            for r in found.rows
+        ],
+        tax_year=found.tax_year,
+        prior_year=found.prior_year,
+    )
 
 
 @workspace_router.get(
@@ -521,7 +558,21 @@ async def field_links_route(
     return_id: UUID, ctx: Ctx, evidence_version_id: Annotated[UUID | None, Query()] = None
 ) -> FieldLinksOut:
     await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
-    _not_yet()
+    from abacus.modules.tax.leadsheets import field_links
+
+    return FieldLinksOut(
+        items=[
+            FieldLinkOut(
+                match_id=link.match_id,
+                evidence_version_id=link.evidence_version_id,
+                page=link.page,
+                bbox=list(link.bbox),
+                field_key=link.field_key,
+                line_key=link.line_key,
+            )
+            for link in await field_links(ctx, return_id, evidence_version_id)
+        ]
+    )
 
 
 @workspace_router.post(

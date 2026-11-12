@@ -55,6 +55,7 @@ from abacus.modules.review.field_values import (
     current_values,
     edited_by_a_person,
     field_timeline,
+    latest_citations,
     latest_sources,
     previous_value,
     record_value,
@@ -325,6 +326,7 @@ __all__ = [
     "gate_met",
     "issue_engagement",
     "issue_row",  # A-06-T11: a finding's issue status and version
+    "latest_citations",
     "latest_sources",
     "list_checkpoints",
     "list_issues",

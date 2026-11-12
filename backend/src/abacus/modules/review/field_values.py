@@ -330,6 +330,28 @@ async def latest_sources(
     return {(r.target_id, str(r.field_key)): (str(r.value_source), int(r.cites)) for r in rows}
 
 
+async def latest_citations(
+    tenant: TenantContext, target_type: str, target_ids: Sequence[UUID]
+) -> dict[tuple[UUID, str], tuple[UUID, ...]]:
+    """T-04-T17: each field's latest version's citation ids by `(target_id, field_key)` (an empty
+    tuple when that version cites nothing). The caller has authorised a read of the targets."""
+    if not target_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT DISTINCT ON (target_id, field_key) target_id, field_key, citation_ids "
+                    "FROM field_value_versions "
+                    "WHERE target_type = :t AND target_id = ANY(:ids) "
+                    "ORDER BY target_id, field_key, seq DESC"
+                ),
+                {"t": target_type, "ids": list(target_ids)},
+            )
+        ).all()
+    return {(r.target_id, str(r.field_key)): tuple(r.citation_ids or ()) for r in rows}
+
+
 async def edited_by_a_person(
     tenant: TenantContext, target_type: str, target_ids: Sequence[UUID]
 ) -> set[UUID]:

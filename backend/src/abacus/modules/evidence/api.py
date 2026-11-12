@@ -290,7 +290,9 @@ from abacus.modules.evidence.run_files import (
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 from abacus.modules.evidence.screening_facts import (
+    CitationBox,
     ScreeningFacts,
+    citation_boxes,
     citation_sources,
     screening_facts,
     supported_citations,
@@ -559,6 +561,7 @@ __all__ = [
     "BackfillInput",
     "Candidate",
     "CitationAnchor",
+    "CitationBox",
     "CitationClaim",
     "CitationKind",
     "CitationLabel",
@@ -660,6 +663,7 @@ __all__ = [
     "attachment_tax_years",
     "check_ready",
     "check_upload_content",
+    "citation_boxes",
     "citation_cell_reason",
     "citation_cell_text",
     "citation_display",
