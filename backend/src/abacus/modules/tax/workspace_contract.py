@@ -11,6 +11,7 @@ values are TRI (`restricted`, §7216) and never leave as a model's text. Figures
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal, NoReturn, cast
@@ -357,6 +358,17 @@ class ResidencyOptionOut(BaseModel):
     recommended: Annotated[bool, Internal] = False
 
 
+class ResidencyFactOut(BaseModel):
+    """T-04-T39 (additive): one cited fact as code states it (TRI)."""
+
+    model_config = _frozen()
+
+    key: Annotated[str, Internal]
+    value: Annotated[dict[str, object], Tri]
+    citation_ids: Annotated[list[UUID], Internal]
+    source_kind: Annotated[str, Internal]
+
+
 class ReturnResidencyOut(BaseModel):
     model_config = _frozen()
 
@@ -365,6 +377,13 @@ class ReturnResidencyOut(BaseModel):
     options: Annotated[list[ResidencyOptionOut], Confidential]
     confirmed_by_name: Annotated[str | None, Confidential] = None
     confirmed_at: Annotated[datetime | None, Internal] = None
+    # T-04-T39 (additive): the determination, its conflict, cited facts, review point, tallies.
+    determination_id: Annotated[UUID | None, Internal] = None
+    conflict: Annotated[bool, Internal] = False
+    fact_rows: Annotated[list[ResidencyFactOut], Tri] = []
+    issue_id: Annotated[UUID | None, Internal] = None
+    version: Annotated[int, Internal] = 1
+    tallies: Annotated[dict[str, int], Internal] = {}
 
 
 class AllocationRowOut(BaseModel):
@@ -380,6 +399,13 @@ class StateAllocationOut(BaseModel):
     model_config = _frozen()
 
     rows: Annotated[list[AllocationRowOut], Tri]
+    # T-04-T39 (additive): code's totals and what the return does not hold yet.
+    federal_total: MaybeMoney = None
+    ny_agi: MaybeMoney = None
+    credit: MaybeMoney = None
+    credit_limit: MaybeMoney = None
+    addbacks: MaybeMoney = None
+    missing: Annotated[list[str], Internal] = []
 
 
 # --- routes (each 501, one action) ---------------------------------------------------------------
@@ -731,8 +757,48 @@ async def k1_override_route(treatment_id: UUID, body: K1OverrideIn, ctx: Ctx) ->
     f"{_R}/residency", action="residency.read", response_model=ReturnResidencyOut, errors=(501,)
 )
 async def residency_route(return_id: UUID, ctx: Ctx) -> ReturnResidencyOut:
+    """T-04-T39 (TXI-03 a to e): facts with citations, options with code's recommendation, the
+    status and the review point. 404 before a determination is opened."""
+    from abacus.modules.tax.residency_service import residency_view
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    view = await residency_view(ctx, return_id)
+    return ReturnResidencyOut(
+        status=ResidencyDeterminationStatus(view.status),
+        facts=[_fact_text(f.key, f.value) for f in view.facts],
+        options=[
+            ResidencyOptionOut(key=o.key, label=o.label, recommended=o.recommended)
+            for o in view.options
+        ],
+        confirmed_by_name=view.confirmed_by_name,
+        confirmed_at=view.confirmed_at,
+        determination_id=view.determination_id,
+        conflict=view.conflict,
+        fact_rows=[
+            ResidencyFactOut(
+                key=f.key,
+                value=dict(f.value),
+                citation_ids=list(f.citation_ids),
+                source_kind=f.source_kind,
+            )
+            for f in view.facts
+        ],
+        issue_id=view.issue_id,
+        version=view.version,
+        tallies=dict(view.tallies),
+    )
+
+
+def _fact_text(key: str, value: Mapping[str, object]) -> str:
+    """A fact's words from code's parts ("281 NYC days", "Main home: Rhinebeck")."""
+    if key == "days":
+        return f"{value.get('nyc', 0)} NYC days"
+    if key == "main_home_answer":
+        return f"Main home: {value.get('place', '')}"
+    places = cast(object, value.get("places") or value.get("localities") or [])
+    parts = cast(list[object], places) if isinstance(places, list) else []
+    joined = ", ".join(str(p) for p in parts)
+    return f"{key.replace('_', ' ').capitalize()}: {joined}".rstrip(": ")
 
 
 @workspace_router.post(
@@ -755,8 +821,48 @@ async def residency_proposal_route(return_id: UUID, ctx: Ctx) -> ReturnRunAccept
     errors=(501,),
 )
 async def state_allocation_route(return_id: UUID, ctx: Ctx) -> StateAllocationOut:
+    """T-04-T39 (TXI-03 allocation): income by jurisdiction, the IT-112-R credit and the IT-225
+    add-backs, computed by code from the return's fields."""
+    from abacus.modules.tax.residency_service import allocation_view
+
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    view = await allocation_view(ctx, return_id)
+    return StateAllocationOut(
+        rows=[
+            AllocationRowOut(
+                jurisdiction=ln.jurisdiction,
+                income=ln.amount if "credit" not in ln.label else None,
+                credits=ln.amount if "credit" in ln.label else None,
+                derivation=f"{ln.label}: {ln.derivation}" if ln.derivation else ln.label,
+            )
+            for ln in view.lines
+        ],
+        federal_total=view.federal_total,
+        ny_agi=view.ny_agi,
+        credit=view.credit,
+        credit_limit=view.credit_limit,
+        addbacks=view.addbacks,
+        missing=list(view.missing),
+    )
+
+
+@workspace_router.get(
+    f"{_R}/state-allocation.xlsx", action="export.create", response_model=bytes, errors=(501,)
+)
+async def state_allocation_xlsx_route(return_id: UUID, ctx: Ctx) -> Response:
+    """T-04-T39: the allocation as a deterministic xlsx; `export.create` needs a fresh MFA."""
+    from abacus.modules.tax.residency_service import allocation_view, allocation_xlsx
+
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    content = allocation_xlsx(await allocation_view(ctx, return_id))
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="state-allocation-{return_id}.xlsx"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @workspace_router.get(
