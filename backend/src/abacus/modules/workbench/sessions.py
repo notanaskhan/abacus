@@ -52,6 +52,7 @@ from abacus.modules.identity.api import (
     my_engagement_roles,
     walled_from,
 )
+from abacus.modules.workbench.session_events import SessionItemsChanged
 from abacus.modules.workbench.session_workflow import (
     SessionInput,
     WorkbenchSessionWorkflow,
@@ -210,6 +211,22 @@ async def _session_resource(ctx: AuthContext, row: SessionRow) -> Resource:
     if engagement is None:
         return Resource.firm(ctx.tenant_id)
     return (await get_ref(ctx, UUID(engagement))).resource()  # a wall answers 404
+
+
+async def readable_in_full(ctx: AuthContext, session_id: UUID) -> bool:
+    """TASK-7325: whether `ctx` may read the session's items now (the `session:<id>` topic): the
+    same checks as `get_session`, and a locked or omitted session reads False."""
+    async with tenant_session(ctx.tenant) as session:
+        row = await load_session(session, session_id)
+    if row is None:
+        return False
+    try:
+        await _readable(ctx, row)
+        await authorise(ctx, "session.read", await _session_resource(ctx, row))
+    except (NotFound, Forbidden):
+        return False
+    access = await viewer_access(ctx, row.client_scope, await _engagement_client(ctx, row))
+    return access == "open"
 
 
 async def get_session(ctx: AuthContext, session_id: UUID) -> SessionView:
@@ -372,6 +389,7 @@ async def post_message(
             target=Target("workbench_session", session_id),
             after=Ref(seq=seq),
         )
+        tx.emit(SessionItemsChanged(session_id=session_id, seq=seq))
     signal = "answer" if answers_seq is not None else "user_message"
     await signal_with_start(
         WorkbenchSessionWorkflow,

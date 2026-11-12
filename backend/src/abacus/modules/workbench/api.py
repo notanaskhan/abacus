@@ -14,6 +14,7 @@ from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.workbench.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.workbench.run_links import session_links
 from abacus.modules.workbench.session_activities import SESSION_ACTIVITIES
+from abacus.modules.workbench.session_events import register as _register_session_topic
 from abacus.modules.workbench.session_workflow import (
     SessionInput,
     TurnDone,
@@ -31,6 +32,7 @@ from abacus.modules.workbench.sessions_contract import agent_badge_router, sessi
 
 # P-10-T43: the audit explorer places a session's events by its engagement (SPEC-304).
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+_register_session_topic()  # TASK-7325: `session:<id>` and `session.items_changed`
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (sessions_router, agent_badge_router)

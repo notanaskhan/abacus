@@ -243,3 +243,91 @@ describe("TAX-08 Assistant (live)", () => {
     });
   });
 });
+
+describe("TAX-08's plan changes (TASK-7325)", () => {
+  const write = (over: Record<string, unknown>) => ({
+    id: "w1",
+    key: "propose_field_changes",
+    kind: "proposal",
+    outcome: "proposed",
+    at: "2026-09-14T14:30:00Z",
+    decided_at: null,
+    decided_by_name: null,
+    decision: null,
+    proposal_id: "p1",
+    state: "waiting",
+    target_id: null,
+    target_type: null,
+    ...over,
+  });
+  const withPlan = (writes: unknown[]) => ({
+    "GET /v1/tax/returns/{return_id}/workspace": () => json(summary("available")),
+    "GET /v1/workbench/sessions": () =>
+      json({ items: [{ id: SESSION, title: "Box 18A", state: "live" }] }),
+    "GET /v1/workbench/sessions/{session_id}": () =>
+      json(
+        snapshot([
+          item(1, "user_message", { body: "Fix box 18A" }),
+          item(
+            2,
+            "plan",
+            { steps: [{ key: "s1", label: "Propose line 2a 1,550" }] },
+            { run_id: RUN },
+          ),
+        ]),
+      ),
+    "GET /v1/agent-runs/{run_id}/trace/writes": () => json(writes),
+    "GET /v1/agent-runs/{run_id}": () => json({ detail: "not_found" }, 404),
+    "GET /v1/proposals/{ref}": () => json({ detail: "not_found" }, 404),
+  });
+
+  it("a waiting change offers Approve adjustments…, which opens SHL-10 in place", async () => {
+    const calls = serve(withPlan([write({})]));
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "History" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Box 18A" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Approve adjustments…" }));
+    await waitFor(() => {
+      expect(calls.some((c) => c.key === "GET /v1/proposals/{ref}")).toBe(true);
+    });
+    expect(await screen.findByRole("dialog", { name: "Approve agent output" })).toBeTruthy(); // SHL-10
+    // Opening the sheet decides nothing: the person decides on SHL-10.
+    expect(calls.some((c) => c.key.includes("/approve"))).toBe(false);
+  });
+
+  it("a decided change reads who decided, with nothing to press", async () => {
+    serve(
+      withPlan([
+        write({ decision: "approved", decided_by_name: "Samuel Ito", state: "approved" }),
+      ]),
+    );
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "History" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Box 18A" }));
+    expect(await screen.findByText("✓ Approved by Samuel Ito")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Approve adjustments…" })).toBeNull();
+  });
+});
+
+describe("TAX-08's session topic (TASK-7325)", () => {
+  it("an item written invalidates that session's snapshot and no other", async () => {
+    const { RealtimeClient } = await import("../../app-core/realtime");
+    const { getSessionQueryKey } = await import("@abacus/api-client/query");
+    const { QueryClient } = await import("@tanstack/react-query");
+    const queries = new QueryClient();
+    const mine = getSessionQueryKey({ path: { session_id: SESSION } });
+    const other = getSessionQueryKey({ path: { session_id: RUN } });
+    queries.setQueryData(mine, snapshot([]));
+    queries.setQueryData(other, snapshot([]));
+    const live = new RealtimeClient(queries, () => (async function* () {})());
+    await live.handle({
+      seq: 7,
+      type: "invalidate",
+      topic: `session:${SESSION}`,
+      ref_type: "session",
+      ref_id: SESSION,
+    });
+    expect(queries.getQueryState(mine)?.isInvalidated).toBe(true);
+    expect(queries.getQueryState(other)?.isInvalidated).toBe(false);
+  });
+});

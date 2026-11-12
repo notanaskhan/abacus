@@ -9,12 +9,17 @@
 //   bound to the return (`POST /v1/workbench/sessions`, `subject_ref` tax_return:<id>) and posts
 //   the message (`POST …/messages`, with an Idempotency-Key). History lists the person's threads on
 //   this return (`GET /v1/workbench/sessions?subject_ref=…`).
-// - The thread is the session snapshot (`GET /v1/workbench/sessions/{id}`), polled while a turn
-//   runs: the session stream answers 501 until P-10-T26. Agent text renders only through
-//   AgentBlocks and AgentText. A plan opens its child run in the run pane (RunPane), where the
-//   person approves it. The changes it proposes reach SHL-10, so nothing here approves for the
-//   person and no agent-owned control reads approve, send or sign.
+// - The thread is the session snapshot (`GET /v1/workbench/sessions/{id}`). With `realtime.sse`
+//   on, the tab's stream carries `session:<id>` (TASK-7325): each item written invalidates the
+//   snapshot, beside the workspace's own topic. Without the stream it polls while a turn runs.
+//   Agent text renders only through AgentBlocks and AgentText.
+// - A plan opens its child run in the run pane (RunPane), where the person approves the plan.
+//   The changes the child run proposes are listed under it (its writes, TASK-7325): a waiting one
+//   offers "Approve adjustments…", which opens SHL-10's ApproveSheet in place (TAX-08's "→ SHL-10
+//   confirmation"), where the person approves, edits or rejects; a decided one reads who decided.
+//   Nothing here approves for the person, and no agent-owned control reads approve, send or sign.
 import {
+  agentRunWritesOptions,
   createSessionMutation,
   listSessionsOptions,
   postSessionMessageMutation,
@@ -32,12 +37,20 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { registerTopicKeys } from "../../app-core/realtime";
+import { useRealtimeInterval, useRealtimeStream } from "../../app-core/realtime-hooks";
 import { RunPane } from "../../domain/agents";
+import { ApproveSheet } from "../SHL-10";
 import { BLOCKER_COPY } from "../TAX-04/live-core";
 import { COPY, IDLE_PROMPTS } from "./copy";
 
-/** Polled while a turn runs (the session stream is P-10-T26's). */
+/** Polled while a turn runs, when the tab has no stream. */
 export const TURN_POLL_MS = 1500;
+
+// `session:<id>` refetches that session's snapshot (the generated key matches on `_id` and path).
+registerTopicKeys("session", (topic) => [
+  [{ _id: "getSession", path: { session_id: topic.slice("session:".length) } }],
+]);
 
 export const ASSISTANT_LIVE_COPY = {
   // SPEC-649 AC-6.8, verbatim.
@@ -46,6 +59,10 @@ export const ASSISTANT_LIVE_COPY = {
   agentsOff: "Paused for the whole firm",
   unavailable: COPY.notAllowed,
   openPlan: "Open plan",
+  // TAX-08's ApprovalCard: "Approve adjustments" → SHL-10 confirmation.
+  approveChanges: "Approve adjustments…",
+  decided: (decision: string, by: string | null) =>
+    `${decision === "approved" ? "✓ Approved" : decision === "rejected" ? "Rejected" : decision.replaceAll("_", " ")}${by === null ? "" : ` by ${by}`}`,
   back: "Back to the thread",
   noThreads: "No threads on this return yet.",
 } as const;
@@ -94,6 +111,53 @@ function Bubble({ body }: { body: string }): JSX.Element {
     >
       {body}
     </p>
+  );
+}
+
+/** The child run's proposed changes under its plan (TASK-7325). */
+function PlanChanges({ runId }: { runId: string }): JSX.Element | null {
+  const queryClient = useQueryClient();
+  const writes = useQuery(agentRunWritesOptions({ path: { run_id: runId } }));
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const proposals = (writes.data ?? []).filter(
+    (w) => w.kind === "proposal" && w.proposal_id != null,
+  );
+  if (proposals.length === 0) return null;
+  return (
+    <ul aria-label={COPY.cardTitle} data-plan-changes className="flex flex-col gap-[6px]">
+      {proposals.map((w) => (
+        <li key={w.id} className="flex items-center justify-between gap-[8px] text-[12.5px]">
+          <span>{COPY.cardTitle}</span>
+          {w.decision == null && w.state === "waiting" ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setReviewing(w.proposal_id ?? null);
+              }}
+            >
+              {ASSISTANT_LIVE_COPY.approveChanges}
+            </Button>
+          ) : w.decision != null ? (
+            <span className="text-ink-2">
+              {ASSISTANT_LIVE_COPY.decided(w.decision, w.decided_by_name)}
+            </span>
+          ) : null}
+        </li>
+      ))}
+      {reviewing !== null ? (
+        <ApproveSheet
+          proposalRef={reviewing}
+          open
+          onOpenChange={(next) => {
+            if (next) return;
+            setReviewing(null);
+            void queryClient.invalidateQueries({ queryKey: [{ _id: "agentRunWrites" }] });
+            void queryClient.invalidateQueries({ queryKey: [{ _id: "workspace" }] });
+          }}
+        />
+      ) : null}
+    </ul>
   );
 }
 
@@ -152,6 +216,7 @@ function Item({
               </li>
             ))}
           </ol>
+          {item.run_id ? <PlanChanges runId={item.run_id} /> : null}
           {item.run_id ? (
             <Button
               variant="secondary"
@@ -206,10 +271,13 @@ export function AssistantLive({
     ...listSessionsOptions({ query: { subject_ref: subjectRef } }),
     enabled: open && available && view === "history",
   });
+  useRealtimeStream(open && sessionId !== null ? [`session:${sessionId}`] : []);
+  const streaming = useRealtimeInterval("record") === false;
   const snapshot = useQuery({
     ...getSessionOptions({ path: { session_id: sessionId ?? "" } }),
     enabled: open && sessionId !== null,
-    refetchInterval: (q) => (q.state.data?.state === "running" ? TURN_POLL_MS : false),
+    refetchInterval: (q) =>
+      !streaming && q.state.data?.state === "running" ? TURN_POLL_MS : false,
   });
   const create = useMutation(createSessionMutation());
   const post = useMutation({

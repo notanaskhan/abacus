@@ -266,6 +266,24 @@ def register() -> None:
         "notification.created",
         realtime.Invalidation("notification", "notification_id", (("user", "user_id"),)),
     )
+    # DEC-4318 (tax/return_events.py): a stale sign-off and a reassigned issue move the return's
+    # counts. Registered here too, so `INVALIDATIONS` (composed at this module's import) holds
+    # them whichever of tax and notifications imports first (TASK-7325 found the order mattered).
+    for event_type, ref_field in (
+        ("sign_off.went_stale", "sign_off_id"),
+        ("issue.assigned", "issue_id"),
+    ):
+        realtime.register_invalidation(
+            event_type,
+            realtime.Invalidation(
+                event_type.split(".")[0], ref_field, (("engagement", "engagement_id"),)
+            ),
+        )
+    # TASK-7325: a session's items, on its own topic (the workbench registers who may subscribe).
+    realtime.register_invalidation(
+        "session.items_changed",
+        realtime.Invalidation("session", "session_id", (("session", "session_id"),)),
+    )
 
 
 __all__ = ["change_topics", "events_stream", "on_outbox_event", "parse_topics", "register"]
