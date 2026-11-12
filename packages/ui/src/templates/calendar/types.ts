@@ -25,6 +25,16 @@ export interface DeadlineChip {
   postponedTo?: string;
   /** The C21 rule text the popover shows ("15th day of the 3rd month … + 6-month extension"). */
   rule?: string;
+  /** F-07-T11: the work's stage as the server words it ("In review · Partner"). */
+  stage?: string;
+  /** Owner initials for the week row ("OB"). */
+  initials?: string;
+  /** The popover's team line ("OB / SI · signer DR"). */
+  team?: string;
+  /** The popover's blockers line ("11 open issues"). */
+  blockers?: string;
+  /** The popover's title ("2025 Form 1065 · Ridgeline Property Partners, LP"); `label` if absent. */
+  title?: string;
 }
 
 export interface CalendarHoliday {
@@ -63,4 +73,19 @@ export interface CalendarCopy {
   clearFilters: string;
   /** "Postponed → {date}". */
   postponed: (date: string) => string;
+}
+
+/** F-07-T11: the list view's and the rule popover's words. */
+export interface CalendarListCopy {
+  title: string;
+  noun: string;
+  due: string;
+  client: string;
+  filing: string;
+  rule: string;
+  stage: string;
+  team: string;
+  risk: string;
+  blockers: string;
+  openReturn: string;
 }

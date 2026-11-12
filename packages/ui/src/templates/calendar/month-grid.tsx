@@ -48,6 +48,7 @@ export interface MonthGridProps {
   onMonth?: (delta: 1 | -1) => void;
   onOpenChip?: (chip: DeadlineChip) => void;
   onHoverChip?: (chip: DeadlineChip, anchor: HTMLElement) => void;
+  onFocusChip?: (chip: DeadlineChip, anchor: HTMLElement) => void;
   onLeaveChip?: () => void;
   label?: string;
 }
@@ -65,6 +66,7 @@ export function MonthGrid({
   onMonth,
   onOpenChip,
   onHoverChip,
+  onFocusChip,
   onLeaveChip,
   label,
 }: MonthGridProps): JSX.Element {
@@ -172,6 +174,7 @@ export function MonthGrid({
                     copy={copy}
                     {...(onOpenChip === undefined ? {} : { onOpen: onOpenChip })}
                     {...(onHoverChip === undefined ? {} : { onHover: onHoverChip })}
+                    {...(onFocusChip === undefined ? {} : { onFocusIn: onFocusChip })}
                     {...(onLeaveChip === undefined ? {} : { onLeave: onLeaveChip })}
                   />
                 ))}
