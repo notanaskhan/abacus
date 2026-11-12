@@ -291,6 +291,10 @@ RECORD_TYPES: Final = frozenset(
     # A-07-T31 (DEC-3108; ADR P-14): the archived audit file, anchored on the report release; its
     # years are content like every other's, and the archive applies the five-year floor itself.
     | {"audit_documentation"}
+    # T-05-T22 (DEC-4404; ADR P-14): an entity return's workbook and its preparer memo, anchored on
+    # the filing date (7 years from filing by policy; chapter 06's floor is 3 years under
+    # §6501(a), 6 for a substantial omission). Years are content like every other's.
+    | {"tax_workbook", "preparer_memo"}
 )
 _DAYS_PER_YEAR: Final = Decimal("365.25")
 _EFFECTIVE_YEARS = text(

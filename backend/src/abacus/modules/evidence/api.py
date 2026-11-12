@@ -169,6 +169,7 @@ from abacus.modules.evidence.hold_runs import with_hold_inheritance
 from abacus.modules.evidence.holds import (
     HoldScope,
     HoldView,
+    engagement_on_hold,  # T-05-T22: records kept outside evidence versions
     holds_covering,
     list_holds,
     place_hold,
@@ -686,6 +687,7 @@ __all__ = [
     "effective_policies",
     "engagement_documents",
     "engagement_of_version",
+    "engagement_on_hold",
     "engagement_snapshots",
     "engagement_stored_versions",
     "engagement_version_leaves",

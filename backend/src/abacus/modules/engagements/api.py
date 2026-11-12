@@ -281,6 +281,7 @@ from abacus.modules.engagements.work_items import (
     set_assurance_profile,
     set_work_item_due,
     wall_assignment_count,
+    work_item_tri_subject,
 )
 from abacus.modules.engagements.work_items import engagement_type_of as engagement_type_of
 from abacus.modules.identity.api import (
@@ -658,6 +659,7 @@ __all__ = [
     "work_item_period",
     "work_item_provider",
     "work_item_titles",
+    "work_item_tri_subject",
 ]
 
 # S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).

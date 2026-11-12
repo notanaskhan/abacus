@@ -187,12 +187,15 @@ from abacus.modules.organisations.tax_profile import (
 )
 from abacus.modules.organisations.tin import (
     MaskedTin,
+    RevealReason,  # T-05-T22: a partner's reveal takes the same reason codes
     TinConflict,
     TinInvalid,
+    TinKind,
     TinKindNotAllowed,
     clear_tin,
     fingerprint_tin,
     mask_tin,
+    normalise_tin,  # T-05-T22: a partner's TIN is normalised as an entity's is
     seal_tin,
 )
 from abacus.modules.organisations.workflows import (
@@ -288,6 +291,7 @@ __all__ = [
     "OpenNoticeRowOut",
     "OverviewItem",
     "OverviewSection",
+    "RevealReason",
     "RoleAsked",
     "SectionRows",
     "SignerContact",
@@ -301,6 +305,7 @@ __all__ = [
     "TaxProfileFileOut",
     "TinConflict",
     "TinInvalid",
+    "TinKind",
     "TinKindNotAllowed",
     "TranscriptComparisonIn",
     "TranscriptComparisonOut",
@@ -355,6 +360,7 @@ __all__ = [
     "firm_names",
     "mask_tin",
     "normalise",
+    "normalise_tin",
     "office_name_column",
     "portal_activation",
     "readable_client",

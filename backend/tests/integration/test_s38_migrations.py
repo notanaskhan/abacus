@@ -1,7 +1,8 @@
-"""S38: 0830 (T-05-T20, the tax workbook and the preparer memo) goes down to 0821 and back up with
-forced row-level security; the app role never deletes; insert-only rows are never updated (not
-even by a superuser: the trigger refuses); inserts are column-granted; a formula cell carries its
-formula; adopting and approving a memo are a person's events.
+"""S38: 0830 (T-05-T20, the tax workbook and the preparer memo) and 0831 (T-05-T22, partner
+TINs) go down to 0821 and back up with forced row-level security; the app role never deletes;
+insert-only rows are never updated (the trigger refuses even a superuser); inserts are
+column-granted; a formula cell carries its formula; adopting and approving a memo are a person's
+events; a partner TIN is sealed, never plain.
 
 Row acceptance (T-05-T20): "The cell store accepts formula cells only through record_value, and
 memo versions refuse UPDATE and DELETE."
@@ -25,8 +26,9 @@ TABLES = (
     "preparer_memo_versions",
     "preparer_memo_events",
     "planning_opportunities",
+    "partner_tin_reveals",
 )
-INSERT_ONLY = ("preparer_memo_versions", "preparer_memo_events")
+INSERT_ONLY = ("preparer_memo_versions", "preparer_memo_events", "partner_tin_reveals")
 
 
 @pytest.fixture(scope="module")
@@ -51,12 +53,13 @@ def _column(database: sc.Database, table: str, column: str) -> bool:
     )
 
 
-def test_0830_goes_down_and_up_with_forced_rls(private_db: sc.Database) -> None:
+def test_0830_and_0831_go_down_and_up_with_forced_rls(private_db: sc.Database) -> None:
     migrate(private_db.owner_url, BEFORE, down=True)
     for table in TABLES:
         assert _value(private_db, f"SELECT to_regclass('{table}') IS NULL"), table
     assert not _column(private_db, "workpaper_cells", "formula")
     assert not _column(private_db, "workpaper_versions", "engine_manifest")
+    assert not _column(private_db, "partners", "tin_sealed")
     migrate(private_db.owner_url, "head")
     for table in TABLES:
         forced = _value(
@@ -72,6 +75,9 @@ def test_0830_goes_down_and_up_with_forced_rls(private_db: sc.Database) -> None:
         ("workpaper_cells", "engine_version"),
         ("workpaper_versions", "engine_manifest"),
         ("workpaper_versions", "inputs_hash"),
+        ("partners", "tin_sealed"),
+        ("partners", "tin_last4"),
+        ("partners", "tin_kind"),
     ):
         assert _column(private_db, table, column), (table, column)
 
@@ -117,12 +123,12 @@ def test_memo_versions_and_events_refuse_update_and_delete_even_for_a_superuser(
         ("DELETE", "BEFORE"),
     }
     # The trigger raises for every row, whoever runs the statement (the function body).
-    body = str(
-        _value(
-            private_db,
-            "SELECT prosrc FROM pg_proc WHERE proname = 'preparer_memo_rows_immutable'",
-        )
+    function = (
+        "partner_tin_reveals_immutable"
+        if table == "partner_tin_reveals"
+        else "preparer_memo_rows_immutable"
     )
+    body = str(_value(private_db, "SELECT prosrc FROM pg_proc WHERE proname = $1", function))
     assert "RAISE EXCEPTION" in body and "insert-only" in body
 
 
@@ -180,3 +186,27 @@ def test_planning_opportunities_are_open_only_in_t05(private_db: sc.Database) ->
         )
     )
     assert "'open'" in definition and "raised" not in definition
+
+
+def test_a_partner_tin_is_sealed_never_plain(private_db: sc.Database) -> None:
+    """0831: the TIN is an envelope plus its last four and kind, all three or none."""
+    kinds = _value(
+        private_db,
+        "SELECT data_type FROM information_schema.columns "
+        "WHERE table_name = 'partners' AND column_name = 'tin_sealed'",
+    )
+    assert kinds == "bytea"
+    plain = _value(
+        private_db,
+        "SELECT count(*) FROM information_schema.columns WHERE table_name = 'partners' "
+        "AND column_name IN ('tin', 'ein', 'ssn', 'itin')",
+    )
+    assert plain == 0
+    together = str(
+        _value(
+            private_db,
+            "SELECT pg_get_constraintdef(oid) FROM pg_constraint "
+            "WHERE conname = 'partners_tin_together'",
+        )
+    )
+    assert "tin_sealed IS NULL" in together and "tin_kind IS NULL" in together
