@@ -85,3 +85,10 @@ T-01: `backend/tests/contracts/c21_t01/`; T-02: `backend/tests/contracts/c21_t02
   `InstallmentDatesOut` under `due_date.read`. It answers 404 for a form with none.
 - **I-CLOCKS TY2027.** TY2027 Q4 is Tue Jan 18, 2028: Jan 15 is a Saturday and Mon Jan 17 is MLK
   Day. TY2028 Q4 is Tue Jan 16, 2029, because Mon Jan 15 is MLK Day.
+
+**Additive (T-05-T21, DEC-4408):** reference kind `tax_form_lines` (`TaxFormLinesPayload`: `form`
+1065, `tax_year`, rows `{key, schedule ∈ L·K·8825·M-1·M-2·M-3, line, label, side, mappable}`; diff
+identity `key`; migration 0832 widens the kind CHECK). Reader `platform.api.tax_form_lines_for(form,
+tax_year, *, as_of)` → `TaxFormLinesFor` (`lines`, `mappable_keys`, `reference_set_version_id`);
+none published: `LookupError`. Drafts are reviewed by the tax CPA
+(`docs/quality/golden-reviews/tax-form-lines-1065@1.md`) and published by two people.

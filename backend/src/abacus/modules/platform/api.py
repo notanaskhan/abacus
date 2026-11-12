@@ -161,6 +161,7 @@ from abacus.modules.platform.reference_sets import (
     reference_value,
     references_in_effect,
     retention_minimum,
+    tax_form_lines_for,  # T-05-T21
 )
 from abacus.modules.platform.reference_sets_contract import (
     DisasterPostponementsPayload,
@@ -455,6 +456,7 @@ __all__ = [
     "start_propagation",
     "start_provisioning",
     "start_reference_fanout",
+    "tax_form_lines_for",
     "tenant_key_workflow_id",
     "usage_month_of",
     "wedge_read",
