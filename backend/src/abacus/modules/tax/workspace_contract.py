@@ -729,9 +729,16 @@ async def k1_activity_route(activity_id: UUID, ctx: Ctx) -> K1ActivityOut:
     errors=(409, 501),
 )
 async def k1_treatment_run_route(activity_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
+    """T-04-T38: the analyst's `k1_treatments` mode on the activity's return (202), as the
+    person's agent; its treatments come back as one proposal for SHL-10."""
+    from abacus.modules.tax.analyst_modes import activity_return, return_facts, start_mode
+
     await _flag_on(ctx, TAX_AGENTS_ENABLED)
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    return_id = await activity_return(ctx, activity_id)
+    engagement, entity, year = await return_facts(ctx, return_id)
+    run = await start_mode(ctx, "k1_treatments", return_id, entity, year, engagement)
+    return ReturnRunAcceptedOut(agent_run_id=run)
 
 
 @workspace_router.post(
@@ -809,9 +816,15 @@ def _fact_text(key: str, value: Mapping[str, object]) -> str:
     errors=(409, 501),
 )
 async def residency_proposal_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
+    """T-04-T38: the analyst's `residency` mode on the return (202), as the person's agent; its
+    recommendation comes back as one proposal, a conflict as Action required."""
+    from abacus.modules.tax.analyst_modes import return_facts, start_mode
+
     await _flag_on(ctx, TAX_AGENTS_ENABLED)
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
-    _not_yet()
+    engagement, entity, year = await return_facts(ctx, return_id)
+    run = await start_mode(ctx, "residency", return_id, entity, year, engagement)
+    return ReturnRunAcceptedOut(agent_run_id=run)
 
 
 @workspace_router.get(

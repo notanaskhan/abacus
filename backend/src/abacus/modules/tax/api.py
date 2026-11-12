@@ -18,6 +18,7 @@ from abacus.modules.identity.api import AbacusRouter, AuthContext, register_scop
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
 from abacus.modules.reporting.api import register_k1_rows
+from abacus.modules.tax import analyst_modes as _analyst_modes
 from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax import drafter_workflow as _drafter
@@ -195,6 +196,7 @@ WORKFLOWS: dict[type, str] = {
     **_drafter.WORKFLOWS,  # T-04-T25: ReturnDrafterWorkflow
     **_fix_runner.WORKFLOWS,  # T-04-T31: FixRunWorkflow
     **_explain.WORKFLOWS,  # T-04-T31: IssueExplainWorkflow
+    **_analyst_modes.WORKFLOWS,  # T-04-T38: AnalystModeWorkflow
 }
 ACTIVITIES: tuple[object, ...] = (
     *k1_release.ACTIVITIES,
@@ -202,6 +204,7 @@ ACTIVITIES: tuple[object, ...] = (
     *_drafter.ACTIVITIES,
     *_fix_runner.ACTIVITIES,
     *_explain.ACTIVITIES,
+    *_analyst_modes.ACTIVITIES,
 )
 start_draft = _drafter.start_draft
 # T-04-T25: the history recorder's workflow and its types (abacus_tools reaches tax only here).
