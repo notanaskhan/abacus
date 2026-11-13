@@ -132,3 +132,18 @@ Sign-offs, proposals and decisions write P-04's events. Each action lands in the
   `approved` version row and a run of the `capital` and `k1s` groups (none while a run is open).
 - 04 Allocation, column D from row 2, holds the closed-books amount per segment that interim
   closing reads when the draft names none (written by T-05-T40's `interim_closing_706d`).
+
+## T-05-T40 · import mode and the part-2 steps (DEC-4703, DEC-4704)
+- `POST …/workbook/imports?kind=` takes the raw CSV or xlsx report (≤ 5 MB: 413
+  `import_too_large`; `import_invalid` 422 lists sheet, row, column and code) and answers
+  `import_id`, `kind` and the cells written; an open run is 409 `cells_locked_by_run`.
+- Cells: 02 A–H from row 2 for a depreciation report (with a SUM total row), 08 F–H from row 2 for
+  a state schedule; source `engine_import`, citation note "‹Depreciation report|State schedule›
+  import ‹sha256[:12]› row ‹n›".
+- 04 Allocation rows from 2: A period key (`p1`, `p2`), B start, C end, D the segment's amount.
+- 06 D is the state amount (first state's apportionment); 08 J–L the state share per recipient
+  and line.
+- A step with nothing to read answers `failed` with its class and one issue
+  (`run_step:<step>:<class>`, blocks final approval). `convention_706d` is the run's question step
+  when the convention is not settled; its answer is the option key.
+

@@ -398,10 +398,22 @@ async def on_sign_off_recorded(event: OutboxEvent) -> None:
         await _project(event.tenant_id, UUID(str(p["target_id"])), "prepared", "sign_off")
 
 
+async def tax_year_of(tenant: TenantContext, return_id: UUID) -> int:
+    """T-05-T40: the return's tax year, for a run step under the run's context (RLS-scoped)."""
+    async with tenant_session(tenant) as session:
+        year = await session.scalar(
+            text("SELECT tax_year FROM tax_returns WHERE work_item_id = :r"), {"r": return_id}
+        )
+    if year is None:
+        raise NotFound("tax_return")
+    return int(year)
+
+
 __all__ = [
     "on_binder_published",
     "on_sign_off_recorded",
     "overview",
     "record",
+    "tax_year_of",
     "transition",
 ]

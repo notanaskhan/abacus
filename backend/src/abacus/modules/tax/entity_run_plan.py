@@ -27,8 +27,9 @@ every dependency sits on a lower level, as P-10's `validate_plan` requires:
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 from typing import Final
 from uuid import UUID
 
@@ -141,20 +142,107 @@ def selected(scope: str, keys: Sequence[str]) -> list[EntityStep]:
     return [s for s in STEPS if s.key in chosen]
 
 
-def plan_steps(
-    chosen: Sequence[EntityStep], *, consent: bool, return_id: UUID | None = None
-) -> list[PlanStep]:
-    """The run's plan: dependencies outside the chosen set are dropped (their results stand)."""
-    keys = {s.key for s in chosen}
-    out: list[PlanStep] = []
+QUESTION_706D: Final = "convention_706d"
+CONVENTIONS: Final = ("calendar_day", "semi_monthly", "monthly")
+_TITLES: Final = {
+    "calendar_day": "Calendar day",
+    "semi_monthly": "Semi-monthly",
+    "monthly": "Monthly",
+}
+
+
+@dataclass(frozen=True)
+class ConventionQuestion:
+    """T-05-T40 (DEC-4704): the §706(d) convention is not settled for the return, so the run asks
+    it before `interim_closing_706d` (options and the recommendation computed by code)."""
+
+    options: tuple[dict[str, str], ...]
+    recommended: str
+    reason: str
+
+
+def convention_question(transfers: Sequence[date], proposed: str | None) -> ConventionQuestion:
+    """The three conventions of Reg. §1.706-4(c), each with the day each transfer is treated as
+    happening at the end of; the reader's proposed convention is recommended, else calendar day."""
+    from abacus.modules.tax.compute.entity.allocation import boundary
+
+    options: list[dict[str, str]] = []
+    for key in CONVENTIONS:
+        ends = [boundary(t, key) for t in transfers]  # type: ignore[arg-type] -- key is a Convention
+        days = ", ".join(f"{d:%b} {d.day}, {d.year}" for d in ends)
+        detail = f" (books close {days})" if days else ""
+        options.append({"key": key, "title": f"{_TITLES[key]}{detail}"})
+    if proposed in CONVENTIONS:
+        return ConventionQuestion(
+            tuple(options),
+            str(proposed),
+            "The agreement reader's proposal names this convention; a person confirms it.",
+        )
+    return ConventionQuestion(
+        tuple(options),
+        "calendar_day",
+        "The agreement names no convention; the calendar-day convention closes the books on the "
+        "transfer date (Reg. §1.706-4(c)).",
+    )
+
+
+def _levels(chosen: Sequence[EntityStep], extra: Mapping[str, tuple[str, ...]]) -> dict[str, int]:
+    """Plan levels as dependency depth, with `extra` edges (a question before its step)."""
+    keys = {s.key for s in chosen} | set(extra)
+    depth: dict[str, int] = {}
+    for key, deps in extra.items():
+        if key not in _BY_KEY:
+            depth[key] = 1 + max((depth.get(d, DEPTH.get(d, 0)) for d in deps), default=0)
     for step in chosen:
-        depends = tuple(d for d in step.depends_on if d in keys)
+        deps = tuple(d for d in step.depends_on if d in keys) + extra.get(step.key, ())
+        depth[step.key] = 1 + max((depth[d] for d in deps if d in depth), default=0)
+    return depth
+
+
+def plan_steps(
+    chosen: Sequence[EntityStep],
+    *,
+    consent: bool,
+    return_id: UUID | None = None,
+    convention: ConventionQuestion | None = None,
+) -> list[PlanStep]:
+    """The run's plan: dependencies outside the chosen set are dropped (their results stand).
+    With `convention` (the §706(d) convention unsettled) and `interim_closing_706d` chosen, a
+    question step `convention_706d` comes first and the step waits on it (T-05-T40)."""
+    keys = {s.key for s in chosen}
+    extra: dict[str, tuple[str, ...]] = {}
+    out: list[PlanStep] = []
+    ask = convention is not None and "interim_closing_706d" in keys and consent
+    if ask:
+        interim = _BY_KEY["interim_closing_706d"]
+        extra[QUESTION_706D] = tuple(d for d in interim.depends_on if d in keys)
+        extra["interim_closing_706d"] = (QUESTION_706D,)
+    level = _levels(chosen, extra)
+    if ask and convention is not None:
+        out.append(
+            PlanStep(
+                key=QUESTION_706D,
+                label="Which §706(d) convention applies to the interest transfer?",
+                level=level[QUESTION_706D],
+                kind="question",
+                arguments={
+                    "question_key": QUESTION_706D,
+                    "options": [dict(o) for o in convention.options],
+                    "recommended": convention.recommended,
+                    "reason": convention.reason,
+                    "group": "capital",
+                },
+                depends_on=extra[QUESTION_706D],
+            )
+        )
+    for step in chosen:
+        depends = tuple(d for d in step.depends_on if d in keys) + extra.get(step.key, ())
         if step.model and not consent:
             out.append(
                 PlanStep(
                     key=step.key,
                     label=step.label,
-                    level=DEPTH[step.key],
+                    level=level[step.key],
                     kind="question",
                     arguments={
                         "question_key": "consent_7216",
@@ -169,7 +257,7 @@ def plan_steps(
             PlanStep(
                 key=step.key,
                 label=step.label,
-                level=DEPTH[step.key],
+                level=level[step.key],
                 kind="compute",
                 tool=f"{RUN_STEP}{step.key}",
                 arguments={
@@ -194,13 +282,39 @@ async def consent_in_force(tenant: TenantContext, work_item_id: UUID) -> bool:
     return verdict.valid
 
 
+async def settled_convention(tenant: TenantContext, return_id: UUID) -> tuple[bool, str | None]:
+    """Whether a person settled the §706(d) convention (the newest structure version is approved
+    or a person's own draft), and the convention the newest version names (T-05-T40)."""
+    from abacus.modules.tax.allocation_structure import versions
+
+    found = await versions(tenant, return_id)
+    if not found:
+        return False, None
+    newest = found[0]
+    settled = newest.status == "approved" or newest.proposed_by_kind == "human"
+    return settled, newest.convention
+
+
+async def transfer_dates(tenant: TenantContext, return_id: UUID) -> list[date]:
+    from abacus.modules.tax.allocation_structure import ownership_of
+
+    return (await ownership_of(tenant, return_id))[1]
+
+
 async def entity_workbook_plan(
     tenant: TenantContext, engagement_id: UUID, request: PlanRequest
 ) -> list[PlanStep]:
     del engagement_id  # the work item names the return; the engagement was authorised already
     chosen = selected(request.scope, request.keys)
     consent = await consent_in_force(tenant, request.work_item_id)
-    return plan_steps(chosen, consent=consent, return_id=request.work_item_id)
+    question: ConventionQuestion | None = None
+    if any(s.key == "interim_closing_706d" for s in chosen):
+        settled, proposed = await settled_convention(tenant, request.work_item_id)
+        if not settled:
+            question = convention_question(
+                await transfer_dates(tenant, request.work_item_id), proposed
+            )
+    return plan_steps(chosen, consent=consent, return_id=request.work_item_id, convention=question)
 
 
 register_plan_provider(PROVIDER, entity_workbook_plan)
@@ -209,10 +323,14 @@ __all__ = [
     "DEPTH",
     "GROUPS",
     "PROVIDER",
+    "QUESTION_706D",
     "STEPS",
+    "ConventionQuestion",
     "RunKeysInvalid",
+    "convention_question",
     "dependants",
     "entity_workbook_plan",
     "plan_steps",
     "selected",
+    "settled_convention",
 ]
