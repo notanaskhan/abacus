@@ -4,7 +4,7 @@
 // seeded envelope's id, so they walk it with N-02-T42's M13 journeys and the fixture project
 // walks the artboards.
 import { expect, test } from "../harness";
-import { M13, artboard, skipUnhosted } from "./support";
+import { BUILDER_ENTRY, M13, artboard, skipUnhosted } from "./support";
 
 test.describe("SIG-02 builder, full stack (N-02-T40)", () => {
   test.beforeEach(({ journey }) => {
@@ -14,7 +14,10 @@ test.describe("SIG-02 builder, full stack (N-02-T40)", () => {
   test("Grace builds Harborview's 8879-PE and the Ridgeline letter; Send waits on an email", async ({
     journey,
   }) => {
-    test.fixme(journey.project !== "fixture", M13);
+    test.fixme(journey.project === "staging" || journey.project === "canary", M13);
+    // TASK-7820: no screen opens the builder on a seeded draft (SIG-01's To send row opens the
+    // evidence drawer), and `?ov=envelope:<id>` needs the id the SPA holds in memory.
+    test.fixme(journey.project === "fullstack", BUILDER_ENTRY);
     await journey.as("grace-holloway", artboard("SIG-02", "a"));
     await journey.step(
       "SIG-02 a: the checks, the signers in order, SMS never offered",
