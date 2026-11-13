@@ -209,3 +209,12 @@ describe("PersonStack", () => {
     expect(container.textContent).not.toContain("+");
   });
 });
+
+describe("FirmMark without a name (portal before branding resolves)", () => {
+  it("is decorative rather than an unlabelled image", () => {
+    const { container } = render(<FirmMark name="" />);
+    const mark = container.querySelector('[data-brand="firm-mark"]');
+    expect(mark?.getAttribute("role")).toBeNull();
+    expect(mark?.getAttribute("aria-hidden")).toBe("true");
+  });
+});

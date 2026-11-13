@@ -93,10 +93,12 @@ export function FirmMark({
       />
     );
   }
+  // With no name yet (the portal before its branding resolves) the mark is decorative: an image
+  // role with an empty label is an axe "serious" finding, and there is nothing to announce.
+  const named = name.trim() !== "";
   return (
     <span
-      role="img"
-      aria-label={name}
+      {...(named ? { role: "img", "aria-label": name } : { "aria-hidden": true })}
       data-brand="firm-mark"
       data-mark="initials"
       className={clsx(

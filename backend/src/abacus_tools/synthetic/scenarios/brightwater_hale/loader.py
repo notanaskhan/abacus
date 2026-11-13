@@ -127,6 +127,7 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     create_risk,
     decide_archive_addition,
     decide_archive_lock,
+    edit_ebp_plan,
     edit_risk,
     eqr_concur,
     eqr_mark_reviewed,
@@ -2525,6 +2526,30 @@ async def _ebp_documents_uploaded(_: asyncpg.Connection, __: Scenario, event: Ev
                 provenance=Provenance(source="client_upload", method="uploaded"),
                 requested_by=dana,
             )
+
+
+async def _ebp_plan_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """TASK-7814: Marcus Delaney records Northwind's plan facts through EBP-01's edit service (the
+    first save records the plan; the PN goes onto the plan entity). A plan already recorded is left
+    as it is, so a second load writes nothing."""
+    ctx = await _staff_context(conn, event)
+    audit = BY_LABEL["A1"]
+    work_item = await _assurance_work_item(audit)
+    async with as_tenant(conn, TENANT):
+        recorded = await conn.fetchval(
+            "SELECT 1 FROM ebp_plans WHERE tenant_id = $1 AND work_item_id = $2", TENANT, work_item
+        )
+    if recorded is not None:
+        return
+    ref = await get_ref(ctx, engagement_id_of(audit))
+    await edit_ebp_plan(
+        ctx,
+        work_item,
+        fields=cast(dict[str, str], event.data["fields"]),
+        citation_note=str(event.data["citation_note"]),
+        seen_version=1,
+        plan_entity_id=ref.client_entity_id,
+    )
 
 
 async def _ebp_documents_part2_uploaded(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
@@ -7012,6 +7037,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "evidence.engagement_files_uploaded": _engagement_files_uploaded,
     "evidence.ebp_documents_uploaded": _ebp_documents_uploaded,  # A-05-T07
     "evidence.ebp_documents_part2_uploaded": _ebp_documents_part2_uploaded,  # A-05-T34
+    "assurance.ebp_plan_recorded": _ebp_plan_recorded,  # TASK-7814: EBP-01 a
     # A-03-T16 part two (DEC-1767): the sampling slice.
     "ledger.grouping_set_imported": _grouping_set_imported,
     "ledger.grouping_set_published": _grouping_set_published,

@@ -139,6 +139,11 @@ test.describe("J04-fs-audit PBC slice", () => {
 // Sep 24 snapshot's (no fixture scenario carries it): the screening citation on its AUD-03 row
 // opens SHL-07, whose "Open source" opens SHL-08 with the quoted region lit, the region and the
 // cited cell sharing one match. INV-1 to INV-5 after each step, in the browser and the database.
+// TASK-7813, TASK-7814: on the full stack the steps below need what no slice seeds yet, at any
+// snapshot: a Granite Peak PBC upload screened by the agent's v2 run, with a flagged check, a
+// verified citation and a pending C3 proposal (the card's `proposal_ref`). Hannah Leclerc is not on
+// Granite Peak's FY2026 team (team_of(A2): MO, OH, SB, CH, and Caleb Dunn from Sep 10), so AUD-01
+// does not list it for her (visible()); and AUD-01's row opens AUD-02, not AUD-03.
 test.describe("J04-fs-audit trace to source (P-03-T25)", () => {
   test.beforeEach(({ journey }) => {
     const hosted = journey.project === "staging" || journey.project === "canary";
@@ -149,6 +154,10 @@ test.describe("J04-fs-audit trace to source (P-03-T25)", () => {
     test.fixme(
       journey.project === "fixture",
       "Granite Peak's screened upload is the Sep 24 snapshot's, full stack only (no fixture data)",
+    );
+    test.fixme(
+      journey.project === "fullstack",
+      "Granite Peak's screened upload is not seeded (Sep 24 snapshot) and Hannah Leclerc is not on its team",
     );
   });
 
@@ -230,6 +239,10 @@ test.describe("J04-fs-audit pbc-ai through SHL-10 (P-04-T45)", () => {
     test.fixme(
       journey.project === "fixture",
       "Granite Peak's screened upload and its proposal are the Sep 24 snapshot's: full stack only",
+    );
+    test.fixme(
+      journey.project === "fullstack",
+      "Granite Peak's screened upload is not seeded (Sep 24 snapshot) and Hannah Leclerc is not on its team",
     );
   });
 

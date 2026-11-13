@@ -9,7 +9,7 @@
 // naming its owning epic, task and chapter 01 date (journey-e2e skill). The portal is
 // white-labelled: no portal step may show the product's name (INV-4).
 import type { Page } from "@playwright/test";
-import { DEMO_INSTANT, expect, test } from "../harness";
+import { DEMO_INSTANT, SEP_24_PASS, SEP_24_SNAPSHOT, expect, seededAt, test } from "../harness";
 import { M13, artboard } from "../signatures/support";
 import { artboardAs, board, noProductName, owner as r02Owner } from "./r02-support";
 import { A07_LIVE, a07, noAgentDecision, onScreen } from "./a07-support";
@@ -325,6 +325,7 @@ test.describe("J03 signatures (N-02-T42)", () => {
 test.describe("J03 planning (A-04-T34)", () => {
   const RISKS = "/audits/_auditId_/risks";
   const CONTROLS = "/audits/_auditId_/controls";
+  const STAGING_EBP = "the staging walk waits for the EBP batch's deploy and ebp.modules on PF-X1";
 
   test.fixme(
     "j03 8: Margaret decides materiality v2 on SHL-11 (AUD-07 d)",
@@ -381,27 +382,64 @@ test.describe("J03 planning (A-04-T34)", () => {
     },
   );
 
-  test("j03 7, 7b, 12, 13: the plan's TB, profile, testing and contributions", async ({
-    journey,
-  }) => {
-    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-06&st=a&section=ebp_06", {
-      clock: DEMO_INSTANT,
-    });
-    await journey.step("J03 step 7: EBP-06 agrees the trust report", async (page) => {
-      await expect(page.locator("[data-screen='EBP-06']").first()).toBeVisible();
-    });
+  // TASK-7813, TASK-7814: EBP-06 reads Northwind's trial balance of record, recorded at 10:00 AM
+  // on Sep 14 (after E0's 9:24 AM: 404 `trial_balance` there), so the full stack walks it on the
+  // Sep 24 seed. The fixture draws EBP-06 a at E0.
+  test(
+    "j03 7: the plan's TB agrees the trust report (EBP-06)",
+    SEP_24_PASS,
+    async ({ journey }) => {
+      test.fixme(journey.project === "staging" || journey.project === "canary", STAGING_EBP);
+      seededAt(
+        journey.project,
+        SEP_24_SNAPSHOT,
+        "Northwind's TB of record is recorded Sep 14, 10:00 AM, after E0",
+      );
+      await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-06&st=a&section=ebp_06", {
+        clock: DEMO_INSTANT,
+      });
+      await journey.step("J03 step 7: EBP-06 agrees the trust report", async (page) => {
+        await expect(page.locator("[data-screen='EBP-06']").first()).toBeVisible();
+      });
+    },
+  );
+
+  // TASK-7813, TASK-7814: EBP-01 a stands at Thu Sep 24, 10:15 AM (docs/screens/EBP-01.md);
+  // the ebp slice records the plan facts on Sep 22 (Marcus Delaney), so the full stack walks it on
+  // the Sep 24 seed.
+  test("j03 7b: the plan profile (EBP-01)", SEP_24_PASS, async ({ journey }) => {
+    test.fixme(journey.project === "staging" || journey.project === "canary", STAGING_EBP);
+    seededAt(
+      journey.project,
+      SEP_24_SNAPSHOT,
+      "Marcus records Northwind's plan facts on Sep 22, after E0",
+    );
     await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-01&st=a&section=ebp_01", {
       clock: DEMO_INSTANT,
     });
     await journey.step("J03 step 7b: the plan profile", async (page) => {
       await expect(page.locator("[data-screen='EBP-01']").first()).toBeVisible();
     });
+  });
+
+  // TASK-7813, TASK-7814: EBP-03 reads the `ebp_eligibility` attribute test over A-03's approved
+  // Participants sample, with the census and HR roster imports and the verified entry rule
+  // (EBP-02). No slice records that test yet, at any snapshot (the Sep 24 seed reads "No sample
+  // yet."), so the step stays on the fixture project until one does.
+  test("j03 12: eligibility testing (EBP-03)", async ({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "no slice records Northwind's eligibility test (census and HR imports, verified entry rule)",
+    );
     await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-03&st=a&section=ebp_03", {
       clock: DEMO_INSTANT,
     });
     await journey.step("J03 step 12: eligibility testing", async (page) => {
       await expect(page.locator("[data-screen='EBP-03']").first()).toBeVisible();
     });
+  });
+
+  test("j03 13: contributions and remittance (EBP-04)", async ({ journey }) => {
     await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-04&st=a&section=ebp_04", {
       clock: DEMO_INSTANT,
     });

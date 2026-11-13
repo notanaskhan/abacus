@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-completion-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
+.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -406,6 +406,18 @@ generate:
 
 migrate: db-guard
 	cd backend && $(STACK_ENV) uv run alembic upgrade head
+
+# TASK-7814: an empty local database for a second scenario load at another snapshot (the nightly's
+# Sep 24 pass): drop and recreate it in this stack's own container, apply the bootstrap roles
+# (idempotent) and every migration. The local stack only (db-guard); the API and worker reconnect.
+db-reset: db-guard
+	docker compose exec -T db psql -q -U postgres -d postgres \
+		-c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'abacus' AND pid <> pg_backend_pid()" \
+		-c "DROP DATABASE abacus" -c "CREATE DATABASE abacus" > /dev/null
+	for f in bootstrap.sql bootstrap-local.sql; do \
+		docker compose exec -T db psql -q -v ON_ERROR_STOP=1 -U postgres -d abacus < backend/migrations/$$f > /dev/null || exit 1; \
+	done
+	$(MAKE) migrate
 
 # K-02-T06: the reference-set operator CLI (abacus_tools.refdata). Locally against this checkout's
 # stack; on staging and production the same command runs as the ops-task.yml one-off ECS task

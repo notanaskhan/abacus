@@ -35,6 +35,7 @@ export {
 export { assertStill, axeStep, settle } from "./axe";
 export { AGENT_APPROVER, HUMAN_VERBS, assertInvariants, violations } from "./invariants";
 export { DEMO_INSTANT, PERSONAS, type Persona, type PersonaSlug } from "./personas";
+export { SEED_SNAPSHOT, SEP_24_PASS, SEP_24_SNAPSHOT, seededAt } from "./snapshots";
 
 export interface StepScope {
   /** Names the persona must not see on this step (INV-3, INV-4). */

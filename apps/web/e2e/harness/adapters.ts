@@ -172,9 +172,50 @@ export async function signInWithEmailCode(page: Page, persona: Persona): Promise
   await page.waitForURL((url) => url.origin !== idp);
 }
 
+/**
+ * TASK-7813: a fixture path's `_key_` placeholder (screen-scenarios.ts) names the record a
+ * scenario opens; on the full stack it is the seeded record's id, looked up as the signed-in
+ * persona. Only the keys a full-stack step opens are here; any other placeholder stays as written.
+ * The lookup walks the screens the persona would (the SPA holds its token in memory, so a request
+ * from the test has none).
+ */
+const SEEDED_IDS: Readonly<Record<string, (page: Page) => Promise<string>>> = {
+  // Northwind Robotics 401(k) Plan PY2025, the scenario's EBP audit: AUD-01's row opens AUD-02 at
+  // `/audits/<assurance work item>`.
+  _auditId_: async (page) => {
+    await page.goto("/audits");
+    await page
+      .getByRole("row", { name: /Northwind Robotics 401\(k\) Plan/ })
+      .first()
+      .getByRole("button", { name: "Open row" })
+      .click();
+    await page.waitForURL(/\/audits\/[^/?]+/);
+    const id = new URL(page.url()).pathname.split("/")[2];
+    if (id === undefined || id === "")
+      throw new Error("no Northwind audit on AUD-01 (make seed-demo)");
+    return id;
+  },
+};
+
+async function withSeededIds(page: Page, path: string): Promise<string> {
+  let out = path;
+  for (const [key, lookup] of Object.entries(SEEDED_IDS)) {
+    if (out.includes(key)) out = out.split(key).join(await lookup(page));
+  }
+  return out;
+}
+
 const fullstack: PersonaAdapter = {
   project: "fullstack",
   async open(page, persona, path) {
+    // A portal person opens the portal's own entry, as on the fixture project: the local vite
+    // server answers every path with the firm entry, which would draw the firm's "Page not found".
+    // The portal signs its people in itself (POR-01), never through the staff chooser.
+    if (persona.kind !== "staff" && !path.startsWith("/components")) {
+      await servePortalEntry(page, path);
+      await page.goto(path);
+      return;
+    }
     await page.goto("/");
     const choose = page.getByRole("button", { name: new RegExp(`\\b${persona.name}\\b`) });
     const email = page.getByLabel("Work email");
@@ -183,13 +224,19 @@ const fullstack: PersonaAdapter = {
     const shell = page.getByRole("navigation", { name: "Modules" });
     await choose.or(email).or(shell).first().waitFor();
     if ((await choose.count()) > 0) {
+      const idp = new URL(page.url()).origin;
       await choose.first().click();
-      await page.getByText(persona.name).first().waitFor();
+      // The chooser's own button carries the persona's name, so wait for the callback to land
+      // back in the app (and, for staff, the shell) before navigating; a `goto` while the OIDC
+      // callback is in flight leaves no session and bounces to /authorize again.
+      await page.waitForURL((url) => url.origin !== idp);
+      if (persona.kind === "staff") await shell.waitFor();
+      else await page.getByText(persona.name).first().waitFor();
     } else if (persona.kind === "staff" && (await email.count()) > 0) {
       // The scenario's staff (make seed-demo) are not on the chooser: they sign in by email code.
       await signInWithEmailCode(page, persona);
     }
-    if (path !== "/") await page.goto(path);
+    if (path !== "/") await page.goto(await withSeededIds(page, path));
   },
   probe: probeInPage,
 };
