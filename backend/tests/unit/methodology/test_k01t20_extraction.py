@@ -60,6 +60,7 @@ async def test_extract_source_raises_the_problem_codes() -> None:
         await extraction.extract_source(b"not a pdf")
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_extraction_module_never_imports_the_gateway() -> None:
     tree = ast.parse(inspect.getsource(extraction))
     names = {node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)} | {

@@ -157,6 +157,7 @@ def test_the_agent_never_concludes_an_estimate() -> None:
 # --- one late-remittance record ------------------------------------------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_late_remittances_live_in_one_object() -> None:
     """One object (0658): the remittance row, and its event log (corrections, status moves).
     Only the object holds the late principal; nothing else names a late-remittance table."""
@@ -170,6 +171,7 @@ def test_late_remittances_live_in_one_object() -> None:
     assert "principal" not in events
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_4a_aud27_and_ebp04_read_the_same_record() -> None:
     readers = {
         "ebp_form5500.py": "ebp_late_remittances",

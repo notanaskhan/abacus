@@ -216,6 +216,7 @@ _CONSENT_WORDING = (
 )
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac31_no_consent_wording_exists_in_code() -> None:
     for root in (REPO / "backend/src/abacus", REPO / "backend/migrations"):
         for path in root.rglob("*.py"):

@@ -11,6 +11,8 @@ import ast
 from decimal import Decimal as D
 from pathlib import Path
 
+import pytest
+
 from abacus.modules.tax.compute.individual import forms, k1, residency
 
 PKG = (
@@ -84,6 +86,7 @@ def test_the_same_inputs_give_the_same_stamp() -> None:
     assert a == k1.outside_basis(D(1912500), D(2762075)).stamp and len(a.inputs_hash) == 64
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_package_imports_only_the_kernel_numeric_and_itself() -> None:
     allowed = ("abacus.kernel.numeric", "abacus.modules.tax.compute.individual")
     for path in PKG.glob("*.py"):

@@ -153,6 +153,7 @@ def test_f04_5_abacus_now_checks_the_firm_is_synthetic() -> None:
 # --- F-04.6: Temporal determinism ---------------------------------------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_f04_6_workflow_code_never_reads_the_business_clock() -> None:
     offenders: list[str] = []
     for path in SRC.rglob("*workflow*.py"):

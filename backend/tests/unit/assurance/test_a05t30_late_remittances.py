@@ -41,6 +41,7 @@ def test_line_4a_is_the_late_deferrals_by_code() -> None:
     assert ebp_remittances.schedule_h_4a([]) == Decimal(0)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_one_reader_serves_ebp_04f_the_4a_preview_aud_27_and_ebp_07() -> None:
     assert api.late_remittances is ebp_remittances.late_remittances
     for route in (ebp_contract.ebp_late_remittances_route, ebp_contract.ebp_schedule_4a_route):

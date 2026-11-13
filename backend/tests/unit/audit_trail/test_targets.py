@@ -116,6 +116,7 @@ def _recorded_target_types() -> set[str]:
     return found
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_every_target_type_the_code_records_is_placed_so_a_new_one_is_a_decision() -> None:
     assert targets.known_kinds() >= _recorded_target_types()
 

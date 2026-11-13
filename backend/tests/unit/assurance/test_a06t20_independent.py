@@ -69,6 +69,7 @@ def test_deciding_needs_a_fresh_second_factor() -> None:
     assert "decision.decide" in actions
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_inv2_an_agent_finding_needs_verified_citations() -> None:
     source = inspect.getsource(findings.record_finding)
     assert "raise UncitedFinding" in source
@@ -83,12 +84,14 @@ def test_inv2_why_surfaced_states_only_codes_figures() -> None:
     assert findings.why_surfaced_support("Roughly 40,000 at risk.", figures) == "unsupported"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_inv3_every_findings_route_gates_first() -> None:
     for name in ("misstatements_route", "sum_route", "sum_request_conclusion_route"):
         body = inspect.getsource(getattr(findings_contract, name))
         assert "await _gate(ctx, work_item_id" in body
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_inv5_an_agent_raised_finding_reads_person_via_agent() -> None:
     """The row's creator name for an agent-raised finding is "<person> via Agent"."""
     source = inspect.getsource(findings._rows)  # pyright: ignore[reportPrivateUsage] -- the private helper under test

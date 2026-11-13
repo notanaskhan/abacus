@@ -169,6 +169,7 @@ def test_the_evaluation_codes_are_declared() -> None:
 # --- nothing evaluates code -------------------------------------------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_no_eval_in_the_compute_package() -> None:
     banned = {"eval", "exec", "compile", "__import__", "import_module", "literal_eval"}
     for path in COMPUTE.glob("*.py"):

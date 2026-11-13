@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import cast
 
+import pytest
 import yaml
 
 BACKEND = Path(__file__).resolve().parents[3]
@@ -16,6 +17,7 @@ MATRIX = BACKEND.parent / "docs" / "architecture" / "permission-matrix"
 OFFICE = re.compile(r"office", re.IGNORECASE)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_authorisation_package_never_reads_an_office() -> None:
     hits = [
         f"{path.relative_to(BACKEND)}:{n}"

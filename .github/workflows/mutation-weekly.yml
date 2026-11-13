@@ -1,7 +1,7 @@
 # Weekly full mutation run (Q-03-T026; ADR-079; DEC-365; Q-03 C1). Sundays, over every red scope
 # (identity/authz, kernel/db, kernel/uow, kernel/crypto, evidence, ai_gateway, audit_trail and
-# every */compute/ package), in six shards balanced by line count (Q-03-T205: four ran past 4 hours as
-# the red modules grew), each inside 4 hours. mutmut
+# every */compute/ package), in eight shards balanced by line count (Q-03-T205: four ran past 4 hours as
+# the red modules grew; Q-03-T147: one of six ran out at 15,308 of 16,196 mutants), each inside 4 hours. mutmut
 # 3.8.0 (allowlisted) runs through `uv run --with`, never from the lock. The `floors` job merges
 # the shards' results, publishes the survivors per module and fails when a scope is under its
 # floor in the protected backend/mutation-thresholds.yaml (all 0 until Q-03-T051 sets the S11
@@ -23,14 +23,14 @@ concurrency:
 
 jobs:
   shard:
-    name: mutation weekly (${{ matrix.shard }}/6)
+    name: mutation weekly (${{ matrix.shard }}/8)
     runs-on: ubuntu-24.04
     # The 4-hour budget per shard plus setup; GitHub's own job limit is 6 hours.
     timeout-minutes: 250
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,7 +45,7 @@ jobs:
         working-directory: backend
         run: |
           uv run python -m abacus_tools.quality.mutation plan weekly \
-            --shard ${{ matrix.shard }} --shards 6 --out "$RUNNER_TEMP/mutation-plan.json"
+            --shard ${{ matrix.shard }} --shards 8 --out "$RUNNER_TEMP/mutation-plan.json"
           uv run python -m abacus_tools.quality.mutation narrow "$RUNNER_TEMP/mutation-plan.json"
           uv run python -m abacus_tools.quality.mutation prepare
       - name: Mutate inside the 4-hour budget
@@ -103,7 +103,9 @@ jobs:
           uv run python -m abacus_tools.quality.mutation summarise --mutants mutants \
             --json "$OUT/mutation-survivors.json" --markdown "$OUT/mutation-survivors.md" \
             --title "Weekly mutation survivors per module" --enforce-floors || status=$?
-          cat "$OUT/mutation-survivors.md" >> "$GITHUB_STEP_SUMMARY"
+          # The job summary takes 1 MiB: the table goes there, every survivor stays in the artifact.
+          sed '/^<details>/,$d' "$OUT/mutation-survivors.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "Every survivor: the mutation-weekly artifact." >> "$GITHUB_STEP_SUMMARY"
           exit "$status"
       - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

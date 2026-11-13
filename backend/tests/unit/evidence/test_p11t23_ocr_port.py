@@ -116,6 +116,7 @@ def test_the_gate_names_its_first_failing_condition(
     assert asyncio.run(ocr_gate.first_refusal(tenant, ocr_gate.GateFacts(*facts))) == expected
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_port_logs_counts_and_hashes_only() -> None:
     source = inspect.getsource(ocr)
     logged = [line for line in source.splitlines() if "_log." in line and "(" in line]

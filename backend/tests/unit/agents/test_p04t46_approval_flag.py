@@ -64,6 +64,7 @@ async def test_ac_a_decision_answers_404_until_the_firm_turns_approval_on(
     await contract._deciding(_ctx())  # pyright: ignore[reportPrivateUsage] -- the guard under test
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac_every_decision_route_uses_the_guard_and_undo_does_not() -> None:
     for route in DECIDING_ROUTES:
         source = inspect.getsource(route)

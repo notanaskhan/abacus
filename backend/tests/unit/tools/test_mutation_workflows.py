@@ -65,9 +65,9 @@ def test_t026_weekly_runs_every_scope_on_sunday_in_shards_under_4_hours() -> Non
     jobs = _jobs("mutation-weekly.yml")
     shard = jobs["shard"]
     matrix = cast(dict[str, object], cast(dict[str, object], shard["strategy"])["matrix"])
-    assert matrix["shard"] == [1, 2, 3, 4, 5, 6]  # Q-03-T205
+    assert matrix["shard"] == [1, 2, 3, 4, 5, 6, 7, 8]  # Q-03-T205, Q-03-T147
     runs = _runs(shard)
-    assert "mutation plan weekly" in runs and "--shards 6" in runs
+    assert "mutation plan weekly" in runs and "--shards 8" in runs
     assert f"timeout --signal=INT 230m {MUTMUT}" in runs
     assert cast(int, shard["timeout-minutes"]) <= 250
     floors = jobs["floors"]
@@ -83,7 +83,15 @@ def test_t026_both_jobs_publish_survivors_per_module() -> None:
         job = _jobs(name)[job_name]
         runs = _runs(job)
         assert "mutation summarise" in runs
-        assert 'cat "$OUT/mutation-survivors.md" >> "$GITHUB_STEP_SUMMARY"' in runs
+        if name == "mutation-weekly.yml":
+            # Q-03-T147: the weekly list (4.4 MB) is over the 1 MiB job summary: the table goes
+            # there and every survivor stays in the uploaded report.
+            assert (
+                """sed '/^<details>/,$d' "$OUT/mutation-survivors.md" >> "$GITHUB_STEP_SUMMARY\""""
+                in runs
+            )
+        else:
+            assert 'cat "$OUT/mutation-survivors.md" >> "$GITHUB_STEP_SUMMARY"' in runs
         paths = [str(cast(dict[str, object], s["with"])["path"]) for s in _uploads(job)]
         assert "${{ runner.temp }}/mutation-report" in paths, name
         assert all("always()" in str(s.get("if", "")) for s in _uploads(job)), name

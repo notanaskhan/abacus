@@ -6,9 +6,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 EVIDENCE = Path(__file__).parents[3] / "src" / "abacus" / "modules" / "evidence"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_only_processing_looks_extractions_up_by_version() -> None:
     pinned = sorted(
         path.name

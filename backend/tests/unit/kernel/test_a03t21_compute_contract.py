@@ -54,6 +54,7 @@ def _imports(path: Path) -> set[str]:
     return names
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 @pytest.mark.parametrize("package", PACKAGES)
 def test_ac6_every_compute_import_is_stdlib_its_own_package_or_the_two_kernel_helpers(
     package: str,

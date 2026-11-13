@@ -222,6 +222,7 @@ def test_dec337_a_negative_hold_is_refused() -> None:
         boundary.hold_facts_for(-1)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_dec337_the_worker_holds_no_boundary_facts() -> None:
     """The worker boots with `hold_boundary_facts_for(0)` before it serves any pool."""
     import inspect

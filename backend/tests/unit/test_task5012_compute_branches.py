@@ -325,6 +325,7 @@ def _raw_parameters() -> dict[str, dict[str, object]]:
     return cast(dict[str, dict[str, object]], yaml.safe_load(path.read_text(encoding="utf-8")))
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_parameter_file_refuses_an_unknown_rounding_and_a_boolean_figure() -> None:
     rounding = deepcopy(_raw_parameters())
     rounding["estimates"]["rounding"] = "bankers"

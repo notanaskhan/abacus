@@ -80,6 +80,7 @@ def test_ac_roll_refuses_a_kind_it_does_not_roll_or_a_mismatched_version() -> No
         roll("form_8879_set", {"kind": "due_date_rules", "rows": []}, 2027)
 
 
+@pytest.mark.source_scan  # reads the repository layout: left out under mutmut (DEC-599)
 def test_ac_no_draft_is_written_inside_the_repository(tmp_path: Path) -> None:
     payload = {"kind": "legal_holidays", "rows": holidays(2028)}
     with pytest.raises(Refused):

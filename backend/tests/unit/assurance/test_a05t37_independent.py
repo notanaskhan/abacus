@@ -94,6 +94,7 @@ def test_lost_earnings_are_idempotent_non_negative_and_monotone_in_days(
     assert later.lost_earnings >= a.lost_earnings
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_line_4a_sums_late_deferrals_only() -> None:
     assert r.schedule_h_4a([Decimal("33540.00")]) == Decimal("33540.00")
     assert r.schedule_h_4a([]) == Decimal("0")
@@ -103,6 +104,7 @@ def test_line_4a_sums_late_deferrals_only() -> None:
     assert "match" not in source
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_a_correction_needs_evidence_and_is_one_human_event() -> None:
     source = inspect.getsource(ebp_remittances.record_correction)
     assert "if not evidence_version_ids:" in source

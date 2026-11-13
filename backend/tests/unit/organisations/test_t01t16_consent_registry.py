@@ -13,6 +13,7 @@ from __future__ import annotations
 import inspect
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from sqlalchemy.dialects import postgresql
 
 from abacus.modules.organisations import activities, consent_registry, workflows
@@ -47,6 +48,7 @@ def test_ac39_needs_attention_comes_first() -> None:
     assert order[-1] == "superseded"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac40_the_scope_is_walls_and_offshore_with_no_hidden_count() -> None:
     source = inspect.getsource(consent_registry._scope)  # pyright: ignore[reportPrivateUsage] -- the scope under test
     assert "visible_clients(ctx, READ" in source
@@ -62,6 +64,7 @@ def test_ac42_the_csv_never_starts_a_formula() -> None:
     assert lines[1].startswith("'=HYPERLINK(1),'+1,'-2,'@x,Feld,,2025")
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac43_the_sweep_marks_what_it_raised_so_a_rerun_raises_nothing() -> None:
     source = inspect.getsource(consent_registry.sweep)
     assert "not row.warned" in source and "not row.flagged" in source

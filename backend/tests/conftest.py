@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from typing import cast
 
@@ -12,6 +13,12 @@ from abacus.kernel import controls
 from abacus.kernel.controls import Active
 
 NO_TESTS_COLLECTED = 5
+
+# Under mutmut the suite runs from backend/mutants/, where each function is wrapped in a
+# trampoline that adds stack frames; a test that nests close to Python's default limit (the
+# formula parser's depth bound) then overflows. Raise the limit there only (Q-03-T147).
+if "/mutants/" in Path(__file__).resolve().as_posix():
+    sys.setrecursionlimit(max(sys.getrecursionlimit(), 20_000))
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:

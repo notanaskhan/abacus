@@ -182,6 +182,7 @@ def test_ac_statement_tables_are_read_only_when_the_firm_covers_statements() -> 
 # --- evidence never altered (ADR-004, ADR-110) ------------------------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 @pytest.mark.parametrize("module", [fx, statement_tables, ocr_step])
 def test_ac_extraction_never_updates_or_deletes_and_never_writes_evidence(module: object) -> None:
     source = inspect.getsource(module)  # type: ignore[arg-type]  # a module

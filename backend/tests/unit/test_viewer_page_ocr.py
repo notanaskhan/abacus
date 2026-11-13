@@ -6,6 +6,8 @@ from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from abacus.modules.evidence import viewer
 from abacus.modules.evidence.viewer import (
     ViewerPageOcr,
@@ -43,6 +45,7 @@ def test_a_refusal_shows_only_on_a_page_left_without_words() -> None:
     assert _page_ocr(_page(), None) is None  # type: ignore[arg-type]  # a stand-in row
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_a_client_gets_neither_how_a_page_was_read_nor_the_refusal() -> None:
     source = Path(viewer.__file__).read_text()
     assert "refusal = None if client else" in source

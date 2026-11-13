@@ -97,7 +97,9 @@ GENERATED: Final = (
 )
 NIGHTLY_BUDGET_MINUTES: Final = 60
 WEEKLY_BUDGET_MINUTES: Final = 240
-WEEKLY_SHARDS: Final = 6  # Q-03-T205: 277 red files, ~75,700 lines (Dec 2027)
+WEEKLY_SHARDS: Final = (
+    8  # Q-03-T205 six; Q-03-T147 eight: shard 4 of six ran out at 15,308 of 16,196
+)
 
 KILLED: Final = frozenset({1, 3})
 TIMEOUT: Final = frozenset({36, -24, 24, 152, 255})
@@ -184,8 +186,13 @@ def narrow(pyproject_text: str, files: Sequence[str]) -> str:
 
 
 def prepare(backend: Path = BACKEND) -> list[str]:
-    """Link each top-level repository entry into backend/ (skipping names backend/ already has);
-    the runner's checkout only. Returns the names linked."""
+    """Link each top-level repository entry into backend/ (skipping names backend/ already has),
+    and backend/backend to backend/ itself; the runner's checkout only. Returns the names linked.
+
+    mutmut runs from backend/mutants/, so `Path(__file__).parents[n]` in a copied test or tool
+    stops one level short: what was the repository root is backend/, and every
+    `<root>/backend/...` read would miss. The self link makes those paths resolve to the real
+    files (Q-03-T147). Python's `rglob` and `os.walk` do not follow it, so nothing loops."""
     linked: list[str] = []
     for entry in sorted(backend.parent.iterdir()):
         target = backend / entry.name
@@ -193,6 +200,10 @@ def prepare(backend: Path = BACKEND) -> list[str]:
             continue
         target.symlink_to(Path("..") / entry.name)
         linked.append(entry.name)
+    itself = backend / backend.name
+    if not itself.exists() and not itself.is_symlink():
+        itself.symlink_to(Path("."))
+        linked.append(backend.name)
     return linked
 
 

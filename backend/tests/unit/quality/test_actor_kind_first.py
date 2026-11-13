@@ -47,6 +47,7 @@ def _agent() -> AgentContext:
     )
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_no_gate_tests_client_before_the_actor_kind() -> None:
     found = [
         f"{path.relative_to(SRC)}:{n}"

@@ -145,6 +145,7 @@ def test_same_inputs_same_stamp_and_different_inputs_differ() -> None:
     assert a.inputs_hash != b.inputs_hash and len(a.inputs_hash) == 64
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_library_imports_only_the_kernel_numeric_and_calendar() -> None:
     allowed = ("abacus.kernel.numeric", "abacus.kernel.calendar", "abacus.modules.notices.compute")
     for path in COMPUTE.glob("*.py"):

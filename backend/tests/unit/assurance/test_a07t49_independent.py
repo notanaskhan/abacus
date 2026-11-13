@@ -672,6 +672,7 @@ def test_the_seal_is_the_sha256_of_the_manifest_body() -> None:
     assert (manifest.evidence_leaf_count, manifest.row_leaf_count) == (1, 1)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_manifest_is_compliance_until_the_floor_and_evidence_governance_until_retention() -> (
     None
 ):
@@ -765,6 +766,7 @@ async def test_a_decided_addition_is_never_decided_again(monkeypatch: pytest.Mon
         await aa.decide_addition(_ctx(), WORK_ITEM, uuid.uuid4(), approve=False, reason="dup")
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_an_addition_needs_a_locked_archive() -> None:
     source = inspect.getsource(aa.locked_archive)
     assert "raise ArchiveNotLocked" in source

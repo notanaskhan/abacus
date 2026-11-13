@@ -267,6 +267,7 @@ def test_forged_moved_edited_and_stale_webhook_deliveries_are_refused() -> None:
 # --- Validation by code, no SMS, human-only verbs ------------------------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_builders_checks_import_no_model_gateway_or_agent() -> None:
     tree = ast.parse(Path(builder.__file__).read_text(encoding="utf-8"))
     modules = [

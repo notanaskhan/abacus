@@ -66,6 +66,7 @@ def test_ac2_2_only_risk_narrative_raises_flags_and_only_pbc_gap() -> None:
     assert draft.flags[0].kind == "pbc_gap"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac2_2_the_prompt_never_offers_to_rebut_management_override() -> None:
     from pathlib import Path
 

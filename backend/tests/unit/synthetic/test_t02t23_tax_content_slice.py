@@ -14,6 +14,8 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from abacus.modules.requests.questionnaire_templates import parse as parse_template
 from abacus.modules.tax.engine_adapter import parse_pdf
 from abacus.modules.tax.k1_packages import parse_k1_set
@@ -100,6 +102,7 @@ def test_ac1_the_asks_carry_kevins_dana_s_and_luis_s_questions() -> None:
     assert inquiry.addressee == "Dana Kowalski" and inquiry.due == "2026-09-18"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_slice_is_events_in_order_and_no_content_is_a_migration() -> None:
     events = slice_events(SLICE)
     kinds = [e.kind for e in sorted(events, key=lambda e: e.at)]

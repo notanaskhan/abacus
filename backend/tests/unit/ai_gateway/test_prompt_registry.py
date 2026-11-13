@@ -23,6 +23,7 @@ def _files() -> list[Path]:
     return sorted(PROMPTS.glob("*/*.txt"))
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac14_a_registered_prompt_has_its_id_version_text_and_hash() -> None:
     found = prompt(SCREEN)
     assert isinstance(found, Prompt)

@@ -114,9 +114,20 @@ def test_t026_prepare_links_the_repository_entries_into_backend(tmp_path: Path) 
     (tmp_path / "AGENTS.md").write_text("x")
     (tmp_path / ".git").mkdir()
     (tmp_path / "src").mkdir()  # backend already has one: left alone
-    assert mutation.prepare(backend) == ["AGENTS.md", "docs"]
+    assert mutation.prepare(backend) == ["AGENTS.md", "docs", "backend"]
     assert (backend / "docs").resolve() == (tmp_path / "docs").resolve()
     assert not (backend / ".git").exists()
+
+
+def test_q03t147_prepare_links_backend_into_itself_so_root_paths_resolve(tmp_path: Path) -> None:
+    backend = tmp_path / "backend"
+    (backend / "src").mkdir(parents=True)
+    (backend / "coverage-thresholds.yaml").write_text("x")
+    mutation.prepare(backend)
+    # From backend/mutants/, parents[n] lands on backend/: <that>/backend/... must still resolve.
+    assert (backend / "backend" / "coverage-thresholds.yaml").read_text() == "x"
+    assert [p.name for p in backend.rglob("*.yaml")] == ["coverage-thresholds.yaml"]  # no loop
+    assert mutation.prepare(backend) == []  # idempotent
 
 
 def _meta(codes: dict[str, int | None]) -> dict[str, object]:

@@ -58,6 +58,7 @@ def _links_migration() -> str:
     return path.read_text()
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_link_lives_60_seconds_set_by_the_database() -> None:
     source = _links_migration()
     assert (
@@ -78,6 +79,7 @@ def test_a_link_is_used_once_by_its_own_person_inside_its_life() -> None:
         assert clause in use
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_link_is_bound_to_its_tenant() -> None:
     source = _links_migration()
     assert "tenant_table(op" in source or "FORCE ROW LEVEL SECURITY" in source

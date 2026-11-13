@@ -58,6 +58,7 @@ def test_ac3_one_check_per_kind() -> None:
         register_output_check("agent_blocks", other)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac4_call_never_consults_the_registry() -> None:
     source = inspect.getsource(gateway.call) + inspect.getsource(gateway._call)  # pyright: ignore[reportPrivateUsage] -- the guard reads the private turn
     assert "output_check" not in source and "settle(" not in source

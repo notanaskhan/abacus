@@ -262,11 +262,13 @@ def test_ac17_autonomy_other_than_propose_fails_when_specs_are_loaded(
 # --- generation and drift ------------------------------------------------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac14_the_generated_specs_match_the_yaml_files() -> None:
     assert agent_specs.render() == (SPECS_DIR / "_specs.py").read_text()
     assert agent_specs.main(["--check"]) == 0
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac14_the_yaml_files_and_the_generated_ids_agree() -> None:
     ids = {
         str(cast(dict[str, object], yaml.safe_load(path.read_text()))["id"])
@@ -289,6 +291,7 @@ def scratch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return directory
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac14_a_yaml_edit_makes_the_drift_check_fail_until_regenerated(scratch: Path) -> None:
     real_before = (SPECS_DIR / "_specs.py").read_bytes()
     assert agent_specs.main(["--check"]) == 0
@@ -320,6 +323,7 @@ def test_ac14_a_new_yaml_spec_makes_the_drift_check_fail(scratch: Path) -> None:
     assert agent_specs.main(["--check"]) == 1
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac14_generation_is_deterministic(scratch: Path) -> None:
     assert agent_specs.render() == agent_specs.render()
     assert agent_specs.main([]) == 0
@@ -329,5 +333,6 @@ def test_ac14_generation_is_deterministic(scratch: Path) -> None:
     assert first == (SPECS_DIR / "_specs.py").read_text()
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac14_the_real_generated_file_is_untouched_by_these_tests() -> None:
     assert agent_specs.render() == (SPECS_DIR / "_specs.py").read_text()

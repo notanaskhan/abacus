@@ -87,6 +87,7 @@ def test_p58_refuses_a_citation_c4_does_not_verify(monkeypatch: pytest.MonkeyPat
         _call(_tb("100.00", "100.00", ["a"]), {"a": uuid4()}, supported=none)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_snapshot_names_its_document_and_is_never_adopted_here() -> None:
     source = inspect.getsource(ledger.record_document_snapshot)
     assert "source_evidence_version_id" in source and "extraction_run_id" in source

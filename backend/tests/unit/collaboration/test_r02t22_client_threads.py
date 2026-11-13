@@ -6,6 +6,7 @@ the portal anchors' registration."""
 
 from __future__ import annotations
 
+import uuid
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -39,10 +40,14 @@ def test_anchor_readers_is_the_default_and_keeps_the_locator() -> None:
 
 
 def test_a_policy_is_registered_once() -> None:
-    ct.register_client_policy("test_once", "author_only")
-    ct.register_client_policy("test_once", "author_only")
+    # A name of its own per run: mutmut re-runs the suite in one process (Q-03-T147).
+    kind = "test_once_" + uuid.uuid4().hex[:12].translate(
+        str.maketrans("0123456789", "ghijklmnop")
+    )
+    ct.register_client_policy(kind, "author_only")
+    ct.register_client_policy(kind, "author_only")
     with pytest.raises(RuntimeError):
-        ct.register_client_policy("test_once", "anchor_readers")
+        ct.register_client_policy(kind, "anchor_readers")
 
 
 def test_ac34_client_text_is_plain_and_bounded() -> None:

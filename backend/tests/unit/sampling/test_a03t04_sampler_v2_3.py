@@ -107,6 +107,7 @@ _RNG_METHODS = {
 }
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac9_no_random_member_but_random_and_getrandbits_is_referenced() -> None:
     for path in sorted(COMPUTE.rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))

@@ -10,7 +10,6 @@ import pytest
 from abacus_tools.quality import check_dependencies as cd
 
 REPO = Path(__file__).resolve().parents[4]
-
 PYPROJECT = "backend/pyproject.toml"
 WEB = "apps/web/package.json"
 

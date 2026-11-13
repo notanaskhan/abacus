@@ -62,6 +62,7 @@ def test_ac_alert_days_by_notice() -> None:
     assert alert_days("cp3219a") == CP3219A_ALERTS == (30, 14, 7, 2)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac_no_route_ever_calls_an_irs_host() -> None:
     source = Path(sending.__file__).read_text()
     assert "irs.gov" not in source.lower()
