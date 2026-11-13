@@ -779,5 +779,5 @@ from abacus.modules.assurance.governance_comms import (  # noqa: E402  # A-07-T4
 
 # W-02-T11 (DEC-4716): this module's Workbench tool on C17, registered at import.
 from abacus.modules.assurance import (  # noqa: E402
-    workbench_tools as _workbench_tools,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
+    agent_tools as _workbench_tools,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )

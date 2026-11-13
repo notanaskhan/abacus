@@ -22,7 +22,7 @@ def test_the_eight_rows_are_the_fixtures_in_order() -> None:
     titles = re.findall(r'title: "([^"]+)"', FIXTURE)[:8]
     assert [r[2] for r in wb.ROWS] == titles
     keys = re.findall(r'stableId\("session:([a-z0-9-]+)"\)', FIXTURE)
-    assert [r[0] for r in wb.ROWS][1:] == keys[: len(wb.ROWS) - 1]
+    assert [r[0] for r in wb.ROWS] == keys[: len(wb.ROWS)]
 
 
 def test_row_states_via_agent_and_the_locked_copperleaf_row() -> None:
