@@ -30,6 +30,14 @@ Regenerate: python -m abacus_tools.codegen.eval_suites
 '''
 
 
+EXTRA_MODES: dict[str, dict[str, str]] = {
+    "decisions.recommender": {
+        "decisions.recommend.convention_706d@v1": "evals/tax_recommender_modes",
+        "decisions.recommend.section_754@v1": "evals/tax_recommender_modes",
+    }
+}
+
+
 def render() -> str:
     suites: dict[str, tuple[str, int]] = {}
     # N-01-T22 (DEC-1282): an agent's other modes, each prompt on the same suite and version.
@@ -42,6 +50,25 @@ def render() -> str:
             suites[agent_id] = (spec.prompt, version)
             if spec.modes:
                 modes[agent_id] = {m.prompt: version for m in spec.modes.values()}
+    # T-05-T47 (DEC-4713): spec v2 capabilities with a suite (tax.account_mapper,
+    # tax.agreement_reader, tax.memo_drafter, ...), keyed the same way.
+    from abacus.modules.agents.specs._specs_v2 import SPECS_V2
+
+    for agent_id, raw_spec in sorted(SPECS_V2.items()):
+        suite_dir = raw_spec.get("evaluation_suite")
+        if agent_id in suites or not isinstance(suite_dir, str):
+            continue
+        path = REPO / suite_dir / "suite.yaml"
+        if path.exists():
+            raw = cast(dict[str, object], yaml.safe_load(path.read_text(encoding="utf-8")))
+            suites[agent_id] = (str(raw_spec["prompt"]), int(cast(int, raw["version"])))
+    # T-05-T47: the recommender's tax modes (T-05-T49) run on their own suite.
+    for agent_id, prompts in EXTRA_MODES.items():
+        for prompt, suite_dir in prompts.items():
+            path = REPO / suite_dir / "suite.yaml"
+            if path.exists():
+                raw = cast(dict[str, object], yaml.safe_load(path.read_text(encoding="utf-8")))
+                modes.setdefault(agent_id, {})[prompt] = int(cast(int, raw["version"]))
     body = pprint.pformat(suites, indent=4, width=99, sort_dicts=True)
     mode_body = pprint.pformat(modes, indent=4, width=99, sort_dicts=True)
     return (

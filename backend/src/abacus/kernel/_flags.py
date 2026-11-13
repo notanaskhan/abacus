@@ -380,6 +380,30 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+PROMPT_TAX_ACCOUNT_MAPPER = Flag(
+    name="prompt.tax.account_mapper",
+    kind="variant",
+    default="tax.map_accounts@v1",
+    values=(
+        "tax.map_accounts@v1",
+    ),
+)
+PROMPT_TAX_AGREEMENT_READER = Flag(
+    name="prompt.tax.agreement_reader",
+    kind="variant",
+    default="tax.agreement_reader@v1",
+    values=(
+        "tax.agreement_reader@v1",
+    ),
+)
+PROMPT_TAX_MEMO_DRAFTER = Flag(
+    name="prompt.tax.memo_drafter",
+    kind="variant",
+    default="tax.preparer_memo@v1",
+    values=(
+        "tax.preparer_memo@v1",
+    ),
+)
 REALTIME_SSE = Flag(
     name="realtime.sse",
     kind="boolean",
@@ -605,6 +629,9 @@ FLAGS: dict[str, Flag] = {
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "prompt.tax.account_mapper": PROMPT_TAX_ACCOUNT_MAPPER,
+    "prompt.tax.agreement_reader": PROMPT_TAX_AGREEMENT_READER,
+    "prompt.tax.memo_drafter": PROMPT_TAX_MEMO_DRAFTER,
     "realtime.sse": REALTIME_SSE,
     "reporting.fs_disclosure": REPORTING_FS_DISCLOSURE,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
