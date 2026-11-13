@@ -478,6 +478,12 @@ from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
     open_deterministic_run,
 )
 
+# T-05-T52 (DEC-4905): an owner's gate counts the agent's open work on its records.
+from abacus.modules.agents.owner_reads import (  # noqa: E402
+    open_question_count,
+    pending_proposal_count,
+)
+
 # T-04-T15: an owner's applier reads an approved proposal's rows (never a pending one).
 from abacus.modules.agents.proposal_store import (  # noqa: E402
     approved_rows as approved_proposal_rows,
@@ -712,8 +718,10 @@ __all__ = [
     "open_capability_run",
     "open_deterministic_run",
     "open_plan_child_run",
+    "open_question_count",
     "open_turn_run",
     "override_rate",
+    "pending_proposal_count",
     "pending_suggestion",
     "pending_suggestions",
     "proposal_approver",

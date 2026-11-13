@@ -1934,7 +1934,7 @@ async def entity_issues_route(
         open_total=queue.open_total,
         resolved_total=queue.resolved_total,
         sections=[
-            WorkbookIssueSectionOut(key=k, title=t, count=n)  # type: ignore[arg-type]
+            WorkbookIssueSectionOut(key=k, title=t, count=n)  # type: ignore[arg-type] -- the queue lists only the two open sections
             for k, t, n in queue.sections
         ],
     )  # fmt: skip
