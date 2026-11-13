@@ -44,6 +44,7 @@ The P-10 run API (`/v1/agent-runs/{run}` …), P-04's sign-off, proposal, issue 
 | Allocation structure | `GET /v1/tax-returns/{id}/allocation-structure?version=` | `allocation_structure.read` |
 | A new structure draft | `PUT /v1/tax-returns/{id}/allocation-structure/draft` | `allocation_structure.edit` |
 | Preview without saving | `POST /v1/tax-returns/{id}/allocation-structure/preview` | `allocation_structure.read` |
+| Approve the structure (L3) and re-run capital and K-1s | `POST /v1/tax-returns/{id}/allocation-structure/approve` (T-05-T41) | `sign_off.create` (P-04's L3 rules) |
 | Sections and their tallies | `GET /v1/tax-returns/{id}/sections` | `workbook.read` |
 | A section's sign-off | `POST /v1/tax-returns/{id}/sections/{key}/sign-off` | `sign_off.create` (P-04 levels) |
 | TXP-10's issues | `GET /v1/tax-returns/{id}/issues?section=&status=&step=&q=&show_resolved=` | `issue.read` (P-04) |
@@ -100,7 +101,9 @@ Each is a person's own act (`agent: deny` in the matrix; the service's `require_
 ## 6. Audit events
 Through the unit of work, identifiers and fingerprints only (DEC-60):
 - `workbook_cell.edited`, `workbook_import.created`, `workbook_run.started`;
-- `tax_ownership.replaced`, `allocation_structure.drafted`;
+- `tax_ownership.replaced`, `allocation_structure.drafted`, `allocation_structure.proposed`
+  (the agreement reader's proposal adopted, Pending approval), `allocation_structure.approved`
+  (the person's own approved version after the L3 sign-off; T-05-T41, DEC-4701);
 - `preparer_memo.draft_requested`, `preparer_memo.section_edited`.
 
 Sign-offs, proposals and decisions write P-04's events. Each action lands in the activity catalogue with its build task.
@@ -114,3 +117,18 @@ Sign-offs, proposals and decisions write P-04's events. Each action lands in the
 | Version | Date | Notes |
 |---|---|---|
 | v1 | 2026-11-10 | stub (T-05-T06): 32 routes, 501, dark |
+
+## T-05-T41 · the allocation structure (DEC-4701, DEC-4702)
+- Versions are insert-only (`expected_version` = the newest version number read, else 409
+  `structure_version_conflict`). A person's draft is Pending approval with its results stored;
+  a manager or partner on the engagement drafts (`structure_editor_required`, 403).
+- The agreement reader's proposal, once a person approves it, is adopted as a version Pending
+  approval (`proposed_by: agent`); nothing is approved by the adoption.
+- `GET` answers the additive fields `structure_id`, `sign_off_target_id`, `latest_version`,
+  `method`, `convention`, `proposed_by`, `income`, `distributable`, `periods`, `partners`,
+  `results`, `checks`, `gp_profit_percent`, `citation_ids` and `persisted` (False on a preview).
+- `POST …/approve` is the L3 sign-off on `sign_off_target_id` with `seen_hash` through P-04
+  (an agent, staff and the version's preparer are refused there), then the person's own
+  `approved` version row and a run of the `capital` and `k1s` groups (none while a run is open).
+- 04 Allocation, column D from row 2, holds the closed-books amount per segment that interim
+  closing reads when the draft names none (written by T-05-T40's `interim_closing_706d`).
