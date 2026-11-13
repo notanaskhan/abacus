@@ -51,6 +51,8 @@ AGENTS = (
     "backend/src/abacus_tools/evals/**",
     # A-04-T09: the materiality recommender's suite grades against the engine's figures.
     "backend/src/abacus/modules/assurance/compute/**",
+    # T-04-T18 (TASK-7827): the tax return suite on the fake model reads the tax module.
+    "backend/src/abacus/modules/tax/**",
 )
 # What the fixture-mode journeys walk (F-04-T28; F-04.32): the SPA and portal sources, the
 # component library, the journey specs and their harness, and the server and browser config. A
