@@ -25097,6 +25097,10 @@ export const entitySheetQueryKey = (options: Options<EntitySheetData>) => create
  * Entity Sheet Route
  *
  * One sheet with range paging (T-05-T27): values and formulas, never evaluated text.
+ *
+ * T-05-T38 rest (DEC-4630): `version` names a finished run; the sheet reads as it stood when
+ * that run finished (review's insert-only versions at that instant). No version, or the newest,
+ * is the live workbook with each cell's writer and citations.
  */
 export const entitySheetOptions = (options: Options<EntitySheetData>) => queryOptions<EntitySheetResponse, EntitySheetError, EntitySheetResponse, ReturnType<typeof entitySheetQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

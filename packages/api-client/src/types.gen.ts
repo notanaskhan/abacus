@@ -55692,6 +55692,10 @@ export type WorkbookOut = {
      * Version
      */
     version: number;
+    /**
+     * Versions
+     */
+    versions?: Array<WorkbookVersionOut>;
 };
 
 /**
@@ -56346,6 +56350,26 @@ export type WorkbookTrialBalanceOut = {
      * View
      */
     view: 'account' | 'line';
+};
+
+/**
+ * WorkbookVersionOut
+ *
+ * T-05-T38 rest (DEC-4630): a version of the workbook is the state a finished run left.
+ */
+export type WorkbookVersionOut = {
+    /**
+     * Finished At
+     */
+    finished_at: string;
+    /**
+     * Run No
+     */
+    run_no: number;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**

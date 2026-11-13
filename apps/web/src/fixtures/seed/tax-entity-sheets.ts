@@ -4,8 +4,65 @@
 // text. 05 Capital before the fix (A: H8:H12 empty, J16 off 6,200), with the fix proposed (B:
 // H8:H12 flagged "Proposed") and after it (B2: J13 = J15 = 6,866,200); 01 Trial Balance rows 6–18
 // (C: I18 = F18+G18+H18). Synthetic only.
-import type { WorkbookCellOut, WorkbookSheetCellsOut } from "@abacus/api-client";
+import type { CitationV2Out, WorkbookCellOut, WorkbookSheetCellsOut } from "@abacus/api-client";
+import { stableId } from "./prng";
 import type { Snapshot } from "./tax-entity";
+
+/** T-05-T38 rest (DEC-4630): the cells' citations TXP-11 a2 and d open. D12 cites Jonah Feld's
+ * 2024 K-1 Item L (SHL-07, a2); J16's difference cites the Harborline municipal bond fund
+ * statement, Dec 2025, p. 1 (SHL-08, d). */
+export const K1_ITEM_L = stableId("citation:ridgeline:feld-2024-k1-item-l");
+export const HARBORLINE = stableId("citation:ridgeline:harborline-dec-2025");
+const CELL_CITES: Readonly<Record<string, readonly string[]>> = {
+  D12: [K1_ITEM_L],
+  J16: [HARBORLINE],
+};
+
+function cited(id: string, n: number, title: string, loc: string, version: string): CitationV2Out {
+  return {
+    id,
+    n,
+    kind: "document_text",
+    title,
+    loc,
+    quote: null,
+    quote_state: "shown",
+    value_text: null,
+    match_id: null,
+    state: "valid",
+    verified: true,
+    verification_reason: null,
+    created_by: { kind: "agent", label: "Olivia Brandt via Agent" },
+    retrieved_at: "2026-09-14T14:20:00Z",
+    used_in: 1,
+    moved: null,
+    allowed_actions: [],
+    source: {
+      type: "evidence_version",
+      id: version,
+      version: "1",
+      evidence_version_id: version,
+      page: 1,
+    },
+  };
+}
+
+export const CITATIONS: readonly CitationV2Out[] = [
+  cited(
+    K1_ITEM_L,
+    1,
+    "2024 Schedule K-1 — Jonah Feld",
+    "Item L, beginning capital",
+    stableId("evidence:ridgeline:feld-k1-2024"),
+  ),
+  cited(
+    HARBORLINE,
+    1,
+    "Municipal bond fund statement (Harborline, Dec 2025)",
+    "p. 1",
+    stableId("evidence:ridgeline:harborline-2025-12"),
+  ),
+];
 
 type Cell = readonly [address: string, value: string | null, formula?: string | null];
 
@@ -17,6 +74,7 @@ function cell([address, value, formula]: Cell, state?: WorkbookCellOut["state"])
     formula: f,
     author: f === null ? "run_step" : "formula",
     state: state ?? (f === null ? "value" : "formula"),
+    citation_ids: [...(CELL_CITES[address] ?? [])],
     version: 2,
   };
 }
