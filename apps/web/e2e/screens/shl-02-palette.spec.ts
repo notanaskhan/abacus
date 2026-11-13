@@ -5,7 +5,7 @@
 // flag and the C15 index, so only the states the seed itself produces run there (a, keyboard,
 // portal). c and g stay fixture-only until W-02 and W-03 (agent mode, saved prompts).
 import type { Page } from "@playwright/test";
-import { DEMO_INSTANT, expect, test } from "../harness";
+import { DEMO_INSTANT, expect, openPalette, test } from "../harness";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -19,8 +19,7 @@ const AGENT_RUNS =
 
 /** ⌘K (Ctrl+K off macOS), then the query; answers the combobox. */
 async function go(page: Page, query: string) {
-  await page.keyboard.press("ControlOrMeta+k");
-  const box = page.getByRole("combobox", { name: "Search" });
+  const box = await openPalette(page); // a press before the shell's listener is retried (DEC-4735)
   await expect(box).toBeFocused();
   if (query !== "") await box.fill(query);
   return box;
@@ -88,6 +87,28 @@ test.describe("SHL-02 palette", () => {
       );
     });
 
+    test("shl-02 a: the Actions group binds to the top client, none without one (P-02-T10)", async ({
+      journey,
+    }) => {
+      await journey.as("hannah-leclerc", "/", { clock: DEMO_INSTANT, scenario: "SHL-02:a" });
+      await journey.step("SHL-02 a: feld, then the client's actions", async (page) => {
+        await go(page, "feld");
+        const actions = page.getByRole("group", { name: "Actions" });
+        await expect(
+          actions.getByRole("option", { name: "New engagement for Jonah & Claire Feld…" }),
+        ).toBeVisible();
+        await expect(
+          actions.getByRole("option", { name: "New to-do on Jonah & Claire Feld…" }),
+        ).toBeVisible();
+      });
+      await journey.step("SHL-02 a: no client matched, no client actions", async (page) => {
+        const box = page.getByRole("combobox", { name: "Search" });
+        await box.fill("pellstret");
+        await expect(page.getByText(/^New engagement for /u)).toHaveCount(0);
+        await expect(page.getByText(/^New to-do on /u)).toHaveCount(0);
+      });
+    });
+
     test("shl-02 f: to-do opens SHL-17", async ({ journey }) => {
       await journey.as("hannah-leclerc", "/", { clock: SEP_28, scenario: "SHL-02:f" });
       await journey.step("SHL-02 f: granite, then a to-do", async (page) => {
@@ -130,7 +151,10 @@ test.describe("SHL-02 palette", () => {
     const scenario = journey.project === "fixture" ? { scenario: "SHL-02:a" } : {};
     await journey.as("hannah-leclerc", "/", { clock: DEMO_INSTANT, ...scenario });
     await journey.step("SHL-02 keyboard", async (page) => {
-      const before = await page.evaluate(() => document.activeElement?.outerHTML ?? "");
+      // The shell first (a capture on an empty #root names nothing), then the element itself:
+      // Esc returns focus to it, not to an element that serialises the same (DEC-4735).
+      await expect(page.getByRole("navigation", { name: "Modules" })).toBeVisible();
+      const before = await page.evaluateHandle(() => document.activeElement);
       const box = await go(page, "feld");
       await expect(page.getByRole("option").first()).toBeVisible();
       const first = await box.getAttribute("aria-activedescendant");
@@ -149,8 +173,7 @@ test.describe("SHL-02 palette", () => {
       await expect(box).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(box).toHaveCount(0);
-      const after = await page.evaluate(() => document.activeElement?.outerHTML ?? "");
-      expect(after).toBe(before);
+      expect(await page.evaluate((el) => el === document.activeElement, before)).toBe(true);
       await go(page, "feld");
       await page.keyboard.press("Enter");
       await expect(page.getByRole("combobox", { name: "Search" })).toHaveCount(0);
