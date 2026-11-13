@@ -67,6 +67,8 @@ export interface DashboardLayoutProps {
   sideTopHeight?: number;
   /** The gap between the queue and the right column: 10 (T11) or 12 (TPL-11). */
   columnsGap?: number;
+  /** The right column's width: 420 (T11); 380 beside HOME-05's docked Today pane. */
+  columnWidth?: number;
 }
 
 // ---- Tiles ----------------------------------------------------------------------------------------
@@ -78,6 +80,8 @@ export type DashTileProps =
       value: string;
       label: string;
       variant: PillVariant;
+      /** HOME-05's compressed row (I-02-T16 rest): 88 beside the docked Today pane. */
+      width?: number;
     }
   | {
       /** A title over a row of numbers with their captions (TY2025 Returns, Audits). */
@@ -93,6 +97,8 @@ export type DashTileProps =
       value: string;
       pill?: { label: string; variant: PillVariant };
       caption: string;
+      /** HOME-05's compressed row: Closes 90, Notices 84. */
+      width?: number;
     }
   | {
       /** A number over a caption, left (TPL-11d: "17 Signatures out"). */
@@ -112,7 +118,12 @@ export function DashTile(props: DashTileProps): JSX.Element {
       <section
         data-tile="single"
         aria-label={`${props.value} ${props.label}`}
-        className={cn(TILE, "w-[120px] flex-none items-center justify-center gap-[9px]")}
+        {...(props.width === undefined ? {} : { style: { width: props.width } })}
+        className={cn(
+          TILE,
+          props.width === undefined && "w-[120px]",
+          "flex-none items-center justify-center gap-[9px]",
+        )}
       >
         <span className={KPI_NUMBER}>{props.value}</span>
         <Pill variant={props.variant} size="state">
@@ -165,7 +176,12 @@ export function DashTile(props: DashTileProps): JSX.Element {
           "  ",
           " ",
         )}
-        className={cn(TILE, "w-[160px] flex-none justify-center gap-[6px] px-[16px]")}
+        {...(props.width === undefined ? {} : { style: { width: props.width } })}
+        className={cn(
+          TILE,
+          props.width === undefined ? "w-[160px] px-[16px]" : "px-[10px]",
+          "flex-none justify-center gap-[6px]",
+        )}
       >
         <span className="flex items-center gap-[8px]">
           <span className={KPI_NUMBER}>{props.value}</span>
@@ -421,6 +437,7 @@ export function DashboardLayout({
   side,
   sideTopHeight,
   columnsGap = 10,
+  columnWidth = 420,
 }: DashboardLayoutProps): JSX.Element {
   const head = (
     <div
@@ -505,8 +522,12 @@ export function DashboardLayout({
       </Pane>
       <div
         data-dashboard="side"
-        style={columnsGap === 10 ? undefined : { marginLeft: columnsGap - 10 }}
-        className="flex w-[420px] flex-none flex-col gap-(--gutter-pane)"
+        style={{
+          width: columnWidth,
+          ...(columnsGap === 10 ? {} : { marginLeft: columnsGap - 10 }),
+        }}
+        data-dash-column=""
+        className="flex flex-none flex-col gap-(--gutter-pane)"
       >
         {side.map((pane, i) => {
           const fixed = i === 0 && sideTopHeight !== undefined;

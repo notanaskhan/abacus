@@ -3,7 +3,12 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { PRACTICE_VIEWS, T11Specimen, Tpl11Specimen } from "../specimens/dashboard";
 import { RETURNS_BY_OFFICE } from "../specimens/seed-figures";
 import { installDomShims } from "../test-dom";
-import { KPI_NUMBER } from "./dashboard-layout";
+import {
+  DashTile,
+  DashboardLayout,
+  type DashboardLayoutProps,
+  KPI_NUMBER,
+} from "./dashboard-layout";
 
 // F-05-T46 acceptance: "Role variants, the quiet day and Office Denver recompute from fixtures
 // with every count tying to blueprint section 9.5 and KPI type at 22px or less." Plus Home offers
@@ -147,5 +152,39 @@ describe("KPI type stays at 22px or less", () => {
       }
       unmount();
     }
+  });
+});
+
+describe("I-02-T16 rest: HOME-05's compressed row beside the docked Today pane", () => {
+  it("single and meter tiles take a width; T11's 120 and 160 stay the default", () => {
+    const { container } = render(
+      <>
+        <DashTile kind="single" value="17" label="Prepared" variant="neutral" width={88} />
+        <DashTile kind="single" value="15" label="In review" variant="neutral" />
+        <DashTile kind="meter" value="11" caption="Closes" width={90} />
+        <DashTile kind="meter" value="9" caption="Notices" />
+      </>,
+    );
+    const [a, b, c, d] = [...container.querySelectorAll<HTMLElement>("[data-tile]")];
+    expect(a?.style.width).toBe("88px");
+    expect(b?.className).toContain("w-[120px]");
+    expect(c?.style.width).toBe("90px");
+    expect(d?.className).toContain("w-[160px]");
+  });
+
+  it("the right column is 420 by default and 380 when docked", () => {
+    const common = {
+      toolbar: {},
+      greeting: "Good morning, Daniel",
+      date: "Monday, September 14",
+      bare: true,
+      queue: { title: "Waiting on you", children: null },
+      side: [{ title: "Deadlines", children: null }],
+    } as unknown as DashboardLayoutProps; // `bare`: the toolbar is not drawn
+    const { container, rerender } = render(<DashboardLayout {...common} />);
+    const column = () => container.querySelector<HTMLElement>("[data-dash-column]");
+    expect(column()?.style.width).toBe("420px");
+    rerender(<DashboardLayout {...common} columnWidth={380} />);
+    expect(column()?.style.width).toBe("380px");
   });
 });

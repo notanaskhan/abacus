@@ -133,7 +133,7 @@ export function HOME05({ initialCollapsed }: HOME05Props): JSX.Element {
         />
       </aside>
       <div ref={home} className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <HOME01 />
+        <HOME01 docked />
       </div>
     </div>
   );
