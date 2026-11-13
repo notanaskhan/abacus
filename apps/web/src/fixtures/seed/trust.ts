@@ -129,6 +129,8 @@ const EBP_V3 = stableId("methodology-template-version:bh-ebp:3");
 const EBP_V2 = stableId("methodology-template-version:bh-ebp:2");
 export const KEYSTONE_SOC1 = stableId("evidence-version:northwind:keystone-soc1-type2");
 export const NORTHWIND_SPD = stableId("evidence-version:northwind:spd-2025");
+/** EBP-02 (A-05-T17; DEC-2490): the adoption agreement read before the 2024 amendment. */
+export const NORTHWIND_AA = stableId("evidence-version:northwind:adoption-agreement");
 export const HARBORLINE = stableId("evidence-version:northwind:harborline-net-trust-assets");
 export const K1_DRAFT = stableId("evidence-version:feld:ridgeline-k1-draft");
 export const K1_STATEMENT = stableId("evidence-version:feld:ridgeline-k1-statement");
@@ -454,7 +456,24 @@ export const W2_WAGES = citation(stableId("citation:feld:1040:1a:w2-claire"), 1,
   },
 });
 
+// EBP-02's lit lines (DV-EBP-02-3): the adoption agreement's Plan year line (p. 1, as EBP-02b2
+// shows it) and the SPD's Entry dates line (p. 6 of 18, as EBP-02c shows it).
+const AA_PLAN_YEAR: Rect = [54, 236, 558, 254];
+const SPD_ENTRY_DATES: Rect = [54, 236, 558, 254];
+export const AA_PLAN_YEAR_MATCH = at(NORTHWIND_AA, 1, AA_PLAN_YEAR);
+export const SPD_ENTRY_DATES_MATCH = at(NORTHWIND_SPD, 6, SPD_ENTRY_DATES);
+
 export const DOCUMENTS: Record<string, SeededDocument> = {
+  [NORTHWIND_AA]: {
+    face: "statement",
+    manifest: manifest(NORTHWIND_AA, "Northwind 401(k) Adoption Agreement.pdf", 14),
+    regions: [region(NORTHWIND_AA, 1, AA_PLAN_YEAR, null, "Plan year")],
+  },
+  [NORTHWIND_SPD]: {
+    face: "statement",
+    manifest: manifest(NORTHWIND_SPD, "Northwind Summary Plan Description 2025.pdf", 18),
+    regions: [region(NORTHWIND_SPD, 6, SPD_ENTRY_DATES, null, "Entry dates")],
+  },
   [K1_DRAFT]: {
     face: "form",
     manifest: manifest(K1_DRAFT, "Ridgeline_2025_K1_JonahFeld_DRAFT.pdf", 3, {

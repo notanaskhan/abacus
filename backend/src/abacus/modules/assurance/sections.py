@@ -57,6 +57,15 @@ class SectionState:
     grammar: Grammar
     sub_line: str | None = None
     blocked_on_user_id: UUID | None = None
+    # The section's earlier versions, newest first: the rail's child rows (EBP-02's Version 1;
+    # DV-EBP-02-5, DEC-2492).
+    versions: tuple[SectionVersion, ...] = ()
+
+
+@dataclass(frozen=True)
+class SectionVersion:
+    version_no: int
+    at: datetime
 
 
 SectionStateProvider = Callable[[TenantContext, UUID], Awaitable[SectionState | None]]

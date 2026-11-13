@@ -64,6 +64,7 @@ from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.evidence.api import (
     CitationAnchor,
     CitationClaim,
+    citation_display,
     record_citations,
     review_material,
     version_view,
@@ -117,6 +118,17 @@ class DocumentValue:
 
 
 @dataclass(frozen=True)
+class CitedSpot:
+    evidence_version_id: UUID
+    page: int | None
+    match_id: str
+    # SHL-07's card on the reference (DEC-2491): code's title and location, the re-read quote.
+    title: str = ""
+    loc: str = ""
+    quote: str | None = None
+
+
+@dataclass(frozen=True)
 class ProvisionDocuments:
     spd: DocumentValue | None = None
     amendment: DocumentValue | None = None
@@ -136,6 +148,8 @@ class ProvisionState:
     conflict: str | None = None
     conflict_source: DocumentValue | None = None
     amended_on: date | None = None
+    # A-05-T17 (DEC-2490): where the value's first verified citation sits, for the viewer to light.
+    source: CitedSpot | None = None
 
 
 @dataclass(frozen=True)
@@ -514,6 +528,22 @@ async def record_document_value(
         )
 
 
+async def _spot(ctx: AuthContext, citation_ids: Sequence[UUID]) -> CitedSpot | None:
+    """The first of a value's citations the reader may see that is verified and has a region on
+    a document: what hovering the provision lights in the viewer (DV-EBP-02-3)."""
+    for citation_id in citation_ids:
+        try:
+            view = await citation_display(ctx, citation_id)
+        except (NotFound, Forbidden):
+            continue
+        version = view.source.evidence_version_id
+        if view.verified and view.match_id is not None and version is not None:
+            return CitedSpot(
+                version, view.source.page, view.match_id, view.title, view.loc, view.quote
+            )
+    return None
+
+
 async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None) -> PlanReview:
     """EBP-02's provisions for the latest review (or `review_no`, read-only b2): each row's
     adopted value and reference, and whether its value is verified now."""
@@ -527,6 +557,7 @@ async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None)
     rows = provisions_for(amendment_in_force=bool(found.amendment_in_force))
     states = await _states(ctx.tenant, paper, rows)
     docs, year_end = await _documents(ctx.tenant, work_item_id)
+    spots = {p.key: await _spot(ctx, states[p.value_cell].citation_ids) for p in rows}
     latest = None if review_no is None else await _review_row(ctx.tenant, work_item_id, None)
     version_diff = None
     if latest is not None and latest.review_no != found.review_no:
@@ -557,6 +588,7 @@ async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None)
                     amendment_in_force=bool(found.amendment_in_force),
                     plan_year_end=year_end,
                 ),
+                spots[p.key],
             )
             for p in rows
         ),
@@ -564,6 +596,21 @@ async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None)
         sign_offs=await _signed(ctx.tenant, paper),
         version_diff=version_diff,
     )
+
+
+_EARLIER: Final = text(
+    "SELECT review_no, created_at FROM ebp_plan_reviews WHERE work_item_id = :w "
+    "AND review_no < (SELECT max(review_no) FROM ebp_plan_reviews WHERE work_item_id = :w) "
+    "ORDER BY review_no DESC"
+)
+
+
+async def earlier_reviews(tenant: TenantContext, work_item_id: UUID) -> list[tuple[int, datetime]]:
+    """Every review before the latest, newest first, with when it started (the rail's children);
+    the cockpit's reader authorised the work item."""
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_EARLIER, {"w": work_item_id})).all()
+    return [(int(r.review_no), cast(datetime, r.created_at)) for r in rows]
 
 
 async def unverified_count(tenant: TenantContext, workpaper_id: UUID, work_item_id: UUID) -> int:

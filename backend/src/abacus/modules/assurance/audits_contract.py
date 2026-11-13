@@ -218,6 +218,15 @@ class AuditOverviewOut(BaseModel):
     phase: Annotated[AuditEngagementStatus, classified("internal")]
 
 
+class AuditSectionVersionOut(BaseModel):
+    """An earlier version of a section: a rail child row ("Version 1 · Sep 15, 2026 10:02 AM")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    version_no: Annotated[int, Field(ge=1), classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+
+
 class AuditSectionRowOut(BaseModel):
     """A rail row from a registered section provider (DV-1): a missing provider hides the row.
     `sub_line` is code-built ("11 of 24 received", "Complete · 9:26 AM"), never model text."""
@@ -236,6 +245,8 @@ class AuditSectionRowOut(BaseModel):
     blocked_on_user_id: Annotated[UUID | None, classified("internal")] = None
     blocked_on_name: Annotated[str | None, classified("internal")] = None
     allowed_actions: Annotated[list[str], classified("internal")] = []
+    # DV-EBP-02-5 (DEC-2492): earlier versions, newest first; none for most sections.
+    versions: Annotated[list[AuditSectionVersionOut], classified("internal")] = []
 
 
 class AuditBandOut(BaseModel):

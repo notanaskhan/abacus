@@ -3,6 +3,7 @@
 
 import type { PlanReviewOut, ProvisionOut, SignOffChipOut } from "@abacus/api-client";
 import { stableId } from "./prng";
+import { AA_PLAN_YEAR_MATCH, NORTHWIND_AA, NORTHWIND_SPD, SPD_ENTRY_DATES_MATCH } from "./trust";
 
 export type Ebp02Variant = "a" | "b" | "b2" | "c" | "d" | "e";
 
@@ -36,7 +37,8 @@ const ROWS: readonly (readonly [string, string, string, string])[] = [
 // The two rows the 2024 amendment governs: absent from Version 1 (b2).
 const AMENDED = new Set(["long_term_part_time", "catch_up"]);
 export const PAPER = stableId("workpaper:northwind:ebp_02");
-export const SPD_2025 = stableId("evidence_version:northwind:spd_2025");
+/** The SPD 2025 (c), seeded in the viewer with its p. 6 Entry dates line. */
+export const SPD_2025 = NORTHWIND_SPD;
 const HL: SignOffChipOut = {
   level: 1,
   initials: "HL",
@@ -71,6 +73,21 @@ function row(
         ? {
             evidence_version_id: SPD_2025,
             note: "The SPD (2025, p. 6) says entry is on the first day of each calendar quarter.",
+            page: 6,
+            match_id: SPD_ENTRY_DATES_MATCH,
+          }
+        : null,
+    // DV-EBP-02-3 (DEC-2490): the line hovering lights; the seeded adoption agreement draws Plan
+    // year's.
+    source_match:
+      key === "plan_year"
+        ? {
+            evidence_version_id: NORTHWIND_AA,
+            page: 1,
+            match_id: AA_PLAN_YEAR_MATCH,
+            title: "Adoption Agreement",
+            loc: "p. 1",
+            quote: "Plan year January 1 – December 31",
           }
         : null,
     citation_count: 1,

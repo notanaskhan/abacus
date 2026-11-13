@@ -1,17 +1,21 @@
-import type { PlanReviewOut, ProvisionOut } from "@abacus/api-client";
+import type { PlanReviewOut, ProvisionOut, SourceMatchOut } from "@abacus/api-client";
 import {
   ebpPlanReviewOptions,
   ebpPlanReviewQueryKey,
   fieldTickMutation,
 } from "@abacus/api-client/query";
 import {
+  CitationPopoverHost,
+  type CitationView,
   type CockpitCanvas,
   Icon,
+  type MatchId,
   PaneAction,
   Pill,
   type ViewState,
   cn,
   date as formatDate,
+  useMatchStore,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -31,6 +35,18 @@ import { COPY } from "./copy";
 const BLOCK = "overflow-hidden rounded-pane bg-card shadow-e1";
 const HEAD = "flex h-[32px] items-center px-[12px] text-section font-medium hairline-b";
 const GRID = "grid grid-cols-[1fr_190px_76px_14px] items-center gap-[8px]";
+
+/** SHL-07's card for a provision's citation: code's title and location, the re-read quote. */
+function citeOf(m: SourceMatchOut): CitationView {
+  return {
+    n: 1,
+    title: m.title ?? "",
+    quote: m.quote ?? "",
+    loc: m.loc ?? "",
+    match: m.match_id as MatchId,
+    kind: "pdf",
+  };
+}
 
 function Row({
   provision,
@@ -53,6 +69,11 @@ function Row({
 }): JSX.Element {
   const conflict = provision.conflict ?? null;
   const source = provision.conflict_source ?? null;
+  // DV-EBP-02-3 (DEC-2490): the line the value was read from, lit in the dock viewer, which shares
+  // this scope. Hover lights it after the intent delay; a click pins it (c: the SPD's line).
+  const store = useMatchStore();
+  const hovered = provision.source_match?.match_id ?? null;
+  const pinned = source?.match_id ?? hovered;
   return (
     <>
       {/* biome-ignore lint/a11y/useSemanticElements: a grid row, not a table */}
@@ -66,14 +87,18 @@ function Row({
           "mx-[5px] h-[30px] rounded-[7px] px-[8px] text-body",
           lit ? "bg-match-mark" : "hover:bg-tonal-hover",
         )}
-        onPointerEnter={() => {
+        data-match={hovered ?? undefined}
+        onPointerEnter={(event) => {
           onLight(provision.key);
+          if (hovered !== null) store.intent(hovered as MatchId, event.currentTarget, "row");
         }}
         onPointerLeave={() => {
           onLight(null);
+          if (hovered !== null) store.release("row");
         }}
-        onClick={() => {
+        onClick={(event) => {
           onPin(provision.key);
+          if (pinned !== null) store.togglePin(pinned as MatchId, event.currentTarget);
         }}
       >
         <span className="flex min-w-0 items-center gap-[6px] truncate">
@@ -95,7 +120,27 @@ function Row({
             </Pill>
           )}
         </span>
-        <span className="truncate text-ink-3">{provision.reference ?? ""}</span>
+        {provision.source_match != null && provision.reference != null ? (
+          // SHL-07 on the reference (DEC-2491): the value's citation in the C-07 popover.
+          <button
+            type="button"
+            data-ebp02="reference"
+            className="truncate text-left text-ink-3 hover:text-ink"
+            onClick={(event) => {
+              event.stopPropagation();
+              const m = provision.source_match;
+              if (m == null) return;
+              store.togglePin(m.match_id as MatchId, event.currentTarget, {
+                list: [citeOf(m)],
+                index: 0,
+              });
+            }}
+          >
+            {provision.reference}
+          </button>
+        ) : (
+          <span className="truncate text-ink-3">{provision.reference ?? ""}</span>
+        )}
         <button
           type="button"
           aria-label={COPY.verify(provision.label)}
@@ -201,24 +246,9 @@ export function useProvisionsCanvas(
     actions: (
       <>
         {data !== undefined && (
-          // The rail has no Version 1 child row yet (DV-EBP-02-5): the pill opens the earlier one.
-          <button
-            type="button"
-            data-ebp02="version"
-            disabled={readOnly || data.version_no <= 1}
-            aria-label={
-              readOnly || data.version_no <= 1
-                ? COPY.version(data.version_no)
-                : COPY.openVersion(data.version_no - 1)
-            }
-            onClick={() => {
-              onOpenVersion?.(data.version_no - 1);
-            }}
-          >
-            <Pill variant="neutral" size="micro">
-              {COPY.version(data.version_no)}
-            </Pill>
-          </button>
+          <Pill variant="neutral" size="micro">
+            {COPY.version(data.version_no)}
+          </Pill>
         )}
         {readOnly && (
           <Pill variant="muted" size="micro">
@@ -297,6 +327,12 @@ export function useProvisionsCanvas(
               </button>
             </div>
           )}
+          <CitationPopoverHost
+            onOpenDialog={(cite) => {
+              const found = data.provisions.find((p) => p.source_match?.match_id === cite.match);
+              if (found?.source_match != null) onDock?.(found.source_match.evidence_version_id);
+            }}
+          />
           <section data-ebp02="provisions" aria-label={COPY.block} className={BLOCK}>
             <h3 className={HEAD}>
               <span className="flex-1">{COPY.block}</span>
@@ -333,8 +369,12 @@ export function useProvisionsCanvas(
                   onLight={setLit}
                   onPin={(key) => {
                     setPinned((was) => (was === key ? null : key));
-                    const source = p.conflict_source ?? null;
-                    if (source !== null) onDock?.(source.evidence_version_id);
+                    // c opens the SPD; any other row opens the document its value was read from.
+                    const doc =
+                      p.conflict_source?.evidence_version_id ??
+                      p.source_match?.evidence_version_id ??
+                      null;
+                    if (doc !== null) onDock?.(doc);
                   }}
                   onRaise={onRaise}
                   onTick={(row) => {

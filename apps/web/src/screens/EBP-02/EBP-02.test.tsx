@@ -8,6 +8,12 @@ import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { newQueryClient } from "../../testing/support";
+import {
+  AA_PLAN_YEAR_MATCH,
+  NORTHWIND_AA,
+  NORTHWIND_SPD,
+  SPD_ENTRY_DATES_MATCH,
+} from "../../fixtures/seed/trust";
 import { EBP02Frame } from "./artboard";
 import { type Ebp02State, scenarios } from "./scenarios";
 
@@ -85,7 +91,9 @@ describe("EBP-02", () => {
     expect(document.querySelectorAll("[data-provision]").length).toBe(18);
     expect(document.querySelector("[data-provision='catch_up']")).toBeNull();
     expect(document.querySelector("[data-ebp02='snapshot']")).not.toBeNull();
-    const ticks = [...document.querySelectorAll<HTMLButtonElement>("[data-provision] button")];
+    const ticks = [
+      ...document.querySelectorAll<HTMLButtonElement>("[data-provision] button[aria-pressed]"),
+    ];
     expect(ticks.every((t) => t.disabled)).toBe(true);
   });
 
@@ -107,11 +115,21 @@ describe("EBP-02", () => {
     expect(document.querySelector("[data-ebp02='snapshot']")).toBeNull();
   });
 
-  it("a: the Version 2 pill opens Version 1", async () => {
+  it("DV-EBP-02-5: the rail's Version 1 child row opens the earlier review", async () => {
     show("a");
-    const pill = await drawn("[data-ebp02='version']");
-    fireEvent.click(pill);
+    await drawn("[data-screen='EBP-02'][data-version='2']");
+    const child = await drawn("[data-phase='ebp_02@v1']");
+    expect(child.textContent).toContain("Version 1");
+    expect(child.textContent).toContain("Sep 15, 2026 10:02 AM");
+    fireEvent.click(child.querySelector("[data-rail-target]") as HTMLElement);
     await drawn("[data-screen='EBP-02'][data-version='1']");
+    expect(document.querySelector("[data-phase='ebp_02@v1']")?.hasAttribute("data-selected")).toBe(
+      true,
+    );
+    fireEvent.click(
+      document.querySelector("[data-phase='ebp_02'] [data-rail-target]") as HTMLElement,
+    );
+    await drawn("[data-screen='EBP-02'][data-version='2']");
   });
 
   it("c: the row states the SPD's words, offers Raise exception… and opens the SPD", async () => {
@@ -124,6 +142,53 @@ describe("EBP-02", () => {
     const row = await drawn("[data-provision='entry_dates']");
     fireEvent.click(row);
     await drawn("[data-audit-dock='viewer']");
+  });
+
+  it("DV-EBP-02-3: a click opens the adoption agreement with Plan year's line lit", async () => {
+    show("a");
+    const row = await drawn("[data-provision='plan_year']");
+    fireEvent.click(row);
+    await drawn(`[data-audit-viewer='${NORTHWIND_AA}']`);
+    const line = await drawn(`[data-audit-viewer] [data-match='${AA_PLAN_YEAR_MATCH}']`);
+    await waitFor(() => {
+      expect(line.hasAttribute("data-lit")).toBe(true);
+    });
+  });
+
+  it("DV-EBP-02-3: hovering a row lights its line in the open viewer", async () => {
+    show("a");
+    const row = await drawn("[data-provision='plan_year']");
+    fireEvent.click(row); // opens the document and pins the line
+    const line = await drawn(`[data-audit-viewer] [data-match='${AA_PLAN_YEAR_MATCH}']`);
+    fireEvent.click(row); // unpins it
+    await waitFor(() => {
+      expect(line.hasAttribute("data-lit")).toBe(false);
+    });
+    fireEvent.pointerEnter(row);
+    await waitFor(() => {
+      expect(line.hasAttribute("data-lit")).toBe(true);
+    });
+  });
+
+  it("SHL-07: the reference opens the citation's card", async () => {
+    show("a");
+    const reference = await drawn("[data-provision='plan_year'] [data-ebp02='reference']");
+    expect(reference.textContent).toBe("AA §1.05");
+    fireEvent.click(reference);
+    await waitFor(() => {
+      expect(document.body.textContent).toContain("Plan year January 1 – December 31");
+    });
+    expect(document.body.textContent).toContain("Adoption Agreement");
+  });
+
+  it("c: the row opens the SPD on p. 6 with the Entry dates line lit", async () => {
+    show("c");
+    fireEvent.click(await drawn("[data-provision='entry_dates']"));
+    await drawn(`[data-audit-viewer='${NORTHWIND_SPD}']`);
+    const line = await drawn(`[data-audit-viewer] [data-match='${SPD_ENTRY_DATES_MATCH}']`);
+    await waitFor(() => {
+      expect(line.hasAttribute("data-lit")).toBe(true);
+    });
   });
 
   it("c: Entry dates carries the amber SPD: quarterly pill", async () => {

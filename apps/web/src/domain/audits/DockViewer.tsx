@@ -65,6 +65,9 @@ export interface DockViewerOptions {
   lit?: string | null;
   /** The page's width at 100% (the kit's default in the 330 dock; AUD-03's 490 viewer is wider). */
   pageWidth?: number;
+  /** EBP-02 (DV-EBP-02-3; DEC-2490): light from the host's match scope, not one of the viewer's own,
+   * so a canvas row lights its line here; the lit region scrolls to 30% of the well. */
+  shared?: boolean;
 }
 
 function Lit({ match, ready }: { match: string; ready: boolean }): null {
@@ -80,6 +83,7 @@ function Viewer({
   above,
   lit,
   pageWidth,
+  shared,
 }: { versionId: string } & DockViewerOptions): JSX.Element {
   const reveal = useLoggedReveal(versionId);
   const manifest = useQuery({
@@ -149,6 +153,7 @@ function Viewer({
         loading={manifest.data === undefined}
         {...(pageWidth === undefined ? {} : { pageWidth })}
         {...(above === undefined ? {} : { aboveWell: above })}
+        {...(shared === true ? { scrollToLit: true } : {})}
         reveal={{
           allowed: manifest.data?.allowed_actions.includes("pii.reveal") ?? false,
           onReveal: reveal.onReveal,
@@ -170,9 +175,13 @@ export function DockViewer({
   }
   return (
     <div data-audit-viewer={versionId} className="flex min-h-0 flex-1 flex-col">
-      <MatchScope>
+      {options.shared === true ? (
         <Viewer key={versionId} versionId={versionId} {...options} />
-      </MatchScope>
+      ) : (
+        <MatchScope>
+          <Viewer key={versionId} versionId={versionId} {...options} />
+        </MatchScope>
+      )}
     </div>
   );
 }

@@ -4,6 +4,8 @@
 
 export const AUDIT_MESSAGES = {
   back: "All Audits",
+  /** A rail child row: a section's earlier version (EBP-02's rail, the handoff's words). */
+  version: (n: number): string => `Version ${String(n)}`,
   railTitle: "Overview",
   bands: {
     overview: "Overview",
