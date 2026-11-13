@@ -5,7 +5,7 @@ plan_key: S41-leftovers
 spec: SPEC-651
 acceptance_criteria: [AC-F5]  # each leftover's row keeps its own criteria; listed per item below
 risk_zone: amber
-status: in-progress
+status: in-review
 branch: s41lo-txp06-signoff
 worktree: /Users/ayushkbhatia/Accrued/abacus-s41
 created: 2026-11-13
@@ -51,3 +51,14 @@ build them").
 - 2026-11-13: item 3 dropped (W-02-T19's tools); item 4 built (`s41lo-context-lines`).
 - 2026-11-13: item 5 not built (recorded); item 6 built (`s41lo-palette-actions`).
 - 2026-11-13: item 7 built (`s41lo-graph-subpath`).
+- 2026-11-14 end pass on the stack's tip: ruff (format, check), lint-imports, banned_patterns,
+  error_codes, validate_docs, scope_guards, tool_registry, generator_coverage, register_ids,
+  `contracts --check`, full pyright (1 error in this round's test, fixed), check-generated and
+  check-heads all pass. Web: tsc and eslint clean; vitest on the touched screens and lint 84/84.
+  Backend: the touched unit and contract tests pass (stub test now lists S42's five served
+  routes and its 38-route pin: main red, fixed forward in #1938). `pnpm audit --prod` clean;
+  dev deps carry js-yaml (3 high) and minimatch (1 moderate), protected bumps, recorded.
+  Security read: no blocking finding (each new read authorises and masks TINs; the AC-C4 parts
+  fail closed on Forbidden, including G2 independence; the approve writer runs only from SHL-12's
+  HumanAction and the route keeps P-04's rules). Full suites not run (the S42 session held the
+  test lock); CI on the batch's last merge covers them.
