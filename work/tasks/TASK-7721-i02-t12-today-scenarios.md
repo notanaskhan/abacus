@@ -3,7 +3,7 @@ id: TASK-7721
 title: I-02-T12 Today scenarios and seed footing tests
 plan_key: I-02-T12
 spec: SPEC-654
-acceptance_criteria: [AC-1.1, AC-1.3]
+acceptance_criteria: [AC-1, AC-8, AC-9]
 risk_zone: green
 status: in-review
 branch: i02-t12-today-scenarios

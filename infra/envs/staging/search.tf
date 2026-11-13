@@ -2,7 +2,7 @@
 # 5 s). The indexer logs `search.index_lag` (object type and milliseconds only, never search text)
 # for each document the outbox relay rebuilds; a reindex backfill does not log it. The filter turns
 # each line into one `SearchIndexLagMs` sample on whichever backend service ran the relay, and the
-# alarm reads its p95. Runbook: RB-31 (index drift and rebuild, P-02-T14).
+# alarm reads its p95. Runbook: RB-82 (index drift and rebuild, P-02-T14; RB-31 was taken).
 
 resource "aws_cloudwatch_log_metric_filter" "search_index_lag" {
   for_each       = local.enabled ? local.backend_services : {}
@@ -20,7 +20,7 @@ resource "aws_cloudwatch_log_metric_filter" "search_index_lag" {
 resource "aws_cloudwatch_metric_alarm" "search_index_lag" {
   count               = local.enabled ? 1 : 0
   alarm_name          = "abacus-staging-search-index-lag-p95"
-  alarm_description   = "C15 search index: relay lag p95 over 5 s for 15 minutes; results trail their records. Runbook: docs/runbooks/RB-31-search-index-drift.md"
+  alarm_description   = "C15 search index: relay lag p95 over 5 s for 15 minutes; results trail their records. Runbook: docs/runbooks/RB-82-search-index-drift.md"
   namespace           = "Abacus/Search"
   metric_name         = "SearchIndexLagMs"
   extended_statistic  = "p95"

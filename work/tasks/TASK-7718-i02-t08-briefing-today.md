@@ -3,7 +3,7 @@ id: TASK-7718
 title: I-02-T08 Capability briefing.today v1 (spec, prompt, EngagementBriefing, validator, briefing step)
 plan_key: I-02-T08
 spec: SPEC-654
-acceptance_criteria: [AC-3.3, AC-3.4]
+acceptance_criteria: [AC-3, AC-10]
 risk_zone: red
 status: in-review
 branch: i02-t08-briefing-today

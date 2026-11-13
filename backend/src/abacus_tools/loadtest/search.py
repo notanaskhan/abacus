@@ -1,4 +1,4 @@
-"""C15 search at 1M documents (P-02-T13; P-02 §10 item 6; ADR-241; DEC-4726; RB-31).
+"""C15 search at 1M documents (P-02-T13; P-02 §10 item 6; ADR-241; DEC-4726; RB-82).
 
 Run, against a local stack only:
 

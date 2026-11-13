@@ -46,6 +46,17 @@ To write (Q-02).
 ## 8. Review
 To write (Q-02).
 
+## Module steps recorded by their epics
+The sections above are Q-02's to write. Owning epics record the step their data needs here, in
+the order the offboarding runs them:
+
+- **Search index (P-02-T14, C15).** After the firm's records are shredded or exported, and before
+  the tenant is closed: `python -m abacus_tools.search purge <tenant>` deletes every
+  `search_documents` row and every `search_recents` row of the firm. The index holds metadata only
+  and is rebuildable, so nothing in it is retained or exported; verify with the drift check
+  answering no rows for the tenant. `membership.deactivated` already purges each person's recents
+  as people leave.
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|

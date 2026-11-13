@@ -3,7 +3,7 @@ id: TASK-7717
 title: I-02-T09 evals/briefing_today (cases, graders, frozen thresholds, calibration set)
 plan_key: I-02-T09
 spec: SPEC-654
-acceptance_criteria: [AC-6.1]
+acceptance_criteria: [AC-3, AC-7]
 risk_zone: amber
 status: in-review
 branch: i02-t09-briefing-evals

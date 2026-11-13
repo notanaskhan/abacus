@@ -3,7 +3,7 @@ id: TASK-7719
 title: I-02-T10 practice.today assembly and live routes
 plan_key: I-02-T10
 spec: SPEC-654
-acceptance_criteria: [AC-1.1, AC-1.2, AC-2.1]
+acceptance_criteria: [AC-1, AC-2, AC-4, AC-5]
 risk_zone: amber
 status: in-review
 branch: i02-t10-today-assembly

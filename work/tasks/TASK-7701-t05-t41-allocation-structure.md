@@ -3,7 +3,7 @@ id: TASK-7701
 title: T-05-T41 Allocation structure service (GET, PUT draft, POST preview, L3 approval and re-run, proposal adoption)
 plan_key: T-05-T41
 spec: SPEC-651
-acceptance_criteria: [AC-5.1, AC-5.2, AC-5.3, AC-5.4]  # T-05 F5
+acceptance_criteria: [AC-F5, AC-F12]  # save, preview and approve; L1 before L3; an approved version reruns capital and K-1s
 risk_zone: amber
 status: in-review
 branch: t05-t41-allocation-structure

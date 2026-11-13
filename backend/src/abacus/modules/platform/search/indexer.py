@@ -16,7 +16,7 @@ by content. Walls are not subscribed to: they are evaluated at query time (P-02 
 each stored document's lag from its source change (`source_updated_at`) to now is recorded on the
 `abacus.search.index_lag` histogram and logged as `search.index_lag` (`lag_ms`, `object_type`:
 identifiers only). CloudWatch's log metric filter turns the line into `SearchIndexLagMs`, alarmed
-at p95 above 5 s (`infra/modules/search`, RB-31). The target is P-02's relay lag p95 ≤ 5 s.
+at p95 above 5 s (`infra/envs/staging/search.tf`, RB-82). The target is P-02's relay lag p95 ≤ 5 s.
 
 `membership.deactivated` purges that person's recents. The reindex is audited
 (`search_index.reindex_requested` here, `.reindex_completed` by the workflow's last activity).

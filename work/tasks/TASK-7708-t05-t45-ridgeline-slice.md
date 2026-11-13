@@ -3,7 +3,7 @@ id: TASK-7708
 title: T-05-T45 Brightwater Hale Ridgeline slice part 1 through service APIs
 plan_key: T-05-T45
 spec: SPEC-651
-acceptance_criteria: [AC-13.1]  # T-05 §5.3
+acceptance_criteria: [AC-F14]  # the Ridgeline and Harborview slice loads on synthetic firms only
 risk_zone: amber
 status: in-review
 branch: t05-t45-ridgeline-slice

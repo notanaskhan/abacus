@@ -31,4 +31,4 @@ def test_the_alarm_is_p95_over_5_seconds_for_15_minutes() -> None:
     assert "period              = 300" in alarm and "evaluation_periods  = 3" in alarm
     assert "threshold           = var.search_index_lag_p95_ms" in alarm
     assert "default     = 5000" in VARIABLES.split('variable "search_index_lag_p95_ms"')[1]
-    assert "RB-31-search-index-drift.md" in alarm
+    assert "RB-82-search-index-drift.md" in alarm

@@ -3,7 +3,7 @@ id: TASK-7710
 title: T-05-T47 S41 protected bundle (flag renewals, prompt variant flags, suite registration)
 plan_key: T-05-T47
 spec: SPEC-651
-acceptance_criteria: [AC-15.1]
+acceptance_criteria: [AC-F13]  # prompt variant flags and eval suites for every v2 spec mode
 risk_zone: red
 status: in-review
 branch: t05-t47-protected-bundle

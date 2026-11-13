@@ -119,6 +119,22 @@ what today: `docs/architecture/reference/review-slot-consumers.md`. Incidents:
 6. **Tests:** a stale sign-off after the change event; a replayed event announces nothing new; an
    agent context refused on the decision; the gate rebuilt from scratch equals the live rows.
 
+## Making records findable (C15 search; P-02-T14)
+
+A module whose records a person should reach from ⌘K registers a `SearchProjection` from its
+`api.py` (`platform.api.register_search_projection`); `platform` changes nothing. The guide is
+`docs/contracts/c15-search.md` §6; copy `tax/search.py` (a `tri` type with related names) or
+`requests/search.py` (an engagement-scoped type).
+
+1. Group and scope kind from C15 §3; `read_action` is the record's own read in the matrix file;
+   `target` the screen a row opens.
+2. Builder in `<module>/search.py`: current state from the module's own tables, `None` when the
+   record must not be findable. Metadata only: never a TIN, an amount, a body or Restricted text.
+3. Triggers: the outbox events (identifier-only payloads) that change what the row says.
+4. Backfill once with `python -m abacus_tools.search reindex <tenant> --type <type>` (RB-82).
+5. Tests: the builder (current state, the `None` cases, no TIN), a C15 consumer case, and the
+   SHL-02 fixture rows if a palette state shows the type. Never log or assert on search text.
+
 ## An engine with reference data (A-05-T62)
 A pure engine under `compute/<area>/` stamps `ENGINE_VERSION` and `inputs_hash` on every figure. Reference data it reads (rates, limits) lives beside it in `reference/*.yaml`, PROTECTED and CPA-reviewed: a missing year or quarter is a refusal, never a guess. A version bump recomputes through a checkpoint a person approves; it never rewrites stored figures (`docs/runbooks/ebp-modules.md` §5). Firm-shaped mappings (Schedule H lines) are database content, not YAML.
 

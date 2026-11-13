@@ -1,4 +1,4 @@
-# C15 search under the December profile (P-02-T13; P-02 §10 item 6; DEC-4726; RB-31): staff search
+# C15 search under the December profile (P-02-T13; P-02 §10 item 6; DEC-4726; RB-82): staff search
 # at the peak while the firm works its requests, over a tenant grown to 1M documents with
 # `python -m abacus_tools.loadtest.search seed`. `search_first` times the first group alone
 # (Clients, the canonical first group) against P-02's 250 ms p95; `search_all` is every group under

@@ -7,7 +7,7 @@
 | Surface | firm (never the portal: the portal bundle carries no palette code, INV-4) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/SHL-02 Command palette - Go/` (README.md, spec.md, revision.md R2; revision wins over spec) |
 | Epic and tasks | P-02 · ADR-241 (P-33) T15 · glossary T04 · contract T03 · C15 stub T01 · migration T05 · consumer suite T02 · indexer T06 · builders T07 · query T08 · AC suite T09 · palette T10 · fixtures T11 · journeys T12 · load T13 · docs T14 |
-| Manifest status | planned (`routes/manifest/shl.ts`; `entry: true`, no designed link targets it). Fixture at P-02-T10/T11, live behind `search.palette` after P-02-T08 |
+| Manifest status | planned in `routes/manifest/shl.ts` (`entry: true`, no route: an overlay, as SHL-04). **Live** behind `search.palette` (P-02-T08 to T13; on for synthetic firms, per-firm rollout in `docs/operations/p02-search-flag-plan.md`, P-02-T14) |
 | Flags | `search.palette` (routes, ⌘K and the mount) · `search.agent_mode` (the `>` prefix; flips only after W-02's WB-01 new-session target) |
 
 ## States
