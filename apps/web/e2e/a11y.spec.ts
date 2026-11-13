@@ -330,6 +330,12 @@ test.describe("target size (SC 2.5.8)", () => {
         const box = el.getBoundingClientRect();
         const ox = box.left + box.width / 2;
         const oy = box.top + box.height / 2;
+        // A control an open dialog covers cannot be pressed until the dialog closes, so it is not
+        // a target while covered (TPL-13 a2's day popover over its chips; owner's call, DEC-4740).
+        // Only an open dialog that is not the control's own counts; anything else still fails.
+        const top = document.elementFromPoint(ox, oy);
+        const cover = top?.closest('[role="dialog"]');
+        if (top !== null && cover != null && !cover.contains(el)) return;
         const lands = offsets.every(([dx = 0, dy = 0]) => {
           const hit = document.elementFromPoint(ox + dx, oy + dy);
           return hit !== null && (hit === el || el.contains(hit));
