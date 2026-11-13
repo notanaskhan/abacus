@@ -1,5 +1,7 @@
 import { Navigate, createRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import type { JSX } from "react";
+import { type JSX, Suspense, lazy } from "react";
+import { useFlag } from "../../app-core/flags";
+import { registerOverlay } from "../../app-core/overlays";
 import { appRoute, lazyScreen } from "../root";
 
 // Home: `/` goes to `/home` when `home.dashboard` is on (I-01-T11); off, `/` and `/home` go to the
@@ -8,6 +10,8 @@ import { appRoute, lazyScreen } from "../root";
 // none of it.
 const Home01 = lazyScreen(async () => (await import("../../screens/HOME-01")).HOME01);
 const Home02 = lazyScreen(async () => (await import("../../screens/HOME-02")).HOME02);
+// I-02-T16: HOME-05 docks the Today brief beside HOME-01 behind `today_brief.enabled`.
+const Home05 = lazyScreen(async () => (await import("../../screens/HOME-05")).HOME05);
 
 export const homeRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -22,10 +26,9 @@ export const homeDashboardRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/home",
   component: function HomeDashboardPage(): JSX.Element {
+    const brief = useFlag("today_brief.enabled") === true;
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
-        <Home01 />
-      </div>
+      <div className="flex min-h-0 flex-1 flex-col">{brief ? <Home05 /> : <Home01 />}</div>
     );
   },
 });
@@ -61,3 +64,24 @@ export const homeApprovalsRoute = createRoute({
 });
 
 export const homeRoutes = [homeRoute, homeDashboardRoute, homeApprovalsRoute] as const;
+
+// I-02-T16: `?ov=today`, the Today panel as a left drawer (x10–480, no scrim) over any firm route,
+// from the bell and "Open Today ›". Flag off: the overlay renders nothing.
+const TodayDrawer = lazy(async () => ({
+  default: (await import("../../screens/HOME-05")).TodayDrawer,
+}));
+
+function TodayOverlay({ close }: { close: () => void }): JSX.Element | null {
+  const on = useFlag("today_brief.enabled") === true;
+  if (!on) return null;
+  return (
+    <Suspense fallback={null}>
+      <TodayDrawer onClose={close} />
+    </Suspense>
+  );
+}
+
+registerOverlay("today", {
+  layer: "drawer",
+  render: ({ close }) => <TodayOverlay close={close} />,
+});

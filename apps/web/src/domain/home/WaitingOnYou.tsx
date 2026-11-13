@@ -108,7 +108,11 @@ function Row({
   );
   const row = "flex min-h-[44px] items-center gap-[12px] py-[5px] pr-[12px] pl-[14px] hairline-b";
   return (
-    <li data-gate={gate.id} data-band={gate.band}>
+    <li
+      data-gate={gate.id}
+      data-band={gate.band}
+      className="data-[lit=true]:bg-match-bg" /* I-02-T16: lit by a Today row (HOME-05) */
+    >
       {href === undefined ? (
         <div className={row}>{body}</div>
       ) : (
