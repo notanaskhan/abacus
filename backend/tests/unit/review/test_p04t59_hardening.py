@@ -22,6 +22,7 @@ from abacus_tools.quality.mutation import SCOPES
 BACKEND = Path(__file__).resolve().parents[3]
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac_the_review_scope_and_its_floor_are_recorded() -> None:
     assert SCOPES["review"] == ("src/abacus/modules/review/*.py",)
     text = (BACKEND / "mutation-thresholds.yaml").read_text(encoding="utf-8")

@@ -264,6 +264,7 @@ def test_ac3_publication_is_four_eyes_and_already_published_is_409() -> None:
 # --- AC-5: wording lives in the database -------------------------------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac5_no_template_wording_ships_in_a_migration_or_constant() -> None:
     migration = (REPO / "backend/migrations/versions/0460_report_templates.py").read_text()
     assert "INSERT INTO report_template" not in migration

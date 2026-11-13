@@ -74,6 +74,7 @@ def test_the_output_is_proposals_or_none_fit_never_both() -> None:
         )
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_intake_mode_imports_nothing_that_decides_an_attachment() -> None:
     tree = ast.parse(MODULE.read_text(encoding="utf-8"))
     imported = [

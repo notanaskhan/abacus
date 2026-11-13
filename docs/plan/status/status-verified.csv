@@ -669,3 +669,6 @@ P-07-T52,done,277fabd3a P-07-T52: CLI-06 bulk client import; live [mig 0250] [sk
 R-01-T26,done,ab549afcd R-01-T26: portal settings and the read-only preview; live [mig 0251] [skip ci] (#536) (and 0 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
 R-01-T27,done,427c1aed4 R-01-T27: sender domains; delivery status and the client-mail gate (mig 0340) (#610) (and 1 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
 R-01-T28,done,ad19689ba R-01-T28: ADM-10 portal branding and client experience on fixtures (#613) (and 0 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
+Q-03-T072,done,"TASK-7817 (#1854, DEC-4815): mutation-weekly run 43330118713 on lo38-mutation-sweeps: ai_gateway 27.8% (floor 20), audit_trail 26.1% (floor 14); floors job passed"
+Q-03-T147,done,"TASK-7817 (#1854, DEC-4815, DEC-4817): run 43330118713, no red scope below its floor (14 scopes); floors ratcheted to it (AY approved), identity/authz kept at 62 while 348 of its mutants are not run"
+Q-03-T227,done,"TASK-7817 (#1854, DEC-4815): run 43330118713, compute 74.1% against a 0% floor"

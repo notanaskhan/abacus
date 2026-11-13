@@ -62,6 +62,7 @@ def test_sheet_addresses_are_the_sheet_row_with_header_row_one() -> None:
     assert ic.ControlException.address.fget(row) == "Exceptions!D8"  # type: ignore[attr-defined] -- APIRoute carries methods and openapi_extra
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_a_proposal_never_writes_a_concluded_severity() -> None:
     for text in _strings(ic.propose_severity):
         assert "concluded_severity" not in text
@@ -76,6 +77,7 @@ def test_routing_answers_503_until_a_router_registers(monkeypatch: pytest.Monkey
     assert ic.RouteNotAvailable.code == "route_not_available"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_routing_calls_the_router_inside_the_unit_of_work() -> None:
     source = inspect.getsource(ic.route_exception)
     uow_at = source.index("async with uow(")
@@ -140,6 +142,7 @@ def test_reliance_is_refused_while_the_gap_is_open_and_allowed_once_bridged() ->
     assert blocking(closed) is None
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_request_drafts_are_never_sent_by_code() -> None:
     source = inspect.getsource(soc_reports.request_drafts)
     for word in ("send(", ".send", "send_request", "notify("):
@@ -157,6 +160,7 @@ def test_every_write_denies_clients_third_parties_the_agent_and_the_system(actio
     assert cell["independence"] == "required"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_every_route_gates_before_reading() -> None:
     """Walls answer 404 from `_gate` before any read (INV-3): no route body reads first."""
     for name in (

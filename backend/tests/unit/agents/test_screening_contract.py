@@ -307,6 +307,7 @@ def _raw() -> dict[str, object]:
     return copy.deepcopy(_specs.SPECS[SCREENER])
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac14_the_spec_keeps_its_escalation_tier_and_input_schema() -> None:
     found = AGENTS[SCREENER]
     assert found.escalation_tier in ("small", "medium", "large")

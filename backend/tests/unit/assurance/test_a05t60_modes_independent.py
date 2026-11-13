@@ -99,6 +99,7 @@ def test_a_mode_module_only_reads(name: str) -> None:
         assert write not in used, (name, write)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_no_read_selects_a_related_party_s_sealed_name() -> None:
     hits = [
         p.relative_to(SRC).as_posix()

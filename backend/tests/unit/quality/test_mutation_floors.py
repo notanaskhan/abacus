@@ -235,6 +235,7 @@ def test_t027_the_committed_scope_parses_from_source() -> None:
     assert set(mutation_floors.scopes_of(driver)) == set(SCOPES)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_t027_widening_the_scope_is_a_normal_change() -> None:
     wider = DRIVER.replace('("src/e/*.py",)', '("src/e/*.py", "src/e2/*.py")')
     more = PYPROJECT.replace('["src/e/*", "src/k/*"]', '["src/e/*", "src/k/*", "src/x/*"]')
@@ -242,6 +243,7 @@ def test_t027_widening_the_scope_is_a_normal_change() -> None:
     assert mutation_floors.narrowed(None, more, None, wider) == []  # a base without the config
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 @pytest.mark.parametrize(
     ("pyproject", "driver", "problem"),
     [
@@ -325,8 +327,8 @@ def test_t027_the_hook_refuses_an_edit_to_scopes(project: tuple[Path, Run]) -> N
     assert project[1]("protect_paths.py", edit) == 2
     other = {
         "file_path": path,
-        "old_string": "WEEKLY_SHARDS: Final = 6",
-        "new_string": "WEEKLY_SHARDS: Final = 7",
+        "old_string": "WEEKLY_SHARDS: Final = 8",
+        "new_string": "WEEKLY_SHARDS: Final = 9",
     }
     assert project[1]("protect_paths.py", other) == 0
 

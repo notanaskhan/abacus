@@ -10,6 +10,7 @@ import json
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
 import yaml
 
 from abacus.kernel.ocr import normalise
@@ -79,6 +80,7 @@ def test_ac_the_santos_golden_and_its_partly_obscured_date() -> None:
     assert fields["notice.charges.tax.amount"].value_text == gold["charges"]["tax"]
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac_the_corpus_never_reaches_production_code() -> None:
     source = REPO / "backend" / "src" / "abacus"
     assert not [p for p in source.rglob("*.py") if "scanned_corpus" in p.read_text()]

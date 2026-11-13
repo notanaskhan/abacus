@@ -7,6 +7,8 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+import pytest
+
 PORTAL = Path(__file__).parents[3] / "src" / "abacus" / "modules" / "portal"
 ALLOWED = frozenset({"reconnect_todo_count"})
 
@@ -27,6 +29,7 @@ def _imports_from_connections() -> dict[str, set[str]]:
     return found
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_portal_imports_only_the_reconnect_count_from_connections() -> None:
     found = _imports_from_connections()
     assert found == {"connections.py": set(ALLOWED)}

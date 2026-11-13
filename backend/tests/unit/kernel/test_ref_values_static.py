@@ -12,6 +12,8 @@ import ast
 import re
 from pathlib import Path
 
+import pytest
+
 SRC = Path(__file__).resolve().parents[3] / "src" / "abacus"
 FINGERPRINT = re.compile(r"[0-9a-f]{64}")
 
@@ -37,6 +39,7 @@ def _text_values(tree: ast.AST) -> list[tuple[int, str]]:
     return found
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_no_ref_carries_text() -> None:
     offenders = [
         f"{path.relative_to(SRC)}:{line} {what}"

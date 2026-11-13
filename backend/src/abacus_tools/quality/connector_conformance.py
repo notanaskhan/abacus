@@ -31,7 +31,6 @@ from typing import Final, Literal, cast
 from abacus.kernel.clock import system_now
 
 REPO: Final = Path(__file__).resolve().parents[4]
-
 # Chapter 10 §10.6.6, the fakes each journey needs: who reads "unverified" when a fake drifts.
 DEPENDENT_JOURNEYS: Final[dict[str, tuple[str, ...]]] = {
     "quickbooks_online": ("J02", "J05", "J10"),

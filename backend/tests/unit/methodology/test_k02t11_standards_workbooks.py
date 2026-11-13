@@ -131,6 +131,7 @@ def test_ac46_a_csv_is_the_rows_sheet() -> None:
     )
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac47_an_import_only_ever_adds_a_draft() -> None:
     source = inspect.getsource(standards.import_draft)
     assert "tx.session.add(" in source and "update(" not in source

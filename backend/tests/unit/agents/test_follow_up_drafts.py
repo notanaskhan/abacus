@@ -9,6 +9,8 @@ import uuid
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from abacus.modules.agents import follow_up_drafts
 from abacus.modules.agents.follow_up_drafts import group_by_contact
 from abacus.modules.requests.api import FollowUpCandidate
@@ -96,6 +98,7 @@ def test_ac19_the_p4_tick_never_reaches_a_send_path() -> None:
     assert not {c for c in calls if "deliver" in c or "grant" in c}
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac19_every_send_path_refuses_a_non_person_before_anything_else() -> None:
     """Each public send, undo and dismiss starts with the human-only check (INV-1)."""
     tree = ast.parse(Path(follow_up_drafts.__file__).read_text(encoding="utf-8"))

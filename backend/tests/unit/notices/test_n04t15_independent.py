@@ -87,6 +87,7 @@ def test_tax_is_monotone_in_income(ti: int, step: int) -> None:
     assert bracket.tax(D(ti + step), table) >= bracket.tax(D(ti), table)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_intake_guards_run_in_order_not_ready_then_low_confidence_then_duplicate() -> None:
     source = inspect.getsource(intake.create_notice)
     order = [

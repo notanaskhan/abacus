@@ -246,6 +246,7 @@ async def test_the_engagement_partner_never_opens_as_the_eqr(
 # --- the digest ----------------------------------------------------------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_digest_is_built_from_decided_cards_only() -> None:
     import inspect
 

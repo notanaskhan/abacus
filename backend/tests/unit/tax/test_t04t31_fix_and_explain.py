@@ -80,6 +80,7 @@ def test_a_line_named_twice_is_proposed_once() -> None:
     assert fr.plan_rows(None, INSTRUCTION) == ()
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_instructions_reach_the_model_as_untrusted_data() -> None:
     source = inspect.getsource(fr._judge)  # pyright: ignore[reportPrivateUsage] -- the rule under test
     assert 'untrusted=("fix_instructions",)' in source
@@ -208,6 +209,7 @@ async def test_a_missing_consent_waits_before_any_model_call(
     assert (result.outcome, result.needs) == ("waiting_on_inputs", ("consent_7216",))
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_runner_never_resolves_or_writes_a_value() -> None:
     source = inspect.getsource(fr)
     for forbidden in ("resolve_on_approval", "record_value", "write_field", "UPDATE "):
@@ -254,6 +256,7 @@ def test_explain_falls_back_to_codes_sentence() -> None:
 # --- review: In progress, the run row, resolution as the approver -------------------------------
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_set_fix_instructions_moves_the_issue_in_progress_and_records_the_run() -> None:
     source = inspect.getsource(issue_resolutions.set_fix_instructions)
     assert '"in_progress"' in source and '"status_changed"' in source
@@ -277,6 +280,7 @@ async def test_only_an_approval_resolves(decision: str) -> None:
     )
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 @pytest.mark.asyncio
 async def test_the_resolution_is_the_approvers_and_needs_issue_resolve(
     monkeypatch: pytest.MonkeyPatch,
@@ -325,6 +329,7 @@ async def test_the_resolution_is_the_approvers_and_needs_issue_resolve(
     assert "async with uow(person.tenant)" in source  # as the person, never the system
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_agent_cannot_resolve_an_issue() -> None:
     source = inspect.getsource(issue_runs)
     assert "issue_events_resolution_by_a_person" in source

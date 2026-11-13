@@ -11,6 +11,8 @@ import inspect
 from pathlib import Path
 from typing import Any, cast
 
+import pytest
+
 from abacus.modules.identity.routing import ACTION_KEY
 from abacus.modules.tax import extension_acks, extensions, schedules_contract
 from abacus.modules.tax.engine_adapter import parse_acks
@@ -43,6 +45,7 @@ def test_federal_is_the_extensions_us_jurisdiction() -> None:
     assert extension_acks.jurisdiction_of("NY") == "NY"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_no_extension_route_or_module_can_transmit() -> None:
     actions: set[str] = {
         cast(Any, r).openapi_extra[ACTION_KEY]  # Any: test doubles and JSON

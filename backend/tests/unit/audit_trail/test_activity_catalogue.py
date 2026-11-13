@@ -59,6 +59,7 @@ def _audited_literals() -> set[str]:
     return found
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_g02t08_every_audited_action_literal_has_an_entry_or_is_reviewed() -> None:
     literals = _audited_literals()
     assert len(literals) > 300, "the scan found the codebase's audited actions"

@@ -36,11 +36,16 @@ def test_an_unregistered_kind_is_a_409_before_anything_is_read() -> None:
 
 
 def test_a_kind_registers_once() -> None:
+    # A kind of its own per run: the registry is process-wide and mutmut re-runs the suite in one
+    # process (Q-03-T147), so a fixed name would already be taken on the second pass.
+    kind = "test_once_" + uuid.uuid4().hex[:12].translate(
+        str.maketrans("0123456789", "ghijklmnop")
+    )
     provider = _Cells()
-    anchors.register_anchor("test_cells_once", provider)
-    anchors.register_anchor("test_cells_once", provider)  # the same provider again is fine
+    anchors.register_anchor(kind, provider)
+    anchors.register_anchor(kind, provider)  # the same provider again is fine
     with pytest.raises(RuntimeError):
-        anchors.register_anchor("test_cells_once", _Cells())
+        anchors.register_anchor(kind, _Cells())
 
 
 def test_the_locator_key_is_normalised_and_checked_against_the_schema() -> None:

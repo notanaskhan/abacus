@@ -40,6 +40,7 @@ def test_ac5_practice_re_imports_the_kernel_functions_unchanged() -> None:
     assert practice_calendar.roll is kernel_calendar.roll
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac5_the_kernel_holds_no_holiday_data() -> None:
     source = inspect.getsource(kernel_calendar)
     assert "holidays: frozenset[date]" in source

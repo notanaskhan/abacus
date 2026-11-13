@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
+import pytest
+
 from abacus.kernel import request_context
 
 
@@ -21,6 +23,7 @@ def test_identity_notes_the_expiry_and_the_request_reads_it() -> None:
     assert request_context.token_expires_at() is None
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_streams_pass_the_expiry_not_none() -> None:
     from pathlib import Path
 

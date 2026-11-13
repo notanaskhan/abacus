@@ -100,5 +100,6 @@ def test_the_signing_surge_profile_holds_send_and_the_portal_view_to_500_ms() ->
     assert "e18_envelope_id" in journey_vars()
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_signatures_is_a_mutation_scope() -> None:
     assert SCOPES["signatures"] == ("src/abacus/modules/signatures/*.py",)

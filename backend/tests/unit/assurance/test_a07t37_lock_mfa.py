@@ -52,6 +52,7 @@ async def test_no_or_stale_second_factor_is_refused_before_anything_is_read(
     assert read == []
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_the_stored_time_is_never_the_clocks() -> None:
     source = Path(al.__file__).read_text(encoding="utf-8")
     assert "ctx.mfa_at or clock.system_now()" not in source

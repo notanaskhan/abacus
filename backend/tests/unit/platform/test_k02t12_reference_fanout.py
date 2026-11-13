@@ -23,6 +23,7 @@ from abacus.modules.platform.reference_fanout_workflow import (
 from abacus_tools import refdata
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac49_one_run_per_version_and_action() -> None:
     assert fanout_workflow_id("v1", "published") == "reference_fanout:published:v1"
     assert fanout_workflow_id("v1", "withdrawn") != fanout_workflow_id("v1", "published")
@@ -33,6 +34,7 @@ def test_ac49_one_run_per_version_and_action() -> None:
     assert FanOutInput("v", "published").action == "published"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac50_an_announcement_is_written_once_per_tenant_and_version() -> None:
     source = inspect.getsource(reference_fanout.reference_set_announce)
     assert "audit_of_targets(" in source and "return False" in source

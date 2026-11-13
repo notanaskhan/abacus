@@ -13,6 +13,8 @@ import re
 from pathlib import Path
 from typing import Final
 
+import pytest
+
 SRC: Final = Path(__file__).resolve().parents[3] / "src" / "abacus"
 OWNER: Final = SRC / "modules" / "review" / "field_values.py"
 # A write by SQL text or by the ORM: INSERT/UPDATE/DELETE naming the table, or the model built,
@@ -38,6 +40,7 @@ def _offenders() -> list[str]:
     return found
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_only_record_value_writes_a_field_version() -> None:
     assert _offenders() == []
 

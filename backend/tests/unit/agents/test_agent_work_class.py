@@ -59,6 +59,7 @@ def test_ac4_the_screener_is_time_sensitive_essential_and_has_no_cheaper_tier() 
     assert found.cheaper_tiers == ()
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac4_the_screeners_yaml_declares_the_three_fields() -> None:
     loaded = yaml.safe_load(SCREENER_YAML.read_text())
     assert loaded["work_class"] == "time_sensitive"

@@ -14,6 +14,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+import pytest
 from openpyxl import Workbook
 from openpyxl.cell.cell import Cell
 
@@ -147,6 +148,7 @@ def test_ac17_the_csv_path_reports_the_overlap_on_its_row_too() -> None:
     ]
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac17_ledger_keeps_an_empty_dependency_set_and_imports_no_module() -> None:
     assert MODULE_DEPENDENCIES["ledger"] == frozenset()
     for path in sorted(LEDGER.rglob("*.py")):

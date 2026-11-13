@@ -44,6 +44,7 @@ def test_the_spec_loads_as_a_loop_over_t28_and_t38_tools() -> None:
     assert spec_problems(spec) == []
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_it_is_test_only_and_no_route_names_it() -> None:
     assert CAPABILITY in TEST_ONLY
     for path in SRC.glob("modules/*/*.py"):

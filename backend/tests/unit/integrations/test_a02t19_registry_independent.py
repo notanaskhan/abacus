@@ -571,6 +571,7 @@ def test_ac13_2_no_principal_holds_write_capability_execute() -> None:
     assert cell.get("agent") == "deny" and cell.get("system") == "deny"
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac13_2_no_code_outside_the_gate_reaches_a_writer_or_the_compiled_registry() -> None:
     """Writers are callable only through `execute_write` (ADR-150 enforcement): nothing else in
     the app imports `integrations.writers` or the generated module."""

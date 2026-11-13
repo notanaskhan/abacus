@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import inspect
 
+import pytest
+
 from abacus_tools.quality import schema_check as sc
 
 
@@ -23,6 +25,7 @@ def test_ac20_the_orm_stop_gap_is_gone() -> None:
     assert not hasattr(sc, "check_orm")
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac20_the_no_migrations_guard_is_gone() -> None:
     assert not hasattr(sc, "MESSAGE")
     assert "not implemented" not in inspect.getsource(sc)

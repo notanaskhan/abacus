@@ -12,6 +12,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
+import pytest
 import yaml
 
 from abacus.modules.notices.intake import notice_code_of
@@ -44,6 +45,7 @@ def test_ac_each_notice_has_a_service_event_and_a_client() -> None:
     assert all(e.client for e in events)
 
 
+@pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_ac_the_template_variants_are_content() -> None:
     path = Path(nc.__file__).parent / "files" / "notice_templates.yaml"
     variants = yaml.safe_load(path.read_text())["variants"]
