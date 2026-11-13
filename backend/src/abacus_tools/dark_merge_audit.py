@@ -15,7 +15,8 @@ PR, why it is not dark, or that it is:
 - `live_path`: a changed file matching a glob in `deploy/live-paths.yaml`.
 
 Output is a Markdown table (`--out` writes it to a file too). Identifiers and paths only. Exit 0
-when every PR is dark_only, 1 when any is not (`--report-only` always exits 0).
+when every PR is dark_only, 1 when any is not (`--report-only` always exits 0), 2 when a ref is
+not a commit or no live-path glob loads (it never passes open).
 """
 
 from __future__ import annotations
@@ -135,9 +136,12 @@ def audit_commit(repo: Path, sha: str, globs: list[str]) -> Merge:
         if path.startswith(FLAGS_DIR) and path.endswith(".yaml"):
             before = flag_defaults(_show(repo, parent, path))
             for name, value in flag_defaults(_show(repo, sha, path)).items():
-                if name not in before and not default_off(value):
+                # A new flag defaulting on, or an existing one flipped on (TASK-7828).
+                was_off = name not in before or default_off(before[name])
+                if was_off and not default_off(value):
                     merge.findings.append(f"flag_default_on: {name}")
-        if path.startswith(MIGRATIONS_DIR) and path.endswith(".py") and status.startswith("A"):
+        # Added, modified or renamed (TASK-7828): an edit that adds a drop is a contract step too.
+        if path.startswith(MIGRATIONS_DIR) and path.endswith(".py") and status[:1] in "AMR":
             ops = contract_operations(_show(repo, sha, path) or "")
             if ops:
                 merge.findings.append(f"contract_migration: {path} ({'; '.join(ops)})")
@@ -146,8 +150,30 @@ def audit_commit(repo: Path, sha: str, globs: list[str]) -> Merge:
     return merge
 
 
+class AuditRefused(ValueError):
+    """A ref git cannot resolve to a commit, or no live-path globs: the audit never passes open."""
+
+
+def resolve(repo: Path, ref: str) -> str:
+    """The commit a ref names, or refused. `--end-of-options` keeps a ref that starts with `-`
+    from being read as a git option (TASK-7828)."""
+    result = subprocess.run(
+        [GIT, "-C", str(repo), "rev-parse", "--verify", "--end-of-options", f"{ref}^{{commit}}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    sha = result.stdout.strip()
+    if result.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise AuditRefused(f"not a commit: {ref!r}")
+    return sha
+
+
 def audit(repo: Path, start: str, end: str, globs: list[str]) -> list[Merge]:
-    shas = _git(repo, "rev-list", "--first-parent", "--reverse", f"{start}..{end}").split()
+    if not globs:
+        raise AuditRefused("no live-path globs: every PR would read dark_only")
+    first, last = resolve(repo, start), resolve(repo, end)
+    shas = _git(repo, "rev-list", "--first-parent", "--reverse", f"{first}..{last}").split()
     return [audit_commit(repo, sha, globs) for sha in shas]
 
 
@@ -179,7 +205,11 @@ def main(argv: list[str] | None = None) -> int:
     repo = Path(cast(str, args.repo))
     globs_file = repo / cast(str, args.live_paths)
     globs = live_globs(globs_file.read_text(encoding="utf-8") if globs_file.exists() else None)
-    merges = audit(repo, cast(str, args.start), cast(str, args.end), globs)
+    try:
+        merges = audit(repo, cast(str, args.start), cast(str, args.end), globs)
+    except AuditRefused as refused:
+        sys.stderr.write(f"dark-merge audit refused: {refused}\n")
+        return 2
     text = report(merges, cast(str, args.start), cast(str, args.end))
     sys.stdout.write(text)
     if args.out:

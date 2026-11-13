@@ -28,7 +28,7 @@ envelopes, so SIG-01 walks live; the rest name their real blocker.
   declined envelope is seeded). Staging and the canary stay on M13 (hosted sign-in).
 
 ## Progress log
-- 2026-11-13: built; run in the lo39 end pass (local full stack, Sep 14 seed with `signatures`).
+- 2026-11-13: built; to run in the lo39 end pass (local full stack, Sep 14 seed with `signatures`).
 
 ## Decisions made during this task
 None.

@@ -173,3 +173,39 @@ def test_helpers() -> None:
     assert audit.live_globs(None) == [] and audit.live_globs("x: 1") == []
     assert audit.live_globs("live_paths:\n  - a/*\n  - 3\n") == ["a/*"]
     assert audit.is_live("a/b/c.py", ["a/*"]) and not audit.is_live("b/c.py", ["a/*"])
+
+
+# --- the security review's fixes (TASK-7828) ------------------------------------------------
+
+
+def test_an_existing_flag_flipped_on_is_not_dark(repo: Path) -> None:
+    off = FLAGS_V1.replace("true", "false")
+    _commit(repo, {"docs/architecture/feature-flags/a.yaml": off}, "off (#910)")
+    base = _git(repo, "rev-parse", "HEAD")
+    _commit(repo, {"docs/architecture/feature-flags/a.yaml": FLAGS_V1}, "flip on (#911)")
+    [merge] = audit.audit(repo, base, "HEAD", GLOBS)
+    assert merge.findings == ["flag_default_on: a.old"]
+
+
+def test_an_edited_migration_that_adds_a_drop_is_not_dark(repo: Path) -> None:
+    _commit(repo, {"backend/migrations/versions/0902_t.py": EXPAND}, "add (#912)")
+    base = _git(repo, "rev-parse", "HEAD")
+    edited = EXPAND.replace('"CREATE TABLE t (id uuid)"', '"DROP TABLE old"')
+    _commit(repo, {"backend/migrations/versions/0902_t.py": edited}, "edit (#913)")
+    [merge] = audit.audit(repo, base, "HEAD", GLOBS)
+    assert merge.findings == [
+        "contract_migration: backend/migrations/versions/0902_t.py (drop: DROP TABLE)"
+    ]
+
+
+def test_it_never_passes_open(repo: Path, tmp_path: Path) -> None:
+    base = _git(repo, "rev-parse", "HEAD")
+    with pytest.raises(audit.AuditRefused, match="no live-path globs"):
+        audit.audit(repo, base, "HEAD", [])
+    for ref in ("--output=x", "no-such-ref", "HEAD~99"):
+        with pytest.raises(audit.AuditRefused, match="not a commit"):
+            audit.audit(repo, ref, "HEAD", GLOBS)
+    assert not (repo / "x").exists()
+    # The CLI answers 2 for a refusal: an empty or missing live-path file, or a bad ref.
+    assert audit.main(["--from", base, "--repo", str(repo), "--live-paths", "nope.yaml"]) == 2
+    assert audit.main(["--from=-x", "--repo", str(repo), "--report-only"]) == 2

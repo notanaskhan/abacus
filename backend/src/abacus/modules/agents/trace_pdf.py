@@ -17,6 +17,8 @@ records read by source and the output counts. Never a model family (the runtime 
 from __future__ import annotations
 
 import json
+import threading
+import unicodedata
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Final, cast
@@ -26,6 +28,11 @@ from abacus.kernel.logging import get_logger
 
 LAYOUT: Final = "run_export"
 TABLE_ROWS: Final = 500  # C11's TableBlock holds at most 500 rows: longer timelines continue
+# Security review (TASK-7828): a PDF renders in a child of up to 1 GiB, so at most two at a time
+# per process, and at most this many timeline rows (the JSON export always holds them all).
+MAX_RENDERS: Final = 2
+MAX_TIMELINE_ROWS: Final = 5_000
+_slots = threading.BoundedSemaphore(MAX_RENDERS)
 _EPOCH: Final = datetime(1970, 1, 1, tzinfo=UTC)
 
 Json = dict[str, object]
@@ -49,11 +56,28 @@ class TraceRendererUnavailable(DomainUnavailable):
     code = "renderer_unavailable"
 
 
+def safe_text(value: str) -> str:
+    """What the vendored faces can draw (C11 refuses `missing_glyph` otherwise): Latin and its
+    extensions, general punctuation and currency signs; anything else (an emoji, a CJK name)
+    becomes U+FFFD's stand-in "?". Security review (TASK-7828): one character must not make a
+    run's PDF fail every time."""
+    out: list[str] = []
+    for ch in unicodedata.normalize("NFC", value):
+        code = ord(ch)
+        drawable = 0x20 <= code < 0x250 or 0x2000 <= code <= 0x206F or 0x20A0 <= code <= 0x20CF
+        out.append(ch if drawable else "?")
+    return "".join(out)
+
+
+def _cell(value: object) -> str:
+    return safe_text("—" if value is None or value == "" else str(value))
+
+
 def _text(value: object) -> dict[str, object]:
-    return {"type": "text", "text": "—" if value is None or value == "" else str(value)}
+    return {"type": "text", "text": _cell(value)}
 
 
-def _kv(rows: list[tuple[str, object]]) -> dict[str, object]:
+def _kv(rows: list[tuple[str, object]]) -> dict[str, object]:  # labels are code words
     return {"type": "kv", "rows": [{"key": k, "value": [_text(v)]} for k, v in rows]}
 
 
@@ -97,29 +121,38 @@ def trace_blocks(body: bytes, run_id: str) -> list[object]:
         {"type": "heading", "level": 2, "text": "Timeline"},
     ]
     rows = [_dict(r) for r in _list(trace.get("rows"))]
+    shown = rows[:MAX_TIMELINE_ROWS]
     blocks += _tables(
         ["#", "At (UTC)", "Step", "State", "Actor", "Detail"],
         [
             [
-                str(r.get("seq", "")),
-                str(r.get("at", "")),
-                str(r.get("title", "")),
-                str(r.get("state", "")),
-                str(r.get("actor") or "—"),
-                str(r.get("detail") or "—"),
+                _cell(r.get("seq")),
+                _cell(r.get("at")),
+                _cell(r.get("title")),
+                _cell(r.get("state")),
+                _cell(r.get("actor")),
+                _cell(r.get("detail")),
             ]
-            for r in rows
+            for r in shown
         ],
     )
+    if len(rows) > len(shown):
+        more = len(rows) - len(shown)
+        blocks.append(
+            {
+                "type": "paragraph",
+                "runs": [_text(f"{more:,} more rows are in the JSON export of this trace.")],
+            }
+        )
     blocks.append({"type": "heading", "level": 2, "text": "Records read"})
     read = [_dict(r) for r in _list(trace.get("records_read"))]
     blocks += _tables(
-        ["Source", "Records"], [[str(r.get("source", "")), str(r.get("count", ""))] for r in read]
+        ["Source", "Records"], [[_cell(r.get("source")), _cell(r.get("count"))] for r in read]
     )
     blocks.append({"type": "heading", "level": 2, "text": "Outputs"})
     outputs = [_list(o) for o in _list(trace.get("output_counts"))]
     blocks += _tables(
-        ["Output", "Count"], [[str(o[0]), str(o[1])] for o in outputs if len(o) == 2]
+        ["Output", "Count"], [[_cell(o[0]), _cell(o[1])] for o in outputs if len(o) == 2]
     )
     return blocks
 
@@ -140,6 +173,9 @@ def render_trace_pdf(body: bytes, run_id: str, content_hash: str) -> bytes:
     if _renderer is None:
         _log.warning("agent_run.trace_pdf_refused", error="no_renderer")
         raise TraceRendererUnavailable("the trace PDF could not be rendered")
+    if not _slots.acquire(blocking=False):
+        _log.warning("agent_run.trace_pdf_refused", error="renderer_busy")
+        raise TraceRendererUnavailable("the trace PDF renderer is busy: try again shortly")
     try:
         return _renderer(
             LAYOUT,
@@ -149,16 +185,21 @@ def render_trace_pdf(body: bytes, run_id: str, content_hash: str) -> bytes:
             content_hash,
         )
     except Exception as exc:  # a refusal, a crash in the child or missing libraries: all 503
-        _log.warning("agent_run.trace_pdf_refused", error=type(exc).__name__)
+        _log.warning("agent_run.trace_pdf_refused", error=exc)  # logged by its class only
         raise TraceRendererUnavailable("the trace PDF could not be rendered") from None
+    finally:
+        _slots.release()
 
 
 __all__ = [
     "LAYOUT",
+    "MAX_RENDERS",
+    "MAX_TIMELINE_ROWS",
     "TABLE_ROWS",
     "TracePdfRenderer",
     "TraceRendererUnavailable",
     "register_trace_pdf_renderer",
     "render_trace_pdf",
+    "safe_text",
     "trace_blocks",
 ]

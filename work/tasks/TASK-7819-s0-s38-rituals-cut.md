@@ -9,7 +9,7 @@ branch: lo39-cut-rituals
 worktree: /Users/ayushkbhatia/Accrued/abacus-lo39
 created: 2026-11-13
 updated: 2026-11-13
-plan_key: Q-04-T098
+plan_key: SPEC-000  # bookkeeping over 91 rows (DEC-4818)
 ---
 
 ## Objective

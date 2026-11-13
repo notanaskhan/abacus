@@ -137,6 +137,7 @@ known-first-party = ["abacus", "abacus_tools"]
 "tests/unit/tools/test_f05t62_ci_frontend_independent.py" = ["S101", "S603"]  # git and the paths module in a tmp repo
 "tests/unit/tools/test_worktree_env.py" = ["S101", "S603"]  # git init in a tmp repo
 "tests/unit/tools/test_q04t125_dark_merge_audit.py" = ["S101", "S603"]  # git init in a tmp repo
+"tests/unit/sampling/test_q03t179_sampler_mutants.py" = ["S101", "S311"]  # reproduces the draw stream's own PRNG (ADR-340 §5)
 "src/abacus_tools/qbo_sandbox.py" = ["S105"]  # environment variable names, not secrets (F-09-T05)
 "tests/integration/conftest.py" = ["S105", "S106", "S310"]  # local container credentials; health checks
 "tests/integration/test_q03t028_plan_tests.py" = ["S101", "S608"]  # the synthetic fixture's INSERT is built from catalog column names (Q-03-T028)

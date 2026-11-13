@@ -218,7 +218,7 @@ def test_options_are_the_bottom_and_the_midpoint() -> None:
     assert m.option_keys(POLICY) == frozenset({"rate_1_0", "rate_1_5", "custom"})
 
 
-# --- refusals and the names they carry ------------------------------------------------------------
+# --- refusals and the names they carry ---------------------------------------------------------
 
 
 @pytest.mark.parametrize(

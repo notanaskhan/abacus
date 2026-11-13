@@ -58,11 +58,10 @@ Reproduced from Q-04 §4.9. Verify each year against C21's due-date reference se
 | notanaskhan | |
 | ayushkbhatia | |
 
-## Dark-merge audit (Q-04-T125; DEC-4819)
+## 8. Dark-merge audit (Q-04-T125; DEC-4819)
 
 After a train merges inside a window, `make dark-merge-audit FROM=<ref before the train> TO=<ref
 after>` lists each merged PR as `dark_only` or `NOT dark` with its reasons: a new flag whose
 default is not false, a migration with a contract operation (`abacus_tools.quality.expand_only`'s
 rules), or a changed file under `deploy/live-paths.yaml`. A `NOT dark` PR inside a window is a
 defect fix or a breach; say which in the window's notes (`docs/ops/windows/`).
-
