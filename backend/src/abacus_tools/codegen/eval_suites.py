@@ -34,7 +34,9 @@ EXTRA_MODES: dict[str, dict[str, str]] = {
     "decisions.recommender": {
         "decisions.recommend.convention_706d@v1": "evals/tax_recommender_modes",
         "decisions.recommend.section_754@v1": "evals/tax_recommender_modes",
-    }
+    },
+    # T-05-T50 rest (DEC-4927): the fix runner's free-text workbook mode.
+    "issues.fix_runner": {"issues.fix_runner.workbook@v1": "evals/workbook_fix"},
 }
 
 

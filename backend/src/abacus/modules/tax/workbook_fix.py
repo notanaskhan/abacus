@@ -11,8 +11,13 @@ a workbook (`workbook_service.sheets_of`), the runner's activity hands the issue
    subtract or set an amount on a `<sheet>!<cell>` address of the form's own sheets. No model is
    asked (DEC-4901): the amount is the person's own figure (number provenance) and code computes
    each new value from the cell's current one. One `workbook_cell_changes` proposal with a row per
-   cell (before and after, `{t, v}`), named to the issue (`review.api.record_fix_proposal`). An
-   instruction outside the grammar proposes nothing (`no_cell_named`); the run never writes a cell.
+   cell (before and after, `{t, v}`), named to the issue (`review.api.record_fix_proposal`).
+   **Free text** (T-05-T50 rest, TASK-7932, DEC-4927): when the grammar names nothing, the model
+   (`issues.fix_runner.workbook@v1`, a mode of `issues.fix_runner`) is asked only which cells the
+   words name and what was asked on each; code keeps an answer only when its sheet is one of the
+   form's, its cell an address, and its amount written verbatim in the person's words, then
+   computes the value as for the grammar. A refused call or an answer with nothing kept proposes
+   nothing (`no_cell_named`); the run never writes a cell.
 2. **Approve (a person, SHL-10).** The adapter (`apply_fix`, registered for the kind) runs after
    the decision commits: each row's value through `write_cells` → `record_value` as the
    approver's value (`human`, so a re-run keeps it), the cells' dependents recomputed (bounded, as
@@ -33,11 +38,13 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Final, Literal
+from typing import TYPE_CHECKING, Annotated, Final, Literal, cast
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 
+from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.tax.workbook_service import (
@@ -50,7 +57,12 @@ from abacus.modules.tax.workbook_service import (
     write_cells,
 )
 
+if TYPE_CHECKING:
+    from abacus.modules.identity.api import AgentContext
+
 KIND: Final = "workbook_cell_changes"
+FIX_RUNNER: Final = "issues.fix_runner"
+PROMPT: Final = "issues.fix_runner.workbook@v1"  # a mode of issues.fix_runner (DEC-4927)
 CAUSE: Final = "fix_instructions"
 Op = Literal["add", "subtract", "set"]
 
@@ -125,6 +137,100 @@ def parse_instructions(instructions: str, form: str) -> tuple[PlannedCell, ...]:
     return tuple(by_cell.values())[:MAX_CELLS]
 
 
+# --- free text (the model judges which cells; code checks and computes) -------------------------
+
+_Int = classified("internal")
+_Conf = classified("confidential")
+_CELL: Final = re.compile(r"^[A-Za-z]{1,3}[1-9]\d{0,4}$")
+# An amount as written: not part of a cell reference ("B6") and not a sheet key ("07 M-2", "07!").
+_WRITTEN: Final = re.compile(
+    r"(?<![\w.])(?<![A-Za-z]-)\(?-?\$?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\)?"
+    r"(?![\w!]|\s[A-Za-z][\w.&-]*!)"
+)
+
+
+class WorkbookFixChange(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    sheet: Annotated[str, Field(pattern=r"^\d{2}$"), _Int]
+    cell: Annotated[str, Field(min_length=2, max_length=8), _Int]
+    op: Annotated[Op, _Int]
+    # The amount exactly as the person wrote it ("6,200"); code parses and checks it.
+    amount: Annotated[str, Field(min_length=1, max_length=24), _Conf]
+
+
+class WorkbookFixJudgment(BaseModel):
+    """`issues.fix_runner.workbook@v1`'s answer: the cells the instructions name, nothing else."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    changes: Annotated[list[WorkbookFixChange], Field(max_length=MAX_CELLS), _Int]
+
+
+def kept(judgment: WorkbookFixJudgment, instructions: str, form: str) -> tuple[PlannedCell, ...]:
+    """The answer's cells code can stand behind: a sheet of the form's, a cell address, and an
+    amount the person wrote verbatim (number provenance, ADR-050). Anything else is dropped."""
+    sheets = {n for n, _ in sheets_of(form)}
+    written = {m.group(0) for m in _WRITTEN.finditer(instructions)}
+    by_cell: dict[str, PlannedCell] = {}
+    for c in judgment.changes:
+        if c.sheet not in sheets or not _CELL.fullmatch(c.cell) or c.amount.strip() not in written:
+            continue
+        amount = _amount(c.amount.strip())
+        if amount is None:
+            continue
+        try:
+            at = address(f"{c.sheet}!{c.cell.upper()}")
+        except CellAddressInvalid:
+            continue
+        by_cell.pop(at.key, None)
+        by_cell[at.key] = PlannedCell(c.op, amount, at)
+    return tuple(by_cell.values())[:MAX_CELLS]
+
+
+async def judge(agent: AgentContext, instructions: str, form: str) -> WorkbookFixJudgment | None:
+    """The model's reading of free-text instructions (module docstring, 1). Refused or failed:
+    None, and nothing is proposed."""
+    from abacus.ai_gateway import Attribution, ContextBuilder, GatewayCall, call
+    from abacus.modules.agents.api import spec_v2
+
+    spec = spec_v2(FIX_RUNNER)
+    context = (
+        ContextBuilder()
+        .task(
+            {
+                "sheets": [{"key": k, "title": t} for k, t in sheets_of(form)],
+                "fix_instructions": instructions,
+            },
+            untrusted=("fix_instructions",),  # a person's words, still data (ADR-052)
+        )
+        .build()
+    )
+    try:
+        result = await call(
+            GatewayCall(
+                purpose=spec.purpose,
+                prompt=PROMPT,
+                tier=spec.tier,
+                output_schema=WorkbookFixJudgment,
+                budget_usd=spec.limits.max_cost_usd,
+                attribution=Attribution(
+                    agent.tenant, agent.engagement_id, FIX_RUNNER, agent.agent_run_id
+                ),
+                context=context,
+                work_class=spec.work_class,
+                essential=spec.essential,
+                routes=spec.routes,
+                cheaper_tiers=spec.cheaper_tiers,
+                max_output_tokens=spec.limits.max_output_tokens,
+                timeout_seconds=spec.limits.max_seconds,
+            )
+        )
+    except Exception:  # a refused call (consent, terms, budget): nothing is proposed
+        return None
+    return cast(WorkbookFixJudgment, result.output)
+
+
 def _decimal(cell: Mapping[str, object] | None) -> Decimal | None:
     if not cell or cell.get("v") is None:
         return None
@@ -189,6 +295,9 @@ async def fix(agent: object, issue_id: UUID, return_id: UUID, form: str) -> FixR
     if agent.engagement_id is None:
         return FixResult("refused", code="no_engagement")
     planned = parse_instructions(instructions, form)
+    if not planned:  # free text: the model names the cells, code keeps what it can stand behind
+        judgment = await judge(agent, instructions, form)
+        planned = () if judgment is None else kept(judgment, instructions, form)
     if not planned:
         return FixResult("nothing_to_propose", code="no_cell_named")
     values = await current_values(agent.tenant, WORKBOOK, return_id)
@@ -380,11 +489,16 @@ def register() -> None:
 __all__ = [
     "CAUSE",
     "KIND",
+    "PROMPT",
     "SHEET_GROUPS",
     "FixResult",
     "PlannedCell",
+    "WorkbookFixChange",
+    "WorkbookFixJudgment",
     "apply_fix",
     "fix",
+    "judge",
+    "kept",
     "label_of",
     "new_value",
     "parse_instructions",
