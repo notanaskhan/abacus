@@ -149,6 +149,14 @@ from abacus.modules.agents.proposals import (
     register_checkpoint_hooks,
     register_proposal_state,
 )
+from abacus.modules.agents.recommender_modes import (  # T-05-T49
+    ModeClause as RecommendModeClause,
+)
+from abacus.modules.agents.recommender_modes import ModeFact as RecommendModeFact
+from abacus.modules.agents.recommender_modes import ModeFacts as RecommendModeFacts
+from abacus.modules.agents.recommender_modes import ModeOption as RecommendModeOption
+from abacus.modules.agents.recommender_modes import attribution_for as recommend_attribution
+from abacus.modules.agents.recommender_modes import recommend_mode as recommend_mode
 from abacus.modules.agents.review_start import (
     CitationStates,
     ReviewUnavailable,
@@ -598,6 +606,10 @@ __all__ = [
     "ProposedRow",
     "ProposedValue",
     "RecommendFacts",
+    "RecommendModeClause",
+    "RecommendModeFact",
+    "RecommendModeFacts",
+    "RecommendModeOption",
     "Recommended",
     "RecordedRun",
     "RecordedStep",
@@ -701,6 +713,8 @@ __all__ = [
     "pending_suggestions",
     "proposal_approver",
     "recommend",
+    "recommend_attribution",
+    "recommend_mode",
     "record_code_run",
     "record_synthetic_run",
     "register_change_set_applier",
