@@ -68,6 +68,14 @@ BUILT = {
     ("GET", f"{_R}/schedules/k/lines/{{line}}/breakdown"),
     ("GET", f"{_R}/capital-accounts"),
     ("GET", f"{_R}/schedules/m2"),
+    # S41: T-05-T41 allocation structure, T-05-T40 imports, T-05-T42 sections.
+    ("GET", f"{_R}/allocation-structure"),
+    ("PUT", f"{_R}/allocation-structure/draft"),
+    ("POST", f"{_R}/allocation-structure/preview"),
+    ("POST", f"{_R}/allocation-structure/approve"),
+    ("POST", f"{_R}/workbook/imports"),
+    ("GET", f"{_R}/sections"),
+    ("POST", f"{_R}/sections/{{key}}/sign-off"),
 }
 
 
@@ -81,7 +89,7 @@ def test_every_route_is_published_with_a_501_until_built() -> None:
                 assert "501" not in responses, route.path  # type: ignore[attr-defined] -- starlette route attributes
             else:
                 assert "501" in responses, route.path  # type: ignore[attr-defined] -- starlette route attributes
-    assert len(wb.workbook_router.routes) == 32
+    assert len(wb.workbook_router.routes) == 33  # S41: + allocation-structure/approve
 
 
 HUMAN_VERBS = (

@@ -3,9 +3,9 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (T-05-T06, 2026-11-10): every route answers 501 under its one action, dark behind `tax.entity_workspace` |
+| Status | **frozen at v1** (T-05-T46, 2026-11-13, DEC-4712; snapshot `backend/tests/contracts/tax_workbook/v1.json`); live behind `tax.entity_workspace`; the routes §9 lists as later rows still answer 501 |
 | Provider epic | T-05 (SPEC-651) |
-| Consumers | TXP-00, TXP-01, TXP-02, TXP-05, TXP-06, TXP-07, TXP-10, TXP-11 (T-05 FE rows); T-06 (TXP-03, 04, 08, 09 reuse the reads); T-08 (TAX-10 two-year) |
+| Consumers | TXP-00, TXP-01, TXP-02, TXP-05, TXP-06, TXP-07, TXP-10, TXP-11 (T-05 FE rows); T-07 (the workbook engine, run plan and K-1 draft payload), T-06 (TXP-03, 04, 08, 09 reuse the reads; E3, E4, E8–E12 on the same workbook), T-04 and T-02 (K-1 drafts into `k1_packages`); T-08 (TAX-10 two-year) |
 | Flags | `tax.entity_workspace` (routes), `tax.workbook_run` (runs and imports), `tax.entity_agents` (model-backed steps); entitlement `tax_entity_returns` (requires review) |
 | Code | `backend/src/abacus/modules/tax/workbook_contract.py` |
 | Matrix | T-05-T04's rows in `docs/architecture/permission-matrix/tax.yaml` |
@@ -117,6 +117,7 @@ Sign-offs, proposals and decisions write P-04's events. Each action lands in the
 | Version | Date | Notes |
 |---|---|---|
 | v1 | 2026-11-10 | stub (T-05-T06): 32 routes, 501, dark |
+| v1 | 2026-11-13 | **frozen** (T-05-T46, DEC-4712): 33 routes (+ `POST …/allocation-structure/approve`); additions since the stub are additive fields only |
 
 ## T-05-T41 · the allocation structure (DEC-4701, DEC-4702)
 - Versions are insert-only (`expected_version` = the newest version number read, else 409
@@ -163,4 +164,57 @@ Sign-offs, proposals and decisions write P-04's events. Each action lands in the
   links, a fixed-template note), reopened if it fails again; a passing one resolves.
 - Item L ties the M-2 against the partners' ending capital on 05 (Schedule L line 21 is not on
   the workbook; recorded deviation from F8's wording).
+
+## 9. Frozen v1 (T-05-T46, DEC-4712)
+The freeze holds every model of `tax/workbook_contract.py` (`python -m abacus_tools.contracts
+--check` fails a removed or retyped field, a field made required or a removed enum member;
+additions pass). Consumers code against this section.
+
+### 9.1 The cell store
+- One `tax_workbook` per entity return (the return's work item); cells are review fields of
+  target `tax_workbook` written only through `workbook_service.write_cells` (`review.record_value`,
+  insert-only versions), each with its source: `formula`, `engine_import`, `tb_linked` or
+  `human`. A run step never overwrites a cell a person wrote (`keep_human`).
+- Sheet registry, Form 1065 (`SHEETS_1065`, frozen): 01 Trial Balance, 02 Adjustments (the
+  depreciation import's rows, the screens' "Fixed Assets"), 03 Form Lines, 04 Allocation, 05
+  Capital, 06 Schedule K, 07 M-2, 08 State, 09 K-1s. TXP-11's tab titles are the handoff's (02
+  Fixed Assets, 03 Liabilities, 04 Partner Txns, 08 States); the server's titles above are the
+  contract's and stand (recorded deviation; T-06 adds sheets, never renames).
+- Addresses: `<sheet>!<column><row>` ("05!F2"); the long form `05 Capital!F2` is accepted.
+- Layouts (code reads them; a consumer writes the same): 01 from row 2 A account, B name, C UTB,
+  D AJE, E RJE, F ATB, then a total row; 02 A–H the asset rows plus a total row; 03 one row per
+  mapped line; 04 from row 2 A period key, B start, C end, D amount; 05 from row 2 A partner, B
+  beginning, C contributions, D distributions, E income share, F ending; 06 from row 2 A line, B
+  label, C federal, D state; 07 B by M-2 line number; 08 A–C Form 8825 property, line, amount,
+  F–H state, apportionment %, PTET, J–L recipient, line, state share; 09 one column per
+  recipient from B, row 1 its name, rows matching 06.
+
+### 9.2 The formula grammar and the DAG
+ADR-237's closed grammar (references, ranges, cross-sheet references, + − × ÷, SUM, ROUND, IF,
+MIN, MAX), parsed and evaluated by `workpapers.compute` (E13); never evaluated as text. A cell
+edit recomputes its dependents synchronously up to 500, else 422 `recompute_too_large`.
+
+### 9.3 The run plan
+Provider `tax.entity_workbook` (P-10's plan-provider slot): ten steps in six groups (import, map,
+compute, capital, apportionment, k1s), plan level = dependency depth; scopes `all`, `group`,
+`task` (each with its dependants). `convention_706d` is a question step before
+`interim_closing_706d` when no person settled the convention. Import mode for
+`depreciation_register`, `bonus_eligibility`, `apportionment_ptet`, `state_k1s_k3s`. A step with
+nothing to read answers `failed` with its class and one issue (`run_step:<step>:<class>`).
+
+### 9.4 Schedules, the allocation model and K-1 drafts
+- TB/TTB and tallies (T-05-T33), Schedule K with `analysis` (T-05-T34, T-05-T43), capital and M-2
+  (T-05-T34), sections and tie-outs (T-05-T42).
+- The allocation structure: insert-only versions with rungs and stored results; `GET`, `PUT
+  …/draft`, `POST …/preview` (no persistence), `POST …/approve` (L3 then a `capital` + `k1s`
+  re-run); E5 parts 1 and 2 compute (T-05-T41, T-05-T44's fields).
+- The K-1 draft payload: 09's per-recipient shares by Schedule K line are the drafts; writing
+  them into `k1_packages` (C10) and releasing are T-02's and T-04's, never this contract's.
+
+### 9.5 Routes still answering 501 (their rows)
+`GET …/workbook/export.xlsx` (T-05-T57); `GET …/issues` (T-05-T51); the memo routes and `GET
+…/opportunities` (T-05-T54); `GET …/reconciliation` (T-05-T61). `GET …/general-information`,
+`GET …/partners`, `PUT …/ownership` and `POST …/mappings` are named by no later row: carried as
+S41 open items for S42's planning (the shapes are frozen; the services exist in part:
+`allocation_structure.partners_of`, `ownership_of`, `entity_mapping`).
 
