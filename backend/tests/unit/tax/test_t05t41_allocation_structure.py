@@ -70,9 +70,13 @@ def test_ridgeline_two_periods_of_628100_and_meera_shah_238678() -> None:
 def test_interim_closing_reads_04_when_the_draft_names_no_amounts() -> None:
     draft = Draft(kind="straight_percentage", convention="monthly")
     found = compute(
-        draft, year=2025, partners=[], periods=_periods(), transfers=[date(2025, 6, 30)],
+        draft,
+        year=2025,
+        partners=[],
+        periods=_periods(),
+        transfers=[date(2025, 6, 30)],
         sheet_amounts=[D(628100), D(628100)],
-    )  # fmt: skip
+    )
     assert found.total == D(1256200)
     with pytest.raises(StructureInvalid) as missing:
         compute(draft, year=2025, partners=[], periods=_periods(), transfers=[date(2025, 6, 30)])
@@ -113,16 +117,26 @@ def test_the_hash_moves_with_the_structure_not_with_its_citations() -> None:
 def test_proration_is_calendar_day_only_and_priorities_are_unique() -> None:
     with pytest.raises(StructureInvalid):
         compute(
-            Draft(kind="straight_percentage", method="proration", convention="monthly",
-                  income=D(100)),
-            year=2025, partners=[], periods=_periods(), transfers=[date(2025, 6, 30)],
-        )  # fmt: skip
+            Draft(
+                kind="straight_percentage", method="proration", convention="monthly", income=D(100)
+            ),
+            year=2025,
+            partners=[],
+            periods=_periods(),
+            transfers=[date(2025, 6, 30)],
+        )
     with pytest.raises(StructureInvalid):
         compute(
-            Draft(kind="targeted_waterfall", income=D(1),
-                  rungs=(DraftRung(1, "residual"), DraftRung(1, "promote"))),
-            year=2025, partners=[], periods=[], transfers=[],
-        )  # fmt: skip
+            Draft(
+                kind="targeted_waterfall",
+                income=D(1),
+                rungs=(DraftRung(1, "residual"), DraftRung(1, "promote")),
+            ),
+            year=2025,
+            partners=[],
+            periods=[],
+            transfers=[],
+        )
 
 
 def test_the_readers_proposal_becomes_a_draft_with_its_citations() -> None:
@@ -149,21 +163,37 @@ def test_the_readers_proposal_becomes_a_draft_with_its_citations() -> None:
 # --- the service: who drafts, who approves, the re-run ------------------------------------------
 
 
+_TENANT: Any = object()  # Any: a stand-in tenant
+_TENANT_ID = uuid.uuid4()
+
+
 @dataclass
 class _Ctx:
     user_id: uuid.UUID
-    tenant: Any = object()  # Any: a stand-in tenant
-    tenant_id: uuid.UUID = uuid.uuid4()
+    tenant: Any = _TENANT
+    tenant_id: uuid.UUID = _TENANT_ID
 
 
 def _row(status: str, by: str = "human", actor: str | None = None) -> alloc.StructureRow:
     return alloc.StructureRow(
-        id=uuid.uuid4(), version_no=1, status=status, kind="straight_percentage",  # type: ignore[arg-type]
-        method="interim_closing", convention="monthly", income=D(1256200), distributable=None,
-        proposed_by_kind=by, proposal_id=None, content_hash="a" * 64,  # type: ignore[arg-type]
-        citation_ids=(), supersedes_id=None, actor_kind="human",
-        actor_id=actor or str(uuid.uuid4()), engagement_id=uuid.uuid4(), work_item_id=uuid.uuid4(),
-    )  # fmt: skip
+        id=uuid.uuid4(),
+        version_no=1,
+        status=status,
+        kind="straight_percentage",  # type: ignore[arg-type]
+        method="interim_closing",
+        convention="monthly",
+        income=D(1256200),
+        distributable=None,
+        proposed_by_kind=by,
+        proposal_id=None,
+        content_hash="a" * 64,  # type: ignore[arg-type]
+        citation_ids=(),
+        supersedes_id=None,
+        actor_kind="human",
+        actor_id=actor or str(uuid.uuid4()),
+        engagement_id=uuid.uuid4(),
+        work_item_id=uuid.uuid4(),
+    )
 
 
 def test_a_senior_or_staff_draft_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -180,7 +210,7 @@ def test_a_senior_or_staff_draft_is_refused(monkeypatch: pytest.MonkeyPatch) -> 
                 year=2025,
                 expected_version=0,
                 draft=RIDGELINE,
-            )  # fmt: skip
+            )
         )
 
 
@@ -197,7 +227,7 @@ def test_only_a_version_pending_approval_is_approved(monkeypatch: pytest.MonkeyP
                 engagement_id=uuid.uuid4(),
                 seen_hash="a" * 64,
                 statement_version="v1",
-            )  # fmt: skip
+            )
         )
 
 
@@ -231,7 +261,7 @@ def test_an_agent_or_staff_l3_is_refused_by_p04_and_nothing_is_written(
                 engagement_id=uuid.uuid4(),
                 seen_hash="a" * 64,
                 statement_version="v1",
-            )  # fmt: skip
+            )
         )
     assert writes == []  # refused before any version is written or a run is started
 

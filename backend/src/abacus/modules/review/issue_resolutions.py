@@ -17,7 +17,7 @@ send-to-client.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date
 from typing import Final
@@ -175,6 +175,60 @@ async def system_resolve_dependents(system: TenantContext, source_ref: str) -> l
     resolved: list[UUID] = []
     async with uow(system) as tx:
         rows = (await tx.session.execute(_SYSTEM_DEPENDENTS, {"ref": source_ref})).all()
+        for row in rows:
+            await tx.session.execute(
+                text("UPDATE issues SET status = 'resolved', version = version + 1 WHERE id = :i"),
+                {"i": row.id},
+            )
+            await tx.session.execute(
+                _EVENT_ROW,
+                {
+                    "t": system.tenant_id,
+                    "i": row.id,
+                    "event": "system_resolved",
+                    "sealed": None,
+                    "scope": None,
+                },
+            )
+            tx.record(
+                "issue.system_resolved",
+                target=Target(SUBJECT, row.id),
+                before=Ref(version=int(row.version)),
+                after=Ref(version=int(row.version) + 1),
+                scope=Scope(engagement_id=row.engagement_id),
+            )
+            tx.emit(
+                IssueStatusChanged(
+                    issue_id=row.id, engagement_id=row.engagement_id, status="resolved"
+                )
+            )
+            resolved.append(row.id)
+    return resolved
+
+
+async def system_resolve_self_checks(
+    system: TenantContext, work_item_id: UUID, source_refs: Sequence[str]
+) -> list[UUID]:
+    """T-05-T42 (0860, DEC-4705): the open `self_check` issues of a work item named by
+    `source_refs` resolve as the system once their check passes (a `system_resolved` event and
+    one audit event each). Only issues raised `system_resolved_only` move."""
+    if system.actor_kind != "system":
+        raise Forbidden("issue.system_resolve", "role")
+    if not source_refs:
+        return []
+    resolved: list[UUID] = []
+    async with uow(system) as tx:
+        rows = (
+            await tx.session.execute(
+                text(
+                    "SELECT id, version, engagement_id FROM issues WHERE work_item_id = :w "
+                    "AND source_kind = 'self_check' AND system_resolved_only "
+                    "AND source_ref = ANY(:refs) AND status IN ('open', 'in_progress', "
+                    "'reopened') FOR UPDATE"
+                ),
+                {"w": work_item_id, "refs": list(source_refs)},
+            )
+        ).all()
         for row in rows:
             await tx.session.execute(
                 text("UPDATE issues SET status = 'resolved', version = version + 1 WHERE id = :i"),

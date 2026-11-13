@@ -60,6 +60,9 @@ from abacus.modules.agents.engagement_run import RunStepResult as RunStepResult
 from abacus.modules.agents.engagement_run import WorkItemRun as WorkItemRun
 from abacus.modules.agents.engagement_run import register_plan_provider as register_plan_provider
 from abacus.modules.agents.engagement_run import register_run_step as register_run_step
+from abacus.modules.agents.engagement_run import (  # T-05-T42
+    run_work_item_ref as run_work_item_ref,
+)
 from abacus.modules.agents.engagement_run import start_engagement_run as start_engagement_run
 from abacus.modules.agents.engagement_run import work_item_runs as work_item_runs
 from abacus.modules.agents.engagement_runs import (
