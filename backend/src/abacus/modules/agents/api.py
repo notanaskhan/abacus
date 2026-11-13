@@ -792,5 +792,8 @@ from abacus.modules.agents.briefing.facts import BriefingFacts as BriefingFacts 
 from abacus.modules.agents.briefing.facts import (  # noqa: E402
     register_briefing_source as register_briefing_source,
 )
+from abacus.modules.agents.briefing.today import (  # noqa: E402
+    latest_briefings as latest_briefings,
+)
 
 _briefing_today.register()
