@@ -205,5 +205,5 @@ _register_run_steps()
 
 # W-02-T11 (DEC-4716): this module's Workbench tool on C17, registered at import.
 from abacus.modules.workpapers import (  # noqa: E402
-    workbench_tools as _workbench_tools,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
+    agent_tools as _workbench_tools,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )

@@ -1,0 +1,69 @@
+# workbench.assistant v1 (W-02-T12; W-02 §6; TASK-7715; DEC-4718). The Workbench's assistant: a loop
+# in a firm-level or engagement session. Read and compute tools answer; a turn that would save a
+# file answers with a plan the session's owner approves, and its one write is the P-10 files pair
+# (propose, then the approved write after a person's approval with Undo). Never `tri`: the season's
+# figures arrive as counts (`tax.season_counts`); per-return content stays outside the allow-list
+# and the C19 refusal still guards it. It never decides, approves, signs, releases, sends, posts,
+# exports, transmits, adopts, publishes, resolves, accepts or rejects. Source of truth: compiled
+# into ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+id: workbench.assistant
+version: 1
+purpose: Answer a person's questions about the firm's work from records they can open, ask when something is ambiguous, and plan any file it would save for the person to approve.
+shape: loop
+prompt: workbench.assistant@v1
+tier: medium
+escalation_tier: large
+input_schema: AssistantInput
+output_schema: AssistantTurn
+tools:
+  read:
+    - engagements.list
+    - engagements.read_graph
+    - requests.list_items
+    - evidence.search
+    - evidence.read_extraction
+    - knowledge.search
+    - methodology.read_step
+    - activity.read
+    - binders.read
+    - workpapers.read_section
+    - assurance.read_materiality
+  compute:
+    - ledger.compare_periods
+    - ledger.tie_out
+    - files.build_workbook
+    - tax.season_counts
+  propose: [files.propose_save]
+  approved_write: [files.save_approved]
+task_scope:
+  - engagement.read
+  - request_item.read
+  - evidence.read
+  - knowledge.read
+  - methodology.read
+  - activity.read
+  - trial_balance.read
+  - workpaper.read
+  - materiality.read
+  - binder.read
+  - tax_return.read_metadata
+  - file.propose
+  - file.save
+limits:
+  max_output_tokens: 4000
+  max_cost_usd: "0.60"
+  max_steps: 24
+  max_seconds: 900
+  max_tool_calls: 40
+  max_repeat_identical_calls: 2
+  max_parallel_steps: 3
+plan: required_when_writes
+autonomy: propose
+data_classes: [confidential]
+untrusted_inputs: [tool_results.evidence, tool_results.client_fields]
+evaluation_suite: evals/workbench_assistant
+work_class: interactive
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none

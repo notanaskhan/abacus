@@ -20,6 +20,7 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'decisions.recommender': ('decisio
     'tax.memo_drafter': ('tax.preparer_memo@v1', 1),
     'tax.return_analyst': ('tax.return_analyst.explain@v1', 1),
     'tax.return_drafter': ('tax.return_drafter@v1', 1),
+    'workbench.assistant': ('workbench.assistant@v1', 1),
     'workpapers.section_drafter': ('workpapers.section_draft.gap@v1', 1)}
 EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'decisions.recommender': {   'decisions.recommend.convention_706d@v1': 1,
                                  'decisions.recommend.section_754@v1': 1},
