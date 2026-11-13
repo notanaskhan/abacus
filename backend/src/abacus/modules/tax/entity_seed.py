@@ -155,7 +155,7 @@ async def record_synthetic_entity(
             tx.record(
                 "workbook.step_written",
                 target=Target(WORKBOOK, return_id),
-                after=Ref(step="scenario", cells=len(entity.cells)),
+                after=Ref(cells=len(entity.cells), synthetic=True),
                 scope=Scope(engagement_id=engagement_id, work_item_id=return_id),
             )
     return ids

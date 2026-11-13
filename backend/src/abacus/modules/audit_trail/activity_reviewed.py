@@ -924,6 +924,20 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tax.mapping_recorded",
         # reviewed 2026-11-13 (S41, TASK-7701): an allocation structure's versions show on
         # TXP-06 and its approval is the L3 sign-off's own feed row.
+        # reviewed 2026-11-13 (S41 CI fix, DEC-4735): a brief's build, the synthetic loaders'
+        # records, the preparer memo's versions (TXP-01 shows them), the Workbench session's
+        # own items (its thread shows them) and an imported report (its cells' provenance):
+        # explorer only, not the engagement feed.
+        "daily_briefing.built",
+        "session.recorded_synthetic",
+        "tax_entity.recorded_synthetic",
+        "tax_memo.drafted",
+        "tax_memo.regenerated",
+        "workbench_session.context_added",
+        "workbench_session.context_removed",
+        "workbench_session.deleted",
+        "workbench_session.renamed",
+        "workbook_import.recorded",
         "allocation_structure.approved",
         "allocation_structure.drafted",
         "allocation_structure.proposed",

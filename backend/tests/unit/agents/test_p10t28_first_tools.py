@@ -28,7 +28,9 @@ def test_the_fifteen_first_tools_are_registered() -> None:
     assert set(registered_tools()) >= FIRST
     # P-10-T38 adds the files tools beside the fifteen (compute, propose and approved_write).
     files = {"files.build_workbook", "files.propose_save", "files.save_approved"}
-    assert {d.name for d in DECLARED} == FIRST | files
+    # W-02-T11 (DEC-4716) declares `binders.read` beside requests' first tools.
+    workbench = {"binders.read"}
+    assert {d.name for d in DECLARED} == FIRST | files | workbench
 
 
 @pytest.mark.parametrize("name", sorted(FIRST))

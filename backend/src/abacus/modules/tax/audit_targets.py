@@ -41,6 +41,8 @@ _ROWS = {
     "allocation_structure": text(
         "SELECT id, engagement_id FROM allocation_structures WHERE id = ANY(:ids)"
     ),
+    # T-05-T48 (DEC-4708): a return's preparer memo, owned by its engagement.
+    "preparer_memo": text("SELECT id, engagement_id FROM preparer_memos WHERE id = ANY(:ids)"),
 }
 # T-05-T35 (DEC-4620): the entity workbook's events (`workbook.step_written`,
 # `workbook.cell_edited`) target the return's work item, like `tax_return`.

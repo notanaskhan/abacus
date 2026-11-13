@@ -6,9 +6,10 @@ makes this exact and cheap."""
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Final
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -33,12 +34,20 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | Non
     "upload_review": (UploadReview.id, UploadReview.engagement_id),
     "inbox_match": (InboxMatchRun.id, InboxMatchRun.engagement_id),
 }
-AUDIT_KINDS = frozenset(_OWNERS)
+# I-02-T08 (DEC-4721): a daily briefing row (raw SQL table, no ORM model), owned by its engagement.
+_ROWS: Final = {
+    "daily_briefing": text("SELECT id, engagement_id FROM daily_briefings WHERE id = ANY(:ids)"),
+}
+AUDIT_KINDS = frozenset(_OWNERS) | frozenset(_ROWS)
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
     """For `kind` rows named by an audit event (the caller has authorised the read of the trail):
     their id -> the owning engagement. Unknown ids are left out."""
+    if kind in _ROWS:
+        async with tenant_session(tenant) as session:
+            found = await session.execute(_ROWS[kind], {"ids": list(ids)})
+            return {r.id: r.engagement_id for r in found if r.engagement_id is not None}
     key, owner = _OWNERS[kind]
     async with tenant_session(tenant) as session:
         rows = await session.execute(select(key, owner).where(key.in_(list(ids))))

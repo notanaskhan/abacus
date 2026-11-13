@@ -213,6 +213,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # S36: P-10-T42 meters a finished run; P-10-T38 runs (or drops) an approved write on
         # its decision or Undo; T-04-T31 resolves an issue when its fix proposal is approved.
         "agent_run.completed",
+        # T-05-T42 (DEC-4706): a finished run re-checks the workbook's section tie-outs.
+        "agent_run.state_changed",
         "proposal.decided",
         "proposal.undone",
         # T-04-T29: the return workspace's invalidations (a second tab's counts).

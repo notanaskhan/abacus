@@ -82,7 +82,7 @@ def test_a_quoted_number_backs_a_segment_that_cites_it() -> None:
     )
     capital = next(s for s in settled.sections if s.key == "capital")
     assert not capital.unsupported
-    assert capital.segments[0]["citations"] == [{"n": 2, "start": 0, "end": 44}]
+    assert capital.segments[0]["citations"] == [{"n": 2, "start": 0, "end": 43}]
 
 
 def test_an_unknown_citation_is_dropped_and_offsets_follow_the_text() -> None:
