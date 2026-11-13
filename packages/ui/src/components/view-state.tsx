@@ -43,7 +43,14 @@ export type ViewState =
   | { kind: "empty"; action?: StateAction }
   /** "No results for ‘…’." and Clear filters; `title` when the screen words it ("No clients
    * match 'Schwab'."). */
-  | { kind: "filtered-empty"; query?: string; title?: string; clear?: () => void }
+  | {
+      kind: "filtered-empty";
+      query?: string;
+      title?: string;
+      clear?: () => void;
+      /** The link's words when the narrowing is a search ("Clear search", WB-01 f). */
+      clearLabel?: string;
+    }
   | { kind: "ready" }
   /** The C-20 error: a brick tile, "Couldn’t load …", Retry. */
   | { kind: "error"; retry: () => void }
@@ -299,7 +306,7 @@ export function ViewStateBody({
           }
           link={
             <EmptyLink {...(state.clear === undefined ? {} : { onClick: state.clear })}>
-              Clear filters
+              {state.clearLabel ?? "Clear filters"}
             </EmptyLink>
           }
         />

@@ -10,6 +10,7 @@ what the firm's engine received.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from typing import Final
 from uuid import UUID
@@ -57,7 +58,10 @@ async def resolve(
             tx.record(
                 "filing_extension.ack_unmatched",
                 target=Target("work_item", return_id),
-                after=Ref(form=str(ack.form), jurisdiction=ack.jurisdiction),
+                # Ref holds ids only: the form and jurisdiction are codes, so the ack's digest.
+                after=Ref(
+                    ack=hashlib.sha256(f"{ack.form}:{ack.jurisdiction}".encode()).hexdigest()
+                ),
             )
             continue
         extension_id = UUID(str(found))

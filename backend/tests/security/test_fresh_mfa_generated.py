@@ -190,6 +190,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/tax-returns/{return_id}/allocation-structure/approve", "sign_off.create"),
     ("POST", "/v1/tax-returns/{return_id}/k1-packages:release", "k1_package.release"),
     ("POST", "/v1/tax-returns/{return_id}/memo/adopt", "sign_off.create"),
+    ("POST", "/v1/tax-returns/{return_id}/memo/approve", "sign_off.create"),
     ("POST", "/v1/tax-returns/{return_id}/sections/{key}/sign-off", "sign_off.create"),
     ("POST", "/v1/walls", "wall.create"),
     ("POST", "/v1/walls/{wall_id}/approve", "wall.approve"),

@@ -32,7 +32,7 @@ const KEY = "accrued.today.collapsed";
 
 export function readCollapsed(): boolean {
   try {
-    return globalThis.localStorage?.getItem(KEY) === "1";
+    return globalThis.localStorage.getItem(KEY) === "1";
   } catch {
     return false;
   }
@@ -40,7 +40,7 @@ export function readCollapsed(): boolean {
 
 export function writeCollapsed(collapsed: boolean): void {
   try {
-    globalThis.localStorage?.setItem(KEY, collapsed ? "1" : "0");
+    globalThis.localStorage.setItem(KEY, collapsed ? "1" : "0");
   } catch {
     // private mode or blocked storage: the preference lasts the page only
   }

@@ -20,12 +20,23 @@ function draw(props: Partial<Parameters<typeof FormRendererLayout>[0]> = {}) {
     <MatchScope>
       <FormRendererLayout
         mode="form"
-        thumbs={[{ n: 1, src: "/f/1.png", diagnostics: 2 }, { n: 2, src: null }]}
+        thumbs={[
+          { n: 1, src: "/f/1.png", diagnostics: 2 },
+          { n: 2, src: null },
+        ]}
         page={1}
         file={FILE}
         k1s={[{ id: "feld", name: "Jonah Feld", amount: "307900", status: "Draft" }]}
         total={{ state: "off", difference: "-6200" }}
-        diagnostics={[{ id: "d1", severity: "error", text: "M-2 line 9 ≠ Schedule L", page: 6, match: contractMatchId({ match_id: "p6.m2_9" }) }]}
+        diagnostics={[
+          {
+            id: "d1",
+            severity: "error",
+            text: "M-2 line 9 ≠ Schedule L",
+            page: 6,
+            match: contractMatchId({ match_id: "p6.m2_9", rects: [[0, 0, 10, 10]] }),
+          },
+        ]}
         {...props}
       />
     </MatchScope>,
@@ -36,7 +47,9 @@ describe("T17 FormRendererLayout", () => {
   it("the face holds no editable control", () => {
     const { container } = draw();
     const face = container.querySelector("[data-form-face]");
-    expect(face?.querySelectorAll("input, textarea, select, [contenteditable='true']").length).toBe(0);
+    expect(
+      face?.querySelectorAll("input, textarea, select, [contenteditable='true']").length,
+    ).toBe(0);
   });
 
   it("thumbnails show the diagnostic count and a Missing placeholder", () => {

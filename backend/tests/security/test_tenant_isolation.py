@@ -517,6 +517,7 @@ TABLES: tuple[str, ...] = (
     "sync_runs",
     "tax_authorizations",
     "tax_elections",
+    "tax_issue_resolution_notes",
     "tax_profile_files",
     "tax_return_status_events",
     "tax_returns",

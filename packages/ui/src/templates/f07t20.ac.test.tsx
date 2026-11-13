@@ -17,7 +17,7 @@ const FILE = {
 };
 
 describe("T14 inspector (independent)", () => {
-  it.each(["123-45-4417", "123456789", "4417", "XX-XXX0287", "•••-••-44"])(
+  it.each(["900-45-4417", "123456789", "4417", "XX-XXX0287", "•••-••-44"])(
     "an unmasked or malformed TIN %s never draws",
     (tin) => {
       render(<MaskedTin value={tin} canReveal={false} />);
@@ -34,7 +34,7 @@ describe("T14 inspector (independent)", () => {
         canvas={null}
         inspector={{ title: "Jonah Feld", sub: "Person", tin: "•••-••-4417", kv: [] }}
         canReveal={false}
-        onReveal={async () => "123-45-4417"}
+        onReveal={() => Promise.resolve("900-45-4417")}
       />,
     );
     expect(screen.queryByText("Reveal (logged)")).toBeNull();
@@ -69,7 +69,9 @@ describe("T17 form renderer (independent)", () => {
     draw([{ label: "Download", onSelect: () => undefined }]);
     const bars = document.querySelectorAll('[role="toolbar"]');
     for (const bar of bars) {
-      expect([...bar.querySelectorAll("button")].some((b) => b.textContent === "Download")).toBe(false);
+      expect([...bar.querySelectorAll("button")].some((b) => b.textContent === "Download")).toBe(
+        false,
+      );
     }
   });
 

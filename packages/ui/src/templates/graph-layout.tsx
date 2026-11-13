@@ -11,6 +11,7 @@
 // absent unless the viewer holds the capability (`canReveal`). Firm-only (INV-4, F-07-T20).
 import { type JSX, type ReactNode, useEffect, useState } from "react";
 import { cn } from "../cn";
+import { amount } from "../format";
 import { Button } from "../components/button";
 import { Pill } from "../components/pill";
 import { Segmented } from "../components/tabs";
@@ -113,8 +114,12 @@ export function MaskedTin({
   const [shown, setShown] = useState<string | null>(null);
   useEffect(() => {
     if (shown === null) return undefined;
-    const timer = setTimeout(() => setShown(null), REMASK_MS);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+      setShown(null);
+    }, REMASK_MS);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [shown]);
   const masked = value !== null && value !== undefined && isTinMask(value) ? value : "—";
   return (
@@ -177,7 +182,10 @@ function Inspector({
       style={{ width: GRAPH_GEOMETRY.inspector }}
       className="flex min-h-0 flex-none flex-col overflow-y-auto rounded-pane bg-card"
     >
-      <header style={{ height: GRAPH_GEOMETRY.header }} className="flex flex-none items-center justify-center text-[14.5px] font-medium">
+      <header
+        style={{ height: GRAPH_GEOMETRY.header }}
+        className="flex flex-none items-center justify-center text-[14.5px] font-medium"
+      >
         {data.title}
       </header>
       <OverviewCard icon={data.icon ?? "user"} title={data.title} sub={data.sub} />
@@ -191,7 +199,10 @@ function Inspector({
           </div>
         ) : null}
         {data.kv.map((row) => (
-          <div key={row.key} className="flex min-h-[33px] items-start gap-[8px] px-[12px] py-[6px] text-body hairline-b">
+          <div
+            key={row.key}
+            className="flex min-h-[33px] items-start gap-[8px] px-[12px] py-[6px] text-body hairline-b"
+          >
             <dt className="w-[96px] flex-none text-ink-2">{row.label}</dt>
             <dd className="flex min-w-0 flex-1 flex-col">
               {row.lines.map((line) => (
@@ -203,10 +214,15 @@ function Inspector({
       </dl>
       {data.k1 ? (
         <section aria-label={data.k1.title} className="mt-[10px]">
-          <p className="px-[12px] text-[11px] font-medium uppercase tracking-[0.04em] text-ink-3">{data.k1.title}</p>
+          <p className="px-[12px] text-[11px] font-medium uppercase tracking-[0.04em] text-ink-3">
+            {data.k1.title}
+          </p>
           <ul>
             {data.k1.rows.map((r) => (
-              <li key={r.key} className="flex min-h-[30px] items-center px-[12px] text-body hairline-b">
+              <li
+                key={r.key}
+                className="flex min-h-[30px] items-center px-[12px] text-body hairline-b"
+              >
                 <span className="flex-1 text-ink-2">{r.label}</span>
                 <span className="tabular-nums">{formatWhole(r.amount)}</span>
               </li>
@@ -223,7 +239,9 @@ function Inspector({
       ) : null}
       {data.linked && data.linked.length > 0 ? (
         <section aria-label="Linked work" className="mt-[10px] pb-[10px]">
-          <p className="px-[12px] text-[11px] font-medium uppercase tracking-[0.04em] text-ink-3">Linked work</p>
+          <p className="px-[12px] text-[11px] font-medium uppercase tracking-[0.04em] text-ink-3">
+            Linked work
+          </p>
           {data.linked.map((w) => (
             <button
               key={w.id}
@@ -241,11 +259,8 @@ function Inspector({
   );
 }
 
-function formatWhole(amount: string): string {
-  const n = Number(amount);
-  if (!Number.isFinite(n)) return amount;
-  const s = Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 });
-  return n < 0 ? `(${s})` : s;
+function formatWhole(value: string): string {
+  return amount(value, "whole").text;
 }
 
 function ListBody({ rows }: { rows: readonly RelationshipRow[] }): JSX.Element {
@@ -295,14 +310,26 @@ export function GraphCanvasLayout({
       {subbar ? <div className="flex-none">{subbar}</div> : null}
       {tabsbar ? <div className="flex-none">{tabsbar}</div> : null}
       <div className="flex min-h-0 flex-1 gap-[10px] p-[12px]">
-        <section aria-label="Relationships" className="flex min-h-0 min-w-0 flex-1 flex-col rounded-pane bg-card">
-          <header style={{ height: GRAPH_GEOMETRY.header }} className="flex flex-none items-center gap-[8px] px-[12px]">
+        <section
+          aria-label="Relationships"
+          className="flex min-h-0 min-w-0 flex-1 flex-col rounded-pane bg-card"
+        >
+          <header
+            style={{ height: GRAPH_GEOMETRY.header }}
+            className="flex flex-none items-center gap-[8px] px-[12px]"
+          >
             <Segmented
               size="small"
               label="Relationships view"
               options={["Graph", "List"]}
               active={view === "list" ? "List" : "Graph"}
-              {...(onView === undefined ? {} : { onChange: (l: string) => onView(l === "List" ? "list" : "graph") })}
+              {...(onView === undefined
+                ? {}
+                : {
+                    onChange: (l: string) => {
+                      onView(l === "List" ? "list" : "graph");
+                    },
+                  })}
             />
             <span className="flex-1 text-center text-[14.5px] font-medium">Relationships</span>
             <Button variant="secondary" size="sm" onClick={onAddRelationship}>
@@ -330,7 +357,9 @@ export function GraphCanvasLayout({
             )}
           </div>
         </section>
-        {inspector ? <Inspector data={inspector} canReveal={canReveal} onReveal={onReveal} /> : null}
+        {inspector ? (
+          <Inspector data={inspector} canReveal={canReveal} onReveal={onReveal} />
+        ) : null}
       </div>
     </div>
   );

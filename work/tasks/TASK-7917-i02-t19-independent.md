@@ -3,7 +3,7 @@ id: TASK-7917
 title: I-02-T19 Independent AC and security tests for I-02-T04, T06, T07, T08, T11, T13
 plan_key: I-02-T19
 spec: SPEC-654
-acceptance_criteria: [AC-3.11]  # consent and citation mutations fail; no audit row carries brief content
+acceptance_criteria: [AC-11]  # consent and citation mutations fail; no audit row carries brief content
 risk_zone: red
 status: in-review
 branch: i02-t19-independent

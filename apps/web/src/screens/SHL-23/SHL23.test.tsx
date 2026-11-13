@@ -16,6 +16,11 @@ import { TodayPanel, factParagraph } from ".";
 
 afterEach(cleanup);
 
+function must<T>(v: T | null | undefined): T {
+  if (v === null || v === undefined) throw new Error("expected an element");
+  return v;
+}
+
 describe("SHL-23 Today brief panel", () => {
   it("1: Daniel's cells 3 · 6 · 2 · 0 and the code fact paragraph", () => {
     render(<TodayPanel vm={danielToday()} />);
@@ -29,7 +34,10 @@ describe("SHL-23 Today brief panel", () => {
   it("1: Needs you first rows carry their why lines; a row without one shows its context line", () => {
     const vm = danielToday();
     const first = DANIEL_ROWS[0];
-    const stripped = { ...vm, needs_you_first: vm.needs_you_first.map((r, i) => (i === 0 ? { ...r, why_blocks: [] } : r)) };
+    const stripped = {
+      ...vm,
+      needs_you_first: vm.needs_you_first.map((r, i) => (i === 0 ? { ...r, why_blocks: [] } : r)),
+    };
     render(<TodayPanel vm={stripped} />);
     expect(screen.getByText(first?.context_line ?? "")).toBeTruthy();
     expect(document.querySelector(`[data-why="${first?.gate_id ?? ""}"]`)).toBeNull();
@@ -41,7 +49,7 @@ describe("SHL-23 Today brief panel", () => {
     const cell = document.querySelector<HTMLButtonElement>('[data-cell="decision"]');
     cell?.focus();
     expect(document.activeElement).toBe(cell);
-    fireEvent.click(cell!);
+    fireEvent.click(must(cell));
     expect(onOpen).toHaveBeenCalledWith("/home/approvals?band=decision");
   });
 
@@ -66,7 +74,10 @@ describe("SHL-23 Today brief panel", () => {
   });
 
   it("DF-04: narrative unavailable keeps every count", () => {
-    const vm = { ...danielToday(), availability: { narrative: false, ask: false, narrative_reason: "consent_7216" as const } };
+    const vm = {
+      ...danielToday(),
+      availability: { narrative: false, ask: false, narrative_reason: "consent_7216" as const },
+    };
     render(<TodayPanel vm={vm} />);
     expect(screen.getByText(COPY.consentOff)).toBeTruthy();
     expect(document.querySelectorAll("[data-cell]").length).toBe(4);

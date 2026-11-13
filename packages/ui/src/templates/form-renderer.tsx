@@ -9,6 +9,7 @@
 // The face holds no editable control (C11: the form is rendered, never typed into). Firm-only.
 import { type JSX, type ReactNode, useState } from "react";
 import { cn } from "../cn";
+import { amount } from "../format";
 import { Button } from "../components/button";
 import type { MenuItem } from "../components/popover";
 import { Pill } from "../components/pill";
@@ -67,12 +68,9 @@ export interface FormRendererLayoutProps {
   className?: string;
 }
 
-function whole(amount: string | null): string {
-  if (amount === null) return "—";
-  const n = Number(amount);
-  if (!Number.isFinite(n)) return amount;
-  const s = Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 });
-  return n < 0 ? `(${s})` : s;
+function whole(value: string | null): string {
+  if (value === null) return "—";
+  return amount(value, "whole").text;
 }
 
 function Thumbs({
@@ -86,7 +84,11 @@ function Thumbs({
 }): JSX.Element {
   const { w, h } = FORM_GEOMETRY.thumb;
   return (
-    <nav aria-label="Pages" style={{ width: FORM_GEOMETRY.rail }} className="flex flex-none flex-col items-center gap-[10px] overflow-y-auto py-[12px]">
+    <nav
+      aria-label="Pages"
+      style={{ width: FORM_GEOMETRY.rail }}
+      className="flex flex-none flex-col items-center gap-[10px] overflow-y-auto py-[12px]"
+    >
       {thumbs.map((t) => (
         <button
           key={t.n}
@@ -101,12 +103,17 @@ function Thumbs({
           )}
         >
           {t.src === null ? (
-            <span className="flex h-full items-center justify-center text-[11px] text-ink-3">Missing</span>
+            <span className="flex h-full items-center justify-center text-[11px] text-ink-3">
+              Missing
+            </span>
           ) : (
             <img src={t.src} alt="" className="h-full w-full object-cover" />
           )}
           {t.diagnostics ? (
-            <span data-diagnostics={t.diagnostics} className="absolute right-[4px] top-[4px] rounded-pill bg-red-tint px-[5px] text-[10px] text-red-ink">
+            <span
+              data-diagnostics={t.diagnostics}
+              className="absolute right-[4px] top-[4px] rounded-pill bg-red-tint px-[5px] text-[10px] text-red-ink"
+            >
               {t.diagnostics}
             </span>
           ) : null}
@@ -128,20 +135,35 @@ function RightPane({
   onGoTo: (d: FormDiagnostic) => void;
 }): JSX.Element {
   return (
-    <aside style={{ width: FORM_GEOMETRY.pane }} className="flex min-h-0 flex-none flex-col overflow-y-auto rounded-pane bg-card">
+    <aside
+      style={{ width: FORM_GEOMETRY.pane }}
+      className="flex min-h-0 flex-none flex-col overflow-y-auto rounded-pane bg-card"
+    >
       <section aria-label="K-1s">
-        <header className="flex h-[46px] items-center justify-center text-[14.5px] font-medium">K-1s</header>
+        <header className="flex h-[46px] items-center justify-center text-[14.5px] font-medium">
+          K-1s
+        </header>
         <ul>
           {k1s.map((k) => (
-            <li key={k.id} className="flex min-h-[33px] items-center gap-[8px] px-[12px] text-body hairline-b">
+            <li
+              key={k.id}
+              className="flex min-h-[33px] items-center gap-[8px] px-[12px] text-body hairline-b"
+            >
               <span className="min-w-0 flex-1 truncate">{k.name}</span>
               <span className="tabular-nums">{whole(k.amount)}</span>
               <span className="text-[11px] text-ink-3">{k.status}</span>
             </li>
           ))}
-          <li data-total={total.state} className="flex min-h-[33px] items-center gap-[8px] px-[12px] text-body font-medium">
+          <li
+            data-total={total.state}
+            className="flex min-h-[33px] items-center gap-[8px] px-[12px] text-body font-medium"
+          >
             <span className="flex-1">Total = Schedule K</span>
-            <Pill variant={total.state === "tie" ? "green" : total.state === "off" ? "amber" : "neutral"}>
+            <Pill
+              variant={
+                total.state === "tie" ? "green" : total.state === "off" ? "amber" : "neutral"
+              }
+            >
               {total.state === "tie"
                 ? "tie"
                 : total.state === "off"
@@ -155,15 +177,32 @@ function RightPane({
         <header className="flex h-[36px] items-center px-[12px] text-[12px] font-medium text-ink-3">
           Diagnostics
           {diagnostics.length > 0 ? (
-            <span className="ml-[6px] rounded-pill bg-red-tint px-[5px] text-[10px] text-red-ink">{diagnostics.length}</span>
+            <span className="ml-[6px] rounded-pill bg-red-tint px-[5px] text-[10px] text-red-ink">
+              {diagnostics.length}
+            </span>
           ) : null}
         </header>
         <ul>
           {diagnostics.map((d) => (
-            <li key={d.id} className="flex min-h-[33px] items-center gap-[8px] px-[12px] py-[4px] text-body hairline-b">
-              <span className={cn("size-[6px] flex-none rounded-pill", d.severity === "error" ? "bg-red" : "bg-amber")} aria-hidden />
+            <li
+              key={d.id}
+              className="flex min-h-[33px] items-center gap-[8px] px-[12px] py-[4px] text-body hairline-b"
+            >
+              <span
+                className={cn(
+                  "size-[6px] flex-none rounded-pill",
+                  d.severity === "error" ? "bg-red" : "bg-amber",
+                )}
+                aria-hidden
+              />
               <span className="min-w-0 flex-1">{d.text}</span>
-              <Button variant="ghost" size="sm" onClick={() => onGoTo(d)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onGoTo(d);
+                }}
+              >
                 Go to
               </Button>
             </li>
@@ -206,9 +245,22 @@ export function FormRendererLayout({
           label="Workbook or form"
           options={["Workbook", "Form"]}
           active={mode === "form" ? "Form" : "Workbook"}
-          {...(onMode === undefined ? {} : { onChange: (l: string) => onMode(l === "Form" ? "form" : "workbook") })}
+          {...(onMode === undefined
+            ? {}
+            : {
+                onChange: (l: string) => {
+                  onMode(l === "Form" ? "form" : "workbook");
+                },
+              })}
         />
-        <Button variant="ghost" size="sm" aria-pressed={traces} onClick={() => setTraces(!traces)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-pressed={traces}
+          onClick={() => {
+            setTraces(!traces);
+          }}
+        >
           Show traces
         </Button>
       </div>
@@ -216,7 +268,7 @@ export function FormRendererLayout({
         <Thumbs thumbs={thumbs} page={page} onPage={onPage} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-form-face="">
           {loading || file === null ? (
-            <SkeletonRows type="lines" immediate label="Rendering the form" />
+            <SkeletonRows type="card" immediate label="Rendering the form" />
           ) : (
             <SourceViewer file={file} menu={menu} outlineCited={traces} scrollToLit />
           )}

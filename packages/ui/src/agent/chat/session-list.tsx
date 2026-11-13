@@ -135,6 +135,7 @@ export function SessionList({
             query,
             ...(emptyTitle === undefined ? {} : { title: emptyTitle }),
             clear: () => onQuery?.(""),
+            clearLabel: "Clear search",
           }}
           empty={{ title: "No sessions yet." }}
           noun="sessions"
@@ -153,7 +154,9 @@ export function SessionList({
                     autoFocus
                     value={editing.title}
                     maxLength={120}
-                    onChange={(e) => setEditing({ id: row.id, title: e.target.value })}
+                    onChange={(e) => {
+                      setEditing({ id: row.id, title: e.target.value });
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && editing.title.trim() !== "") {
                         onRename?.(row.id, editing.title.trim());
@@ -162,8 +165,10 @@ export function SessionList({
                         setEditing(null);
                       }
                     }}
-                    onBlur={() => setEditing(null)}
-                    className="h-[28px] w-full rounded-[6px] border border-line bg-card px-[6px] text-[13px]"
+                    onBlur={() => {
+                      setEditing(null);
+                    }}
+                    className="h-[28px] w-full rounded-[6px] border border-hair bg-card px-[6px] text-[13px]"
                   />
                 </li>
               );
@@ -213,11 +218,19 @@ export function SessionList({
                       <IconButton
                         icon="pencil"
                         label="Rename session"
-                        onClick={() => setEditing({ id: row.id, title: row.title })}
+                        onClick={() => {
+                          setEditing({ id: row.id, title: row.title });
+                        }}
                       />
                     )}
                     {onDelete === undefined ? null : (
-                      <IconButton icon="trash-2" label="Delete session" onClick={() => onDelete(row.id)} />
+                      <IconButton
+                        icon="trash-2"
+                        label="Delete session"
+                        onClick={() => {
+                          onDelete(row.id);
+                        }}
+                      />
                     )}
                   </span>
                 ) : null}

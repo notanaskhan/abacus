@@ -22,7 +22,7 @@ export function ScheduleK({
   onOpenCell,
 }: {
   returnId: string;
-  /** Open an entity section by its path suffix ("/review/capital-accounts", "/issues", "/k1"). */
+  /** Open an entity section by its path suffix ("/issues"). */
   onOpen?: (suffix: string) => void;
   /** SHL-09 on a line's cells (the shell's overlay wiring). */
   onOpenCell?: (line: string) => void;
@@ -54,7 +54,7 @@ export function ScheduleK({
           onClose={() => {
             setAllocationOpen(false);
           }}
-          onItemL={() => onOpen?.("/review/capital-accounts")}
+          onItemL={() => void navigate(to.TXP07({ returnId, section: "capital-accounts" }))}
         />
       ) : null}
       <TXP05
@@ -78,7 +78,8 @@ export function ScheduleK({
           setLine(null);
         }}
         onItemL={setItemLOpen}
-        onOpenCapital={() => onOpen?.("/review/capital-accounts")}
+        // TXP-07 is routed (T-05-T55): a typed link (link contract rule 1).
+        onOpenCapital={() => void navigate(to.TXP07({ returnId, section: "capital-accounts" }))}
         onOpenIssues={() => onOpen?.("/issues")}
         // A5: a partner header opens the K-1 package (TXP-12; TAX-11 is planned).
         onPartner={() => void navigate(to.TXP12({ returnId }))}

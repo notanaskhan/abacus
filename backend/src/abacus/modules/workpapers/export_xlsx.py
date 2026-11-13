@@ -41,7 +41,8 @@ _AMOUNT: Final = "#,##0.00;(#,##0.00)"
 _MAX_CELL: Final = 32_767
 _FORMULA_LEADS: Final = ("=", "+", "-", "@", "\t", "\r")
 _MODIFIED: Final = re.compile(rb"(<dcterms:modified[^>]*>)[^<]*(</dcterms:modified>)")
-_SHEET_REF: Final = re.compile(r"(?<![A-Za-z0-9'_])(\d{2})!")
+# A sheet reference in the canonical text: `05!` or `'05'!` (the renderer quotes it).
+_SHEET_REF: Final = re.compile(r"(?<![A-Za-z0-9_'])('?)(\d{2})\1!")
 MAX_TITLE: Final = 31  # Excel's sheet-name limit
 
 
@@ -83,7 +84,7 @@ def excel_formula(text: str, own: str, names: Mapping[str, str]) -> str | None:
         return None
 
     def quoted(m: re.Match[str]) -> str:
-        name = names.get(m.group(1))
+        name = names.get(m.group(2))
         return m.group(0) if name is None else "'" + name.replace("'", "''") + "'!"
 
     return _SHEET_REF.sub(quoted, canonical)

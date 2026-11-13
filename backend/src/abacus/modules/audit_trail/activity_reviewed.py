@@ -961,5 +961,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         "daily_briefing.dispatched",
         "daily_briefing.unavailable",
         "daily_briefing.snapshot",
+        # reviewed 2026-11-13 (S42 end pass, TASK-7922): a memo section's edit and the memo going
+        # stale show on TXP-04's version list and the memo card; a session's title in WB-01.
+        "tax_memo.section_edited",
+        "tax_memo.went_stale",
+        "workbench_session.titled",
     }
 )

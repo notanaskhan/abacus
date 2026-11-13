@@ -56,7 +56,19 @@ export const REASON_COPY: Readonly<Record<string, string>> = {
   flag_off: COPY.aiUnavailable,
 };
 
-const WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
+const WORDS = [
+  "Zero",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+];
 
 /** A small count as a word for a sentence start or middle ("Two of the six"). */
 export function word(n: number, lower = false): string {
@@ -64,15 +76,30 @@ export function word(n: number, lower = false): string {
   return lower && n < WORDS.length ? w.toLowerCase() : w;
 }
 
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+/** "Sep 15" from an ISO date (a calendar day: no time zone, no Date). */
 function monthDay(iso: string): string {
-  const [y, m, d] = iso.split("-").map((x) => Number(x));
-  const at = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1));
-  return at.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  const [, m, d] = iso.split("-").map((x) => Number(x));
+  return `${MONTHS[(m ?? 1) - 1] ?? ""} ${String(d ?? 1)}`;
 }
 
 type Values = Readonly<Record<string, unknown>>;
-const num = (v: Values, k: string): number => (typeof v[k] === "number" ? (v[k] as number) : 0);
-const str = (v: Values, k: string): string => (typeof v[k] === "string" ? (v[k] as string) : "");
+const num = (v: Values, k: string): number => (typeof v[k] === "number" ? v[k] : 0);
+const str = (v: Values, k: string): string => (typeof v[k] === "string" ? v[k] : "");
 
 /** One registered lead fact as its code sentence; an unknown key or a zero count says nothing. */
 export function leadSentence(key: string, values: Values): string | null {
@@ -83,7 +110,9 @@ export function leadSentence(key: string, values: Values): string | null {
       const top = num(values, "top");
       const client = str(values, "top_client");
       const head = `${String(due)} of your ${String(num(values, "total"))} items are due tomorrow, ${monthDay(str(values, "date"))}`;
-      return top > 0 && client !== "" ? `${head}; ${String(top)} of them are ${client}.` : `${head}.`;
+      return top > 0 && client !== ""
+        ? `${head}; ${String(top)} of them are ${client}.`
+        : `${head}.`;
     }
     case "lead.blocked_signoffs": {
       const blocked = num(values, "blocked") || num(values, "count");

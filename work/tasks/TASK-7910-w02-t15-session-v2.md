@@ -28,12 +28,14 @@ pinned scope, first-message title, edit-and-resend, deterministic compaction, th
 - Security review: at the S42 end pass (red).
 
 ## Partial
-- The five `session-v2-*.json` replay histories need a Temporal test server to record
-  (`record_session`); not recorded in this build (end pass or CI's workflow job).
+- Two of the five planned v2 histories are recorded at the end pass (read-only, child-run:
+  `workbench-session-v2-*.json` by `record_s42_runs`); the side-queue, compaction and plans-gate
+  shapes are not (the stubbed activity answers the same commands, so they pin no new sequence).
 - The FE renders `nothing_written` and `plans_off` notices with W-02-T17's thread states.
 
 ## Progress log
 - 2026-11-13: built; tests written, not run (S42 end pass).
+- 2026-11-13 (end pass): v2 histories recorded and replaying; S37's v1 histories still replay.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

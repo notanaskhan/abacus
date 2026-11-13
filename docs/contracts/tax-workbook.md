@@ -242,7 +242,7 @@ Reminder template; 409 `issue_not_sent`); `POST …/issues/{id}/resolve` (`{seen
 422 `resolution_note_required` when no approved fix closed it). Migration 0870.
 
 ## T-05-T52 · decision and gate kinds (DEC-4905, DEC-4906)
-Additive (no route). C3 decision kind `section_754` (reserved `engagement_partner`; options
+Additive (no route). C3 decision kind `basis_adjustment_election` (§754) (reserved `engagement_partner`; options
 `elect_now`, `file_without`, `against`; context `transfer`, `due`, `difference`), raised by the
 run after `interim_closing_706d` when the year has a transfer. Gate kinds: `tax_mapping_complete`,
 `tax_allocation_approved`, `tax_fix_settled`, `tax_memo_approved`, `tax_run_questions_answered`.

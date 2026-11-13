@@ -328,7 +328,7 @@ async def apply_fix(tenant: TenantContext, proposal_id: UUID) -> None:
         tx.record(
             "workbook.fix_applied",
             target=Target(WORKBOOK, return_id),
-            after=Ref(proposal=str(proposal_id), cells=len(fixed), recomputed=len(dependents)),
+            after=Ref(proposal=proposal_id, cells=len(fixed), recomputed=len(dependents)),
             scope=Scope(engagement_id=engagement_id),
         )
     from abacus.modules.tax.memo_service import check_stale  # T-05-T54: the memo's figures

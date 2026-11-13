@@ -4,7 +4,13 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { TPL14_BOARDS, Tpl14Specimen } from "./tpl14";
-import { FELD_K1, TPL14_OWNERSHIP, TPL14_VIEWER, feldInspector, releasedEdges } from "./tpl14-data";
+import {
+  FELD_K1,
+  TPL14_OWNERSHIP,
+  TPL14_VIEWER,
+  feldInspector,
+  releasedEdges,
+} from "./tpl14-data";
 
 afterEach(cleanup);
 

@@ -80,12 +80,18 @@ function RowLink({
             <span
               className={`rounded-pill px-[6px] text-[11px] ${row.due.tone === "red_tint" ? "bg-red-tint text-red-ink" : "bg-nested text-ink-2"}`}
             >
-              {row.due.days <= 0 ? "Today" : row.due.days === 1 ? "Tomorrow" : `${String(row.due.days)} days`}
+              {row.due.days <= 0
+                ? "Today"
+                : row.due.days === 1
+                  ? "Tomorrow"
+                  : `${String(row.due.days)} days`}
             </span>
           ) : null}
         </span>
         <Why row={row} />
-        {row.folded ? <span className="text-[11px] text-ink-3">{COPY.more_rows(row.folded)}</span> : null}
+        {row.folded ? (
+          <span className="text-[11px] text-ink-3">{COPY.more_rows(row.folded)}</span>
+        ) : null}
       </button>
     </li>
   );
@@ -101,7 +107,9 @@ function CardView({ card }: { card: Card }): JSX.Element {
         summary.map((doc, i) => <AgentBlocks key={String(i)} blocks={doc} facts={{}} />)
       ) : (
         <p className="text-[12px] text-ink-3">
-          {reason !== null ? (REASON_COPY[reason] ?? COPY.summaryUnavailable) : COPY.summaryUnavailable}
+          {reason !== null
+            ? (REASON_COPY[reason] ?? COPY.summaryUnavailable)
+            : COPY.summaryUnavailable}
         </p>
       )}
     </section>
@@ -122,7 +130,9 @@ function GroupBand({
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setOpen(!open);
+        }}
         className="flex h-[32px] w-full items-center gap-[6px] px-[10px] text-left"
       >
         <Icon name={open ? "chevron-down" : "chevron-right"} size={12} />
@@ -135,7 +145,11 @@ function GroupBand({
             <p className="text-[12px] text-ink-3">{COPY.nothingLate}</p>
           ) : group.summary ? (
             group.href ? (
-              <button type="button" onClick={() => onOpen?.(group.href ?? "")} className="text-left text-[12px] text-ink-2 hover:underline">
+              <button
+                type="button"
+                onClick={() => onOpen?.(group.href ?? "")}
+                className="text-left text-[12px] text-ink-2 hover:underline"
+              >
                 {group.summary}
               </button>
             ) : (
@@ -184,20 +198,23 @@ export function TodayPanel({
   if (vm === undefined || vm.status === "building") {
     const c = vm?.building_counts ?? {};
     return (
-      <div data-screen="SHL-23" data-state="building" className="flex flex-col gap-[10px] p-[12px]">
+      <div
+        data-screen="SHL-23"
+        data-state="building"
+        className="flex flex-col gap-[10px] p-[12px]"
+      >
         <p className="text-[13px] text-ink-2">
           {COPY.building(c["items"] ?? 0, c["deadlines"] ?? 0, c["runs"] ?? 0)}
         </p>
-        <SkeletonRows type="lines" immediate label={COPY.title} />
+        <SkeletonRows type="card" immediate label={COPY.title} />
       </div>
     );
   }
   const quiet = vm.items === 0;
   const paragraph = factParagraph(vm);
-  const unavailable =
-    vm.availability.narrative === false
-      ? (REASON_COPY[vm.availability.narrative_reason ?? "boundary_refused"] ?? COPY.aiUnavailable)
-      : null;
+  const unavailable = !vm.availability.narrative
+    ? (REASON_COPY[vm.availability.narrative_reason ?? "boundary_refused"] ?? COPY.aiUnavailable)
+    : null;
   return (
     <div data-screen="SHL-23" className="flex min-h-0 flex-1 flex-col">
       <header className="flex h-[46px] flex-none items-center gap-[8px] px-[12px]">
@@ -216,7 +233,10 @@ export function TodayPanel({
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto px-[12px] pb-[12px]">
         {unavailable !== null ? (
-          <p role="note" className="mb-[8px] rounded-[8px] bg-amber-tint p-[8px] text-[12px] text-amber-ink">
+          <p
+            role="note"
+            className="mb-[8px] rounded-[8px] bg-amber-tint p-[8px] text-[12px] text-amber-ink"
+          >
             {unavailable}
           </p>
         ) : null}
@@ -230,14 +250,22 @@ export function TodayPanel({
                 onClick={() => onOpen?.(cell.href)}
                 className="flex min-w-[88px] flex-col rounded-[8px] bg-nested px-[10px] py-[6px] text-left"
               >
-                <span className={`text-[18px] font-medium tabular-nums ${cell.count === 0 ? "text-ink-4" : "text-ink"}`}>
+                <span
+                  className={`text-[18px] font-medium tabular-nums ${cell.count === 0 ? "text-ink-4" : "text-ink"}`}
+                >
                   {cell.count}
                 </span>
-                <span className="text-[11px] text-ink-3">{CELL_LABELS[cell.kind] ?? cell.kind}</span>
+                <span className="text-[11px] text-ink-3">
+                  {CELL_LABELS[cell.kind] ?? cell.kind}
+                </span>
               </button>
             ))}
           </div>
-          {paragraph !== "" ? <p data-fact-paragraph className="mt-[8px] text-[13px] text-ink">{paragraph}</p> : null}
+          {paragraph !== "" ? (
+            <p data-fact-paragraph className="mt-[8px] text-[13px] text-ink">
+              {paragraph}
+            </p>
+          ) : null}
         </section>
         <h2 className="mt-[12px] text-[12px] font-medium text-ink-3">{COPY.needsYouFirst}</h2>
         {quiet || vm.needs_you_first.length === 0 ? (
@@ -264,7 +292,7 @@ export function TodayPanel({
       </div>
       {vm.availability.ask ? (
         <form
-          className="flex h-[38px] flex-none items-center gap-[6px] border-t border-line px-[12px]"
+          className="flex h-[38px] flex-none items-center gap-[6px] border-t border-hair px-[12px]"
           onSubmit={(e) => {
             e.preventDefault();
             if (question.trim() !== "") {
@@ -277,7 +305,9 @@ export function TodayPanel({
             aria-label={COPY.ask}
             placeholder={COPY.ask}
             value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            onChange={(e) => {
+              setQuestion(e.target.value);
+            }}
             className="h-[28px] flex-1 rounded-[7px] bg-card px-[8px] text-[12.5px] shadow-e1"
           />
         </form>

@@ -3,7 +3,7 @@ id: TASK-7920
 title: F-07-T18 T17 FormRendererLayout
 plan_key: F-07-T18
 spec: SPEC-652
-acceptance_criteria: [AC-7]  # no editable control; Go to lights the field; total shows the server's tie state
+acceptance_criteria: [AC-6]  # no editable control; Go to lights the field; total shows the server's tie state
 risk_zone: amber
 status: in-review
 branch: f07-t18-form-renderer

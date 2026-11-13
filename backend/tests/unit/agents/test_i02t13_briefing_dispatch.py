@@ -78,7 +78,7 @@ def test_ac_at_most_three_at_once() -> None:
 
 
 def test_ac_a_signed_gate_drops_its_why_line() -> None:
-    blocks = {
+    blocks: dict[str, object] = {
         "summary": {"version": 1, "parts": []},
         "why": [
             {"gate_id": "g-signed", "line": {"version": 1, "parts": [{"kind": "p"}]}},

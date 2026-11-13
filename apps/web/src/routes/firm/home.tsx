@@ -27,9 +27,7 @@ export const homeDashboardRoute = createRoute({
   path: "/home",
   component: function HomeDashboardPage(): JSX.Element {
     const brief = useFlag("today_brief.enabled") === true;
-    return (
-      <div className="flex min-h-0 flex-1 flex-col">{brief ? <Home05 /> : <Home01 />}</div>
-    );
+    return <div className="flex min-h-0 flex-1 flex-col">{brief ? <Home05 /> : <Home01 />}</div>;
   },
 });
 

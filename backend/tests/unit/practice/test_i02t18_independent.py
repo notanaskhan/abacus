@@ -75,6 +75,15 @@ def _wire(monkeypatch: pytest.MonkeyPatch, items: list[a.Item]) -> None:
     monkeypatch.setattr(a, "names_of", names)
     monkeypatch.setattr(due_dates, "add_business_days", next_day)
 
+    async def no_runs(*_a: object) -> list[object]:  # S41 gaps (#1905): the Running group's read
+        return []
+
+    async def no_downstream(*_a: object) -> list[object]:
+        return []
+
+    monkeypatch.setattr(a, "_running", no_runs)
+    monkeypatch.setattr(a, "_downstream", no_downstream)
+
 
 item_strategy = st.tuples(
     st.sampled_from(KINDS), st.one_of(st.none(), st.integers(-3, 10)), st.booleans()
@@ -137,10 +146,14 @@ def test_cards_ordered_by_most_urgent_row(monkeypatch: pytest.MonkeyPatch) -> No
 
 
 def test_next_business_day_skips_a_holiday() -> None:
-    from abacus.modules.practice.due_dates import add_business_days
+    # The holiday roll is the platform's table (an integration read); the arithmetic is the
+    # kernel's, given that roll.
+    from abacus.kernel.calendar import add_business_days
 
     friday_before_labor_day = date(2026, 9, 4)
-    assert asyncio.run(add_business_days(friday_before_labor_day, 1)) == date(2026, 9, 8)
+    labor_day = frozenset({date(2026, 9, 7)})
+    assert add_business_days(friday_before_labor_day, 1, labor_day) == date(2026, 9, 8)
+    assert add_business_days(friday_before_labor_day, 1, frozenset()) == date(2026, 9, 7)
 
 
 def test_no_model_text_in_any_count_or_lead_fact(monkeypatch: pytest.MonkeyPatch) -> None:

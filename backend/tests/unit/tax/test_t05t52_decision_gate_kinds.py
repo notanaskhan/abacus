@@ -8,6 +8,7 @@ it." The card's options and facts are code's; the kind is reserved to the engage
 from __future__ import annotations
 
 import asyncio
+import importlib
 import uuid
 from datetime import date
 from decimal import Decimal
@@ -17,6 +18,8 @@ import pytest
 from abacus.kernel.db import TenantContext
 from abacus.modules.tax import entity_decisions as ed
 from abacus.modules.tax import entity_gates as eg
+
+importlib.import_module("abacus.modules.tax.api")  # registers the kinds, as the app does
 
 
 def test_ac_754_card_carries_code_facts() -> None:

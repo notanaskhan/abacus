@@ -48,7 +48,11 @@ def _wire_access(monkeypatch: pytest.MonkeyPatch, *, firm_reads: bool = False) -
 
     monkeypatch.setattr(sessions, "walled_from", walls)
     monkeypatch.setattr(sessions, "_clients_on_team", team)
-    monkeypatch.setattr(sessions, "firm_role_allows", lambda *_a: firm_reads)  # pyright: ignore[reportUnknownLambdaType] -- a stand-in rule
+
+    def firm_role_allows(*_a: object) -> bool:
+        return firm_reads
+
+    monkeypatch.setattr(sessions, "firm_role_allows", firm_role_allows)
 
 
 @pytest.mark.parametrize(
@@ -106,6 +110,11 @@ def _wire_list(monkeypatch: pytest.MonkeyPatch, raw: list[dict[str, object]]) ->
     monkeypatch.setattr(session_list, "my_engagement_roles", roles)
     monkeypatch.setattr(session_list, "display_names", names)
     monkeypatch.setattr(session_list, "viewer_access", access)
+
+    async def colleagues(*_a: object) -> frozenset[uuid.UUID]:
+        return frozenset()
+
+    monkeypatch.setattr(session_list, "colleagues_of", colleagues)
 
 
 def test_t09_a_walled_session_adds_no_row_no_count_no_search_hit(
@@ -218,15 +227,16 @@ def test_t11_season_counts_foot(monkeypatch: pytest.MonkeyPatch) -> None:
         return date(2026, 9, 14)
 
     monkeypatch.setattr(tax_board, "_board", board)
-    monkeypatch.setattr(tax_board, "_due", lambda _r: None)  # pyright: ignore[reportUnknownLambdaType] -- no due dates
+
+    def no_due(_r: object) -> None:
+        return None
+
+    monkeypatch.setattr(tax_board, "_due", no_due)
     monkeypatch.setattr(organisations_api, "firm_offices", offices)
     monkeypatch.setattr(clock, "today", today)
     agent = SimpleNamespace(tenant=TenantContext(uuid.uuid4(), "agent", "run:1"))
-    out = asyncio.run(
-        tools.season_counts(
-            cast(Any, agent), tools.SeasonIn(tax_year=2025)
-        )  # Any: a stand-in agent
-    )
+    stand_in = cast(Any, agent)  # Any: a stand-in agent context
+    out = asyncio.run(tools.season_counts(stand_in, tools.SeasonIn(tax_year=2025)))
     assert out.returns == out.open + out.done == 3
     assert sum(s.count for s in out.by_status) == out.returns
     assert sum(o.open + o.done for o in out.by_office) == out.returns

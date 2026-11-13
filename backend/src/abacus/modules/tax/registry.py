@@ -712,11 +712,12 @@ INSERT_COLUMNS["partner_tin_reveals"] = frozenset(
 
 # T-05-T42 (0860, DEC-4705): workbook sections (stable sign-off targets) and the notes of
 # sign-offs given while a tie-out was off (sealed).
+# T-05-T51 (0870, DEC-4904): a person's sealed note when resolving an issue no approved fix closed.
 TABLES: frozenset[str] = _TABLES_0831 | frozenset(
-    {"tax_workbook_sections", "tax_section_acknowledgements"}
+    {"tax_workbook_sections", "tax_section_acknowledgements", "tax_issue_resolution_notes"}
 )
 INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0831 | frozenset(
-    {"tax_workbook_sections", "tax_section_acknowledgements"}
+    {"tax_workbook_sections", "tax_section_acknowledgements", "tax_issue_resolution_notes"}
 )
 INSERT_COLUMNS["tax_workbook_sections"] = frozenset(
     {"tenant_id", "engagement_id", "work_item_id", "key"}
@@ -726,9 +727,6 @@ INSERT_COLUMNS["tax_section_acknowledgements"] = frozenset(
     | {"note_sealed", "note_sha256", "created_by"}
 )
 
-# T-05-T51 (0870, DEC-4904): a person's sealed note when resolving an issue no approved fix closed.
-TABLES = TABLES | frozenset({"tax_issue_resolution_notes"})
-INSERT_ONLY = INSERT_ONLY | frozenset({"tax_issue_resolution_notes"})
 INSERT_COLUMNS["tax_issue_resolution_notes"] = frozenset(
     {"tenant_id", "engagement_id", "work_item_id", "issue_id", "note_sealed", "note_sha256"}
     | {"created_by"}

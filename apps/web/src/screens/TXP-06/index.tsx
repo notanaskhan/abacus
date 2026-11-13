@@ -482,7 +482,7 @@ function Rules({
                     <StackedBar
                       segments={rungSegments(s, tier, priority, selected)}
                       total={s.distributable ?? tier.amount}
-                      label={title}
+                      label={`${title} · ${COPY.waterfall}`}
                     />
                     <Ledger
                       rows={[

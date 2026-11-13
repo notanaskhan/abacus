@@ -5432,6 +5432,12 @@
             ],
             "cls": "internal",
             "title": "Ref Id"
+          },
+          "words": {
+            "cls": "internal",
+            "default": "",
+            "title": "Words",
+            "type": "string"
           }
         },
         "required": [
@@ -96140,6 +96146,19 @@
             "minLength": 1,
             "title": "Body",
             "type": "string"
+          },
+          "edits_seq": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Edits Seq"
           }
         },
         "required": [
@@ -117606,6 +117625,34 @@
             "title": "Basis",
             "type": "string"
           },
+          "book_tie": {
+            "cls": "internal",
+            "default": "pending",
+            "enum": [
+              "tie",
+              "off",
+              "check",
+              "pending",
+              "ties_once_posted",
+              "reconciled"
+            ],
+            "title": "Book Tie",
+            "type": "string"
+          },
+          "derives_tie": {
+            "cls": "internal",
+            "default": "pending",
+            "enum": [
+              "tie",
+              "off",
+              "check",
+              "pending",
+              "ties_once_posted",
+              "reconciled"
+            ],
+            "title": "Derives Tie",
+            "type": "string"
+          },
           "item_l": {
             "anyOf": [
               {
@@ -117702,6 +117749,34 @@
             "type": "string",
             "x-tri": true
           },
+          "ending_704b": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Ending 704B",
+            "x-tri": true
+          },
+          "guaranteed_payments": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Guaranteed Payments",
+            "x-tri": true
+          },
           "income": {
             "cls": "restricted",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
@@ -117721,11 +117796,79 @@
             "cls": "confidential",
             "title": "Name"
           },
+          "nondeductible": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Nondeductible",
+            "x-tri": true
+          },
           "partner_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Partner Id",
             "type": "string"
+          },
+          "row": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Row"
+          },
+          "tax_exempt": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Tax Exempt",
+            "x-tri": true
+          },
+          "tax_exempt_704b": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Tax Exempt 704B",
+            "x-tri": true
+          },
+          "transfers": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Transfers",
+            "x-tri": true
           }
         },
         "required": [
@@ -117771,11 +117914,53 @@
             "type": "string",
             "x-tri": true
           },
+          "ending_704b": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Ending 704B",
+            "x-tri": true
+          },
           "income": {
             "cls": "restricted",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Income",
             "type": "string",
+            "x-tri": true
+          },
+          "tax_exempt": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Tax Exempt",
+            "x-tri": true
+          },
+          "transfers": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Transfers",
             "x-tri": true
           }
         },
@@ -118306,6 +118491,286 @@
           "percentage"
         ],
         "title": "WorkbookInterestTransferOut",
+        "type": "object"
+      },
+      "WorkbookIssueAssigneeOptionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Detail"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Id"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "person",
+              "agent",
+              "client_contact"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ],
+        "title": "WorkbookIssueAssigneeOptionOut",
+        "type": "object"
+      },
+      "WorkbookIssueAssigneeOut": {
+        "additionalProperties": false,
+        "description": "T-05-T51: a person or the Accrued Agent.",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "person",
+              "agent"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "internal",
+            "title": "Name",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ],
+        "title": "WorkbookIssueAssigneeOut",
+        "type": "object"
+      },
+      "WorkbookIssueAssigneesOut": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookIssueAssigneeOptionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "WorkbookIssueAssigneesOut",
+        "type": "object"
+      },
+      "WorkbookIssueCellLinkOut": {
+        "additionalProperties": false,
+        "description": "T-05-T51: a linked cell range, for TXP-11's match lighting.",
+        "properties": {
+          "range": {
+            "cls": "internal",
+            "title": "Range",
+            "type": "string"
+          },
+          "sheet": {
+            "cls": "internal",
+            "title": "Sheet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sheet",
+          "range"
+        ],
+        "title": "WorkbookIssueCellLinkOut",
+        "type": "object"
+      },
+      "WorkbookIssueReminderOut": {
+        "additionalProperties": false,
+        "properties": {
+          "drafts": {
+            "cls": "internal",
+            "title": "Drafts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "drafts"
+        ],
+        "title": "WorkbookIssueReminderOut",
+        "type": "object"
+      },
+      "WorkbookIssueResolveIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "WorkbookIssueResolveIn",
+        "type": "object"
+      },
+      "WorkbookIssueResolvedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "issue_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Issue Id",
+            "type": "string"
+          },
+          "noted": {
+            "cls": "internal",
+            "title": "Noted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "issue_id",
+          "noted"
+        ],
+        "title": "WorkbookIssueResolvedOut",
+        "type": "object"
+      },
+      "WorkbookIssueSectionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "waiting_on_client",
+              "review_points"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "count"
+        ],
+        "title": "WorkbookIssueSectionOut",
+        "type": "object"
+      },
+      "WorkbookIssueSendIn": {
+        "additionalProperties": false,
+        "description": "T-05-T51: the issue's own client wording goes; the body never carries text.",
+        "properties": {
+          "contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Contact Id",
+            "type": "string"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version",
+          "contact_id"
+        ],
+        "title": "WorkbookIssueSendIn",
+        "type": "object"
+      },
+      "WorkbookIssueSentOut": {
+        "additionalProperties": false,
+        "properties": {
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_item_id"
+        ],
+        "title": "WorkbookIssueSentOut",
         "type": "object"
       },
       "WorkbookItemLOut": {
@@ -119298,11 +119763,96 @@
       "WorkbookReturnIssueOut": {
         "additionalProperties": false,
         "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookIssueAssigneeOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "blocks": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "category_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Category Path"
+          },
+          "cells": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookIssueCellLinkOut"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Created At"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "default": "review_point",
+            "title": "Kind",
+            "type": "string"
+          },
+          "priority": {
+            "cls": "internal",
+            "default": "normal",
+            "title": "Priority",
+            "type": "string"
+          },
+          "request_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Request Item Id"
           },
           "section": {
             "anyOf": [
@@ -119315,6 +119865,18 @@
             ],
             "cls": "internal",
             "title": "Section"
+          },
+          "source_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Kind"
           },
           "status": {
             "cls": "internal",
@@ -119337,6 +119899,12 @@
             "cls": "confidential",
             "title": "Title",
             "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -119372,6 +119940,26 @@
               "$ref": "#/components/schemas/WorkbookReturnIssueOut"
             },
             "title": "Items",
+            "type": "array"
+          },
+          "open_total": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Open Total",
+            "type": "integer"
+          },
+          "resolved_total": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Resolved Total",
+            "type": "integer"
+          },
+          "sections": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookIssueSectionOut"
+            },
+            "title": "Sections",
             "type": "array"
           }
         },
@@ -234626,7 +235214,7 @@
     },
     "/v1/me/today/builds": {
       "post": {
-        "description": "Records the day's snapshot and starts the missing (or, `force`, all) engagement briefings;\n429 `rebuild_limit` after three forced rebuilds a day; 409 `in_progress`.",
+        "description": "Records the day's snapshot and starts the missing (or, `force`, all) engagement briefings;\n429 `rebuild_limit` after three forced rebuilds a day; 409 `in_progress`. I-02-T13\n(DEC-4916): at most three engagement runs at once; unavailable ones recorded, no model call.",
         "operationId": "today_builds",
         "parameters": [
           {
@@ -234753,16 +235341,6 @@
               }
             },
             "description": "Too soon or too many: retry after Retry-After"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Today Builds Route",
@@ -272994,8 +273572,116 @@
         "x-abacus-action": "tax_return.read"
       }
     },
+    "/v1/tax-returns/{return_id}/issue-assignees": {
+      "get": {
+        "description": "TXP-10's assignee picker (T-05-T51): the team, the Accrued Agent, client contacts.",
+        "operationId": "entity_issue_assignees",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookIssueAssigneesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Entity Issue Assignees Route",
+        "tags": [
+          "tax workbook"
+        ],
+        "x-abacus-action": "issue.read"
+      }
+    },
     "/v1/tax-returns/{return_id}/issues": {
       "get": {
+        "description": "TXP-10's queue (T-05-T51, DEC-4903): Waiting on the client and Review points, counts over\nthe open issues before the filters (the badge), `by_step` for TXP-00.",
         "operationId": "entity_issues",
         "parameters": [
           {
@@ -273186,6 +273872,429 @@
           "tax workbook"
         ],
         "x-abacus-action": "issue.read"
+      }
+    },
+    "/v1/tax-returns/{return_id}/issues/{issue_id}/reminders": {
+      "post": {
+        "description": "A follow-up draft from the firm's C16 Reminder template on the issue's request item.",
+        "operationId": "entity_issue_remind",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "issue_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Issue Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookIssueReminderOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Entity Issue Remind Route",
+        "tags": [
+          "tax workbook"
+        ],
+        "x-abacus-action": "follow_up.draft"
+      }
+    },
+    "/v1/tax-returns/{return_id}/issues/{issue_id}/resolve": {
+      "post": {
+        "description": "P-04's resolve with a required note when no fix was approved (422\n`resolution_note_required`); the note is sealed, audited by hash.",
+        "operationId": "entity_issue_resolve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "issue_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Issue Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookIssueResolveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookIssueResolvedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Entity Issue Resolve Route",
+        "tags": [
+          "tax workbook"
+        ],
+        "x-abacus-action": "issue.resolve"
+      }
+    },
+    "/v1/tax-returns/{return_id}/issues/{issue_id}/send-to-client": {
+      "post": {
+        "description": "SHL-15 \u2192 POR-04 (T-05-T51, DEC-4904): only the issue's client wording; 409\n`client_wording_missing` without one.",
+        "operationId": "entity_issue_send",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "issue_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Issue Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookIssueSendIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookIssueSentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Entity Issue Send Route",
+        "tags": [
+          "tax workbook"
+        ],
+        "x-abacus-action": "issue.send_to_client"
       }
     },
     "/v1/tax-returns/{return_id}/journal-entries": {
@@ -273943,6 +275052,7 @@
     },
     "/v1/tax-returns/{return_id}/memo": {
       "get": {
+        "description": "TXP-01 (T-05-T54, DEC-4909): sections, status (stale computed on cited figures) and the\nmoved figures in words.",
         "operationId": "entity_memo",
         "parameters": [
           {
@@ -274059,7 +275169,7 @@
     },
     "/v1/tax-returns/{return_id}/memo/adopt": {
       "post": {
-        "description": "The preparer's L1 sign-off on the memo (`seen_hash`); the reviewer's L2 is P-04's.",
+        "description": "The preparer's L1 sign-off on the memo (`seen_hash`); the reviewer's L2 is P-04's\n(T-05-T54: `POST \u2026/memo/approve`).",
         "operationId": "entity_memo_adopt",
         "parameters": [
           {
@@ -274205,9 +275315,147 @@
         "x-abacus-action": "sign_off.create"
       }
     },
+    "/v1/tax-returns/{return_id}/memo/approve": {
+      "post": {
+        "description": "T-05-T54 (DEC-4910): the reviewer's L2 on the memo; never the preparer (403\n`preparer_cannot_approve`); approval writes the opportunities.",
+        "operationId": "entity_memo_approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookMemoAdoptIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSignOffRecordedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Entity Memo Approve Route",
+        "tags": [
+          "tax workbook"
+        ],
+        "x-abacus-action": "sign_off.create"
+      }
+    },
     "/v1/tax-returns/{return_id}/memo/draft": {
       "post": {
-        "description": "A memo run; `consent_required` (409) without both \u00a77216 consents.",
+        "description": "A memo run; `consent_required` (409) without both \u00a77216 consents. T-05-T54: no sections\nnamed regenerates a stale memo's affected sections only; a person's sections are kept.",
         "operationId": "entity_memo_draft",
         "parameters": [
           {
@@ -274355,6 +275603,7 @@
     },
     "/v1/tax-returns/{return_id}/memo/sections/{key}": {
       "patch": {
+        "description": "A person's section edit (T-05-T54): human-owned from now on; 409\n`memo_version_conflict`.",
         "operationId": "entity_memo_section",
         "parameters": [
           {
@@ -274511,6 +275760,7 @@
     },
     "/v1/tax-returns/{return_id}/opportunities": {
       "get": {
+        "description": "T-05-T54: the approved memo's opportunities.",
         "operationId": "entity_opportunities",
         "parameters": [
           {
@@ -276949,7 +278199,7 @@
     },
     "/v1/tax-returns/{return_id}/workbook/export.xlsx": {
       "get": {
-        "description": "Deterministic xlsx with formulas, formula-escaped; `export_blocked` (409).",
+        "description": "Deterministic xlsx with formulas, formula-escaped; `export_blocked` (409). T-05-T57\n(DEC-4908): the live workbook or a finished run's version, whole or one sheet; byte-identical\nfor identical data; audited `workbook.exported`.",
         "operationId": "entity_export",
         "parameters": [
           {

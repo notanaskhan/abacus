@@ -66,7 +66,9 @@ export const workbenchRoute = createRoute({
           onSelect={(session) => void navigate({ search: { ...search, session } })}
           onNew={(href) => void navigate({ href })}
           onFilter={(f) => {
-            const { filter: _drop, ...rest } = search;
+            const rest = Object.fromEntries(
+              Object.entries(search).filter(([k]) => k !== "filter"),
+            ) as WorkbenchSearch;
             void navigate({ search: f === "all" ? rest : { ...rest, filter: f }, replace: true });
           }}
         />

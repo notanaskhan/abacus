@@ -2076,7 +2076,7 @@ async def entity_issue_remind_route(
 
 @workbook_router.post(
     f"{_R}/issues/{{issue_id}}/resolve", action="issue.resolve",
-    response_model=WorkbookIssueResolvedOut, errors=(409, 422),
+    response_model=WorkbookIssueResolvedOut, errors=(409,),
 )  # fmt: skip
 async def entity_issue_resolve_route(
     return_id: UUID, issue_id: UUID, body: WorkbookIssueResolveIn, ctx: Ctx
@@ -2195,7 +2195,7 @@ async def entity_memo_adopt_route(
 
 @workbook_router.post(
     f"{_R}/memo/approve", action="sign_off.create", response_model=WorkbookSignOffRecordedOut,
-    status_code=201, errors=(403, 409),
+    status_code=201, errors=(409,),
 )  # fmt: skip
 async def entity_memo_approve_route(
     return_id: UUID, body: WorkbookMemoAdoptIn, ctx: Ctx, idempotency_key: IdempotencyKey
