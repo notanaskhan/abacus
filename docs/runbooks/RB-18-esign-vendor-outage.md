@@ -3,7 +3,7 @@ id: RB-18
 title: E-signature or knowledge-based-authentication vendor outage (record mode; wet-signature path)
 owner: builder
 alarms: []
-last_rehearsed: never
+last_rehearsed: 2026-11-13
 rehearse_by: 2027-08-16
 ---
 
@@ -83,3 +83,4 @@ in the request: the task reads it from its secret store (`ABACUS_ESIGN_INSTALL_A
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|
+| 2026-11-13 | drill on the synthetic firm, local stack (fake provider, `signatures.esign_provider` off): §2.3 record-mode import, §2.5 the handwritten path on a two-signer 8879 | passed (`test_n02t08_record_import.py`, `test_n02t27_handwritten_fallback.py`: 10 passed; TASK-7828); staging with DocuSeal switched off not run | none |
