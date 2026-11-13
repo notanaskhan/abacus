@@ -37,7 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.provider_terms import covering
 from abacus.kernel.tin_patterns import scrub_tins
-from abacus.modules.agents.tools.registry import ToolNotRegistered, tool
+from abacus.modules.agents.tools.registry import ToolNotRegistered, row_fields, tool
 from abacus.modules.identity.api import AuthContext
 
 Phase = Literal[
@@ -307,6 +307,55 @@ def register_trace_samples(record_type: str, resolver: SampleResolver) -> None:
     _RESOLVERS[record_type] = resolver
 
 
+SAMPLES_PER_STEP: Final = 5
+
+
+def _uuid(value: object) -> UUID | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return UUID(value)
+    except ValueError:
+        return None
+
+
+def step_sample_refs(tool_name: str, result: Mapping[str, object] | None) -> list[dict[str, str]]:
+    """The first five records a tool step read, for `agent_run_steps.sample_refs` (P-09-T08; 0751):
+    each `{record_type, id}`, the type the tool declares it reads and the `id` of each row in its
+    row lists in the order returned, or the output's own `id` for a single-record read. Ids only:
+    a sample's label and route come from the owning module's resolver when someone opens the step,
+    filtered by `visible()` for that reader. A tool with no declared record type writes none."""
+    if result is None:
+        return []
+    try:
+        declared = tool(tool_name)
+    except ToolNotRegistered:
+        return []
+    kind = declared.records_read
+    if not kind:
+        return []
+    ids: list[UUID] = []
+    rows = row_fields(declared.output_model)
+    for field in rows:
+        values = result.get(field)
+        if not isinstance(values, list):
+            continue
+        for row in cast(list[object], values):
+            if isinstance(row, dict):
+                found = _uuid(cast(dict[str, object], row).get("id"))
+                if found is not None and found not in ids:
+                    ids.append(found)
+            if len(ids) >= SAMPLES_PER_STEP:
+                break
+        if len(ids) >= SAMPLES_PER_STEP:
+            break
+    if not rows:
+        own = _uuid(result.get("id"))
+        if own is not None:
+            ids.append(own)
+    return [{"record_type": kind, "id": str(i)} for i in ids[:SAMPLES_PER_STEP]]
+
+
 def sample_refs(raw: object) -> list[tuple[str, UUID]]:
     refs: list[tuple[str, UUID]] = []
     if not isinstance(raw, list):
@@ -367,6 +416,7 @@ __all__ = [
     "register_trace_samples",
     "samples_for",
     "step_of",
+    "step_sample_refs",
     "steps_of",
     "timeline",
 ]

@@ -297,6 +297,11 @@ it. Code: `backend/src/abacus/modules/agents/runs_routes.py`.
   `superseded`), `approver_name`, `proposal_id`.
 - `TraceStepOut` on the new step route: `step_id`, `title`, `args_summary`, `records_read` and up
   to five `samples` (`record_type`, `id`, `label`, `open_route`), filtered by `visible()`.
+  P-09-T08 (TASK-7808, DEC-4806): a tool step records its first five rows' ids as `sample_refs`
+  with `source_ref = accrued`; samples resolve for `engagement` (`/engagements/{id}`),
+  `request_item` (`/engagements/{e}/items/{id}`), `evidence_version` and `evidence_item` (the
+  source viewer, `/engagements/{e}?ov=viewer:{version}`; an item opens its newest version that is
+  not withdrawn). Any other record type answers no samples (fail closed).
 
 **Flags.** `agent_dock.enabled` (SHL-13) and `run_trace.enabled` (WB-09 v1.1 and the step route),
 boolean, default off, owner notanaskhan, expiring 2027-05-07 (DEC-137's 180 days; the plan's

@@ -366,6 +366,11 @@ register_proposal_source(proposals_for, proposal_of)
 register_export_section("screening", screening_section)
 # SPEC-036 (TASK-075): which agents may see a real firm's data (stages follow in TASK-076).
 register_client_data_facts(cleared=cleared_for_client_data, stage=stage_for)
+
+# P-09-T08: the trace's samples for engagements, request items and documents.
+from abacus.modules.agents.trace_samples import register as _register_trace_samples  # noqa: E402
+
+_register_trace_samples()
 # SPEC-036 (TASK-076): identity's disclosure lists the cleared assistants and their stage.
 register_ai_assistants(assistants)
 # G-02-T23 (DEC-711): the AI policy's level, where the policy governs the firm.

@@ -633,7 +633,7 @@ __all__ = [
     "RecordClass",
     "RecordedCitation",
     "RenderHashMismatch",
-    "RevealedField",  # A-05-T18 (DEC-2067)
+    "RevealedField",  # A-05-T18 (DEC-2067)",
     "ReviewMaterial",
     "ScreenedFile",
     "ScreeningDecision",
@@ -691,6 +691,8 @@ __all__ = [
     "engagement_snapshots",
     "engagement_stored_versions",
     "engagement_version_leaves",
+    "evidence_item_trace_samples",
+    "evidence_version_trace_samples",
     "evidence_versions_for",
     "export_manifest_json_schema",
     "export_requester",
@@ -766,7 +768,7 @@ __all__ = [
     "render_trial_balance_layers",
     "retain_until_for",
     "return_files",
-    "reveal_field",  # A-05-T18 (DEC-2067)
+    "reveal_field",  # A-05-T18 (DEC-2067)",
     "review_assignees",
     "review_decision_engagement",
     "review_material",
@@ -827,4 +829,12 @@ from abacus.modules.evidence.form_extraction import Extracted as ExtractedField 
 from abacus.modules.evidence.form_extraction import extract as extract_form  # noqa: E402
 from abacus.modules.evidence.form_extraction import identify as identify_form  # noqa: E402
 from abacus.modules.evidence.pii import detect as detect_pii  # noqa: E402
+
+# P-09-T08: the run trace's samples for this module's records.
+from abacus.modules.evidence.trace_samples import (  # noqa: E402
+    evidence_item_trace_samples as evidence_item_trace_samples,
+)
+from abacus.modules.evidence.trace_samples import (  # noqa: E402
+    evidence_version_trace_samples as evidence_version_trace_samples,
+)
 from abacus.modules.evidence.words import Word as Word  # noqa: E402

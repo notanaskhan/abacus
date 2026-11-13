@@ -301,7 +301,7 @@ __all__ = [
     "FollowUpCandidate",
     "FulfilledVersion",
     "FulfilmentRef",
-    "HandlerUnavailable",  # N-04-T13: a handler whose module is off (pending_handler)
+    "HandlerUnavailable",  # N-04-T13: a handler whose module is off (pending_handler)",
     "ItemKind",
     "ItemNotFulfillable",
     "ItemPatch",
@@ -402,6 +402,7 @@ __all__ = [
     "reopen_after_undo",
     "request_item_sent",
     "request_item_state",
+    "request_item_trace_samples",
     "request_items_for",
     "review_hosts",
     "review_targets",
@@ -440,4 +441,9 @@ from abacus.modules.requests import (  # noqa: E402
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
 from abacus.modules.requests import (  # noqa: E402
     search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
+)
+
+# P-09-T08: the run trace's samples for this module's records.
+from abacus.modules.requests.trace_samples import (  # noqa: E402
+    request_item_trace_samples as request_item_trace_samples,
 )
