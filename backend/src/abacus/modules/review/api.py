@@ -86,10 +86,14 @@ from abacus.modules.review.issue_resolutions import (
     system_resolve_self_checks,
 )
 from abacus.modules.review.issue_resolutions import move as move_issue
+from abacus.modules.review.issue_resolutions import (  # T-05-T51: TXP-10 sends the client wording
+    send_to_client as send_issue_to_client,
+)
 from abacus.modules.review.issue_runs import SUBSCRIPTIONS as ISSUE_RUN_SUBSCRIPTIONS
 from abacus.modules.review.issue_runs import (
     IssueRunMismatch,
     fix_instructions_of,
+    issue_run_facts,  # T-05-T51: whether an approved fix closed the issue
     record_explanation,
     record_fix_proposal,
 )
@@ -99,6 +103,7 @@ from abacus.modules.review.issues import (
     create_issue,
     create_issue_in,
     issue_awaits_client,  # T-04-T39: TXI-03's "Asked the client"
+    issue_links,  # T-05-T51: TXP-10's linked cells and request items
     issue_row,
     list_issues,  # T-04-T23: TAX-06 counts and the CSV export
     read_issue,
@@ -337,6 +342,8 @@ __all__ = [
     "gate_met",
     "gates_waiting_on",
     "issue_awaits_client",
+    "issue_links",
+    "issue_run_facts",
     "issue_engagement",
     "issue_row",  # A-06-T11: a finding's issue status and version
     "latest_citations",
@@ -356,6 +363,7 @@ __all__ = [
     "raise_review_note",
     "raise_review_note_in",
     "read_issue",
+    "send_issue_to_client",
     "rebuild_human_gates",
     "record_engine_issue",
     "record_explanation",

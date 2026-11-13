@@ -242,13 +242,15 @@ from abacus.modules.engagements.slots import (
     replace_gate_provider,
     work_item_provider,
 )
-from abacus.modules.engagements.team import (
+from abacus.modules.engagements.team import (  # T-05-T51: TXP-10's assignee picker
+    RosterMember,
     approve_eqr_eligibility,
     approve_team,
     assign_eqr,
     eqr_eligibility,
     team_approval,
 )
+from abacus.modules.engagements.team import team_of as engagement_roster
 from abacus.modules.engagements.trace_samples import TraceSampleRow, engagement_trace_samples
 from abacus.modules.engagements.transitions import (
     archive_when_items_archived as archive_when_items_archived,
@@ -525,6 +527,7 @@ __all__ = [
     "PriorItem",
     "ProgressFact",
     "ProgressSource",
+    "RosterMember",
     "StoredFile",
     "TemplateItem",
     "TemplateSeed",
@@ -582,6 +585,7 @@ __all__ = [
     "engagement_hold_facts",
     "engagement_label",
     "engagement_metadata",
+    "engagement_roster",
     "engagement_trace_samples",
     "engagements_for",
     "engagements_in_hold_scope",

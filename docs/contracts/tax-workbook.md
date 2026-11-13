@@ -228,3 +228,15 @@ in SHL-10. On approval the cells are written as the approver's (`value_source` `
 recompute, `workbook.fix_applied` is audited, the approver's checkpoint "Fix approved by <name>" is
 saved and a `group` run of the fixed sheets' groups starts (it shows in `GET …/workbook-runs`). A
 tie-out issue stays In progress until the re-run's tie-outs pass; the system resolves it.
+
+## T-05-T51 · TXP-10's queue and actions (DEC-4903, DEC-4904)
+`GET …/issues` answers (was 501): items with `section` (`waiting_on_client`, `review_points`,
+`resolved` with `show_resolved`), `step`, `kind`, `priority`, `source_kind`, `category_path`,
+`blocks`, `assignee` (person or agent), `cells` (linked ranges), `request_item_id`, `version`,
+`created_at`, `allowed_actions`; `by_section`, `by_step`, `open_total` (the badge) and
+`sections` count open issues before filters; `resolved_total` is Show resolved's count. New:
+`GET …/issue-assignees` (team, Accrued Agent, client contacts); `POST …/issues/{id}/send-to-client`
+(`{seen_version, contact_id, due_on}`; the issue's own client wording only; 409
+`client_wording_missing`); `POST …/issues/{id}/reminders` (202, a follow-up draft from the
+Reminder template; 409 `issue_not_sent`); `POST …/issues/{id}/resolve` (`{seen_version, note}`;
+422 `resolution_note_required` when no approved fix closed it). Migration 0870.

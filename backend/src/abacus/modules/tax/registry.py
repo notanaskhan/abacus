@@ -725,3 +725,11 @@ INSERT_COLUMNS["tax_section_acknowledgements"] = frozenset(
     {"tenant_id", "engagement_id", "work_item_id", "section_id", "sign_off_id", "off_count"}
     | {"note_sealed", "note_sha256", "created_by"}
 )
+
+# T-05-T51 (0870, DEC-4904): a person's sealed note when resolving an issue no approved fix closed.
+TABLES = TABLES | frozenset({"tax_issue_resolution_notes"})
+INSERT_ONLY = INSERT_ONLY | frozenset({"tax_issue_resolution_notes"})
+INSERT_COLUMNS["tax_issue_resolution_notes"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "issue_id", "note_sealed", "note_sha256"}
+    | {"created_by"}
+)
