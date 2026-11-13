@@ -42,6 +42,13 @@ def _migration(name: str) -> ModuleType:
     return module
 
 
+def _immutable(m: ModuleType) -> set[str]:
+    return set(cast(tuple[str, ...], m.IMMUTABLE))
+
+
+DRAFT = cast(Any, object())  # Any: an opaque draft the preview hands to the engine
+
+
 def _ctx() -> AuthContext:
     user = uuid.uuid4()
     return AuthContext(
@@ -73,16 +80,12 @@ def test_t17_t20_every_table_forced_rls_and_versions_insert_only(name: str) -> N
 
 def test_t17_allocation_versions_and_results_are_insert_only() -> None:
     m = _migration("0821")
-    assert {"allocation_structures", "allocation_results"} <= set(
-        cast(Any, m).IMMUTABLE
-    )  # Any: the migration module's constant
+    assert {"allocation_structures", "allocation_results"} <= _immutable(m)
 
 
 def test_t20_memo_versions_and_events_are_insert_only() -> None:
     m = _migration("0830")
-    assert {"preparer_memo_versions", "preparer_memo_events"} <= set(
-        cast(Any, m).IMMUTABLE
-    )  # Any: the migration module's constant
+    assert {"preparer_memo_versions", "preparer_memo_events"} <= _immutable(m)
 
 
 # --- T-05-T41: human-only L3 approval; preview never persists -----------------------------------
@@ -114,11 +117,7 @@ def test_t41_preview_never_persists(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(allocation_structure, "computed_for", computed)
     monkeypatch.setattr(allocation_structure, "uow", no_write)
-    out = asyncio.run(
-        allocation_structure.preview(
-            _ctx(), uuid.uuid4(), 2025, cast(Any, object())
-        )  # Any: an opaque draft
-    )
+    out = asyncio.run(allocation_structure.preview(_ctx(), uuid.uuid4(), 2025, DRAFT))
     assert out is sentinel
 
 
