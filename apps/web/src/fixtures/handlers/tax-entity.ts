@@ -14,6 +14,12 @@ import {
   tallies,
   trialBalance,
 } from "../seed/tax-entity";
+import {
+  allocationSummary,
+  breakdown,
+  capitalAccounts,
+  scheduleK,
+} from "../seed/tax-entity-schedule-k";
 import { CITATIONS, sheetCells } from "../seed/tax-entity-sheets";
 
 const notYet = () => json({ detail: "not_implemented" }, 501);
@@ -65,6 +71,13 @@ export function taxEntityHandlers(
         ? json(cellProvenance(req.params.target_id ?? "", req.params.field_key ?? ""))
         : json({ detail: "not_found" }, 404),
     [`GET ${R}/partners`]: () => json(partners(snapshot)),
+    // T-05-T43: TXP-05's reads.
+    [`GET ${R}/schedules/k`]: (req) =>
+      json(scheduleK(req.query.get("view") === "state" ? "state" : "federal")),
+    [`GET ${R}/schedules/k/lines/{line}/breakdown`]: (req) =>
+      json(breakdown(req.params.line ?? "")),
+    [`GET ${R}/capital-accounts`]: () => json(capitalAccounts(snapshot)),
+    [`GET ${R}/allocation-structure`]: () => json(allocationSummary()),
     [`GET ${R}/workbook-runs`]: () => json({ items: runs(snapshot) }),
     [`POST ${R}/workbook-runs`]: notYet,
     [`PUT ${R}/ownership`]: notYet,

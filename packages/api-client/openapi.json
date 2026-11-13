@@ -116938,13 +116938,115 @@
         "title": "WorkbookAcceptedOut",
         "type": "object"
       },
+      "WorkbookAllocationApproveIn": {
+        "additionalProperties": false,
+        "description": "T-05-T41: TXP-06 c2's \"Approve structure\" (SHL-12 at L3).",
+        "properties": {
+          "seen_hash": {
+            "cls": "internal",
+            "maxLength": 71,
+            "minLength": 64,
+            "title": "Seen Hash",
+            "type": "string"
+          },
+          "statement_version": {
+            "cls": "internal",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Statement Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seen_hash",
+          "statement_version"
+        ],
+        "title": "WorkbookAllocationApproveIn",
+        "type": "object"
+      },
+      "WorkbookAllocationApprovedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Id"
+          },
+          "run_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run No"
+          },
+          "sign_off_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Sign Off Id",
+            "type": "string"
+          },
+          "structure_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Structure Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sign_off_id",
+          "structure_id"
+        ],
+        "title": "WorkbookAllocationApprovedOut",
+        "type": "object"
+      },
       "WorkbookAllocationDraftIn": {
         "additionalProperties": false,
         "properties": {
+          "convention": {
+            "cls": "internal",
+            "default": "calendar_day",
+            "enum": [
+              "calendar_day",
+              "semi_monthly",
+              "monthly"
+            ],
+            "title": "Convention",
+            "type": "string"
+          },
           "expected_version": {
             "cls": "internal",
             "title": "Expected Version",
             "type": "integer"
+          },
+          "income": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Income",
+            "x-tri": true
           },
           "kind": {
             "cls": "internal",
@@ -116953,6 +117055,16 @@
               "targeted_waterfall"
             ],
             "title": "Kind",
+            "type": "string"
+          },
+          "method": {
+            "cls": "internal",
+            "default": "interim_closing",
+            "enum": [
+              "interim_closing",
+              "proration"
+            ],
+            "title": "Method",
             "type": "string"
           },
           "rungs": {
@@ -116965,6 +117077,26 @@
             "title": "Rungs",
             "type": "array",
             "x-tri": true
+          },
+          "segment_amounts": {
+            "cls": "restricted",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                  "type": "string"
+                }
+              ],
+              "cls": "restricted",
+              "x-tri": true
+            },
+            "maxItems": 24,
+            "title": "Segment Amounts",
+            "type": "array",
+            "x-tri": true
           }
         },
         "required": [
@@ -116973,6 +117105,141 @@
           "rungs"
         ],
         "title": "WorkbookAllocationDraftIn",
+        "type": "object"
+      },
+      "WorkbookAllocationPartnerOut": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "gp",
+              "lp",
+              "member",
+              "shareholder"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "restricted",
+            "title": "Name",
+            "type": "string",
+            "x-tri": true
+          },
+          "partner_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          },
+          "total": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "partner_id",
+          "name",
+          "kind",
+          "total"
+        ],
+        "title": "WorkbookAllocationPartnerOut",
+        "type": "object"
+      },
+      "WorkbookAllocationPeriodOut": {
+        "additionalProperties": false,
+        "description": "T-05-T41: one period (straight percentage) or one rung's total (waterfall).",
+        "properties": {
+          "amount": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string",
+            "x-tri": true
+          },
+          "ends_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ends On"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "starts_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Starts On"
+          }
+        },
+        "required": [
+          "key",
+          "amount"
+        ],
+        "title": "WorkbookAllocationPeriodOut",
+        "type": "object"
+      },
+      "WorkbookAllocationResultOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string",
+            "x-tri": true
+          },
+          "partner_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          },
+          "period_key": {
+            "cls": "internal",
+            "title": "Period Key",
+            "type": "string"
+          },
+          "rung_priority": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Rung Priority"
+          }
+        },
+        "required": [
+          "partner_id",
+          "period_key",
+          "amount"
+        ],
+        "title": "WorkbookAllocationResultOut",
         "type": "object"
       },
       "WorkbookAllocationStructureOut": {
@@ -116996,6 +117263,76 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "checks": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "cls": "internal",
+            "title": "Checks",
+            "type": "object"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "convention": {
+            "cls": "internal",
+            "default": "calendar_day",
+            "enum": [
+              "calendar_day",
+              "semi_monthly",
+              "monthly"
+            ],
+            "title": "Convention",
+            "type": "string"
+          },
+          "distributable": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Distributable",
+            "x-tri": true
+          },
+          "gp_profit_percent": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Gp Profit Percent",
+            "x-tri": true
+          },
+          "income": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Income",
+            "x-tri": true
+          },
           "kind": {
             "cls": "internal",
             "enum": [
@@ -117004,6 +117341,71 @@
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "latest_version": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Latest Version",
+            "type": "integer"
+          },
+          "method": {
+            "cls": "internal",
+            "default": "interim_closing",
+            "enum": [
+              "interim_closing",
+              "proration"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "partners": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookAllocationPartnerOut"
+            },
+            "title": "Partners",
+            "type": "array",
+            "x-tri": true
+          },
+          "periods": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookAllocationPeriodOut"
+            },
+            "title": "Periods",
+            "type": "array",
+            "x-tri": true
+          },
+          "persisted": {
+            "cls": "internal",
+            "default": true,
+            "title": "Persisted",
+            "type": "boolean"
+          },
+          "proposed_by": {
+            "anyOf": [
+              {
+                "enum": [
+                  "human",
+                  "agent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposed By"
+          },
+          "results": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookAllocationResultOut"
+            },
+            "title": "Results",
+            "type": "array",
+            "x-tri": true
           },
           "rungs": {
             "cls": "restricted",
@@ -117019,6 +117421,19 @@
             "title": "Seen Hash",
             "type": "string"
           },
+          "sign_off_target_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Sign Off Target Id"
+          },
           "status": {
             "cls": "internal",
             "enum": [
@@ -117029,6 +117444,19 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "structure_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Structure Id"
           },
           "version": {
             "cls": "internal",
@@ -119190,6 +119618,18 @@
       "WorkbookScheduleKOut": {
         "additionalProperties": false,
         "properties": {
+          "analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookScheduleKLineOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "x-tri": true
+          },
           "lines": {
             "cls": "restricted",
             "items": {
@@ -119224,12 +119664,39 @@
             "title": "Key",
             "type": "string"
           },
+          "section_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Section Id"
+          },
+          "seen_hash": {
+            "cls": "internal",
+            "default": "",
+            "title": "Seen Hash",
+            "type": "string"
+          },
           "signed_levels": {
             "cls": "internal",
             "items": {
               "type": "string"
             },
             "title": "Signed Levels",
+            "type": "array"
+          },
+          "stale_levels": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Stale Levels",
             "type": "array"
           },
           "tallies": {
@@ -119262,6 +119729,7 @@
           "level": {
             "cls": "internal",
             "enum": [
+              "l1",
               "l2",
               "l3"
             ],
@@ -119285,6 +119753,19 @@
             "cls": "internal",
             "title": "Seen Hash",
             "type": "string"
+          },
+          "statement_version": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Statement Version"
           }
         },
         "required": [
@@ -270185,6 +270666,7 @@
     },
     "/v1/tax-returns/{return_id}/allocation-structure": {
       "get": {
+        "description": "T-05-T41 (DEC-4701): the newest version (or `version`), its rungs, stored results and\nthe partners' totals; `seen_hash` is what TXP-06's L3 names.",
         "operationId": "entity_allocation",
         "parameters": [
           {
@@ -270297,16 +270779,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Allocation Route",
@@ -270316,9 +270788,147 @@
         "x-abacus-action": "allocation_structure.read"
       }
     },
+    "/v1/tax-returns/{return_id}/allocation-structure/approve": {
+      "post": {
+        "description": "TXP-06 c2: the L3 sign-off (P-04's rules: a person only, a manager or partner, not the\nversion's preparer; `content_changed` when the structure moved), the approved version and the\ncapital and K-1 re-run (none while a run is open).",
+        "operationId": "entity_allocation_approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookAllocationApproveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookAllocationApprovedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Entity Allocation Approve Route",
+        "tags": [
+          "tax workbook"
+        ],
+        "x-abacus-action": "sign_off.create"
+      }
+    },
     "/v1/tax-returns/{return_id}/allocation-structure/draft": {
       "put": {
-        "description": "A new draft version; approval is P-04's L3 sign-off on `allocation_structure`.",
+        "description": "A new version Pending approval (`structure_version_conflict`, 409; a manager or partner\nonly, `structure_editor_required`, 403); approval is P-04's L3 sign-off on it.",
         "operationId": "entity_allocation_draft",
         "parameters": [
           {
@@ -270445,16 +271055,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Allocation Draft Route",
@@ -270466,7 +271066,7 @@
     },
     "/v1/tax-returns/{return_id}/allocation-structure/preview": {
       "post": {
-        "description": "Recompute without persistence.",
+        "description": "Recompute without persistence (TXP-06 d: the back-solve shows Pending until Save).",
         "operationId": "entity_allocation_preview",
         "parameters": [
           {
@@ -270572,16 +271172,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Allocation Preview Route",
@@ -274858,6 +275448,7 @@
     },
     "/v1/tax-returns/{return_id}/sections": {
       "get": {
+        "description": "T-05-T42 (DEC-4705): the six sections, their tie-outs, signed and stale levels.",
         "operationId": "entity_sections",
         "parameters": [
           {
@@ -274953,16 +275544,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Sections Route",
@@ -274974,7 +275555,7 @@
     },
     "/v1/tax-returns/{return_id}/sections/{key}/sign-off": {
       "post": {
-        "description": "Tie-out precheck (`tie_out_off`, 409), then P-04's sign-off (`level_not_permitted`, 403;\n`not_preparer_of_target`).",
+        "description": "Tie-out precheck (`tie_out_off`, 409, unless a note is given), then P-04's sign-off\n(`level_not_permitted`, 403; `preparer_cannot_review`). T-05-T42 (DEC-4705).",
         "operationId": "entity_section_sign_off",
         "parameters": [
           {
@@ -275110,16 +275691,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Section Sign Off Route",
@@ -276484,7 +277055,7 @@
     },
     "/v1/tax-returns/{return_id}/workbook/imports": {
       "post": {
-        "description": "Raw-body report, parsed as hostile (ADR-052); cells cited as `engine_import`.",
+        "description": "Raw-body report, parsed as hostile (ADR-052); cells cited as `engine_import`. T-05-T40\n(DEC-4703): CSV or xlsx, at most 5 MB (413) and 2,000 rows; `import_invalid` (422) lists\nsheet, row, column and code; an open run holds the cells (`cells_locked_by_run`, 409).",
         "operationId": "entity_import",
         "parameters": [
           {
@@ -276605,6 +277176,16 @@
             },
             "description": "Conflict with the resource's state"
           },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -276614,16 +277195,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Import Route",

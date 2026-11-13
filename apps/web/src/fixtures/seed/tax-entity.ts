@@ -458,12 +458,19 @@ export const FIGURES = {
 } as const;
 
 const PARTNERS = [
-  ["gp", "Ridgeline GP LLC", "llc_member", null],
+  ["gp", "Ridgeline GP LLC", "general", null],
   ["shah", "Meera Shah", "limited", null],
   ["psv", "Pell Street Ventures LLC", "llc_member", null],
   ["ps2", "Pell Street II LLC", "llc_member", null],
   ["feld", "Jonah Feld", "limited", "4417"],
 ] as const;
+
+/** The contract keys a period's shares by partner id (T-05-T43 aligns the fixture with it). */
+function byPartner(shares: Readonly<Record<string, string>>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(shares).map(([key, pct]) => [stableId(`partner:ridgeline:${key}`), pct]),
+  );
+}
 
 /** TXP-06 A: two periods split at the 6/30/2025 assignment (percentage interests). */
 export function partners(snapshot: Snapshot): WorkbookPartnersOut {
@@ -485,12 +492,12 @@ export function partners(snapshot: Snapshot): WorkbookPartnersOut {
       {
         starts_on: "2025-01-01",
         ends_on: "2025-06-30",
-        shares: { gp: "2", shah: "38", psv: "35", feld: "25" },
+        shares: byPartner({ gp: "2", shah: "38", psv: "35", feld: "25" }),
       },
       {
         starts_on: "2025-07-01",
         ends_on: "2025-12-31",
-        shares: { gp: "2", shah: "38", psv: "30", ps2: "5", feld: "25" },
+        shares: byPartner({ gp: "2", shah: "38", psv: "30", ps2: "5", feld: "25" }),
       },
     ],
     transfers: [],
