@@ -1,0 +1,34 @@
+# briefing.today v1 (I-02-T08; I-02 §6; TASK-7718; DEC-4721). One engagement's part of the Today
+# brief: `modules/agents/briefing/today.py` gives the model code's gates and facts only (titles
+# untrusted), validates gate coverage, citations, fact references, recommendation fidelity, reserved
+# verbs and style by code with one repair, and stores the briefing (`daily_briefings`); a briefing
+# that fails twice is stored unverified and never shown. Workflow shape, no tools. Source of truth:
+# compiled into ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+id: briefing.today
+version: 1
+purpose: Write one engagement's part of a person's Today brief from code's gates and facts, one cited why line per gate, for the person to act on.
+shape: workflow
+prompt: briefing.today@v1
+tier: medium
+escalation_tier: medium
+input_schema: BriefingInput
+output_schema: EngagementBriefing
+tools: {}
+task_scope:
+  - engagement.read
+limits:
+  max_output_tokens: 2000
+  max_cost_usd: "0.10"
+  max_steps: 3
+  max_seconds: 60
+  max_tool_calls: 1
+plan: never
+autonomy: propose
+data_classes: [confidential, tri]
+untrusted_inputs: [gate_titles]
+evaluation_suite: evals/briefing_today
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none

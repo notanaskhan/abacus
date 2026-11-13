@@ -18,7 +18,7 @@ out of the rates. The prioritisation judge's 30-item calibration set is labelled
 | `gate_coverage` | a supplied gate has no why line, or a why line names a gate not supplied |
 | `sentences_cited` | a why line carries neither a citation nor a fact reference |
 | `citations_verified` | a cited id is not one of the case's verified citations |
-| `number_provenance` | a number in the summary, a why line or the risk line is not a fact's value |
+| `recommendation_fidelity` | a why line restates a recommendation not the card's own |
 | `recommendation_fidelity` | a why line restates a recommendation other than the card's own |
 | `reserved_actions_absent` | the briefing claims or offers a person's act (approve, sign off, …) |
 | `style_rules` | markdown, a link, more than two sentences or 220 characters in a why line |
