@@ -1,0 +1,1 @@
+List the engagement's binders (PBC lists and organizers): each binder's name, kind, status, whether it is published, and how many requests it holds and how many are done, counted by code. Never the requests' client wording.

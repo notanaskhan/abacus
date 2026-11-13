@@ -622,3 +622,91 @@ async def propose_allocation_structure(
             )
         )  # fmt: skip
     return await _propose(agent, ALLOCATION_STRUCTURE, "Proposed allocation structure", rows)
+
+
+# --- W-02-T11 (DEC-4716): `tax.season_counts`, the firm's season by code ----------------------
+
+
+class SeasonIn(BaseModel):
+    model_config = _cfg()
+
+    tax_year: Annotated[int | None, Field(ge=2000, le=2100), Int] = None
+
+
+class OfficeCount(BaseModel):
+    model_config = _cfg()
+
+    office: Annotated[str, Int]
+    open: Annotated[int, Int]
+    done: Annotated[int, Int]
+
+
+class StatusCount(BaseModel):
+    model_config = _cfg()
+
+    status: Annotated[str, Int]
+    count: Annotated[int, Int]
+
+
+class SeasonOut(BaseModel):
+    """Counts only (§7216 design for J11): no taxpayer figure, return content or internal id."""
+
+    model_config = _cfg()
+
+    tax_year: Annotated[int, Int]
+    returns: Annotated[int, Int]
+    open: Annotated[int, Int]
+    done: Annotated[int, Int]
+    by_status: Annotated[list[StatusCount], Int]
+    by_office: Annotated[list[OfficeCount], Int]
+    engagements: Annotated[int, Int]
+    engagements_with_two_returns: Annotated[int, Int]
+    stalled: Annotated[int, Int]  # open and past the (extended) due date, business today
+
+
+@agent_tool(
+    name="tax.season_counts", kind="compute", action="tax_return.read_metadata",
+    data_class="confidential", input_model=SeasonIn, output_model=SeasonOut,
+    records_read="tax_return",
+)  # fmt: skip
+async def season_counts(agent: AgentContext, args: SeasonIn) -> SeasonOut:
+    """The viewer's season, by code over the board's visible returns (walls and visibility as
+    TAX-01's; nothing walled is counted)."""
+    from abacus.kernel.clock import today
+    from abacus.modules.organisations.api import firm_offices
+    from abacus.modules.tax.board import DONE, _board, _due
+
+    board = await _board(agent, args.tax_year)  # type: ignore[arg-type] -- the run's context reads as its initiator
+    statuses: dict[str, int] = {}
+    offices: dict[UUID | None, list[int]] = {}
+    engagements: dict[UUID, int] = {}
+    stalled = 0
+    on = await today(agent.tenant)
+    for r, facts in board.rows:
+        statuses[r.status] = statuses.get(r.status, 0) + 1
+        tally = offices.setdefault(facts.office_id, [0, 0])
+        tally[1 if r.status in DONE else 0] += 1
+        engagements[facts.engagement_id] = engagements.get(facts.engagement_id, 0) + 1
+        due = _due(r)
+        if r.status not in DONE and due is not None and due < on:
+            stalled += 1
+    names = dict(await firm_offices(agent.tenant))
+    done = sum(n for s, n in statuses.items() if s in DONE)
+    return SeasonOut(
+        tax_year=board.tax_year or 0,
+        returns=len(board.rows),
+        open=len(board.rows) - done,
+        done=done,
+        by_status=[StatusCount(status=s, count=n) for s, n in sorted(statuses.items())],
+        by_office=[
+            OfficeCount(
+                office=names.get(o, "No office") if o else "No office", open=t[0], done=t[1]
+            )
+            for o, t in sorted(
+                offices.items(), key=lambda kv: names.get(kv[0], "") if kv[0] else ""
+            )
+        ],
+        engagements=len(engagements),
+        engagements_with_two_returns=sum(1 for n in engagements.values() if n >= 2),
+        stalled=stalled,
+    )

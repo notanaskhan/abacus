@@ -1,0 +1,1 @@
+Count the firm's tax returns for a tax year as code computes them: total, open and done, by status, by office, the tax engagements and how many carry two returns, and returns stalled past their due date. Counts only: no return content, no taxpayer figure, no internal id; small cells come back as entity references the screen resolves.
