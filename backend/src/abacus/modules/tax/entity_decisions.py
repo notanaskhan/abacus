@@ -1,7 +1,7 @@
 """The entity return's decision kinds, notification kinds and topics (T-05-T52; TASK-7903; T-05
 F10; SHL-11 g, TXP-00, TXP-10, HOME-02; ADR-050, ADR-005; DEC-4905, DEC-4906). Amber.
 
-- **§754 (`section_754`).** A decision card reserved to the engagement partner (SHL-11 g). Code
+- **§754 (`basis_adjustment_election`; registry codes hold no digits).** A decision card reserved to the engagement partner (SHL-11 g). Code
   computes its options and facts (ADR-050), never a model: the year's interest transfers from the
   ownership periods (T-05-T41) and, when a basis owner has registered one
   (`register_section_743b_source`, T-06), the §743(b) difference for the transfer; until then the
@@ -38,8 +38,8 @@ from abacus.modules.review.api import (
     DecisionKind,
 )
 
-SECTION_754: Final = "section_754"
-QUESTION_754: Final = "section_754"
+SECTION_754: Final = "basis_adjustment_election"
+QUESTION_754: Final = "basis_adjustment_election"
 RESERVED: Final = "engagement_partner"
 
 Section743bSource = Callable[[TenantContext, UUID, date], Awaitable[Decimal | None]]

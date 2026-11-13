@@ -107,7 +107,7 @@ export const card754: DecisionCardOut = {
     id: DECISION_754,
     engagement_id: ENGAGEMENT,
     work_item_id: id("work-item:1065"),
-    kind: "section_754",
+    kind: "basis_adjustment_election",
     version_no: 1,
     status: "awaiting_role",
     reserved_role: "engagement_partner",
