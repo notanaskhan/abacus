@@ -526,6 +526,9 @@ CATALOGUE: Final[dict[str, Kind]] = {
     # T-01-T27 (DEC-1463): the tax engine bridge's kinds, to the people the producer names (never
     # the actor). `export_failed` is A-01-T22's kind; the engine adds its source.
     "engine_sync.failed": Kind("export_failed", _listed, "tax_return", "work_item_id"),
+    # T-05-T52 (DEC-4906): the entity workspace's fix and memo staleness (C16; no amounts).
+    "workbook.fix_applied": Kind("workbook_fix_applied", _listed, "tax_return", "work_item_id"),
+    "tax_memo.went_stale": Kind("tax_memo_stale", _listed, "tax_return", "work_item_id"),
     "tax_return.ready_to_transmit": Kind(
         "ready_to_transmit", _listed, "tax_return", "work_item_id"
     ),
@@ -718,6 +721,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "checkpoint.created": "An import on {engagement} is waiting for your approval.",
     # T-01-T27 (DEC-1463): the tax engine bridge.
     "engine_sync.failed": "The tax engine reported errors for a return on {engagement}.",
+    "workbook.fix_applied": "An approved fix changed a return's workbook on {engagement}.",
+    "tax_memo.went_stale": "A preparer memo on {engagement} cites figures that changed.",
     "tax_return.ready_to_transmit": "A return on {engagement} reached the tax engine.",
     "tax_return.efile_relocked": "A return on {engagement} was locked for e-file again.",
     "engine_ack.rejected": "The e-file for a return on {engagement} was rejected.",
@@ -940,6 +945,9 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("extension_payment_approval_requested", "approval", "Gavel"),
     NotificationKind("estimate_due_soon", "deadline", "CalendarClock"),
     NotificationKind("sign_off_re_review", "approval", "UserCheck"),  # A-06-T14
+    # T-05-T52 (DEC-4906): the entity return's fix and memo staleness.
+    NotificationKind("workbook_fix_applied", "system", "FileText"),
+    NotificationKind("tax_memo_stale", "approval", "TriangleAlert"),
     # P-10-T33: agent-originated (AGENT_KINDS), so no inline action (INV-1).
     NotificationKind("run_needs_input", "run", "MessageSquareText"),
     NotificationKind("run_finished", "run", "Bot"),

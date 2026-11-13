@@ -434,6 +434,10 @@ async def interim_closing_706d(agent: AgentContext, facts: RunStepFacts) -> RunS
         await _write(agent, facts, return_id, writes)
         return await _needs_attention(agent, facts, return_id, "closing_amounts_required")
     await _write(agent, facts, return_id, writes)
+    if transfers:  # T-05-T52 (DEC-4906): the §754 card, once per return, for the partner
+        from abacus.modules.tax.entity_decisions import ensure_section_754_card
+
+        await ensure_section_754_card(agent, facts.engagement_id, return_id)
     return RunStepResult("succeeded", records_read=len(segs))
 
 

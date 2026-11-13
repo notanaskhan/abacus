@@ -408,6 +408,14 @@ from abacus.modules.tax import workbook_fix as _workbook_fix  # noqa: E402
 
 _workbook_fix.register()
 
+# T-05-T52 (DEC-4905, DEC-4906): the entity return's gate kinds, the §754 decision kind and the
+# badge and stale-banner topics.
+from abacus.modules.tax import entity_decisions as _entity_decisions  # noqa: E402
+from abacus.modules.tax import entity_gates as _entity_gates  # noqa: E402
+
+_entity_gates.register()
+_entity_decisions.register()
+
 # T-04-T19 (DEC-3211): the tax tools on C17 register at their module's import.
 from abacus.modules.tax.tools import (  # noqa: E402
     read_return as _tax_tools_loaded,

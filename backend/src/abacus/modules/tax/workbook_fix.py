@@ -262,7 +262,9 @@ def recompute(
 async def apply_fix(tenant: TenantContext, proposal_id: UUID) -> None:
     """An approved `workbook_cell_changes` proposal (module docstring, 2)."""
     from abacus.modules.agents.api import approved_proposal_rows, proposal_approver
+    from abacus.modules.engagements.api import function_holders
     from abacus.modules.identity.api import display_names, member_context
+    from abacus.modules.tax.entity_decisions import WorkbookFixApplied
 
     async with tenant_session(tenant) as session:
         found = await approved_proposal_rows(session, proposal_id)
@@ -311,6 +313,18 @@ async def apply_fix(tenant: TenantContext, proposal_id: UUID) -> None:
             writes=writes,
             on_behalf_of_user_id=approver,
         )
+        tx.emit(
+            WorkbookFixApplied(
+                work_item_id=return_id,
+                engagement_id=engagement_id,
+                cells=len(fixed),
+                by_user=approver,
+                recipient_user_ids=sorted(
+                    {u for users in (await function_holders(system, return_id)).values()
+                     for u in users}
+                ),
+            )
+        )  # fmt: skip
         tx.record(
             "workbook.fix_applied",
             target=Target(WORKBOOK, return_id),

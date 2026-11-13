@@ -240,3 +240,11 @@ tie-out issue stays In progress until the re-run's tie-outs pass; the system res
 `client_wording_missing`); `POST …/issues/{id}/reminders` (202, a follow-up draft from the
 Reminder template; 409 `issue_not_sent`); `POST …/issues/{id}/resolve` (`{seen_version, note}`;
 422 `resolution_note_required` when no approved fix closed it). Migration 0870.
+
+## T-05-T52 · decision and gate kinds (DEC-4905, DEC-4906)
+Additive (no route). C3 decision kind `section_754` (reserved `engagement_partner`; options
+`elect_now`, `file_without`, `against`; context `transfer`, `due`, `difference`), raised by the
+run after `interim_closing_706d` when the year has a transfer. Gate kinds: `tax_mapping_complete`,
+`tax_allocation_approved`, `tax_fix_settled`, `tax_memo_approved`, `tax_run_questions_answered`.
+C16 kinds `workbook_fix_applied` and `tax_memo_stale`; events `workbook.fix_applied` and
+`tax_memo.went_stale` invalidate `engagement:<id>` and `work_item:<return id>`.
