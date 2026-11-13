@@ -259,6 +259,9 @@ class WorkbookTbRowOut(BaseModel):
         Literal["assets", "liabilities", "equity", "income", "deductions", "unmapped"] | None,
         Internal,
     ] = None
+    # T-05-T37 rest (DEC-4629), additive: the row's sheet 01 cells by column (`utb`, `aje`,
+    # `rje`, `atb` → "01!C5"), SHL-09's address; empty by form line or before the import.
+    cells: Annotated[dict[str, str], Internal] = Field(default_factory=dict[str, str])
 
 
 class WorkbookTbTotalOut(BaseModel):
@@ -288,6 +291,16 @@ class WorkbookTrialBalanceOut(BaseModel):
     )
 
 
+class WorkbookTermOut(BaseModel):
+    """T-05-T37 rest (DEC-4629): one term of a card's derivation, added or taken away."""
+
+    model_config = _cfg()
+
+    label: Annotated[str, Confidential]  # an account's name or a fixed label
+    amount: Annotated[Decimal, Tri]
+    op: Annotated[Literal["+", "-"], Internal] = "+"
+
+
 class WorkbookTallyOut(BaseModel):
     model_config = _cfg()
 
@@ -295,6 +308,7 @@ class WorkbookTallyOut(BaseModel):
     label: Annotated[str, Internal]
     state: Annotated[TallyState, Internal]
     difference: Annotated[MaybeMoney, Tri] = None
+    terms: Annotated[list[WorkbookTermOut], Tri] = Field(default_factory=list[WorkbookTermOut])
 
 
 class WorkbookFigureOut(BaseModel):
@@ -305,6 +319,7 @@ class WorkbookFigureOut(BaseModel):
     key: Annotated[str, Internal]
     label: Annotated[str, Internal]
     amount: Annotated[Decimal, Tri]
+    terms: Annotated[list[WorkbookTermOut], Tri] = Field(default_factory=list[WorkbookTermOut])
 
 
 class WorkbookTalliesOut(BaseModel):
@@ -316,6 +331,17 @@ class WorkbookTalliesOut(BaseModel):
     )
 
 
+class WorkbookJournalEntryLineOut(BaseModel):
+    """T-05-T37 rest (DEC-4629): one line of an entry, for TXP-02's drawer (O2)."""
+
+    model_config = _cfg()
+
+    account_code: Annotated[str, Confidential]
+    account_name: Annotated[str | None, Confidential] = None
+    debit: Annotated[Decimal, Tri]
+    credit: Annotated[Decimal, Tri]
+
+
 class WorkbookJournalEntryOut(BaseModel):
     model_config = _cfg()
 
@@ -324,6 +350,12 @@ class WorkbookJournalEntryOut(BaseModel):
     reference: Annotated[str, Internal]  # "TJE-3"
     amount: Annotated[Decimal, Tri]
     state: Annotated[str, Internal]
+    # T-05-T37 rest (DEC-4629), additive: the drawer's memo, lines and the named approval.
+    description: Annotated[str | None, Confidential] = None
+    lines: Annotated[list[WorkbookJournalEntryLineOut], Tri] = Field(
+        default_factory=list[WorkbookJournalEntryLineOut]
+    )
+    approval: Annotated[str | None, Internal] = None  # "Approved by Samuel Ito under …"
 
 
 class WorkbookJournalEntriesOut(BaseModel):
@@ -354,9 +386,15 @@ class WorkbookMappingIn(BaseModel):
 
 
 class WorkbookMappingProposedOut(BaseModel):
+    """DEC-4629: the tax reviewer's pick maps the account (`mapped`); anyone else's pick is a
+    review note proposing the line to the reviewer (`flagged`, `note_id`), and nothing maps."""
+
     model_config = _cfg()
 
-    proposal_id: Annotated[UUID, Internal]
+    state: Annotated[Literal["mapped", "flagged"], Internal]
+    account_code: Annotated[str, Confidential]
+    form_line_key: Annotated[str, Internal]
+    note_id: Annotated[UUID | None, Internal] = None
 
 
 # --- Schedule K, capital, M-2 ------------------------------------------------------------------
@@ -962,7 +1000,9 @@ async def entity_trial_balance_route(
 
     return WorkbookTrialBalanceOut(
         view=view,
-        rows=[WorkbookTbRowOut(**r.__dict__) for r in rows],
+        rows=[
+            WorkbookTbRowOut.model_validate({**r.__dict__, "cells": dict(r.cells)}) for r in rows
+        ],
         unmapped=unmapped,
         totals=[WorkbookTbTotalOut(**t.__dict__) for t in totals(rows)],
     )
@@ -982,10 +1022,24 @@ async def entity_tallies_route(return_id: UUID, ctx: Ctx) -> WorkbookTalliesOut:
     found, cards = await tb_tallies(ctx, return_id, loaded.facts.engagement_id)
     return WorkbookTalliesOut(
         items=[
-            WorkbookTallyOut(key=t.key, label=t.label, state=t.state, difference=t.difference)
+            WorkbookTallyOut(
+                key=t.key,
+                label=t.label,
+                state=t.state,
+                difference=t.difference,
+                terms=[WorkbookTermOut(**term.__dict__) for term in t.terms],
+            )
             for t in found
         ],
-        figures=[WorkbookFigureOut(key=f.key, label=f.label, amount=f.amount) for f in cards],
+        figures=[
+            WorkbookFigureOut(
+                key=f.key,
+                label=f.label,
+                amount=f.amount,
+                terms=[WorkbookTermOut(**term.__dict__) for term in f.terms],
+            )
+            for f in cards
+        ],
     )
 
 
@@ -1000,15 +1054,32 @@ async def entity_journal_entries_route(return_id: UUID, ctx: Ctx) -> WorkbookJou
     await _workbook_read(ctx, return_id)
     return WorkbookJournalEntriesOut(
         items=[
-            WorkbookJournalEntryOut(id=i, kind=k, reference=ref, amount=amount, state=state)
-            for i, k, ref, amount, state in await journal_entries(ctx, return_id)
-            if k in ("aje", "rje", "tje")
+            WorkbookJournalEntryOut(
+                id=e.id,
+                kind=e.kind,
+                reference=e.ref,
+                amount=e.amount,
+                state=e.status,
+                description=e.description,
+                approval=e.approval_label,
+                lines=[
+                    WorkbookJournalEntryLineOut(
+                        account_code=ln.account_code,
+                        account_name=ln.account_name,
+                        debit=ln.debit,
+                        credit=ln.credit,
+                    )
+                    for ln in e.lines
+                ],
+            )
+            for e in await journal_entries(ctx, return_id)
+            if e.kind in ("aje", "rje", "tje")
         ]
     )
 
 
 @workbook_router.get(
-    "/form-lines", action="reference_set.read", response_model=WorkbookFormLinesOut, errors=(501,)
+    "/form-lines", action="reference_set.read", response_model=WorkbookFormLinesOut
 )
 async def entity_form_lines_route(
     ctx: Ctx,
@@ -1016,23 +1087,50 @@ async def entity_form_lines_route(
     tax_year: Annotated[int, Query(ge=2000, le=2100)],
     q: Annotated[str | None, Query(max_length=80)] = None,
 ) -> WorkbookFormLinesOut:
+    """T-05-T37 rest (DEC-4629): the line picker's list, the published set's mappable lines."""
+    from abacus.modules.tax.entity_mapping import form_line_choices
+
     await _flag_on(ctx)
-    _not_yet()
+    # The decorator's action is declared, not enforced: a firm-level read of the published set.
+    await authorise(ctx, "reference_set.read", Resource.firm(ctx.tenant_id))
+    return WorkbookFormLinesOut(
+        items=[
+            WorkbookFormLineOut(key=c.key, label=c.label)
+            for c in await form_line_choices(ctx, form, tax_year, q)
+        ]
+    )
 
 
 @workbook_router.post(
-    f"{_R}/mappings", action="account_mapping.edit", response_model=WorkbookMappingProposedOut,
-    status_code=201, errors=(409, 501),
+    f"{_R}/mappings", action="workbook.edit", response_model=WorkbookMappingProposedOut,
+    status_code=201, errors=(409,),
 )  # fmt: skip
 async def entity_mapping_route(
     return_id: UUID, body: WorkbookMappingIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> WorkbookMappingProposedOut:
-    """A ledger mapping proposal, approved through P-04's `POST /proposals/{id}/approve`. The
-    plan's `account_mapping.propose` is not in the matrix yet (A-03's file), so it is
-    `account_mapping.edit`.
+    """TXP-02's line picker (O1). A-03's `account_mapping.edit` requires independence and is an
+    audit verb, so the pick is authorised as `workbook.edit` on the return (a person's verb).
+
+    DEC-4629: proposals are the agent's (ADR-161), so a person's pick is not one. The tax
+    reviewer's pick maps the account (human only, audited); anyone else's raises a review note
+    proposing the line to the reviewer and maps nothing.
     """
+    from abacus.modules.tax.entity_mapping import pick_form_line
+    from abacus.modules.tax.overview import load_return
+
+    del idempotency_key  # the pick is a set: repeating it writes the same key again
     await _flag_on(ctx)
-    _not_yet()
+    _form, resource = await _workbook_read(ctx, return_id)
+    await _authorise_edit(ctx, resource)  # a person's pick (agent: deny), on the return
+    loaded = await load_return(ctx, return_id)
+    out = await pick_form_line(
+        ctx, return_id, loaded.facts.engagement_id, body.account_code, body.form_line_key,
+        body.rationale,
+    )  # fmt: skip
+    return WorkbookMappingProposedOut(
+        state=out.state, account_code=body.account_code, form_line_key=body.form_line_key,
+        note_id=out.note_id,
+    )  # fmt: skip
 
 
 @workbook_router.get(

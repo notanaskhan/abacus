@@ -1980,7 +1980,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/tax-returns/{return_id}/k1-packages:share-internal",
         "k1_package.share_internal",
     ),
-    ("POST", "/v1/tax-returns/{return_id}/mappings", "account_mapping.edit"),
+    ("POST", "/v1/tax-returns/{return_id}/mappings", "workbook.edit"),
     ("POST", "/v1/tax-returns/{return_id}/memo/adopt", "sign_off.create"),
     ("POST", "/v1/tax-returns/{return_id}/memo/draft", "tax_memo.draft"),
     ("POST", "/v1/tax-returns/{return_id}/sections/{key}/sign-off", "sign_off.create"),

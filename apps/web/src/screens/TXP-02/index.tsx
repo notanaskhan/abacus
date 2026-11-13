@@ -6,9 +6,12 @@
 // nothing. E: an unmapped account reads "Map…" and the Unmapped card "Check"; F: Building, tallies
 // Pending and skeleton rows under the running row.
 import type {
+  WorkbookJournalEntryOut,
   WorkbookTalliesOut,
+  WorkbookTallyOut,
   WorkbookTbRowOut,
   WorkbookTbTotalOut,
+  WorkbookTermOut,
   WorkbookTrialBalanceOut,
 } from "@abacus/api-client";
 import {
@@ -117,7 +120,49 @@ export function tableRows(tb: WorkbookTrialBalanceOut): TableRow[] {
   return out;
 }
 
-/** The tally strip: the server's tax-basis foot and unmapped count, then its figure cards. */
+/** A derivation in the handoff's words: "Rental income $3,776,500 + Parking … $96,400 =
+ * $3,872,900", every figure the server's (`terms`, then the card's own figure). */
+export function derivation(
+  terms: readonly WorkbookTermOut[] | undefined,
+  total?: string | null,
+  suffix?: string,
+): string | undefined {
+  if (terms === undefined || terms.length === 0) return undefined;
+  const parts = terms.map(
+    (t, i) =>
+      `${i === 0 ? (t.op === "-" ? "− " : "") : t.op === "-" ? "− " : "+ "}${t.label} ${amount(t.amount, "dollars").text}`,
+  );
+  const sum = total === undefined || total === null ? "" : ` = ${amount(total, "dollars").text}`;
+  return `${parts.join(" ")}${sum}${suffix === undefined ? "" : ` · ${suffix}`}`;
+}
+
+type TieKey = "balance_sheet" | "capital_tie" | "retained_earnings";
+
+function tie(
+  t: WorkbookTalliesOut | undefined,
+  building: boolean,
+  key: TieKey,
+  suffix?: string,
+): TallyItem {
+  const label = COPY.cards[key];
+  const found: WorkbookTallyOut | undefined = t?.items.find((i) => i.key === key);
+  if (building || found === undefined) {
+    return { label, pill: { text: COPY.pending, variant: "neutral" } };
+  }
+  const state = found.state === "tie" || found.state === "off" ? found.state : "pending";
+  const info = derivation(found.terms, undefined, suffix);
+  return {
+    label,
+    tally: state,
+    ...(state === "off"
+      ? { vars: { amount: amount(found.difference ?? "0", "dollars").text } }
+      : {}),
+    ...(info === undefined ? {} : { info }),
+  };
+}
+
+/** The tally strip in the handoff's order: the tax-basis foot, the three statement ties, the
+ * unmapped count, then the figure cards; every figure and derivation is the server's. */
 export function tallyItems(
   t: WorkbookTalliesOut | undefined,
   building: boolean,
@@ -126,10 +171,10 @@ export function tallyItems(
   const pending = { pill: { text: COPY.pending, variant: "neutral" as const } };
   const foot = t?.items.find((i) => i.key === "ttb_foot");
   const unmapped = t?.items.find((i) => i.key === "unmapped");
-  const figure = (key: keyof typeof COPY.cards): TallyItem => {
+  const figure = (key: keyof typeof COPY.cards, suffix?: string): TallyItem => {
     const found = t?.figures?.find((f) => f.key === key);
-    const info = (COPY.info as Readonly<Record<string, string>>)[key];
     if (building || found === undefined) return { label: COPY.cards[key], ...pending };
+    const info = derivation(found.terms, found.amount, suffix);
     return {
       label: COPY.cards[key],
       value: amount(found.amount, "dollars").text,
@@ -140,6 +185,9 @@ export function tallyItems(
     building || foot === undefined
       ? { label: COPY.cards.ttb, ...pending }
       : { label: COPY.cards.ttb, tally: foot.state === "tie" ? "tie" : "off" },
+    tie(t, building, "balance_sheet"),
+    tie(t, building, "capital_tie"),
+    tie(t, building, "retained_earnings", COPY.closesToCapital),
     building || unmapped === undefined
       ? { label: COPY.cards.unmapped, ...pending }
       : unmapped.state === "check"
@@ -154,9 +202,25 @@ export function tallyItems(
         : { label: COPY.cards.unmapped, value: "0" },
     figure("gross_rents"),
     figure("total_deductions"),
-    figure("net_rental_income"),
+    figure("net_rental_income", COPY.toScheduleK),
     figure("book_total_assets"),
   ];
+}
+
+/** The footnote's entry line, from the server's lines: "AJE-1 Dr Real estate taxes 18,500 / Cr
+ * Accrued expenses 18,500 (December installment)". */
+export function entrySummary(e: WorkbookJournalEntryOut): string {
+  const side = (dr: boolean) =>
+    (e.lines ?? [])
+      .filter((ln) => Number(dr ? ln.debit : ln.credit) !== 0)
+      .map(
+        (ln) =>
+          `${dr ? "Dr" : "Cr"} ${ln.account_name ?? ln.account_code} ${amount(dr ? ln.debit : ln.credit, "whole").text}`,
+      )
+      .join(", ");
+  const lines = [side(true), side(false)].filter((x) => x !== "").join(" / ");
+  const memo = e.description === null || e.description === undefined ? "" : ` (${e.description})`;
+  return `${lines}${memo}`;
 }
 
 const VIEW_LABEL: Readonly<Record<Txp02View, string>> = {
@@ -192,6 +256,9 @@ export interface TXP02Props {
   onOpenRow?: (accountCode: string) => void;
   onOpenInExcel?: () => void;
   onJournalEntry?: () => void;
+  /** C8's entries on the return: the footnote names each; its reference opens the drawer (a3). */
+  entries?: readonly WorkbookJournalEntryOut[] | undefined;
+  onOpenEntry?: (entry: WorkbookJournalEntryOut) => void;
 }
 
 export function TXP02({
@@ -207,8 +274,11 @@ export function TXP02({
   onOpenRow,
   onOpenInExcel,
   onJournalEntry,
+  entries = [],
+  onOpenEntry,
 }: TXP02Props): JSX.Element {
   const rows = tb === undefined ? [] : tableRows(tb);
+  const hasPriorYear = tb?.rows.some((r) => r.prior_year !== null && r.prior_year !== undefined);
   return (
     <div data-screen="TXP-02" className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-[44px] flex-none items-center gap-[8px] px-[12px]">
@@ -270,7 +340,22 @@ export function TXP02({
                 else onOpenRow?.(code);
               }}
             />
-            <p className="mt-[8px] text-[11.5px] text-ink-3">{COPY.footnote}</p>
+            <p className="mt-[8px] text-[11.5px] text-ink-3">
+              {entries.map((e, i) => (
+                <span key={e.id}>
+                  {i === 0 ? null : " · "}
+                  <button
+                    type="button"
+                    className="font-medium text-ink-2 hover:underline"
+                    onClick={() => onOpenEntry?.(e)}
+                  >
+                    {e.reference}
+                  </button>{" "}
+                  {entrySummary(e)}
+                </span>
+              ))}
+              {hasPriorYear === true ? `${entries.length > 0 ? " · " : ""}${COPY.pyNote}` : null}
+            </p>
           </>
         )}
       </div>

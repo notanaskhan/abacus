@@ -75,7 +75,7 @@ export function EntityReturn({
       {section.tab === "agent" ? (
         <AgentTab returnId={returnId} onComposer={onComposer} />
       ) : section.review === "financials" ? (
-        <Financials returnId={returnId} />
+        <Financials returnId={returnId} form={form} taxYear={record.data.row.tax_year} />
       ) : section.tab === "workpaper" ? (
         <Workpaper returnId={returnId} />
       ) : (

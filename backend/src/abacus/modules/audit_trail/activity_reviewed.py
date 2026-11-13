@@ -918,5 +918,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "search_index.reindex_requested",
         "workbook.cell_edited",
         "workbook.step_written",
+        # reviewed 2026-11-13 (T-05-T37 rest, DEC-4629): the tax reviewer's mapping shows on
+        # TXP-02's row and its Unmapped tally, not the engagement feed.
+        "tax.mapping_recorded",
     }
 )

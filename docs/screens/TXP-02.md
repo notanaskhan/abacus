@@ -17,13 +17,13 @@
 | Artboard | State | Data condition that produces it | Demo clock | Snapshot | Parity tier | Status |
 |---|---|---|---|---|---|---|
 | a | By Account · Full TB | Run 2 TB: 28 accounts PY, UTB, AJE, RJE, ATB, TJE, TTB; tallies tie | Mon Sep 14, 2026, 9:24 AM CT | Run 2 | D (blocking) · C report-only, **lock proposed** | fixture |
-| a2 | Cell provenance | SHL-09 on account 2050: `01 Trial Balance!I18 = F18+G18+H18` → (94,000) | Mon Sep 14, 2026, 9:24 AM CT | Run 2 | D (blocking) · C report-only | planned |
-| a3 | AJE-1 | O2 drawer: AJE-1 18,500 accrual from the Cook County second-installment bill, "Approved by Samuel Ito · Sep 9" | Mon Sep 14, 2026, 9:24 AM CT | Run 2 | D (blocking) · C report-only | planned |
+| a2 | Cell provenance | SHL-09 on account 2050: `01 Trial Balance!I18 = F18+G18+H18` → (94,000) | Mon Sep 14, 2026, 9:24 AM CT | Run 2 | D (blocking) · C report-only | fixture |
+| a3 | AJE-1 | O2 drawer: AJE-1 18,500 accrual from the Cook County second-installment bill, "Approved by Samuel Ito · Sep 9" | Mon Sep 14, 2026, 9:24 AM CT | Run 2 | D (blocking) · C report-only | fixture |
 | b | Balance Sheet | `statement=balance_sheet`: total assets 17,914,500 = liabilities 11,048,300 + capital 6,866,200 | Mon Sep 14, 2026, 9:24 AM CT | Run 2 | D (blocking) · C report-only | fixture |
 | c | Income Statement | `statement=income_statement` | Mon Sep 14, 2026, 9:24 AM CT | Run 2 | D (blocking) · C report-only | fixture |
 | d | Grouped by Form 1065 Line | `view=line`: Schedule L, Form 8825 (by property), Schedule K, M-2 and M-3 subtotals from server totals | Mon Sep 14, 2026, 9:24 AM CT | Run 2 | D (blocking) · C report-only | fixture |
 | e | Unmapped | Run 1 snapshot: account 1300 "Map…", Unmapped 1 (Check), sync chip disabled "Map every account first" | Mon Sep 14, 2026, 9:24 AM CT | Sep 8 snapshot | D (blocking) · C report-only | fixture |
-| e2 | Line picker | Line picker open over the published TY2025 1065 form-line set | Mon Sep 14, 2026, 9:24 AM CT | Sep 8 snapshot | D (blocking) · C report-only | planned |
+| e2 | Line picker | Line picker open over the published TY2025 1065 form-line set | Mon Sep 14, 2026, 9:24 AM CT | Sep 8 snapshot | D (blocking) · C report-only | fixture |
 | f | Building | `import_trial_balance` running: tallies Pending, rows skeletons | Mon Sep 14, 2026, 9:24 AM CT | run active | D (blocking) · C report-only | fixture |
 | loading | — | skeleton per the handoff (the screen's Building state where it has one) | — | — | D | fixture |
 | not allowed | — | walled or out of scope: 404, no counts (INV-3) | — | — | — | planned |
@@ -50,9 +50,9 @@ Matrix actions from `permission-matrix/tax.yaml` (T-05-T04): every human verb `a
 
 | From | To | Status |
 |---|---|---|
-| Amount | SHL-09 (workbook address) | planned |
-| AJE-1 amount | O2 drawer, source SHL-08 | planned |
-| Map… | line picker (O1 300) then SHL-10 | planned |
+| Amount | SHL-09 (workbook address) | built (row → its sheet 01 cells, DEC-4629) |
+| AJE-1 amount | O2 drawer, source SHL-08 | built (footnote reference → O2); source SHL-08 planned |
+| Map… | line picker (O1 300) then SHL-10 | built (DEC-4629: the reviewer's pick maps; another's is a review note) |
 | Sync chip | TAX-09 (T-01) | planned |
 
 ## Notes
@@ -87,3 +87,9 @@ SPEC-651's criteria for this screen; each becomes a test named "TXP-02 acceptanc
 
 - Built: a, b, c, d, e, f and loading, from the fixture's server-shaped payloads; the screen sums nothing (section totals, the TB total and the figure cards are the server's: `WorkbookTrialBalanceOut.totals`, `WorkbookTalliesOut.figures`, additive).
 - Partial: a2 (SHL-09 on a row), a3 (the AJE-1 drawer, O2) and e2 (the line picker, O1 300) are callbacks the screen raises (`onOpenRow`, `onMap`); their overlays are T-05-T38's SHL wiring. The tally strip shows six of the handoff's nine cards: Balance Sheet, Capital Tie and Retained Earnings wait on server tallies (T-05-T34's capital facts), and the PY column reads "—" live until the prior-year TB import. The control bar's view and statement live in component state, not yet the route's search params. The subbar sync chip's export-disabled tooltip is T-01's chip.
+
+### Build notes (T-05-T37 rest, TASK-7634, DEC-4629)
+
+- Built: a2, a3 and e2. A row opens SHL-09 on its sheet 01 cells (UTB, AJE, RJE, ATB; `WorkbookTbRowOut.cells`), since the kit's DataGrid opens rows, not cells. The footnote lists the server's entries, and each reference opens the O2 drawer (lines, memo, the named approval). Map… opens the line picker over `GET /v1/form-lines`. The tally strip has all nine cards: Balance Sheet, Capital Tie (the TB's roll-forward against M-2 line 9) and Retained Earnings (book net income against M-2 line 3). Each comes from the server with its derivation terms, so the screen's info circles no longer hardcode Ridgeline's figures.
+- Mapping (DEC-4629): proposals are the agent's (ADR-161), so a person's pick is not one. The tax reviewer's pick maps the account; anyone else's raises a review note proposing the line. SHL-10 approval of a person's pick is not used.
+- Open: the AJE drawer's source citation (SHL-08) needs `proposed_entries.source_ref` in C8's read (A-06, red); artboards a2, a3 and e2 open their overlay on interaction, not on load; the PY clause of the footnote is the handoff's TY2024 text.
