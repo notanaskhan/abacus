@@ -328,6 +328,8 @@ __all__ = [
     "StaleReturn",
     "TaxCalendarSweepWorkflow",
     "TransitionRefused",
+    "WorkbookFixChange",
+    "WorkbookFixJudgment",
     "allocation_rung_params",
     "allocation_versions",
     "apply_transition",
@@ -366,6 +368,9 @@ __all__ = [
     "share_k1_internal",
     "start_draft",
     "transcript_comparison_lines",
+    "workbook_fix_amounts",
+    "workbook_fix_kept",
+    "workbook_sheets",
 ]
 
 # T-03 (S27): imported so its refusal codes are catalogued (the routes import it lazily).
@@ -407,6 +412,15 @@ register_explainer(_fix_runner.RECORD_TYPE, _explain.start_explain)
 # T-05-T50 (DEC-4901): the fix flow on an entity return's workbook cells (the tax fix runner hands
 # an entity return's issue to `workbook_fix`; its proposal kind applies through this adapter).
 from abacus.modules.tax import workbook_fix as _workbook_fix  # noqa: E402
+
+# T-05-T50 rest (DEC-4927): the free-text mode's answer model and code check, for its evaluation.
+from abacus.modules.tax.workbook_fix import (  # noqa: E402
+    WorkbookFixChange,
+    WorkbookFixJudgment,
+)
+from abacus.modules.tax.workbook_fix import kept as workbook_fix_kept  # noqa: E402
+from abacus.modules.tax.workbook_fix import written_amounts as workbook_fix_amounts  # noqa: E402
+from abacus.modules.tax.workbook_service import sheets_of as workbook_sheets  # noqa: E402
 
 _workbook_fix.register()
 

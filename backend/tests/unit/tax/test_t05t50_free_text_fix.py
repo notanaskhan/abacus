@@ -146,3 +146,35 @@ def test_ac_a_lowered_threshold_is_refused(tmp_path: Path) -> None:
     (tmp_path / "workbook_fix" / "suite.yaml").write_text(yaml.safe_dump(raw))
     with pytest.raises(suite.ThresholdsChanged):
         suite.load(tmp_path)
+
+
+def test_sec_the_call_names_the_returns_7216_subject(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Security review (TASK-7933): the gateway checks §7216 consents only for the subjects a call
+    names, so the free-text call names the return's partnership for its year."""
+    import abacus.ai_gateway as gateway
+    from abacus.ai_gateway import DataSubject
+    from abacus.modules.identity.api import AgentContext
+    from abacus.modules.tax import entity_tri
+
+    entity, return_id = uuid.uuid4(), uuid.uuid4()
+    seen: list[Any] = []  # Any: the gateway call the fake received
+
+    async def subjects(_t: object, r: uuid.UUID) -> tuple[DataSubject, ...]:
+        assert r == return_id
+        return (DataSubject(entity, 2025),)
+
+    async def call(c: Any) -> Any:  # noqa: ANN401 -- Any: a GatewayCall and its result double
+        seen.append(c)
+        raise RuntimeError("refused")  # a refused call proposes nothing
+
+    monkeypatch.setattr(entity_tri, "entity_return_subjects", subjects)
+    monkeypatch.setattr(gateway, "call", call)
+    agent = AgentContext.__new__(AgentContext)
+    for k, v in {
+        "tenant": object(),
+        "engagement_id": uuid.uuid4(),
+        "agent_run_id": uuid.uuid4(),
+    }.items():
+        object.__setattr__(agent, k, v)
+    assert asyncio.run(wf.judge(agent, "put 6,200 in the M-2", FORM, return_id)) is None
+    assert seen[0].context.data_subjects == (DataSubject(entity, 2025),)

@@ -1,9 +1,9 @@
 ---
 id: TASK-7931
-title: I-02-T16 rest: HOME-01's compressed geometry beside the docked Today pane
+title: "I-02-T16 rest: HOME-01's compressed geometry beside the docked Today pane"
 plan_key: I-02-T16
 spec: SPEC-654
-acceptance_criteria: [AC-H1]
+acceptance_criteria: [AC-9]
 risk_zone: green
 status: in-review
 branch: i02-t16-docked-widths

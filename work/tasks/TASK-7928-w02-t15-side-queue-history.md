@@ -1,6 +1,6 @@
 ---
 id: TASK-7928
-title: W-02-T15 rest: the v2 session's side-queue replay history
+title: "W-02-T15 rest: the v2 session's side-queue replay history"
 plan_key: W-02-T15
 spec: SPEC-653
 acceptance_criteria: [AC-L6]

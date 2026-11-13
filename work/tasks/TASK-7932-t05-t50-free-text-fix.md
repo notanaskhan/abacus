@@ -1,6 +1,6 @@
 ---
 id: TASK-7932
-title: T-05-T50 rest: free-text workbook fix instructions (model judges cells, code checks and computes)
+title: "T-05-T50 rest: free-text workbook fix instructions (model judges cells, code checks and computes)"
 plan_key: T-05-T50
 spec: SPEC-652
 acceptance_criteria: [AC-3]

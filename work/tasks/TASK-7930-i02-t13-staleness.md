@@ -1,9 +1,9 @@
 ---
 id: TASK-7930
-title: I-02-T13 rest: staleness asks for a background rebuild
+title: "I-02-T13 rest: staleness asks for a background rebuild"
 plan_key: I-02-T13
 spec: SPEC-654
-acceptance_criteria: [AC-F3]
+acceptance_criteria: [AC-10]
 risk_zone: red
 status: in-review
 branch: i02-t13-staleness-poll

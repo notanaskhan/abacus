@@ -167,11 +167,17 @@ class WorkbookFixJudgment(BaseModel):
     changes: Annotated[list[WorkbookFixChange], Field(max_length=MAX_CELLS), _Int]
 
 
+def written_amounts(instructions: str) -> frozenset[str]:
+    """The amounts a person wrote, as written (cell references, sheet keys and form designators
+    are not amounts): the provenance rule `kept` applies."""
+    return frozenset(m.group(0) for m in _WRITTEN.finditer(instructions))
+
+
 def kept(judgment: WorkbookFixJudgment, instructions: str, form: str) -> tuple[PlannedCell, ...]:
     """The answer's cells code can stand behind: a sheet of the form's, a cell address, and an
     amount the person wrote verbatim (number provenance, ADR-050). Anything else is dropped."""
     sheets = {n for n, _ in sheets_of(form)}
-    written = {m.group(0) for m in _WRITTEN.finditer(instructions)}
+    written = written_amounts(instructions)
     by_cell: dict[str, PlannedCell] = {}
     for c in judgment.changes:
         if c.sheet not in sheets or not _CELL.fullmatch(c.cell) or c.amount.strip() not in written:
@@ -188,11 +194,14 @@ def kept(judgment: WorkbookFixJudgment, instructions: str, form: str) -> tuple[P
     return tuple(by_cell.values())[:MAX_CELLS]
 
 
-async def judge(agent: AgentContext, instructions: str, form: str) -> WorkbookFixJudgment | None:
+async def judge(
+    agent: AgentContext, instructions: str, form: str, return_id: UUID
+) -> WorkbookFixJudgment | None:
     """The model's reading of free-text instructions (module docstring, 1). Refused or failed:
     None, and nothing is proposed."""
     from abacus.ai_gateway import Attribution, ContextBuilder, GatewayCall, call
     from abacus.modules.agents.api import spec_v2
+    from abacus.modules.tax.entity_tri import entity_return_subjects
 
     spec = spec_v2(FIX_RUNNER)
     context = (
@@ -204,6 +213,9 @@ async def judge(agent: AgentContext, instructions: str, form: str) -> WorkbookFi
             },
             untrusted=("fix_instructions",),  # a person's words, still data (ADR-052)
         )
+        # §7216: the partnership for the return's year, so the gateway checks its consents
+        # (an unknown return is an unresolved subject: the call fails closed). TASK-7933.
+        .subjects(*await entity_return_subjects(agent.tenant, return_id))
         .build()
     )
     try:
@@ -296,7 +308,7 @@ async def fix(agent: object, issue_id: UUID, return_id: UUID, form: str) -> FixR
         return FixResult("refused", code="no_engagement")
     planned = parse_instructions(instructions, form)
     if not planned:  # free text: the model names the cells, code keeps what it can stand behind
-        judgment = await judge(agent, instructions, form)
+        judgment = await judge(agent, instructions, form, return_id)
         planned = () if judgment is None else kept(judgment, instructions, form)
     if not planned:
         return FixResult("nothing_to_propose", code="no_cell_named")
@@ -506,4 +518,5 @@ __all__ = [
     "register",
     "rerun_groups",
     "workbook_form",
+    "written_amounts",
 ]

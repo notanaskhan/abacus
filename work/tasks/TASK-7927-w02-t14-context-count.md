@@ -1,6 +1,6 @@
 ---
 id: TASK-7927
-title: W-02-T14 rest: the Paperclip chip's context count
+title: "W-02-T14 rest: the Paperclip chip's context count"
 plan_key: W-02-T14
 spec: SPEC-653
 acceptance_criteria: [AC-L1]
