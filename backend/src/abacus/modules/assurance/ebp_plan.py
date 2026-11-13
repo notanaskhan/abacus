@@ -592,6 +592,27 @@ def check_notes(found: Sequence[EbpProviderCheck], names: Mapping[UUID, str]) ->
     return out
 
 
+@dataclass(frozen=True)
+class PlanFacts:
+    """W-02's client record line (AC-C4): the plan year and the BOY participant count."""
+
+    plan_year_start: date
+    plan_year_end: date
+    participants_boy_with_balances: int | None
+
+
+async def plan_facts(tenant: TenantContext, engagement_id: UUID) -> PlanFacts | None:
+    """The engagement's EBP plan facts, or None (not an EBP audit, or no plan yet). For a caller
+    that authorised `ebp.read` on the engagement (S41 leftovers, DEC-4738)."""
+    from abacus.modules.engagements.api import assurance_item_id
+
+    item = await assurance_item_id(tenant, engagement_id)
+    plan = None if item is None else await _plan_row(tenant, item)
+    if plan is None:
+        return None
+    return PlanFacts(plan.plan_year_start, plan.plan_year_end, plan.participants_boy_with_balances)
+
+
 async def engagement_of(tenant: TenantContext, work_item_id: UUID) -> UUID:
     return (await _item(tenant, work_item_id))[0]
 

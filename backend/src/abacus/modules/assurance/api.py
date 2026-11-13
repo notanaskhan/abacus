@@ -113,8 +113,10 @@ from abacus.modules.assurance.ebp_imports import import_source as import_ebp_sou
 from abacus.modules.assurance.ebp_investments import AUDIT_KINDS as CERTIFICATION_KINDS
 from abacus.modules.assurance.ebp_investments import audit_owners as certification_owners
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
+from abacus.modules.assurance.ebp_plan import PlanFacts as EbpPlanFacts
 from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
 from abacus.modules.assurance.ebp_plan import edit_plan as edit_ebp_plan  # TASK-7814: the seed
+from abacus.modules.assurance.ebp_plan import plan_facts as ebp_plan_facts
 from abacus.modules.assurance.ebp_provisions import (  # TASK-7815: the seed
     start_review as start_ebp_plan_review,
 )
@@ -153,6 +155,7 @@ from abacus.modules.assurance.internal_control import (
     register_exception_route,
 )
 from abacus.modules.assurance.internal_control import audit_owners as control_owners
+from abacus.modules.assurance.internal_control import exceptions as control_exceptions
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
@@ -507,6 +510,7 @@ __all__ = [
     "BringDownWorkflow",
     "CompletionReadinessWorkflow",
     "EbpImportTies",  # TASK-7815: the seed (EBP-03 on the Sep 24 pass)
+    "EbpPlanFacts",
     "EbpResultIn",  # TASK-7815
     "EbpTestIn",  # TASK-7815
     "ExceptionRouter",
@@ -542,11 +546,13 @@ __all__ = [
     "archive_state",  # A-07-T41: the archive slice
     "completion_errors",
     "completion_router",
+    "control_exceptions",
     "create_archive_addition",  # A-07-T41: the archive slice
     "create_ebp_test",  # TASK-7815
     "create_risk",
     "decide_archive_addition",  # A-07-T41: the archive slice
     "decide_archive_lock",  # A-07-T41: the archive slice
+    "ebp_plan_facts",
     "edit_ebp_plan",
     "edit_risk",
     "eqr_concur",  # A-07-T41: the archive slice
