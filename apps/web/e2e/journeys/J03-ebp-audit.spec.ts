@@ -422,14 +422,16 @@ test.describe("J03 planning (A-04-T34)", () => {
     });
   });
 
-  // TASK-7813, TASK-7814: EBP-03 reads the `ebp_eligibility` attribute test over A-03's approved
+  // TASK-7813, TASK-7815: EBP-03 reads the `ebp_eligibility` attribute test over A-03's approved
   // Participants sample, with the census and HR roster imports and the verified entry rule
-  // (EBP-02). No slice records that test yet, at any snapshot (the Sep 24 seed reads "No sample
-  // yet."), so the step stays on the fixture project until one does.
-  test("j03 12: eligibility testing (EBP-03)", async ({ journey }) => {
-    test.fixme(
-      journey.project !== "fixture",
-      "no slice records Northwind's eligibility test (census and HR imports, verified entry rule)",
+  // (EBP-02). The ebp2 slice records them Sep 17 to Sep 24, 9:30 AM (DEC-4813), so the full stack
+  // walks it on the Sep 24 seed. The fixture draws EBP-03 a at E0.
+  test("j03 12: eligibility testing (EBP-03)", SEP_24_PASS, async ({ journey }) => {
+    test.fixme(journey.project === "staging" || journey.project === "canary", STAGING_EBP);
+    seededAt(
+      journey.project,
+      SEP_24_SNAPSHOT,
+      "Ana Cruz's eligibility test is recorded on Sep 24, 9:10 AM, after E0",
     );
     await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-03&st=a&section=ebp_03", {
       clock: DEMO_INSTANT,

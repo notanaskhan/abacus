@@ -100,20 +100,29 @@ from abacus.modules.assurance.completion_targets import (
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
 from abacus.modules.assurance.draft_mappings import gap_inputs, risk_inputs, risk_narrative_inputs
+from abacus.modules.assurance.ebp_contract import ResultIn as EbpResultIn  # TASK-7815: the seed
+from abacus.modules.assurance.ebp_contract import TestIn as EbpTestIn  # TASK-7815: the seed
 from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
 from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
 from abacus.modules.assurance.ebp_form5500 import ACTIVITIES as FORM5500_ACTIVITIES
 from abacus.modules.assurance.ebp_form5500 import SUBSCRIPTIONS as FORM5500_SUBSCRIPTIONS
 from abacus.modules.assurance.ebp_form5500 import WORKFLOWS as FORM5500_WORKFLOWS
+from abacus.modules.assurance.ebp_imports import Ties as EbpImportTies  # TASK-7815: the seed
+from abacus.modules.assurance.ebp_imports import import_source as import_ebp_source  # TASK-7815
 from abacus.modules.assurance.ebp_investments import AUDIT_KINDS as CERTIFICATION_KINDS
 from abacus.modules.assurance.ebp_investments import audit_owners as certification_owners
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
 from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
 from abacus.modules.assurance.ebp_plan import edit_plan as edit_ebp_plan  # TASK-7814: the seed
+from abacus.modules.assurance.ebp_provisions import (  # TASK-7815: the seed
+    start_review as start_ebp_plan_review,
+)
 from abacus.modules.assurance.ebp_remittances import AUDIT_KINDS as LATE_REMITTANCE_KINDS
 from abacus.modules.assurance.ebp_remittances import audit_owners as late_remittance_owners
 from abacus.modules.assurance.ebp_remittances import late_remittances
+from abacus.modules.assurance.ebp_tests import create as create_ebp_test  # TASK-7815: the seed
+from abacus.modules.assurance.ebp_tests import mark as mark_ebp_test  # TASK-7815: the seed
 from abacus.modules.assurance.eqr_service import SUBSCRIPTIONS as EQR_SUBSCRIPTIONS
 from abacus.modules.assurance.eqr_service import register_eqr_checklist_template
 from abacus.modules.assurance.findings import AUDIT_KINDS as FINDING_KINDS
@@ -497,6 +506,9 @@ __all__ = [
     "BringDownResult",
     "BringDownWorkflow",
     "CompletionReadinessWorkflow",
+    "EbpImportTies",  # TASK-7815: the seed (EBP-03 on the Sep 24 pass)
+    "EbpResultIn",  # TASK-7815
+    "EbpTestIn",  # TASK-7815
     "ExceptionRouter",
     "ExceptionRow",
     "Form5500TieOutWorkflow",
@@ -531,6 +543,7 @@ __all__ = [
     "completion_errors",
     "completion_router",
     "create_archive_addition",  # A-07-T41: the archive slice
+    "create_ebp_test",  # TASK-7815
     "create_risk",
     "decide_archive_addition",  # A-07-T41: the archive slice
     "decide_archive_lock",  # A-07-T41: the archive slice
@@ -554,9 +567,11 @@ __all__ = [
     "governance_letter_pdf",
     "governance_request_approval",  # A-07-T41: the archive slice
     "governance_rooms",
+    "import_ebp_source",  # TASK-7815
     "import_grouping_csv",
     "late_remittances",  # A-05-T30: AUD-27 and EBP-07 read the one late remittance
     "mapping_live",
+    "mark_ebp_test",  # TASK-7815
     "materiality_engine",
     "open_eqr_reviews",  # A-07-T41: the archive slice
     "pass_on_sum",
@@ -602,6 +617,7 @@ __all__ = [
     "set_governance_recipients",  # A-07-T41: the archive slice
     "set_misstatement_effect",
     "start_archive_lock",  # A-07-T41: the archive slice
+    "start_ebp_plan_review",  # TASK-7815
     "start_mapping",
     "start_release",  # A-07-T41: the archive slice
     "store_addition_evidence",  # S35 follow-up (DEC-3308): an addition's document after lock
