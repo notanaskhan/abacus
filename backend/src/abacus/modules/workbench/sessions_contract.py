@@ -154,6 +154,9 @@ class SessionSummaryOut(BaseModel):
     title_source: Annotated[Literal["auto", "manual"] | None, Internal] = None
     # The row's version for `If-Match` on rename (W-02-T09).
     version: Annotated[str | None, Field(max_length=40), Internal] = None
+    # W-02-T14 rest (TASK-7927): the Paperclip chip's count of attached context items; None on a
+    # locked row (metadata only, DEC-87) and on the TAX-08 subject list.
+    context_count: Annotated[int | None, Field(ge=0), Internal] = None
 
 
 class SessionListCountsOut(BaseModel):
@@ -195,6 +198,7 @@ def summary_of(r: Row) -> SessionSummaryOut:
         locked=r.locked,
         title_source=r.title_source,  # type: ignore[arg-type] -- the run's context reads as its initiator
         version=r.version,
+        context_count=None if r.locked else r.context_count,
     )
 
 

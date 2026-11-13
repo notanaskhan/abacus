@@ -174,6 +174,7 @@ export function WB01({
                   title={selected.title}
                   owner={rowOf(selected).owner}
                   live={selected.running === true}
+                  contextCount={selected.context_count ?? 0}
                   {...(runId === null
                     ? {}
                     : {

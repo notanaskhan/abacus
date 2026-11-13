@@ -74,6 +74,7 @@ class Row:
     title_source: str
     locked: bool
     version: str
+    context_count: int = 0  # W-02-T14 rest: the attached context items (`context_refs`)
 
     @property
     def via_agent(self) -> bool:
@@ -171,6 +172,7 @@ async def list_sessions(
                 title_source=str(r["title_source"] or "auto"),
                 locked=access == "locked",
                 version=version_of(str(r["title"]), r["renamed_at"]),
+                context_count=len(r["context_refs"] or []),
             )
         )
     running = sum(1 for v in visible if v.running)

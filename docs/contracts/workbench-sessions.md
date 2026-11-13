@@ -40,8 +40,9 @@ Every route goes through `AbacusRouter` with one action. Each answers, in order:
 - `SessionSummaryOut` (one list row): `id`, `title` (Confidential), `state` (registry
   `workbench_session`), `last_item_at`, `owner {user_id, name, via_agent}`, `origin`, `agent_label`
   (the definition's name on a via-Agent row), `needs_answer`, `running`, `ready_for_review`,
-  `locked`, `title_source` (`auto`, `manual`), `version`. The W-02 fields are optional so the
-  TAX-08 list keeps its shape.
+  `locked`, `title_source` (`auto`, `manual`), `version`, `context_count` (the Paperclip chip's
+  attached items; null on a locked row; W-02-T14 rest, TASK-7927). The W-02 fields are optional
+  so the TAX-08 list keeps its shape.
 - `SessionListCountsOut {running, needs_answer}`: over the viewer's rows only.
 - `ContextOptionOut {kind, ref_id, title, detail, attached}`; `ContextItemOut {id, kind, ref_id,
   card_title (Client record · Documents · Workpapers), chip_label, summary_lines[]}`. Kinds:

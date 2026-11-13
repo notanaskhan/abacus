@@ -152,3 +152,21 @@ def test_rename_by_someone_else_is_refused(monkeypatch: pytest.MonkeyPatch) -> N
     ctx: Any = type("C", (), {"tenant": object(), "user_id": ME})()  # Any: a test double
     with pytest.raises(NotSessionOwner):
         asyncio.run(sl._owned(tx, ctx, uuid.uuid4()))  # type: ignore[arg-type] -- a test double stands in for the typed object
+
+
+def test_t14_the_paperclip_count_is_the_attached_items_and_a_locked_row_has_none(
+    candidates: list[dict[str, Any]],  # Any: a test double
+) -> None:
+    """W-02-T14 rest (TASK-7927): `context_count` counts `context_refs`; a locked row is
+    metadata only (DEC-87), so its count is withheld."""
+    from abacus.modules.workbench.sessions_contract import summary_of
+
+    open_row = _raw("Northwind planning", "live")
+    open_row["context_refs"] = [{"kind": "engagement", "id": "a"}, {"kind": "workpaper", "id": "b"}]
+    locked_row = _raw("Copperleaf", "live", ["locked"])
+    locked_row["context_refs"] = [{"kind": "engagement", "id": "c"}]
+    candidates.extend([open_row, locked_row])
+    ctx: Any = type("C", (), {"tenant": object(), "user_id": ME})()  # Any: a test double
+    rows = {r.title: r for r in asyncio.run(sl.list_sessions(ctx)).rows}
+    assert summary_of(rows["Northwind planning"]).context_count == 2
+    assert summary_of(rows["Copperleaf"]).context_count is None
