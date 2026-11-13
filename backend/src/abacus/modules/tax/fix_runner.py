@@ -428,7 +428,9 @@ async def fix_activity(p: FixRunInput) -> FixRunOutcome:
         agent = await load_run_v2_context(UUID(p.tenant_id), UUID(p.run_id))
     except AgentRunNotRunning:
         return FixRunOutcome("refused", [], code="run_ended")
-    result = await fix(agent, UUID(p.issue_id), UUID(p.client_entity_id), p.tax_year)
+    result = await _entity_fix(agent, UUID(p.issue_id))
+    if result is None:
+        result = await fix(agent, UUID(p.issue_id), UUID(p.client_entity_id), p.tax_year)
     return FixRunOutcome(
         result.outcome,
         list(result.needs),
@@ -436,6 +438,22 @@ async def fix_activity(p: FixRunInput) -> FixRunOutcome:
         result.rows,
         result.code,
     )
+
+
+async def _entity_fix(agent: AgentContext, issue_id: UUID) -> FixResult | None:
+    """T-05-T50 (DEC-4901): an issue on a return whose form has a workbook (an entity return) is
+    fixed on its workbook's cells (`workbook_fix`); None for any other return."""
+    from abacus.modules.review.api import issue_row
+    from abacus.modules.tax import workbook_fix
+
+    issue = await issue_row(agent.tenant, issue_id)
+    if issue.record_type != RECORD_TYPE:
+        return None
+    form = await workbook_fix.workbook_form(agent.tenant, issue.record_id)
+    if form is None:
+        return None
+    done = await workbook_fix.fix(agent, issue_id, issue.record_id, form)
+    return FixResult(done.outcome, proposal_id=done.proposal_id, rows=done.rows, code=done.code)
 
 
 WORKFLOWS: dict[type, WorkClass] = {FixRunWorkflow: "background"}

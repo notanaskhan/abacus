@@ -947,5 +947,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tax_section.opened",
         "tax_section.signed_off",
         "tie_out.off_acknowledged",
+        # reviewed 2026-11-13 (S42, TASK-7901): an approved workbook fix's cells (TXP-11 history
+        # and the TXP-10 issue's activity).
+        "workbook.fix_applied",
     }
 )

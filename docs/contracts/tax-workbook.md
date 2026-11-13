@@ -218,3 +218,13 @@ nothing to read answers `failed` with its class and one issue (`run_step:<step>:
 S41 open items for S42's planning (the shapes are frozen; the services exist in part:
 `allocation_structure.partners_of`, `ownership_of`, `entity_mapping`).
 
+
+## T-05-T50 · the fix flow (DEC-4901, DEC-4902)
+Additive (no route). An issue on an entity return (`record_type` `tax_return`, the form has a
+workbook) is fixed through SHL-15's fix instructions: the tax fix runner proposes one
+`workbook_cell_changes` proposal (C3) with a row per cell (`target_type` `tax_workbook`,
+`field_key` `<sheet>!<cell>`, `before` and `after` as `{t, v}`, cause `fix_instructions`), decided
+in SHL-10. On approval the cells are written as the approver's (`value_source` `human`), dependents
+recompute, `workbook.fix_applied` is audited, the approver's checkpoint "Fix approved by <name>" is
+saved and a `group` run of the fixed sheets' groups starts (it shows in `GET …/workbook-runs`). A
+tie-out issue stays In progress until the re-run's tie-outs pass; the system resolves it.
