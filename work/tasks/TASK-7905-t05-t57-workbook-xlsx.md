@@ -24,10 +24,8 @@ with live closed-grammar formulas and client text kept as text.
 - Rollback: revert the PR (the route answers 501 again).
 
 ## Partial
-- Cell styles beyond the number format (TXP-11's column widths, fills for human cells) are not
-  written; the file carries values and formulas only.
-- Formula cells carry no cached value: Excel computes on open; a viewer that does not compute
-  shows them blank.
+- ~~Column widths and human fills~~: TASK-7929.
+- Formula cells carry no cached value (decided, DEC-4925): Excel computes on open.
 
 ## Progress log
 - 2026-11-13: built; tests written, not run (S42 end pass).
