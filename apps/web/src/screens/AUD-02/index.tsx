@@ -32,6 +32,7 @@ import {
   useAuditCockpit,
   useAutoMode,
   useSourceDocuments,
+  versionRowId,
 } from "../../domain/audits";
 import { useFlag } from "../../app-core/flags";
 import { AgentDock } from "../../domain/agent-dock";
@@ -537,9 +538,21 @@ function Cockpit({
       <AuditCockpit
         cockpit={cockpit}
         canvas={canvas}
-        section={selected}
+        section={
+          selected === PLAN_REVIEW && planReviewVersion !== undefined
+            ? versionRowId(PLAN_REVIEW, planReviewVersion)
+            : selected
+        }
         onSection={(r) => {
           onSection?.(r.key);
+          // Plan Review's own row is the current version (DV-EBP-02-5).
+          if (r.key === PLAN_REVIEW && planReviewVersion !== undefined) {
+            onPlanReviewVersion?.(null);
+          }
+        }}
+        onSectionVersion={(r, versionNo) => {
+          onSection?.(r.key);
+          if (r.key === PLAN_REVIEW) onPlanReviewVersion?.(versionNo);
         }}
         bar={{
           ...(onBack === undefined ? {} : { onBack }),
@@ -580,7 +593,7 @@ function Cockpit({
             tbOn && tb.linked !== null ? (
               <ViewerPane target={tb.linked} />
             ) : (
-              <DockViewer versionId={doc ?? null} />
+              <DockViewer versionId={doc ?? null} shared={reviewOpen} />
             ),
           aiUnavailable: agent.aiUnavailable,
           ...(pausable ? { action: <AgentDockMenu engagementId={cockpit.engagement_id} /> } : {}),

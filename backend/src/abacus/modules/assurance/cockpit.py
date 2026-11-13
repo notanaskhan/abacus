@@ -35,6 +35,7 @@ from abacus.modules.assurance.sections import (
     AuditSection,
     Band,
     SectionState,
+    SectionVersion,
     registered_sections,
     run_summaries,
 )
@@ -68,6 +69,7 @@ class SectionRow:
     blocked_on_user_id: UUID | None = None
     blocked_on_name: str | None = None
     allowed_actions: list[str] = field(default_factory=list[str])
+    versions: tuple[SectionVersion, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -192,6 +194,7 @@ async def audit_cockpit(ctx: AuthContext, work_item_id: UUID) -> Cockpit:
                     route=section.route,
                     link=section.link,
                     blocked_on_user_id=state.blocked_on_user_id,
+                    versions=state.versions,
                 )
             )
         for band in BANDS:

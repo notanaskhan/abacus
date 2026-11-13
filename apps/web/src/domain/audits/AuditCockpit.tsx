@@ -17,6 +17,8 @@ export interface AuditCockpitProps {
   section?: string;
   onSection?: (row: AuditSectionRowOut) => void;
   onBegin?: (row: AuditSectionRowOut) => void;
+  /** A rail child row: a section's earlier version (EBP-02's Version 1; DEC-2492). */
+  onSectionVersion?: (row: AuditSectionRowOut, versionNo: number) => void;
   bar?: Omit<AuditBarOptions, "onLayout">;
   dock?: DockHostOptions;
   /** Inside the firm shell (a routed screen) the toolbar is the shell's. */
@@ -29,6 +31,7 @@ export function AuditCockpit({
   section,
   onSection,
   onBegin,
+  onSectionVersion,
   bar = {},
   dock = {},
   embedded = true,
@@ -53,6 +56,7 @@ export function AuditCockpit({
           {...(section === undefined ? {} : { selected: section })}
           {...(onSection === undefined ? {} : { onOpen: onSection })}
           {...(onBegin === undefined ? {} : { onBegin })}
+          {...(onSectionVersion === undefined ? {} : { onVersion: onSectionVersion })}
         />
       }
       canvas={canvas}

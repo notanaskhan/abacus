@@ -33,6 +33,7 @@ from abacus.modules.assurance.sections import (
     Band,
     SectionState,
     SectionStateProvider,
+    SectionVersion,
     register_audit_section,
 )
 from abacus.modules.engagements.api import assurance_item
@@ -109,12 +110,24 @@ DESIGNED: Final[tuple[DesignedPaper, ...]] = (
 )  # fmt: skip
 BY_KIND: Final = {p.kind: p for p in DESIGNED}
 # The papers whose screen is built (A-05-T11: EBP-01, the Overview > Plan profile canvas).
-LIVE: Final = frozenset({"EBP-01"})
+LIVE: Final = frozenset({"EBP-01", "EBP-02"})  # EBP-02: A-05-T17 (DEC-2492)
 
 
 async def _is_ebp(tenant: TenantContext, work_item_id: UUID) -> bool:
     item = await assurance_item(tenant, work_item_id)
     return item.ebp_plan_kind is not None or item.assurance_type.startswith("ebp")
+
+
+async def _earlier(
+    tenant: TenantContext, work_item_id: UUID, kind: str
+) -> tuple[SectionVersion, ...]:
+    """EBP-02's earlier plan reviews, newest first (DV-EBP-02-5): the rail's Version 1 under Plan
+    Review. Other papers have none yet."""
+    if kind != "ebp_provisions":
+        return ()
+    from abacus.modules.assurance.ebp_provisions import earlier_reviews
+
+    return tuple(SectionVersion(no, at) for no, at in await earlier_reviews(tenant, work_item_id))
 
 
 def _state_provider(paper: DesignedPaper) -> SectionStateProvider:
@@ -130,7 +143,10 @@ def _state_provider(paper: DesignedPaper) -> SectionStateProvider:
         if found is None or found.version_no == 0:
             return SectionState(AuditSectionStatus.NOT_STARTED, "idle_pill")
         return SectionState(
-            AuditSectionStatus.IN_PROGRESS, "idle_pill", sub_line=f"v{found.version_no}"
+            AuditSectionStatus.IN_PROGRESS,
+            "idle_pill",
+            sub_line=f"v{found.version_no}",
+            versions=await _earlier(tenant, work_item_id, paper.kind),
         )
 
     state.__qualname__ = f"ebp_section_state.{paper.section_key}"

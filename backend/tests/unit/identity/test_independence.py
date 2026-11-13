@@ -215,6 +215,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "ebp_provider.invite",
         "ebp_provider.manage",
         "ebp_provider.request",
+        "ebp_provision.enter",  # A-05-T16 (DEC-2489)
         "ebp_schedule.draft",
         "ebp_schedule.render",
         "engagement_ai.configure",  # S29

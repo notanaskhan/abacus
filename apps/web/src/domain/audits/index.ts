@@ -53,6 +53,8 @@ export {
   phaseOf,
   railModel,
   subLineOf,
+  versionOf,
+  versionRowId,
 } from "./rail";
 export { SectionRail, type SectionRailProps } from "./SectionRail";
 export {

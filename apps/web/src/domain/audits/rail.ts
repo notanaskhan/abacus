@@ -15,7 +15,7 @@ import type {
   RailSection,
   RegistryContext,
 } from "@abacus/ui";
-import { status } from "@abacus/ui";
+import { dateTime, status } from "@abacus/ui";
 import { AUDIT_MESSAGES } from "./messages";
 
 type SectionCode = NonNullable<AuditSectionRowOut["section_state"]>;
@@ -68,9 +68,36 @@ export function idlePillOf(row: AuditSectionRowOut): Phase["pill"] | undefined {
   return { kind: "progress", text: pill.label };
 }
 
+/** A child row's id: the section's key and the version ("ebp_02@v1"; DV-EBP-02-5). */
+export function versionRowId(key: string, versionNo: number): string {
+  return `${key}@v${String(versionNo)}`;
+}
+
+/** The section key and version a child row's id names, or null for a section's own row. */
+export function versionOf(id: string): { key: string; versionNo: number } | null {
+  const found = /^(.+)@v([0-9]+)$/u.exec(id);
+  return found === null ? null : { key: found[1] ?? "", versionNo: Number(found[2]) };
+}
+
+/** A section's earlier versions as the rail's indented children: "Version 1 · Sep 15, 2026 10:02
+ * AM" (EBP-02's Plan Review; DEC-2492). */
+function versionsOf(row: AuditSectionRowOut): Phase[] {
+  return (row.versions ?? []).map((v) => ({
+    id: versionRowId(row.key, v.version_no),
+    title: AUDIT_MESSAGES.version(v.version_no),
+    live: { text: dateTime(v.at) },
+  }));
+}
+
 export function phaseOf(row: AuditSectionRowOut): Phase {
   const begin = (row.allowed_actions ?? []).includes(BEGIN_ACTION);
-  const base: Phase = { id: row.key, title: row.title, ...(begin ? { begin: true } : {}) };
+  const children = versionsOf(row);
+  const base: Phase = {
+    id: row.key,
+    title: row.title,
+    ...(begin ? { begin: true } : {}),
+    ...(children.length > 0 ? { children } : {}),
+  };
   if (row.grammar === "idle_pill") {
     const pill = idlePillOf(row);
     if (pill === undefined) return { ...base, disc: discOf(row.section_state) };

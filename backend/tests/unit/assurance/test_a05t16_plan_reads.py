@@ -150,3 +150,57 @@ def test_ac_the_amendment_tag_is_codes(
         plan_year_end=date(2025, 12, 31),
     )
     assert amended == tagged
+
+
+# --- A-05-T17 (DEC-2490): the line hovering lights ----------------------------------------------
+async def test_a17_the_spot_is_the_first_verified_citation_with_a_region(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    from abacus.kernel.errors import NotFound
+
+    version = uuid.uuid4()
+    walled, unverified, lit = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+
+    async def display(_ctx: object, citation_id: uuid.UUID) -> object:
+        if citation_id == walled:
+            raise NotFound("citation")
+        source = SimpleNamespace(evidence_version_id=version, page=3)
+        return SimpleNamespace(
+            verified=citation_id == lit,
+            match_id=f"m-{citation_id}",
+            source=source,
+            title="Adoption Agreement",
+            loc="p. 3",
+            quote="Plan year",
+        )
+
+    monkeypatch.setattr(ebp_provisions, "citation_display", display)
+    spot = await ebp_provisions._spot(object(), [walled, unverified, lit])  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- the unit under test
+    assert spot == ebp_provisions.CitedSpot(
+        version, 3, f"m-{lit}", "Adoption Agreement", "p. 3", "Plan year"
+    )
+    assert await ebp_provisions._spot(object(), []) is None  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- no citation
+
+
+# --- A-05-T17 (DEC-2492): the rail's Version 1 child row ----------------------------------------
+async def test_a17_plan_review_lists_its_earlier_reviews_for_the_rail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from datetime import UTC, datetime
+
+    from abacus.modules.assurance import ebp_designed
+    from abacus.modules.assurance.sections import SectionVersion
+
+    at = datetime(2026, 9, 15, 15, 2, tzinfo=UTC)
+
+    async def earlier(*_a: object) -> list[tuple[int, datetime]]:
+        return [(1, at)]
+
+    monkeypatch.setattr(ebp_provisions, "earlier_reviews", earlier)
+    found = await ebp_designed._earlier(object(), uuid.uuid4(), "ebp_provisions")  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- the unit under test
+    assert found == (SectionVersion(1, at),)
+    other = await ebp_designed._earlier(object(), uuid.uuid4(), "ebp_eligibility")  # pyright: ignore[reportPrivateUsage, reportArgumentType] -- another paper
+    assert other == ()
+    assert "EBP-02" in ebp_designed.LIVE

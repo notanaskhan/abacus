@@ -21,10 +21,12 @@ import {
   json,
 } from "../../app-core/fixture-mode";
 import { auditHandlers } from "../handlers/audits";
+import { trustHandlers } from "../handlers/trust";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { type Ebp02Variant, ebp02Review } from "../seed/ebp02";
 import { capabilitiesFor } from "../seed/shell";
+import { DOCUMENTS } from "../seed/trust";
 
 const seed = getSeed();
 const E0 = seedScenario();
@@ -58,12 +60,14 @@ function withPlanReview(base: FixtureHandler): FixtureHandler {
                 key: "ebp_02",
                 title: "Plan Review",
                 route: "EBP-02",
-                link: "planned" as const,
+                link: "live" as const,
                 work_item_ref: cockpit.work_item_id,
                 grammar: "sub_line" as const,
                 section_state: "draft_ready" as const,
                 sub_line: "Reviewed · HL",
                 allowed_actions: [],
+                // DV-EBP-02-5: the rail's Version 1 child row (the handoff's rail).
+                versions: [{ version_no: 1, at: "2026-09-15T10:02:00-05:00" }],
               },
               ...(band.rows ?? []),
             ],
@@ -94,6 +98,8 @@ function frame(
       return {
         ...E0.handlers,
         ...audits,
+        // The dock viewer reads the seeded adoption agreement and SPD (DV-EBP-02-3).
+        ...trustHandlers({ documents: DOCUMENTS, citations: [] }),
         ...(cockpit === undefined ? {} : { [COCKPIT]: withPlanReview(cockpit) }),
         "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, on)),
         [`GET ${P}/plan-reviews/current`]: ({ query }) =>

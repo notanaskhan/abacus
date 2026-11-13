@@ -5114,6 +5114,10 @@ export type AuditSectionRowOut = {
      */
     title: string;
     /**
+     * Versions
+     */
+    versions?: Array<AuditSectionVersionOut>;
+    /**
      * Work Item Ref
      */
     work_item_ref: string;
@@ -5123,6 +5127,22 @@ export type AuditSectionRowOut = {
  * AuditSectionStatus
  */
 export type AuditSectionStatus = 'not_started' | 'queued' | 'waiting_on_inputs' | 'ready_to_run' | 'in_progress' | 'running' | 'blocked_on_decision' | 'draft_ready' | 'prepared' | 'reviewed' | 'signed_off' | 'locked' | 'failed' | 'changed_after_signoff';
+
+/**
+ * AuditSectionVersionOut
+ *
+ * An earlier version of a section: a rail child row ("Version 1 · Sep 15, 2026 10:02 AM").
+ */
+export type AuditSectionVersionOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
 
 /**
  * AuditSessionOut
@@ -37459,6 +37479,7 @@ export type ProvisionOut = {
      * Reference
      */
     reference?: string | null;
+    source_match?: SourceMatchOut | null;
     /**
      * Value
      */
@@ -46878,6 +46899,39 @@ export type SourceFileOut = {
      * Sha256
      */
     sha256: string;
+};
+
+/**
+ * SourceMatchOut
+ *
+ * EBP-02: the line a provision was read from, which hovering lights in the viewer (A-05-T17;
+ * DV-EBP-02-3; DEC-2490).
+ */
+export type SourceMatchOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Loc
+     */
+    loc?: string;
+    /**
+     * Match Id
+     */
+    match_id: string;
+    /**
+     * Page
+     */
+    page?: number | null;
+    /**
+     * Quote
+     */
+    quote?: string | null;
+    /**
+     * Title
+     */
+    title?: string;
 };
 
 /**

@@ -2,7 +2,7 @@ import type { AuditCockpitOut, AuditSectionRowOut } from "@abacus/api-client";
 import { RecordRail, status } from "@abacus/ui";
 import type { JSX } from "react";
 import { AUDIT_MESSAGES } from "./messages";
-import { railModel } from "./rail";
+import { versionOf, railModel } from "./rail";
 
 // The audit cockpit's rail (A-01-T06; AUD-02, AUD-03): the C-03 RecordRail with the OverviewCard,
 // the Overview links and one band per projected band. It renders the rows it is given and nothing
@@ -17,6 +17,8 @@ export interface SectionRailProps {
   onOpen?: (row: AuditSectionRowOut) => void;
   /** "Begin…" on a not-started section (only rendered with `engagement_run.start`). */
   onBegin?: (row: AuditSectionRowOut) => void;
+  /** A section's earlier version was picked (a child row; EBP-02's Version 1, DEC-2492). */
+  onVersion?: (row: AuditSectionRowOut, versionNo: number) => void;
   /** The overview pill reads "Processing" while a C6 engagement run executes (DV-11). */
   processing?: boolean;
 }
@@ -26,10 +28,19 @@ export function SectionRail({
   selected = "source_documents",
   onOpen,
   onBegin,
+  onVersion,
   processing = false,
 }: SectionRailProps): JSX.Element {
   const model = railModel(cockpit);
   const open = (id: string): void => {
+    const child = versionOf(id);
+    if (child !== null) {
+      const parent = model.rows.get(child.key);
+      if (parent !== undefined && !model.planned.has(child.key)) {
+        onVersion?.(parent, child.versionNo);
+      }
+      return;
+    }
     const row = model.rows.get(id);
     if (row === undefined || model.planned.has(id)) return;
     onOpen?.(row);

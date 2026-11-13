@@ -272,6 +272,22 @@ class ConflictSourceOut(BaseModel):
     match_id: Annotated[str | None, Field(max_length=200), classified("internal")] = None
 
 
+class SourceMatchOut(BaseModel):
+    """EBP-02: the line a provision was read from, which hovering lights in the viewer (A-05-T17;
+    DV-EBP-02-3; DEC-2490)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    page: Annotated[int | None, Field(ge=1), classified("internal")] = None
+    match_id: Annotated[str, Field(max_length=200), classified("internal")]
+    # SHL-07 on the reference (DEC-2491): the citation's title and location, and its quote as the
+    # word layer re-reads it (masked where PII was found).
+    title: Annotated[str, Field(max_length=300), classified("internal")] = ""
+    loc: Annotated[str, Field(max_length=100), classified("internal")] = ""
+    quote: Annotated[str | None, Field(max_length=2000), classified("confidential")] = None
+
+
 class ProvisionDocumentIn(BaseModel):
     """EBP-02's agent-off path for the SPD and the amendment (DV-EBP-02-1; DEC-2489): what the
     document says, the words on the page that say it, and the person's note."""
@@ -313,6 +329,7 @@ class ProvisionOut(BaseModel):
     ] = None
     value_hash: Annotated[str | None, Field(max_length=80), classified("internal")] = None
     conflict_source: Annotated[ConflictSourceOut | None, classified("confidential")] = None
+    source_match: Annotated[SourceMatchOut | None, classified("internal")] = None
 
 
 class PlanReviewOut(BaseModel):
@@ -1597,6 +1614,18 @@ async def ebp_plan_review_route(
                         note=p.conflict_source.note,
                         page=p.conflict_source.page,
                         match_id=p.conflict_source.match_id,
+                    )
+                ),
+                source_match=(
+                    None
+                    if p.source is None
+                    else SourceMatchOut(
+                        evidence_version_id=p.source.evidence_version_id,
+                        page=p.source.page,
+                        match_id=p.source.match_id,
+                        title=p.source.title,
+                        loc=p.source.loc,
+                        quote=p.source.quote,
                     )
                 ),
             )

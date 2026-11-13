@@ -94,9 +94,7 @@ Verbatim from the handoff (copy keys in `screens/EBP-02/copy.ts` when built). Ke
 |---|---|---|---|
 | DV-EBP-02-1 | Agent-off path: every agent-filled value has a keyed or imported equivalent with a required citation note; the agent states read "not cleared" until A-04's `workpapers.drafting` and the firm's opt-in hold | A-05 F13; ADR-112 | DEC-1857 |
 | DV-EBP-02-2 | b2 (Version 1 snapshot) is a README deviation: 18 rows, before the 2024 amendment | README deviations list | DEC-1857 |
-| DV-EBP-02-3 | Hover and pin light the provision row (`--match-mark`); the viewer's matching line lights once SHL-08's page-line anchors carry the provision's citation, and the viewer opens from Source Docs meanwhile. c's row opens the SPD in the dock, on its first page and with no line lit, for the same reason | The dock viewer has no line anchors or page parameter for a cell citation yet | DEC-2071, DEC-2487 |
 | DV-EBP-02-4 | Ticks are field ticks on EBP-02's value cells (`workpaper_cell`, B2–B21), not on an `ebp_provision` target | A-05-T16 keeps provisions on the paper's cells | DEC-2069 |
-| DV-EBP-02-5 | The artboard opens Version 1 from a child row in the rail; the rail's rows have no children yet, so the header's Version pill opens the earlier version, and the route reads `?version=` | Cockpit rail rows carry no versions | DEC-2487 |
 
 ## Parity
 | Artboard | Tier | Diff % | Notes |

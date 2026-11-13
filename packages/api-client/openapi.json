@@ -11010,6 +11010,15 @@
             "title": "Title",
             "type": "string"
           },
+          "versions": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AuditSectionVersionOut"
+            },
+            "title": "Versions",
+            "type": "array"
+          },
           "work_item_ref": {
             "cls": "internal",
             "format": "uuid",
@@ -11047,6 +11056,29 @@
         ],
         "title": "AuditSectionStatus",
         "type": "string"
+      },
+      "AuditSectionVersionOut": {
+        "description": "An earlier version of a section: a rail child row (\"Version 1 \u00b7 Sep 15, 2026 10:02 AM\").",
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_no",
+          "at"
+        ],
+        "title": "AuditSectionVersionOut",
+        "type": "object"
       },
       "AuditSessionOut": {
         "description": "The drawer's Session line (\"SSO \u00b7 MFA 9:01 AM\").",
@@ -79287,6 +79319,17 @@
             "cls": "confidential",
             "title": "Reference"
           },
+          "source_match": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceMatchOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "value": {
             "cls": "confidential",
             "maxLength": 500,
@@ -99580,6 +99623,69 @@
           "created_at"
         ],
         "title": "SourceFileOut",
+        "type": "object"
+      },
+      "SourceMatchOut": {
+        "description": "EBP-02: the line a provision was read from, which hovering lights in the viewer (A-05-T17;\nDV-EBP-02-3; DEC-2490).",
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "loc": {
+            "cls": "internal",
+            "default": "",
+            "maxLength": 100,
+            "title": "Loc",
+            "type": "string"
+          },
+          "match_id": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Match Id",
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Quote"
+          },
+          "title": {
+            "cls": "internal",
+            "default": "",
+            "maxLength": 300,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "match_id"
+        ],
+        "title": "SourceMatchOut",
         "type": "object"
       },
       "SourceOut": {
