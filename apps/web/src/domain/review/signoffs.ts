@@ -51,9 +51,16 @@ export function useSignOffEligibility(target: SignOffTarget, level: SignOffLevel
   );
 }
 
-/** Sign at the eligibility's level with the hash and statement the person saw. */
+/** A target whose approval is its owner's route, not P-04's bare write (TXP-06's L3 on an
+ * allocation structure also writes the approved version and starts the re-run). It signs with the
+ * hash and statement the person saw and answers the sign-off it recorded (S41 leftover, DEC-4736). */
+export type SignOffWriter = (eligibility: SignOffEligibilityOut) => Promise<SignOffOut>;
+
+/** Sign at the eligibility's level with the hash and statement the person saw; `writer` replaces
+ * `POST /v1/sign-offs` for a target whose owner signs through its own route. */
 export function useSignOffWrite(
   eligibility: SignOffEligibilityOut | undefined,
+  writer?: SignOffWriter,
 ): (kind: "ladder" | "final_approval") => Promise<SignOffOut> {
   const queryClient = useQueryClient();
   const sign = useMutation({
@@ -70,8 +77,20 @@ export function useSignOffWrite(
       });
     },
   });
+  const owned = useMutation({
+    mutationFn: (e: SignOffEligibilityOut) =>
+      (writer ?? (() => Promise.reject(new Error("no_writer"))))(e),
+    onSuccess: (_out, e) => {
+      const query = { target_type: e.target.target_type, target_id: e.target.target_id };
+      void queryClient.invalidateQueries({ queryKey: signOffLadderQueryKey({ query }) });
+      void queryClient.invalidateQueries({
+        queryKey: signOffEligibilityQueryKey({ query: { ...query, level: e.level } }),
+      });
+    },
+  });
   return (kind) => {
     if (eligibility === undefined) return Promise.reject(new Error("not_loaded"));
+    if (writer !== undefined) return owned.mutateAsync(eligibility);
     return sign.mutateAsync({
       body: {
         target_type: eligibility.target.target_type,

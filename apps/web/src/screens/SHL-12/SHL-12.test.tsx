@@ -5,9 +5,10 @@
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { type FixtureHandler, installFixtureMode } from "../../app-core/fixture-mode";
-import { HASH, TB } from "../../fixtures/seed/review";
+import { HASH, TB, hannahL2 } from "../../fixtures/seed/review";
+import type { SignOffWriter } from "../../domain/review";
 import { renderRoutes } from "../../testing/support";
 import { SignOffChips, SignOffSheet } from ".";
 import { OPENS, STATES, type Shl12State, scenarios } from "./scenarios";
@@ -30,7 +31,11 @@ interface Call {
   body: unknown;
 }
 
-function show(state: Shl12State, extra: Record<string, FixtureHandler> = {}): Call[] {
+function show(
+  state: Shl12State,
+  extra: Record<string, FixtureHandler> = {},
+  write?: SignOffWriter,
+): Call[] {
   const calls: Call[] = [];
   const scenario = scenarios[state];
   const handlers = Object.fromEntries(
@@ -54,6 +59,7 @@ function show(state: Shl12State, extra: Record<string, FixtureHandler> = {}): Ca
           meta={open.meta}
           open
           onOpenChange={() => undefined}
+          {...(write === undefined ? {} : { write })}
         />
       ),
     },
@@ -133,6 +139,26 @@ describe("SHL-12", () => {
     await waitFor(() => {
       expect(
         toastStore.list().some((t) => t.text === "Signed off Trial Balance (L2) · 9:41 AM"),
+      ).toBe(true);
+    });
+  });
+
+  it("an owner's writer signs instead of P-04's bare write, with the hash and statement seen (DEC-4736)", async () => {
+    // TXP-06's L3 goes through the allocation approve route; SHL-12 hands it the eligibility.
+    const write = vi.fn<SignOffWriter>(() => Promise.resolve(hannahL2));
+    const calls = show("a", {}, write);
+    fireEvent.click(await cta(/^Sign off as Reviewer \(L2\)$/u));
+    await waitFor(() => {
+      expect(write).toHaveBeenCalledOnce();
+    });
+    const seen = write.mock.calls[0]?.[0];
+    expect(seen?.target.content_hash).toBe(HASH);
+    expect(seen?.statement.version).toBe("bh-review-v1");
+    expect(seen?.level).toBe("L2_reviewer");
+    expect(calls.some((c) => c.method === "POST")).toBe(false);
+    await waitFor(() => {
+      expect(
+        toastStore.list().some((t) => t.text.startsWith("Signed off Trial Balance (L2)")),
       ).toBe(true);
     });
   });

@@ -27,6 +27,7 @@ export {
   SIGN_OFF_LEVELS,
   type SignOffLevel,
   type SignOffTarget,
+  type SignOffWriter,
   levelOf,
   useBulkEligibility,
   useBulkSignOffWrite,
