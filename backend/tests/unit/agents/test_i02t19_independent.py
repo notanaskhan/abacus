@@ -100,6 +100,7 @@ def test_t11_attention_providers_fail_closed() -> None:
     assert src.index("if provider is None:") < src.index("continue")
     assert "_PROVIDERS.get(kind)" in src
 
+
 def test_t07_facts_are_collected_as_the_viewer() -> None:
     src = inspect.getsource(facts.collect)
     assert "ConsentRequired" in inspect.getsource(facts)

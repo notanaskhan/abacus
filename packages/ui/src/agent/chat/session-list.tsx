@@ -135,6 +135,7 @@ export function SessionList({
             query,
             ...(emptyTitle === undefined ? {} : { title: emptyTitle }),
             clear: () => onQuery?.(""),
+            clearLabel: "Clear search",
           }}
           empty={{ title: "No sessions yet." }}
           noun="sessions"

@@ -36,7 +36,10 @@ describe("WB-01 list pane", () => {
   it("c: the three close runs draw spinners and read via Agent", () => {
     const rows = wbList("wb01c-running-three").items.map((r) => rowOf(r));
     render(<SessionList rows={rows} still />);
-    expect(screen.getAllByLabelText("Running")).toHaveLength(3);
+    // The spinner's word is visually hidden inside its status (C-20).
+    expect(screen.getAllByRole("status").filter((s) => s.textContent === "Running")).toHaveLength(
+      3,
+    );
     expect(screen.getByText(/Raj Malhotra via Agent/)).toBeTruthy();
   });
 

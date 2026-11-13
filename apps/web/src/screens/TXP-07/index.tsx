@@ -445,7 +445,8 @@ export function TXP07({
   const offCount =
     capital === undefined
       ? 0
-      : [capital.item_l?.tie, capital.tie, capital.book_tie].filter((s) => s === "off").length;
+      : // Item L's tie and the capital total's tie are one check (05 against Schedule L).
+        [capital.item_l?.tie ?? capital.tie, capital.book_tie].filter((s) => s === "off").length;
   const items = tallyItems(capital, computing, onOpenIssue);
   const last = Math.min(page + PANES_VISIBLE, rows.length);
   const signOff = () => {
