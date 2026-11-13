@@ -9,7 +9,16 @@ from uuid import uuid4
 import pytest
 
 from abacus.modules.assurance import ebp_tests
-from abacus.modules.assurance.compute.ebp.eligibility import QACA, missed
+from abacus.modules.assurance.compute.ebp.eligibility import (
+    QACA,
+    QACA_MATCH_PCT,
+    STANDARD_RULE,
+    Rates,
+    missed,
+)
+
+# Northwind's verified elections read as QACA's (DEC-2488): the rule is the plan's, passed in.
+NORTHWIND = Rates(QACA, QACA_MATCH_PCT)
 
 pytestmark = pytest.mark.asyncio
 
@@ -24,6 +33,8 @@ async def test_a_person_with_no_dates_reads_the_default_rate() -> None:
         _Ctx(),  # pyright: ignore[reportArgumentType] -- only its tenant_id is read
         person,  # pyright: ignore[reportArgumentType] -- a row's shape, no database here
         2025,
+        STANDARD_RULE,
+        NORTHWIND,
     )
     assert rule is QACA
 
@@ -43,6 +54,8 @@ async def test_the_year_after_entry_adds_a_step(monkeypatch: pytest.MonkeyPatch)
         _Ctx(),  # pyright: ignore[reportArgumentType] -- only its tenant_id is read
         person,  # pyright: ignore[reportArgumentType] -- a row's shape, no database here
         2025,
+        STANDARD_RULE,
+        NORTHWIND,
     )
     assert rule.default_pct > QACA.default_pct
     assert missed(Decimal(100000), rule).deferral > missed(Decimal(100000)).deferral

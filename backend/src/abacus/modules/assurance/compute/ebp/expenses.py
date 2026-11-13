@@ -20,6 +20,8 @@ from typing import Final, cast
 
 import yaml
 
+from abacus.modules.assurance.compute.ebp.provisions import normalise
+
 ENGINE_NAME: Final = "ebp_expenses"
 ENGINE_VERSION: Final = "1"
 _LIMITS: Final = Path(__file__).parent / "reference" / "irs_plan_limits.yaml"
@@ -51,6 +53,35 @@ class Expense:
     paid_from_plan: Decimal
     schedule_h_line: str
     has_disclosure: bool
+
+
+# The Plan expenses election's wordings code reads exactly (A-05-T16; DEC-2488), after `normalise`.
+_PERMITS: Final = frozenset(
+    {
+        "reasonable expenses may be paid from plan",
+        "expenses may be paid from plan",
+        "reasonable administrative expenses may be paid from plan",
+    }
+)
+_REFUSES: Final = frozenset(
+    {
+        "expenses paid by employer",
+        "paid by employer",
+        "employer pays all expenses",
+        "expenses may not be paid from plan",
+    }
+)
+
+
+def plan_may_pay(wording: str) -> bool | None:
+    """Whether the verified Plan expenses election lets the plan pay its expenses; None for any
+    wording code does not read exactly, which a person reads."""
+    text = normalise(wording)
+    if text in _PERMITS:
+        return True
+    if text in _REFUSES:
+        return False
+    return None
 
 
 @dataclass(frozen=True)

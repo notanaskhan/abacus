@@ -7,11 +7,13 @@ Code computes every eligibility figure EBP-03 shows; the model only reads the HR
   first of the month following the later of the participant's birthday at the minimum age and hire
   plus the service months (21 and 3 on Northwind; a birthday on Feb 29 counts from Feb 28 in a
   common year; hire plus the months keeps the day, clamped to the month's end).
-- **Auto-escalation** (QACA): the default rate, plus the step for each plan year after the year of
-  entry, to the cap (6% + 1% a year to 15%: a 2023 entrant is at 8% for 2025, a 2025 entrant 6%).
+- **Auto-escalation** (the verified Default deferral rate and Auto-escalation; `rates_from`): the
+  default rate, plus the step for each plan year after the year of entry, to the cap (6% + 1% a
+  year to 15%: a 2023 entrant is at 8% for 2025, a 2025 entrant 6%).
 - **Missed amounts** (a missed auto-enrollment): the missed deferral at the default rate and the
-  missed QACA match at 3.5% (100% of the first 1% and 50% of the next 5%), each of compensation,
-  half up to the cent: $41,200 gives 2,472.00 and 1,442.00.
+  missed match at the verified Safe harbor match's rate (100% of the first 1% and 50% of the next
+  5% is 3.5%), each of compensation, half up to the cent: $41,200 gives 2,472.00 and 1,442.00.
+  QACA's figures stay the engine's golden defaults; EBP-03 and EBP-04 pass the plan's own.
 - **Review**: when the census and the HR record disagree on a date, the row needs a person; if
   both dates give the same entry, code says so ("no effect on entry") for the person to confirm.
 - **Population** (`eligible_not_enrolled_no_optout`): every participant whose entry is on or before
@@ -70,6 +72,62 @@ _SERVICE: Final = re.compile(r"([0-9]{1,2}) month(?: of)?(?: elapsed time| servi
 _ENTRY_DATES: Final = frozenset(
     {"first of month following", "first of month following eligibility"}
 )
+
+
+RATE_KEYS: Final = ("default_deferral_rate", "auto_escalation", "safe_harbor_match")
+# Checked on the raw wording, as `_READABLE` is: "+" and "%" belong to these elections.
+_RATE_READABLE: Final = re.compile(r"[A-Za-z0-9 (),.%+]+")
+_PCT: Final = r"([0-9]{1,2}(?:\.[0-9]{1,2})?)%"
+_DEFAULT: Final = re.compile(_PCT)
+_STEP: Final = re.compile(
+    _PCT + r" (?:each jan 1 after one full plan year|a year) (?:up )?to " + _PCT
+)
+_TIER: Final = re.compile(r"([0-9]{1,3})% of (first|next) ([0-9]{1,2}(?:\.[0-9]{1,2})?)%")
+
+
+@dataclass(frozen=True)
+class Rates:
+    """A plan's deferral escalation and match rate, as its verified elections state them."""
+
+    escalation: Escalation
+    match_pct: Decimal
+
+
+def match_pct_from(wording: str) -> Decimal | None:
+    """The match as a percent of compensation: "100% of first 1% + 50% of next 5%" is 3.5. Tiers
+    run first, then next; any other wording is None, for a person."""
+    if not _RATE_READABLE.fullmatch(wording):
+        return None
+    text = normalise(wording)
+    tiers = list(_TIER.finditer(text))
+    rest = _TIER.sub("", text).replace("and", "").strip()
+    if not tiers or rest or tiers[0].group(2) != "first":
+        return None
+    if any(t.group(2) != "next" for t in tiers[1:]):
+        return None
+    with localcontext(CONTEXT):
+        return sum(
+            (Decimal(t.group(1)) * Decimal(t.group(3)) / _HUNDRED for t in tiers), Decimal(0)
+        )
+
+
+def rates_from(provisions: Mapping[str, str]) -> Rates | None:
+    """The rates the verified wording states, or None: a wording code does not read exactly is left
+    for a person, never replaced by QACA's."""
+    raw = [provisions.get(key, "") for key in RATE_KEYS]
+    if not all(_RATE_READABLE.fullmatch(wording) for wording in raw):
+        return None
+    default = _DEFAULT.fullmatch(normalise(raw[0]))
+    step = _STEP.fullmatch(normalise(raw[1]))
+    match_pct = match_pct_from(raw[2])
+    if default is None or step is None or match_pct is None:
+        return None
+    escalation = Escalation(
+        Decimal(default.group(1)), Decimal(step.group(1)), Decimal(step.group(2))
+    )
+    if escalation.cap_pct < escalation.default_pct:
+        return None
+    return Rates(escalation, match_pct)
 
 
 @dataclass(frozen=True)
@@ -173,11 +231,17 @@ def escalation_rate(entry_on: date, plan_year: int, rule: Escalation = QACA) -> 
         return min(rule.default_pct + rule.step_pct * (plan_year - entry_on.year), rule.cap_pct)
 
 
-def missed(compensation: Decimal, rule: Escalation = QACA) -> Missed:
+def missed(
+    compensation: Decimal, rule: Escalation = QACA, match_pct: Decimal = QACA_MATCH_PCT
+) -> Missed:
     with localcontext(CONTEXT):
         deferral = quantize_half_up(compensation * rule.default_pct / _HUNDRED, 2)
-        match = quantize_half_up(compensation * QACA_MATCH_PCT / _HUNDRED, 2)
-    return Missed(deferral, match, _hash("missed", comp=compensation, rate=rule.default_pct))
+        match = quantize_half_up(compensation * match_pct / _HUNDRED, 2)
+    return Missed(
+        deferral,
+        match,
+        _hash("missed", comp=compensation, rate=rule.default_pct, match_pct=match_pct),
+    )
 
 
 def review(dob: date, census_hire: date, hr_hire: date, rule: EntryRule = STANDARD_RULE) -> Review:

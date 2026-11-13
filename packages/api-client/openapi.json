@@ -21850,11 +21850,37 @@
             "title": "Evidence Version Id",
             "type": "string"
           },
+          "match_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Match Id"
+          },
           "note": {
             "cls": "confidential",
             "maxLength": 500,
             "title": "Note",
             "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page"
           }
         },
         "required": [
@@ -30453,6 +30479,13 @@
             "cls": "internal",
             "title": "Prepared By"
           },
+          "rates": {
+            "$ref": "#/components/schemas/RatesOut",
+            "cls": "internal",
+            "default": {
+              "state": "unverified"
+            }
+          },
           "reviewed_by": {
             "anyOf": [
               {
@@ -38295,6 +38328,12 @@
             "title": "Line Key",
             "type": "string"
           },
+          "not_permitted": {
+            "cls": "internal",
+            "default": false,
+            "title": "Not Permitted",
+            "type": "boolean"
+          },
           "paid_from_plan": {
             "anyOf": [
               {
@@ -38354,6 +38393,51 @@
         "title": "ExpenseRowOut",
         "type": "object"
       },
+      "ExpensesClauseOut": {
+        "description": "EBP-09's read of EBP-02's verified Plan expenses election (A-05-T16; DEC-2488).",
+        "properties": {
+          "plan_may_pay": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Plan May Pay"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "verified",
+              "unverified",
+              "unreadable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "wording": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Wording"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "ExpensesClauseOut",
+        "type": "object"
+      },
       "ExpensesOut": {
         "description": "EBP-09 a: 38,400 = 2i(1) 6,000 + 2i(2) 32,400; 41,500 - 3,100.",
         "properties": {
@@ -38380,6 +38464,13 @@
             "cls": "internal",
             "title": "Exceptions",
             "type": "integer"
+          },
+          "expenses_clause": {
+            "$ref": "#/components/schemas/ExpensesClauseOut",
+            "cls": "internal",
+            "default": {
+              "state": "unverified"
+            }
           },
           "inputs_hash": {
             "cls": "internal",
@@ -79041,6 +79132,68 @@
         "title": "ProvidersOut",
         "type": "object"
       },
+      "ProvisionDocumentIn": {
+        "additionalProperties": false,
+        "description": "EBP-02's agent-off path for the SPD and the amendment (DV-EBP-02-1; DEC-2489): what the\ndocument says, the words on the page that say it, and the person's note.",
+        "properties": {
+          "effective_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective On"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "note": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "page": {
+            "cls": "internal",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "quote": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Quote",
+            "type": "string"
+          },
+          "value": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "evidence_version_id",
+          "page",
+          "quote",
+          "note"
+        ],
+        "title": "ProvisionDocumentIn",
+        "type": "object"
+      },
       "ProvisionOut": {
         "examples": [
           {
@@ -80363,6 +80516,78 @@
           "body"
         ],
         "title": "RaiseReviewNoteIn",
+        "type": "object"
+      },
+      "RatesOut": {
+        "description": "The rates EBP-03 and EBP-04 computed from: the verified Default deferral rate,\nAuto-escalation and Safe harbor match (A-05-T16; DEC-2488). While `unverified` or `unreadable`\nthey are null and no default rate or missed amount is shown.",
+        "properties": {
+          "cap_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Cap Pct"
+          },
+          "default_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Default Pct"
+          },
+          "match_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Match Pct"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "verified",
+              "unverified",
+              "unreadable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "step_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Step Pct"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "RatesOut",
         "type": "object"
       },
       "ReReviewOut": {
@@ -133351,6 +133576,157 @@
           "assurance"
         ],
         "x-abacus-action": "ebp_provider.invite"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/provisions/{provision_key}/documents/{source}": {
+      "put": {
+        "description": "A person keys what the SPD or the amendment says for one provision, with the quote found on\nthe page (422 `citation_unverified`) and a note; the review comes back with code's comparison\n(A-05-T16; DEC-2489).",
+        "operationId": "ebp_provision_document",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provision_key",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z_]{1,40}$",
+              "title": "Provision Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "source",
+            "required": true,
+            "schema": {
+              "enum": [
+                "spd",
+                "amendment"
+              ],
+              "title": "Source",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProvisionDocumentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Provision Document Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp_provision.enter"
       }
     },
     "/v1/audits/{work_item_id}/ebp/schedule-h-4a": {

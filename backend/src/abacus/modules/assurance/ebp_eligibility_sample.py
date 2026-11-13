@@ -30,9 +30,10 @@ from abacus.modules.assurance.ebp_contract import (
     EligibilitySampleOut,
     EligibilitySampleRowOut,
     EntryRuleOut,
+    RatesOut,
 )
 from abacus.modules.assurance.ebp_participants import binding
-from abacus.modules.assurance.ebp_provisions import EntryRuleRead, entry_rule_read
+from abacus.modules.assurance.ebp_provisions import EntryRuleRead, RatesRead, plan_reads
 from abacus.modules.engagements.api import assurance_item, engagement_metadata, get_ref
 from abacus.modules.evidence.api import citation_sources
 from abacus.modules.identity.api import AuthContext, allowed_actions, names_of
@@ -103,14 +104,32 @@ def rule_out(read: EntryRuleRead) -> EntryRuleOut:
     )
 
 
+def rates_out(read: RatesRead) -> RatesOut:
+    rates = read.rates
+    return RatesOut(
+        state=read.state,
+        default_pct=None if rates is None else rates.escalation.default_pct,
+        step_pct=None if rates is None else rates.escalation.step_pct,
+        cap_pct=None if rates is None else rates.escalation.cap_pct,
+        match_pct=None if rates is None else rates.match_pct,
+    )
+
+
 def rate_label(
-    election: Decimal | None, entry_on: date | None, year: int, *, flagged: bool
+    election: Decimal | None,
+    entry_on: date | None,
+    year: int,
+    *,
+    flagged: bool,
+    rates: eligibility.Rates | None = None,
 ) -> str:
-    """ "8% elected", "6% default" (code's escalated rate), "0% — no opt-out" on an exception."""
+    """ "8% elected", "6% default" (code's escalated rate from the verified rates, none without
+    them), "0% — no opt-out" on an exception."""
     if election is None:
-        if entry_on is None:
+        if entry_on is None or rates is None:
             return ""
-        return f"{eligibility.escalation_rate(entry_on, year).normalize():f}% default"
+        rate = eligibility.escalation_rate(entry_on, year, rates.escalation)
+        return f"{rate.normalize():f}% default"
     if election == 0:
         return "0% — no opt-out" if flagged else "0%"
     return f"{election.normalize():f}% elected"
@@ -138,6 +157,7 @@ async def _row(
     hr: _Person | None,
     year: int,
     rule: eligibility.EntryRule | None,
+    rates: eligibility.Rates | None,
     hr_version: UUID | None = None,
 ) -> EligibilitySampleRowOut:
     hire = census.hire_on if census else None
@@ -162,8 +182,9 @@ async def _row(
         else None
     )
     missed = (
-        eligibility.missed(census.compensation)
+        eligibility.missed(census.compensation, rates.escalation, rates.match_pct)
         if rule is not None
+        and rates is not None
         and flagged
         and census is not None
         and census.election == 0
@@ -189,6 +210,7 @@ async def _row(
             None if entry is None else entry.entry_on,
             year,
             flagged=flagged,
+            rates=rates,
         ),
         result=cast(EligibilityResult, state),
         note=gone or (review.note if review else None),
@@ -210,7 +232,8 @@ async def _can(ctx: AuthContext, engagement_id: UUID) -> list[str]:
 async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
     """The route authorised `ebp.read`. No test yet is no rows: EBP-03's empty state."""
     item = await assurance_item(ctx.tenant, work_item_id)
-    rule = await entry_rule_read(ctx.tenant, item.engagement_id, work_item_id)
+    reads = await plan_reads(ctx.tenant, item.engagement_id, work_item_id)
+    rule = reads.entry
     found = await latest_test_of_variant(ctx.tenant, work_item_id, VARIANT)
     if found is None:
         return EligibilitySampleOut(
@@ -221,6 +244,7 @@ async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
             needs_human=0,
             allowed_actions=await _can(ctx, item.engagement_id),
             entry_rule=rule_out(rule),
+            rates=rates_out(reads.rates),
         )
     test_id, content_hash = found
     table = await grid(ctx, item.engagement_id, test_id)
@@ -253,6 +277,7 @@ async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
             roster.get(row.record_key),
             year,
             rule.rule,
+            reads.rates.rates,
             hr_version=_source_of(sources, cited[row.item_id]),
         )
         for row in table.rows
@@ -280,4 +305,5 @@ async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
         workpaper_id=table.workpaper_id,
         allowed_actions=await _can(ctx, item.engagement_id),
         entry_rule=rule_out(rule),
+        rates=rates_out(reads.rates),
     )

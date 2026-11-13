@@ -160,6 +160,7 @@ export const ACTIONS = [
   "ebp_provider.invite",
   "ebp_provider.manage",
   "ebp_provider.request",
+  "ebp_provision.enter",
   "ebp_schedule.draft",
   "ebp_schedule.render",
   "ebp_schedule_h_mapping.publish",

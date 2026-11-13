@@ -443,6 +443,7 @@ codes:
   citation_unverified:
     status: 422
     raised_by:
+    - abacus.modules.assurance.ebp_provisions.CitationUnverified
     - abacus.modules.sampling.populations.CitationUnverified
     summary: A comparison cites something not verified and live on the engagement (INV-2).
   client_contact:

@@ -2051,6 +2051,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/audits/{work_item_id}/ebp/certification/points/{point_key}",
         "ebp_certification.evaluate",
     ),
+    (
+        "PUT",
+        "/v1/audits/{work_item_id}/ebp/provisions/{provision_key}/documents/{source}",
+        "ebp_provision.enter",
+    ),
     ("PUT", "/v1/audits/{work_item_id}/estimates/{estimate_id}/method", "estimate.evaluate"),
     (
         "PUT",

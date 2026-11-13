@@ -10105,9 +10105,17 @@ export type ConflictSourceOut = {
      */
     evidence_version_id: string;
     /**
+     * Match Id
+     */
+    match_id?: string | null;
+    /**
      * Note
      */
     note: string;
+    /**
+     * Page
+     */
+    page?: number | null;
 };
 
 /**
@@ -14309,6 +14317,7 @@ export type EligibilitySampleOut = {
      * Prepared By
      */
     prepared_by?: string | null;
+    rates?: RatesOut;
     /**
      * Reviewed By
      */
@@ -17816,6 +17825,10 @@ export type ExpenseRowOut = {
      */
     line_key: string;
     /**
+     * Not Permitted
+     */
+    not_permitted?: boolean;
+    /**
      * Paid From Plan
      */
     paid_from_plan?: string | null;
@@ -17831,6 +17844,26 @@ export type ExpenseRowOut = {
      * Schedule H Line
      */
     schedule_h_line: '2i(1)' | '2i(2)' | '2i(3)' | '2i(4)';
+};
+
+/**
+ * ExpensesClauseOut
+ *
+ * EBP-09's read of EBP-02's verified Plan expenses election (A-05-T16; DEC-2488).
+ */
+export type ExpensesClauseOut = {
+    /**
+     * Plan May Pay
+     */
+    plan_may_pay?: boolean | null;
+    /**
+     * State
+     */
+    state: 'verified' | 'unverified' | 'unreadable';
+    /**
+     * Wording
+     */
+    wording?: string | null;
 };
 
 /**
@@ -17851,6 +17884,7 @@ export type ExpensesOut = {
      * Exceptions
      */
     exceptions: number;
+    expenses_clause?: ExpensesClauseOut;
     /**
      * Inputs Hash
      */
@@ -37360,6 +37394,39 @@ export type ProvidersOut = {
 };
 
 /**
+ * ProvisionDocumentIn
+ *
+ * EBP-02's agent-off path for the SPD and the amendment (DV-EBP-02-1; DEC-2489): what the
+ * document says, the words on the page that say it, and the person's note.
+ */
+export type ProvisionDocumentIn = {
+    /**
+     * Effective On
+     */
+    effective_on?: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Note
+     */
+    note: string;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Quote
+     */
+    quote: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * ProvisionOut
  */
 export type ProvisionOut = {
@@ -37937,6 +38004,36 @@ export type RaiseReviewNoteIn = {
      * Target Type
      */
     target_type: string;
+};
+
+/**
+ * RatesOut
+ *
+ * The rates EBP-03 and EBP-04 computed from: the verified Default deferral rate,
+ * Auto-escalation and Safe harbor match (A-05-T16; DEC-2488). While `unverified` or `unreadable`
+ * they are null and no default rate or missed amount is shown.
+ */
+export type RatesOut = {
+    /**
+     * Cap Pct
+     */
+    cap_pct?: string | null;
+    /**
+     * Default Pct
+     */
+    default_pct?: string | null;
+    /**
+     * Match Pct
+     */
+    match_pct?: string | null;
+    /**
+     * State
+     */
+    state: 'verified' | 'unverified' | 'unreadable';
+    /**
+     * Step Pct
+     */
+    step_pct?: string | null;
 };
 
 /**
@@ -62578,6 +62675,70 @@ export type EbpProviderInviteResponses = {
 };
 
 export type EbpProviderInviteResponse = EbpProviderInviteResponses[keyof EbpProviderInviteResponses];
+
+export type EbpProvisionDocumentData = {
+    body: ProvisionDocumentIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Provision Key
+         */
+        provision_key: string;
+        /**
+         * Source
+         */
+        source: 'spd' | 'amendment';
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/provisions/{provision_key}/documents/{source}';
+};
+
+export type EbpProvisionDocumentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpProvisionDocumentError = EbpProvisionDocumentErrors[keyof EbpProvisionDocumentErrors];
+
+export type EbpProvisionDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlanReviewOut;
+};
+
+export type EbpProvisionDocumentResponse = EbpProvisionDocumentResponses[keyof EbpProvisionDocumentResponses];
 
 export type EbpSchedule4aData = {
     body?: never;

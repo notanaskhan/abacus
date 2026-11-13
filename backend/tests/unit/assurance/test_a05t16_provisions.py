@@ -148,6 +148,11 @@ async def test_a17_the_review_reads_its_paper_sign_offs_hashes_and_what_the_late
     monkeypatch.setattr(ebp_provisions, "_states", states)
     monkeypatch.setattr(ebp_provisions, "reviewable_facts", facts)
     monkeypatch.setattr(ebp_provisions, "sign_off_states", signed)
+
+    async def no_documents(*_a: object) -> tuple[dict[str, object], None]:
+        return {}, None  # A-05-T16 (DEC-2489): no SPD or amendment value keyed
+
+    monkeypatch.setattr(ebp_provisions, "_documents", no_documents)
     ctx = SimpleNamespace(tenant=None)
     found = await ebp_provisions.review_of(ctx, uuid.uuid4(), asked)  # pyright: ignore[reportArgumentType] -- the stubs read `tenant`
     assert found.workpaper_id == paper

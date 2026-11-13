@@ -1539,6 +1539,18 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "ebp_provision.enter": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "client_admin": "deny",
+        "client_contributor": "deny",
+        "third_party": "deny",
+        "client_service": "deny",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+    },
     "ebp_schedule.draft": {
         "engagement_partner": "allow",
         "manager": "allow",

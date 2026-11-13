@@ -45,6 +45,7 @@ from abacus.modules.workpapers.drafting import (
 from abacus.modules.workpapers.drafting import (
     apply_cell_suggestion,
     draft_paper,
+    latest_version_id,
     paper_engagement,
     paper_id_of_kind,
     paper_of_kind,
@@ -167,6 +168,7 @@ __all__ = [
     "exception_prefill",
     "grid",
     "latest_test_of_variant",
+    "latest_version_id",  # A-05-T16 (DEC-2489): EBP-02's document values
     "link_issue",
     "mark",
     "matrix_sections",  # A-06-T23: AUD-17 sections by paper kind

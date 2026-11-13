@@ -14,9 +14,14 @@ from sqlalchemy import text
 
 from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance import ebp_eligibility_sample as sample_module
-from abacus.modules.assurance.compute.ebp.eligibility import EntryRule
+from abacus.modules.assurance.compute.ebp.eligibility import QACA, QACA_MATCH_PCT, EntryRule, Rates
 from abacus.modules.assurance.ebp_participants import seal_pii
-from abacus.modules.assurance.ebp_provisions import EntryRuleRead
+from abacus.modules.assurance.ebp_provisions import (
+    EntryRuleRead,
+    ExpensesClauseRead,
+    PlanReads,
+    RatesRead,
+)
 
 from .support import Firm, Seeder, make_firm
 
@@ -89,6 +94,15 @@ def _row(position: int, key: str, state: str) -> SimpleNamespace:
     )
 
 
+def _reads(entry: EntryRuleRead, rates: RatesRead | None = None) -> PlanReads:
+    """EBP-02's reads as the sample sees them: Northwind's verified rates unless given."""
+    return PlanReads(
+        entry,
+        rates or RatesRead("verified", Rates(QACA, QACA_MATCH_PCT)),
+        ExpensesClauseRead("unverified"),
+    )
+
+
 @pytest.fixture
 async def sample(seed: Seeder, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     firm = await make_firm(seed)
@@ -146,11 +160,11 @@ async def sample(seed: Seeder, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespa
     async def can(*_a: object) -> list[str]:
         return ["test.mark"]
 
-    async def rule(*_a: object) -> EntryRuleRead:
-        return EntryRuleRead("verified", EntryRule())
+    async def rule(*_a: object) -> PlanReads:
+        return _reads(EntryRuleRead("verified", EntryRule()))
 
     for name, stub in (
-        ("entry_rule_read", rule),
+        ("plan_reads", rule),
         ("latest_test_of_variant", latest),
         ("grid", grid),
         ("sign_off_states", states),
@@ -213,13 +227,13 @@ async def test_ac_no_test_yet_is_no_rows(
 async def test_ac_an_unverified_entry_rule_computes_nothing_and_opens_no_birth_date(
     sample: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def unverified(*_a: object) -> EntryRuleRead:
-        return EntryRuleRead("unverified")
+    async def unverified(*_a: object) -> PlanReads:
+        return _reads(EntryRuleRead("unverified"))
 
     async def never(*_a: object) -> date:
         raise AssertionError("a date of birth was opened with no verified rule")
 
-    monkeypatch.setattr(sample_module, "entry_rule_read", unverified)
+    monkeypatch.setattr(sample_module, "plan_reads", unverified)
     monkeypatch.setattr(sample_module, "_dob", never)
     out = await sample_module.sample(sample.firm.person(), sample.work_item)
     assert out.entry_rule.state == "unverified"
@@ -237,10 +251,10 @@ async def test_ac_an_unverified_entry_rule_computes_nothing_and_opens_no_birth_d
 async def test_ac_the_verified_rule_moves_the_entry_date(
     sample: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def six_months(*_a: object) -> EntryRuleRead:
-        return EntryRuleRead("verified", EntryRule(minimum_age=21, service_months=6))
+    async def six_months(*_a: object) -> PlanReads:
+        return _reads(EntryRuleRead("verified", EntryRule(minimum_age=21, service_months=6)))
 
-    monkeypatch.setattr(sample_module, "entry_rule_read", six_months)
+    monkeypatch.setattr(sample_module, "plan_reads", six_months)
     out = await sample_module.sample(sample.firm.person(), sample.work_item)
     assert (out.entry_rule.minimum_age, out.entry_rule.service_months) == (21, 6)
     first = out.rows[0]
@@ -269,3 +283,22 @@ async def test_ac_a_row_opens_the_hr_record_its_hire_date_cites(
     monkeypatch.setattr(sample_module, "citation_sources", sources)
     out = await sample_module.sample(sample.firm.person(), sample.work_item)
     assert out.rows[0].hr_record_version_id == version
+
+
+async def test_ac_unverified_rates_show_no_default_rate_or_missed_amount(
+    sample: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A-05-T16 (DEC-2488): the entry rule is verified but the rates are not, so QACA's constants
+    never stand in: no default rate and no missed amount, and the person's figures stay."""
+
+    async def no_rates(*_a: object) -> PlanReads:
+        return _reads(EntryRuleRead("verified", EntryRule()), RatesRead("unverified"))
+
+    monkeypatch.setattr(sample_module, "plan_reads", no_rates)
+    out = await sample_module.sample(sample.firm.person(), sample.work_item)
+    assert out.rates.state == "unverified"
+    first, young, kwame, _ = out.rows
+    assert first.rate_label == "8% elected"
+    assert young.rate_label == ""
+    assert (kwame.missed_deferral, kwame.missed_match) == (None, None)
+    assert young.entry_on is not None  # the entry rule still places the entry
