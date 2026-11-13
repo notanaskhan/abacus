@@ -120,3 +120,41 @@ def test_tool_inputs_match_the_frozen_workbench_suite() -> None:
         fields = model.model_fields
         assert set(fields) == set(spec["accepted"]), name
         assert {k for k, f in fields.items() if f.is_required()} == set(spec["required"]), name
+
+
+def test_binders_read_answers_the_seasons_visible_count(monkeypatch: pytest.MonkeyPatch) -> None:
+    """S41 gaps (AC-A6, DEC-4734): `season_total` is BND-01's visible count for the season (the
+    index applies walls), the page narrows to `binder_ids`, and the tiles come with it."""
+    from abacus.kernel.listing import ListPage
+    from abacus.modules.requests import agent_tools as req
+    from abacus.modules.requests import binder_index
+
+    @dataclass(frozen=True)
+    class _Row:
+        id: uuid.UUID
+        name: str
+        client_name: str
+        kind: str
+        status: str
+        total_count: int
+        done_count: int
+        last_client_activity_at: None = None
+
+    a, b = uuid.uuid4(), uuid.uuid4()
+    seen: list[binder_index.IndexFilters] = []
+
+    async def list_binders(
+        ctx: object, filters: binder_index.IndexFilters, cursor: object, limit: object
+    ) -> object:
+        seen.append(filters)
+        return ListPage[Any](  # Any: a test double row
+            items=[_Row(a, "2025 Binder", "Feld", "tax", "published", 13, 11),
+                   _Row(b, "2025 Binder", "Iyer", "tax", "published", 9, 2)],
+            total=241, counts={"published": 180, "complete": 61},
+        )  # fmt: skip
+
+    monkeypatch.setattr(binder_index, "list_binders", list_binders)
+    out = asyncio.run(req.read_binders(object(), req.BindersIn(tax_year=2025, binder_ids=[b])))  # type: ignore[arg-type] -- a test double stands in for the run's context
+    assert (out.season_total, out.total, [r.id for r in out.binders]) == (241, 1, [b])
+    assert out.by_status == {"published": 180, "complete": 61}
+    assert seen[0].season == "TY2025"

@@ -191,6 +191,11 @@ class BindersOut(BaseModel):
     binders: Annotated[list[BinderRow], Conf]
     total: Annotated[int, Int]
     next_cursor: Annotated[str | None, Int] = None
+    # S41 gaps (AC-A6, DEC-4734): the season's binders the viewer can see, counted by code over
+    # BND-01's index (walls applied, nothing hidden is counted), and its tiles by status.
+    season_total: Annotated[int, Int] = 0
+    season_total_capped: Annotated[bool, Int] = False
+    by_status: Annotated[dict[str, int], Int] = Field(default_factory=dict[str, int])
 
 
 async def read_binders(caller: ToolCaller, args: BindersIn) -> BindersOut:
@@ -217,7 +222,14 @@ async def read_binders(caller: ToolCaller, args: BindersIn) -> BindersOut:
         for r in page.items
         if wanted is None or r.id in wanted
     ]  # fmt: skip
-    return BindersOut(binders=rows, total=len(rows), next_cursor=page.next_cursor)
+    return BindersOut(
+        binders=rows,
+        total=len(rows),
+        next_cursor=page.next_cursor,
+        season_total=page.total,
+        season_total_capped=page.total_capped,
+        by_status=dict(page.counts),
+    )
 
 
 AGENT_TOOLS: Final = (
