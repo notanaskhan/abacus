@@ -38,7 +38,8 @@ build them").
    and the PayGrid and Keystone documents. Needs a per-scenario variant in the loader.
 6. P-02-T12 (TASK-7722): the palette's context-bound actions asserted in `shl-02-palette.spec.ts`;
    `go()` through `openPalette`; the keyboard test's focus check fixed.
-7. F-07-T13/T14 (TASK-7725/7726): the `./graph` subpath of `@abacus/ui`.
+7. F-07-T13/T14 (TASK-7725/7726): the `./graph` subpath of `@abacus/ui` (not a protected path);
+   the portal lint's existing `graph` pattern covers it, pinned by two tests.
 8. End pass: check-fast, pyright, eslint/tsc, the touched suites, Q-03-T274 `pnpm audit` and the
    T275/T276 consumer suites under the test lock; one security read of the diffs.
 
@@ -49,3 +50,4 @@ build them").
   `GET …/issue-assignees` is served but missing from the stub test's BUILT set (main red; S42's).
 - 2026-11-13: item 3 dropped (W-02-T19's tools); item 4 built (`s41lo-context-lines`).
 - 2026-11-13: item 5 not built (recorded); item 6 built (`s41lo-palette-actions`).
+- 2026-11-13: item 7 built (`s41lo-graph-subpath`).
