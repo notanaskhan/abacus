@@ -571,8 +571,11 @@ jobs:
       # P-10-T41: runtime.conformance's fast subset (DE-3 to DE-6 cases at 1.0; code only).
       - if: needs.changes.outputs.agents == 'true'
         run: make evals-conformance-fast
-      # T-04-T18: the tax return suite on the fake model, every run (code only, seconds).
-      - run: make evals-tax-fast
+      # T-04-T18: the tax return suite on the fake model (code only, seconds). Gated like the
+      # rest (TASK-7827): ungated, it ran with no checkout on a diff without agent paths and failed
+      # "No rule to make target". The tax module's paths count as agent paths for it.
+      - if: needs.changes.outputs.agents == 'true'
+        run: make evals-tax-fast
 
   # One stable check for branch protection: green only when every stage 1 and 2 job passed.
   stage-2:
