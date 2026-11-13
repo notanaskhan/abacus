@@ -16,6 +16,14 @@ export const COPY = {
   add: "Add to session",
   composer: "Message",
   readOnlyLine: "Nothing was written.",
+  tabs: { client_record: "Client record", documents: "Documents", workpapers: "Workpapers" },
+  picker: "Add context",
+  send: "Send",
+  remove: (label: string) => `Remove ${label}`,
+  sources: "Sources",
+  controlLink: "Internal Control (Exceptions!D2)",
+  loadingCard: "Reading",
+  unsupported: "Unsupported",
 } as const;
 
 export const SUGGESTED_PROMPTS: readonly SuggestedPrompt[] = [
