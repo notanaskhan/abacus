@@ -1,7 +1,7 @@
 task_id,status,evidence
 F-01-T05,partial,"coverage exception backend/coverage-exception.toml (DEC-10); TASK-7827 (#1883) and TASK-7828 (#1900): main's reds after S39, S40, lo38 and S25 fixed at their causes; open: the E0 and Sep 24 fixtures need a Linux export (WeasyPrint), the pii_reveals revealed_at/expires_at microsecond flake needs a migration granting INSERT (revealed_at) (TASK-1255), and coverage at 95%"
 F-01-T06,partial,".github/workflows/ci.yml has merge_group, draft gating, changes job, frontend job; Makefile check-heads/check-generated; 5 green runs and ruleset not judgeable"
-F-01-T07,partial,"abacus_tools/ci/paths.py and the frontend job; TASK-7823 (#1867) and TASK-7828 (#1900, DEC-4821): stage 1 path-aware and fail-closed, check-docs keeps every cheap gate; open: the 6-minute frontend-only PR is measured on the first such PR after merge"
+F-01-T07,partial,"#1867, #1900 (DEC-4821): stage 1 path-aware and fail-closed; measured 2026-11-14 on frontend-only PR #1944 (run 43499777873, green): every backend shard reported success in 3-5 s without running, but the run took 14 m 44 s and stage 1 alone 7 m 15 s (frontend tests 8 m 39 s, fixture journeys 11-14 m); open: the 6-minute bound (needs faster frontend gates or the F-01-T06 ruleset scoping which checks are required)"
 F-01-T09,done,"TASK-080/081: worktree isolation, guards, dev-fixtures; VITE_FIXTURES now read (app-core/clock.tsx, make dev-fixtures); code probe 2026-11-12 (DEC-4804); tests not re-run here"
 F-01-T10,not-started,"Obsolete: SU-06 removed number blocks (test_validate_docs.py ""any free number, any deciders""); no .github/ISSUE_TEMPLATE; only duplicate-id check remains (validate_docs.py:133)"
 Q-02-T06,done,"TASK-1209 and #447: matrix rows firm.ai_client_data, engagement.ai_exclude, firm.read_settings with security_admin, flag agents.client_data_optin; the stage is set through the staff route (#447), not a matrix row; the approval file is void (AMENDMENT-solo); code probe 2026-11-12 (DEC-4804); tests not re-run here"
@@ -56,7 +56,7 @@ Q-02-T45,done,"agents/runs_routes.py /v1/agent-runs (C6 v1, #510) (re-verified 2
 P-09-T07,done,TASK-6304 (#1497): run read model with items feed; code probe 2026-11-12 (DEC-4804); tests not re-run here
 P-09-T08,done,"TASK-6305 (#1498), TASK-7808 (#1821, DEC-4806): steps record and resolve their samples; TASK-7824 (#1868), TASK-7828 (#1900): a withdrawn version never resolves (tests/integration/test_p09t08_trace_samples.py, 4 passed 2026-11-13)"
 P-09-T10,done,"TASK-6307 (#1500) and remainders #1522 (DEC-3024), #1574 (DEC-3136): WB-09 registered, a2 and Approve on a waiting write; ""Open CCH Axcess Tax"" waits on WB-11 (W-01), outside the row; code probe 2026-11-12 (DEC-4804); tests not re-run here"
-P-09-T11,partial,"TASK-6518 (#1549, DEC-3118) JSON export; TASK-7825 (#1871, DEC-4820) and TASK-7828 (#1900, DEC-4821): the PDF through C11 run_export, capped, audited with source_sha256, unit-tested with a stand-in renderer; open: a real WeasyPrint render of a trace PDF (no local libraries; CI Linux)"
+P-09-T11,partial,"#1871, #1900 (DEC-4820): trace PDF export; #1946 (TASK-7834): the real renderer in the image-bound suite (byte-identical, text, pages, glyphs); done once make golden-render passes in the batch CI"
 K-04-T33,partial,"TASK-460: assurance/dashboard.py: gates, tiles from progress sources, sign-offs, requests, next-up via could() (SPEC-317, dashboard.read); no lenses, C14 provider, basis strings or health rule"
 K-04-T40,partial,"TASK-460: legacy/EngagementDashboard.tsx tab; not the ENG-12 T21 record variant, lenses or milestones"
 A-01-T18,done,"#450 (dc46552b): engagement_exports create/undo/history behind a 10-s grant, migration 0191"
@@ -102,7 +102,7 @@ R-01-T21,done,#464 (b1ea439b): portal Playwright journeys (run in CI after #476)
 R-01-T22,done,#472 (ee7bdf04): templated send
 Q-02-T43,done,"s10-leftovers (TASK-1403): firm_exports and links (migration 0216), FirmExportWorkflow v1 histories, dual approval in service and database, 15-min links, 410 after 7 days"
 F-05-T60,partial,#464 (b1ea439b) tier-2 checks; no board locked (needs a pnpm visual run and sign-off)
-P-03-T20,partial,"#439 (07e4d02c), TASK-1321 SHL-08 built; re-checked 2026-11-13 (lo39): the SHL-08 and SHL-14 handoff still give no prefilled request wording for ""Ask … for the password"" (DEC-460)"
+P-03-T20,partial,"#439 (07e4d02c), TASK-1321 SHL-08 built; re-checked 2026-11-14: the SHL-08 and SHL-14 handoff (unchanged since 2026-10-17) still give no prefilled request wording for ""Ask … for the password"" (DEC-460); open: a handoff revision with that copy (Claude Design), then the SHL-14 prefill"
 Q-03-T043,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
 Q-03-T044,partial,#468 (81f57c4d) repo side; x25 rehearsed on a laptop 2026-11-01 (DEC-1531); only the perf-stack run waits for Q-03-T036
 Q-03-T046,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
@@ -618,8 +618,8 @@ R-02-T11,done,TASK-6309 (#1502) and remainder #1523 (DEC-3025): C18 approvals se
 R-02-T12,done,"TASK-6310 (#1503) and remainders #1524 (DEC-3026), #1581 (DEC-3146): governance room, tcwg grants at send, the letter PDF through C10; code probe 2026-11-12 (DEC-4804); tests not re-run here"
 T-04-T03,done,TASK-6318 (#1512): protected bundle; T-04 table owners now in schema_check TABLE_OWNERS; code probe 2026-11-12 (DEC-4804); tests not re-run here
 T-04-T07,done,"TASK-6322 (#1516) and remainder (DEC-3031): fixtures on the generated client; every in-scope screen (TAX-04..08, TXI-01..03) built with its tests in S33+; code probe 2026-11-12 (DEC-4804); tests not re-run here"
-P-09-T09,partial,"TASK-6306 (#1499), remainder #1521; probe 2026-11-13 (lo39): the step-through card needs a runtime step mode (a Temporal workflow change, P-10) and frames 9 and 10 need triggers (K-04-T21, A-11-T17)"
-R-02-T13,partial,TASK-6313 (#1507) and remainder #1527 (DEC-3029): portal and governance seed slices; open: make seed-demo and fixture equivalence not shown; code probe 2026-11-12 (DEC-4804); tests not re-run here
+P-09-T09,partial,"TASK-6306 (#1499), remainder #1521; frame 10 built (feedback route live); frame 8's run picker #1944 (TASK-7835); open: frame 9's trigger line (a trigger label on C6 once K-04-T21, S61, records engagement triggers) and step-through card (a runtime step mode: no backlog row owns it)"
+R-02-T13,partial,"TASK-6313 (#1507), remainder #1527 (DEC-3029), TASK-7809 (book); #1945 (TASK-7833): the completion and governance_room slices loaded and read against portal_figures.json; done once the test passes in the batch CI"
 F-03-T04,done,256be2829 docs(product): status registry and the glossary change set (SU-25; F-03-T04; F-02-T04) (and 0 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
 F-05-T07,done,92a5224d3 feat(web;ui): design-system ESLint rules and compiled-CSS check (F-05-T07) (and 1 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
 Q-01-T03,done,47b2aa698 infra: Terraform bootstrap; environment roots and the plan-only infra workflow (SU-20; Q-01-T03) (and 0 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
