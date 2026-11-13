@@ -3,7 +3,7 @@
 // on the seeded stack in the full-stack project (the fake provider in CI, the demo account
 // nightly), where Tess Moreno reads her Sign area. The provider's own view is never scripted.
 import { expect, test } from "../harness";
-import { M13, skipUnhosted } from "./support";
+import { M13, NO_DECLINED, skipUnhosted } from "./support";
 
 test.describe("POR-06 sign, full stack (N-02-T40)", () => {
   test.beforeEach(({ journey }) => {
@@ -26,7 +26,8 @@ test.describe("POR-06 sign, full stack (N-02-T40)", () => {
   test("a declined envelope reads as declined, with nothing left to sign (POR-06 g)", async ({
     journey,
   }) => {
-    test.fixme(journey.project !== "fixture", M13);
+    test.fixme(journey.project === "staging" || journey.project === "canary", M13);
+    test.fixme(journey.project === "fullstack", NO_DECLINED);
     await journey.as("tess-moreno", "/sign", { scenario: "POR-06:g" });
     await journey.step("POR-06 g: declined", async (page) => {
       await expect(page.getByText(/[Dd]eclined/).first()).toBeVisible();
