@@ -9,6 +9,7 @@ import {
   createSessionMutation,
   deleteSessionMutation,
   listSessionsQueryKey,
+  postSessionMessageMutation,
   removeContextMutation,
   renameSessionMutation,
   sessionDrillMutation,
@@ -88,6 +89,20 @@ export function useSessionDrill() {
       m.mutateAsync({
         path: { session_id: sessionId },
         body: { artifact_id: artifactId, group_key: groupKey },
+        headers: { "Idempotency-Key": key() },
+      }),
+  };
+}
+
+/** W-02-T16: the person's message (WB-02 e); its turn runs in the session's workflow. */
+export function usePostMessage() {
+  const m = useMutation(postSessionMessageMutation());
+  return {
+    ...m,
+    post: (sessionId: string, body: string) =>
+      m.mutateAsync({
+        path: { session_id: sessionId },
+        body: { body },
         headers: { "Idempotency-Key": key() },
       }),
   };
