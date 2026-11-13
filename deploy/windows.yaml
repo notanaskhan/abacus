@@ -15,7 +15,8 @@ rules_version: 1
 # PF-X1 is the synthetic test pilot firm, Brightwater Hale (DEC-1530): the ops rows rehearse
 # against it while no pilot firm is live (DEC-1391). `synthetic: true` refuses a real_data_since,
 # so no window ever applies to it and every guard stays inert for the platform (DEC-68); its flips
-# still need an approver and a rollback. A real pilot firm is added beside it, never in its place.
+# still need an approver and a rollback; the solo builder may be its own approver (DEC-4822), never
+# on a real firm. A real pilot firm is added beside it, never in its place.
 firms:
   - tenant_id: 293fc3e7-be13-4767-ae6a-ce245b2dbda9
     code: PF-X1

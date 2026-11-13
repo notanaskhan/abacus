@@ -23,3 +23,34 @@ the runbooks keep the two-person rule for real firms and say how the solo builde
 
 Q-04-T107 stays partial until that call is made and the walk is finished; Q-04-T137 is the next
 quarter's walk.
+
+## Second pass after DEC-4822 (2026-11-13, TASK-7830)
+
+Ayush chose: on a synthetic firm the solo builder approves their own flips; a real pilot firm keeps
+two people (DEC-4822). Fresh worktree stack (`ABACUS_PORT_OFFSET=90`), Dev firm seeded, PF-X1 loaded
+with `make seed-demo SLICE="pilot portal portal_pbc people"` at E0. Every flip ran through `make flag`
+with `APPROVED_BY` = the operator.
+
+| Runbook | Step walked | Result |
+|---|---|---|
+| RB-33 binder export and pilot rollback | §2 step 3 `audits.binder_export` on; §4.1 `audits.cockpit` off; §4.2 `audits.binder_export` off; the cockpit back on | passed: four flips, each `feature_flag.set` carries `approved_by`, `rollback` and `self_approved: 1` |
+| review-approvals-flip | §5 the rollback (`review.approve_agent_output` off, `HOTFIX`), then §3 the flip on | passed after the runbook fix below |
+| RB-01 flag flips | `collaboration.v2` on, then off (its rollback) | passed (the route checks on staging stay with RB-01's staging rehearsal) |
+| control | a flip with no `APPROVED_BY` | refused: `approver_missing` |
+| pilot onboarding (RB-37, pilot-onboarding §1 and §3) | not walked: its steps are signed-in API calls with fresh MFA | open |
+
+Eight self-approved flips recorded; the guard's unit tests prove a real pilot firm still refuses
+`approver_is_operator` in and out of its window.
+
+### Gaps found and fixed (TASK-7830)
+
+1. **The runbooks' `ROLLBACK` values were refused.** review-approvals-flip §3 said
+   `ROLLBACK="flag off; decisions persist"` and §5 `ROLLBACK="n/a"`; RB-33 §2 and §4 named none. The
+   flip guard takes only a `docs/` path or an https link (`rollback_missing`). Each now links its
+   rollback section, and both runbooks say who may approve on PF-X1.
+2. **`make flag` and `make entitlement` ignored the worktree's stack.** They ran with no database
+   setting, so a worktree at another `ABACUS_PORT_OFFSET` wrote to the default stack on port 55432.
+   The first attempt at this pass wrote three PF-X1 flag rows and five `feature_flag.set` events into
+   another worktree's local stack; the three rows were deleted (each flag had no row before), the
+   events stay (audit is append-only). Both targets now use the environment's database when one is
+   set (staging) and this checkout's stack otherwise (`OPERATOR_ENV` in the Makefile).

@@ -2,11 +2,12 @@
 
 `make flag` and `make entitlement` ask it before they write anything. For a pilot firm (one listed
 in `deploy/windows.yaml`) every flip names an approver who is not its operator and a rollback
-link. Inside the firm's window it also needs the Tuesday 19:00-21:00 CT slot (never in a deadline
-week or a mini-freeze) unless it is a hotfix with a reason, and the ops request it runs from; a
-`prompt.<capability>` variant also needs the eval report and the shadow run at that version
-(P-29 rule 4). A firm that is not listed (the synthetic firms, the Dev firm) keeps today's rules:
-an operator and a reason.
+link; on a synthetic firm (PF-X1, DEC-1530) the solo builder may approve their own flip, and
+the verdict records it (DEC-4822). Inside the firm's window it also needs the Tuesday
+19:00-21:00 CT slot (never in a deadline week or a mini-freeze) unless it is a hotfix with a
+reason, and the ops request it runs from; a `prompt.<capability>` variant also needs the eval
+report and the shadow run at that version (P-29 rule 4). A firm that is not listed (the other
+synthetic firms, the Dev firm) keeps today's rules: an operator and a reason.
 
 The verdict carries the audit references the write records: fingerprints of the approver, the
 rollback, the request, the eval report and the shadow run, the slot's start as Unix seconds, and
@@ -80,7 +81,7 @@ def check(cal: release_windows.Calendar, flip: Flip) -> Verdict:
     window = release_windows.in_window(cal, flip.firm, flip.at)
     if flip.approved_by is None or not _HANDLE.fullmatch(flip.approved_by):
         why.append("approver_missing")
-    elif flip.approved_by == flip.operator:
+    elif flip.approved_by == flip.operator and not firm.synthetic:
         why.append("approver_is_operator")
     if flip.rollback is None or not _ROLLBACK.fullmatch(flip.rollback):
         why.append("rollback_missing")
@@ -120,6 +121,8 @@ def check(cal: release_windows.Calendar, flip: Flip) -> Verdict:
         refs["slot"] = _slot_start(cal, flip.at)
     if flip.hotfix is not None:
         refs["hotfix"] = 1
+    if firm.synthetic and flip.approved_by is not None and flip.approved_by == flip.operator:
+        refs["self_approved"] = 1  # DEC-4822: one builder, a synthetic firm only
     return Verdict(tuple(why), window, True, refs)
 
 
