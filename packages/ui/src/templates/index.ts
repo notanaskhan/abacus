@@ -152,3 +152,13 @@ export {
   type RelationshipRow,
   isTinMask,
 } from "./graph-layout";
+// F-07-T18: T17 FormRendererLayout (thumbnails, the form face on E5, K-1s, total, diagnostics).
+export {
+  FORM_GEOMETRY,
+  type FormDiagnostic,
+  type FormMode,
+  FormRendererLayout,
+  type FormRendererLayoutProps,
+  type FormThumb,
+  type K1ListRow,
+} from "./form-renderer";
