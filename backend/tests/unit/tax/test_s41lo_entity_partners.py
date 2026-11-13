@@ -52,4 +52,5 @@ def test_the_ownership_write_still_answers_501_and_the_reads_carry_tin_tags() ->
     route = next(
         r for r in wb.workbook_router.routes if getattr(r, "path", "").endswith("/ownership")
     )
-    assert "PUT" in getattr(route, "methods", set())
+    methods: set[str] = getattr(route, "methods", set[str]())
+    assert "PUT" in methods
