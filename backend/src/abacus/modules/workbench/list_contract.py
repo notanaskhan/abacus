@@ -135,26 +135,31 @@ context_options_router = AbacusRouter(
     "/{session_id}",
     action="session.manage",
     response_model=SessionSummaryOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def rename_session_route(
     session_id: UUID, body: SessionRenameIn, ctx: Ctx, if_match: IfMatch
 ) -> SessionSummaryOut:
     """The owner's rename; `title_source` becomes `manual`; 409 `stale_version` when `If-Match`
-    is not the row's version; one `workbench_session.renamed` audit event (titles by hash)."""
+    is not the row's version; one `workbench_session.renamed` audit event (titles by hash).
+    W-02-T09 (DEC-4714)."""
+    from abacus.modules.workbench.session_list import rename_session
+    from abacus.modules.workbench.sessions_contract import summary_of
+
     await workbench_gate(ctx)
-    _not_yet()
+    row, version = await rename_session(ctx, session_id, body.title, if_match)
+    return summary_of(row).model_copy(update={"version": version})
 
 
-@manage_router.delete(
-    "/{session_id}", action="session.manage", response_model=SessionDeletedOut, errors=(501,)
-)
+@manage_router.delete("/{session_id}", action="session.manage", response_model=SessionDeletedOut)
 async def delete_session_route(
     session_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SessionDeletedOut:
     """Soft delete; `workbench_session.deleted`; items, runs and trace are kept."""
+    from abacus.modules.workbench.session_list import delete_session
+
     await workbench_gate(ctx)
-    _not_yet()
+    return SessionDeletedOut(id=session_id, deleted_at=await delete_session(ctx, session_id))
 
 
 @context_options_router.get(
