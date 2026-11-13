@@ -27,8 +27,10 @@ fakes:
     contract: C16 (email half)
     suite: backend/tests/acceptance/test_q01_ses_transport.py
     verified_on: null
-  - fake: backend/src/abacus/modules/signatures/contract.py
-    provider: DocuSign (the `fake` envelope provider)
+  # Q-03-T230 (TASK-7822): the envelope provider fake is `FakeEsign`, and since ADR-342 it imitates
+  # DocuSeal, not DocuSign; the C7 suite that drives it end to end is the envelope workflow's.
+  - fake: backend/src/abacus_tools/fakes/esign.py
+    provider: DocuSeal (ADR-342; the `fake` envelope provider)
     contract: C7
-    suite: backend/tests/contracts/c7_n02/test_c7_stubs.py
+    suite: backend/tests/integration/backfill/test_n02t14_envelope_workflow.py
     verified_on: null
