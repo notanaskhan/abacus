@@ -182,6 +182,6 @@ async def test_a_census_row_with_no_hire_date_opens_no_birth_date(
     )
     row = await ebp_eligibility_sample._row(  # pyright: ignore[reportPrivateUsage] -- the path under test
         object(),  # pyright: ignore[reportArgumentType] -- never reached
-        1, uuid.uuid4(), "NW-1", "pass", {}, census, None, 2025, EntryRule(),
+        1, uuid.uuid4(), "NW-1", "pass", {}, census, None, 2025, EntryRule(), None,
     )  # fmt: skip
     assert (row.entry_on, row.eligible_on) == (None, None)

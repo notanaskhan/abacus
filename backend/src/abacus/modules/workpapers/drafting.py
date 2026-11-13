@@ -281,6 +281,22 @@ async def paper_id_of_kind(tenant: TenantContext, engagement_id: UUID, kind: str
     return None if found is None else UUID(str(found))
 
 
+async def latest_version_id(tenant: TenantContext, workpaper_id: UUID) -> UUID | None:
+    """A paper's newest version (A-05-T16: EBP-02's document values are keyed by it); the caller
+    authorised the person on the paper's engagement."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text(
+                    "SELECT id FROM workpaper_versions WHERE workpaper_id = :p "
+                    "ORDER BY version_no DESC LIMIT 1"
+                ),
+                {"p": workpaper_id},
+            )
+        ).scalar()
+    return None if found is None else UUID(str(found))
+
+
 SOURCE = SectionSource(draft_paper, bound, pack_problem, raise_draft_flag)
 
 __all__ = [
@@ -288,6 +304,7 @@ __all__ = [
     "apply_cell_suggestion",
     "bound",
     "draft_paper",
+    "latest_version_id",
     "pack_problem",
     "paper_engagement",
 ]

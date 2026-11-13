@@ -267,6 +267,24 @@ class ConflictSourceOut(BaseModel):
     evidence_version_id: Annotated[UUID, classified("internal")]
     # "The SPD (2025, p. 6) says entry is on the first day of each calendar quarter."
     note: Annotated[str, Field(max_length=500), classified("confidential")]
+    # A-05-T16/T17 (DEC-2489): the page and the verified quote's match, which the viewer lights.
+    page: Annotated[int | None, Field(ge=1), classified("internal")] = None
+    match_id: Annotated[str | None, Field(max_length=200), classified("internal")] = None
+
+
+class ProvisionDocumentIn(BaseModel):
+    """EBP-02's agent-off path for the SPD and the amendment (DV-EBP-02-1; DEC-2489): what the
+    document says, the words on the page that say it, and the person's note."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    value: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    page: Annotated[int, Field(ge=1, le=10_000), classified("internal")]
+    quote: Annotated[str, Field(min_length=1, max_length=500), classified("confidential")]
+    note: Annotated[str, Field(min_length=1, max_length=500), classified("confidential")]
+    # The amendment's only: the date it took effect.
+    effective_on: Annotated[date | None, classified("internal")] = None
 
 
 class PlanReviewDiffOut(BaseModel):
@@ -720,12 +738,25 @@ class ExpenseRowOut(BaseModel):
     paid_from_plan: MaybeMoney = None
     schedule_h_line: Annotated[Literal["2i(1)", "2i(2)", "2i(3)", "2i(4)"], classified("internal")]
     exception: Annotated[bool, classified("internal")] = False
+    # A-05-T16 (DEC-2488): paid from the plan while the verified Plan expenses election says the
+    # plan does not pay its expenses.
+    not_permitted: Annotated[bool, classified("internal")] = False
     # A-05-T45 (additive): the grid's Provider and 408(b)(2) words, and each cell's citations.
     provider_name: Annotated[str | None, classified("confidential")] = None
     disclosure_text: Annotated[str | None, classified("confidential")] = None
     citation_labels: Annotated[list[str], Field(max_length=20), classified("confidential")] = (
         Field(default_factory=list[str])
     )
+
+
+class ExpensesClauseOut(BaseModel):
+    """EBP-09's read of EBP-02's verified Plan expenses election (A-05-T16; DEC-2488)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    state: Annotated[Literal["verified", "unverified", "unreadable"], classified("internal")]
+    wording: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+    plan_may_pay: Annotated[bool | None, classified("internal")] = None
 
 
 class ExpensesOut(BaseModel):
@@ -745,6 +776,9 @@ class ExpensesOut(BaseModel):
     exceptions: Annotated[int, classified("internal")]
     engine_version: Annotated[str, Field(max_length=40), classified("internal")]
     inputs_hash: Annotated[str, Field(max_length=64), classified("internal")]
+    expenses_clause: Annotated[ExpensesClauseOut, classified("internal")] = ExpensesClauseOut(
+        state="unverified"
+    )
 
 
 class ComplianceTestOut(BaseModel):
@@ -1242,6 +1276,20 @@ class EntryRuleOut(BaseModel):
     service_months: Annotated[int | None, Field(ge=0, le=99), classified("internal")] = None
 
 
+class RatesOut(BaseModel):
+    """The rates EBP-03 and EBP-04 computed from: the verified Default deferral rate,
+    Auto-escalation and Safe harbor match (A-05-T16; DEC-2488). While `unverified` or `unreadable`
+    they are null and no default rate or missed amount is shown."""
+
+    model_config = ConfigDict(frozen=True)
+
+    state: Annotated[Literal["verified", "unverified", "unreadable"], classified("internal")]
+    default_pct: Annotated[Decimal | None, classified("internal")] = None
+    step_pct: Annotated[Decimal | None, classified("internal")] = None
+    cap_pct: Annotated[Decimal | None, classified("internal")] = None
+    match_pct: Annotated[Decimal | None, classified("internal")] = None
+
+
 class EligibilitySampleOut(BaseModel):
     """EBP-03's sample read: the rows, the tallies and the rungs the header shows."""
 
@@ -1258,6 +1306,7 @@ class EligibilitySampleOut(BaseModel):
     # DEC-2328: the paper an exception's AUD-15 draft finding sits on.
     workpaper_id: Annotated[UUID | None, classified("internal")] = None
     entry_rule: Annotated[EntryRuleOut, classified("internal")]
+    rates: Annotated[RatesOut, classified("internal")] = RatesOut(state="unverified")
 
 
 CorrectionWord = Literal["found", "pending_vfcp_scc", "corrected"]
@@ -1534,12 +1583,22 @@ async def ebp_plan_review_route(
                 label=p.provision.label,
                 value=p.value or "",
                 verified=p.verified,
-                conflict=None,
-                amended_on=None,
+                conflict=p.conflict,
+                amended_on=p.amended_on,
                 citation_count=p.citation_count,
                 reference=p.reference,
                 cell=p.provision.value_cell,
                 value_hash=p.value_hash,
+                conflict_source=(
+                    None
+                    if p.conflict_source is None
+                    else ConflictSourceOut(
+                        evidence_version_id=p.conflict_source.evidence_version_id,
+                        note=p.conflict_source.note,
+                        page=p.conflict_source.page,
+                        match_id=p.conflict_source.match_id,
+                    )
+                ),
             )
             for p in found.provisions
         ],
@@ -1555,6 +1614,38 @@ async def ebp_plan_review_route(
             )
         ),
     )
+
+
+@router.put(
+    "/ebp/provisions/{provision_key}/documents/{source}",
+    action="ebp_provision.enter",
+    response_model=PlanReviewOut,
+)
+async def ebp_provision_document_route(
+    work_item_id: UUID,
+    provision_key: Annotated[str, Path(pattern=r"^[a-z_]{1,40}$")],
+    source: Literal["spd", "amendment"],
+    body: ProvisionDocumentIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> PlanReviewOut:
+    """A person keys what the SPD or the amendment says for one provision, with the quote found on
+    the page (422 `citation_unverified`) and a note; the review comes back with code's comparison
+    (A-05-T16; DEC-2489)."""
+    await _gate(ctx, work_item_id, "ebp_provision.enter", _E)
+    await ebp_provisions.record_document_value(
+        ctx,
+        work_item_id,
+        provision_key,
+        source,
+        value=body.value,
+        evidence_version_id=body.evidence_version_id,
+        page=body.page,
+        quote=body.quote,
+        note=body.note,
+        effective_on=body.effective_on,
+    )
+    return await ebp_plan_review_route(work_item_id, ctx, None)
 
 
 @router.post(
@@ -2316,7 +2407,15 @@ async def ebp_plan_expenses_route(work_item_id: UUID, ctx: Ctx) -> ExpensesOut:
 
     view = await ebp_expenses.plan_expenses(ctx.tenant, work_item_id)
     tied = view.tie
+    item = await assurance_item(ctx.tenant, work_item_id)
+    clause = (
+        await ebp_provisions.plan_reads(ctx.tenant, item.engagement_id, work_item_id)
+    ).expenses
+    refused = clause.plan_may_pay is False
     return ExpensesOut(
+        expenses_clause=ExpensesClauseOut(
+            state=clause.state, wording=clause.wording, plan_may_pay=clause.plan_may_pay
+        ),
         rows=[
             ExpenseRowOut(
                 id=r["id"],
@@ -2330,6 +2429,7 @@ async def ebp_plan_expenses_route(work_item_id: UUID, ctx: Ctx) -> ExpensesOut:
                 paid_from_plan=r["paid_from_plan"],
                 schedule_h_line=r["schedule_h_line"],
                 exception=r["line_key"] in tied.exceptions,
+                not_permitted=refused and bool(r["paid_from_plan"]),
             )
             for r in view.rows
         ],

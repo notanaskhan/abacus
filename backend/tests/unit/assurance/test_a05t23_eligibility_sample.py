@@ -6,9 +6,13 @@ from datetime import date
 from decimal import Decimal
 
 from abacus.modules.assurance.compute.ebp import eligibility
+from abacus.modules.assurance.compute.ebp.eligibility import QACA, QACA_MATCH_PCT, Rates
 from abacus.modules.assurance.ebp_eligibility_sample import eligible_shown, rate_label
 
 ENTRY_2025 = date(2025, 6, 1)
+
+# The verified elections Northwind's figures come from (DEC-2488).
+NORTHWIND = Rates(QACA, QACA_MATCH_PCT)
 
 
 def test_eligible_on_is_shown_where_hire_plus_three_months_governs() -> None:
@@ -25,8 +29,10 @@ def test_eligible_on_is_withheld_where_it_would_be_the_21st_birthday() -> None:
 
 def test_the_rate_label_reads_the_election_or_codes_escalated_default() -> None:
     assert rate_label(Decimal("8.0000"), ENTRY_2025, 2025, flagged=False) == "8% elected"
-    assert rate_label(None, ENTRY_2025, 2025, flagged=False) == "6% default"
-    assert rate_label(None, date(2023, 7, 1), 2025, flagged=False) == "8% default"
+    assert rate_label(None, ENTRY_2025, 2025, flagged=False, rates=NORTHWIND) == "6% default"
+    assert rate_label(None, date(2023, 7, 1), 2025, flagged=False, rates=NORTHWIND) == "8% default"
     assert rate_label(Decimal(0), ENTRY_2025, 2025, flagged=True) == "0% — no opt-out"
     assert rate_label(Decimal(0), ENTRY_2025, 2025, flagged=False) == "0%"
-    assert rate_label(None, None, 2025, flagged=False) == ""
+    assert rate_label(None, None, 2025, flagged=False, rates=NORTHWIND) == ""
+    # A-05-T16 (DEC-2488): without the verified rates no default rate is shown, never QACA's.
+    assert rate_label(None, ENTRY_2025, 2025, flagged=False) == ""

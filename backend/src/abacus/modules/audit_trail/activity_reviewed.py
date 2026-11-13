@@ -856,6 +856,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "attention_flag.converted",
         "attention_flag.reminded",
         "ebp_plan_review.started",
+        "ebp_provision.document_value_recorded",  # A-05-T16 (DEC-2489)
         "ebp_import.imported",
         "ebp_import.refused",
         "proposed_entry.proposed",

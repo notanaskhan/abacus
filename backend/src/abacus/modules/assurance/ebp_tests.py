@@ -18,8 +18,9 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.numeric import quantize_half_up
 from abacus.modules.assurance.compute.ebp.eligibility import (
-    QACA,
+    EntryRule,
     Escalation,
+    Rates,
     entry,
     escalation_rate,
     missed,
@@ -32,6 +33,7 @@ from abacus.modules.assurance.ebp_contract import (
     TestIn,
 )
 from abacus.modules.assurance.ebp_participants import binding
+from abacus.modules.assurance.ebp_provisions import plan_reads
 from abacus.modules.engagements.api import assurance_item, engagement_metadata
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.workpapers.api import (
@@ -172,26 +174,32 @@ async def _rule_of(
     ctx: AuthContext,
     person: RowMapping,
     plan_year: int,
+    entry_rule: EntryRule,
+    rates: Rates,
 ) -> Escalation:
-    """The participant's QACA rate this plan year, from their entry date (DEC-2361). The date of
-    birth opens here to place the entry and goes no further. Unknown either date: the default."""
+    """The participant's rate this plan year under the verified rates, from their entry date under
+    the verified entry rule (DEC-2361, DEC-2488). The date of birth opens here to place the entry
+    and goes no further. Unknown either date: the verified default rate."""
     if person["dob_sealed"] is None or person["hire_on"] is None:
-        return QACA
+        return rates.escalation
     opened = await open_sealed(
         ctx.tenant_id,
         bytes(person["dob_sealed"]),
         binding(person["import_id"], person["participant_key"], "dob"),
     )
-    entered = entry(date.fromisoformat(opened.decode()), person["hire_on"]).entry_on
-    return replace(QACA, default_pct=escalation_rate(entered, plan_year))
+    entered = entry(date.fromisoformat(opened.decode()), person["hire_on"], entry_rule).entry_on
+    return replace(
+        rates.escalation, default_pct=escalation_rate(entered, plan_year, rates.escalation)
+    )
 
 
 async def contribution_recalc(ctx: AuthContext, work_item_id: UUID) -> TestGridOut:
     """EBP-04 c (A-05-T32; DEC-2356, DEC-2361): the shared grid with code's figures on each cell.
     `value` is what the participant's election gives on their compensation, and for the match what
-    the census says was matched; `expected` is the plan's rule (QACA's rate for the participant's
-    year and 3.5% match, `compute/ebp/eligibility.py`). Same record key in the newest EBP-03 grid
-    links the row. The browser computes nothing."""
+    the census says was matched; `expected` is the plan's rule: the verified rates and entry rule
+    from EBP-02 (`ebp_provisions.plan_reads`; DEC-2488), so with any of them unverified or unread
+    no cell has an `expected`. Same record key in the newest EBP-03 grid links the row. The browser
+    computes nothing."""
     latest = await latest_test_of_variant(ctx.tenant, work_item_id, "ebp_contribution_recalc")
     if latest is None:
         raise NotFound("attribute_test")
@@ -200,6 +208,8 @@ async def contribution_recalc(ctx: AuthContext, work_item_id: UUID) -> TestGridO
     item = await assurance_item(ctx.tenant, work_item_id)
     metadata = await engagement_metadata(ctx, item.engagement_id)
     plan_year = metadata.engagement.fiscal_period_end.year
+    reads = await plan_reads(ctx.tenant, item.engagement_id, work_item_id)
+    entry_rule, rates = reads.entry.rule, reads.rates.rates
     async with tenant_session(ctx.tenant) as session:
         people = {
             row["participant_key"]: row
@@ -225,11 +235,15 @@ async def contribution_recalc(ctx: AuthContext, work_item_id: UUID) -> TestGridO
     for row in out.rows:
         person = people.get(row.record_key)
         comp = None if person is None else person["compensation"]
-        if person is None or comp is None:
+        if person is None or comp is None or entry_rule is None or rates is None:
             rows.append(row.model_copy(update={"linked_item_id": linked.get(row.record_key)}))
             continue
         compensation = Decimal(str(comp))
-        rule = missed(compensation, await _rule_of(ctx, person, plan_year))
+        rule = missed(
+            compensation,
+            await _rule_of(ctx, person, plan_year, entry_rule, rates),
+            rates.match_pct,
+        )
         elected = quantize_half_up(
             compensation * Decimal(str(person["deferral_election_pct"] or 0)) / Decimal(100), 2
         )
