@@ -57,8 +57,8 @@ from abacus.modules.tax.compute.entity.allocation import (
     segments,
 )
 from abacus.modules.tax.compute.entity.waterfall import (
-    Rung,
     RuleType,
+    Rung,
     WaterfallInvalid,
     WaterfallPartner,
     run_waterfall,
@@ -875,7 +875,7 @@ async def reviewables(tenant: TenantContext, engagement_id: UUID) -> list[Review
                 f"Allocation structure · Version {r['version_no']}",
                 str(r["content_hash"]),
                 True,
-            )  # fmt: skip
+            )
         )
     return out
 

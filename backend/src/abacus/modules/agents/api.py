@@ -199,6 +199,7 @@ from abacus.modules.agents.run_waits import HeldCard as HeldCard
 from abacus.modules.agents.run_waits import on_decision_decided
 from abacus.modules.agents.run_waits import register_decision_source as register_decision_source
 from abacus.modules.agents.run_waits import run_workflow_id as run_workflow_id
+from abacus.modules.agents.run_waits import step_answers as run_step_answers  # T-05-T40
 from abacus.modules.agents.run_workflow import AgentRunInput as AgentRunInput
 from abacus.modules.agents.run_workflow import AgentRunWorkflow as AgentRunWorkflow
 from abacus.modules.agents.runs import run_initiators
@@ -726,6 +727,7 @@ __all__ = [
     "run_outcome",
     "run_record_hashes",
     "run_session_turn",
+    "run_step_answers",
     "run_v2_status",
     "run_workflow_id",
     "screen",

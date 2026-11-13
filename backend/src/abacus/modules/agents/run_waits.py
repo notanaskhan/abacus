@@ -345,6 +345,31 @@ async def on_decision_decided(event: OutboxEvent) -> None:
 
 RUN_WAIT_ACTIVITIES: Final = (wait_state_activity, cancel_held_activity)
 
+
+async def step_answers(tenant: TenantContext, run_id: UUID) -> dict[str, str]:
+    """T-05-T40 (DEC-4704): a run's answered questions by plan step key, the option chosen (a
+    skipped question with its default applied counts as answered). For a run step handler of the
+    same run (the plan's own questions), never a person's free text."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT s.plan_step_key, q.answer FROM agent_questions q "
+                    "JOIN agent_run_steps s ON s.id = q.step_id AND s.tenant_id = q.tenant_id "
+                    "WHERE q.run_id = :run AND q.state IN ('answered', 'skipped') "
+                    "AND q.answer IS NOT NULL ORDER BY q.answered_at"
+                ),
+                {"run": run_id},
+            )
+        ).all()
+    out: dict[str, str] = {}
+    for key, answer in rows:
+        option = answer.get("option") if isinstance(answer, dict) else None
+        if key and isinstance(option, str):
+            out[str(key)] = option
+    return out
+
+
 __all__ = [
     "DECISION_SIGNAL",
     "QUESTION_KINDS",
@@ -354,4 +379,5 @@ __all__ = [
     "on_decision_decided",
     "open_wait",
     "run_workflow_id",
+    "step_answers",
 ]

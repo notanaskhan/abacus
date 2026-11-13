@@ -19,12 +19,12 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Annotated, Final, Literal, NoReturn, cast, get_args
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Response
+from fastapi import Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_ENTITY_WORKSPACE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, DomainTooLarge, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -795,6 +795,12 @@ async def _authorise_run_start(ctx: AuthContext, resource: Resource) -> None:
     await authorise(ctx, "workbook_run.start", resource)
 
 
+class PayloadTooLarge(DomainTooLarge):
+    """T-05-T40: a workbook import over 5 MB (413)."""
+
+    code = "import_too_large"
+
+
 class RunInProgress(DomainConflict):
     """A workbook run of this return is still open: one at a time (TXP-00)."""
 
@@ -1068,17 +1074,38 @@ async def entity_export_route(
 @workbook_router.post(
     f"{_R}/workbook/imports", action="workbook_import.create",
     response_model=WorkbookImportAcceptedOut,
-    status_code=201, errors=(409, 501),
+    status_code=201, errors=(409, 413),
 )  # fmt: skip
 async def entity_import_route(
     return_id: UUID,
     kind: Annotated[ImportKind, Query()],
+    request: Request,
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> WorkbookImportAcceptedOut:
-    """Raw-body report, parsed as hostile (ADR-052); cells cited as `engine_import`."""
+    """Raw-body report, parsed as hostile (ADR-052); cells cited as `engine_import`. T-05-T40
+    (DEC-4703): CSV or xlsx, at most 5 MB (413) and 2,000 rows; `import_invalid` (422) lists
+    sheet, row, column and code; an open run holds the cells (`cells_locked_by_run`, 409)."""
+    from abacus.modules.agents.api import work_item_runs
+    from abacus.modules.tax.cell_edit import CellsLockedByRun
+    from abacus.modules.tax.overview import load_return, return_resource
+    from abacus.modules.tax.workbook_imports import MAX_BYTES, record_import
+
     await _flag_on(ctx)
-    _not_yet()
+    loaded = await load_return(ctx, return_id)
+    await authorise(ctx, "workbook_import.create", await return_resource(ctx, loaded))
+    declared = request.headers.get("content-length")
+    if declared is not None and declared.isdigit() and int(declared) > MAX_BYTES:
+        raise PayloadTooLarge(facts={"limit": MAX_BYTES})
+    data = await request.body()
+    if len(data) > MAX_BYTES:
+        raise PayloadTooLarge(facts={"limit": MAX_BYTES})
+    if any(r.active for r in await work_item_runs(ctx.tenant, f"tax_return:{return_id}", 5)):
+        raise CellsLockedByRun(facts={"return_id": str(return_id)})
+    done = await record_import(
+        ctx, return_id=return_id, engagement_id=loaded.facts.engagement_id, kind=kind, data=data
+    )
+    return WorkbookImportAcceptedOut(import_id=done.import_id, kind=kind, cells=done.cells)
 
 
 @workbook_router.post(
