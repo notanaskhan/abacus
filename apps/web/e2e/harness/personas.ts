@@ -50,6 +50,7 @@ export const PERSONAS = {
   "laura-kemp": staff("Laura Kemp"), // ENG-13 a, b and e (P-07-T62)
   "caleb-dunn": staff("Caleb Dunn"), // A-03-T19: AUD-31 f and e′ (j04 2)
   "simone-baptiste": staff("Simone Baptiste"), // A-03-T19: AUD-11 f (j22 2)
+  "omar-haddad": staff("Omar Haddad"), // TASK-7816: Granite Peak's Audit Manager (j04 trace, pbc-ai)
   "claire-feld": portal("Claire Feld"),
   "dana-kowalski": portal("Dana Kowalski"),
   "tess-moreno": portal("Tess Moreno"),

@@ -81,19 +81,25 @@ function citeOf(view: CitationView | undefined): Shl07Cite | undefined {
 
 // ---- The cited cell -----------------------------------------------------------------------------
 
-export interface CitedCellProps {
-  anchor: CitationAnchorRef;
+/** What a cell cites: its anchor, whose stack `GET /v1/citations` reads, or (TASK-7816) the
+ * citations the host already read by id (AUD-03's screening flag: its `region_ref`). */
+export type CitedCellSource =
+  | { anchor: CitationAnchorRef; citations?: never }
+  | { anchor?: never; citations: readonly CitationV2Out[] };
+
+export type CitedCellProps = CitedCellSource & {
   /** The element: a table cell by default. */
   as?: "td" | "span" | "button";
   /** Open on mount, as an artboard opens: pinned, or as a hover preview. */
   openOnMount?: "pin" | "hover";
   className?: string;
   children: ReactNode;
-}
+};
 
 /** A cell with citations: hover previews, click pins, Escape closes and refocuses it. */
 export function CitedCell({
   anchor,
+  citations,
   as: Tag = "td",
   openOnMount,
   className,
@@ -102,12 +108,17 @@ export function CitedCell({
   const store = useMatchStore();
   const ref = useRef<HTMLElement | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { data } = useQuery(
-    listCitationsOptions({
-      query: { anchor_type: anchor.type, anchor_id: anchor.id, anchor_ref: anchor.ref },
+  const { data } = useQuery({
+    ...listCitationsOptions({
+      query: {
+        anchor_type: anchor?.type ?? "",
+        anchor_id: anchor?.id ?? "",
+        anchor_ref: anchor?.ref ?? "",
+      },
     }),
-  );
-  const list = useMemo(() => toCiteViews(data?.items ?? []), [data]);
+    enabled: anchor !== undefined,
+  });
+  const list = useMemo(() => toCiteViews(citations ?? data?.items ?? []), [citations, data]);
   const mine = useSyncExternalStore(
     store.subscribe,
     () => {

@@ -148,9 +148,11 @@ from abacus.modules.evidence.firm_export_schedule_contract import (
 from abacus.modules.evidence.form_extraction import extract_version
 from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
 from abacus.modules.evidence.gate_facts import (
+    StandingDecision,
     decided_among,
     effective_decisions,
     review_assignees,
+    standing_decisions,
     waiting_among,
 )
 
@@ -354,6 +356,7 @@ from abacus.modules.evidence.uploads import (
     UPLOAD_ROUTE_PATHS,
     upload,
     upload_preview,
+    upload_synthetic,
 )
 from abacus.modules.evidence.viewer import readable_version, signer_page, viewer_page
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
@@ -643,6 +646,7 @@ __all__ = [
     "SectionRequest",
     "SentBack",
     "ServableVersion",
+    "StandingDecision",
     "StoredObject",
     "StoredRecord",
     "SupersedeMismatch",
@@ -782,6 +786,7 @@ __all__ = [
     "source_document_count",
     "stage_content",
     "stale_pdfs",
+    "standing_decisions",
     "start_ocr_backfill",
     "start_trust_layer_backfill",
     "store_generated",
@@ -795,6 +800,7 @@ __all__ = [
     "undo_review_decision",
     "upload",
     "upload_preview",
+    "upload_synthetic",
     "upload_workflow_id",
     "verified_citation_ids",
     "version_content",

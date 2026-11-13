@@ -65,10 +65,11 @@ from abacus.modules.agents.service import proposal_of
 from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import (
+    StandingDecision,
     assign_inbox_file,
     decide,
-    effective_decisions,
     screening_facts,
+    standing_decisions,
     verified_citation_ids,
     waiting_among,
     withdrawn_among,
@@ -153,9 +154,9 @@ async def _on_version(
     reasoning: str,
 ) -> _Projected:
     resource = await _resource(ctx, engagement_id)
-    decisions = await effective_decisions(ctx.tenant, [version_id])
+    standing = (await standing_decisions(ctx.tenant, [version_id])).get(version_id)
     gone = version_id in await withdrawn_among(ctx.tenant, [version_id])
-    decided = decisions.get(version_id)
+    decided = standing.decision if standing is not None else None
     state = (
         _STATE_OF.get(decided, "superseded")
         if decided is not None
@@ -181,10 +182,33 @@ async def _on_version(
         policy=None,
         set=None,
         checkpoint_id=None,
-        decision=None,
+        decision=await _standing_view(standing, state),
         allowed_actions=await _allowed(ctx, resource, state),
     )
     return _Projected(view, engagement_id, version_id, resource)
+
+
+async def _standing_view(standing: StandingDecision | None, state: str) -> DecisionView | None:
+    """TASK-7816: the standing review decision, named, so a read after the verdict says who made
+    it (SHL-10's "Approved by …", INV-1), as the verdict's own response does."""
+    if standing is None or state not in ("approved", "rejected"):
+        return None
+    try:
+        by = UUID(standing.actor_id)
+    except ValueError:
+        return None  # a decision row is a person's (ADR-005); anything else is not named
+    names = await names_of([by])
+    return DecisionView(
+        id=standing.id,
+        decision=state,
+        reason_code=standing.reason_code,
+        note=None,
+        decided_by_user_id=by,
+        decided_by_name=names.get(by, "Former member"),
+        decided_at=standing.decided_at,
+        routed_to_user_id=None,
+        undo_until=None,
+    )
 
 
 async def _visible_run(ctx: AuthContext, run: AgentRun | None) -> AgentRun:

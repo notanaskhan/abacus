@@ -5,6 +5,8 @@ whether a person has already decided."""
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -45,6 +47,43 @@ async def effective_decisions(
             .order_by(ReviewDecision.evidence_version_id, ReviewDecision.decision_seq.desc())
         )
         return {v: decision for v, decision in rows.all() if decision != "undone"}
+
+
+@dataclass(frozen=True)
+class StandingDecision:
+    """A version's standing review decision: its row, verdict, reason and who made it when."""
+
+    id: UUID
+    decision: str
+    reason_code: str | None
+    actor_id: str
+    decided_at: datetime
+
+
+async def standing_decisions(
+    tenant: TenantContext, version_ids: Sequence[UUID]
+) -> dict[UUID, StandingDecision]:
+    """TASK-7816: `effective_decisions` with the row behind each verdict, so a typed proposal's
+    read names the person who decided (SHL-10's "Approved by …", INV-1)."""
+    ids = list(dict.fromkeys(version_ids))
+    if not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(ReviewDecision)
+                .where(ReviewDecision.evidence_version_id.in_(ids))
+                .ext(distinct_on(ReviewDecision.evidence_version_id))
+                .order_by(ReviewDecision.evidence_version_id, ReviewDecision.decision_seq.desc())
+            )
+        ).scalars()
+        return {
+            r.evidence_version_id: StandingDecision(
+                r.id, r.decision, r.reason_code, r.actor_id, r.created_at
+            )
+            for r in rows
+            if r.decision != "undone"
+        }
 
 
 async def waiting_among(tenant: TenantContext, inbox_file_ids: Sequence[UUID]) -> frozenset[UUID]:

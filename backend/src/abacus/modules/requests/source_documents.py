@@ -81,6 +81,7 @@ class RowFacts:
     latest_upload: LatestUploadView | None
     match_confidence: int | None
     linked_count: int | None
+    screening: str | None = None  # TASK-7816: the batch's SHL-20 verdict, upload rows only
 
 
 # (request item, evidence version) pairs → facts by version id; registered by evidence, which
@@ -96,6 +97,22 @@ def register_upload_facts(provider: UploadFactsProvider) -> None:
     if _upload_facts is not None and _upload_facts is not provider:
         raise RuntimeError("the upload facts provider is already registered")
     _upload_facts = provider
+
+
+# TASK-7816: request items → the C2 `evidence_screening` verdict of each one's screening
+# aggregate (AUD-03's row glyph), registered by agents, which composes the aggregates. An item
+# with no aggregate is absent; unregistered (or the card's flag off), no row carries a verdict.
+ScreeningVerdictsProvider = Callable[
+    [TenantContext, Sequence[UUID]], Awaitable[Mapping[UUID, str]]
+]
+_screening_verdicts: ScreeningVerdictsProvider | None = None
+
+
+def register_screening_verdicts(provider: ScreeningVerdictsProvider) -> None:
+    global _screening_verdicts
+    if _screening_verdicts is not None and _screening_verdicts is not provider:
+        raise RuntimeError("the screening verdicts provider is already registered")
+    _screening_verdicts = provider
 
 
 async def _live_fulfilments(
@@ -157,6 +174,9 @@ async def row_facts(
     facts: Mapping[UUID, UploadFacts] = {}
     if _upload_facts is not None and latest:
         facts = await _upload_facts(tenant, sorted(latest.items()))
+    verdicts: Mapping[UUID, str] = {}
+    if _screening_verdicts is not None and latest:
+        verdicts = await _screening_verdicts(tenant, sorted(latest))
     out: dict[UUID, RowFacts] = {}
     for item in items:
         owed: OwedByView | None = None
@@ -182,6 +202,7 @@ async def row_facts(
             latest_upload=upload,
             match_confidence=found.match_confidence if found is not None else None,
             linked_count=linked or None,
+            screening=verdicts.get(item.id) if upload is not None else None,
         )
     return out
 
@@ -264,6 +285,7 @@ class SourceDocumentRow:
     latest_upload: LatestUploadView | None
     match_confidence: int | None
     linked_count: int | None
+    screening: str | None = None
 
 
 # A-03-T15: the band the sample fan-out's requests sit in, after the categories (AUD-03).
@@ -482,6 +504,7 @@ async def source_documents(
                 latest_upload=f.latest_upload,
                 match_confidence=f.match_confidence,
                 linked_count=f.linked_count,
+                screening=f.screening,
             )
         )
     for rows in bands.values():

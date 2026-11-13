@@ -1,0 +1,25 @@
+{
+  "document": "Granite Peak card statement June 2026.pdf",
+  "prompt_ref": "evidence.upload_review@v3",
+  "content_sha256": "11a73bfaf62316869856a64e16db6fea13ee6512c5bd0252c7195d2c41db5b35",
+  "response": {
+    "no_concerns": false,
+    "flags": [
+      {
+        "category": "irrelevant",
+        "confidence": 0.95,
+        "rationale": "The request asks for the bank statements of the year-end month and the month after; this is a corporate credit card statement.",
+        "citations": [
+          {
+            "page": 1,
+            "quote": "Example Card Services"
+          },
+          {
+            "page": 1,
+            "quote": "PAYMENTS AND OTHER CREDITS"
+          }
+        ]
+      }
+    ]
+  }
+}

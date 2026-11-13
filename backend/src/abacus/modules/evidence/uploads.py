@@ -25,7 +25,7 @@ from uuid import UUID, uuid4
 from abacus.kernel.clock import now, system_now
 from abacus.kernel.crypto import DetachedKey
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, Limits, run_isolated_with
 from abacus.kernel.scanning import scan
 from abacus.kernel.tin_patterns import scrub_tins
@@ -60,6 +60,7 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     engagement_role_of,
+    is_synthetic_firm,
     names_of,
     refuse_unmasked_read,
 )
@@ -346,6 +347,12 @@ class NotStaff(DomainConflict):
     code = "not_staff"
 
 
+class NotSyntheticUpload(DomainForbidden):
+    """`upload_synthetic` writes only on a synthetic firm (TASK-7816)."""
+
+    code = "synthetic_only"
+
+
 def clean_note(note: str | None) -> str | None:
     """Plain text, control characters removed, at most 500 characters; empty means none."""
     if note is None:
@@ -533,6 +540,48 @@ async def upload(
     (SPEC-023 AC-1), only the firm's team may, with an optional note."""
     await authorise_upload(ctx, engagement_id, item_id)
     await gate_client_data(ctx, engagement_id, "evidence.upload")  # SPEC-025 AC-7
+    return await _store(
+        ctx,
+        engagement_id,
+        item_id,
+        file_name=file_name,
+        content=content,
+        on_behalf=on_behalf,
+        note=note,
+    )
+
+
+async def upload_synthetic(
+    ctx: AuthContext, engagement_id: UUID, item_id: UUID, *, file_name: str, content: bytes
+) -> UploadView:
+    """TASK-7816 (DEC-4814): the scenario loader's client upload on the synthetic firm. It is
+    `upload` as the client makes it (authorised, scanned, stored detached, attached, announced),
+    without SPEC-025's client-data gate: the seed's audits carry their phase and status but no
+    CLI-07 acceptance record, so G1 never reads met (DEC-310). Refuses any other firm."""
+    if not await is_synthetic_firm(ctx.tenant):
+        raise NotSyntheticUpload
+    await authorise_upload(ctx, engagement_id, item_id)
+    return await _store(
+        ctx,
+        engagement_id,
+        item_id,
+        file_name=file_name,
+        content=content,
+        on_behalf=False,
+        note=None,
+    )
+
+
+async def _store(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    item_id: UUID,
+    *,
+    file_name: str,
+    content: bytes,
+    on_behalf: bool,
+    note: str | None,
+) -> UploadView:
     if on_behalf and not await is_staff_on(ctx, engagement_id):
         raise NotStaff
     found = await screened(ctx, engagement_id, content, file_name)

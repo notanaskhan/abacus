@@ -238,6 +238,7 @@ from abacus.modules.evidence.api import (
     place_hold,
     set_policy,
     stage_content,
+    upload_synthetic,
 )
 from abacus.modules.identity.api import (
     AuthContext,
@@ -412,6 +413,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import collaboration_slic
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
 from abacus_tools.synthetic.scenarios.brightwater_hale import ebp_eligibility as _eligibility
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
+from abacus_tools.synthetic.scenarios.brightwater_hale import pbc_screening as _pbc_screening
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_workspace_slice as _txw
@@ -2114,6 +2116,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
+    _pbc_screening.SLICE: _pbc_screening.NEEDS,  # TASK-7816: Granite's screened PBC upload
 }
 
 
@@ -2564,6 +2567,138 @@ async def _ebp_plan_recorded(conn: asyncpg.Connection, _: Scenario, event: Event
         seen_version=1,
         plan_entity_id=ref.client_entity_id,
     )
+
+
+# --- TASK-7816 (DEC-4814): the pbc_screening slice -----------------------------------------------
+
+
+async def _pbc_list_published(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A draft PBC list asked of the client: published by the event's actor, every draft request
+    Requested and due on the event's date. Bootstrapped, as `_pbc_list_created` writes Northwind's
+    published list: `publish_binder` needs G3, which no seeded audit records (DEC-310)."""
+    pbc = _PBC[str(event.data["list"])]
+    list_id = UUID(pbc.id)
+    by = user_id_of(_SEATS[event.actor])
+    due = date.fromisoformat(str(event.data["due_on"]))
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "UPDATE request_lists SET status = 'published', published_at = $2, published_by = $3 "
+            "WHERE id = $1 AND status = 'draft'",
+            list_id,
+            event.at,
+            by,
+        )
+        await conn.execute(
+            "UPDATE request_items SET status = 'requested', client_visible = true, due_on = $2, "
+            "requested_at = $3, sent_at = $3, sent_by = $4 "
+            "WHERE request_list_id = $1 AND status = 'draft'",
+            list_id,
+            due,
+            event.at,
+            by,
+        )
+        return "request_list.published", "request_list", str(list_id)
+
+    await _bootstrap(conn, event, write)
+
+
+def _pbc_item(event: Event) -> tuple[UUID, UUID]:
+    """(engagement, request item) the event's list position names."""
+    pbc = _PBC[str(event.data["list"])]
+    return engagement_id_of(BY_LABEL[pbc.engagement]), UUID(
+        pbc.request_id(int(cast(int, event.data["position"])))
+    )
+
+
+async def _item_version(conn: asyncpg.Connection, item: UUID) -> UUID | None:
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT evidence_version_id FROM fulfilments WHERE request_item_id = $1 "
+        "AND voided_at IS NULL ORDER BY created_at DESC LIMIT 1",
+        item,
+    )
+    return cast(UUID, found) if found is not None else None
+
+
+async def _pbc_file_uploaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The client's own upload from the portal, through `evidence.api.upload_synthetic` (the
+    portal's upload without the client-data gate, DEC-4814). A reload leaves an answered request
+    as it is."""
+    engagement, item = _pbc_item(event)
+    if await _item_version(conn, item) is not None:
+        return
+    ctx = await _portal_user_context(conn, str(event.data["by"]))
+    await upload_synthetic(
+        ctx,
+        engagement,
+        item,
+        file_name=str(event.data["file"]),
+        content=_pbc_screening.card_statement(),
+    )
+
+
+async def _pbc_upload_reviewed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The upload reviewer's own path in this process, as its evaluation runs the fake route:
+    the upload workflow's extraction, words, checks, PII scan and masked rendition, then the run
+    for the engagement partner (TASK-059 D2) and `review` on the fake model with the slice's
+    recorded answer; code verifies the citations. Then the SHL-20 aggregate composes. A version
+    already reviewed is not reviewed again."""
+    from abacus.ai_gateway import FakeModel, configure_provider
+    from abacus.modules.agents.api import (
+        compose_screening,
+        create_review_run,
+        install_fake_reviews,
+        load_agent_context,
+        review,
+    )
+    from abacus.modules.evidence.api import (
+        UPLOAD_VERSION,
+        UploadInput,
+        check_upload_content,
+        masked_preview_upload,
+        pii_scan_upload,
+        process_upload,
+        words_upload,
+    )
+    from abacus_tools.synthetic.scenarios.brightwater_hale.responses import load as load_answers
+
+    item = _pbc_item(event)[1]
+    version = await _item_version(conn, item)
+    if version is None:
+        raise LookupError("the PBC request has no upload to review")
+    reviewed = await tenant_value(
+        conn, TENANT, "SELECT 1 FROM upload_reviews WHERE evidence_version_id = $1", version
+    )
+    if reviewed is None:
+        given = UploadInput(str(TENANT), UPLOAD_VERSION, str(version))
+        # The upload workflow's steps, in its order (v9: words before checks; v7: the masked
+        # rendition after the scan it masks from, which SHL-08's pages are).
+        await process_upload(given)
+        await words_upload(given)  # P-03-T15: the reviewer reads only masked material
+        await check_upload_content(given)
+        await pii_scan_upload(given)
+        await masked_preview_upload(given)
+        answers = {
+            (prompt, sha): text for prompt, sha, text in load_answers(_pbc_screening.ANSWERS)
+        }
+        fake = FakeModel()
+        install_fake_reviews(fake, answers)
+        partner = user_id_of(_SEATS[BY_LABEL[_PBC[str(event.data["list"])].engagement].ep])
+        configure_provider(fake)
+        try:
+            run_id = await create_review_run(
+                TENANT, version, UUID(stable_id(event.label)), partner
+            )
+            if run_id is None:
+                raise LookupError("the upload reviewer did not start (fake route, extraction)")
+            outcome = await review(await load_agent_context(TENANT, run_id))
+        finally:
+            configure_provider(None)
+        if outcome.status != "completed":
+            raise RuntimeError(f"the recorded review did not complete: {outcome.status}")
+    await compose_screening(TENANT, item)
 
 
 async def _ebp_documents_part2_uploaded(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
@@ -7335,6 +7470,10 @@ HANDLERS: Final[dict[str, Handler]] = {
     "assurance.ebp_import_recorded": _ebp_import_recorded,
     "assurance.ebp_test_created": _ebp_test_created,
     "assurance.ebp_results_marked": _ebp_results_marked,
+    # TASK-7816 (DEC-4814): Granite Peak's PBC list asked, Luis's upload, the reviewer's flag.
+    "requests.pbc_list_published": _pbc_list_published,
+    "evidence.pbc_file_uploaded": _pbc_file_uploaded,
+    "agents.pbc_upload_reviewed": _pbc_upload_reviewed,
     # A-03-T16 part two (DEC-1767): the sampling slice.
     "ledger.grouping_set_imported": _grouping_set_imported,
     "ledger.grouping_set_published": _grouping_set_published,

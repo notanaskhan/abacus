@@ -209,6 +209,10 @@ from abacus.modules.agents.runs_v2_contract import (
     feedback_router,
     runs_v2_router,
 )
+
+# TASK-7816: the scenario loader composes the SHL-20 aggregate after it records a review.
+from abacus.modules.agents.screening_aggregate import compose_for_item as compose_screening
+from abacus.modules.agents.screening_card import screening_verdicts
 from abacus.modules.agents.screening_contract import screening_items_router, screenings_router
 from abacus.modules.agents.screenings import (
     SUBSCRIPTIONS as SCREENING_SUBSCRIPTIONS,
@@ -354,6 +358,7 @@ from abacus.modules.identity.api import (
     register_autonomy_level_provider,
 )
 from abacus.modules.platform.api import register_pilot_metric_source, register_usage_labeller
+from abacus.modules.requests.api import register_screening_verdicts
 from abacus.modules.review.api import register_client_request_sender, register_run_status_reader
 
 # P-10-T38: `file_save` proposals hold their effect on a grant (approved_writes.py).
@@ -418,6 +423,8 @@ SUBSCRIPTIONS = {
 
 # P-04-T16 (C13): the agent's proposals are `proposal` gates until a person decides.
 register_gate_sources()
+# TASK-7816: AUD-03's rows carry their batch's screening verdict (requests asks; agents answers).
+register_screening_verdicts(screening_verdicts)
 # I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
 register_home_counts()
 # P-04-T23: review checks a decision card's recommended suggestion against its engagement.
@@ -643,6 +650,7 @@ __all__ = [
     "check_notice_answer",
     "check_suggestion_target",
     "close_deterministic_run",
+    "compose_screening",
     "create_draft_run",
     "create_intake_match_run",
     "create_match_run",
