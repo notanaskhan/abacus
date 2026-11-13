@@ -440,6 +440,8 @@ class WorkbookScheduleKOut(BaseModel):
 
     view: Annotated[Literal["federal", "state"], Internal]
     lines: Annotated[list[WorkbookScheduleKLineOut], Tri]
+    # T-05-T43 (DEC-4707), additive: Analysis of Net Income line 1 (federal view only).
+    analysis: Annotated[WorkbookScheduleKLineOut | None, Tri] = None
 
 
 class WorkbookBreakdownRowOut(BaseModel):
@@ -1344,20 +1346,21 @@ async def entity_schedule_k_route(
     await _workbook_read(ctx, return_id)
     values = await es.workbook_values(ctx.tenant, return_id)
     partners = [pid for pid, _n in await es.recipients(ctx.tenant, return_id)]
+    lines = es.schedule_k(values, partners, view)
+
+    def out(k: es.KLine) -> WorkbookScheduleKLineOut:
+        return WorkbookScheduleKLineOut(
+            line=k.line,
+            label=k.label,
+            total=k.total,
+            by_partner=[WorkbookScheduleKCellOut(partner_id=p, amount=a) for p, a in k.by_partner],
+            tie=k.tie,
+        )
+
     return WorkbookScheduleKOut(
         view=view,
-        lines=[
-            WorkbookScheduleKLineOut(
-                line=k.line,
-                label=k.label,
-                total=k.total,
-                by_partner=[
-                    WorkbookScheduleKCellOut(partner_id=p, amount=a) for p, a in k.by_partner
-                ],
-                tie=k.tie,
-            )
-            for k in es.schedule_k(values, partners, view)
-        ],
+        lines=[out(k) for k in lines],
+        analysis=out(es.analysis(lines)) if view == "federal" and lines else None,
     )
 
 

@@ -54978,21 +54978,143 @@ export type WorkbookAcceptedOut = {
 };
 
 /**
+ * WorkbookAllocationApproveIn
+ *
+ * T-05-T41: TXP-06 c2's "Approve structure" (SHL-12 at L3).
+ */
+export type WorkbookAllocationApproveIn = {
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+    /**
+     * Statement Version
+     */
+    statement_version: string;
+};
+
+/**
+ * WorkbookAllocationApprovedOut
+ */
+export type WorkbookAllocationApprovedOut = {
+    /**
+     * Run Id
+     */
+    run_id?: string | null;
+    /**
+     * Run No
+     */
+    run_no?: number | null;
+    /**
+     * Sign Off Id
+     */
+    sign_off_id: string;
+    /**
+     * Structure Id
+     */
+    structure_id: string;
+};
+
+/**
  * WorkbookAllocationDraftIn
  */
 export type WorkbookAllocationDraftIn = {
+    /**
+     * Convention
+     */
+    convention?: 'calendar_day' | 'semi_monthly' | 'monthly';
     /**
      * Expected Version
      */
     expected_version: number;
     /**
+     * Income
+     */
+    income?: number | string | null;
+    /**
      * Kind
      */
     kind: 'straight_percentage' | 'targeted_waterfall';
     /**
+     * Method
+     */
+    method?: 'interim_closing' | 'proration';
+    /**
      * Rungs
      */
     rungs: Array<WorkbookRungOutInput>;
+    /**
+     * Segment Amounts
+     */
+    segment_amounts?: Array<number | string>;
+};
+
+/**
+ * WorkbookAllocationPartnerOut
+ */
+export type WorkbookAllocationPartnerOut = {
+    /**
+     * Kind
+     */
+    kind: 'gp' | 'lp' | 'member' | 'shareholder';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Partner Id
+     */
+    partner_id: string;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
+ * WorkbookAllocationPeriodOut
+ *
+ * T-05-T41: one period (straight percentage) or one rung's total (waterfall).
+ */
+export type WorkbookAllocationPeriodOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Ends On
+     */
+    ends_on?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Starts On
+     */
+    starts_on?: string | null;
+};
+
+/**
+ * WorkbookAllocationResultOut
+ */
+export type WorkbookAllocationResultOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Partner Id
+     */
+    partner_id: string;
+    /**
+     * Period Key
+     */
+    period_key: string;
+    /**
+     * Rung Priority
+     */
+    rung_priority?: number | null;
 };
 
 /**
@@ -55004,9 +55126,63 @@ export type WorkbookAllocationStructureOut = {
      */
     allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
     /**
+     * Checks
+     */
+    checks?: {
+        [key: string]: boolean;
+    };
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Convention
+     */
+    convention?: 'calendar_day' | 'semi_monthly' | 'monthly';
+    /**
+     * Distributable
+     */
+    distributable?: string | null;
+    /**
+     * Gp Profit Percent
+     */
+    gp_profit_percent?: string | null;
+    /**
+     * Income
+     */
+    income?: string | null;
+    /**
      * Kind
      */
     kind: 'straight_percentage' | 'targeted_waterfall';
+    /**
+     * Latest Version
+     */
+    latest_version?: number;
+    /**
+     * Method
+     */
+    method?: 'interim_closing' | 'proration';
+    /**
+     * Partners
+     */
+    partners?: Array<WorkbookAllocationPartnerOut>;
+    /**
+     * Periods
+     */
+    periods?: Array<WorkbookAllocationPeriodOut>;
+    /**
+     * Persisted
+     */
+    persisted?: boolean;
+    /**
+     * Proposed By
+     */
+    proposed_by?: 'human' | 'agent' | null;
+    /**
+     * Results
+     */
+    results?: Array<WorkbookAllocationResultOut>;
     /**
      * Rungs
      */
@@ -55016,9 +55192,17 @@ export type WorkbookAllocationStructureOut = {
      */
     seen_hash: string;
     /**
+     * Sign Off Target Id
+     */
+    sign_off_target_id?: string | null;
+    /**
      * Status
      */
     status: 'editing' | 'pending_approval' | 'approved' | 'superseded';
+    /**
+     * Structure Id
+     */
+    structure_id?: string | null;
     /**
      * Version
      */
@@ -56068,6 +56252,7 @@ export type WorkbookScheduleKLineOut = {
  * WorkbookScheduleKOut
  */
 export type WorkbookScheduleKOut = {
+    analysis?: WorkbookScheduleKLineOut | null;
     /**
      * Lines
      */
@@ -56087,9 +56272,21 @@ export type WorkbookSectionOut = {
      */
     key: string;
     /**
+     * Section Id
+     */
+    section_id?: string | null;
+    /**
+     * Seen Hash
+     */
+    seen_hash?: string;
+    /**
      * Signed Levels
      */
     signed_levels: Array<string>;
+    /**
+     * Stale Levels
+     */
+    stale_levels?: Array<string>;
     /**
      * Tallies
      */
@@ -56107,7 +56304,7 @@ export type WorkbookSectionSignOffIn = {
     /**
      * Level
      */
-    level: 'l2' | 'l3';
+    level: 'l1' | 'l2' | 'l3';
     /**
      * Note
      */
@@ -56116,6 +56313,10 @@ export type WorkbookSectionSignOffIn = {
      * Seen Hash
      */
     seen_hash: string;
+    /**
+     * Statement Version
+     */
+    statement_version?: string | null;
 };
 
 /**
@@ -124718,10 +124919,6 @@ export type EntityAllocationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityAllocationError = EntityAllocationErrors[keyof EntityAllocationErrors];
@@ -124734,6 +124931,66 @@ export type EntityAllocationResponses = {
 };
 
 export type EntityAllocationResponse = EntityAllocationResponses[keyof EntityAllocationResponses];
+
+export type EntityAllocationApproveData = {
+    body: WorkbookAllocationApproveIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/allocation-structure/approve';
+};
+
+export type EntityAllocationApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EntityAllocationApproveError = EntityAllocationApproveErrors[keyof EntityAllocationApproveErrors];
+
+export type EntityAllocationApproveResponses = {
+    /**
+     * Successful Response
+     */
+    201: WorkbookAllocationApprovedOut;
+};
+
+export type EntityAllocationApproveResponse = EntityAllocationApproveResponses[keyof EntityAllocationApproveResponses];
 
 export type EntityAllocationDraftData = {
     body: WorkbookAllocationDraftIn;
@@ -124782,10 +125039,6 @@ export type EntityAllocationDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityAllocationDraftError = EntityAllocationDraftErrors[keyof EntityAllocationDraftErrors];
@@ -124838,10 +125091,6 @@ export type EntityAllocationPreviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityAllocationPreviewError = EntityAllocationPreviewErrors[keyof EntityAllocationPreviewErrors];
@@ -126844,10 +127093,6 @@ export type EntitySectionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntitySectionsError = EntitySectionsErrors[keyof EntitySectionsErrors];
@@ -126912,10 +127157,6 @@ export type EntitySectionSignOffErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntitySectionSignOffError = EntitySectionSignOffErrors[keyof EntitySectionSignOffErrors];
@@ -127583,13 +127824,13 @@ export type EntityImportErrors = {
      */
     409: ErrorOut;
     /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityImportError = EntityImportErrors[keyof EntityImportErrors];

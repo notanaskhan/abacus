@@ -13,6 +13,7 @@ import { SCREEN_OF, type Section, isEntityForm, sectionOf, slugOf } from "../../
 import { to } from "../../routes/to";
 import { EntityReturnLayout, NOT_BUILT } from "./EntityReturnLayout";
 import { Financials } from "../TXP-02/Financials";
+import { ScheduleK } from "../TXP-05/ScheduleK";
 import { Workpaper } from "../TXP-11/Workpaper";
 import { TXP00, frameOf } from "./index";
 
@@ -76,6 +77,8 @@ export function EntityReturn({
         <AgentTab returnId={returnId} onComposer={onComposer} />
       ) : section.review === "financials" ? (
         <Financials returnId={returnId} form={form} taxYear={record.data.row.tax_year} />
+      ) : section.review === "schedule-k" ? (
+        <ScheduleK returnId={returnId} onOpen={onOpen} />
       ) : section.tab === "workpaper" ? (
         <Workpaper returnId={returnId} />
       ) : (

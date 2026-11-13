@@ -28,8 +28,8 @@ export const txpScreens = {
   },
   "TXP-05": {
     name: "Review › Schedule K · Ridgeline 2025 Form 1065",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/tax-returns/$returnId/review/$section", // `section: "schedule-k"`
   },
   "TXP-06": {
     name: "Allocation Structure (modal sheet) · Ridgeline and Harborview 2025 Form 1065",

@@ -132,6 +132,38 @@ def breakdown(values: Values, line: str) -> list[tuple[str, Decimal]]:
     return out
 
 
+# T-05-T43 (DEC-4707): Analysis of Net Income, line 1: Schedule K lines 1 to 11 less 12 to 13e
+# and 21, per partner and in total (tax-exempt income, 18a to 18c, is excluded).
+ANALYSIS_ADD: Final = frozenset({"1", "2", "3c", "4c", "5", "6a", "7", "8", "9a", "10", "11"})
+ANALYSIS_LESS: Final = frozenset({"12", "13a", "13b", "13c", "13d", "13e", "21"})
+
+
+def analysis(lines: Sequence[KLine]) -> KLine:
+    """Analysis of Net Income line 1 from the Schedule K lines (code's sum; ADR-050)."""
+    total = ZERO
+    shares: dict[UUID, Decimal] = {}
+    order: list[UUID] = []
+    for line in lines:
+        sign = 1 if line.line in ANALYSIS_ADD else -1 if line.line in ANALYSIS_LESS else 0
+        if sign == 0:
+            continue
+        total += sign * line.total
+        for pid, amount in line.by_partner:
+            if pid not in shares:
+                order.append(pid)
+                shares[pid] = ZERO
+            shares[pid] += sign * amount
+    by_partner = tuple((pid, shares[pid]) for pid in order)
+    allocated = sum((a for _p, a in by_partner), ZERO)
+    return KLine(
+        line="analysis_1",
+        label="Net income (loss)",
+        total=total,
+        by_partner=by_partner,
+        tie="tie" if not by_partner else _tie(total - allocated),
+    )
+
+
 # --- capital accounts ----------------------------------------------------------------------------
 
 
@@ -269,12 +301,15 @@ async def workbook_values(tenant: TenantContext, return_id: UUID) -> dict[str, d
 
 
 __all__ = [
+    "ANALYSIS_ADD",
+    "ANALYSIS_LESS",
     "M2",
     "M2_LINES",
     "CapitalRow",
     "CapitalTotals",
     "ItemL",
     "KLine",
+    "analysis",
     "breakdown",
     "capital_rows",
     "capital_tie",
