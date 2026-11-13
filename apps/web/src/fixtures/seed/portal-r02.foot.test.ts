@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   ACCRUED_EXPENSES,
   ACCRUED_LINES,
+  AJE1_DETAIL,
   APPROVALS_AFTER,
   K1_BOXES,
   PAGE_2,
@@ -30,6 +31,10 @@ const BOOK = JSON.parse(
     "utf8",
   ),
 ) as {
+  attest_entries: {
+    accrued: { lines: string[] };
+    aje_1_lines: { account: string; name: string; debit: string | null; credit: string | null }[];
+  };
   posted_entries: { total: string; accrued_expenses: { total: string } };
   uncorrected_misstatements: { net_effect: string };
   fs_draft: { page_2: { net_assets: string } };
@@ -40,6 +45,17 @@ const cents = (xs: readonly string[]): number =>
   xs.reduce((n, x) => n + Math.round(Number(x) * 100), 0);
 
 describe("R-02-T13 portal slice", () => {
+  it("AJE-1's lines are the book's, the accounts the seed posts (DEC-4807)", () => {
+    expect(AJE1_DETAIL.lines).toEqual(
+      BOOK.attest_entries.aje_1_lines.map((l) => ({
+        account: `${l.account} ${l.name}`,
+        debit: l.debit,
+        credit: l.credit,
+      })),
+    );
+    expect([...ACCRUED_LINES]).toEqual(BOOK.attest_entries.accrued.lines);
+  });
+
   it("Copperleaf's posted entries foot to 35,300 and accrued expenses to 14,900", () => {
     expect(cents(POSTED)).toBe(3_530_000);
     expect(cents(ACCRUED_EXPENSES)).toBe(1_490_000);

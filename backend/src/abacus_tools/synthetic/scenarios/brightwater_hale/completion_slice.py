@@ -259,8 +259,14 @@ ENTRIES: Final = (
     SeedEntry(
         "F-08",
         "paje",
-        "Accrued administrative expenses",
-        (("5300", "13050.00", "0"), ("2100", "0", "13050.00")),
+        # R-02-T13 (DEC-4807): AUD-16's title and the figures book's accrued group, line by line.
+        "Accrued administrative expenses — Q4 recordkeeping 6,150 · TPA 2,400 · audit fee 4,500",
+        (
+            ("5300", "6150.00", "0"),
+            ("5300", "2400.00", "0"),
+            ("5300", "4500.00", "0"),
+            ("2100", "0", "13050.00"),
+        ),
         "client_declined",
         "recorded when invoiced",
         "Declined by Dana Kowalski · Sep 25 — recorded when invoiced",

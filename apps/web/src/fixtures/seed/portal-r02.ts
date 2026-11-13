@@ -161,10 +161,15 @@ export const APPROVALS_AFTER: ApprovalsOut = {
 export const AJE1_DETAIL: ApprovalItemDetailOut = {
   ...AJE_1,
   seen_hash: "fixture-aje-1-v1",
+  // The book's AJE-1 lines (AUD-16's accounts; R-02-T13, DEC-4807): the seed writes the same.
   lines: [
-    { account: "1210 Contributions receivable", debit: "48600.00", credit: null },
-    { account: "4100 Employer contributions", debit: null, credit: "33540.00" },
-    { account: "4110 Participant contributions", debit: null, credit: "15060.00" },
+    {
+      account: "1250 Employer & participant contributions receivable",
+      debit: "48600.00",
+      credit: null,
+    },
+    { account: "4100 Participant contributions", debit: null, credit: "33540.00" },
+    { account: "4200 Employer contributions", debit: null, credit: "15060.00" },
   ],
   parts: [],
   support: [],
