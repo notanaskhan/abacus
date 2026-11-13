@@ -101,4 +101,9 @@ def install(fake: FakeModel) -> FakeModel:
     responder = spec("notices.responder")
     fake.respond(responder.prompt, fake_analyze)
     fake.respond(responder.modes["extract"].prompt, fake_extract)
+    # I-02-T12: the Today briefing, one why line per gate by fact reference.
+    from abacus.modules.agents.briefing.today import PROMPT as BRIEFING_PROMPT
+    from abacus.modules.agents.briefing.today import fake_briefing
+
+    fake.respond(BRIEFING_PROMPT, fake_briefing)
     return fake
