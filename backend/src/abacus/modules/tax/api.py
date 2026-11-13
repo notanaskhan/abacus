@@ -416,6 +416,11 @@ from abacus.modules.tax import entity_gates as _entity_gates  # noqa: E402
 _entity_gates.register()
 _entity_decisions.register()
 
+# T-05-T53 (DEC-4907): the entity return's final-approval guards (red; `tax/approval.py` owns L4).
+from abacus.modules.tax import entity_guards as _entity_guards  # noqa: E402
+
+_entity_guards.register()
+
 # T-04-T19 (DEC-3211): the tax tools on C17 register at their module's import.
 from abacus.modules.tax.tools import (  # noqa: E402
     read_return as _tax_tools_loaded,
