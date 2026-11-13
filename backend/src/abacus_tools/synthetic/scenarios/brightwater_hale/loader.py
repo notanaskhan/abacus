@@ -412,6 +412,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import archive_slice as _
 from abacus_tools.synthetic.scenarios.brightwater_hale import collaboration_slice as _collab
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
 from abacus_tools.synthetic.scenarios.brightwater_hale import ebp_eligibility as _eligibility
+from abacus_tools.synthetic.scenarios.brightwater_hale import entity_slice as _ent
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import pbc_screening as _pbc_screening
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
@@ -7427,6 +7428,175 @@ async def _collaboration_todo_seeded(conn: asyncpg.Connection, _: Scenario, even
     )
 
 
+# --- T-05-T45 (DEC-4711): the entity returns' slice (`--slice entity`) -------------------------
+
+
+def _entity_return(event: Event) -> UUID:
+    return UUID(RETURN_BY_LABEL[str(event.data["return"])].id)
+
+
+def _entity_engagement(event: Event) -> UUID:
+    found = RETURN_BY_LABEL[str(event.data["return"])]
+    return UUID(stable_id(f"engagement:tax:{found.engagement}"))
+
+
+async def _entity_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Ridgeline's or Harborview's facts and Run 2's cells through tax's synthetic recorder."""
+    from abacus.modules.tax.api import (
+        SeedEntity,
+        SeedPartner,
+        SeedTransfer,
+        record_synthetic_entity,
+    )
+
+    ridgeline = event.data["return"] == _ent.RIDGELINE
+    partners = _ent.RIDGELINE_PARTNERS if ridgeline else _ent.HARBORVIEW_PARTNERS
+    entity = SeedEntity(
+        principal_activity="Residential and commercial rental real estate",
+        business_code="531110",
+        accounting_method="accrual",
+        books_basis="income_tax",
+        partners=[
+            SeedPartner(name, kind, ek, n, periods, admitted)
+            for n, (name, kind, ek, periods, admitted) in enumerate(partners)
+        ],
+        transfers=[SeedTransfer(*_ent.TRANSFER)] if ridgeline else [],
+        cells=[
+            (address, value if not _is_number(value) else Decimal(value))
+            for address, value in (
+                _ent.ridgeline_cells() if ridgeline else _ent.harborview_cells()
+            )
+        ],
+    )
+    with frozen(_feld_at(event)):
+        await record_synthetic_entity(
+            await _staff_context(conn, event), _entity_return(event), entity
+        )
+
+
+def _is_number(value: str) -> bool:
+    try:
+        Decimal(value)
+    except ArithmeticError:
+        return False
+    return value.lstrip("-").replace(".", "", 1).isdigit()
+
+
+async def _entity_allocation_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The structure through the allocation service as the partner (Pending approval)."""
+    from abacus.modules.tax.allocation_structure import (
+        Draft,
+        DraftRung,
+        rung_params,
+        save_draft,
+        versions,
+    )
+
+    ctx = await _staff_context(conn, event)
+    return_id = _entity_return(event)
+    if await versions(ctx.tenant, return_id):
+        return
+    if event.data["return"] == _ent.RIDGELINE:
+        draft = Draft(
+            kind="straight_percentage",
+            method="interim_closing",
+            convention="monthly",
+            segment_amounts=(Decimal(628100), Decimal(628100)),
+            rungs=(DraftRung(1, "straight_pct"),),
+        )
+    else:
+        draft = Draft(
+            kind="targeted_waterfall",
+            income=Decimal(900000),
+            rungs=tuple(
+                DraftRung(n, rule, rung_params(rule, None if pct is None else Decimal(pct), None))
+                for n, (rule, pct) in enumerate(_ent.HARBORVIEW_RUNGS, start=1)
+            ),
+        )
+    with frozen(_feld_at(event)):
+        await save_draft(
+            ctx,
+            return_id=return_id,
+            engagement_id=_entity_engagement(event),
+            year=2025,
+            expected_version=0,
+            draft=draft,
+        )
+
+
+async def _entity_allocation_signed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """L1 by the drafter through P-04; L3 by Samuel through the allocation service's approve
+    (the scenario records its own runs: no re-run)."""
+    from abacus.modules.review.api import sign_target
+    from abacus.modules.tax.allocation_structure import TARGET, approve, versions
+
+    ctx = await _staff_context(conn, event)
+    return_id = _entity_return(event)
+    found = await versions(ctx.tenant, return_id)
+    if not found or found[0].status != "pending_approval":
+        return
+    pending = found[0]
+    level = int(str(event.data["level"]))
+    with frozen(_feld_at(event)):
+        if level == 1:
+            await sign_target(
+                ctx, TARGET, pending.id, 1, pending.content_hash, SIGN_OFF_STATEMENTS[1].version
+            )
+        else:
+            await approve(
+                ctx,
+                return_id=return_id,
+                engagement_id=_entity_engagement(event),
+                seen_hash=pending.content_hash,
+                statement_version=SIGN_OFF_STATEMENTS[3].version,
+                rerun=False,
+            )
+
+
+async def _entity_run_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Run 1 (Sep 8) or Run 2 (Sep 10) through agents' synthetic-only recorder."""
+    from abacus.modules.agents.api import RecordedRun, RecordedStep, record_synthetic_run
+    from abacus.modules.tax.entity_run_plan import DEPTH, STEPS
+
+    del conn
+    initiator = user_id_of(_SEATS[event.actor])
+    number = int(str(event.data["run_number"]))
+    run_id = UUID(stable_id(f"entity-run:{event.data['return']}:{number}"))
+    first = number == 1
+
+    def state_of(key: str) -> str:
+        if not first:
+            return "succeeded"
+        if key == "import_trial_balance":
+            return "failed"
+        return "queued"
+
+    await record_synthetic_run(
+        TenantContext(TENANT, "human", str(initiator)),
+        RecordedRun(
+            agent_id="engagements.run",
+            engagement_id=_entity_engagement(event),
+            initiator_user_id=initiator,
+            run_number=number,
+            state=str(event.data["state"]),
+            steps=[
+                RecordedStep(
+                    key=s.key,
+                    level=DEPTH[s.key],
+                    label=s.label,
+                    state=state_of(s.key),
+                    kind="compute",
+                    reached=state_of(s.key) != "queued",
+                )
+                for s in STEPS
+            ],
+            work_item_ref=f"tax_return:{_entity_return(event)}",
+            plan_decided_at=_feld_at(event),
+            id=run_id,
+        ),
+    )
+
+
 HANDLERS: Final[dict[str, Handler]] = {
     "identity.firm_created": _firm_created,
     "organisations.office_created": _office_created,
@@ -7688,6 +7858,11 @@ HANDLERS: Final[dict[str, Handler]] = {
     "review.feld_issue_created": _feld_issue_created,
     "review.feld_issue_resolved": _feld_issue_resolved,
     "review.feld_checkpoint_named": _feld_checkpoint_named,
+    # T-05-T45 (`--slice entity`): facts and cells, then the structure, its sign-offs and the runs.
+    "tax.entity_seeded": _entity_seeded,
+    "tax.allocation_drafted": _entity_allocation_drafted,
+    "review.allocation_signed": _entity_allocation_signed,
+    "agents.entity_run_recorded": _entity_run_recorded,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}

@@ -447,3 +447,13 @@ from abacus.modules.tax import entity_sections as _entity_sections  # noqa: E402
 
 _entity_sections.register()
 SUBSCRIPTIONS["agent_run.state_changed"] = _entity_sections.on_run_state_changed
+
+# T-05-T45 (DEC-4711): the synthetic-only entity return recorder (the scenario loader's).
+from abacus.modules.tax.entity_seed import (  # noqa: E402
+    SeedEntity as SeedEntity,
+)
+from abacus.modules.tax.entity_seed import SeedPartner as SeedPartner  # noqa: E402
+from abacus.modules.tax.entity_seed import SeedTransfer as SeedTransfer  # noqa: E402
+from abacus.modules.tax.entity_seed import (  # noqa: E402
+    record_synthetic_entity as record_synthetic_entity,
+)
