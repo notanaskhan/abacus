@@ -1,0 +1,3247 @@
+{
+  "WorkbookAcceptedOut": {
+    "additionalProperties": false,
+    "properties": {
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ],
+    "title": "WorkbookAcceptedOut",
+    "type": "object"
+  },
+  "WorkbookAllocationApproveIn": {
+    "additionalProperties": false,
+    "description": "T-05-T41: TXP-06 c2's \"Approve structure\" (SHL-12 at L3).",
+    "properties": {
+      "seen_hash": {
+        "cls": "internal",
+        "maxLength": 71,
+        "minLength": 64,
+        "title": "Seen Hash",
+        "type": "string"
+      },
+      "statement_version": {
+        "cls": "internal",
+        "maxLength": 40,
+        "minLength": 1,
+        "title": "Statement Version",
+        "type": "string"
+      }
+    },
+    "required": [
+      "seen_hash",
+      "statement_version"
+    ],
+    "title": "WorkbookAllocationApproveIn",
+    "type": "object"
+  },
+  "WorkbookAllocationApprovedOut": {
+    "additionalProperties": false,
+    "properties": {
+      "run_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Run Id"
+      },
+      "run_no": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Run No"
+      },
+      "sign_off_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Sign Off Id",
+        "type": "string"
+      },
+      "structure_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Structure Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "sign_off_id",
+      "structure_id"
+    ],
+    "title": "WorkbookAllocationApprovedOut",
+    "type": "object"
+  },
+  "WorkbookAllocationDraftIn": {
+    "additionalProperties": false,
+    "properties": {
+      "convention": {
+        "cls": "internal",
+        "default": "calendar_day",
+        "enum": [
+          "calendar_day",
+          "semi_monthly",
+          "monthly"
+        ],
+        "title": "Convention",
+        "type": "string"
+      },
+      "expected_version": {
+        "cls": "internal",
+        "title": "Expected Version",
+        "type": "integer"
+      },
+      "income": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Income",
+        "x-tri": true
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "straight_percentage",
+          "targeted_waterfall"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "method": {
+        "cls": "internal",
+        "default": "interim_closing",
+        "enum": [
+          "interim_closing",
+          "proration"
+        ],
+        "title": "Method",
+        "type": "string"
+      },
+      "rungs": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookRungOut-Input"
+        },
+        "maxItems": 20,
+        "minItems": 1,
+        "title": "Rungs",
+        "type": "array",
+        "x-tri": true
+      },
+      "segment_amounts": {
+        "cls": "restricted",
+        "items": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+              "type": "string"
+            }
+          ],
+          "cls": "restricted",
+          "x-tri": true
+        },
+        "maxItems": 24,
+        "title": "Segment Amounts",
+        "type": "array",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "expected_version",
+      "kind",
+      "rungs"
+    ],
+    "title": "WorkbookAllocationDraftIn",
+    "type": "object"
+  },
+  "WorkbookAllocationPartnerOut": {
+    "additionalProperties": false,
+    "properties": {
+      "beginning": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Beginning",
+        "x-tri": true
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "gp",
+          "lp",
+          "member",
+          "shareholder"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "name": {
+        "cls": "restricted",
+        "title": "Name",
+        "type": "string",
+        "x-tri": true
+      },
+      "partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Partner Id",
+        "type": "string"
+      },
+      "target": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Target",
+        "x-tri": true
+      },
+      "total": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Total",
+        "type": "string",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "partner_id",
+      "name",
+      "kind",
+      "total"
+    ],
+    "title": "WorkbookAllocationPartnerOut",
+    "type": "object"
+  },
+  "WorkbookAllocationPeriodOut": {
+    "additionalProperties": false,
+    "description": "T-05-T41: one period (straight percentage) or one rung's total (waterfall).",
+    "properties": {
+      "amount": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Amount",
+        "type": "string",
+        "x-tri": true
+      },
+      "available": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Available",
+        "x-tri": true
+      },
+      "ends_on": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Ends On"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "prior": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Prior",
+        "x-tri": true
+      },
+      "remaining": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Remaining",
+        "x-tri": true
+      },
+      "starts_on": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Starts On"
+      }
+    },
+    "required": [
+      "key",
+      "amount"
+    ],
+    "title": "WorkbookAllocationPeriodOut",
+    "type": "object"
+  },
+  "WorkbookAllocationResultOut": {
+    "additionalProperties": false,
+    "properties": {
+      "amount": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Amount",
+        "type": "string",
+        "x-tri": true
+      },
+      "partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Partner Id",
+        "type": "string"
+      },
+      "period_key": {
+        "cls": "internal",
+        "title": "Period Key",
+        "type": "string"
+      },
+      "rung_priority": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Rung Priority"
+      }
+    },
+    "required": [
+      "partner_id",
+      "period_key",
+      "amount"
+    ],
+    "title": "WorkbookAllocationResultOut",
+    "type": "object"
+  },
+  "WorkbookAllocationStructureOut": {
+    "additionalProperties": false,
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "workbook.edit",
+            "workbook.export",
+            "workbook_import.create",
+            "workbook_run.start",
+            "tax_ownership.edit",
+            "allocation_structure.edit",
+            "tax_memo.edit",
+            "tax_memo.draft"
+          ],
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "checks": {
+        "additionalProperties": {
+          "type": "boolean"
+        },
+        "cls": "internal",
+        "title": "Checks",
+        "type": "object"
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "convention": {
+        "cls": "internal",
+        "default": "calendar_day",
+        "enum": [
+          "calendar_day",
+          "semi_monthly",
+          "monthly"
+        ],
+        "title": "Convention",
+        "type": "string"
+      },
+      "distributable": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Distributable",
+        "x-tri": true
+      },
+      "gp_profit_percent": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Gp Profit Percent",
+        "x-tri": true
+      },
+      "income": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Income",
+        "x-tri": true
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "straight_percentage",
+          "targeted_waterfall"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "latest_version": {
+        "cls": "internal",
+        "default": 0,
+        "title": "Latest Version",
+        "type": "integer"
+      },
+      "method": {
+        "cls": "internal",
+        "default": "interim_closing",
+        "enum": [
+          "interim_closing",
+          "proration"
+        ],
+        "title": "Method",
+        "type": "string"
+      },
+      "partners": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookAllocationPartnerOut"
+        },
+        "title": "Partners",
+        "type": "array",
+        "x-tri": true
+      },
+      "periods": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookAllocationPeriodOut"
+        },
+        "title": "Periods",
+        "type": "array",
+        "x-tri": true
+      },
+      "persisted": {
+        "cls": "internal",
+        "default": true,
+        "title": "Persisted",
+        "type": "boolean"
+      },
+      "proposed_by": {
+        "anyOf": [
+          {
+            "enum": [
+              "human",
+              "agent"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Proposed By"
+      },
+      "results": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookAllocationResultOut"
+        },
+        "title": "Results",
+        "type": "array",
+        "x-tri": true
+      },
+      "rungs": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookRungOut-Output"
+        },
+        "title": "Rungs",
+        "type": "array",
+        "x-tri": true
+      },
+      "seen_hash": {
+        "cls": "internal",
+        "title": "Seen Hash",
+        "type": "string"
+      },
+      "sign_off_target_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Sign Off Target Id"
+      },
+      "status": {
+        "cls": "internal",
+        "enum": [
+          "editing",
+          "pending_approval",
+          "approved",
+          "superseded"
+        ],
+        "title": "Status",
+        "type": "string"
+      },
+      "structure_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Structure Id"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "version",
+      "kind",
+      "status",
+      "rungs",
+      "seen_hash",
+      "allowed_actions"
+    ],
+    "title": "WorkbookAllocationStructureOut",
+    "type": "object"
+  },
+  "WorkbookBreakdownOut": {
+    "additionalProperties": false,
+    "properties": {
+      "line": {
+        "cls": "internal",
+        "title": "Line",
+        "type": "string"
+      },
+      "rows": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookBreakdownRowOut"
+        },
+        "title": "Rows",
+        "type": "array",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "line",
+      "rows"
+    ],
+    "title": "WorkbookBreakdownOut",
+    "type": "object"
+  },
+  "WorkbookBreakdownRowOut": {
+    "additionalProperties": false,
+    "properties": {
+      "amount": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Amount",
+        "type": "string",
+        "x-tri": true
+      },
+      "property_name": {
+        "cls": "confidential",
+        "title": "Property Name",
+        "type": "string"
+      }
+    },
+    "required": [
+      "property_name",
+      "amount"
+    ],
+    "title": "WorkbookBreakdownRowOut",
+    "type": "object"
+  },
+  "WorkbookCapitalAccountsOut": {
+    "additionalProperties": false,
+    "properties": {
+      "basis": {
+        "cls": "internal",
+        "enum": [
+          "tax",
+          "gaap",
+          "section_704b"
+        ],
+        "title": "Basis",
+        "type": "string"
+      },
+      "item_l": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/WorkbookItemLOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "x-tri": true
+      },
+      "rows": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookCapitalRowOut"
+        },
+        "title": "Rows",
+        "type": "array",
+        "x-tri": true
+      },
+      "tie": {
+        "cls": "internal",
+        "enum": [
+          "tie",
+          "off",
+          "check",
+          "pending",
+          "ties_once_posted",
+          "reconciled"
+        ],
+        "title": "Tie",
+        "type": "string"
+      },
+      "totals": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/WorkbookCapitalTotalsOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "x-tri": true
+      },
+      "view": {
+        "cls": "internal",
+        "enum": [
+          "by_partner",
+          "by_movement"
+        ],
+        "title": "View",
+        "type": "string"
+      }
+    },
+    "required": [
+      "view",
+      "basis",
+      "rows",
+      "tie"
+    ],
+    "title": "WorkbookCapitalAccountsOut",
+    "type": "object"
+  },
+  "WorkbookCapitalRowOut": {
+    "additionalProperties": false,
+    "properties": {
+      "beginning": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Beginning",
+        "type": "string",
+        "x-tri": true
+      },
+      "contributions": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Contributions",
+        "type": "string",
+        "x-tri": true
+      },
+      "distributions": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Distributions",
+        "type": "string",
+        "x-tri": true
+      },
+      "ending": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Ending",
+        "type": "string",
+        "x-tri": true
+      },
+      "income": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Income",
+        "type": "string",
+        "x-tri": true
+      },
+      "name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Name"
+      },
+      "partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Partner Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "partner_id",
+      "beginning",
+      "contributions",
+      "income",
+      "distributions",
+      "ending"
+    ],
+    "title": "WorkbookCapitalRowOut",
+    "type": "object"
+  },
+  "WorkbookCapitalTotalsOut": {
+    "additionalProperties": false,
+    "description": "T-05-T34: the server's column totals (the screen never sums).",
+    "properties": {
+      "beginning": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Beginning",
+        "type": "string",
+        "x-tri": true
+      },
+      "contributions": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Contributions",
+        "type": "string",
+        "x-tri": true
+      },
+      "distributions": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Distributions",
+        "type": "string",
+        "x-tri": true
+      },
+      "ending": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Ending",
+        "type": "string",
+        "x-tri": true
+      },
+      "income": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Income",
+        "type": "string",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "beginning",
+      "contributions",
+      "income",
+      "distributions",
+      "ending"
+    ],
+    "title": "WorkbookCapitalTotalsOut",
+    "type": "object"
+  },
+  "WorkbookCellEditIn": {
+    "additionalProperties": false,
+    "properties": {
+      "expected_version": {
+        "cls": "internal",
+        "title": "Expected Version",
+        "type": "integer"
+      },
+      "formula": {
+        "anyOf": [
+          {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Formula",
+        "x-tri": true
+      },
+      "value": {
+        "anyOf": [
+          {
+            "maxLength": 200,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Value",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "expected_version"
+    ],
+    "title": "WorkbookCellEditIn",
+    "type": "object"
+  },
+  "WorkbookCellOut": {
+    "additionalProperties": false,
+    "properties": {
+      "address": {
+        "cls": "internal",
+        "pattern": "^[A-Z]{1,3}[0-9]{1,6}$",
+        "title": "Address",
+        "type": "string"
+      },
+      "author": {
+        "cls": "internal",
+        "enum": [
+          "run_step",
+          "engine_import",
+          "person",
+          "formula"
+        ],
+        "title": "Author",
+        "type": "string"
+      },
+      "checkpoint_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Checkpoint Id"
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "formula": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Formula",
+        "x-tri": true
+      },
+      "proposal_note_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Proposal Note Id"
+      },
+      "recomputed": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Recomputed",
+        "type": "array"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "value",
+          "formula",
+          "locked_by_run",
+          "stale",
+          "flagged"
+        ],
+        "title": "State",
+        "type": "string"
+      },
+      "value": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Value",
+        "x-tri": true
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "address",
+      "author",
+      "state",
+      "version"
+    ],
+    "title": "WorkbookCellOut",
+    "type": "object"
+  },
+  "WorkbookCellProvenanceOut": {
+    "additionalProperties": false,
+    "properties": {
+      "cell": {
+        "$ref": "#/components/schemas/WorkbookCellOut",
+        "cls": "restricted",
+        "x-tri": true
+      },
+      "inputs": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Inputs",
+        "type": "array"
+      },
+      "issue_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Issue Ids",
+        "type": "array"
+      },
+      "writer": {
+        "cls": "confidential",
+        "title": "Writer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "cell",
+      "writer"
+    ],
+    "title": "WorkbookCellProvenanceOut",
+    "type": "object"
+  },
+  "WorkbookFigureOut": {
+    "additionalProperties": false,
+    "description": "T-05-T37: a figure card's amount (gross rents, total deductions, \u2026), the server's.",
+    "properties": {
+      "amount": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Amount",
+        "type": "string",
+        "x-tri": true
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "amount"
+    ],
+    "title": "WorkbookFigureOut",
+    "type": "object"
+  },
+  "WorkbookFormLineOut": {
+    "additionalProperties": false,
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "label"
+    ],
+    "title": "WorkbookFormLineOut",
+    "type": "object"
+  },
+  "WorkbookFormLinesOut": {
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookFormLineOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "WorkbookFormLinesOut",
+    "type": "object"
+  },
+  "WorkbookGeneralInformationOut": {
+    "additionalProperties": false,
+    "properties": {
+      "accounting_method": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Accounting Method"
+      },
+      "ein_last4": {
+        "anyOf": [
+          {
+            "pattern": "^[0-9]{4}$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Ein Last4",
+        "x-pii-kind": "tin"
+      },
+      "entity_name": {
+        "cls": "confidential",
+        "title": "Entity Name",
+        "type": "string"
+      },
+      "form": {
+        "cls": "internal",
+        "enum": [
+          "1065",
+          "1120-S",
+          "1120",
+          "990"
+        ],
+        "title": "Form",
+        "type": "string"
+      },
+      "preparer_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Preparer Name"
+      },
+      "return_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Return Id",
+        "type": "string"
+      },
+      "reviewer_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Reviewer Name"
+      },
+      "signer_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Signer Name"
+      },
+      "tax_year": {
+        "cls": "internal",
+        "title": "Tax Year",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "return_id",
+      "entity_name",
+      "form",
+      "tax_year"
+    ],
+    "title": "WorkbookGeneralInformationOut",
+    "type": "object"
+  },
+  "WorkbookImportAcceptedOut": {
+    "additionalProperties": false,
+    "properties": {
+      "cells": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Cells",
+        "type": "integer"
+      },
+      "import_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Import Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "depreciation_register",
+          "state_apportionment"
+        ],
+        "title": "Kind",
+        "type": "string"
+      }
+    },
+    "required": [
+      "import_id",
+      "kind",
+      "cells"
+    ],
+    "title": "WorkbookImportAcceptedOut",
+    "type": "object"
+  },
+  "WorkbookInterestTransferOut-Input": {
+    "additionalProperties": false,
+    "properties": {
+      "citation_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Citation Id"
+      },
+      "from_partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "From Partner Id",
+        "type": "string"
+      },
+      "on": {
+        "cls": "internal",
+        "format": "date",
+        "title": "On",
+        "type": "string"
+      },
+      "percentage": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "type": "string"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Percentage",
+        "x-tri": true
+      },
+      "to_partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "To Partner Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "on",
+      "from_partner_id",
+      "to_partner_id",
+      "percentage"
+    ],
+    "title": "WorkbookInterestTransferOut",
+    "type": "object"
+  },
+  "WorkbookInterestTransferOut-Output": {
+    "additionalProperties": false,
+    "properties": {
+      "citation_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Citation Id"
+      },
+      "from_partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "From Partner Id",
+        "type": "string"
+      },
+      "on": {
+        "cls": "internal",
+        "format": "date",
+        "title": "On",
+        "type": "string"
+      },
+      "percentage": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Percentage",
+        "type": "string",
+        "x-tri": true
+      },
+      "to_partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "To Partner Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "on",
+      "from_partner_id",
+      "to_partner_id",
+      "percentage"
+    ],
+    "title": "WorkbookInterestTransferOut",
+    "type": "object"
+  },
+  "WorkbookItemLOut": {
+    "additionalProperties": false,
+    "description": "T-05-T34: Item L's ending capital (the partners') against the M-2's line 9.",
+    "properties": {
+      "capital_ending": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Capital Ending",
+        "type": "string",
+        "x-tri": true
+      },
+      "difference": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Difference",
+        "type": "string",
+        "x-tri": true
+      },
+      "m2_ending": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "M2 Ending",
+        "type": "string",
+        "x-tri": true
+      },
+      "tie": {
+        "cls": "internal",
+        "enum": [
+          "tie",
+          "off",
+          "check",
+          "pending",
+          "ties_once_posted",
+          "reconciled"
+        ],
+        "title": "Tie",
+        "type": "string"
+      }
+    },
+    "required": [
+      "capital_ending",
+      "m2_ending",
+      "tie",
+      "difference"
+    ],
+    "title": "WorkbookItemLOut",
+    "type": "object"
+  },
+  "WorkbookJournalEntriesOut": {
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookJournalEntryOut"
+        },
+        "title": "Items",
+        "type": "array",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "WorkbookJournalEntriesOut",
+    "type": "object"
+  },
+  "WorkbookJournalEntryOut": {
+    "additionalProperties": false,
+    "properties": {
+      "amount": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Amount",
+        "type": "string",
+        "x-tri": true
+      },
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "aje",
+          "rje",
+          "tje"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "reference": {
+        "cls": "internal",
+        "title": "Reference",
+        "type": "string"
+      },
+      "state": {
+        "cls": "internal",
+        "title": "State",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "reference",
+      "amount",
+      "state"
+    ],
+    "title": "WorkbookJournalEntryOut",
+    "type": "object"
+  },
+  "WorkbookM2LineOut": {
+    "additionalProperties": false,
+    "properties": {
+      "amount": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Amount",
+        "type": "string",
+        "x-tri": true
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "line": {
+        "cls": "internal",
+        "title": "Line",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "line",
+      "label",
+      "amount"
+    ],
+    "title": "WorkbookM2LineOut",
+    "type": "object"
+  },
+  "WorkbookM2Out": {
+    "additionalProperties": false,
+    "properties": {
+      "beginning": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Beginning",
+        "type": "string",
+        "x-tri": true
+      },
+      "difference": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Difference",
+        "x-tri": true
+      },
+      "ending": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Ending",
+        "type": "string",
+        "x-tri": true
+      },
+      "item_l": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/WorkbookItemLOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "x-tri": true
+      },
+      "lines": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookM2LineOut"
+        },
+        "title": "Lines",
+        "type": "array",
+        "x-tri": true
+      },
+      "tie": {
+        "cls": "internal",
+        "enum": [
+          "tie",
+          "off",
+          "check",
+          "pending",
+          "ties_once_posted",
+          "reconciled"
+        ],
+        "title": "Tie",
+        "type": "string"
+      },
+      "variant": {
+        "cls": "internal",
+        "enum": [
+          "as_drafted",
+          "with_fix"
+        ],
+        "title": "Variant",
+        "type": "string"
+      }
+    },
+    "required": [
+      "variant",
+      "beginning",
+      "ending",
+      "tie"
+    ],
+    "title": "WorkbookM2Out",
+    "type": "object"
+  },
+  "WorkbookMappingIn": {
+    "additionalProperties": false,
+    "properties": {
+      "account_code": {
+        "cls": "confidential",
+        "maxLength": 40,
+        "minLength": 1,
+        "title": "Account Code",
+        "type": "string"
+      },
+      "form_line_key": {
+        "cls": "internal",
+        "maxLength": 80,
+        "minLength": 1,
+        "title": "Form Line Key",
+        "type": "string"
+      },
+      "rationale": {
+        "anyOf": [
+          {
+            "maxLength": 500,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Rationale"
+      }
+    },
+    "required": [
+      "account_code",
+      "form_line_key"
+    ],
+    "title": "WorkbookMappingIn",
+    "type": "object"
+  },
+  "WorkbookMappingProposedOut": {
+    "additionalProperties": false,
+    "properties": {
+      "proposal_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Proposal Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "proposal_id"
+    ],
+    "title": "WorkbookMappingProposedOut",
+    "type": "object"
+  },
+  "WorkbookMemoAdoptIn": {
+    "additionalProperties": false,
+    "properties": {
+      "seen_hash": {
+        "cls": "internal",
+        "title": "Seen Hash",
+        "type": "string"
+      }
+    },
+    "required": [
+      "seen_hash"
+    ],
+    "title": "WorkbookMemoAdoptIn",
+    "type": "object"
+  },
+  "WorkbookMemoDraftIn": {
+    "additionalProperties": false,
+    "properties": {
+      "sections": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 12,
+        "title": "Sections",
+        "type": "array"
+      }
+    },
+    "title": "WorkbookMemoDraftIn",
+    "type": "object"
+  },
+  "WorkbookMemoOut": {
+    "additionalProperties": false,
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "workbook.edit",
+            "workbook.export",
+            "workbook_import.create",
+            "workbook_run.start",
+            "tax_ownership.edit",
+            "allocation_structure.edit",
+            "tax_memo.edit",
+            "tax_memo.draft"
+          ],
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "sections": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookMemoSectionOut"
+        },
+        "title": "Sections",
+        "type": "array",
+        "x-tri": true
+      },
+      "seen_hash": {
+        "cls": "internal",
+        "title": "Seen Hash",
+        "type": "string"
+      },
+      "stale_fields": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Stale Fields",
+        "type": "array"
+      },
+      "status": {
+        "cls": "internal",
+        "enum": [
+          "drafting",
+          "adopted",
+          "approved",
+          "stale"
+        ],
+        "title": "Status",
+        "type": "string"
+      }
+    },
+    "required": [
+      "status",
+      "sections",
+      "seen_hash",
+      "allowed_actions"
+    ],
+    "title": "WorkbookMemoOut",
+    "type": "object"
+  },
+  "WorkbookMemoSectionEditIn": {
+    "additionalProperties": false,
+    "properties": {
+      "body": {
+        "cls": "restricted",
+        "maxLength": 20000,
+        "minLength": 1,
+        "title": "Body",
+        "type": "string",
+        "x-tri": true
+      },
+      "expected_version": {
+        "cls": "internal",
+        "title": "Expected Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "expected_version",
+      "body"
+    ],
+    "title": "WorkbookMemoSectionEditIn",
+    "type": "object"
+  },
+  "WorkbookMemoSectionOut": {
+    "additionalProperties": false,
+    "properties": {
+      "body": {
+        "cls": "restricted",
+        "title": "Body",
+        "type": "string",
+        "x-tri": true
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "human_owned": {
+        "cls": "internal",
+        "title": "Human Owned",
+        "type": "boolean"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "title": {
+        "cls": "internal",
+        "title": "Title",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "key",
+      "title",
+      "body",
+      "human_owned",
+      "version"
+    ],
+    "title": "WorkbookMemoSectionOut",
+    "type": "object"
+  },
+  "WorkbookOpportunitiesOut": {
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookOpportunityOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "WorkbookOpportunitiesOut",
+    "type": "object"
+  },
+  "WorkbookOpportunityOut": {
+    "additionalProperties": false,
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "title": {
+        "cls": "confidential",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "title"
+    ],
+    "title": "WorkbookOpportunityOut",
+    "type": "object"
+  },
+  "WorkbookOut": {
+    "additionalProperties": false,
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "workbook.edit",
+            "workbook.export",
+            "workbook_import.create",
+            "workbook_run.start",
+            "tax_ownership.edit",
+            "allocation_structure.edit",
+            "tax_memo.edit",
+            "tax_memo.draft"
+          ],
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "return_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Return Id",
+        "type": "string"
+      },
+      "sheets": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookSheetOut"
+        },
+        "title": "Sheets",
+        "type": "array"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "return_id",
+      "version",
+      "sheets",
+      "allowed_actions"
+    ],
+    "title": "WorkbookOut",
+    "type": "object"
+  },
+  "WorkbookOwnershipIn": {
+    "additionalProperties": false,
+    "properties": {
+      "citation_note": {
+        "cls": "restricted",
+        "maxLength": 500,
+        "minLength": 1,
+        "title": "Citation Note",
+        "type": "string",
+        "x-tri": true
+      },
+      "expected_version": {
+        "cls": "internal",
+        "title": "Expected Version",
+        "type": "integer"
+      },
+      "periods": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookOwnershipPeriodOut-Input"
+        },
+        "maxItems": 24,
+        "minItems": 1,
+        "title": "Periods",
+        "type": "array",
+        "x-tri": true
+      },
+      "transfers": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookInterestTransferOut-Input"
+        },
+        "maxItems": 50,
+        "title": "Transfers",
+        "type": "array",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "expected_version",
+      "periods",
+      "citation_note"
+    ],
+    "title": "WorkbookOwnershipIn",
+    "type": "object"
+  },
+  "WorkbookOwnershipPeriodOut-Input": {
+    "additionalProperties": false,
+    "properties": {
+      "ends_on": {
+        "cls": "internal",
+        "format": "date",
+        "title": "Ends On",
+        "type": "string"
+      },
+      "shares": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ]
+        },
+        "cls": "restricted",
+        "title": "Shares",
+        "type": "object",
+        "x-tri": true
+      },
+      "starts_on": {
+        "cls": "internal",
+        "format": "date",
+        "title": "Starts On",
+        "type": "string"
+      }
+    },
+    "required": [
+      "starts_on",
+      "ends_on",
+      "shares"
+    ],
+    "title": "WorkbookOwnershipPeriodOut",
+    "type": "object"
+  },
+  "WorkbookOwnershipPeriodOut-Output": {
+    "additionalProperties": false,
+    "properties": {
+      "ends_on": {
+        "cls": "internal",
+        "format": "date",
+        "title": "Ends On",
+        "type": "string"
+      },
+      "shares": {
+        "additionalProperties": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        },
+        "cls": "restricted",
+        "title": "Shares",
+        "type": "object",
+        "x-tri": true
+      },
+      "starts_on": {
+        "cls": "internal",
+        "format": "date",
+        "title": "Starts On",
+        "type": "string"
+      }
+    },
+    "required": [
+      "starts_on",
+      "ends_on",
+      "shares"
+    ],
+    "title": "WorkbookOwnershipPeriodOut",
+    "type": "object"
+  },
+  "WorkbookPartnerOut": {
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "kind": {
+        "cls": "internal",
+        "enum": [
+          "general",
+          "limited",
+          "llc_member"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
+      "name": {
+        "cls": "restricted",
+        "title": "Name",
+        "type": "string",
+        "x-tri": true
+      },
+      "tin_last4": {
+        "anyOf": [
+          {
+            "pattern": "^[0-9]{4}$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Tin Last4",
+        "x-pii-kind": "tin"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "kind"
+    ],
+    "title": "WorkbookPartnerOut",
+    "type": "object"
+  },
+  "WorkbookPartnersOut": {
+    "additionalProperties": false,
+    "properties": {
+      "allowed_actions": {
+        "cls": "internal",
+        "items": {
+          "enum": [
+            "workbook.edit",
+            "workbook.export",
+            "workbook_import.create",
+            "workbook_run.start",
+            "tax_ownership.edit",
+            "allocation_structure.edit",
+            "tax_memo.edit",
+            "tax_memo.draft"
+          ],
+          "type": "string"
+        },
+        "title": "Allowed Actions",
+        "type": "array"
+      },
+      "partners": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookPartnerOut"
+        },
+        "title": "Partners",
+        "type": "array",
+        "x-tri": true
+      },
+      "periods": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookOwnershipPeriodOut-Output"
+        },
+        "title": "Periods",
+        "type": "array",
+        "x-tri": true
+      },
+      "transfers": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookInterestTransferOut-Output"
+        },
+        "title": "Transfers",
+        "type": "array",
+        "x-tri": true
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "version",
+      "partners",
+      "periods",
+      "transfers",
+      "allowed_actions"
+    ],
+    "title": "WorkbookPartnersOut",
+    "type": "object"
+  },
+  "WorkbookReconciliationOut": {
+    "additionalProperties": false,
+    "properties": {
+      "checkpoint_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Checkpoint Id"
+      },
+      "differences": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Differences",
+        "type": "integer"
+      },
+      "rows": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookReconciliationRowOut"
+        },
+        "title": "Rows",
+        "type": "array",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "rows",
+      "differences"
+    ],
+    "title": "WorkbookReconciliationOut",
+    "type": "object"
+  },
+  "WorkbookReconciliationRowOut": {
+    "additionalProperties": false,
+    "properties": {
+      "accrued": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Accrued",
+        "x-tri": true
+      },
+      "engine": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Engine",
+        "x-tri": true
+      },
+      "field_key": {
+        "cls": "internal",
+        "title": "Field Key",
+        "type": "string"
+      },
+      "issue_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Issue Id"
+      }
+    },
+    "required": [
+      "field_key"
+    ],
+    "title": "WorkbookReconciliationRowOut",
+    "type": "object"
+  },
+  "WorkbookReturnIssueOut": {
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Id",
+        "type": "string"
+      },
+      "section": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Section"
+      },
+      "status": {
+        "cls": "internal",
+        "title": "Status",
+        "type": "string"
+      },
+      "step": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Step"
+      },
+      "title": {
+        "cls": "confidential",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "title",
+      "status"
+    ],
+    "title": "WorkbookReturnIssueOut",
+    "type": "object"
+  },
+  "WorkbookReturnIssuesOut": {
+    "additionalProperties": false,
+    "properties": {
+      "by_section": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "cls": "internal",
+        "title": "By Section",
+        "type": "object"
+      },
+      "by_step": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "cls": "internal",
+        "title": "By Step",
+        "type": "object"
+      },
+      "items": {
+        "cls": "confidential",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookReturnIssueOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items",
+      "by_section",
+      "by_step"
+    ],
+    "title": "WorkbookReturnIssuesOut",
+    "type": "object"
+  },
+  "WorkbookRunAcceptedOut": {
+    "additionalProperties": false,
+    "properties": {
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      },
+      "run_no": {
+        "cls": "internal",
+        "title": "Run No",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "run_id",
+      "run_no"
+    ],
+    "title": "WorkbookRunAcceptedOut",
+    "type": "object"
+  },
+  "WorkbookRunIn": {
+    "additionalProperties": false,
+    "properties": {
+      "keys": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Keys",
+        "type": "array"
+      },
+      "scope": {
+        "cls": "internal",
+        "enum": [
+          "all",
+          "group",
+          "task"
+        ],
+        "title": "Scope",
+        "type": "string"
+      }
+    },
+    "required": [
+      "scope"
+    ],
+    "title": "WorkbookRunIn",
+    "type": "object"
+  },
+  "WorkbookRunRowOut": {
+    "additionalProperties": false,
+    "properties": {
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      },
+      "run_no": {
+        "cls": "internal",
+        "title": "Run No",
+        "type": "integer"
+      },
+      "started_at": {
+        "cls": "internal",
+        "format": "date-time",
+        "title": "Started At",
+        "type": "string"
+      },
+      "started_by": {
+        "cls": "confidential",
+        "title": "Started By",
+        "type": "string"
+      },
+      "state": {
+        "cls": "internal",
+        "title": "State",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id",
+      "run_no",
+      "started_by",
+      "started_at",
+      "state"
+    ],
+    "title": "WorkbookRunRowOut",
+    "type": "object"
+  },
+  "WorkbookRungOut-Input": {
+    "additionalProperties": false,
+    "properties": {
+      "amount": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Amount",
+        "x-tri": true
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "percentage": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Percentage",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "key",
+      "label"
+    ],
+    "title": "WorkbookRungOut",
+    "type": "object"
+  },
+  "WorkbookRungOut-Output": {
+    "additionalProperties": false,
+    "properties": {
+      "amount": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Amount",
+        "x-tri": true
+      },
+      "citation_ids": {
+        "cls": "internal",
+        "items": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": "Citation Ids",
+        "type": "array"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "percentage": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Percentage",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "key",
+      "label"
+    ],
+    "title": "WorkbookRungOut",
+    "type": "object"
+  },
+  "WorkbookRunsOut": {
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "cls": "internal",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookRunRowOut"
+        },
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "WorkbookRunsOut",
+    "type": "object"
+  },
+  "WorkbookScheduleKCellOut": {
+    "additionalProperties": false,
+    "properties": {
+      "amount": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Amount",
+        "type": "string",
+        "x-tri": true
+      },
+      "partner_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Partner Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "partner_id",
+      "amount"
+    ],
+    "title": "WorkbookScheduleKCellOut",
+    "type": "object"
+  },
+  "WorkbookScheduleKLineOut": {
+    "additionalProperties": false,
+    "properties": {
+      "by_partner": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookScheduleKCellOut"
+        },
+        "title": "By Partner",
+        "type": "array",
+        "x-tri": true
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "line": {
+        "cls": "internal",
+        "title": "Line",
+        "type": "string"
+      },
+      "tie": {
+        "cls": "internal",
+        "enum": [
+          "tie",
+          "off",
+          "check",
+          "pending",
+          "ties_once_posted",
+          "reconciled"
+        ],
+        "title": "Tie",
+        "type": "string"
+      },
+      "total": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Total",
+        "type": "string",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "line",
+      "label",
+      "total",
+      "by_partner",
+      "tie"
+    ],
+    "title": "WorkbookScheduleKLineOut",
+    "type": "object"
+  },
+  "WorkbookScheduleKOut": {
+    "additionalProperties": false,
+    "properties": {
+      "analysis": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/WorkbookScheduleKLineOut"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "x-tri": true
+      },
+      "lines": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookScheduleKLineOut"
+        },
+        "title": "Lines",
+        "type": "array",
+        "x-tri": true
+      },
+      "view": {
+        "cls": "internal",
+        "enum": [
+          "federal",
+          "state"
+        ],
+        "title": "View",
+        "type": "string"
+      }
+    },
+    "required": [
+      "view",
+      "lines"
+    ],
+    "title": "WorkbookScheduleKOut",
+    "type": "object"
+  },
+  "WorkbookSectionOut": {
+    "additionalProperties": false,
+    "properties": {
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "section_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Section Id"
+      },
+      "seen_hash": {
+        "cls": "internal",
+        "default": "",
+        "title": "Seen Hash",
+        "type": "string"
+      },
+      "signed_levels": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Signed Levels",
+        "type": "array"
+      },
+      "stale_levels": {
+        "cls": "internal",
+        "items": {
+          "type": "string"
+        },
+        "title": "Stale Levels",
+        "type": "array"
+      },
+      "tallies": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookTallyOut"
+        },
+        "title": "Tallies",
+        "type": "array",
+        "x-tri": true
+      },
+      "title": {
+        "cls": "internal",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "title",
+      "tallies",
+      "signed_levels"
+    ],
+    "title": "WorkbookSectionOut",
+    "type": "object"
+  },
+  "WorkbookSectionSignOffIn": {
+    "additionalProperties": false,
+    "properties": {
+      "level": {
+        "cls": "internal",
+        "enum": [
+          "l1",
+          "l2",
+          "l3"
+        ],
+        "title": "Level",
+        "type": "string"
+      },
+      "note": {
+        "anyOf": [
+          {
+            "maxLength": 500,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "confidential",
+        "title": "Note"
+      },
+      "seen_hash": {
+        "cls": "internal",
+        "title": "Seen Hash",
+        "type": "string"
+      },
+      "statement_version": {
+        "anyOf": [
+          {
+            "maxLength": 40,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Statement Version"
+      }
+    },
+    "required": [
+      "level",
+      "seen_hash"
+    ],
+    "title": "WorkbookSectionSignOffIn",
+    "type": "object"
+  },
+  "WorkbookSectionsOut": {
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookSectionOut"
+        },
+        "title": "Items",
+        "type": "array",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "WorkbookSectionsOut",
+    "type": "object"
+  },
+  "WorkbookSheetCellsOut": {
+    "additionalProperties": false,
+    "properties": {
+      "cells": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookCellOut"
+        },
+        "title": "Cells",
+        "type": "array",
+        "x-tri": true
+      },
+      "next_range": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Next Range"
+      },
+      "sheet": {
+        "cls": "internal",
+        "title": "Sheet",
+        "type": "string"
+      },
+      "version": {
+        "cls": "internal",
+        "title": "Version",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "sheet",
+      "version",
+      "cells"
+    ],
+    "title": "WorkbookSheetCellsOut",
+    "type": "object"
+  },
+  "WorkbookSheetOut": {
+    "additionalProperties": false,
+    "properties": {
+      "flagged": {
+        "cls": "internal",
+        "default": 0,
+        "minimum": 0.0,
+        "title": "Flagged",
+        "type": "integer"
+      },
+      "imported_from": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Imported From"
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "title": {
+        "cls": "internal",
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "title"
+    ],
+    "title": "WorkbookSheetOut",
+    "type": "object"
+  },
+  "WorkbookSignOffRecordedOut": {
+    "additionalProperties": false,
+    "properties": {
+      "sign_off_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Sign Off Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "sign_off_id"
+    ],
+    "title": "WorkbookSignOffRecordedOut",
+    "type": "object"
+  },
+  "WorkbookTalliesOut": {
+    "additionalProperties": false,
+    "properties": {
+      "figures": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookFigureOut"
+        },
+        "title": "Figures",
+        "type": "array",
+        "x-tri": true
+      },
+      "items": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookTallyOut"
+        },
+        "title": "Items",
+        "type": "array",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "WorkbookTalliesOut",
+    "type": "object"
+  },
+  "WorkbookTallyOut": {
+    "additionalProperties": false,
+    "properties": {
+      "difference": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Difference",
+        "x-tri": true
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "state": {
+        "cls": "internal",
+        "enum": [
+          "tie",
+          "off",
+          "check",
+          "pending",
+          "ties_once_posted",
+          "reconciled"
+        ],
+        "title": "State",
+        "type": "string"
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "state"
+    ],
+    "title": "WorkbookTallyOut",
+    "type": "object"
+  },
+  "WorkbookTbRowOut": {
+    "additionalProperties": false,
+    "properties": {
+      "account_code": {
+        "cls": "confidential",
+        "title": "Account Code",
+        "type": "string"
+      },
+      "account_name": {
+        "cls": "confidential",
+        "title": "Account Name",
+        "type": "string"
+      },
+      "adjusted": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Adjusted",
+        "x-tri": true
+      },
+      "aje": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Aje",
+        "type": "string",
+        "x-tri": true
+      },
+      "form_line_key": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Form Line Key"
+      },
+      "group": {
+        "anyOf": [
+          {
+            "enum": [
+              "assets",
+              "liabilities",
+              "equity",
+              "income",
+              "deductions",
+              "unmapped"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "title": "Group"
+      },
+      "prior_year": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Prior Year",
+        "x-tri": true
+      },
+      "rje": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Rje",
+        "type": "string",
+        "x-tri": true
+      },
+      "tax_basis": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Tax Basis",
+        "type": "string",
+        "x-tri": true
+      },
+      "tje": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Tje",
+        "type": "string",
+        "x-tri": true
+      },
+      "unadjusted": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Unadjusted",
+        "type": "string",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "account_code",
+      "account_name",
+      "unadjusted",
+      "aje",
+      "rje",
+      "tje",
+      "tax_basis"
+    ],
+    "title": "WorkbookTbRowOut",
+    "type": "object"
+  },
+  "WorkbookTbTotalOut": {
+    "additionalProperties": false,
+    "description": "T-05-T37: a section's totals or the TB total, computed by the server.",
+    "properties": {
+      "adjusted": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Adjusted",
+        "type": "string",
+        "x-tri": true
+      },
+      "aje": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Aje",
+        "type": "string",
+        "x-tri": true
+      },
+      "key": {
+        "cls": "internal",
+        "title": "Key",
+        "type": "string"
+      },
+      "label": {
+        "cls": "internal",
+        "title": "Label",
+        "type": "string"
+      },
+      "prior_year": {
+        "anyOf": [
+          {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "title": "Prior Year",
+        "x-tri": true
+      },
+      "rje": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Rje",
+        "type": "string",
+        "x-tri": true
+      },
+      "tax_basis": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Tax Basis",
+        "type": "string",
+        "x-tri": true
+      },
+      "tje": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Tje",
+        "type": "string",
+        "x-tri": true
+      },
+      "unadjusted": {
+        "cls": "restricted",
+        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+        "title": "Unadjusted",
+        "type": "string",
+        "x-tri": true
+      }
+    },
+    "required": [
+      "key",
+      "label",
+      "unadjusted",
+      "aje",
+      "rje",
+      "adjusted",
+      "tje",
+      "tax_basis"
+    ],
+    "title": "WorkbookTbTotalOut",
+    "type": "object"
+  },
+  "WorkbookTrialBalanceOut": {
+    "additionalProperties": false,
+    "properties": {
+      "rows": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookTbRowOut"
+        },
+        "title": "Rows",
+        "type": "array",
+        "x-tri": true
+      },
+      "totals": {
+        "cls": "restricted",
+        "items": {
+          "$ref": "#/components/schemas/WorkbookTbTotalOut"
+        },
+        "title": "Totals",
+        "type": "array",
+        "x-tri": true
+      },
+      "unmapped": {
+        "cls": "internal",
+        "minimum": 0.0,
+        "title": "Unmapped",
+        "type": "integer"
+      },
+      "view": {
+        "cls": "internal",
+        "enum": [
+          "account",
+          "line"
+        ],
+        "title": "View",
+        "type": "string"
+      }
+    },
+    "required": [
+      "view",
+      "rows",
+      "unmapped"
+    ],
+    "title": "WorkbookTrialBalanceOut",
+    "type": "object"
+  }
+}
