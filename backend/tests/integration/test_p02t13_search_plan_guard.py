@@ -20,10 +20,14 @@ from typing import Any
 
 import pytest
 from sqlalchemy import event, text
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import ClauseElement, Executable
 
 from abacus.kernel.config import settings
 from abacus.kernel.db import configure_engine, dispose_engine, tenant_session
-from abacus.kernel.db.session import _current_engine  # pyright: ignore[reportPrivateUsage]
+from abacus.kernel.db.session import (
+    _current_engine,  # pyright: ignore[reportPrivateUsage] -- a test double stands in for the typed object
+)
 from abacus.modules.platform.search import query, spec, store
 from abacus.modules.platform.search.contract import SearchQueryIn
 
@@ -34,9 +38,24 @@ from .test_p02t09_search_independent import (
     CLIENTS,
     RETURNS,
     World,
-    _as,  # pyright: ignore[reportPrivateUsage]
-    _binder_doc,  # pyright: ignore[reportPrivateUsage]
+    _as,  # pyright: ignore[reportPrivateUsage] -- a test double stands in for the typed object
+    _binder_doc,  # pyright: ignore[reportPrivateUsage] -- a test double stands in for the typed object
 )
+
+
+class _Explain(Executable, ClauseElement):
+    """`EXPLAIN (FORMAT JSON) <statement>` with the statement's own bound parameters."""
+
+    inherit_cache = False
+
+    def __init__(self, statement: ClauseElement) -> None:
+        self.statement = statement
+
+
+@compiles(_Explain)
+def _explain(element: _Explain, compiler: Any, **kw: Any) -> str:  # noqa: ANN401  # Any: SQLAlchemy's compiler hook signature
+    return "EXPLAIN (FORMAT JSON) " + str(compiler.process(element.statement, **kw))
+
 
 INDEXES = frozenset(
     {
@@ -70,7 +89,7 @@ async def world(migrated_db: MigratedDatabase) -> World:
     return await World(Seeder(migrated_db.superuser_dsn)).build()
 
 
-def _nodes(plan: dict[str, Any]) -> Iterator[dict[str, Any]]:
+def _nodes(plan: dict[str, Any]) -> Iterator[dict[str, Any]]:  # Any: a test double
     yield plan
     for child in plan.get("Plans", []):
         yield from _nodes(child)
@@ -82,18 +101,14 @@ async def test_every_group_statement_is_index_served(
     world: World, group: str, members: tuple[spec.SearchProjection, ...], q: str
 ) -> None:
     ctx = _as(world.hannah)
-    stmt = query._group_query(ctx, group, members, q, 6)  # type: ignore[arg-type]
+    stmt = query._group_query(ctx, group, members, q, 6)  # type: ignore[arg-type] -- a test double stands in for the typed object
     assert stmt is not None
     async with tenant_session(ctx.tenant) as session:
         await session.execute(text("SET LOCAL enable_seqscan = off"))
         await session.execute(
             text("SELECT set_config('pg_trgm.similarity_threshold', '0.3', true)")
         )
-        conn = await session.connection()
-        compiled = stmt.compile(dialect=conn.dialect, compile_kwargs={"render_postcompile": True})
-        params = compiled.construct_params()
-        args = tuple(params[k] for k in compiled.positiontup or ())
-        raw = (await conn.exec_driver_sql(f"EXPLAIN (FORMAT JSON) {compiled}", args)).scalar_one()
+        raw = (await session.execute(_Explain(stmt))).scalar_one()
     plan = (json.loads(raw) if isinstance(raw, str) else raw)[0]["Plan"]
     on_docs = [n for n in _nodes(plan) if n.get("Relation Name") == "search_documents"]
     assert on_docs, "the plan never reads search_documents"

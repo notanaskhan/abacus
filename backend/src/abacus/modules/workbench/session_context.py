@@ -244,7 +244,8 @@ async def remove(ctx: AuthContext, session_id: UUID, item_id: UUID) -> list[Item
             return r.get("kind") == gone.kind and r.get("id") == str(gone.ref_id)
 
         kept = [r for r in refs if not named(r)]
-        dropped = next((r for r in refs if named(r)), {})
+        nothing: dict[str, str] = {}
+        dropped = next((r for r in refs if named(r)), nothing)
         still = {r.get("client") for r in kept}
         clients = list(row.client_scope or [])
         client = dropped.get("client")

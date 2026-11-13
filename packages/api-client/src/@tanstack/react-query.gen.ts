@@ -18235,6 +18235,7 @@ export const todayQueryKey = (options?: Options<TodayData>) => createQueryKey('t
  * Today Route
  *
  * The viewer's day; `status: building` with `needs_build` on the first open (§3.8).
+ * I-02-T10 (DEC-4722): assembled by code over C13.
  */
 export const todayOptions = (options?: Options<TodayData>) => queryOptions<TodayResponse, TodayError, TodayResponse, ReturnType<typeof todayQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -27000,7 +27001,7 @@ export const contextOptionsQueryKey = (options: Options<ContextOptionsData>) => 
 /**
  * Context Options Route
  *
- * Only records the viewer can open (AC-C3).
+ * Only records the viewer can open (AC-C3). W-02-T10 (DEC-4715).
  */
 export const contextOptionsOptions = (options: Options<ContextOptionsData>) => queryOptions<ContextOptionsResponse, ContextOptionsError, ContextOptionsResponse, ReturnType<typeof contextOptionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -27136,6 +27137,7 @@ export const getSessionOptions = (options: Options<GetSessionData>) => queryOpti
  *
  * The owner's rename; `title_source` becomes `manual`; 409 `stale_version` when `If-Match`
  * is not the row's version; one `workbench_session.renamed` audit event (titles by hash).
+ * W-02-T09 (DEC-4714).
  */
 export const renameSessionMutation = (options?: Partial<Options<RenameSessionData>>): UseMutationOptions<RenameSessionResponse, RenameSessionError, Options<RenameSessionData>> => {
     const mutationOptions: UseMutationOptions<RenameSessionResponse, RenameSessionError, Options<RenameSessionData>> = {

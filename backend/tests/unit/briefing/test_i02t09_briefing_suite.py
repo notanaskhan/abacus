@@ -15,10 +15,10 @@ def test_the_suite_is_frozen_and_green_on_the_fake_model() -> None:
     raw = bt.load()
     report = bt.run_suite(raw)
     assert report["status"] == "passed", report["reasons"]
-    cases = [bt.Case.model_validate(c) for c in raw["cases"]]  # type: ignore[union-attr]
+    cases = [bt.Case.model_validate(c) for c in raw["cases"]]  # type: ignore[union-attr] -- a test double stands in for the typed object
     assert sum(1 for c in cases if c.category == "pass") >= 40
     assert sum(1 for c in cases if c.category == "calibration") == 30
-    assert report["rates"]["judge_calibration"] >= 0.8  # type: ignore[index]
+    assert report["rates"]["judge_calibration"] >= 0.8  # type: ignore[index] -- a test double stands in for the typed object
     assert report["graders_without_a_seeded_case"] == []
 
 
@@ -36,7 +36,7 @@ def test_changed_thresholds_are_refused(tmp_path: pytest.TempPathFactory) -> Non
 
 def test_28600_and_i_approved_are_caught() -> None:
     raw = bt.load()
-    by_id = {c["id"]: bt.Case.model_validate(c) for c in raw["cases"]}  # type: ignore[union-attr]
+    by_id = {c["id"]: bt.Case.model_validate(c) for c in raw["cases"]}  # type: ignore[union-attr] -- a test double stands in for the typed object
     failed = {g.grader for g in bt.grades(by_id["seeded_number_28600"]) if not g.passed}
     assert "number_provenance" in failed
     failed = {g.grader for g in bt.grades(by_id["seeded_i_approved"]) if not g.passed}

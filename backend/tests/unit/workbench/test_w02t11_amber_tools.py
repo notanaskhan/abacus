@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 
-import abacus.api.app  # noqa: F401  # registers every module's tools
+import abacus.api.app  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers every module's tools
 from abacus.modules.agents.tools.registry import tool
 
 NAMES = {
@@ -68,15 +68,55 @@ def test_season_counts_foot_and_carry_no_return_content(monkeypatch: pytest.Monk
         return date(2026, 9, 14)
 
     monkeypatch.setattr(board, "_board", fake_board)
-    monkeypatch.setattr(board, "_due", lambda r: r.due)
+
+    def due_of(r: _R) -> date | None:
+        return r.due
+
+    monkeypatch.setattr(board, "_due", due_of)
     monkeypatch.setattr(orgs, "firm_offices", offices)
     from abacus.kernel import clock
 
     monkeypatch.setattr(clock, "today", today)
-    agent: Any = type("A", (), {"tenant": object()})()
-    out = asyncio.run(tools.season_counts(agent, tools.SeasonIn()))
+    agent: Any = type("A", (), {"tenant": object()})()  # Any: a test double
+    out = asyncio.run(tools.season_counts(agent, tools.SeasonIn(tax_year=2025)))
     assert (out.returns, out.open, out.done) == (3, 2, 1)
     assert sum(o.open + o.done for o in out.by_office) == out.returns
     assert [o.office for o in out.by_office] == ["Chicago", "Denver"]
     assert (out.engagements, out.engagements_with_two_returns, out.stalled) == (2, 1, 1)
     assert "client" not in str(out.model_dump()).lower()
+    # S41 end pass (DEC-4733): the frozen suite's arguments filter and group by code.
+    only = asyncio.run(
+        tools.season_counts(
+            agent, tools.SeasonIn(tax_year=2025, group_by=["office"], status_in=["in_review"])
+        )
+    )
+    assert (only.returns, only.by_status) == (1, [])
+    assert [o.office for o in only.by_office] == ["Denver"]
+
+
+def test_tool_inputs_match_the_frozen_workbench_suite() -> None:
+    """S41 end pass (DEC-4733): each W-02-T11 tool takes exactly the arguments the frozen
+    `evals/workbench_assistant/suite.yaml` records (required and accepted)."""
+    from pathlib import Path
+
+    import yaml
+
+    from abacus.modules.assurance.agent_tools import MaterialityIn
+    from abacus.modules.requests.agent_tools import BindersIn
+    from abacus.modules.tax import tools
+    from abacus.modules.workpapers.agent_tools import SectionIn
+
+    suite = yaml.safe_load(
+        (Path(__file__).resolve().parents[3] / "evals/workbench_assistant/suite.yaml").read_text()
+    )
+    models = {
+        "tax.season_counts": tools.SeasonIn,
+        "binders.read": BindersIn,
+        "workpapers.read_section": SectionIn,
+        "assurance.read_materiality": MaterialityIn,
+    }
+    for name, model in models.items():
+        spec = suite["defaults"]["tool_args"][name]
+        fields = model.model_fields
+        assert set(fields) == set(spec["accepted"]), name
+        assert {k for k, f in fields.items() if f.is_required()} == set(spec["required"]), name

@@ -106,14 +106,14 @@ def test_an_unknown_citation_is_dropped_and_offsets_follow_the_text() -> None:
 
 
 def test_a_persons_section_and_unaffected_sections_are_untouched_on_regenerate() -> None:
-    human = {
+    human: dict[str, dict[str, object]] = {
         "capital": {
             "key": "capital",
             "segments": [{"text": "Olivia's note: capital reconciles.", "citations": []}],
             "human_owned": True,
         }
     }
-    previous = {
+    previous: dict[str, dict[str, object]] = {
         **human,
         "balance_sheet": {
             "key": "balance_sheet",

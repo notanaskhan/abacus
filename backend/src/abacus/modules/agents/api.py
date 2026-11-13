@@ -809,3 +809,6 @@ from abacus.modules.agents.briefing.today import (  # noqa: E402
 )
 
 _briefing_today.register()
+
+# T-05-T47 (DEC-4713): the compiled v2 specs, for the eval-suite generator (tooling).
+from abacus.modules.agents.specs._specs_v2 import SPECS_V2 as SPECS_V2  # noqa: E402

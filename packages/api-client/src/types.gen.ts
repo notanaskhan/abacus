@@ -108472,10 +108472,6 @@ export type TodayErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TodayError = TodayErrors[keyof TodayErrors];
@@ -108771,10 +108767,6 @@ export type TodayDrillErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TodayDrillError = TodayDrillErrors[keyof TodayDrillErrors];
@@ -132948,10 +132940,6 @@ export type ContextOptionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ContextOptionsError = ContextOptionsErrors[keyof ContextOptionsErrors];
@@ -133016,10 +133004,6 @@ export type ListSessionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
@@ -133131,10 +133115,6 @@ export type DeleteSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeleteSessionError = DeleteSessionErrors[keyof DeleteSessionErrors];
@@ -133251,10 +133231,6 @@ export type RenameSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RenameSessionError = RenameSessionErrors[keyof RenameSessionErrors];
@@ -133311,10 +133287,6 @@ export type AttachContextErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttachContextError = AttachContextErrors[keyof AttachContextErrors];
@@ -133375,10 +133347,6 @@ export type RemoveContextErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RemoveContextError = RemoveContextErrors[keyof RemoveContextErrors];

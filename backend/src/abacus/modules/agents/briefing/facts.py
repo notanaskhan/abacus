@@ -30,7 +30,7 @@ import json
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
@@ -149,9 +149,9 @@ async def collect(viewer: object, engagement_id: UUID) -> BriefingFacts:
     from abacus.modules.requests.api import pbc_counts
     from abacus.modules.review.api import gates_waiting_on
 
-    tenant: TenantContext = viewer.tenant  # type: ignore[attr-defined] -- an AuthContext
+    tenant = cast(TenantContext, viewer.tenant)  # type: ignore[attr-defined] -- an AuthContext
     page = await gates_waiting_on(
-        viewer,  # type: ignore[arg-type]
+        viewer,  # type: ignore[arg-type] -- the run's context reads as its initiator
         kind=None, engagement_id=engagement_id, cursor=None, limit=MAX_GATES, sort="deadline",
     )  # fmt: skip
     gates = tuple(
@@ -171,7 +171,7 @@ async def collect(viewer: object, engagement_id: UUID) -> BriefingFacts:
                 id=fid, kind="date", value=g.due_on.isoformat(), basis="C13 gate due date"
             )
     work_items = await work_item_ids_of(tenant, engagement_id)
-    counts = await pbc_counts(viewer, work_items)  # type: ignore[arg-type]
+    counts = await pbc_counts(viewer, work_items)  # type: ignore[arg-type] -- the run's context reads as its initiator
     if counts:
         received = sum(r for r, _t in counts.values())
         total = sum(t for _r, t in counts.values())
@@ -195,7 +195,7 @@ async def collect(viewer: object, engagement_id: UUID) -> BriefingFacts:
     now = await clock.now(tenant)
     if not await _consented(tenant, subjects, now):
         raise ConsentRequired(facts={"engagement_id": str(engagement_id)})
-    viewer_id: UUID = viewer.user_id  # type: ignore[attr-defined]
+    viewer_id = cast(UUID, viewer.user_id)  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
     return BriefingFacts(
         engagement_id=engagement_id,
         viewer_user_id=viewer_id,

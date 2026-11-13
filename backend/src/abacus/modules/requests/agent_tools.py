@@ -159,13 +159,17 @@ _P10_TOOLS: Final = (
     ),
 )  # fmt: skip
 
-# --- W-02-T11 (DEC-4716): `binders.read`, the engagement's binders with code's counts ---------
+# --- W-02-T11 (DEC-4716; S41 end pass DEC-4733): `binders.read`, a season's binders -----------
 
 
 class BindersIn(BaseModel):
+    """The frozen workbench suite's arguments: a tax year, optionally some binders, a cursor."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    engagement_id: Annotated[UUID | None, Int] = None
+    tax_year: Annotated[int, Field(ge=2000, le=2100), Int]
+    binder_ids: Annotated[list[UUID] | None, Field(max_length=MAX_ROWS), Int] = None
+    cursor: Annotated[str | None, Field(max_length=500), Int] = None
 
 
 class BinderRow(BaseModel):
@@ -173,11 +177,12 @@ class BinderRow(BaseModel):
 
     id: Annotated[UUID, Int]
     name: Annotated[str, Conf]
+    client_name: Annotated[str, Conf]
     kind: Annotated[str, Int]
     status: Annotated[str, Int]
     requests: Annotated[int, Int]
     done: Annotated[int, Int]
-    published: Annotated[bool, Int]
+    last_client_activity_on: Annotated[date | None, Int] = None
 
 
 class BindersOut(BaseModel):
@@ -185,50 +190,34 @@ class BindersOut(BaseModel):
 
     binders: Annotated[list[BinderRow], Conf]
     total: Annotated[int, Int]
-
-
-_DONE: Final = frozenset({"uploaded", "received", "not_applicable"})
+    next_cursor: Annotated[str | None, Int] = None
 
 
 async def read_binders(caller: ToolCaller, args: BindersIn) -> BindersOut:
-    """The engagement's binders with their request and done counts (code's; never the items'
-    client words)."""
-    from abacus.modules.requests.models import RequestList
+    """The season's tax binders as BND-01 lists them (`binder_index.list_binders`: `visible()`,
+    walls, the done and total counts by code; never the items' client words). `binder_ids`
+    narrows the page to those binders."""
+    from abacus.modules.requests.binder_index import IndexFilters, list_binders
 
-    engagement = _engagement(caller, args.engagement_id)
-    async with tenant_session(caller.tenant) as session:
-        lists = (
-            (
-                await session.execute(
-                    select(RequestList)
-                    .where(RequestList.engagement_id == engagement)
-                    .order_by(RequestList.created_at, RequestList.id)
-                )
-            )
-            .scalars()
-            .all()
-        )
-        counts = (
-            await session.execute(
-                select(RequestItem.request_list_id, RequestItem.status, func.count())
-                .where(RequestItem.engagement_id == engagement, RequestItem.deleted_at.is_(None))
-                .group_by(RequestItem.request_list_id, RequestItem.status)
-            )
-        ).all()
-    total: dict[UUID, int] = {}
-    done: dict[UUID, int] = {}
-    for binder_id, status, n in counts:
-        total[binder_id] = total.get(binder_id, 0) + int(n)
-        if status in _DONE:
-            done[binder_id] = done.get(binder_id, 0) + int(n)
+    page = await list_binders(
+        caller,  # type: ignore[arg-type] -- the run's context reads as its initiator
+        IndexFilters(service="tax_return", season=f"TY{args.tax_year}"),
+        args.cursor,
+        MAX_ROWS,
+    )
+    wanted = None if args.binder_ids is None else set(args.binder_ids)
     rows = [
         BinderRow(
-            id=b.id, name=b.name, kind=b.kind, status=b.status, requests=total.get(b.id, 0),
-            done=done.get(b.id, 0), published=b.published_at is not None,
+            id=r.id, name=r.name, client_name=r.client_name, kind=r.kind, status=r.status,
+            requests=r.total_count, done=r.done_count,
+            last_client_activity_on=(
+                None if r.last_client_activity_at is None else r.last_client_activity_at.date()
+            ),
         )
-        for b in lists
+        for r in page.items
+        if wanted is None or r.id in wanted
     ]  # fmt: skip
-    return BindersOut(binders=rows[:MAX_ROWS], total=len(rows))
+    return BindersOut(binders=rows, total=len(rows), next_cursor=page.next_cursor)
 
 
 AGENT_TOOLS: Final = (

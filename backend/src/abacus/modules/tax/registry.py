@@ -696,8 +696,8 @@ UPDATE_COLUMNS.update(
 )
 
 # T-05-T22 (0831, DEC-4404): partner TINs (sealed, by column grant) and their reveals.
-TABLES: frozenset[str] = _TABLES_0830 | frozenset({"partner_tin_reveals"})
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0830 | frozenset({"partner_tin_reveals"})
+_TABLES_0831: frozenset[str] = _TABLES_0830 | frozenset({"partner_tin_reveals"})
+_INSERT_ONLY_0831: frozenset[str] = _INSERT_ONLY_0830 | frozenset({"partner_tin_reveals"})
 INSERT_COLUMNS["partners"] = INSERT_COLUMNS["partners"] | frozenset(
     {"tin_sealed", "tin_last4", "tin_kind"}
 )
@@ -712,8 +712,12 @@ INSERT_COLUMNS["partner_tin_reveals"] = frozenset(
 
 # T-05-T42 (0860, DEC-4705): workbook sections (stable sign-off targets) and the notes of
 # sign-offs given while a tie-out was off (sealed).
-TABLES = TABLES | frozenset({"tax_workbook_sections", "tax_section_acknowledgements"})
-INSERT_ONLY = INSERT_ONLY | frozenset({"tax_workbook_sections", "tax_section_acknowledgements"})
+TABLES: frozenset[str] = _TABLES_0831 | frozenset(
+    {"tax_workbook_sections", "tax_section_acknowledgements"}
+)
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0831 | frozenset(
+    {"tax_workbook_sections", "tax_section_acknowledgements"}
+)
 INSERT_COLUMNS["tax_workbook_sections"] = frozenset(
     {"tenant_id", "engagement_id", "work_item_id", "key"}
 )

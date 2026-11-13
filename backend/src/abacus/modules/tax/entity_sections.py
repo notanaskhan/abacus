@@ -54,19 +54,19 @@ State = Literal["tie", "off", "pending"]
 
 
 @dataclass(frozen=True)
-class Section:
+class WorkbookPart:
     key: str
     title: str
     sheets: tuple[str, ...]
 
 
-SECTIONS: Final[tuple[Section, ...]] = (
-    Section("trial-balance", "Financials", ("01", "03")),
-    Section("fixed-assets", "Fixed Assets", ("02",)),
-    Section("allocation", "Allocation", ("04",)),
-    Section("capital-accounts", "Capital Accounts", ("05", "07")),
-    Section("schedule-k", "Schedule K", ("06", "09")),
-    Section("states", "States", ("08",)),
+SECTIONS: Final[tuple[WorkbookPart, ...]] = (
+    WorkbookPart("trial-balance", "Financials", ("01", "03")),
+    WorkbookPart("fixed-assets", "Fixed Assets", ("02",)),
+    WorkbookPart("allocation", "Allocation", ("04",)),
+    WorkbookPart("capital-accounts", "Capital Accounts", ("05", "07")),
+    WorkbookPart("schedule-k", "Schedule K", ("06", "09")),
+    WorkbookPart("states", "States", ("08",)),
 )
 _BY_KEY: Final = {s.key: s for s in SECTIONS}
 
@@ -108,7 +108,7 @@ def _rows(values: Values, sheet: str, col: str = "A") -> list[int]:
     return out
 
 
-def section_hash(section: Section, values: Values) -> str:
+def section_hash(section: WorkbookPart, values: Values) -> str:
     """SHA-256 of the section's sheets' cells, canonical JSON (what a sign-off covers)."""
     cells = {
         k: dict(v)
@@ -168,7 +168,7 @@ def tie_outs(values: Values) -> list[TieOut]:
         )  # fmt: skip
     partners = [n for n in _rows(values, "05") if _text(values, f"05!A{n}")]
     if partners:
-        broken = []
+        broken: list[int] = []
         for n in partners:
             b, c, d, e, f = (_dec(values, f"05!{col}{n}") or ZERO for col in "BCDEF")
             if b + c - d + e != f:
@@ -204,13 +204,13 @@ def tie_outs(values: Values) -> list[TieOut]:
                 )
             )  # fmt: skip
     lines = _rows(values, "06")
-    columns = []
+    columns: list[str] = []
     col = 0
     while f"09!{chr(ord('B') + col)}1" in values:
         columns.append(chr(ord("B") + col))
         col += 1
     if lines and columns:
-        off_lines = []
+        off_lines: list[int] = []
         for n in lines:
             total = _dec(values, f"06!C{n}") or ZERO
             shares = sum((_dec(values, f"09!{c}{n}") or ZERO for c in columns), ZERO)
@@ -233,7 +233,7 @@ def tie_outs(values: Values) -> list[TieOut]:
     return out
 
 
-def section_tie_outs(section: Section, values: Values) -> list[TieOut]:
+def section_tie_outs(section: WorkbookPart, values: Values) -> list[TieOut]:
     return [t for t in tie_outs(values) if t.section == section.key]
 
 
@@ -507,11 +507,11 @@ __all__ = [
     "SECTIONS",
     "TARGET",
     "WHY",
-    "Section",
     "SectionView",
     "SignedSection",
     "TieOut",
     "TieOutOff",
+    "WorkbookPart",
     "ensure_sections",
     "on_run_state_changed",
     "register",

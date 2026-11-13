@@ -274,7 +274,9 @@ export function layoutLayered(
   const rank = ranks(nodes, edges);
   const layers = orderLayers(nodes, edges, rank);
   const order = new Map<string, number>();
-  layers.forEach((layer) => { layer.forEach((id, i) => order.set(id, i)); });
+  layers.forEach((layer) => {
+    layer.forEach((id, i) => order.set(id, i));
+  });
   const known = new Set(nodes.map((n) => n.id));
   // Lanes each gap needs: one per horizontal run that sits in it (see routeOrthogonal).
   const lanes = Array.from({ length: layers.length }, () => 0);

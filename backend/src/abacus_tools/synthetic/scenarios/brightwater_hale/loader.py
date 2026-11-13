@@ -420,7 +420,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_workspace_slice as _txw
 from abacus_tools.synthetic.scenarios.brightwater_hale import usage_slice as _usage
 from abacus_tools.synthetic.scenarios.brightwater_hale import (  # noqa: F401  # registers its slice
-    workbench_slice as _wbs,
+    workbench_slice as _wbs,  # pyright: ignore[reportUnusedImport] -- imported to register the slice
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
@@ -7490,13 +7490,11 @@ def _is_number(value: str) -> bool:
 
 async def _entity_allocation_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """The structure through the allocation service as the partner (Pending approval)."""
-    from abacus.modules.tax.allocation_structure import (
-        Draft,
-        DraftRung,
-        rung_params,
-        save_draft,
-        versions,
-    )
+    from abacus.modules.tax.api import AllocationDraft as Draft
+    from abacus.modules.tax.api import AllocationDraftRung as DraftRung
+    from abacus.modules.tax.api import allocation_rung_params as rung_params
+    from abacus.modules.tax.api import allocation_versions as versions
+    from abacus.modules.tax.api import save_allocation_draft as save_draft
 
     ctx = await _staff_context(conn, event)
     return_id = _entity_return(event)
@@ -7534,7 +7532,9 @@ async def _entity_allocation_signed(conn: asyncpg.Connection, _: Scenario, event
     """L1 by the drafter through P-04; L3 by Samuel through the allocation service's approve
     (the scenario records its own runs: no re-run)."""
     from abacus.modules.review.api import sign_target
-    from abacus.modules.tax.allocation_structure import TARGET, approve, versions
+    from abacus.modules.tax.api import ALLOCATION_TARGET as TARGET
+    from abacus.modules.tax.api import allocation_versions as versions
+    from abacus.modules.tax.api import approve_allocation as approve
 
     ctx = await _staff_context(conn, event)
     return_id = _entity_return(event)
@@ -7562,7 +7562,8 @@ async def _entity_allocation_signed(conn: asyncpg.Connection, _: Scenario, event
 async def _entity_run_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """Run 1 (Sep 8) or Run 2 (Sep 10) through agents' synthetic-only recorder."""
     from abacus.modules.agents.api import RecordedRun, RecordedStep, record_synthetic_run
-    from abacus.modules.tax.entity_run_plan import DEPTH, STEPS
+    from abacus.modules.tax.api import ENTITY_RUN_DEPTH as DEPTH
+    from abacus.modules.tax.api import ENTITY_RUN_STEPS as STEPS
 
     del conn
     initiator = user_id_of(_SEATS[event.actor])

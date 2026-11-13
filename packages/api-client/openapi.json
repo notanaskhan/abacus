@@ -234505,7 +234505,7 @@
     },
     "/v1/me/today": {
       "get": {
-        "description": "The viewer's day; `status: building` with `needs_build` on the first open (\u00a73.8).",
+        "description": "The viewer's day; `status: building` with `needs_build` on the first open (\u00a73.8).\nI-02-T10 (DEC-4722): assembled by code over C13.",
         "operationId": "today",
         "parameters": [
           {
@@ -234608,16 +234608,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Today Route",
@@ -235281,16 +235271,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Today Drill Route",
@@ -288546,7 +288526,7 @@
     },
     "/v1/workbench/context-options": {
       "get": {
-        "description": "Only records the viewer can open (AC-C3).",
+        "description": "Only records the viewer can open (AC-C3). W-02-T10 (DEC-4715).",
         "operationId": "context_options",
         "parameters": [
           {
@@ -288681,16 +288661,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Context Options Route",
@@ -288857,16 +288827,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Sessions Route",
@@ -289110,16 +289070,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Delete Session Route",
@@ -289243,7 +289193,7 @@
         "x-abacus-action": "session.read"
       },
       "patch": {
-        "description": "The owner's rename; `title_source` becomes `manual`; 409 `stale_version` when `If-Match`\nis not the row's version; one `workbench_session.renamed` audit event (titles by hash).",
+        "description": "The owner's rename; `title_source` becomes `manual`; 409 `stale_version` when `If-Match`\nis not the row's version; one `workbench_session.renamed` audit event (titles by hash).\nW-02-T09 (DEC-4714).",
         "operationId": "rename_session",
         "parameters": [
           {
@@ -289370,16 +289320,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Rename Session Route",
@@ -289508,16 +289448,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Attach Context Route",
@@ -289646,16 +289576,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remove Context Route",

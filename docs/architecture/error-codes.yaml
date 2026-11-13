@@ -525,6 +525,11 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.ConnectorNotAvailable
     summary: No adapter for this system is registered here (catalogue honesty, AC-49).
+  consent_7216:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.briefing.facts.ConsentRequired
+    summary: 'A TRI subject of the engagement lacks the §7216 consents in force: no model call.'
   consent_declined:
     status: 409
     raised_by:
@@ -3231,6 +3236,21 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.run_commands.StepNotFailed
+  structure_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.allocation_structure.StructureInvalid
+    summary: The engine cannot run the structure; `facts.code` says why (never a partner's figures).
+  structure_not_pending:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.allocation_structure.StructureNotPending
+    summary: Only a version Pending approval is approved; the newest version is not one.
+  structure_version_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.allocation_structure.StructureVersionConflict
+    summary: 'The structure moved since the person read it: reload and re-apply.'
   suggestion_changed:
     status: 409
     raised_by:
@@ -3399,6 +3419,11 @@ codes:
     raised_by:
     - abacus.modules.workpapers.tie_out.CheckStale
     summary: 'The check changed since it was read (`seen_version`): 409, as C9 §6 documents (ED-155).'
+  tie_out_off:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.entity_sections.TieOutOff
+    summary: A section with an off tie-out is signed only with a note (TXP-07 b2).
   tin_conflict:
     status: 409
     raised_by:

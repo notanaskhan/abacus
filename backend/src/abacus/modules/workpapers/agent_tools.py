@@ -12,6 +12,7 @@ from typing import Annotated, Final
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
@@ -24,10 +25,13 @@ MAX_CELLS: Final = 200
 
 
 class SectionIn(BaseModel):
+    """The frozen workbench suite's arguments (S41 end pass, DEC-4733): the workpaper, and the
+    section it should be (its kind, `internal_control`, or its AUD-17 section, `planning`)."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    engagement_id: Annotated[UUID | None, Int] = None
-    code: Annotated[str, Field(min_length=1, max_length=20), Int]
+    workpaper_id: Annotated[UUID, Int]
+    section: Annotated[str | None, Field(min_length=1, max_length=40), Int] = None
 
 
 class CellRow(BaseModel):
@@ -58,16 +62,32 @@ class SectionOut(BaseModel):
     untrusted=("cells",), records_read="workpaper",
 )  # fmt: skip
 async def read_section(agent: AgentContext, args: SectionIn) -> SectionOut:
-    from abacus.modules.workpapers.service import workpaper_detail, workpapers_for
+    from abacus.kernel.db import tenant_session
+    from abacus.modules.workpapers.models import Workpaper
+    from abacus.modules.workpapers.service import section_of, workpaper_detail, workpapers_for
 
-    engagement = args.engagement_id or agent.engagement_id
-    if engagement is None:
-        raise NotFound("engagement")
+    async with tenant_session(agent.tenant) as session:
+        row = (
+            await session.execute(
+                select(Workpaper.engagement_id, Workpaper.kind).where(
+                    Workpaper.id == args.workpaper_id
+                )
+            )
+        ).first()
+    if row is None:
+        raise NotFound("workpaper")
+    engagement = row.engagement_id
+    # `workpapers_for` applies the reader's visibility: a paper they may not read is not found.
     papers = await workpapers_for(agent, engagement)  # type: ignore[arg-type] -- the run's context
-    paper = next((p for p in papers if p.code == args.code), None)
+    paper = next((p for p in papers if p.id == args.workpaper_id), None)
     if paper is None:
         raise NotFound("workpaper")
-    detail = await workpaper_detail(agent, engagement, paper.id)  # type: ignore[arg-type]
+    if args.section is not None and args.section not in {
+        row.kind,
+        section_of(row.kind, paper.audit_area),
+    }:
+        raise NotFound("workpaper_section")
+    detail = await workpaper_detail(agent, engagement, paper.id)  # type: ignore[arg-type] -- the run's context reads as its initiator
     cells = [
         CellRow(
             id=f"{paper.id}:{c.cell_key}",

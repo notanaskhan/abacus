@@ -692,7 +692,8 @@ async def approve(
         await tx.session.execute(_LOCK, {"k": f"{TARGET}:{return_id}"})
         newest = (await tx.session.execute(_STRUCTURES, {"r": return_id})).mappings().first()
         if newest is None or newest["id"] != pending.id:
-            raise StructureVersionConflict(facts={"current_version": int(newest["version_no"])})
+            current = 0 if newest is None else int(newest["version_no"])
+            raise StructureVersionConflict(facts={"current_version": current})
         approved_id = await _insert_version(
             tx, ctx.tenant_id, engagement_id, return_id, pending.version_no + 1, "approved",
             draft, None, by=pending.proposed_by_kind, proposal_id=pending.proposal_id,
@@ -791,9 +792,9 @@ def draft_from_proposal(rows: Sequence[tuple[str, object, Sequence[UUID]]]) -> D
     if kind == "straight_percentage" and not rungs:
         rungs.append(DraftRung(1, "straight_pct"))
     return Draft(
-        kind=cast(Kind, kind),
-        method=cast(Method, method),
-        convention=cast(Convention, convention),
+        kind=kind,
+        method=method,
+        convention=convention,
         rungs=tuple(rungs),
         citation_ids=tuple(citations),
     )

@@ -13,7 +13,7 @@ import io
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -70,11 +70,15 @@ def test_a_formula_in_the_report_stays_text_and_is_never_evaluated() -> None:
     assert cells["02!A4"].formula is None  # a client string is text in the cell store
 
 
+def _problems(error: ImportInvalid) -> list[dict[str, object]]:
+    return cast(list[dict[str, object]], error.facts["problems"])
+
+
 def test_problems_name_sheet_row_column_and_code_never_the_cell() -> None:
     bad = "Asset,Cost,Depreciation\nTruck,ten thousand,1000\n,,\nVan,5000,\n"
     with pytest.raises(ImportInvalid) as caught:
         parse("depreciation_register", bad.encode())
-    problems = caught.value.facts["problems"]
+    problems = cast(list[dict[str, object]], caught.value.facts["problems"])
     assert {"sheet": "csv", "row": 2, "column": "B", "code": "not_a_number"} in problems
     assert {"sheet": "csv", "row": 4, "column": "C", "code": "required"} in problems
     assert all("ten thousand" not in str(p) for p in problems)
@@ -83,10 +87,10 @@ def test_problems_name_sheet_row_column_and_code_never_the_cell() -> None:
 def test_a_missing_required_column_and_size_limits_are_refused() -> None:
     with pytest.raises(ImportInvalid) as missing:
         parse("depreciation_register", b"Asset,Cost\nTruck,1\n")
-    assert missing.value.facts["problems"][0]["code"] == "missing_column:current"
+    assert _problems(missing.value)[0]["code"] == "missing_column:current"
     with pytest.raises(ImportInvalid) as large:
         parse("depreciation_register", b"x" * (5 * 1024 * 1024 + 1))
-    assert large.value.facts["problems"][0]["code"] == "too_large"
+    assert _problems(large.value)[0]["code"] == "too_large"
 
 
 def test_an_xlsx_report_reads_cached_values_only() -> None:
@@ -118,7 +122,7 @@ def test_state_rows_land_in_08_f_to_h() -> None:
 
 @pytest.fixture
 def io_stub(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded calls
-    seen: dict[str, Any] = {"writes": [], "issues": [], "values": {}}
+    seen: dict[str, Any] = {"writes": [], "issues": [], "values": {}}  # Any: a test double
 
     async def write(
         agent: object, facts: object, return_id: object, writes: list[CellWrite]
@@ -126,7 +130,9 @@ def io_stub(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded
         seen["writes"].extend(writes)
         return len(writes)
 
-    async def current(tenant: object, target: str, target_id: object) -> dict[str, Any]:
+    async def current(
+        tenant: object, target: str, target_id: object
+    ) -> dict[str, Any]:  # Any: a test double
         return seen["values"]
 
     async def issue(ctx: object, **kwargs: object) -> uuid.UUID:
@@ -142,10 +148,10 @@ def io_stub(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded
 
 
 def test_no_depreciation_import_stops_at_needs_attention_with_one_issue(
-    io_stub: dict[str, Any],
+    io_stub: dict[str, Any],  # Any: a test double
 ) -> None:
     result = asyncio.run(
-        run_steps.depreciation_register(_Agent(), _facts("depreciation_register"))  # type: ignore[arg-type]
+        run_steps.depreciation_register(_Agent(), _facts("depreciation_register"))  # type: ignore[arg-type] -- a test double stands in for the typed object
     )
     assert (result.state, result.error_code) == ("failed", "import_required")
     (issue,) = io_stub["issues"]
@@ -153,21 +159,23 @@ def test_no_depreciation_import_stops_at_needs_attention_with_one_issue(
     assert issue["blocks"] == ("final_approval",) and issue["work_item_id"] == RETURN
 
 
-def test_an_imported_report_lets_the_step_succeed(io_stub: dict[str, Any]) -> None:
+def test_an_imported_report_lets_the_step_succeed(
+    io_stub: dict[str, Any],  # Any: a test double
+) -> None:  # Any: a test double
     io_stub["values"] = {
         w.address.replace("02!", "02!"): {"v": None if w.value is None else str(w.value)}
         for w in writes_for(parse("depreciation_register", REPORT.encode()))
     }
     result = asyncio.run(
-        run_steps.depreciation_register(_Agent(), _facts("depreciation_register"))  # type: ignore[arg-type]
+        run_steps.depreciation_register(_Agent(), _facts("depreciation_register"))  # type: ignore[arg-type] -- a test double stands in for the typed object
     )
     assert (result.state, result.records_read) == ("succeeded", 2)
-    bonus = asyncio.run(run_steps.bonus_eligibility(_Agent(), _facts("bonus_eligibility")))  # type: ignore[arg-type]
+    bonus = asyncio.run(run_steps.bonus_eligibility(_Agent(), _facts("bonus_eligibility")))  # type: ignore[arg-type] -- a test double stands in for the typed object
     assert (bonus.state, bonus.records_read) == ("succeeded", 1)
 
 
 def test_apportionment_writes_06_d_as_federal_times_the_percentage(
-    io_stub: dict[str, Any],
+    io_stub: dict[str, Any],  # Any: a test double
 ) -> None:
     io_stub["values"] = {
         "06!A2": {"v": "1"},
@@ -178,15 +186,17 @@ def test_apportionment_writes_06_d_as_federal_times_the_percentage(
         "08!G2": {"v": "62.5"},
         "08!H2": {"v": "48000"},
     }
-    result = asyncio.run(run_steps.apportionment_ptet(_Agent(), _facts("apportionment_ptet")))  # type: ignore[arg-type]
+    result = asyncio.run(run_steps.apportionment_ptet(_Agent(), _facts("apportionment_ptet")))  # type: ignore[arg-type] -- a test double stands in for the typed object
     assert result.state == "succeeded"
     written = {w.address: (w.value, w.formula) for w in io_stub["writes"]}
     assert written["06!D2"] == (D(785125), "=ROUND(C2*'08'!G2/100,0)")
     assert written["06!D3"] == (D(60250), "=ROUND(C3*'08'!G2/100,0)")
 
 
-def test_no_state_schedule_is_needs_attention(io_stub: dict[str, Any]) -> None:
-    result = asyncio.run(run_steps.state_k1s_k3s(_Agent(), _facts("state_k1s_k3s")))  # type: ignore[arg-type]
+def test_no_state_schedule_is_needs_attention(
+    io_stub: dict[str, Any],  # Any: a test double
+) -> None:  # Any: a test double
+    result = asyncio.run(run_steps.state_k1s_k3s(_Agent(), _facts("state_k1s_k3s")))  # type: ignore[arg-type] -- a test double stands in for the typed object
     assert (result.state, result.error_code) == ("failed", "import_required")
 
 

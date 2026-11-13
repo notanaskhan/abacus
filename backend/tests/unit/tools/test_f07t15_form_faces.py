@@ -66,7 +66,7 @@ def test_the_manifest_takes_each_field_from_its_page_and_refuses_ambiguity() -> 
     sizes = [(612.0, 792.0)] * len(ff.FACES)
     images = [f"page-{n}.png" for n in range(1, len(ff.FACES) + 1)]
     doc = ff.manifest(located, sizes, images)
-    fields = {f["id"]: f for f in doc["fields"]}  # type: ignore[union-attr]
+    fields = {f["id"]: f for f in doc["fields"]}  # type: ignore[union-attr] -- a test double stands in for the typed object
     assert fields["k.l5"]["page"] == 2 and fields["k.l5"]["rect_pt"] == [1.0, 2.0, 3.0, 4.0]
     assert fields["p1.m3"]["diagnostic"] == "m3_required"
     assert fields["m2.l4"]["diagnostic"] == "m2_off"

@@ -431,7 +431,13 @@ function Rules({
                   </span>
                   <span className="flex-1" />
                   {rung.percentage != null && onEdit !== undefined && !isEditing ? (
-                    <Button variant="ghost" size="sm" onClick={() => { onEdit(priority); }}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        onEdit(priority);
+                      }}
+                    >
                       {COPY.edit}
                     </Button>
                   ) : null}

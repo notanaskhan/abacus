@@ -214,7 +214,8 @@ async def seed(tenant_id: UUID, documents: int, batch: int) -> int:
 
 async def clean(tenant_id: UUID) -> int:
     async with uow(_system(tenant_id)) as tx:
-        gone = cast(CursorResult[Any], await tx.session.execute(_CLEAN))
+        result = await tx.session.execute(_CLEAN)
+        gone = cast(CursorResult[Any], result)  # Any: a DELETE's rows have no columns to type
         tx.record(
             "search_index.loadtest_seeded",
             target=Target("search_index", tenant_id),

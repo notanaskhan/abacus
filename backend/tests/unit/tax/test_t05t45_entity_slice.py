@@ -66,7 +66,9 @@ def test_the_recorder_refuses_a_firm_that_is_not_synthetic(
         return False
 
     monkeypatch.setattr(entity_seed, "is_synthetic_firm", not_synthetic)
-    ctx: Any = type("C", (), {"tenant": object(), "tenant_id": uuid.uuid4()})()
+    ctx: Any = type(  # Any: a test double
+        "C", (), {"tenant": object(), "tenant_id": uuid.uuid4()}
+    )()  # Any: a test double
     with pytest.raises(NotFound):
         asyncio.run(
             entity_seed.record_synthetic_entity(

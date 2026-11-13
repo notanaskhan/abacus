@@ -171,7 +171,9 @@ async def context_options_route(
     from abacus.modules.workbench.session_context import attached_of, options
 
     await workbench_gate(ctx)
-    attached = set() if session_id is None else await attached_of(ctx, session_id)
+    attached: set[tuple[str, UUID]] = (
+        set() if session_id is None else await attached_of(ctx, session_id)
+    )
     return ContextOptionsOut(
         tab=tab,
         items=[
@@ -194,9 +196,9 @@ def _items_out(session_id: UUID, items: list[Item]) -> ContextItemsOut:
         items=[
             ContextItemOut(
                 id=i.id,
-                kind=i.kind,  # type: ignore[arg-type]
+                kind=i.kind,  # type: ignore[arg-type] -- the run's context reads as its initiator
                 ref_id=i.ref_id,
-                card_title=i.card_title,  # type: ignore[arg-type]
+                card_title=i.card_title,  # type: ignore[arg-type] -- the run's context reads as its initiator
                 chip_label=i.chip_label,
                 summary_lines=list(i.summary_lines),
             )

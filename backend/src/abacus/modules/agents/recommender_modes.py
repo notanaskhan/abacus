@@ -177,7 +177,7 @@ async def recommend_mode(attribution: Attribution, facts: ModeFacts) -> ModeOutc
 def attribution_for(
     tenant: object, engagement_id: UUID | None, run_id: UUID | None
 ) -> Attribution:
-    return Attribution(tenant, engagement_id, RECOMMENDER, run_id)  # type: ignore[arg-type]
+    return Attribution(tenant, engagement_id, RECOMMENDER, run_id)  # type: ignore[arg-type] -- the run's context reads as its initiator
 
 
 __all__ = [

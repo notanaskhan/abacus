@@ -34,7 +34,7 @@ class _Eng:
     type: str = "audit"
 
 
-CTX: Any = object()
+CTX: Any = object()  # Any: a test double
 FAIRHAVEN = _Eng(uuid.uuid4(), "Fairhaven")
 NORTHWIND = _Eng(uuid.uuid4(), "Northwind")
 WALLED = _Eng(uuid.uuid4(), "Walled")
@@ -126,7 +126,7 @@ async def test_unmet_c1_gate_blocks_requests(
     class _Ctx:
         tenant: object = None
 
-    rows = await gates_blocking_requests(_Ctx(), [FAIRHAVEN.id, NORTHWIND.id])  # type: ignore[arg-type]
+    rows = await gates_blocking_requests(_Ctx(), [FAIRHAVEN.id, NORTHWIND.id])  # type: ignore[arg-type] -- a test double stands in for the typed object
     assert [(r.title, r.codes) for r in rows] == [
         ("Fairhaven · G3 not met", ("engagement_letter",))
     ]

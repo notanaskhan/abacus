@@ -168,7 +168,7 @@ def convention_question(transfers: Sequence[date], proposed: str | None) -> Conv
 
     options: list[dict[str, str]] = []
     for key in CONVENTIONS:
-        ends = [boundary(t, key) for t in transfers]  # type: ignore[arg-type] -- key is a Convention
+        ends = [boundary(t, key) for t in transfers]
         days = ", ".join(f"{d:%b} {d.day}, {d.year}" for d in ends)
         detail = f" (books close {days})" if days else ""
         options.append({"key": key, "title": f"{_TITLES[key]}{detail}"})

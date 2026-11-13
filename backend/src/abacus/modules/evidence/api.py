@@ -768,6 +768,7 @@ __all__ = [
     "register_proposal_source",
     "render_general_ledger",
     "render_journal_listing",
+    "render_preview",
     "render_trial_balance",
     "render_trial_balance_layers",
     "retain_until_for",
@@ -835,6 +836,9 @@ from abacus.modules.evidence.form_extraction import Extracted as ExtractedField 
 from abacus.modules.evidence.form_extraction import extract as extract_form  # noqa: E402
 from abacus.modules.evidence.form_extraction import identify as identify_form  # noqa: E402
 from abacus.modules.evidence.pii import detect as detect_pii  # noqa: E402
+
+# F-07-T15 (DEC-4731): the preview rasteriser, for the specimen tooling (pure, in process).
+from abacus.modules.evidence.previews import render as render_preview  # noqa: E402
 
 # P-09-T08: the run trace's samples for this module's records.
 from abacus.modules.evidence.trace_samples import (  # noqa: E402

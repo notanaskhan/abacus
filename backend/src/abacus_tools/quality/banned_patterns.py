@@ -1708,7 +1708,11 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "notices": _BASE
     | {"organisations", "engagements", "requests", "evidence", "review", "signatures"}
     | {"communications", "agents", "tax", "methodology", "reporting"},
-    "workbench": _BASE | {"organisations", "engagements", "methodology", "agents", "integrations"},
+    # W-02-T10 (DEC-4715, S41 end pass DEC-4733): the context card's summary lines read requests'
+    # PBC counts and workpapers' papers; neither imports workbench, so the edges stay acyclic.
+    "workbench": _BASE
+    | {"organisations", "engagements", "methodology", "agents", "integrations"}
+    | {"requests", "workpapers"},
     # T-02-T10: practice registers its due-dates rules into tax (`register_due_dates_source`).
     # I-02-T04 (DEC-4610): the Today read model reads gates through review, briefings through
     # agents and request counts through requests; nothing imports practice.
@@ -2947,6 +2951,10 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/assurance/trial_balance.py",
             "src/abacus/modules/tax/approval.py",  # T-01-T18: the return's only L4 writer
             "src/abacus/modules/sampling/sample_sets.py",  # A-03-T10: a sample's only L2 writer
+            # T-05-T41 (DEC-4702): an allocation structure's only L3 writer (Samuel's approval).
+            "src/abacus/modules/tax/allocation_structure.py",
+            # T-05-T42 (DEC-4705): a workbook section's only sign writer (tie-outs first).
+            "src/abacus/modules/tax/entity_sections.py",
         ),
     ),
     Rule(

@@ -805,6 +805,16 @@ async def _authorise_edit(ctx: AuthContext, resource: Resource) -> None:
     await authorise(ctx, "workbook.edit", resource)
 
 
+async def _authorise_import(ctx: AuthContext, resource: Resource) -> None:
+    """T-05-T40: a person imports a report (never an agent, ADR-005)."""
+    await authorise(ctx, "workbook_import.create", resource)
+
+
+async def _authorise_structure_edit(ctx: AuthContext, resource: Resource) -> None:
+    """T-05-T41: a person drafts an allocation structure (never an agent, ADR-005)."""
+    await authorise(ctx, "allocation_structure.edit", resource)
+
+
 async def _authorise_run_start(ctx: AuthContext, resource: Resource) -> None:
     """A person starts the workbook run (never an agent: ADR-005)."""
     await authorise(ctx, "workbook_run.start", resource)
@@ -1108,7 +1118,7 @@ async def entity_import_route(
 
     await _flag_on(ctx)
     loaded = await load_return(ctx, return_id)
-    await authorise(ctx, "workbook_import.create", await return_resource(ctx, loaded))
+    await _authorise_import(ctx, await return_resource(ctx, loaded))
     declared = request.headers.get("content-length")
     if declared is not None and declared.isdigit() and int(declared) > MAX_BYTES:
         raise PayloadTooLarge(facts={"limit": MAX_BYTES})
@@ -1616,7 +1626,7 @@ async def entity_allocation_draft_route(
     await _flag_on(ctx)
     loaded = await load_return(ctx, return_id)
     resource = await return_resource(ctx, loaded)
-    await authorise(ctx, "allocation_structure.edit", resource)
+    await _authorise_structure_edit(ctx, resource)
     await save_draft(
         ctx,
         return_id=return_id,

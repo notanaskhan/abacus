@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from dataclasses import replace
 from decimal import Decimal
 from typing import Any
 
@@ -102,8 +103,32 @@ def test_k1_shares_come_from_the_ownership_note(note: str, share: Decimal | None
     assert run_steps.share_of(note) == share
 
 
-@pytest.mark.parametrize("kind", run_steps.PART_TWO)
-def test_part_two_steps_answer_needs_attention(kind: str) -> None:
-    handler = run_steps._import_required(kind)  # pyright: ignore[reportPrivateUsage] -- the test or the shared trajectory base reaches a private helper
-    result = asyncio.run(handler(_Agent(), FACTS))  # type: ignore[arg-type] -- a test double or the review api's own context alias
+def test_every_part_two_step_has_its_handler() -> None:
+    """T-05-T40 replaced S40's fail-closed stub with the part-2 handlers (DEC-4703)."""
+    assert set(run_steps.PART_TWO_HANDLERS) == set(run_steps.PART_TWO)
+
+
+@pytest.mark.parametrize("kind", ["depreciation_register", "bonus_eligibility"])
+def test_a_report_step_with_no_report_needs_attention(
+    kind: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An empty workbook still answers Needs attention (`import_required`) and raises the
+    step's issue, as S40's stub did."""
+    issues: list[str] = []
+
+    async def no_cells(tenant: object, target: object, return_id: object) -> dict[str, object]:
+        return {}
+
+    async def create_issue(*_args: object, **kwargs: object) -> object:
+        issues.append(str(kwargs["source_ref"]))
+        return object()
+
+    import abacus.modules.review.api as review_api
+
+    monkeypatch.setattr(run_steps, "current_values", no_cells)
+    monkeypatch.setattr(review_api, "create_issue", create_issue)
+    step = replace(FACTS, step_key=kind)
+    handler = run_steps.PART_TWO_HANDLERS[kind]
+    result = asyncio.run(handler(_Agent(), step))  # type: ignore[arg-type] -- a test double stands in for the run's context
     assert (result.state, result.error_code) == ("failed", "import_required")
+    assert issues == [f"run_step:{kind}:import_required"]
