@@ -58,6 +58,7 @@ function RowLink({
   return (
     <li
       data-row={row.gate_id}
+      className="rounded-[8px] data-[lit=true]:bg-match-bg"
       onMouseEnter={() => onHover?.(row.highlight_refs ?? [])}
       onMouseLeave={() => onHover?.(null)}
       onFocus={() => onHover?.(row.highlight_refs ?? [])}
