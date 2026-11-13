@@ -256,3 +256,11 @@ openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition` attach
 identical bytes; formulas are the closed grammar's, live; text is never a formula. 409
 `export_blocked` while a run is open (the live workbook only); 404 `workbook_version` for an
 unknown version. Audited `workbook.exported`.
+
+## T-05-T54 · the memo service (DEC-4909, DEC-4910)
+`GET …/memo` answers (was 501): `status` (`drafting`, `adopted`, `approved`, `stale`), sections
+(`key`, `title`, `body`, `human_owned`, `version`), `seen_hash`, `stale_fields` ("ending capital
+6,860,000 → 6,866,200"). `POST …/memo/draft` (202 `run_id`; 409 `consent_required`; no sections
+named regenerates a stale memo's affected sections). `PATCH …/memo/sections/{key}` (409
+`memo_version_conflict`). `POST …/memo/adopt` (L1) and new `POST …/memo/approve` (L2; 403
+`preparer_cannot_approve`). `GET …/opportunities` answers. Event `tax_memo.went_stale`.

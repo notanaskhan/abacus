@@ -421,6 +421,14 @@ from abacus.modules.tax import entity_guards as _entity_guards  # noqa: E402
 
 _entity_guards.register()
 
+# T-05-T54 (DEC-4909, DEC-4910): the preparer memo service (the memo as a P-04 reviewable and its
+# draft run's workflow).
+from abacus.modules.tax import memo_service as _memo_service  # noqa: E402
+
+_memo_service.register()
+WORKFLOWS.update(_memo_service.WORKFLOWS)
+ACTIVITIES = (*ACTIVITIES, *_memo_service.ACTIVITIES)  # pyright: ignore[reportConstantRedefinition] -- the worker reads the final tuple
+
 # T-04-T19 (DEC-3211): the tax tools on C17 register at their module's import.
 from abacus.modules.tax.tools import (  # noqa: E402
     read_return as _tax_tools_loaded,

@@ -331,6 +331,9 @@ async def apply_fix(tenant: TenantContext, proposal_id: UUID) -> None:
             after=Ref(proposal=str(proposal_id), cells=len(fixed), recomputed=len(dependents)),
             scope=Scope(engagement_id=engagement_id),
         )
+    from abacus.modules.tax.memo_service import check_stale  # T-05-T54: the memo's figures
+
+    await check_stale(tenant.tenant_id, return_id)
     person = await member_context(tenant.tenant_id, approver)
     if person is None:  # the approver left the firm since: the values stand, no re-run
         return

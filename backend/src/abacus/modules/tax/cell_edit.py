@@ -260,6 +260,9 @@ async def edit_cell(
             after=Ref(cell=at.key, recomputed=len(touched)),
         )
     checkpoint = await save_checkpoint(ctx, WORKBOOK, return_id, name)
+    from abacus.modules.tax.memo_service import check_stale  # T-05-T54: the memo's figures
+
+    await check_stale(ctx.tenant_id, return_id)
     shown = figures[at.key]
     if rendered is None and number is None:
         shown_text = value  # a text cell keeps its text

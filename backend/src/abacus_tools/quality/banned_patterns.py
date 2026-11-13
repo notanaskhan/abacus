@@ -2955,6 +2955,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/tax/allocation_structure.py",
             # T-05-T42 (DEC-4705): a workbook section's only sign writer (tie-outs first).
             "src/abacus/modules/tax/entity_sections.py",
+            # T-05-T54 (DEC-4910): the memo's L1 adopt and L2 approve through `sign_target`.
+            "src/abacus/modules/tax/memo_service.py",
         ),
     ),
     Rule(
