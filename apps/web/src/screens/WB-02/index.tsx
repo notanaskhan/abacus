@@ -61,6 +61,8 @@ export interface GroundedAnswer {
   nothingWritten: boolean;
   /** The answer points to a control conclusion reserved to a role (AC-A2). */
   controlLink: boolean;
+  /** The audit the answer's `entity_ref` names (record type `audit`): AUD-09's `auditId`. */
+  controlAuditId: string | null;
   /** The question the person typed. */
   question: string;
 }
@@ -86,7 +88,7 @@ export interface WB02ViewProps {
   onRemove?: (item: ContextItemOut) => void;
   onSend?: (text: string) => void;
   onOpenSource?: (source: AnswerSource) => void;
-  onOpenControl?: () => void;
+  onOpenControl?: (auditId: string | null) => void;
 }
 
 function ContextStack({
@@ -251,7 +253,7 @@ function Answer({
 }: {
   answer: GroundedAnswer;
   onOpenSource?: ((s: AnswerSource) => void) | undefined;
-  onOpenControl?: (() => void) | undefined;
+  onOpenControl?: ((auditId: string | null) => void) | undefined;
 }): JSX.Element {
   return (
     <div data-wb02="answer" className="flex flex-col gap-[10px] px-[16px] py-[12px]">
@@ -279,7 +281,7 @@ function Answer({
         {answer.controlLink ? (
           <button
             type="button"
-            onClick={onOpenControl}
+            onClick={() => onOpenControl?.(answer.controlAuditId)}
             className="mt-[6px] text-body text-ink underline-offset-2 hover:underline"
           >
             {COPY.controlLink}
@@ -395,6 +397,18 @@ function record(v: unknown): Record<string, unknown> {
   return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
 }
 
+/** The first audit an answer's blocks name (`entity_ref` with record type `audit`). */
+function auditOf(parts: unknown): string | null {
+  if (!Array.isArray(parts)) return null;
+  for (const part of parts as unknown[]) {
+    const r = record(part);
+    if (r["kind"] === "entity_ref" && r["record_type"] === "audit") {
+      return typeof r["record_id"] === "string" ? r["record_id"] : null;
+    }
+  }
+  return null;
+}
+
 /** e: the newest question and its answer from the session's items (C6 v2), as stored: the blocks
  * the verifier kept, their sources, and whether the turn's code line follows. */
 export function answerOf(items: readonly Item[] | undefined): GroundedAnswer | undefined {
@@ -433,7 +447,10 @@ export function answerOf(items: readonly Item[] | undefined): GroundedAnswer | u
     nothingWritten: after.some(
       (i) => i.kind === "notice" && record(i.payload)["code"] === "nothing_written",
     ),
-    controlLink: Array.isArray(payload["links"]) && (payload["links"] as unknown[]).length > 0,
+    controlLink:
+      auditOf(blocks["parts"]) !== null ||
+      (Array.isArray(payload["links"]) && (payload["links"] as unknown[]).length > 0),
+    controlAuditId: auditOf(blocks["parts"]),
     question: text(record(asked?.payload)["body"]),
   };
 }
@@ -444,7 +461,7 @@ export interface WB02Props {
   /** A suggested prompt's text goes to the composer; nothing is sent. */
   onDraft: (text: string) => void;
   /** AUD-09: the Internal Control link in an answer. */
-  onOpenControl?: () => void;
+  onOpenControl?: (auditId: string | null) => void;
 }
 
 export function WB02({ list, onDraft, onOpenControl }: WB02Props): JSX.Element {
