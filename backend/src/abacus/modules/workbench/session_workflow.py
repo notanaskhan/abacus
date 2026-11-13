@@ -103,9 +103,16 @@ class WorkbenchSessionWorkflow:
                 if self._closed:
                     return "closed"
                 continue
+            # W-02-T15 (DEC-4913): v2 turns carry the context layers, the pinned scope, the
+            # first-message title, compaction, the plans gate and the code's "Nothing was written."
+            turn = (
+                "workbench.session.turn_v2"
+                if workflow.patched("w02-session-v2")
+                else "workbench.session.turn"
+            )
             try:
                 done = await workflow.execute_activity(
-                    "workbench.session.turn",
+                    turn,
                     args=[p.tenant_id, p.session_id, work.kind, work.seq],
                     result_type=TurnDone,
                     start_to_close_timeout=_TURN,

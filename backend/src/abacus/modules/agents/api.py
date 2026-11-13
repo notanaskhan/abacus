@@ -284,6 +284,9 @@ from abacus.modules.agents.session_turns import dispatch_run as dispatch_run
 from abacus.modules.agents.session_turns import open_plan_child_run as open_plan_child_run
 from abacus.modules.agents.session_turns import open_turn_run as open_turn_run
 from abacus.modules.agents.session_turns import run_session_turn as run_session_turn
+from abacus.modules.agents.session_turns import (
+    turn_capability_ready as turn_capability_ready,
+)
 from abacus.modules.agents.shadow_score import (
     DecidedNotice,
     OverrideRate,
@@ -777,6 +780,7 @@ __all__ = [
     "template_drafts_router",
     "text_part",
     "tool_output_for_model",
+    "turn_capability_ready",
     "txt",
     "upload_review_available",
     "verify_citations",
