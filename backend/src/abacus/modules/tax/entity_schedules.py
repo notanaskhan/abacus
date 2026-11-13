@@ -166,6 +166,29 @@ def analysis(lines: Sequence[KLine]) -> KLine:
 
 # --- capital accounts ----------------------------------------------------------------------------
 
+# T-05-T55 (DEC-4911): 05's columns past F, read when a run or a person wrote them (TXP-07's
+# panes): G tax-exempt income on the tax basis (blank when the run left it out), H the same on the
+# §704(b) and book bases, I nondeductible noncapital expense, J transfers (§706(d) assignment),
+# K guaranteed payments (memo), L ending capital on the §704(b) and book bases.
+EXTRA_COLUMNS: Final = {
+    "tax_exempt": "G",
+    "tax_exempt_704b": "H",
+    "nondeductible": "I",
+    "transfers": "J",
+    "guaranteed_payments": "K",
+    "ending_704b": "L",
+}
+
+
+def capital_extras(values: Values, row: int) -> dict[str, Decimal | None]:
+    """A 05 row's extra columns: None where the cell is blank (the screen draws "—")."""
+    out: dict[str, Decimal | None] = {}
+    for key, col in EXTRA_COLUMNS.items():
+        cell = values.get(f"05!{col}{row}")
+        raw = None if cell is None else cell.get("v")
+        out[key] = None if raw in (None, "") else dec(values, f"05!{col}{row}")
+    return out
+
 
 @dataclass(frozen=True)
 class CapitalRow:

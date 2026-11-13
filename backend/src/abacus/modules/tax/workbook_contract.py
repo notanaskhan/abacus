@@ -471,6 +471,15 @@ class WorkbookCapitalRowOut(BaseModel):
     distributions: Annotated[Decimal, Tri]
     ending: Annotated[Decimal, Tri]
     name: Annotated[str | None, Confidential] = None  # T-05-T34: the 05 row's partner name
+    # T-05-T55 (DEC-4911), additive: 05's columns G-L (None where blank: TXP-07 draws "—").
+    tax_exempt: Annotated[Decimal | None, Tri] = None
+    tax_exempt_704b: Annotated[Decimal | None, Tri] = None
+    nondeductible: Annotated[Decimal | None, Tri] = None
+    transfers: Annotated[Decimal | None, Tri] = None
+    guaranteed_payments: Annotated[Decimal | None, Tri] = None
+    ending_704b: Annotated[Decimal | None, Tri] = None
+    # The 05 row's number, for SHL-09 (`05!G<row>`).
+    row: Annotated[int | None, Internal] = None
 
 
 class WorkbookCapitalTotalsOut(BaseModel):
@@ -483,6 +492,11 @@ class WorkbookCapitalTotalsOut(BaseModel):
     income: Annotated[Decimal, Tri]
     distributions: Annotated[Decimal, Tri]
     ending: Annotated[Decimal, Tri]
+    # T-05-T55 (DEC-4911), additive: Σ tax-exempt income on the tax basis ("OTHER INCREASES")
+    # and Σ transfers (nets to 0).
+    tax_exempt: Annotated[Decimal | None, Tri] = None
+    transfers: Annotated[Decimal | None, Tri] = None
+    ending_704b: Annotated[Decimal | None, Tri] = None
 
 
 class WorkbookItemLOut(BaseModel):
@@ -505,6 +519,10 @@ class WorkbookCapitalAccountsOut(BaseModel):
     tie: Annotated[TallyState, Internal]
     totals: Annotated[WorkbookCapitalTotalsOut | None, Tri] = None
     item_l: Annotated[WorkbookItemLOut | None, Tri] = None
+    # T-05-T55 (DEC-4911), additive: the §704(b)/book endings against Schedule L, and Item L
+    # derived from the rows (Σ endings = the total).
+    book_tie: Annotated[TallyState, Internal] = "pending"
+    derives_tie: Annotated[TallyState, Internal] = "pending"
 
 
 class WorkbookM2LineOut(BaseModel):
@@ -1575,6 +1593,13 @@ async def entity_capital_accounts_route(
     rows = es.capital_rows(values, return_id, known)
     totals = es.capital_totals(rows)
     found = es.item_l(rows, es.m2_as_drafted(values))
+    extras = [es.capital_extras(values, n) for n in range(2, len(rows) + 2)]
+
+    def total_of(key: str) -> Decimal | None:
+        present = [v for e in extras if (v := e[key]) is not None]
+        return sum(present, Decimal(0)) if present else None
+
+    book = total_of("ending_704b")
     return WorkbookCapitalAccountsOut(
         view=view,
         basis="tax",
@@ -1587,12 +1612,21 @@ async def entity_capital_accounts_route(
                 income=r.income,
                 distributions=r.distributions,
                 ending=r.ending,
+                row=n,
+                **extras[n - 2],
             )
-            for r in rows
+            for n, r in enumerate(rows, start=2)
         ],
         tie=es.capital_tie(rows),
-        totals=WorkbookCapitalTotalsOut(**totals.__dict__),
+        totals=WorkbookCapitalTotalsOut(
+            **totals.__dict__,
+            tax_exempt=total_of("tax_exempt"),
+            transfers=total_of("transfers"),
+            ending_704b=book,
+        ),
         item_l=WorkbookItemLOut(**found.__dict__),
+        book_tie="pending" if book is None else ("tie" if book == found.m2_ending else "off"),
+        derives_tie="tie" if sum((r.ending for r in rows), Decimal(0)) == totals.ending else "off",
     )
 
 
