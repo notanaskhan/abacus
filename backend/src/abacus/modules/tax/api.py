@@ -436,3 +436,8 @@ from abacus.modules.tax import (  # noqa: E402
 )
 
 _run_steps.register()
+
+# T-05-T41 (DEC-4701): the allocation structure's reviewable, facts and proposal adapter.
+from abacus.modules.tax import allocation_structure as _allocation_structure  # noqa: E402
+
+_allocation_structure.register()

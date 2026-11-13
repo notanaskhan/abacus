@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Final, Literal, NoReturn, cast, get_args
+from typing import TYPE_CHECKING, Annotated, Final, Literal, NoReturn, cast, get_args
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -35,6 +35,9 @@ from abacus.modules.identity.api import (
     current_context,
     mask_tins_for,
 )
+
+if TYPE_CHECKING:
+    from abacus.modules.tax.allocation_structure import Draft
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -532,6 +535,35 @@ class WorkbookRungOut(BaseModel):
     citation_ids: Annotated[list[UUID], Internal] = Field(default_factory=list[UUID])
 
 
+class WorkbookAllocationPeriodOut(BaseModel):
+    """T-05-T41: one period (straight percentage) or one rung's total (waterfall)."""
+
+    model_config = _cfg()
+
+    key: Annotated[str, Internal]
+    starts_on: Annotated[date | None, Internal] = None
+    ends_on: Annotated[date | None, Internal] = None
+    amount: Annotated[Decimal, Tri]
+
+
+class WorkbookAllocationResultOut(BaseModel):
+    model_config = _cfg()
+
+    partner_id: Annotated[UUID, Internal]
+    period_key: Annotated[str, Internal]
+    rung_priority: Annotated[int | None, Internal] = None
+    amount: Annotated[Decimal, Tri]
+
+
+class WorkbookAllocationPartnerOut(BaseModel):
+    model_config = _cfg()
+
+    partner_id: Annotated[UUID, Internal]
+    name: Annotated[str, Tri]
+    kind: Annotated[Literal["gp", "lp", "member", "shareholder"], Internal]
+    total: Annotated[Decimal, Tri]
+
+
 class WorkbookAllocationStructureOut(BaseModel):
     model_config = _cfg()
 
@@ -541,6 +573,30 @@ class WorkbookAllocationStructureOut(BaseModel):
     rungs: Annotated[list[WorkbookRungOut], Tri]
     seen_hash: Annotated[str, Internal]  # what an L3 sign-off names (P-04)
     allowed_actions: Annotated[list[WorkbookAction], Internal]
+    # T-05-T41 (DEC-4701), additive: what TXP-06 draws and the target its L3 names.
+    structure_id: Annotated[UUID | None, Internal] = None
+    sign_off_target_id: Annotated[UUID | None, Internal] = None
+    latest_version: Annotated[int, Internal] = 0
+    method: Annotated[Literal["interim_closing", "proration"], Internal] = "interim_closing"
+    convention: Annotated[Literal["calendar_day", "semi_monthly", "monthly"], Internal] = (
+        "calendar_day"
+    )
+    proposed_by: Annotated[Literal["human", "agent"] | None, Internal] = None
+    income: Annotated[MaybeMoney, Tri] = None
+    distributable: Annotated[MaybeMoney, Tri] = None
+    periods: Annotated[list[WorkbookAllocationPeriodOut], Tri] = Field(
+        default_factory=list[WorkbookAllocationPeriodOut]
+    )
+    partners: Annotated[list[WorkbookAllocationPartnerOut], Tri] = Field(
+        default_factory=list[WorkbookAllocationPartnerOut]
+    )
+    results: Annotated[list[WorkbookAllocationResultOut], Tri] = Field(
+        default_factory=list[WorkbookAllocationResultOut]
+    )
+    checks: Annotated[dict[str, bool], Internal] = Field(default_factory=dict[str, bool])
+    gp_profit_percent: Annotated[Decimal | None, Tri] = None
+    citation_ids: Annotated[list[UUID], Internal] = Field(default_factory=list[UUID])
+    persisted: Annotated[bool, Internal] = True  # False on a preview
 
 
 class WorkbookAllocationDraftIn(BaseModel):
@@ -549,6 +605,34 @@ class WorkbookAllocationDraftIn(BaseModel):
     expected_version: Annotated[int, Internal]
     kind: Annotated[StructureKind, Internal]
     rungs: Annotated[list[WorkbookRungOut], Field(min_length=1, max_length=20), Tri]
+    # T-05-T41, additive: the §706(d) method and convention, the year's income (the waterfall's
+    # and proration's) and the closed-books amounts by segment (interim closing; else 04's).
+    method: Annotated[Literal["interim_closing", "proration"], Internal] = "interim_closing"
+    convention: Annotated[Literal["calendar_day", "semi_monthly", "monthly"], Internal] = (
+        "calendar_day"
+    )
+    income: Annotated[MaybeMoney, Tri] = None
+    segment_amounts: Annotated[list[Money], Field(max_length=24), Tri] = Field(
+        default_factory=list[Decimal]
+    )
+
+
+class WorkbookAllocationApproveIn(BaseModel):
+    """T-05-T41: TXP-06 c2's "Approve structure" (SHL-12 at L3)."""
+
+    model_config = _cfg()
+
+    seen_hash: Annotated[str, Field(min_length=64, max_length=71), Internal]
+    statement_version: Annotated[str, Field(min_length=1, max_length=40), Internal]
+
+
+class WorkbookAllocationApprovedOut(BaseModel):
+    model_config = _cfg()
+
+    sign_off_id: Annotated[UUID, Internal]
+    structure_id: Annotated[UUID, Internal]
+    run_id: Annotated[UUID | None, Internal] = None  # the capital and K-1 re-run
+    run_no: Annotated[int | None, Internal] = None
 
 
 # --- sections, issues, the memo, reconciliation ------------------------------------------------
@@ -1334,39 +1418,217 @@ async def entity_m2_route(
     )
 
 
+def _draft(body: WorkbookAllocationDraftIn) -> Draft:
+    from abacus.modules.tax.allocation_structure import Draft, DraftRung, rung_params
+
+    return Draft(
+        kind=body.kind,
+        method=body.method,
+        convention=body.convention,
+        income=body.income,
+        segment_amounts=tuple(body.segment_amounts),
+        rungs=tuple(
+            DraftRung(n, r.key, rung_params(r.key, r.percentage, r.amount), tuple(r.citation_ids))
+            for n, r in enumerate(body.rungs, start=1)
+        ),
+        citation_ids=tuple(dict.fromkeys(c for r in body.rungs for c in r.citation_ids)),
+    )
+
+
+def _rung_out(priority: int, rule_type: str, params: dict[str, str]) -> WorkbookRungOut:
+    from abacus.modules.tax.allocation_structure import PERCENT_PARAM
+
+    key = PERCENT_PARAM.get(rule_type)
+    pct = params.get(key) if key else None
+    days = params.get("days") if rule_type == "preferred_return" else None
+    return WorkbookRungOut(
+        key=rule_type,
+        label=rule_type.replace("_", " ").capitalize(),
+        percentage=None if pct is None else Decimal(pct),
+        amount=None if days is None else Decimal(days),
+    )
+
+
+async def _structure_out(
+    ctx: AuthContext, return_id: UUID, resource: Resource, version: int | None
+) -> WorkbookAllocationStructureOut:
+    from abacus.modules.tax import allocation_structure as alloc
+
+    found = await alloc.view(ctx.tenant, return_id, version)
+    actions = cast(
+        list[WorkbookAction],
+        [a for a in await allowed_actions(ctx, resource) if a == "allocation_structure.edit"],
+    )
+    names = {p.id: p for p in found.partners}
+    totals: dict[UUID, Decimal] = {}
+    for r in found.results:
+        totals[r.partner_id] = totals.get(r.partner_id, Decimal(0)) + r.amount
+    row = found.row
+    periods: dict[str, Decimal] = {}
+    for r in found.results:
+        key = r.period_key if r.rung_priority is None else f"r{r.rung_priority}"
+        periods[key] = periods.get(key, Decimal(0)) + r.amount
+    return WorkbookAllocationStructureOut(
+        version=0 if row is None else row.version_no,
+        kind="straight_percentage" if row is None else row.kind,
+        status=found.status,
+        rungs=[_rung_out(r.priority, r.rule_type, dict(r.params)) for r in found.rungs],
+        seen_hash="" if row is None else f"sha256:{row.content_hash}",
+        allowed_actions=actions,
+        structure_id=None if row is None else row.id,
+        sign_off_target_id=None if row is None else row.sign_off_target,
+        latest_version=found.latest_version,
+        method="interim_closing" if row is None else row.method,
+        convention="calendar_day" if row is None else row.convention,
+        proposed_by=None if row is None else row.proposed_by_kind,
+        income=None if row is None else row.income,
+        distributable=None if row is None else row.distributable,
+        periods=[WorkbookAllocationPeriodOut(key=k, amount=v) for k, v in periods.items()],
+        partners=[
+            WorkbookAllocationPartnerOut(
+                partner_id=p.id,
+                name=p.name,
+                kind=cast(Literal["gp", "lp", "member", "shareholder"], p.kind),
+                total=totals.get(p.id, Decimal(0)),
+            )
+            for p in names.values()
+        ],
+        results=[
+            WorkbookAllocationResultOut(
+                partner_id=r.partner_id,
+                period_key=r.period_key,
+                rung_priority=r.rung_priority,
+                amount=r.amount,
+            )
+            for r in found.results
+        ],
+        citation_ids=[] if row is None else list(row.citation_ids),
+    )
+
+
 @workbook_router.get(
     f"{_R}/allocation-structure", action="allocation_structure.read",
-    response_model=WorkbookAllocationStructureOut, errors=(501,),
+    response_model=WorkbookAllocationStructureOut,
 )  # fmt: skip
 async def entity_allocation_route(
     return_id: UUID, ctx: Ctx, version: Annotated[int | None, Query(ge=1)] = None
 ) -> WorkbookAllocationStructureOut:
+    """T-05-T41 (DEC-4701): the newest version (or `version`), its rungs, stored results and
+    the partners' totals; `seen_hash` is what TXP-06's L3 names."""
+    from abacus.modules.tax.overview import load_return, return_resource
+
     await _flag_on(ctx)
-    _not_yet()
+    loaded = await load_return(ctx, return_id)
+    resource = await return_resource(ctx, loaded)
+    await authorise(ctx, "allocation_structure.read", resource)
+    return await _structure_out(ctx, return_id, resource, version)
 
 
 @workbook_router.put(
     f"{_R}/allocation-structure/draft", action="allocation_structure.edit",
-    response_model=WorkbookAllocationStructureOut, errors=(409, 501),
+    response_model=WorkbookAllocationStructureOut, errors=(409,),
 )  # fmt: skip
 async def entity_allocation_draft_route(
     return_id: UUID, body: WorkbookAllocationDraftIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> WorkbookAllocationStructureOut:
-    """A new draft version; approval is P-04's L3 sign-off on `allocation_structure`."""
+    """A new version Pending approval (`structure_version_conflict`, 409; a manager or partner
+    only, `structure_editor_required`, 403); approval is P-04's L3 sign-off on it."""
+    from abacus.modules.tax.allocation_structure import save_draft
+    from abacus.modules.tax.overview import load_return, return_resource
+
     await _flag_on(ctx)
-    _not_yet()
+    loaded = await load_return(ctx, return_id)
+    resource = await return_resource(ctx, loaded)
+    await authorise(ctx, "allocation_structure.edit", resource)
+    await save_draft(
+        ctx,
+        return_id=return_id,
+        engagement_id=loaded.facts.engagement_id,
+        year=int(loaded.row.tax_year),
+        expected_version=body.expected_version,
+        draft=_draft(body),
+    )
+    return await _structure_out(ctx, return_id, resource, None)
 
 
 @workbook_router.post(
     f"{_R}/allocation-structure/preview", action="allocation_structure.read",
-    response_model=WorkbookAllocationStructureOut, errors=(501,),
+    response_model=WorkbookAllocationStructureOut,
 )  # fmt: skip
 async def entity_allocation_preview_route(
     return_id: UUID, body: WorkbookAllocationDraftIn, ctx: Ctx
 ) -> WorkbookAllocationStructureOut:
-    """Recompute without persistence."""
+    """Recompute without persistence (TXP-06 d: the back-solve shows Pending until Save)."""
+    from abacus.modules.tax.allocation_structure import preview
+    from abacus.modules.tax.overview import load_return, return_resource
+
     await _flag_on(ctx)
-    _not_yet()
+    loaded = await load_return(ctx, return_id)
+    resource = await return_resource(ctx, loaded)
+    await authorise(ctx, "allocation_structure.read", resource)
+    draft = _draft(body)
+    found = await preview(ctx, return_id, int(loaded.row.tax_year), draft)
+    return WorkbookAllocationStructureOut(
+        version=body.expected_version,
+        kind=draft.kind,
+        status="editing",
+        rungs=list(body.rungs),
+        seen_hash="",
+        allowed_actions=[],
+        method=draft.method,
+        convention=draft.convention,
+        income=found.total,
+        distributable=found.distributable,
+        periods=[
+            WorkbookAllocationPeriodOut(
+                key=p.key, starts_on=p.starts_on, ends_on=p.ends_on, amount=p.amount
+            )
+            for p in found.periods
+        ],
+        results=[
+            WorkbookAllocationResultOut(
+                partner_id=r.partner_id,
+                period_key=r.period_key,
+                rung_priority=r.rung_priority,
+                amount=r.amount,
+            )
+            for r in found.results
+        ],
+        checks=dict(found.checks),
+        gp_profit_percent=found.gp_profit_percent,
+        persisted=False,
+    )
+
+
+@workbook_router.post(
+    f"{_R}/allocation-structure/approve", action="sign_off.create",
+    response_model=WorkbookAllocationApprovedOut, status_code=201, errors=(409,),
+)  # fmt: skip
+async def entity_allocation_approve_route(
+    return_id: UUID, body: WorkbookAllocationApproveIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> WorkbookAllocationApprovedOut:
+    """TXP-06 c2: the L3 sign-off (P-04's rules: a person only, a manager or partner, not the
+    version's preparer; `content_changed` when the structure moved), the approved version and the
+    capital and K-1 re-run (none while a run is open)."""
+    from abacus.modules.tax.allocation_structure import approve
+    from abacus.modules.tax.overview import load_return, return_resource
+
+    await _flag_on(ctx)
+    loaded = await load_return(ctx, return_id)
+    await authorise(ctx, "allocation_structure.read", await return_resource(ctx, loaded))
+    done = await approve(
+        ctx,
+        return_id=return_id,
+        engagement_id=loaded.facts.engagement_id,
+        seen_hash=body.seen_hash,
+        statement_version=body.statement_version,
+    )
+    return WorkbookAllocationApprovedOut(
+        sign_off_id=done.sign_off_id,
+        structure_id=done.structure_id,
+        run_id=done.run_id,
+        run_no=done.run_no,
+    )
 
 
 @workbook_router.get(

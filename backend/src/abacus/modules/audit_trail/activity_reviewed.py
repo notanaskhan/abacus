@@ -921,5 +921,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         # reviewed 2026-11-13 (T-05-T37 rest, DEC-4629): the tax reviewer's mapping shows on
         # TXP-02's row and its Unmapped tally, not the engagement feed.
         "tax.mapping_recorded",
+        # reviewed 2026-11-13 (S41, TASK-7701): an allocation structure's versions show on
+        # TXP-06 and its approval is the L3 sign-off's own feed row.
+        "allocation_structure.approved",
+        "allocation_structure.drafted",
+        "allocation_structure.proposed",
     }
 )
