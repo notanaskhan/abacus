@@ -23,8 +23,10 @@ build them").
    re-run. `SignOffWriter` on SHL-12 (`domain/review/signoffs.ts`, `screens/SHL-12/index.tsx`),
    `screens/TXP-06/Allocation.tsx`; SHL-12 test for the writer path. Rollback: drop the writer
    prop; the button hides again (no `onSignOff`). DEC-4736.
-2. T-05-T46 (TASK-7709): the four frozen routes no later row claims (general information,
-   partners, ownership, mappings).
+2. T-05-T46 (TASK-7709): of the four routes no later row claims, serve `GET …/general-information`
+   and `GET …/partners` (`tax/entity_partners.py`, read-only, through the offshore mask);
+   mappings is already served; `PUT …/ownership` stays 501 (DEC-4737). Rollback: restore the
+   stubs.
 3. W-02-T12 (TASK-7715): `identity.list_offices` and `files.list_folders` as registered tools in
    the assistant's spec, if their read APIs exist.
 4. W-02-T10 (TASK-7712): `client` (a client record without an engagement) and single `document`
@@ -36,4 +38,7 @@ build them").
    T275/T276 consumer suites under the test lock; one security read of the diffs.
 
 ## Progress log
-- 2026-11-13: item 1 built (PR on `s41lo-txp06-signoff`).
+- 2026-11-13: item 1 built (#1935, `s41lo-txp06-signoff`).
+- 2026-11-13: item 2 built (`s41lo-entity-reads`): `tax/entity_partners.py`, the two routes, stub
+  test's BUILT set, client regenerated; `PUT …/ownership` stays 501 (DEC-4737). Found: S42's
+  `GET …/issue-assignees` is served but missing from the stub test's BUILT set (main red; S42's).

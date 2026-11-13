@@ -24460,6 +24460,9 @@ export const entityGeneralInformationQueryKey = (options: Options<EntityGeneralI
 
 /**
  * Entity General Information Route
+ *
+ * The rail's facts (S41 leftovers, DEC-4737): the entity, form and year, the EIN's last four,
+ * the accounting method and the ladder's preparer, reviewer and signer.
  */
 export const entityGeneralInformationOptions = (options: Options<EntityGeneralInformationData>) => queryOptions<EntityGeneralInformationResponse, EntityGeneralInformationError, EntityGeneralInformationResponse, ReturnType<typeof entityGeneralInformationQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -24877,6 +24880,9 @@ export const entityPartnersQueryKey = (options: Options<EntityPartnersData>) => 
 
 /**
  * Entity Partners Route
+ *
+ * TXP-05's columns and Item J (S41 leftovers, DEC-4737): the partners in order, the ownership
+ * periods and the interest transfers; `tax_ownership.edit` when the viewer holds it.
  */
 export const entityPartnersOptions = (options: Options<EntityPartnersData>) => queryOptions<EntityPartnersResponse, EntityPartnersError, EntityPartnersResponse, ReturnType<typeof entityPartnersQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

@@ -79,6 +79,9 @@ BUILT = {
     # S40 partials: T-05-T37 rest, the line picker (DEC-4629).
     ("GET", "/v1/form-lines"),
     ("POST", f"{_R}/mappings"),
+    # S41 leftovers (DEC-4737): the rail's facts and the partners. `PUT …/ownership` stays 501.
+    ("GET", f"{_R}/general-information"),
+    ("GET", f"{_R}/partners"),
 }
 
 

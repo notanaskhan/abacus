@@ -972,25 +972,93 @@ def _not_yet() -> NoReturn:
 
 @workbook_router.get(
     f"{_R}/general-information", action="tax_return.read",
-    response_model=WorkbookGeneralInformationOut, errors=(501,),
+    response_model=WorkbookGeneralInformationOut,
 )  # fmt: skip
 async def entity_general_information_route(
     return_id: UUID, ctx: Ctx
 ) -> WorkbookGeneralInformationOut:
+    """The rail's facts (S41 leftovers, DEC-4737): the entity, form and year, the EIN's last four,
+    the accounting method and the ladder's preparer, reviewer and signer."""
+    from abacus.modules.identity.api import names_of
+    from abacus.modules.organisations.api import (
+        client_of_entity,
+        entity_display_name,
+        entity_tin_last4s,
+    )
+    from abacus.modules.tax.entity_partners import accounting_method, ladder_people
+    from abacus.modules.tax.overview import load_return, return_resource
+
     await _flag_on(ctx)
-    # The answer carries EIN and TIN last fours (Restricted, pii_kind tin): masked for an
-    # offshore reader once the stub answers (review 6; S35 round 2 end pass).
-    return await mask_tins_for(ctx, _not_yet())
+    loaded = await load_return(ctx, return_id)
+    await authorise(ctx, "tax_return.read", await return_resource(ctx, loaded))
+    entity = loaded.client_entity_id
+    client = await client_of_entity(ctx.tenant, entity)
+    last4s = sorted(await entity_tin_last4s(ctx.tenant, client, entity)) if client else []
+    people = ladder_people(loaded.facts.assignees)
+    names = await names_of(sorted({p for p in people if p is not None}, key=str))
+    preparer, reviewer, signer = (None if p is None else names.get(p) for p in people)
+    # The answer carries the EIN's last four (Restricted, pii_kind tin): masked for an offshore
+    # reader (review 6; S35 round 2 end pass).
+    return await mask_tins_for(
+        ctx,
+        WorkbookGeneralInformationOut(
+            return_id=return_id,
+            entity_name=await entity_display_name(ctx.tenant, entity) or loaded.facts.client_name,
+            form=cast(Literal["1065", "1120-S", "1120", "990"], str(loaded.row.form)),
+            tax_year=int(loaded.row.tax_year),
+            ein_last4=last4s[0] if len(last4s) == 1 else None,
+            accounting_method=await accounting_method(ctx.tenant, return_id),
+            preparer_name=preparer,
+            reviewer_name=reviewer,
+            signer_name=signer,
+        ),
+    )
 
 
 @workbook_router.get(
-    f"{_R}/partners", action="tax_return.read", response_model=WorkbookPartnersOut, errors=(501,)
+    f"{_R}/partners", action="tax_return.read", response_model=WorkbookPartnersOut
 )
 async def entity_partners_route(return_id: UUID, ctx: Ctx) -> WorkbookPartnersOut:
+    """TXP-05's columns and Item J (S41 leftovers, DEC-4737): the partners in order, the ownership
+    periods and the interest transfers; `tax_ownership.edit` when the viewer holds it."""
+    from abacus.modules.tax.entity_partners import ownership
+    from abacus.modules.tax.overview import load_return, return_resource
+
     await _flag_on(ctx)
-    # The answer carries EIN and TIN last fours (Restricted, pii_kind tin): masked for an
-    # offshore reader once the stub answers (review 6; S35 round 2 end pass).
-    return await mask_tins_for(ctx, _not_yet())
+    loaded = await load_return(ctx, return_id)
+    resource = await return_resource(ctx, loaded)
+    await authorise(ctx, "tax_return.read", resource)
+    held = await allowed_actions(ctx, resource, ("tax_ownership.edit",))
+    found = await ownership(ctx.tenant, return_id)
+    # The answer carries each partner's TIN last four (Restricted, pii_kind tin): masked for an
+    # offshore reader (review 6; S35 round 2 end pass).
+    return await mask_tins_for(
+        ctx,
+        WorkbookPartnersOut(
+            version=found.version,
+            partners=[
+                WorkbookPartnerOut(id=p.id, name=p.name, tin_last4=p.tin_last4, kind=p.kind)
+                for p in found.partners
+            ],
+            periods=[
+                WorkbookOwnershipPeriodOut(
+                    starts_on=p.starts_on, ends_on=p.ends_on, shares=p.shares
+                )
+                for p in found.periods
+            ],
+            transfers=[
+                WorkbookInterestTransferOut(
+                    on=t.on,
+                    from_partner_id=t.from_partner_id,
+                    to_partner_id=t.to_partner_id,
+                    percentage=t.percentage,
+                    citation_id=t.citation_id,
+                )
+                for t in found.transfers
+            ],
+            allowed_actions=["tax_ownership.edit"] if "tax_ownership.edit" in held else [],
+        ),
+    )
 
 
 @workbook_router.put(
