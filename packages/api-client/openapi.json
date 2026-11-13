@@ -111477,7 +111477,8 @@
             "default": "missing",
             "enum": [
               "missing",
-              "force"
+              "force",
+              "background"
             ],
             "title": "Mode",
             "type": "string"
@@ -111653,6 +111654,16 @@
               "$ref": "#/components/schemas/GateRow"
             },
             "title": "Needs You First",
+            "type": "array"
+          },
+          "stale_engagements": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Stale Engagements",
             "type": "array"
           },
           "status": {

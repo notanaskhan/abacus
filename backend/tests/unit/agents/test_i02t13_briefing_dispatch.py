@@ -92,3 +92,59 @@ def test_ac_a_signed_gate_drops_its_why_line() -> None:
 
 def test_ac_the_snapshot_holds_no_text() -> None:
     assert d._ints({"count": 3, "label": "Ridgeline", "flag": True}) == {"count": 3}  # pyright: ignore[reportPrivateUsage] -- the filter under test
+
+
+# --- I-02-T13 rest (TASK-7930): staleness asks for a background rebuild -----------------------
+
+
+def test_rest_a_brief_is_stale_when_a_why_gate_closed_since() -> None:
+    from abacus.modules.agents.briefing.dispatch import why_gone
+
+    blocks = {"why": [{"gate_id": "g1", "line": {}}, {"gate_id": "g2", "line": {}}]}
+    assert not why_gone(blocks, {"g1", "g2", "g3"})
+    assert why_gone(blocks, {"g1"})
+    assert not why_gone(None, set())
+    assert not why_gone({"why": "nope"}, set())
+
+
+def test_rest_background_builds_only_the_stale_engagements(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import asyncio
+    import uuid
+    from datetime import date
+    from types import SimpleNamespace
+    from typing import Any
+
+    from abacus.modules.agents import api as agents_api
+    from abacus.modules.practice.today import assembly, routes
+    from abacus.modules.practice.today.contract import TodayBuildIn
+
+    stale, fresh = uuid.uuid4(), uuid.uuid4()
+    vm = SimpleNamespace(
+        cards=[SimpleNamespace(engagement_id=stale, label="A"),
+               SimpleNamespace(engagement_id=fresh, label="B")],
+        stale_engagements=[stale],
+    )  # fmt: skip
+    seen: list[Any] = []  # Any: the dispatch's recorded call
+
+    async def gate(*_a: object) -> None:
+        return None
+
+    async def assemble(*_a: object) -> object:
+        return vm
+
+    async def snapshot(*_a: object) -> None:
+        return None
+
+    async def ensure(_ctx: object, cards: object, mode: str, _on: object) -> object:
+        seen.append((cards, mode))
+        return SimpleNamespace(started=[1])
+
+    monkeypatch.setattr(routes, "today_gate", gate)
+    monkeypatch.setattr(assembly, "assemble", assemble)
+    monkeypatch.setattr(agents_api, "write_briefing_snapshot", snapshot)
+    monkeypatch.setattr(agents_api, "ensure_briefings", ensure)
+    body = TodayBuildIn(brief_date=date(2026, 9, 14), mode="background")
+    asyncio.run(routes.today_builds_route(body, object(), "k"))  # type: ignore[arg-type] -- test doubles
+    assert seen == [([(stale, "A")], "background")]

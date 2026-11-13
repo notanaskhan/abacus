@@ -7,7 +7,13 @@
 import { Button, Icon } from "@abacus/ui";
 import { type JSX, useEffect, useRef, useState } from "react";
 import { useOpenHref } from "../../app-core/open";
-import { readCollapsed, useRebuildBrief, useTodayBrief, writeCollapsed } from "../../domain/today";
+import {
+  readCollapsed,
+  useRebuildBrief,
+  useStaleRebuild,
+  useTodayBrief,
+  writeCollapsed,
+} from "../../domain/today";
 import { HOME01 } from "../HOME-01";
 import { TodayPanel } from "../SHL-23";
 
@@ -37,6 +43,7 @@ export function HOME05({ initialCollapsed }: HOME05Props): JSX.Element {
   const [collapsed, setCollapsed] = useState(initialCollapsed ?? readCollapsed());
   const brief = useTodayBrief(!collapsed);
   const rebuild = useRebuildBrief();
+  useStaleRebuild(brief.data);
   const open = useOpenHref();
   const home = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -136,6 +143,7 @@ export function HOME05({ initialCollapsed }: HOME05Props): JSX.Element {
 export function TodayDrawer({ onClose }: { onClose: () => void }): JSX.Element {
   const brief = useTodayBrief();
   const rebuild = useRebuildBrief();
+  useStaleRebuild(brief.data);
   const open = useOpenHref();
   return (
     <div

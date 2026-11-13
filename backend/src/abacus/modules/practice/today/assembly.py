@@ -204,14 +204,17 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
     ranked = sorted(items, key=lambda i: urgency(i, today))
     briefings = await _briefings(ctx, on, engagement_ids)
     cards: list[Card] = []
-    from abacus.modules.agents.api import current_why_lines
+    from abacus.modules.agents.api import briefing_why_gone, current_why_lines
 
     open_gates = {str(i.gate_id) for i in items}
     why: dict[str, list[dict[str, object]]] = {}
-    for b in briefings.values():
+    stale: list[UUID] = []
+    for engagement_id, b in briefings.items():
         if getattr(b, "status", None) == "ready":
             # I-02-T13 (DEC-4917): a gate closed since the briefing drops its why line.
             why.update(current_why_lines(getattr(b, "blocks", None), open_gates))
+            if briefing_why_gone(getattr(b, "blocks", None), open_gates):
+                stale.append(engagement_id)
     for engagement_id, rows in cards_of(items, today, labels):
         b = briefings.get(engagement_id)
         status = getattr(b, "status", None)
@@ -299,6 +302,7 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
         availability=Availability(narrative=True, ask=False, ask_reason="ask_binding_pending"),
         status="ready" if ready or not cards else "building",
         needs_build=not ready and bool(cards),
+        stale_engagements=sorted(stale, key=str),
         building_counts={
             "items": len(items),
             "deadlines": sum(1 for i in items if i.due_on),

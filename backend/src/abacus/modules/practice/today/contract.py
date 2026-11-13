@@ -184,6 +184,9 @@ class TodayVM(BaseModel):
     status: Annotated[BriefStatus, Internal]
     needs_build: Annotated[bool, Internal] = False
     built_at: Annotated[datetime | None, Internal] = None
+    # I-02-T13 rest (TASK-7930): engagements whose ready brief names a gate closed since; the
+    # panel says "items changed since" and asks for a background rebuild (debounced server-side).
+    stale_engagements: Annotated[list[UUID], Internal] = []
     # The building line's counts ("from 11 items, 4 deadlines and 3 runs").
     building_counts: Annotated[dict[str, int], Internal] = Field(default_factory=dict[str, int])
 
@@ -264,7 +267,8 @@ class TodayBuildIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     brief_date: Annotated[date, Internal]
-    mode: Annotated[Literal["missing", "force"], Internal] = "missing"
+    # `background`: the stale engagements only, debounced (15 minutes, six a day; I-02-T13 rest).
+    mode: Annotated[Literal["missing", "force", "background"], Internal] = "missing"
 
 
 class TodayBuildAcceptedOut(BaseModel):

@@ -83,4 +83,14 @@ describe("SHL-23 Today brief panel", () => {
     expect(document.querySelectorAll("[data-cell]").length).toBe(4);
     expect(screen.queryByLabelText(COPY.ask)).toBeNull();
   });
+
+  it("I-02-T13 rest: a brief naming a gate closed since says items changed since", () => {
+    const vm = { ...danielToday(), stale_engagements: ["e-1"] };
+    const { container, rerender } = render(<TodayPanel vm={vm} />);
+    expect(container.querySelector("[data-changed-since]")?.textContent).toMatch(
+      /^Written .+ · items changed since$/,
+    );
+    rerender(<TodayPanel vm={{ ...vm, stale_engagements: [] }} />);
+    expect(container.querySelector("[data-changed-since]")).toBeNull();
+  });
 });
