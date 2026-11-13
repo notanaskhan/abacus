@@ -107,7 +107,7 @@ def test_tool_inputs_match_the_frozen_workbench_suite() -> None:
     from abacus.modules.workpapers.agent_tools import SectionIn
 
     suite = yaml.safe_load(
-        (Path(__file__).resolve().parents[3] / "evals/workbench_assistant/suite.yaml").read_text()
+        (Path(__file__).resolve().parents[4] / "evals/workbench_assistant/suite.yaml").read_text()
     )
     models = {
         "tax.season_counts": tools.SeasonIn,

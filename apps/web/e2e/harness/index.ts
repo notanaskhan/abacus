@@ -13,7 +13,7 @@
 // too on the first step) and INV-1 to INV-5 on the page as it stands. A step waits on state, never
 // on time. The same spec runs in the fixture, fullstack, staging and canary projects; the persona
 // adapter of the project signs the persona in.
-import { test as base, type Page } from "@playwright/test";
+import { test as base, expect, type Locator, type Page } from "@playwright/test";
 import {
   type HarnessProject,
   type OpenOptions,
@@ -99,3 +99,17 @@ export const test = base.extend<{ journey: Journey }>({
     await use(new Journey(page));
   },
 });
+
+/**
+ * SHL-02 by ⌘K (Ctrl+K off macOS); answers the palette's search box. Home's first reads can land
+ * before the shell's ⌘K listener is attached, so a press that opens nothing is retried. It presses
+ * only while the palette is closed, so a retry never toggles it shut (S41 CI fix, DEC-4735).
+ */
+export async function openPalette(page: Page): Promise<Locator> {
+  const box = page.getByRole("combobox", { name: "Search" });
+  await expect(async () => {
+    if (!(await box.isVisible())) await page.keyboard.press("ControlOrMeta+k");
+    await expect(box).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  return box;
+}

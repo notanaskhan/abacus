@@ -391,8 +391,10 @@ class SectionDraft(BaseModel):
 RecommendFactRef = Annotated[
     str,
     Field(
+        # T-05-T49 (S41 CI fix, DEC-4735): the convention and §754 modes cite registered facts
+        # (`fact:transfer_date`) and the agreement's clauses (`clause:assignment_3`).
         pattern=r"^(?:benchmark_key|benchmark_amount|policy|option:[a-z0-9_]{1,40}|factor:\d{1,2}|"
-        r"prior:PY\d{4})$"
+        r"prior:PY\d{4}|fact:[a-z0-9_]{1,40}|clause:[a-z0-9_]{1,40})$"
     ),
 ]
 

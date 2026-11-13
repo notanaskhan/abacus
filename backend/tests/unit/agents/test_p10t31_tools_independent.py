@@ -59,6 +59,8 @@ ELSEWHERE: dict[str, dict[str, object]] = {
     },
     "evidence.list_uploads": {"engagement_id": GRANITE_AUDIT},
     "activity.read": {"engagement_id": GRANITE_AUDIT},
+    # W-02-T11 (DEC-4716): the Workbench's materiality read names its engagement.
+    "assurance.read_materiality": {"engagement_id": GRANITE_AUDIT},
     "ledger.read_tb": {"client_entity_id": GRANITE_ENTITY},
     "ledger.compare_periods": {
         "client_entity_id": GRANITE_ENTITY,
@@ -144,9 +146,19 @@ def _call(agent: AgentContext, name: str, arguments: dict[str, object]) -> ToolC
 # --- scope pinning, walls (AC-R2, AC-R3; INV-3) --------------------------------------------------
 
 
+# W-02-T11 (S41 CI fix, DEC-4735): tools whose arguments name no engagement or client, so C17 has
+# no target to pin. Each reaches records only through the owner's `visible()` read for the run's
+# context: `binders.read` is BND-01's index for a season; `workpapers.read_section` resolves its
+# paper's engagement and refuses one outside the run's engagement (404) before reading content.
+INDIRECT: dict[str, str] = {
+    "binders.read": "the season's binders through BND-01's visible() index",
+    "workpapers.read_section": "the paper's own engagement, refused outside the run's (404)",
+}
+
+
 def test_every_first_tool_is_covered_here() -> None:
     first = {n for n in registered_tools() if not n.startswith(("tax.", "files."))}
-    assert set(ELSEWHERE) | {"knowledge.search"} == first
+    assert set(ELSEWHERE) | {"knowledge.search"} | set(INDIRECT) == first
 
 
 @pytest.mark.parametrize("name", sorted(ELSEWHERE))

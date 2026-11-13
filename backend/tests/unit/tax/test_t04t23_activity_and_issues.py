@@ -50,10 +50,13 @@ def test_ac_category_paths_and_formula_cells() -> None:
     assert dependency_ref(uuid.UUID(int=1)).startswith("k1_dependency:")
 
 
-def test_only_a_dependency_resolves_by_the_system_alone() -> None:
+def test_only_a_dependency_or_a_self_check_resolves_by_the_system_alone() -> None:
+    """T-05-T42 (0860, DEC-4705) added the self-check: an issue a tie-out raises closes itself
+    when the tie-out passes. Any other source still needs a person (S41 CI fix, DEC-4735)."""
     IssueSource("k1_dependency", "approvals/k1", system_resolved_only=True)
+    IssueSource("self_check", "income/k1", system_resolved_only=True)
     with pytest.raises(ValueError):
-        IssueSource("self_check", "income/k1", system_resolved_only=True)
+        IssueSource("mismatch", "income/k1", system_resolved_only=True)
 
 
 def test_ac_the_activity_filter_narrows_to_one_return() -> None:

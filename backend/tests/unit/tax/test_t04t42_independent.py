@@ -56,8 +56,26 @@ def test_t19_every_tax_read_and_compute_tool_is_tri_so_consent_gates_it_before_a
     """Guard: `data_class="tri"` is what makes the runtime refuse `consent_required` before the
     handler runs (C19 at the tool layer); a tax read declared anything else would skip it."""
     for name, t in TAX_TOOLS.items():
-        if t.kind in ("read", "compute"):
+        if t.kind in ("read", "compute") and name not in COUNTS_ONLY:
             assert t.data_class == "tri", name
+
+
+# W-02-T11 (DEC-4716; S41 CI fix DEC-4735): a firm-season aggregate answers counts and office names
+# only, never a taxpayer's return or figure, so it reads as `confidential` (the Workbench assistant
+# never reaches TRI). The exemption holds only while its output carries no per-return field.
+COUNTS_ONLY = frozenset({"tax.season_counts"})
+
+
+def test_t19_a_counts_only_tool_answers_counts_and_names_never_a_return() -> None:
+    for name in COUNTS_ONLY:
+        t = TAX_TOOLS[name]
+        assert t.kind == "compute" and t.data_class == "confidential", name
+        fields = set(t.output_model.model_fields)
+        assert not fields & {"return_id", "returns_list", "rows", "client_entity_id", "name"}, name
+        assert fields <= {
+            "tax_year", "returns", "open", "done", "by_status", "by_office", "engagements",
+            "engagements_with_two_returns", "stalled",
+        }, (name, fields)  # fmt: skip
 
 
 def test_t19_every_propose_tool_answers_a_proposal_never_a_value() -> None:

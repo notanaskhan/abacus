@@ -96,20 +96,27 @@ class Problem:
 
 
 class ImportInvalid(DomainInvalid):
-    """The report cannot be read; `facts.problems` lists sheet, row, column and code."""
+    """The report cannot be read. Error facts are identifiers only, so `facts.problems` is the
+    count and each `facts.problem_NNN` reads `<sheet>:<row>:<column>:<code>` (row 0 and column
+    `-` when the problem is the sheet's); never a cell's text (S41 CI fix, DEC-4735)."""
 
     code = "import_invalid"
 
 
 def _invalid(problems: Sequence[Problem]) -> ImportInvalid:
-    return ImportInvalid(
-        facts={
-            "problems": [
-                {"sheet": p.sheet, "row": p.row, "column": p.column, "code": p.code}
-                for p in problems[:100]
-            ]
-        }
-    )
+    facts: dict[str, object] = {"problems": len(problems)}
+    for n, p in enumerate(problems[:100], start=1):
+        facts[f"problem_{n:03d}"] = problem_ref(p)
+    return ImportInvalid(facts=facts)
+
+
+def problem_ref(p: Problem) -> str:
+    return f"{p.sheet or 'file'}:{p.row or 0}:{p.column or '-'}:{p.code}"
+
+
+def problems_of(error: ImportInvalid) -> list[str]:
+    """The problem identifiers an `ImportInvalid` carries, in order."""
+    return [str(v) for k, v in sorted(error.facts.items()) if k.startswith("problem_")]
 
 
 def normalise(header: object) -> str:

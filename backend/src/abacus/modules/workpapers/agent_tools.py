@@ -77,6 +77,10 @@ async def read_section(agent: AgentContext, args: SectionIn) -> SectionOut:
     if row is None:
         raise NotFound("workpaper")
     engagement = row.engagement_id
+    # An engagement-bound run reads its own engagement's papers only: another engagement's paper is
+    # not found, before its content is read (C17's pinned scope; S41 CI fix, DEC-4735).
+    if agent.engagement_id is not None and engagement != agent.engagement_id:
+        raise NotFound("workpaper")
     # `workpapers_for` applies the reader's visibility: a paper they may not read is not found.
     papers = await workpapers_for(agent, engagement)  # type: ignore[arg-type] -- the run's context
     paper = next((p for p in papers if p.id == args.workpaper_id), None)

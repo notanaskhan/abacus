@@ -42,16 +42,16 @@ describe("TXP-05 Schedule K", () => {
     expect(line2?.cells.sum?.value).toBe("1231600");
     expect(line2?.cells.p2?.value).toBe("400270"); // 35% × 615,800 + 30% × 615,800
     expect(line2?.cells.p3?.value).toBe("30790");
-    expect(rows.find((r) => r.id === "line:20c")?.cells.total?.value).toBe(COPY.stmt);
-    expect(rows.find((r) => r.id === "line:1")?.cells.total?.value).toBe("—");
+    expect(rows.find((r) => r.id === "line:20c")?.cells.total?.text).toBe(COPY.stmt);
+    expect(rows.find((r) => r.id === "line:1")?.cells.total?.text).toBe("—");
   });
 
   it("A: Analysis of Net Income is 1,250,000 and Item J reads beginning → ending", () => {
     const rows = tableRows(scheduleK("federal"), partners("run2"), capitalAccounts("run2"));
     expect(rows.find((r) => r.id === "line:analysis_1")?.cells.total?.value).toBe("1250000");
     const j = rows.find((r) => r.id === "item:J");
-    expect(j?.cells.p2?.value).toBe("35% → 30%");
-    expect(j?.cells.p3?.value).toBe("0% → 5%");
+    expect(j?.cells.p2?.text).toBe("35% → 30%");
+    expect(j?.cells.p3?.text).toBe("0% → 5%");
   });
 
   it("A: Item L as drafted sums to 6,860,000, off 6,200 against 6,866,200", () => {
@@ -61,7 +61,7 @@ describe("TXP-05 Schedule K", () => {
     expect(l?.label).toBe(COPY.rows.itemL);
     expect(l?.cells.sum?.value).toBe("6860000");
     expect(l?.cells.tie?.value).toBe("off 6,200");
-    expect(l?.cells.total?.value).toBe(`6,866,200 ${COPY.rows.schL}`);
+    expect(l?.cells.total?.text).toBe(`6,866,200 ${COPY.rows.schL}`);
     const items = tallyItems(
       scheduleK("federal"),
       partners("run2"),
@@ -77,7 +77,7 @@ describe("TXP-05 Schedule K", () => {
 
   it("A: the screen draws the title, the controls, the footnote and no $", () => {
     draw();
-    expect(screen.getByText(COPY.title)).toBeTruthy();
+    expect(screen.getByText(COPY.title, { selector: "span" })).toBeTruthy();
     expect(screen.getByText(COPY.allocation)).toBeTruthy();
     expect(screen.getByText(COPY.footnote)).toBeTruthy();
     expect(screen.getAllByText("1,231,600").length).toBeGreaterThan(0);
@@ -106,7 +106,7 @@ describe("TXP-05 Schedule K", () => {
     const il = rows.find((r) => r.id === "line:ptet_il");
     expect(il?.cells.total?.value).toBe("28044");
     expect(il?.cells.p1?.value).toBe("10657");
-    expect(rows.find((r) => r.id === "line:IL")?.cells.total?.value).toBe("—");
+    expect(rows.find((r) => r.id === "line:IL")?.cells.total?.text).toBe("—");
   });
 
   it("C: after the fix Item L ties at 6,866,200", () => {

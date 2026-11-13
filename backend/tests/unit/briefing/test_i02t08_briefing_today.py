@@ -103,4 +103,4 @@ def test_the_spec_is_a_tool_less_workflow_on_its_suite() -> None:
     spec = spec_v2(CAPABILITY)
     assert spec.prompt == "briefing.today@v1"
     assert spec.evaluation_suite == "evals/briefing_today"
-    assert not [t for group in spec.tools.values() for t in group]  # type: ignore[union-attr] -- a test double stands in for the typed object
+    assert not [t for group in spec.tools.by_kind().values() for t in group]

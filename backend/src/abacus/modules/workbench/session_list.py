@@ -37,6 +37,7 @@ from abacus.kernel.errors import DomainConflict, DomainForbidden, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.api import (
     AuthContext,
+    colleagues_of,
     display_names,
     my_engagement_roles,
 )
@@ -138,9 +139,17 @@ async def list_sessions(
 ) -> Listed:
     """The viewer's rows (module docstring). The route authorised `session.read` at the firm."""
     engagements = [str(e) for e in await my_engagement_roles(ctx.tenant, ctx.user_id)]
+    # W-02-T13 (DEC-4717): colleagues share an office or a team (S41 CI fix: the parameter the
+    # query names was never passed, DEC-4735).
+    colleagues = list(await colleagues_of(ctx.tenant, ctx.user_id))
     async with tenant_session(ctx.tenant) as session:
         raw = (
-            (await session.execute(_CANDIDATES, {"me": ctx.user_id, "engagements": engagements}))
+            (
+                await session.execute(
+                    _CANDIDATES,
+                    {"me": ctx.user_id, "colleagues": colleagues, "engagements": engagements},
+                )
+            )
             .mappings()
             .all()
         )

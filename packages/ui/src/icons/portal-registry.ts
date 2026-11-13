@@ -12,6 +12,7 @@ import {
   Atom,
   Banknote,
   Building,
+  BuildingComplex,
   Bell,
   Bold,
   BookOpen,
@@ -125,6 +126,7 @@ const PORTAL_ICONS = {
   "book-open": BookOpen,
   briefcase: Briefcase,
   building: Building, // S40: status code "building" reads as this name (DEC-1006 test)
+  "building-2": BuildingComplex, // S41: the graph canvas's entity and external nodes (DEC-1006 test)
   bug: Bug, // F-07-T02: the chat header's run trace
   camera: Camera,
   check: Check,

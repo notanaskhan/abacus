@@ -107,8 +107,9 @@ jobs:
     needs: [changes]
     runs-on: ubuntu-24.04
     # S8 wave A grew the suite past 15 minutes per shard (#395 cancelled at 91-93%, no failures);
-    # pytest-xdist workers (DEC-335) bring it back down.
-    timeout-minutes: 35
+    # pytest-xdist workers (DEC-335) bring it back down. S41 (run 43457012689): shard 1 was
+    # cancelled at 99% after 35 minutes; 45 until the shards are rebalanced (DEC-4735).
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:

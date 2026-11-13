@@ -8,7 +8,7 @@
 // P-06-T25 adds step 5, the morning chase: Grace filters Binders to clients silent for 30 days and
 // sends the Request Chaser's drafted follow-up (the agent drafts, a person sends; DEC-74), on
 // BND-01's own scenario in the fixture project until `binders.engine` is on in E0 (P-06-T16).
-import { DEMO_INSTANT, expect, test } from "../harness";
+import { DEMO_INSTANT, expect, openPalette, test } from "../harness";
 import { M13, artboard } from "../signatures/support";
 import { P05_LIVE, nothingBlocks, p05 } from "./p05-support";
 
@@ -197,8 +197,7 @@ test.describe("J16 · P-02 search", () => {
     await journey.step(
       "J16 step 9: ridgeline → Ridgeline Property Partners, LP (CLI-02)",
       async (page) => {
-        await page.keyboard.press("ControlOrMeta+k");
-        await page.getByRole("combobox", { name: "Search" }).fill("ridgeline");
+        await (await openPalette(page)).fill("ridgeline");
         await page
           .getByRole("group", { name: "Clients" })
           .getByRole("option", { name: /Ridgeline Property Partners, LP/ })
@@ -212,8 +211,7 @@ test.describe("J16 · P-02 search", () => {
     const scenario = journey.project === "fixture" ? { scenario: "SHL-02:a" } : {};
     await journey.as("grace-holloway", "/", { clock: DEMO_INSTANT, ...scenario });
     await journey.step("J16 step 5: feld → the 2025 Binder (BND-02)", async (page) => {
-      await page.keyboard.press("ControlOrMeta+k");
-      await page.getByRole("combobox", { name: "Search" }).fill("feld");
+      await (await openPalette(page)).fill("feld");
       await page
         .getByRole("group", { name: "Binders" })
         .getByRole("option", { name: /2025 Binder/ })

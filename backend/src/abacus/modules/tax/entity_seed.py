@@ -30,7 +30,8 @@ from abacus.modules.identity.api import AuthContext, is_synthetic_firm
 from abacus.modules.review.api import current_values
 from abacus.modules.tax.workbook_service import WORKBOOK, CellWrite, write_cells
 
-NOTE: Final = "Brightwater Hale scenario (synthetic)"
+# A citation, never firm display text: the firm is the tenant the loader names (P-08-T22 T14).
+NOTE: Final = "Synthetic scenario (seed)"
 
 
 @dataclass(frozen=True)
@@ -155,7 +156,7 @@ async def record_synthetic_entity(
             tx.record(
                 "workbook.step_written",
                 target=Target(WORKBOOK, return_id),
-                after=Ref(step="scenario", cells=len(entity.cells)),
+                after=Ref(cells=len(entity.cells), synthetic=True),
                 scope=Scope(engagement_id=engagement_id, work_item_id=return_id),
             )
     return ids

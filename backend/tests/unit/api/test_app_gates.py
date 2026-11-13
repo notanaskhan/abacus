@@ -553,6 +553,8 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
+        # T-05-T41 (DEC-4702): an approval records a sign-off and an approved version, 201.
+        "/v1/tax-returns/{return_id}/allocation-structure/approve",
         # W-02-T02/T03 (SPEC-653): attaching context and a drill each insert a session item, 201.
         "/v1/workbench/sessions/{session_id}/context",
         "/v1/workbench/sessions/{session_id}/drill",

@@ -386,7 +386,7 @@ class BriefingTask(BaseModel):
     """The trusted part of the task as the fake reads it (gates sit in the untrusted block)."""
 
     model_config = ConfigDict(frozen=True, extra="ignore")
-    facts: list[FactIn] = Field(default_factory=list[FactIn])
+    facts: Annotated[list[FactIn], Field(default_factory=list[FactIn]), Conf]
 
 
 _GATES: Final = TypeAdapter(list[GateIn])
