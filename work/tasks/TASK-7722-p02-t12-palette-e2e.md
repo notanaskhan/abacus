@@ -25,7 +25,13 @@ T-05), J16 steps 5 and 9, with `assertInvariants` (INV-1, INV-3, INV-4) and axe 
 - Full stack and staging need `search.palette` on for the firm (P-02-T14 rollout); until then
   those projects' palette steps fail on a closed palette, the reason T14 turns the flag on.
 - `shl-02 g` is `test.fixme` (W-03 saved prompts); `shl-02 c` fixture-only (agent mode, W-02).
-- The context-bound actions of P-02-T10's rest (held #1858) are not asserted here.
+- S41 leftovers (TASK-7733): the context-bound actions of P-02-T10's rest (#1858, merged) are
+  asserted (`shl-02 a: the Actions group binds to the top client`); `go()` opens the palette
+  through the harness's `openPalette`; the keyboard test waits for the shell and compares the
+  focused element itself. Run through the fixture project from a temporary journeys copy: 8 of 9
+  pass. `shl-02 c` fails there: the agent rows' targets are W-02 screens not routable yet, so the
+  palette shows "No matches" (the spec's header: c waits on W-02). The screen specs run under the
+  `chromium` project, where the fixture states skip.
 
 ## Progress log
 - 2026-11-13: built; eslint and tsc clean; specs written, not run.

@@ -29,7 +29,10 @@ fixture, so `seed-demo` and fixture mode answer the same list.
   1 carries its first message only.
 - `make fixtures` export of the list and the equivalence test (F-04-T31's mechanism) are not
   extended to workbench reads; the slice mirrors the fixture by id and title instead.
-- WB-02's Northwind context scenario (2:40 PM answer) is not seeded.
+- WB-02's Northwind context scenario (2:40 PM answer) is not seeded. S41 leftovers scan
+  (TASK-7733): a 2:40 PM session would join Hannah's WB-01 list, which E0 pins at eight 9:24 AM
+  rows (the slice loads every session), and the answer needs P-10's turn recorder and the PayGrid
+  and Keystone documents; it needs a per-scenario variant in the loader.
 
 ## Progress log
 - 2026-11-13: built; slice smoke-imported (12 events); tests written, not run.

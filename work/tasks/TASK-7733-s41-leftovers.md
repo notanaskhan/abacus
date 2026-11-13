@@ -32,8 +32,12 @@ build them").
    `assurance.api.ebp_plan_facts`, `control_exceptions`, `review.api.sign_off_ladder`; workbench may
    import review). The extra picker kinds are not in the spec (not a gap). DEC-4738. Rollback:
    revert the three summary parts.
-5. W-02-T13 (TASK-7714): the J11 thread and WB-02's Northwind context scenario.
-6. P-02-T12 (TASK-7722): the palette's context-bound actions (P-02-T10, merged #1858).
+5. W-02-T13 (TASK-7714): not built. The J11 thread is P-10's extension; `wb02-northwind-context`
+   (2:40 PM) would join Hannah's WB-01 list, which the E0 scenario pins at eight 9:24 AM rows
+   (the slice loads every session regardless of clock), and its answer needs P-10's turn recorder
+   and the PayGrid and Keystone documents. Needs a per-scenario variant in the loader.
+6. P-02-T12 (TASK-7722): the palette's context-bound actions asserted in `shl-02-palette.spec.ts`;
+   `go()` through `openPalette`; the keyboard test's focus check fixed.
 7. F-07-T13/T14 (TASK-7725/7726): the `./graph` subpath of `@abacus/ui`.
 8. End pass: check-fast, pyright, eslint/tsc, the touched suites, Q-03-T274 `pnpm audit` and the
    T275/T276 consumer suites under the test lock; one security read of the diffs.
@@ -44,3 +48,4 @@ build them").
   test's BUILT set, client regenerated; `PUT …/ownership` stays 501 (DEC-4737). Found: S42's
   `GET …/issue-assignees` is served but missing from the stub test's BUILT set (main red; S42's).
 - 2026-11-13: item 3 dropped (W-02-T19's tools); item 4 built (`s41lo-context-lines`).
+- 2026-11-13: item 5 not built (recorded); item 6 built (`s41lo-palette-actions`).
