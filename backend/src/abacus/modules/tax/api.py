@@ -402,6 +402,12 @@ from abacus.modules.review.api import register_explainer, register_fix_runner  #
 register_fix_runner(_fix_runner.RECORD_TYPE, _fix_runner.start_fix)
 register_explainer(_fix_runner.RECORD_TYPE, _explain.start_explain)
 
+# T-05-T50 (DEC-4901): the fix flow on an entity return's workbook cells (the tax fix runner hands
+# an entity return's issue to `workbook_fix`; its proposal kind applies through this adapter).
+from abacus.modules.tax import workbook_fix as _workbook_fix  # noqa: E402
+
+_workbook_fix.register()
+
 # T-04-T19 (DEC-3211): the tax tools on C17 register at their module's import.
 from abacus.modules.tax.tools import (  # noqa: E402
     read_return as _tax_tools_loaded,

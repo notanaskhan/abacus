@@ -193,6 +193,10 @@ async def _resolve_as(
         return None
     if current.status not in RESOLVABLE:
         return None
+    if current.system_resolved_only:
+        # T-05-T50 (DEC-4902): a self-check (a tie-out) resolves when its check passes after the
+        # fix's re-run, as the system; approving the fix's values never resolves it.
+        return None
     _, resource, _ = await record_of(person, current.record_type, current.record_id)
     try:
         await authorise(person, "issue.resolve", resource)
