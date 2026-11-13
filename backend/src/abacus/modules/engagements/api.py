@@ -188,6 +188,7 @@ from abacus.modules.engagements.service import (
     engagement_label,
     engagement_metadata,
     engagement_resource_of,
+    engagements_for,  # W-02-T10
     engagements_of_client,
     engagements_of_entity,
     engagements_of_scope,
@@ -252,10 +253,11 @@ from abacus.modules.engagements.trace_samples import TraceSampleRow, engagement_
 from abacus.modules.engagements.transitions import (
     archive_when_items_archived as archive_when_items_archived,
 )
-from abacus.modules.engagements.work_item_facts import (
+from abacus.modules.engagements.work_item_facts import (  # W-02-T10: work_item_ids_of
     WorkItemFacts,
     function_holders,
     work_item_facts,
+    work_item_ids_of,
     work_item_offices,
 )
 from abacus.modules.engagements.work_items import (
@@ -581,6 +583,7 @@ __all__ = [
     "engagement_label",
     "engagement_metadata",
     "engagement_trace_samples",
+    "engagements_for",
     "engagements_in_hold_scope",
     "engagements_of_client",
     "engagements_of_entity",
@@ -657,6 +660,7 @@ __all__ = [
     "visible_among",
     "work_item_engagement",
     "work_item_facts",
+    "work_item_ids_of",
     "work_item_index",
     "work_item_offices",
     "work_item_period",

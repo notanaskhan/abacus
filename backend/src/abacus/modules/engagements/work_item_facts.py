@@ -118,3 +118,15 @@ async def work_item_offices(
 
 
 __all__ = ["WorkItemFacts", "work_item_facts", "work_item_offices"]
+
+
+async def work_item_ids_of(tenant: TenantContext, engagement_id: UUID) -> list[UUID]:
+    """W-02-T10 (DEC-4715): an engagement's work items, for a caller that has authorised a read
+    of the engagement (the Workbench context summaries)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalars(
+            select(WorkItem.id)
+            .where(WorkItem.engagement_id == engagement_id)
+            .order_by(WorkItem.id)
+        )
+        return list(found)

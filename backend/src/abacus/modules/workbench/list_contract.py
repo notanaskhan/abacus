@@ -15,16 +15,18 @@ the context routes. Every route answers, in order: its matrix action (the router
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import TYPE_CHECKING, Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.workbench.sessions_contract import SessionSummaryOut, workbench_gate
+
+if TYPE_CHECKING:
+    from abacus.modules.workbench.session_context import Item
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -121,10 +123,6 @@ class ContextItemsOut(BaseModel):
     items: Annotated[list[ContextItemOut], Confidential]
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
-
-
 manage_router = AbacusRouter(prefix="/v1/workbench/sessions", tags=["workbench sessions"])
 context_options_router = AbacusRouter(
     prefix="/v1/workbench/context-options", tags=["workbench sessions"]
@@ -162,18 +160,49 @@ async def delete_session_route(
     return SessionDeletedOut(id=session_id, deleted_at=await delete_session(ctx, session_id))
 
 
-@context_options_router.get(
-    "", action="session.create", response_model=ContextOptionsOut, errors=(501,)
-)
+@context_options_router.get("", action="session.create", response_model=ContextOptionsOut)
 async def context_options_route(
     ctx: Ctx,
     tab: Annotated[ContextTab, Query()],
     q: Annotated[str | None, Query(min_length=1, max_length=120)] = None,
     session_id: Annotated[UUID | None, Query()] = None,
 ) -> ContextOptionsOut:
-    """Only records the viewer can open (AC-C3)."""
+    """Only records the viewer can open (AC-C3). W-02-T10 (DEC-4715)."""
+    from abacus.modules.workbench.session_context import attached_of, options
+
     await workbench_gate(ctx)
-    _not_yet()
+    attached = set() if session_id is None else await attached_of(ctx, session_id)
+    return ContextOptionsOut(
+        tab=tab,
+        items=[
+            ContextOptionOut(
+                kind=o.kind,  # type: ignore[arg-type]  # the three kinds the tabs list
+                ref_id=o.ref_id,
+                title=o.title,
+                detail=o.detail,
+                attached=on,
+            )
+            for o, on in await options(ctx, tab, q, attached)
+        ],
+    )
+
+
+def _items_out(session_id: UUID, items: list[Item]) -> ContextItemsOut:
+    return ContextItemsOut(
+        session_id=session_id,
+        firm_wide=not items,
+        items=[
+            ContextItemOut(
+                id=i.id,
+                kind=i.kind,  # type: ignore[arg-type]
+                ref_id=i.ref_id,
+                card_title=i.card_title,  # type: ignore[arg-type]
+                chip_label=i.chip_label,
+                summary_lines=list(i.summary_lines),
+            )
+            for i in items
+        ],
+    )
 
 
 @manage_router.post(
@@ -181,26 +210,27 @@ async def context_options_route(
     action="session.manage",
     response_model=ContextItemsOut,
     status_code=201,
-    errors=(501,),
 )
 async def attach_context_route(
     session_id: UUID, body: ContextAttachIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ContextItemsOut:
     """One `context_added` item and audit event per record; a record the owner can't open is
     404 (no existence leak)."""
+    from abacus.modules.workbench.session_context import attach
+
     await workbench_gate(ctx)
-    _not_yet()
+    found = await attach(ctx, session_id, [(r.kind, r.ref_id) for r in body.items])
+    return _items_out(session_id, found)
 
 
 @manage_router.delete(
-    "/{session_id}/context/{item_id}",
-    action="session.manage",
-    response_model=ContextItemsOut,
-    errors=(501,),
+    "/{session_id}/context/{item_id}", action="session.manage", response_model=ContextItemsOut
 )
 async def remove_context_route(
     session_id: UUID, item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ContextItemsOut:
     """`context_removed`; later turns leave the record out of `client_scope` (AC-C5)."""
+    from abacus.modules.workbench.session_context import remove
+
     await workbench_gate(ctx)
-    _not_yet()
+    return _items_out(session_id, await remove(ctx, session_id, item_id))
