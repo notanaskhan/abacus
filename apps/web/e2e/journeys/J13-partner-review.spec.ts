@@ -1,7 +1,7 @@
 // J13 partner review (P-01-T16; blueprint §7.13): the chrome of the partner's morning. Daniel
 // Reyes signs in, sees the bell's dot and opens the notifications drawer (SHL-01, SHL-04). The rows
 // are fixture until the P-04 producers land. Each step runs axe and INV-1 to INV-5.
-import { DEMO_INSTANT, expect, test } from "../harness";
+import { DEMO_INSTANT, expect, openPalette, test } from "../harness";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -121,8 +121,7 @@ test.describe("J13 · P-02 search", () => {
     const scenario = journey.project === "fixture" ? { scenario: "SHL-02:a" } : {};
     await journey.as("daniel-reyes", "/", { clock: DEMO_INSTANT, ...scenario });
     await journey.step("J13 step 4: ridgeline in the palette (SHL-02)", async (page) => {
-      await page.keyboard.press("ControlOrMeta+k");
-      await page.getByRole("combobox", { name: "Search" }).fill("ridgeline");
+      await (await openPalette(page)).fill("ridgeline");
       const clients = page.getByRole("group", { name: "Clients" });
       const returns = page.getByRole("group", { name: "Returns" });
       await expect(
