@@ -1,7 +1,7 @@
 task_id,status,evidence
 F-01-T05,partial,"Dated exception is backend/coverage-exception.toml (DEC-10; read by abacus_tools.ci.coverage_floor): 70% from 2026-10-20, 78% by 2026-11-06, 87% by 2026-11-20, expires 2026-12-01 when fail_under=95 applies; ADR-116 dropped by the solo edition. Open until coverage holds at 95 (re-verified 2026-10-29)"
 F-01-T06,partial,".github/workflows/ci.yml has merge_group, draft gating, changes job, frontend job; Makefile check-heads/check-generated; 5 green runs and ruleset not judgeable"
-F-01-T07,partial,abacus_tools/ci/paths.py + tests/unit/tools/test_paths.py; ci.yml frontend and evals-fast gates; 6-minute clause unmeasured (frontend job timeout 10)
+F-01-T07,partial,"abacus_tools/ci/paths.py and the frontend job exist; measured on docs-only PR #1801 (run 43264503086): stage 1 make check-fast 17.5 min, and the backend unit and integration shards still ran (up to 75 min); open: a frontend-only PR inside 6 min without backend shards; probe 2026-11-12 (DEC-4808)"
 F-01-T09,done,"TASK-080/081: worktree isolation, guards, dev-fixtures; VITE_FIXTURES now read (app-core/clock.tsx, make dev-fixtures); code probe 2026-11-12 (DEC-4804); tests not re-run here"
 F-01-T10,not-started,"Obsolete: SU-06 removed number blocks (test_validate_docs.py ""any free number, any deciders""); no .github/ISSUE_TEMPLATE; only duplicate-id check remains (validate_docs.py:133)"
 Q-02-T06,done,"TASK-1209 and #447: matrix rows firm.ai_client_data, engagement.ai_exclude, firm.read_settings with security_admin, flag agents.client_data_optin; the stage is set through the staff route (#447), not a matrix row; the approval file is void (AMENDMENT-solo); code probe 2026-11-12 (DEC-4804); tests not re-run here"
@@ -56,7 +56,7 @@ Q-02-T45,done,"agents/runs_routes.py /v1/agent-runs (C6 v1, #510) (re-verified 2
 P-09-T07,done,TASK-6304 (#1497): run read model with items feed; code probe 2026-11-12 (DEC-4804); tests not re-run here
 P-09-T08,partial,"TASK-6305 (#1498): trace read model live; open: no module registers trace samples (register_trace_samples has no caller), so step samples stay empty; code probe 2026-11-12 (DEC-4804); tests not re-run here"
 P-09-T10,done,"TASK-6307 (#1500) and remainders #1522 (DEC-3024), #1574 (DEC-3136): WB-09 registered, a2 and Approve on a waiting write; ""Open CCH Axcess Tax"" waits on WB-11 (W-01), outside the row; code probe 2026-11-12 (DEC-4804); tests not re-run here"
-P-09-T11,partial,"TASK-6518 (#1549, DEC-3118): JSON trace export with signed manifest; open: the PDF format needs C11 run_trace_v1; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+P-09-T11,partial,"TASK-6518 (#1549, DEC-3118): JSON export with signed manifest; open: the PDF needs a code-owned C11 run_trace layout rendered by WeasyPrint, not built (no local WeasyPrint to test it); probe 2026-11-12 (DEC-4808)"
 K-04-T33,partial,"TASK-460: assurance/dashboard.py: gates, tiles from progress sources, sign-offs, requests, next-up via could() (SPEC-317, dashboard.read); no lenses, C14 provider, basis strings or health rule"
 K-04-T40,partial,"TASK-460: legacy/EngagementDashboard.tsx tab; not the ENG-12 T21 record variant, lenses or milestones"
 A-01-T18,done,"#450 (dc46552b): engagement_exports create/undo/history behind a 10-s grant, migration 0191"
@@ -213,7 +213,7 @@ Q-04-T060,partial,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/season.md: 
 Q-04-T069,partial,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/season.md: no request reached the AY-lane desk (no live channel); 0 hours, RK-07 not raised"
 Q-04-T075,partial,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/season.md: no request reached the AY-lane desk (no live channel); 0 hours, RK-07 not raised"
 Q-04-T082,partial,"synthetic (PF-X1), DEC-4100: docs/ops/pilot/pf-x1/season.md: no request reached the AY-lane desk (no live channel); 0 hours, RK-07 not raised"
-F-01-T08,partial,"b29146054 test(e2e): setup-first journey and nightly-red issue (SU-17, F-01-T08); TASK-114; open: three green nights of e2e.yml not verified (S0-S25 closeout, DEC-4200)"
+F-01-T08,partial,"b29146054 setup-first journey and nightly-red issue; open: e2e.yml nightly full-stack journeys failed every night 2026-11-07 to 11-12 (J02, J03, J04, J06, J09 legs); the nightly-red issue job works; probe 2026-11-12 (DEC-4808)"
 F-02-T01,done,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-115 (S0-S25 closeout, DEC-4200)"
 F-02-T02,done,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-116 (S0-S25 closeout, DEC-4200)"
 F-02-T03,done,"TASK-117; docs/specs/SPEC-046-decision-day-adr-glossary.md (S0-S25 closeout, DEC-4200)"
@@ -246,7 +246,7 @@ Q-01-T20,partial,"02a6cc5d2 Q-01-T20: R0 run log, staging resume 2026-10-29 (#72
 Q-01-T21,partial,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1237; open: the staging or production run its acceptance names is not verified here (S0-S25 closeout, DEC-4200)"
 Q-01-T22,done,"2305b2622 docs(adr): draft ADR-156 tenant key provisioning (P-65) and ADR-157 platform controls and ; TASK-355 (S0-S25 closeout, DEC-4200)"
 Q-01-T24,done,"6e1bffc11 test(api): independent acceptance tests for the P-45 routes, edge middleware and IaC plan ; TASK-352 (S0-S25 closeout, DEC-4200)"
-Q-02-T04,partial,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1239; open: recorded partial at its build (S0-S25 closeout, DEC-4200)"
+Q-02-T04,done,"SPEC-341 status done with no open questions; docs/contracts/compliance-kernel.md §8 (v1.2) names every kernel slot, its consumers, sprint and how it fails closed; the approval is the solo builder's (AMENDMENT-solo); probe 2026-11-12 (DEC-4808)"
 Q-02-T05,partial,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1240; open: recorded partial at its build (S0-S25 closeout, DEC-4200)"
 Q-02-T09,done,"266b3a06b Independent acceptance tests for the AI opt-in and engagement exclusion (Q-02-T09); ED-059; TASK-1251; backend/tests/integration/backfill/test_q02t09_optin_independent.py (S0-S25 closeout, DEC-4200)"
 F-02-T12,done,"6291af11d docs(decisions): S1-S2 decision burn-down and ADR backlog close-out (F-02-T12, TASK-379); TASK-379 (S0-S25 closeout, DEC-4200)"
@@ -254,7 +254,7 @@ F-03-T20,done,"02b6fb7c6 test(engagements): independent lifecycle, gate-policy, 
 F-04-T08,done,"dff088d75 test(clock): independent acceptance tests for business time and the demo clock (F-04-T08) (S0-S25 closeout, DEC-4200)"
 F-05-T22,done,"f12e01696 test(e3): independent acceptance tests for overlays, toasts and Undo (F-05-T22, TASK-360); TASK-360 (S0-S25 closeout, DEC-4200)"
 F-05-T24,done,"5a57cec72 test(a11y): accessibility harness over the gallery; forced-colors edges (F-05-T24, TASK-35; TASK-357 (S0-S25 closeout, DEC-4200)"
-F-05-T25,partial,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1243; open: recorded partial at its build (S0-S25 closeout, DEC-4200)"
+F-05-T25,partial,TASK-1243 skills (#4db71f3aa): the protected-.claude approval is void (AMENDMENT-solo); open: a fresh session porting one kit from the skill alone is not shown; probe 2026-11-12 (DEC-4808)
 F-05-T26,done,"c1b6df037 F-05-T26: M3 calibration, kit throughput 86%, hold (#441); TASK-1313 (S0-S25 closeout, DEC-4200)"
 Q-01-T31,done,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1238; apps/web/src/lint/q01-t31-runtime-config.test.ts (S0-S25 closeout, DEC-4200)"
 Q-01-T32,partial,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1238; open: the staging or production run its acceptance names is not verified here (S0-S25 closeout, DEC-4200)"
@@ -363,10 +363,10 @@ Q-03-T022,done,"TASK-1232; backend/tests/integration/backfill/test_q03t022_conne
 Q-03-T023,done,"TASK-1232; backend/tests/integration/backfill/ledger_support.py (S0-S25 closeout, DEC-4200)"
 Q-03-T024,done,"TASK-1232; backend/tests/integration/backfill/ledger_support.py (S0-S25 closeout, DEC-4200)"
 Q-03-T025,done,"7959c11df Q-03-T025: S8 back-fill suites verified green on main (TASK-1253) (#428); TASK-1253; work/tasks/TASK-1253-q03-t025-s8-backfill-defects.md (S0-S25 closeout, DEC-4200)"
-Q-03-T026,partial,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1244; open: two weeks of nightly and weekly runs inside budget not verified (S0-S25 closeout, DEC-4200)"
+Q-03-T026,partial,"TASK-1244 wiring; open: mutation-nightly and mutation-weekly failed every run to 2026-11-12 (mutants/ path and registry issues, fixed on branch lo38-mutation-sweeps, not on main yet); probe 2026-11-12 (DEC-4808)"
 Q-03-T027,done,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1244 (S0-S25 closeout, DEC-4200)"
 Q-03-T028,done,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1245, TASK-1250; backend/tests/integration/test_q03t028_plan_tests.py (S0-S25 closeout, DEC-4200)"
-Q-03-T029,partial,"4db71f3aa S8 wave B: screens, kill switches, shadow output, rule-link void, platform ops, quality, c; TASK-1246; open: the quarter-end SLA read is not recorded (S0-S25 closeout, DEC-4200)"
+Q-03-T029,done,"the SLA read is recorded in docs/quality/supply-chain-quarterly.md (2027 Q3, Q-03-T148, DEC-4802): supply_chain check shows no high or critical finding past its SLA on 2026-11-12; probe 2026-11-12 (DEC-4808)"
 A-01-T14,done,"TASK-1281; backend/tests/integration/backfill/test_a01t14_audits_independent.py (S0-S25 closeout, DEC-4200)"
 A-02-T08,done,"TASK-1263; backend/tests/contracts/c09_ledger/test_c09_consumers.py (S0-S25 closeout, DEC-4200)"
 F-04-T34,done,"TASK-1298; work/tasks/TASK-1298-f04t34-journeys-docs-runbook-skills.md (S0-S25 closeout, DEC-4200)"
@@ -618,7 +618,7 @@ R-02-T11,done,TASK-6309 (#1502) and remainder #1523 (DEC-3025): C18 approvals se
 R-02-T12,done,"TASK-6310 (#1503) and remainders #1524 (DEC-3026), #1581 (DEC-3146): governance room, tcwg grants at send, the letter PDF through C10; code probe 2026-11-12 (DEC-4804); tests not re-run here"
 T-04-T03,done,TASK-6318 (#1512): protected bundle; T-04 table owners now in schema_check TABLE_OWNERS; code probe 2026-11-12 (DEC-4804); tests not re-run here
 T-04-T07,done,"TASK-6322 (#1516) and remainder (DEC-3031): fixtures on the generated client; every in-scope screen (TAX-04..08, TXI-01..03) built with its tests in S33+; code probe 2026-11-12 (DEC-4804); tests not re-run here"
-P-09-T09,partial,"TASK-6306 (#1499) and remainder #1521 (DEC-3023): frames 1, 2, 5, 8; open: frames 9 and 10 as fixtures not confirmed; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+P-09-T09,partial,"TASK-6306 (#1499), remainder #1521; frame 10's reason picker built and tested (RunPane.test revision 4); open: frames 9 and 10 as fixture docks need triggers (K-04-T21, S61) and the ""Auto-started by trigger"" line (A-11-T17, S68); the step-through card is not built; probe 2026-11-12 (DEC-4808)"
 R-02-T13,partial,TASK-6313 (#1507) and remainder #1527 (DEC-3029): portal and governance seed slices; open: make seed-demo and fixture equivalence not shown; code probe 2026-11-12 (DEC-4804); tests not re-run here
 F-03-T04,done,256be2829 docs(product): status registry and the glossary change set (SU-25; F-03-T04; F-02-T04) (and 0 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
 F-05-T07,done,92a5224d3 feat(web;ui): design-system ESLint rules and compiled-CSS check (F-05-T07) (and 1 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
