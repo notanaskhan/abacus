@@ -65,7 +65,13 @@ export interface HOME01Props {
   initialOffice?: string | null;
   /** Where a Waiting-on-you row goes; undefined while the target is planned (DV-3). */
   hrefOf?: (gate: HumanGateOut) => string | undefined;
+  /** Beside HOME-05's docked Today pane: the compressed row and the 380 right column. */
+  docked?: boolean;
 }
+
+/** HOME-05's right region at 896 (docs/screens/HOME-05.md): tiles 88, Audits 330, Closes 90,
+ * Notices 84; the right column 380, so the queue takes 506. Undocked, T11's own widths. */
+const DOCKED = { single: 88, audits: 330, closes: 90, notices: 84, column: 380 } as const;
 
 /** Morning until noon in the firm's zone ("Good morning" at 9:24 AM, "Good afternoon" at 12:40 PM). */
 function isMorning(now: Date, tz: string): boolean {
@@ -147,7 +153,15 @@ function ByOffice({
 }
 
 /** The tile row: one tile per registered home count; an unregistered key has none (AC3.1). */
-function Tiles({ home, name }: { home: HomeOut; name: OfficeName }): JSX.Element {
+function Tiles({
+  home,
+  name,
+  docked = false,
+}: {
+  home: HomeOut;
+  name: OfficeName;
+  docked?: boolean;
+}): JSX.Element {
   return (
     <>
       {home.tiles.flatMap((tile) => {
@@ -163,6 +177,7 @@ function Tiles({ home, name }: { home: HomeOut; name: OfficeName }): JSX.Element
             >
               <DashTile
                 kind="single"
+                {...(docked ? { width: DOCKED.single } : {})}
                 value={String(statusN(tile, code))}
                 label={COPY.tiles.tax[code]}
                 variant={status("return", code).variant ?? "neutral"}
@@ -178,7 +193,7 @@ function Tiles({ home, name }: { home: HomeOut; name: OfficeName }): JSX.Element
             <ByOffice key="audits" tile={tile} name={name} label={COPY.tiles.audits(tile.total)}>
               <DashTile
                 kind="group"
-                width={360}
+                width={docked ? DOCKED.audits : 360}
                 title={COPY.tiles.audits(tile.total)}
                 counts={phases.map((p) => ({
                   value: String(statusN(tile, p)),
@@ -193,6 +208,7 @@ function Tiles({ home, name }: { home: HomeOut; name: OfficeName }): JSX.Element
             <DashTile
               key="closes"
               kind="meter"
+              {...(docked ? { width: DOCKED.closes } : {})}
               value={String(statusN(tile, "in_progress"))}
               pill={{
                 label: COPY.tiles.closesPill,
@@ -216,6 +232,7 @@ function Tiles({ home, name }: { home: HomeOut; name: OfficeName }): JSX.Element
             >
               <DashTile
                 kind="meter"
+                {...(docked ? { width: DOCKED.notices } : {})}
                 value={String(tile.total)}
                 {...(fresh > 0
                   ? {
@@ -443,6 +460,7 @@ export function HOME01({
   height,
   initialOffice = null,
   hrefOf,
+  docked = false,
 }: HOME01Props): JSX.Element {
   const [office, setOffice] = useState<string | null>(initialOffice);
   const session = useSession();
@@ -565,11 +583,12 @@ export function HOME01({
             ...(workbenchOn ? { runningHref: linkOf(to.WB01(), { filter: "running" }) } : {}),
           })}
       loading={loading}
+      {...(docked ? { columnWidth: DOCKED.column } : {})}
       tiles={
         home.isError ? (
           <ErrorState noun={COPY.error.tiles} onRetry={() => void home.refetch()} />
         ) : view === undefined ? null : (
-          <Tiles home={view} name={officeLabel} />
+          <Tiles home={view} name={officeLabel} docked={docked} />
         )
       }
       queue={{
