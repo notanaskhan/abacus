@@ -80,8 +80,10 @@ describe("TXP-06 Allocation Structure", () => {
         onSave={onSave}
       />,
     );
-    fireEvent.change(screen.getByLabelText("9% Preferred Return"), { target: { value: "9" } });
-    expect(onRung).toHaveBeenCalledWith(2, "9");
+    fireEvent.change(screen.getByRole("textbox", { name: "9% Preferred Return" }), {
+      target: { value: "9.5" },
+    });
+    expect(onRung).toHaveBeenCalledWith(2, "9.5");
     expect(screen.getAllByText(COPY.pending).length).toBeGreaterThanOrEqual(2);
     fireEvent.click(screen.getByText(COPY.save));
     expect(onSave).toHaveBeenCalledOnce();
@@ -90,7 +92,9 @@ describe("TXP-06 Allocation Structure", () => {
   it("Esc in a rung field leaves edit mode before the sheet closes", () => {
     const onEdit = vi.fn();
     render(<TXP06 structure={harborview()} forceOpen editing={2} onEdit={onEdit} />);
-    fireEvent.keyDown(screen.getByLabelText("8% Preferred Return"), { key: "Escape" });
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "8% Preferred Return" }), {
+      key: "Escape",
+    });
     expect(onEdit).toHaveBeenCalledWith(null);
   });
 });

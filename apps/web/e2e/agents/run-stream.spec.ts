@@ -3,7 +3,8 @@
 // and a session that read a client the viewer may not open is locked; j23 1-run: Margaret Okonkwo
 // sees Northwind #4127 blocked on her materiality decision. Each step runs axe and INV-1 to INV-5.
 //
-// The fixture project walks AUD-02's built artboards (c Running, d "Waiting on Margaret Okonkwo").
+// The fixture project walks AUD-02's built artboards (a: #4127 with Risk Assessment Running; d:
+// "Waiting on Margaret Okonkwo"). c is the proposed plan, not a running run (docs/screens/AUD-02.md).
 // The live halves (SSE delivery, the polling fallback, the locked session) need the full stack: they
 // run on the staging project and are skipped where its URL is not set. j11 b2–b3 (Workbench
 // screens) stay `test.fixme` until W-02 builds WB-01/02/03 (S40–S45).
@@ -19,8 +20,8 @@ test.describe("Run stream: the dock (P-10-T50)", () => {
   }) => {
     skipUnhosted(journey.project);
     test.fixme(journey.project !== "fixture", LIVE);
-    await journey.as("hannah-leclerc", artboard("AUD-02", "c"));
-    await journey.step("j23 1-run: the run is Running in the dock (AUD-02 c)", async (page) => {
+    await journey.as("hannah-leclerc", artboard("AUD-02", "a"));
+    await journey.step("j23 1-run: the run is Running in the dock (AUD-02 a)", async (page) => {
       await expect(page.getByText(/Running/).first()).toBeVisible();
     });
     await journey.as("margaret-okonkwo", artboard("AUD-02", "d"));

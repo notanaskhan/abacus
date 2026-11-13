@@ -418,7 +418,11 @@ export function DataGrid({
                         {row.tag !== undefined && <PropChip>{row.tag}</PropChip>}
                       </>
                     ) : type === "num" ? (
-                      <MoneyCell value={cell?.value ?? null} format={c.format ?? g.format} />
+                      cell?.text !== undefined ? (
+                        <span className="whitespace-nowrap text-ink-3">{cell.text}</span>
+                      ) : (
+                        <MoneyCell value={cell?.value ?? null} format={c.format ?? g.format} />
+                      )
                     ) : type === "variance" ? (
                       variance !== undefined && (
                         <VarianceCell variance={variance} format={c.format ?? g.format} />

@@ -72,7 +72,7 @@ export function StackedBar({
             className={cn(
               "flex h-full items-center justify-center truncate text-[11px] font-medium text-ink",
               s.fill,
-              s.outlined === true && "outline outline-1 -outline-offset-1 outline-ink",
+              s.outlined === true && "outline -outline-offset-1 outline-ink",
             )}
           >
             {Number(s.value) / whole > 0.08 ? s.label : ""}

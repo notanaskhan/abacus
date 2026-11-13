@@ -10,7 +10,9 @@ import {
   entityScheduleKOptions,
 } from "@abacus/api-client/query";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
+import { to } from "../../routes/to";
 import { Allocation } from "../TXP-06/Allocation";
 import { TXP05, type Txp05View } from "./index";
 
@@ -25,6 +27,7 @@ export function ScheduleK({
   /** SHL-09 on a line's cells (the shell's overlay wiring). */
   onOpenCell?: (line: string) => void;
 }): JSX.Element {
+  const navigate = useNavigate();
   const [view, setView] = useState<Txp05View>("federal");
   const [line, setLine] = useState<string | null>(null);
   const [itemLOpen, setItemLOpen] = useState(false);
@@ -77,7 +80,8 @@ export function ScheduleK({
         onItemL={setItemLOpen}
         onOpenCapital={() => onOpen?.("/review/capital-accounts")}
         onOpenIssues={() => onOpen?.("/issues")}
-        onPartner={() => onOpen?.("/k1")}
+        // A5: a partner header opens the K-1 package (TXP-12; TAX-11 is planned).
+        onPartner={() => void navigate(to.TXP12({ returnId }))}
       />
     </>
   );

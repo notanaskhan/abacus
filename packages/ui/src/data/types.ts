@@ -44,6 +44,9 @@ export interface TableCell {
   agent?: boolean | undefined;
   /** A variance column's cell: the change and what is known about it. */
   variance?: VarianceValue | undefined;
+  /** Words the server sends in place of a number in a numeric column ("STMT", "—"): drawn as
+   * text in ink-3, never parsed as an amount (S41 CI fix, DEC-4735). `value` is then null. */
+  text?: string | undefined;
 }
 
 /** The five variance states (C-01 spec 06), in precedence order. */

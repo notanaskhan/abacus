@@ -24,6 +24,7 @@ import {
   Segmented,
   SkeletonRows,
   Spinner,
+  type TableCell,
   type TableColumn,
   type TableRow,
   type TallyItem,
@@ -36,7 +37,7 @@ import { COPY, PARTNER_NOTE } from "./copy";
 export type Txp05View = "federal" | "state";
 
 const MONEY = { type: "num", format: "whole" } as const;
-const DASH = { value: "—" };
+const DASH = { value: null, text: "—" };
 
 function tagOf(p: WorkbookPartnerOut): "GP" | "LP" {
   return p.kind === "general" ? "GP" : "LP";
@@ -74,7 +75,7 @@ function lineRow(
   label?: string,
 ): TableRow {
   const empty = l.by_partner.length === 0 && Number(l.total) === 0;
-  const cells: Record<string, { value: string | null }> = {
+  const cells: Record<string, TableCell> = {
     line: { value: l.line.startsWith("analysis") ? "1" : l.line },
     total: empty ? DASH : { value: l.total },
     sum: empty ? DASH : l.tie === "tie" ? { value: l.total } : DASH,
@@ -88,14 +89,14 @@ function lineRow(
 }
 
 function stmtRow(partners: readonly WorkbookPartnerOut[]): TableRow {
-  const cells: Record<string, { value: string | null }> = {
+  const cells: Record<string, TableCell> = {
     line: { value: "20c" },
-    total: { value: COPY.stmt },
+    total: { value: null, text: COPY.stmt },
     sum: DASH,
     tie: DASH,
   };
   partners.forEach((_p, i) => {
-    cells[`p${String(i)}`] = { value: COPY.stmt };
+    cells[`p${String(i)}`] = { value: null, text: COPY.stmt };
   });
   return { id: "line:20c", label: COPY.rows.qbi, cells };
 }
@@ -109,14 +110,17 @@ function itemJ(p: WorkbookPartnersOut): TableRow {
   const first = p.periods[0]?.shares ?? {};
   const last = p.periods.at(-1)?.shares ?? {};
   const pct = (v: string | undefined) => `${String(Number(v ?? "0"))}%`;
-  const cells: Record<string, { value: string | null }> = {
+  const cells: Record<string, TableCell> = {
     line: { value: "J" },
     total: DASH,
-    sum: { value: "100%" },
+    sum: { value: null, text: "100%" },
     tie: { value: "tie" },
   };
   p.partners.forEach((partner, i) => {
-    cells[`p${String(i)}`] = { value: `${pct(first[partner.id])} → ${pct(last[partner.id])}` };
+    cells[`p${String(i)}`] = {
+      value: null,
+      text: `${pct(first[partner.id])} → ${pct(last[partner.id])}`,
+    };
   });
   return { id: "item:J", label: COPY.rows.itemJ, cells };
 }
@@ -127,14 +131,12 @@ function itemL(
   partners: readonly WorkbookPartnerOut[],
 ): TableRow {
   const l = capital.item_l;
-  const cells: Record<string, { value: string | null }> = {
+  const cells: Record<string, TableCell> = {
     line: { value: "L" },
-    total: {
-      value:
-        l === undefined || l === null
-          ? null
-          : `${amount(l.m2_ending, "whole").text} ${COPY.rows.schL}`,
-    },
+    total:
+      l === undefined || l === null
+        ? { value: null }
+        : { value: null, text: `${amount(l.m2_ending, "whole").text} ${COPY.rows.schL}` },
     sum: { value: l?.capital_ending ?? null },
     tie: { value: l === undefined || l === null ? COPY.pending : tieText(l.tie, l.difference) },
   };
@@ -148,9 +150,9 @@ function itemL(
 
 function itemK(partners: readonly WorkbookPartnerOut[]): TableRow {
   // Item K's §752 shares are TXP-08's basis reads (T-06); until then the row is Pending.
-  const cells: Record<string, { value: string | null }> = {
+  const cells: Record<string, TableCell> = {
     line: { value: "K" },
-    total: { value: COPY.pending },
+    total: { value: null, text: COPY.pending },
     sum: DASH,
     tie: { value: COPY.pending },
   };
