@@ -25,7 +25,8 @@ code-computed summaries and an honest `client_scope`.
 - Rollback: revert; the routes answer 501.
 
 ## Partial
-- AC-C4's richer lines (plan participants, materiality and Internal Control exceptions) need
+- S41 gaps (DEC-4734): the workpapers card now carries the decided materiality and version when
+  the viewer may read it. Still open: AC-C4's richer lines (plan participants, materiality and Internal Control exceptions) need
   read APIs from the EBP and planning modules; the summaries carry PBC counts, workpaper counts
   and titles, and the engagement period. Carried to W-02-T13/S42.
 - `client` kind (a client record without an engagement) and single `document` picks are not

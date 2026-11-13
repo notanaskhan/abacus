@@ -25,8 +25,8 @@ and nothing `tri`.
 
 ## Partial
 - `tool_selection` is the workbench_assistant suite's (W-02-T07 cases; W-02-T12 runs it).
-- AC-A6's "Binders 241" is a firm-wide count; `binders.read` is per engagement (a firm-wide
-  binder count tool is not in this row).
+- S41 gaps (DEC-4734): AC-A6's "Binders 241" is `binders.read`'s `season_total`, the season's
+  visible binders counted by code over BND-01's index, with `by_status` tiles.
 
 ## Progress log
 - 2026-11-13: built; registration verified at import; tests written, not run.

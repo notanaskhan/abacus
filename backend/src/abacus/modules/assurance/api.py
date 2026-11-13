@@ -573,6 +573,7 @@ __all__ = [
     "mapping_live",
     "mark_ebp_test",  # TASK-7815
     "materiality_engine",
+    "materiality_record",
     "open_eqr_reviews",  # A-07-T41: the archive slice
     "pass_on_sum",
     "propose_materiality",  # P-04-T36: the scenario loader proposes as the person named
@@ -780,3 +781,6 @@ from abacus.modules.assurance import (  # noqa: E402
 from abacus.modules.assurance.governance_comms import (  # noqa: E402  # A-07-T41
     set_recipients as set_governance_recipients,
 )
+
+# W-02-T10 gaps (DEC-4734): the engagement's materiality record, for the Workbench context card.
+from abacus.modules.assurance.materiality import record as materiality_record  # noqa: E402

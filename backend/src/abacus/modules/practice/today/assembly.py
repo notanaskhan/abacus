@@ -38,6 +38,7 @@ from abacus.modules.practice.today.contract import (
     Availability,
     Card,
     CountCell,
+    DownstreamRow,
     DrillVM,
     DueChip,
     GateRow,
@@ -263,6 +264,11 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
             items=[_group_item(i) for i in items if i.blocked][:10],
         ),
     ]
+    groups = [
+        *_high_risk(briefings, labels),
+        *groups,
+        *await _running(ctx, items, labels),
+    ]
     first = (await names_of([ctx.user_id])).get(ctx.user_id, "").split(" ")[0]
     ready = bool(cards) and all(c.briefing_status == "ready" for c in cards)
     return TodayVM(
@@ -309,14 +315,103 @@ async def drill(ctx: AuthContext, work_item_id: UUID, day: date | None = None) -
     ranked = sorted(items, key=lambda i: urgency(i, today))
     labels = await _labels(ctx, [i.engagement_id for i in items if i.engagement_id])
     label = labels.get(ranked[0].engagement_id, "") if ranked[0].engagement_id else ""
+    downstream = await _downstream(ctx, work_item_id, ranked[0].engagement_id)
     return DrillVM(
         work_item_id=work_item_id,
         title=label,
         summary_fallback=f"{len(items)} items wait on you here.",
         blockers=[row_of(i, today) for i in ranked],
+        downstream=downstream,
         open_href=ranked[0].route,
         select_refs=[i.gate_id for i in ranked],
     )
+
+
+def _high_risk(briefings: dict[UUID, object], labels: dict[UUID, str]) -> list[Group]:
+    """I-02-T10 (S41 gaps, DEC-4734): High risk is each ready briefing's verified risk line
+    (INV-2: an unverified or failed briefing shows nothing); the group is absent without one."""
+    rows: list[GroupItem] = []
+    for engagement_id, b in sorted(briefings.items(), key=lambda kv: labels.get(kv[0], "")):
+        if getattr(b, "status", None) != "ready":
+            continue
+        blocks = getattr(b, "blocks", None)
+        if not isinstance(blocks, dict):
+            continue
+        risk = cast(dict[str, object], blocks).get("risk")
+        if not isinstance(risk, dict):
+            continue
+        rows.append(
+            GroupItem(
+                ref_id=engagement_id,
+                title=labels.get(engagement_id, ""),
+                detail_blocks=[cast(dict[str, object], risk)],
+                assignable=True,
+            )
+        )
+    return [Group(key="high_risk", count=len(rows), items=rows)] if rows else []
+
+
+async def _running(ctx: AuthContext, items: list[Item], labels: dict[UUID, str]) -> list[Group]:
+    """I-02-T10 (S41 gaps, DEC-4734): Running is the engagement runs still active on the work
+    items waiting on the viewer (counted by code), each with who started it."""
+    from abacus.modules.agents.api import WorkItemRun, work_item_runs
+
+    seen: dict[UUID, UUID | None] = {}
+    for i in items:
+        if i.work_item_id is not None and i.work_item_id not in seen:
+            seen[i.work_item_id] = i.engagement_id
+    found: list[tuple[UUID, UUID | None, WorkItemRun]] = []
+    for work_item_id, engagement_id in list(seen.items())[:20]:
+        for run in await work_item_runs(ctx.tenant, f"tax_return:{work_item_id}", 5):
+            if run.active:
+                found.append((work_item_id, engagement_id, run))
+    if not found:
+        return []
+    starters = await names_of(
+        [r.initiator_user_id for _w, _e, r in found if r.initiator_user_id is not None]
+    )
+    rows = [
+        GroupItem(
+            ref_id=r.run_id,
+            title=f"{labels.get(e, '') if e else ''} run #{r.run_number}".strip(),
+            actor=starters.get(r.initiator_user_id) if r.initiator_user_id else None,
+            deep_link=f"/tax-returns/{w}?ov=run-trace:{r.run_id}",
+        )
+        for w, e, r in found
+    ]
+    return [Group(key="running", count=len(rows), items=rows)]
+
+
+async def _downstream(
+    ctx: AuthContext, work_item_id: UUID, engagement_id: UUID | None
+) -> list[DownstreamRow]:
+    """I-02-T11 (S41 gaps, DEC-4734): the work items waiting on this one (a 1065's K-1 recipients'
+    returns), through the owner's work-item hooks: only those the viewer can open on both sides
+    (DEC-88), titled by name, with the owner's next milestone as the state line."""
+    from abacus.modules.engagements.api import (
+        dependents_visible,
+        next_milestone,
+        work_item_titles,
+    )
+
+    if engagement_id is None:
+        return []
+    kind = "tax_return"  # the one kind with hooks today (tax registers them)
+    dependents = await dependents_visible(ctx, kind, work_item_id, engagement_id)
+    if not dependents:
+        return []
+    milestone = await next_milestone(ctx, kind, work_item_id)
+    titles = await work_item_titles(ctx.tenant, dependents)
+    line = f"Waiting on the {milestone}" if milestone else "Waiting downstream"
+    return [
+        DownstreamRow(
+            work_item_id=d,
+            title=titles.get(d, ""),
+            state_line=line,
+            deep_link=f"/tax-returns/{d}",
+        )
+        for d in dependents
+    ]
 
 
 __all__ = [
