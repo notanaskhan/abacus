@@ -125,3 +125,22 @@ async def test_the_limit_and_a_stranger_id_are_honoured(world: World) -> None:
     raw = [{"record_type": "request_item", "id": str(uuid.uuid4())}, *_raw(world)]
     found = await samples_for(_ctx(world.partner), raw, 2)
     assert [s.record_type for s in found] == ["evidence_version"]  # the stranger id is dropped
+
+
+async def test_a_withdrawn_version_never_resolves(
+    world: World, migrated_db: MigratedDatabase
+) -> None:
+    """ADR-162 §4 (TASK-7824): a client's withdrawn upload is gone from every read, so a step that
+    read it before the withdrawal shows no sample for it, as a version or through its item."""
+    seed = Seeder(migrated_db.superuser_dsn)
+    await seed.run(
+        "INSERT INTO evidence_withdrawals (tenant_id, evidence_version_id, engagement_id, "
+        "request_item_id, withdrawn_by_user_id, withdrawn_at, erase_after) "
+        "SELECT tenant_id, id, engagement_id, $2, $3, now(), now() + interval '30 days' "
+        "FROM evidence_versions WHERE id = $1",
+        world.version,
+        world.item,
+        world.partner.user_id,
+    )
+    found = await samples_for(_ctx(world.partner), _raw(world), 5)
+    assert [s.record_type for s in found] == ["request_item", "engagement"]
