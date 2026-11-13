@@ -921,6 +921,21 @@ async def _authorise_run_start(ctx: AuthContext, resource: Resource) -> None:
     await authorise(ctx, "workbook_run.start", resource)
 
 
+async def _authorise_export(ctx: AuthContext, resource: Resource) -> None:
+    """T-05-T57: a person exports the workbook (fresh MFA; never an agent, ADR-005)."""
+    await authorise(ctx, "workbook.export", resource)
+
+
+async def _authorise_memo_draft(ctx: AuthContext, resource: Resource) -> None:
+    """T-05-T54: a person starts the memo's run (never an agent, ADR-005)."""
+    await authorise(ctx, "tax_memo.draft", resource)
+
+
+async def _authorise_memo_edit(ctx: AuthContext, resource: Resource) -> None:
+    """T-05-T54: a person edits a memo section (never an agent, ADR-005)."""
+    await authorise(ctx, "tax_memo.edit", resource)
+
+
 class PayloadTooLarge(DomainTooLarge):
     """T-05-T40: a workbook import over 5 MB (413)."""
 
@@ -1201,7 +1216,7 @@ async def entity_export_route(
 
     await _flag_on(ctx)
     loaded = await load_return(ctx, return_id)
-    await authorise(ctx, "workbook.export", await return_resource(ctx, loaded))
+    await _authorise_export(ctx, await return_resource(ctx, loaded))
     runs = await work_item_runs(ctx.tenant, f"tax_return:{return_id}")
     made = await export_workbook(
         ctx,
@@ -2046,8 +2061,38 @@ async def entity_issue_resolve_route(
     f"{_R}/memo", action="tax_memo.read", response_model=WorkbookMemoOut, errors=(501,)
 )
 async def entity_memo_route(return_id: UUID, ctx: Ctx) -> WorkbookMemoOut:
+    """TXP-01 (T-05-T54, DEC-4909): sections, status (stale computed on cited figures) and the
+    moved figures in words."""
+    from abacus.modules.tax.memo_service import read_memo
+
     await _flag_on(ctx)
-    _not_yet()
+    await _memo_read(ctx, return_id)
+    memo = await read_memo(ctx, return_id)
+    return WorkbookMemoOut(
+        status=memo.status,
+        sections=[
+            WorkbookMemoSectionOut(
+                key=s.key,
+                title=s.title,
+                body=s.body,
+                human_owned=s.human_owned,
+                version=memo.version,
+            )
+            for s in memo.sections
+        ],
+        seen_hash=memo.seen_hash,
+        stale_fields=memo.stale_fields,
+        allowed_actions=[],
+    )
+
+
+async def _memo_read(ctx: AuthContext, return_id: UUID) -> Resource:
+    from abacus.modules.tax.overview import load_return, return_resource
+
+    loaded = await load_return(ctx, return_id)
+    resource = await return_resource(ctx, loaded)
+    await authorise(ctx, "tax_memo.read", resource)
+    return resource
 
 
 @workbook_router.post(
@@ -2058,9 +2103,15 @@ async def entity_memo_route(return_id: UUID, ctx: Ctx) -> WorkbookMemoOut:
 async def entity_memo_draft_route(
     return_id: UUID, body: WorkbookMemoDraftIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> WorkbookAcceptedOut:
-    """A memo run; `consent_required` (409) without both §7216 consents."""
+    """A memo run; `consent_required` (409) without both §7216 consents. T-05-T54: no sections
+    named regenerates a stale memo's affected sections only; a person's sections are kept."""
+    from abacus.modules.tax.memo_service import start_draft
+
     await _flag_on(ctx)
-    _not_yet()
+    resource = await _memo_read(ctx, return_id)
+    await _authorise_memo_draft(ctx, resource)
+    run_id = await start_draft(ctx, return_id, body.sections)
+    return WorkbookAcceptedOut(run_id=run_id)
 
 
 @workbook_router.patch(
@@ -2074,8 +2125,20 @@ async def entity_memo_section_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> WorkbookMemoSectionOut:
+    """A person's section edit (T-05-T54): human-owned from now on; 409
+    `memo_version_conflict`."""
+    from abacus.modules.tax.memo_service import edit_section
+
     await _flag_on(ctx)
-    _not_yet()
+    resource = await _memo_read(ctx, return_id)
+    await _authorise_memo_edit(ctx, resource)
+    done = await edit_section(
+        ctx, return_id, key, expected_version=body.expected_version, body=body.body
+    )
+    return WorkbookMemoSectionOut(
+        key=done.key, title=done.title, body=done.body, human_owned=True,
+        version=body.expected_version + 1,
+    )  # fmt: skip
 
 
 @workbook_router.post(
@@ -2085,9 +2148,33 @@ async def entity_memo_section_route(
 async def entity_memo_adopt_route(
     return_id: UUID, body: WorkbookMemoAdoptIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> WorkbookSignOffRecordedOut:
-    """The preparer's L1 sign-off on the memo (`seen_hash`); the reviewer's L2 is P-04's."""
+    """The preparer's L1 sign-off on the memo (`seen_hash`); the reviewer's L2 is P-04's
+    (T-05-T54: `POST …/memo/approve`)."""
+    from abacus.modules.tax.memo_service import sign_memo
+
     await _flag_on(ctx)
-    _not_yet()
+    await _memo_read(ctx, return_id)
+    return WorkbookSignOffRecordedOut(
+        sign_off_id=await sign_memo(ctx, return_id, level=1, seen_hash=body.seen_hash)
+    )
+
+
+@workbook_router.post(
+    f"{_R}/memo/approve", action="sign_off.create", response_model=WorkbookSignOffRecordedOut,
+    status_code=201, errors=(403, 409),
+)  # fmt: skip
+async def entity_memo_approve_route(
+    return_id: UUID, body: WorkbookMemoAdoptIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> WorkbookSignOffRecordedOut:
+    """T-05-T54 (DEC-4910): the reviewer's L2 on the memo; never the preparer (403
+    `preparer_cannot_approve`); approval writes the opportunities."""
+    from abacus.modules.tax.memo_service import sign_memo
+
+    await _flag_on(ctx)
+    await _memo_read(ctx, return_id)
+    return WorkbookSignOffRecordedOut(
+        sign_off_id=await sign_memo(ctx, return_id, level=2, seen_hash=body.seen_hash)
+    )
 
 
 @workbook_router.get(
@@ -2097,8 +2184,17 @@ async def entity_memo_adopt_route(
     errors=(501,),
 )
 async def entity_opportunities_route(return_id: UUID, ctx: Ctx) -> WorkbookOpportunitiesOut:
+    """T-05-T54: the approved memo's opportunities."""
+    from abacus.modules.tax.memo_service import opportunities
+
     await _flag_on(ctx)
-    _not_yet()
+    await _memo_read(ctx, return_id)
+    return WorkbookOpportunitiesOut(
+        items=[
+            WorkbookOpportunityOut(key=str(i), title=t)
+            for i, t in await opportunities(ctx, return_id)
+        ]
+    )
 
 
 @workbook_router.get(

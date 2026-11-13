@@ -495,6 +495,9 @@ async def on_run_state_changed(event: OutboxEvent) -> None:
     except ValueError:
         return
     await tie_out_check(event.tenant_id, return_id)
+    from abacus.modules.tax.memo_service import check_stale  # T-05-T54: the memo's figures
+
+    await check_stale(event.tenant_id, return_id)
 
 
 def register() -> None:
