@@ -3700,3 +3700,824 @@ cases:
   category: seeded
   seeded_failures:
   - injection_contained
+# I-02-T09 (TASK-7717): ten Today-context turns (the brief's ask binding lands with W-02-T15).
+- id: today_context_01
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: what needs me first on Northwind? (I-02-T09: a Today-context turn; recorded calls follow
+    the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_02
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: why is the Northwind materiality card on my list? (I-02-T09: a Today-context turn; recorded
+    calls follow the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_03
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: what does the PBC count mean for Northwind''s report date? (I-02-T09: a Today-context
+    turn; recorded calls follow the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_04
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: which Northwind items are overdue? (I-02-T09: a Today-context turn; recorded calls follow
+    the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_05
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: summarise the Internal Control exceptions I need to look at (I-02-T09: a Today-context
+    turn; recorded calls follow the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_06
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: what changed on Northwind since yesterday''s brief? (I-02-T09: a Today-context turn;
+    recorded calls follow the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_07
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: is anything blocking my sign-off on Northwind? (I-02-T09: a Today-context turn; recorded
+    calls follow the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_08
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: which Northwind requests are still outstanding? (I-02-T09: a Today-context turn; recorded
+    calls follow the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_09
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: explain the receivable movement before I open the card (I-02-T09: a Today-context turn;
+    recorded calls follow the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
+- id: today_context_10
+  group: read_only
+  de:
+  - DE-3
+  fast: false
+  note: 'Today: what is the materiality figure the card proposes? (I-02-T09: a Today-context turn; recorded
+    calls follow the read-only shape)'
+  expected:
+    tools:
+    - evidence.read_extraction
+    - assurance.read_materiality
+    max_steps: 24
+    declared_writes: []
+    facts:
+    - $48,600.00
+    - $16,812,400.00
+    - $16,861,000.00
+    - Margaret Okonkwo
+    min_citation_coverage: 1.0
+    client_scope:
+    - client:northwind
+    read_only: true
+  turn:
+    kind: answer
+    calls:
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d001
+        cells:
+        - C14
+    - name: evidence.read_extraction
+      arguments:
+        document_id: 00000000-0000-4000-8000-00000000d002
+        cells:
+        - B9
+    - name: assurance.read_materiality
+      arguments:
+        engagement_id: 00000000-0000-4000-8000-0000000004e1
+        version: 2
+    - name: workpapers.read_section
+      arguments:
+        workpaper_id: 00000000-0000-4000-8000-00000000a001
+        section: internal_control
+    steps: 4
+    clients_read:
+    - client:northwind
+    answer:
+      text: Contributions receivable is $48,600.00 at 12/31/2025 against $0.00 at 1/1/2025. It is the
+        participant deferrals withheld from the Dec 26, 2025 payroll and the employer match on that payroll,
+        deposited with Keystone on Jan 9, 2026 [1][2]. Planning materiality used unadjusted net assets
+        of $16,812,400.00, which excludes this receivable; net assets including it are $16,861,000.00.
+        The deposit timing is already open in Internal Control (Exceptions!D2); its severity is for Margaret
+        Okonkwo to conclude.
+      claims:
+      - text: Contributions receivable is $48,600.00 at 12/31/2025.
+        citations:
+        - c1
+      - text: It was deposited with Keystone on Jan 9, 2026.
+        citations:
+        - c2
+      - text: Net assets including it are $16,861,000.00.
+        citations:
+        - f1
+      citations:
+      - id: c1
+        verified: true
+      - id: c2
+        verified: true
+      - id: f1
+        verified: true
+      numbers:
+      - text: $48,600.00
+        source: citation
+      - text: $0.00
+        source: code_fact
+      - text: $16,812,400.00
+        source: code_fact
+      - text: $16,861,000.00
+        source: code_fact
+    code_lines:
+    - Nothing was written.
+  category: pass
