@@ -13,6 +13,7 @@ from __future__ import annotations
 import importlib
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import cast
 
 from fastapi import FastAPI, Request
@@ -51,6 +52,7 @@ from abacus.kernel.logging import get_logger
 from abacus.kernel.telemetry import configure_tracing, shutdown_tracing
 from abacus.kernel.temporal import payload_codec
 from abacus.modules import MODULES
+from abacus.modules.agents.api import register_trace_pdf_renderer
 from abacus.modules.audit_trail.api import events_for_work_item
 from abacus.modules.evidence.api import (
     MAX_CONTENT_BYTES,
@@ -66,6 +68,7 @@ from abacus.modules.integrations.api import (
     egress_read_posts,
     esign_webhook_secret,
 )
+from abacus.modules.reporting.api import RenderInput, render_isolated
 from abacus.modules.signatures.api import register_esign_webhook
 
 # A-01-T18 (SPEC-344, DEC-433): no module may import audit_trail, so the composition roots (this
@@ -74,6 +77,27 @@ register_export_audit_trail(events_for_work_item)
 # ADR-152 (DEC-1281): signatures may not import integrations, so the API gives the DocuSeal
 # webhook receiver integrations' answer: exactly this install's secret, W7 open and connected.
 register_esign_webhook(esign_webhook_secret)
+
+
+def _trace_pdf(
+    layout: str, blocks: list[object], title: str, as_of: datetime, digest: str
+) -> bytes:
+    """C11's isolated renderer for the agent run trace's PDF (TASK-7825, DEC-4820)."""
+    request = RenderInput(
+        layout_key=layout,
+        blocks=blocks,
+        values={},
+        title=title,
+        as_of=as_of,
+        mode="final",
+        content_hash=digest,
+    )
+    return render_isolated(request).pdf
+
+
+# TASK-7825 (DEC-4820): agents may not import reporting (ADR-008), so the API gives the trace
+# export its PDF renderer.
+register_trace_pdf_renderer(_trace_pdf)
 
 # Every module's routers, in MODULES order (P-39; F-03-T07): adding a router edits only that
 # module's api.py.

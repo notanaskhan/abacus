@@ -10,6 +10,7 @@ An export is deterministic canonical JSON with a SHA-256 manifest, and is audite
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import json
@@ -605,10 +606,17 @@ class TraceExport:
     manifest: dict[str, object]
 
 
-async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
+ExportFormat = Literal["json", "pdf"]
+
+
+async def export_trace(
+    ctx: AuthContext, run_id: UUID, export_format: ExportFormat = "json"
+) -> TraceExport:
     """P-09-T11 (DEC-3118): canonical JSON (byte-identical for the same trace version) and a
     signed manifest naming the person, the body's SHA-256 and the persisted run record's hash;
-    `run_trace.export` needs a fresh second factor (matrix `mfa_recent`)."""
+    `run_trace.export` needs a fresh second factor (matrix `mfa_recent`). TASK-7825 (DEC-4820):
+    `pdf` renders the same JSON body through C11's `run_export` layout; the manifest's `sha256`
+    is then the PDF's and `source_sha256` the JSON body's it was drawn from."""
     from abacus.kernel.crypto.signing import export_signer
 
     trace = await trace_for(ctx, run_id)
@@ -619,7 +627,14 @@ async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
 
     # P-10-T44 (DEC-4302): an ended v2 run answers its frozen bytes while its rows hold still.
     body = await frozen_body(ctx.tenant, run_id, trace.projection, RENDERER_VERSION, build)
-    digest = hashlib.sha256(body).hexdigest()
+    source_digest = hashlib.sha256(body).hexdigest()
+    if export_format == "pdf":
+        from abacus.modules.agents.trace_pdf import render_trace_pdf
+
+        delivered = await asyncio.to_thread(render_trace_pdf, body, str(run_id), source_digest)
+    else:
+        delivered = body
+    digest = hashlib.sha256(delivered).hexdigest()
     frozen_rows = cast("dict[str, object]", json.loads(body)).get("rows")
     manifest: dict[str, object] = {
         "run_id": str(run_id),
@@ -634,6 +649,9 @@ async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
         "run_record_sha256": trace.run.record_sha256 or run_record_sha256(run),
         "exported_by": str(ctx.user_id),
     }
+    if export_format == "pdf":
+        manifest["format"] = "pdf"
+        manifest["source_sha256"] = source_digest
     signed_body = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
     signer = export_signer()
     signed = await signer.sign_digest(hashlib.sha256(signed_body).digest())
@@ -645,7 +663,7 @@ async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
             target=Target("agent_run", run_id),
             after=Ref(sha256=digest, rows=len(trace.rows), by=ctx.user_id),
         )
-    return TraceExport(body, manifest)
+    return TraceExport(delivered, manifest)
 
 
 # --- C6 v1 (TASK-5000): the run, its records read and its writes ---------------------------
@@ -1115,6 +1133,7 @@ def page_items(raw: Sequence[RunItem], after_seq: int) -> tuple[list[RunItem], i
 
 
 __all__: Sequence[str] = [
+    "ExportFormat",
     "export_trace",
     "items_for",
     "projection_for",

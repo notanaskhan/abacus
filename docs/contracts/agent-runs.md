@@ -101,7 +101,8 @@ Code: `backend/src/abacus/modules/agents/runs_routes.py`. Every field is `intern
   - `blocks`: AgentBlocks v1 (TASK-5004), validated by `agents/blocks.validate_blocks`. It is null on pre-v2 runs. The run's fact registry travels with runtime v2 (P-10); until then the client shows a dash for any fact.
 
   Items are built when read from the run's own records, so nothing is back-filled. Seqs are numbered by time. The client polls every 1.5 s while the run is queued or running and the tab is visible.
-- **TraceExportIn:** `format`, which takes only `json` in v0.
+- **TraceExportIn:** `format`: `json` (v0) or `pdf` (TASK-7825, DEC-4820, additive). A PDF is C11's code-owned `run_export` layout rendered from the same canonical JSON body, so both describe one trace version and two exports of it are the same bytes.
+- **TraceExportOut** (additive, TASK-7825): `media_type` (`application/json` or `application/pdf`), `content_encoding` (`utf-8` for JSON, `base64` for a PDF) and `source_sha256` (a PDF's: the JSON body's SHA-256; null for JSON). `sha256` is always the delivered bytes'.
 - **TraceExportOut:**
   - `filename`;
   - `content`: `confidential`, the canonical JSON;
@@ -142,7 +143,8 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 |---|---|---|
 | 404 | `{"detail": "not found"}` | Unknown run, shadow run, or firm-level run; on `/record`, also a run whose record is not persisted yet |
 | 403 | `{"detail": "forbidden"}` | Not on the engagement, independence unconfirmed, or no recent MFA (export) |
-| 422 | validation body | `format` other than `json` |
+| 422 | validation body | `format` other than `json` or `pdf` |
+| 503 | `renderer_unavailable` | a PDF the renderer's isolated child could not produce (C11) |
 
 ## 7. Audit and outbox events
 | Event | Written when | Payload (no Restricted data) |

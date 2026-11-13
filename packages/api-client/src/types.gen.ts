@@ -52779,7 +52779,7 @@ export type TraceExportIn = {
     /**
      * Format
      */
-    format?: 'json';
+    format?: 'json' | 'pdf';
 };
 
 /**
@@ -52791,9 +52791,17 @@ export type TraceExportOut = {
      */
     content: string;
     /**
+     * Content Encoding
+     */
+    content_encoding?: 'utf-8' | 'base64';
+    /**
      * Filename
      */
     filename: string;
+    /**
+     * Media Type
+     */
+    media_type?: 'application/json' | 'application/pdf';
     /**
      * Renderer Version
      */
@@ -52818,6 +52826,10 @@ export type TraceExportOut = {
      * Signature Key Id
      */
     signature_key_id?: string | null;
+    /**
+     * Source Sha256
+     */
+    source_sha256?: string | null;
 };
 
 /**
