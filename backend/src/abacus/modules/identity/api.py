@@ -859,3 +859,7 @@ __all__ = [
     "walled_from",
     "walls_awaiting_approval",
 ]
+
+# W-02-T13 (DEC-4717): colleagues by office or team, for the Workbench list's membership.
+from abacus.modules.identity.colleagues import colleagues_of as colleagues_of  # noqa: E402
+
