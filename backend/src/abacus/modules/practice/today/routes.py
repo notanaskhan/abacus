@@ -41,13 +41,16 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
-@today_router.get("", action="briefing.read", response_model=TodayVM, errors=(501,))
+@today_router.get("", action="briefing.read", response_model=TodayVM)
 async def today_route(
     ctx: Ctx, brief_date: Annotated[date | None, Query(alias="date")] = None
 ) -> TodayVM:
-    """The viewer's day; `status: building` with `needs_build` on the first open (§3.8)."""
+    """The viewer's day; `status: building` with `needs_build` on the first open (§3.8).
+    I-02-T10 (DEC-4722): assembled by code over C13."""
+    from abacus.modules.practice.today.assembly import assemble
+
     await today_gate(ctx)
-    _not_yet()
+    return await assemble(ctx, brief_date)
 
 
 @today_router.post(
@@ -66,17 +69,17 @@ async def today_builds_route(
     _not_yet()
 
 
-@today_router.get(
-    "/work-items/{work_item_id}", action="briefing.read", response_model=DrillVM, errors=(501,)
-)
+@today_router.get("/work-items/{work_item_id}", action="briefing.read", response_model=DrillVM)
 async def today_drill_route(
     work_item_id: UUID,
     ctx: Ctx,
     brief_date: Annotated[date | None, Query(alias="date")] = None,
 ) -> DrillVM:
     """The drill-in under `visible(work_item)`; 404 when walled or not the viewer's."""
+    from abacus.modules.practice.today.assembly import drill
+
     await today_gate(ctx)
-    _not_yet()
+    return await drill(ctx, work_item_id, brief_date)
 
 
 @today_router.get("/history", action="briefing.read", response_model=HistoryPage, errors=(501,))

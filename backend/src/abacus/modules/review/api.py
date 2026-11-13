@@ -271,6 +271,7 @@ __all__ = [
     "FieldState",  # A-05-T16 (DEC-2069)
     "FieldValueInvalid",
     "FieldVersionFact",
+    "GateCounts",
     "GateFacts",
     "GateSource",
     "GateView",
@@ -332,7 +333,9 @@ __all__ = [
     "field_timeline",
     "fix_instructions_of",
     "follow_proposal_decision",
+    "gate_counts",
     "gate_met",
+    "gates_waiting_on",
     "issue_awaits_client",
     "issue_engagement",
     "issue_row",  # A-06-T11: a finding's issue status and version
@@ -354,9 +357,6 @@ __all__ = [
     "raise_review_note_in",
     "read_issue",
     "rebuild_human_gates",
-    "GateCounts",
-    "gate_counts",
-    "gates_waiting_on",
     "record_engine_issue",
     "record_explanation",
     "record_fix_proposal",
@@ -416,3 +416,5 @@ async def _assigned_levels(tenant: _Tenant, key: str) -> tuple[int, ...] | None:
 
 
 register_level_assignments(_assigned_levels)
+
+# I-02-T10 (DEC-4722): the gates' presenter facts (titles, context lines, routes) for Today.

@@ -305,6 +305,45 @@ async def build_engagement_briefing(
     return Built(status, stored, tuple(codes))  # type: ignore[arg-type]
 
 
+_LATEST: Final = text(
+    "SELECT DISTINCT ON (engagement_id) engagement_id, id, status, blocks, unavailable_reason "
+    "FROM daily_briefings WHERE scope = 'engagement' AND viewer_user_id = :v AND brief_date = :d "
+    "AND engagement_id = ANY(:ids) ORDER BY engagement_id, seq DESC"
+)
+
+
+@dataclass(frozen=True)
+class StoredBriefing:
+    engagement_id: UUID
+    id: UUID
+    status: str
+    blocks: object
+    unavailable_reason: str | None
+
+
+async def latest_briefings(
+    tenant: object, viewer_user_id: UUID, on: date, engagement_ids: Sequence[UUID]
+) -> dict[UUID, StoredBriefing]:
+    """I-02-T10: the viewer's newest engagement briefing per engagement on a day (their own rows
+    only; the caller authorised `briefing.read`)."""
+    from abacus.kernel.db import tenant_session
+
+    if not engagement_ids:
+        return {}
+    async with tenant_session(tenant) as session:  # type: ignore[arg-type]
+        rows = (
+            await session.execute(
+                _LATEST, {"v": viewer_user_id, "d": on, "ids": list(engagement_ids)}
+            )
+        ).all()
+    return {
+        r.engagement_id: StoredBriefing(
+            r.engagement_id, r.id, str(r.status), r.blocks, r.unavailable_reason
+        )
+        for r in rows
+    }
+
+
 def registry_of(facts: Sequence[Fact]) -> dict[str, Fact]:
     return {f.id: f for f in facts}
 
@@ -349,6 +388,7 @@ __all__ = [
     "briefing_step",
     "build_engagement_briefing",
     "input_of",
+    "latest_briefings",
     "register",
     "registry_of",
     "validate",
