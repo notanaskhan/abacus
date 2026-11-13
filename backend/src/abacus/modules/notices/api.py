@@ -5,6 +5,7 @@ Pre-registered (F-03-T08; ADR-140). N-04-T02 (DEC-2051): the notices v1 contract
 """
 
 from abacus.kernel.audit_owners import register_client_owners, register_engagement_owners
+from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.notices.audit_targets import (
@@ -113,12 +114,16 @@ SUBSCRIPTIONS = {
     **_intake_read.SUBSCRIPTIONS,
     **_ANALYSIS_SUBSCRIPTIONS,
 }
-WORKFLOWS: dict[type, str] = {
+WORKFLOWS: dict[type, WorkClass] = {
     NoticeResponseWorkflow: "time_sensitive",
     NoticeIntakeWorkflow: "interactive",
     NoticeIntakeRereadWorkflow: "interactive",
     NoticeAnalysisWorkflow: "background",
 }
+# Each module registers its workflows' work classes so `dispatch` can route them (ADR-071). Without
+# this every notices dispatch raised LookupError, and the relay held the firm's whole outbox behind
+# the first `notice.created` (TASK-7811).
+register_work_classes(WORKFLOWS)
 
 # N-04-T19 (DEC-2313): the analysis's agent step.
 from abacus.modules.notices.agent_step import step as _agent_step  # noqa: E402

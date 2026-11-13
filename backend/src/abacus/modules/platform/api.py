@@ -6,7 +6,7 @@ from typing import Final
 from uuid import UUID
 
 from abacus.kernel.controls import ControlName, control_active
-from abacus.kernel.dispatch import PlatformSchedule
+from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.uow import Handler, OutboxEvent
 from abacus.modules.identity.api import AbacusRouter, register_posture_source
 from abacus.modules.platform.audit_resolvers import register as register_audit_resolvers
@@ -297,7 +297,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # incident propagation (time_sensitive); Q-01-T26 the hourly spend-anomaly job (background), on
 # its Schedule (`SCHEDULES`, ensured by `abacus_tools.schedules`).
 # Q-01-T30: the canary (time_sensitive), on its own Schedule when this environment names one.
-WORKFLOWS = {
+WORKFLOWS: dict[type, WorkClass] = {
     **PROVISIONING_WORKFLOWS,
     **INCIDENT_WORKFLOWS,
     **JOB_WORKFLOWS,
@@ -342,6 +342,11 @@ SEARCH_DRIFT_SCHEDULE: Final = PlatformSchedule(
     every=timedelta(days=1),
     note="P-02-T06: the nightly search drift check, a 1 % sample per type per firm",
 )
+
+
+# The fan-out had no work class, so each dispatch raised LookupError (TASK-7811); the others are
+# registered where they are defined, and registering them again with the same class is a no-op.
+register_work_classes(WORKFLOWS)
 
 
 # G-02-T20: `wisp_pack.requested` starts the WISP pack's build.
