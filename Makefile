@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
+.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check dark-merge-audit release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -380,6 +380,10 @@ deploy-lock:
 # locally and read-only: window_mode, rollback, the Tuesday slot, deadline weeks, the migrate hold.
 release-check:
 	cd backend && uv run python -m abacus_tools.release window-gate --release ../deploy/production/release.json $(if $(AT),--at $(AT))
+
+# Q-04-T125 (DEC-4819): every merged PR between two refs as dark_only or not (P-29, ADR-151).
+dark-merge-audit:
+	cd backend && uv run python -m abacus_tools.dark_merge_audit --from $(FROM) --to $(or $(TO),HEAD) $(if $(OUT),--out $(OUT))
 
 release-pr:
 	@test -n "$(SHA)" || (echo "usage: make release-pr SHA=<40-character git sha>"; exit 2)

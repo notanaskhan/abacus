@@ -1,0 +1,18 @@
+# Live paths (Q-04-T125; P-29, ADR-151; DEC-4819): files a live firm's journeys run through.
+# Inside a release window a change touches these only to fix a defect; new work merges dark behind
+# a default-off flag. `python -m abacus_tools.dark_merge_audit` reports every merged PR that
+# changes one of these globs (fnmatch: `*` also crosses `/`).
+#
+# The first set is PF-X1's walked surfaces (PW1 scope: sign-in, Home, requests and the portal
+# upload, evidence). Edit it when a firm goes live on more, in the same change as its go-live
+# dossier. Pilot codes only; never a firm name.
+live_paths:
+  - backend/src/abacus/kernel/*
+  - backend/src/abacus/modules/identity/*
+  - backend/src/abacus/modules/requests/*
+  - backend/src/abacus/modules/evidence/*
+  - backend/src/abacus/modules/portal/*
+  - apps/web/src/app-core/*
+  - apps/web/src/screens/HOME-*
+  - apps/web/src/screens/POR-*
+  - apps/web/src/portal/*
