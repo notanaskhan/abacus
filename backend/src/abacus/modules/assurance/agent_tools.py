@@ -12,7 +12,7 @@ from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
@@ -24,9 +24,13 @@ Conf = classified("confidential")
 
 
 class MaterialityIn(BaseModel):
+    """The frozen workbench suite's arguments (S41 end pass, DEC-4733): the engagement, and a
+    version (the latest when omitted)."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    engagement_id: Annotated[UUID | None, Int] = None
+    engagement_id: Annotated[UUID, Int]
+    version: Annotated[int | None, Field(ge=1), Int] = None
 
 
 class MaterialityOut(BaseModel):
@@ -50,13 +54,17 @@ class MaterialityOut(BaseModel):
 async def read_materiality(agent: AgentContext, args: MaterialityIn) -> MaterialityOut:
     from abacus.modules.assurance import materiality
 
-    engagement = args.engagement_id or agent.engagement_id
-    if engagement is None:
-        raise NotFound("engagement")
-    found = await materiality.record(agent, engagement)  # type: ignore[arg-type] -- the run's context
+    found = await materiality.record(agent, args.engagement_id)  # type: ignore[arg-type] -- the run's context
     if not found.versions:
         return MaterialityOut(decided=False)
-    v = found.versions[-1]
+    if args.version is None:
+        v = found.versions[-1]
+    else:
+        v = next(
+            (x for x in found.versions if getattr(x, "version_no", None) == args.version), None
+        )
+        if v is None:
+            raise NotFound("materiality_version")
     return MaterialityOut(
         decided=True,
         version=getattr(v, "version_no", None),

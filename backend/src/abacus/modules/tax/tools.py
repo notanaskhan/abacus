@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import Annotated, Final, cast
+from typing import Annotated, Final, Literal, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -628,9 +628,14 @@ async def propose_allocation_structure(
 
 
 class SeasonIn(BaseModel):
+    """The frozen workbench suite's arguments (S41 end pass, DEC-4733): the tax year, which
+    breakdowns to answer (both when omitted) and the statuses to count (all when omitted)."""
+
     model_config = _cfg()
 
-    tax_year: Annotated[int | None, Field(ge=2000, le=2100), Int] = None
+    tax_year: Annotated[int, Field(ge=2000, le=2100), Int]
+    group_by: Annotated[list[Literal["status", "office"]] | None, Field(max_length=2), Int] = None
+    status_in: Annotated[list[str] | None, Field(max_length=20), Int] = None
 
 
 class OfficeCount(BaseModel):
@@ -674,7 +679,11 @@ async def season_counts(agent: AgentContext, args: SeasonIn) -> SeasonOut:
     TAX-01's; nothing walled is counted)."""
     from abacus.kernel.clock import today
     from abacus.modules.organisations.api import firm_offices
-    from abacus.modules.tax.board import DONE, _board, _due
+    from abacus.modules.tax.board import (
+        DONE,
+        _board,  # pyright: ignore[reportPrivateUsage] -- the tax module's own board
+        _due,  # pyright: ignore[reportPrivateUsage] -- the tax module's own board
+    )
 
     board = await _board(agent, args.tax_year)  # type: ignore[arg-type] -- the run's context reads as its initiator
     statuses: dict[str, int] = {}
@@ -682,7 +691,10 @@ async def season_counts(agent: AgentContext, args: SeasonIn) -> SeasonOut:
     engagements: dict[UUID, int] = {}
     stalled = 0
     on = await today(agent.tenant)
-    for r, facts in board.rows:
+    wanted = None if args.status_in is None else set(args.status_in)
+    rows = [(r, f) for r, f in board.rows if wanted is None or r.status in wanted]
+    groups = set(args.group_by or ("status", "office"))
+    for r, facts in rows:
         statuses[r.status] = statuses.get(r.status, 0) + 1
         tally = offices.setdefault(facts.office_id, [0, 0])
         tally[1 if r.status in DONE else 0] += 1
@@ -694,10 +706,14 @@ async def season_counts(agent: AgentContext, args: SeasonIn) -> SeasonOut:
     done = sum(n for s, n in statuses.items() if s in DONE)
     return SeasonOut(
         tax_year=board.tax_year or 0,
-        returns=len(board.rows),
-        open=len(board.rows) - done,
+        returns=len(rows),
+        open=len(rows) - done,
         done=done,
-        by_status=[StatusCount(status=s, count=n) for s, n in sorted(statuses.items())],
+        by_status=(
+            [StatusCount(status=s, count=n) for s, n in sorted(statuses.items())]
+            if "status" in groups
+            else []
+        ),
         by_office=[
             OfficeCount(
                 office=names.get(o, "No office") if o else "No office", open=t[0], done=t[1]
@@ -705,6 +721,7 @@ async def season_counts(agent: AgentContext, args: SeasonIn) -> SeasonOut:
             for o, t in sorted(
                 offices.items(), key=lambda kv: names.get(kv[0], "") if kv[0] else ""
             )
+            if "office" in groups
         ],
         engagements=len(engagements),
         engagements_with_two_returns=sum(1 for n in engagements.values() if n >= 2),
