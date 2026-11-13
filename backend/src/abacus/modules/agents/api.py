@@ -527,6 +527,7 @@ __all__ = [
     "AdoptedValue",
     "AgentBlocks",
     "AgentEvent",
+    "AgentFact",
     "AgentInput",
     "AgentRunBackfillWorkflow",
     "AgentRunBusy",
@@ -543,6 +544,9 @@ __all__ = [
     "BackfillInput",
     "BatchOutcome",
     "BlocksTurn",
+    "BriefingCandidate",
+    "BriefingContribution",
+    "BriefingSubject",
     "ChangeSetApplier",
     "Citation",
     "CitationStates",
@@ -665,6 +669,7 @@ __all__ = [
     "ask",
     "begin_code_run",
     "blocks",
+    "briefing_fact_id",
     "capability_ready",
     "check",
     "check_live",
@@ -787,8 +792,15 @@ _register_topics()
 
 # I-02-T07 (DEC-4719): the Today brief's facts collector and its owners' slot.
 # I-02-T08 (DEC-4721): the `briefing_today` run step (writes `daily_briefings`).
+from abacus.modules.agents.blocks import Fact as AgentFact  # noqa: E402
 from abacus.modules.agents.briefing import today as _briefing_today  # noqa: E402
 from abacus.modules.agents.briefing.facts import BriefingFacts as BriefingFacts  # noqa: E402
+from abacus.modules.agents.briefing.facts import Candidate as BriefingCandidate  # noqa: E402
+from abacus.modules.agents.briefing.facts import (  # noqa: E402
+    Contribution as BriefingContribution,
+)
+from abacus.modules.agents.briefing.facts import Subject as BriefingSubject  # noqa: E402
+from abacus.modules.agents.briefing.facts import fact_id as briefing_fact_id  # noqa: E402
 from abacus.modules.agents.briefing.facts import (  # noqa: E402
     register_briefing_source as register_briefing_source,
 )

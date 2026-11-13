@@ -692,6 +692,23 @@ from abacus.modules.engagements.audit_labels import (  # noqa: E402
 _register_audit_labels()
 
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
+# I-02-T11 (DEC-4723): the attention slot, its work-item hooks and this module's provider.
+from abacus.modules.engagements import attention as _attention  # noqa: E402
 from abacus.modules.engagements import (  # noqa: E402
     search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )
+from abacus.modules.engagements.attention import AttentionRow as AttentionRow  # noqa: E402
+from abacus.modules.engagements.attention import WorkItemHooks as WorkItemHooks  # noqa: E402
+from abacus.modules.engagements.attention import attention_rows as attention_rows  # noqa: E402
+from abacus.modules.engagements.attention import (  # noqa: E402
+    dependents_visible as dependents_visible,
+)
+from abacus.modules.engagements.attention import next_milestone as next_milestone  # noqa: E402
+from abacus.modules.engagements.attention import (  # noqa: E402
+    register_attention_provider as register_attention_provider,
+)
+from abacus.modules.engagements.attention import (  # noqa: E402
+    register_work_item_hooks as register_work_item_hooks,
+)
+
+_attention.register()
