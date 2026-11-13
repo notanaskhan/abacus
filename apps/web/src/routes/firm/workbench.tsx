@@ -65,6 +65,10 @@ export const workbenchRoute = createRoute({
           onQuery={(q) => void navigate({ search: { ...search, q }, replace: true })}
           onSelect={(session) => void navigate({ search: { ...search, session } })}
           onNew={(href) => void navigate({ href })}
+          onFilter={(f) => {
+            const { filter: _drop, ...rest } = search;
+            void navigate({ search: f === "all" ? rest : { ...rest, filter: f }, replace: true });
+          }}
         />
       </Gate>
     );

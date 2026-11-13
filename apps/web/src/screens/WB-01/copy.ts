@@ -6,6 +6,7 @@ export const COPY = {
   noMatch: (q: string) => `No sessions match '${q}'.`,
   clearSearch: "Clear search",
   deleteConfirm: "Delete this session? Its run trace stays in the firm audit log.",
+  delete: "Delete",
   lockedTitle: "You can't open this session",
   lockedBody: (client: string, contacts: readonly string[]) =>
     `It reads ${client}, a client you don't have access to. ${contacts.join(" or ")} can share what you need.`,
