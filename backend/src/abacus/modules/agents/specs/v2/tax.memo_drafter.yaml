@@ -1,0 +1,37 @@
+# tax.memo_drafter v1 (T-05-T48; T-05 §6.4, F9; TASK-7705; DEC-4708). The entity return's preparer
+# memo from code-computed figures and citation handles: `modules/tax/memo_drafter.py` gives the
+# model the figures and the sources' quotes (untrusted), settles every number and citation by code
+# (a number with no provenance is dropped; an empty section reads Unsupported), keeps every section
+# a person owns and, on a regenerate, every unaffected section; the version is stored as the
+# agent's draft. Workflow shape (code's steps, one model call, no tools). Source of truth: compiled
+# into ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
+id: tax.memo_drafter
+version: 1
+purpose: Draft the entity return's preparer memo from figures code computed, citing the workbook and documents, for the preparer to adopt and the reviewer to approve.
+shape: workflow
+prompt: tax.preparer_memo@v1
+tier: medium
+escalation_tier: medium
+input_schema: DraftMemoInput
+output_schema: DraftMemoOutput
+tools: {}
+task_scope:
+  - tax_return.read
+  - workbook.read
+  - tax_memo.read
+limits:
+  max_output_tokens: 6000
+  max_cost_usd: "0.30"
+  max_steps: 3
+  max_seconds: 120
+  max_tool_calls: 1
+plan: never
+autonomy: propose
+data_classes: [tri]
+untrusted_inputs: [memo_sources]
+evaluation_suite: evals/tax_memo_drafter
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none
