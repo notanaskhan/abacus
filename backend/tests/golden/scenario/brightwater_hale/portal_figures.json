@@ -8,7 +8,14 @@
   "attest_entries": {
     "names": ["AJE-1", "RJE-1", "PAJE-1", "PAJE-2"],
     "receivable": {"total": "48600.00", "lines": ["33540.00", "15060.00"]},
-    "accrued": {"total": "13050.00", "lines": ["6150.00", "2400.00", "4500.00"]}
+    "accrued": {"total": "13050.00", "lines": ["6150.00", "2400.00", "4500.00"]},
+    "_source": "aje_1_lines and paje_2_title are AUD-16's (handoff spec; R-02-T13, DEC-4807); the seed and the fixtures read them here",
+    "aje_1_lines": [
+      {"account": "1250", "name": "Employer & participant contributions receivable", "debit": "48600.00", "credit": null},
+      {"account": "4100", "name": "Participant contributions", "debit": null, "credit": "33540.00"},
+      {"account": "4200", "name": "Employer contributions", "debit": null, "credit": "15060.00"}
+    ],
+    "paje_2_title": "Accrued administrative expenses — Q4 recordkeeping 6,150 · TPA 2,400 · audit fee 4,500"
   },
   "posted_entries": {
     "list": ["11860", "700", "2140", "5320", "14900", "380"], "total": "35300",
