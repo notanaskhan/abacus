@@ -79,6 +79,15 @@ BUILT = {
     # S40 partials: T-05-T37 rest, the line picker (DEC-4629).
     ("GET", "/v1/form-lines"),
     ("POST", f"{_R}/mappings"),
+    # S41 leftovers (DEC-4737): the rail's facts and the partners. `PUT …/ownership` stays 501.
+    ("GET", f"{_R}/general-information"),
+    ("GET", f"{_R}/partners"),
+    # S42 (T-05-T50 fix flow, T-05-T54 memo approval): served, were missing (main red, DEC-4737).
+    ("GET", f"{_R}/issue-assignees"),
+    ("POST", f"{_R}/issues/{{issue_id}}/send-to-client"),
+    ("POST", f"{_R}/issues/{{issue_id}}/reminders"),
+    ("POST", f"{_R}/issues/{{issue_id}}/resolve"),
+    ("POST", f"{_R}/memo/approve"),
 }
 
 
@@ -92,7 +101,9 @@ def test_every_route_is_published_with_a_501_until_built() -> None:
                 assert "501" not in responses, route.path  # type: ignore[attr-defined] -- starlette route attributes
             else:
                 assert "501" in responses, route.path  # type: ignore[attr-defined] -- starlette route attributes
-    assert len(wb.workbook_router.routes) == 33  # S41: + allocation-structure/approve
+    assert (
+        len(wb.workbook_router.routes) == 38
+    )  # S41: 33; S42: + issue-assignees, 3 issue acts, memo/approve
 
 
 HUMAN_VERBS = (

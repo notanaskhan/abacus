@@ -273351,6 +273351,7 @@
     },
     "/v1/tax-returns/{return_id}/general-information": {
       "get": {
+        "description": "The rail's facts (S41 leftovers, DEC-4737): the entity, form and year, the EIN's last four,\nthe accounting method and the ladder's preparer, reviewer and signer.",
         "operationId": "entity_general_information",
         "parameters": [
           {
@@ -273446,16 +273447,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity General Information Route",
@@ -276131,6 +276122,7 @@
     },
     "/v1/tax-returns/{return_id}/partners": {
       "get": {
+        "description": "TXP-05's columns and Item J (S41 leftovers, DEC-4737): the partners in order, the ownership\nperiods and the interest transfers; `tax_ownership.edit` when the viewer holds it.",
         "operationId": "entity_partners",
         "parameters": [
           {
@@ -276226,16 +276218,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Partners Route",

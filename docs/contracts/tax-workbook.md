@@ -213,10 +213,14 @@ nothing to read answers `failed` with its class and one issue (`run_step:<step>:
 
 ### 9.5 Routes still answering 501 (their rows)
 `GET …/workbook/export.xlsx` (T-05-T57); `GET …/issues` (T-05-T51); the memo routes and `GET
-…/opportunities` (T-05-T54); `GET …/reconciliation` (T-05-T61). `GET …/general-information`,
-`GET …/partners`, `PUT …/ownership` and `POST …/mappings` are named by no later row: carried as
-S41 open items for S42's planning (the shapes are frozen; the services exist in part:
-`allocation_structure.partners_of`, `ownership_of`, `entity_mapping`).
+…/opportunities` (T-05-T54); `GET …/reconciliation` (T-05-T61). `PUT …/ownership` is named by
+no later row and stays 501 (DEC-4737: its version store and what a replaced ownership does to an
+approved allocation structure and the K-1 drafts are unplanned). Served since (S41 leftovers,
+DEC-4737): `GET …/general-information` (entity name, form, year, the EIN's last four, the
+profile's accounting method, the ladder's preparer, first reviewer and signer) and `GET …/partners`
+(partners in order with the TIN's last four, periods grouped by date range, transfers with their
+first clause citation, `version` 1, `tax_ownership.edit` when held); both through the offshore
+mask. `POST …/mappings` was served by T-05-T37 (DEC-4629).
 
 
 ## T-05-T50 · the fix flow (DEC-4901, DEC-4902)

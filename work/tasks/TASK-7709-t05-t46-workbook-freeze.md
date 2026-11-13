@@ -24,8 +24,9 @@ shapes.
 
 ## Partial
 - The consumer contract tests of T-07, T-06, T-04 and T-02 are those epics' rows.
-- Four routes are named by no later row (general information, partners, ownership, mappings):
-  carried as S41 open items.
+- Four routes were named by no later row. S41 leftovers (TASK-7733, DEC-4737): general
+  information and partners are served; mappings was T-05-T37's; `PUT …/ownership` stays 501 (no
+  version store, and its effect on an approved structure and the K-1 drafts is unplanned).
 - TXP-11's tab titles stay the handoff's (deviation recorded in the contract).
 
 ## Progress log

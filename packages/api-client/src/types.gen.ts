@@ -126126,10 +126126,6 @@ export type EntityGeneralInformationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityGeneralInformationError = EntityGeneralInformationErrors[keyof EntityGeneralInformationErrors];
@@ -127379,10 +127375,6 @@ export type EntityPartnersErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityPartnersError = EntityPartnersErrors[keyof EntityPartnersErrors];

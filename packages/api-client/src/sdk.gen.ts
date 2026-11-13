@@ -14979,6 +14979,9 @@ export const approveReturn = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Entity General Information Route
+ *
+ * The rail's facts (S41 leftovers, DEC-4737): the entity, form and year, the EIN's last four,
+ * the accounting method and the ladder's preparer, reviewer and signer.
  */
 export const entityGeneralInformation = <ThrowOnError extends boolean = false>(options: Options<EntityGeneralInformationData, ThrowOnError>): RequestResult<EntityGeneralInformationResponses, EntityGeneralInformationErrors, ThrowOnError> => (options.client ?? client).get<EntityGeneralInformationResponses, EntityGeneralInformationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15258,6 +15261,9 @@ export const entityOwnership = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Entity Partners Route
+ *
+ * TXP-05's columns and Item J (S41 leftovers, DEC-4737): the partners in order, the ownership
+ * periods and the interest transfers; `tax_ownership.edit` when the viewer holds it.
  */
 export const entityPartners = <ThrowOnError extends boolean = false>(options: Options<EntityPartnersData, ThrowOnError>): RequestResult<EntityPartnersResponses, EntityPartnersErrors, ThrowOnError> => (options.client ?? client).get<EntityPartnersResponses, EntityPartnersErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
