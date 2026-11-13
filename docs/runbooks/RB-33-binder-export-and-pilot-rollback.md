@@ -3,7 +3,7 @@ id: RB-33
 title: Binder export and pilot rollback
 owner: builder
 alarms: []
-last_rehearsed: never
+last_rehearsed: 2026-11-13
 rehearse_by: 2027-05-25
 ---
 # RB-33 · Binder export and pilot rollback
@@ -74,3 +74,4 @@ Both A-01 flags retire by the **Thu May 27, 2027** release train (A-01 DoD 9): `
 
 | Date | Where | Who | Result |
 |---|---|---|---|
+| 2026-11-13 | Local stack, PF-X1 (synthetic) | solo builder (DEC-4822) | §2 step 3 and §4.1, §4.2 flips passed, each audited with `self_approved`; the commands now name their `ROLLBACK` (Q-04-T107, TASK-7830). The binder export itself (§3) was not run. |

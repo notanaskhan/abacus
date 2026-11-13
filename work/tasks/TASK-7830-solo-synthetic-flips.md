@@ -24,6 +24,7 @@ two-person rule for real pilot firms (DEC-4822).
   and records it, still needs an approver and a rollback; a real firm refuses in and out of window.
 - Walk RB-33 §2.3/§4.2, review-approvals-flip §3/§5 and RB-01's flag flips on PF-X1 (local stack);
   record in `docs/ops/rehearsals/2026-11-13-runbook-walk.md`.
+- Walk RB-37 §0-§6 on PF-X1 through the API; fix what it finds.
 - Rollback: revert the commit; the guard refuses self-approval again everywhere.
 
 ## Progress log
@@ -34,6 +35,10 @@ two-person rule for real pilot firms (DEC-4822).
   `make entitlement` writing to the default stack (one stray write into the S35 stack, rows
   removed). Mistake made once: ran `make flag` assuming it honoured ABACUS_PORT_OFFSET. Open: the
   RB-37 onboarding walk.
+- 2026-11-13: RB-37 walked §0-§6 through the API as four PF-X1 seats (local hosted sign-in);
+  plan.seats raised to 48 in the local DB to invite; audit_log.explorer flipped on. Gaps fixed in
+  RB-37 (preconditions, office code, team kind, version 0, seasonal access end, security-role
+  holders, audit route). Q-04-T107 done.
 
 ## Decisions made during this task
 - DEC-4822.

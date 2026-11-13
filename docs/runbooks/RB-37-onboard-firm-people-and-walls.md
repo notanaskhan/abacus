@@ -3,7 +3,7 @@ id: RB-37
 title: Onboard a firm's people, offices and walls
 owner: builder
 alarms: []
-last_rehearsed: never
+last_rehearsed: 2026-11-13
 rehearse_by: 2027-03-16
 ---
 # RB-37 · Onboard a firm's people, offices and walls
@@ -17,21 +17,28 @@ Use only this runbook and the contract. Every write below needs a **fresh second
 - [ ] The firm exists, with its firm admin signed in. Their `GET /v1/firm/settings/overview` answers 200.
 - [ ] You hold the people list in the firm's own format: name, work email, level (partner, manager, senior, staff), firm role if any (firm admin, practice leader, quality partner), office, team, service line, and whether the person is offshore or seasonal.
 - [ ] Offshore preconditions are written down **before** anyone offshore is invited (section 4).
+- [ ] Seats are free for everyone on the list: `GET /v1/firm/staff` tallies show `seats_used` plus
+  `seats_pending` below `seats_total`. A full plan answers 409 `seats_full`; `plan.seats` is set at
+  provisioning, not by the firm, so a bigger plan is a provisioning change before you invite.
+- [ ] The audit log explorer is on for the firm (`audit_log.explorer`; off, `GET /v1/audit-events`
+  answers 404), or section 6's last check waits until it is.
 - [ ] Synthetic data only on a rehearsal firm. Never paste a real person's details into a ticket, a commit or this runbook.
 
 ## 1. Offices, then teams
 
-1. Create each office: `POST /v1/firm/offices` (`org_structure.manage`). Offices are a **filter, never an access boundary** (DEC-30): no permission reads an office.
-2. Create each team: `POST /v1/firm/teams` with its `service_line`, then `PUT /v1/firm/teams/{team_id}/members` once people exist (step 2).
-3. Check: `GET /v1/firm/offices` and `GET /v1/firm/teams` list them, each with `version` 1.
+1. Create each office: `POST /v1/firm/offices` (`org_structure.manage`) with `name`, a `code` of two
+   to six capital letters and its `time_zone`. Offices are a **filter, never an access boundary** (DEC-30): no permission reads an office.
+2. Create each team: `POST /v1/firm/teams` with its `kind` (`service_line` for a line's team) and `service_line`, then `PUT /v1/firm/teams/{team_id}/members` once people exist (step 2).
+3. Check: `GET /v1/firm/offices` and `GET /v1/firm/teams` list them, each new one at `version` 0.
 
 ## 2. People
 
 1. Invite each person: `POST /v1/firm/staff/invitations` (`firm.manage_users`), one per email, with level and office. A person appears in `GET /v1/firm/staff` as invited (`invitation_id` set, `user_id` null) until they accept.
-2. Firm roles: `PUT /v1/firm/staff/{user_id}/role` after they accept. Security roles: `PUT /v1/firm/staff/{user_id}/security-role` (`security_role.assign`, a security admin's act).
-3. Resend or revoke an invitation: `POST /v1/firm/staff/invitations/{invitation_id}/resend` or `/revoke`.
-4. Seasonal people: set their access end with `PUT /v1/firm/groups/seasonal/access-ends`. Access ends by itself at that date (the hourly sweep, G-01-T13); the person gets a seven-day notice.
-5. Check: `GET /v1/firm/staff` tallies (`StaffTalliesOut`) match your list. For a 46-person firm: 46 rows, each either active or invited, none unexpected.
+2. Firm roles: `PUT /v1/firm/staff/{user_id}/role` after they accept. Security roles: `PUT /v1/firm/staff/{user_id}/security-role` (`security_role.assign`: a firm admin or a security admin).
+3. A seasonal invitation names its `access_ends_on` (without one: 422 `access_ends_required`).
+4. Resend or revoke an invitation: `POST /v1/firm/staff/invitations/{invitation_id}/resend` or `/revoke`.
+5. Seasonal people: move the group's access end with `PUT /v1/firm/groups/seasonal/access-ends`. Access ends by itself at that date (the hourly sweep, G-01-T13); the person gets a seven-day notice.
+6. Check: `GET /v1/firm/staff` tallies (`StaffTalliesOut`) match your list. For a 46-person firm: 46 rows, each either active or invited, none unexpected.
 
 ## 3. Service lines and annual independence
 
@@ -61,6 +68,12 @@ A wall keeps one person away from one client, with **404 semantics**: the walled
 - [ ] Offices, teams, people and walls match the firm's list.
 - [ ] Every invited person has accepted, or has a resend logged.
 - [ ] Offshore preconditions are recorded in the firm's onboarding ticket.
-- [ ] The audit trail shows each step as the person who did it (`GET /v1/audit` filtered to the firm admin).
+- [ ] The audit trail shows each step as the person who did it (`GET /v1/audit-events?actor_id=<firm admin's user id>&limit=100`; needs `audit_log.explorer`).
 
 If any check fails, stop and raise it in the firm's onboarding ticket; do not work around a refusal (a 403 or 404 is the product doing its job).
+
+## Rehearsals
+
+| Date | Where | Result |
+|---|---|---|
+| 2026-11-13 | Local stack, PF-X1 (Brightwater Hale, synthetic), solo (Q-04-T107, TASK-7830) | Every section passed through the API as the firm admin, the security admin, a partner and the walled person; the wall refused its creator and a security admin and took the named partner. Fixed here: the seat and explorer preconditions, the office code, version 0, the seasonal access end, who assigns security roles, the audit route. The plan was raised to 48 seats in the local database to walk the invitations. |

@@ -37,7 +37,7 @@ with `APPROVED_BY` = the operator.
 | review-approvals-flip | §5 the rollback (`review.approve_agent_output` off, `HOTFIX`), then §3 the flip on | passed after the runbook fix below |
 | RB-01 flag flips | `collaboration.v2` on, then off (its rollback) | passed (the route checks on staging stay with RB-01's staging rehearsal) |
 | control | a flip with no `APPROVED_BY` | refused: `approver_missing` |
-| pilot onboarding (RB-37, pilot-onboarding §1 and §3) | not walked: its steps are signed-in API calls with fresh MFA | open |
+| pilot onboarding (RB-37) | §0 to §6 through the API, signed in through the local hosted email-code flow as the firm admin (Grace Holloway), the security admin (Felix Andersen), a partner (Margaret Okonkwo) and the walled person (Ana Cruz) | passed (third pass below) |
 
 Eight self-approved flips recorded; the guard's unit tests prove a real pilot firm still refuses
 `approver_is_operator` in and out of its window.
@@ -54,3 +54,34 @@ Eight self-approved flips recorded; the guard's unit tests prove a real pilot fi
    another worktree's local stack; the three rows were deleted (each flag had no row before), the
    events stay (audit is append-only). Both targets now use the environment's database when one is
    set (staging) and this checkout's stack otherwise (`OPERATOR_ENV` in the Makefile).
+
+## Third pass: RB-37 (2026-11-13, TASK-7830)
+
+Same stack. Each seat signed in as on staging (work email, the emailed code, the authenticator
+code) through `abacus_tools.fakes.oidc_server`, then called RB-37's routes with its session.
+
+| Section | Result |
+|---|---|
+| §0 | the firm admin's `GET /v1/firm/settings/overview` 200 |
+| §1 offices, teams | created and listed (at `version` 0); a team's members set |
+| §2 people | an invitation listed as invited (`invitation_id` set, `user_id` null), resent; a seasonal one revoked; a firm role set; a security role set and cleared by the security admin; the seasonal group's access end moved; tallies 47 used, 1 pending, of 48 |
+| §3 | the audit line's policy saved by the firm admin, refused to the security admin (403); the annual statement published, a partner's own confirmation recorded, the firm's list read |
+| §4 | the offshore group read (none; TINs masked, consent required) |
+| §5 walls | preview, create naming the partner; approval refused to its creator and to the security admin (403), taken by the named partner; the walled person gets 404 on the client and never sees it in Clients, Home or search, with no "hidden" note |
+| §6 | the firm admin's audit trail lists each step as theirs (16 actions) |
+
+To walk §2 the firm needed free seats: PF-X1 uses all 46 and `plan.seats` is provisioning's, so the
+local database's `plan.seats` was set to 48 (a rehearsal stand-in for a plan change). §6 needed
+`audit_log.explorer`, turned on with `make flag` (self-approved, DEC-4822).
+
+### Gaps found and fixed in RB-37
+
+1. §0 now checks free seats (409 `seats_full` otherwise; seats change at provisioning) and the audit
+   log explorer flag.
+2. §1: an office `code` is two to six capital letters; a team needs its `kind`; new rows are at
+   `version` 0, not 1.
+3. §2: a seasonal invitation needs `access_ends_on` (422 `access_ends_required`); a firm admin may
+   also assign security roles (the permission matrix says so; the runbook said security admin only).
+4. §6: the route is `GET /v1/audit-events?actor_id=…` (`limit` at most 100), not `/v1/audit`.
+
+RB-37, RB-33 and review-approvals-flip now carry `last_rehearsed: 2026-11-13`.

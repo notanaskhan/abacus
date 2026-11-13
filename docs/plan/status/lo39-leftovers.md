@@ -14,7 +14,7 @@ three-agent security review at the end, one merge with a single CI run.
 | Q-04-T020 | partial | `docs/ops/on-call.md` exists | the test page needs the paging tool |
 | N-02-T40 | partial | #1863, #1900: SIG-01 a, b, c, f on the full stack | SIG-02, ENG-04 (no in-app entry to a seeded draft), POR-06 g (no declined envelope), hosted runs |
 | N-02-T46 | partial | RB-18 rehearsed locally (10 passed) | the staging rehearsal |
-| Q-04-T107 | partial | solo walk on PF-X1 (`docs/ops/rehearsals/2026-11-13-runbook-walk.md`); DEC-4822 (TASK-7830): flip and rollback runbooks walked, two gaps fixed | the pilot onboarding runbook (RB-37) walk |
+| Q-04-T107 | done | solo walk on PF-X1 (`docs/ops/rehearsals/2026-11-13-runbook-walk.md`); DEC-4822 (TASK-7830): flip, rollback and onboarding (RB-37) runbooks walked, every gap fixed | — |
 | Q-04-T137 | todo | — | the next quarter's walk |
 | Q-04-T125 | partial | #1864, #1900: `abacus_tools.dark_merge_audit`, `deploy/live-paths.yaml`; run over today's batch | the Jan 25-27, 2028 trains |
 | Q-04-T035 | partial | — | the custodian's ScheduleKeyDeletion on AWS; counsel's exit terms |
