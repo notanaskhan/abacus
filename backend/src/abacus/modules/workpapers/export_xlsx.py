@@ -12,6 +12,8 @@ else, on the evidence `render.py` pattern:
   `+`, `-`, `@`, tab, carriage return, or their full-width forms) also gets Excel's quote prefix,
   so a client string starting with `=` stays text in Excel and anywhere it is copied (ADR-052).
 - **Numbers** are decimals, written as numbers with a fixed number format.
+- **Layout** (T-05-T57 rest): the caller's column widths (in screen pixels, as the grid draws
+  them) and a fill on the cells a person wrote (`human`), so the file reads like the grid.
 - **Byte-identical output** for identical data: fixed workbook properties (creator `platform`,
   created and modified at `STAMP`), sheets and cells written in a fixed order, and the ZIP rebuilt
   with fixed entry times, attributes and compression.
@@ -31,7 +33,8 @@ from typing import Final, cast
 
 from openpyxl import Workbook
 from openpyxl.cell.cell import Cell
-from openpyxl.utils.cell import coordinate_from_string
+from openpyxl.styles import PatternFill
+from openpyxl.utils.cell import coordinate_from_string, get_column_letter
 
 from abacus.modules.workpapers.compute.formula import FormulaError, parse, render
 
@@ -39,6 +42,9 @@ STAMP: Final = datetime(2000, 1, 1, tzinfo=UTC)  # the file's fixed created and 
 _ZIP_TIME: Final = (1980, 1, 1, 0, 0, 0)
 _AMOUNT: Final = "#,##0.00;(#,##0.00)"
 _MAX_CELL: Final = 32_767
+_PX_PER_CHAR: Final = 7  # Excel's default width unit is one Calibri 11 digit, about 7 px
+# A person's value: the grid's pale amber, as a solid fill (no theme colour, so the bytes hold).
+_HUMAN_FILL: Final = PatternFill(fill_type="solid", start_color="FFFDF3E2", end_color="FFFDF3E2")
 _FORMULA_LEADS: Final = ("=", "+", "-", "@", "\t", "\r")
 _MODIFIED: Final = re.compile(rb"(<dcterms:modified[^>]*>)[^<]*(</dcterms:modified>)")
 # A sheet reference in the canonical text: `05!` or `'05'!` (the renderer quotes it).
@@ -54,6 +60,7 @@ class ExportCell:
     a1: str
     value: Decimal | str | None
     formula: str | None = None
+    human: bool = False  # a person wrote the value (TXP-11's human cell): filled
 
 
 @dataclass(frozen=True)
@@ -61,6 +68,7 @@ class ExportSheet:
     key: str  # "05"
     title: str  # "05 Capital": the xlsx sheet name
     cells: tuple[ExportCell, ...]
+    widths: tuple[int, ...] = ()  # column widths in pixels, from column A
 
 
 def formula_like(value: str) -> bool:
@@ -112,8 +120,12 @@ def build(sheets: Sequence[ExportSheet]) -> Workbook:
     names = {s.key: sheet_name(s.title) for s in sheets}
     for s in sheets:
         sheet = workbook.create_sheet(names[s.key])
+        for index, px in enumerate(s.widths, start=1):
+            sheet.column_dimensions[get_column_letter(index)].width = round(px / _PX_PER_CHAR, 1)
         for c in sorted(s.cells, key=lambda c: _sort_key(c.a1)):
             cell = cast(Cell, sheet[c.a1])
+            if c.human:
+                cell.fill = _HUMAN_FILL
             formula = None if c.formula is None else excel_formula(c.formula, s.key, names)
             if formula is not None:
                 cell.value = formula

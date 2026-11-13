@@ -53,10 +53,18 @@ def _decimal(raw: object) -> Decimal | None:
         return None
 
 
+# TXP-11's grid widths in pixels (the label column, then the figures): the file reads like it.
+GRID_WIDTHS: Final = (220, 70, 70, 110, 110, 130, 110, 130, 110, 120, 90)
+
+
 def export_sheets(
-    form: str, values: Mapping[str, Mapping[str, object]], only: str | None = None
+    form: str,
+    values: Mapping[str, Mapping[str, object]],
+    only: str | None = None,
+    human: frozenset[str] = frozenset(),
 ) -> list[ExportSheet]:
-    """The form's sheets in order (or one), each cell's stored value and formula."""
+    """The form's sheets in order (or one), each cell's stored value and formula; `human` names
+    the fields (`05!F2`) a person wrote last, filled in the file."""
     out: list[ExportSheet] = []
     for key, title in sheets_of(form):
         if only is not None and key != only:
@@ -76,10 +84,14 @@ def export_sheets(
             formula = values.get(f"{field}:f", {}).get("v")
             cells.append(
                 ExportCell(
-                    field.split("!", 1)[1], value, None if formula is None else str(formula)
+                    field.split("!", 1)[1],
+                    value,
+                    None if formula is None else str(formula),
+                    human=field in human,
                 )
             )
-        out.append(ExportSheet(key, title, tuple(cells)))  # the title carries its number
+        # the title carries its number
+        out.append(ExportSheet(key, title, tuple(cells), GRID_WIDTHS))
     return out
 
 
@@ -105,7 +117,7 @@ async def export_workbook(
 ) -> WorkbookFile:
     """`versions` are the finished runs (number, finished_at), newest first."""
     from abacus.kernel.errors import NotFound
-    from abacus.modules.review.api import current_values, values_as_of
+    from abacus.modules.review.api import current_values, latest_sources, values_as_of
     from abacus.modules.tax.overview import tax_year_of
     from abacus.modules.tax.workbook_service import sheet_or_404
 
@@ -115,6 +127,8 @@ async def export_workbook(
         if run_open:
             raise ExportBlocked(facts={"return_id": str(return_id)})
         values = await current_values(ctx.tenant, WORKBOOK, return_id)
+        sources = await latest_sources(ctx.tenant, WORKBOOK, [return_id])
+        human = frozenset(k for (_, k), (src, _) in sources.items() if src == "human")
         read = newest
     else:
         found = next((v for v in versions if v[0] == version), None)
@@ -122,8 +136,9 @@ async def export_workbook(
             raise NotFound("workbook_version")
         then = await values_as_of(ctx.tenant, WORKBOOK, [return_id], found[1])  # type: ignore[arg-type] -- a finished run's datetime
         values = then.get(return_id, {})
+        human = frozenset[str]()  # an earlier version's writers are not read back: no fills
         read = version
-    data = render_workbook(export_sheets(form, values, only))
+    data = render_workbook(export_sheets(form, values, only, human))
     digest = hashlib.sha256(data).hexdigest()
     year = await tax_year_of(ctx.tenant, return_id)
     async with uow(ctx.tenant) as tx:

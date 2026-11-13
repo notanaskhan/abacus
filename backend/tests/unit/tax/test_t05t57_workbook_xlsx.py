@@ -70,3 +70,19 @@ def test_ac_filename() -> None:
 def test_ac_one_sheet() -> None:
     sheets = export_sheets("1065", VALUES, "07")
     assert [s.key for s in sheets] == ["07"]
+
+
+def test_t57_rest_grid_widths_and_a_persons_cells_are_filled() -> None:
+    """T-05-T57 rest (TASK-7929): TXP-11's widths on every sheet; only the cells a person wrote
+    last carry the fill; the bytes stay identical for identical data."""
+    from abacus.modules.tax.workbook_export import GRID_WIDTHS
+
+    human = frozenset({"05!A2"})
+    data = render_workbook(export_sheets("1065", VALUES, human=human))
+    book = load_workbook(io.BytesIO(data))
+    capital = book[next(n for n in book.sheetnames if n.startswith("05"))]
+    assert capital.column_dimensions["A"].width == round(GRID_WIDTHS[0] / 7, 1)
+    assert capital.column_dimensions["B"].width == round(GRID_WIDTHS[1] / 7, 1)
+    assert capital["A2"].fill.fill_type == "solid"
+    assert capital["F2"].fill.fill_type is None
+    assert render_workbook(export_sheets("1065", VALUES, human=human)) == data
