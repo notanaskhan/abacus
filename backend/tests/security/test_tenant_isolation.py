@@ -520,6 +520,8 @@ TABLES: tuple[str, ...] = (
     "tax_profile_files",
     "tax_return_status_events",
     "tax_returns",
+    "tax_section_acknowledgements",
+    "tax_workbook_sections",
     "team_approvals",
     "team_rosters",
     "teams",

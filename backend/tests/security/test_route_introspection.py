@@ -1961,6 +1961,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/support/sessions/{session_id}/end", "staff"),
     ("POST", "/v1/tax-returns/{return_id}/acks", "efile_ack.record"),
     ("POST", "/v1/tax-returns/{return_id}/acks/{ack_id}/issue", "efile_ack.record"),
+    ("POST", "/v1/tax-returns/{return_id}/allocation-structure/approve", "sign_off.create"),
     (
         "POST",
         "/v1/tax-returns/{return_id}/allocation-structure/preview",
