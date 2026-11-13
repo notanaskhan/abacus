@@ -178,3 +178,47 @@ test.describe("J16 collaboration (P-05-T15)", () => {
     });
   });
 });
+
+// P-02-T12 (P-02 §10): j16 9, Daniel searches "ridgeline" and opens the client record (CLI-02); j16 5
+// per P-02 OQ-2 (no "Go to Binders" group): Grace reaches the binder by searching it. The fixture
+// project opens on SHL-02's scenario (search.palette on).
+test.describe("J16 · P-02 search", () => {
+  test.beforeEach(({ journey }) => {
+    const hosted = journey.project === "staging" || journey.project === "canary";
+    test.skip(
+      hosted && HOSTED_URL[journey.project] === undefined,
+      `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
+    );
+  });
+
+  test("j16 9: ridgeline opens the client record", async ({ journey }) => {
+    const scenario = journey.project === "fixture" ? { scenario: "SHL-02:a" } : {};
+    await journey.as("daniel-reyes", "/", { clock: DEMO_INSTANT, ...scenario });
+    await journey.step(
+      "J16 step 9: ridgeline → Ridgeline Property Partners, LP (CLI-02)",
+      async (page) => {
+        await page.keyboard.press("ControlOrMeta+k");
+        await page.getByRole("combobox", { name: "Search" }).fill("ridgeline");
+        await page
+          .getByRole("group", { name: "Clients" })
+          .getByRole("option", { name: /Ridgeline Property Partners, LP/ })
+          .click();
+        await expect(page).toHaveURL(/\/clients\//);
+      },
+    );
+  });
+
+  test("j16 5: Go… reaches the binder", async ({ journey }) => {
+    const scenario = journey.project === "fixture" ? { scenario: "SHL-02:a" } : {};
+    await journey.as("grace-holloway", "/", { clock: DEMO_INSTANT, ...scenario });
+    await journey.step("J16 step 5: feld → the 2025 Binder (BND-02)", async (page) => {
+      await page.keyboard.press("ControlOrMeta+k");
+      await page.getByRole("combobox", { name: "Search" }).fill("feld");
+      await page
+        .getByRole("group", { name: "Binders" })
+        .getByRole("option", { name: /2025 Binder/ })
+        .click();
+      await expect(page).toHaveURL(/\/binders\//);
+    });
+  });
+});

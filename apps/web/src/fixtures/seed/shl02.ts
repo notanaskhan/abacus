@@ -301,8 +301,35 @@ export const SHL02_G: SearchResultsOut = {
 };
 
 /** The response for search text on the seed (the fixture handler's lookup). */
+// --- "ridgeline" (P-02-T12: J13 step 4, J16 step 9) ---------------------------------------------
+// Daniel Reyes's Monday: the client and its 1065. TXP-01 is `planned`, so the 1065 opens the client
+// record (CLI-02) as the backend routes it (tax/search.py, ENTITY_RETURNS_TO_TXP01).
+
+const RIDGELINE_CLIENT = item(
+  "client",
+  "ridgeline-client",
+  "Ridgeline Property Partners, LP",
+  "CLI-02",
+  { clientId: id("ridgeline-client") },
+  { match_ranges: [[0, 9]] },
+);
+
+export const SHL02_RIDGELINE: SearchResultsOut = {
+  groups: [
+    { group: "clients", items: [RIDGELINE_CLIENT], has_more: false },
+    {
+      group: "returns",
+      items: [{ ...RIDGELINE_1065, context: "Ridgeline Property Partners, LP" }],
+      has_more: false,
+    },
+  ],
+  suggestion: null,
+  total_visible: 2,
+};
+
 export function resultsFor(q: string, walled = false): SearchResultsOut {
   const key = q.trim().toLowerCase();
+  if (key === "ridgeline") return SHL02_RIDGELINE;
   if (key === "feld") return walled ? SHL02_E : SHL02_A;
   if (key === "pellstret") return SHL02_D;
   if (key === "granite") return SHL02_F;

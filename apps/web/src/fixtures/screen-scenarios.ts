@@ -58,6 +58,7 @@ import {
 } from "./scenarios/SHL-13";
 import { scenarios as aud08 } from "./scenarios/AUD-08";
 import { scenarios as aud09 } from "./scenarios/AUD-09";
+import { scenarios as shl02 } from "./scenarios/SHL-02";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
 import { OPENS as TAX02_OPENS, j06Scenario } from "./scenarios/TAX-02";
 import { OPENS as BND02_OPENS, scenarios as bnd02 } from "./scenarios/BND-02";
@@ -303,6 +304,8 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
       ]),
     ),
   },
+  // P-02-T12: the "Go…" palette's states for shl-02-palette.spec.ts and J13 4, J16 5 and 9.
+  "SHL-02": { scenarios: shl02, opens: {} },
   // P-04-T47: j06 coordination, the CCH import approved as a checkpoint on SHL-16 over TAX-02.
   "TAX-02": {
     scenarios: { j06: j06Scenario() },

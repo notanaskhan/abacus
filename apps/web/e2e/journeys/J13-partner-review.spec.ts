@@ -101,3 +101,46 @@ test.describe("J13 · HOME-02 queue", () => {
     });
   });
 });
+
+// P-02-T12 (P-02 §10): j13 4, Daniel's Monday search. ⌘K "ridgeline" offers the Ridgeline client
+// and its 2025 Form 1065, filtered by his permissions; the 1065 opens the client record (CLI-02)
+// while TXP-01 is `planned` (P-02 AC "TXP-01 planned"), so the TXP-01 landing is `test.fixme`
+// until T-05 registers it. The fixture project opens on SHL-02's scenario (search.palette on).
+test.describe("J13 · P-02 search", () => {
+  test.beforeEach(({ journey }) => {
+    const hosted = journey.project === "staging" || journey.project === "canary";
+    test.skip(
+      hosted && HOSTED_URL[journey.project] === undefined,
+      `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
+    );
+  });
+
+  test("j13 4: ⌘K ridgeline offers the 1065 and the client record filtered by permissions", async ({
+    journey,
+  }) => {
+    const scenario = journey.project === "fixture" ? { scenario: "SHL-02:a" } : {};
+    await journey.as("daniel-reyes", "/", { clock: DEMO_INSTANT, ...scenario });
+    await journey.step("J13 step 4: ridgeline in the palette (SHL-02)", async (page) => {
+      await page.keyboard.press("ControlOrMeta+k");
+      await page.getByRole("combobox", { name: "Search" }).fill("ridgeline");
+      const clients = page.getByRole("group", { name: "Clients" });
+      const returns = page.getByRole("group", { name: "Returns" });
+      await expect(
+        clients.getByRole("option", { name: /Ridgeline Property Partners, LP/ }),
+      ).toBeVisible();
+      await expect(returns.getByRole("option", { name: /2025 Form 1065/ })).toBeVisible();
+    });
+    await journey.step("J13 step 4: the 1065 opens the client record (CLI-02)", async (page) => {
+      await page
+        .getByRole("group", { name: "Returns" })
+        .getByRole("option", { name: /2025 Form 1065/ })
+        .click();
+      await expect(page).toHaveURL(/\/clients\//);
+    });
+  });
+
+  test("j13 4: the 1065 lands on TXP-01", async ({ journey }) => {
+    test.fixme(true, "T-05: TXP-01");
+    await journey.as("daniel-reyes", "/", { clock: DEMO_INSTANT });
+  });
+});
