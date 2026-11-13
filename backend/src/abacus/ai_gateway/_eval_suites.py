@@ -26,6 +26,7 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'briefing.today': ('briefing.today
 EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'decisions.recommender': {   'decisions.recommend.convention_706d@v1': 1,
                                  'decisions.recommend.section_754@v1': 1},
     'evidence.matcher': {'evidence.inbox_match@v2': 1},
+    'issues.fix_runner': {'issues.fix_runner.workbook@v1': 1},
     'notices.responder': {'notices.extract@v1': 1},
     'workpapers.section_drafter': {   'workpapers.section_draft.ebp_attribute@v1': 1,
                                       'workpapers.section_draft.ebp_form5500@v1': 1,

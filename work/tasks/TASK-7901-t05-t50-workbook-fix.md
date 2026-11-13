@@ -27,9 +27,7 @@ as the system when the tie passes.
 - Rollback: revert the PR (an applied fix's values stay as the approver's versions).
 
 ## Partial
-- No model step: free-text instructions outside the grammar propose nothing (`no_cell_named`);
-  a model judgment over the issue's linked cells is a later prompt registration
-  (`issues.fix_runner.workbook@v1` and its eval cases).
+- ~~No model step~~: free text goes to `issues.fix_runner.workbook@v1`, checked by code (TASK-7932, DEC-4927).
 - Rows carry no citations (the person's instruction is the source); the TXP-11 "Proposed" ghost
   values read the proposal's rows (T-05-T58/T59 screens).
 - The issue's "In progress → Resolved" timeline and the Issues badge (11 → 10) are TXP-10's read
