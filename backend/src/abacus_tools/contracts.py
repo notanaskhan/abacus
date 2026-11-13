@@ -656,9 +656,19 @@ def _shape(schema: Schema) -> str:
     return json.dumps(keep, sort_keys=True)
 
 
+def _as_enum(schema: Schema) -> Schema:
+    """A one-value field (`Literal["json"]` is `const`) is a one-member enum (DEC-4823)."""
+    if "const" not in schema or "enum" in schema:
+        return schema
+    rest = {k: v for k, v in schema.items() if k != "const"}
+    return {**rest, "enum": [schema["const"]]}
+
+
 def _field_breaks(where: str, before: Schema, after: Schema) -> list[str]:
     """A field's breaks. An inline enum follows the same rule as a named one (README, "The
-    frozen-contract rule"; DEC-597): a member added is additive, a member removed breaks."""
+    frozen-contract rule"; DEC-597): a member added is additive, a member removed breaks. A
+    one-value field counts as a one-member enum, so widening it is additive (DEC-4823)."""
+    before, after = _as_enum(before), _as_enum(after)
     old_enum = cast(list[object] | None, before.get("enum"))
     new_enum = cast(list[object] | None, after.get("enum"))
     if old_enum is not None and new_enum is not None:

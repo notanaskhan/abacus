@@ -118652,7 +118652,7 @@
       },
       "WorkbookMappingProposedOut": {
         "additionalProperties": false,
-        "description": "DEC-4629: the tax reviewer's pick maps the account (`mapped`); anyone else's pick is a\nreview note proposing the line to the reviewer (`flagged`, `note_id`), and nothing maps.",
+        "description": "DEC-4629: the tax reviewer's pick maps the account (`mapped`); anyone else's pick is a\nreview note proposing the line to the reviewer (`flagged`, `note_id`), and nothing maps.\n`proposal_id` stays because v1 is frozen (DEC-4824): the record the pick wrote, the review\nnote when flagged, the mapping set when mapped.",
         "properties": {
           "account_code": {
             "cls": "confidential",
@@ -118677,6 +118677,12 @@
             "cls": "internal",
             "title": "Note Id"
           },
+          "proposal_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Proposal Id",
+            "type": "string"
+          },
           "state": {
             "cls": "internal",
             "enum": [
@@ -118688,6 +118694,7 @@
           }
         },
         "required": [
+          "proposal_id",
           "state",
           "account_code",
           "form_line_key"

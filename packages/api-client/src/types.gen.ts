@@ -55754,6 +55754,8 @@ export type WorkbookMappingIn = {
  *
  * DEC-4629: the tax reviewer's pick maps the account (`mapped`); anyone else's pick is a
  * review note proposing the line to the reviewer (`flagged`, `note_id`), and nothing maps.
+ * `proposal_id` stays because v1 is frozen (DEC-4824): the record the pick wrote, the review
+ * note when flagged, the mapping set when mapped.
  */
 export type WorkbookMappingProposedOut = {
     /**
@@ -55768,6 +55770,10 @@ export type WorkbookMappingProposedOut = {
      * Note Id
      */
     note_id?: string | null;
+    /**
+     * Proposal Id
+     */
+    proposal_id: string;
     /**
      * State
      */
