@@ -11,7 +11,9 @@ SPEC-653 AC-C3 to AC-C5; DEC-43; DEC-4715). Amber.
   `client_scope` (so a later reader without that client sees the session locked, DEC-87); one
   insert-only `context_added` item and one `workbench_session.context_added` audit event per
   record. The card's summary lines are computed by code from the owning modules (AC-C4):
-  requests' PBC counts, workpapers' papers, the engagement's period; never by a model.
+  requests' PBC counts, workpapers' papers, the engagement's period, an EBP plan's number, year
+  and BOY participants, the Trial Balance's L1, materiality and the Internal Control exception
+  count (each only where the viewer may read it); never by a model.
 - **Remove**: `context_removed`; the ref leaves `context_refs` and later turns leave its client
   out of `client_scope` unless another ref still names it (AC-C5). Earlier items stay.
 """
@@ -21,6 +23,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import date
 from typing import Final, Literal, cast
 from uuid import UUID
 
@@ -101,7 +104,8 @@ async def options(
 async def summary(ctx: AuthContext, option: Option) -> tuple[str, tuple[str, ...]]:
     """(chip label, summary lines) by code from the owning modules (AC-C4)."""
     if option.kind == "client_entity":
-        return option.title, (option.title, option.detail)
+        plan = await _plan_line(ctx, option)
+        return option.title, (plan or option.title, option.detail)
     work_items = await work_item_ids_of(ctx.tenant, option.engagement_id)
     if option.kind == "request_set":
         from abacus.modules.requests.api import pbc_counts
@@ -118,8 +122,93 @@ async def summary(ctx: AuthContext, option: Option) -> tuple[str, tuple[str, ...
     papers = [p for wi in work_items for p in await work_item_papers(ctx.tenant, wi)]
     titles = " · ".join(str(getattr(p, "title", "")) for p in papers[:4])
     lines = (f"{len(papers)} workpapers", titles) if titles else (f"{len(papers)} workpapers",)
-    materiality = await _materiality_line(ctx, option.engagement_id)
-    return "Workpapers", (*lines, materiality) if materiality else lines
+    # AC-C4's one line: "Trial Balance · Prepared · MD · Materiality v2 · $252,200 · Internal
+    # Control · 7 exceptions", each part present only when the viewer may read it.
+    parts = [
+        part
+        for part in (
+            await _trial_balance_part(ctx, option.engagement_id),
+            await _materiality_line(ctx, option.engagement_id),
+            await _control_part(ctx, option.engagement_id),
+        )
+        if part
+    ]
+    return "Workpapers", (*lines, " · ".join(parts)) if parts else lines
+
+
+def _plan_year(start: date, end: date) -> str:
+    return f"{start:%b} {start.day}–{end:%b} {end.day}"  # noqa: RUF001 -- the handoff's en dash
+
+
+async def _plan_line(ctx: AuthContext, option: Option) -> str | None:
+    """AC-C4's client record line (S41 leftovers, DEC-4738): the plan's number, plan year and
+    participants with balances at BOY when the engagement is an EBP audit the viewer may read
+    (`ebp.read`); None otherwise, and nothing says why."""
+    from abacus.modules.assurance.api import ebp_plan_facts
+    from abacus.modules.identity.api import Forbidden, authorise, engagement_resource
+    from abacus.modules.organisations.api import entity_plan_number
+
+    try:
+        await authorise(
+            ctx, "ebp.read", await engagement_resource(ctx.tenant, option.engagement_id)
+        )
+    except (Forbidden, NotFound):
+        return None
+    plan = await ebp_plan_facts(ctx.tenant, option.engagement_id)
+    if plan is None:
+        return None
+    number = await entity_plan_number(ctx.tenant, option.ref_id)
+    parts = [
+        option.title,
+        f"PN {number}" if number else None,
+        f"plan year {_plan_year(plan.plan_year_start, plan.plan_year_end)}",
+        (
+            f"{plan.participants_boy_with_balances:,} participants with balances at BOY"
+            if plan.participants_boy_with_balances is not None
+            else None
+        ),
+    ]
+    return " · ".join(p for p in parts if p)
+
+
+async def _trial_balance_part(ctx: AuthContext, engagement_id: UUID) -> str | None:
+    """ "Trial Balance · Prepared · MD": the engagement's trial balance (assurance's
+    `trial_balance` reviewable) and its L1 signer's initials, when the viewer may read the ladder
+    (`sign_off.read`); "Trial Balance" alone before a current L1."""
+    from abacus.modules.identity.api import Forbidden
+    from abacus.modules.review.api import reviewables_of, sign_off_ladder
+
+    found = [
+        r
+        for r in await reviewables_of(ctx.tenant, engagement_id)
+        if r.target_type == "trial_balance"
+    ]
+    if not found:
+        return None
+    try:
+        ladder = await sign_off_ladder(ctx, "trial_balance", found[-1].target_id)
+    except (Forbidden, NotFound):
+        return None
+    l1 = next((lv.latest for lv in ladder.levels if lv.level == 1), None)
+    if l1 is None or l1.stale:
+        return "Trial Balance"
+    return f"Trial Balance · Prepared · {l1.initials}"
+
+
+async def _control_part(ctx: AuthContext, engagement_id: UUID) -> str | None:
+    """ "Internal Control · 7 exceptions" when the viewer may read controls (`control.read`)."""
+    from abacus.modules.assurance.api import control_exceptions
+    from abacus.modules.identity.api import Forbidden, authorise, engagement_resource
+
+    try:
+        await authorise(ctx, "control.read", await engagement_resource(ctx.tenant, engagement_id))
+        found = await control_exceptions(ctx, engagement_id)
+    except (Forbidden, NotFound):
+        return None
+    if not found:
+        return None
+    noun = "exception" if len(found) == 1 else "exceptions"
+    return f"Internal Control · {len(found)} {noun}"
 
 
 async def _materiality_line(ctx: AuthContext, engagement_id: UUID) -> str | None:
@@ -138,7 +227,7 @@ async def _materiality_line(ctx: AuthContext, engagement_id: UUID) -> str | None
     if not found.versions:
         return None
     newest = found.versions[-1]
-    return f"Materiality {newest.overall:,.0f} · version {newest.version_no}"
+    return f"Materiality v{newest.version_no} · ${newest.overall:,.0f}"
 
 
 _SESSION: Final = text(

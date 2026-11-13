@@ -29,8 +29,8 @@ its frozen suite registered.
   a firm-level session, trajectories recorded by P-10's runtime) is P-10-T43's `post_message`
   with a capability ref; blank Workbench sessions name no capability yet (binding the assistant
   to blank sessions is W-02-T15's).
-- `identity.list_offices` and `files.list_folders` are not registered tools (W-02 §6 lists
-  them); left out of the spec.
+- `identity.list_offices` and `files.list_folders` are not registered tools: they are W-02-T19's
+  red tools (with the writable-by-approver filter), a later row; left out of the spec.
 
 ## Progress log
 - 2026-11-13: spec compiled; suites regenerated; tests written, not run.

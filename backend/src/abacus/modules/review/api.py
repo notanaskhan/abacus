@@ -157,6 +157,7 @@ from abacus.modules.review.sign_offs import (
     # product call stays in review (SIGNOFF-001).
     sign_target,
 )
+from abacus.modules.review.sign_offs import ladder as sign_off_ladder  # W-02 AC-C4 (DEC-4738)
 from abacus.modules.review.slots import (
     REQUIRED_LEVELS,
     AppliedDecision,
@@ -400,6 +401,7 @@ __all__ = [
     "save_checkpoint",
     "seal_text",
     "send_issue_to_client",
+    "sign_off_ladder",
     "sign_off_states",
     "sign_target",
     "stale_of",

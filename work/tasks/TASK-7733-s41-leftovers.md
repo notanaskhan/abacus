@@ -27,10 +27,11 @@ build them").
    and `GET …/partners` (`tax/entity_partners.py`, read-only, through the offshore mask);
    mappings is already served; `PUT …/ownership` stays 501 (DEC-4737). Rollback: restore the
    stubs.
-3. W-02-T12 (TASK-7715): `identity.list_offices` and `files.list_folders` as registered tools in
-   the assistant's spec, if their read APIs exist.
-4. W-02-T10 (TASK-7712): `client` (a client record without an engagement) and single `document`
-   picks in the context picker.
+3. W-02-T12 (TASK-7715): dropped: `identity.list_offices` and `files.list_folders` are W-02-T19's.
+4. W-02-T10 (TASK-7712): AC-C4's summary lines (`workbench/session_context.py`; exports
+   `assurance.api.ebp_plan_facts`, `control_exceptions`, `review.api.sign_off_ladder`; workbench may
+   import review). The extra picker kinds are not in the spec (not a gap). DEC-4738. Rollback:
+   revert the three summary parts.
 5. W-02-T13 (TASK-7714): the J11 thread and WB-02's Northwind context scenario.
 6. P-02-T12 (TASK-7722): the palette's context-bound actions (P-02-T10, merged #1858).
 7. F-07-T13/T14 (TASK-7725/7726): the `./graph` subpath of `@abacus/ui`.
@@ -42,3 +43,4 @@ build them").
 - 2026-11-13: item 2 built (`s41lo-entity-reads`): `tax/entity_partners.py`, the two routes, stub
   test's BUILT set, client regenerated; `PUT …/ownership` stays 501 (DEC-4737). Found: S42's
   `GET …/issue-assignees` is served but missing from the stub test's BUILT set (main red; S42's).
+- 2026-11-13: item 3 dropped (W-02-T19's tools); item 4 built (`s41lo-context-lines`).

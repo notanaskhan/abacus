@@ -117,7 +117,7 @@ def test_workpapers_card_carries_materiality_only_when_the_viewer_may_read_it(
         return object()
 
     async def allowed(ctx: object, action: str, resource: object) -> None:
-        assert action == "materiality.read"
+        assert action in ("materiality.read", "control.read")
 
     async def denied(ctx: object, action: str, resource: object) -> None:
         raise identity_api.Forbidden(action, "role")
@@ -129,10 +129,147 @@ def test_workpapers_card_carries_materiality_only_when_the_viewer_may_read_it(
     monkeypatch.setattr(workpapers_api, "work_item_papers", papers)
     monkeypatch.setattr(identity_api, "engagement_resource", resource)
     monkeypatch.setattr(assurance_api, "materiality_record", record)
+    _no_tb_or_exceptions(monkeypatch)
     option = next(o for o in asyncio.run(sc.all_options(CTX)) if o.kind == "workpaper_set")
     monkeypatch.setattr(identity_api, "authorise", allowed)
     _chip, lines = asyncio.run(sc.summary(CTX, option))
-    assert lines == ("0 workpapers", "Materiality 168,100 · version 2")
+    assert lines == ("0 workpapers", "Materiality v2 · $168,100")  # AC-C4's words (DEC-4738)
     monkeypatch.setattr(identity_api, "authorise", denied)
     _chip, lines = asyncio.run(sc.summary(CTX, option))
     assert lines == ("0 workpapers",)
+
+
+def _no_tb_or_exceptions(monkeypatch: pytest.MonkeyPatch) -> None:
+    from abacus.modules.assurance import api as assurance_api
+    from abacus.modules.review import api as review_api
+
+    async def none(*_a: object) -> list[object]:
+        return []
+
+    monkeypatch.setattr(review_api, "reviewables_of", none)
+    monkeypatch.setattr(assurance_api, "control_exceptions", none)
+
+
+def test_ac_c4_workpaper_line_and_client_record_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    """S41 leftovers (AC-C4, DEC-4738): "Trial Balance · Prepared · MD · Materiality v2 · $252,200
+    · Internal Control · 7 exceptions" and "… · PN 001 · plan year Jan 1-Dec 31 · 286
+    participants with balances at BOY", each part only where the viewer may read it."""
+    from decimal import Decimal
+
+    from abacus.modules.assurance import api as assurance_api
+    from abacus.modules.identity import api as identity_api
+    from abacus.modules.organisations import api as organisations_api
+    from abacus.modules.review import api as review_api
+    from abacus.modules.workpapers import api as workpapers_api
+
+    tb_id = uuid.uuid4()
+
+    @dataclass(frozen=True)
+    class _V:
+        overall: Decimal
+        version_no: int
+
+    @dataclass(frozen=True)
+    class _Record:
+        versions: list[_V]
+
+    @dataclass(frozen=True)
+    class _Reviewable:
+        target_type: str
+        target_id: uuid.UUID
+
+    @dataclass(frozen=True)
+    class _Signed:
+        initials: str
+        stale: bool
+
+    @dataclass(frozen=True)
+    class _Level:
+        level: int
+        latest: _Signed | None
+
+    @dataclass(frozen=True)
+    class _Ladder:
+        levels: list[_Level]
+
+    @dataclass(frozen=True)
+    class _Plan:
+        plan_year_start: date
+        plan_year_end: date
+        participants_boy_with_balances: int | None
+
+    seen: list[str] = []
+
+    async def work_items(tenant: object, engagement: object) -> list[uuid.UUID]:
+        return [uuid.uuid4()]
+
+    async def papers(tenant: object, wi: object) -> list[object]:
+        return []
+
+    async def resource(tenant: object, engagement: object) -> object:
+        return object()
+
+    async def allowed(ctx: object, action: str, resource: object) -> None:
+        seen.append(action)
+
+    async def record(ctx: object, engagement: object) -> _Record:
+        return _Record([_V(Decimal(252200), 2)])
+
+    async def reviewables(tenant: object, engagement: object) -> list[_Reviewable]:
+        return [_Reviewable("workpaper", uuid.uuid4()), _Reviewable("trial_balance", tb_id)]
+
+    async def ladder(ctx: object, target_type: str, target_id: uuid.UUID) -> _Ladder:
+        assert (target_type, target_id) == ("trial_balance", tb_id)
+        return _Ladder([_Level(1, _Signed("MD", False)), _Level(2, None)])
+
+    async def exceptions(ctx: object, engagement: object) -> list[object]:
+        return [object()] * 7
+
+    async def plan(tenant: object, engagement: object) -> _Plan:
+        return _Plan(date(2025, 1, 1), date(2025, 12, 31), 286)
+
+    async def plan_number(tenant: object, entity: object) -> str:
+        return "001"
+
+    monkeypatch.setattr(sc, "work_item_ids_of", work_items)
+    monkeypatch.setattr(workpapers_api, "work_item_papers", papers)
+    monkeypatch.setattr(identity_api, "engagement_resource", resource)
+    monkeypatch.setattr(identity_api, "authorise", allowed)
+    monkeypatch.setattr(assurance_api, "materiality_record", record)
+    monkeypatch.setattr(review_api, "reviewables_of", reviewables)
+    monkeypatch.setattr(review_api, "sign_off_ladder", ladder)
+    monkeypatch.setattr(assurance_api, "control_exceptions", exceptions)
+    monkeypatch.setattr(assurance_api, "ebp_plan_facts", plan)
+    monkeypatch.setattr(organisations_api, "entity_plan_number", plan_number)
+    options = asyncio.run(sc.all_options(CTX))
+    papers_opt = next(o for o in options if o.kind == "workpaper_set")
+    _chip, lines = asyncio.run(sc.summary(CTX, papers_opt))
+    assert lines[-1] == (
+        "Trial Balance · Prepared · MD · Materiality v2 · $252,200 · "
+        "Internal Control · 7 exceptions"
+    )
+    client_opt = next(o for o in options if o.kind == "client_entity")
+    _chip, lines = asyncio.run(sc.summary(CTX, client_opt))
+    assert lines[0] == (
+        "Northwind Robotics 401(k) Plan · PN 001 · plan year Jan 1\u2013Dec 31 · 286 participants "
+        "with balances at BOY"
+    )
+    assert {"materiality.read", "control.read", "ebp.read"} <= set(seen)
+
+
+def test_ac_c4_lines_say_nothing_when_the_viewer_may_not_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from abacus.modules.identity import api as identity_api
+
+    async def resource(tenant: object, engagement: object) -> object:
+        return object()
+
+    async def denied(ctx: object, action: str, resource: object) -> None:
+        raise identity_api.Forbidden(action, "role")
+
+    monkeypatch.setattr(identity_api, "engagement_resource", resource)
+    monkeypatch.setattr(identity_api, "authorise", denied)
+    client_opt = next(o for o in asyncio.run(sc.all_options(CTX)) if o.kind == "client_entity")
+    _chip, lines = asyncio.run(sc.summary(CTX, client_opt))
+    assert lines == (client_opt.title, client_opt.detail)

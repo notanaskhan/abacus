@@ -1712,7 +1712,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # PBC counts and workpapers' papers; neither imports workbench, so the edges stay acyclic.
     "workbench": _BASE
     | {"organisations", "engagements", "methodology", "agents", "integrations"}
-    | {"requests", "workpapers", "assurance"},
+    | {"requests", "workpapers", "assurance"}
+    # S41 leftovers (DEC-4738): AC-C4's workpaper line reads the Trial Balance's L1 through review.
+    | {"review"},
     # T-02-T10: practice registers its due-dates rules into tax (`register_due_dates_source`).
     # I-02-T04 (DEC-4610): the Today read model reads gates through review, briefings through
     # agents and request counts through requests; nothing imports practice.

@@ -26,11 +26,14 @@ code-computed summaries and an honest `client_scope`.
 
 ## Partial
 - S41 gaps (DEC-4734): the workpapers card now carries the decided materiality and version when
-  the viewer may read it. Still open: AC-C4's richer lines (plan participants, materiality and Internal Control exceptions) need
-  read APIs from the EBP and planning modules; the summaries carry PBC counts, workpaper counts
-  and titles, and the engagement period. Carried to W-02-T13/S42.
-- `client` kind (a client record without an engagement) and single `document` picks are not
-  offered: the picker offers the three kinds the tabs need.
+  the viewer may read it. S41 leftovers (TASK-7733, DEC-4738): AC-C4's lines are built: the client record line
+  (plan number, plan year, participants with balances at BOY, behind `ebp.read`) and the workpaper
+  line ("Trial Balance · Prepared · MD · Materiality v2 · $252,200 · Internal Control · 7
+  exceptions", each part behind its read). Still open: the PBC line's "3 files in use", which no
+  spec, contract or table defines.
+- The picker offers the three kinds the spec's three tabs need (`client_record`, `documents`,
+  `workpapers`); a client without an engagement and single documents are not in SPEC-653 or the
+  epic (not a gap; S41 leftovers scan).
 
 ## Progress log
 - 2026-11-13: built; OpenAPI export clean; tests written, not run.
