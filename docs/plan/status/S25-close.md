@@ -17,18 +17,16 @@ Planned 50 rows, 49.5 task-equivalents.
 
 | Result | Rows |
 |---|---|
-| Done | 25 |
-| Partial | 18: 8 product, 2 quality lanes, 8 run on the synthetic firm |
+| Done | 27 |
+| Partial | 16: 6 product, 2 quality lanes, 8 run on the synthetic firm |
 | Todo | 7 |
 
-This corrects an earlier count. S25.md recorded 22 done, and a later check against `main` found five of those rows short of their full text: A-04-T18, A-04-T20, A-06-T10, N-04-T05 and P-04-T60. The held batch closes those five and A-06-T11, which is why the count reads 23 rather than 17; A-04-T19 and A-04-T24, from the other held stack, make it 25.
+This corrects an earlier count. S25.md recorded 22 done, and a later check against `main` found five of those rows short of their full text: A-04-T18, A-04-T20, A-06-T10, N-04-T05 and P-04-T60. The held batch closes those five and A-06-T11, which is why the count reads 23 rather than 17; A-04-T19 and A-04-T24, from the other held stack, make it 25, and A-05-T16 and A-05-T17's remaining clauses (TASK-5307 to TASK-5311) make it 27.
 
 ## Carry-overs
 | Rows | Reason |
 |---|---|
 | A-04-T21 | Inquiries list and Remind can now follow A-04-T19 (merged 2026-11-08); the decision strip and amber notes need a data marker |
-| A-05-T16 | EBP-03's entry rule reads the verified provision (DEC-2482); EBP-04, EBP-09 and EBP-03's other inputs do not yet |
-| A-05-T17 | The viewer's matching line needs SHL-08's anchors, which the row's acceptance names (DV-EBP-02-3). SHL-07 on the reference is also open |
 | A-05-T19 | Waits on P-03's census scan |
 | A-06-T08 | Needs the audit CPA's signature on the golden review |
 | K-01-T25, P-04-T57 | Need staging and demo-firm data |

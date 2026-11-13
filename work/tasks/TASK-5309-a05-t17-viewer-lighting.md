@@ -4,7 +4,7 @@ title: A-05-T17 the viewer's matching line lights on hover and pin; c opens the 
 spec: SPEC-640
 acceptance_criteria: [AC-1]  # "Hovering a provision lights the same line in the viewer"
 risk_zone: green
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T17
 branch: s25d-a05-t17

@@ -4,7 +4,7 @@ title: A-05-T17 the cockpit rail's Version 1 child row; EBP-02's rail row live
 spec: SPEC-640
 acceptance_criteria: [AC-1]  # "Version 1 child row with diff ribbon"
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T17
 branch: s25d-a05-t17
