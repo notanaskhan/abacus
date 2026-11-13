@@ -961,23 +961,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         "daily_briefing.dispatched",
         "daily_briefing.unavailable",
         "daily_briefing.snapshot",
-        # reviewed 2026-11-13 (S42 end pass, TASK-7922; S41 rows on main without a review): the
-        # brief's per-engagement build and the synthetic seeds are operational (explorer only);
-        # the memo's drafts, edits and staleness show on TXP-04's version list and the memo
-        # card; a Workbench session's context, title and deletion show in WB-01 and the session
-        # header; a workbook import shows in TXP-11's history.
-        "daily_briefing.built",
-        "session.recorded_synthetic",
-        "tax_entity.recorded_synthetic",
-        "tax_memo.drafted",
-        "tax_memo.regenerated",
+        # reviewed 2026-11-13 (S42 end pass, TASK-7922): a memo section's edit and the memo going
+        # stale show on TXP-04's version list and the memo card; a session's title in WB-01.
         "tax_memo.section_edited",
         "tax_memo.went_stale",
-        "workbench_session.context_added",
-        "workbench_session.context_removed",
-        "workbench_session.deleted",
-        "workbench_session.renamed",
         "workbench_session.titled",
-        "workbook_import.recorded",
     }
 )

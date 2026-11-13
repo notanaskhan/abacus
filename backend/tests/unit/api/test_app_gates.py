@@ -912,8 +912,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/portal/governance/communications/{communication_id}/questions",
         # T-04-T37 (DEC-4316): a record-bound session (TAX-08) is a row, so 201.
         "/v1/workbench/sessions",
-        # T-05-T41 (S41) and T-05-T54 (S42): an approval records a sign-off row, so 201.
-        "/v1/tax-returns/{return_id}/allocation-structure/approve",
+        # T-05-T54 (S42): the memo's approval records a sign-off row, so 201.
         "/v1/tax-returns/{return_id}/memo/approve",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)

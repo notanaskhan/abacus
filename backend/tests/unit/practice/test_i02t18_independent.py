@@ -75,6 +75,15 @@ def _wire(monkeypatch: pytest.MonkeyPatch, items: list[a.Item]) -> None:
     monkeypatch.setattr(a, "names_of", names)
     monkeypatch.setattr(due_dates, "add_business_days", next_day)
 
+    async def no_runs(*_a: object) -> list[object]:  # S41 gaps (#1905): the Running group's read
+        return []
+
+    async def no_downstream(*_a: object) -> list[object]:
+        return []
+
+    monkeypatch.setattr(a, "_running", no_runs)
+    monkeypatch.setattr(a, "_downstream", no_downstream)
+
 
 item_strategy = st.tuples(
     st.sampled_from(KINDS), st.one_of(st.none(), st.integers(-3, 10)), st.booleans()
