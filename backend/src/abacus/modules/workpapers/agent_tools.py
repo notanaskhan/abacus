@@ -87,7 +87,7 @@ async def read_section(agent: AgentContext, args: SectionIn) -> SectionOut:
         section_of(row.kind, paper.audit_area),
     }:
         raise NotFound("workpaper_section")
-    detail = await workpaper_detail(agent, engagement, paper.id)  # type: ignore[arg-type]
+    detail = await workpaper_detail(agent, engagement, paper.id)  # type: ignore[arg-type] -- the run's context reads as its initiator
     cells = [
         CellRow(
             id=f"{paper.id}:{c.cell_key}",

@@ -170,7 +170,7 @@ _TENANT_ID = uuid.uuid4()
 @dataclass
 class _Ctx:
     user_id: uuid.UUID
-    tenant: Any = _TENANT
+    tenant: Any = _TENANT  # Any: a test double
     tenant_id: uuid.UUID = _TENANT_ID
 
 
@@ -179,14 +179,14 @@ def _row(status: str, by: str = "human", actor: str | None = None) -> alloc.Stru
         id=uuid.uuid4(),
         version_no=1,
         status=status,
-        kind="straight_percentage",  # type: ignore[arg-type]
+        kind="straight_percentage",  # type: ignore[arg-type] -- a test double stands in for the typed object
         method="interim_closing",
         convention="monthly",
         income=D(1256200),
         distributable=None,
         proposed_by_kind=by,
         proposal_id=None,
-        content_hash="a" * 64,  # type: ignore[arg-type]
+        content_hash="a" * 64,  # type: ignore[arg-type] -- a test double stands in for the typed object
         citation_ids=(),
         supersedes_id=None,
         actor_kind="human",
@@ -204,7 +204,7 @@ def test_a_senior_or_staff_draft_is_refused(monkeypatch: pytest.MonkeyPatch) -> 
     with pytest.raises(StructureEditorRequired):
         asyncio.run(
             alloc.save_draft(
-                _Ctx(uuid.uuid4()),  # type: ignore[arg-type]
+                _Ctx(uuid.uuid4()),  # type: ignore[arg-type] -- a test double stands in for the typed object
                 return_id=uuid.uuid4(),
                 engagement_id=uuid.uuid4(),
                 year=2025,
@@ -222,7 +222,7 @@ def test_only_a_version_pending_approval_is_approved(monkeypatch: pytest.MonkeyP
     with pytest.raises(StructureNotPending):
         asyncio.run(
             alloc.approve(
-                _Ctx(uuid.uuid4()),  # type: ignore[arg-type]
+                _Ctx(uuid.uuid4()),  # type: ignore[arg-type] -- a test double stands in for the typed object
                 return_id=uuid.uuid4(),
                 engagement_id=uuid.uuid4(),
                 seen_hash="a" * 64,
@@ -256,7 +256,7 @@ def test_an_agent_or_staff_l3_is_refused_by_p04_and_nothing_is_written(
     with pytest.raises(Forbidden):
         asyncio.run(
             alloc.approve(
-                _Ctx(uuid.uuid4()),  # type: ignore[arg-type]
+                _Ctx(uuid.uuid4()),  # type: ignore[arg-type] -- a test double stands in for the typed object
                 return_id=uuid.uuid4(),
                 engagement_id=uuid.uuid4(),
                 seen_hash="a" * 64,

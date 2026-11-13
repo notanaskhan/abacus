@@ -418,3 +418,6 @@ async def _assigned_levels(tenant: _Tenant, key: str) -> tuple[int, ...] | None:
 register_level_assignments(_assigned_levels)
 
 # I-02-T10 (DEC-4722): the gates' presenter facts (titles, context lines, routes) for Today.
+
+# I-02-T10 (DEC-4722): a gate kind's HOME-02 band, for practice.today's cells.
+from abacus.modules.review.gates import band_of as band_of  # noqa: E402

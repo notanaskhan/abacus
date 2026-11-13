@@ -476,3 +476,6 @@ _register_hooks(
         next_milestone=_attention_hooks.next_milestone, dependents=_attention_hooks.dependents
     ),
 )
+
+# T-05-T45 (DEC-4711): the allocation service and the run plan's shape for the synthetic scenario
+# loader (tooling reaches tax only through this file).

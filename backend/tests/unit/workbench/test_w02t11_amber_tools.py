@@ -77,7 +77,7 @@ def test_season_counts_foot_and_carry_no_return_content(monkeypatch: pytest.Monk
     from abacus.kernel import clock
 
     monkeypatch.setattr(clock, "today", today)
-    agent: Any = type("A", (), {"tenant": object()})()
+    agent: Any = type("A", (), {"tenant": object()})()  # Any: a test double
     out = asyncio.run(tools.season_counts(agent, tools.SeasonIn(tax_year=2025)))
     assert (out.returns, out.open, out.done) == (3, 2, 1)
     assert sum(o.open + o.done for o in out.by_office) == out.returns

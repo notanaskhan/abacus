@@ -73,16 +73,16 @@ def test_the_tax_source_registers_6200_and_28595(monkeypatch: pytest.MonkeyPatch
             row = type("T", (), {"price": Decimal(360000), "display_name": "Pell Street II LLC"})()
             return type("R", (), {"first": lambda self: row})()
 
-    async def wb(tenant: object, return_id: object) -> dict[str, Any]:
+    async def wb(tenant: object, return_id: object) -> dict[str, Any]:  # Any: a test double
         return values
 
-    async def subjects(tenant: object, return_id: object) -> tuple[Any, ...]:
+    async def subjects(tenant: object, return_id: object) -> tuple[Any, ...]:  # Any: a test double
         return ()
 
     monkeypatch.setattr(source, "tenant_session", lambda tenant: _Session())
     monkeypatch.setattr(entity_schedules, "workbook_values", wb)
     monkeypatch.setattr(entity_tri, "entity_return_subjects", subjects)
-    found = asyncio.run(source.entity_briefing(object(), uuid.uuid4()))  # type: ignore[arg-type]
+    found = asyncio.run(source.entity_briefing(object(), uuid.uuid4()))  # type: ignore[arg-type] -- a test double stands in for the typed object
     by_id = {f.id: f.value for f in found.facts}
     assert by_id["tie_out_item_l_m2"] == "6200"
     assert by_id["section_754_placeholder"] == "28595"  # 360,000 - 331,405
@@ -112,7 +112,9 @@ def test_a_tri_subject_without_consent_is_refused_before_any_model_call(
     monkeypatch.setattr(requests_api, "pbc_counts", none)
     monkeypatch.setattr(bf, "_SOURCES", {"t": source})
     monkeypatch.setattr(bf, "_consented", refused)
-    viewer: Any = type("V", (), {"tenant": object(), "user_id": uuid.uuid4()})()
+    viewer: Any = type(  # Any: a test double
+        "V", (), {"tenant": object(), "user_id": uuid.uuid4()}
+    )()  # Any: a test double
     from abacus.kernel import clock
 
     async def now(tenant: object) -> Any:  # noqa: ANN401

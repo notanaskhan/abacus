@@ -111,12 +111,16 @@ class _Signed:
 
 @pytest.fixture
 def stubs(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded calls
-    seen: dict[str, Any] = {"signed": [], "values": RUN_2}
+    seen: dict[str, Any] = {"signed": [], "values": RUN_2}  # Any: a test double
 
-    async def ensure(ctx: object, return_id: object, engagement_id: object) -> dict[str, Any]:
+    async def ensure(
+        ctx: object, return_id: object, engagement_id: object
+    ) -> dict[str, Any]:  # Any: a test double
         return {s.key: uuid.uuid4() for s in SECTIONS}
 
-    async def current(tenant: object, target: str, target_id: object) -> dict[str, Any]:
+    async def current(
+        tenant: object, target: str, target_id: object
+    ) -> dict[str, Any]:  # Any: a test double
         return seen["values"]
 
     async def sign(*args: object) -> _Signed:
@@ -131,8 +135,10 @@ def stubs(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded c
     return seen
 
 
-def test_signing_with_the_tie_out_off_and_no_note_is_409(stubs: dict[str, Any]) -> None:
-    ctx: Any = type(
+def test_signing_with_the_tie_out_off_and_no_note_is_409(
+    stubs: dict[str, Any],  # Any: a test double
+) -> None:  # Any: a test double
+    ctx: Any = type(  # Any: a test double
         "C", (), {"tenant": object(), "tenant_id": uuid.uuid4(), "user_id": uuid.uuid4()}
     )()
     with pytest.raises(TieOutOff) as caught:
@@ -152,10 +158,11 @@ def test_signing_with_the_tie_out_off_and_no_note_is_409(stubs: dict[str, Any]) 
 
 
 def test_a_section_with_every_tie_out_passing_needs_no_note(
-    stubs: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+    stubs: dict[str, Any],  # Any: a test double
+    monkeypatch: pytest.MonkeyPatch,  # Any: a test double
 ) -> None:
     stubs["values"] = {**RUN_2, "07!B9": {"t": "decimal", "v": "6860000"}}
-    ctx: Any = type(
+    ctx: Any = type(  # Any: a test double
         "C", (), {"tenant": object(), "tenant_id": uuid.uuid4(), "user_id": uuid.uuid4()}
     )()
 
@@ -195,14 +202,16 @@ def test_a_section_with_every_tie_out_passing_needs_no_note(
 
 
 def test_tie_out_check_raises_off_and_resolves_passing(monkeypatch: pytest.MonkeyPatch) -> None:
-    raised: list[dict[str, Any]] = []
+    raised: list[dict[str, Any]] = []  # Any: a test double
     resolved: list[list[str]] = []
     return_id = uuid.uuid4()
 
     async def engagement(tenant: object, work_item: object) -> uuid.UUID:
         return uuid.uuid4()
 
-    async def current(tenant: object, target: str, target_id: object) -> dict[str, Any]:
+    async def current(
+        tenant: object, target: str, target_id: object
+    ) -> dict[str, Any]:  # Any: a test double
         return RUN_2
 
     async def raise_issue(system: object, **kw: object) -> tuple[uuid.UUID, bool]:

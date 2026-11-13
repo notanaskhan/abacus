@@ -54,19 +54,19 @@ State = Literal["tie", "off", "pending"]
 
 
 @dataclass(frozen=True)
-class Section:
+class WorkbookPart:
     key: str
     title: str
     sheets: tuple[str, ...]
 
 
-SECTIONS: Final[tuple[Section, ...]] = (
-    Section("trial-balance", "Financials", ("01", "03")),
-    Section("fixed-assets", "Fixed Assets", ("02",)),
-    Section("allocation", "Allocation", ("04",)),
-    Section("capital-accounts", "Capital Accounts", ("05", "07")),
-    Section("schedule-k", "Schedule K", ("06", "09")),
-    Section("states", "States", ("08",)),
+SECTIONS: Final[tuple[WorkbookPart, ...]] = (
+    WorkbookPart("trial-balance", "Financials", ("01", "03")),
+    WorkbookPart("fixed-assets", "Fixed Assets", ("02",)),
+    WorkbookPart("allocation", "Allocation", ("04",)),
+    WorkbookPart("capital-accounts", "Capital Accounts", ("05", "07")),
+    WorkbookPart("schedule-k", "Schedule K", ("06", "09")),
+    WorkbookPart("states", "States", ("08",)),
 )
 _BY_KEY: Final = {s.key: s for s in SECTIONS}
 
@@ -108,7 +108,7 @@ def _rows(values: Values, sheet: str, col: str = "A") -> list[int]:
     return out
 
 
-def section_hash(section: Section, values: Values) -> str:
+def section_hash(section: WorkbookPart, values: Values) -> str:
     """SHA-256 of the section's sheets' cells, canonical JSON (what a sign-off covers)."""
     cells = {
         k: dict(v)
@@ -233,7 +233,7 @@ def tie_outs(values: Values) -> list[TieOut]:
     return out
 
 
-def section_tie_outs(section: Section, values: Values) -> list[TieOut]:
+def section_tie_outs(section: WorkbookPart, values: Values) -> list[TieOut]:
     return [t for t in tie_outs(values) if t.section == section.key]
 
 
@@ -507,11 +507,11 @@ __all__ = [
     "SECTIONS",
     "TARGET",
     "WHY",
-    "Section",
     "SectionView",
     "SignedSection",
     "TieOut",
     "TieOutOff",
+    "WorkbookPart",
     "ensure_sections",
     "on_run_state_changed",
     "register",

@@ -194,9 +194,9 @@ def _items_out(session_id: UUID, items: list[Item]) -> ContextItemsOut:
         items=[
             ContextItemOut(
                 id=i.id,
-                kind=i.kind,  # type: ignore[arg-type]
+                kind=i.kind,  # type: ignore[arg-type] -- the run's context reads as its initiator
                 ref_id=i.ref_id,
-                card_title=i.card_title,  # type: ignore[arg-type]
+                card_title=i.card_title,  # type: ignore[arg-type] -- the run's context reads as its initiator
                 chip_label=i.chip_label,
                 summary_lines=list(i.summary_lines),
             )

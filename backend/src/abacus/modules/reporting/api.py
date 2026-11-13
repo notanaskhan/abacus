@@ -112,6 +112,9 @@ from abacus.modules.reporting.render.core import RenderInput as RenderInput
 from abacus.modules.reporting.render.core import RenderOutput as RenderOutput
 from abacus.modules.reporting.render.core import render_docx as render_docx
 from abacus.modules.reporting.render.core import render_isolated as render_isolated
+
+# F-07-T15 (DEC-4731): the in-process pipeline with value regions, for the specimen tooling.
+from abacus.modules.reporting.render.core import render_located as render_located
 from abacus.modules.reporting.render.head import RenderRefused as _RenderingRefused
 
 # P-11-T13: the template import and publication services the routes call, for the scenario loader

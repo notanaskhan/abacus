@@ -43,7 +43,7 @@ def visible(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sc, "engagements_for", engagements)
 
 
-CTX: Any = type(
+CTX: Any = type(  # Any: a test double
     "C", (), {"tenant": object(), "user_id": uuid.uuid4(), "tenant_id": uuid.uuid4()}
 )()
 

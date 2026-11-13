@@ -31,8 +31,8 @@ PDF: Final = "application/pdf"
 
 def render() -> dict[str, bytes]:
     """Every output file by name, in memory."""
-    from abacus.modules.evidence.previews import render as rasterise
-    from abacus.modules.reporting.render.core import RenderInput, render_located
+    from abacus.modules.evidence.api import render_preview as rasterise
+    from abacus.modules.reporting.api import RenderInput, render_located
 
     located = render_located(
         RenderInput(

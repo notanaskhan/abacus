@@ -52,7 +52,7 @@ def render() -> str:
                 modes[agent_id] = {m.prompt: version for m in spec.modes.values()}
     # T-05-T47 (DEC-4713): spec v2 capabilities with a suite (tax.account_mapper,
     # tax.agreement_reader, tax.memo_drafter, ...), keyed the same way.
-    from abacus.modules.agents.specs._specs_v2 import SPECS_V2
+    from abacus.modules.agents.api import SPECS_V2
 
     for agent_id, raw_spec in sorted(SPECS_V2.items()):
         suite_dir = raw_spec.get("evaluation_suite")

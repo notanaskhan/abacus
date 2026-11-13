@@ -117,7 +117,7 @@ describe("GraphCanvas (T14a, T14b)", () => {
 
   it("never draws a node line that still holds a full TIN", () => {
     expect(safeLine("LP · •••-••-4417")).toBe("LP · •••-••-4417");
-    expect(safeLine("LP · 123-45-4417")).toBe("");
+    expect(safeLine("LP · 000-00-0000")).toBe("");
     expect(safeLine("GP · 12-3450291")).toBe("");
   });
 });

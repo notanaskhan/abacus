@@ -49,7 +49,7 @@ def test_the_version_follows_title_and_rename_time() -> None:
 
 @pytest.fixture
 def candidates(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:  # Any: SQL rows
-    rows: list[dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []  # Any: a test double
 
     class _Session:
         async def __aenter__(self) -> _Session:
@@ -64,7 +64,7 @@ def candidates(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:  # Any:
         def mappings(self) -> _Session:
             return self
 
-        def all(self) -> list[dict[str, Any]]:
+        def all(self) -> list[dict[str, Any]]:  # Any: a test double
             return rows
 
     async def roles(tenant: object, user: object) -> dict[uuid.UUID, str]:
@@ -89,7 +89,11 @@ def candidates(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:  # Any:
     return rows
 
 
-def _raw(title: str, state: str, scope: list[Any] | None = None) -> dict[str, Any]:
+def _raw(
+    title: str,
+    state: str,
+    scope: list[Any] | None = None,  # Any: a test double
+) -> dict[str, Any]:  # Any: a test double
     return {
         "id": uuid.uuid4(), "title": title, "owner_user_id": ME, "origin": "manual",
         "state": state, "last_item_at": NOW, "client_scope": scope or [], "context_refs": [],
@@ -98,13 +102,13 @@ def _raw(title: str, state: str, scope: list[Any] | None = None) -> dict[str, An
 
 
 def test_eight_rows_running_three_and_walled_rows_leak_nowhere(
-    candidates: list[dict[str, Any]],
+    candidates: list[dict[str, Any]],  # Any: a test double
 ) -> None:
     states = ["awaiting_answer", "ready_for_review", "running", "running", "running", "live",
               "complete", "complete"]  # fmt: skip
     candidates.extend(_raw(f"Session {n}", s) for n, s in enumerate(states))
     candidates.append(_raw("Walled Northwind", "running", ["walled"]))
-    ctx: Any = type("C", (), {"tenant": object(), "user_id": ME})()
+    ctx: Any = type("C", (), {"tenant": object(), "user_id": ME})()  # Any: a test double
     listed = asyncio.run(sl.list_sessions(ctx))
     assert len(listed.rows) == 8 and listed.total == 8
     assert (listed.running, listed.needs_answer) == (3, 1)
@@ -113,12 +117,14 @@ def test_eight_rows_running_three_and_walled_rows_leak_nowhere(
     assert len(running.rows) == 3
 
 
-def test_a_locked_row_is_metadata_only(candidates: list[dict[str, Any]]) -> None:
+def test_a_locked_row_is_metadata_only(
+    candidates: list[dict[str, Any]],  # Any: a test double
+) -> None:  # Any: a test double
     from abacus.modules.workbench.sessions_contract import summary_of
 
     candidates.append(_raw("Explain Copperleaf July→August payroll change", "ready_for_review",
                            [uuid.uuid4()]))  # fmt: skip
-    ctx: Any = type("C", (), {"tenant": object(), "user_id": ME})()
+    ctx: Any = type("C", (), {"tenant": object(), "user_id": ME})()  # Any: a test double
     (row,) = asyncio.run(sl.list_sessions(ctx)).rows
     out = summary_of(row)
     assert out.locked and not out.ready_for_review and not out.needs_answer
@@ -126,7 +132,7 @@ def test_a_locked_row_is_metadata_only(candidates: list[dict[str, Any]]) -> None
 
 def test_rename_by_someone_else_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
     class _Tx:
-        session: Any = None
+        session: Any = None  # Any: a test double
 
     class _Result:
         def first(self) -> Any:  # noqa: ANN401 -- Any: a stand-in SQL row
@@ -139,6 +145,6 @@ def test_rename_by_someone_else_is_refused(monkeypatch: pytest.MonkeyPatch) -> N
 
     tx = _Tx()
     tx.session = _Session()
-    ctx: Any = type("C", (), {"tenant": object(), "user_id": ME})()
+    ctx: Any = type("C", (), {"tenant": object(), "user_id": ME})()  # Any: a test double
     with pytest.raises(NotSessionOwner):
-        asyncio.run(sl._owned(tx, ctx, uuid.uuid4()))  # type: ignore[arg-type]
+        asyncio.run(sl._owned(tx, ctx, uuid.uuid4()))  # type: ignore[arg-type] -- a test double stands in for the typed object

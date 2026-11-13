@@ -118,7 +118,7 @@ def test_state_rows_land_in_08_f_to_h() -> None:
 
 @pytest.fixture
 def io_stub(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded calls
-    seen: dict[str, Any] = {"writes": [], "issues": [], "values": {}}
+    seen: dict[str, Any] = {"writes": [], "issues": [], "values": {}}  # Any: a test double
 
     async def write(
         agent: object, facts: object, return_id: object, writes: list[CellWrite]
@@ -126,7 +126,9 @@ def io_stub(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded
         seen["writes"].extend(writes)
         return len(writes)
 
-    async def current(tenant: object, target: str, target_id: object) -> dict[str, Any]:
+    async def current(
+        tenant: object, target: str, target_id: object
+    ) -> dict[str, Any]:  # Any: a test double
         return seen["values"]
 
     async def issue(ctx: object, **kwargs: object) -> uuid.UUID:
@@ -142,10 +144,10 @@ def io_stub(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded
 
 
 def test_no_depreciation_import_stops_at_needs_attention_with_one_issue(
-    io_stub: dict[str, Any],
+    io_stub: dict[str, Any],  # Any: a test double
 ) -> None:
     result = asyncio.run(
-        run_steps.depreciation_register(_Agent(), _facts("depreciation_register"))  # type: ignore[arg-type]
+        run_steps.depreciation_register(_Agent(), _facts("depreciation_register"))  # type: ignore[arg-type] -- a test double stands in for the typed object
     )
     assert (result.state, result.error_code) == ("failed", "import_required")
     (issue,) = io_stub["issues"]
@@ -153,21 +155,23 @@ def test_no_depreciation_import_stops_at_needs_attention_with_one_issue(
     assert issue["blocks"] == ("final_approval",) and issue["work_item_id"] == RETURN
 
 
-def test_an_imported_report_lets_the_step_succeed(io_stub: dict[str, Any]) -> None:
+def test_an_imported_report_lets_the_step_succeed(
+    io_stub: dict[str, Any],  # Any: a test double
+) -> None:  # Any: a test double
     io_stub["values"] = {
         w.address.replace("02!", "02!"): {"v": None if w.value is None else str(w.value)}
         for w in writes_for(parse("depreciation_register", REPORT.encode()))
     }
     result = asyncio.run(
-        run_steps.depreciation_register(_Agent(), _facts("depreciation_register"))  # type: ignore[arg-type]
+        run_steps.depreciation_register(_Agent(), _facts("depreciation_register"))  # type: ignore[arg-type] -- a test double stands in for the typed object
     )
     assert (result.state, result.records_read) == ("succeeded", 2)
-    bonus = asyncio.run(run_steps.bonus_eligibility(_Agent(), _facts("bonus_eligibility")))  # type: ignore[arg-type]
+    bonus = asyncio.run(run_steps.bonus_eligibility(_Agent(), _facts("bonus_eligibility")))  # type: ignore[arg-type] -- a test double stands in for the typed object
     assert (bonus.state, bonus.records_read) == ("succeeded", 1)
 
 
 def test_apportionment_writes_06_d_as_federal_times_the_percentage(
-    io_stub: dict[str, Any],
+    io_stub: dict[str, Any],  # Any: a test double
 ) -> None:
     io_stub["values"] = {
         "06!A2": {"v": "1"},
@@ -178,15 +182,17 @@ def test_apportionment_writes_06_d_as_federal_times_the_percentage(
         "08!G2": {"v": "62.5"},
         "08!H2": {"v": "48000"},
     }
-    result = asyncio.run(run_steps.apportionment_ptet(_Agent(), _facts("apportionment_ptet")))  # type: ignore[arg-type]
+    result = asyncio.run(run_steps.apportionment_ptet(_Agent(), _facts("apportionment_ptet")))  # type: ignore[arg-type] -- a test double stands in for the typed object
     assert result.state == "succeeded"
     written = {w.address: (w.value, w.formula) for w in io_stub["writes"]}
     assert written["06!D2"] == (D(785125), "=ROUND(C2*'08'!G2/100,0)")
     assert written["06!D3"] == (D(60250), "=ROUND(C3*'08'!G2/100,0)")
 
 
-def test_no_state_schedule_is_needs_attention(io_stub: dict[str, Any]) -> None:
-    result = asyncio.run(run_steps.state_k1s_k3s(_Agent(), _facts("state_k1s_k3s")))  # type: ignore[arg-type]
+def test_no_state_schedule_is_needs_attention(
+    io_stub: dict[str, Any],  # Any: a test double
+) -> None:  # Any: a test double
+    result = asyncio.run(run_steps.state_k1s_k3s(_Agent(), _facts("state_k1s_k3s")))  # type: ignore[arg-type] -- a test double stands in for the typed object
     assert (result.state, result.error_code) == ("failed", "import_required")
 
 

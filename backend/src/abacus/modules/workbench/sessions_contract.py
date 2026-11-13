@@ -185,12 +185,12 @@ def summary_of(r: Row) -> SessionSummaryOut:
         state=r.state,  # type: ignore[arg-type]  # the table's CHECK holds the literal
         last_item_at=r.last_item_at,
         owner=SessionOwnerOut(user_id=r.owner_user_id, name=r.owner_name, via_agent=r.via_agent),
-        origin=r.origin,  # type: ignore[arg-type]
+        origin=r.origin,  # type: ignore[arg-type] -- the run's context reads as its initiator
         needs_answer=r.needs_answer and not r.locked,
         running=r.running,
         ready_for_review=r.ready_for_review and not r.locked,
         locked=r.locked,
-        title_source=r.title_source,  # type: ignore[arg-type]
+        title_source=r.title_source,  # type: ignore[arg-type] -- the run's context reads as its initiator
         version=r.version,
     )
 

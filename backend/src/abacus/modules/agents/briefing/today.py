@@ -198,10 +198,10 @@ async def _call(
                 output_schema=EngagementBriefing,
                 budget_usd=spec.limits.max_cost_usd,
                 attribution=Attribution(
-                    agent.tenant,  # type: ignore[attr-defined]
-                    agent.engagement_id,  # type: ignore[attr-defined]
+                    agent.tenant,  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
+                    agent.engagement_id,  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
                     CAPABILITY,
-                    agent.agent_run_id,  # type: ignore[attr-defined]
+                    agent.agent_run_id,  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
                 ),
                 context=context,
                 work_class=spec.work_class,
@@ -247,8 +247,8 @@ async def build_engagement_briefing(
     from abacus.kernel.db import tenant_session
     from abacus.kernel.uow import Ref, Target, uow
 
-    tenant = cast(TenantContext, agent.tenant)  # type: ignore[attr-defined]
-    viewer_id = cast(UUID, viewer.user_id)  # type: ignore[attr-defined]
+    tenant = cast(TenantContext, agent.tenant)  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
+    viewer_id = cast(UUID, viewer.user_id)  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
 
     async def store(status: str, reason: str | None, digest: str | None, blocks: object) -> UUID:
         async with tenant_session(tenant) as session:
@@ -266,7 +266,7 @@ async def build_engagement_briefing(
                         "reason": reason,
                         "hash": None if digest is None else bytes.fromhex(digest),
                         "blocks": None if blocks is None else json.dumps(blocks),
-                        "run": agent.agent_run_id,  # type: ignore[attr-defined]
+                        "run": agent.agent_run_id,  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
                         "prompt": PROMPT,
                     },
                 ),
@@ -331,7 +331,7 @@ async def latest_briefings(
 
     if not engagement_ids:
         return {}
-    async with tenant_session(tenant) as session:  # type: ignore[arg-type]
+    async with tenant_session(tenant) as session:  # type: ignore[arg-type] -- the run's context reads as its initiator
         rows = (
             await session.execute(
                 _LATEST, {"v": viewer_user_id, "d": on, "ids": list(engagement_ids)}
@@ -355,8 +355,8 @@ async def briefing_step(agent: object, step: object) -> object:
     from abacus.kernel import clock
     from abacus.modules.agents.engagement_run import RunStepResult
 
-    args = cast(dict[str, object], step.arguments)  # type: ignore[attr-defined]
-    raw = args.get("engagement_id") or cast(object, agent.engagement_id)  # type: ignore[attr-defined]
+    args = cast(dict[str, object], step.arguments)  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
+    raw = args.get("engagement_id") or cast(object, agent.engagement_id)  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
     if raw is None:
         return RunStepResult("failed", "engagement_missing")
     built = await build_engagement_briefing(
@@ -366,7 +366,7 @@ async def briefing_step(agent: object, step: object) -> object:
         engagement_label=str(args.get("label") or ""),
         titles={},
         recommendations={},
-        on=await clock.today(agent.tenant),  # type: ignore[attr-defined]
+        on=await clock.today(agent.tenant),  # type: ignore[attr-defined] -- the run's or viewer's context is typed object here
     )
     if built.status in ("ready", "unchanged"):
         return RunStepResult("succeeded", records_read=1)
@@ -376,7 +376,7 @@ async def briefing_step(agent: object, step: object) -> object:
 def register() -> None:
     from abacus.modules.agents.engagement_run import register_run_step
 
-    register_run_step("briefing_today", briefing_step)  # type: ignore[arg-type]
+    register_run_step("briefing_today", briefing_step)  # type: ignore[arg-type] -- the run's context reads as its initiator
 
 
 # --- The fake model's answer (I-02-T12; local runs and tests only) ------------------------------

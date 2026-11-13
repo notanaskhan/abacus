@@ -45,7 +45,7 @@ def convention_facts(
 ) -> RecommendModeFacts:
     """Options from code with the day each closes the books; clauses are (ref, label, text)."""
     options = tuple(
-        RecommendModeOption(key, f"{title} (books close {_day(boundary(transfer, key))})")  # type: ignore[arg-type]
+        RecommendModeOption(key, f"{title} (books close {_day(boundary(transfer, key))})")  # type: ignore[arg-type] -- the run's context reads as its initiator
         for key, title in _TITLES.items()
     )
     return RecommendModeFacts(

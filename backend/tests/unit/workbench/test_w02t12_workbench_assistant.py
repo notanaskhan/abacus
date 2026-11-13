@@ -30,7 +30,7 @@ def test_the_spec_compiles_with_the_w02_tools_and_never_tri() -> None:
     assert spec.prompt == "workbench.assistant@v1"
     assert spec.autonomy == "propose" and spec.plan == "required_when_writes"
     assert "tri" not in spec.data_classes
-    tools = [t for group in spec.tools.values() for t in group]  # type: ignore[union-attr]
+    tools = [t for group in spec.tools.values() for t in group]  # type: ignore[union-attr] -- a test double stands in for the typed object
     for name in (
         "tax.season_counts",
         "binders.read",

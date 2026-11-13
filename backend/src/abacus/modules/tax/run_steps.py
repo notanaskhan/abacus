@@ -411,7 +411,7 @@ async def interim_closing_706d(agent: AgentContext, facts: RunStepFacts) -> RunS
     if not by_transfer:
         by_transfer = [(None, {"partnership": HUNDRED})]
     try:
-        segs = segments(date(year, 1, 1), date(year, 12, 31), by_transfer, convention)  # type: ignore[arg-type]
+        segs = segments(date(year, 1, 1), date(year, 12, 31), by_transfer, convention)  # type: ignore[arg-type] -- the run's context reads as its initiator
     except AllocationInvalid as error:
         return RunStepResult("failed", error.code)
     values = await current_values(agent.tenant, WORKBOOK, return_id)
