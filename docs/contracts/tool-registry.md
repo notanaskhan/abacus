@@ -119,3 +119,12 @@ The decorator's keywords and the four kinds are part of v1.
 |---|---|---|
 | v1 | 2026-11-06 | Stub (P-10-T10, DEC-2409) |
 | v1 | 2026-11-09 | Runtime and freeze (P-10-T22, DEC-3001): per-call authorisation, scope pinning, §7216 before the query, grants, the idempotency ledger (0750), row limits, TIN scrub, access events, `<untrusted>` rendering |
+
+## W-02-T11 · the Workbench's amber tools (DEC-4716)
+| Tool | Kind | Action | Data class | What it answers |
+|---|---|---|---|---|
+| `tax.season_counts` | compute | `tax_return.read_metadata` | confidential | the season's returns by status and office, open and done, engagements and those with two returns, stalled count; counts only (§7216 design for J11) |
+| `binders.read` | read | `binder.read` | confidential | the engagement's binders with request and done counts by code |
+| `workpapers.read_section` | read | `workpaper.read` | confidential | one workpaper by code: title, area, status, signed levels, filled cells (untrusted), citation count |
+| `assurance.read_materiality` | read | `materiality.read` | confidential | the decided materiality: overall, PM and %, CT and %, benchmark, version |
+

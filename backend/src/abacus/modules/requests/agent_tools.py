@@ -148,7 +148,7 @@ async def read_item(caller: ToolCaller, args: ItemIn) -> ItemOut:
     )
 
 
-AGENT_TOOLS: Final = (
+_P10_TOOLS: Final = (
     ToolDecl(
         "requests.list_items", "read", READ, "confidential", ItemsIn, ItemsOut, list_items,
         records_read="request_item",
@@ -156,5 +156,85 @@ AGENT_TOOLS: Final = (
     ToolDecl(
         "requests.read_item", "read", READ, "confidential", ItemIn, ItemOut, read_item,
         untrusted=("still_needed", "na_note"), records_read="request_item",
+    ),
+)  # fmt: skip
+
+# --- W-02-T11 (DEC-4716): `binders.read`, the engagement's binders with code's counts ---------
+
+
+class BindersIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    engagement_id: Annotated[UUID | None, Int] = None
+
+
+class BinderRow(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Int]
+    name: Annotated[str, Conf]
+    kind: Annotated[str, Int]
+    status: Annotated[str, Int]
+    requests: Annotated[int, Int]
+    done: Annotated[int, Int]
+    published: Annotated[bool, Int]
+
+
+class BindersOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    binders: Annotated[list[BinderRow], Conf]
+    total: Annotated[int, Int]
+
+
+_DONE: Final = frozenset({"uploaded", "received", "not_applicable"})
+
+
+async def read_binders(caller: ToolCaller, args: BindersIn) -> BindersOut:
+    """The engagement's binders with their request and done counts (code's; never the items'
+    client words)."""
+    from abacus.modules.requests.models import RequestList
+
+    engagement = _engagement(caller, args.engagement_id)
+    async with tenant_session(caller.tenant) as session:
+        lists = (
+            (
+                await session.execute(
+                    select(RequestList)
+                    .where(RequestList.engagement_id == engagement)
+                    .order_by(RequestList.created_at, RequestList.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        counts = (
+            await session.execute(
+                select(RequestItem.request_list_id, RequestItem.status, func.count())
+                .where(RequestItem.engagement_id == engagement, RequestItem.deleted_at.is_(None))
+                .group_by(RequestItem.request_list_id, RequestItem.status)
+            )
+        ).all()
+    total: dict[UUID, int] = {}
+    done: dict[UUID, int] = {}
+    for binder_id, status, n in counts:
+        total[binder_id] = total.get(binder_id, 0) + int(n)
+        if status in _DONE:
+            done[binder_id] = done.get(binder_id, 0) + int(n)
+    rows = [
+        BinderRow(
+            id=b.id, name=b.name, kind=b.kind, status=b.status, requests=total.get(b.id, 0),
+            done=done.get(b.id, 0), published=b.published_at is not None,
+        )
+        for b in lists
+    ]  # fmt: skip
+    return BindersOut(binders=rows[:MAX_ROWS], total=len(rows))
+
+
+AGENT_TOOLS: Final = (
+    *_P10_TOOLS,
+    ToolDecl(
+        "binders.read", "read", "binder.read", "confidential", BindersIn, BindersOut,
+        read_binders, records_read="binder",
     ),
 )  # fmt: skip

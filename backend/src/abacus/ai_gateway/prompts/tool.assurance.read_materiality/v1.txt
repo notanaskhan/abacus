@@ -1,0 +1,1 @@
+Read the engagement's planning materiality as decided: overall, performance materiality and its percentage, the clearly trivial threshold and its percentage, the benchmark it rests on and the version. Read only; the agent never sets or decides materiality.
