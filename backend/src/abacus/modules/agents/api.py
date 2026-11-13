@@ -784,3 +784,9 @@ from abacus.modules.agents.workflow_types import (  # noqa: E402
 from abacus.modules.agents.workflow_types import KnowledgeInput as KnowledgeInput  # noqa: E402
 
 _register_topics()
+
+# I-02-T07 (DEC-4719): the Today brief's facts collector and its owners' slot.
+from abacus.modules.agents.briefing.facts import BriefingFacts as BriefingFacts  # noqa: E402
+from abacus.modules.agents.briefing.facts import (  # noqa: E402
+    register_briefing_source as register_briefing_source,
+)

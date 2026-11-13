@@ -449,6 +449,9 @@ _entity_sections.register()
 SUBSCRIPTIONS["agent_run.state_changed"] = _entity_sections.on_run_state_changed
 
 # T-05-T45 (DEC-4711): the synthetic-only entity return recorder (the scenario loader's).
+# I-02-T07 (DEC-4719): the tax facts of the Today brief (off tie-outs, the §754 placeholder).
+from abacus.modules.agents.api import register_briefing_source as _register_briefing  # noqa: E402
+from abacus.modules.tax.briefing_source import entity_briefing as _entity_briefing  # noqa: E402
 from abacus.modules.tax.entity_seed import (  # noqa: E402
     SeedEntity as SeedEntity,
 )
@@ -457,3 +460,5 @@ from abacus.modules.tax.entity_seed import SeedTransfer as SeedTransfer  # noqa:
 from abacus.modules.tax.entity_seed import (  # noqa: E402
     record_synthetic_entity as record_synthetic_entity,
 )
+
+_register_briefing("tax.entity_returns", _entity_briefing)

@@ -67,9 +67,12 @@ from abacus.modules.review.field_values import (
 from abacus.modules.review.firm_gates import register_firm_gates
 from abacus.modules.review.gates import (
     C13_EVENTS,
+    GateCounts,
     GateSource,
     GateView,
     OpenGate,
+    gate_counts,
+    gates_waiting_on,
     rebuild_human_gates,
     register_gate_source,
 )
@@ -351,6 +354,9 @@ __all__ = [
     "raise_review_note_in",
     "read_issue",
     "rebuild_human_gates",
+    "GateCounts",
+    "gate_counts",
+    "gates_waiting_on",
     "record_engine_issue",
     "record_explanation",
     "record_fix_proposal",
