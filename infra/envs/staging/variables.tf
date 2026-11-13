@@ -203,6 +203,12 @@ variable "sse_delivery_p95_ms" {
   default     = 5000
 }
 
+variable "search_index_lag_p95_ms" {
+  description = "P-02: the C15 search index's relay lag p95 the alarm allows, in milliseconds."
+  type        = number
+  default     = 5000
+}
+
 variable "db_max_connections" {
   description = "The database's max_connections (db.t4g.micro: about 87); the alarm fires above 70% of it."
   type        = number
