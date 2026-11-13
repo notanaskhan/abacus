@@ -3,14 +3,20 @@
 Run from backend/: python -m abacus_tools.quality.mutation <command>
 
 - `plan nightly [--since-hours 24]`: the red files changed on this branch in the last 24 hours.
-- `plan weekly --shard I --shards N`: shard I of N over every red file, balanced by line count.
+- `plan weekly --shard I --shards N`: shard I of N over every red file, balanced by line count;
+  the measured outliers in `WEEKLY_HEAVY` are weighted by their cost, and a file with `parts` > 1
+  has its mutants split across that many shards by the last digit of the mutant number. A shard
+  holding such a part writes mutmut's mutant-name globs into the plan (`mutants`), and the
+  workflow passes them to `mutmut run`.
 - `narrow PLAN`: point `[tool.mutmut] only_mutate` in pyproject.toml at the plan's files. The
   workflows run it on the runner's checkout only; the committed list is the whole red scope.
 - `prepare`: link the repository's top-level entries into backend/, so a test that finds the
   repository as `Path(__file__).parents[n]` still finds it from mutmut's `mutants/` copy.
-- `summarise [--enforce-floors]`: killed, survived and the survivors per scope from mutmut's
-  `mutants/**/*.meta` files, as JSON and Markdown; with `--enforce-floors`, exit 1 when a scope
-  that ran is under its floor in `backend/mutation-thresholds.yaml`.
+- `summarise [--mutants DIR ...] [--enforce-floors]`: killed, survived and the survivors per scope
+  from mutmut's `**/*.meta` files, as JSON and Markdown; with `--enforce-floors`, exit 1 when a
+  scope that ran is under its floor in `backend/mutation-thresholds.yaml`. Given one folder per
+  shard, the shards' `.meta` files for one source are merged first: a result from any shard wins
+  over a mutant another shard did not run.
 
 mutmut itself (3.8.0, allowlisted) runs only in `mutation-nightly.yml` and `mutation-weekly.yml`
 through `uv run --with`; this module never imports it.
@@ -25,7 +31,7 @@ import re
 import shutil
 import subprocess
 import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final, cast
@@ -101,6 +107,30 @@ WEEKLY_SHARDS: Final = (
     8  # Q-03-T205 six; Q-03-T147 eight: shard 4 of six ran out at 15,308 of 16,196
 )
 
+
+@dataclass(frozen=True)
+class Heavy:
+    """A red file whose mutants cost far more than its line count says."""
+
+    seconds_per_line: float  # CPU seconds of mutants per line, measured on a weekly run
+    parts: int = 1  # shards its mutants are split across (a divisor of 10: by last digit)
+
+
+# TASK-7818 (DEC-4816): run 43330118713 measured the rest of the red scope at about 0.4 CPU
+# seconds of mutants a line, and these four far above it. identity/authz's 1,708 mutants are over
+# one shard's budget on their own (nearly every unit test calls `authorise`, and the 348 the run
+# never reached, 324 of them in `authorise`, are its dearest: 1,170 to 1,640 CPU minutes in all,
+# 50 to 70 s a line), so they go to five shards, weighted at the high estimate rounded up. A
+# shard's setup (stats and clean tests over the whole unit suite) took 65 to 107 of its 230
+# minutes.
+WEEKLY_BASE_SECONDS_PER_LINE: Final = 0.4
+WEEKLY_HEAVY: Final[dict[str, Heavy]] = {
+    "src/abacus/modules/identity/authz/__init__.py": Heavy(seconds_per_line=80, parts=5),
+    "src/abacus/modules/evidence/form_extraction.py": Heavy(seconds_per_line=30),
+    "src/abacus/modules/evidence/pii.py": Heavy(seconds_per_line=17),
+    "src/abacus/kernel/crypto/payload_codec.py": Heavy(seconds_per_line=92),
+}
+
 KILLED: Final = frozenset({1, 3})
 TIMEOUT: Final = frozenset({36, -24, 24, 152, 255})
 SURVIVED: Final = frozenset({0})
@@ -160,18 +190,95 @@ def _lines(backend: Path, rel: str) -> int:
     return sum(1 for _ in (backend / rel).open(encoding="utf-8"))
 
 
-def shards(files: Sequence[str], count: int, weight: dict[str, int]) -> list[list[str]]:
+def shards(
+    files: Sequence[str],
+    count: int,
+    weight: dict[str, int],
+    apart: Callable[[str], str] | None = None,
+) -> list[list[str]]:
     """`count` shards with every file in exactly one, balanced greedily by weight (heaviest
-    first into the lightest shard); each shard's files sorted."""
+    first into the lightest shard); each shard's files sorted. Items with the same `apart` key
+    (the parts of one split file) never share a shard."""
     if count < 1:
         raise ValueError("at least one shard")
     buckets: list[list[str]] = [[] for _ in range(count)]
     loads = [0] * count
+    held: list[set[str]] = [set() for _ in range(count)]
     for rel in sorted(files, key=lambda f: (-weight.get(f, 0), f)):
-        lightest = loads.index(min(loads))
+        key = apart(rel) if apart is not None else None
+        free = [i for i in range(count) if key is None or key not in held[i]]
+        if not free:
+            raise ValueError(f"more parts of {key} than shards")
+        lightest = min(free, key=lambda i: (loads[i], i))
         buckets[lightest].append(rel)
         loads[lightest] += weight.get(rel, 0)
+        if key is not None:
+            held[lightest].add(key)
     return [sorted(b) for b in buckets]
+
+
+METHOD_SEPARATOR: Final = "\u01c1"  # mutmut's `ǁ` in `xǁ<Class>ǁ<method>`
+_PART = "#"  # `<file>#<last digits>`: one part of a split file in the weekly plan
+
+
+def digit_parts(parts: int) -> list[str]:
+    """The last digits of the mutant numbers in each of `parts` parts: every digit in one."""
+    if parts < 1 or 10 % parts:
+        raise ValueError(f"a split file's parts divide 10, not {parts}")
+    return ["".join(str(d) for d in range(10) if d % parts == k) for k in range(parts)]
+
+
+def module_of(rel: str) -> str:
+    """The dotted module mutmut names a backend-relative source path's mutants after."""
+    dotted = rel.removeprefix("src/").removesuffix(".py").replace("/", ".")
+    return dotted.removesuffix(".__init__")
+
+
+def mutant_globs(rel: str, digits: str | None = None) -> list[str]:
+    """mutmut 3.8 `mutmut run` globs for a file's mutants (functions `x_<name>`, methods
+    `xǁ<Class>ǁ<method>`), or, with `digits`, for those whose number ends in one of them."""
+    tail = "__mutmut_*" if digits is None else f"__mutmut_*[{digits}]"
+    module = module_of(rel)
+    return [f"{module}.x_*{tail}", f"{module}.x{METHOD_SEPARATOR}*{tail}"]
+
+
+@dataclass(frozen=True)
+class ShardPlan:
+    files: list[str]
+    mutants: list[str]  # empty: every mutant of `files`
+
+
+def weekly_plan(
+    files: Sequence[str],
+    count: int,
+    lines: dict[str, int],
+    heavy: dict[str, Heavy] = WEEKLY_HEAVY,
+) -> list[ShardPlan]:
+    """`count` shard plans over `files`: line count for every file, cost for the `heavy` ones,
+    whose `parts` (by the mutant number's last digit) go to different shards. A shard holding a
+    part runs only the mutants its globs name; every other shard runs all of its files."""
+    units: list[str] = []
+    weight: dict[str, int] = {}
+    for rel in files:
+        cost = heavy.get(rel)
+        if cost is None:
+            units.append(rel)
+            weight[rel] = lines.get(rel, 0)
+            continue
+        total = round(lines.get(rel, 0) * cost.seconds_per_line / WEEKLY_BASE_SECONDS_PER_LINE)
+        for digits in digit_parts(cost.parts) if cost.parts > 1 else [""]:
+            unit = f"{rel}{_PART}{digits}" if digits else rel
+            units.append(unit)
+            weight[unit] = -(-total // cost.parts)
+    plans: list[ShardPlan] = []
+    for bucket in shards(units, count, weight, apart=lambda u: u.split(_PART, 1)[0]):
+        split = any(_PART in u for u in bucket)
+        mutants: list[str] = []
+        for unit in bucket if split else []:
+            rel, _, digits = unit.partition(_PART)
+            mutants += mutant_globs(rel, digits or None)
+        plans.append(ShardPlan(sorted({u.split(_PART, 1)[0] for u in bucket}), mutants))
+    return plans
 
 
 _ONLY_MUTATE = re.compile(r"(?ms)^only_mutate = \[\n.*?^\]\n")
@@ -254,13 +361,41 @@ def tally(metas: dict[str, dict[str, object]]) -> dict[str, ScopeResult]:
     return out
 
 
-def read_metas(mutants: Path) -> dict[str, dict[str, object]]:
-    """mutmut keeps one `<source path>.meta` JSON per mutated file under `mutants/`."""
-    metas: dict[str, dict[str, object]] = {}
-    for meta in sorted(mutants.rglob("*.py.meta")):
-        source = meta.relative_to(mutants).as_posix().removesuffix(".meta")
-        metas[source] = cast(dict[str, object], json.loads(meta.read_text(encoding="utf-8")))
-    return metas
+def _decided(code: int | None) -> int:
+    """How much a mutant's exit code says: a result, a mutant mutmut skipped, or none."""
+    return 0 if code is None else 1 if code in NOT_RUN else 2
+
+
+def merge_metas(metas: Sequence[dict[str, object]]) -> dict[str, object]:
+    """One `.meta` from several shards' copies for the same source: per mutant, the shard that
+    decided it wins over one that did not run it (TASK-7818: a split file's parts)."""
+    codes: dict[str, int | None] = {}
+    durations: dict[str, object] = {}
+    merged: dict[str, object] = {}
+    for meta in metas:
+        merged.update({k: v for k, v in meta.items() if k not in merged})
+        theirs = cast(dict[str, int | None], meta.get("exit_code_by_key") or {})
+        timed = cast(dict[str, object], meta.get("durations_by_key") or {})
+        for mutant, code in theirs.items():
+            if mutant not in codes or _decided(code) > _decided(codes[mutant]):
+                codes[mutant] = code
+                if mutant in timed:
+                    durations[mutant] = timed[mutant]
+    merged["exit_code_by_key"] = codes
+    merged["durations_by_key"] = durations
+    return merged
+
+
+def read_metas(*roots: Path) -> dict[str, dict[str, object]]:
+    """mutmut keeps one `<source path>.meta` JSON per mutated file under `mutants/`; given one
+    folder per shard, the copies of one source's `.meta` are merged."""
+    found: dict[str, list[dict[str, object]]] = {}
+    for root in roots:
+        for meta in sorted(root.rglob("*.py.meta")):
+            source = meta.relative_to(root).as_posix().removesuffix(".meta")
+            parsed = cast(dict[str, object], json.loads(meta.read_text(encoding="utf-8")))
+            found.setdefault(source, []).append(parsed)
+    return {source: merge_metas(copies) for source, copies in sorted(found.items())}
 
 
 def under_floor(results: dict[str, ScopeResult], floors: dict[str, int]) -> list[str]:
@@ -315,13 +450,18 @@ def markdown(results: dict[str, ScopeResult], floors: dict[str, int], title: str
 def _plan(args: argparse.Namespace) -> int:
     if args.kind == "nightly":
         files = changed_red_files(_git_changed_since(cast(int, args.since_hours)))
+        mutants: list[str] = []
     else:
         every = red_files()
-        weight = {f: _lines(BACKEND, f) for f in every}
+        lines = {f: _lines(BACKEND, f) for f in every}
         shard, count = cast(int, args.shard), cast(int, args.shards)
-        files = shards(every, count, weight)[shard - 1]
-    Path(args.out).write_text(json.dumps({"files": files}, indent=2) + "\n", encoding="utf-8")
-    print(f"mutation plan ({args.kind}): {len(files)} red files")
+        plan = weekly_plan(every, count, lines)[shard - 1]
+        files, mutants = plan.files, plan.mutants
+    payload = {"files": files, "mutants": mutants}
+    Path(args.out).write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    print(f"mutation plan ({args.kind}): {len(files)} red files, {len(mutants)} mutant globs")
     return 0
 
 
@@ -337,8 +477,8 @@ def _narrow(args: argparse.Namespace) -> int:
 
 def _summarise(args: argparse.Namespace) -> int:
     floors = parse_floors(FLOORS_FILE.read_text(encoding="utf-8"))
-    mutants = Path(args.mutants)
-    results = tally(read_metas(mutants)) if mutants.is_dir() else {}
+    roots = [Path(p) for p in cast(list[str], args.mutants) if Path(p).is_dir()]
+    results = tally(read_metas(*roots)) if roots else {}
     payload = {
         scope: {
             "score": r.score,
@@ -378,7 +518,7 @@ def main(argv: list[str] | None = None) -> int:
     narrowed.add_argument("plan")
     commands.add_parser("prepare")
     summary = commands.add_parser("summarise")
-    summary.add_argument("--mutants", default="mutants")
+    summary.add_argument("--mutants", nargs="+", default=["mutants"])
     summary.add_argument("--json", default="mutation-survivors.json")
     summary.add_argument("--markdown", default="mutation-survivors.md")
     summary.add_argument("--title", default="Mutation survivors per module")

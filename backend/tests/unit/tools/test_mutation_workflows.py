@@ -75,6 +75,26 @@ def test_t026_weekly_runs_every_scope_on_sunday_in_shards_under_4_hours() -> Non
     assert "--enforce-floors" in _runs(floors)
 
 
+def test_t7818_a_split_files_shards_run_their_globs_and_their_results_are_merged() -> None:
+    jobs = _jobs("mutation-weekly.yml")
+    runs = _runs(jobs["shard"])
+    # The plan's mutant-name globs reach mutmut; with none, it runs every narrowed file.
+    assert "jq -r '.mutants[]' \"$RUNNER_TEMP/mutation-plan.json\"" in runs
+    assert f'timeout --signal=INT 230m {MUTMUT} "${{MUTANTS[@]}}"' in runs
+    # Each shard's .meta files land in a folder of their own: merging the artifacts on download
+    # would let one shard's copy of a split file's .meta overwrite the others'.
+    downloads = [
+        s
+        for s in _steps(jobs["floors"])
+        if str(s.get("uses", "")).startswith("actions/download-artifact@")
+    ]
+    assert len(downloads) == 1
+    options = cast(dict[str, object], downloads[0]["with"])
+    assert options["pattern"] == "mutation-meta-*" and "merge-multiple" not in options
+    assert options["path"] == "backend/mutation-shards"
+    assert "summarise --mutants mutation-shards/*" in _runs(jobs["floors"])
+
+
 def test_t026_both_jobs_publish_survivors_per_module() -> None:
     for name, job_name in (
         ("mutation-nightly.yml", "incremental"),

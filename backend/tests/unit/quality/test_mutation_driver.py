@@ -3,6 +3,8 @@ over the red scopes, narrows mutmut's config on the runner, and publishes surviv
 
 from __future__ import annotations
 
+import ast
+import fnmatch
 import json
 import tomllib
 from pathlib import Path
@@ -210,3 +212,145 @@ def test_t026_the_weekly_floors_check_fails_on_an_unmeasured_red_scope(tmp_path:
     common += ["--markdown", str(tmp_path / "s.md")]
     assert mutation.main(common) == 0
     assert mutation.main([*common, "--enforce-floors"]) == 1  # identity/authz and others ran none
+
+
+def _mutant_names(rel: str, per_function: int = 23) -> list[str]:
+    """Names mutmut 3.8 gives a file's mutants: every top-level function and every method of a
+    top-level class, numbered from 1 (enough numbers to end in every digit)."""
+    tree = ast.parse((mutation.BACKEND / rel).read_text(encoding="utf-8"))
+    functions: list[str] = []
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            functions.append(f"x_{node.name}")
+        elif isinstance(node, ast.ClassDef):
+            sep = mutation.METHOD_SEPARATOR
+            functions += [
+                f"x{sep}{node.name}{sep}{m.name}"
+                for m in node.body
+                if isinstance(m, ast.FunctionDef | ast.AsyncFunctionDef)
+            ]
+    module = mutation.module_of(rel)
+    return [f"{module}.{f}__mutmut_{n}" for f in functions for n in range(1, per_function + 1)]
+
+
+AUTHZ = "src/abacus/modules/identity/authz/__init__.py"
+
+
+def test_t7818_a_split_file_parts_cover_every_function_and_mutant_exactly_once() -> None:
+    files = red_files()
+    lines = {f: (mutation.BACKEND / f).read_text(encoding="utf-8").count("\n") for f in files}
+    plans = mutation.weekly_plan(files, mutation.WEEKLY_SHARDS, lines)
+    assert len(plans) == mutation.WEEKLY_SHARDS
+    # Every red file is planned; a split file in as many shards as it has parts, the rest once.
+    flat = [f for plan in plans for f in plan.files]
+    assert sorted(set(flat)) == files
+    for rel in files:
+        heavy = mutation.WEEKLY_HEAVY.get(rel)
+        assert flat.count(rel) == (heavy.parts if heavy else 1), rel
+    assert mutation.WEEKLY_HEAVY[AUTHZ].parts > 1
+    names = _mutant_names(AUTHZ)
+    functions = {n.rsplit(".", 1)[1].partition("__mutmut_")[0] for n in names}
+    assert {"x_authorise", "x_visible_scope"} <= functions
+    holding = [p for p in plans if AUTHZ in p.files]
+    for name in names:
+        owners = [p for p in holding if any(fnmatch.fnmatchcase(name, g) for g in p.mutants)]
+        assert len(owners) == 1, name  # every mutant of every function in exactly one shard
+    for plan in holding:
+        # Each part takes mutants of every function, so no shard holds the dear ones alone.
+        taken = {n for n in names if any(fnmatch.fnmatchcase(n, g) for g in plan.mutants)}
+        assert {n.rsplit(".", 1)[1].partition("__mutmut_")[0] for n in taken} == functions
+        # The shard's other files keep every mutant, and their globs take none of the split
+        # file's: a module glob that reached into it would run its parts twice.
+        for rel in plan.files:
+            if rel == AUTHZ:
+                continue
+            own = mutation.mutant_globs(rel)
+            assert set(own) <= set(plan.mutants), rel
+            assert not any(fnmatch.fnmatchcase(n, g) for n in names for g in own), rel
+            for name in _mutant_names(rel, 3):
+                assert any(fnmatch.fnmatchcase(name, g) for g in plan.mutants), name
+    # A shard with no part of a split file runs every mutant of its files.
+    split = {f for f, h in mutation.WEEKLY_HEAVY.items() if h.parts > 1}
+    assert all(not p.mutants for p in plans if not split & set(p.files))
+
+
+def test_t7818_split_parts_go_to_different_shards_and_the_heavy_files_apart() -> None:
+    files = [f"src/abacus/kernel/db/f{i}.py" for i in range(20)] + ["src/abacus/a.py", "src/b.py"]
+    lines = dict.fromkeys(files, 100)
+    heavy = {"src/abacus/a.py": mutation.Heavy(40, parts=2), "src/b.py": mutation.Heavy(30)}
+    plans = mutation.weekly_plan(files, 4, lines, heavy)
+    holding = [i for i, p in enumerate(plans) if "src/abacus/a.py" in p.files]
+    assert len(holding) == 2
+    b = [i for i, p in enumerate(plans) if "src/b.py" in p.files]
+    assert len(b) == 1 and b[0] not in holding  # weighted by cost, the heavy files sit apart
+    assert sorted(g for i in holding for g in plans[i].mutants if g.startswith("abacus.a.")) == [
+        "abacus.a.x_*__mutmut_*[02468]",
+        "abacus.a.x_*__mutmut_*[13579]",
+        f"abacus.a.x{mutation.METHOD_SEPARATOR}*__mutmut_*[02468]",
+        f"abacus.a.x{mutation.METHOD_SEPARATOR}*__mutmut_*[13579]",
+    ]
+    assert mutation.digit_parts(5) == ["05", "16", "27", "38", "49"]
+    with pytest.raises(ValueError):
+        mutation.digit_parts(3)  # by last digit, the parts divide 10
+    with pytest.raises(ValueError):
+        mutation.weekly_plan(files, 1, lines, heavy)  # two parts cannot share one shard
+
+
+@pytest.mark.parametrize(
+    ("rel", "module"),
+    [
+        (AUTHZ, "abacus.modules.identity.authz"),
+        ("src/abacus/kernel/db/session.py", "abacus.kernel.db.session"),
+    ],
+)
+def test_t7818_mutant_globs_name_the_module_as_mutmut_does(rel: str, module: str) -> None:
+    assert mutation.module_of(rel) == module
+
+
+def test_t7818_merging_shards_keeps_every_decided_result() -> None:
+    first: dict[str, object] = {
+        "exit_code_by_key": {"m__mutmut_1": 1, "m__mutmut_2": None, "m__mutmut_3": 34},
+        "durations_by_key": {"m__mutmut_1": 2.0},
+        "hash_by_function_name": {"x_m": "abc"},
+    }
+    second: dict[str, object] = {
+        "exit_code_by_key": {"m__mutmut_1": None, "m__mutmut_2": 0, "m__mutmut_3": 3},
+        "durations_by_key": {"m__mutmut_2": 5.0, "m__mutmut_3": 1.0},
+    }
+    for order in ([first, second], [second, first]):
+        merged = mutation.merge_metas(order)
+        # A result from either shard wins over the other's None or not run, whichever came first.
+        assert merged["exit_code_by_key"] == {"m__mutmut_1": 1, "m__mutmut_2": 0, "m__mutmut_3": 3}
+        assert merged["durations_by_key"] == {
+            "m__mutmut_1": 2.0,
+            "m__mutmut_2": 5.0,
+            "m__mutmut_3": 1.0,
+        }
+        assert merged["hash_by_function_name"] == {"x_m": "abc"}
+    # Run by no shard, a mutant stays not run.
+    alone = mutation.merge_metas([{"exit_code_by_key": {"m__mutmut_9": None}}])
+    assert alone["exit_code_by_key"] == {"m__mutmut_9": None}
+
+
+@pytest.mark.source_scan
+def test_t7818_summarise_merges_each_shards_folder_before_it_counts(tmp_path: Path) -> None:
+    source = "src/abacus/kernel/db/session.py"
+    shard_codes = [
+        {"a__mutmut_1": 1, "a__mutmut_2": None, "a__mutmut_3": None},
+        {"a__mutmut_1": None, "a__mutmut_2": 0, "a__mutmut_3": None},
+        {"a__mutmut_1": None, "a__mutmut_2": None, "a__mutmut_3": 36},
+    ]
+    roots: list[str] = []
+    for i, codes in enumerate(shard_codes, 1):
+        root = tmp_path / f"mutation-meta-{i}"
+        meta = root / f"{source}.meta"
+        meta.parent.mkdir(parents=True)
+        meta.write_text(json.dumps(_meta(codes)))
+        roots.append(str(root))
+    out_json = tmp_path / "s.json"
+    absent = str(tmp_path / "absent")  # a shard that uploaded nothing
+    args = ["summarise", "--mutants", *roots, absent, "--json", str(out_json)]
+    code = mutation.main([*args, "--markdown", str(tmp_path / "s.md")])
+    assert code == 0
+    db = json.loads(out_json.read_text())["kernel/db"]
+    assert (db["killed"], db["survived"], db["timeout"], db["not_run"]) == (1, 1, 1, 0)
