@@ -1,4 +1,4 @@
-"""W-02-T09 (TASK-7711; W-02 §3.1, §3.2; SPEC-653 AC-L1 to L6, AC-V1 to V3; DEC-4714): WB-01's list.
+"""W-02-T09 (TASK-7711; W-02 §3.1, §3.2; SPEC-653 AC-L1 to L6, AC-V1 to V3; DEC-4714).
 
 Row acceptance: "Exactly 8 rows and Running 3; walled rows leak nowhere." Filters and counts,
 title-only search, walled rows omitted with no count, locked rows metadata only; rename and
