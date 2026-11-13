@@ -674,6 +674,7 @@ async def approve(
     engagement_id: UUID,
     seen_hash: str,
     statement_version: str,
+    rerun: bool = True,
 ) -> Approved:
     """Samuel's L3: P-04's sign-off (its rules refuse an agent, staff and the preparer), then the
     person's own `approved` version row and the capital and K-1 re-run."""
@@ -705,7 +706,8 @@ async def approve(
             scope=Scope(engagement_id=engagement_id, work_item_id=return_id),
         )
     ref = f"tax_return:{return_id}"
-    if any(r.active for r in await work_item_runs(ctx.tenant, ref, 5)):
+    # `rerun=False`: the synthetic scenario records its runs itself (T-05-T45).
+    if not rerun or any(r.active for r in await work_item_runs(ctx.tenant, ref, 5)):
         return Approved(signed.id, approved_id, None, None)
     started = await start_engagement_run(
         ctx,
