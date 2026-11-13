@@ -29,6 +29,7 @@
     "./tokens/*": "./src/tokens/*",
     "./fonts/*": "./src/fonts/*",
     "./specimens": "./src/specimens/index.ts",
+    "./graph": "./src/graph/index.ts",
     "./icons": "./src/icons/index.ts",
     "./icons/portal-registry": "./src/icons/portal-registry.ts"
   },

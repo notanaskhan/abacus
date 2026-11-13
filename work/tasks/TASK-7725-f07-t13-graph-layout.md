@@ -23,7 +23,8 @@ property tests.
 - Rollback: revert; nothing imports it until GraphCanvas (F-07-T14).
 
 ## Partial
-- No `./graph` subpath in `packages/ui/package.json` yet (protected file; lands with the canvas).
+- S41 leftovers (TASK-7733): `@abacus/ui/graph` is a subpath of `packages/ui/package.json`; the
+  portal lint's `graph` pattern refuses it in portal code (two tests in `f07t20-portal-kits`).
 
 ## Progress log
 - 2026-11-13: built; eslint and tsc clean; tests written, not run.

@@ -44,6 +44,22 @@ describe("F-07-T20 portal boundary: firm-only kits", () => {
     expect(found.length).toBeGreaterThan(0);
   });
 
+  it("refuses the graph subpath in portal code (S41 leftovers, TASK-7733)", async () => {
+    const found = await restricted(
+      'import { GraphCanvas } from "@abacus/ui/graph";\nexport const G = GraphCanvas;',
+      "src/portal/home.tsx",
+    );
+    expect(found.some((m) => m.includes("firm-only"))).toBe(true);
+  });
+
+  it("a firm screen may import the graph subpath", async () => {
+    const found = await restricted(
+      'import { GraphCanvas } from "@abacus/ui/graph";\nexport const G = GraphCanvas;',
+      "src/screens/CLI-02/index.tsx",
+    );
+    expect(found).toEqual([]);
+  });
+
   it("a portal file may still import shared kits", async () => {
     const found = await restricted(
       'import { Button } from "@abacus/ui";\nexport const B = Button;',
