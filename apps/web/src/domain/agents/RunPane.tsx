@@ -25,6 +25,7 @@ import {
   count,
   Icon,
   type IconName,
+  Menu,
   ProgressBar,
   Skeleton,
   ConfirmDialog,
@@ -808,6 +809,10 @@ export interface RunPaneProps {
   agents?: readonly DockAgent[];
   /** P-09-T14: the engagement a new run starts on (the dock's). */
   engagementId?: string;
+  /** The dock's run list, for frame 8's run picker. */
+  runs?: readonly AgentRunOut[];
+  /** Open another run in the pane (`?run=`). */
+  onRun?: (runId: string) => void;
 }
 
 function header(view: RunViewOut | undefined): { live: boolean; ended: boolean } {
@@ -870,13 +875,35 @@ function SignOffDialog({
   );
 }
 
+/** SHL-13 frame 8's "Run n ⌄": the open agent's runs on this engagement, oldest first, numbered
+ * back from the open run's own number (the dock lists the latest ten). */
+export function runChoices(
+  open: AgentRunOut,
+  openNumber: number | null | undefined,
+  runs: readonly AgentRunOut[],
+): { id: string; label: string; current: boolean }[] {
+  const mine = runs
+    .filter((r) => r.agent === open.agent)
+    .sort((a, b) => a.started_at.localeCompare(b.started_at));
+  const at = mine.findIndex((r) => r.id === open.id);
+  if (at < 0 || openNumber == null) return [];
+  return mine
+    .map((r, i) => ({ id: r.id, n: openNumber + (i - at), current: r.id === open.id }))
+    .filter((c) => c.n >= 1)
+    .map((c) => ({ id: c.id, label: `Run ${count(c.n)}`, current: c.current }));
+}
+
 function HeaderAction({
   view,
   idle,
   ended,
   engagementId,
   items,
+  runs,
+  onRun,
 }: {
+  runs?: readonly AgentRunOut[] | undefined;
+  onRun?: ((runId: string) => void) | undefined;
   view: RunViewOut | undefined;
   idle: boolean;
   ended: boolean;
@@ -892,11 +919,31 @@ function HeaderAction({
   });
   if (isCloseRun(view?.run)) {
     const n = view?.header?.run_number;
-    return (
-      <Button size="sm" variant="ghost" disabled title="The run picker arrives with P-09-T13">
-        {`Run ${n == null ? "" : count(n)}`}
+    const label = `Run ${n == null ? "" : count(n)}`;
+    const choices = view === undefined ? [] : runChoices(view.run, n, runs ?? []);
+    const trigger = (
+      <Button size="sm" variant="ghost" disabled={onRun === undefined || choices.length < 2}>
+        {label}
         <Icon name="chevron-down" size={12} />
       </Button>
+    );
+    if (onRun === undefined || choices.length < 2) return trigger;
+    return (
+      <Menu
+        trigger={trigger}
+        label="Runs"
+        align="end"
+        width={176}
+        sections={[
+          choices.map((c) => ({
+            label: c.label,
+            checked: c.current,
+            onSelect: () => {
+              if (!c.current) onRun(c.id);
+            },
+          })),
+        ]}
+      />
     );
   }
   if (idle) {
@@ -953,6 +1000,8 @@ export function RunPane({
   onOpenDecision,
   agents,
   engagementId,
+  runs,
+  onRun,
 }: RunPaneProps): JSX.Element {
   const queryClient = useQueryClient();
   const v2 = useFlag("agent_runtime.v2") === true;
@@ -1023,6 +1072,8 @@ export function RunPane({
               ended={ended}
               engagementId={engagementId}
               items={feed.items}
+              runs={runs}
+              onRun={onRun}
             />
           </div>
         </header>

@@ -24,9 +24,16 @@ import {
 } from "../../fixtures/seed/agent-runs";
 import { json, mockApi, renderRoutes } from "../../testing/support";
 import { dockAgents } from "./AgentDock";
-import { levelTail, projectionTitle, RunPane, sourceOf } from "./RunPane";
+import { levelTail, projectionTitle, RunPane, runChoices, sourceOf } from "./RunPane";
 
 afterEach(cleanup);
+
+/** Copperleaf Run 2 (frame 8), the close run the picker tests open. */
+function closeRun(): (typeof SHL13_RUNS)[string]["view"]["run"] {
+  const run = SHL13_RUNS[RUN_CLOSE_COPPERLEAF_ID];
+  if (run === undefined) throw new Error("no Copperleaf run in the fixtures");
+  return run.view.run;
+}
 
 /** P-09-T14: `agent_runtime.v2` on (or off) for the firm, through `/v1/me/capabilities`. */
 function capabilities(v2: boolean): object {
@@ -233,6 +240,44 @@ describe("SHL-13 run pane", () => {
     });
     expect((answers[0] as { option_key?: string }).option_key).toBeTruthy();
     expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/answer"))).toBe(true);
+  });
+
+  it("frame 8: Run 2 ⌄ lists the agent's runs and opens the one picked", async () => {
+    const run2 = closeRun();
+    const run1 = {
+      ...run2,
+      id: "run-1",
+      started_at: "2026-08-14T14:00:00Z",
+      state: "succeeded" as const,
+    };
+    const other = { ...run2, id: "other", agent: "screening", started_at: "2026-09-01T14:00:00Z" };
+    const opened: string[] = [];
+    renderPane(RUN_CLOSE_COPPERLEAF_ID, {
+      runs: [run2, other, run1],
+      onRun: (id) => opened.push(id),
+    });
+    const trigger = await screen.findByRole("button", { name: /Run 2/ });
+    expect(trigger.hasAttribute("disabled")).toBe(false);
+    fireEvent.pointerDown(trigger, { button: 0, pointerType: "mouse" });
+    const menu = await screen.findByRole("menu", { name: "Runs" });
+    const items = within(menu).getAllByRole("menuitemradio");
+    expect(items.map((i) => i.textContent)).toEqual(["Run 1", "Run 2"]);
+    expect(items[1]?.getAttribute("aria-checked")).toBe("true");
+    const first = items[0];
+    if (first === undefined) throw new Error("no Run 1");
+    fireEvent.click(first);
+    await waitFor(() => {
+      expect(opened).toEqual(["run-1"]);
+    });
+  });
+
+  it("frame 8: with one run, or no host to open another, Run 2 stays a plain label", async () => {
+    const run2 = closeRun();
+    expect(runChoices(run2, 2, [run2])).toHaveLength(1);
+    expect(runChoices(run2, null, [run2])).toEqual([]);
+    renderPane(RUN_CLOSE_COPPERLEAF_ID, { runs: [run2] });
+    const trigger = await screen.findByRole("button", { name: /Run 2/ });
+    expect(trigger.hasAttribute("disabled")).toBe(true);
   });
 
   it("frame 8: Copperleaf's close run counts 6 of 9 with 3 running", async () => {

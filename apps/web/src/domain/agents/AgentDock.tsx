@@ -211,6 +211,8 @@ export function AgentDock({
             engagementId={engagementId}
             onTrace={showTrace}
             agents={dockAgents(runs.data ?? [])}
+            runs={runs.data ?? []}
+            onRun={openRun}
             {...(selectedRef === undefined ? {} : { selectedRef })}
             {...(onSelectRef === undefined ? {} : { onSelectRef })}
             {...(onOpenDecision === undefined ? {} : { onOpenDecision })}
