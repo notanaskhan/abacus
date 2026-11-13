@@ -17,6 +17,11 @@ Granite Peak's estimates, masters and minutes.
 
 Every provider and person is fictional; every figure is allocated by `kernel.numeric.allocate`
 so totals foot exactly. Uploaded through `evidence.api` (`evidence.ebp_documents_part2_uploaded`).
+
+TASK-7815 (DEC-4813): the slice also carries EBP-03's eligibility test, Sep 17 to Sep 24
+(`ebp_eligibility.py`: EBP-02's entry rule, the census and HR imports, the test and its marks).
+They read A-03's approved Participants sample, so they load with `--slice sampling`: the Sep 24
+nightly's slices, never E0's (every one is dated after it).
 """
 
 from __future__ import annotations
@@ -28,6 +33,7 @@ from decimal import Decimal
 from typing import Final
 
 from abacus.kernel.numeric import allocate
+from abacus_tools.synthetic.scenarios.brightwater_hale import ebp_eligibility
 from abacus_tools.synthetic.scenarios.brightwater_hale.ebp import (
     PARTICIPANTS_EOY,
     PDF,
@@ -233,7 +239,10 @@ def _ebp2_slice() -> list[Event]:
             SLICE,
             {"files": len(FILES), "plan": PLAN},
             client="Northwind Robotics, Inc.",
-        )
+        ),
+        # TASK-7815 (DEC-4813): EBP-02's entry rule, the census and HR imports and EBP-03's
+        # eligibility test, Sep 17 to Sep 24, so the Sep 24 seed reads EBP-03's grid.
+        *ebp_eligibility.events(SLICE),
     ]
 
 

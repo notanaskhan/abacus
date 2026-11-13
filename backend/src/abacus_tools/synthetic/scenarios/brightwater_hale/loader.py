@@ -98,6 +98,7 @@ from abacus.kernel.clock import frozen, system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext
 from abacus.kernel.dispatch import dispatch
+from abacus.kernel.errors import DomainConflict
 from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
 from abacus.modules.adjustments.api import (
@@ -112,6 +113,9 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     PHASE_GATES,
     RELEASE_MODE_SETTING,
     AdditionReason,
+    EbpImportTies,
+    EbpResultIn,
+    EbpTestIn,
     ExceptionRow,
     GovernanceKind,
     MappingConfirmIn,
@@ -124,6 +128,7 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     adopt_trial_balance,
     archive_state,
     create_archive_addition,
+    create_ebp_test,
     create_risk,
     decide_archive_addition,
     decide_archive_lock,
@@ -142,8 +147,10 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     governance_create,
     governance_letter,
     governance_request_approval,
+    import_ebp_source,
     import_grouping_csv,
     mapping_live,
+    mark_ebp_test,
     open_eqr_reviews,
     pass_on_sum,
     propose_materiality,
@@ -178,6 +185,7 @@ from abacus.modules.assurance.api import (  # A-07-T41: the archive slice
     set_governance_recipients,
     set_misstatement_effect,
     start_archive_lock,
+    start_ebp_plan_review,
     start_mapping,
     start_release,
     store_addition_evidence,
@@ -204,6 +212,7 @@ from abacus.modules.engagements.api import (
     answer_independence,
     approve_team,
     assign_eqr,
+    assign_work_item,
     assurance_item,
     assurance_item_id,
     change_team_role,
@@ -347,6 +356,8 @@ from abacus.modules.review.api import (
     AlreadySigned,
     create_issue,
     decide_card,
+    edit_field,
+    field_states,
     move_issue,
     raise_decision_card,
     raise_review_note,
@@ -355,6 +366,7 @@ from abacus.modules.review.api import (
     reviewables_of,
     save_checkpoint,
     sign_target,
+    tick_field,
 )
 from abacus.modules.sampling.api import (
     ApproveIn,
@@ -367,6 +379,7 @@ from abacus.modules.sampling.api import (
     TieIn,
     UploadSourceIn,
     VersionIn,
+    approved_items,
     create_population,
     create_sample_set,
     record_tie,
@@ -386,7 +399,7 @@ from abacus.modules.tax.api import (
     request_estimate_confirmation,
     share_k1_internal,
 )
-from abacus.modules.workpapers.api import CellEdit, create_workpaper, set_cells
+from abacus.modules.workpapers.api import CELL_TARGET, CellEdit, create_workpaper, set_cells
 from abacus_tools import deploy_lock
 from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
@@ -397,6 +410,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import agent_runs_slice a
 from abacus_tools.synthetic.scenarios.brightwater_hale import archive_slice as _archive
 from abacus_tools.synthetic.scenarios.brightwater_hale import collaboration_slice as _collab
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
+from abacus_tools.synthetic.scenarios.brightwater_hale import ebp_eligibility as _eligibility
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
@@ -2575,6 +2589,279 @@ async def _ebp_documents_part2_uploaded(_: asyncpg.Connection, __: Scenario, eve
                     provenance=Provenance(source="client_upload", method="uploaded"),
                     requested_by=uploader,
                 )
+
+
+# --- EBP-03's eligibility test (TASK-7815; A-05 §3 F2 to F4; DEC-4813) -------------------------
+# Through the services as the people the design names, each left as it is when already recorded:
+# Marcus starts EBP-02's provisions review and keys each provision (the loader has no model, so
+# the drafter's read is refused and the review stands without it: DV-EBP-03-1, the agent-off
+# path); Hannah ticks each value (L1), so EBP-03's entry rule reads verified. Dana uploads
+# version 2 of the census and the HR records; Ana imports both, creates the eligibility test on
+# the approved Participants Version 2 and marks every row.
+
+_DRAFTING_UNAVAILABLE: Final = "ai_drafting_unavailable"
+_PARTICIPANTS_APPROVED: Final = 2  # the sampling slice: Hannah approves Version 2 on Sep 16
+
+
+async def _northwind_version(conn: asyncpg.Connection, title: str, version_no: int) -> UUID:
+    engagement = (await _northwind_work_item(conn))[0]
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT v.id FROM evidence_versions v JOIN evidence_items i ON i.id = v.evidence_item_id "
+        "WHERE i.engagement_id = $1 AND i.title = $2 AND v.version_no = $3",
+        engagement,
+        title,
+        version_no,
+    )
+    if found is None:
+        raise LookupError(f"{title} v{version_no} has not been uploaded")
+    return cast(UUID, found)
+
+
+async def _ebp_review(conn: asyncpg.Connection) -> tuple[UUID, bool]:
+    """EBP-02's paper and whether the amendment is in force, from the latest provisions review."""
+    item = (await _northwind_work_item(conn))[1]
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT workpaper_id, amendment_in_force FROM ebp_plan_reviews WHERE work_item_id = $1 "
+        "ORDER BY review_no DESC LIMIT 1",
+        item,
+    )
+    if row is None:
+        raise LookupError("Northwind has no provisions review")
+    return cast(UUID, row["workpaper_id"]), bool(row["amendment_in_force"])
+
+
+async def _ebp_preparer_assigned(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Hannah assigns Marcus the preparer function on PY2025 (ENG-05's service), unless he holds
+    it already."""
+    item = (await _northwind_work_item(conn))[1]
+    member = user_id_of(_SEATS[str(event.data["member"])])
+    function = str(event.data["function"])
+    if await tenant_value(
+        conn,
+        TENANT,
+        "SELECT 1 FROM work_item_assignments WHERE work_item_id = $1 AND user_id = $2 "
+        "AND function = $3 AND removed_at IS NULL",
+        item,
+        member,
+        function,
+    ):
+        return
+    await assign_work_item(await _staff_context(conn, event), item, member, function)
+
+
+async def _ebp_paper(
+    conn: asyncpg.Connection,
+    ctx: AuthContext,
+    engagement: UUID,
+    paper: tuple[str, str, str],
+) -> None:
+    """An EBP designed paper on Northwind (A-05-T09: a workpaper of its kind), unless one with
+    its code is already there; A-04's create, as the person who first works on it."""
+    code, title, kind = paper
+    if await tenant_value(
+        conn,
+        TENANT,
+        "SELECT 1 FROM workpapers WHERE engagement_id = $1 AND code = $2",
+        engagement,
+        code,
+    ):
+        return
+    await create_workpaper(ctx, engagement, code, title, None, kind=kind)
+
+
+async def _ebp_plan_review_started(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Marcus starts the read on adoption agreement v2, the 2024 amendment and the 2025 SPD. The
+    review is recorded before the drafter starts; with no model here the drafter refuses
+    `ai_drafting_unavailable` and the review stands without its read."""
+    engagement, item = await _northwind_work_item(conn)
+    if await tenant_value(
+        conn, TENANT, "SELECT 1 FROM ebp_plan_reviews WHERE work_item_id = $1", item
+    ):
+        return
+    ctx = await _staff_context(conn, event)
+    await _ebp_paper(conn, ctx, engagement, _eligibility.PROVISIONS_PAPER)
+    versions = [await _northwind_version(conn, t, 1) for t in _eligibility.REVIEW_FILES]
+    try:
+        await start_ebp_plan_review(ctx, item, versions, f"scenario:{event.id}")
+    except DomainConflict as refused:
+        if refused.code != _DRAFTING_UNAVAILABLE:
+            raise
+
+
+async def _ebp_provisions_keyed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Marcus keys each provision the review holds, election (B) and reference (C), each with its
+    citation note (SHL-09's edit); a field already holding a value is left."""
+    ctx = await _staff_context(conn, event)
+    paper, amended = await _ebp_review(conn)
+    keyed = [
+        (cell, wording, ref)
+        for row, (_key, value, ref) in _eligibility.held_provisions(amended=amended)
+        for cell, wording in ((f"B{row}", value), (f"C{row}", ref))
+    ]
+    states = await field_states(ctx.tenant, CELL_TARGET, paper, [c for c, _, _ in keyed])
+    pending = [(c, w, r) for c, w, r in keyed if states[c].value is None]
+    # Typed into EBP-02's grid first (A-04's cells: SHL-09's edit changes a cell that exists),
+    # then each value's citation note through the tray. An unchanged cell writes nothing.
+    engagement = (await _northwind_work_item(conn))[0]
+    await set_cells(ctx, engagement, paper, [CellEdit(c, w, ()) for c, w, _ in pending])
+    for cell, wording, ref in pending:
+        await edit_field(
+            ctx,
+            CELL_TARGET,
+            paper,
+            cell,
+            value={"t": "text", "v": wording},
+            value_kind="exact",
+            citation_note=_eligibility.PROVISION_NOTE.format(ref=ref),
+            seen_seq=1,
+        )
+
+
+async def _ebp_provisions_verified(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Hannah ticks each keyed election (L1): EBP-02's verification. A ticked value is left."""
+    ctx = await _staff_context(conn, event)
+    paper, amended = await _ebp_review(conn)
+    cells = [f"B{row}" for row, _ in _eligibility.held_provisions(amended=amended)]
+    states = await field_states(ctx.tenant, CELL_TARGET, paper, cells)
+    for cell in cells:
+        state = states[cell]
+        if state.value is None:
+            raise LookupError(f"EBP-02 {cell} has not been keyed")
+        if state.ticked_levels:
+            continue
+        await tick_field(ctx, CELL_TARGET, paper, cell, level=1, seen_hash=state.content_hash)
+
+
+async def _ebp_eligibility_files_uploaded(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """Dana uploads version 2 of the census and of the HR records (the ebp slice's items)."""
+    dana = UUID(_PORTAL["Dana Kowalski"].id)
+    engagement = (await _northwind_work_item(conn))[0]
+    for title, content in (
+        (_eligibility.CENSUS_FILE, _eligibility.census_xlsx),
+        (_eligibility.HR_FILE, _eligibility.hr_xlsx),
+    ):
+        item = await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM evidence_items WHERE engagement_id = $1 AND title = $2",
+            engagement,
+            title,
+        )
+        if item is None:
+            raise LookupError(f"{title} is the ebp slice's and is missing")
+        if await tenant_value(
+            conn,
+            TENANT,
+            "SELECT 1 FROM evidence_versions WHERE evidence_item_id = $1 AND version_no = 2",
+            item,
+        ):
+            continue
+        stored = await stage_content(TENANT, content())
+        async with uow(TenantContext(TENANT, "human", str(dana))) as tx:
+            await add_version(
+                tx,
+                engagement_id=engagement,
+                item=cast(UUID, item),
+                stored=stored,
+                media_type=_XLSX,
+                provenance=Provenance(source="client_upload", method="uploaded"),
+                requested_by=dana,
+            )
+
+
+async def _ebp_import_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Ana imports version 2 of the census (W-3 Box 1 and Box 12 D keyed for the tie) or of the HR
+    records as the HR roster; a kind already imported is left."""
+    kind = str(event.data["source"])
+    item = (await _northwind_work_item(conn))[1]
+    if await tenant_value(
+        conn,
+        TENANT,
+        "SELECT 1 FROM ebp_source_imports WHERE work_item_id = $1 AND kind = $2 "
+        "AND status = 'imported'",
+        item,
+        kind,
+    ):
+        return
+    census = kind == "census"
+    title = _eligibility.CENSUS_FILE if census else _eligibility.HR_FILE
+    await import_ebp_source(
+        await _staff_context(conn, event),
+        item,
+        await _northwind_version(conn, title, 2),
+        "census" if census else "hr_roster",
+        _eligibility.CENSUS_MAP if census else _eligibility.HR_MAP,
+        EbpImportTies(w3_box1=_eligibility.W3_BOX1, w3_box12d=_eligibility.W3_BOX12D)
+        if census
+        else None,
+    )
+
+
+async def _ebp_eligibility_test(conn: asyncpg.Connection) -> UUID | None:
+    item = (await _northwind_work_item(conn))[1]
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM attribute_tests WHERE work_item_id = $1 AND variant = 'ebp_eligibility' "
+        "ORDER BY created_at DESC LIMIT 1",
+        item,
+    )
+    return None if found is None else cast(UUID, found)
+
+
+async def _ebp_test_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Ana creates the eligibility test on the approved Participants Version 2 (EBP-03)."""
+    if await _ebp_eligibility_test(conn) is not None:
+        return
+    ctx = await _staff_context(conn, event)
+    engagement, item = await _northwind_work_item(conn)
+    await _ebp_paper(conn, ctx, engagement, _eligibility.ELIGIBILITY_PAPER)
+    await create_ebp_test(
+        ctx,
+        item,
+        EbpTestIn(
+            variant="eligibility",
+            sample_set_id=await _participants_set(conn),
+            sample_version=_PARTICIPANTS_APPROVED,
+        ),
+    )
+
+
+async def _ebp_results_marked(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Ana marks every row's attributes: rows 8 and 15 an exception on enrollment, row 22 no
+    effect on the hire date, every other cell pass (each with the handoff's note)."""
+    ctx = await _staff_context(conn, event)
+    item = (await _northwind_work_item(conn))[1]
+    test = await _ebp_eligibility_test(conn)
+    if test is None:
+        raise LookupError("Northwind's eligibility test has not been created")
+    marked = {
+        (r["sample_item_id"], r["attribute_key"])
+        for r in await tenant_rows(
+            conn,
+            TENANT,
+            "SELECT sample_item_id, attribute_key FROM test_attribute_results WHERE test_id = $1",
+            test,
+        )
+    }
+    keys = _eligibility.sampled_keys()
+    items = await approved_items(ctx, await _participants_set(conn), _PARTICIPANTS_APPROVED)
+    if [i.record_key for i in items] != [keys[p.name] for p in _eligibility.SAMPLED]:
+        raise LookupError("Participants Version 2 is not the designed draw")
+    for sampled, person in zip(items, _eligibility.SAMPLED, strict=True):
+        for attribute in _eligibility.ATTRIBUTES:
+            if (sampled.id, attribute) in marked:
+                continue
+            result, note = _eligibility.result_of(person, attribute)
+            await mark_ebp_test(
+                ctx, item, test, sampled.id, attribute, EbpResultIn(result=result, note=note)
+            )
 
 
 # --- the sampling slice (A-03-T16 part two; DEC-1767) --------------------------------------------
@@ -5408,7 +5695,8 @@ async def _completion_papers(conn: asyncpg.Connection, _: Scenario, event: Event
     ctx = await _staff_context(conn, event)
     engagement = (await _northwind_work_item(conn))[0]
     for paper in _completion.PAPERS:
-        await create_workpaper(ctx, engagement, paper.code, paper.title, None, kind=paper.kind)
+        # TASK-7815: the ebp2 slice makes EBP-03 on Sep 24 when it loads (DEC-4813).
+        await _ebp_paper(conn, ctx, engagement, (paper.code, paper.title, paper.kind))
 
 
 async def _completion_exceptions(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -7038,6 +7326,15 @@ HANDLERS: Final[dict[str, Handler]] = {
     "evidence.ebp_documents_uploaded": _ebp_documents_uploaded,  # A-05-T07
     "evidence.ebp_documents_part2_uploaded": _ebp_documents_part2_uploaded,  # A-05-T34
     "assurance.ebp_plan_recorded": _ebp_plan_recorded,  # TASK-7814: EBP-01 a
+    # TASK-7815: EBP-02's entry rule and EBP-03's eligibility test (DEC-4813)
+    "engagements.ebp_preparer_assigned": _ebp_preparer_assigned,
+    "assurance.ebp_plan_review_started": _ebp_plan_review_started,
+    "assurance.ebp_provisions_keyed": _ebp_provisions_keyed,
+    "assurance.ebp_provisions_verified": _ebp_provisions_verified,
+    "evidence.ebp_eligibility_files_uploaded": _ebp_eligibility_files_uploaded,
+    "assurance.ebp_import_recorded": _ebp_import_recorded,
+    "assurance.ebp_test_created": _ebp_test_created,
+    "assurance.ebp_results_marked": _ebp_results_marked,
     # A-03-T16 part two (DEC-1767): the sampling slice.
     "ledger.grouping_set_imported": _grouping_set_imported,
     "ledger.grouping_set_published": _grouping_set_published,

@@ -1987,6 +1987,11 @@ codes:
     raised_by:
     - abacus.modules.requests.repository.NoWorkItem
     summary: 'A request needs a binder, and a binder a work item: the engagement has none yet.'
+  no_workpaper:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_tests.NoWorkpaper
+    summary: The work item has no paper for this test's variant yet.
   not_a_client_contributor:
     status: 409
     raised_by:

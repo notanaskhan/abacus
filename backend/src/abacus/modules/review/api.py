@@ -46,6 +46,8 @@ from abacus.modules.review.decisions import (
 )
 from abacus.modules.review.engagement_gates import register_engagement_gates
 from abacus.modules.review.field_provenance import FieldState, field_states
+from abacus.modules.review.field_provenance import edit as edit_field  # TASK-7815: the seed
+from abacus.modules.review.field_provenance import tick as tick_field  # TASK-7815: the seed
 from abacus.modules.review.field_values import (
     FieldValueInvalid,
     FieldVersionFact,
@@ -318,6 +320,7 @@ __all__ = [
     "decided_cards",
     "decision_kind",
     "detect_stale",
+    "edit_field",  # TASK-7815: the seed keys EBP-02's provisions (the agent-off path)
     "edited_by_a_person",
     "field_owner",
     "field_states",  # A-05-T16 (DEC-2069)
@@ -384,6 +387,7 @@ __all__ = [
     "stale_of",
     "states_of",
     "system_resolve_dependents",
+    "tick_field",  # TASK-7815: the seed verifies them (L1 field ticks)
     "typed_value",
     "values_as_of",
 ]
