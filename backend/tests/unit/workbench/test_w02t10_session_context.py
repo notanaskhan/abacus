@@ -86,3 +86,53 @@ def test_pbc_summary_lines_are_codes_counts(monkeypatch: pytest.MonkeyPatch) -> 
 def test_attaching_a_record_the_viewer_cannot_open_is_404() -> None:
     with pytest.raises(NotFound):
         asyncio.run(sc.attach(CTX, uuid.uuid4(), [("client_entity", uuid.uuid4())]))
+
+
+def test_workpapers_card_carries_materiality_only_when_the_viewer_may_read_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """S41 gaps (AC-C4, DEC-4734): the decided overall and its version, by code."""
+    from decimal import Decimal
+
+    from abacus.modules.assurance import api as assurance_api
+    from abacus.modules.identity import api as identity_api
+    from abacus.modules.workpapers import api as workpapers_api
+
+    @dataclass(frozen=True)
+    class _V:
+        overall: Decimal
+        version_no: int
+
+    @dataclass(frozen=True)
+    class _Record:
+        versions: list[_V]
+
+    async def work_items(tenant: object, engagement: object) -> list[uuid.UUID]:
+        return [uuid.uuid4()]
+
+    async def papers(tenant: object, wi: object) -> list[object]:
+        return []
+
+    async def resource(tenant: object, engagement: object) -> object:
+        return object()
+
+    async def allowed(ctx: object, action: str, resource: object) -> None:
+        assert action == "materiality.read"
+
+    async def denied(ctx: object, action: str, resource: object) -> None:
+        raise identity_api.Forbidden(action, "role")
+
+    async def record(ctx: object, engagement: object) -> _Record:
+        return _Record([_V(Decimal(168100), 1), _V(Decimal(168100), 2)])
+
+    monkeypatch.setattr(sc, "work_item_ids_of", work_items)
+    monkeypatch.setattr(workpapers_api, "work_item_papers", papers)
+    monkeypatch.setattr(identity_api, "engagement_resource", resource)
+    monkeypatch.setattr(assurance_api, "materiality_record", record)
+    option = next(o for o in asyncio.run(sc.all_options(CTX)) if o.kind == "workpaper_set")
+    monkeypatch.setattr(identity_api, "authorise", allowed)
+    _chip, lines = asyncio.run(sc.summary(CTX, option))
+    assert lines == ("0 workpapers", "Materiality 168,100 · version 2")
+    monkeypatch.setattr(identity_api, "authorise", denied)
+    _chip, lines = asyncio.run(sc.summary(CTX, option))
+    assert lines == ("0 workpapers",)

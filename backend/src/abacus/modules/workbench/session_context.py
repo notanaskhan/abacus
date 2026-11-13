@@ -118,7 +118,27 @@ async def summary(ctx: AuthContext, option: Option) -> tuple[str, tuple[str, ...
     papers = [p for wi in work_items for p in await work_item_papers(ctx.tenant, wi)]
     titles = " · ".join(str(getattr(p, "title", "")) for p in papers[:4])
     lines = (f"{len(papers)} workpapers", titles) if titles else (f"{len(papers)} workpapers",)
-    return "Workpapers", lines
+    materiality = await _materiality_line(ctx, option.engagement_id)
+    return "Workpapers", (*lines, materiality) if materiality else lines
+
+
+async def _materiality_line(ctx: AuthContext, engagement_id: UUID) -> str | None:
+    """W-02-T10 gaps (AC-C4, DEC-4734): the decided materiality and its version, by code, when
+    the viewer may read it (`materiality.read`); nothing otherwise, and nothing says why."""
+    from abacus.modules.assurance.api import materiality_record
+    from abacus.modules.identity.api import Forbidden, authorise, engagement_resource
+
+    try:
+        await authorise(
+            ctx, "materiality.read", await engagement_resource(ctx.tenant, engagement_id)
+        )
+        found = await materiality_record(ctx, engagement_id)
+    except (Forbidden, NotFound):
+        return None
+    if not found.versions:
+        return None
+    newest = found.versions[-1]
+    return f"Materiality {newest.overall:,.0f} · version {newest.version_no}"
 
 
 _SESSION: Final = text(
