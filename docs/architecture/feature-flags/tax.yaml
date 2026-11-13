@@ -66,3 +66,30 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: prompt.tax.account_mapper
+    description: "The tax.account_mapper capability's prompt version per firm (prompt rollouts, SPEC-011 Q3). T-05-T47, DEC-4713."
+    owner: ayushkbhatia
+    created: 2026-11-13
+    expires: 2027-02-11
+    override: DEC-137
+    kind: variant
+    values: [tax.map_accounts@v1]
+    default: tax.map_accounts@v1
+  - name: prompt.tax.agreement_reader
+    description: "The tax.agreement_reader capability's prompt version per firm (prompt rollouts, SPEC-011 Q3). T-05-T47, DEC-4713."
+    owner: ayushkbhatia
+    created: 2026-11-13
+    expires: 2027-02-11
+    override: DEC-137
+    kind: variant
+    values: [tax.agreement_reader@v1]
+    default: tax.agreement_reader@v1
+  - name: prompt.tax.memo_drafter
+    description: "The tax.memo_drafter capability's prompt version per firm (prompt rollouts, SPEC-011 Q3). T-05-T47, DEC-4713."
+    owner: ayushkbhatia
+    created: 2026-11-13
+    expires: 2027-02-11
+    override: DEC-137
+    kind: variant
+    values: [tax.preparer_memo@v1]
+    default: tax.preparer_memo@v1
