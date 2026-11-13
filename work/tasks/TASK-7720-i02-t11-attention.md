@@ -28,7 +28,8 @@ release; the Feld and Shah 1040s under DEC-88's both-sides rule).
 - Rollback: revert; nothing reads the slot until Today's drill-in wires it.
 
 ## Partial
-- Today's drill-in does not yet read the attention rows or the dependents (I-02-T10 left its
+- S41 gaps (DEC-4734): the drill-in now lists the dependents (both sides visible) with the K-1 release
+  as their state line. Before that: today's drill-in did not read the attention rows or the dependents (I-02-T10 left its
   assign prefill and downstream rows waiting on this row); wired in the end pass if time allows,
   else carried to I-02-T13.
 - The tax hooks and the PBC provider run SQL; only the slot is unit-tested here. The DB-backed

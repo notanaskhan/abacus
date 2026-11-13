@@ -26,7 +26,8 @@ drill-in, live on `GET /v1/me/today` and the drill route.
 ## Partial
 - `POST /v1/me/today/builds` (three forced a day) and history stay 501: the stub's split gives
   builds to I-02-T13 and history to I-02-T16.
-- Groups `high_risk` (briefing risk lines) and `running` (runs count) are not assembled; the
+- S41 gaps (DEC-4734): `high_risk` (ready briefings' risk lines) and `running` (active engagement
+  runs on the viewer's work items) are now assembled. Before that: groups `high_risk` and `running` were not assembled; the
   per-persona E0 figures (Daniel 3·6·2·0, Margaret 2·0·2·0) are checked at the end-pass load.
 - Assign prefills and downstream rows in the drill-in wait for I-02-T11's providers.
 
