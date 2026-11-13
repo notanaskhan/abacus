@@ -1,7 +1,7 @@
 task_id,status,evidence
-F-01-T05,partial,"Dated exception is backend/coverage-exception.toml (DEC-10; read by abacus_tools.ci.coverage_floor): 70% from 2026-10-20, 78% by 2026-11-06, 87% by 2026-11-20, expires 2026-12-01 when fail_under=95 applies; ADR-116 dropped by the solo edition. Open until coverage holds at 95 (re-verified 2026-10-29)"
+F-01-T05,partial,"coverage exception backend/coverage-exception.toml (DEC-10); TASK-7827 (#1883) and TASK-7828 (#1900): main's reds after S39, S40, lo38 and S25 fixed at their causes; open: the E0 and Sep 24 fixtures need a Linux export (WeasyPrint), the pii_reveals revealed_at/expires_at microsecond flake needs a migration granting INSERT (revealed_at) (TASK-1255), and coverage at 95%"
 F-01-T06,partial,".github/workflows/ci.yml has merge_group, draft gating, changes job, frontend job; Makefile check-heads/check-generated; 5 green runs and ruleset not judgeable"
-F-01-T07,partial,"abacus_tools/ci/paths.py and the frontend job exist; measured on docs-only PR #1801 (run 43264503086): stage 1 make check-fast 17.5 min, and the backend unit and integration shards still ran (up to 75 min); open: a frontend-only PR inside 6 min without backend shards; probe 2026-11-12 (DEC-4808)"
+F-01-T07,partial,"abacus_tools/ci/paths.py and the frontend job; TASK-7823 (#1867) and TASK-7828 (#1900, DEC-4821): stage 1 path-aware and fail-closed, check-docs keeps every cheap gate; open: the 6-minute frontend-only PR is measured on the first such PR after merge"
 F-01-T09,done,"TASK-080/081: worktree isolation, guards, dev-fixtures; VITE_FIXTURES now read (app-core/clock.tsx, make dev-fixtures); code probe 2026-11-12 (DEC-4804); tests not re-run here"
 F-01-T10,not-started,"Obsolete: SU-06 removed number blocks (test_validate_docs.py ""any free number, any deciders""); no .github/ISSUE_TEMPLATE; only duplicate-id check remains (validate_docs.py:133)"
 Q-02-T06,done,"TASK-1209 and #447: matrix rows firm.ai_client_data, engagement.ai_exclude, firm.read_settings with security_admin, flag agents.client_data_optin; the stage is set through the staff route (#447), not a matrix row; the approval file is void (AMENDMENT-solo); code probe 2026-11-12 (DEC-4804); tests not re-run here"
@@ -54,9 +54,9 @@ A-07-T30,done,"TASK-6507 (#1538, DEC-3107): in-app release transaction and Relea
 A-07-T37,done,TASK-6610 (#1598): ArchiveLockWorkflow and the seal; code probe 2026-11-12 (DEC-4804); tests not re-run here
 Q-02-T45,done,"agents/runs_routes.py /v1/agent-runs (C6 v1, #510) (re-verified 2026-10-29)"
 P-09-T07,done,TASK-6304 (#1497): run read model with items feed; code probe 2026-11-12 (DEC-4804); tests not re-run here
-P-09-T08,partial,"TASK-6305 (#1498): trace read model live; open: no module registers trace samples (register_trace_samples has no caller), so step samples stay empty; code probe 2026-11-12 (DEC-4804); tests not re-run here"
+P-09-T08,done,"TASK-6305 (#1498), TASK-7808 (#1821, DEC-4806): steps record and resolve their samples; TASK-7824 (#1868), TASK-7828 (#1900): a withdrawn version never resolves (tests/integration/test_p09t08_trace_samples.py, 4 passed 2026-11-13)"
 P-09-T10,done,"TASK-6307 (#1500) and remainders #1522 (DEC-3024), #1574 (DEC-3136): WB-09 registered, a2 and Approve on a waiting write; ""Open CCH Axcess Tax"" waits on WB-11 (W-01), outside the row; code probe 2026-11-12 (DEC-4804); tests not re-run here"
-P-09-T11,partial,"TASK-6518 (#1549, DEC-3118): JSON export with signed manifest; open: the PDF needs a code-owned C11 run_trace layout rendered by WeasyPrint, not built (no local WeasyPrint to test it); probe 2026-11-12 (DEC-4808)"
+P-09-T11,partial,"TASK-6518 (#1549, DEC-3118) JSON export; TASK-7825 (#1871, DEC-4820) and TASK-7828 (#1900, DEC-4821): the PDF through C11 run_export, capped, audited with source_sha256, unit-tested with a stand-in renderer; open: a real WeasyPrint render of a trace PDF (no local libraries; CI Linux)"
 K-04-T33,partial,"TASK-460: assurance/dashboard.py: gates, tiles from progress sources, sign-offs, requests, next-up via could() (SPEC-317, dashboard.read); no lenses, C14 provider, basis strings or health rule"
 K-04-T40,partial,"TASK-460: legacy/EngagementDashboard.tsx tab; not the ENG-12 T21 record variant, lenses or milestones"
 A-01-T18,done,"#450 (dc46552b): engagement_exports create/undo/history behind a 10-s grant, migration 0191"
@@ -102,7 +102,7 @@ R-01-T21,done,#464 (b1ea439b): portal Playwright journeys (run in CI after #476)
 R-01-T22,done,#472 (ee7bdf04): templated send
 Q-02-T43,done,"s10-leftovers (TASK-1403): firm_exports and links (migration 0216), FirmExportWorkflow v1 histories, dual approval in service and database, 15-min links, 410 after 7 days"
 F-05-T60,partial,#464 (b1ea439b) tier-2 checks; no board locked (needs a pnpm visual run and sign-off)
-P-03-T20,partial,"#439 (07e4d02c), TASK-1321 SHL-08 built; ""Ask ... for the password"" blocked on handoff copy (DEC-460, TASK-1365)"
+P-03-T20,partial,"#439 (07e4d02c), TASK-1321 SHL-08 built; re-checked 2026-11-13 (lo39): the SHL-08 and SHL-14 handoff still give no prefilled request wording for ""Ask … for the password"" (DEC-460)"
 Q-03-T043,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
 Q-03-T044,partial,#468 (81f57c4d) repo side; x25 rehearsed on a laptop 2026-11-01 (DEC-1531); only the perf-stack run waits for Q-03-T036
 Q-03-T046,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
@@ -523,7 +523,7 @@ T-01-T30,done,"3fe0151c8 TASK-2418 T-01-T30: consent independent suite (#898); T
 T-01-T31,done,"5c1fbffcc TASK-2417 T-01-T31: independent bridge suite (#897); TASK-2417; backend/tests/integration/test_t01t31_bridge_independent.py (S0-S25 closeout, DEC-4200)"
 A-03-T22,done,"31cb113d2 A-03-T22: consumer contract tests for C9 v2 and the sampling stub (#859); TASK-2507; work/tasks/TASK-2507-a03-t22-consumer-contract-tests.md (S0-S25 closeout, DEC-4200)"
 K-01-T16,done,"798dd1649 TASK-2516 K-01-T16: independent AC tests for K-01-T12/T14 (#917); TASK-2516; backend/tests/integration/backfill/test_k01t16_independent.py (S0-S25 closeout, DEC-4200)"
-N-02-T40,partial,"fcf069a94 N-02-T40: route SIG-01 at /signatures (#1011); TASK-2535, TASK-2541; work/tasks/TASK-2535-n02-t40-signatures-e2e.md; open: recorded partial at its build (S0-S25 closeout, DEC-4200)"
+N-02-T40,partial,"TASK-2535 (#1011); TASK-7820 (#1863), TASK-7828 (#1900): SIG-01 a, b, c and f walk the seeded hub on the full stack; open: SIG-02 and ENG-04 need an in-app entry to a seeded draft and letter (ids held in memory), POR-06 g needs a declined envelope in the seed, staging and canary need the hosted sign-in (M13)"
 N-02-T41,done,"548cd2e28 TASK-2534 N-02-T41: signatures independent suite (#976); TASK-2534; backend/tests/integration/backfill/test_n02t41_signatures_independent.py (S0-S25 closeout, DEC-4200)"
 P-04-T51,done,"fae44c29a P-04-T51: independent AC tests for the SHL-12 UI (#871); TASK-2512; work/tasks/TASK-2512-p04-t51-shl12-ac-tests.md (S0-S25 closeout, DEC-4200)"
 P-11-T12,done,"a23fbd43b TASK-2514 P-11-T12: golden render fixtures (#912); TASK-2514; backend/tests/golden_render/p11t12.sha256 (S0-S25 closeout, DEC-4200)"
@@ -540,7 +540,7 @@ K-01-T17,done,"5e0fcdb43 TASK-2615 K-01-T17: KNW-03 e2e, J01 step 6, KNW-01/KNW-
 N-02-T42,done,"530f47a81 TASK-2627 N-02-T42: M13 signature journey steps (#1013); TASK-2627; work/tasks/TASK-2627-n02-t42-m13-journeys.md (S0-S25 closeout, DEC-4200)"
 N-02-T43,done,"e93f5c5ab TASK-2628 N-02-T43: SIG-01, SIG-02, POR-06 and ENG-04 locked at Tier C (#1014); TASK-2628; work/tasks/TASK-2628-n02-t43-parity-a11y-lock.md (S0-S25 closeout, DEC-4200)"
 N-02-T45,done,"7bbc52b0f TASK-2618 N-02-T45: C7 v1.1 frozen, signatures README, W7 notes, source skill, hand-off no; TASK-2618; work/tasks/TASK-2618-n02-t45-c7-freeze-docs.md (S0-S25 closeout, DEC-4200)"
-N-02-T46,partial,"82887e007 TASK-2637 N-02-T46: RB-18 for DocuSeal and the signing screen contracts closed (#1029); TASK-2637; work/tasks/TASK-2637-n02-t46-rb18-screen-contracts.md; open: the staging or production run its acceptance names is not verified here (S0-S25 closeout, DEC-4200)"
+N-02-T46,partial,"82887e007 TASK-2637 (#1029): RB-18 and the four contracts; rehearsed locally 2026-11-13 on the synthetic suites with signatures.esign_provider off: record-mode import and the handwritten path complete (test_n02t08_record_import.py, test_n02t27_handwritten_fallback.py, 10 passed); open: the staging rehearsal with DocuSeal switched off"
 N-02-T47,done,"79416e98a TASK-2629 N-02-T47: provider 429 backoff, signing surge profile, signatures mutation scope; TASK-2629; backend/tests/unit/signatures/test_n02t47_rate_limit_backoff.py (S0-S25 closeout, DEC-4200)"
 P-04-T53,done,"8888ef2b4 TASK-2609 P-04-T53: acceptance tests for the SHL-11 UI (#911); TASK-2609; work/tasks/TASK-2609-p04-t53-shl11-ui-acs.md (S0-S25 closeout, DEC-4200)"
 P-11-T15,done,"2aaa81d3a TASK-2606 P-11-T15: acceptance tests for template import and publication (#904); TASK-2606; backend/tests/integration/test_p11t15_template_publication_acs.py (S0-S25 closeout, DEC-4200)"
@@ -618,7 +618,7 @@ R-02-T11,done,TASK-6309 (#1502) and remainder #1523 (DEC-3025): C18 approvals se
 R-02-T12,done,"TASK-6310 (#1503) and remainders #1524 (DEC-3026), #1581 (DEC-3146): governance room, tcwg grants at send, the letter PDF through C10; code probe 2026-11-12 (DEC-4804); tests not re-run here"
 T-04-T03,done,TASK-6318 (#1512): protected bundle; T-04 table owners now in schema_check TABLE_OWNERS; code probe 2026-11-12 (DEC-4804); tests not re-run here
 T-04-T07,done,"TASK-6322 (#1516) and remainder (DEC-3031): fixtures on the generated client; every in-scope screen (TAX-04..08, TXI-01..03) built with its tests in S33+; code probe 2026-11-12 (DEC-4804); tests not re-run here"
-P-09-T09,partial,"TASK-6306 (#1499), remainder #1521; frame 10's reason picker built and tested (RunPane.test revision 4); open: frames 9 and 10 as fixture docks need triggers (K-04-T21, S61) and the ""Auto-started by trigger"" line (A-11-T17, S68); the step-through card is not built; probe 2026-11-12 (DEC-4808)"
+P-09-T09,partial,"TASK-6306 (#1499), remainder #1521; probe 2026-11-13 (lo39): the step-through card needs a runtime step mode (a Temporal workflow change, P-10) and frames 9 and 10 need triggers (K-04-T21, A-11-T17)"
 R-02-T13,partial,TASK-6313 (#1507) and remainder #1527 (DEC-3029): portal and governance seed slices; open: make seed-demo and fixture equivalence not shown; code probe 2026-11-12 (DEC-4804); tests not re-run here
 F-03-T04,done,256be2829 docs(product): status registry and the glossary change set (SU-25; F-03-T04; F-02-T04) (and 0 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
 F-05-T07,done,92a5224d3 feat(web;ui): design-system ESLint rules and compiled-CSS check (F-05-T07) (and 1 later) ; code marker on main; S0-S38 built-row probe 2026-11-12 (DEC-4805); tests not re-run here
@@ -759,3 +759,9 @@ Q-04-T159,cut,"Solo ritual: no second founder or live firm to run it, cut under 
 Q-04-T160,cut,"Solo ritual: no second founder or live firm to run it, cut under the solo edition (DEC-4818; docs/plan/status/S0-S38-rituals-cut.md)"
 Q-04-T161,cut,"Solo ritual: no second founder or live firm to run it, cut under the solo edition (DEC-4818; docs/plan/status/S0-S38-rituals-cut.md)"
 Q-04-T162,cut,"Solo ritual: no second founder or live firm to run it, cut under the solo edition (DEC-4818; docs/plan/status/S0-S38-rituals-cut.md)"
+Q-03-T179,done,"TASK-7826 (#1876): 44 tests from the engines' sources; local mutmut 3.8.0 (lower bound, unit/assurance, unit/sampling, property/sampling): materiality 93.3%, sampling stats 91.0%, canonical 96.6%, draw 97.9%, versions 100%, v 88.0% (run 43330118713); the weekly run on main confirms"
+Q-03-T230,partial,"TASK-7822 (#1866): docs/quality/fakes.yaml names the DocuSeal fake (fakes/esign.py); open: verifying the five fakes against NetSuite, WorkOS, an OIDC provider, Amazon SES and DocuSeal sandboxes needs their credentials (Ayush)"
+Q-04-T125,partial,"TASK-7821 (#1864, DEC-4819) and TASK-7828 (#1900, DEC-4821): abacus_tools.dark_merge_audit (make dark-merge-audit) and deploy/live-paths.yaml; run 2026-11-13 over f2a76b4aa..41be01263 (13 PRs: 8 dark_only, 5 touching live paths, no firm live so no window applied); open: the Jan 25-27, 2028 trains themselves"
+Q-03-T180,todo,"probe 2026-11-13 (lo39): review and signatures meet their floors (4.8%, 8.3% of 4 and 8, run 43330118713); integrations and consents are not mutation scopes, and SCOPES and [tool.mutmut] are edit-hook protected: adding them is Ayush's change (the diff is in TASK-7828)"
+Q-03-T036,todo,"probe 2026-11-13 (lo39): not built. Open design question for Ayush: the records bucket writes COMPLIANCE Object Lock (evidence/records.py), so a perf stack destroy cannot remove record objects; options: a long-lived abacus-perf-records bucket, a perf-only retention mode, or no record-writing scenarios"
+Q-04-T107,partial,"solo walk on PF-X1 2026-11-13 (docs/ops/rehearsals/2026-11-13-runbook-walk.md, TASK-7829): windows and RB-18 passed; the flip and rollback runbooks are refused by flip_guard (approver_is_operator: two people on every flip, P-29) under the solo edition; open: Ayush's call on solo approval, then the walk"
