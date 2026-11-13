@@ -1,6 +1,6 @@
 ---
 id: TASK-7929
-title: T-05-T57 rest: the xlsx export's grid widths and a person's cells filled
+title: "T-05-T57 rest: the xlsx export's grid widths and a person's cells filled"
 plan_key: T-05-T57
 spec: SPEC-652
 acceptance_criteria: [AC-6]

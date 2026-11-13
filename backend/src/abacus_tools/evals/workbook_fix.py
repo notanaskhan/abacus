@@ -82,20 +82,20 @@ class CaseResult:
 
 
 def grades(case: Case) -> list[Grade]:
-    from abacus.modules.tax.workbook_fix import (
-        _WRITTEN,  # pyright: ignore[reportPrivateUsage] -- the product's own provenance rule
+    from abacus.modules.tax.api import (
         WorkbookFixChange,
         WorkbookFixJudgment,
-        kept,
+        workbook_fix_amounts,
+        workbook_fix_kept,
+        workbook_sheets,
     )
-    from abacus.modules.tax.workbook_service import sheets_of
 
     answer = WorkbookFixJudgment(
         changes=[WorkbookFixChange(**c.model_dump()) for c in case.output]
     )
-    planned = {p.at.key for p in kept(answer, case.instructions, case.form)}
-    written = {m.group(0) for m in _WRITTEN.finditer(case.instructions)}
-    sheets = {k for k, _ in sheets_of(case.form)}
+    planned = {p.at.key for p in workbook_fix_kept(answer, case.instructions, case.form)}
+    written = workbook_fix_amounts(case.instructions)
+    sheets = {k for k, _ in workbook_sheets(case.form)}
     raw = {f"{c.sheet}!{c.cell.upper()}" for c in case.output}
     return [
         Grade("cells_named_only", planned == set(case.expected)),

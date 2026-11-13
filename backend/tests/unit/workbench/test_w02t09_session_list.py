@@ -162,7 +162,10 @@ def test_t14_the_paperclip_count_is_the_attached_items_and_a_locked_row_has_none
     from abacus.modules.workbench.sessions_contract import summary_of
 
     open_row = _raw("Northwind planning", "live")
-    open_row["context_refs"] = [{"kind": "engagement", "id": "a"}, {"kind": "workpaper", "id": "b"}]
+    open_row["context_refs"] = [
+        {"kind": "engagement", "id": "a"},
+        {"kind": "workpaper", "id": "b"},
+    ]
     locked_row = _raw("Copperleaf", "live", ["locked"])
     locked_row["context_refs"] = [{"kind": "engagement", "id": "c"}]
     candidates.extend([open_row, locked_row])

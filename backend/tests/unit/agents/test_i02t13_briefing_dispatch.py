@@ -12,6 +12,8 @@ import inspect
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
+import pytest
+
 from abacus.modules.agents.briefing import dispatch as d
 
 NOW = datetime(2026, 9, 14, 14, 24, tzinfo=UTC)
@@ -100,7 +102,9 @@ def test_ac_the_snapshot_holds_no_text() -> None:
 def test_rest_a_brief_is_stale_when_a_why_gate_closed_since() -> None:
     from abacus.modules.agents.briefing.dispatch import why_gone
 
-    blocks = {"why": [{"gate_id": "g1", "line": {}}, {"gate_id": "g2", "line": {}}]}
+    blocks: dict[str, object] = {
+        "why": [{"gate_id": "g1", "line": {}}, {"gate_id": "g2", "line": {}}]
+    }
     assert not why_gone(blocks, {"g1", "g2", "g3"})
     assert why_gone(blocks, {"g1"})
     assert not why_gone(None, set())

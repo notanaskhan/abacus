@@ -1,6 +1,6 @@
 ---
 id: TASK-7926
-title: W-02-T16 rest: WB-02's Internal Control link opens AUD-09
+title: "W-02-T16 rest: WB-02's Internal Control link opens AUD-09"
 plan_key: W-02-T16
 spec: SPEC-653
 acceptance_criteria: [AC-A2]
