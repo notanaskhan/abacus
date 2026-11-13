@@ -4,7 +4,7 @@ title: A-05-T16 keyed SPD and amendment values make EBP-02's conflict and amendm
 spec: SPEC-640
 acceptance_criteria: [AC-14]  # F2: SPD conflicts and amendment tags on the review
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T16
 branch: s25d-a05-t16

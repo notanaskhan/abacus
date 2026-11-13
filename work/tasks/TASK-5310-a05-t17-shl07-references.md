@@ -4,7 +4,7 @@ title: A-05-T17 SHL-07 citation popover on EBP-02's references
 spec: SPEC-640
 acceptance_criteria: [AC-1]  # the row's SHL-07 on AA references
 risk_zone: green
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T17
 branch: s25d-a05-t17
