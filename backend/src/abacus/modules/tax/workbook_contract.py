@@ -1192,9 +1192,41 @@ async def entity_export_route(
     version: Annotated[int | None, Query(ge=1)] = None,
     sheet: Annotated[str | None, Query(max_length=40)] = None,
 ) -> Response:
-    """Deterministic xlsx with formulas, formula-escaped; `export_blocked` (409)."""
+    """Deterministic xlsx with formulas, formula-escaped; `export_blocked` (409). T-05-T57
+    (DEC-4908): the live workbook or a finished run's version, whole or one sheet; byte-identical
+    for identical data; audited `workbook.exported`."""
+    from abacus.modules.agents.api import work_item_runs
+    from abacus.modules.tax.overview import load_return, return_resource
+    from abacus.modules.tax.workbook_export import MEDIA_TYPE, export_workbook
+
     await _flag_on(ctx)
-    _not_yet()
+    loaded = await load_return(ctx, return_id)
+    await authorise(ctx, "workbook.export", await return_resource(ctx, loaded))
+    runs = await work_item_runs(ctx.tenant, f"tax_return:{return_id}")
+    made = await export_workbook(
+        ctx,
+        return_id=return_id,
+        engagement_id=loaded.facts.engagement_id,
+        entity=loaded.facts.client_name,
+        form=str(loaded.row.form),
+        sheet=sheet,
+        version=version,
+        versions=[
+            (r.run_number, r.finished_at)
+            for r in sorted(runs, key=lambda r: r.run_number, reverse=True)
+            if r.finished_at is not None
+        ],
+        run_open=any(r.active for r in runs),
+    )
+    return Response(
+        content=made.data,
+        media_type=MEDIA_TYPE,
+        headers={
+            "Content-Disposition": f'attachment; filename="{made.filename}"',
+            "ETag": f'"{made.sha256}"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @workbook_router.post(
