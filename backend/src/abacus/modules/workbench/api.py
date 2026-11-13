@@ -71,3 +71,9 @@ __all__ = [
     "post_message",
     "session_workflow_id",
 ]
+
+# W-02-T13 (DEC-4717): the synthetic-only session recorder (the scenario loader's).
+from abacus.modules.workbench.session_seed import SeedSession as SeedSession  # noqa: E402
+from abacus.modules.workbench.session_seed import (  # noqa: E402
+    record_synthetic_session as record_synthetic_session,
+)

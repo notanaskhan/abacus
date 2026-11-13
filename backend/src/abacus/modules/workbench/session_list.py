@@ -1,8 +1,10 @@
 """WB-01's session list, blank create, rename and delete (W-02-T09; W-02 §3.1, §3.2; SPEC-653
 AC-L1 to AC-L6, AC-V1 to AC-V3; DEC-87, DEC-43; DEC-4714). Amber.
 
-- **Membership (DEC-87, DEC-4601).** "All" is the sessions the viewer owns plus the sessions of
-  the engagements the viewer is on (their own engagement roles), never deleted ones. Each
+- **Membership (DEC-87, DEC-4601 Q1).** "All" is the sessions the viewer owns, the sessions
+  whose owner shares an office or a team with the viewer (`identity.api.colleagues_of`, W-02-T13)
+  and the sessions of the engagements the viewer is on (their own engagement roles), never
+  deleted ones. Each
   candidate then goes through `viewer_access` over its `client_scope`: a wall on any client omits
   the row (no count, no "n hidden" anywhere); a client the viewer can't open locks it (metadata
   only: title, owner, state; no thread item, figure or count).
@@ -33,12 +35,17 @@ from sqlalchemy import text
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.identity.api import AuthContext, display_names, my_engagement_roles
+from abacus.modules.identity.api import (
+    AuthContext,
+    display_names,
+    my_engagement_roles,
+)
 from abacus.modules.workbench.sessions import open_session, viewer_access
 
 PAGE: Final = 50
 NEW_TITLE: Final = "New session"
-VIA_AGENT: Final = frozenset({"schedule", "trigger", "saved_prompt", "engagement_run"})
+# DEC-4601 Q1: "Via Agent" is every origin that is not `manual`.
+VIA_AGENT: Final = frozenset({"schedule", "trigger", "saved_prompt", "engagement_run", "test"})
 Filter = Literal["all", "mine", "via_agent", "running", "needs_answer"]
 
 
@@ -105,8 +112,9 @@ def _title_hash(title: str) -> str:
 _CANDIDATES: Final = text(
     "SELECT id, title, owner_user_id, origin, state, last_item_at, client_scope, context_refs, "
     "title_source, renamed_at, created_at FROM workbench_sessions s WHERE deleted_at IS NULL AND "
-    "(owner_user_id = :me OR EXISTS (SELECT 1 FROM jsonb_array_elements(s.context_refs) r "
-    "WHERE r->>'kind' = 'engagement' AND r->>'id' = ANY(CAST(:engagements AS text[])))) "
+    "(owner_user_id = :me OR owner_user_id = ANY(:colleagues) OR EXISTS (SELECT 1 FROM "
+    "jsonb_array_elements(s.context_refs) r WHERE r->>'kind' = 'engagement' AND "
+    "r->>'id' = ANY(CAST(:engagements AS text[])))) "
     "ORDER BY coalesce(last_item_at, created_at) DESC, id LIMIT 2000"
 )
 

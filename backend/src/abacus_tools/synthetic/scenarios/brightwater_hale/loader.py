@@ -419,6 +419,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_workspace_slice as _txw
 from abacus_tools.synthetic.scenarios.brightwater_hale import usage_slice as _usage
+from abacus_tools.synthetic.scenarios.brightwater_hale import (  # noqa: F401  # registers its slice
+    workbench_slice as _wbs,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
     THORNBURY_ANSWERS,
@@ -7597,6 +7600,30 @@ async def _entity_run_recorded(conn: asyncpg.Connection, _: Scenario, event: Eve
     )
 
 
+# --- W-02-T13 (DEC-4717): WB-01's sessions (`--slice workbench`) --------------------------------
+
+
+async def _workbench_session_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """One WB-01 row through the workbench module's synthetic recorder, as its owner."""
+    from abacus.modules.workbench.api import SeedSession, record_synthetic_session
+
+    client = event.data.get("client")
+    scope = [] if not client else [await _client_id(conn, str(client))]
+    message = event.data.get("message")
+    await record_synthetic_session(
+        await _staff_context(conn, event),
+        SeedSession(
+            id=UUID(stable_id(f"session:{event.data['key']}")),
+            title=str(event.data["title"]),
+            origin=str(event.data["origin"]),
+            state=str(event.data["state"]),
+            last_item_at=datetime.fromisoformat(str(event.data["at"])),
+            client_scope=scope,
+            first_message=None if message is None else str(message),
+        ),
+    )
+
+
 HANDLERS: Final[dict[str, Handler]] = {
     "identity.firm_created": _firm_created,
     "organisations.office_created": _office_created,
@@ -7863,6 +7890,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "tax.allocation_drafted": _entity_allocation_drafted,
     "review.allocation_signed": _entity_allocation_signed,
     "agents.entity_run_recorded": _entity_run_recorded,
+    # W-02-T13 (`--slice workbench`): WB-01's rows.
+    "workbench.session_recorded": _workbench_session_recorded,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}

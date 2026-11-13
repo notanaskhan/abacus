@@ -78,6 +78,10 @@ def candidates(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:  # Any:
             return "omitted"
         return "locked" if clients else "open"
 
+    async def colleagues(tenant: object, user: object) -> frozenset[uuid.UUID]:
+        return frozenset()
+
+    monkeypatch.setattr(sl, "colleagues_of", colleagues)
     monkeypatch.setattr(sl, "tenant_session", lambda tenant: _Session())
     monkeypatch.setattr(sl, "my_engagement_roles", roles)
     monkeypatch.setattr(sl, "display_names", names)
