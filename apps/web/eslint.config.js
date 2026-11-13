@@ -246,10 +246,52 @@ const PORTAL_IMPORT_PATTERNS = [
   },
 ];
 
+// F-07-T20 (F-07 §I3; INV-4, DEC-78, DEC-88): the firm-only tier-4 kits never reach the portal:
+// agent/chat (the Workbench), graph (relationship graphs) and forms-gov (the rendered return and
+// its draft K-1s). They are named imports of `@abacus/ui`'s root, so they are refused by name.
+export const PORTAL_FORBIDDEN_KITS = [
+  // agent/chat
+  "ChatThread",
+  "ChatHeader",
+  "SessionList",
+  "ContextPicker",
+  "ContextChips",
+  "EmptySession",
+  "QuestionCard",
+  "WorkbenchLayout",
+  // graph
+  "GraphCanvas",
+  "GraphCanvasLayout",
+  "MaskedTin",
+  "layoutLayered",
+  "routeOrthogonal",
+  // forms-gov
+  "FormRendererLayout",
+];
+
 /** The usual import rules with the portal's boundary on top. */
 function portalImportRestrictions(featureRoots) {
   const base = importRestrictions(featureRoots);
-  return { ...base, patterns: [...base.patterns, ...PORTAL_IMPORT_PATTERNS] };
+  return {
+    ...base,
+    paths: [
+      ...base.paths,
+      {
+        name: "@abacus/ui",
+        importNames: PORTAL_FORBIDDEN_KITS,
+        message:
+          "INV-4: agent/chat, graph and forms-gov are firm-only kits; the portal never imports them (F-07-T20).",
+      },
+    ],
+    patterns: [
+      ...base.patterns,
+      ...PORTAL_IMPORT_PATTERNS,
+      {
+        regex: "(?:^|/)(?:agent/chat|graph|forms-gov)(?:/|$)",
+        message: "INV-4: agent/chat, graph and forms-gov are firm-only kits (F-07-T20).",
+      },
+    ],
+  };
 }
 
 export default defineConfig(
