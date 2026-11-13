@@ -23,6 +23,7 @@ from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
+from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.kernel.uow import UnitOfWork
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import (
@@ -679,7 +680,9 @@ from abacus.modules.reporting.statements_workflows import (  # noqa: E402
 )
 
 # The render job is a relay subscription, not a workflow (DEC-1561).
-WORKFLOWS: dict[type, str] = {FsDraftWorkflow: "interactive", TieOutWorkflow: "background"}
+WORKFLOWS: dict[type, WorkClass] = {FsDraftWorkflow: "interactive", TieOutWorkflow: "background"}
+# Registered so `dispatch` routes them (ADR-071); without it each raised LookupError (TASK-7811).
+register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = (draft_activity, draft_failed_activity, tie_out_activity)
 
 # N-02-T32 (DEC-1458): the engagement letter renders through C11 by engagements' port, since
