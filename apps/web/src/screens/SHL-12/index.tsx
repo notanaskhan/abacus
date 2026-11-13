@@ -25,6 +25,7 @@ import { useSession } from "../../app-core/session";
 import {
   type SignOffLevel,
   type SignOffTarget,
+  type SignOffWriter,
   levelOf,
   useGate,
   useSignOffEligibility,
@@ -332,6 +333,8 @@ export interface SignOffSheetProps {
   /** The header's right ("AUD-06", "2025 Form 1065 · Ridgeline"). */
   meta?: string;
   onSigned?: (signOff: SignOffOut) => void;
+  /** The target owner's own signing route (TXP-06's approve); default `POST /v1/sign-offs`. */
+  write?: SignOffWriter;
 }
 
 export function SignOffSheet({
@@ -341,6 +344,7 @@ export function SignOffSheet({
   onOpenChange,
   meta,
   onSigned,
+  write,
 }: SignOffSheetProps): JSX.Element {
   const session = useSession();
   const [asked, setAsked] = useState<SignOffLevel>(levelOf(level) ?? "L1_preparer");
@@ -367,6 +371,7 @@ export function SignOffSheet({
           target={target}
           eligibility={eligibility}
           actor={actor}
+          {...(write === undefined ? {} : { write })}
           onLevel={setAsked}
           onCancel={() => {
             onOpenChange(false);
@@ -388,10 +393,12 @@ function Body({
   onLevel,
   onCancel,
   onSigned,
+  write,
 }: {
   target: SignOffTarget;
   eligibility: SignOffEligibilityOut;
   actor: Actor;
+  write?: SignOffWriter;
   onLevel: (level: SignOffLevel) => void;
   onCancel: () => void;
   onSigned: (signOff: SignOffOut) => void;
@@ -401,7 +408,7 @@ function Body({
   const ladder = useSignOffLadder(target).data?.levels ?? eligibility.ladder;
   const final = isReturn(eligibility);
   const kind = final ? "final_approval" : "ladder";
-  const sign = useSignOffWrite(eligibility);
+  const sign = useSignOffWrite(eligibility, write);
   const t = eligibility.target;
   const role = COPY.roles[eligibility.level];
   const short = COPY.short[eligibility.level];
