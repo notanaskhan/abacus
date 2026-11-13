@@ -47,7 +47,16 @@ ROUTES: list[tuple[str, str, str]] = [
 ]
 # Served by W-02-T09 (list, create, rename, delete), T10 (context) and T20 (drill, preview,
 # download); each row empties its entries and flips the 501 assertion with it.
-UNBUILT = {(m, p) for m, p, _ in ROUTES}
+# S41 built the list, rename, delete and context routes (W-02-T09 to T13); the rest stay stubs.
+BUILT = {
+    ("get", "/v1/workbench/sessions"),
+    ("patch", "/v1/workbench/sessions/{session_id}"),
+    ("delete", "/v1/workbench/sessions/{session_id}"),
+    ("get", "/v1/workbench/context-options"),
+    ("post", "/v1/workbench/sessions/{session_id}/context"),
+    ("delete", "/v1/workbench/sessions/{session_id}/context/{item_id}"),
+}
+UNBUILT = {(m, p) for m, p, _ in ROUTES} - BUILT
 
 # What each artboard reads (W-02 §2.1). Removing any of these fields fails this suite.
 ARTBOARD_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {

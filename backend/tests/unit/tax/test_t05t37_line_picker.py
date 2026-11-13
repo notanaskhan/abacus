@@ -154,7 +154,7 @@ def test_ac3_4_the_tax_reviewers_pick_maps_the_account_as_that_person(
     world = _World(reviewer=True)
     _patch(monkeypatch, world)
     out = _pick()
-    assert out == em.PickOutcome("mapped")
+    assert out == em.PickOutcome("mapped", mapping_set_id=uuid.UUID(int=1))
     assert len(world.edits) == 1
     edit = world.edits[0]
     assert (edit["account_code"], edit["form_line_key"], edit["edited_by"]) == (

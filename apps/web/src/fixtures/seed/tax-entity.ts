@@ -395,20 +395,29 @@ export function formLines(q: string | null): WorkbookFormLineOut[] {
   );
 }
 
-/** The server's answer to a pick: the tax reviewer (Samuel) maps; anyone else proposes. */
+/** The server's answer to a pick: the tax reviewer (Samuel) maps; anyone else proposes.
+ * `proposal_id` is the record the pick wrote (DEC-4824): the mapping set, or the review note. */
 export function mappingAnswer(
   persona: string | undefined,
   accountCode: string,
   formLineKey: string,
 ): WorkbookMappingProposedOut {
-  return persona === PERSONAS.samuel
-    ? { state: "mapped", account_code: accountCode, form_line_key: formLineKey }
-    : {
-        state: "flagged",
-        account_code: accountCode,
-        form_line_key: formLineKey,
-        note_id: stableId(`note:mapping:${accountCode}`),
-      };
+  if (persona === PERSONAS.samuel) {
+    return {
+      proposal_id: stableId("mapping-set:tax"),
+      state: "mapped",
+      account_code: accountCode,
+      form_line_key: formLineKey,
+    };
+  }
+  const noteId = stableId(`note:mapping:${accountCode}`);
+  return {
+    proposal_id: noteId,
+    state: "flagged",
+    account_code: accountCode,
+    form_line_key: formLineKey,
+    note_id: noteId,
+  };
 }
 
 /** a2: SHL-09's tray on a sheet 01 cell, the ATB of 2050 Accrued expenses = C + D + E. */

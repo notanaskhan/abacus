@@ -167,6 +167,7 @@ async def form_line_choices(
 class PickOutcome:
     state: Literal["mapped", "flagged"]
     note_id: UUID | None = None
+    mapping_set_id: UUID | None = None  # the set a mapped pick wrote to (DEC-4824)
 
 
 async def pick_form_line(
@@ -242,4 +243,4 @@ async def pick_form_line(
             target=Target(WORKBOOK, return_id),
             after=Ref(mapping_set=set_id),  # IDs only: the code and key are in the edit row
         )
-    return PickOutcome("mapped")
+    return PickOutcome("mapped", mapping_set_id=set_id)

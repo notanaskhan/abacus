@@ -97,3 +97,29 @@ def test_t18_an_inline_enum_retyped_still_breaks() -> None:
     now = {"Card": {"properties": {"kind": {"type": "integer", "enum": [1, 2]}}}}
     problems = contracts.breaking(INLINE, now)  # type: ignore[arg-type]  # test fixtures
     assert problems and "Card.kind" in problems[0]
+
+
+CONST = {"TraceExportIn": {"properties": {"format": {"type": "string", "const": "json"}}}}
+
+
+def test_dec4823_a_one_value_field_widened_to_an_enum_is_additive() -> None:
+    # TraceExportIn.format went from Literal["json"] to Literal["json", "pdf"] (P-09-T11).
+    widened = {"type": "string", "enum": ["json", "pdf"]}
+    now = {"TraceExportIn": {"properties": {"format": widened}}}
+    assert contracts.breaking(CONST, now) == []  # type: ignore[arg-type]  # test fixtures
+
+
+def test_dec4823_a_one_value_field_that_drops_its_value_breaks() -> None:
+    now = {"TraceExportIn": {"properties": {"format": {"type": "string", "enum": ["pdf"]}}}}
+    assert contracts.breaking(CONST, now) == [  # type: ignore[arg-type]  # test fixtures
+        "TraceExportIn.format: enum member 'json' removed"
+    ]
+    other = {"TraceExportIn": {"properties": {"format": {"type": "string", "const": "pdf"}}}}
+    assert contracts.breaking(CONST, other) == [  # type: ignore[arg-type]  # test fixtures
+        "TraceExportIn.format: enum member 'json' removed"
+    ]
+
+
+def test_dec4823_an_enum_narrowed_to_one_value_still_breaks() -> None:
+    now = {"Card": {"properties": {"kind": {"type": "string", "const": "a"}}}}
+    assert contracts.breaking(INLINE, now) == ["Card.kind: enum member 'b' removed"]  # type: ignore[arg-type]  # test fixtures

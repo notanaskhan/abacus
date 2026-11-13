@@ -405,10 +405,13 @@ class WorkbookMappingIn(BaseModel):
 
 class WorkbookMappingProposedOut(BaseModel):
     """DEC-4629: the tax reviewer's pick maps the account (`mapped`); anyone else's pick is a
-    review note proposing the line to the reviewer (`flagged`, `note_id`), and nothing maps."""
+    review note proposing the line to the reviewer (`flagged`, `note_id`), and nothing maps.
+    `proposal_id` stays because v1 is frozen (DEC-4824): the record the pick wrote, the review
+    note when flagged, the mapping set when mapped."""
 
     model_config = _cfg()
 
+    proposal_id: Annotated[UUID, Internal]
     state: Annotated[Literal["mapped", "flagged"], Internal]
     account_code: Annotated[str, Confidential]
     form_line_key: Annotated[str, Internal]
@@ -1341,9 +1344,12 @@ async def entity_mapping_route(
         ctx, return_id, loaded.facts.engagement_id, body.account_code, body.form_line_key,
         body.rationale,
     )  # fmt: skip
+    written = out.note_id if out.state == "flagged" else out.mapping_set_id
+    if written is None:  # the pick returns the record it wrote in both states
+        raise RuntimeError("the line pick wrote no record")
     return WorkbookMappingProposedOut(
-        state=out.state, account_code=body.account_code, form_line_key=body.form_line_key,
-        note_id=out.note_id,
+        proposal_id=written, state=out.state, account_code=body.account_code,
+        form_line_key=body.form_line_key, note_id=out.note_id,
     )  # fmt: skip
 
 

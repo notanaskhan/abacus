@@ -76,6 +76,9 @@ BUILT = {
     ("POST", f"{_R}/workbook/imports"),
     ("GET", f"{_R}/sections"),
     ("POST", f"{_R}/sections/{{key}}/sign-off"),
+    # S40 partials: T-05-T37 rest, the line picker (DEC-4629).
+    ("GET", "/v1/form-lines"),
+    ("POST", f"{_R}/mappings"),
 }
 
 
