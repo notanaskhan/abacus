@@ -84,6 +84,8 @@ class ApprovalBlockerOut(BaseModel):
 
     kind: Annotated[str, classified("internal")]
     ref_id: Annotated[UUID | None, classified("internal")]
+    # T-05-T53 (DEC-4907), additive: the code's fixed sentence for TAX-05 and SHL-12 h.
+    words: Annotated[str, classified("internal")] = ""
 
 
 class FinalApprovalOut(BaseModel):
@@ -439,7 +441,10 @@ def _approval_out(found: approval.Eligibility, approved_at: datetime | None) -> 
     return FinalApprovalOut(
         return_id=found.return_id,
         eligible=found.eligible,
-        blockers=[ApprovalBlockerOut(kind=b.kind, ref_id=b.ref_id) for b in found.blockers],
+        blockers=[
+            ApprovalBlockerOut(kind=b.kind, ref_id=b.ref_id, words=approval.blocker_words(b.kind))
+            for b in found.blockers
+        ],
         approver_user_id=found.signer,
         checkpoint_id=found.checkpoint_id,
         content_hash=found.content_hash,
@@ -545,7 +550,10 @@ async def engine_sync_route(return_id: ReturnId, ctx: Ctx) -> EngineSyncOut:
         if await export.exportable(ctx.tenant, return_id)
         else [ApprovalBlockerOut(kind="final_approval_required", ref_id=None)]
     )
-    blockers += [ApprovalBlockerOut(kind=b.kind, ref_id=b.ref_id) for b in found.blockers]
+    blockers += [
+        ApprovalBlockerOut(kind=b.kind, ref_id=b.ref_id, words=approval.blocker_words(b.kind))
+        for b in found.blockers
+    ]
     return EngineSyncOut(
         return_id=v.return_id,
         state=v.state,

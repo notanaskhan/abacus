@@ -98,6 +98,32 @@ def register_final_approval_blocker(kind: str, provider: BlockerProvider) -> Non
     _PROVIDERS[kind] = provider
 
 
+# T-05-T53 (DEC-4907): the words TAX-05 and SHL-12 h show for each blocker code, fixed by code.
+BLOCKER_WORDS: Final[dict[str, str]] = {
+    "policy_unassigned": "No partner is named to give final approval for this client.",
+    "no_checkpoint": "Nothing has been saved to approve yet.",
+    "sign_off_missing_l1": "The preparer's sign-off is missing or out of date.",
+    "sign_off_missing_l2": "The reviewer's sign-off is missing or out of date.",
+    "sign_off_missing_l3": "The manager's sign-off is missing or out of date.",
+    "issue_blocks_final_approval": "An open issue blocks final approval.",
+    "import_pending_approval": "An engine import is waiting for a decision.",
+    "draft_k1": "A partner's K-1 is still a draft.",
+    "trial_balance_missing": "No trial balance has been imported for the return.",
+    "unmapped_accounts": "Some trial balance accounts are not mapped to a form line.",
+    "allocation_structure_not_approved": "The allocation structure is not approved.",
+    "tie_out_off_unacknowledged": (
+        "A tie-out is off and its section has not been signed off with a note."
+    ),
+    "workbook_run_in_progress": "A workbook run is still in progress.",
+    "entity_return": "The entity return's checks could not be read.",
+}
+
+
+def blocker_words(kind: str) -> str:
+    """A blocker's sentence; an unknown code reads as a generic one (never blank)."""
+    return BLOCKER_WORDS.get(kind, "A check blocks final approval.")
+
+
 class NotSigner(Forbidden):
     def __init__(self) -> None:
         super().__init__(APPROVE, "condition")
@@ -243,7 +269,11 @@ async def approve(
     content_hash = cast(str, found.content_hash)  # signed as the checkpoint stores it
     if found.blockers:
         raise FinalApprovalBlocked(
-            facts={"work_item_id": str(return_id), "blockers": len(found.blockers)}
+            facts={
+                "work_item_id": str(return_id),
+                "blockers": len(found.blockers),
+                "first_blocker": found.blockers[0].kind,  # T-05-T53: the list is the GET's
+            }
         )
     at = await now(ctx.tenant)
     keys = {"tenant_id": ctx.tenant_id, "work_item_id": return_id}
@@ -351,6 +381,7 @@ def register() -> None:
 
 
 __all__ = [
+    "BLOCKER_WORDS",
     "Blocker",
     "ContentChanged",
     "Eligibility",
@@ -359,6 +390,7 @@ __all__ = [
     "TaxReturnApproved",
     "TransitionRefused",
     "approve",
+    "blocker_words",
     "eligibility",
     "register",
     "register_final_approval_blocker",
