@@ -9,6 +9,8 @@ Activities are stubbed (no database), so each history pins the command sequence 
 - `workbench-session-v2-read-only.json` (W-02-T15): one message, one v2 turn, then `close`.
 - `workbench-session-v2-child-run.json`: one message whose v2 turn proposes writes; the child's
   workflow is started once through the start-child activity.
+- `workbench-session-v2-side-queue.json` (W-02-T15 rest): a v2 turn asks a question, a second
+  message is answered while it stays open, then the answer, then `close`.
 
 A history on disk is never overwritten.
 """
@@ -58,6 +60,8 @@ def _activities(scenario: str) -> list[Any]:  # Any: activity callables of sever
 
     @activity.defn(name="workbench.session.turn_v2")
     async def turn_v2(tenant_id: str, session_id: str, kind: str, seq: int) -> TurnDone:
+        if scenario == "side-queue" and seq == 1:
+            return TurnDone(asked=2)
         return TurnDone(child_run_id=_CHILD) if scenario == "child-run" else TurnDone()
 
     @activity.defn(name="workbench.session.start_child")
@@ -103,6 +107,7 @@ async def _record(out: Path, stack: Stack) -> None:
     sessions = [
         ("workbench-session-v2-read-only.json", "read-only"),
         ("workbench-session-v2-child-run.json", "child-run"),
+        ("workbench-session-v2-side-queue.json", "side-queue"),
     ]
     for n, (name, scenario) in enumerate(sessions, start=10):
         if (out / name).exists():
@@ -124,6 +129,11 @@ async def _record(out: Path, stack: Stack) -> None:
                 start_signal="user_message",
                 start_signal_args=[1],
             )
+            if scenario == "side-queue":
+                await asyncio.sleep(1)
+                await handle.signal("user_message", 3)  # answered first; the question stays open
+                await asyncio.sleep(1)
+                await handle.signal("answer", [4, 2])
             await asyncio.sleep(1)
             await handle.signal("close")
             await _save(client, out, name, handle)

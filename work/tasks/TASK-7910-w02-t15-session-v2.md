@@ -28,9 +28,7 @@ pinned scope, first-message title, edit-and-resend, deterministic compaction, th
 - Security review: at the S42 end pass (red).
 
 ## Partial
-- Two of the five planned v2 histories are recorded at the end pass (read-only, child-run:
-  `workbench-session-v2-*.json` by `record_s42_runs`); the side-queue, compaction and plans-gate
-  shapes are not (the stubbed activity answers the same commands, so they pin no new sequence).
+- ~~Replay histories~~: read-only, child-run (end pass) and side-queue (TASK-7928) recorded; compaction and the plans gate add no workflow command (DEC-4924).
 - The FE renders `nothing_written` and `plans_off` notices with W-02-T17's thread states.
 
 ## Progress log

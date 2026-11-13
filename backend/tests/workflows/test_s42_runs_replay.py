@@ -20,6 +20,7 @@ NAMES = [
     "memo-draft-v1-failed.json",
     "workbench-session-v2-read-only.json",
     "workbench-session-v2-child-run.json",
+    "workbench-session-v2-side-queue.json",
 ]
 
 
