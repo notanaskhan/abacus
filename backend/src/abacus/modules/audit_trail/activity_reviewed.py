@@ -950,5 +950,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         # reviewed 2026-11-13 (S42, TASK-7901): an approved workbook fix's cells (TXP-11 history
         # and the TXP-10 issue's activity).
         "workbook.fix_applied",
+        # reviewed 2026-11-13 (S42, TASK-7902): the sealed note on resolving an issue no fix
+        # closed (TXP-10 d's resolution line).
+        "issue.resolution_noted",
     }
 )

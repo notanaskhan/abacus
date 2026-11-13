@@ -685,6 +685,25 @@ class WorkbookSignOffRecordedOut(BaseModel):
     sign_off_id: Annotated[UUID, Internal]
 
 
+class WorkbookIssueAssigneeOut(BaseModel):
+    """T-05-T51: a person or the Accrued Agent."""
+
+    model_config = _cfg()
+
+    kind: Annotated[Literal["person", "agent"], Internal]
+    user_id: Annotated[UUID | None, Internal] = None
+    name: Annotated[str, Internal]
+
+
+class WorkbookIssueCellLinkOut(BaseModel):
+    """T-05-T51: a linked cell range, for TXP-11's match lighting."""
+
+    model_config = _cfg()
+
+    sheet: Annotated[str, Internal]
+    range: Annotated[str, Internal]
+
+
 class WorkbookReturnIssueOut(BaseModel):
     model_config = _cfg()
 
@@ -693,6 +712,28 @@ class WorkbookReturnIssueOut(BaseModel):
     section: Annotated[str | None, Internal] = None
     step: Annotated[str | None, Internal] = None
     status: Annotated[str, Internal]
+    # T-05-T51 (DEC-4903), additive: the queue row's facts.
+    kind: Annotated[str, Internal] = "review_point"
+    priority: Annotated[str, Internal] = "normal"
+    source_kind: Annotated[str | None, Internal] = None
+    category_path: Annotated[str | None, Internal] = None
+    blocks: Annotated[list[str], Internal] = Field(default_factory=list[str])
+    assignee: Annotated[WorkbookIssueAssigneeOut | None, Internal] = None
+    cells: Annotated[list[WorkbookIssueCellLinkOut], Internal] = Field(
+        default_factory=list[WorkbookIssueCellLinkOut]
+    )
+    request_item_id: Annotated[UUID | None, Internal] = None
+    version: Annotated[int, Internal] = 1
+    created_at: Annotated[datetime | None, Internal] = None
+    allowed_actions: Annotated[list[str], Internal] = Field(default_factory=list[str])
+
+
+class WorkbookIssueSectionOut(BaseModel):
+    model_config = _cfg()
+
+    key: Annotated[Literal["waiting_on_client", "review_points"], Internal]
+    title: Annotated[str, Internal]
+    count: Annotated[int, Internal]
 
 
 class WorkbookReturnIssuesOut(BaseModel):
@@ -701,6 +742,63 @@ class WorkbookReturnIssuesOut(BaseModel):
     items: Annotated[list[WorkbookReturnIssueOut], Confidential]
     by_section: Annotated[dict[str, int], Internal]
     by_step: Annotated[dict[str, int], Internal]
+    # T-05-T51, additive: the badge (open total), Show resolved's count and the two headings.
+    open_total: Annotated[int, Internal] = 0
+    resolved_total: Annotated[int, Internal] = 0
+    sections: Annotated[list[WorkbookIssueSectionOut], Internal] = Field(
+        default_factory=list[WorkbookIssueSectionOut]
+    )
+
+
+class WorkbookIssueAssigneeOptionOut(BaseModel):
+    model_config = _cfg()
+
+    kind: Annotated[Literal["person", "agent", "client_contact"], Internal]
+    id: Annotated[UUID | None, Internal] = None
+    name: Annotated[str, Confidential]
+    detail: Annotated[str | None, Internal] = None
+
+
+class WorkbookIssueAssigneesOut(BaseModel):
+    model_config = _cfg()
+
+    items: Annotated[list[WorkbookIssueAssigneeOptionOut], Confidential]
+
+
+class WorkbookIssueSendIn(BaseModel):
+    """T-05-T51: the issue's own client wording goes; the body never carries text."""
+
+    model_config = _cfg()
+
+    seen_version: Annotated[int, Field(ge=1), Internal]
+    contact_id: Annotated[UUID, Internal]
+    due_on: Annotated[date | None, Internal] = None
+
+
+class WorkbookIssueSentOut(BaseModel):
+    model_config = _cfg()
+
+    request_item_id: Annotated[UUID, Internal]
+
+
+class WorkbookIssueReminderOut(BaseModel):
+    model_config = _cfg()
+
+    drafts: Annotated[int, Internal]
+
+
+class WorkbookIssueResolvedOut(BaseModel):
+    model_config = _cfg()
+
+    issue_id: Annotated[UUID, Internal]
+    noted: Annotated[bool, Internal]
+
+
+class WorkbookIssueResolveIn(BaseModel):
+    model_config = _cfg()
+
+    seen_version: Annotated[int, Field(ge=1), Internal]
+    note: Annotated[str | None, Field(max_length=1000), Confidential] = None
 
 
 class WorkbookMemoSectionOut(BaseModel):
@@ -1802,8 +1900,114 @@ async def entity_issues_route(
     q: Annotated[str | None, Query(max_length=120)] = None,
     show_resolved: Annotated[bool, Query()] = False,
 ) -> WorkbookReturnIssuesOut:
+    """TXP-10's queue (T-05-T51, DEC-4903): Waiting on the client and Review points, counts over
+    the open issues before the filters (the badge), `by_step` for TXP-00."""
+    from abacus.modules.tax.entity_issues import issue_queue
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    queue = await issue_queue(
+        ctx, return_id, section=section, status=status, step=step, q=q,
+        show_resolved=show_resolved,
+    )  # fmt: skip
+    return WorkbookReturnIssuesOut(
+        items=[
+            WorkbookReturnIssueOut(
+                id=i.id, title=i.title, section=i.section, step=i.step, status=i.status,
+                kind=i.kind, priority=i.priority, source_kind=i.source_kind,
+                category_path=i.category_path, blocks=list(i.blocks),
+                assignee=None if i.assignee is None else WorkbookIssueAssigneeOut(
+                    kind=i.assignee.kind, user_id=i.assignee.user_id, name=i.assignee.name
+                ),
+                cells=[
+                    WorkbookIssueCellLinkOut(sheet=str(c.get("sheet", "")),
+                                             range=str(c.get("range", "")))
+                    for c in i.links
+                ],
+                request_item_id=i.request_item_id, version=i.version, created_at=i.created_at,
+                allowed_actions=list(i.allowed_actions),
+            )
+            for i in queue.items
+        ],
+        by_section=queue.by_section,
+        by_step=queue.by_step,
+        open_total=queue.open_total,
+        resolved_total=queue.resolved_total,
+        sections=[
+            WorkbookIssueSectionOut(key=k, title=t, count=n)  # type: ignore[arg-type]
+            for k, t, n in queue.sections
+        ],
+    )  # fmt: skip
+
+
+@workbook_router.get(
+    f"{_R}/issue-assignees", action="issue.read", response_model=WorkbookIssueAssigneesOut
+)
+async def entity_issue_assignees_route(return_id: UUID, ctx: Ctx) -> WorkbookIssueAssigneesOut:
+    """TXP-10's assignee picker (T-05-T51): the team, the Accrued Agent, client contacts."""
+    from abacus.modules.tax.entity_issues import assignee_options
+
+    await _flag_on(ctx)
+    await _workbook_read(ctx, return_id)
+    return WorkbookIssueAssigneesOut(
+        items=[
+            WorkbookIssueAssigneeOptionOut(kind=o.kind, id=o.id, name=o.name, detail=o.detail)
+            for o in await assignee_options(ctx, return_id)
+        ]
+    )
+
+
+@workbook_router.post(
+    f"{_R}/issues/{{issue_id}}/send-to-client", action="issue.send_to_client",
+    response_model=WorkbookIssueSentOut, errors=(409,),
+)  # fmt: skip
+async def entity_issue_send_route(
+    return_id: UUID, issue_id: UUID, body: WorkbookIssueSendIn, ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> WorkbookIssueSentOut:  # fmt: skip
+    """SHL-15 → POR-04 (T-05-T51, DEC-4904): only the issue's client wording; 409
+    `client_wording_missing` without one."""
+    from abacus.modules.tax.entity_issues import send_to_client
+
+    await _flag_on(ctx)
+    await _workbook_read(ctx, return_id)
+    item = await send_to_client(
+        ctx, return_id, issue_id, seen_version=body.seen_version, contact_id=body.contact_id,
+        due_on=body.due_on,
+    )  # fmt: skip
+    return WorkbookIssueSentOut(request_item_id=item)
+
+
+@workbook_router.post(
+    f"{_R}/issues/{{issue_id}}/reminders", action="follow_up.draft",
+    response_model=WorkbookIssueReminderOut, status_code=202, errors=(409,),
+)  # fmt: skip
+async def entity_issue_remind_route(
+    return_id: UUID, issue_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> WorkbookIssueReminderOut:
+    """A follow-up draft from the firm's C16 Reminder template on the issue's request item."""
+    from abacus.modules.tax.entity_issues import remind
+
+    await _flag_on(ctx)
+    await _workbook_read(ctx, return_id)
+    return WorkbookIssueReminderOut(drafts=await remind(ctx, return_id, issue_id))
+
+
+@workbook_router.post(
+    f"{_R}/issues/{{issue_id}}/resolve", action="issue.resolve",
+    response_model=WorkbookIssueResolvedOut, errors=(409, 422),
+)  # fmt: skip
+async def entity_issue_resolve_route(
+    return_id: UUID, issue_id: UUID, body: WorkbookIssueResolveIn, ctx: Ctx
+) -> WorkbookIssueResolvedOut:
+    """P-04's resolve with a required note when no fix was approved (422
+    `resolution_note_required`); the note is sealed, audited by hash."""
+    from abacus.modules.tax.entity_issues import resolve
+
+    await _flag_on(ctx)
+    await _workbook_read(ctx, return_id)
+    await resolve(ctx, return_id, issue_id, seen_version=body.seen_version, note=body.note)
+    return WorkbookIssueResolvedOut(issue_id=issue_id, noted=bool((body.note or "").strip()))
 
 
 @workbook_router.get(

@@ -735,6 +735,27 @@ async def record_self_check_issue(
     return issue_id, True
 
 
+_LINKS: Final = text(
+    "SELECT issue_id, link_kind, ref FROM issue_links WHERE issue_id = ANY(:ids) ORDER BY id"
+)
+
+
+async def issue_links(
+    tenant: TenantContext, issue_ids: Sequence[UUID]
+) -> dict[UUID, list[tuple[str, dict[str, object]]]]:
+    """T-05-T51 (TXP-10): each issue's links (`cell_range`, `request_item`, …) in the order
+    written, for a reader the caller already authorised on `issue.read`."""
+    if not issue_ids:
+        return {}
+    out: dict[UUID, list[tuple[str, dict[str, object]]]] = {}
+    async with tenant_session(tenant) as session:
+        for r in await session.execute(_LINKS, {"ids": list(issue_ids)}):
+            raw: object = r.ref
+            ref = cast(dict[str, object], raw if isinstance(raw, dict) else json.loads(str(raw)))
+            out.setdefault(r.issue_id, []).append((str(r.link_kind), ref))
+    return out
+
+
 # P-04-T31: the part-2 service reads an issue and its record the same way.
 issue_row = _one
 record_of = _record  # T-04-T31: the issue's record, its resource and its label
