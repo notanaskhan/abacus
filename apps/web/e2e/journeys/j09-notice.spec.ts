@@ -12,6 +12,10 @@ test.describe("J09 notice", () => {
   });
 
   test("j09 3: the analysis waits on the signer (NOT-02a)", async ({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "N-04-T26: reads a fixture state (NOT-02/03) by the placeholder id; the full-stack seed has no notice analysis at E0 and no id lookup yet",
+    );
     await journey.as("kevin-osei", "/notices/_noticeId_", {
       clock: DEMO_INSTANT,
       scenario: "NOT-02:a",
@@ -23,6 +27,10 @@ test.describe("J09 notice", () => {
   });
 
   test("j09 4: Daniel's decision reads as his (NOT-02c)", async ({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "N-04-T26: reads a fixture state (NOT-02/03) by the placeholder id; the full-stack seed has no notice analysis at E0 and no id lookup yet",
+    );
     await journey.as("daniel-reyes", "/notices/_noticeId_", {
       clock: DEMO_INSTANT,
       scenario: "NOT-02:c",
@@ -33,6 +41,10 @@ test.describe("J09 notice", () => {
   });
 
   test("j09 5-6: the response letter and its approval (NOT-03)", async ({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "N-04-T26: reads a fixture state (NOT-02/03) by the placeholder id; the full-stack seed has no notice analysis at E0 and no id lookup yet",
+    );
     await journey.as("kevin-osei", "/notices/_noticeId_?tab=response", {
       clock: DEMO_INSTANT,
       scenario: "NOT-03:a",
@@ -43,6 +55,10 @@ test.describe("J09 notice", () => {
   });
 
   test("j09 variants: Collins disagrees, Santos has no authorization", async ({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "N-04-T26: reads a fixture state (NOT-02/03) by the placeholder id; the full-stack seed has no notice analysis at E0 and no id lookup yet",
+    );
     await journey.as("kevin-osei", "/notices/_noticeId_", {
       clock: DEMO_INSTANT,
       scenario: "NOT-02:e",

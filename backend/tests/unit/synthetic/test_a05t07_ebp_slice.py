@@ -78,9 +78,20 @@ def test_the_documents_are_deterministic_and_readable() -> None:
 
 
 def test_the_slice_uploads_once_on_northwind() -> None:
-    # A-05-T49 (DEC-2603): the slice grants `ebp_audits` first, then uploads once.
-    entitlement, event = slice_events("ebp")
+    # A-05-T49 (DEC-2603): the slice grants `ebp_audits` first, turns `ebp.modules` on (TASK-7813:
+    # the EBP canvases read behind it), then uploads once.
+    entitlement, flag, plan, event = slice_events("ebp")
     assert entitlement.kind == "platform.entitlement_set"
     assert entitlement.data["module"] == "ebp_audits"
+    assert flag.kind == "platform.flag_set"
+    assert flag.data["flag"] == "ebp.modules"
+    # TASK-7814: Marcus Delaney records EBP-01 a's plan facts on Sep 22, after E0.
+    assert plan.kind == "assurance.ebp_plan_recorded"
+    assert plan.actor == "MD"
+    assert plan.at == ebp.PLAN_RECORDED_AT
+    assert dict(ebp.PLAN_FACTS)["plan_number"] == ebp.PLAN_NUMBER
+    assert dict(ebp.PLAN_FACTS)["recordkeeper_plan_id"] == ebp.RECORDKEEPER_PLAN_ID
+    assert dict(ebp.PLAN_FACTS)["participants_eoy"] == str(ebp.PARTICIPANTS_EOY)
+    assert dict(ebp.PLAN_FACTS)["participants_boy_with_balances"] == str(ebp.PARTICIPANTS_BOY)
     assert event.kind == "evidence.ebp_documents_uploaded"
     assert event.data["files"] == len(ebp.FILES) == 8

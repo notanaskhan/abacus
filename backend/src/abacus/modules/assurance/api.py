@@ -110,6 +110,7 @@ from abacus.modules.assurance.ebp_investments import AUDIT_KINDS as CERTIFICATIO
 from abacus.modules.assurance.ebp_investments import audit_owners as certification_owners
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
 from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
+from abacus.modules.assurance.ebp_plan import edit_plan as edit_ebp_plan  # TASK-7814: the seed
 from abacus.modules.assurance.ebp_remittances import AUDIT_KINDS as LATE_REMITTANCE_KINDS
 from abacus.modules.assurance.ebp_remittances import audit_owners as late_remittance_owners
 from abacus.modules.assurance.ebp_remittances import late_remittances
@@ -533,6 +534,7 @@ __all__ = [
     "create_risk",
     "decide_archive_addition",  # A-07-T41: the archive slice
     "decide_archive_lock",  # A-07-T41: the archive slice
+    "edit_ebp_plan",
     "edit_risk",
     "eqr_concur",  # A-07-T41: the archive slice
     "eqr_mark_reviewed",  # A-07-T41: the archive slice

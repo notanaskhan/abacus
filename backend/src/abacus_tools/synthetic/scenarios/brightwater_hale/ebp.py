@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Final
 
@@ -35,6 +35,7 @@ from openpyxl import Workbook
 from abacus.kernel.calendar import add_business_days, is_business_day
 from abacus.kernel.numeric import allocate
 from abacus_tools.synthetic.documents import pinned_xlsx, positioned_pdf
+from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
@@ -42,6 +43,20 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "ebp"
 NEEDS: Final = ("people",)
+EBP_MODULES_FLAG: Final = "ebp.modules"
+# EBP-01 a's facts (A-05-T11 fixture, the handoff's figures); keys are ebp_plan's editable fields.
+PLAN_FACTS: Final = (
+    ("plan_year_start", "2025-01-01"),
+    ("plan_year_end", "2025-12-31"),
+    ("safe_harbor", "qaca"),
+    ("recordkeeper_plan_id", "58217"),
+    ("participants_boy_with_balances", "286"),
+    ("participants_eoy", "301"),
+    ("prior_year_filer", "large_plan"),
+    ("plan_number", "001"),
+)
+PLAN_CITATION: Final = "Adoption agreement v2 and the PY2025 census"
+PLAN_RECORDED_AT: Final = datetime(2026, 9, 22, 9, 30, tzinfo=CT)
 PLAN: Final = "Northwind Robotics 401(k) Plan"
 PLAN_NUMBER: Final = "001"
 RECORDKEEPER_PLAN_ID: Final = "58217"
@@ -319,6 +334,28 @@ def _ebp_slice() -> list[Event]:
             "system",
             SLICE,
             {"module": "ebp_audits"},
+        ),
+        # TASK-7813: the EBP canvases (EBP-01 to EBP-09) read behind `ebp.modules`; the synthetic
+        # firm turns it on so the full-stack journeys (J03 7 to 13, J18 1) draw them.
+        Event(
+            f"flag:{EBP_MODULES_FLAG}",
+            SETUP_AT,
+            "platform.flag_set",
+            "system",
+            SLICE,
+            {"flag": EBP_MODULES_FLAG},
+        ),
+        # TASK-7814: Marcus Delaney records Northwind's plan facts through EBP-01's edit service
+        # from the adoption agreement v2 and the census, so EBP-01 a (Sep 24, 10:15 AM) reads them.
+        # The time is inferred (the handoff draws only the profile at 10:15 AM).
+        Event(
+            "ebp:northwind:plan",
+            PLAN_RECORDED_AT,
+            "assurance.ebp_plan_recorded",
+            "MD",
+            SLICE,
+            {"fields": dict(PLAN_FACTS), "citation_note": PLAN_CITATION},
+            client="Northwind Robotics, Inc.",
         ),
         Event(
             "ebp:northwind:documents",
