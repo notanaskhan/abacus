@@ -77,6 +77,10 @@ one shard; the authz parts hold 319, 368, 354, 340 and 327.
   globs must name its other files too; clean tests still run the whole suite.
 - 2026-11-13: built. ruff, ruff format and pyright clean on the three files; 5,079 tests in
   tests/unit/quality and the workflow tests pass. Weekly run 43393671620 dispatched on the branch.
+- 2026-11-13: run 43393671620: shards 1, 2, 4, 5, 6 and 7 succeeded. The merge counted 1,354
+  authz mutants decided across the four parts that ran. Shard 8 ran out of time (166 minutes of
+  setup on 39.9k lines: the weight counted mutants, not setup). Shard 3 failed in mutmut's stats
+  pass on a load-test timing race. Both are fixed in TASK-7832 (DEC-4825).
 
 ## Rows
 - Q-03-T147: still partial (the ratchet is AY's to approve, TASK-7817); this task closes the

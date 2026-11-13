@@ -147,6 +147,15 @@ async def run(
         samples[s.name] = Samples("sse", s.p95_first_event_ms)
     for t in scenario.temporal:
         samples[t.name] = Samples("temporal", t.p95_ms)
+    # The bodies are built before the clock starts (TASK-7832): a body is the run's fixture, not
+    # its load, and a slow first build (the 300-row workbook) would eat a short run's window
+    # before some users made their first request.
+    bodies = {
+        step.body: BODIES[step.body]()
+        for group in scenario.groups
+        for step in group.steps
+        if step.body is not None
+    }
     started_at = system_now()
     began = time.perf_counter()
     deadline = began + scenario.duration_seconds
@@ -172,7 +181,7 @@ async def run(
                     headers["Idempotency-Key"] = uuid.uuid4().hex
                 content: bytes | None = None
                 if step.body is not None:
-                    body = BODIES[step.body]()
+                    body = bodies[step.body]
                     content = body.content
                     headers["Content-Type"] = body.content_type
                 start = time.perf_counter()
