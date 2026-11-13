@@ -11,6 +11,11 @@ import { TXP07, movementRows, paneLines, tallyItems } from ".";
 
 afterEach(cleanup);
 
+function must<T>(v: T | null | undefined): T {
+  if (v === null || v === undefined) throw new Error("expected an element");
+  return v;
+}
+
 describe("TXP-07 Capital Accounts", () => {
   it("covers the eight artboards", () => {
     expect(STATES).toEqual(["a", "a2", "a3", "b", "b2", "c", "d", "e"]);
@@ -51,8 +56,8 @@ describe("TXP-07 Capital Accounts", () => {
 
   it("a3: Pell Street's transfers net to 0 and open the Allocation Structure", () => {
     const rows = capitalAccounts("run2").rows;
-    const psv = paneLines(rows[2]!).find((l) => l.id === "transfers");
-    const ps2 = paneLines(rows[3]!).find((l) => l.id === "transfers");
+    const psv = paneLines(must(rows[2])).find((l) => l.id === "transfers");
+    const ps2 = paneLines(must(rows[3])).find((l) => l.id === "transfers");
     expect(psv?.tax).toBe("(331,405)");
     expect(ps2?.tax).toBe("331,405");
     const onTransfers = vi.fn();
@@ -64,7 +69,7 @@ describe("TXP-07 Capital Accounts", () => {
         onTransfers={onTransfers}
       />,
     );
-    fireEvent.click(screen.getAllByLabelText(COPY.transfersCell)[0]!);
+    fireEvent.click(must(screen.getAllByLabelText(COPY.transfersCell)[0]));
     expect(onTransfers).toHaveBeenCalled();
   });
 

@@ -10,18 +10,27 @@ import { lightRows } from ".";
 
 afterEach(cleanup);
 
+function must<T>(v: T | null | undefined): T {
+  if (v === null || v === undefined) throw new Error("expected an element");
+  return v;
+}
+
 describe("HOME-05 docked Today", () => {
   it("hovering Needs-you-first row 2 lights its HOME-01 row", () => {
     const capital = DANIEL_ROWS[1];
     const home = document.createElement("div");
     home.innerHTML = `<ul><li data-gate="${capital?.gate_id ?? ""}"></li><li data-gate="other"></li></ul>`;
-    const onHighlight = vi.fn((refs: readonly string[] | null) => lightRows(home, refs));
+    const onHighlight = vi.fn((refs: readonly string[] | null) => {
+      lightRows(home, refs);
+    });
     render(<TodayPanel vm={danielToday()} onHighlight={onHighlight} />);
     const row = document.querySelector(`[data-row="${capital?.gate_id ?? ""}"]`);
-    fireEvent.mouseEnter(row!);
-    expect(home.querySelector(`[data-gate="${capital?.gate_id ?? ""}"]`)?.getAttribute("data-lit")).toBe("true");
+    fireEvent.mouseEnter(must(row));
+    expect(
+      home.querySelector(`[data-gate="${capital?.gate_id ?? ""}"]`)?.getAttribute("data-lit"),
+    ).toBe("true");
     expect(home.querySelector('[data-gate="other"]')?.hasAttribute("data-lit")).toBe(false);
-    fireEvent.mouseLeave(row!);
+    fireEvent.mouseLeave(must(row));
     expect(home.querySelector("[data-lit]")).toBeNull();
   });
 

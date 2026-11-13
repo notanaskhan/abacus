@@ -213,7 +213,7 @@ function PartnerPane({
     <section
       aria-label={name}
       data-pane={row.partner_id}
-      className="flex flex-none flex-col rounded-[10px] border border-line bg-surface"
+      className="flex flex-none flex-col rounded-[10px] border border-hair bg-card"
       style={{ width: PANE_WIDTH }}
     >
       <table className="w-full table-fixed border-collapse text-body tabular-nums">
@@ -224,7 +224,7 @@ function PartnerPane({
           <col style={{ width: 140 }} />
         </colgroup>
         <thead>
-          <tr className="h-[36px] border-b border-line">
+          <tr className="h-[36px] border-b border-hair">
             <th scope="col" className="px-[12px] text-left text-[13px] font-medium text-ink">
               <span className="inline-flex items-center gap-[6px]">
                 {name}
@@ -463,8 +463,9 @@ export function TXP07({
           {...(onView === undefined
             ? {}
             : {
-                onChange: (label: string) =>
-                  onView(label === COPY.byMovement ? "by_movement" : "by_partner"),
+                onChange: (label: string) => {
+                  onView(label === COPY.byMovement ? "by_movement" : "by_partner");
+                },
               })}
         />
         {computing ? <Spinner size={12} label={COPY.computing} showLabel /> : null}
@@ -516,7 +517,7 @@ export function TXP07({
         <div
           role="dialog"
           aria-label={COPY.signOff}
-          className="mx-[12px] mb-[10px] rounded-[10px] border border-amber-line bg-amber-tint p-[12px]"
+          className="mx-[12px] mb-[10px] rounded-[10px] border border-amber bg-amber-tint p-[12px]"
         >
           <p className="mb-[8px] text-body text-amber-ink">
             {COPY.blocked(Math.max(1, offCount))}
@@ -525,9 +526,11 @@ export function TXP07({
             {COPY.noteLabel}
             <textarea
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(e) => {
+                setNote(e.target.value);
+              }}
               rows={2}
-              className="rounded-[6px] border border-line bg-surface p-[6px]"
+              className="rounded-[6px] border border-hair bg-card p-[6px]"
             />
           </label>
           <div className="flex gap-[8px]">

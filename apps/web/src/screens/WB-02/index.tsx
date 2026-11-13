@@ -119,17 +119,31 @@ function ContextStack({
         </section>
       ))}
       {adding.map((ref) => (
-        <section key={ref} aria-busy="true" aria-label={COPY.loadingCard} className="rounded-[10px] bg-card p-[10px] shadow-e1">
-          <SkeletonRows type="lines" immediate label={COPY.loadingCard} />
+        <section
+          key={ref}
+          aria-busy="true"
+          aria-label={COPY.loadingCard}
+          className="rounded-[10px] bg-card p-[10px] shadow-e1"
+        >
+          <SkeletonRows type="card" immediate label={COPY.loadingCard} />
         </section>
       ))}
       {items.length > 0 ? (
         <div className="flex flex-wrap gap-[6px]">
           {items.map((item) => (
-            <span key={item.id} className="inline-flex h-[24px] items-center gap-[4px] rounded-pill bg-nested px-[8px] text-[12px] text-ink">
+            <span
+              key={item.id}
+              className="inline-flex h-[24px] items-center gap-[4px] rounded-pill bg-nested px-[8px] text-[12px] text-ink"
+            >
               {item.chip_label}
               {onRemove === undefined ? null : (
-                <button type="button" aria-label={COPY.remove(item.chip_label)} onClick={() => onRemove(item)}>
+                <button
+                  type="button"
+                  aria-label={COPY.remove(item.chip_label)}
+                  onClick={() => {
+                    onRemove(item);
+                  }}
+                >
                   <Icon name="x" size={12} />
                 </button>
               )}
@@ -203,20 +217,22 @@ function Picker({
                 >
                   <span
                     aria-hidden
-                    className={`flex size-[16px] items-center justify-center rounded-pill border ${on ? "border-green bg-green text-card" : "border-line"}`}
+                    className={`flex size-[16px] items-center justify-center rounded-pill border ${on ? "border-green bg-green text-card" : "border-hair"}`}
                   >
-                    {on ? <Icon name="check" size={10} /> : null}
+                    {on ? <Icon name="check" size={12} /> : null}
                   </span>
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate text-body text-ink">{o.title}</span>
-                    {o.detail ? <span className="truncate text-[11.5px] text-ink-3">{o.detail}</span> : null}
+                    {o.detail ? (
+                      <span className="truncate text-[11.5px] text-ink-3">{o.detail}</span>
+                    ) : null}
                   </span>
                 </button>
               </li>
             );
           })}
         </ul>
-        <div className="flex items-center gap-[8px] border-t border-line pt-[8px]">
+        <div className="flex items-center gap-[8px] border-t border-hair pt-[8px]">
           <span className="flex-1 text-[11.5px] text-ink-3">{COPY.pickerFooter}</span>
           <span className="text-[12px] text-ink-2">{COPY.selected(picked.size)}</span>
           <Button variant="primary" size="sm" disabled={picked.size === 0} onClick={onAdd}>
@@ -239,7 +255,9 @@ function Answer({
 }): JSX.Element {
   return (
     <div data-wb02="answer" className="flex flex-col gap-[10px] px-[16px] py-[12px]">
-      <p className="self-end rounded-[12px] bg-nested px-[12px] py-[8px] text-body text-ink">{answer.question}</p>
+      <p className="self-end rounded-[12px] bg-nested px-[12px] py-[8px] text-body text-ink">
+        {answer.question}
+      </p>
       <div className="rounded-[12px] bg-card p-[12px] shadow-e1">
         <AgentBlocks blocks={answer.blocks} facts={answer.facts} cites={answer.cites} />
         {answer.sources.length > 0 ? (
@@ -259,12 +277,18 @@ function Answer({
           </div>
         ) : null}
         {answer.controlLink ? (
-          <button type="button" onClick={onOpenControl} className="mt-[6px] text-body text-ink underline-offset-2 hover:underline">
+          <button
+            type="button"
+            onClick={onOpenControl}
+            className="mt-[6px] text-body text-ink underline-offset-2 hover:underline"
+          >
             {COPY.controlLink}
           </button>
         ) : null}
       </div>
-      {answer.nothingWritten ? <p className="text-[11.5px] text-ink-3">{COPY.readOnlyLine}</p> : null}
+      {answer.nothingWritten ? (
+        <p className="text-[11.5px] text-ink-3">{COPY.readOnlyLine}</p>
+      ) : null}
     </div>
   );
 }
@@ -302,7 +326,10 @@ export function WB02View({
           <div className="flex h-[46px] flex-none items-center gap-[8px] px-[16px]">
             <span className="flex-1 text-[14.5px] font-medium text-ink">{COPY.newSession}</span>
             {firmWide ? (
-              <span data-chip="firm-wide" className="inline-flex h-[24px] items-center rounded-pill bg-nested px-[8px] text-[12px] text-ink-2">
+              <span
+                data-chip="firm-wide"
+                className="inline-flex h-[24px] items-center rounded-pill bg-nested px-[8px] text-[12px] text-ink-2"
+              >
                 {COPY.firmWide}
               </span>
             ) : null}
@@ -334,7 +361,7 @@ export function WB02View({
             ) : null}
           </div>
           <form
-            className="flex h-[50px] flex-none items-center gap-[8px] border-t border-line px-[12px]"
+            className="flex h-[50px] flex-none items-center gap-[8px] border-t border-hair px-[12px]"
             onSubmit={(e) => {
               e.preventDefault();
               if (draft.trim() !== "") onSend?.(draft.trim());
@@ -360,6 +387,10 @@ export function WB02View({
 
 type Item = SessionSnapshotOut["items"][number];
 
+function text(v: unknown, fallback = ""): string {
+  return typeof v === "string" ? v : typeof v === "number" ? String(v) : fallback;
+}
+
 function record(v: unknown): Record<string, unknown> {
   return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
 }
@@ -371,7 +402,10 @@ export function answerOf(items: readonly Item[] | undefined): GroundedAnswer | u
   const at = list.map((i) => i.kind).lastIndexOf("agent_blocks");
   if (at < 0) return undefined;
   const item = list[at];
-  const asked = list.slice(0, at).reverse().find((i) => i.kind === "user_message");
+  const asked = list
+    .slice(0, at)
+    .reverse()
+    .find((i) => i.kind === "user_message");
   const payload = record(item?.payload);
   const blocks = record(payload["blocks"]);
   if (!Array.isArray(blocks["parts"])) return undefined;
@@ -379,11 +413,12 @@ export function answerOf(items: readonly Item[] | undefined): GroundedAnswer | u
   const sources: AnswerSource[] = raw.map((c, i) => {
     const r = record(c);
     return {
-      id: String(r["id"] ?? i),
+      id: text(r["id"], String(i)),
       n: Number(r["n"] ?? i + 1),
-      title: String(r["title"] ?? ""),
-      loc: String(r["loc"] ?? ""),
-      evidenceVersionId: typeof r["evidence_version_id"] === "string" ? r["evidence_version_id"] : null,
+      title: text(r["title"]),
+      loc: text(r["loc"]),
+      evidenceVersionId:
+        typeof r["evidence_version_id"] === "string" ? r["evidence_version_id"] : null,
       matchId: typeof r["match_id"] === "string" ? r["match_id"] : null,
     };
   });
@@ -399,7 +434,7 @@ export function answerOf(items: readonly Item[] | undefined): GroundedAnswer | u
       (i) => i.kind === "notice" && record(i.payload)["code"] === "nothing_written",
     ),
     controlLink: Array.isArray(payload["links"]) && (payload["links"] as unknown[]).length > 0,
-    question: String(record(asked?.payload)["body"] ?? ""),
+    question: text(record(asked?.payload)["body"]),
   };
 }
 

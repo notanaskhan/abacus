@@ -18,7 +18,7 @@ import {
   type SessionRow,
   SessionList,
   WorkbenchLayout,
-  statusWord,
+  registryWord,
 } from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { useOpenOverlay } from "../../app-core/open";
@@ -83,14 +83,13 @@ export function filterLabel(
   filter: SessionFilter,
   counts: { running?: number; needs_answer?: number } | null | undefined,
 ): string {
-  const word = statusWord("workbench_session_filter", filter).label;
   const n =
     filter === "running"
       ? counts?.running
       : filter === "needs_answer"
         ? counts?.needs_answer
         : undefined;
-  return word.replace("{n}", String(n ?? 0));
+  return registryWord("workbench_session_filter", filter, { fill: { n: String(n ?? 0) } }).label;
 }
 
 export function filterMenu(
@@ -148,9 +147,9 @@ export function WB01({
           ) : (
             <SessionList
               rows={rows.map((r) => rowOf(r, me))}
-              selectedId={sessionId ?? undefined}
+              {...(sessionId === null ? {} : { selectedId: sessionId })}
               query={q}
-              emptyTitle={q.trim() === "" ? undefined : COPY.noMatch(q.trim())}
+              {...(q.trim() === "" ? {} : { emptyTitle: COPY.noMatch(q.trim()) })}
               filterMenu={filterMenu(filter, list.data?.counts, onFilter)}
               onQuery={onQuery}
               onSelect={onSelect}
@@ -177,8 +176,18 @@ export function WB01({
                   live={selected.running === true}
                   {...(runId === null
                     ? {}
-                    : { onOpenTrace: () => openOverlay({ key: "run-trace", args: [runId] }) })}
-                  {...(manage ? { onDelete: () => setDeleting(selected.id) } : {})}
+                    : {
+                        onOpenTrace: () => {
+                          openOverlay({ key: "run-trace", args: [runId] });
+                        },
+                      })}
+                  {...(manage
+                    ? {
+                        onDelete: () => {
+                          setDeleting(selected.id);
+                        },
+                      }
+                    : {})}
                   {...(PLANNED_VISIBLE && onCreateAgent !== undefined ? { onCreateAgent } : {})}
                 />
               ) : null}

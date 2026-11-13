@@ -93,14 +93,63 @@ export function feldInspector(released = false): GraphInspector {
 
 /** b: the list view (T1 grammar). */
 export const RIDGELINE_LIST: readonly RelationshipRow[] = [
-  { id: "gp-lp", from: "Ridgeline GP LLC", relationship: "2% GP", to: "Ridgeline Property Partners, LP", since: "1/1/2019", source: "Partnership agreement" },
-  { id: "shah-lp", from: "Meera Shah", relationship: "38% LP", to: "Ridgeline Property Partners, LP", since: "1/1/2019", source: "Partnership agreement" },
-  { id: "psv-lp", from: "Pell Street Ventures LLC", relationship: "30% LP (35% to 6/30/2025)", to: "Ridgeline Property Partners, LP", since: "1/1/2019", source: "Partnership agreement" },
-  { id: "psv-ps2", from: "Pell Street Ventures LLC", relationship: "Sold 5 points ($360,000)", to: "Pell Street II LLC", since: "6/30/2025", source: "Assignment agreement (requested)" },
-  { id: "ps2-lp", from: "Pell Street II LLC", relationship: "5% LP from 7/1/2025", to: "Ridgeline Property Partners, LP", since: "7/1/2025", source: "Assignment agreement (requested)" },
-  { id: "feld-lp", from: "Jonah Feld", relationship: "25% LP", to: "Ridgeline Property Partners, LP", since: "1/1/2019", source: "Partnership agreement" },
-  { id: "spouse", from: "Claire Feld", relationship: "Spouse", to: "Jonah Feld", since: "—", source: "Client record" },
-];  // prettier-ignore
+  {
+    id: "gp-lp",
+    from: "Ridgeline GP LLC",
+    relationship: "2% GP",
+    to: "Ridgeline Property Partners, LP",
+    since: "1/1/2019",
+    source: "Partnership agreement",
+  },
+  {
+    id: "shah-lp",
+    from: "Meera Shah",
+    relationship: "38% LP",
+    to: "Ridgeline Property Partners, LP",
+    since: "1/1/2019",
+    source: "Partnership agreement",
+  },
+  {
+    id: "psv-lp",
+    from: "Pell Street Ventures LLC",
+    relationship: "30% LP (35% to 6/30/2025)",
+    to: "Ridgeline Property Partners, LP",
+    since: "1/1/2019",
+    source: "Partnership agreement",
+  },
+  {
+    id: "psv-ps2",
+    from: "Pell Street Ventures LLC",
+    relationship: "Sold 5 points ($360,000)",
+    to: "Pell Street II LLC",
+    since: "6/30/2025",
+    source: "Assignment agreement (requested)",
+  },
+  {
+    id: "ps2-lp",
+    from: "Pell Street II LLC",
+    relationship: "5% LP from 7/1/2025",
+    to: "Ridgeline Property Partners, LP",
+    since: "7/1/2025",
+    source: "Assignment agreement (requested)",
+  },
+  {
+    id: "feld-lp",
+    from: "Jonah Feld",
+    relationship: "25% LP",
+    to: "Ridgeline Property Partners, LP",
+    since: "1/1/2019",
+    source: "Partnership agreement",
+  },
+  {
+    id: "spouse",
+    from: "Claire Feld",
+    relationship: "Spouse",
+    to: "Jonah Feld",
+    since: "—",
+    source: "Client record",
+  },
+];
 
 /** c: the trust variant (Calloway Family Trust). */
 export const TRUST_NODES: readonly GraphCanvasNode[] = [
@@ -108,7 +157,12 @@ export const TRUST_NODES: readonly GraphCanvasNode[] = [
   { id: "trust", kind: "trust", name: "Calloway Family Trust", line: "Form 1041 · ••-•••5530" },
   { id: "nora", kind: "person", name: "Nora Calloway", line: "Beneficiary · •••-••-2074" },
   { id: "theo", kind: "person", name: "Theo Calloway", line: "Beneficiary · •••-••-2091" },
-  { id: "harborline", kind: "entity", name: "Harborline Trust Company", line: "Custodian · ••-•••6602" },
+  {
+    id: "harborline",
+    kind: "entity",
+    name: "Harborline Trust Company",
+    line: "Custodian · ••-•••6602",
+  },
 ];
 export const TRUST_EDGES: readonly GraphEdgeIn[] = [
   { id: "trustee", from: "eleanor", to: "trust", kind: "role", label: "Trustee" },

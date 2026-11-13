@@ -7,12 +7,7 @@
 import { Button, Icon } from "@abacus/ui";
 import { type JSX, useEffect, useRef, useState } from "react";
 import { useOpenHref } from "../../app-core/open";
-import {
-  readCollapsed,
-  useRebuildBrief,
-  useTodayBrief,
-  writeCollapsed,
-} from "../../domain/today";
+import { readCollapsed, useRebuildBrief, useTodayBrief, writeCollapsed } from "../../domain/today";
 import { HOME01 } from "../HOME-01";
 import { TodayPanel } from "../SHL-23";
 
@@ -76,7 +71,13 @@ export function HOME05({ initialCollapsed }: HOME05Props): JSX.Element {
     return (
       <div data-screen="HOME-05" data-state="c" className="flex min-h-0 flex-1 flex-col">
         <div className="flex h-[32px] flex-none items-center px-[12px]">
-          <Button variant="ghost" size="sm" onClick={() => toggle(false)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              toggle(false);
+            }}
+          >
             {COPY.openToday}
             <Icon name="chevron-right" size={12} />
           </Button>
@@ -88,7 +89,11 @@ export function HOME05({ initialCollapsed }: HOME05Props): JSX.Element {
     );
   }
   return (
-    <div data-screen="HOME-05" data-state="docked" className="flex min-h-0 flex-1 gap-[12px] pl-[12px]">
+    <div
+      data-screen="HOME-05"
+      data-state="docked"
+      className="flex min-h-0 flex-1 gap-[12px] pl-[12px]"
+    >
       <aside
         ref={panel}
         aria-label={COPY.today}
@@ -100,7 +105,9 @@ export function HOME05({ initialCollapsed }: HOME05Props): JSX.Element {
             type="button"
             data-chip="today"
             aria-pressed="true"
-            onClick={() => toggle(true)}
+            onClick={() => {
+              toggle(true);
+            }}
             className="inline-flex h-[24px] items-center gap-[4px] rounded-pill bg-nested px-[8px] text-[12px] text-ink"
           >
             {COPY.today}
@@ -109,7 +116,9 @@ export function HOME05({ initialCollapsed }: HOME05Props): JSX.Element {
         </div>
         <TodayPanel
           vm={brief.data}
-          onOpen={(href) => open(href)}
+          onOpen={(href) => {
+            open(href);
+          }}
           onRebuild={() => {
             if (brief.data !== undefined) void rebuild.rebuild(brief.data.brief_date, true);
           }}

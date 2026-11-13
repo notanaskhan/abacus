@@ -10,16 +10,30 @@ import { type GroundedAnswer, WB02View, answerOf } from ".";
 afterEach(cleanup);
 
 const ANSWER: GroundedAnswer = {
-  question:
-    "Why did contributions receivable go from $0 at 1/1/2025 to $48,600 at 12/31/2025?",
-  blocks: { version: 1, parts: [{ kind: "paragraph", text: "Contributions receivable moved." }] } as never,
+  question: "Why did contributions receivable go from $0 at 1/1/2025 to $48,600 at 12/31/2025?",
+  blocks: {
+    version: 1,
+    parts: [{ kind: "paragraph", text: "Contributions receivable moved." }],
+  } as never,
   facts: {},
   cites: {},
   sources: [
-    { id: "c1", n: 1, title: "PayGrid Contribution Detail 2025.xlsx", loc: "pay date 12/26/2025",
-      evidenceVersionId: "ev-1", matchId: "m-1" },
-    { id: "c2", n: 2, title: "Keystone Account Balances PY2025.xlsx", loc: "deposit 1/9/2026",
-      evidenceVersionId: "ev-2", matchId: "m-2" },
+    {
+      id: "c1",
+      n: 1,
+      title: "PayGrid Contribution Detail 2025.xlsx",
+      loc: "pay date 12/26/2025",
+      evidenceVersionId: "ev-1",
+      matchId: "m-1",
+    },
+    {
+      id: "c2",
+      n: 2,
+      title: "Keystone Account Balances PY2025.xlsx",
+      loc: "deposit 1/9/2026",
+      evidenceVersionId: "ev-2",
+      matchId: "m-2",
+    },
   ],
   nothingWritten: true,
   controlLink: true,
@@ -93,11 +107,30 @@ describe("WB-02 New session", () => {
 
   it("answerOf reads the code line from the turn's notice", () => {
     const items = [
-      { id: "1", seq: 1, kind: "user_message", actor_kind: "human", created_at: "", payload: { body: "Q?" } },
-      { id: "2", seq: 2, kind: "agent_blocks", actor_kind: "agent", created_at: "",
-        payload: { blocks: { version: 1, parts: [] } } },
-      { id: "3", seq: 3, kind: "notice", actor_kind: "system", created_at: "",
-        payload: { code: "nothing_written" } },
+      {
+        id: "1",
+        seq: 1,
+        kind: "user_message",
+        actor_kind: "human",
+        created_at: "",
+        payload: { body: "Q?" },
+      },
+      {
+        id: "2",
+        seq: 2,
+        kind: "agent_blocks",
+        actor_kind: "agent",
+        created_at: "",
+        payload: { blocks: { version: 1, parts: [] } },
+      },
+      {
+        id: "3",
+        seq: 3,
+        kind: "notice",
+        actor_kind: "system",
+        created_at: "",
+        payload: { code: "nothing_written" },
+      },
     ] as never;
     const a = answerOf(items);
     expect(a?.question).toBe("Q?");

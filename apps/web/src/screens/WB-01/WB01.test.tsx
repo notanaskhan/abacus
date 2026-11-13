@@ -10,6 +10,11 @@ import { filterLabel, filterMenu, rowOf } from ".";
 
 afterEach(cleanup);
 
+function must<T>(v: T | null | undefined): T {
+  if (v === null || v === undefined) throw new Error("expected an element");
+  return v;
+}
+
 describe("WB-01 list pane", () => {
   it("c: the menu reads Running 3 at 9:24:00 and Running 4 at 9:25, Needs your answer 0", () => {
     const at924 = wbList("wb01c-running-three").counts;
@@ -38,12 +43,7 @@ describe("WB-01 list pane", () => {
   it("f: a title search with no match says so with Clear search", () => {
     const onQuery = vi.fn();
     render(
-      <SessionList
-        rows={[]}
-        query="K-3"
-        emptyTitle={COPY.noMatch("K-3")}
-        onQuery={onQuery}
-      />,
+      <SessionList rows={[]} query="K-3" emptyTitle={COPY.noMatch("K-3")} onQuery={onQuery} />,
     );
     expect(screen.getByText("No sessions match 'K-3'.")).toBeTruthy();
     fireEvent.click(screen.getByText(COPY.clearSearch));
@@ -71,10 +71,13 @@ describe("WB-01 list pane", () => {
     const rows = items.map((r) => rowOf(r, hannah));
     const onRename = vi.fn();
     render(<SessionList rows={rows} still onRename={onRename} />);
-    fireEvent.click(screen.getAllByLabelText("Rename session")[0]!);
+    fireEvent.click(must(screen.getAllByLabelText("Rename session")[0]));
     const field = screen.getByLabelText("Session title");
     fireEvent.change(field, { target: { value: "Season progress by office" } });
     fireEvent.keyDown(field, { key: "Enter" });
-    expect(onRename).toHaveBeenCalledWith(rows.find((r) => r.manageable)?.id, "Season progress by office");
+    expect(onRename).toHaveBeenCalledWith(
+      rows.find((r) => r.manageable)?.id,
+      "Season progress by office",
+    );
   });
 });

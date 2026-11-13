@@ -24,7 +24,11 @@ const KITS = [
 
 describe("F-07-T20 portal boundary: firm-only kits", () => {
   for (const code of KITS) {
-    for (const file of ["src/entries/portal.tsx", "src/portal/home.tsx", "src/screens/POR-04/index.tsx"]) {
+    for (const file of [
+      "src/entries/portal.tsx",
+      "src/portal/home.tsx",
+      "src/screens/POR-04/index.tsx",
+    ]) {
       it(`refuses ${code} in ${file}`, async () => {
         const found = await restricted(`${code}\nexport const x = 1;`, file);
         expect(found.some((m) => m.includes("firm-only"))).toBe(true);
@@ -41,7 +45,10 @@ describe("F-07-T20 portal boundary: firm-only kits", () => {
   });
 
   it("a portal file may still import shared kits", async () => {
-    const found = await restricted('import { Button } from "@abacus/ui";\nexport const B = Button;', "src/portal/home.tsx");
+    const found = await restricted(
+      'import { Button } from "@abacus/ui";\nexport const B = Button;',
+      "src/portal/home.tsx",
+    );
     expect(found).toEqual([]);
   });
 

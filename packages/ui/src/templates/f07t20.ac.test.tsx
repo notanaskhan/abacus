@@ -34,7 +34,7 @@ describe("T14 inspector (independent)", () => {
         canvas={null}
         inspector={{ title: "Jonah Feld", sub: "Person", tin: "•••-••-4417", kv: [] }}
         canReveal={false}
-        onReveal={async () => "900-45-4417"}
+        onReveal={() => Promise.resolve("900-45-4417")}
       />,
     );
     expect(screen.queryByText("Reveal (logged)")).toBeNull();
@@ -69,7 +69,9 @@ describe("T17 form renderer (independent)", () => {
     draw([{ label: "Download", onSelect: () => undefined }]);
     const bars = document.querySelectorAll('[role="toolbar"]');
     for (const bar of bars) {
-      expect([...bar.querySelectorAll("button")].some((b) => b.textContent === "Download")).toBe(false);
+      expect([...bar.querySelectorAll("button")].some((b) => b.textContent === "Download")).toBe(
+        false,
+      );
     }
   });
 

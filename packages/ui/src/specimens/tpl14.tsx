@@ -40,31 +40,90 @@ interface Board {
 }
 
 export const TPL14_BOARDS: readonly Board[] = [
-  { id: "a", name: "Default graph", note: "Jonah Feld selected; two K-1s at risk", view: "graph", nodes: ridgelineNodes(), edges: RIDGELINE_EDGES, selected: "jonah-feld", banner: "at_risk" },
-  { id: "b", name: "List view", note: "From · Relationship · To · Since · Source", view: "list", nodes: ridgelineNodes(), edges: RIDGELINE_EDGES, banner: "at_risk" },
-  { id: "c", name: "Trust variant", note: "Calloway Family Trust: trustee, beneficiaries, custodian", view: "graph", nodes: TRUST_NODES, edges: TRUST_EDGES },
-  { id: "d", name: "External node", note: "An upper-tier entity the firm does not serve", view: "graph", nodes: [...ridgelineNodes(), EXTERNAL_NODE], edges: [...RIDGELINE_EDGES, EXTERNAL_EDGE], banner: "at_risk" },
-  { id: "e", name: "Single entity", note: "No relationships yet", view: "graph", nodes: [SINGLE_NODE], edges: [], single: true },
-  { id: "f", name: "After Ridgeline approval", note: "K-1s released Sep 15", view: "graph", nodes: ridgelineNodes(), edges: releasedEdges(), selected: "jonah-feld", banner: "released" },
-];  // prettier-ignore
+  {
+    id: "a",
+    name: "Default graph",
+    note: "Jonah Feld selected; two K-1s at risk",
+    view: "graph",
+    nodes: ridgelineNodes(),
+    edges: RIDGELINE_EDGES,
+    selected: "jonah-feld",
+    banner: "at_risk",
+  },
+  {
+    id: "b",
+    name: "List view",
+    note: "From · Relationship · To · Since · Source",
+    view: "list",
+    nodes: ridgelineNodes(),
+    edges: RIDGELINE_EDGES,
+    banner: "at_risk",
+  },
+  {
+    id: "c",
+    name: "Trust variant",
+    note: "Calloway Family Trust: trustee, beneficiaries, custodian",
+    view: "graph",
+    nodes: TRUST_NODES,
+    edges: TRUST_EDGES,
+  },
+  {
+    id: "d",
+    name: "External node",
+    note: "An upper-tier entity the firm does not serve",
+    view: "graph",
+    nodes: [...ridgelineNodes(), EXTERNAL_NODE],
+    edges: [...RIDGELINE_EDGES, EXTERNAL_EDGE],
+    banner: "at_risk",
+  },
+  {
+    id: "e",
+    name: "Single entity",
+    note: "No relationships yet",
+    view: "graph",
+    nodes: [SINGLE_NODE],
+    edges: [],
+    single: true,
+  },
+  {
+    id: "f",
+    name: "After Ridgeline approval",
+    note: "K-1s released Sep 15",
+    view: "graph",
+    nodes: ridgelineNodes(),
+    edges: releasedEdges(),
+    selected: "jonah-feld",
+    banner: "released",
+  },
+];
 
 function Tpl14({ board }: { board: Board }): JSX.Element {
   const [view, setView] = useState<GraphView>(board.view);
   const [selected, setSelected] = useState<string | null>(board.selected ?? null);
-  const inspector =
-    selected === "jonah-feld" ? feldInspector(board.banner === "released") : null;
+  const inspector = selected === "jonah-feld" ? feldInspector(board.banner === "released") : null;
   return (
-    <Artboard id={`tpl-14${board.id}`} badge={`TPL-14${board.id}`} name={board.name} note={board.note}>
+    <Artboard
+      id={`tpl-14${board.id}`}
+      badge={`TPL-14${board.id}`}
+      name={board.name}
+      note={board.note}
+    >
       <div className="relative h-[800px] w-[1400px] bg-shell" data-tpl14={board.id}>
         <GraphCanvasLayout
           view={view}
           onView={setView}
-          banner={board.banner === "at_risk" ? BANNER_AT_RISK : board.banner === "released" ? BANNER_RELEASED : null}
+          banner={
+            board.banner === "at_risk"
+              ? BANNER_AT_RISK
+              : board.banner === "released"
+                ? BANNER_RELEASED
+                : null
+          }
           single={board.single === true}
           rows={RIDGELINE_LIST}
           inspector={inspector}
           canReveal
-          onReveal={async () => null}
+          onReveal={() => Promise.resolve(null)}
           canvas={
             <GraphCanvas
               nodes={board.nodes}

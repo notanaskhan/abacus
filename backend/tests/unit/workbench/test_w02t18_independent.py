@@ -48,7 +48,11 @@ def _wire_access(monkeypatch: pytest.MonkeyPatch, *, firm_reads: bool = False) -
 
     monkeypatch.setattr(sessions, "walled_from", walls)
     monkeypatch.setattr(sessions, "_clients_on_team", team)
-    monkeypatch.setattr(sessions, "firm_role_allows", lambda *_a: firm_reads)  # pyright: ignore[reportUnknownLambdaType] -- a stand-in rule
+
+    def firm_role_allows(*_a: object) -> bool:
+        return firm_reads
+
+    monkeypatch.setattr(sessions, "firm_role_allows", firm_role_allows)
 
 
 @pytest.mark.parametrize(
@@ -218,7 +222,11 @@ def test_t11_season_counts_foot(monkeypatch: pytest.MonkeyPatch) -> None:
         return date(2026, 9, 14)
 
     monkeypatch.setattr(tax_board, "_board", board)
-    monkeypatch.setattr(tax_board, "_due", lambda _r: None)  # pyright: ignore[reportUnknownLambdaType] -- no due dates
+
+    def no_due(_r: object) -> None:
+        return None
+
+    monkeypatch.setattr(tax_board, "_due", no_due)
     monkeypatch.setattr(organisations_api, "firm_offices", offices)
     monkeypatch.setattr(clock, "today", today)
     agent = SimpleNamespace(tenant=TenantContext(uuid.uuid4(), "agent", "run:1"))
