@@ -546,6 +546,11 @@ class WorkbookAllocationPeriodOut(BaseModel):
     starts_on: Annotated[date | None, Internal] = None
     ends_on: Annotated[date | None, Internal] = None
     amount: Annotated[Decimal, Tri]
+    # T-05-T44 (DEC-4710): a waterfall rung's prior tiers, what was available to it and what is
+    # left after it (server's arithmetic; the screen draws).
+    prior: Annotated[MaybeMoney, Tri] = None
+    available: Annotated[MaybeMoney, Tri] = None
+    remaining: Annotated[MaybeMoney, Tri] = None
 
 
 class WorkbookAllocationResultOut(BaseModel):
@@ -564,6 +569,9 @@ class WorkbookAllocationPartnerOut(BaseModel):
     name: Annotated[str, Tri]
     kind: Annotated[Literal["gp", "lp", "member", "shareholder"], Internal]
     total: Annotated[Decimal, Tri]
+    # T-05-T44: the back-solve (waterfall): beginning 704(b) capital and the target (+ the plug).
+    beginning: Annotated[MaybeMoney, Tri] = None
+    target: Annotated[MaybeMoney, Tri] = None
 
 
 class WorkbookAllocationStructureOut(BaseModel):
@@ -1470,6 +1478,29 @@ def _draft(body: WorkbookAllocationDraftIn) -> Draft:
     )
 
 
+def _tiers(
+    rows: list[WorkbookAllocationPeriodOut], distributable: Decimal | None
+) -> list[WorkbookAllocationPeriodOut]:
+    """Waterfall rungs (`r<n>` keys) with prior tiers, available and remaining (code's sums)."""
+    if distributable is None:
+        return rows
+    out: list[WorkbookAllocationPeriodOut] = []
+    prior = Decimal(0)
+    for r in rows:
+        available = distributable - prior
+        out.append(
+            r.model_copy(
+                update={
+                    "prior": prior if prior else None,
+                    "available": available,
+                    "remaining": available - r.amount,
+                }
+            )
+        )
+        prior += r.amount
+    return out
+
+
 def _rung_out(priority: int, rule_type: str, params: dict[str, str]) -> WorkbookRungOut:
     from abacus.modules.tax.allocation_structure import PERCENT_PARAM
 
@@ -1518,13 +1549,24 @@ async def _structure_out(
         proposed_by=None if row is None else row.proposed_by_kind,
         income=None if row is None else row.income,
         distributable=None if row is None else row.distributable,
-        periods=[WorkbookAllocationPeriodOut(key=k, amount=v) for k, v in periods.items()],
+        periods=_tiers(
+            [WorkbookAllocationPeriodOut(key=k, amount=v) for k, v in periods.items()],
+            None if row is None or row.kind != "targeted_waterfall" else row.distributable,
+        ),
         partners=[
             WorkbookAllocationPartnerOut(
                 partner_id=p.id,
                 name=p.name,
                 kind=cast(Literal["gp", "lp", "member", "shareholder"], p.kind),
                 total=totals.get(p.id, Decimal(0)),
+                **(
+                    {
+                        "beginning": p.beginning_capital,
+                        "target": p.beginning_capital + totals.get(p.id, Decimal(0)),
+                    }
+                    if row is not None and row.kind == "targeted_waterfall"
+                    else {}
+                ),
             )
             for p in names.values()
         ],
@@ -1614,12 +1656,15 @@ async def entity_allocation_preview_route(
         convention=draft.convention,
         income=found.total,
         distributable=found.distributable,
-        periods=[
-            WorkbookAllocationPeriodOut(
-                key=p.key, starts_on=p.starts_on, ends_on=p.ends_on, amount=p.amount
-            )
-            for p in found.periods
-        ],
+        periods=_tiers(
+            [
+                WorkbookAllocationPeriodOut(
+                    key=p.key, starts_on=p.starts_on, ends_on=p.ends_on, amount=p.amount
+                )
+                for p in found.periods
+            ],
+            found.distributable,
+        ),
         results=[
             WorkbookAllocationResultOut(
                 partner_id=r.partner_id,

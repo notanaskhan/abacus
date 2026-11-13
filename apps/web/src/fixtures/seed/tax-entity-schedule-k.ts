@@ -11,6 +11,7 @@ import type {
   WorkbookScheduleKOut,
 } from "@abacus/api-client";
 import { stableId } from "./prng";
+import { ridgeline } from "./tax-entity-allocation";
 import type { Snapshot } from "./tax-entity";
 
 const KEYS = ["gp", "shah", "psv", "ps2", "feld"] as const;
@@ -118,7 +119,7 @@ export function capitalAccounts(snapshot: Snapshot): WorkbookCapitalAccountsOut 
     basis: "tax",
     rows: endings.map((ending, i) => ({
       partner_id: PARTNER_IDS[i] ?? "",
-      name: NAMES[i],
+      name: NAMES[i] ?? null,
       beginning: "0",
       contributions: "0",
       income: "0",
@@ -135,18 +136,7 @@ export function capitalAccounts(snapshot: Snapshot): WorkbookCapitalAccountsOut 
   };
 }
 
-/** The tally strip's Allocation card: the approved straight-percentage structure (SI). */
+/** The tally strip's Allocation card: Ridgeline's approved structure (TXP-06 A's). */
 export function allocationSummary(): WorkbookAllocationStructureOut {
-  return {
-    version: 2,
-    kind: "straight_percentage",
-    status: "approved",
-    rungs: [{ key: "straight_pct", label: "Straight pct", citation_ids: [] }],
-    seen_hash: `sha256:${"0".repeat(64)}`,
-    allowed_actions: ["allocation_structure.edit"],
-    method: "interim_closing",
-    convention: "monthly",
-    proposed_by: "agent",
-    latest_version: 2,
-  };
+  return ridgeline();
 }

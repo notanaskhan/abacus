@@ -55054,6 +55054,10 @@ export type WorkbookAllocationDraftIn = {
  */
 export type WorkbookAllocationPartnerOut = {
     /**
+     * Beginning
+     */
+    beginning?: string | null;
+    /**
      * Kind
      */
     kind: 'gp' | 'lp' | 'member' | 'shareholder';
@@ -55065,6 +55069,10 @@ export type WorkbookAllocationPartnerOut = {
      * Partner Id
      */
     partner_id: string;
+    /**
+     * Target
+     */
+    target?: string | null;
     /**
      * Total
      */
@@ -55082,6 +55090,10 @@ export type WorkbookAllocationPeriodOut = {
      */
     amount: string;
     /**
+     * Available
+     */
+    available?: string | null;
+    /**
      * Ends On
      */
     ends_on?: string | null;
@@ -55089,6 +55101,14 @@ export type WorkbookAllocationPeriodOut = {
      * Key
      */
     key: string;
+    /**
+     * Prior
+     */
+    prior?: string | null;
+    /**
+     * Remaining
+     */
+    remaining?: string | null;
     /**
      * Starts On
      */

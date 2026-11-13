@@ -20,6 +20,7 @@ import {
   capitalAccounts,
   scheduleK,
 } from "../seed/tax-entity-schedule-k";
+import { harborview, ridgeline } from "../seed/tax-entity-allocation";
 import { CITATIONS, sheetCells } from "../seed/tax-entity-sheets";
 
 const notYet = () => json({ detail: "not_implemented" }, 501);
@@ -77,7 +78,19 @@ export function taxEntityHandlers(
     [`GET ${R}/schedules/k/lines/{line}/breakdown`]: (req) =>
       json(breakdown(req.params.line ?? "")),
     [`GET ${R}/capital-accounts`]: () => json(capitalAccounts(snapshot)),
-    [`GET ${R}/allocation-structure`]: () => json(allocationSummary()),
+    // T-05-T44: TXP-06 (Harborview's snapshot draws its waterfall; Sep 8 is Pending approval).
+    [`GET ${R}/allocation-structure`]: () =>
+      json(
+        snapshot === "harborview"
+          ? harborview()
+          : snapshot === "run1"
+            ? ridgeline(true)
+            : allocationSummary(),
+      ),
+    [`POST ${R}/allocation-structure/preview`]: () =>
+      json({ ...harborview(), status: "editing", persisted: false }),
+    [`PUT ${R}/allocation-structure/draft`]: notYet,
+    [`POST ${R}/allocation-structure/approve`]: notYet,
     [`GET ${R}/workbook-runs`]: () => json({ items: runs(snapshot) }),
     [`POST ${R}/workbook-runs`]: notYet,
     [`PUT ${R}/ownership`]: notYet,

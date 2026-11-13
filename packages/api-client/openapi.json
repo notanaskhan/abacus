@@ -117110,6 +117110,20 @@
       "WorkbookAllocationPartnerOut": {
         "additionalProperties": false,
         "properties": {
+          "beginning": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Beginning",
+            "x-tri": true
+          },
           "kind": {
             "cls": "internal",
             "enum": [
@@ -117132,6 +117146,20 @@
             "format": "uuid",
             "title": "Partner Id",
             "type": "string"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Target",
+            "x-tri": true
           },
           "total": {
             "cls": "restricted",
@@ -117161,6 +117189,20 @@
             "type": "string",
             "x-tri": true
           },
+          "available": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Available",
+            "x-tri": true
+          },
           "ends_on": {
             "anyOf": [
               {
@@ -117178,6 +117220,34 @@
             "cls": "internal",
             "title": "Key",
             "type": "string"
+          },
+          "prior": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Prior",
+            "x-tri": true
+          },
+          "remaining": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Remaining",
+            "x-tri": true
           },
           "starts_on": {
             "anyOf": [
