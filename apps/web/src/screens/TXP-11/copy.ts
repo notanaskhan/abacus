@@ -4,7 +4,9 @@
 export const COPY = {
   grid: "Ridgeline workbook",
   openInExcel: "Open in Excel",
-  version: "Version 2 · Run 2",
+  /** The version picker's words ("Version 2 · Run 2"); the numbers are the server's. */
+  version: (n: number) => `Version ${String(n)} · Run ${String(n)}`,
+  versions: "Workbook version",
   readOnlyVersion: "Read-only: an earlier run",
   linkedIssue: "Linked issue · Tax-exempt interest 6,200 omitted…",
   citedBy: "Cited by 1 issue",
@@ -15,6 +17,12 @@ export const COPY = {
   conflict: "This cell changed since you opened it. Reload to see the new value, then edit again.",
   reload: "Reload",
   saving: "Saving…",
+  /** Undesigned (T-05-T03), DEC-4630: the overlays' openers on the selected cell. */
+  provenance: "Cell provenance",
+  citations: (n: number) => `Citations (${String(n)})`,
+  seeSource: "See the source",
+  quote: "Quote",
+  unverified: "Not verified",
 } as const;
 
 /** The workbook's sheets in tab order (the handoff's titles). */

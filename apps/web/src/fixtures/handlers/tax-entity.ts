@@ -14,7 +14,7 @@ import {
   tallies,
   trialBalance,
 } from "../seed/tax-entity";
-import { sheetCells } from "../seed/tax-entity-sheets";
+import { CITATIONS, sheetCells } from "../seed/tax-entity-sheets";
 
 const notYet = () => json({ detail: "not_implemented" }, 501);
 const R = "/v1/tax-returns/{return_id}";
@@ -26,6 +26,25 @@ export function taxEntityHandlers(
   return {
     [`GET ${R}/workbook/sheets/{sheet}`]: (req) =>
       json(sheetCells(snapshot, req.params.sheet ?? "05", options.proposed === true)),
+    // T-05-T38 rest (DEC-4630): the workbook's versions (Run 1 and Run 2 finished) and the
+    // cells' citations.
+    [`GET ${R}/workbook`]: (req) =>
+      json({
+        return_id: req.params.return_id ?? "",
+        version: snapshot === "run1" ? 1 : 2,
+        sheets: [],
+        allowed_actions: ["workbook.edit"],
+        versions: [
+          ...(snapshot === "run1"
+            ? []
+            : [{ version: 2, run_no: 2, finished_at: "2026-09-14T14:20:00Z" }]),
+          { version: 1, run_no: 1, finished_at: "2026-09-08T15:10:00Z" },
+        ],
+      }),
+    "GET /v1/citations/{citation_id}": (req) => {
+      const found = CITATIONS.find((c) => c.id === req.params.citation_id);
+      return found === undefined ? json({ detail: "not_found" }, 404) : json(found);
+    },
     [`GET ${R}/trial-balance`]: (req) => {
       const view = req.query.get("view") === "line";
       const statement = (req.query.get("statement") ?? "full") as Statement;

@@ -9,6 +9,7 @@
 import type { WorkbookCellOut, WorkbookSheetCellsOut } from "@abacus/api-client";
 import {
   Button,
+  Picker,
   type WorkbookCell,
   WorkbookGrid,
   type WorkbookSheetTab,
@@ -80,6 +81,18 @@ export interface TXP11Props {
   onReload?: () => void;
   onOpenInExcel?: () => void;
   onOpenIssue?: () => void;
+  /** T-05-T38 rest (DEC-4630): the finished runs' versions, newest first, and the one shown. */
+  versions?: readonly number[];
+  version?: number | undefined;
+  onVersion?: (version: number) => void;
+  /** The selected cell's provenance (SHL-09, a3) and citations (SHL-07, a2). */
+  onProvenance?: (address: string) => void;
+  onCitations?: (address: string) => void;
+}
+
+/** How many citations the server lists on a cell of the sheet. */
+export function citationCount(data: WorkbookSheetCellsOut | undefined, address: string): number {
+  return data?.cells.find((c) => c.address === address)?.citation_ids?.length ?? 0;
 }
 
 export function TXP11({
@@ -97,7 +110,14 @@ export function TXP11({
   onReload,
   onOpenInExcel,
   onOpenIssue,
+  versions = [],
+  version,
+  onVersion,
+  onProvenance,
+  onCitations,
 }: TXP11Props): JSX.Element {
+  const shown = version ?? versions[0] ?? data?.version ?? 1;
+  const cites = citationCount(data, selected);
   const key = keyOf(sheet);
   const expected = key === "05" && openIssue ? { H12: COPY.expectedH12 } : {};
   const sheets: WorkbookSheetTab[] = SHEETS.map((title) => ({
@@ -126,12 +146,44 @@ export function TXP11({
         ) : null}
         {saving ? <span className="text-[11.5px] text-ink-3">{COPY.saving}</span> : null}
         <span className="flex-1" />
+        {onProvenance === undefined ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onProvenance(selected);
+            }}
+          >
+            {COPY.provenance}
+          </Button>
+        )}
+        {onCitations === undefined || cites === 0 ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onCitations(selected);
+            }}
+          >
+            {COPY.citations(cites)}
+          </Button>
+        )}
         <Button variant="ghost" size="sm" icon="square-arrow-out-up-right" onClick={onOpenInExcel}>
           {COPY.openInExcel}
         </Button>
-        <span className="text-[12px] text-ink-2">
-          {readOnly ? COPY.readOnlyVersion : COPY.version}
-        </span>
+        {versions.length > 1 && onVersion !== undefined ? (
+          <Picker
+            label={COPY.versions}
+            options={versions.map((n) => ({ value: String(n), label: COPY.version(n) }))}
+            value={String(shown)}
+            onChange={(v) => {
+              onVersion(Number(v));
+            }}
+          />
+        ) : (
+          <span className="text-[12px] text-ink-2">{COPY.version(shown)}</span>
+        )}
+        {readOnly ? <span className="text-[12px] text-ink-3">{COPY.readOnlyVersion}</span> : null}
       </div>
       <div className="min-h-0 flex-1 px-[12px] pb-[12px]">
         <WorkbookGrid

@@ -118408,6 +118408,14 @@
             "cls": "internal",
             "title": "Version",
             "type": "integer"
+          },
+          "versions": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookVersionOut"
+            },
+            "title": "Versions",
+            "type": "array"
           }
         },
         "required": [
@@ -119745,6 +119753,35 @@
           "unmapped"
         ],
         "title": "WorkbookTrialBalanceOut",
+        "type": "object"
+      },
+      "WorkbookVersionOut": {
+        "additionalProperties": false,
+        "description": "T-05-T38 rest (DEC-4630): a version of the workbook is the state a finished run left.",
+        "properties": {
+          "finished_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "run_no": {
+            "cls": "internal",
+            "title": "Run No",
+            "type": "integer"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "run_no",
+          "finished_at"
+        ],
+        "title": "WorkbookVersionOut",
         "type": "object"
       },
       "WorkingPaperOut": {
@@ -276563,7 +276600,7 @@
     },
     "/v1/tax-returns/{return_id}/workbook/sheets/{sheet}": {
       "get": {
-        "description": "One sheet with range paging (T-05-T27): values and formulas, never evaluated text.",
+        "description": "One sheet with range paging (T-05-T27): values and formulas, never evaluated text.\n\nT-05-T38 rest (DEC-4630): `version` names a finished run; the sheet reads as it stood when\nthat run finished (review's insert-only versions at that instant). No version, or the newest,\nis the live workbook with each cell's writer and citations.",
         "operationId": "entity_sheet",
         "parameters": [
           {

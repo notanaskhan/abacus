@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn, cast, get_args
+from typing import Annotated, Final, Literal, NoReturn, cast, get_args
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -149,6 +149,16 @@ class WorkbookSheetOut(BaseModel):
     imported_from: Annotated[str | None, Internal] = None  # an import-mode sheet's source
 
 
+class WorkbookVersionOut(BaseModel):
+    """T-05-T38 rest (DEC-4630): a version of the workbook is the state a finished run left."""
+
+    model_config = _cfg()
+
+    version: Annotated[int, Internal]  # = the run's number ("Version 2 · Run 2")
+    run_no: Annotated[int, Internal]
+    finished_at: Annotated[datetime, Internal]
+
+
 class WorkbookOut(BaseModel):
     model_config = _cfg()
 
@@ -156,6 +166,11 @@ class WorkbookOut(BaseModel):
     version: Annotated[int, Internal]
     sheets: Annotated[list[WorkbookSheetOut], Internal]
     allowed_actions: Annotated[list[WorkbookAction], Internal]
+    # T-05-T38 rest (DEC-4630), additive: the finished runs' versions, newest first; `version`
+    # is the newest (the live workbook, with any edits since), 1 before the first run finishes.
+    versions: Annotated[list[WorkbookVersionOut], Internal] = Field(
+        default_factory=list[WorkbookVersionOut]
+    )
 
 
 class WorkbookCellOut(BaseModel):
@@ -752,12 +767,34 @@ async def workbook_route(return_id: UUID, ctx: Ctx) -> WorkbookOut:
     from abacus.modules.tax.workbook_service import sheets_of
 
     held = await allowed_actions(ctx, resource, get_args(WorkbookAction))
+    versions = await _versions(ctx, return_id)
     return WorkbookOut(
         return_id=return_id,
-        version=1,
+        version=versions[0].version if versions else 1,
         sheets=[WorkbookSheetOut(key=n, title=t) for n, t in sheets_of(form)],
         allowed_actions=[cast(WorkbookAction, a) for a in get_args(WorkbookAction) if a in held],
+        versions=versions,
     )
+
+
+async def _versions(ctx: AuthContext, return_id: UUID) -> list[WorkbookVersionOut]:
+    """DEC-4630: each finished run of the return is a version, newest first."""
+    from abacus.modules.agents.api import work_item_runs
+
+    runs = await work_item_runs(ctx.tenant, f"tax_return:{return_id}")
+    return [
+        WorkbookVersionOut(version=r.run_number, run_no=r.run_number, finished_at=r.finished_at)
+        for r in sorted(runs, key=lambda r: r.run_number, reverse=True)
+        if r.finished_at is not None
+    ]
+
+
+_AUTHOR: Final[dict[str, CellAuthor]] = {
+    "formula": "formula",
+    "engine_import": "engine_import",
+    "tb_linked": "run_step",
+    "human": "person",
+}
 
 
 @workbook_router.get(
@@ -772,26 +809,67 @@ async def entity_sheet_route(
     version: Annotated[int | None, Query(ge=1)] = None,
     range_: Annotated[str | None, Query(alias="range", max_length=40)] = None,
 ) -> WorkbookSheetCellsOut:
-    """One sheet with range paging (T-05-T27): values and formulas, never evaluated text."""
-    del version  # one live version until the workbook run versions it (T-05-T32)
+    """One sheet with range paging (T-05-T27): values and formulas, never evaluated text.
+
+    T-05-T38 rest (DEC-4630): `version` names a finished run; the sheet reads as it stood when
+    that run finished (review's insert-only versions at that instant). No version, or the newest,
+    is the live workbook with each cell's writer and citations."""
     await _flag_on(ctx)
     form, _resource = await _workbook_read(ctx, return_id)
-    from abacus.modules.review.api import current_values
+    from abacus.modules.review.api import (
+        current_values,
+        latest_citations,
+        latest_sources,
+        values_as_of,
+    )
     from abacus.modules.tax.workbook_service import WORKBOOK, sheet_cells, sheet_or_404
 
+    key = sheet_or_404(form, sheet)
+    versions = await _versions(ctx, return_id)
+    newest = versions[0].version if versions else 1
+    if version is not None and version != newest:
+        found = next((v for v in versions if v.version == version), None)
+        if found is None:
+            raise NotFound("workbook_version")  # no finished run of the return has that number
+        then = await values_as_of(ctx.tenant, WORKBOOK, [return_id], found.finished_at)
+        cells, next_range = sheet_cells(then.get(return_id, {}), key, range_)
+        return WorkbookSheetCellsOut(
+            sheet=sheet,
+            version=version,
+            cells=[
+                WorkbookCellOut(
+                    address=c.address,
+                    value=c.value,
+                    formula=c.formula,
+                    author="formula" if c.formula else "person",
+                    state="formula" if c.formula else "value",
+                    version=version,
+                )
+                for c in cells
+            ],
+            next_range=next_range,
+        )
     values = await current_values(ctx.tenant, WORKBOOK, return_id)
-    cells, next_range = sheet_cells(values, sheet_or_404(form, sheet), range_)
+    cells, next_range = sheet_cells(values, key, range_)
+    sources = await latest_sources(ctx.tenant, WORKBOOK, [return_id])
+    cites = await latest_citations(ctx.tenant, WORKBOOK, [return_id])
+
+    def author(address: str, formula: str | None) -> CellAuthor:
+        source = sources.get((return_id, f"{key}!{address}"), ("", 0))[0]
+        return _AUTHOR.get(source, "formula" if formula else "person")
+
     return WorkbookSheetCellsOut(
         sheet=sheet,
-        version=1,
+        version=newest,
         cells=[
             WorkbookCellOut(
                 address=c.address,
                 value=c.value,
                 formula=c.formula,
-                author="formula" if c.formula else "person",
+                author=author(c.address, c.formula),
                 state="formula" if c.formula else "value",
-                version=1,
+                citation_ids=list(cites.get((return_id, f"{key}!{c.address}"), ())),
+                version=newest,
             )
             for c in cells
         ],

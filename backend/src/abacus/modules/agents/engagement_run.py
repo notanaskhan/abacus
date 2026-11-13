@@ -474,6 +474,9 @@ class WorkItemRun:
     initiator_user_id: UUID | None
     created_at: datetime
     state: str
+    # T-05-T38 rest (DEC-4630): when the run ended (TXP-11's version picker reads the workbook as
+    # it stood then); None while it runs.
+    finished_at: datetime | None = None
 
     @property
     def active(self) -> bool:
@@ -481,7 +484,7 @@ class WorkItemRun:
 
 
 _WORK_ITEM_RUNS: Final = text(
-    "SELECT id, run_number, initiator_user_id, created_at, state FROM agent_runs "
+    "SELECT id, run_number, initiator_user_id, created_at, state, finished_at FROM agent_runs "
     "WHERE agent_id = :agent AND work_item_ref = :ref ORDER BY created_at DESC LIMIT :limit"
 )
 
@@ -501,6 +504,7 @@ async def work_item_runs(
                 None if r.initiator_user_id is None else UUID(str(r.initiator_user_id)),
                 r.created_at,
                 str(r.state),
+                r.finished_at,
             )
             for r in rows
         ]
