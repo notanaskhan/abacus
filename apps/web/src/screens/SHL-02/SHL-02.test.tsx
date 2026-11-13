@@ -54,8 +54,18 @@ describe("SHL-02 Go…", () => {
   it("a: the designed groups for 'feld', the matched words at 500", async () => {
     await mount("a");
     await waitFor(() => {
-      expect(groupLabels()).toEqual(["Clients", "Returns", "Binders", "Files", "Inbox"]);
+      expect(groupLabels()).toEqual([
+        "Clients",
+        "Returns",
+        "Binders",
+        "Files",
+        "Inbox",
+        "Actions",
+      ]);
     });
+    // P-02 AC: the actions bound to the top Clients result (DEC-4631).
+    expect(screen.getByText("New engagement for Jonah & Claire Feld…")).toBeTruthy();
+    expect(screen.getByText("New to-do on Jonah & Claire Feld…")).toBeTruthy();
     expect(screen.getByText("Jonah Feld, limited partner 25%", { exact: false })).toBeTruthy();
     expect(document.querySelectorAll("[data-match]").length).toBeGreaterThan(0);
     expect(screen.getByRole("status").textContent).toBe(COPY.results(6));
@@ -64,7 +74,7 @@ describe("SHL-02 Go…", () => {
   it("e: a without the walled rows, and no note, glyph or count", async () => {
     await mount("e");
     await waitFor(() => {
-      expect(groupLabels()).toEqual(["Clients", "Returns", "Binders"]);
+      expect(groupLabels()).toEqual(["Clients", "Returns", "Binders", "Actions"]);
     });
     expect(document.body.textContent).not.toMatch(/hidden|ethical wall/i);
   });
@@ -96,8 +106,9 @@ describe("SHL-02 Go…", () => {
   it("f: Clients, Audits and To-dos for 'granite'", async () => {
     await mount("f");
     await waitFor(() => {
-      expect(groupLabels()).toEqual(["Clients", "Audits", "To-dos"]);
+      expect(groupLabels()).toEqual(["Clients", "Audits", "To-dos", "Actions"]);
     });
+    expect(screen.getByText("New to-do on Granite Peak Outdoor Supply, Inc.…")).toBeTruthy();
   });
 
   it("error: the designed words when search is unavailable", async () => {

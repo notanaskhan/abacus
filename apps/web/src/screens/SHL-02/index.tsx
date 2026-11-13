@@ -57,6 +57,32 @@ function statusWord(item: SearchItemOut): string | null {
     : `${word} · ${context.charAt(0).toUpperCase()}${context.slice(1)}`;
 }
 
+/** P-02-T10 rest (DEC-4631): the actions bound to the top Clients result, last in the canonical
+ * order; none when no client matched, and each hidden while its target screen is planned in a
+ * production build (the server still refuses anything the viewer may not do). */
+export function contextActions(
+  data: SearchResultsOut | undefined,
+  onOpen: (href: string, newTab: boolean) => void,
+): PaletteItem[] {
+  const client = data?.groups.find((g) => g.group === "clients")?.items[0];
+  if (client === undefined) return [];
+  return COPY.contextActions
+    .filter((a) => hrefOf(a.screen, {}) !== null)
+    .map<PaletteItem>((a) => {
+      const href = a.href(client.object_id);
+      return {
+        id: `action:${a.id}:${client.object_id}`,
+        label: a.label(client.title),
+        run: () => {
+          onOpen(href, false);
+        },
+        runNewTab: () => {
+          onOpen(href, true);
+        },
+      };
+    });
+}
+
 export interface GoProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -117,10 +143,14 @@ export function Go({ open, onOpenChange, onOpen, mac = true }: GoProps): JSX.Ele
       ];
     }
     const data: SearchResultsOut | undefined = results.data;
-    return (data?.groups ?? []).map((g) => ({
+    const found = (data?.groups ?? []).map((g) => ({
       label: COPY.groups[g.group as keyof typeof COPY.groups],
       items: g.items.map(row).filter((r): r is PaletteItem => r !== null),
     }));
+    const actions = contextActions(data, onOpen);
+    return actions.length === 0
+      ? found
+      : [...found, { label: COPY.groups.actions, items: actions }];
     // `row` reads `record` and `onOpen`, both stable for the palette's life.
   }, [query, recents.data, results.data]);
 

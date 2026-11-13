@@ -42,6 +42,24 @@ export const COPY = {
       close: "Close",
     },
   },
+  /** P-02-T10 rest (DEC-4631; P-02 AC "Actions … bound to the top Clients result"): the
+   * context-bound actions, verbatim from SHL-02a and f. "Run an agent on ‹client›…" (W-02's
+   * WB-01 target), "Message ‹contact›…" (N-03) and "Open board · ‹audit›" (K-04) join with their
+   * epics' targets. */
+  contextActions: [
+    {
+      id: "new-engagement-for",
+      label: (client: string) => `New engagement for ${client}…`,
+      screen: "ENG-03",
+      href: (clientId: string) => `/engagements/new?client=${encodeURIComponent(clientId)}`,
+    },
+    {
+      id: "new-todo-on",
+      label: (client: string) => `New to-do on ${client}…`,
+      screen: "SHL-17",
+      href: (clientId: string) => `?ov=todos:new:client:${encodeURIComponent(clientId)}`,
+    },
+  ],
   create: [
     { id: "new-client", label: "New client…", screen: "CLI-01", href: "/clients?ov=new-client" },
     {

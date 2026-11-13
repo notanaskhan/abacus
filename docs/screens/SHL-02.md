@@ -118,3 +118,7 @@ the palette (INV-1), Approve, Sign off, Release, Send, Post or Decide on any pal
   owning task or epic.
 - The e deviation (DEC-43, DF-14) and the clock decision (OQ-6) are recorded.
 - The Links table names every outbound target, so the link-contract test knows each one.
+
+### Build notes (P-02-T10 rest, TASK-7636, DEC-4631)
+
+- Actions bound to the top Clients result: "New engagement for ‹client›…" (ENG-03 with `?client=`) and "New to-do on ‹client›…" (SHL-17). They are omitted when no client matched, and hidden in production while their targets are planned. "Run an agent on…", "Message…" and "Open board · …" wait on W-02, N-03 and K-04.
