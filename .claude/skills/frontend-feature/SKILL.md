@@ -97,6 +97,18 @@ A gate that waits on a person shows on HOME-01 and HOME-02 with no Home code cha
 
 Never count gates in a component: read `GET /v1/human-gates/counts` (`total`, `bands`). A row is a link to where the gate is decided, never a decision control (INV-1). Add the persona's fixture row to `countEquality.test.ts` when a scenario adds gates.
 
+## Search and the palette (SHL-02; C15 v1; P-02-T14)
+
+The palette (`screens/SHL-02`, mounted by the toolbar while `search.palette` is on) reads
+`POST /v1/search` and `/v1/search/recents` through the generated client only. A screen does not
+search on its own: it makes its record findable in the backend (C15 §6) and, when a record route
+loads, records it in Recent (`POST /v1/search/recents`; the server re-authorises). Search text
+goes only in a POST body, never a URL, a query key's string form, a log or an analytics event.
+A new group needs its label in `screens/SHL-02/copy.ts`; the server orders the groups. Walled rows
+are absent with no count or hint (DEC-43). Fixture rows live in `fixtures/seed/shl02.ts`, the
+states in `fixtures/scenarios/SHL-02.ts` (registered for `?screen=SHL-02&st=` journeys); the
+specs are `e2e/screens/shl-02-palette.spec.ts`.
+
 ## Frozen contracts (P-07-T64, DEC-1054)
 
 A frozen contract (`docs/contracts/*.md` with **frozen**, snapshot under `backend/tests/contracts/<family>/v<n>.json`) takes additions only. A rename, retype, newly required field or removed enum member ships the next version with overlap: `python -m abacus_tools.contracts --freeze <family> v<n+1>`, never an edit of the old snapshot.

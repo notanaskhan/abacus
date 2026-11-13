@@ -3,7 +3,7 @@ id: TASK-7723
 title: P-02-T13 search load test, plan guard, query count and lag alarm
 plan_key: P-02-T13
 spec: SPEC-000  # docs/contracts/c15-search.md; ADR-241
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # first-group p95 <= 250 ms at 1M documents, relay lag p95 <= 5 s; plan guard in CI
 risk_zone: amber
 status: in-review
 branch: p02-t13-search-load

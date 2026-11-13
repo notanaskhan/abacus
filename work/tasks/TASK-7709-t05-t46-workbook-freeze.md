@@ -3,7 +3,7 @@ id: TASK-7709
 title: T-05-T46 Freeze tax-workbook v1 for T-07, T-06, T-04 and T-02
 plan_key: T-05-T46
 spec: SPEC-651
-acceptance_criteria: [AC-14.1]  # T-05 §8
+acceptance_criteria: [AC-F14]  # tax-workbook contract frozen; snapshot and stub route set pinned
 risk_zone: amber
 status: in-review
 branch: t05-t46-workbook-freeze

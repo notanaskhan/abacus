@@ -3,7 +3,7 @@ id: TASK-7716
 title: I-02-T07 Briefing facts collector (agents/briefing/facts.py)
 plan_key: I-02-T07
 spec: SPEC-654
-acceptance_criteria: [AC-3.1, AC-3.2]
+acceptance_criteria: [AC-3, AC-10]  # facts by code, consent before any model call, walls applied
 risk_zone: red
 status: in-review
 branch: i02-t07-briefing-facts

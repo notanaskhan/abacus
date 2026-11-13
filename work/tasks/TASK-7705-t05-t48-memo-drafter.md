@@ -3,7 +3,7 @@ id: TASK-7705
 title: T-05-T48 tax.memo_drafter capability
 plan_key: T-05-T48
 spec: SPEC-651
-acceptance_criteria: [AC-9.1, AC-9.2]  # T-05 F9
+acceptance_criteria: [AC-F9]  # memo drafted by reference, verified, never signed by the agent
 risk_zone: red
 status: in-review
 branch: t05-t48-memo-drafter

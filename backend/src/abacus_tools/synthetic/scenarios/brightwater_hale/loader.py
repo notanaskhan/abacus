@@ -733,6 +733,9 @@ FLAGS_ON: Final = (
     # N-01-T23: INB-01, INB-02 and FIL-01 live on Brightwater Hale (staging and local).
     "inbox.firm_intake",
     "files.browser",
+    # P-02-T14 (DEC-4727): C15 search and the SHL-02 palette on synthetic firms (local, staging
+    # and the canary's firm); real firms flip per docs/operations/p02-search-flag-plan.md.
+    "search.palette",
 )
 OFFICE_ZONES: Final = {
     "Chicago": "America/Chicago",

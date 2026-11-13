@@ -82,8 +82,47 @@ consent for an offshore member (§7216).
 Titles, context lines, related names, the suggestion and the query text are `confidential`;
 identifiers, codes, dates, counts and match ranges `internal`. Nothing is Restricted.
 
-## 5. Not in v1 (later rows)
+## 5. Freeze note (v1, P-02-T14, DEC-4727)
 
-The `search_documents` and `search_recents` tables (P-02-T05), the indexer, reindex workflow and
-drift check (T06), the owners' builders (T07), the live query and recents (T08), the palette (T10).
-pgvector is not used for record search (ADR-241 decision 2).
+C15 v1 froze at the S39 review and is built: the tables and indexes (`0840`, P-02-T05), the indexer,
+reindex workflow and drift check (T06), the seven owners' builders (T07), the live query and
+recents (T08), the palette (T10, T11), the end-to-end specs (T12) and the load test, plan guard and
+lag alarm (T13). From here:
+
+- **Additive in place:** a new group, scope kind, data class or optional document field; a new
+  owner registering a projection. Each lands with its consumer suite cases
+  (`backend/tests/contracts/c15_search/`, `apps/web/src/fixtures/contracts/search.contract.test.ts`).
+- **v2 with one sprint of overlap:** renaming or removing a field, a group or a route, changing an
+  error code, or changing what a scope kind filters on. Both versions are served for the overlap.
+- **The v0 adapter** (`register_search_projection(object_type, builder)` in `platform.slots`) is
+  retired at the end of S42: every owner registers a v1 `SearchProjection`.
+- **Not v1:** pgvector for record search (ADR-241 decision 2), body or document-text search,
+  synonyms, per-firm ranking.
+
+## 6. Registration guide: a new owner (C-01, W-02, …)
+
+A module makes its records findable without a platform change. Everything below is in the owning
+module; `platform` is only imported through `platform.api`.
+
+1. **Pick the group and scope kind** from §3. A close is `closes` scoped `engagement`; a Workbench
+   session is `sessions` scoped `own` (W-02) or `engagement` when it names one. A new group is an
+   additive C15 change (§5): it needs its place in the canonical order and a palette label first.
+2. **Write the builder** in `<module>/search.py`: `async def build(tenant, object_id) ->
+   SearchIndexDocument | None`, reading only the module's own tables with the tenant context it is
+   given. Return `None` for anything that should not be findable (withdrawn, deleted, draft). Put
+   no TIN, amount, body text or Restricted value in any field; the indexer's scrub
+   (`scrub.scrub_document`) is a backstop, not the design.
+3. **Name the triggers**: the outbox events whose identifier-only payloads say which ids to rebuild
+   (`{"close.status_changed": lambda p: [p["close_id"]]}`). A rename that touches many records
+   returns them all; more than 200 ids go to `SearchReindexWorkflow` automatically.
+4. **Register at import** in `<module>/api.py`:
+   `register_search_projection(SearchProjection(object_type=…, group=…, read_action=…, scope_kind=…,
+   triggers=…, build=…, target=…))`. `read_action` is the record's own read in the module's matrix
+   file; `target` is the screen the row opens (planned screens are hidden in production).
+5. **Backfill** the existing records once: `python -m abacus_tools.search reindex <tenant> --type
+   <object_type>` (a `SearchReindexWorkflow`, audited) locally and on staging (RB-82).
+6. **Test**: a builder unit test (current state, `None` cases, no TIN), a C15 consumer case for the
+   type, and, if the screen lists the type, its SHL-02 fixture rows.
+
+The palette needs no change for a new type in an existing group; a new group needs its label in
+`apps/web/src/screens/SHL-02/copy.ts` (the server already answers groups in canonical order).

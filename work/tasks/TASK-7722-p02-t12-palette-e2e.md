@@ -3,7 +3,7 @@ id: TASK-7722
 title: P-02-T12 Playwright palette spec and J13 4, J16 5 and 9
 plan_key: P-02-T12
 spec: SPEC-000  # docs/screens/SHL-02.md; C15 v1
-acceptance_criteria: []
+acceptance_criteria: [AC-1]  # shl-02-palette.spec.ts, J13 4, J16 5 and 9 with axe and INV-1/3/4 on every state
 risk_zone: green
 status: in-review
 branch: p02-t12-palette-e2e

@@ -29,8 +29,11 @@ The gateway owns the data; this module authorises and serves it.
 - `GET /v1/me/capabilities?engagement_id=` (route marker `own`: any signed-in member, about themselves): the matrix evaluated for the caller through `identity.allowed_actions`, which records no authorisation check. Returns `capabilities`, `roles` (code and label), `flags`, `entitlements` (modules held), `office_id`, `tz`, `mfa_recent_until`, `server_now`, `clock_mode`, `portal` (`shell` and `scopes`, client users only) and `nav` (firm settings areas; all `none` on an engagement's capabilities). A walled or unknown engagement answers 404.
 - What it offers is never a grant: every action is still checked by `authorise` when it is taken.
 
-## Search slot (C15; `slots.py`)
-`register_search_projection(object_type, builder)`; an unregistered type is never indexed (fail closed).
+## Search (C15 v1; `search/`; ADR-241; P-02)
+- **Register** a `SearchProjection` from the owning module's `api.py` (`platform.api.register_search_projection`); an unregistered type is never indexed (fail closed). The registration guide is `docs/contracts/c15-search.md` §6; the v0 `slots.py` adapter retires at the end of S42.
+- **Index** `search_documents` (rebuildable, upserted by `search/indexer.py` from the owners' builders on their outbox events; more than 200 ids go to `SearchReindexWorkflow`) and `search_recents` (20 per person). Walls are evaluated at query time, never indexed. Operator commands: `python -m abacus_tools.search` (reindex, index, drift, purge).
+- **Query** `POST /v1/search`, `GET`/`POST /v1/search/recents` behind `search.palette` (`search/query.py`, `recents.py`): `visible()` per scope kind, `authorise()` for `tri`, 1 s statement timeout, a per-person token bucket. The search text is never logged, traced, stored or audited.
+- **Operate** (P-02-T13): relay lag on `abacus.search.index_lag` and the `search.index_lag` line, alarmed at p95 > 5 s (`infra/envs/staging/search.tf`); the 1M load test `abacus_tools.loadtest.search`; drift and rebuild in RB-82; offboarding purge in RB-13.
 
 ## Platform jobs and the canary (Q-01-T26, T30; DEC-358, DEC-359)
 - `SpendAnomalyWorkflow` (`jobs.py`, background) runs `ai_gateway.budgets.flag_anomalies` once an hour on the Schedule `spend_anomaly:platform`. `schedules()` in `api.py` declares it, and the canary's when `canary_tenant_id` is set; `python -m abacus_tools.schedules ensure` creates them (`kernel.dispatch.schedule`; overlap SKIP, one-hour catch-up).

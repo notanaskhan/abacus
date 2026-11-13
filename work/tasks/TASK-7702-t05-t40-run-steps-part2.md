@@ -3,7 +3,7 @@ id: TASK-7702
 title: T-05-T40 Run step handlers part 2 (import mode, §706(d) question, failure classes)
 plan_key: T-05-T40
 spec: SPEC-651
-acceptance_criteria: [AC-2.3, AC-2.4]  # T-05 F2
+acceptance_criteria: [AC-F2]  # part-2 handlers, hostile import, the §706(d) question step and failure classes
 risk_zone: amber
 status: in-review
 branch: t05-t40-run-steps-part2

@@ -3,7 +3,7 @@ id: TASK-7720
 title: I-02-T11 attention providers and work-item hooks
 plan_key: I-02-T11
 spec: SPEC-654
-acceptance_criteria: [AC-2.2, AC-2.3]
+acceptance_criteria: [AC-5, AC-6, AC-10]
 risk_zone: amber
 status: in-review
 branch: i02-t11-attention

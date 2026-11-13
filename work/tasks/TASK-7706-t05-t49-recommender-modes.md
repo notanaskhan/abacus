@@ -3,7 +3,7 @@ id: TASK-7706
 title: T-05-T49 decisions.recommender modes convention_706d and section_754
 plan_key: T-05-T49
 spec: SPEC-651
-acceptance_criteria: [AC-10.1, AC-10.2]  # T-05 F10
+acceptance_criteria: [AC-F10]  # §706(d) and §754 recommendation modes, facts by reference
 risk_zone: red
 status: in-review
 branch: t05-t49-recommender-modes

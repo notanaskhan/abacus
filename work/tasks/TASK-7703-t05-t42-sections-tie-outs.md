@@ -3,7 +3,7 @@ id: TASK-7703
 title: T-05-T42 Section sign-offs and post-run tie-outs
 plan_key: T-05-T42
 spec: SPEC-651
-acceptance_criteria: [AC-7.4, AC-8.1]  # T-05 F7, F8
+acceptance_criteria: [AC-F7, AC-F8]  # section sign-offs refuse while a tie-out is off; self-check issues resolve by the system
 risk_zone: amber
 status: in-review
 branch: t05-t42-sections-tie-outs
