@@ -97,7 +97,9 @@ describe("MonthGrid", () => {
     );
     expect(container.querySelector('[data-day="2026-09-14"] [data-today]')).not.toBeNull();
     expect(screen.getByText("Labor Day")).toBeTruthy();
-    expect(container.querySelector('[data-day="2026-08-30"] .text-ink-4')).not.toBeNull();
+    // Dimmed against the month's ink-2, at ink-3: ink-4 fails contrast on the card (DEC-4740).
+    expect(container.querySelector('[data-day="2026-08-30"] .text-ink-3')).not.toBeNull();
+    expect(container.querySelector('[data-day="2026-08-30"] .text-ink-2')).toBeNull();
   });
 
   it("chips state client, filing, due date and risk in words; postponed and done read so", () => {

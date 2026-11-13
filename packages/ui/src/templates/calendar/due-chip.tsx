@@ -66,7 +66,9 @@ export function DueChip({
         tabIndex={tabIndex}
         aria-label={chipName(chip, copy)}
         className={cn(
-          "inline-flex h-[22px] min-w-0 items-center gap-[4px] truncate rounded-full px-[8px] text-[12px] leading-none",
+          // 22px pill (CHIP_H) with a 24px hit area (SC 2.5.8): no overflow clip on the button,
+          // the label truncates instead (S41 leftovers CI, DEC-4740).
+          "relative inline-flex h-[22px] min-w-0 items-center gap-[4px] rounded-full px-[8px] text-[12px] leading-none before:absolute before:inset-x-0 before:-inset-y-[1px] before:content-['']",
           TONE[chip.tier] ?? TONE.later,
           postponed && "line-through",
         )}
@@ -77,7 +79,7 @@ export function DueChip({
         onBlur={onLeave}
       >
         {chip.tier === "done" ? <Icon name="check" size={12} /> : null}
-        <span className="truncate">{chip.label}</span>
+        <span className="min-w-0 truncate">{chip.label}</span>
         {chip.note === undefined ? null : <span className="opacity-80">{chip.note}</span>}
       </button>
       {postponed ? (
