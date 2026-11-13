@@ -38,6 +38,8 @@ from abacus.modules.platform.api import (
     PilotMetricsWorkflow,
     ProvisionTenantResult,
     ReferenceSetFanOutWorkflow,
+    SearchDriftCheckWorkflow,
+    SearchReindexWorkflow,
     SpendAnomalyWorkflow,
     TenantKeyWorkflow,
     TenantProvisioningWorkflow,
@@ -127,6 +129,8 @@ async def worker(temporal: Client, key_ops: InMemoryTenantKeyOps) -> AsyncIterat
         WispPackWorkflow: "batch",  # G-02-T11: a WISP pack is built later
         PilotMetricsWorkflow: "batch",  # Q-04-T008: the weekly pilot metrics, on its Schedule
         ReferenceSetFanOutWorkflow: "background",  # K-02-T12: a published set's fan-out
+        SearchReindexWorkflow: "batch",  # P-02-T06: a firm's or a type's reindex
+        SearchDriftCheckWorkflow: "batch",  # P-02-T06: the nightly drift check, on its Schedule
     } == WORKFLOWS
     activities = cast("list[Callable[..., object]]", list(ACTIVITIES))
     # Two pools, as in production: the general one and the keyops one (P-65).

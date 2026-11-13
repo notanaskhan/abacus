@@ -44,6 +44,7 @@ IDS = (
     "notification_purge:platform",
     "pilot_metrics:platform",  # Q-04-T008: last week's pilot metrics, weekly (batch)
     "run_events_prune:platform",  # P-10-T44: run events past 30 days, daily (batch)
+    "search_drift:platform",  # P-02-T06 (DEC-4612): the nightly search drift check (batch)
     "seal_verify:platform",  # A-07-T42: every locked archive's seal, monthly (RB-29)
     "ses_events:platform",
     "signatures-evidence-integrity",  # N-02-T38: every envelope's evidence re-hashed, nightly

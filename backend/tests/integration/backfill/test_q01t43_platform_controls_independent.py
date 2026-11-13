@@ -46,6 +46,8 @@ EXEMPT_ROUTES: Final = {
     ("POST", "/v1/telemetry/errors"): "operational: browser error reports",
     ("PUT", "/v1/firm/support-access"): "the support session",
     ("POST", "/v1/knowledge/search"): "a read sent as POST",
+    # P-02 (ADR-241): a read sent as POST so the text never reaches a URL (as the server exempts).
+    ("POST", "/v1/search"): "a read sent as POST",
     ("POST", "/v1/firm/staff/{user_id}/revoke"): "ending access: a person's",
     ("POST", "/v1/firm/staff/invitations/{invitation_id}/revoke"): "ending access: an invitation",
     # A-02-T33 (#1601): the unauthenticated connect hand-off only reads where a flow began.

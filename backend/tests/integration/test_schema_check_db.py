@@ -2390,6 +2390,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "workbench_sessions": frozenset(
             {"client_scope", "context_refs", "deleted_at", "item_seq", "last_item_at"}
             | {"state", "title"}
+            # W-02-T06 (0850, DEC-4605): the title's source, a rename and who deleted.
+            | {"title_source", "renamed_by", "renamed_at", "deleted_by"}
+        ),
+        # I-02-T06 (0851): a viewer's daily briefing is rebuilt in place (one row per viewer,
+        # engagement and day).
+        "daily_briefings": frozenset(
+            {"agent_run_id", "blocks", "built_at", "card_refs", "citation_ids", "counts"}
+            | {"lead_facts", "status", "unavailable_reason"}
         ),
         "engagement_agent_budgets": frozenset({"alert_pct", "minutes_per_usage_month"}),
         "usage_month_rollups": frozenset({"cost_usd", "minutes"}),

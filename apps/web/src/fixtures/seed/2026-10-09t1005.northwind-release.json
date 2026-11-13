@@ -3,12 +3,16 @@
     "version": "bh-2026.10.3",
     "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
     "snapshot": "2026-10-09T10:05",
-    "slices": ["archive"]
+    "slices": [
+      "archive"
+    ]
   },
   "persona": "margaret-okonkwo",
   "request": "GET /v1/audits/{work_item_id}/release",
   "body": {
-    "allowed_actions": ["report.release"],
+    "allowed_actions": [
+      "report.release"
+    ],
     "also_required": [
       {
         "key": "fs_approved",
@@ -65,7 +69,9 @@
         "value": null
       },
       {
-        "blockers": ["not_released"],
+        "blockers": [
+          "not_released"
+        ],
         "gate": "G8",
         "met": false,
         "required": true,

@@ -126,9 +126,8 @@ def test_c6_v2_the_run_step_slot_and_the_runs_start_answer() -> None:
     assert "202" in cast(Json, start["responses"])
 
 
-@pytest.mark.xfail(
-    reason="T-05-T32 (the workbook run's step handlers) has not landed (TASK-7408)", strict=True
-)
+# T-05-T32 landed in S40 (TASK-7622): part 1's handlers and part 2's fail-closed ones are all
+# registered, so the expected failure is lifted (S40 CI repair, DEC-4632).
 def test_c6_v2_the_workbook_runs_ten_steps_are_registered() -> None:
     import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the steps at import (T-05-T32)
     from abacus.modules.agents.engagement_run import run_step_handler
