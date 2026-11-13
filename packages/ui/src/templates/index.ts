@@ -136,3 +136,19 @@ export {
 } from "./workbench-layout";
 // T13 CalendarLayout and MonthGrid (F-07-T10; SPEC-652 AC-6).
 export * from "./calendar";
+// F-07-T16: T14 GraphCanvasLayout (record frame, canvas pane, banner, 330 inspector).
+export {
+  type DependencyBanner,
+  GRAPH_GEOMETRY,
+  type GraphCanvasLayoutProps,
+  GraphCanvasLayout,
+  type GraphInspector,
+  type GraphView,
+  type InspectorKv,
+  type K1BandRow,
+  type LinkedWork,
+  MaskedTin,
+  REMASK_MS,
+  type RelationshipRow,
+  isTinMask,
+} from "./graph-layout";
