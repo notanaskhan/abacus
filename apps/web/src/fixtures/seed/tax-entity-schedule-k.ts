@@ -110,7 +110,18 @@ const NAMES: Five = [
   "Jonah Feld",
 ];
 
-/** Item L: the partners' ending capital against Schedule L's 6,866,200 (off 6,200 until the fix). */
+/** Item L: the partners' ending capital against Schedule L's 6,866,200 (off 6,200 until the fix).
+ * T-05-T55: each 05 row as TXP-07's panes draw it (handoff TXP-07 a, b, c): beginning,
+ * contributions, allocated income, tax-exempt income (blank on the tax basis until the fix; 704(b)
+ * and book carry it), transfers (−331,405 / +331,405 at 6/30/2025), distributions, and the
+ * endings on both bases. Verbatim from the handoff; every pane crossfoots. */
+const BEGINNING: Five = ["80000", "2280000", "2100000", "0", "1500000"];
+const CONTRIBUTIONS: Five = ["0", "0", "0", "0", "250000"];
+const INCOME: Five = ["25000", "475000", "406250", "31250", "312500"];
+const TAX_EXEMPT: Five = ["124", "2356", "2015", "155", "1550"];
+const TRANSFERS: readonly (string | null)[] = [null, null, "-331405", "331405", null];
+const DISTRIBUTIONS: Five = ["12000", "228000", "180000", "30000", "150000"];
+
 export function capitalAccounts(snapshot: Snapshot): WorkbookCapitalAccountsOut {
   const fixed = snapshot === "afterFix" || snapshot === "run3";
   const endings = fixed ? ENDING_FIXED : ENDING_DRAFTED;
@@ -120,19 +131,38 @@ export function capitalAccounts(snapshot: Snapshot): WorkbookCapitalAccountsOut 
     rows: endings.map((ending, i) => ({
       partner_id: PARTNER_IDS[i] ?? "",
       name: NAMES[i] ?? null,
-      beginning: "0",
-      contributions: "0",
-      income: "0",
-      distributions: "0",
+      row: i + 2,
+      beginning: BEGINNING[i] ?? "0",
+      contributions: CONTRIBUTIONS[i] ?? "0",
+      income: INCOME[i] ?? "0",
+      distributions: DISTRIBUTIONS[i] ?? "0",
       ending,
+      tax_exempt: fixed ? (TAX_EXEMPT[i] ?? null) : null,
+      tax_exempt_704b: TAX_EXEMPT[i] ?? null,
+      nondeductible: null,
+      transfers: TRANSFERS[i] ?? null,
+      guaranteed_payments: null,
+      ending_704b: ENDING_FIXED[i] ?? null,
     })),
     tie: fixed ? "tie" : "off",
+    totals: {
+      beginning: "5960000",
+      contributions: "250000",
+      income: "1250000",
+      distributions: "600000",
+      ending: fixed ? "6866200" : "6860000",
+      tax_exempt: fixed ? "6200" : null,
+      transfers: "0",
+      ending_704b: "6866200",
+    },
     item_l: {
       capital_ending: fixed ? "6866200" : "6860000",
       m2_ending: "6866200",
       tie: fixed ? "tie" : "off",
       difference: fixed ? "0" : "-6200",
     },
+    book_tie: "tie",
+    derives_tie: "tie",
   };
 }
 

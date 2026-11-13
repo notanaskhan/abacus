@@ -38,8 +38,8 @@ export const txpScreens = {
   },
   "TXP-07": {
     name: "Review › Capital Accounts · Ridgeline 2025 Form 1065",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/tax-returns/$returnId/review/$section", // `section: "capital-accounts"` (T-05-T55)
   },
   "TXP-08": {
     name: "Review › Basis · Ridgeline inside / outside basis",
