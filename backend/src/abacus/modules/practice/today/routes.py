@@ -72,12 +72,12 @@ async def today_builds_route(
     await today_gate(ctx)
     vm = await assemble(ctx, body.brief_date)
     await write_briefing_snapshot(ctx, vm)
-    done = await ensure_briefings(
-        ctx,
-        [(c.engagement_id, c.label) for c in vm.cards],
-        "force" if body.mode == "force" else "interactive",
-        body.brief_date,
-    )
+    cards = [(c.engagement_id, c.label) for c in vm.cards]
+    if body.mode == "background":  # I-02-T13 rest: the stale engagements, debounced in dispatch
+        stale = set(vm.stale_engagements)
+        cards = [c for c in cards if c[0] in stale]
+    mode = {"force": "force", "background": "background"}.get(body.mode, "interactive")
+    done = await ensure_briefings(ctx, cards, mode, body.brief_date)  # type: ignore[arg-type] -- the three literals
     return TodayBuildAcceptedOut(
         status_url=f"/v1/me/today?date={body.brief_date.isoformat()}", started=len(done.started)
     )

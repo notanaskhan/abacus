@@ -351,6 +351,22 @@ def current_why(blocks: object, open_gate_ids: set[str]) -> dict[str, list[dict[
     return out
 
 
+def why_gone(blocks: object, open_gate_ids: set[str]) -> bool:
+    """I-02-T13 rest (staleness): a ready briefing names a why line for a gate no longer open, so
+    its brief describes a day that changed; the Today read asks for a background rebuild."""
+    if not isinstance(blocks, dict):
+        return False
+    why = cast(dict[str, object], blocks).get("why")
+    if not isinstance(why, list):
+        return False
+    for raw in cast(list[object], why):
+        if isinstance(raw, dict):
+            gate = str(cast(dict[str, object], raw).get("gate_id", ""))
+            if gate and gate not in open_gate_ids:
+                return True
+    return False
+
+
 def register() -> None:
     """At the agents api's import: the plan provider and the user-topic invalidation."""
     from abacus.kernel import realtime

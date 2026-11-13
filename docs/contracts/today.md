@@ -17,7 +17,7 @@ Every route reads only the caller's own brief (`viewer_user_id = caller`).
 | Method · path | Action | Shape | Served by |
 |---|---|---|---|
 | `GET /v1/me/today?date=` | `briefing.read` | `TodayVM` | I-02-T10 |
-| `POST /v1/me/today/builds` `{brief_date, mode: missing\|force}` | `briefing.rebuild` | 202 `TodayBuildAcceptedOut`; 429 `rebuild_limit` (a fourth forced rebuild a day); 409 `in_progress` | I-02-T13 |
+| `POST /v1/me/today/builds` `{brief_date, mode: missing\|force\|background}` (`background`: the stale engagements only, debounced 15 minutes and six a day; TASK-7930) | `briefing.rebuild` | 202 `TodayBuildAcceptedOut`; 429 `rebuild_limit` (a fourth forced rebuild a day); 409 `in_progress` | I-02-T13 |
 | `GET /v1/me/today/work-items/{work_item_id}?date=` | `briefing.read` (+ `visible(work_item)`) | `DrillVM`; 404 walled or not the viewer's | I-02-T10 |
 | `GET /v1/me/today/history?before=&limit=` | `briefing.read` | `HistoryPage` (90 days) | I-02-T16 |
 | `GET /v1/me/today/history/{brief_id}` | `briefing.read` | `TodayVM` (read-only, walls re-checked, citations re-verified) | I-02-T16 |
@@ -27,7 +27,9 @@ Every route reads only the caller's own brief (`viewer_user_id = caller`).
 - `TodayVM`: `brief_date`, `brief_id`, `first_name`, `items`, `engagements` ("11 items across 4
   engagements"), `cells[CountCell]`, `lead_facts[LeadFact]`, `layout` (`focus`, `by_engagement`),
   `needs_you_first[GateRow]`, `cards[Card]`, `groups[Group]`, `availability`, `status`
-  (`building`, `ready`), `needs_build`, `built_at`, `building_counts`.
+  (`building`, `ready`), `needs_build`, `built_at`, `building_counts`, `stale_engagements` (ready
+  briefs naming a gate closed since; the panel says "Written … · items changed since" and asks
+  for a background rebuild; TASK-7930).
 - `CountCell {kind, count, href}`: kinds are C13's bands in HOME-02 order (`decision`, `sign_off`,
   `approval_send`, `signature`, `needs_attention`) plus the derived `overdue`.
 - `LeadFact {key, values, refs}`: keys `lead.overdue` › `lead.due_tomorrow` ›

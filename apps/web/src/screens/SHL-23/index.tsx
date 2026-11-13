@@ -314,6 +314,11 @@ export function TodayPanel({
       ) : null}
       {vm.built_at ? (
         <p className="flex-none px-[12px] pb-[8px] text-[11px] text-ink-3">
+          {(vm.stale_engagements ?? []).length > 0 ? (
+            <span data-changed-since="" className="block">
+              {COPY.changedSince(clockTime(vm.built_at, { tz: timeZone }))}
+            </span>
+          ) : null}
           {COPY.footer(clockTime(vm.built_at, { tz: timeZone }))}
         </p>
       ) : null}

@@ -18,6 +18,8 @@ export const COPY = {
     `Building your brief from ${String(n)} items, ${String(d)} deadlines and ${String(r)} runs…`,
   footer: (time: string) =>
     `Brief built ${time} from your queue, deadlines and runs · every line links to its source`,
+  // I-02 staleness: a ready brief whose why lines name gates closed since.
+  changedSince: (time: string) => `Written ${time} · items changed since`,
   open: "Open",
   assign: "Assign open items",
   summaryUnavailable: "Summary unavailable",

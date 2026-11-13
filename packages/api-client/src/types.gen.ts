@@ -52395,7 +52395,7 @@ export type TodayBuildIn = {
     /**
      * Mode
      */
-    mode?: 'missing' | 'force';
+    mode?: 'missing' | 'force' | 'background';
 };
 
 /**
@@ -52491,6 +52491,10 @@ export type TodayVm = {
      * Needs You First
      */
     needs_you_first: Array<GateRow>;
+    /**
+     * Stale Engagements
+     */
+    stale_engagements?: Array<string>;
     /**
      * Status
      */

@@ -680,6 +680,7 @@ __all__ = [
     "begin_code_run",
     "blocks",
     "briefing_fact_id",
+    "briefing_why_gone",
     "capability_ready",
     "check",
     "check_live",
@@ -836,6 +837,9 @@ from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
 )
 from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
     ensure_briefings as ensure_briefings,
+)
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
+    why_gone as briefing_why_gone,
 )
 from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
     write_snapshot as write_briefing_snapshot,

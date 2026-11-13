@@ -30,8 +30,7 @@ pre-checks without a model call, modes and debounce, the day snapshot, why-line 
 ## Partial
 - Work class: dispatch rides P-10's engagement run (interactive and background share its class);
   the mode is audited.
-- The staleness trigger (background mode) is called by the Today read when `needs_build` is set
-  (I-02-T15's screen) and by the 15-minute poll; no scheduled job here.
+- ~~The staleness trigger~~: `stale_engagements` + `mode: background`, asked by the open panel (TASK-7930, DEC-4926).
 
 ## Progress log
 - 2026-11-13: built; tests written, not run (S42 end pass).
