@@ -263,10 +263,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
-    # I-02-T06 (0851): a building row reaches its terminal state once (trigger).
+    # I-02-T06 (0851): a building row reaches its terminal state once (trigger); I-02-T13 (0871):
+    # the claimed row records the facts hash it was built from.
     "daily_briefings": frozenset(
         {"status", "unavailable_reason", "blocks", "citation_ids", "agent_run_id", "counts"}
-        | {"lead_facts", "card_refs", "built_at"}
+        | {"lead_facts", "card_refs", "built_at", "facts_hash"}
     ),
     "autonomy_policy_drafts": frozenset(
         {"base_version_no", "sections", "schema_version", "version", "updated_at", "updated_by"}

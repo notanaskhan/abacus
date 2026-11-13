@@ -37,6 +37,7 @@ from sqlalchemy import text
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import DomainEvent
 from abacus.modules.agents.blocks import AgentBlocks, BlocksRejected, Fact, validate_blocks
 from abacus.modules.agents.briefing.facts import BriefingFacts, ConsentRequired, collect
 
@@ -231,6 +232,27 @@ _TODAY: Final = text(
     "SELECT id, seq, status, facts_hash FROM daily_briefings WHERE scope = 'engagement' AND "
     "viewer_user_id = :v AND engagement_id = :e AND brief_date = :d ORDER BY seq DESC LIMIT 1"
 )
+# I-02-T13: the day's newest finished row (a claimed `building` row is not a result).
+_READY: Final = text(
+    "SELECT id, seq, status, facts_hash FROM daily_briefings WHERE scope = 'engagement' AND "
+    "viewer_user_id = :v AND engagement_id = :e AND brief_date = :d AND status <> 'building' "
+    "ORDER BY seq DESC LIMIT 1"
+)
+_COMPLETE: Final = text(
+    "UPDATE daily_briefings SET status = :status, unavailable_reason = :reason, "
+    "facts_hash = :hash, blocks = CAST(:blocks AS jsonb), agent_run_id = :run, "
+    "built_at = clock_timestamp() WHERE id = :id AND status = 'building' RETURNING id"
+)
+
+
+def _built(viewer: UUID, on: date, engagement: UUID, status: str) -> DomainEvent:
+    from abacus.modules.agents.briefing.dispatch import DailyBriefingBuilt
+
+    return DailyBriefingBuilt(
+        viewer_user_id=viewer, brief_date=on, engagement_id=engagement, status=status
+    )
+
+
 _INSERT: Final = text(
     "INSERT INTO daily_briefings (tenant_id, scope, viewer_user_id, engagement_id, brief_date, "
     "seq, status, unavailable_reason, facts_hash, blocks, agent_run_id, prompt_ref, "
@@ -255,6 +277,26 @@ async def build_engagement_briefing(
             prior = (
                 await session.execute(_TODAY, {"v": viewer_id, "e": engagement_id, "d": on})
             ).first()
+        if prior is not None and prior.status == "building":
+            # I-02-T13 (DEC-4916): the row `ensure_briefings` claimed is completed in place.
+            async with uow(tenant) as tx:
+                done = await tx.session.scalar(
+                    _COMPLETE,
+                    {
+                        "id": prior.id, "status": status, "reason": reason,
+                        "hash": None if digest is None else bytes.fromhex(digest),
+                        "blocks": None if blocks is None else json.dumps(blocks),
+                        "run": agent.agent_run_id,  # type: ignore[attr-defined] -- the run's context is typed object here
+                    },
+                )  # fmt: skip
+                if done is not None:
+                    tx.record(
+                        "daily_briefing.built",
+                        target=Target("daily_briefing", prior.id),
+                        after=Ref(status=status, engagement=engagement_id),
+                    )
+                    tx.emit(_built(viewer_id, on, engagement_id, status))
+                    return cast(UUID, prior.id)
         async with uow(tenant) as tx:
             new_id = cast(
                 UUID,
@@ -276,6 +318,7 @@ async def build_engagement_briefing(
                 target=Target("daily_briefing", new_id),
                 after=Ref(status=status, engagement=engagement_id),
             )
+            tx.emit(_built(viewer_id, on, engagement_id, status))
         return new_id
 
     try:
@@ -284,7 +327,7 @@ async def build_engagement_briefing(
         return Built("unavailable", await store("unavailable", "consent_7216", None, None))
     async with tenant_session(tenant) as session:
         prior = (
-            await session.execute(_TODAY, {"v": viewer_id, "e": engagement_id, "d": on})
+            await session.execute(_READY, {"v": viewer_id, "e": engagement_id, "d": on})
         ).first()
     if (
         prior is not None

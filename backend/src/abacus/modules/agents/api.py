@@ -555,6 +555,7 @@ __all__ = [
     "BlocksTurn",
     "BriefingCandidate",
     "BriefingContribution",
+    "BriefingRebuildLimit",
     "BriefingSubject",
     "ChangeSetApplier",
     "Citation",
@@ -693,12 +694,14 @@ __all__ = [
     "create_review_run",
     "create_screening_run",
     "create_suggestion",
+    "current_why_lines",
     "deterministic_run_facts",
     "dispatch_run",
     "draft",
     "draft_follow_ups",
     "effective_ai_policy",
     "engagement_graph",
+    "ensure_briefings",
     "extract_notice_fields",
     "fact",
     "fail_code_run",
@@ -785,6 +788,7 @@ __all__ = [
     "upload_review_available",
     "verify_citations",
     "workflow_id",
+    "write_briefing_snapshot",
 ]
 
 # S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
@@ -821,6 +825,23 @@ from abacus.modules.agents.briefing.today import (  # noqa: E402
 )
 
 _briefing_today.register()
+
+# I-02-T13 (DEC-4916, DEC-4917): briefing dispatch and freshness (the Today brief's builds).
+from abacus.modules.agents.briefing import dispatch as _briefing_dispatch  # noqa: E402
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
+    RebuildLimit as BriefingRebuildLimit,
+)
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
+    current_why as current_why_lines,
+)
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
+    ensure_briefings as ensure_briefings,
+)
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
+    write_snapshot as write_briefing_snapshot,
+)
+
+_briefing_dispatch.register()
 
 # T-05-T47 (DEC-4713): the compiled v2 specs, for the eval-suite generator (tooling).
 from abacus.modules.agents.specs._specs_v2 import SPECS_V2 as SPECS_V2  # noqa: E402

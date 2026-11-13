@@ -956,5 +956,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         # reviewed 2026-11-13 (S42, TASK-7905): a workbook exported to xlsx (who, which version,
         # the file's hash; TXP-11's history).
         "workbook.exported",
+        # reviewed 2026-11-13 (S42, TASK-7913): the Today brief's builds (dispatch, an
+        # unavailable engagement recorded with its reason, the day's snapshot); no brief content.
+        "daily_briefing.dispatched",
+        "daily_briefing.unavailable",
+        "daily_briefing.snapshot",
     }
 )

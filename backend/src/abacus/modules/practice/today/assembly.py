@@ -110,6 +110,12 @@ def row_of(item: Item, today: date) -> GateRow:
     )
 
 
+def with_why(row: GateRow, why: Mapping[str, list[dict[str, object]]]) -> GateRow:
+    """I-02-T13: the row's verified why line, or none (the context line stays the row's words)."""
+    found = why.get(str(row.gate_id))
+    return row if not found else row.model_copy(update={"why_blocks": found})
+
+
 def cards_of(
     items: Sequence[Item], today: date, labels: Mapping[UUID, str]
 ) -> list[tuple[UUID, list[Item]]]:
@@ -198,6 +204,14 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
     ranked = sorted(items, key=lambda i: urgency(i, today))
     briefings = await _briefings(ctx, on, engagement_ids)
     cards: list[Card] = []
+    from abacus.modules.agents.api import current_why_lines
+
+    open_gates = {str(i.gate_id) for i in items}
+    why: dict[str, list[dict[str, object]]] = {}
+    for b in briefings.values():
+        if getattr(b, "status", None) == "ready":
+            # I-02-T13 (DEC-4917): a gate closed since the briefing drops its why line.
+            why.update(current_why_lines(getattr(b, "blocks", None), open_gates))
     for engagement_id, rows in cards_of(items, today, labels):
         b = briefings.get(engagement_id)
         status = getattr(b, "status", None)
@@ -214,7 +228,7 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
                 engagement_id=engagement_id,
                 work_item_id=rows[0].work_item_id,
                 label=labels.get(engagement_id, ""),
-                rows=[row_of(i, today) for i in rows[:ROWS_PER_CARD]],
+                rows=[with_why(row_of(i, today), why) for i in rows[:ROWS_PER_CARD]],
                 more=max(0, len(rows) - ROWS_PER_CARD),
                 briefing_id=getattr(b, "id", None),
                 briefing_status=status,
@@ -279,7 +293,7 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
         cells=cells,
         lead_facts=lead,
         layout="focus",
-        needs_you_first=[row_of(i, today) for i in ranked[:FIRST]],
+        needs_you_first=[with_why(row_of(i, today), why) for i in ranked[:FIRST]],
         cards=cards,
         groups=groups,
         availability=Availability(narrative=True, ask=False, ask_reason="ask_binding_pending"),

@@ -58,15 +58,29 @@ async def today_route(
     action="briefing.rebuild",
     response_model=TodayBuildAcceptedOut,
     status_code=202,
-    errors=(409, 429, 501),
+    errors=(409, 429),
 )
 async def today_builds_route(
     body: TodayBuildIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> TodayBuildAcceptedOut:
     """Records the day's snapshot and starts the missing (or, `force`, all) engagement briefings;
-    429 `rebuild_limit` after three forced rebuilds a day; 409 `in_progress`."""
+    429 `rebuild_limit` after three forced rebuilds a day; 409 `in_progress`. I-02-T13
+    (DEC-4916): at most three engagement runs at once; unavailable ones recorded, no model call."""
+    from abacus.modules.agents.api import ensure_briefings, write_briefing_snapshot
+    from abacus.modules.practice.today.assembly import assemble
+
     await today_gate(ctx)
-    _not_yet()
+    vm = await assemble(ctx, body.brief_date)
+    await write_briefing_snapshot(ctx, vm)
+    done = await ensure_briefings(
+        ctx,
+        [(c.engagement_id, c.label) for c in vm.cards],
+        "force" if body.mode == "force" else "interactive",
+        body.brief_date,
+    )
+    return TodayBuildAcceptedOut(
+        status_url=f"/v1/me/today?date={body.brief_date.isoformat()}", started=len(done.started)
+    )
 
 
 @today_router.get("/work-items/{work_item_id}", action="briefing.read", response_model=DrillVM)
