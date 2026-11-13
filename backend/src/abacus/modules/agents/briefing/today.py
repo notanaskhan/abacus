@@ -32,10 +32,11 @@ from datetime import date
 from typing import Annotated, Final, Literal, cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 from sqlalchemy import text
 
 from abacus.kernel.classification import classified
+from abacus.kernel.db import TenantContext
 from abacus.modules.agents.blocks import AgentBlocks, BlocksRejected, Fact, validate_blocks
 from abacus.modules.agents.briefing.facts import BriefingFacts, ConsentRequired, collect
 
@@ -246,8 +247,8 @@ async def build_engagement_briefing(
     from abacus.kernel.db import tenant_session
     from abacus.kernel.uow import Ref, Target, uow
 
-    tenant = agent.tenant  # type: ignore[attr-defined]
-    viewer_id: UUID = viewer.user_id  # type: ignore[attr-defined]
+    tenant = cast(TenantContext, agent.tenant)  # type: ignore[attr-defined]
+    viewer_id = cast(UUID, viewer.user_id)  # type: ignore[attr-defined]
 
     async def store(status: str, reason: str | None, digest: str | None, blocks: object) -> UUID:
         async with tenant_session(tenant) as session:
@@ -302,7 +303,7 @@ async def build_engagement_briefing(
             answer, codes = repaired, []
     status = "unverified" if codes else "ready"
     stored = await store(status, None, facts.facts_hash, answer.model_dump(mode="json"))
-    return Built(status, stored, tuple(codes))  # type: ignore[arg-type]
+    return Built(status, stored, tuple(codes))
 
 
 _LATEST: Final = text(
@@ -355,12 +356,12 @@ async def briefing_step(agent: object, step: object) -> object:
     from abacus.modules.agents.engagement_run import RunStepResult
 
     args = cast(dict[str, object], step.arguments)  # type: ignore[attr-defined]
-    raw = args.get("engagement_id") or agent.engagement_id  # type: ignore[attr-defined]
+    raw = args.get("engagement_id") or cast(object, agent.engagement_id)  # type: ignore[attr-defined]
     if raw is None:
         return RunStepResult("failed", "engagement_missing")
     built = await build_engagement_briefing(
         agent,
-        agent.initiator,  # type: ignore[attr-defined] -- the viewer the run acts for (ADR-025)
+        cast(object, agent.initiator),  # type: ignore[attr-defined] -- the viewer (ADR-025)
         UUID(str(raw)),
         engagement_label=str(args.get("label") or ""),
         titles={},
@@ -378,6 +379,68 @@ def register() -> None:
     register_run_step("briefing_today", briefing_step)  # type: ignore[arg-type]
 
 
+# --- The fake model's answer (I-02-T12; local runs and tests only) ------------------------------
+
+
+class BriefingTask(BaseModel):
+    """The trusted part of the task as the fake reads it (gates sit in the untrusted block)."""
+
+    model_config = ConfigDict(frozen=True, extra="ignore")
+    facts: list[FactIn] = Field(default_factory=list[FactIn])
+
+
+_GATES: Final = TypeAdapter(list[GateIn])
+_GATES_BLOCK: Final = re.compile(r'<untrusted name="gates">\n(.*?)\n</untrusted>', re.DOTALL)
+
+
+def _seg_text(text: str) -> dict[str, str]:
+    return {"kind": "text", "text": text}
+
+
+def _seg_fact(fact: str) -> dict[str, str]:
+    return {"kind": "fact", "fact_id": fact}
+
+
+def _para(*segments: dict[str, str]) -> dict[str, object]:
+    return {"version": 1, "parts": [{"kind": "p", "segments": list(segments)}]}
+
+
+def fake_briefing(request: object) -> str:
+    """`briefing.today@v1` in the fake model, read from the task by code (I-02-T12): one why line
+    per gate, every figure a fact reference (the gate's due date, else the PBC counts), no number
+    in text and no reserved verb, so `validate` passes it as the scenario's Today briefing.
+    FakeModel itself refuses to exist outside local runs and tests."""
+    user = str(getattr(request, "user", ""))
+    task = BriefingTask.model_validate_json(user.split("## task\n", 1)[1].split("\n", 1)[0])
+    found = _GATES_BLOCK.search(user)
+    gates = _GATES.validate_json(found.group(1)) if found else []
+    facts = {f.id for f in task.facts}
+    pbc = {"pbc_received", "pbc_total"} <= facts
+    why: list[dict[str, object]] = []
+    for g in gates:
+        gate_id = g.gate_id
+        due = next((f for f in facts if f.startswith("gate_") and f.endswith("_due")
+                    and f[len("gate_"):-len("_due")] == UUID(gate_id).hex[:8]), None)  # fmt: skip
+        lead = "Something upstream blocks this item" if g.blocked else "This waits on you"
+        if due is not None:
+            line = _para(_seg_text(f"{lead}; due "), _seg_fact(due), _seg_text("."))
+        elif pbc:
+            line = _para(
+                _seg_text(f"{lead}; the client has returned "), _seg_fact("pbc_received"),
+                _seg_text(" of "), _seg_fact("pbc_total"), _seg_text(" requests."),
+            )  # fmt: skip
+        else:
+            continue  # no fact to cite: the line is left out and code's context line shows
+        why.append({"gate_id": gate_id, "line": line})
+    summary = (
+        _para(_seg_text("Requests are back: "), _seg_fact("pbc_received"), _seg_text(" of "),
+              _seg_fact("pbc_total"), _seg_text("."))
+        if pbc
+        else _para(_seg_text("Your open items on this engagement are listed below by due date."))
+    )  # fmt: skip
+    return json.dumps({"summary": summary, "why": why, "risk": None})
+
+
 __all__ = [
     "CAPABILITY",
     "PROMPT",
@@ -387,6 +450,7 @@ __all__ = [
     "WhyLine",
     "briefing_step",
     "build_engagement_briefing",
+    "fake_briefing",
     "input_of",
     "latest_briefings",
     "register",
