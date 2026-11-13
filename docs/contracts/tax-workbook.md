@@ -36,7 +36,7 @@ The P-10 run API (`/v1/agent-runs/{run}` …), P-04's sign-off, proposal, issue 
 | Tallies | `GET /v1/tax-returns/{id}/trial-balance/tallies` | `workbook.read` |
 | AJE, RJE, TJE | `GET /v1/tax-returns/{id}/journal-entries` | `adjusted_tb.read` (A-06) |
 | Form line picker | `GET /v1/form-lines?form=&tax_year=&q=` | `reference_set.read` (K-02) |
-| Propose a mapping | `POST /v1/tax-returns/{id}/mappings` | `account_mapping.edit` (the plan's `account_mapping.propose` once A-03 adds it) |
+| Pick a mapping | `POST /v1/tax-returns/{id}/mappings` | `workbook.edit`; maps only for `tax_mapping.approve` (DEC-4629) |
 | Schedule K | `GET /v1/tax-returns/{id}/schedules/k?view=&version=` | `workbook.read` |
 | Form 8825 by property | `GET /v1/tax-returns/{id}/schedules/k/lines/{line}/breakdown` | `workbook.read` |
 | Capital accounts | `GET /v1/tax-returns/{id}/capital-accounts?view=&version=` | `workbook.read` |
@@ -55,6 +55,8 @@ The P-10 run API (`/v1/agent-runs/{run}` …), P-04's sign-off, proposal, issue 
 | Accrued vs the engine | `GET /v1/tax-returns/{id}/reconciliation?checkpoint=` | `tax_reconciliation.read` |
 
 Served so far (S40): the trial balance, its tallies and journal entries (T-05-T33, DEC-4618); Schedule K, the Form 8825 breakdown, capital accounts and the M-2 (T-05-T34, DEC-4619). T-05-T34 adds, additively: `WorkbookCapitalRowOut.name`, `WorkbookCapitalAccountsOut.totals` and `.item_l`, `WorkbookM2Out.lines` and `.item_l` (Item L's ending capital against the M-2's line 9: `tie`, or `off` with the difference).
+
+TXP-02's rest (T-05-T37, DEC-4629), all additive: `WorkbookTbRowOut.cells` (each amount's sheet 01 address by column, `utb` `aje` `rje` `atb`, for SHL-09); tallies `balance_sheet`, `capital_tie` and `retained_earnings` (the two M-2 checks read `pending` until sheet 07 is written); `terms` on tallies and figures (each derivation term with its label, amount and `+` or `-`); `WorkbookJournalEntryOut.description`, `.lines` and `.approval` (the O2 drawer). `GET /v1/form-lines` is served (the published set's mappable lines; 404 when none is published). `POST …/mappings` is served: the tax reviewer's pick maps the account (`state: mapped`, audited `tax.mapping_recorded`); anyone else's raises a review note proposing the line (`state: flagged`, `note_id`) and maps nothing. Proposals stay the agent's (ADR-161), so a person's pick is never one. `WorkbookMappingProposedOut` changed from `{proposal_id}` to `{state, account_code, form_line_key, note_id}`; the route was a 501 stub with no consumer.
 
 The cell edit (T-05-T35, DEC-4620) is served. The cell path names the sheet (`05!H12`, URL-encoded). The preparer's edit recomputes its dependents synchronously, up to 500 cells; beyond that it answers 422 `recompute_too_large`. It then saves a checkpoint named "Edited 05 Capital!H12 by ‹person›". A reviewer's edit becomes a review note anchored on the cell: the response has state `flagged` and carries `proposal_note_id`, and the cell does not change. A person with neither function gets 403 `preparer_function_required`. The other errors are 409 `cell_version_conflict` or `cells_locked_by_run`, and 422 `formula_invalid` for grammar errors and cycles. `WorkbookCellOut` gains `recomputed`, `proposal_note_id` and `checkpoint_id`, all additive.
 

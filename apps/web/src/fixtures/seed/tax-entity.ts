@@ -6,8 +6,12 @@
 // Synthetic only.
 import type {
   AgentRunOut,
+  FieldProvenanceOut,
   RunItemOut,
   RunItemsOut,
+  WorkbookFormLineOut,
+  WorkbookJournalEntryOut,
+  WorkbookMappingProposedOut,
   WorkbookPartnersOut,
   WorkbookRunRowOut,
   WorkbookTalliesOut,
@@ -133,9 +137,22 @@ function groupOf(line: string | null): Group {
   return "deductions";
 }
 
+/** The account's sheet 01 cells as `import_trial_balance` writes them (T-05-T37 rest): one row
+ * per account from row 2 in TB order, UTB, AJE, RJE and ATB in columns C to F. */
+function cellsOf(code: string): Record<string, string> {
+  const n = TB.findIndex((r) => r[0] === code) + 2;
+  return {
+    utb: `01!C${String(n)}`,
+    aje: `01!D${String(n)}`,
+    rje: `01!E${String(n)}`,
+    atb: `01!F${String(n)}`,
+  };
+}
+
 function tbRow([code, name, line, utb, aje, rje, tje]: Row, unmapped: boolean): WorkbookTbRowOut {
   const mapped = unmapped ? null : line;
   return {
+    cells: cellsOf(code),
     account_code: code,
     account_name: name,
     form_line_key: mapped,
@@ -235,7 +252,7 @@ export function trialBalance(
     if (statement === "income_statement") return line !== "" && !line.startsWith("L");
     return true;
   });
-  const shown = view === "line" ? byLine(rows) : rows;
+  const shown = view === "line" ? byLine(rows).map((r) => ({ ...r, cells: {} })) : rows;
   const sections = ["assets", "liabilities", "equity", "income", "deductions", "unmapped"].filter(
     (g) => rows.some((r) => r.group === g),
   );
@@ -248,9 +265,21 @@ export function trialBalance(
   };
 }
 
-/** TXP-02's tally strip on the snapshot (T-05-T37): the server's foots and figure cards. */
+/** TXP-02's tally strip on the snapshot (T-05-T37): the server's foots, the three statement ties
+ * (T-05-T37 rest, DEC-4629) and figure cards, each with the server's derivation terms. Run 1's
+ * balance sheet is off by the unmapped 1300 (158,000) and its M-2 is not yet written. */
 export function tallies(snapshot: Snapshot): WorkbookTalliesOut {
   const run1 = snapshot === "run1";
+  const rents = [
+    { label: "Rental income", amount: "3776500", op: "+" as const },
+    { label: "Parking & other property income", amount: "96400", op: "+" as const },
+  ];
+  const roll = [
+    { label: "Beginning capital", amount: "5960000", op: "+" as const },
+    { label: "Contributions", amount: "250000", op: "+" as const },
+    { label: "Book net income", amount: "1256200", op: "+" as const },
+    { label: "Distributions", amount: "600000", op: "-" as const },
+  ];
   return {
     items: [
       { key: "utb_foot", label: "Unadjusted foots", state: "tie", difference: "0" },
@@ -262,13 +291,158 @@ export function tallies(snapshot: Snapshot): WorkbookTalliesOut {
         state: run1 ? "check" : "tie",
         difference: run1 ? "1" : "0",
       },
+      {
+        key: "balance_sheet",
+        label: "Balance sheet",
+        state: run1 ? "off" : "tie",
+        difference: run1 ? "-158000" : "0",
+        terms: [
+          { label: "Total liabilities", amount: "11048300", op: "+" },
+          { label: "Partners' capital", amount: "6866200", op: "+" },
+        ],
+      },
+      {
+        key: "capital_tie",
+        label: "Capital tie",
+        state: run1 ? "pending" : "tie",
+        difference: run1 ? null : "0",
+        terms: roll,
+      },
+      {
+        key: "retained_earnings",
+        label: "Retained earnings",
+        state: run1 ? "pending" : "tie",
+        difference: run1 ? null : "0",
+        terms: [{ label: "Book net income", amount: "1256200", op: "+" }],
+      },
     ],
     figures: [
-      { key: "gross_rents", label: "Gross rents", amount: "3872900" },
+      { key: "gross_rents", label: "Gross rents", amount: "3872900", terms: rents },
       { key: "total_deductions", label: "Total deductions", amount: "2641300" },
-      { key: "net_rental_income", label: "Net rental RE income", amount: "1231600" },
+      {
+        key: "net_rental_income",
+        label: "Net rental RE income",
+        amount: "1231600",
+        terms: [...rents, { label: "Total deductions", amount: "2641300", op: "-" }],
+      },
       { key: "book_total_assets", label: "Book total assets", amount: "17914500" },
     ],
+  };
+}
+
+/** C8's entries on the return (TXP-02 a3 and the footnote): AJE-1 from the Cook County second
+ * installment, TJE-1 the zero-net reclass of tax-exempt interest to Schedule K line 18a. */
+export function journalEntries(): WorkbookJournalEntryOut[] {
+  return [
+    {
+      id: stableId("entry:ridgeline-aje-1"),
+      kind: "aje",
+      reference: "AJE-1",
+      amount: "18500",
+      state: "approved",
+      description: "December installment",
+      approval: "Approved by Samuel Ito · Sep 9",
+      lines: [
+        { account_code: "5300", account_name: "Real estate taxes", debit: "18500", credit: "0" },
+        { account_code: "2050", account_name: "Accrued expenses", debit: "0", credit: "18500" },
+      ],
+    },
+    {
+      id: stableId("entry:ridgeline-tje-1"),
+      kind: "tje",
+      reference: "TJE-1",
+      amount: "6200",
+      state: "approved",
+      description: "reclass tax-exempt interest 6,200 to Schedule K line 18a (net 0)",
+      approval: "Approved by Samuel Ito · Sep 9",
+      lines: [
+        {
+          account_code: "4510",
+          account_name: "Tax-exempt interest (book)",
+          debit: "6200",
+          credit: "0",
+        },
+        {
+          account_code: "4510-T",
+          account_name: "Tax-exempt interest — Sch K 18a (tax only)",
+          debit: "0",
+          credit: "6200",
+        },
+      ],
+    },
+  ];
+}
+
+/** e2: the published TY2025 1065 set's mappable lines the picker lists (T-05-T21's keys). */
+const FORM_LINES: readonly WorkbookFormLineOut[] = [
+  { key: "L1", label: "Schedule L · line 1 Cash" },
+  { key: "L2a", label: "Schedule L · line 2a Trade notes and accounts receivable" },
+  { key: "L5", label: "Schedule L · line 5 Tax-exempt securities" },
+  { key: "L9a", label: "Schedule L · line 9a Buildings and other depreciable assets" },
+  { key: "L11", label: "Schedule L · line 11 Land (net of any amortization)" },
+  { key: "L13", label: "Schedule L · line 13 Other assets" },
+  { key: "L15", label: "Schedule L · line 15 Accounts payable" },
+  { key: "L17", label: "Schedule L · line 17 Other current liabilities" },
+];
+
+export function formLines(q: string | null): WorkbookFormLineOut[] {
+  const needle = (q ?? "").trim().toLowerCase();
+  return FORM_LINES.filter(
+    (l) =>
+      needle === "" ||
+      l.key.toLowerCase().includes(needle) ||
+      l.label.toLowerCase().includes(needle),
+  );
+}
+
+/** The server's answer to a pick: the tax reviewer (Samuel) maps; anyone else proposes. */
+export function mappingAnswer(
+  persona: string | undefined,
+  accountCode: string,
+  formLineKey: string,
+): WorkbookMappingProposedOut {
+  return persona === PERSONAS.samuel
+    ? { state: "mapped", account_code: accountCode, form_line_key: formLineKey }
+    : {
+        state: "flagged",
+        account_code: accountCode,
+        form_line_key: formLineKey,
+        note_id: stableId(`note:mapping:${accountCode}`),
+      };
+}
+
+/** a2: SHL-09's tray on a sheet 01 cell, the ATB of 2050 Accrued expenses = C + D + E. */
+export function cellProvenance(returnId: string, fieldKey: string): FieldProvenanceOut {
+  return {
+    target_type: "tax_workbook",
+    target_id: returnId,
+    field_key: fieldKey,
+    label: fieldKey,
+    current_seq: 1,
+    content_hash: "0".repeat(64),
+    versions: [
+      {
+        seq: 1,
+        value: { t: "decimal", v: "-94000" },
+        value_kind: "exact",
+        value_source: "formula",
+        cause: "recompute",
+        actor_kind: "agent",
+        actor_user_id: null,
+        actor_name: "Accrued Agent",
+        recorded_at: "2026-09-14T14:20:00Z",
+        citation: null,
+        citation_ids: [],
+        references: [],
+        unsupported: false,
+        suggestion_id: null,
+        checkpoint_id: null,
+        issue_id: null,
+      },
+    ],
+    ticks: [],
+    flags: [],
+    allowed_actions: [],
   };
 }
 

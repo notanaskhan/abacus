@@ -10158,6 +10158,8 @@ export const undoFollowUp = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Entity Form Lines Route
+ *
+ * T-05-T37 rest (DEC-4629): the line picker's list, the published set's mappable lines.
  */
 export const entityFormLines = <ThrowOnError extends boolean = false>(options: Options<EntityFormLinesData, ThrowOnError>): RequestResult<EntityFormLinesResponses, EntityFormLinesErrors, ThrowOnError> => (options.client ?? client).get<EntityFormLinesResponses, EntityFormLinesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -15045,9 +15047,12 @@ export const shareK1 = <ThrowOnError extends boolean = false>(options: Options<S
 /**
  * Entity Mapping Route
  *
- * A ledger mapping proposal, approved through P-04's `POST /proposals/{id}/approve`. The
- * plan's `account_mapping.propose` is not in the matrix yet (A-03's file), so it is
- * `account_mapping.edit`.
+ * TXP-02's line picker (O1). A-03's `account_mapping.edit` requires independence and is an
+ * audit verb, so the pick is authorised as `workbook.edit` on the return (a person's verb).
+ *
+ * DEC-4629: proposals are the agent's (ADR-161), so a person's pick is not one. The tax
+ * reviewer's pick maps the account (human only, audited); anyone else's raises a review note
+ * proposing the line to the reviewer and maps nothing.
  */
 export const entityMapping = <ThrowOnError extends boolean = false>(options: Options<EntityMappingData, ThrowOnError>): RequestResult<EntityMappingResponses, EntityMappingErrors, ThrowOnError> => (options.client ?? client).post<EntityMappingResponses, EntityMappingErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

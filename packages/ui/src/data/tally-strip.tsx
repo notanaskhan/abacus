@@ -35,9 +35,22 @@ export interface TallyPillSpec {
 export type TallyItem =
   | (TallyBase & { value: string; info?: string; pill?: TallyPillSpec })
   | (TallyBase & { pill: TallyPillSpec })
-  | (TallyBase & { tally: TallyCode; vars?: Readonly<Record<string, string | number>> })
+  | (TallyBase & {
+      tally: TallyCode;
+      vars?: Readonly<Record<string, string | number>>;
+      /** The ⓘ after the pill: the tie's derivation (T-05-T37 rest, TXP-02 "Retained earnings"). */
+      info?: string;
+    })
   | (TallyBase & { running: string })
   | (TallyBase & { signs: readonly { initials: string; when?: string; name: string }[] });
+
+function Info({ text }: { text: string }): JSX.Element {
+  return (
+    <span role="img" aria-label={text} title={text} className="cursor-help">
+      <Icon name="info" size={15} className="text-ink-3" />
+    </span>
+  );
+}
 
 function TallyPillOf({ pill, compact }: { pill: TallyPillSpec; compact: boolean }): JSX.Element {
   return (
@@ -58,11 +71,7 @@ function Second({ item, compact }: { item: TallyItem; compact: boolean }): JSX.E
         <span className="text-title font-normal tracking-[-0.01em] tabular-nums group-data-[density=compact]/tally:text-body group-data-[density=compact]/tally:leading-none">
           {item.value}
         </span>
-        {item.info !== undefined && (
-          <span role="img" aria-label={item.info} title={item.info} className="cursor-help">
-            <Icon name="info" size={15} className="text-ink-3" />
-          </span>
-        )}
+        {item.info !== undefined && <Info text={item.info} />}
         {item.pill !== undefined && <TallyPillOf pill={item.pill} compact={compact} />}
       </span>
     );
@@ -70,7 +79,10 @@ function Second({ item, compact }: { item: TallyItem; compact: boolean }): JSX.E
   if ("pill" in item) return <TallyPillOf pill={item.pill} compact={compact} />;
   if ("tally" in item) {
     return (
-      <TallyPill code={item.tally} {...(item.vars === undefined ? {} : { vars: item.vars })} />
+      <span className="flex items-center gap-[6px]">
+        <TallyPill code={item.tally} {...(item.vars === undefined ? {} : { vars: item.vars })} />
+        {item.info !== undefined && <Info text={item.info} />}
+      </span>
     );
   }
   if ("running" in item) {

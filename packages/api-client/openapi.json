@@ -117473,6 +117473,15 @@
             "cls": "internal",
             "title": "Label",
             "type": "string"
+          },
+          "terms": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookTermOut"
+            },
+            "title": "Terms",
+            "type": "array",
+            "x-tri": true
           }
         },
         "required": [
@@ -117833,6 +117842,50 @@
         "title": "WorkbookJournalEntriesOut",
         "type": "object"
       },
+      "WorkbookJournalEntryLineOut": {
+        "additionalProperties": false,
+        "description": "T-05-T37 rest (DEC-4629): one line of an entry, for TXP-02's drawer (O2).",
+        "properties": {
+          "account_code": {
+            "cls": "confidential",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Account Name"
+          },
+          "credit": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Credit",
+            "type": "string",
+            "x-tri": true
+          },
+          "debit": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Debit",
+            "type": "string",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "account_code",
+          "debit",
+          "credit"
+        ],
+        "title": "WorkbookJournalEntryLineOut",
+        "type": "object"
+      },
       "WorkbookJournalEntryOut": {
         "additionalProperties": false,
         "properties": {
@@ -117842,6 +117895,30 @@
             "title": "Amount",
             "type": "string",
             "x-tri": true
+          },
+          "approval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approval"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Description"
           },
           "id": {
             "cls": "internal",
@@ -117858,6 +117935,15 @@
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "lines": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookJournalEntryLineOut"
+            },
+            "title": "Lines",
+            "type": "array",
+            "x-tri": true
           },
           "reference": {
             "cls": "internal",
@@ -118033,16 +118119,45 @@
       },
       "WorkbookMappingProposedOut": {
         "additionalProperties": false,
+        "description": "DEC-4629: the tax reviewer's pick maps the account (`mapped`); anyone else's pick is a\nreview note proposing the line to the reviewer (`flagged`, `note_id`), and nothing maps.",
         "properties": {
-          "proposal_id": {
+          "account_code": {
+            "cls": "confidential",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "form_line_key": {
             "cls": "internal",
-            "format": "uuid",
-            "title": "Proposal Id",
+            "title": "Form Line Key",
+            "type": "string"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Note Id"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "mapped",
+              "flagged"
+            ],
+            "title": "State",
             "type": "string"
           }
         },
         "required": [
-          "proposal_id"
+          "state",
+          "account_code",
+          "form_line_key"
         ],
         "title": "WorkbookMappingProposedOut",
         "type": "object"
@@ -119321,6 +119436,15 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "terms": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookTermOut"
+            },
+            "title": "Terms",
+            "type": "array",
+            "x-tri": true
           }
         },
         "required": [
@@ -119364,6 +119488,14 @@
             "title": "Aje",
             "type": "string",
             "x-tri": true
+          },
+          "cells": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "internal",
+            "title": "Cells",
+            "type": "object"
           },
           "form_line_key": {
             "anyOf": [
@@ -119534,6 +119666,40 @@
           "tax_basis"
         ],
         "title": "WorkbookTbTotalOut",
+        "type": "object"
+      },
+      "WorkbookTermOut": {
+        "additionalProperties": false,
+        "description": "T-05-T37 rest (DEC-4629): one term of a card's derivation, added or taken away.",
+        "properties": {
+          "amount": {
+            "cls": "restricted",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string",
+            "x-tri": true
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "op": {
+            "cls": "internal",
+            "default": "+",
+            "enum": [
+              "+",
+              "-"
+            ],
+            "title": "Op",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "amount"
+        ],
+        "title": "WorkbookTermOut",
         "type": "object"
       },
       "WorkbookTrialBalanceOut": {
@@ -223928,6 +224094,7 @@
     },
     "/v1/form-lines": {
       "get": {
+        "description": "T-05-T37 rest (DEC-4629): the line picker's list, the published set's mappable lines.",
         "operationId": "entity_form_lines",
         "parameters": [
           {
@@ -224056,16 +224223,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Form Lines Route",
@@ -272929,7 +273086,7 @@
     },
     "/v1/tax-returns/{return_id}/mappings": {
       "post": {
-        "description": "A ledger mapping proposal, approved through P-04's `POST /proposals/{id}/approve`. The\nplan's `account_mapping.propose` is not in the matrix yet (A-03's file), so it is\n`account_mapping.edit`.",
+        "description": "TXP-02's line picker (O1). A-03's `account_mapping.edit` requires independence and is an\naudit verb, so the pick is authorised as `workbook.edit` on the return (a person's verb).\n\nDEC-4629: proposals are the agent's (ADR-161), so a person's pick is not one. The tax\nreviewer's pick maps the account (human only, audited); anyone else's raises a review note\nproposing the line to the reviewer and maps nothing.",
         "operationId": "entity_mapping",
         "parameters": [
           {
@@ -273056,23 +273213,13 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Mapping Route",
         "tags": [
           "tax workbook"
         ],
-        "x-abacus-action": "account_mapping.edit"
+        "x-abacus-action": "workbook.edit"
       }
     },
     "/v1/tax-returns/{return_id}/memo": {

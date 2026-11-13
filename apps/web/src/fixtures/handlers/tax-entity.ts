@@ -3,6 +3,10 @@
 // rows land (the gallery never persists).
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import {
+  cellProvenance,
+  formLines,
+  journalEntries,
+  mappingAnswer,
   partners,
   runs,
   type Snapshot,
@@ -29,6 +33,18 @@ export function taxEntityHandlers(
       return json(trialBalance(snapshot, view ? "line" : "account", statement, unmapped));
     },
     [`GET ${R}/trial-balance/tallies`]: () => json(tallies(snapshot)),
+    // T-05-T37 rest (DEC-4629): the drawer's entries, the picker's lines and a pick's answer,
+    // and SHL-09's tray on a sheet 01 cell (a2).
+    [`GET ${R}/journal-entries`]: () => json({ items: journalEntries() }),
+    [`GET /v1/form-lines`]: (req) => json({ items: formLines(req.query.get("q")) }),
+    [`POST ${R}/mappings`]: (req) => {
+      const body = req.body as { account_code: string; form_line_key: string };
+      return json(mappingAnswer(req.persona, body.account_code, body.form_line_key), 201);
+    },
+    [`GET /v1/fields/{target_type}/{target_id}/{field_key}/provenance`]: (req) =>
+      req.params.target_type === "tax_workbook"
+        ? json(cellProvenance(req.params.target_id ?? "", req.params.field_key ?? ""))
+        : json({ detail: "not_found" }, 404),
     [`GET ${R}/partners`]: () => json(partners(snapshot)),
     [`GET ${R}/workbook-runs`]: () => json({ items: runs(snapshot) }),
     [`POST ${R}/workbook-runs`]: notYet,

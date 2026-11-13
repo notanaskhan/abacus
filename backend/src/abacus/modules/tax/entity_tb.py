@@ -18,14 +18,15 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from typing import Final, Literal
 from uuid import UUID
 
-from abacus.modules.adjustments.api import TaxLayersView, adjusted_tb, entries_of
+from abacus.modules.adjustments.api import Entry, TaxLayersView, adjusted_tb, entries_of
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.ledger.api import engagement_trial_balances, form_line_rows, tax_mapping_set
+from abacus.modules.tax.entity_schedules import dec, workbook_values
 
 ZERO: Final = Decimal("0")
 View = Literal["account", "line"]
@@ -44,6 +45,8 @@ class TbRow:
     tax_basis: Decimal
     adjusted: Decimal | None = None  # ATB (C8's, never summed here); line rows sum it
     group: str = "unmapped"
+    # T-05-T37 rest (DEC-4629): the row's sheet 01 cells (`utb` -> "01!C5"), for SHL-09.
+    cells: tuple[tuple[str, str], ...] = ()
 
 
 Group = Literal["assets", "liabilities", "equity", "income", "deductions", "unmapped"]
@@ -110,22 +113,44 @@ def totals(rows: Sequence[TbRow]) -> list[TbTotal]:
 
 
 @dataclass(frozen=True)
+class TbTerm:
+    """One term of a card's derivation: `label` `amount`, added (`+`) or taken away (`-`); the
+    screen prints the terms and the card's own figure after "=" (ADR-050: the server's)."""
+
+    label: str
+    amount: Decimal
+    op: Literal["+", "-"] = "+"
+
+
+@dataclass(frozen=True)
 class TbFigure:
     key: str
     label: str
     amount: Decimal
+    terms: tuple[TbTerm, ...] = ()
+
+
+_RENTS: Final = "8825 Rents"
 
 
 def figures(rows: Sequence[TbRow]) -> list[TbFigure]:
     """TXP-02's figure cards, from the tax basis: gross rents (Form 8825 rents, shown positive),
-    total deductions, net rental real estate income (rents less deductions), book total assets."""
-    rents = -sum((r.tax_basis for r in rows if (r.form_line_key or "") == "8825 Rents"), ZERO)
+    total deductions, net rental real estate income (rents less deductions), book total assets.
+    Gross rents and net rental income carry their derivations (each rents account by name)."""
+    rent_rows = [r for r in rows if (r.form_line_key or "") == _RENTS]
+    rents = -sum((r.tax_basis for r in rent_rows), ZERO)
     deductions = sum((r.tax_basis for r in rows if r.group == "deductions"), ZERO)
     assets = sum((r.tax_basis for r in rows if r.group == "assets"), ZERO)
+    rent_terms = tuple(TbTerm(r.account_name, -r.tax_basis) for r in rent_rows)
     return [
-        TbFigure("gross_rents", "Gross rents", rents),
+        TbFigure("gross_rents", "Gross rents", rents, rent_terms),
         TbFigure("total_deductions", "Total deductions", deductions),
-        TbFigure("net_rental_income", "Net rental RE income", rents - deductions),
+        TbFigure(
+            "net_rental_income",
+            "Net rental RE income",
+            rents - deductions,
+            (*rent_terms, TbTerm("Total deductions", deductions, "-")),
+        ),
         TbFigure("book_total_assets", "Book total assets", assets),
     ]
 
@@ -134,8 +159,9 @@ def figures(rows: Sequence[TbRow]) -> list[TbFigure]:
 class TbTally:
     key: str
     label: str
-    state: Literal["tie", "off", "check"]
+    state: Literal["tie", "off", "check", "pending"]
     difference: Decimal | None = None
+    terms: tuple[TbTerm, ...] = ()
 
 
 def _d(value: Decimal | None) -> Decimal:
@@ -211,6 +237,129 @@ def tallies(rows: Sequence[TbRow]) -> list[TbTally]:
     return out
 
 
+def _equity_role(
+    form_line_key: str | None,
+) -> Literal["beginning", "contributions", "distributions"]:
+    """The capital roll-forward's role of an equity account from its line: M-2 line 2 is
+    contributed capital, lines 6 and 7 distributions; Schedule L 21 and the rest beginning."""
+    key = form_line_key or ""
+    if key.startswith("M-2 2"):
+        return "contributions"
+    if key.startswith(("M-2 6", "M-2 7")):
+        return "distributions"
+    return "beginning"
+
+
+@dataclass(frozen=True)
+class CapitalRoll:
+    """Partners' capital from the TB (credit-positive): beginning + contributions + book net
+    income - distributions = ending; total assets against liabilities and that ending."""
+
+    beginning: Decimal
+    contributions: Decimal
+    net_income: Decimal
+    distributions: Decimal
+    assets: Decimal
+    liabilities: Decimal
+
+    @property
+    def ending(self) -> Decimal:
+        return self.beginning + self.contributions + self.net_income - self.distributions
+
+
+def capital_roll(rows: Sequence[TbRow]) -> CapitalRoll:
+    """From the adjusted (book) TB: book net income is income and deductions (credits less
+    debits); TJEs reclass within the tax basis and are net zero, so the balance sheet reads ATB."""
+
+    def atb(r: TbRow) -> Decimal:
+        return r.adjusted if r.adjusted is not None else r.unadjusted + r.aje + r.rje
+
+    equity = [r for r in rows if r.group == "equity"]
+    by_role: dict[str, Decimal] = {"beginning": ZERO, "contributions": ZERO, "distributions": ZERO}
+    for r in equity:
+        by_role[_equity_role(r.form_line_key)] += atb(r)
+    income = sum((atb(r) for r in rows if r.group in ("income", "deductions")), ZERO)
+    return CapitalRoll(
+        beginning=-by_role["beginning"],
+        contributions=-by_role["contributions"],
+        net_income=-income,
+        distributions=by_role["distributions"],
+        assets=sum((atb(r) for r in rows if r.group == "assets"), ZERO),
+        liabilities=-sum((atb(r) for r in rows if r.group == "liabilities"), ZERO),
+    )
+
+
+def statement_tallies(
+    rows: Sequence[TbRow], m2_line_3: Decimal | None, m2_line_9: Decimal | None
+) -> list[TbTally]:
+    """T-05-T37 rest (DEC-4629): the balance-sheet tie (assets = liabilities + partners'
+    capital), the capital tie (the TB's capital roll-forward against the M-2's line 9) and
+    retained earnings (book net income against the M-2's line 3). The two M-2 checks read
+    `pending` until the run's `capital_m2` step has written sheet 07."""
+    roll = capital_roll(rows)
+    sheet = roll.assets - roll.liabilities - roll.ending
+    out = [
+        TbTally(
+            "balance_sheet", "Balance sheet", "tie" if sheet == ZERO else "off", sheet,
+            (TbTerm("Total liabilities", roll.liabilities),
+             TbTerm("Partners' capital", roll.ending)),
+        ),
+    ]  # fmt: skip
+    roll_terms = (
+        TbTerm("Beginning capital", roll.beginning),
+        TbTerm("Contributions", roll.contributions),
+        TbTerm("Book net income", roll.net_income),
+        TbTerm("Distributions", roll.distributions, "-"),
+    )
+    if m2_line_9 is None:
+        out.append(TbTally("capital_tie", "Capital tie", "pending", None, roll_terms))
+    else:
+        off = roll.ending - m2_line_9
+        out.append(
+            TbTally("capital_tie", "Capital tie", "tie" if off == ZERO else "off", off, roll_terms)
+        )
+    income_terms = (TbTerm("Book net income", roll.net_income),)
+    if m2_line_3 is None:
+        out.append(
+            TbTally("retained_earnings", "Retained earnings", "pending", None, income_terms)
+        )
+    else:
+        off = roll.net_income - m2_line_3
+        state: Literal["tie", "off"] = "tie" if off == ZERO else "off"
+        out.append(TbTally("retained_earnings", "Retained earnings", state, off, income_terms))
+    return out
+
+
+_ACCOUNT_CELL: Final = re.compile(r"^01!A([1-9][0-9]{0,5})$")
+_SHEET_01: Final[tuple[tuple[str, str], ...]] = (
+    ("utb", "C"), ("aje", "D"), ("rje", "E"), ("atb", "F"),
+)  # fmt: skip
+
+
+def account_cells(values: object) -> dict[str, tuple[tuple[str, str], ...]]:
+    """Each account's sheet 01 cells from the workbook's current values: `import_trial_balance`
+    writes the code in column A of the account's row and UTB, AJE, RJE and ATB in C to F."""
+    out: dict[str, tuple[tuple[str, str], ...]] = {}
+    if not isinstance(values, dict):
+        return out
+    for key, cell in values.items():  # pyright: ignore[reportUnknownVariableType] -- a JSON map read from review
+        found = _ACCOUNT_CELL.match(str(key))  # pyright: ignore[reportUnknownArgumentType] -- the key is a string
+        if found is None or not isinstance(cell, dict):
+            continue
+        code = cell.get("v")  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType] -- a JSON value
+        if code in (None, ""):
+            continue
+        row = found.group(1)
+        out[str(code)] = tuple((col, f"01!{letter}{row}") for col, letter in _SHEET_01)  # pyright: ignore[reportUnknownArgumentType] -- a JSON value
+    return out
+
+
+def with_cells(
+    rows: Sequence[TbRow], cells: dict[str, tuple[tuple[str, str], ...]]
+) -> list[TbRow]:
+    return [replace(r, cells=cells.get(r.account_code, ())) for r in rows]
+
+
 async def trial_balance(
     ctx: AuthContext,
     return_id: UUID,
@@ -223,6 +372,8 @@ async def trial_balance(
     layers = await adjusted_tb(ctx, return_id, "ttb")
     rows = account_rows(layers, await _mapping(ctx, engagement_id))  # type: ignore[arg-type] -- a test double or the review api's own context alias
     unmapped = sum(1 for r in rows if r.form_line_key is None)
+    if view == "account":
+        rows = with_cells(rows, account_cells(await workbook_values(ctx.tenant, return_id)))
     shown = by_line(rows) if view == "line" else rows
     return narrowed(shown, statement, unmapped_only and view == "account"), unmapped
 
@@ -232,29 +383,35 @@ async def tb_tallies(
 ) -> tuple[list[TbTally], list[TbFigure]]:
     layers = await adjusted_tb(ctx, return_id, "ttb")
     rows = account_rows(layers, await _mapping(ctx, engagement_id))  # type: ignore[arg-type] -- a test double or the review api's own context alias
-    return tallies(rows), figures(rows)
+    values = await workbook_values(ctx.tenant, return_id)
+    m2 = {n: (dec(values, f"07!B{n}") if f"07!B{n}" in values else None) for n in (3, 9)}
+    return [*tallies(rows), *statement_tallies(rows, m2[3], m2[9])], figures(rows)
 
 
-async def journal_entries(
-    ctx: AuthContext, return_id: UUID
-) -> list[tuple[UUID, str, str, Decimal, str]]:
-    """C8's entries on the return: `(id, kind, ref, amount, status)`."""
-    return [(e.id, e.kind, e.ref, e.amount, e.status) for e in await entries_of(ctx, return_id)]
+async def journal_entries(ctx: AuthContext, return_id: UUID) -> list[Entry]:
+    """C8's entries on the return with their lines, memo and named approval (the drawer's)."""
+    return list(await entries_of(ctx, return_id))
 
 
 __all__ = [
     "GROUPS",
+    "CapitalRoll",
     "TbFigure",
     "TbRow",
     "TbTally",
+    "TbTerm",
     "TbTotal",
+    "account_cells",
     "by_line",
+    "capital_roll",
     "figures",
     "group_of",
     "journal_entries",
     "narrowed",
+    "statement_tallies",
     "tallies",
     "tb_tallies",
     "totals",
     "trial_balance",
+    "with_cells",
 ]

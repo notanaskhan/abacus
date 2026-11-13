@@ -55228,6 +55228,10 @@ export type WorkbookFigureOut = {
      * Label
      */
     label: string;
+    /**
+     * Terms
+     */
+    terms?: Array<WorkbookTermOut>;
 };
 
 /**
@@ -55401,6 +55405,30 @@ export type WorkbookJournalEntriesOut = {
 };
 
 /**
+ * WorkbookJournalEntryLineOut
+ *
+ * T-05-T37 rest (DEC-4629): one line of an entry, for TXP-02's drawer (O2).
+ */
+export type WorkbookJournalEntryLineOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name?: string | null;
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Debit
+     */
+    debit: string;
+};
+
+/**
  * WorkbookJournalEntryOut
  */
 export type WorkbookJournalEntryOut = {
@@ -55409,6 +55437,14 @@ export type WorkbookJournalEntryOut = {
      */
     amount: string;
     /**
+     * Approval
+     */
+    approval?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -55416,6 +55452,10 @@ export type WorkbookJournalEntryOut = {
      * Kind
      */
     kind: 'aje' | 'rje' | 'tje';
+    /**
+     * Lines
+     */
+    lines?: Array<WorkbookJournalEntryLineOut>;
     /**
      * Reference
      */
@@ -55495,12 +55535,27 @@ export type WorkbookMappingIn = {
 
 /**
  * WorkbookMappingProposedOut
+ *
+ * DEC-4629: the tax reviewer's pick maps the account (`mapped`); anyone else's pick is a
+ * review note proposing the line to the reviewer (`flagged`, `note_id`), and nothing maps.
  */
 export type WorkbookMappingProposedOut = {
     /**
-     * Proposal Id
+     * Account Code
      */
-    proposal_id: string;
+    account_code: string;
+    /**
+     * Form Line Key
+     */
+    form_line_key: string;
+    /**
+     * Note Id
+     */
+    note_id?: string | null;
+    /**
+     * State
+     */
+    state: 'mapped' | 'flagged';
 };
 
 /**
@@ -56145,6 +56200,10 @@ export type WorkbookTallyOut = {
      * State
      */
     state: 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
+    /**
+     * Terms
+     */
+    terms?: Array<WorkbookTermOut>;
 };
 
 /**
@@ -56167,6 +56226,12 @@ export type WorkbookTbRowOut = {
      * Aje
      */
     aje: string;
+    /**
+     * Cells
+     */
+    cells?: {
+        [key: string]: string;
+    };
     /**
      * Form Line Key
      */
@@ -56239,6 +56304,26 @@ export type WorkbookTbTotalOut = {
      * Unadjusted
      */
     unadjusted: string;
+};
+
+/**
+ * WorkbookTermOut
+ *
+ * T-05-T37 rest (DEC-4629): one term of a card's derivation, added or taken away.
+ */
+export type WorkbookTermOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Op
+     */
+    op?: '+' | '-';
 };
 
 /**
@@ -103743,10 +103828,6 @@ export type EntityFormLinesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityFormLinesError = EntityFormLinesErrors[keyof EntityFormLinesErrors];
@@ -125960,10 +126041,6 @@ export type EntityMappingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityMappingError = EntityMappingErrors[keyof EntityMappingErrors];

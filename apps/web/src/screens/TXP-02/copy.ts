@@ -20,8 +20,8 @@ export const COPY = {
    * the control. */
   showUnmapped: "Show",
   exportBlocked: "1 unmapped account blocks export",
-  footnote:
-    "AJE-1 Dr Real estate taxes 18,500 / Cr Accrued expenses 18,500 (December installment) · TJE-1 reclass tax-exempt interest 6,200 to Schedule K line 18a (net 0) · PY = TY2024 pre-closing TB (2024 Form 1065 workbook)",
+  /** The footnote's prior-year clause, shown once the prior year's TB is imported (handoff). */
+  pyNote: "PY = TY2024 pre-closing TB (2024 Form 1065 workbook)",
   columns: {
     code: "Acct #",
     name: "Account name",
@@ -44,15 +44,29 @@ export const COPY = {
   },
   cards: {
     ttb: "TTB balanced",
+    balance_sheet: "Balance sheet",
+    capital_tie: "Capital tie",
+    retained_earnings: "Retained earnings",
     unmapped: "Unmapped",
     gross_rents: "Gross rents",
     total_deductions: "Total deductions",
     net_rental_income: "Net rental RE income",
     book_total_assets: "Book total assets",
   },
-  info: {
-    gross_rents: "Rents 3,776,500 + parking & other 96,400 = rental revenue 3,872,900",
-    net_rental_income:
-      "3,776,500 + 96,400 − 2,641,300 = 1,231,600 · Form 8825 → Schedule K line 2",
-  },
+  /** After a derivation's terms (handoff info circles); the figures are the server's. */
+  closesToCapital: "closes to partners' capital",
+  toScheduleK: "Form 8825 → Schedule K line 2",
+  /** Undesigned (T-05-T03), DEC-4629: the overlays' words around the handoff's own. */
+  cellTitle: "Cell provenance",
+  cellColumns: "Column",
+  noCell: "This amount has no workbook cell until the trial balance is imported.",
+  entryLines: "Entry lines",
+  entryDebit: "Debit",
+  entryCredit: "Credit",
+  entryMemo: "Memo",
+  pickerTitle: "Form 1065 line",
+  pickerSearch: "Search lines",
+  pickerEmpty: "No line matches.",
+  pickerMapped: "Mapped.",
+  pickerProposed: "Proposed to the tax reviewer for approval.",
 } as const;
