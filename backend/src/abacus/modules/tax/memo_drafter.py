@@ -62,10 +62,11 @@ MAX_FACTS: Final = 120
 MAX_SOURCES: Final = 80
 Int = classified("internal")
 Tri = classified("restricted", tri=True)
-# A figure, not a form or schedule's name: "M-2", "K-1" and "§754" are names (S41 CI fix, DEC-4735).
+# A figure, not a form or schedule's name: "M-2", "K-1", "§754" are names (DEC-4735).
 _NUMBER: Final = re.compile(r"(?<![\w.§])(?<![A-Za-z]-)\d[\d,]*(?:\.\d+)?")
 _KEY: Final = r"^[a-z][a-z0-9_]{0,39}$"
-_HANDLE: Final = r"^[a-z][a-z0-9_:!-]{0,59}$"  # a cell handle is `cell:01!f18` (S41 CI fix, DEC-4735)
+# A cell handle is `cell:01!f18` (S41 CI fix, DEC-4735).
+_HANDLE: Final = r"^[a-z][a-z0-9_:!-]{0,59}$"
 
 
 def _cfg() -> ConfigDict:

@@ -57,8 +57,6 @@ def _explain(element: _Explain, compiler: Any, **kw: Any) -> str:  # noqa: ANN40
     return "EXPLAIN (FORMAT JSON) " + str(compiler.process(element.statement, **kw))
 
 
-
-
 @pytest.fixture(autouse=True)
 async def wired(
     migrated_db: MigratedDatabase, monkeypatch: pytest.MonkeyPatch
