@@ -248,6 +248,7 @@ from abacus.modules.engagements.team import (
     eqr_eligibility,
     team_approval,
 )
+from abacus.modules.engagements.trace_samples import TraceSampleRow, engagement_trace_samples
 from abacus.modules.engagements.transitions import (
     archive_when_items_archived as archive_when_items_archived,
 )
@@ -526,6 +527,7 @@ __all__ = [
     "TemplateItem",
     "TemplateSeed",
     "TemplateVersionSummary",
+    "TraceSampleRow",
     "UnknownWorkItemKind",
     "VersionNotLatest",
     "WorkItemExists",
@@ -578,6 +580,7 @@ __all__ = [
     "engagement_hold_facts",
     "engagement_label",
     "engagement_metadata",
+    "engagement_trace_samples",
     "engagements_in_hold_scope",
     "engagements_of_client",
     "engagements_of_entity",

@@ -54,6 +54,7 @@ from abacus.modules.agents.run_waits import QUESTION_KINDS, RUN_WAIT_ACTIVITIES,
 from abacus.modules.agents.service import AgentRunNotRunning, load_run_v2_context
 from abacus.modules.agents.tools.registry import registered_tools
 from abacus.modules.agents.tools.runtime import ToolCallIn, call_tool
+from abacus.modules.agents.trace import step_sample_refs
 from abacus.modules.engagements.api import service_line_of
 from abacus.modules.identity.api import (
     AgentContext,
@@ -314,6 +315,8 @@ class StepOutcome:
     records_read: int = 0
     active_ms: int = 0
     wait_ref: str | None = None  # P-10-T32: the question's or the card's id
+    # P-09-T08 (0751): the first five records a tool step read, as `{record_type, id}`.
+    sample_refs: tuple[dict[str, str], ...] = ()
 
 
 async def _agent(tenant_id: str, run_id: str) -> AgentContext:
@@ -402,6 +405,7 @@ async def execute_step_activity(
             None if result.ok else (result.code or "tool_failed"),
             result.records_read,
             result.active_ms,
+            sample_refs=tuple(step_sample_refs(tool_name, result.result if result.ok else None)),
         )
     else:
         outcome = StepOutcome("failed", "step_kind_pending")  # model steps: P-10-T40
@@ -457,6 +461,16 @@ async def _finish_step(
                 "id": step_id,
             },
         )
+        if outcome.sample_refs:
+            # The firm's own records (WB-09 a3 "Through Accrued"); a connector's tools name their
+            # connection when they record one (none does yet).
+            await tx.session.execute(
+                text(
+                    "UPDATE agent_run_steps SET sample_refs = CAST(:refs AS jsonb), "
+                    "source_ref = 'accrued' WHERE id = :id"
+                ),
+                {"refs": json.dumps(list(outcome.sample_refs)), "id": step_id},
+            )
         await tx.session.execute(
             text(
                 "UPDATE agent_runs SET records_read = records_read + :records, "
