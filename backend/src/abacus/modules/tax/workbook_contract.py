@@ -645,6 +645,10 @@ class WorkbookSectionOut(BaseModel):
     title: Annotated[str, Internal]
     tallies: Annotated[list[WorkbookTallyOut], Tri]
     signed_levels: Annotated[list[str], Internal]
+    # T-05-T42 (DEC-4705), additive: the sign-off target, what it names and stale levels.
+    section_id: Annotated[UUID | None, Internal] = None
+    seen_hash: Annotated[str, Internal] = ""
+    stale_levels: Annotated[list[str], Internal] = Field(default_factory=list[str])
 
 
 class WorkbookSectionsOut(BaseModel):
@@ -656,9 +660,10 @@ class WorkbookSectionsOut(BaseModel):
 class WorkbookSectionSignOffIn(BaseModel):
     model_config = _cfg()
 
-    level: Annotated[Literal["l2", "l3"], Internal]
+    level: Annotated[Literal["l1", "l2", "l3"], Internal]  # T-05-T42: L1 is the preparer's
     seen_hash: Annotated[str, Internal]
     note: Annotated[str | None, Field(max_length=500), Confidential] = None
+    statement_version: Annotated[str | None, Field(max_length=40), Internal] = None
 
 
 class WorkbookSignOffRecordedOut(BaseModel):
@@ -1658,17 +1663,40 @@ async def entity_allocation_approve_route(
     )
 
 
-@workbook_router.get(
-    f"{_R}/sections", action="workbook.read", response_model=WorkbookSectionsOut, errors=(501,)
-)
+@workbook_router.get(f"{_R}/sections", action="workbook.read", response_model=WorkbookSectionsOut)
 async def entity_sections_route(return_id: UUID, ctx: Ctx) -> WorkbookSectionsOut:
+    """T-05-T42 (DEC-4705): the six sections, their tie-outs, signed and stale levels."""
+    from abacus.modules.tax.entity_sections import sections_view
+    from abacus.modules.tax.overview import load_return
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    loaded = await load_return(ctx, return_id)
+    found = await sections_view(ctx, return_id, loaded.facts.engagement_id)
+    return WorkbookSectionsOut(
+        items=[
+            WorkbookSectionOut(
+                key=s.key,
+                title=s.title,
+                tallies=[
+                    WorkbookTallyOut(
+                        key=t.key, label=t.label, state=t.state, difference=t.difference
+                    )
+                    for t in s.tallies
+                ],
+                signed_levels=list(s.signed_levels),
+                section_id=s.section_id,
+                seen_hash=f"sha256:{s.content_hash}",
+                stale_levels=list(s.stale_levels),
+            )
+            for s in found
+        ]
+    )
 
 
 @workbook_router.post(
     f"{_R}/sections/{{key}}/sign-off", action="sign_off.create",
-    response_model=WorkbookSignOffRecordedOut, status_code=201, errors=(409, 501),
+    response_model=WorkbookSignOffRecordedOut, status_code=201, errors=(409,),
 )  # fmt: skip
 async def entity_section_sign_off_route(
     return_id: UUID,
@@ -1677,10 +1705,25 @@ async def entity_section_sign_off_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> WorkbookSignOffRecordedOut:
-    """Tie-out precheck (`tie_out_off`, 409), then P-04's sign-off (`level_not_permitted`, 403;
-    `not_preparer_of_target`)."""
+    """Tie-out precheck (`tie_out_off`, 409, unless a note is given), then P-04's sign-off
+    (`level_not_permitted`, 403; `preparer_cannot_review`). T-05-T42 (DEC-4705)."""
+    from abacus.modules.tax.entity_sections import sign_section
+    from abacus.modules.tax.overview import load_return
+
     await _flag_on(ctx)
-    _not_yet()
+    await _workbook_read(ctx, return_id)
+    loaded = await load_return(ctx, return_id)
+    done = await sign_section(
+        ctx,
+        return_id=return_id,
+        engagement_id=loaded.facts.engagement_id,
+        key=key,
+        level=int(body.level.removeprefix("l")),
+        seen_hash=body.seen_hash,
+        note=body.note,
+        statement_version=body.statement_version,
+    )
+    return WorkbookSignOffRecordedOut(sign_off_id=done.sign_off_id)
 
 
 @workbook_router.get(

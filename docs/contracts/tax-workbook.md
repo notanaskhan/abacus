@@ -147,3 +147,20 @@ Sign-offs, proposals and decisions write P-04's events. Each action lands in the
   (`run_step:<step>:<class>`, blocks final approval). `convention_706d` is the run's question step
   when the convention is not settled; its answer is the option key.
 
+## T-05-T42 · sections, sign-offs and tie-outs (DEC-4705, DEC-4706)
+- Sections (code): `trial-balance` (01, 03), `fixed-assets` (02), `allocation` (04),
+  `capital-accounts` (05, 07), `schedule-k` (06, 09), `states` (08). Each has a stable
+  `section_id` (`tax_workbook_sections`, 0860) and is the `tax_workbook_section` reviewable;
+  its content hash is the SHA-256 of its sheets' cells (`seen_hash` = `sha256:<hex>`).
+- `GET …/sections` adds `section_id`, `seen_hash` and `stale_levels`; tallies are the
+  section's tie-outs (`tb_foots`, `capital_rollforward`, `item_l_m2`, `k1_sum_k`).
+- `POST …/sections/{key}/sign-off` takes `level` `l1` (the preparer's), `l2` or `l3`, `seen_hash`,
+  an optional `note` and `statement_version`; with an off tie-out and no note it is 409
+  `tie_out_off` (`count`); with a note the sign-off records and the note is sealed beside it,
+  audited `tie_out.off_acknowledged` with its hash only.
+- After every terminal run state on a return's run, each off tie-out raises one `review_point`
+  issue as the system (`tie_out:<key>`, `self_check`, resolved only by the system, `cell_range`
+  links, a fixed-template note), reopened if it fails again; a passing one resolves.
+- Item L ties the M-2 against the partners' ending capital on 05 (Schedule L line 21 is not on
+  the workbook; recorded deviation from F8's wording).
+

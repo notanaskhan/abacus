@@ -80,6 +80,7 @@ from abacus.modules.review.issue_resolutions import (
     IssueSystemResolvedOnly,  # T-04-T23
     register_client_request_sender,
     system_resolve_dependents,
+    system_resolve_self_checks,
 )
 from abacus.modules.review.issue_resolutions import move as move_issue
 from abacus.modules.review.issue_runs import SUBSCRIPTIONS as ISSUE_RUN_SUBSCRIPTIONS
@@ -100,6 +101,7 @@ from abacus.modules.review.issues import (
     read_issue,
     record_engine_issue,  # T-01-T26: engine diagnostics
     record_rule_issue,
+    record_self_check_issue,
 )
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
@@ -354,6 +356,7 @@ __all__ = [
     "record_fix_proposal",
     "record_import_proposal",
     "record_rule_issue",
+    "record_self_check_issue",
     "record_sign_off",
     "record_text_reads",
     "record_value",
@@ -387,6 +390,7 @@ __all__ = [
     "stale_of",
     "states_of",
     "system_resolve_dependents",
+    "system_resolve_self_checks",
     "tick_field",  # TASK-7815: the seed verifies them (L1 field ticks)
     "typed_value",
     "values_as_of",

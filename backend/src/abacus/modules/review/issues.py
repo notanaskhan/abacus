@@ -35,6 +35,7 @@ from abacus.modules.engagements.api import engagement_resource_of
 from abacus.modules.identity.api import (
     Actor,
     AuthContext,
+    Forbidden,
     Resource,
     allowed_actions,
     authorise,
@@ -168,8 +169,9 @@ class IssueSource:
     system_resolved_only: bool = False
 
     def __post_init__(self) -> None:
-        if self.system_resolved_only and self.kind != "k1_dependency":
-            raise ValueError("only a dependency issue resolves by the system alone")
+        # T-05-T42 (0860, DEC-4705): a code self-check (a tie-out) also resolves by the system.
+        if self.system_resolved_only and self.kind not in ("k1_dependency", "self_check"):
+            raise ValueError("only a dependency or a self-check resolves by the system alone")
 
 
 async def _record(ctx: Actor, record_type: str, record_id: UUID) -> tuple[UUID, Resource, str]:
@@ -631,6 +633,106 @@ async def record_rule_issue(
         async with uow(tenant) as own:
             await write(own)
     return issue_id
+
+
+# --- T-05-T42 (0860, DEC-4705): a code self-check the system raises, reopens and resolves -----
+
+SELF_CHECK_OPEN: Final = ("open", "in_progress", "reopened")
+
+
+async def record_self_check_issue(
+    system: TenantContext,
+    *,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    record_type: str,
+    record_id: UUID,
+    source_ref: str,
+    title: str,
+    internal_note: str,
+    links: Sequence[Mapping[str, object]],
+    blocks: Sequence[str] = ("final_approval",),
+    category_path: str | None = None,
+) -> tuple[UUID, bool]:
+    """One `review_point` issue per `(work item, source_ref)` raised by code (a tie-out after a
+    run): `self_check`, resolved only by the system when the check passes. A resolved one is
+    reopened when the check fails again. `links` are `cell_range` refs (`{"sheet", "range"}`).
+    The owning module's subscriber is the only caller (no person is authorised here; the title
+    and note are code's deterministic text, never a model's). Returns (id, created or reopened)."""
+    if system.actor_kind != "system":
+        raise Forbidden("issue.system_raise", "role")
+    async with uow(system) as tx:
+        existing = (
+            await tx.session.execute(
+                text(
+                    "SELECT id, status, version FROM issues WHERE work_item_id = :w "
+                    "AND source_ref = :s FOR UPDATE"
+                ),
+                {"w": work_item_id, "s": source_ref},
+            )
+        ).first()
+        if existing is not None:
+            if existing.status in SELF_CHECK_OPEN:
+                return existing.id, False
+            await tx.session.execute(
+                text("UPDATE issues SET status = 'reopened', version = version + 1 WHERE id = :i"),
+                {"i": existing.id},
+            )
+            await tx.session.execute(
+                text(
+                    "INSERT INTO issue_events (tenant_id, issue_id, event) "
+                    "VALUES (:t, :i, 'reopened')"
+                ),
+                {"t": system.tenant_id, "i": existing.id},
+            )
+            tx.record(
+                "issue.reopened",
+                target=Target(SUBJECT, existing.id),
+                before=Ref(version=int(existing.version)),
+                after=Ref(version=int(existing.version) + 1),
+                scope=Scope(engagement_id=engagement_id),
+            )
+            tx.emit(
+                IssueStatusChanged(
+                    issue_id=existing.id, engagement_id=engagement_id, status="reopened"
+                )
+            )
+            return existing.id, True
+        issue_id = uuid4()
+        await _write_issue(
+            tx,
+            system,  # type: ignore[arg-type] -- _write_issue reads tenant_id only
+            issue_id=issue_id,
+            engagement_id=engagement_id,
+            record_type=record_type,
+            record_id=record_id,
+            kind="review_point",
+            priority="high",
+            sealed={
+                "title_sealed": await seal_text(system, title, SUBJECT, issue_id, "title"),
+                "internal_note_sealed": await seal_text(
+                    system, internal_note, SUBJECT, issue_id, "internal_note"
+                ),
+                "client_wording_sealed": None,
+            },
+            client_contact_id=None,
+            assignee_user_id=None,
+            assignee_agent=False,
+            blocks=blocks,
+            source_ref=source_ref,
+            work_item_id=work_item_id,
+            source=IssueSource("self_check", category_path, system_resolved_only=True),
+        )
+        for link in links:
+            await tx.session.execute(
+                text(
+                    "INSERT INTO issue_links (tenant_id, issue_id, link_kind, ref) "
+                    "VALUES (:t, :i, 'cell_range', CAST(:ref AS jsonb))"
+                ),
+                {"t": system.tenant_id, "i": issue_id, "ref": json.dumps(dict(link))},
+            )
+        tx.emit(IssueStatusChanged(issue_id=issue_id, engagement_id=engagement_id, status="open"))
+    return issue_id, True
 
 
 # P-04-T31: the part-2 service reads an issue and its record the same way.

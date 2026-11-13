@@ -3,7 +3,7 @@
 Row acceptance: "A run without a depreciation import stops that step at Needs attention with an
 issue, and an imported report fills 02 Fixed Assets with cited cells." Plus: the report is parsed
 as hostile input; the §706(d) convention is a run question with options from code when no person
-settled it; state amounts are code's (federal × apportionment).
+settled it; state amounts are code's (federal times apportionment).
 """
 
 from __future__ import annotations
@@ -113,7 +113,7 @@ def test_state_rows_land_in_08_f_to_h() -> None:
     assert cells == {"08!F2": "NY", "08!G2": D("62.5"), "08!H2": D(48000)}
 
 
-# --- the handlers ----------------------------------------------------------------------------------
+# --- the handlers ---------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -129,7 +129,7 @@ def io_stub(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:  # Any: recorded
     async def current(tenant: object, target: str, target_id: object) -> dict[str, Any]:
         return seen["values"]
 
-    async def issue(ctx: object, **kwargs: Any) -> uuid.UUID:
+    async def issue(ctx: object, **kwargs: object) -> uuid.UUID:
         seen["issues"].append(kwargs)
         return uuid.uuid4()
 
@@ -170,10 +170,14 @@ def test_apportionment_writes_06_d_as_federal_times_the_percentage(
     io_stub: dict[str, Any],
 ) -> None:
     io_stub["values"] = {
-        "06!A2": {"v": "1"}, "06!C2": {"v": "1256200"},
-        "06!A3": {"v": "2"}, "06!C3": {"v": "96400"},
-        "08!F2": {"v": "NY"}, "08!G2": {"v": "62.5"}, "08!H2": {"v": "48000"},
-    }  # fmt: skip
+        "06!A2": {"v": "1"},
+        "06!C2": {"v": "1256200"},
+        "06!A3": {"v": "2"},
+        "06!C3": {"v": "96400"},
+        "08!F2": {"v": "NY"},
+        "08!G2": {"v": "62.5"},
+        "08!H2": {"v": "48000"},
+    }
     result = asyncio.run(run_steps.apportionment_ptet(_Agent(), _facts("apportionment_ptet")))  # type: ignore[arg-type]
     assert result.state == "succeeded"
     written = {w.address: (w.value, w.formula) for w in io_stub["writes"]}

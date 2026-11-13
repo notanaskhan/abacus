@@ -508,3 +508,13 @@ async def work_item_runs(
             )
             for r in rows
         ]
+
+
+async def run_work_item_ref(tenant: TenantContext, run_id: UUID) -> str | None:
+    """T-05-T42 (DEC-4706): the work item a run is for (`tax_return:<id>`), for an owner's
+    subscriber reacting to the run's own state event; None for an unknown run."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT work_item_ref FROM agent_runs WHERE id = :r"), {"r": run_id}
+        )
+    return None if found is None else str(found)

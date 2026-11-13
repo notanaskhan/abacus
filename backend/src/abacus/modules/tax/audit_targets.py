@@ -34,6 +34,10 @@ _ROWS = {
         "SELECT id, engagement_id FROM residency_determinations WHERE id = ANY(:ids)"
     ),
     # T-05-T41 (DEC-4701): an allocation structure version, owned by its engagement.
+    # T-05-T42 (DEC-4705): a workbook section (its sign-offs and acknowledged tie-outs).
+    "tax_workbook_section": text(
+        "SELECT id, engagement_id FROM tax_workbook_sections WHERE id = ANY(:ids)"
+    ),
     "allocation_structure": text(
         "SELECT id, engagement_id FROM allocation_structures WHERE id = ANY(:ids)"
     ),

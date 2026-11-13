@@ -926,5 +926,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "allocation_structure.approved",
         "allocation_structure.drafted",
         "allocation_structure.proposed",
+        # reviewed 2026-11-13 (S41, TASK-7703): sections open once per return (explorer only);
+        # a section's sign-off and an acknowledged off tie-out show on TXP-07 and the sign-off
+        # feed row.
+        "tax_section.opened",
+        "tax_section.signed_off",
+        "tie_out.off_acknowledged",
     }
 )

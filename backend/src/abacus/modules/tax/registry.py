@@ -708,3 +708,16 @@ INSERT_COLUMNS["partner_tin_reveals"] = frozenset(
     {"tenant_id", "engagement_id", "work_item_id", "partner_id", "user_id", "reason_code"}
     | {"mfa_at"}
 )
+
+
+# T-05-T42 (0860, DEC-4705): workbook sections (stable sign-off targets) and the notes of
+# sign-offs given while a tie-out was off (sealed).
+TABLES = TABLES | frozenset({"tax_workbook_sections", "tax_section_acknowledgements"})
+INSERT_ONLY = INSERT_ONLY | frozenset({"tax_workbook_sections", "tax_section_acknowledgements"})
+INSERT_COLUMNS["tax_workbook_sections"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "key"}
+)
+INSERT_COLUMNS["tax_section_acknowledgements"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "section_id", "sign_off_id", "off_count"}
+    | {"note_sealed", "note_sha256", "created_by"}
+)
