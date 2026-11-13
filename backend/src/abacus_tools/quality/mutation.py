@@ -116,16 +116,19 @@ class Heavy:
     parts: int = 1  # shards its mutants are split across (a divisor of 10: by last digit)
 
 
-# TASK-7818 (DEC-4816): run 43330118713 measured the rest of the red scope at about 0.4 CPU
-# seconds of mutants a line, and these four far above it. identity/authz's 1,708 mutants are over
-# one shard's budget on their own (nearly every unit test calls `authorise`, and the 348 the run
-# never reached, 324 of them in `authorise`, are its dearest: 1,170 to 1,640 CPU minutes in all,
-# 50 to 70 s a line), so they go to five shards, weighted at the high estimate rounded up. A
-# shard's setup (stats and clean tests over the whole unit suite) took 65 to 107 of its 230
-# minutes.
+# TASK-7818, TASK-7832 (DEC-4816, DEC-4825): a shard's time is its setup (mutmut's stats pass and
+# clean tests over the whole unit suite, slowed by every mutated function's trampoline) plus its
+# mutants over four workers. Runs 43330118713 and 43393671620 measured setup at about 55 minutes
+# and 2.8 more per 1,000 mutated lines (0.67 CPU s a line at four workers), the mutants of the red
+# scope at about 0.4 CPU s a line, and these four far above it. identity/authz's 1,708 mutants
+# (about 1,370 CPU minutes: nearly every unit test calls `authorise`, whose 324 mutants take 160 s
+# each) are over one shard's budget on their own, so they go to five shards; every part pays the
+# whole file's setup. A file's weight is its lines times (setup + mutants) a line over an ordinary
+# line's, so every other file still weighs its line count.
+WEEKLY_SETUP_SECONDS_PER_LINE: Final = 0.67
 WEEKLY_BASE_SECONDS_PER_LINE: Final = 0.4
 WEEKLY_HEAVY: Final[dict[str, Heavy]] = {
-    "src/abacus/modules/identity/authz/__init__.py": Heavy(seconds_per_line=80, parts=5),
+    "src/abacus/modules/identity/authz/__init__.py": Heavy(seconds_per_line=70, parts=5),
     "src/abacus/modules/evidence/form_extraction.py": Heavy(seconds_per_line=30),
     "src/abacus/modules/evidence/pii.py": Heavy(seconds_per_line=17),
     "src/abacus/kernel/crypto/payload_codec.py": Heavy(seconds_per_line=92),
@@ -254,9 +257,10 @@ def weekly_plan(
     lines: dict[str, int],
     heavy: dict[str, Heavy] = WEEKLY_HEAVY,
 ) -> list[ShardPlan]:
-    """`count` shard plans over `files`: line count for every file, cost for the `heavy` ones,
-    whose `parts` (by the mutant number's last digit) go to different shards. A shard holding a
-    part runs only the mutants its globs name; every other shard runs all of its files."""
+    """`count` shard plans over `files`: line count for every file, setup and mutant cost for the
+    `heavy` ones, whose `parts` (by the mutant number's last digit) go to different shards. A
+    shard holding a part runs only the mutants its globs name; every other shard runs all of its
+    files."""
     units: list[str] = []
     weight: dict[str, int] = {}
     for rel in files:
@@ -265,11 +269,12 @@ def weekly_plan(
             units.append(rel)
             weight[rel] = lines.get(rel, 0)
             continue
-        total = round(lines.get(rel, 0) * cost.seconds_per_line / WEEKLY_BASE_SECONDS_PER_LINE)
+        each = WEEKLY_SETUP_SECONDS_PER_LINE + cost.seconds_per_line / cost.parts
+        ordinary = WEEKLY_SETUP_SECONDS_PER_LINE + WEEKLY_BASE_SECONDS_PER_LINE
         for digits in digit_parts(cost.parts) if cost.parts > 1 else [""]:
             unit = f"{rel}{_PART}{digits}" if digits else rel
             units.append(unit)
-            weight[unit] = -(-total // cost.parts)
+            weight[unit] = round(lines.get(rel, 0) * each / ordinary)
     plans: list[ShardPlan] = []
     for bucket in shards(units, count, weight, apart=lambda u: u.split(_PART, 1)[0]):
         split = any(_PART in u for u in bucket)

@@ -11,6 +11,7 @@ No network and no database: the API is an `httpx.MockTransport`.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import httpx
@@ -18,7 +19,8 @@ import pytest
 from pydantic import ValidationError
 
 from abacus.modules.requests.workbook import read_rows
-from abacus_tools.loadtest.bodies import PBC_IMPORT_ROWS, PBC_SHEET, XLSX, pbc_import_300
+from abacus_tools.loadtest import run as run_module
+from abacus_tools.loadtest.bodies import PBC_IMPORT_ROWS, PBC_SHEET, XLSX, Body, pbc_import_300
 from abacus_tools.loadtest.journey_vars import journey_vars
 from abacus_tools.loadtest.run import run
 from abacus_tools.loadtest.scenario import Scenario, profile
@@ -158,6 +160,28 @@ async def test_ac_each_user_plays_only_its_personas_groups_with_its_own_token() 
         (XLSX, len(pbc_import_300().content))
     }
     assert report.verdict.passed
+
+
+async def test_t7832_bodies_are_built_before_the_clock_so_every_user_gets_its_turn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A first build slower than the whole run (the workbook under mutmut's stats pass) must not
+    # use up the window: every persona still makes its requests, and the body is built once.
+    builds: list[float] = []
+
+    def slow() -> Body:
+        time.sleep(0.4)
+        builds.append(time.perf_counter())
+        return pbc_import_300()
+
+    monkeypatch.setattr(run_module, "BODIES", {"pbc_import_300": slow})
+    api = Api()
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(api), base_url="http://127.0.0.1:8001"
+    ) as client:
+        await run(_scenario(), client, tokens={"staff": "staff-token", "client": "client-token"})
+    assert len(builds) == 1
+    assert {path for path, _, _, _ in api.seen} == {"/v1/home", "/v1/import", "/v1/me"}
 
 
 async def test_ac_a_persona_without_a_token_is_refused_before_anything_runs() -> None:
