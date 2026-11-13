@@ -129,6 +129,13 @@ from abacus.modules.workpapers.compute.dag import recompute as recompute_workboo
 from abacus.modules.workpapers.compute.formula import FormulaError  # noqa: E402
 from abacus.modules.workpapers.compute.formula import parse as parse_formula  # noqa: E402
 from abacus.modules.workpapers.compute.formula import render as render_formula  # noqa: E402
+
+# T-05-T57 (DEC-4908): the designed workbook's deterministic xlsx (Open in Excel).
+from abacus.modules.workpapers.export_xlsx import (  # noqa: E402
+    ExportCell,
+    ExportSheet,
+    render_workbook,
+)
 from abacus.modules.workpapers.service import CellEdit, set_cells  # noqa: E402 -- A-06-T28
 
 __all__ = [
@@ -141,6 +148,8 @@ __all__ = [
     "CodeTaken",
     "DesignedLayout",
     "ExceptionPrefill",
+    "ExportCell",
+    "ExportSheet",
     "FormulaCellInput",
     "FormulaCycleError",
     "FormulaError",
@@ -182,6 +191,7 @@ __all__ = [
     "register_designed_layout",
     "register_sign_off_guard",  # A-05-T16 (DEC-2069)
     "render_formula",
+    "render_workbook",
     "resolve",
     "router",
     "set_cells",

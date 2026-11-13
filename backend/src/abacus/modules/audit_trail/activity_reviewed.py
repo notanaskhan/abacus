@@ -953,5 +953,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         # reviewed 2026-11-13 (S42, TASK-7902): the sealed note on resolving an issue no fix
         # closed (TXP-10 d's resolution line).
         "issue.resolution_noted",
+        # reviewed 2026-11-13 (S42, TASK-7905): a workbook exported to xlsx (who, which version,
+        # the file's hash; TXP-11's history).
+        "workbook.exported",
     }
 )

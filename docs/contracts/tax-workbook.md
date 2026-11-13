@@ -248,3 +248,11 @@ run after `interim_closing_706d` when the year has a transfer. Gate kinds: `tax_
 `tax_allocation_approved`, `tax_fix_settled`, `tax_memo_approved`, `tax_run_questions_answered`.
 C16 kinds `workbook_fix_applied` and `tax_memo_stale`; events `workbook.fix_applied` and
 `tax_memo.went_stale` invalidate `engagement:<id>` and `work_item:<return id>`.
+
+## T-05-T57 · Open in Excel (DEC-4908)
+`GET …/workbook/export.xlsx?version=&sheet=` answers (was 501): the xlsx (`application/vnd.
+openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition` attachment named
+`<Entity>_<year>_<form>_Workbook_v<n>.xlsx`, `ETag` the SHA-256, `no-store`). Identical data gives
+identical bytes; formulas are the closed grammar's, live; text is never a formula. 409
+`export_blocked` while a run is open (the live workbook only); 404 `workbook_version` for an
+unknown version. Audited `workbook.exported`.
