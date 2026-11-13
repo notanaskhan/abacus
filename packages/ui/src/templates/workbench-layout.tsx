@@ -65,7 +65,7 @@ export function WorkbenchLayout({
       <div
         data-tabsbar
         style={{ height: g.tabsbar, marginBottom: g.tabsbarMargin }}
-        className="flex items-center justify-center"
+        className="flex flex-none items-center justify-center"
       >
         <Segmented
           label="Workbench"
@@ -79,7 +79,9 @@ export function WorkbenchLayout({
       </div>
       <div
         data-panes
-        style={{ padding: "10px 12px 12px", gap: g.gap, height: g.panesHeight + 22 }}
+        // The app shell's content area already pads 10 above and 12 beside the template (S40 CI
+        // repair, DEC-4632): the panes start under the tabsbar's −10 margin at y106, x12.
+        style={{ paddingBottom: 12, gap: g.gap, height: g.panesHeight + 12 }}
         className="flex"
       >
         <section

@@ -3,7 +3,11 @@
     "version": "bh-2026.10.3",
     "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
     "snapshot": "E0",
-    "slices": ["portal", "tax_board", "standards"]
+    "slices": [
+      "portal",
+      "tax_board",
+      "standards"
+    ]
   },
   "persona": "priya-raman",
   "request": "GET /v1/standards",
@@ -12,7 +16,9 @@
     "facets": {},
     "items": [
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-06",
@@ -48,7 +54,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-02",
@@ -75,7 +83,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-04",
@@ -102,7 +112,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-02",
@@ -129,7 +141,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-03",
@@ -156,7 +170,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-01",
@@ -183,7 +199,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-01",
@@ -210,7 +228,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-02",
@@ -301,7 +321,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-01",
@@ -328,7 +350,9 @@
         "usage_count": null
       },
       {
-        "allowed_actions": ["firm_standard.read"],
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
         "current_version": {
           "current": true,
           "effective_from": "2026-09-02",

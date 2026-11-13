@@ -195,6 +195,8 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
         # A-03-T01 (DEC-1550): the sample workbook keeps census fields onshore.
         "sample_set.export",
         "firm_export.download",
+        # W-02-T03 (DEC-4603): a Workbench run artifact's download stays onshore.
+        "run_artifact.download",
         # N-04-T01 (DEC-2050): every notices write stays onshore (fail closed until reviewed).
         "notice.agency_reply",
         "notice.analyze",
