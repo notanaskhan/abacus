@@ -435,6 +435,11 @@ from abacus.modules.requests.answer_effect_handlers import (  # noqa: E402
 
 _register_effects()
 
+# I-02-T11 (DEC-4723): outstanding PBC in the attention slot.
+from abacus.modules.engagements.api import (  # noqa: E402
+    register_attention_provider as _register_attention,
+)
+
 # T-03 (S27): imported so its refusal codes are catalogued (the routes import it lazily).
 from abacus.modules.requests import (  # noqa: E402
     questionnaire_editor as _questionnaire_editor,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
@@ -444,8 +449,11 @@ from abacus.modules.requests import (  # noqa: E402
 from abacus.modules.requests import (  # noqa: E402
     search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )
+from abacus.modules.requests.attention import outstanding_pbc as _outstanding_pbc  # noqa: E402
 
 # P-09-T08: the run trace's samples for this module's records.
 from abacus.modules.requests.trace_samples import (  # noqa: E402
     request_item_trace_samples as request_item_trace_samples,
 )
+
+_register_attention("outstanding_pbc", _outstanding_pbc)

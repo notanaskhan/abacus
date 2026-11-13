@@ -462,3 +462,17 @@ from abacus.modules.tax.entity_seed import (  # noqa: E402
 )
 
 _register_briefing("tax.entity_returns", _entity_briefing)
+
+# I-02-T11 (DEC-4723): a 1065's next milestone (K-1 release) and its dependent returns.
+from abacus.modules.engagements.api import WorkItemHooks as _WorkItemHooks  # noqa: E402
+from abacus.modules.engagements.api import (  # noqa: E402
+    register_work_item_hooks as _register_hooks,
+)
+from abacus.modules.tax import attention_hooks as _attention_hooks  # noqa: E402
+
+_register_hooks(
+    "tax_return",
+    _WorkItemHooks(
+        next_milestone=_attention_hooks.next_milestone, dependents=_attention_hooks.dependents
+    ),
+)
