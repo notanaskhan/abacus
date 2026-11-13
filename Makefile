@@ -28,6 +28,10 @@ STACK_ENV = ABACUS_DATABASE_URL=postgresql+asyncpg://abacus_app:abacusapp@$(STAC
 	ABACUS_LOCAL_SUPERUSER_DSN=postgresql://postgres:postgres@$(STACK_DB) \
 	ABACUS_S3_ENDPOINT_URL=http://127.0.0.1:$(ABACUS_S3_PORT) \
 	ABACUS_TEMPORAL_TARGET=127.0.0.1:$(ABACUS_TEMPORAL_PORT)
+# Operator tools (`make flag`, `make entitlement`): the database from the environment when one is set
+# (staging), else this checkout's stack, so a worktree at another ABACUS_PORT_OFFSET never writes
+# into the default stack (TASK-7830: Q-04-T107's walk did).
+OPERATOR_ENV = ABACUS_DATABASE_URL=$${ABACUS_DATABASE_URL:-postgresql+asyncpg://abacus_app:abacusapp@$(STACK_DB)}
 
 # Local runs: the fake connector reads fixtures from here; seed_dev writes them (TASK-012).
 # The records bucket (COMPLIANCE mode: seal manifests, chain anchors) for local runs only, so an
@@ -337,7 +341,7 @@ shadow-report:
 # window also REQUEST (the ops-request file) and the Tuesday slot, or HOTFIX="<reason>"; a prompt.*
 # variant also EVAL_REPORT and SHADOW_RUN. ALL_OFF=1 sets every flag for the firm to its default.
 flag:
-	cd backend && uv run python -m abacus_tools.flags --firm $(FIRM) $(if $(ALL_OFF),--all-off,--flag $(FLAG) --value $(VALUE)) --operator $(OPERATOR) --reason "$(REASON)" $(if $(APPROVED_BY),--approved-by $(APPROVED_BY)) $(if $(ROLLBACK),--rollback "$(ROLLBACK)") $(if $(REQUEST),--request $(REQUEST)) $(if $(HOTFIX),--hotfix "$(HOTFIX)") $(if $(EVAL_REPORT),--eval-report "$(EVAL_REPORT)") $(if $(SHADOW_RUN),--shadow-run "$(SHADOW_RUN)")
+	cd backend && $(OPERATOR_ENV) uv run python -m abacus_tools.flags --firm $(FIRM) $(if $(ALL_OFF),--all-off,--flag $(FLAG) --value $(VALUE)) --operator $(OPERATOR) --reason "$(REASON)" $(if $(APPROVED_BY),--approved-by $(APPROVED_BY)) $(if $(ROLLBACK),--rollback "$(ROLLBACK)") $(if $(REQUEST),--request $(REQUEST)) $(if $(HOTFIX),--hotfix "$(HOTFIX)") $(if $(EVAL_REPORT),--eval-report "$(EVAL_REPORT)") $(if $(SHADOW_RUN),--shadow-run "$(SHADOW_RUN)")
 
 # Q-02-T33 (RB-27): propagate an Accrued incident into the firms it touched, as staff. Needs
 # ABACUS_STAFF_TOKEN (a staff-issuer token with MFA) in the environment; STAFF must be the id it
@@ -365,7 +369,7 @@ windows:
 
 # Q-01-T45: change one firm's module entitlement (ops task; audited as the operator).
 entitlement:
-	cd backend && uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)" $(if $(APPROVED_BY),--approved-by $(APPROVED_BY)) $(if $(ROLLBACK),--rollback "$(ROLLBACK)") $(if $(REQUEST),--request $(REQUEST)) $(if $(HOTFIX),--hotfix "$(HOTFIX)")
+	cd backend && $(OPERATOR_ENV) uv run python -m abacus_tools.tenants entitlement --firm $(FIRM) --module $(MODULE) --enabled $(ENABLED) $(if $(SEATS),--seats $(SEATS)) --operator $(OPERATOR) --reason "$(REASON)" $(if $(APPROVED_BY),--approved-by $(APPROVED_BY)) $(if $(ROLLBACK),--rollback "$(ROLLBACK)") $(if $(REQUEST),--request $(REQUEST)) $(if $(HOTFIX),--hotfix "$(HOTFIX)")
 
 # Q-04-T007: enrol a work item in a pilot window (shadow), or move its mode (operators; audited).
 pilot-enrol:

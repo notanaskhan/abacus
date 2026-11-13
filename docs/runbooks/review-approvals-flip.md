@@ -2,7 +2,7 @@
 title: Review approvals flip (SHL-10 live approval of agent output, per pilot firm, Tue Jul 13, 2027)
 owner: builder
 alarms: []
-last_rehearsed: never
+last_rehearsed: 2026-11-13
 rehearse_by: 2027-07-09
 ---
 # Review approvals flip
@@ -53,10 +53,14 @@ it before then with an expiry after Oct 20 and outside Sep 1 – Oct 20, or this
 
 ## 3. The flip (per firm, inside the window)
 
+On the synthetic firm PF-X1 the solo builder may name themself as `APPROVED_BY` (DEC-4822); a real
+pilot firm always needs the other founder. `ROLLBACK` is a `docs/` path or an https link (the flip
+guard refuses free text).
+
 ```bash
 make flag FIRM=<firm-id> FLAG=review.approve_agent_output VALUE=true OPERATOR=<you> \
   REASON="P-04-T46 SHL-10 live approval" APPROVED_BY=<other founder> \
-  ROLLBACK="flag off; decisions persist" REQUEST=<ops-request file> \
+  ROLLBACK="docs/runbooks/review-approvals-flip.md#5-roll-back" REQUEST=<ops-request file> \
   EVAL_REPORT=<report paths> SHADOW_RUN=<sha256>@<as_of>
 ```
 
@@ -72,6 +76,12 @@ make flag FIRM=<firm-id> FLAG=review.approve_agent_output VALUE=true OPERATOR=<y
 
 ## 5. Roll back
 
-`make flag FIRM=<firm-id> FLAG=review.approve_agent_output VALUE=false OPERATOR=<you> REASON="<why>" APPROVED_BY=<other founder> ROLLBACK="n/a" HOTFIX="<reason>"`
+`make flag FIRM=<firm-id> FLAG=review.approve_agent_output VALUE=false OPERATOR=<you> REASON="<why>" APPROVED_BY=<other founder> ROLLBACK="docs/runbooks/review-approvals-flip.md#3-the-flip-per-firm-inside-the-window" HOTFIX="<reason>"`
 outside the window. SHL-10 stops offering decisions at once (the proposal still reads); decisions already made stay. Record a
 DEC row with the reason.
+
+## Rehearsals
+
+| Date | Where | Result |
+|---|---|---|
+| 2026-11-13 | Local stack, PF-X1 (synthetic), solo (DEC-4822) | §5 rollback and §3 flip passed through `make flag` outside any window; the `ROLLBACK` values were fixed (Q-04-T107, TASK-7830). §4's checks on SHL-10 were not run. |

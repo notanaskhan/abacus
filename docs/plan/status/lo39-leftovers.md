@@ -14,7 +14,7 @@ three-agent security review at the end, one merge with a single CI run.
 | Q-04-T020 | partial | `docs/ops/on-call.md` exists | the test page needs the paging tool |
 | N-02-T40 | partial | #1863, #1900: SIG-01 a, b, c, f on the full stack | SIG-02, ENG-04 (no in-app entry to a seeded draft), POR-06 g (no declined envelope), hosted runs |
 | N-02-T46 | partial | RB-18 rehearsed locally (10 passed) | the staging rehearsal |
-| Q-04-T107 | partial | solo walk on PF-X1 (`docs/ops/rehearsals/2026-11-13-runbook-walk.md`) | the flip guard refuses a solo approver (P-29): Ayush's call, then the walk |
+| Q-04-T107 | done | solo walk on PF-X1 (`docs/ops/rehearsals/2026-11-13-runbook-walk.md`); DEC-4822 (TASK-7830): flip, rollback and onboarding (RB-37) runbooks walked, every gap fixed | — |
 | Q-04-T137 | todo | — | the next quarter's walk |
 | Q-04-T125 | partial | #1864, #1900: `abacus_tools.dark_merge_audit`, `deploy/live-paths.yaml`; run over today's batch | the Jan 25-27, 2028 trains |
 | Q-04-T035 | partial | — | the custodian's ScheduleKeyDeletion on AWS; counsel's exit terms |
@@ -45,4 +45,4 @@ three-agent security review at the end, one merge with a single CI run.
 - **Q-03-T036:** choose how the perf stack treats COMPLIANCE-locked records (a long-lived
   `abacus-perf-records` bucket, a perf-only retention mode, or no record-writing scenarios).
 - **F-01-T06:** the branch ruleset requiring stage 1 and stages 1 and 2.
-- **Q-04-T107:** `abacus_tools.flip_guard` refuses `approver_is_operator` on every flip of a firm in `deploy/windows.yaml` (PF-X1 too). Should the solo builder approve their own flips on the synthetic firm (or under a named DEC), or do the flip runbooks keep two people for real firms only?
+- **Q-04-T107:** decided 2026-11-13: synthetic firms only (DEC-4822, TASK-7830).

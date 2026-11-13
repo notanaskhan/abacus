@@ -3,7 +3,7 @@ id: RB-33
 title: Binder export and pilot rollback
 owner: builder
 alarms: []
-last_rehearsed: never
+last_rehearsed: 2026-11-13
 rehearse_by: 2027-05-25
 ---
 # RB-33 · Binder export and pilot rollback
@@ -26,7 +26,7 @@ Roll back one pilot firm when either founder decides it (a DEC row names the rea
 
 1. No deploy in flight and no release window open for the firm (`deploy/windows.yaml`; `make windows`).
 2. Note the firm id (`FIRM`), the decision DEC id (`DEC`) and the people who will download (each an engagement partner or manager on their engagements, with fresh MFA, onshore).
-3. Check the export is on for the firm: `audits.binder_export` (if off: `make flag FIRM=$FIRM FLAG=audits.binder_export VALUE=true OPERATOR=<you> REASON="RB-33 rollback, $DEC" APPROVED_BY=<other founder>`).
+3. Check the export is on for the firm: `audits.binder_export` (if off: `make flag FIRM=$FIRM FLAG=audits.binder_export VALUE=true OPERATOR=<you> REASON="RB-33 rollback, $DEC" APPROVED_BY=<other founder> ROLLBACK="docs/runbooks/RB-33-binder-export-and-pilot-rollback.md#4-take-the-audit-surfaces-away"`).
 
 ## 3. Export every binder (per audit work item)
 
@@ -40,9 +40,13 @@ For each audit work item of the firm (AUD-01 lists them; `GET /v1/audits`):
 
 ## 4. Take the audit surfaces away
 
+On the synthetic firm PF-X1 the solo builder may name themself as `APPROVED_BY` (DEC-4822); a real
+pilot firm always needs the other founder. `ROLLBACK` is a `docs/` path or an https link (the flip
+guard refuses free text).
+
 Only once every binder of the firm is downloaded and verified:
 
-1. `make flag FIRM=$FIRM FLAG=audits.cockpit VALUE=false OPERATOR=<you> REASON="RB-33 rollback, $DEC" APPROVED_BY=<other founder>`.
+1. `make flag FIRM=$FIRM FLAG=audits.cockpit VALUE=false OPERATOR=<you> REASON="RB-33 rollback, $DEC" APPROVED_BY=<other founder> ROLLBACK="docs/runbooks/RB-33-binder-export-and-pilot-rollback.md#4-take-the-audit-surfaces-away"`.
 2. `make flag FIRM=$FIRM FLAG=audits.binder_export VALUE=false …` once the firm confirms receipt.
 3. Nothing is deleted: evidence and ledger snapshots are immutable (AGENTS.md rule 4) and retention and legal holds still apply (RB-14). Offboarding is RB-13, a separate decision.
 4. Tell the firm (the pilot channel), and close the DEC row with the export ids.
@@ -70,3 +74,4 @@ Both A-01 flags retire by the **Thu May 27, 2027** release train (A-01 DoD 9): `
 
 | Date | Where | Who | Result |
 |---|---|---|---|
+| 2026-11-13 | Local stack, PF-X1 (synthetic) | solo builder (DEC-4822) | §2 step 3 and §4.1, §4.2 flips passed, each audited with `self_approved`; the commands now name their `ROLLBACK` (Q-04-T107, TASK-7830). The binder export itself (§3) was not run. |

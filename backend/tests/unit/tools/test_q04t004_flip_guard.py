@@ -20,6 +20,7 @@ from abacus_tools.flip_guard import Flip, check, fingerprint
 CT = release_windows.CT
 A1 = UUID("00000000-0000-4000-8000-0000000000a1")  # PF-A1: EBP, autumn window
 A2 = UUID("00000000-0000-4000-8000-0000000000a2")  # PF-A2: audit only
+X1 = UUID("00000000-0000-4000-8000-0000000000f1")  # PF-X1: synthetic (DEC-1530)
 ROLLBACK = "docs/ops/flips/2027-09-21-PF-A1.md#rollback"
 
 
@@ -40,6 +41,7 @@ def cal() -> release_windows.Calendar:
             "autumn_window": True,
         },
         {"tenant_id": str(A2), "code": "PF-A2", "real_data_since": "2027-06-01"},
+        {"tenant_id": str(X1), "code": "PF-X1", "synthetic": True, "autumn_window": True},
     ]
     return release_windows.parse(doc)
 
@@ -115,6 +117,28 @@ def test_ac8_the_operator_never_approves_their_own_flip(
     assert check(cal, flip("2027-09-21 19:10", request=request_file, approved_by=None)).why == (
         "approver_missing",
     )
+
+
+def test_dec4822_the_solo_builder_approves_their_own_flip_on_the_synthetic_firm_only(
+    cal: release_windows.Calendar, request_file: Path
+) -> None:
+    solo = check(cal, flip("2027-09-14 22:00", firm=X1, approved_by="ayushkbhatia"))
+    assert solo.why == ()
+    assert solo.refs["self_approved"] == 1
+    assert solo.refs["approved_by"] == fingerprint("ayushkbhatia")
+    paired = check(cal, flip("2027-09-14 22:00", firm=X1))
+    assert paired.why == ()
+    assert "self_approved" not in paired.refs
+    # The synthetic firm still names an approver and a rollback.
+    missing = check(cal, flip("2027-09-14 22:00", firm=X1, approved_by=None, rollback=None))
+    assert missing.why == ("approver_missing", "rollback_missing")
+    # A real firm keeps two people, in or out of its window.
+    for firm, when in ((A1, "2027-09-21 19:10"), (A2, "2027-11-04 10:00")):
+        verdict = check(
+            cal, flip(when, firm=firm, request=request_file, approved_by="ayushkbhatia")
+        )
+        assert verdict.why == ("approver_is_operator",)
+        assert "self_approved" not in verdict.refs
 
 
 @pytest.mark.parametrize("rollback", [None, "see the channel", "http://example.test/r"])
