@@ -45369,6 +45369,10 @@ export type SessionSummaryOut = {
      */
     agent_label?: string | null;
     /**
+     * Context Count
+     */
+    context_count?: number | null;
+    /**
      * Id
      */
     id: string;

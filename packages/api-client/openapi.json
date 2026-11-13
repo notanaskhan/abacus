@@ -96418,6 +96418,19 @@
             "cls": "confidential",
             "title": "Agent Label"
           },
+          "context_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Context Count"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",

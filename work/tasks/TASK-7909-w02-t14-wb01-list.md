@@ -23,8 +23,7 @@ planned Create Agent…).
   `routes/firm/workbench.tsx` writes `?filter=`.
 
 ## Partial
-- The Paperclip chip's count needs a read of the session's attached context (no read route; the
-  attach and remove routes answer it); the chip draws without a count until W-02-T16/T17.
+- ~~The Paperclip chip's count~~: `context_count` on the list row, TASK-7927.
 - axe runs with the end-pass vitest (the gallery's axe harness); not run here.
 
 ## Progress log
