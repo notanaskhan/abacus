@@ -15,7 +15,7 @@ delete, context) is `list_contract.py`'s.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import TYPE_CHECKING, Annotated, Literal, NoReturn
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -24,6 +24,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+
+if TYPE_CHECKING:
+    from abacus.modules.workbench.session_list import Row
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -174,6 +177,24 @@ class SessionListOut(BaseModel):
 sessions_router = AbacusRouter(prefix="/v1/workbench/sessions", tags=["workbench sessions"])
 
 
+def summary_of(r: Row) -> SessionSummaryOut:
+    """W-02-T09: one list row; a locked row keeps metadata only (no thread, figure or count)."""
+    return SessionSummaryOut(
+        id=r.id,
+        title=r.title,
+        state=r.state,  # type: ignore[arg-type]  # the table's CHECK holds the literal
+        last_item_at=r.last_item_at,
+        owner=SessionOwnerOut(user_id=r.owner_user_id, name=r.owner_name, via_agent=r.via_agent),
+        origin=r.origin,  # type: ignore[arg-type]
+        needs_answer=r.needs_answer and not r.locked,
+        running=r.running,
+        ready_for_review=r.ready_for_review and not r.locked,
+        locked=r.locked,
+        title_source=r.title_source,  # type: ignore[arg-type]
+        version=r.version,
+    )
+
+
 async def workbench_gate(ctx: AuthContext) -> None:
     """`workbench.enabled` off: 404 named after the flag (the repository's answer)."""
     from abacus.kernel._flags import WORKBENCH_ENABLED
@@ -198,8 +219,13 @@ async def create_session_route(body: SessionCreateIn, ctx: Ctx) -> SessionSummar
     from abacus.modules.workbench.sessions import open_subject_session
 
     if body.subject_ref is None:
+        from abacus.modules.workbench.session_list import NEW_TITLE, create_blank
+
         await workbench_gate(ctx)
-        _not_yet()
+        created = await create_blank(ctx)
+        return SessionSummaryOut(
+            id=created, title=NEW_TITLE, state="live", title_source="auto", origin="manual"
+        )
 
     session_id = await open_subject_session(
         ctx, body.subject_ref.kind, body.subject_ref.id, body.title
@@ -207,7 +233,7 @@ async def create_session_route(body: SessionCreateIn, ctx: Ctx) -> SessionSummar
     return SessionSummaryOut(id=session_id, title=body.title, state="live")
 
 
-@sessions_router.get("", action="session.read", response_model=SessionListOut, errors=(501,))
+@sessions_router.get("", action="session.read", response_model=SessionListOut)
 async def list_sessions_route(
     ctx: Ctx,
     subject_ref: Annotated[str | None, Query(pattern=r"^[a-z_]{1,40}:[0-9a-f-]{36}$")] = None,
@@ -222,8 +248,16 @@ async def list_sessions_route(
     from abacus.modules.workbench.sessions import subject_sessions
 
     if subject_ref is None:
+        from abacus.modules.workbench.session_list import list_sessions
+
         await workbench_gate(ctx)
-        _not_yet()
+        listed = await list_sessions(ctx, filter, q, cursor)
+        return SessionListOut(
+            items=[summary_of(r) for r in listed.rows],
+            next_cursor=listed.next_cursor,
+            total=listed.total,
+            counts=SessionListCountsOut(running=listed.running, needs_answer=listed.needs_answer),
+        )
 
     kind, _, ident = subject_ref.partition(":")
     rows = await subject_sessions(ctx, kind, UUID(ident))
