@@ -88,3 +88,36 @@ export const TPL14_SAVED: Readonly<Record<string, Point>> = {
   "claire-feld": { x: 636, y: 500 },
   "feld-1040": { x: 836, y: 500 },
 };
+
+/** TPL-14a's node faces as L3 sends them (F-07-T14): names and masked lines, the handoff's words. */
+export const TPL14_FACES: Readonly<
+  Record<
+    string,
+    {
+      name: string;
+      line: string;
+      state?: { label: string; variant: "neutral" | "amber" | "muted" };
+      tag?: string;
+    }
+  >
+> = {
+  "owen-calder": { name: "Owen Calder", line: "Person · Managing member" },
+  "ridgeline-lp": { name: "Ridgeline Property Partners, LP", line: "Form 1065 · ••-•••0287" },
+  "ridgeline-gp": { name: "Ridgeline GP LLC", line: "GP · ••-•••0291" },
+  "meera-shah": { name: "Meera Shah", line: "LP · •••-••-3352" },
+  "pell-street-ventures": { name: "Pell Street Ventures LLC", line: "LP · ••-•••7724" },
+  "pell-street-ii": { name: "Pell Street II LLC", line: "LP from 7/1/2025 · ••-•••8810" },
+  "jonah-feld": { name: "Jonah Feld", line: "LP · •••-••-4417" },
+  "shah-1040": {
+    name: "Meera Shah · 2025 Form 1040",
+    line: "Return",
+    state: { label: "Preparing", variant: "neutral" },
+    tag: "Waiting on K-1",
+  },
+  "claire-feld": { name: "Claire Feld", line: "Spouse · •••-••-6081" },
+  "feld-1040": {
+    name: "Feld Household · 2025 Form 1040 MFJ",
+    line: "Return",
+    state: { label: "In review · Manager", variant: "neutral" },
+  },
+};

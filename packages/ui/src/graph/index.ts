@@ -23,3 +23,13 @@ export type {
   LayoutOptions,
   Point,
 } from "./layout";
+export {
+  GraphCanvas,
+  GraphLegend,
+  NUDGE,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  neighbour,
+  safeLine,
+} from "./canvas";
+export type { GraphCanvasNode, GraphCanvasProps } from "./canvas";
