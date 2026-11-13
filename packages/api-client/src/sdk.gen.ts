@@ -11157,6 +11157,7 @@ export const setPreferences = <ThrowOnError extends boolean = false>(options: Op
  * Today Route
  *
  * The viewer's day; `status: building` with `needs_build` on the first open (§3.8).
+ * I-02-T10 (DEC-4722): assembled by code over C13.
  */
 export const today = <ThrowOnError extends boolean = false>(options?: Options<TodayData, ThrowOnError>): RequestResult<TodayResponses, TodayErrors, ThrowOnError> => (options?.client ?? client).get<TodayResponses, TodayErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -16459,7 +16460,7 @@ export const sumSnapshot = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Context Options Route
  *
- * Only records the viewer can open (AC-C3).
+ * Only records the viewer can open (AC-C3). W-02-T10 (DEC-4715).
  */
 export const contextOptions = <ThrowOnError extends boolean = false>(options: Options<ContextOptionsData, ThrowOnError>): RequestResult<ContextOptionsResponses, ContextOptionsErrors, ThrowOnError> => (options.client ?? client).get<ContextOptionsResponses, ContextOptionsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -16523,6 +16524,7 @@ export const getSession = <ThrowOnError extends boolean = false>(options: Option
  *
  * The owner's rename; `title_source` becomes `manual`; 409 `stale_version` when `If-Match`
  * is not the row's version; one `workbench_session.renamed` audit event (titles by hash).
+ * W-02-T09 (DEC-4714).
  */
 export const renameSession = <ThrowOnError extends boolean = false>(options: Options<RenameSessionData, ThrowOnError>): RequestResult<RenameSessionResponses, RenameSessionErrors, ThrowOnError> => (options.client ?? client).patch<RenameSessionResponses, RenameSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
