@@ -187,6 +187,7 @@ from abacus.modules.requests.source_documents import (
     pbc_binders,
     pbc_counts,
     pbc_counts_of,
+    register_screening_verdicts,
     register_upload_facts,
     source_documents,
 )
@@ -398,6 +399,7 @@ __all__ = [
     "register_binder_tag",
     "register_comment_scope_check",
     "register_live_facts",
+    "register_screening_verdicts",
     "register_upload_facts",
     "reopen_after_undo",
     "request_item_sent",

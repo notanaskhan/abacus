@@ -123,7 +123,8 @@ class ScreeningCardOut(BaseModel):
     # P-04-T42 (additive): the C3 proposal a flagged screening raised (the change "Uploaded - needs
     # review → Received" with its citations), when one is pending; AUD-03's "Review…" opens it in
     # SHL-10 (`?ov=approve:<ref>`). Null when no proposal waits.
-    proposal_ref: Annotated[UUID | None, classified("internal")] = None
+    # TASK-7816: the typed ref (`upload_review:<id>`), so a string; the field was never filled.
+    proposal_ref: Annotated[str | None, classified("internal")] = None
 
 
 class ScreeningRerunOut(BaseModel):

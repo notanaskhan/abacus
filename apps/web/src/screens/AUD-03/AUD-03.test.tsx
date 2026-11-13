@@ -205,6 +205,23 @@ describe("AUD-03 artboards", () => {
     );
   });
 
+  it("TASK-7816 (P-03-T25): c's flag reason is an SHL-07 cited cell whose popover offers Open source", async () => {
+    show("c");
+    await ready();
+    const pane = viewerPane();
+    const reason = await within(pane).findByText(
+      "This file covers only the 31 participants in BrokerWindow; a schedule of account balances covers every participant.",
+    );
+    const cited = reason.closest<HTMLElement>("[data-cited]");
+    expect(cited).not.toBeNull();
+    fireEvent.click(cited as HTMLElement);
+    await waitFor(() => {
+      expect(document.querySelector('[data-popover="anchored"]')).not.toBeNull();
+    });
+    expect(cited?.hasAttribute("data-lit")).toBe(true);
+    expect(await screen.findByRole("button", { name: "Open source" })).toBeTruthy();
+  });
+
   it("AUD-03d Return dialog: Wrong document preselected; confirm is a send-back and the row reads Returned · wrong document", async () => {
     const calls = show("d");
     await ready();

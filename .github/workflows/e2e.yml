@@ -116,13 +116,14 @@ jobs:
         run: make journeys-full JOURNEY_ARGS="--trace=on --grep-invert @sep24"
       # TASK-7814: the steps whose data the timeline holds only from Sep 24 on (tagged @sep24) run
       # on the stack reloaded at the 2026-09-24T10:20 snapshot, with the slices they read.
+      # TASK-7816: `pbc_screening` is Granite Peak's screened PBC upload (J04 trace and pbc-ai).
       # A load on top of E0 would replay the new slices' earlier events after later ones (the
       # sampling slice's Sep 2 independence answers after E0's), so the pass starts from empty.
       - name: Reload the scenario at Sep 24, 10:20 AM (local database only)
         if: success() || failure()
         run: |
           make db-reset
-          make seed-demo SNAPSHOT=2026-09-24T10:20 HOLDOUT=fairhaven_ebp SLICE="people ebp ebp2 planning sampling"
+          make seed-demo SNAPSHOT=2026-09-24T10:20 HOLDOUT=fairhaven_ebp SLICE="people ebp ebp2 planning sampling pbc_screening"
       - name: Journeys on the full stack at Sep 24
         if: success() || failure()
         env:

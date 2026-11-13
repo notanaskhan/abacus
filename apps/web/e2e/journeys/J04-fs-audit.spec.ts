@@ -6,7 +6,15 @@
 // step whose screen or backend is still planned is `test.fixme` naming its owning epic, task and
 // chapter 01 date (journey-e2e skill), never skipped or left out. Walkable on staging by M6 (Fri
 // Mar 5, 2027). The portal is white-labelled: no portal step may show the product's name (INV-4).
-import { DEMO_INSTANT, expect, test } from "../harness";
+import {
+  DEMO_INSTANT,
+  type Journey,
+  SEP_24_PASS,
+  SEP_24_SNAPSHOT,
+  expect,
+  seededAt,
+  test,
+} from "../harness";
 import { A07_LIVE, a07, noAgentDecision, owner as a07Owner } from "./a07-support";
 import { artboardAs, board, noProductName, owner as r02Owner } from "./r02-support";
 
@@ -139,11 +147,29 @@ test.describe("J04-fs-audit PBC slice", () => {
 // Sep 24 snapshot's (no fixture scenario carries it): the screening citation on its AUD-03 row
 // opens SHL-07, whose "Open source" opens SHL-08 with the quoted region lit, the region and the
 // cited cell sharing one match. INV-1 to INV-5 after each step, in the browser and the database.
-// TASK-7813, TASK-7814: on the full stack the steps below need what no slice seeds yet, at any
-// snapshot: a Granite Peak PBC upload screened by the agent's v2 run, with a flagged check, a
-// verified citation and a pending C3 proposal (the card's `proposal_ref`). Hannah Leclerc is not on
-// Granite Peak's FY2026 team (team_of(A2): MO, OH, SB, CH, and Caleb Dunn from Sep 10), so AUD-01
-// does not list it for her (visible()); and AUD-01's row opens AUD-02, not AUD-03.
+// TASK-7816 (DEC-4814): the `pbc_screening` slice seeds it before 10:20 AM on Sep 24: Omar Haddad
+// (Granite Peak's Audit Manager) publishes the list on Sep 17, Luis Ferrante uploads a card
+// statement to the bank-statement request on Sep 22, and the upload reviewer flags it Wrong
+// document with a verified citation and its pending C3 proposal. Omar walks it as a person does:
+// his Approvals queue (HOME-02) holds the upload's review, whose Open is AUD-03 on its request.
+const GRANITE_UPLOAD = "Granite Peak card statement June 2026.pdf";
+const GRANITE_SEEDED =
+  "the pbc_screening slice records Luis Ferrante's upload and its review on Sep 22";
+
+async function graniteUploadOnAud03(journey: Journey, label: string): Promise<void> {
+  await journey.as("omar-haddad", "/home/approvals", { clock: SEP_24 });
+  const page = journey.page;
+  await journey.step(`${label}: Omar's Approvals row opens AUD-03 on the request`, async () => {
+    // The upload waits on a person's review (Approvals & sends); its Open is the gate's host.
+    const approvals = page.getByRole("region", { name: "Approvals & sends" });
+    await approvals.getByRole("button", { name: "Evidence version" }).first().click();
+    await page.getByRole("link", { name: "Open", exact: true }).first().click();
+    await expect(page).toHaveURL(/\/audits\/[^/]+\/source-documents/);
+    await expect(page.locator("[data-screening-glyph='flagged']").first()).toBeVisible();
+    await expect(page.getByText(GRANITE_UPLOAD).first()).toBeVisible();
+  });
+}
+
 test.describe("J04-fs-audit trace to source (P-03-T25)", () => {
   test.beforeEach(({ journey }) => {
     const hosted = journey.project === "staging" || journey.project === "canary";
@@ -155,29 +181,18 @@ test.describe("J04-fs-audit trace to source (P-03-T25)", () => {
       journey.project === "fixture",
       "Granite Peak's screened upload is the Sep 24 snapshot's, full stack only (no fixture data)",
     );
-    test.fixme(
-      journey.project === "fullstack",
-      "Granite Peak's screened upload is not seeded (Sep 24 snapshot) and Hannah Leclerc is not on its team",
-    );
+    seededAt(journey.project, SEP_24_SNAPSHOT, GRANITE_SEEDED);
   });
 
   test(
     "J04 trace: AUD-03 screening citation → SHL-07 → SHL-08 with the region lit",
-    owner("P-03 · P-03-T25 full-stack trace to source · S12, Fri Apr 16, 2027"),
+    {
+      ...SEP_24_PASS,
+      ...owner("P-03 · P-03-T25 full-stack trace to source · S12, Fri Apr 16, 2027"),
+    },
     async ({ journey }) => {
-      await journey.as("hannah-leclerc", "/audits", { clock: SEP_24 });
+      await graniteUploadOnAud03(journey, "J04 trace step 1");
       const page = journey.page;
-      await journey.step(
-        "J04 trace step 1: Granite Peak's cockpit (AUD-01 → AUD-03)",
-        async () => {
-          await page
-            .getByRole("row", { name: new RegExp(GRANITE_PEAK.split(",")[0] ?? "Granite") })
-            .first()
-            .getByRole("button", { name: "Open row" })
-            .click();
-          await expect(page).toHaveURL(/\/audits\/[^/]+/);
-        },
-      );
       const cited = page.locator("[data-cited]").first();
       await journey.step(
         "J04 trace step 2: the screening citation on the row (SHL-07)",
@@ -226,9 +241,10 @@ test.describe("J04-fs-audit (A-01's audits index)", () => {
 
 // P-04-T45: the j04 pbc-ai step on the full stack and staging. Granite Peak's screened upload (the
 // Sep 24 snapshot's) carries the screening agent's flag; on AUD-03 its pending C3 proposal opens in
-// SHL-10 through "Review…", every change cited and none unsupported, and Hannah approves it as a
-// person (INV-1: the control is a HumanAction, never the agent's). While the screening agent is at
-// shadow stage for the firm, nothing of the proposal shows. INV-1 to INV-5 and axe after each step.
+// SHL-10 through "Review…", every change cited and none unsupported, and Omar Haddad approves it
+// as a person (INV-1: the control is a HumanAction, never the agent's). While the screening agent
+// is at shadow stage for the firm, nothing of the proposal shows. INV-1 to INV-5 and axe after
+// each step. TASK-7816: the trace test above runs first (one worker, file order); this one decides.
 test.describe("J04-fs-audit pbc-ai through SHL-10 (P-04-T45)", () => {
   test.beforeEach(({ journey }) => {
     const hosted = journey.project === "staging" || journey.project === "canary";
@@ -240,29 +256,18 @@ test.describe("J04-fs-audit pbc-ai through SHL-10 (P-04-T45)", () => {
       journey.project === "fixture",
       "Granite Peak's screened upload and its proposal are the Sep 24 snapshot's: full stack only",
     );
-    test.fixme(
-      journey.project === "fullstack",
-      "Granite Peak's screened upload is not seeded (Sep 24 snapshot) and Hannah Leclerc is not on its team",
-    );
   });
 
   test(
     "j04 pbc-ai: the screening flag is approved through SHL-10 with verified citations",
-    owner("P-04 · P-04-T45 SHL-10 live on staging · S18, before the Tue Jul 13 flip"),
+    {
+      ...SEP_24_PASS,
+      ...owner("P-04 · P-04-T45 SHL-10 live on staging · S18, before the Tue Jul 13 flip"),
+    },
     async ({ journey }) => {
-      await journey.as("hannah-leclerc", "/audits", { clock: SEP_24 });
+      seededAt(journey.project, SEP_24_SNAPSHOT, GRANITE_SEEDED);
+      await graniteUploadOnAud03(journey, "j04 pbc-ai step 1");
       const page = journey.page;
-      await journey.step(
-        "j04 pbc-ai step 1: Granite Peak's cockpit (AUD-01 → AUD-03)",
-        async () => {
-          await page
-            .getByRole("row", { name: new RegExp(GRANITE_PEAK.split(",")[0] ?? "Granite") })
-            .first()
-            .getByRole("button", { name: "Open row" })
-            .click();
-          await expect(page).toHaveURL(/\/audits\/[^/]+/);
-        },
-      );
       const sheet = page.getByRole("dialog", { name: "Approve agent output" });
       await journey.step("j04 pbc-ai step 2: Review… opens the proposal in SHL-10", async () => {
         await page.getByRole("button", { name: "Review…" }).first().click();
@@ -271,12 +276,12 @@ test.describe("J04-fs-audit pbc-ai through SHL-10 (P-04-T45)", () => {
         await expect(sheet.getByText("Unsupported")).toHaveCount(0);
       });
       await journey.step(
-        "j04 pbc-ai step 3: Hannah approves; the proposal becomes a checkpoint (INV-1)",
+        "j04 pbc-ai step 3: Omar approves; the proposal becomes a checkpoint (INV-1)",
         async () => {
           const approve = sheet.getByRole("button", { name: /^Approve/ });
           await expect(approve).toBeEnabled();
           await approve.click();
-          await expect(page.getByText(/^Approved by Hannah Leclerc/).first()).toBeVisible();
+          await expect(page.getByText(/^Approved by Omar Haddad/).first()).toBeVisible();
         },
       );
     },
@@ -288,7 +293,7 @@ test.describe("J04-fs-audit pbc-ai through SHL-10 (P-04-T45)", () => {
       "P-04 · P-04-T45 shadow-stage hiding check: needs the staging firm's screening agent set to shadow (platform agent-stage control, an operator step) · S18",
     ),
     async ({ journey }) => {
-      await journey.as("hannah-leclerc", "/audits", { clock: SEP_24 });
+      await journey.as("omar-haddad", "/audits", { clock: SEP_24 });
       await expect(journey.page.getByRole("button", { name: "Review…" })).toHaveCount(0);
     },
   );

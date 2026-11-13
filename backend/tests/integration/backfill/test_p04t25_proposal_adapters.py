@@ -331,3 +331,23 @@ async def test_ac_a_rejected_match_is_stored_once_and_reads_rejected(firm: Firm)
     assert (
         await seed.value("SELECT status FROM inbox_files WHERE id = $1", inbox_file) == "waiting"
     )
+
+
+async def test_task7816_a_read_after_the_verdict_names_who_decided(firm: Firm) -> None:
+    """SHL-10 re-reads the proposal after Approve: the read names the person, as the verdict's
+    own response does ("Approved by …", INV-1)."""
+    granite = await _site(firm, "Granite Peak read-back")
+    ref = f"screening_result:{await _flag(firm, granite)}"
+    pending = await firm.net.call("GET", f"/v1/proposals/{ref}", firm.hannah)
+    assert pending.status_code == 200 and pending.json()["decision"] is None
+    approved = await firm.net.call(
+        "POST", f"/v1/proposals/{ref}/approve", firm.hannah, body={"seen_version": 1}
+    )
+    assert approved.status_code == 200, approved.text
+    read = await firm.net.call("GET", f"/v1/proposals/{ref}", firm.hannah)
+    assert read.status_code == 200, read.text
+    body = read.json()
+    assert body["state"] == "approved"
+    assert body["decision"]["decision"] == "approved"
+    assert body["decision"]["decided_by_user_id"] == str(firm.hannah.user_id)
+    assert body["decision"]["decided_by_name"] == approved.json()["decision"]["decided_by_name"]

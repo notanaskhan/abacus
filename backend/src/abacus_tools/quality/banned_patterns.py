@@ -1244,6 +1244,9 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/agents/repository.py", "shown_flags_of_reviews"),
         ("src/abacus/modules/agents/repository.py", "version_results_of"),
         ("src/abacus/modules/agents/repository.py", "items_screened_with"),
+        # TASK-7816 (DEC-4814): AUD-03's row glyph, each item's aggregate verdict, for the rows
+        # requests already read under `visible_items` (`source_documents` row facts).
+        ("src/abacus/modules/agents/repository.py", "head_verdicts"),
         ("src/abacus/modules/evidence/repository.py", "verified_citations_of"),
         # P-04-T24 (C4, INV-2): citations by id, for a caller authorised on the citing
         # engagement (a proposal's rows, re-verified at approval; SHL-10's evidence list).

@@ -29,7 +29,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type JSX, type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useCan } from "../../app-core/can";
 import { useNow } from "../../app-core/clock";
-import { useOverlays } from "../../app-core/overlay-host";
+import { useOpenSourceViewer, useOverlays } from "../../app-core/overlay-host";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import { AgentDock } from "../../domain/agent-dock";
@@ -53,6 +53,7 @@ import {
   useDelegate,
 } from "../../domain/requests";
 import { ScreeningCardHost, useFlagCitations, useScreeningCard } from "../../domain/screening";
+import { CitationPopoverContainer, CitedCell } from "../SHL-07";
 import { COPY } from "./copy";
 
 // AUD-03 · Source documents / PBC with viewer (A-01-T15, A-01-T16; docs/screens/AUD-03.md): the
@@ -498,13 +499,35 @@ function UploadViewer({
   strip: JSX.Element | null;
 }): JSX.Element {
   const lit = useLitMatch(engagementId, row);
+  const openViewer = useOpenSourceViewer();
+  // P-03-T25 (TASK-7816): a flag's verified reason is a cited cell; SHL-07 opens on it, and its
+  // "Open source" opens SHL-08 with the quoted region lit. Both sit in the viewer's match scope.
   const above = (
     <div className="flex flex-col">
       {strip}
       {row.screening != null && (
         <div className="flex flex-col gap-[8px] p-[10px] pb-0">
-          <ScreeningCardHost subject={{ engagementId, itemId: row.request_item_id }} />
+          <ScreeningCardHost
+            subject={{ engagementId, itemId: row.request_item_id }}
+            citeReason={(citation, reason) => (
+              <CitedCell as="button" citations={[citation]}>
+                {reason}
+              </CitedCell>
+            )}
+          />
           <ReviewProposal engagementId={engagementId} itemId={row.request_item_id} />
+          <CitationPopoverContainer
+            onOpenSource={(citation) => {
+              if (citation.source.evidence_version_id === null || citation.match_id === null) {
+                return;
+              }
+              openViewer({
+                evidenceVersionId: citation.source.evidence_version_id,
+                matchId: citation.match_id,
+                engagementId,
+              });
+            }}
+          />
         </div>
       )}
     </div>

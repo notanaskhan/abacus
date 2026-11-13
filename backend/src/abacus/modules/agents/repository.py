@@ -1437,6 +1437,31 @@ async def aggregate_head(session: AsyncSession, item_id: UUID) -> ScreeningResul
     ).scalar_one_or_none()
 
 
+async def head_verdicts(session: AsyncSession, item_ids: Sequence[UUID]) -> dict[UUID, str]:
+    """LIST_EXEMPT: each item's newest aggregate verdict, for items the caller already read
+    (AUD-03's rows, TASK-7816). An item without an aggregate is absent."""
+    if not item_ids:
+        return {}
+    newest = (
+        select(
+            ScreeningResult.request_item_id,
+            ScreeningResult.verdict,
+            func.row_number()
+            .over(
+                partition_by=ScreeningResult.request_item_id,
+                order_by=ScreeningResult.batch_no.desc(),
+            )
+            .label("n"),
+        )
+        .where(ScreeningResult.request_item_id.in_(list(item_ids)), _batch_rows())
+        .subquery()
+    )
+    rows = await session.execute(
+        select(newest.c.request_item_id, newest.c.verdict).where(newest.c.n == 1)
+    )
+    return {item: str(verdict) for item, verdict in rows.all() if item is not None}
+
+
 async def aggregate_head_for(
     session: AsyncSession, ctx: AuthContext, item_id: UUID
 ) -> ScreeningResult | None:

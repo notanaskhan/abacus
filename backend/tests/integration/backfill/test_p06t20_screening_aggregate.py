@@ -762,3 +762,62 @@ async def test_p06t22_the_card_carries_the_request_title_and_its_period(firm: Fi
     card = await firm.card()
     assert isinstance(card["request_title"], str) and card["request_title"] != ""
     assert (card["period_start"], card["period_end"]) == (JUNE_1.isoformat(), SEP_18.isoformat())
+
+
+# --- TASK-7816 (P-04-T42's "Review…"): the card names the flag's pending C3 proposal -------------
+
+
+async def _review_of(firm: Firm, version: uuid.UUID) -> uuid.UUID:
+    return cast(
+        uuid.UUID,
+        await firm.seed.value(
+            "SELECT id FROM upload_reviews WHERE tenant_id = $1 AND evidence_version_id = $2",
+            firm.tenant_id,
+            version,
+        ),
+    )
+
+
+async def test_task7816_a_wrong_document_offers_its_pending_upload_review_proposal(
+    firm: Firm,
+) -> None:
+    good = await firm.version("Invoice 1.pdf")
+    bad = await firm.version("Granite Peak card statement June 2026.pdf")
+    for version in (good, bad):
+        await firm.dated(version, as_of=date(2026, 8, 3))
+    await firm.review(good)
+    await firm.review(bad, "irrelevant")
+    await firm.compose()
+    card = await firm.card()
+    assert card["verdict"] == "flagged"
+    assert card["proposal_ref"] == f"upload_review:{await _review_of(firm, bad)}"
+
+
+async def test_task7816_a_passing_batch_offers_no_proposal(firm: Firm) -> None:
+    good = await firm.version("Invoice 1.pdf")
+    await firm.dated(good, as_of=date(2026, 8, 3))
+    await firm.review(good)
+    await firm.compose()
+    card = await firm.card()
+    assert card["verdict"] == "passed"
+    assert card["proposal_ref"] is None
+
+
+async def test_task7816_aud03_rows_read_their_batch_verdict_behind_the_card_flag(
+    firm: Firm,
+) -> None:
+    bad = await firm.version("Granite Peak card statement June 2026.pdf")
+    await firm.dated(bad, as_of=date(2026, 8, 3))
+    await firm.review(bad, "irrelevant")
+    await firm.compose()
+    tenant = TenantContext(firm.tenant_id, "system", "test")
+    assert await screening_card.screening_verdicts(tenant, [firm.site.item_id]) == {
+        firm.site.item_id: "flagged"
+    }
+    await firm.seed.run(
+        "UPDATE feature_flag_states SET value = 'false' WHERE tenant_id = $1 "
+        "AND flag = 'screening.card'",
+        firm.tenant_id,
+    )
+    forget_flags()
+    assert await screening_card.screening_verdicts(tenant, [firm.site.item_id]) == {}

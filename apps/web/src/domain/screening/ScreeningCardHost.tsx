@@ -61,6 +61,9 @@ export interface ScreeningCardHostProps {
   onClose?: () => void;
   /** Open "Why?" (f) or the follow-up draft (b) as an artboard opens. */
   open?: "feedback" | "follow-up";
+  /** TASK-7816 (P-03-T25): how a host traces a flag's verified reason to its source. AUD-03
+   * wraps it in SHL-07's cited cell; without it the reason is plain agent text. */
+  citeReason?: (citation: CitationV2Out, reason: JSX.Element) => JSX.Element;
   className?: string;
 }
 
@@ -78,6 +81,7 @@ export function ScreeningCardHost({
   subject,
   onClose,
   open,
+  citeReason,
   className,
 }: ScreeningCardHostProps): JSX.Element | null {
   const now = useNow();
@@ -140,12 +144,13 @@ export function ScreeningCardHost({
     const citation = f.region_ref === null ? undefined : citations[f.region_ref];
     const quote = citation?.verified === true ? citation.quote : null;
     const onView = view(citation, f.evidence_version_id);
+    const said = quote === null ? null : <AgentText inline text={quote} className="text-cell" />;
     return {
       id: f.evidence_version_id,
       name: f.file_name,
-      ...(quote === null
+      ...(said === null || citation === undefined
         ? {}
-        : { reason: <AgentText inline text={quote} className="text-cell" /> }),
+        : { reason: citeReason === undefined ? said : citeReason(citation, said) }),
       ...(onView === undefined ? {} : { onView }),
       onReturn: () => {
         setReturning({

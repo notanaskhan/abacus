@@ -92569,7 +92569,6 @@
           "proposal_ref": {
             "anyOf": [
               {
-                "format": "uuid",
                 "type": "string"
               },
               {

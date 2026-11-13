@@ -18,14 +18,16 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 from abacus.kernel._flags import SCREENING_CARD
 from abacus.kernel.clock import system_now
 from abacus.kernel.crypto import seal
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.agents.proposal_adapters import adapter_view
 from abacus.modules.agents.repository import (
     ReviewRunFacts,
     aggregate_for,
     aggregate_head_for,
+    head_verdicts,
     insert_feedback,
     insert_rerun,
     latest_feedback,
@@ -107,6 +109,9 @@ class CardView:
     request_title: str
     period_start: date | None
     period_end: date | None
+    # P-04-T42's "Review…" (TASK-7816): the typed C3 proposal of the review that makes a file
+    # "Wrong document" (`upload_review:<id>`), while it is pending; None otherwise.
+    proposal_ref: str | None = None
 
 
 @dataclass(frozen=True)
@@ -222,6 +227,14 @@ async def screening_card(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -
         if newest is not None and newest.finished_at is not None
         else None
     )
+    proposal_ref = await _pending_proposal(
+        ctx,
+        [
+            r.review_id
+            for v, r in latest_reviews(runs).items()
+            if v in wrong and r.review_id is not None and r.review_id in composed_reviews
+        ],
+    )
     return CardView(
         item_id,
         head.id,
@@ -240,7 +253,32 @@ async def screening_card(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -
         else None,
         tuple(sorted(allowed)),
         *request,
+        proposal_ref,
     )
+
+
+async def screening_verdicts(tenant: TenantContext, item_ids: Sequence[UUID]) -> dict[UUID, str]:
+    """TASK-7816: AUD-03's row glyph, each item's aggregate verdict, for rows the caller already
+    read under `visible_items` (requests asks; it never reads these tables). Nothing while the
+    card's flag is off: the glyph opens the card."""
+    if not await flag_enabled(tenant, SCREENING_CARD):
+        return {}
+    async with tenant_session(tenant) as session:
+        return await head_verdicts(session, item_ids)
+
+
+async def _pending_proposal(ctx: AuthContext, reviews: Sequence[UUID]) -> str | None:
+    """The first of the flagging reviews whose C3 projection is pending, as its ref. The adapter
+    decides the state (a decision stands, a newer review, a withdrawal) and hides shadow output
+    (404, SPEC-036 AC-5), so the card offers only what SHL-10 would open and decide."""
+    for review_id in sorted(reviews):
+        try:
+            view = await adapter_view(ctx, "upload_review", review_id)
+        except NotFound:
+            continue
+        if view.state == "pending":
+            return view.ref
+    return None
 
 
 def rerun_source(tenant_id: UUID, item_id: UUID, version: UUID, user: UUID, prompt: str) -> UUID:
