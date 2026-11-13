@@ -110,6 +110,7 @@ import { T11Specimen, Tpl11Specimen } from "./dashboard";
 import { SourceViewerSpecimen } from "./viewer";
 import { Tpl02Specimen } from "./tpl02";
 import { Tpl13Specimen } from "./tpl13";
+import { Tpl14Specimen } from "./tpl14";
 import { T3Specimen } from "./t3";
 import { Tpl03Specimen } from "./tpl03";
 import { T9Specimen } from "./t9";
@@ -316,6 +317,7 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "tpl-03", kit: "TPL-03", title: "Evidence triad specimen", Component: Tpl03Specimen },
   // TPL-13 firm deadlines, September 2026 (F-07-T12): TPL-13a, a′ (a2), b to f
   { id: "tpl-13", kit: "TPL-13", title: "Calendar specimen", Component: Tpl13Specimen },
+  { id: "tpl-14", kit: "TPL-14", title: "Graph canvas specimen", Component: Tpl14Specimen },
   // TPL-02 Northwind 401(k) cockpit specimen (F-05-T51): TPL-02a to TPL-02e
   { id: "tpl-02", kit: "TPL-02", title: "Record cockpit specimen", Component: Tpl02Specimen },
   // T7 PortalLayout (F-05-T35): split, reduced (T7g) and mobile (T7-M) with the bottom tab bar
