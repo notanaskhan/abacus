@@ -307,7 +307,11 @@ export function TXP05({
           active={view === "state" ? COPY.state : COPY.federal}
           {...(onView === undefined
             ? {}
-            : { onChange: (label: string) => onView(label === COPY.state ? "state" : "federal") })}
+            : {
+                onChange: (label: string) => {
+                  onView(label === COPY.state ? "state" : "federal");
+                },
+              })}
         />
         {building ? <Spinner size={12} label={COPY.building} showLabel /> : null}
         <span className="flex-1 text-center text-[14.5px] font-medium text-ink">{COPY.title}</span>

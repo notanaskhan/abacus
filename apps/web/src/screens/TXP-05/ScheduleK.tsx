@@ -11,6 +11,7 @@ import {
 } from "@abacus/api-client/query";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { Allocation } from "../TXP-06/Allocation";
 import { TXP05, type Txp05View } from "./index";
 
 export function ScheduleK({
@@ -27,6 +28,11 @@ export function ScheduleK({
   const [view, setView] = useState<Txp05View>("federal");
   const [line, setLine] = useState<string | null>(null);
   const [itemLOpen, setItemLOpen] = useState(false);
+  // `?ov=allocation` (TXP-06 over this tab): Esc and X return here.
+  const [allocationOpen, setAllocationOpen] = useState(
+    typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("ov") === "allocation",
+  );
   const path = { return_id: returnId };
   const k = useQuery(entityScheduleKOptions({ path, query: { view } }));
   const partners = useQuery(entityPartnersOptions({ path }));
@@ -38,28 +44,41 @@ export function ScheduleK({
     enabled: line === "2",
   });
   return (
-    <TXP05
-      k={k.data}
-      partners={partners.data}
-      capital={capital.data}
-      allocation={allocation.data}
-      view={view}
-      building={runs.data?.items[0]?.state === "running"}
-      breakdown={line === "2" ? breakdown.data : undefined}
-      itemLOpen={itemLOpen}
-      onView={setView}
-      onAllocation={() => onOpen?.("/review/schedule-k?ov=allocation")}
-      onOpenLine={(next) => {
-        if (next === "2") setLine("2");
-        else onOpenCell?.(next);
-      }}
-      onCloseBreakdown={() => {
-        setLine(null);
-      }}
-      onItemL={setItemLOpen}
-      onOpenCapital={() => onOpen?.("/review/capital-accounts")}
-      onOpenIssues={() => onOpen?.("/issues")}
-      onPartner={() => onOpen?.("/k1")}
-    />
+    <>
+      {allocationOpen ? (
+        <Allocation
+          returnId={returnId}
+          onClose={() => {
+            setAllocationOpen(false);
+          }}
+          onItemL={() => onOpen?.("/review/capital-accounts")}
+        />
+      ) : null}
+      <TXP05
+        k={k.data}
+        partners={partners.data}
+        capital={capital.data}
+        allocation={allocation.data}
+        view={view}
+        building={runs.data?.items[0]?.state === "running"}
+        breakdown={line === "2" ? breakdown.data : undefined}
+        itemLOpen={itemLOpen}
+        onView={setView}
+        onAllocation={() => {
+          setAllocationOpen(true);
+        }}
+        onOpenLine={(next) => {
+          if (next === "2") setLine("2");
+          else onOpenCell?.(next);
+        }}
+        onCloseBreakdown={() => {
+          setLine(null);
+        }}
+        onItemL={setItemLOpen}
+        onOpenCapital={() => onOpen?.("/review/capital-accounts")}
+        onOpenIssues={() => onOpen?.("/issues")}
+        onPartner={() => onOpen?.("/k1")}
+      />
+    </>
   );
 }
