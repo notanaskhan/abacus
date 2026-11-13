@@ -383,6 +383,7 @@ __all__ = [
     "register_reviewable_facts",
     "register_run_status_reader",
     "register_suggestion_owner",
+    "resolve_gate_facts",
     "review_note_event",
     "reviewable_fact_types",
     "reviewable_facts",
@@ -420,4 +421,7 @@ register_level_assignments(_assigned_levels)
 # I-02-T10 (DEC-4722): the gates' presenter facts (titles, context lines, routes) for Today.
 
 # I-02-T10 (DEC-4722): a gate kind's HOME-02 band, for practice.today's cells.
+# I-02-T10 (DEC-4722): each owner's gate facts (titles, context lines, routes) for Today.
+# I-02-T10 (DEC-4722): each owner's gate facts (titles, context lines, routes) for Today.
+from abacus.modules.review.gate_actions import resolve_many as resolve_gate_facts  # noqa: E402
 from abacus.modules.review.gates import band_of as band_of  # noqa: E402

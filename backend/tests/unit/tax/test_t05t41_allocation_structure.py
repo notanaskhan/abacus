@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal, cast
 
 import pytest
 
@@ -108,8 +108,8 @@ def test_harborview_waterfall_distributes_4_900_000_and_plugs_900_000() -> None:
 
 
 def test_the_hash_moves_with_the_structure_not_with_its_citations() -> None:
-    cited = Draft(**{**RIDGELINE.__dict__, "citation_ids": (uuid.uuid4(),)})
-    edited = Draft(**{**RIDGELINE.__dict__, "convention": "semi_monthly"})
+    cited = replace(RIDGELINE, citation_ids=(uuid.uuid4(),))
+    edited = replace(RIDGELINE, convention="semi_monthly")
     assert RIDGELINE.hash() == cited.hash()
     assert RIDGELINE.hash() != edited.hash()
 
@@ -178,15 +178,15 @@ def _row(status: str, by: str = "human", actor: str | None = None) -> alloc.Stru
     return alloc.StructureRow(
         id=uuid.uuid4(),
         version_no=1,
-        status=status,
-        kind="straight_percentage",  # type: ignore[arg-type] -- a test double stands in for the typed object
+        status=cast(alloc.Status, status),
+        kind="straight_percentage",
         method="interim_closing",
         convention="monthly",
         income=D(1256200),
         distributable=None,
-        proposed_by_kind=by,
+        proposed_by_kind=cast(Literal["human", "agent"], by),
         proposal_id=None,
-        content_hash="a" * 64,  # type: ignore[arg-type] -- a test double stands in for the typed object
+        content_hash="a" * 64,
         citation_ids=(),
         supersedes_id=None,
         actor_kind="human",

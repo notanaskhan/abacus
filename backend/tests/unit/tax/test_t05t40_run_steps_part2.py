@@ -13,7 +13,7 @@ import io
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -70,11 +70,15 @@ def test_a_formula_in_the_report_stays_text_and_is_never_evaluated() -> None:
     assert cells["02!A4"].formula is None  # a client string is text in the cell store
 
 
+def _problems(error: ImportInvalid) -> list[dict[str, object]]:
+    return cast(list[dict[str, object]], error.facts["problems"])
+
+
 def test_problems_name_sheet_row_column_and_code_never_the_cell() -> None:
     bad = "Asset,Cost,Depreciation\nTruck,ten thousand,1000\n,,\nVan,5000,\n"
     with pytest.raises(ImportInvalid) as caught:
         parse("depreciation_register", bad.encode())
-    problems = caught.value.facts["problems"]
+    problems = cast(list[dict[str, object]], caught.value.facts["problems"])
     assert {"sheet": "csv", "row": 2, "column": "B", "code": "not_a_number"} in problems
     assert {"sheet": "csv", "row": 4, "column": "C", "code": "required"} in problems
     assert all("ten thousand" not in str(p) for p in problems)
@@ -83,10 +87,10 @@ def test_problems_name_sheet_row_column_and_code_never_the_cell() -> None:
 def test_a_missing_required_column_and_size_limits_are_refused() -> None:
     with pytest.raises(ImportInvalid) as missing:
         parse("depreciation_register", b"Asset,Cost\nTruck,1\n")
-    assert missing.value.facts["problems"][0]["code"] == "missing_column:current"
+    assert _problems(missing.value)[0]["code"] == "missing_column:current"
     with pytest.raises(ImportInvalid) as large:
         parse("depreciation_register", b"x" * (5 * 1024 * 1024 + 1))
-    assert large.value.facts["problems"][0]["code"] == "too_large"
+    assert _problems(large.value)[0]["code"] == "too_large"
 
 
 def test_an_xlsx_report_reads_cached_values_only() -> None:

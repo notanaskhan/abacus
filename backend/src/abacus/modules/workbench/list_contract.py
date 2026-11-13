@@ -171,7 +171,9 @@ async def context_options_route(
     from abacus.modules.workbench.session_context import attached_of, options
 
     await workbench_gate(ctx)
-    attached = set() if session_id is None else await attached_of(ctx, session_id)
+    attached: set[tuple[str, UUID]] = (
+        set() if session_id is None else await attached_of(ctx, session_id)
+    )
     return ContextOptionsOut(
         tab=tab,
         items=[

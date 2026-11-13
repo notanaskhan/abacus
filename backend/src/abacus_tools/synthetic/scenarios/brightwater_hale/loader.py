@@ -420,7 +420,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_workspace_slice as _txw
 from abacus_tools.synthetic.scenarios.brightwater_hale import usage_slice as _usage
 from abacus_tools.synthetic.scenarios.brightwater_hale import (  # noqa: F401  # registers its slice
-    workbench_slice as _wbs,
+    workbench_slice as _wbs,  # pyright: ignore[reportUnusedImport] -- imported to register the slice
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,

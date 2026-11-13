@@ -29,7 +29,7 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
 from abacus.kernel import clock
@@ -193,7 +193,7 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
     due_tomorrow = [i for i in items if i.due_on == tomorrow]
     counts = {c: sum(1 for i in items if i.cell == c) for c in CELLS[:-1]}
     counts["overdue"] = len(overdue)
-    cells = [CountCell(kind=c, count=counts[c], href=f"/home/approvals?band={c}") for c in CELLS]  # type: ignore[arg-type] -- the run's context reads as its initiator
+    cells = [CountCell(kind=c, count=counts[c], href=f"/home/approvals?band={c}") for c in CELLS]
     ranked = sorted(items, key=lambda i: urgency(i, today))
     briefings = await _briefings(ctx, on, engagement_ids)
     cards: list[Card] = []
@@ -201,9 +201,13 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
         b = briefings.get(engagement_id)
         status = getattr(b, "status", None)
         blocks = getattr(b, "blocks", None) if status == "ready" else None
-        summary = []
-        if isinstance(blocks, dict) and isinstance(blocks.get("summary"), dict):
-            summary = list(blocks["summary"].get("parts", []))
+        # The stored briefing is {"summary": AgentBlocks, "why": [...], "risk": ...}; a card's
+        # `summary_blocks` is a list of AgentBlocks documents (`[{"version", "parts"}]`).
+        summary: list[dict[str, object]] = []
+        if isinstance(blocks, dict):
+            raw = cast(dict[str, object], blocks).get("summary")
+            if isinstance(raw, dict):
+                summary = [cast(dict[str, object], raw)]
         cards.append(
             Card(
                 engagement_id=engagement_id,

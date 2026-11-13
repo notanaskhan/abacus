@@ -364,7 +364,9 @@ async def step_answers(tenant: TenantContext, run_id: UUID) -> dict[str, str]:
         ).all()
     out: dict[str, str] = {}
     for key, answer in rows:
-        option = answer.get("option") if isinstance(answer, dict) else None
+        option = (
+            cast(dict[str, object], answer).get("option") if isinstance(answer, dict) else None
+        )
         if key and isinstance(option, str):
             out[str(key)] = option
     return out

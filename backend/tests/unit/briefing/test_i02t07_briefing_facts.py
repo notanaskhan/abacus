@@ -30,6 +30,20 @@ from abacus.modules.agents.briefing.facts import (
 RULE = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 
 
+class _Result:
+    """A SQL result double: `scalars()` or `first()` as the source reads them."""
+
+    def __init__(self, scalars: list[object] | None = None, first: object = None) -> None:
+        self._scalars = scalars or []
+        self._first = first
+
+    def scalars(self) -> list[object]:
+        return self._scalars
+
+    def first(self) -> object:
+        return self._first
+
+
 def test_fact_ids_follow_the_blocks_rule() -> None:
     gate = uuid.uuid4()
     assert RULE.match(fact_id("gate", gate, "due"))
@@ -69,9 +83,9 @@ def test_the_tax_source_registers_6200_and_28595(monkeypatch: pytest.MonkeyPatch
         async def execute(self, statement: object, params: dict[str, Any]) -> Any:  # noqa: ANN401
             sql = str(statement)
             if "FROM tax_returns" in sql:
-                return type("R", (), {"scalars": lambda self: [ret]})()
+                return _Result(scalars=[ret])
             row = type("T", (), {"price": Decimal(360000), "display_name": "Pell Street II LLC"})()
-            return type("R", (), {"first": lambda self: row})()
+            return _Result(first=row)
 
     async def wb(tenant: object, return_id: object) -> dict[str, Any]:  # Any: a test double
         return values
@@ -79,7 +93,10 @@ def test_the_tax_source_registers_6200_and_28595(monkeypatch: pytest.MonkeyPatch
     async def subjects(tenant: object, return_id: object) -> tuple[Any, ...]:  # Any: a test double
         return ()
 
-    monkeypatch.setattr(source, "tenant_session", lambda tenant: _Session())
+    def session_of(tenant: object) -> _Session:
+        return _Session()
+
+    monkeypatch.setattr(source, "tenant_session", session_of)
     monkeypatch.setattr(entity_schedules, "workbook_values", wb)
     monkeypatch.setattr(entity_tri, "entity_return_subjects", subjects)
     found = asyncio.run(source.entity_briefing(object(), uuid.uuid4()))  # type: ignore[arg-type] -- a test double stands in for the typed object

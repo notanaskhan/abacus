@@ -289,12 +289,17 @@ async def installments_due(
 
 __all__ = [
     "ACTIVITIES",
+    "ALLOCATION_TARGET",
+    "ENTITY_RUN_DEPTH",
+    "ENTITY_RUN_STEPS",
     "FORM_FOR_RULES",
     "ROUTERS",
     "SCHEDULES",
     "SUBSCRIPTIONS",
     "TRANSITIONS",
     "WORKFLOWS",
+    "AllocationDraft",
+    "AllocationDraftRung",
     "AnalystModeWorkflow",
     "ApprovalBlocker",
     "DraftInput",
@@ -321,7 +326,10 @@ __all__ = [
     "StaleReturn",
     "TaxCalendarSweepWorkflow",
     "TransitionRefused",
+    "allocation_rung_params",
+    "allocation_versions",
     "apply_transition",
+    "approve_allocation",
     "create_estimate_schedule",
     "drafter_workflow_id",
     "estimates_for",
@@ -350,6 +358,7 @@ __all__ = [
     "request_estimate_confirmation",
     "rule_texts",
     "run_draft",
+    "save_allocation_draft",
     "send_confirmation",
     "set_extended",
     "share_k1_internal",
@@ -479,3 +488,16 @@ _register_hooks(
 
 # T-05-T45 (DEC-4711): the allocation service and the run plan's shape for the synthetic scenario
 # loader (tooling reaches tax only through this file).
+from abacus.modules.tax.allocation_structure import TARGET as ALLOCATION_TARGET  # noqa: E402
+from abacus.modules.tax.allocation_structure import Draft as AllocationDraft  # noqa: E402
+from abacus.modules.tax.allocation_structure import DraftRung as AllocationDraftRung  # noqa: E402
+from abacus.modules.tax.allocation_structure import approve as approve_allocation  # noqa: E402
+from abacus.modules.tax.allocation_structure import (  # noqa: E402
+    rung_params as allocation_rung_params,
+)
+from abacus.modules.tax.allocation_structure import (  # noqa: E402
+    save_draft as save_allocation_draft,
+)
+from abacus.modules.tax.allocation_structure import versions as allocation_versions  # noqa: E402
+from abacus.modules.tax.entity_run_plan import DEPTH as ENTITY_RUN_DEPTH  # noqa: E402
+from abacus.modules.tax.entity_run_plan import STEPS as ENTITY_RUN_STEPS  # noqa: E402

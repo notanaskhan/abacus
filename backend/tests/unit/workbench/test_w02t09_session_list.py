@@ -82,7 +82,11 @@ def candidates(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:  # Any:
         return frozenset()
 
     monkeypatch.setattr(sl, "colleagues_of", colleagues)
-    monkeypatch.setattr(sl, "tenant_session", lambda tenant: _Session())
+
+    def session_of(tenant: object) -> _Session:
+        return _Session()
+
+    monkeypatch.setattr(sl, "tenant_session", session_of)
     monkeypatch.setattr(sl, "my_engagement_roles", roles)
     monkeypatch.setattr(sl, "display_names", names)
     monkeypatch.setattr(sl, "viewer_access", access)

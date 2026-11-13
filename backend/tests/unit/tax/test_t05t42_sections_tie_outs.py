@@ -94,8 +94,8 @@ def test_k1_sum_k_names_the_line_that_does_not_foot() -> None:
 def test_the_section_hash_moves_with_its_cells_only() -> None:
     capital = next(s for s in SECTIONS if s.key == "capital-accounts")
     before = section_hash(capital, RUN_2)
-    edited = {**RUN_2, "07!B9": {"t": "decimal", "v": "6860000"}}
-    other = {**RUN_2, "06!C2": {"t": "decimal", "v": "1"}}
+    edited: dict[str, dict[str, object]] = {**RUN_2, "07!B9": {"t": "decimal", "v": "6860000"}}
+    other: dict[str, dict[str, object]] = {**RUN_2, "06!C2": {"t": "decimal", "v": "1"}}
     assert section_hash(capital, edited) != before  # an earlier sign-off computes stale
     assert section_hash(capital, other) == before
     assert _by_key(edited)["item_l_m2"].state == "tie"
@@ -186,7 +186,10 @@ def test_a_section_with_every_tie_out_passing_needs_no_note(
         async def __aexit__(self, *a: object) -> None:
             return None
 
-    monkeypatch.setattr(es, "uow", lambda tenant: _Uow())
+    def uow_of(tenant: object) -> _Uow:
+        return _Uow()
+
+    monkeypatch.setattr(es, "uow", uow_of)
     done = asyncio.run(
         es.sign_section(
             ctx,

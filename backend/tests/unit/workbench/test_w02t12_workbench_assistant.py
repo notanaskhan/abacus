@@ -8,6 +8,8 @@ or an agent approver.
 
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 from pydantic import ValidationError
 
@@ -30,7 +32,8 @@ def test_the_spec_compiles_with_the_w02_tools_and_never_tri() -> None:
     assert spec.prompt == "workbench.assistant@v1"
     assert spec.autonomy == "propose" and spec.plan == "required_when_writes"
     assert "tri" not in spec.data_classes
-    tools = [t for group in spec.tools.values() for t in group]  # type: ignore[union-attr] -- a test double stands in for the typed object
+    groups = cast(dict[str, list[str]], spec.tools)  # the spec's tool groups, compiled from YAML
+    tools = [t for group in groups.values() for t in group]
     for name in (
         "tax.season_counts",
         "binders.read",

@@ -168,7 +168,7 @@ def tie_outs(values: Values) -> list[TieOut]:
         )  # fmt: skip
     partners = [n for n in _rows(values, "05") if _text(values, f"05!A{n}")]
     if partners:
-        broken = []
+        broken: list[int] = []
         for n in partners:
             b, c, d, e, f = (_dec(values, f"05!{col}{n}") or ZERO for col in "BCDEF")
             if b + c - d + e != f:
@@ -204,13 +204,13 @@ def tie_outs(values: Values) -> list[TieOut]:
                 )
             )  # fmt: skip
     lines = _rows(values, "06")
-    columns = []
+    columns: list[str] = []
     col = 0
     while f"09!{chr(ord('B') + col)}1" in values:
         columns.append(chr(ord("B") + col))
         col += 1
     if lines and columns:
-        off_lines = []
+        off_lines: list[int] = []
         for n in lines:
             total = _dec(values, f"06!C{n}") or ZERO
             shares = sum((_dec(values, f"09!{c}{n}") or ZERO for c in columns), ZERO)
