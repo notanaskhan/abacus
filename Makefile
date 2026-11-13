@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check-fast-frontend check-docs check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check dark-merge-audit release-pr golden-render
+.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check-fast-frontend check-docs check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check dark-merge-audit release-pr golden-render form-fixtures
 
 setup:
 	cd backend && uv sync --locked
@@ -242,6 +242,11 @@ ci-visual:
 # image-bound suite. RECORD_GOLDEN=1 records new goldens (a re-baseline needs a recorded reason).
 golden-render:
 	backend/tests/golden_render/two_containers.sh
+
+# F-07-T15 (DEC-4731): TPL-17's form-page PNGs and field manifest, from the C11 renderer inside the
+# backend image (two containers must agree). CHECK=1 compares with the committed files instead.
+form-fixtures:
+	backend/tests/golden_render/form_fixtures.sh
 
 test:
 	cd backend && uv run pytest $(XDIST) $(UNIT_TESTS) tests/golden

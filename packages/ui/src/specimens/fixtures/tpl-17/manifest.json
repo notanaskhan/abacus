@@ -1,0 +1,806 @@
+{
+  "fields": [
+    {
+      "diagnostic": null,
+      "id": "p1.activity",
+      "label": "A Principal business activity",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        445.95,
+        110.6,
+        539.99,
+        122.6
+      ],
+      "value": "Real estate rental"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.product",
+      "label": "B Principal product or service",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        368.59,
+        133.7,
+        539.97,
+        145.7
+      ],
+      "value": "Residential and commercial rent"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.code",
+      "label": "C Business code number",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        501.74,
+        156.8,
+        539.99,
+        168.8
+      ],
+      "value": "531110"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.name",
+      "label": "Name of partnership",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        371.25,
+        179.9,
+        539.98,
+        191.9
+      ],
+      "value": "Ridgeline Property Partners, LP"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.street",
+      "label": "Number and street",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        460.63,
+        203.0,
+        540.0,
+        215.0
+      ],
+      "value": "410 Elm Street"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.city",
+      "label": "City or town",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        495.97,
+        226.1,
+        539.99,
+        238.1
+      ],
+      "value": "Chicago"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.state",
+      "label": "State",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        529.99,
+        249.2,
+        540.0,
+        261.2
+      ],
+      "value": "IL"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.zip",
+      "label": "ZIP code",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        506.63,
+        272.3,
+        539.99,
+        284.3
+      ],
+      "value": "60610"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.ein",
+      "label": "D Employer identification number",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        488.3,
+        295.4,
+        539.99,
+        307.4
+      ],
+      "value": "••-•••0287"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.started",
+      "label": "E Date business started",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        479.94,
+        318.5,
+        539.99,
+        330.5
+      ],
+      "value": "01/15/2018"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.assets",
+      "label": "F Total assets",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        473.27,
+        341.6,
+        539.99,
+        353.6
+      ],
+      "value": "$17,914,500"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.method",
+      "label": "H Accounting method",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        499.99,
+        364.7,
+        539.99,
+        376.7
+      ],
+      "value": "Accrual"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.k1s",
+      "label": "I Number of Schedules K-1 attached",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        533.33,
+        387.8,
+        540.0,
+        399.8
+      ],
+      "value": "5"
+    },
+    {
+      "diagnostic": "m3_required",
+      "id": "p1.m3",
+      "label": "J Schedules C and M-3 attached",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        473.3,
+        410.9,
+        539.99,
+        422.9
+      ],
+      "value": "Not checked"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.obi",
+      "label": "Ordinary business income (loss)",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        533.33,
+        434.0,
+        540.0,
+        446.0
+      ],
+      "value": "0"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.gp",
+      "label": "General partner or LLC member manager",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        368.13,
+        457.1,
+        539.98,
+        469.1
+      ],
+      "value": "Owen Calder, Ridgeline GP LLC"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.preparer",
+      "label": "Paid preparer",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        468.63,
+        480.2,
+        539.98,
+        492.2
+      ],
+      "value": "Daniel Reyes"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.ptin",
+      "label": "PTIN",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        490.97,
+        503.3,
+        539.99,
+        515.3
+      ],
+      "value": "P•••••512"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.firm",
+      "label": "Firm name",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        426.61,
+        526.4,
+        539.99,
+        538.4
+      ],
+      "value": "Brightwater Hale LLP"
+    },
+    {
+      "diagnostic": null,
+      "id": "p1.firm_ein",
+      "label": "Firm EIN",
+      "match_id": null,
+      "page": 1,
+      "rect_pt": [
+        489.19,
+        549.5,
+        539.99,
+        561.5
+      ],
+      "value": "••-•••4118"
+    },
+    {
+      "diagnostic": null,
+      "id": "k.l2",
+      "label": "2 Net rental real estate income (attach Form 8825)",
+      "match_id": "sch-k-2",
+      "page": 2,
+      "rect_pt": [
+        486.62,
+        110.6,
+        539.99,
+        122.6
+      ],
+      "value": "1,231,600"
+    },
+    {
+      "diagnostic": null,
+      "id": "k.l5",
+      "label": "5 Interest income",
+      "match_id": "sch-k-5",
+      "page": 2,
+      "rect_pt": [
+        503.3,
+        133.7,
+        539.99,
+        145.7
+      ],
+      "value": "18,400"
+    },
+    {
+      "diagnostic": null,
+      "id": "k.l18a",
+      "label": "18a Tax-exempt interest income",
+      "match_id": "sch-k-18a",
+      "page": 3,
+      "rect_pt": [
+        509.97,
+        110.6,
+        539.99,
+        122.6
+      ],
+      "value": "6,200"
+    },
+    {
+      "diagnostic": null,
+      "id": "k.l19a",
+      "label": "19a Distributions of cash and marketable securities",
+      "match_id": "sch-k-19a",
+      "page": 3,
+      "rect_pt": [
+        496.62,
+        133.7,
+        539.99,
+        145.7
+      ],
+      "value": "600,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "k.l20a",
+      "label": "20a Investment income",
+      "match_id": "sch-k-20a",
+      "page": 3,
+      "rect_pt": [
+        503.3,
+        156.8,
+        539.99,
+        168.8
+      ],
+      "value": "18,400"
+    },
+    {
+      "diagnostic": null,
+      "id": "an.l1",
+      "label": "Analysis of Net Income (Loss), line 1",
+      "match_id": "analysis-1",
+      "page": 3,
+      "rect_pt": [
+        486.62,
+        179.9,
+        539.99,
+        191.9
+      ],
+      "value": "1,250,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "an.gp",
+      "label": "2 General partners · Partnership",
+      "match_id": null,
+      "page": 3,
+      "rect_pt": [
+        503.3,
+        203.0,
+        539.99,
+        215.0
+      ],
+      "value": "25,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "an.lp_ind",
+      "label": "Limited partners · Individual (passive)",
+      "match_id": null,
+      "page": 3,
+      "rect_pt": [
+        496.62,
+        226.1,
+        539.99,
+        238.1
+      ],
+      "value": "787,500"
+    },
+    {
+      "diagnostic": null,
+      "id": "an.lp_pship",
+      "label": "Limited partners · Partnership",
+      "match_id": null,
+      "page": 3,
+      "rect_pt": [
+        496.62,
+        249.2,
+        539.99,
+        261.2
+      ],
+      "value": "437,500"
+    },
+    {
+      "diagnostic": null,
+      "id": "l.l21",
+      "label": "Schedule L line 21 Partners' capital accounts, end of year",
+      "match_id": null,
+      "page": 4,
+      "rect_pt": [
+        486.62,
+        110.6,
+        539.99,
+        122.6
+      ],
+      "value": "6,866,200"
+    },
+    {
+      "diagnostic": null,
+      "id": "m2.l1",
+      "label": "M-2 line 1 Balance at beginning of year",
+      "match_id": null,
+      "page": 4,
+      "rect_pt": [
+        486.62,
+        133.7,
+        539.99,
+        145.7
+      ],
+      "value": "5,960,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "m2.l2a",
+      "label": "M-2 line 2a Capital contributed: cash",
+      "match_id": null,
+      "page": 4,
+      "rect_pt": [
+        496.62,
+        156.8,
+        539.99,
+        168.8
+      ],
+      "value": "250,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "m2.l3",
+      "label": "M-2 line 3 Net income (loss)",
+      "match_id": null,
+      "page": 4,
+      "rect_pt": [
+        486.62,
+        179.9,
+        539.99,
+        191.9
+      ],
+      "value": "1,250,000"
+    },
+    {
+      "diagnostic": "m2_off",
+      "id": "m2.l4",
+      "label": "M-2 line 4 Other increases (itemize)",
+      "match_id": null,
+      "page": 4,
+      "rect_pt": [
+        528.0,
+        203.0,
+        540.0,
+        215.0
+      ],
+      "value": "—"
+    },
+    {
+      "diagnostic": null,
+      "id": "m2.l5",
+      "label": "M-2 line 5 Add lines 1 through 4",
+      "match_id": null,
+      "page": 4,
+      "rect_pt": [
+        486.62,
+        226.1,
+        539.99,
+        238.1
+      ],
+      "value": "7,460,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "m2.l6a",
+      "label": "M-2 line 6a Distributions: cash",
+      "match_id": null,
+      "page": 4,
+      "rect_pt": [
+        496.62,
+        249.2,
+        539.99,
+        261.2
+      ],
+      "value": "600,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "m2.l9",
+      "label": "M-2 line 9 Balance at end of year",
+      "match_id": "m2-9",
+      "page": 4,
+      "rect_pt": [
+        486.62,
+        272.3,
+        539.99,
+        284.3
+      ],
+      "value": "6,860,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1f.partner",
+      "label": "Partner's name",
+      "match_id": null,
+      "page": 5,
+      "rect_pt": [
+        480.63,
+        110.6,
+        539.99,
+        122.6
+      ],
+      "value": "Jonah Feld"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1f.tin",
+      "label": "Partner's identifying number",
+      "match_id": null,
+      "page": 5,
+      "rect_pt": [
+        484.31,
+        133.7,
+        539.99,
+        145.7
+      ],
+      "value": "•••-••-4417"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1f.b2",
+      "label": "Box 2 Net rental real estate income (loss)",
+      "match_id": "k1-feld-2",
+      "page": 5,
+      "rect_pt": [
+        496.62,
+        156.8,
+        539.99,
+        168.8
+      ],
+      "value": "307,900"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1f.b5",
+      "label": "Box 5 Interest income",
+      "match_id": "k1-feld-5",
+      "page": 5,
+      "rect_pt": [
+        509.97,
+        179.9,
+        539.99,
+        191.9
+      ],
+      "value": "4,600"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1f.b18a",
+      "label": "Box 18A Tax-exempt interest income",
+      "match_id": "k1-feld-18a",
+      "page": 5,
+      "rect_pt": [
+        509.97,
+        203.0,
+        539.99,
+        215.0
+      ],
+      "value": "1,550"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1f.b19a",
+      "label": "Box 19A Distributions",
+      "match_id": "k1-feld-19a",
+      "page": 5,
+      "rect_pt": [
+        496.62,
+        226.1,
+        539.99,
+        238.1
+      ],
+      "value": "150,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1f.end",
+      "label": "Ending capital account (as drafted)",
+      "match_id": null,
+      "page": 5,
+      "rect_pt": [
+        486.62,
+        249.2,
+        539.99,
+        261.2
+      ],
+      "value": "1,912,500"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1f.status",
+      "label": "Status",
+      "match_id": null,
+      "page": 5,
+      "rect_pt": [
+        420.63,
+        272.3,
+        539.99,
+        284.3
+      ],
+      "value": "Draft K-1 · pre-release"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.partner",
+      "label": "Partner's name",
+      "match_id": null,
+      "page": 6,
+      "rect_pt": [
+        449.29,
+        110.6,
+        540.0,
+        122.6
+      ],
+      "value": "Pell Street II LLC"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.period",
+      "label": "Partner from",
+      "match_id": null,
+      "page": 6,
+      "rect_pt": [
+        493.29,
+        133.7,
+        539.99,
+        145.7
+      ],
+      "value": "7/1/2025"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.tin",
+      "label": "Partner's identifying number",
+      "match_id": null,
+      "page": 6,
+      "rect_pt": [
+        488.3,
+        156.8,
+        539.99,
+        168.8
+      ],
+      "value": "••-•••8810"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.b2",
+      "label": "Box 2 Net rental real estate income (loss)",
+      "match_id": "k1-ps2-2",
+      "page": 6,
+      "rect_pt": [
+        503.3,
+        179.9,
+        539.99,
+        191.9
+      ],
+      "value": "30,790"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.b5",
+      "label": "Box 5 Interest income",
+      "match_id": "k1-ps2-5",
+      "page": 6,
+      "rect_pt": [
+        519.98,
+        203.0,
+        539.99,
+        215.0
+      ],
+      "value": "460"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.b18a",
+      "label": "Box 18A Tax-exempt interest income",
+      "match_id": "k1-ps2-18a",
+      "page": 6,
+      "rect_pt": [
+        519.98,
+        226.1,
+        539.99,
+        238.1
+      ],
+      "value": "155"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.b19a",
+      "label": "Box 19A Distributions",
+      "match_id": "k1-ps2-19a",
+      "page": 6,
+      "rect_pt": [
+        503.3,
+        249.2,
+        539.99,
+        261.2
+      ],
+      "value": "30,000"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.end",
+      "label": "Ending capital account (as drafted)",
+      "match_id": null,
+      "page": 6,
+      "rect_pt": [
+        496.62,
+        272.3,
+        539.99,
+        284.3
+      ],
+      "value": "332,655"
+    },
+    {
+      "diagnostic": null,
+      "id": "k1p.status",
+      "label": "Status",
+      "match_id": null,
+      "page": 6,
+      "rect_pt": [
+        420.63,
+        295.4,
+        539.99,
+        307.4
+      ],
+      "value": "Draft K-1 · pre-release"
+    }
+  ],
+  "pages": [
+    {
+      "face": "1065-p1",
+      "height_pt": 792.0,
+      "image": "page-1.png",
+      "n": 1,
+      "width_pt": 612.0
+    },
+    {
+      "face": "sch-k-p4",
+      "height_pt": 792.0,
+      "image": "page-2.png",
+      "n": 2,
+      "width_pt": 612.0
+    },
+    {
+      "face": "sch-k-p5",
+      "height_pt": 792.0,
+      "image": "page-3.png",
+      "n": 3,
+      "width_pt": 612.0
+    },
+    {
+      "face": "sch-l-m2-p6",
+      "height_pt": 792.0,
+      "image": "page-4.png",
+      "n": 4,
+      "width_pt": 612.0
+    },
+    {
+      "face": "k1-feld",
+      "height_pt": 792.0,
+      "image": "page-5.png",
+      "n": 5,
+      "width_pt": 612.0
+    },
+    {
+      "face": "k1-pell-street-ii",
+      "height_pt": 792.0,
+      "image": "page-6.png",
+      "n": 6,
+      "width_pt": 612.0
+    }
+  ],
+  "title": "Ridgeline Property Partners, LP · 2025 Form 1065 · specimen faces (test only)",
+  "version": 1
+}
