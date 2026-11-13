@@ -557,6 +557,7 @@ codes:
     raised_by:
     - abacus.modules.organisations.consent_gate.TriConsentRequired
     - abacus.modules.requests.lifecycle.ConsentRequired
+    - abacus.modules.tax.memo_service.ConsentRequired
     summary: A read of tax return information without the taxpayer's `use` and `ai_disclosure` consents
       in force (`facts.client_entity_id`, `facts.purpose`).
   consent_retention_missing:
@@ -1456,6 +1457,10 @@ codes:
     - abacus.modules.methodology.imports.ImporterNotEnabled
     summary: 'Reading a Word or PDF methodology needs the Methodology importer, which is not on for this
       firm (K-01 AC7.7): import the workbook alone.'
+  in_progress:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.briefing.dispatch.BuildInProgress
   inbox_file_gone:
     status: 409
     raised_by:
@@ -1850,6 +1855,14 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.MaterialityUndecided
     summary: 'SPEC-300 AC-2: selection waits for the engagement partner''s materiality decision.'
+  memo_not_drafted:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.memo_service.MemoNotDrafted
+  memo_version_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.memo_service.MemoVersionConflict
   mention_not_allowed:
     status: 422
     raised_by:

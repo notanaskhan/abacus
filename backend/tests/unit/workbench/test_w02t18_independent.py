@@ -222,11 +222,8 @@ def test_t11_season_counts_foot(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(organisations_api, "firm_offices", offices)
     monkeypatch.setattr(clock, "today", today)
     agent = SimpleNamespace(tenant=TenantContext(uuid.uuid4(), "agent", "run:1"))
-    out = asyncio.run(
-        tools.season_counts(
-            cast(Any, agent), tools.SeasonIn(tax_year=2025)
-        )  # Any: a stand-in agent
-    )
+    stand_in = cast(Any, agent)  # Any: a stand-in agent context
+    out = asyncio.run(tools.season_counts(stand_in, tools.SeasonIn(tax_year=2025)))
     assert out.returns == out.open + out.done == 3
     assert sum(s.count for s in out.by_status) == out.returns
     assert sum(o.open + o.done for o in out.by_office) == out.returns

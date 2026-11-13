@@ -3,7 +3,7 @@ id: TASK-7916
 title: I-02-T18 Independent AC tests for practice.today (I-02-T10)
 plan_key: I-02-T18
 spec: SPEC-654
-acceptance_criteria: [AC-3.1, AC-3.2, AC-3.4, AC-3.11]  # I-COUNT over random gate sets; footing; order; business day
+acceptance_criteria: [AC-1, AC-4, AC-5, AC-11]  # I-COUNT over random gate sets; footing; order; business day
 risk_zone: amber
 status: in-review
 branch: i02-t18-independent

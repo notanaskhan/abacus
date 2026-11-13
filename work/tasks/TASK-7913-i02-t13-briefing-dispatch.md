@@ -3,7 +3,7 @@ id: TASK-7913
 title: I-02-T13 Briefing dispatch and freshness
 plan_key: I-02-T13
 spec: SPEC-654
-acceptance_criteria: [AC-F3]  # one run per engagement on concurrent opens; unavailable with zero model calls; signed gate drops its why
+acceptance_criteria: [AC-3, AC-8, AC-10]  # one run per engagement on concurrent opens; unavailable with zero model calls; signed gate drops its why
 risk_zone: red
 status: in-review
 branch: i02-t13-briefing-dispatch

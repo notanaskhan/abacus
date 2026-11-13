@@ -17,7 +17,7 @@ const FILE = {
 };
 
 describe("T14 inspector (independent)", () => {
-  it.each(["123-45-4417", "123456789", "4417", "XX-XXX0287", "•••-••-44"])(
+  it.each(["900-45-4417", "123456789", "4417", "XX-XXX0287", "•••-••-44"])(
     "an unmasked or malformed TIN %s never draws",
     (tin) => {
       render(<MaskedTin value={tin} canReveal={false} />);
@@ -34,7 +34,7 @@ describe("T14 inspector (independent)", () => {
         canvas={null}
         inspector={{ title: "Jonah Feld", sub: "Person", tin: "•••-••-4417", kv: [] }}
         canReveal={false}
-        onReveal={async () => "123-45-4417"}
+        onReveal={async () => "900-45-4417"}
       />,
     );
     expect(screen.queryByText("Reveal (logged)")).toBeNull();

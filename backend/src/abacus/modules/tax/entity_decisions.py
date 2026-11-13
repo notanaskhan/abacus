@@ -1,14 +1,14 @@
 """The entity return's decision kinds, notification kinds and topics (T-05-T52; TASK-7903; T-05
 F10; SHL-11 g, TXP-00, TXP-10, HOME-02; ADR-050, ADR-005; DEC-4905, DEC-4906). Amber.
 
-- **§754 (`basis_adjustment_election`; registry codes hold no digits).** A decision card reserved to the engagement partner (SHL-11 g). Code
-  computes its options and facts (ADR-050), never a model: the year's interest transfers from the
-  ownership periods (T-05-T41) and, when a basis owner has registered one
-  (`register_section_743b_source`, T-06), the §743(b) difference for the transfer; until then the
-  card names the transfer and leaves the figure to basis (DEC-4906). Three options, the
-  handoff's: elect now, file without the election (decide in the analysis), recommend against.
-  The run raises the card as the agent once per return, after `interim_closing_706d` finds a
-  transfer in the year (`ensure_section_754_card`); only the reserved partner decides it (P-04's
+- **§754 (`basis_adjustment_election`; registry codes hold no digits).** A decision card reserved
+  to the engagement partner (SHL-11 g). Code computes its options and facts (ADR-050), never a
+  model: the year's interest transfers from the ownership periods (T-05-T41) and, when a basis
+  owner has registered one (`register_section_743b_source`, T-06), the §743(b) difference for the
+  transfer; until then the card names the transfer and leaves the figure to basis (DEC-4906). Three
+  options, the handoff's: elect now, file without the election (decide in the analysis), recommend
+  against. The run raises the card as the agent once per return, after `interim_closing_706d` finds
+  a transfer in the year (`ensure_section_754_card`); only the reserved partner decides it (P-04's
   `decision.decide`, fresh MFA).
 - **§706(d) convention.** The run question `convention_706d` keeps T-05-T40's options from code
   (`entity_run_plan.convention_question`); no other provider exists.

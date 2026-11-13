@@ -14,10 +14,10 @@ describe("T14 GraphCanvasLayout", () => {
   it("the TIN slot accepts only a last-four mask", () => {
     expect(isTinMask("•••-••-4417")).toBe(true);
     expect(isTinMask("••-•••0287")).toBe(true);
-    expect(isTinMask("123-45-4417")).toBe(false);
-    render(<MaskedTin value="123-45-4417" canReveal />);
+    expect(isTinMask("900-45-4417")).toBe(false);
+    render(<MaskedTin value="900-45-4417" canReveal />);
     expect(screen.getByText("—")).toBeTruthy();
-    expect(screen.queryByText("123-45-4417")).toBeNull();
+    expect(screen.queryByText("900-45-4417")).toBeNull();
   });
 
   it("Reveal is absent without the capability", () => {
@@ -27,12 +27,12 @@ describe("T14 GraphCanvasLayout", () => {
 
   it("a revealed value re-masks after 10 s", async () => {
     vi.useFakeTimers();
-    render(<MaskedTin value="•••-••-4417" canReveal onReveal={async () => "123-45-4417"} />);
+    render(<MaskedTin value="•••-••-4417" canReveal onReveal={async () => "900-45-4417"} />);
     await act(async () => {
       fireEvent.click(screen.getByText("Reveal (logged)"));
       await Promise.resolve();
     });
-    expect(screen.getByText("123-45-4417")).toBeTruthy();
+    expect(screen.getByText("900-45-4417")).toBeTruthy();
     act(() => {
       vi.advanceTimersByTime(REMASK_MS);
     });

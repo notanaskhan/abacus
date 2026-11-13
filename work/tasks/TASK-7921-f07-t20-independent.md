@@ -3,7 +3,7 @@ id: TASK-7921
 title: F-07-T20 Independent AC tests for T14/T17 and the portal kit boundary
 plan_key: F-07-T20
 spec: SPEC-652
-acceptance_criteria: [AC-6, AC-7, I3]  # unmasked TIN, reveal without capability, inputs on the face, Download in the bar, portal import of a firm-only kit
+acceptance_criteria: [AC-6]  # unmasked TIN, reveal without capability, inputs on the face, Download in the bar, portal import of a firm-only kit
 risk_zone: amber
 status: in-review
 branch: f07-t20-independent
