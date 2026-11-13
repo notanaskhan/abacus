@@ -103,8 +103,16 @@ import { STATE, SUBJECT } from "./traceWords";
 
 export { duration, STATE, SUBJECT } from "./traceWords";
 
-function download(filename: string, content: string): void {
-  const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
+/** TASK-7825: JSON arrives as UTF-8 text, a PDF as base64 (C6 TraceExportOut). */
+function download(
+  filename: string,
+  content: string,
+  mediaType: string = "application/json",
+  encoding: string = "utf-8",
+): void {
+  const data =
+    encoding === "base64" ? Uint8Array.from(atob(content), (c) => c.charCodeAt(0)) : content;
+  const url = URL.createObjectURL(new Blob([data], { type: mediaType }));
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
@@ -218,7 +226,7 @@ export function TraceDrawer({
       if (isForbidden(error)) setConfirm(true);
     },
     onSuccess: (out) => {
-      download(out.filename, out.content);
+      download(out.filename, out.content, out.media_type, out.content_encoding);
     },
   });
   // WB-09 e: skeleton rows for at least 200 ms, never a half-filled summary.
@@ -257,7 +265,14 @@ export function TraceDrawer({
           >
             Export trace (JSON)
           </Button>
-          <Button size="sm" variant="secondary" disabled title="PDF export arrives with P-09-T11">
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={t === undefined || exp.isPending}
+            onClick={() => {
+              exp.mutate({ path: { run_id: runId }, body: { format: "pdf" } });
+            }}
+          >
             Download PDF
           </Button>
           <span className="text-[11px] text-ink-3">

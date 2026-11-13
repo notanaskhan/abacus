@@ -112284,8 +112284,11 @@
         "properties": {
           "format": {
             "cls": "internal",
-            "const": "json",
             "default": "json",
+            "enum": [
+              "json",
+              "pdf"
+            ],
             "title": "Format",
             "type": "string"
           }
@@ -112300,9 +112303,29 @@
             "title": "Content",
             "type": "string"
           },
+          "content_encoding": {
+            "cls": "internal",
+            "default": "utf-8",
+            "enum": [
+              "utf-8",
+              "base64"
+            ],
+            "title": "Content Encoding",
+            "type": "string"
+          },
           "filename": {
             "cls": "internal",
             "title": "Filename",
+            "type": "string"
+          },
+          "media_type": {
+            "cls": "internal",
+            "default": "application/json",
+            "enum": [
+              "application/json",
+              "application/pdf"
+            ],
+            "title": "Media Type",
             "type": "string"
           },
           "renderer_version": {
@@ -112355,6 +112378,18 @@
             ],
             "cls": "internal",
             "title": "Signature Key Id"
+          },
+          "source_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Sha256"
           }
         },
         "required": [

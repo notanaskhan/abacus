@@ -11,6 +11,7 @@ and 501 until P-09-T08. Every count is code's (ADR-050)."""
 
 from __future__ import annotations
 
+import base64
 import time
 from datetime import datetime
 from typing import Annotated, Literal, cast, get_args
@@ -350,7 +351,8 @@ class TraceStepOut(BaseModel):
 class TraceExportIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    format: Annotated[Literal["json"], classified("internal")] = "json"
+    # TASK-7825 (DEC-4820): `pdf` is C11's run_export rendering of the same JSON body.
+    format: Annotated[Literal["json", "pdf"], classified("internal")] = "json"
 
 
 class TraceExportOut(BaseModel):
@@ -365,6 +367,13 @@ class TraceExportOut(BaseModel):
     run_record_sha256: Annotated[str | None, classified("internal")] = None
     signature: Annotated[str | None, classified("internal")] = None
     signature_key_id: Annotated[str | None, classified("internal")] = None
+    # TASK-7825 (DEC-4820): JSON is UTF-8 text; a PDF's bytes are base64. `source_sha256` names the
+    # JSON body a PDF was drawn from (null for JSON, whose `sha256` is its own).
+    media_type: Annotated[
+        Literal["application/json", "application/pdf"], classified("internal")
+    ] = "application/json"
+    content_encoding: Annotated[Literal["utf-8", "base64"], classified("internal")] = "utf-8"
+    source_sha256: Annotated[str | None, classified("internal")] = None
 
 
 # --- The run record (Q-02-T41; ADR-169 §3 and §4) --------------------------------------------
@@ -718,11 +727,14 @@ async def agent_run_trace_route(run_id: UUID, ctx: Ctx) -> RunTraceOut:
     status_code=201,
 )
 async def export_run_trace_route(run_id: UUID, body: TraceExportIn, ctx: Ctx) -> TraceExportOut:
-    del body  # JSON is the only format in this slice
-    exported = await export_trace(ctx, run_id)
+    exported = await export_trace(ctx, run_id, body.format)
+    pdf = body.format == "pdf"
     return TraceExportOut(
-        filename=f"run-trace-{run_id}.json",
-        content=exported.trace.decode(),
+        filename=f"run-trace-{run_id}.{body.format}",
+        content=base64.b64encode(exported.trace).decode() if pdf else exported.trace.decode(),
+        media_type="application/pdf" if pdf else "application/json",
+        content_encoding="base64" if pdf else "utf-8",
+        source_sha256=str(exported.manifest["source_sha256"]) if pdf else None,
         sha256=str(exported.manifest["sha256"]),
         rows=int(str(exported.manifest["rows"])),
         renderer_version=str(exported.manifest["renderer_version"]),

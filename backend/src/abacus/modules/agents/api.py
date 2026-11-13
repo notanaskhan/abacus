@@ -488,6 +488,10 @@ from abacus.modules.agents.spec_v2 import (  # noqa: E402
     spec_problems,
     spec_v2,  # T-04-T25: a capability's v2 spec (the drafter's tier, limits, routes)
 )
+from abacus.modules.agents.trace_pdf import (  # noqa: E402 -- TASK-7825: the composition root's slot
+    TracePdfRenderer,
+    register_trace_pdf_renderer,
+)
 
 __all__ = [
     "ACTIVITIES",
@@ -629,6 +633,7 @@ __all__ = [
     "ThresholdEvaluation",
     "ThresholdPolicy",
     "ToolFacts",
+    "TracePdfRenderer",
     "TurnOutcome",
     "UnregisteredTarget",
     "UploadReviewWorkflow",
@@ -708,6 +713,7 @@ __all__ = [
     "register_suggestion_applier",
     "register_suggestion_target",
     "register_threshold_policy",
+    "register_trace_pdf_renderer",
     "registry_problems",
     "request_review",
     "reserved_plan_tools",
