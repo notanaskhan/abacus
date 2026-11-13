@@ -134,6 +134,9 @@ class ReadOnlyPorts(ConversePorts):
     """`ConversePorts` offering only the spec's read tools; anything else is refused."""
 
     offered: frozenset[str] = field(default_factory=frozenset[str])
+    # W-02-T15 (DEC-4913): the session's pinned client scope (its attached context's clients);
+    # None leaves the turn unpinned (v1 sessions, a session with no context).
+    pinned: frozenset[str] | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -143,7 +146,27 @@ class ReadOnlyPorts(ConversePorts):
     async def tool(self, request: ToolRequest) -> ToolResult:
         if request.name not in self.offered:
             return ToolResult(name=request.name, ok=False, code="not_offered")
+        if self.pinned is not None and not await self._in_scope(request):
+            return ToolResult(name=request.name, ok=False, code="out_of_scope")
         return await super().tool(request)
+
+    async def _in_scope(self, request: ToolRequest) -> bool:
+        """A tool call naming an engagement or a client outside the pinned scope is refused before
+        it reads anything (W-02 §3.4, AC-Q*: `out_of_scope`)."""
+        args = request.arguments
+        pinned = self.pinned or frozenset()
+        named = args.get("client_id")
+        if isinstance(named, str) and named not in pinned:
+            return False
+        engagement = args.get("engagement_id")
+        if isinstance(engagement, str):
+            try:
+                client = await client_of(self.agent.tenant, UUID(engagement))
+            except ValueError:
+                return False
+            if client is None or str(client) not in pinned:
+                return False
+        return True
 
 
 @dataclass(frozen=True)
@@ -226,17 +249,28 @@ def plan_steps(
     return out
 
 
-async def run_session_turn(tenant_id: UUID, run_id: UUID, request: str) -> TurnOutcome:
+async def run_session_turn(
+    tenant_id: UUID,
+    run_id: UUID,
+    request: str,
+    *,
+    pinned_clients: frozenset[str] | None = None,
+    plans: bool = True,
+) -> TurnOutcome:
     """Run one turn inline (module docstring): `queued → running`, the harness over read-only
     ports, then `succeeded`, `needs_input` (a question) or `failed`. A plan is returned for the
-    workbench to hand to `open_plan_child_run`; the turn itself ends `succeeded`."""
+    workbench to hand to `open_plan_child_run`; the turn itself ends `succeeded`.
+
+    W-02-T15 (DEC-4913): `pinned_clients` refuses a tool call outside the session's scope
+    (`out_of_scope`); `plans` False withholds plans (`workbench.plans` off): a turn that would
+    plan ends `failed` with `plans_off` and no child run is ever written."""
     agent = await load_run_v2_context(tenant_id, run_id)
     spec = spec_v2(agent.agent_id)
     if spec.id in TEST_ONLY and not await is_synthetic_firm(agent.tenant):
         raise NotFound("agent_run")
     t, r = str(tenant_id), str(run_id)
     await set_state_activity(t, r, "running", None, None)
-    ports = ReadOnlyPorts(agent, spec, 1, request)
+    ports = ReadOnlyPorts(agent, spec, 1, request, pinned=pinned_clients)
     outcome = await run_step(
         ports,
         limits_of(spec),
@@ -253,6 +287,9 @@ async def run_session_turn(tenant_id: UUID, run_id: UUID, request: str) -> TurnO
             records_read=outcome.records_read,
             client_scope=clients,
         )
+    if outcome.status == "plan_proposed" and not plans:
+        await complete_run_activity(t, r, "failed", "plans_off")
+        return TurnOutcome("failed", failure="plans_off", client_scope=clients)
     if outcome.status in ("completed", "plan_proposed"):
         try:
             steps = plan_steps(outcome.plan or {}, spec, agent.initiator.user_id)
@@ -271,6 +308,33 @@ async def run_session_turn(tenant_id: UUID, run_id: UUID, request: str) -> TurnO
     failure = outcome.failure or "turn_failed"
     await complete_run_activity(t, r, "failed", failure)
     return TurnOutcome("failed", failure=failure, client_scope=clients)
+
+
+async def turn_capability_ready(tenant: TenantContext, run_id: UUID) -> str | None:
+    """W-02-T15 (DEC-4914): the turn's capability readiness read again just before its model call
+    (consent, boundary, pause), as the person the run acts for; None when ready, else the reason.
+    A person who left the firm since is `initiator_left`."""
+    from abacus.kernel.db import tenant_session
+    from abacus.modules.agents.capability_availability import capability_ready
+    from abacus.modules.identity.api import member_context
+
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT agent_id, engagement_id, initiator_user_id FROM agent_runs "
+                    "WHERE id = :r"
+                ),
+                {"r": run_id},
+            )
+        ).first()
+    if row is None or row.engagement_id is None or row.initiator_user_id is None:
+        return "capability_unavailable"
+    person = await member_context(tenant.tenant_id, row.initiator_user_id)
+    if person is None:
+        return "initiator_left"
+    ready, blocked = await capability_ready(person, row.engagement_id, str(row.agent_id))
+    return None if ready else (blocked or "capability_unavailable")
 
 
 async def _record_turn(tenant_id: UUID, run_id: UUID, active_ms: int, cost: Decimal) -> list[str]:

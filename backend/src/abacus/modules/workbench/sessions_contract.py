@@ -86,6 +86,9 @@ class SessionMessageIn(BaseModel):
     # P-10-T43 (DEC-4301): the open question's item this answers; without it the body is a
     # message (answered first, the question stays open).
     answers_seq: Annotated[int | None, Field(ge=1), Internal] = None
+    # W-02-T15 (DEC-4913), additive: edit-and-resend names the person's earlier message it
+    # replaces; the new message is a new turn and the earlier items stay.
+    edits_seq: Annotated[int | None, Field(ge=1), Internal] = None
 
 
 class SessionMessageAcceptedOut(BaseModel):
@@ -326,7 +329,9 @@ async def post_session_message_route(
     """A write-proposing turn starts exactly one child run in `awaiting_plan_approval` (AC-S4)."""
     from abacus.modules.workbench.sessions import post_message
 
-    posted = await post_message(ctx, session_id, body.body, idempotency_key, body.answers_seq)
+    posted = await post_message(
+        ctx, session_id, body.body, idempotency_key, body.answers_seq, edits_seq=body.edits_seq
+    )
     return SessionMessageAcceptedOut(
         item_id=posted.item_id,
         run_id=posted.run_id,

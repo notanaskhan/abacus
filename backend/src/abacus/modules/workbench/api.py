@@ -53,7 +53,10 @@ register_session_links(session_links)
 # The worker's parts (P-39): the session workflow and its turn activity; no subscriptions yet.
 SUBSCRIPTIONS: Mapping[str, Callable[[OutboxEvent], Awaitable[None]]] = {}
 WORKFLOWS: dict[type, str] = {WorkbenchSessionWorkflow: "interactive"}
-ACTIVITIES: tuple[object, ...] = SESSION_ACTIVITIES
+# W-02-T15 (DEC-4913): the v2 turn the workflow's `w02-session-v2` branch calls.
+from abacus.modules.workbench.session_turn_v2 import session_turn_v2_activity  # noqa: E402
+
+ACTIVITIES: tuple[object, ...] = (*SESSION_ACTIVITIES, session_turn_v2_activity)
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 __all__ = [

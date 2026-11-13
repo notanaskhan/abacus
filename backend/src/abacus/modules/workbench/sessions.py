@@ -309,6 +309,8 @@ async def post_message(
     body: str,
     idempotency_key: str,
     answers_seq: int | None = None,
+    *,
+    edits_seq: int | None = None,
 ) -> Posted:
     if not await flag_enabled(ctx.tenant, AGENT_RUNTIME_V2):
         raise NotFound(AGENT_RUNTIME_V2.name)
@@ -326,6 +328,17 @@ async def post_message(
         ).first()
         if again is not None:
             return Posted(again.id, int(again.seq), again.run_id)
+        if edits_seq is not None:
+            # W-02-T15: only the person's own earlier message may be edited and resent.
+            mine = await session.scalar(
+                text(
+                    "SELECT 1 FROM session_items WHERE session_id = :id AND seq = :seq "
+                    "AND kind = 'user_message' AND actor_id = :me"
+                ),
+                {"id": session_id, "seq": edits_seq, "me": str(ctx.user_id)},
+            )
+            if mine is None:
+                raise NotFound("session_message")
         if answers_seq is not None:
             asked = await session.scalar(
                 text(
@@ -360,6 +373,8 @@ async def post_message(
         payload["blocked"] = blocked
     if answers_seq is not None:
         payload["answers_seq"] = answers_seq
+    if edits_seq is not None:
+        payload["edits_seq"] = edits_seq
     async with uow(ctx.tenant) as tx:
         locked = (await tx.session.execute(_LOCK, {"id": session_id})).first()
         if locked is None:
