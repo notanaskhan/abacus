@@ -7,12 +7,15 @@ Row acceptance: "Approving the M-2 fix turns the approved memo Stale with 'endin
 from __future__ import annotations
 
 import asyncio
+import importlib
 import uuid
 
 import pytest
 
 from abacus.modules.tax import memo_service as ms
 from abacus.modules.tax.memo_drafter import fingerprint_of
+
+importlib.import_module("abacus.modules.tax.api")  # registers the kinds, as the app does
 
 
 def _cells(rows: dict[str, str]) -> dict[str, dict[str, object]]:

@@ -301,6 +301,7 @@ async def test_the_resolution_is_the_approvers_and_needs_issue_resolve(
     async def one(_t: TenantContext, _i: uuid.UUID) -> object:
         return SimpleNamespace(
             status="in_progress", record_type="tax_return", record_id=uuid.uuid4(), version=3,
+            system_resolved_only=False,
             engagement_id=uuid.uuid4(),
         )  # fmt: skip
 

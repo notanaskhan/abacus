@@ -316,6 +316,8 @@ __all__ = [
     "K1ReleaseFailure",
     "K1ReleaseInput",
     "K1ReleaseWorkflow",
+    "MemoDraftInput",
+    "MemoDraftWorkflow",
     "ModeRunInput",
     "ModeRunOutcome",
     "ProposedPayment",
@@ -426,6 +428,8 @@ _entity_guards.register()
 from abacus.modules.tax import memo_service as _memo_service  # noqa: E402
 
 _memo_service.register()
+MemoDraftInput = _memo_service.MemoDraftInput  # the recorder's and replay tests' input (ADR-090)
+MemoDraftWorkflow = _memo_service.MemoDraftWorkflow
 WORKFLOWS.update(_memo_service.WORKFLOWS)
 ACTIVITIES = (*ACTIVITIES, *_memo_service.ACTIVITIES)  # pyright: ignore[reportConstantRedefinition] -- the worker reads the final tuple
 

@@ -3707,6 +3707,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: what needs me first on Northwind? (I-02-T09: a Today-context turn; recorded calls follow
     the read-only shape)'
   expected:
@@ -3790,6 +3791,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: why is the Northwind materiality card on my list? (I-02-T09: a Today-context turn; recorded
     calls follow the read-only shape)'
   expected:
@@ -3873,6 +3875,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: what does the PBC count mean for Northwind''s report date? (I-02-T09: a Today-context
     turn; recorded calls follow the read-only shape)'
   expected:
@@ -3956,6 +3959,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: which Northwind items are overdue? (I-02-T09: a Today-context turn; recorded calls follow
     the read-only shape)'
   expected:
@@ -4039,6 +4043,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: summarise the Internal Control exceptions I need to look at (I-02-T09: a Today-context
     turn; recorded calls follow the read-only shape)'
   expected:
@@ -4122,6 +4127,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: what changed on Northwind since yesterday''s brief? (I-02-T09: a Today-context turn;
     recorded calls follow the read-only shape)'
   expected:
@@ -4205,6 +4211,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: is anything blocking my sign-off on Northwind? (I-02-T09: a Today-context turn; recorded
     calls follow the read-only shape)'
   expected:
@@ -4288,6 +4295,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: which Northwind requests are still outstanding? (I-02-T09: a Today-context turn; recorded
     calls follow the read-only shape)'
   expected:
@@ -4371,6 +4379,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: explain the receivable movement before I open the card (I-02-T09: a Today-context turn;
     recorded calls follow the read-only shape)'
   expected:
@@ -4454,6 +4463,7 @@ cases:
   - DE-3
   repeat: 3
   fast: false
+  repeat: 3
   note: 'Today: what is the materiality figure the card proposes? (I-02-T09: a Today-context turn; recorded
     calls follow the read-only shape)'
   expected:

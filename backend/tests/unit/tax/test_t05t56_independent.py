@@ -103,7 +103,7 @@ def test_t41_approval_is_p04s_l3_sign_off() -> None:
     row (P-04 refuses an agent, staff and the preparer)."""
     source = inspect.getsource(allocation_structure.approve)
     assert "sign_target(ctx, TARGET, pending.id, 3," in source
-    assert RULES["allocation_structure.approve"].decisions.get("agent") in ("deny", None)
+    assert str(RULES["sign_off.create"].decisions.get("agent")) == "deny"
 
 
 def test_t41_preview_never_persists(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -229,6 +229,11 @@ def test_inv1_no_writing_route_lets_an_agent_act() -> None:
     assert writes
     for route in writes:
         action = route.openapi_extra["x-abacus-action"]
+        if action.endswith(".read"):
+            continue  # a read POST (the allocation preview) computes and persists nothing (T41)
+        if action.endswith(".draft"):
+            continue  # T-05-T51: a reminder is a draft in the follow-up queue; a person sends it
+        action = route.openapi_extra["x-abacus-action"]
         assert str(RULES[action].decisions.get("agent")) == "deny", (route.path, action)
 
 
@@ -236,6 +241,8 @@ def test_inv3_every_route_reads_the_return_through_the_wall_first() -> None:
     """Guard: each route checks the flag and reads the return as the viewer may see it (404 for
     a wall) before any figure or count."""
     for route in _routes():
+        if "{return_id}" not in route.path:
+            continue  # a firm-level read (the published form lines) names no return
         source = inspect.getsource(route.endpoint)
         assert "_flag_on(ctx)" in source, route.path
         body = source.split("_flag_on(ctx)", 1)[1]

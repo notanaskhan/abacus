@@ -194,7 +194,7 @@ async def ensure_briefings(
                 tx.record(
                     "daily_briefing.unavailable",
                     target=Target("daily_briefing", claimed),
-                    after=Ref(reason=why),
+                    after=Ref(seq=seq),  # the reason is the row's (Ref: ids only)
                     scope=Scope(engagement_id=engagement_id),
                 )
                 tx.emit(
@@ -219,7 +219,7 @@ async def ensure_briefings(
             tx.record(
                 "daily_briefing.dispatched",
                 target=Target("daily_briefing", claimed),
-                after=Ref(mode=mode, seq=seq),
+                after=Ref(seq=seq),  # the mode is the row's (Ref: ids only)
                 scope=Scope(engagement_id=engagement_id),
             )
         room -= 1

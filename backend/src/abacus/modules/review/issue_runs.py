@@ -122,7 +122,7 @@ async def record_fix_proposal(agent: AgentContext, issue_id: UUID, proposal_id: 
         tx.record(
             "issue.fix_proposed",
             target=Target(SUBJECT, issue_id),
-            after=Ref(proposal=str(proposal_id)),
+            after=Ref(proposal=proposal_id),
             scope=Scope(engagement_id=current.engagement_id),
         )
 
@@ -211,7 +211,7 @@ async def _resolve_as(
             "issue.resolved",
             target=Target(SUBJECT, issue_id),
             before=Ref(version=current.version),
-            after=Ref(version=current.version + 1, proposal=str(proposal_id)),
+            after=Ref(version=current.version + 1, proposal=proposal_id),
             scope=Scope(engagement_id=current.engagement_id),
         )
         tx.emit(

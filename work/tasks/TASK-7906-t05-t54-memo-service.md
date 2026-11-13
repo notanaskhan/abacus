@@ -40,3 +40,5 @@ regenerate, and the opportunities list.
 |---|---|---|
 | DEC-4909 | code's facts, fingerprint staleness, affected-only regenerate, draft workflow | no |
 | DEC-4910 | L1/L2 as P-04 sign-offs on the memo; preparer never approves; opportunities | no |
+- 2026-11-13 (end pass): MemoDraftWorkflow's imports passed through (the sandbox refused the
+  kernel's random at import); `memo-draft-v1-{drafted,failed}.json` recorded and replaying.

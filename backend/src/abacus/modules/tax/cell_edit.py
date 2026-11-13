@@ -257,7 +257,7 @@ async def edit_cell(
         tx.record(
             "workbook.cell_edited",
             target=Target(WORKBOOK, return_id),
-            after=Ref(cell=at.key, recomputed=len(touched)),
+            after=Ref(recomputed=len(touched)),  # the cell is SHL-09's version row (Ref: ids only)
         )
     checkpoint = await save_checkpoint(ctx, WORKBOOK, return_id, name)
     from abacus.modules.tax.memo_service import check_stale  # T-05-T54: the memo's figures

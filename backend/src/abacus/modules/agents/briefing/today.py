@@ -293,7 +293,7 @@ async def build_engagement_briefing(
                     tx.record(
                         "daily_briefing.built",
                         target=Target("daily_briefing", prior.id),
-                        after=Ref(status=status, engagement=engagement_id),
+                        after=Ref(engagement=engagement_id),  # status: the row's (Ref: ids)
                     )
                     tx.emit(_built(viewer_id, on, engagement_id, status))
                     return cast(UUID, prior.id)
@@ -316,7 +316,7 @@ async def build_engagement_briefing(
             tx.record(
                 "daily_briefing.built",
                 target=Target("daily_briefing", new_id),
-                after=Ref(status=status, engagement=engagement_id),
+                after=Ref(engagement=engagement_id),  # status: the row's (Ref: ids)
             )
             tx.emit(_built(viewer_id, on, engagement_id, status))
         return new_id

@@ -297,6 +297,24 @@ def register() -> None:
         "session.items_changed",
         realtime.Invalidation("session", "session_id", (("session", "session_id"),)),
     )
+    # S42 (T-05-T52, DEC-4906; I-02-T13): registered here as well as by tax and agents, for the
+    # same import-order reason (identical entries; the owners never replace one).
+    for event_type, ref_field in (
+        ("workbook.fix_applied", "work_item_id"),
+        ("tax_memo.went_stale", "memo_id"),
+    ):
+        realtime.register_invalidation(
+            event_type,
+            realtime.Invalidation(
+                event_type.split(".")[0],
+                ref_field,
+                (("engagement", "engagement_id"), ("work_item", "work_item_id")),
+            ),
+        )
+    realtime.register_invalidation(
+        "daily_briefing.built",
+        realtime.Invalidation("daily_briefing", "viewer_user_id", (("user", "viewer_user_id"),)),
+    )
 
 
 __all__ = ["change_topics", "events_stream", "on_outbox_event", "parse_topics", "register"]

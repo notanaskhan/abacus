@@ -237,6 +237,9 @@ NOT_CREATING = {
     "/v1/delivery-packets/{packet_id}/approve",
     "/v1/tax-returns/{return_id}/deliverables:publish",
     "/v1/firm/integrations/{key}/test",
+    # T-05-T51 (S42): a send and a resolve move an existing issue, so 200.
+    "/v1/tax-returns/{return_id}/issues/{issue_id}/send-to-client",
+    "/v1/tax-returns/{return_id}/issues/{issue_id}/resolve",
     # T-01-T01 (C19 stub): a decline, a revocation and a template publish change a record, so 200.
     "/v1/consents/{consent_id}/declines",
     "/v1/consents/{consent_id}/revocations",
@@ -548,6 +551,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         # I-02-T03 (SPEC-654): a forced rebuild and an "Ask about your day" turn run later, so 202.
         "/v1/me/today/builds",
         "/v1/me/today/questions",
+        # T-05-T51 (S42): reminders are drafted for the follow-up queue, sent later, so 202.
+        "/v1/tax-returns/{return_id}/issues/{issue_id}/reminders",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -907,6 +912,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/portal/governance/communications/{communication_id}/questions",
         # T-04-T37 (DEC-4316): a record-bound session (TAX-08) is a row, so 201.
         "/v1/workbench/sessions",
+        # T-05-T41 (S41) and T-05-T54 (S42): an approval records a sign-off row, so 201.
+        "/v1/tax-returns/{return_id}/allocation-structure/approve",
+        "/v1/tax-returns/{return_id}/memo/approve",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

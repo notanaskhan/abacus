@@ -79,7 +79,7 @@ def export_sheets(
                     field.split("!", 1)[1], value, None if formula is None else str(formula)
                 )
             )
-        out.append(ExportSheet(key, f"{key} {title}", tuple(cells)))
+        out.append(ExportSheet(key, title, tuple(cells)))  # the title carries its number
     return out
 
 

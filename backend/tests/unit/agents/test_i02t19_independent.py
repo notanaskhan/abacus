@@ -92,11 +92,13 @@ def test_t13_built_event_is_identifiers_only() -> None:
 
 
 def test_t11_attention_providers_fail_closed() -> None:
-    from abacus.modules.practice import api as practice_api
+    """An attention kind with no registered provider is skipped, never guessed (T11)."""
+    from abacus.modules.engagements import attention
 
-    src = inspect.getsource(practice_api)
-    assert "attention" in src.lower()
-
+    src = inspect.getsource(attention.attention_rows)
+    assert "if provider is None:" in src
+    assert src.index("if provider is None:") < src.index("continue")
+    assert "_PROVIDERS.get(kind)" in src
 
 def test_t07_facts_are_collected_as_the_viewer() -> None:
     src = inspect.getsource(facts.collect)

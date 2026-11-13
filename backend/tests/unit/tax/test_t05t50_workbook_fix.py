@@ -98,10 +98,14 @@ class _Session:
 class _Tx:
     def __init__(self) -> None:
         self.records: list[tuple[str, Any]] = []  # Any: a test double of the store row
+        self.events: list[object] = []
         self.session = None
 
     def record(self, name: str, **kw: object) -> None:
         self.records.append((name, kw))
+
+    def emit(self, event: object) -> None:
+        self.events.append(event)
 
 
 class _Uow:
@@ -189,6 +193,17 @@ def test_ac_approval_writes_as_the_approver_checkpoints_and_reruns(
     monkeypatch.setattr(wf, "uow", _uow_of(tx))
     monkeypatch.setattr(wf, "recompute", _no_dependents)
     monkeypatch.setattr(wf, "_checkpoint_and_rerun", checkpoint_and_rerun)
+    from abacus.modules.engagements import api as engagements_api
+    from abacus.modules.tax import memo_service
+
+    async def holders(*_a: object) -> dict[str, list[uuid.UUID]]:
+        return {"preparer": [approver]}
+
+    async def no_memo(*_a: object) -> None:
+        return None
+
+    monkeypatch.setattr(engagements_api, "function_holders", holders)
+    monkeypatch.setattr(memo_service, "check_stale", no_memo)
 
     asyncio.run(wf.apply_fix(tenant, proposal))
 
@@ -196,6 +211,7 @@ def test_ac_approval_writes_as_the_approver_checkpoints_and_reruns(
     assert (w.address, w.value, w.source) == ("07!B6", D("6866200"), "human")
     assert w.citation_note == "Fix approved by Daniel Reyes"
     assert [name for name, _ in tx.records] == ["workbook.fix_applied"]
+    assert [type(e).__name__ for e in tx.events] == ["WorkbookFixApplied"]
     assert rerun == [(return_id, "Fix approved by Daniel Reyes", ("07!B6",))]
 
 

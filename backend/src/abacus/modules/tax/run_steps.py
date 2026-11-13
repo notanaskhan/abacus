@@ -115,7 +115,7 @@ async def _write(
         tx.record(
             "workbook.step_written",
             target=Target(WORKBOOK, return_id),
-            after=Ref(step=facts.step_key, cells=written, run=facts.run_id),
+            after=Ref(cells=written, run=facts.run_id),  # the step is the run's (Ref: ids only)
         )
     return written
 

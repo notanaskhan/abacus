@@ -40,16 +40,16 @@ from decimal import Decimal
 from typing import Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import text
 from temporalio import activity, workflow
 from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
-from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainForbidden, NotFound
-from abacus.kernel.uow import Ref, Scope, Target, uow
-
 with workflow.unsafe.imports_passed_through():
+    from sqlalchemy import text
+
+    from abacus.kernel.db import TenantContext, tenant_session
     from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
+    from abacus.kernel.errors import DomainConflict, DomainForbidden, NotFound
+    from abacus.kernel.uow import Ref, Scope, Target, uow
     from abacus.modules.identity.api import AuthContext
     from abacus.modules.tax.memo_drafter import (
         CAPABILITY,
@@ -568,7 +568,7 @@ async def edit_section(
         tx.record(
             "tax_memo.section_edited",
             target=Target(TARGET, memo.id),
-            after=Ref(version_no=version, section=key, content_hash=digest),
+            after=Ref(version_no=version, content_hash=digest),  # the section is the version row's
             scope=Scope(engagement_id=memo.engagement_id, work_item_id=return_id),
         )
     return MemoSectionView(key, SECTION_TITLES[key], body.strip(), True)

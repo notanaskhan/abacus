@@ -41,11 +41,17 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
     realtime |= {"sign_off.went_stale", "issue.assigned"}
     # TASK-7325: a session's items refetch its thread on a second surface.
     realtime |= {"session.items_changed"}
+    # S42 (T-05-T52, DEC-4906; I-02-T13): an applied fix and a stale memo move TXP-04/TXP-11; a
+    # built brief refetches the Today panel.
+    realtime |= {"workbook.fix_applied", "tax_memo.went_stale", "daily_briefing.built"}
     assert set(INVALIDATIONS) == realtime
 
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        # S42 (T-05-T52, DEC-4906): C16 `workbook_fix_applied` and `tax_memo_stale`.
+        "workbook.fix_applied",
+        "tax_memo.went_stale",
         "agent_run.needs_input",  # P-10-T33 (C16 `run_needs_input`, to the person it waits on)
         "agent_run.ready_for_review",  # P-10-T33 (C16 `run_finished`, to the initiator)
         "agent_run.failed_v2",  # P-10-T33 (C16 `run_finished`, to the initiator)

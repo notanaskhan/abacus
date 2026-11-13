@@ -111,6 +111,11 @@ def _wire_list(monkeypatch: pytest.MonkeyPatch, raw: list[dict[str, object]]) ->
     monkeypatch.setattr(session_list, "display_names", names)
     monkeypatch.setattr(session_list, "viewer_access", access)
 
+    async def colleagues(*_a: object) -> frozenset[uuid.UUID]:
+        return frozenset()
+
+    monkeypatch.setattr(session_list, "colleagues_of", colleagues)
+
 
 def test_t09_a_walled_session_adds_no_row_no_count_no_search_hit(
     monkeypatch: pytest.MonkeyPatch,
