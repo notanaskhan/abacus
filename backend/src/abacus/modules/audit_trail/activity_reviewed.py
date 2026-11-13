@@ -914,6 +914,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         # reviewed 2026-11-13 (S40 end pass): the search index's reindex is an operational record
         # (explorer only); workbook cell writes show in SHL-09's per-cell provenance and the
         # checkpoint list, not the engagement feed.
+        "search_index.loadtest_seeded",  # S41 (TASK-7723): the local 1M load test's batches
         "search_index.reindex_completed",
         "search_index.reindex_requested",
         "workbook.cell_edited",

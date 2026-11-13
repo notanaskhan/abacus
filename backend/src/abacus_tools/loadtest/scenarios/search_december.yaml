@@ -1,0 +1,48 @@
+# C15 search under the December profile (P-02-T13; P-02 §10 item 6; DEC-4726; RB-31): staff search
+# at the peak while the firm works its requests, over a tenant grown to 1M documents with
+# `python -m abacus_tools.loadtest.search seed`. `search_first` times the first group alone
+# (Clients, the canonical first group) against P-02's 250 ms p95; `search_all` is every group under
+# the 1 s statement timeout. The request reads keep the relay busy; the relay lag p95 (≤ 5 s) is
+# read afterwards by `search check` from the index itself. Needs `search.palette` on for the firm
+# (the local seed turns it on for Brightwater Hale). Search text travels only in POST bodies.
+name: search_december
+description: Staff search over 1M documents at the December peak, with request work alongside.
+duration_seconds: 900
+users: 40
+think_ms: 300
+ramp_seconds: 60
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-hannah-leclerc, weight: 2, groups: [search_first, search_all, staff_requests]}
+  - {subject: scenario-daniel-reyes, weight: 2, groups: [search_first, search_all, staff_requests]}
+  - {subject: scenario-ana-cruz, weight: 1, groups: [search_first, staff_requests]}
+groups:
+  - name: search_first
+    weight: 5
+    p95_ms: 250
+    steps:
+      - method: POST
+        path: /v1/search
+        json_body: {q: feld, types: [clients], limit_per_group: 5}
+        expect: [200]
+      - method: POST
+        path: /v1/search
+        json_body: {q: ridgeline, types: [clients], limit_per_group: 5}
+        expect: [200]
+  - name: search_all
+    weight: 2
+    p95_ms: 1000
+    steps:
+      - method: POST
+        path: /v1/search
+        json_body: {q: granite, limit_per_group: 5}
+        expect: [200]
+      - method: POST
+        path: /v1/search
+        json_body: {q: pbc, limit_per_group: 5}
+        expect: [200]
+  - name: staff_requests
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements/{engagement_id}/request-items"}

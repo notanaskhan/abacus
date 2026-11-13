@@ -12,6 +12,12 @@ contract (`spec.check_document`) before it is stored. A document that fails is n
 previous row is deleted rather than left stale; the failure is logged by type and id only, never
 by content. Walls are not subscribed to: they are evaluated at query time (P-02 §4.6).
 
+**Lag (P-02-T13, DEC-4726).** On the relay path only (an outbox event, not a reindex backfill),
+each stored document's lag from its source change (`source_updated_at`) to now is recorded on the
+`abacus.search.index_lag` histogram and logged as `search.index_lag` (`lag_ms`, `object_type`:
+identifiers only). CloudWatch's log metric filter turns the line into `SearchIndexLagMs`, alarmed
+at p95 above 5 s (`infra/modules/search`, RB-31). The target is P-02's relay lag p95 ≤ 5 s.
+
 `membership.deactivated` purges that person's recents. The reindex is audited
 (`search_index.reindex_requested` here, `.reindex_completed` by the workflow's last activity).
 """
@@ -19,14 +25,17 @@ by content. Walls are not subscribed to: they are evaluated at query time (P-02 
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterable, Iterator, Mapping
+from datetime import datetime
 from typing import Final
 from uuid import UUID
 
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.kernel.dispatch import dispatch
 from abacus.kernel.logging import get_logger
+from abacus.kernel.metrics import meter
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
 from abacus.modules.platform.search import store
 from abacus.modules.platform.search.scrub import scrub_document
@@ -60,8 +69,25 @@ def _system(tenant_id: UUID) -> TenantContext:
     return TenantContext(tenant_id, "system", store.ACTOR)
 
 
-async def index_object(tenant_id: UUID, object_type: str, object_id: UUID) -> str:
-    """Rebuild one object's row: `indexed`, `deleted`, `refused` (contract) or `unregistered`."""
+_lag = meter(__name__).create_histogram(
+    "abacus.search.index_lag", unit="s", description="Source change to stored search document"
+)
+LAG_TARGET_SECONDS: Final = 5.0
+
+
+def record_lag(object_type: str, source_updated_at: datetime) -> float:
+    """The relay-path lag in seconds (never negative), on the histogram and the log line."""
+    seconds = max(0.0, (system_now() - source_updated_at).total_seconds())
+    _lag.record(seconds)
+    _log.info("search.index_lag", object_type=object_type, lag_ms=round(seconds * 1000))
+    return seconds
+
+
+async def index_object(
+    tenant_id: UUID, object_type: str, object_id: UUID, *, relay: bool = False
+) -> str:
+    """Rebuild one object's row: `indexed`, `deleted`, `refused` (contract) or `unregistered`.
+    `relay` marks an outbox-driven rebuild, whose lag is measured (module docstring)."""
     found = projection(object_type)
     if found is None:
         return "unregistered"
@@ -77,13 +103,17 @@ async def index_object(tenant_id: UUID, object_type: str, object_id: UUID) -> st
         await store.delete(tenant_id, object_type, object_id)
         return "refused"
     await store.upsert(tenant_id, found, doc)
+    if relay:
+        record_lag(object_type, doc.source_updated_at)
     return "indexed"
 
 
-async def index_many(tenant_id: UUID, object_type: str, ids: Iterable[UUID]) -> dict[str, int]:
+async def index_many(
+    tenant_id: UUID, object_type: str, ids: Iterable[UUID], *, relay: bool = False
+) -> dict[str, int]:
     out: dict[str, int] = {}
     for object_id in ids:
-        result = await index_object(tenant_id, object_type, object_id)
+        result = await index_object(tenant_id, object_type, object_id, relay=relay)
         out[result] = out.get(result, 0) + 1
     return out
 
@@ -129,7 +159,7 @@ def _handler(event_type: str, targets: tuple[SearchProjection, ...]) -> Handler:
             if len(ids) > FANOUT:
                 await request_reindex(event.tenant_id, target.object_type, ids=ids)
             else:
-                await index_many(event.tenant_id, target.object_type, ids)
+                await index_many(event.tenant_id, target.object_type, ids, relay=True)
 
     return handle
 
