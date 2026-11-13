@@ -37,6 +37,7 @@ const ANSWER: GroundedAnswer = {
   ],
   nothingWritten: true,
   controlLink: true,
+  controlAuditId: "aud-northwind",
 };
 
 describe("WB-02 New session", () => {
@@ -101,7 +102,7 @@ describe("WB-02 New session", () => {
     fireEvent.click(screen.getByText(/\[1\] PayGrid Contribution Detail 2025\.xlsx/));
     expect(onOpenSource).toHaveBeenCalledWith(expect.objectContaining({ matchId: "m-1" }));
     fireEvent.click(screen.getByText(COPY.controlLink));
-    expect(onOpenControl).toHaveBeenCalled();
+    expect(onOpenControl).toHaveBeenCalledWith("aud-northwind");
     expect(screen.getByText(COPY.readOnlyLine)).toBeTruthy();
   });
 
@@ -135,5 +136,27 @@ describe("WB-02 New session", () => {
     const a = answerOf(items);
     expect(a?.question).toBe("Q?");
     expect(a?.nothingWritten).toBe(true);
+    expect(a?.controlLink).toBe(false);
+  });
+
+  it("answerOf takes the Internal Control link's audit from the blocks' entity_ref", () => {
+    const parts = [
+      { kind: "p", segments: [{ kind: "text", text: "Contributions tie." }] },
+      { kind: "entity_ref", record_type: "audit", record_id: "aud-1" },
+    ];
+    const items = [
+      { id: "1", seq: 1, kind: "user_message", actor_kind: "human", created_at: "", payload: {} },
+      {
+        id: "2",
+        seq: 2,
+        kind: "agent_blocks",
+        actor_kind: "agent",
+        created_at: "",
+        payload: { blocks: { version: 1, parts } },
+      },
+    ] as never;
+    const a = answerOf(items);
+    expect(a?.controlLink).toBe(true);
+    expect(a?.controlAuditId).toBe("aud-1");
   });
 });

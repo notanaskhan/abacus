@@ -4,6 +4,7 @@ import { type JSX, Suspense, lazy } from "react";
 import { registerOverlay } from "../../app-core/overlays";
 import { useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
+import { to } from "../to";
 import { appRoute, lazyScreen } from "../root";
 
 // Workbench sessions (W-02-T08; W-02 §5.1; docs/screens/WB-01.md to WB-03.md). Behind
@@ -98,6 +99,12 @@ export const newSessionRoute = createRoute({
             />
           }
           onDraft={() => undefined}
+          // W-02-T16: the answer's Internal Control link opens AUD-09 on that sheet.
+          onOpenControl={(auditId) => {
+            if (auditId !== null) {
+              void navigate({ ...to.AUD09({ auditId }), search: { sheet: "internal-control" } });
+            }
+          }}
         />
       </Gate>
     );
