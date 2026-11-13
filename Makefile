@@ -104,10 +104,18 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.check_dependencies
 	$(MAKE) check-fast-frontend
 
-# F-01-T07: the prose checks a docs-only diff still needs (ADRs, specs, task files, register ids).
+# F-01-T07: the checks a diff with no backend path still needs (TASK-7828, security review): the
+# prose checks, the secrets and PII scan over every tracked file, generated-file drift (the
+# TypeScript halves too), the fixtures' seed contamination, the scope guards and the quarantine
+# limit. Every one also runs in check-fast.
 check-docs:
 	cd backend && uv run python -m abacus_tools.quality.validate_docs
 	cd backend && uv run python -m abacus_tools.quality.register_ids
+	cd backend && uv run python -m abacus_tools.quality.secrets_scan
+	cd backend && uv run python -m abacus_tools.quality.seed_contamination
+	cd backend && uv run python -m abacus_tools.quality.scope_guards
+	cd backend && uv run python -m abacus_tools.quality.quarantine
+	$(MAKE) check-generated
 
 # F-01-T07: stage 1's frontend half on its own. CI runs only this (and the docs checks) when a diff
 # touches nothing but apps/web, packages/ui and prose (abacus_tools.ci.paths), so a frontend-only
@@ -394,7 +402,7 @@ release-check:
 
 # Q-04-T125 (DEC-4819): every merged PR between two refs as dark_only or not (P-29, ADR-151).
 dark-merge-audit:
-	cd backend && uv run python -m abacus_tools.dark_merge_audit --from $(FROM) --to $(or $(TO),HEAD) $(if $(OUT),--out $(OUT))
+	cd backend && uv run python -m abacus_tools.dark_merge_audit --from "$(FROM)" --to "$(or $(TO),HEAD)" $(if $(OUT),--out "$(OUT)")
 
 release-pr:
 	@test -n "$(SHA)" || (echo "usage: make release-pr SHA=<40-character git sha>"; exit 2)

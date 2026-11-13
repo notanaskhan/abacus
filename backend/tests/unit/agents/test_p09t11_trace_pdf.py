@@ -24,6 +24,7 @@ from typing import cast
 import pytest
 
 from abacus.kernel.crypto.signing import LocalExportSigner
+from abacus.kernel.uow import Ref
 from abacus.modules.agents import runs, trace_pdf
 
 BODY = json.dumps(
@@ -216,6 +217,11 @@ async def test_a_pdf_export_names_its_bytes_and_its_source(
     assert plain.trace == BODY
     assert "format" not in plain.manifest and "source_sha256" not in plain.manifest
     assert [r["action"] for r in recorded] == ["agent_run.trace_exported"] * 2
+    pdf_ref = cast("Ref", recorded[0]["after"]).fields
+    assert pdf_ref["source_sha256"] == hashlib.sha256(BODY).hexdigest()
+    assert pdf_ref["sha256"] == hashlib.sha256(b"%PDF-1.7 trace").hexdigest()
+    json_ref = cast("Ref", recorded[1]["after"]).fields
+    assert json_ref["sha256"] == json_ref["source_sha256"] == hashlib.sha256(BODY).hexdigest()
     trace_pdf.register_trace_pdf_renderer(None)
 
 
@@ -231,5 +237,62 @@ def test_a_renderer_that_fails_answers_503(failure: Exception) -> None:
         with pytest.raises(trace_pdf.TraceRendererUnavailable) as raised:
             trace_pdf.render_trace_pdf(BODY, "r", "h" * 64)
         assert raised.value.code == "renderer_unavailable"
+    finally:
+        trace_pdf.register_trace_pdf_renderer(None)
+
+
+# --- the security review's limits (TASK-7828) ---------------------------------------------------
+
+
+def test_safe_text_keeps_latin_and_punctuation_and_replaces_the_rest() -> None:
+    assert trace_pdf.safe_text("Zoë Ångström — 12.5% · €40") == "Zoë Ångström — 12.5% · €40"
+    assert trace_pdf.safe_text("Ana 🙂 李") == "Ana ? ?"
+    assert trace_pdf.safe_text("é") == "é"  # NFC first: a combining accent composes
+    blocks = trace_pdf.trace_blocks(
+        json.dumps(
+            {"rows": [{"seq": 1, "at": "x", "title": "Read 📄", "actor": "李 via Agent"}]}
+        ).encode(),
+        "r",
+    )
+    table = cast(dict[str, list[list[str]]], blocks[3])
+    assert table["rows"][0][2] == "Read ?" and table["rows"][0][4] == "? via Agent"
+
+
+def test_a_long_timeline_stops_at_the_cap_and_says_so() -> None:
+    n = trace_pdf.MAX_TIMELINE_ROWS + 7
+    body = json.dumps({"rows": [{"seq": i, "at": "x"} for i in range(n)]}).encode()
+    blocks = [cast(dict[str, object], b) for b in trace_pdf.trace_blocks(body, "r")]
+    timeline_rows = sum(
+        len(cast(list[object], b["rows"]))
+        for b in blocks
+        if b.get("type") == "table" and cast(list[str], b["columns"])[0] == "#"
+    )
+    assert timeline_rows == trace_pdf.MAX_TIMELINE_ROWS
+    assert {
+        "type": "paragraph",
+        "runs": [{"type": "text", "text": "7 more rows are in the JSON export of this trace."}],
+    } in blocks
+
+
+def test_only_two_renders_run_at_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    import threading
+
+    slots = threading.BoundedSemaphore(trace_pdf.MAX_RENDERS)
+    monkeypatch.setattr(trace_pdf, "_slots", slots)
+
+    def renderer(_l: str, _b: list[object], _t: str, _a: datetime, _d: str) -> bytes:
+        return b"%PDF"
+
+    trace_pdf.register_trace_pdf_renderer(renderer)
+    try:
+        for _ in range(trace_pdf.MAX_RENDERS):  # two renders in flight hold both slots
+            assert slots.acquire(blocking=False)
+        with pytest.raises(trace_pdf.TraceRendererUnavailable, match="busy"):
+            trace_pdf.render_trace_pdf(BODY, "r", "h" * 64)
+        slots.release()
+        assert trace_pdf.render_trace_pdf(BODY, "r", "h" * 64) == b"%PDF"
+        # The render gave its slot back: one is free again.
+        assert slots.acquire(blocking=False)
+        assert not slots.acquire(blocking=False)
     finally:
         trace_pdf.register_trace_pdf_renderer(None)

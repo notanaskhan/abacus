@@ -48,7 +48,7 @@ codes:
     raised_by:
     - abacus.modules.agents.section_draft.DraftCapReached
     - abacus.modules.connections.service.ActionCapReached
-    summary: The engagement reached its daily cap for this action (SPEC-007 AC-4).
+    summary: The engagement reached its daily cap of section drafts.
   active_content:
     status: 409
     raised_by:
@@ -3182,7 +3182,7 @@ codes:
     - abacus.modules.tax.k1_treatments.StaleTreatment
     - abacus.modules.tax.status.StaleReturn
     - abacus.modules.tax.tax_profile.TaxProfileStale
-    summary: 'The record changed since it was read: read it again (409).'
+    summary: 'The client changed since it was read (`seen_version` is behind): read it again.'
   standard_key_taken:
     status: 409
     raised_by:

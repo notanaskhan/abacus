@@ -39,22 +39,26 @@ jobs:
       # F-01-T07: the same classifier as stage 2 (abacus_tools.ci.paths). A diff with any backend
       # or unknown path runs all of `make check-fast`; a frontend-only diff runs its frontend half
       # and the docs checks; a prose-only diff runs the docs checks. Unknown base: everything.
+      # Fail closed (security review, TASK-7828): `shell: bash` is `-eo pipefail`, so a crash in the
+      # classifier fails the step instead of leaving its outputs empty; and only an explicit
+      # `backend=false` skips the backend gates (empty or anything else runs all of them).
       - id: paths
+        shell: bash
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           PYTHONPATH: backend/src
         run: python3 -m abacus_tools.ci.paths "$BASE" "$GITHUB_SHA" | tee -a "$GITHUB_OUTPUT"
-      - if: steps.paths.outputs.backend == 'true'
+      - if: steps.paths.outputs.backend != 'false'
         run: make setup
-      - if: steps.paths.outputs.backend == 'true'
+      - if: steps.paths.outputs.backend != 'false'
         run: make check-fast
-      - if: steps.paths.outputs.backend != 'true' && steps.paths.outputs.frontend == 'true'
+      - if: steps.paths.outputs.backend == 'false' && steps.paths.outputs.frontend == 'true'
         run: pnpm install --frozen-lockfile && pnpm -C packages/api-client build:types
-      - if: steps.paths.outputs.backend != 'true' && steps.paths.outputs.frontend == 'true'
+      - if: steps.paths.outputs.backend == 'false' && steps.paths.outputs.frontend == 'true'
         run: make check-fast-frontend
-      - if: steps.paths.outputs.backend != 'true'
+      - if: steps.paths.outputs.backend == 'false'
         run: cd backend && uv sync --frozen
-      - if: steps.paths.outputs.backend != 'true'
+      - if: steps.paths.outputs.backend == 'false'
         run: make check-docs
       # Q-03-T081: from Jun 1, 2027 a PR's new migrations only expand the schema, unless the PR
       # is labelled contract-step (DEC-1052). Inert before that date.
@@ -92,6 +96,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - id: paths
+        shell: bash  # -eo pipefail: a crashed classifier fails this job, so nothing downstream passes
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           PYTHONPATH: backend/src

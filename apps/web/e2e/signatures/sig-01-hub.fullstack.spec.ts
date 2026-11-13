@@ -4,7 +4,7 @@
 // hub (`/signatures`, N-02-T42) on the `signatures` seed slice (TASK-7820): the same rows, reached
 // by the hub's own tabs and row drawer. Staging and the canary wait on the hosted sign-in (M13).
 import { expect, test } from "../harness";
-import { M13, artboard, hubTab, owner, skipUnhosted } from "./support";
+import { M13, NO_DECLINED, artboard, hubTab, owner, skipUnhosted } from "./support";
 
 test.describe("SIG-01 hub, full stack (N-02-T40)", () => {
   test.beforeEach(({ journey }) => {
@@ -30,8 +30,11 @@ test.describe("SIG-01 hub, full stack (N-02-T40)", () => {
       await expect(page.getByText("Needs a handwritten signature").first()).toBeVisible();
       await expect(page.getByText(/Send new link at unlock/)).toHaveCount(0);
     });
-    if (live) await hubTab(journey.page, "To send");
-    else await journey.as("grace-holloway", artboard("SIG-01", "b"));
+    if (live) {
+      // The evidence drawer is modal: close it before the hub's tabs take a click again.
+      await journey.page.getByRole("button", { name: "Close" }).click();
+      await hubTab(journey.page, "To send");
+    } else await journey.as("grace-holloway", artboard("SIG-01", "b"));
     await journey.step("SIG-01 b: drafts to send", async (page) => {
       await expect(page.getByText(/Harborview Dental Properties, LP/).first()).toBeVisible();
     });
@@ -40,7 +43,9 @@ test.describe("SIG-01 hub, full stack (N-02-T40)", () => {
     await journey.step("SIG-01 c: completed, last 30 days", async (page) => {
       await expect(page.getByText(/Summit Line Logistics, Inc\./).first()).toBeVisible();
     });
-    if (!live) {
+    if (live) {
+      test.info().annotations.push({ type: "fixme", description: `SIG-01 e: ${NO_DECLINED}` });
+    } else {
       // SIG-01 e is a variant the seed does not record (no envelope is declined on Sep 14).
       await journey.as("grace-holloway", artboard("SIG-01", "e"));
       await journey.step("SIG-01 e: the declined variant", async (page) => {
@@ -57,9 +62,11 @@ test.describe("SIG-01 hub, full stack (N-02-T40)", () => {
       const live = journey.project !== "fixture";
       await journey.as("grace-holloway", live ? "/signatures" : artboard("SIG-01", "f"));
       if (live) {
-        // Three out-for-signature rows picked by their own checkboxes; nothing is sent here.
-        const boxes = journey.page.getByRole("checkbox");
-        for (const i of [1, 2, 3]) await boxes.nth(i).check();
+        // Three out-for-signature envelopes the seed numbers as the handoff does (E1, E3, E5),
+        // picked by their own labelled checkboxes; nothing is sent here.
+        for (const n of ["E1", "E3", "E5"]) {
+          await journey.page.getByRole("checkbox", { name: `Select ${n}`, exact: true }).check();
+        }
       }
       await journey.step("SIG-01 f: three selected, Remind 3…", async (page) => {
         await expect(page.getByText(/3 selected/).first()).toBeVisible();

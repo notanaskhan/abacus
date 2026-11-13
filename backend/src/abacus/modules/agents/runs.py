@@ -661,7 +661,15 @@ async def export_trace(
         tx.record(
             "agent_run.trace_exported",
             target=Target("agent_run", run_id),
-            after=Ref(sha256=digest, rows=len(trace.rows), by=ctx.user_id),
+            # TASK-7828 (security review): the JSON body the delivered bytes come from. A JSON
+            # export's `source_sha256` equals its `sha256`; a PDF's differs, so the event tells
+            # the formats apart and ties a PDF to its trace version (Ref holds digests only).
+            after=Ref(
+                sha256=digest,
+                rows=len(trace.rows),
+                by=ctx.user_id,
+                source_sha256=source_digest,
+            ),
         )
     return TraceExport(delivered, manifest)
 

@@ -15,9 +15,11 @@ from dataclasses import dataclass, replace
 from typing import cast
 
 import pytest
+from sqlalchemy import text
 
 from abacus.kernel.config import settings
-from abacus.kernel.db import configure_engine, dispose_engine
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.uow import Target, uow
 from abacus.modules.agents import api as agents_api  # registers the resolvers
 from abacus.modules.agents.trace import samples_for
 from abacus.modules.identity.api import AuthContext
@@ -131,16 +133,74 @@ async def test_a_withdrawn_version_never_resolves(
     world: World, migrated_db: MigratedDatabase
 ) -> None:
     """ADR-162 §4 (TASK-7824): a client's withdrawn upload is gone from every read, so a step that
-    read it before the withdrawal shows no sample for it, as a version or through its item."""
+    read it before the withdrawal shows no sample for it, as a version or through its item. Only
+    a detached-key version is withdrawn, and only by the session's own person (0144's guard)."""
     seed = Seeder(migrated_db.superuser_dsn)
-    await seed.run(
-        "INSERT INTO evidence_withdrawals (tenant_id, evidence_version_id, engagement_id, "
-        "request_item_id, withdrawn_by_user_id, withdrawn_at, erase_after) "
-        "SELECT tenant_id, id, engagement_id, $2, $3, now(), now() + interval '30 days' "
-        "FROM evidence_versions WHERE id = $1",
-        world.version,
-        world.item,
-        world.partner.user_id,
+    tenant = cast(
+        uuid.UUID,
+        await seed.value("SELECT tenant_id FROM evidence_versions WHERE id = $1", world.version),
     )
-    found = await samples_for(_ctx(world.partner), _raw(world), 5)
-    assert [s.record_type for s in found] == ["request_item", "engagement"]
+    item = cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO evidence_items (tenant_id, engagement_id, title, created_by_kind, "
+            "created_by_id) VALUES ($1, $2, 'Signed letter.pdf', 'human', 'seed') RETURNING id",
+            tenant,
+            world.engagement,
+        ),
+    )
+    version = uuid.uuid4()
+    await seed.run(
+        "INSERT INTO evidence_versions (id, tenant_id, engagement_id, evidence_item_id, "
+        "version_no, fingerprint, storage_key, storage_version_id, size_bytes, media_type, "
+        "source, method, storage_mode) VALUES ($1, $2, $3, $4, 1, $5, $6, 'v1', 10, "
+        "'application/pdf', 'client_upload', 'uploaded', 'detached_key')",
+        version,
+        tenant,
+        world.engagement,
+        item,
+        hashlib.sha256(version.bytes).hexdigest(),
+        f"tenants/{tenant}/v/{version}",
+    )
+    await seed.run(
+        "INSERT INTO evidence_object_keys (tenant_id, evidence_version_id, key_id, wrapped_key) "
+        "VALUES ($1, $2, 'test-kek', $3)",
+        tenant,
+        version,
+        uuid.uuid4().bytes * 2,
+    )
+    raw = [
+        {"record_type": "evidence_version", "id": str(version)},
+        {"record_type": "evidence_item", "id": str(item)},
+        *_raw(world),
+    ]
+    # A step keeps at most five samples: the two of the new upload, then the world's first three.
+    before = await samples_for(_ctx(world.partner), raw, 10)
+    assert [s.record_type for s in before] == [
+        "evidence_version",
+        "evidence_item",
+        "evidence_version",
+        "request_item",
+        "engagement",
+    ]
+    # The client's own withdrawal, as the app writes it: a unit of work as the person (0144's
+    # guard reads the session's actor; only abacus.kernel.db sets it).
+    withdrawer = TenantContext(tenant, "human", str(world.partner.user_id))
+    async with uow(withdrawer) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO evidence_withdrawals (tenant_id, evidence_version_id, engagement_id, "
+                "request_item_id, withdrawn_by_user_id, withdrawn_at, erase_after) VALUES "
+                "(:tenant, :version, :engagement, NULL, :who, now(), now() + interval '30 days')"
+            ),
+            {
+                "tenant": tenant,
+                "version": version,
+                "engagement": world.engagement,
+                "who": world.partner.user_id,
+            },
+        )
+        tx.record("evidence_version.withdrawn", target=Target("evidence_version", version))
+    after = await samples_for(_ctx(world.partner), raw, 10)
+    assert [s.record_type for s in after] == ["evidence_version", "request_item", "engagement"]
+    assert version not in {s.id for s in after} and item not in {s.id for s in after}

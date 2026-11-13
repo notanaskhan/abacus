@@ -44,24 +44,27 @@ def test_ac_stage1_classifies_the_diff_with_the_stage2_classifier() -> None:
     [paths] = [s for s in _stage1_steps() if s.get("id") == "paths"]
     assert "abacus_tools.ci.paths" in str(paths["run"])
     assert "GITHUB_OUTPUT" in str(paths["run"])
+    # Fail closed (TASK-7828): bash is -eo pipefail, so a crashed classifier fails the step.
+    assert paths["shell"] == "bash"
     base = str(cast(Json, paths["env"])["BASE"])
     assert "pull_request.base.sha" in base and "merge_group.base_sha" in base
     assert "event.before" in base
 
 
 def test_ac_backend_gates_run_only_for_a_backend_or_unknown_diff() -> None:
-    assert _gate("make check-fast") == "steps.paths.outputs.backend == 'true'"
-    assert _gate("make setup") == "steps.paths.outputs.backend == 'true'"
+    # Only an explicit `backend=false` skips them: empty (a crashed classifier) runs everything.
+    assert _gate("make check-fast") == "steps.paths.outputs.backend != 'false'"
+    assert _gate("make setup") == "steps.paths.outputs.backend != 'false'"
 
 
 def test_ac_a_frontend_only_diff_runs_the_frontend_half_and_the_docs() -> None:
-    frontend = "steps.paths.outputs.backend != 'true' && steps.paths.outputs.frontend == 'true'"
+    frontend = "steps.paths.outputs.backend == 'false' && steps.paths.outputs.frontend == 'true'"
     assert _gate("make check-fast-frontend") == frontend
     assert _gate("pnpm install --frozen-lockfile && pnpm -C packages/api-client build:types") == (
         frontend
     )
-    assert _gate("make check-docs") == "steps.paths.outputs.backend != 'true'"
-    assert _gate("cd backend && uv sync --frozen") == "steps.paths.outputs.backend != 'true'"
+    assert _gate("make check-docs") == "steps.paths.outputs.backend == 'false'"
+    assert _gate("cd backend && uv sync --frozen") == "steps.paths.outputs.backend == 'false'"
 
 
 def test_ac_check_fast_still_runs_the_frontend_half() -> None:
@@ -76,6 +79,22 @@ def test_ac_check_fast_still_runs_the_frontend_half() -> None:
     ):
         assert gate in half, gate
     docs = _target("check-docs")
-    assert "abacus_tools.quality.validate_docs" in docs
-    assert "abacus_tools.quality.register_ids" in docs
+    # TASK-7828: the gates a frontend or prose file can trip run whenever check-fast does not.
+    for gate in (
+        "abacus_tools.quality.validate_docs",
+        "abacus_tools.quality.register_ids",
+        "abacus_tools.quality.secrets_scan",
+        "abacus_tools.quality.seed_contamination",
+        "abacus_tools.quality.scope_guards",
+        "abacus_tools.quality.quarantine",
+        "$(MAKE) check-generated",
+    ):
+        assert gate in docs, gate
+        assert gate in _target("check-fast") or gate == "$(MAKE) check-generated", gate
     assert "abacus_tools.quality.validate_docs" in _target("check-fast")
+
+
+def test_stage2_classifier_also_fails_closed() -> None:
+    jobs = cast(Json, yaml.safe_load(CI.read_text(encoding="utf-8")))["jobs"]
+    [paths] = [s for s in cast(list[Json], jobs["changes"]["steps"]) if s.get("id") == "paths"]
+    assert paths["shell"] == "bash"

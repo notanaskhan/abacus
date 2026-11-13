@@ -8,11 +8,24 @@
 # dossier. Pilot codes only; never a firm name.
 live_paths:
   - backend/src/abacus/kernel/*
+  - backend/src/abacus/api/*
   - backend/src/abacus/modules/identity/*
   - backend/src/abacus/modules/requests/*
   - backend/src/abacus/modules/evidence/*
   - backend/src/abacus/modules/portal/*
+  - backend/src/abacus/modules/notifications/*
+  - apps/web/index.html
+  - apps/web/portal.html
+  - apps/web/src/main.tsx
+  - apps/web/src/App.tsx
+  - apps/web/src/router.tsx
+  - apps/web/src/api.ts
   - apps/web/src/app-core/*
+  - apps/web/src/shell/*
+  - apps/web/src/home/*
+  - apps/web/src/portal/*
+  - apps/web/src/screens/shared/*
   - apps/web/src/screens/HOME-*
   - apps/web/src/screens/POR-*
-  - apps/web/src/portal/*
+  - packages/ui/*
+  - packages/api-client/*

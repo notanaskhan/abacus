@@ -63,7 +63,7 @@ def test_population_refusals(records: list[Record], message: str) -> None:
 
 def test_key_normalising() -> None:
     assert normalise_key(" NW-1184 ") == "nw-1184"
-    assert normalise_key("ｎｗ") == "nw"  # NFKC
+    assert normalise_key("\uff4e\uff57") == "nw"  # NFKC: fullwidth "nw"
     with pytest.raises(ValueError, match=r"^a record key must not be blank$"):
         normalise_key("   ")
     with pytest.raises(ValueError, match=r"^a record key must not hold control characters$"):
@@ -85,7 +85,7 @@ def _reference_below(rng: random.Random, bound: int) -> int:
 def test_stream_rejects_words_past_the_largest_multiple() -> None:
     bound = 2**31 + 1  # one multiple fits: about half the words are redrawn
     stream = draw.Stream(4118)
-    reference = random.Random(4118)
+    reference = random.Random(4118)  # the stream's own PRNG (ADR-340 §5)
     assert [stream.below(bound) for _ in range(20)] == [
         _reference_below(reference, bound) for _ in range(20)
     ]

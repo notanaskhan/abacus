@@ -41,7 +41,8 @@ export function artboard(screen: string, state: string): string {
 
 /** TASK-7820: one of SIG-01's hub tabs on the full stack ("To send", "Completed", …). */
 export async function hubTab(page: Page, label: string): Promise<void> {
-  await page.getByText(label, { exact: true }).first().click();
+  // C-05's Segmented renders `tab`s whose names may end in their count ("To send 2").
+  await page.getByRole("tab", { name: new RegExp(`^${label}\\b`) }).click();
 }
 
 /** N-02-T42: POR-06's states open on the Sign list; a person opens the envelope from it. */
