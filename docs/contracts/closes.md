@@ -49,4 +49,62 @@ P-04's sign-off, issue, decision and proposal routes, P-06's request-item routes
 - Later rows add `accepted_explanations`, `reconciled_accounts`, `procedure_statuses` and `sync_status` (T23, T25, T20, T17).
 
 ## 4. Part 2 — intake, accounts, reconciliation, review, flux, portal (C-01-T05)
-See §5 onward (added by C-01-T05).
+Code: `closes/contract_work.py`. Firm routes answer as §1; a transaction question to a client also
+needs `closes.portal_requests`. Refusal codes added: `open_items`, `statement_not_available`,
+`question_template_required` (with part 1's, C-01 §4.3).
+
+## 5. Intake (CLS-03)
+| Method · path | Action | Response | Build task |
+|---|---|---|---|
+| `GET /v1/closes/{id}/requests?view=tree&q&status` | `close.read` | `RequestTreeOut` (counts, screening glyph, Linked (n), internal-only bank-feed rows QC-1) | T19 |
+| `GET /v1/closes/{id}/questionnaire` | `close.read` | `CloseQuestionnaireOut` | T19 |
+| `GET /v1/evidence-versions/{v}/close-summary` | `close.read` | `IntakeSummaryOut` (code figures with `sheet_cell` citations; label `summarized_by_agent` or `totals_from_file`, DV-3) | T19 |
+
+Incorporate, undo, return and on-behalf upload stay P-06's `request_item.*` routes.
+
+## 6. Accounts and schedules (CLS-04)
+| Method · path | Action | Response | Build task |
+|---|---|---|---|
+| `GET /v1/closes/{id}/accounts?show_zero&group_by` | `close.read` | `AccountTreeOut` (rolls up in code; contra flag) | T21 |
+| `GET …/accounts/{acct}/register?cursor` | `close.read` | `RegisterOut` (`ledger_line` citable rows) | T21 |
+| `GET …/accounts/{acct}/workpaper` · `…/workpaper.xlsx` | `close.read` | `WorkpaperOut` (no Post control, DV-1; `recording` "Recorded in QuickBooks") · bytes | T21 |
+| `POST …/accounts/{acct}/arrangements` · `PATCH /v1/arrangements/{aid}` | `arrangement.edit` | `ArrangementOut` (a new version per edit) | T21 |
+| `POST /v1/register-lines/{ref}/recategorization-proposals` | `proposed_entry.create` | `ProposalRefOut` (to SHL-10) | T21 |
+
+## 7. Reconciliation (CLS-05)
+| Method · path | Action | Response | Build task |
+|---|---|---|---|
+| `GET /v1/closes/{id}/reconciliations/{acct}` | `close.read` | `ReconciliationOut` (both sides, items, statement lines with regions, sign-off blockers, `engine_version`, `inputs_hash`) | T23 |
+| `POST /v1/reconciliations/{rid}/items/{iid}/resolve` | `reconciliation.resolve_item` | `ReconcilingItemOut` (note required; a person's) | T23 |
+| `GET /v1/reconciliations/{rid}/items/{iid}/entry-draft` | `close.read` | `EntryDraftOut` (a suggestion) | T23 |
+| `POST /v1/closes/{id}/entries` | `proposed_entry.create` | `ProposalRefOut` (through `adjustments.api.propose_entry`) | T23 |
+
+L1 sign-off is P-04's `POST /v1/sign-offs` on target `reconciliation` (409 `open_items`).
+
+## 8. Review and transaction questions (CLS-06; C5 additive)
+| Method · path | Action | Response | Build task |
+|---|---|---|---|
+| `GET /v1/closes/{id}/issues?class&include_resolved` | `close.read` | `CloseIssuesOut` (open = badge; notes never count) | T24 |
+| `POST /v1/issues/{iid}/transaction-questions` | `transaction_question.send` | `TransactionQuestionOut`; 409 `question_template_required` | T24 |
+
+Issue actions stay P-04's human-only routes.
+
+## 9. Flux (CLS-10)
+| Method · path | Action | Response | Build task |
+|---|---|---|---|
+| `GET /v1/closes/{id}/flux?basis` · `…/flux.xlsx` | `flux.read` | `FluxSetOut` · bytes | T25 |
+| `POST /v1/analytic-lines/{lid}/explain` | `flux.explain` | `StartedRunOut` (202; mode `flux`) | T30 |
+| `PUT /v1/analytic-lines/{lid}/explanation` (If-Match) | `flux.edit` | `FluxLineOut` | T25 |
+| `POST /v1/analytic-lines/{lid}/accept` (If-Match) | `flux.accept` | `FluxLineOut` (Manager or Partner) | T25 |
+
+## 10. Portal questions (POR-11)
+Only a client principal; `closes.portal_requests` off answers 404; inside the grant
+(`scope_only`). The DTO carries the client wording and context line only: never the issue, its
+severity or the agent (QC-9, AC-47).
+
+| Method · path | Action | Response | Build task |
+|---|---|---|---|
+| `GET /v1/portal/closes/{close_id}/questions` | `transaction_question.read_own` | `PortalQuestionsOut` | T27 |
+| `POST /v1/portal/questions/{qid}/answer` | `transaction_question.answer` | `PortalQuestionOut` | T27 |
+
+The close-intake binder reads through P-08/R-01's `GET /v1/portal/binders`, and Mark as Done through P-06's binder action.
