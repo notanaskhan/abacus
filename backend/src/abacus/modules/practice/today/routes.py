@@ -96,21 +96,25 @@ async def today_drill_route(
     return await drill(ctx, work_item_id, brief_date)
 
 
-@today_router.get("/history", action="briefing.read", response_model=HistoryPage, errors=(501,))
+@today_router.get("/history", action="briefing.read", response_model=HistoryPage)
 async def today_history_route(
     ctx: Ctx,
     before: Annotated[date | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=90)] = 30,
 ) -> HistoryPage:
-    """Earlier briefs by day, the caller's own, 90 days at most (Q3)."""
+    """Earlier briefs by day, the caller's own, 90 days at most (Q3). I-02-T17 (DEC-4938)."""
+    from abacus.modules.practice.today.assembly import history
+
     await today_gate(ctx)
-    _not_yet()
+    return await history(ctx, before, limit)
 
 
 @today_router.get(
-    "/history/{brief_id}", action="briefing.read", response_model=TodayVM, errors=(501,)
+    "/history/{brief_id}", action="briefing.read", response_model=TodayVM
 )
 async def today_history_brief_route(brief_id: UUID, ctx: Ctx) -> TodayVM:
-    """A past brief, read-only; walls re-checked and citations re-verified at read."""
+    """A past brief, read-only; walls re-checked at read. I-02-T17 (DEC-4938)."""
+    from abacus.modules.practice.today.assembly import past_brief
+
     await today_gate(ctx)
-    _not_yet()
+    return await past_brief(ctx, brief_id)

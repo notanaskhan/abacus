@@ -29,6 +29,25 @@ export const COPY = {
   budget: "The firm's AI budget for today is used up.",
   nothingLate: "Nothing is late.",
   more_rows: (n: number) => `+${String(n)} more`,
+  // I-02-T17 (SHL-23 2, 3; HOME-05 b): drill-in, assign, history and ask.
+  back: "Today",
+  waitingDownstream: "Waiting downstream",
+  openReturn: "Open return",
+  reservedToYou: "Reserved to you — not assignable",
+  newTodo: "New to-do",
+  assignee: "Assignee",
+  due: "Due",
+  create: "Create",
+  skip: "Skip",
+  cancel: "Cancel",
+  assignOf: (n: number, of: number) => `${String(n)} of ${String(of)}`,
+  historyTitle: "Earlier briefs",
+  noHistory: "No earlier briefs yet.",
+  pastBrief: (day: string) => `Brief for ${day} · read only`,
+  thinking: "Accrued Agent is answering…",
+  readOnly: "I can't approve, sign off or send from Today. Those stay with you on their own screens.",
+  openSignOff: "Open sign-off",
+  askFailed: "I couldn't answer that just now.",
 } as const;
 
 export const CELL_LABELS: Readonly<Record<string, string>> = {

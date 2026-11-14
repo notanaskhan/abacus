@@ -11190,7 +11190,7 @@ export const todayBuilds = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Today History Route
  *
- * Earlier briefs by day, the caller's own, 90 days at most (Q3).
+ * Earlier briefs by day, the caller's own, 90 days at most (Q3). I-02-T17 (DEC-4938).
  */
 export const todayHistory = <ThrowOnError extends boolean = false>(options?: Options<TodayHistoryData, ThrowOnError>): RequestResult<TodayHistoryResponses, TodayHistoryErrors, ThrowOnError> => (options?.client ?? client).get<TodayHistoryResponses, TodayHistoryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -11201,7 +11201,7 @@ export const todayHistory = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * Today History Brief Route
  *
- * A past brief, read-only; walls re-checked and citations re-verified at read.
+ * A past brief, read-only; walls re-checked at read. I-02-T17 (DEC-4938).
  */
 export const todayHistoryBrief = <ThrowOnError extends boolean = false>(options: Options<TodayHistoryBriefData, ThrowOnError>): RequestResult<TodayHistoryBriefResponses, TodayHistoryBriefErrors, ThrowOnError> => (options.client ?? client).get<TodayHistoryBriefResponses, TodayHistoryBriefErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

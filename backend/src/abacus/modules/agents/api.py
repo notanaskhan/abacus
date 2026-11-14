@@ -712,6 +712,8 @@ __all__ = [
     "effective_ai_policy",
     "engagement_graph",
     "ensure_briefings",
+    "briefing_snapshot_of",
+    "briefing_snapshots_of",
     "extract_notice_fields",
     "fact",
     "fail_code_run",
@@ -853,6 +855,12 @@ from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
 )
 from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
     write_snapshot as write_briefing_snapshot,
+)
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402  I-02-T17
+    snapshot_of as briefing_snapshot_of,
+)
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
+    snapshots_of as briefing_snapshots_of,
 )
 
 _briefing_dispatch.register()

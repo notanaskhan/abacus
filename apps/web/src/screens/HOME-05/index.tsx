@@ -15,7 +15,7 @@ import {
   writeCollapsed,
 } from "../../domain/today";
 import { HOME01 } from "../HOME-01";
-import { TodayPanel } from "../SHL-23";
+import { TodayPaneLive } from "../SHL-23/live";
 
 export const PANE_WIDTH = 470;
 export const COPY = {
@@ -121,7 +121,7 @@ export function HOME05({ initialCollapsed }: HOME05Props): JSX.Element {
             <Icon name="chevron-left" size={12} />
           </button>
         </div>
-        <TodayPanel
+        <TodayPaneLive
           vm={brief.data}
           onOpen={(href) => {
             open(href);
@@ -158,7 +158,7 @@ export function TodayDrawer({ onClose }: { onClose: () => void }): JSX.Element {
       <div className="flex h-[32px] flex-none items-center justify-end px-[8px]">
         <Button variant="ghost" size="sm" icon="x" aria-label={COPY.collapse} onClick={onClose} />
       </div>
-      <TodayPanel
+      <TodayPaneLive
         vm={brief.data}
         onOpen={(href) => {
           onClose();
