@@ -23,6 +23,7 @@ any count, the forced-build limit.
 ## Partial
 - Solo edition (one session). Daniel/Margaret golden comparisons against HOME-01/02 on the live
   seed and the walls (Lena Park, Grace Holloway) stay in the journey suites (I-02-T21).
+- Closed by S43 (2026-11-14, main 322ca3310): I-02-T21 (#1981): the journey suites (staging walks are the S43 close's).
 
 ## Progress log
 - 2026-11-13: written, not run (S42 end pass).
