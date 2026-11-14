@@ -412,8 +412,13 @@ async def test_ac3_3_no_table_is_named_reminder(seed: Seeder) -> None:
 # Spec drift: F-03-T16 says no route is named reminder, but P-07's later contract
 # (`docs/contracts/acceptance-independence.md`, P-07 §5, ENG-05, CLI-08) adds the independence
 # confirmation request at `POST …/independence/reminders`. It is not a follow-up; it is allowed.
+# T-05-T51 (DEC-4903, `docs/contracts/tax-workbook.md`) names TXP-10's issue nudge `…/reminders`;
+# it is authorised as `follow_up.draft`, so no new reminder action exists (test below).
 CONTRACTED_REMINDER_ROUTES: Final = frozenset(
-    {"/v1/engagements/{engagement_id}/independence/reminders"}
+    {
+        "/v1/engagements/{engagement_id}/independence/reminders",
+        "/v1/tax-returns/{return_id}/issues/{issue_id}/reminders",
+    }
 )
 
 
