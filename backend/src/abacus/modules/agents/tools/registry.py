@@ -147,9 +147,12 @@ def _identifier_only(annotation: object, name: str = "") -> bool:
 
 
 def row_fields(model: type[BaseModel]) -> dict[str, type[BaseModel]]:
-    """An output model's row lists: each list field whose items are models."""
+    """An output model's row lists: each list field whose items are models. The per-item failure
+    ledger (`failed_items`, W-02-T19) names what was *not* read, so it is not a row list."""
     rows: dict[str, type[BaseModel]] = {}
     for name, field in model.model_fields.items():
+        if name == "failed_items":
+            continue
         annotation = field.annotation
         if get_origin(annotation) in (list, tuple):
             args = [a for a in get_args(annotation) if a is not Ellipsis]

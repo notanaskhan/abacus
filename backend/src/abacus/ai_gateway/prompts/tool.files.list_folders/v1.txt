@@ -1,0 +1,1 @@
+List the folders a workbook could be saved to in Files, each with whether the person who will approve the save can write to it. Nothing is saved or changed.

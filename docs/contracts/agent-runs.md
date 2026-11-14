@@ -392,3 +392,23 @@ Fills §10's trace fields; additive (`TraceRowOut.kind` gains `plan` and `step`)
   and `source_ref` (`accrued` or a connection id), nullable, app-updatable; the harness fills them.
 - The trace-v1 export's bytes are unchanged: the v1.1 fields stay out of `canonical` until
   P-09-T11's export.
+
+### 9.x W-02-T19 additions (2026-11-14, additive; DEC-4930)
+- `RunPlanOut` gains `reads[] {source, label, count}` (WB-03a "Data it will read", code's words
+  from `run_plan.READ_SOURCES`, the planner's code counts) and `writes[] {step_key, action, label,
+  approver_name}` ("Writes that need your approval"; a file save's label is rendered from its
+  build step and folder). Plan steps may declare `reads: [{source, count}]`; an unknown source or
+  a malformed count refuses the plan (`unknown_read_source:<step>`).
+- `POST …/plan/edit` takes optional `labels {step_key: text}`: a kept step's wording only. The
+  edited version is validated again (`validate_plan`) before it is stored; a refusal is 422
+  `plan_edit_invalid` with `facts.problems`.
+- `POST …/steps/{sid}/retry` takes an optional body `{scope: all | failed_items}`.
+  `failed_items` re-reads only the step's failure ledger, for a failed step or one that succeeded
+  with gaps, when its tool takes `only_refs`; otherwise 409 `no_failed_items`.
+- `agent_run_steps.failed_items` / `retry_scope` (0872); `RunStepV2Out` gains `failed_items[]
+  {ref_type, ref_id, source, error_code}` and `retry_scope`; `RunCountersOut` gains `gaps` and
+  `failed_items`, counted by code from each plan step's latest row.
+- C17 (additive): `ToolOutcome.failed_items`, lifted from a tool output's own `failed_items`
+  (`kernel.agent_tools.FailedItem`); not a row list. New read tools `identity.list_offices`
+  (`org_structure.list`) and `files.list_folders` (`file.propose`; writable by the approver).
+

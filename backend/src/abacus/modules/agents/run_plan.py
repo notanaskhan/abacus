@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from abacus.kernel._human_only_actions import HUMAN_ONLY_ACTIONS
 from abacus.modules.agents.tools.registry import has_never_verb
@@ -48,6 +48,9 @@ class PlanStep:
     approver_user_id: str | None = None
     # The clients a read names (resolved by the planner from its arguments).
     reads_clients: tuple[str, ...] = ()
+    # W-02-T19 (WB-03a "Data it will read"): the sources a read step will reach and how many
+    # records each holds, counted by the planner's code before approval (no bulk read).
+    reads: tuple[tuple[str, int], ...] = ()
 
     @classmethod
     def parse(cls, raw: Mapping[str, object]) -> PlanStep:
@@ -67,6 +70,7 @@ class PlanStep:
             writes=strs("writes"),
             approver_user_id=str(raw["approver_user_id"]) if raw.get("approver_user_id") else None,
             reads_clients=strs("reads_clients"),
+            reads=_reads(raw.get("reads")),
         )
 
     def dump(self) -> dict[str, object]:
@@ -81,7 +85,39 @@ class PlanStep:
             "writes": list(self.writes),
             "approver_user_id": self.approver_user_id,
             "reads_clients": list(self.reads_clients),
-        }
+        } | ({"reads": [{"source": s, "count": n} for s, n in self.reads]} if self.reads else {})
+
+
+def _reads(raw: object) -> tuple[tuple[str, int], ...]:
+    """`[{source, count}]` as the planner wrote it; a malformed entry is kept as count -1 so
+    validation refuses the plan rather than dropping what it would read."""
+    if not isinstance(raw, list):
+        return ()
+    found: list[tuple[str, int]] = []
+    for item in cast(list[object], raw):
+        if not isinstance(item, dict):
+            found.append(("", -1))
+            continue
+        entry = cast(dict[str, object], item)
+        count = entry.get("count")
+        found.append(
+            (str(entry.get("source") or ""), count if isinstance(count, int) else -1)
+        )
+    return tuple(found)
+
+
+# W-02-T19: the sources a plan may declare it reads, with the words WB-03a shows (code's, never
+# the model's). A source outside this table refuses the plan (`unknown_read_source`).
+READ_SOURCES: Final[Mapping[str, str]] = {
+    "tax_returns": "Tax returns",
+    "tax_engagements": "Tax engagements",
+    "binders": "Binders",
+    "offices": "Offices",
+    "engagements": "Engagements",
+    "requests": "Requests",
+    "evidence": "Documents",
+    "workpapers": "Workpapers",
+}
 
 
 KINDS: Final = frozenset(
@@ -137,6 +173,9 @@ def validate_plan(steps: Sequence[PlanStep], ctx: PlanContext) -> list[str]:
                 found.append(f"approver_lacks_action:{s.key}")
         if any(c not in ctx.client_scope for c in s.reads_clients):
             found.append(f"read_out_of_scope:{s.key}")
+        for source, count in s.reads:
+            if source not in READ_SOURCES or count < 0:
+                found.append(f"unknown_read_source:{s.key}")
         for dep in s.depends_on:
             if dep not in known:
                 found.append(f"unknown_dependency:{s.key}")

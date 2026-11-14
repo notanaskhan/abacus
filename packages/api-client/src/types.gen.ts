@@ -34310,6 +34310,26 @@ export type PlanOut = {
 };
 
 /**
+ * PlanReadOut
+ *
+ * WB-03a "Data it will read": Tax returns 224 · Tax engagements 214 · Binders 241.
+ */
+export type PlanReadOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Source
+     */
+    source: string;
+};
+
+/**
  * PlanReviewDiffOut
  *
  * EBP-02 b2's ribbon: what the current version adds to this earlier one, from code.
@@ -34400,6 +34420,30 @@ export type PlanStepRefOut = {
      * Label
      */
     label: string;
+};
+
+/**
+ * PlanWriteOut
+ *
+ * WB-03a "Writes that need your approval", with the person who approves it.
+ */
+export type PlanWriteOut = {
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Approver Name
+     */
+    approver_name?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Step Key
+     */
+    step_key: string;
 };
 
 /**
@@ -42289,6 +42333,14 @@ export type RunCountersOut = {
      */
     citations_count?: number;
     /**
+     * Failed Items
+     */
+    failed_items?: number;
+    /**
+     * Gaps
+     */
+    gaps?: number;
+    /**
      * Records Read
      */
     records_read?: number;
@@ -42440,6 +42492,12 @@ export type RunPlanEditIn = {
      */
     expected_version: number;
     /**
+     * Labels
+     */
+    labels?: {
+        [key: string]: string;
+    } | null;
+    /**
      * Steps
      */
     steps: Array<string>;
@@ -42464,6 +42522,10 @@ export type RunPlanOut = {
      */
     id: string;
     /**
+     * Reads
+     */
+    reads?: Array<PlanReadOut>;
+    /**
      * Run Id
      */
     run_id: string;
@@ -42483,6 +42545,10 @@ export type RunPlanOut = {
      * Version
      */
     version: number;
+    /**
+     * Writes
+     */
+    writes?: Array<PlanWriteOut>;
 };
 
 /**
@@ -42718,6 +42784,18 @@ export type RunStartedOut = {
      * Status
      */
     status?: 'queued';
+};
+
+/**
+ * RunStepRetryIn
+ *
+ * W-02-T19 (additive; AC-G4): `failed_items` re-reads only the step's failure ledger.
+ */
+export type RunStepRetryIn = {
+    /**
+     * Scope
+     */
+    scope?: 'all' | 'failed_items';
 };
 
 /**
@@ -59011,7 +59089,10 @@ export type SignOffRunResponses = {
 export type SignOffRunResponse = SignOffRunResponses[keyof SignOffRunResponses];
 
 export type RetryStepData = {
-    body?: never;
+    /**
+     * Body
+     */
+    body?: RunStepRetryIn | null;
     headers: {
         /**
          * Idempotency-Key

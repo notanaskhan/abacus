@@ -20,14 +20,16 @@ from datetime import datetime
 from typing import Annotated, Literal, cast, get_args
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Response
+from fastapi import Body, Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import AGENT_RUNTIME_V2, ENGAGEMENT_RUN_ENABLED, REALTIME_SSE
+from abacus.kernel.agent_tools import FailedItem
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.agents import commands
+from abacus.modules.agents.run_commands import RetryScope
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -155,6 +157,9 @@ class RunCountersOut(BaseModel):
     writes_waiting: Annotated[int, Internal] = 0
     agent_ms: Annotated[int, Internal] = 0
     agent_minutes: Annotated[int, Internal] = 0
+    # W-02-T19 (additive): steps that could not read everything, and the references still unread.
+    gaps: Annotated[int, Internal] = 0
+    failed_items: Annotated[int, Internal] = 0
 
 
 class RunV2Out(BaseModel):
@@ -205,6 +210,31 @@ class RunStepV2Out(BaseModel):
     active_ms: Annotated[int, Internal] = 0
     records_read: Annotated[int, Internal] = 0
     error_code: Annotated[str | None, Internal] = None
+    # W-02-T19 (additive): the items it could not read (references and codes only) and, on a
+    # retry row, what it re-ran.
+    failed_items: Annotated[list[FailedItem], Internal] = Field(default_factory=list[FailedItem])
+    retry_scope: Annotated[RetryScope | None, Internal] = None
+
+
+class PlanReadOut(BaseModel):
+    """WB-03a "Data it will read": Tax returns 224 · Tax engagements 214 · Binders 241."""
+
+    model_config = _frozen()
+
+    source: Annotated[str, Internal]
+    label: Annotated[str, Internal]
+    count: Annotated[int, Internal]
+
+
+class PlanWriteOut(BaseModel):
+    """WB-03a "Writes that need your approval", with the person who approves it."""
+
+    model_config = _frozen()
+
+    step_key: Annotated[str, Internal]
+    action: Annotated[str, Internal]
+    label: Annotated[str, Confidential]
+    approver_name: Annotated[str | None, Confidential] = None
 
 
 class RunPlanStepOut(BaseModel):
@@ -229,6 +259,11 @@ class RunPlanOut(BaseModel):
     sources: Annotated[list[str], Confidential] = Field(default_factory=list[str])
     decided_by: Annotated[str | None, Confidential] = None
     decided_at: Annotated[datetime | None, Internal] = None
+    # W-02-T19 (additive): the plan card's fields, derived by code from the version's steps.
+    reads: Annotated[list[PlanReadOut], Internal] = Field(default_factory=list[PlanReadOut])
+    writes: Annotated[list[PlanWriteOut], Confidential] = Field(
+        default_factory=list[PlanWriteOut]
+    )
 
 
 class QuestionOptionOut(BaseModel):
@@ -298,6 +333,20 @@ class RunPlanEditIn(BaseModel):
 
     steps: Annotated[list[str], Field(min_length=1, max_length=200), Internal]
     expected_version: Annotated[int, Internal]
+    # W-02-T19 (WB-03a2, additive): a kept step's reworded label, by step key. A person's words.
+    labels: Annotated[
+        dict[str, Annotated[str, Field(min_length=1, max_length=200)]] | None,
+        Field(max_length=200),
+        Confidential,
+    ] = None
+
+
+class RunStepRetryIn(BaseModel):
+    """W-02-T19 (additive; AC-G4): `failed_items` re-reads only the step's failure ledger."""
+
+    model_config = _strict()
+
+    scope: Annotated[RetryScope, Internal] = "all"
 
 
 class PlanDecisionIn(BaseModel):
@@ -401,6 +450,13 @@ def _plan_out(plan: commands.PlanView) -> RunPlanOut:
         sources=plan.sources,
         decided_by=plan.decided_by,
         decided_at=plan.decided_at,
+        reads=[PlanReadOut(source=r.source, label=r.label, count=r.count) for r in plan.reads],
+        writes=[
+            PlanWriteOut(
+                step_key=w.step_key, action=w.action, label=w.label, approver_name=w.approver_name
+            )
+            for w in plan.writes
+        ],
     )
 
 
@@ -451,6 +507,8 @@ def _run_out(state: commands.RunState) -> RunV2Out:
             writes_waiting=counters.writes_waiting,
             agent_ms=counters.agent_ms,
             agent_minutes=counters.agent_minutes,
+            gaps=counters.gaps,
+            failed_items=counters.failed_items,
         )
         if counters is not None
         else RunCountersOut(),
@@ -545,7 +603,9 @@ async def edit_run_plan_route(
     run_id: UUID, body: RunPlanEditIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunPlanOut:
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    return _plan_out(await commands.edit_plan(ctx, run_id, body.expected_version, body.steps))
+    return _plan_out(
+        await commands.edit_plan(ctx, run_id, body.expected_version, body.steps, body.labels)
+    )
 
 
 @runs_v2_router.post(
@@ -618,11 +678,16 @@ async def redirect_run_route(
     errors=(409, 501),
 )
 async def retry_step_route(
-    run_id: UUID, step_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+    run_id: UUID,
+    step_id: UUID,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+    body: Annotated[RunStepRetryIn | None, Body()] = None,
 ) -> RunAcceptedOut:
-    """Re-dispatches only the failed step."""
+    """Re-dispatches only the failed step; W-02-T19: with `scope: failed_items`, only the items
+    its failure ledger names ("Retry those 3")."""
     await _flag_on(ctx, AGENT_RUNTIME_V2)
-    await commands.retry(ctx, run_id, step_id)
+    await commands.retry(ctx, run_id, step_id, body.scope if body is not None else "all")
     return _accepted(run_id)
 
 

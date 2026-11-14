@@ -15,7 +15,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 
-from abacus.kernel.agent_tools import MAX_ROWS, ToolCaller, ToolDecl
+from abacus.kernel.agent_tools import MAX_ROWS, FailedItem, ToolCaller, ToolDecl
 from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
@@ -161,6 +161,8 @@ _P10_TOOLS: Final = (
 
 # --- W-02-T11 (DEC-4716; S41 end pass DEC-4733): `binders.read`, a season's binders -----------
 
+_NAMED_PAGES: Final = 10  # W-02-T19: pages read to find binders named by id
+
 
 class BindersIn(BaseModel):
     """The frozen workbench suite's arguments: a tax year, optionally some binders, a cursor."""
@@ -170,6 +172,9 @@ class BindersIn(BaseModel):
     tax_year: Annotated[int, Field(ge=2000, le=2100), Int]
     binder_ids: Annotated[list[UUID] | None, Field(max_length=MAX_ROWS), Int] = None
     cursor: Annotated[str | None, Field(max_length=500), Int] = None
+    # W-02-T19 (AC-G4): a retry of only the binders an earlier read could not reach (set by the
+    # runtime from the step's failure ledger, never by the model).
+    only_refs: Annotated[list[UUID] | None, Field(max_length=MAX_ROWS), Int] = None
 
 
 class BinderRow(BaseModel):
@@ -196,6 +201,11 @@ class BindersOut(BaseModel):
     season_total: Annotated[int, Int] = 0
     season_total_capped: Annotated[bool, Int] = False
     by_status: Annotated[dict[str, int], Int] = Field(default_factory=dict[str, int])
+    # W-02-T19: the binders asked for by id that this read could not reach (walled, removed or
+    # beyond the index's pages), by reference and code only.
+    failed_items: Annotated[list[FailedItem], Field(max_length=MAX_ROWS), Int] = Field(
+        default_factory=list[FailedItem]
+    )
 
 
 async def read_binders(caller: ToolCaller, args: BindersIn) -> BindersOut:
@@ -204,13 +214,24 @@ async def read_binders(caller: ToolCaller, args: BindersIn) -> BindersOut:
     narrows the page to those binders."""
     from abacus.modules.requests.binder_index import IndexFilters, list_binders
 
+    filters = IndexFilters(service="tax_return", season=f"TY{args.tax_year}")
     page = await list_binders(
         caller,  # type: ignore[arg-type] -- the run's context reads as its initiator
-        IndexFilters(service="tax_return", season=f"TY{args.tax_year}"),
+        filters,
         args.cursor,
         MAX_ROWS,
     )
-    wanted = None if args.binder_ids is None else set(args.binder_ids)
+    named = args.only_refs if args.only_refs is not None else args.binder_ids
+    wanted = None if named is None else set(named)
+    items = list(page.items)
+    cursor = page.next_cursor
+    pages = 1
+    while wanted is not None and cursor is not None and pages < _NAMED_PAGES:
+        if wanted <= {r.id for r in items}:
+            break
+        more = await list_binders(caller, filters, cursor, MAX_ROWS)  # type: ignore[arg-type] -- as above
+        items.extend(more.items)
+        cursor, pages = more.next_cursor, pages + 1
     rows = [
         BinderRow(
             id=r.id, name=r.name, client_name=r.client_name, kind=r.kind, status=r.status,
@@ -219,16 +240,24 @@ async def read_binders(caller: ToolCaller, args: BindersIn) -> BindersOut:
                 None if r.last_client_activity_at is None else r.last_client_activity_at.date()
             ),
         )
-        for r in page.items
+        for r in items
         if wanted is None or r.id in wanted
-    ]  # fmt: skip
+    ][:MAX_ROWS]  # fmt: skip
+    found = {r.id for r in rows}
+    missing = [b for b in (named or []) if b not in found]
     return BindersOut(
         binders=rows,
         total=len(rows),
-        next_cursor=page.next_cursor,
+        next_cursor=page.next_cursor if wanted is None else None,
         season_total=page.total,
         season_total_capped=page.total_capped,
         by_status=dict(page.counts),
+        failed_items=[
+            FailedItem(
+                ref_type="binder", ref_id=str(b), source="binders", error_code="not_readable"
+            )
+            for b in missing
+        ],
     )
 
 

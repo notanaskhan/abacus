@@ -53,6 +53,7 @@ from sqlalchemy import text
 
 from abacus.ai_gateway import render_tool_result
 from abacus.kernel.access import AccessSubject, record_reads, register_access_kind
+from abacus.kernel.agent_tools import FailedItem
 from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
@@ -146,6 +147,12 @@ class ToolOutcome(BaseModel):
     restricted: Annotated[bool, classified("internal")] = False
     replayed: Annotated[bool, classified("internal")] = False
     active_ms: Annotated[int, Field(ge=0), classified("internal")] = 0
+    # W-02-T19 (additive; DEC-4930): the items a read could not reach, by reference and code
+    # (`kernel.agent_tools.FailedItem`). Lifted from the output's own `failed_items`; empty for a
+    # tool that reads all or nothing.
+    failed_items: Annotated[
+        list[FailedItem], Field(max_length=1000), classified("internal")
+    ] = Field(default_factory=list[FailedItem])
 
 
 @dataclass(frozen=True)
@@ -490,7 +497,16 @@ async def call_tool(agent: AgentContext, call: ToolCallIn) -> ToolOutcome:
         records_read=rows,
         restricted=the_tool.data_class in ("restricted", "tri"),
         active_ms=_ms(started),
+        failed_items=_failed_items(output),
     )
+
+
+def _failed_items(output: BaseModel) -> list[FailedItem]:
+    """W-02-T19: a read's per-item failures, when its output model names them."""
+    found = getattr(output, "failed_items", None)
+    if not isinstance(found, list):
+        return []
+    return [i for i in cast(list[object], found) if isinstance(i, FailedItem)]
 
 
 def for_model(outcome: ToolOutcome, untrusted: Iterable[str] = ()) -> str:

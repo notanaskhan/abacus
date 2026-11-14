@@ -162,12 +162,17 @@ export const signOffRun = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Retry Step Route
  *
- * Re-dispatches only the failed step.
+ * Re-dispatches only the failed step; W-02-T19: with `scope: failed_items`, only the items
+ * its failure ledger names ("Retry those 3").
  */
 export const retryStep = <ThrowOnError extends boolean = false>(options: Options<RetryStepData, ThrowOnError>): RequestResult<RetryStepResponses, RetryStepErrors, ThrowOnError> => (options.client ?? client).post<RetryStepResponses, RetryStepErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/agent-runs/{run_id}/steps/{step_id}/retry',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

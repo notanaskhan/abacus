@@ -109,6 +109,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "run_id", "seq", "plan_step_key", "level", "kind", "tool_name"}
         | {"args_summary", "args_hash", "state", "needs", "retry_of_step_id"}
         | {"auto_started_by_trigger_id"}
+        | {"retry_scope"}  # W-02-T19 (0872): a retry row's scope, written in its insert
         # 0802 (TASK-6740): a code run's step is written finished in its insert.
         | {"started_at", "ended_at", "records_read", "outputs_summary"}
     ),
@@ -303,6 +304,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"state", "needs", "started_at", "ended_at", "active_ms", "records_read"}
         | {"outputs_summary", "error_code", "error_detail_safe", "usage_record_ids"}
         | {"sample_refs", "source_ref"}  # P-09-T08 (0751): the trace's samples and source
+        | {"failed_items"}  # W-02-T19 (0872): the per-item failure ledger, set when it ends
     ),
     "agent_questions": frozenset(
         {"state", "answer", "answered_by", "answered_at", "skip_default_applied"}

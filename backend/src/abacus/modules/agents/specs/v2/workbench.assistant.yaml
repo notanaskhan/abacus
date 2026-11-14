@@ -28,6 +28,8 @@ tools:
     - binders.read
     - workpapers.read_section
     - assurance.read_materiality
+    - identity.list_offices  # W-02-T19
+    - files.list_folders  # W-02-T19
   compute:
     - ledger.compare_periods
     - ledger.tie_out
@@ -47,6 +49,7 @@ task_scope:
   - materiality.read
   - binder.read
   - tax_return.read_metadata
+  - org_structure.list  # W-02-T19: identity.list_offices
   - file.propose
   - file.save
 limits:

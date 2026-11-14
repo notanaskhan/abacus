@@ -4,7 +4,9 @@ PROTECTED (agents). P-10-T33's routes authorise the person, write their row, the
 - `wake(..., kind)`: the run's workflow is told a person acted (`question_answered`, `stop`,
   `redirected`); the workflow reads the rows itself, so a lost signal is caught up by the next one
   and nothing is decided by the signal (kernel.dispatch's best effort, DEC-3180).
-- `retry_step`: one failed step runs again as a new row (`retry_of_step_id`).
+- `retry_step`: one failed step runs again as a new row (`retry_of_step_id`). W-02-T19: with
+  scope `failed_items` only the references its failure ledger names are read again (AC-G4), for a
+  step that failed or succeeded with gaps, when its tool takes `only_refs`.
 - `retry_run` (whole-run retry): a **child run** (`parent_run_id`) with the same agent,
   engagement, task scope and inputs, started for the person who asked; the ended run is never
   reopened.
@@ -20,11 +22,13 @@ from uuid import UUID
 from sqlalchemy import text
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
+from abacus.kernel.agent_tools import ONLY_REFS
 from abacus.kernel.dispatch import dispatch, signal_workflow
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.run_waits import run_workflow_id
 from abacus.modules.agents.run_workflow import AgentRunInput, AgentRunWorkflow
+from abacus.modules.agents.tools.registry import registered_tools
 from abacus.modules.identity.api import AuthContext, Forbidden
 
 Wake = Literal["question_answered", "stop", "redirected"]
@@ -41,6 +45,15 @@ class StepNotFailed(DomainConflict):
     code = "step_not_failed"
 
 
+class NoFailedItems(DomainConflict):
+    """W-02-T19: a `failed_items` retry needs a ledger to re-read, on a tool that can."""
+
+    code = "no_failed_items"
+
+
+RetryScope = Literal["all", "failed_items"]
+
+
 def _person(ctx: AuthContext, action: str) -> None:
     if ctx.tenant.actor_kind != "human" or ctx.client:
         raise Forbidden(action, "role")
@@ -50,15 +63,19 @@ async def wake(tenant_id: UUID, run_id: UUID, kind: Wake) -> None:
     await signal_workflow(run_workflow_id(str(tenant_id), str(run_id)), kind)
 
 
-async def retry_step(ctx: AuthContext, run_id: UUID, step_seq: int) -> str:
+async def retry_step(
+    ctx: AuthContext, run_id: UUID, step_seq: int, scope: RetryScope = "all"
+) -> str:
     """AC-W6: the failed step at `step_seq` runs again; returns its plan key. The route has
-    authorised `agent_run.retry_step` on the run's engagement."""
+    authorised `agent_run.retry_step` on the run's engagement. W-02-T19 (AC-G4): `failed_items`
+    re-reads only the step's ledger, for a failed step or one that succeeded with gaps."""
     _person(ctx, "agent_run.retry_step")
     async with uow(ctx.tenant) as tx:
         row = (
             await tx.session.execute(
                 text(
-                    "SELECT plan_step_key, state FROM agent_run_steps "
+                    "SELECT plan_step_key, state, tool_name, "
+                    "jsonb_array_length(failed_items) AS failed FROM agent_run_steps "
                     "WHERE run_id = :run AND seq = :seq"
                 ),
                 {"run": run_id, "seq": step_seq},
@@ -66,17 +83,31 @@ async def retry_step(ctx: AuthContext, run_id: UUID, step_seq: int) -> str:
         ).first()
         if row is None:
             raise NotFound("agent_run_step")
-        if row.state != "failed" or not row.plan_step_key:
+        if not row.plan_step_key:
+            raise StepNotFailed(facts={"state": str(row.state)})
+        if scope == "failed_items":
+            if row.state not in ("failed", "succeeded") or not row.failed:
+                raise NoFailedItems(facts={"state": str(row.state)})
+            if not takes_only_refs(row.tool_name):
+                raise NoFailedItems(facts={"reason": "tool_reads_all"})
+        elif row.state != "failed":
             raise StepNotFailed(facts={"state": str(row.state)})
         tx.record(
             "agent_run_step.retry_requested",
             target=Target("agent_run", run_id),
-            after=Ref(seq=step_seq),
+            after=Ref(seq=step_seq, scope=scope, items=int(row.failed or 0)),
         )
+    signal = "items_retry" if scope == "failed_items" else "step_retry"
     await signal_workflow(
-        run_workflow_id(str(ctx.tenant_id), str(run_id)), "step_retry", str(row.plan_step_key)
+        run_workflow_id(str(ctx.tenant_id), str(run_id)), signal, str(row.plan_step_key)
     )
     return str(row.plan_step_key)
+
+
+def takes_only_refs(tool_name: str | None) -> bool:
+    """Whether a step's tool can re-read named items only (its input names `only_refs`)."""
+    found = registered_tools().get(tool_name or "")
+    return found is not None and ONLY_REFS in found.input_model.model_fields
 
 
 async def retry_run(ctx: AuthContext, run_id: UUID) -> UUID:
@@ -133,4 +164,14 @@ async def retry_run(ctx: AuthContext, run_id: UUID) -> UUID:
     return child_id
 
 
-__all__ = ["RunNotEnded", "StepNotFailed", "Wake", "retry_run", "retry_step", "wake"]
+__all__ = [
+    "NoFailedItems",
+    "RetryScope",
+    "RunNotEnded",
+    "StepNotFailed",
+    "Wake",
+    "retry_run",
+    "retry_step",
+    "takes_only_refs",
+    "wake",
+]

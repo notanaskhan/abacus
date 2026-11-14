@@ -391,6 +391,7 @@ from abacus.modules.identity.slots import (
     revoke_contact_links,
     target_events,
 )
+from abacus.modules.identity.agent_tools import AGENT_TOOLS  # W-02-T19: identity.list_offices
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
 from abacus.modules.identity.support import Staff, staff_from_token
 from abacus.modules.identity.team import (
@@ -505,6 +506,7 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
 )
 
 __all__ = [
+    "AGENT_TOOLS",
     "ACCESS_END_ID",
     "ACTION_KEY",
     "ACTIVITIES",

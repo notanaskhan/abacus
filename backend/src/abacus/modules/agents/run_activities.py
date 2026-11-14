@@ -39,6 +39,7 @@ from temporalio import activity
 
 from abacus.kernel import clock
 from abacus.kernel._flags import AGENT_RUNTIME_V2
+from abacus.kernel.agent_tools import ONLY_REFS
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
@@ -50,6 +51,7 @@ from abacus.modules.agents.events import (
     RunReadyForReview,
     RunStateChanged,
 )
+from abacus.modules.agents.run_plan import PlanContext
 from abacus.modules.agents.run_waits import QUESTION_KINDS, RUN_WAIT_ACTIVITIES, open_wait
 from abacus.modules.agents.service import AgentRunNotRunning, load_run_v2_context
 from abacus.modules.agents.tools.registry import registered_tools
@@ -139,6 +141,26 @@ async def _approver_holds(
             if await member_could(UUID(tenant_id), UUID(str(approver)), action, resource):
                 held.append((str(approver), action))
     return held
+
+
+async def plan_rules(tenant_id: str, run_id: str, plan: list[JsonObject]) -> PlanContext:
+    """W-02-T19 (AC-P3): what `validate_plan` checks a person's edited plan against, read as the
+    run's load reads it: the spec's declared writes, the pinned clients, the tools' actions and
+    whether each named approver holds each write now."""
+    async with tenant_session(_tenant(tenant_id, run_id)) as session:
+        row = (await session.execute(_RUN, {"run": UUID(run_id)})).first()
+    if row is None:
+        raise ValueError("agent_run not found")
+    scope = set(cast(list[str], row.task_scope or []))
+    tools = {n: t.action for n, t in registered_tools().items()}
+    writes = {t.action for t in registered_tools().values() if t.kind != "read"} & scope
+    holds = await _approver_holds(tenant_id, row.engagement_id, plan)
+    return PlanContext(
+        declared_writes=frozenset(writes),
+        client_scope=frozenset(str(c) for c in cast(list[UUID], row.client_scope or [])),
+        approver_holds={pair: True for pair in holds},
+        tool_actions=tools,
+    )
 
 
 @activity.defn(name="agents.run_v2.record_plan")
@@ -317,6 +339,8 @@ class StepOutcome:
     wait_ref: str | None = None  # P-10-T32: the question's or the card's id
     # P-09-T08 (0751): the first five records a tool step read, as `{record_type, id}`.
     sample_refs: tuple[dict[str, str], ...] = ()
+    # W-02-T19 (0872): the items it could not read, `{ref_type, ref_id, source, error_code}`.
+    failed_items: tuple[dict[str, str], ...] = ()
 
 
 async def _agent(tenant_id: str, run_id: str) -> AgentContext:
@@ -336,25 +360,35 @@ async def execute_step_activity(
     step: JsonObject,
     attempt: int = 1,
     retry_of_seq: int | None = None,
+    retry_scope: str | None = None,
 ) -> StepOutcome:
     """One step: its row, then (for a tool or compute step) its one C17 call; a question, an
     approval or a decision opens its wait and returns held (P-10-T32). A retry is a new row at a
-    new `seq` naming the failed row (`retry_of_step_id`, AC-W6)."""
+    new `seq` naming the failed row (`retry_of_step_id`, AC-W6). W-02-T19 (AC-G4): a retry with
+    scope `failed_items` re-reads only the references the retried row's ledger names, passed to
+    the tool as `only_refs`; nothing else of the step runs again."""
     tenant = _tenant(tenant_id, run_id)
     run = UUID(run_id)
     kind = str(step.get("kind", "tool"))
     tool_name = str(step["tool"]) if step.get("tool") else None
-    arguments = cast(dict[str, object], step.get("arguments") or {})
+    arguments = dict(cast(dict[str, object], step.get("arguments") or {}))
+    if retry_scope == "failed_items" and retry_of_seq is not None:
+        refs = await _failed_refs(tenant, run, retry_of_seq)
+        if not refs:
+            retry_scope = "all"  # nothing left to re-read: the step runs as it was planned
+        else:
+            arguments[ONLY_REFS] = refs
     async with uow(tenant) as tx:
         step_id = cast(
             UUID,
             await tx.session.scalar(
                 text(
                     "INSERT INTO agent_run_steps (tenant_id, run_id, seq, plan_step_key, level, "
-                    "kind, tool_name, args_hash, state, started_at, retry_of_step_id) VALUES "
+                    "kind, tool_name, args_hash, state, started_at, retry_of_step_id, "
+                    "retry_scope) VALUES "
                     "(:t, :run, :seq, :key, :level, :kind, :tool, :hash, 'running', "
                     "clock_timestamp(), (SELECT p.id FROM agent_run_steps p WHERE p.run_id = :run "
-                    "AND p.seq = :retry_of)) "
+                    "AND p.seq = :retry_of), :scope) "
                     "ON CONFLICT (tenant_id, run_id, seq) DO UPDATE SET state = 'running' "
                     "RETURNING id"
                 ),
@@ -368,6 +402,7 @@ async def execute_step_activity(
                     "tool": tool_name,
                     "hash": _args_hash(tool_name or kind, arguments),
                     "retry_of": retry_of_seq,
+                    "scope": retry_scope if retry_of_seq is not None else None,
                 },
             ),
         )
@@ -406,6 +441,7 @@ async def execute_step_activity(
             result.records_read,
             result.active_ms,
             sample_refs=tuple(step_sample_refs(tool_name, result.result if result.ok else None)),
+            failed_items=tuple(i.model_dump() for i in result.failed_items),
         )
     else:
         outcome = StepOutcome("failed", "step_kind_pending")  # model steps: P-10-T40
@@ -443,6 +479,17 @@ async def _run_step(
     )
 
 
+async def _failed_refs(tenant: TenantContext, run: UUID, seq: int) -> list[str]:
+    """The reference ids the step row at `seq` could not read (its ledger), in order."""
+    async with tenant_session(tenant) as session:
+        raw = await session.scalar(
+            text("SELECT failed_items FROM agent_run_steps WHERE run_id = :run AND seq = :seq"),
+            {"run": run, "seq": seq},
+        )
+    items = cast(list[dict[str, object]], raw or [])
+    return [str(i["ref_id"]) for i in items if i.get("ref_id")]
+
+
 async def _finish_step(
     tenant: TenantContext, run: UUID, step_id: UUID, seq: int, outcome: StepOutcome
 ) -> StepOutcome:
@@ -461,6 +508,13 @@ async def _finish_step(
                 "id": step_id,
             },
         )
+        if outcome.failed_items:
+            await tx.session.execute(
+                text(
+                    "UPDATE agent_run_steps SET failed_items = CAST(:items AS jsonb) WHERE id = :id"
+                ),
+                {"items": json.dumps(list(outcome.failed_items)), "id": step_id},
+            )
         if outcome.sample_refs:
             # The firm's own records (WB-09 a3 "Through Accrued"); a connector's tools name their
             # connection when they record one (none does yet).
