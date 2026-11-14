@@ -45218,7 +45218,7 @@ export type SessionItemOut = {
     /**
      * Kind
      */
-    kind: 'user_message' | 'agent_blocks' | 'plan' | 'question' | 'answer' | 'tool_card' | 'artifact' | 'notice';
+    kind: 'user_message' | 'agent_blocks' | 'plan' | 'question' | 'answer' | 'tool_card' | 'artifact' | 'notice' | 'context_added' | 'context_removed' | 'drill';
     /**
      * Payload
      */
@@ -108957,10 +108957,6 @@ export type TodayHistoryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TodayHistoryError = TodayHistoryErrors[keyof TodayHistoryErrors];
@@ -109013,10 +109009,6 @@ export type TodayHistoryBriefErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TodayHistoryBriefError = TodayHistoryBriefErrors[keyof TodayHistoryBriefErrors];

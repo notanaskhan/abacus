@@ -6,6 +6,7 @@
 // Counts equal HOME-01's: Daniel 3 + 6 + 2 = 11, Margaret 2 + 0 + 2 = 4 (I-COUNT). Model prose
 // appears only as verified `AgentBlocks` `p` parts on why lines and summaries (INV-2).
 import type {
+  SessionSnapshotOut,
   Card,
   CountCell,
   DrillVm,
@@ -472,4 +473,65 @@ export const HISTORY: HistoryPage = {
     },
   ],
   next_cursor: null,
+};
+
+// --- I-02-T17 (SHL-23 3): the Today session at 9:26 AM, the question and its cited answer -------
+
+const cite = (n: number) => stableId(`citation:today:daniel:q1:${String(n)}`);
+
+/** SHL-23 3 verbatim: the person's bubble and the answer card with its three citation chips. */
+export const TODAY_SESSION: SessionSnapshotOut = {
+  id: QUESTION_ACCEPTED.session_id,
+  title: "Today · Mon Sep 14",
+  state: "live",
+  origin: "manual",
+  locked: false,
+  allowed_actions: ["message"],
+  last_item_at: "2026-09-14T14:26:20Z",
+  items: [
+    {
+      id: QUESTION_ACCEPTED.item_id,
+      seq: 2,
+      kind: "user_message",
+      actor_kind: "human",
+      actor_name: "Daniel Reyes",
+      created_at: "2026-09-14T14:26:00Z",
+      payload: { v: 1, body: "What happens if Samuel doesn't approve the M-2 fix today?" },
+    },
+    {
+      id: stableId("session-item:today:daniel:a1"),
+      seq: 3,
+      kind: "agent_blocks",
+      actor_kind: "agent",
+      actor_name: "Daniel Reyes",
+      created_at: "2026-09-14T14:26:20Z",
+      payload: {
+        v: 1,
+        turn_of: "2",
+        blocks: {
+          version: 1,
+          parts: [
+            {
+              kind: "p",
+              segments: [
+                {
+                  kind: "text",
+                  text: "Capital Accounts stays blocked, so you can't give final approval, export or release the K-1s. The extension runs to Sep 15; a later 1065 is late and §6698 charges a penalty per partner per month. The Feld and Shah 1040s keep their draft K-1 holds; both are extended to Oct 15.",
+                },
+              ],
+            },
+            {
+              kind: "cite_list",
+              cites: [1, 2, 3].map((n) => ({ kind: "cite", citation_id: cite(n), n })),
+            },
+          ],
+        },
+        cites: {
+          [cite(1)]: { n: 1, title: "Capital Accounts · Version 3", quote: "", loc: "Capital Accounts", match: null },
+          [cite(2)]: { n: 2, title: "Form 7004 · filed Mar 12, 2026", quote: "", loc: "Form 7004", match: null },
+          [cite(3)]: { n: 3, title: "Feld 1040 · extension", quote: "", loc: "Feld 1040", match: null },
+        },
+      },
+    },
+  ],
 };

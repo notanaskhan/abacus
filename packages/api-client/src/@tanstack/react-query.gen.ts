@@ -18277,7 +18277,7 @@ export const todayHistoryQueryKey = (options?: Options<TodayHistoryData>) => cre
 /**
  * Today History Route
  *
- * Earlier briefs by day, the caller's own, 90 days at most (Q3).
+ * Earlier briefs by day, the caller's own, 90 days at most (Q3). I-02-T17 (DEC-4938).
  */
 export const todayHistoryOptions = (options?: Options<TodayHistoryData>) => queryOptions<TodayHistoryResponse, TodayHistoryError, TodayHistoryResponse, ReturnType<typeof todayHistoryQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -18297,7 +18297,7 @@ export const todayHistoryInfiniteQueryKey = (options?: Options<TodayHistoryData>
 /**
  * Today History Route
  *
- * Earlier briefs by day, the caller's own, 90 days at most (Q3).
+ * Earlier briefs by day, the caller's own, 90 days at most (Q3). I-02-T17 (DEC-4938).
  */
 export const todayHistoryInfiniteOptions = (options?: Options<TodayHistoryData>) => {
     const opts = infiniteQueryOptions<TodayHistoryResponse, TodayHistoryError, InfiniteData<TodayHistoryResponse>, QueryKey<Options<TodayHistoryData>>, string | null | Pick<QueryKey<Options<TodayHistoryData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -18329,7 +18329,7 @@ export const todayHistoryBriefQueryKey = (options: Options<TodayHistoryBriefData
 /**
  * Today History Brief Route
  *
- * A past brief, read-only; walls re-checked and citations re-verified at read.
+ * A past brief, read-only; walls re-checked at read. I-02-T17 (DEC-4938).
  */
 export const todayHistoryBriefOptions = (options: Options<TodayHistoryBriefData>) => queryOptions<TodayHistoryBriefResponse, TodayHistoryBriefError, TodayHistoryBriefResponse, ReturnType<typeof todayHistoryBriefQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

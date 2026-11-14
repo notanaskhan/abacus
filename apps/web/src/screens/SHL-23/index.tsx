@@ -18,7 +18,7 @@ import {
   SkeletonRows,
   time as clockTime,
 } from "@abacus/ui";
-import { type JSX, useState } from "react";
+import { type JSX, type ReactNode, useState } from "react";
 import { CELL_LABELS, COPY, GROUP_LABELS, REASON_COPY, leadSentence } from "./copy";
 
 export type TodayLayout = "focus" | "by_engagement";
@@ -97,12 +97,31 @@ function RowLink({
   );
 }
 
-function CardView({ card }: { card: Card }): JSX.Element {
+function CardView({
+  card,
+  onDrill,
+}: {
+  card: Card;
+  onDrill?: ((workItemId: string, assign: boolean) => void) | undefined;
+}): JSX.Element {
   const reason = card.unavailable_reason ?? null;
   const summary = (card.summary_blocks ?? []) as unknown as AgentBlocksPayload[];
+  const workItem = card.work_item_id ?? null;
   return (
     <section aria-label={card.label} className="rounded-[10px] bg-card p-[10px] shadow-e1">
-      <p className="text-[12px] font-medium text-ink">{card.label}</p>
+      {workItem !== null && onDrill ? (
+        <button
+          type="button"
+          onClick={() => {
+            onDrill(workItem, false);
+          }}
+          className="text-left text-[12px] font-medium text-ink hover:underline"
+        >
+          {card.label}
+        </button>
+      ) : (
+        <p className="text-[12px] font-medium text-ink">{card.label}</p>
+      )}
       {card.briefing_status === "ready" && summary.length > 0 ? (
         summary.map((doc, i) => <AgentBlocks key={String(i)} blocks={doc} facts={{}} />)
       ) : (
@@ -119,9 +138,11 @@ function CardView({ card }: { card: Card }): JSX.Element {
 function GroupBand({
   group,
   onOpen,
+  onDrill,
 }: {
   group: Group;
   onOpen?: ((href: string) => void) | undefined;
+  onDrill?: ((workItemId: string, assign: boolean) => void) | undefined;
 }): JSX.Element {
   const [open, setOpen] = useState(group.key === "high_risk");
   const label = GROUP_LABELS[group.key] ?? group.key;
@@ -156,17 +177,60 @@ function GroupBand({
               <p className="text-[12px] text-ink-2">{group.summary}</p>
             )
           ) : null}
-          {(group.items ?? []).map((item) => (
-            <button
-              key={item.ref_id}
-              type="button"
-              onClick={() => onOpen?.(item.deep_link ?? "")}
-              className="mt-[4px] flex w-full flex-col rounded-[8px] bg-card p-[8px] text-left shadow-e1"
-            >
-              <span className="text-[12px] font-medium text-ink">{item.title}</span>
-              {item.detail ? <span className="text-[12px] text-ink-2">{item.detail}</span> : null}
-            </button>
-          ))}
+          {(group.items ?? []).map((item) =>
+            item.assignable && onDrill ? (
+              // I-02-T17: a High risk card drills in; Assign and Open act on it (SHL-23 1, c).
+              <div
+                key={item.ref_id}
+                data-risk={item.ref_id}
+                className="mt-[4px] flex flex-col gap-[4px] rounded-[10px] bg-card p-[10px] shadow-e1"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDrill(item.ref_id, false);
+                  }}
+                  className="text-left text-[13px] font-medium text-ink hover:underline"
+                >
+                  {item.title}
+                </button>
+                {item.detail ? <span className="text-[12px] text-ink-2">{item.detail}</span> : null}
+                <span className="flex gap-[6px]">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon="user-plus"
+                    onClick={() => {
+                      onDrill(item.ref_id, true);
+                    }}
+                  >
+                    {COPY.assign}
+                  </Button>
+                  {item.deep_link ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onOpen?.(item.deep_link ?? "")}
+                    >
+                      {COPY.open}
+                    </Button>
+                  ) : null}
+                </span>
+              </div>
+            ) : (
+              <button
+                key={item.ref_id}
+                type="button"
+                onClick={() => onOpen?.(item.deep_link ?? "")}
+                className="mt-[4px] flex w-full flex-col rounded-[8px] bg-card p-[8px] text-left shadow-e1"
+              >
+                <span className="text-[12px] font-medium text-ink">{item.title}</span>
+                {item.detail ? (
+                  <span className="text-[12px] text-ink-2">{item.detail}</span>
+                ) : null}
+              </button>
+            ),
+          )}
         </div>
       ) : null}
     </section>
@@ -176,13 +240,19 @@ function GroupBand({
 export interface TodayPanelProps {
   vm: TodayVm | undefined;
   /** The firm's time zone for the footer's time. */
-  timeZone?: string;
-  onOpen?: (href: string) => void;
-  onHistory?: () => void;
-  onRebuild?: () => void;
-  onAsk?: (question: string) => void;
+  timeZone?: string | undefined;
+  onOpen?: ((href: string) => void) | undefined;
+  onHistory?: (() => void) | undefined;
+  onRebuild?: (() => void) | undefined;
+  onAsk?: ((question: string) => void) | undefined;
   /** The linked highlight (HOME-05 a, d): the HOME-01 rows lit by the hovered or focused row. */
-  onHighlight?: (refs: readonly string[] | null) => void;
+  onHighlight?: ((refs: readonly string[] | null) => void) | undefined;
+  /** I-02-T17: a card or a High risk row opens the drill-in (`assign`: straight to Assign). */
+  onDrill?: ((workItemId: string, assign: boolean) => void) | undefined;
+  /** I-02-T17: the ask thread, drawn under the groups. */
+  thread?: ReactNode | undefined;
+  /** I-02-T17: a past brief reads only (no composer, no rebuild); its line in the header. */
+  readOnlyLine?: string | undefined;
 }
 
 export function TodayPanel({
@@ -193,6 +263,9 @@ export function TodayPanel({
   onRebuild,
   onAsk,
   onHighlight,
+  onDrill,
+  thread,
+  readOnlyLine,
 }: TodayPanelProps): JSX.Element {
   const [question, setQuestion] = useState("");
   if (vm === undefined || vm.status === "building") {
@@ -220,16 +293,20 @@ export function TodayPanel({
       <header className="flex h-[46px] flex-none items-center gap-[8px] px-[12px]">
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="text-[14px] font-medium text-ink">{COPY.greeting(vm.first_name)}</span>
-          <span className="text-[11.5px] text-ink-3">{COPY.line(vm.items, vm.engagements)}</span>
+          <span className="text-[11.5px] text-ink-3">
+            {readOnlyLine ?? COPY.line(vm.items, vm.engagements)}
+          </span>
         </span>
         <Button variant="ghost" size="sm" onClick={onHistory}>
           {COPY.history}
         </Button>
-        <Menu
-          label={COPY.more}
-          trigger={<Button variant="ghost" size="sm" icon="ellipsis" aria-label={COPY.more} />}
-          sections={[[{ label: COPY.rebuild, onSelect: () => onRebuild?.() }]]}
-        />
+        {readOnlyLine === undefined ? (
+          <Menu
+            label={COPY.more}
+            trigger={<Button variant="ghost" size="sm" icon="ellipsis" aria-label={COPY.more} />}
+            sections={[[{ label: COPY.rebuild, onSelect: () => onRebuild?.() }]]}
+          />
+        ) : null}
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto px-[12px] pb-[12px]">
         {unavailable !== null ? (
@@ -280,17 +357,18 @@ export function TodayPanel({
         {vm.layout === "by_engagement" ? (
           <div className="mt-[10px] flex flex-col gap-[8px]">
             {vm.cards.map((card) => (
-              <CardView key={card.engagement_id} card={card} />
+              <CardView key={card.engagement_id} card={card} onDrill={onDrill} />
             ))}
           </div>
         ) : null}
         <div className="mt-[10px]">
           {vm.groups.map((g) => (
-            <GroupBand key={g.key} group={g} onOpen={onOpen} />
+            <GroupBand key={g.key} group={g} onOpen={onOpen} onDrill={onDrill} />
           ))}
         </div>
+        {thread}
       </div>
-      {vm.availability.ask ? (
+      {vm.availability.ask && readOnlyLine === undefined ? (
         <form
           className="flex h-[38px] flex-none items-center gap-[6px] border-t border-hair px-[12px]"
           onSubmit={(e) => {

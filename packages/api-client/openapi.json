@@ -96096,7 +96096,10 @@
               "answer",
               "tool_card",
               "artifact",
-              "notice"
+              "notice",
+              "context_added",
+              "context_removed",
+              "drill"
             ],
             "title": "Kind",
             "type": "string"
@@ -235547,7 +235550,7 @@
     },
     "/v1/me/today/history": {
       "get": {
-        "description": "Earlier briefs by day, the caller's own, 90 days at most (Q3).",
+        "description": "Earlier briefs by day, the caller's own, 90 days at most (Q3). I-02-T17 (DEC-4938).",
         "operationId": "today_history",
         "parameters": [
           {
@@ -235662,16 +235665,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Today History Route",
@@ -235683,7 +235676,7 @@
     },
     "/v1/me/today/history/{brief_id}": {
       "get": {
-        "description": "A past brief, read-only; walls re-checked and citations re-verified at read.",
+        "description": "A past brief, read-only; walls re-checked at read. I-02-T17 (DEC-4938).",
         "operationId": "today_history_brief",
         "parameters": [
           {
@@ -235779,16 +235772,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Today History Brief Route",

@@ -44,6 +44,8 @@ from abacus.modules.practice.today.contract import (
     GateRow,
     Group,
     GroupItem,
+    HistoryPage,
+    HistoryRow,
     LeadFact,
     TodayVM,
 )
@@ -281,8 +283,16 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
             items=[_group_item(i) for i in items if i.blocked][:10],
         ),
     ]
+    # I-02-T17 (DEC-4938): a High risk row drills in on its engagement's open work item.
+    work_items = {c.engagement_id: c.work_item_id for c in cards if c.work_item_id is not None}
+    risky = [
+        g.model_copy(update={"items": [
+            i.model_copy(update={"ref_id": work_items.get(i.ref_id, i.ref_id)}) for i in g.items
+        ]})
+        for g in _high_risk(briefings, labels)
+    ]  # fmt: skip
     groups = [
-        *_high_risk(briefings, labels),
+        *risky,
         *groups,
         *await _running(ctx, items, labels),
     ]
@@ -299,7 +309,7 @@ async def assemble(ctx: AuthContext, day: date | None = None) -> TodayVM:
         needs_you_first=[with_why(row_of(i, today), why) for i in ranked[:FIRST]],
         cards=cards,
         groups=groups,
-        availability=Availability(narrative=True, ask=False, ask_reason="ask_binding_pending"),
+        availability=await _ask_availability(ctx),
         status="ready" if ready or not cards else "building",
         needs_build=not ready and bool(cards),
         stale_engagements=sorted(stale, key=str),
@@ -498,3 +508,88 @@ async def question_context(ctx: AuthContext) -> QuestionContext:
         tuple(question_lines(vm)),
         tuple(c.briefing_id for c in vm.cards if c.briefing_id is not None),
     )
+
+
+# --- I-02-T17 (DEC-4938): the ask composer's availability, history and a past brief ----------
+
+
+async def _ask_availability(ctx: AuthContext) -> Availability:
+    """The composer is offered when `workbench.enabled` is on and `workbench.assistant` is ready
+    at firm level (DF-04); otherwise its reason. The narrative's availability is the cards'."""
+    from abacus.kernel._flags import WORKBENCH_ENABLED
+    from abacus.kernel.flags import flag_enabled
+    from abacus.modules.agents.api import firm_capability_blocked
+
+    if not await flag_enabled(ctx.tenant, WORKBENCH_ENABLED):
+        return Availability(narrative=True, ask=False, ask_reason="flag_off")
+    blocked = await firm_capability_blocked(ctx, "workbench.assistant")
+    if blocked is not None:
+        return Availability(narrative=True, ask=False, ask_reason=blocked[:40])
+    return Availability(narrative=True, ask=True)
+
+
+async def history(ctx: AuthContext, before: date | None, limit: int) -> HistoryPage:
+    """Earlier briefs by day, the viewer's own, 90 days at most (Q3), newest first."""
+    from abacus.modules.agents.api import briefing_snapshots_of
+
+    today = await clock.today(ctx.tenant)
+    rows = await briefing_snapshots_of(ctx, before or today, limit + 1, today)
+    page = rows[:limit]
+    return HistoryPage(
+        items=[HistoryRow(brief_id=r.id, brief_date=r.brief_date, built_at=r.built_at,
+                          counts=r.counts) for r in page],  # fmt: skip
+        next_cursor=page[-1].brief_date.isoformat() if len(rows) > limit else None,
+    )
+
+
+async def past_brief(ctx: AuthContext, brief_id: UUID) -> TodayVM:
+    """A past brief, read only: its cells and lead facts as recorded, its cards' engagements
+    re-checked under walls today (a walled one is absent, nothing counts it), each card's summary
+    from that day's verified briefing. No gate rows: they were the day's, and C13 moves on."""
+    from abacus.kernel.errors import NotFound
+    from abacus.modules.agents.api import briefing_snapshot_of
+
+    found = await briefing_snapshot_of(ctx, brief_id)
+    if found is None:
+        raise NotFound("daily_briefing")
+    ids = [UUID(str(c["engagement_id"])) for c in found.card_refs if c.get("engagement_id")]
+    labels = await _labels(ctx, ids)
+    briefings = await _briefings(ctx, found.brief_date, [i for i in ids if i in labels])
+    cards: list[Card] = []
+    for engagement_id in ids:
+        if engagement_id not in labels:
+            continue  # walled or no longer the viewer's (DEC-43): absent, not counted
+        b = briefings.get(engagement_id)
+        blocks = getattr(b, "blocks", None) if getattr(b, "status", None) == "ready" else None
+        raw = cast(dict[str, object], blocks).get("summary") if isinstance(blocks, dict) else None
+        cards.append(
+            Card(
+                engagement_id=engagement_id, label=labels[engagement_id], rows=[],
+                briefing_id=getattr(b, "id", None),
+                briefing_status=getattr(b, "status", None),
+                unavailable_reason=getattr(b, "unavailable_reason", None),
+                summary_blocks=[cast(dict[str, object], raw)] if isinstance(raw, dict) else [],
+            )
+        )  # fmt: skip
+    first = (await names_of([ctx.user_id])).get(ctx.user_id, "").split(" ")[0]
+    return TodayVM(
+        brief_date=found.brief_date,
+        brief_id=found.id,
+        first_name=first,
+        items=sum(found.counts.get(c, 0) for c in CELLS[:-1]),
+        engagements=len(cards),
+        cells=[CountCell(kind=c, count=found.counts.get(c, 0), href=f"/home/approvals?band={c}")
+               for c in CELLS],  # fmt: skip
+        lead_facts=[
+            LeadFact(key=str(f["key"]), values=dict(cast(dict[str, int], f.get("values") or {})),
+                     refs=[UUID(str(r)) for r in cast(list[object], f.get("refs") or [])])
+            for f in found.lead_facts
+        ],  # fmt: skip
+        needs_you_first=[],
+        cards=cards,
+        groups=[],
+        availability=Availability(narrative=True, ask=False, ask_reason="past_brief"),
+        status="ready",
+        built_at=found.built_at,
+    )
+

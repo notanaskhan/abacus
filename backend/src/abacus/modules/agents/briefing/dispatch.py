@@ -31,7 +31,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
-from typing import Annotated, ClassVar, Final, Literal, cast
+from typing import Annotated, Any, ClassVar, Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -328,6 +328,70 @@ async def write_snapshot(viewer: object, vm: object) -> UUID:
     return snapshot
 
 
+# --- I-02-T17 (DEC-4938): the viewer's earlier days, read only ------------------------------------
+
+
+@dataclass(frozen=True)
+class SnapshotRow:
+    id: UUID
+    brief_date: date
+    built_at: datetime
+    counts: dict[str, int]
+    lead_facts: list[dict[str, object]]
+    card_refs: list[dict[str, object]]
+
+
+_SNAPSHOTS: Final = text(
+    "SELECT DISTINCT ON (brief_date) id, brief_date, built_at, counts, lead_facts, card_refs "
+    "FROM daily_briefings WHERE scope = 'user' AND viewer_user_id = :v AND brief_date < :before "
+    "AND brief_date >= :floor ORDER BY brief_date DESC, seq DESC"
+)
+_SNAPSHOT_BY_ID: Final = text(
+    "SELECT id, brief_date, built_at, counts, lead_facts, card_refs FROM daily_briefings "
+    "WHERE id = :id AND scope = 'user' AND viewer_user_id = :v"
+)
+HISTORY_DAYS: Final = 90  # I-02 Q3: a viewer's briefs are kept and listed for 90 days
+
+
+def _snapshot(r: object) -> SnapshotRow:
+    row = cast(Any, r)
+    return SnapshotRow(
+        row.id, row.brief_date, row.built_at, _ints(dict(row.counts or {})),
+        list(row.lead_facts or []), list(row.card_refs or []),
+    )  # fmt: skip
+
+
+async def snapshots_of(viewer: object, before: date, limit: int, today: date) -> list[SnapshotRow]:
+    """The viewer's own day snapshots before `before`, newest day first, the last of each day,
+    within 90 days of `today`."""
+    from abacus.modules.identity.api import AuthContext
+
+    if not isinstance(viewer, AuthContext):
+        raise TypeError("a brief's history is a person's")
+    async with tenant_session(viewer.tenant) as session:
+        rows = (
+            await session.execute(
+                _SNAPSHOTS,
+                {"v": viewer.user_id, "before": before,
+                 "floor": today - timedelta(days=HISTORY_DAYS)},
+            )
+        ).all()  # fmt: skip
+    return [_snapshot(r) for r in rows[:limit]]
+
+
+async def snapshot_of(viewer: object, brief_id: UUID) -> SnapshotRow | None:
+    """One of the viewer's own snapshots (another person's reads as none)."""
+    from abacus.modules.identity.api import AuthContext
+
+    if not isinstance(viewer, AuthContext):
+        raise TypeError("a brief's history is a person's")
+    async with tenant_session(viewer.tenant) as session:
+        row = (
+            await session.execute(_SNAPSHOT_BY_ID, {"id": brief_id, "v": viewer.user_id})
+        ).first()
+    return None if row is None else _snapshot(row)
+
+
 # --- why-line freshness ------------------------------------------------------------------------
 
 
@@ -396,4 +460,7 @@ __all__ = [
     "register",
     "unavailable_reason",
     "write_snapshot",
+    "SnapshotRow",
+    "snapshot_of",
+    "snapshots_of",
 ]

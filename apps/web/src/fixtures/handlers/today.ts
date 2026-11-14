@@ -6,6 +6,7 @@ import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import {
   HISTORY,
   QUESTION_ACCEPTED,
+  TODAY_SESSION,
   danielToday,
   margaretToday,
   ridgelineDrill,
@@ -20,5 +21,10 @@ export function todayHandlers(): Record<string, FixtureHandler> {
     "GET /v1/me/today/history": () => json(HISTORY),
     "GET /v1/me/today/history/{brief_id}": () => json(danielToday()),
     "POST /v1/me/today/questions": () => json(QUESTION_ACCEPTED, 202),
+    // I-02-T17: the Today session's thread (SHL-23 3); W-02-T17 serves every other session.
+    "GET /v1/workbench/sessions/{session_id}": ({ params }) =>
+      params.session_id === TODAY_SESSION.id
+        ? json(TODAY_SESSION)
+        : json({ detail: { code: "not_found" } }, 404),
   };
 }
