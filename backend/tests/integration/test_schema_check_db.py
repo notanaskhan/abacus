@@ -2398,6 +2398,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "daily_briefings": frozenset(
             {"agent_run_id", "blocks", "built_at", "card_refs", "citation_ids", "counts"}
             | {"lead_facts", "status", "unavailable_reason"}
+            | {"facts_hash"}  # I-02 (0871): the build claim's facts hash
         ),
         "engagement_agent_budgets": frozenset({"alert_pct", "minutes_per_usage_month"}),
         "usage_month_rollups": frozenset({"cost_usd", "minutes"}),

@@ -13,6 +13,9 @@ tooling:
 
 from __future__ import annotations
 
+import builtins
+import io
+import os
 import re
 from pathlib import Path
 from typing import cast
@@ -45,15 +48,30 @@ AREAS_10_14_2 = (
 # --- T003: the weekly quality report -------------------------------------------------------------
 
 
-def test_ac1_every_10_14_2_area_publishes_with_no_inputs(tmp_path: Path) -> None:
+def test_ac1_every_10_14_2_area_publishes_with_no_inputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Every file the report opens for writing is recorded (TASK-7836): a snapshot of the whole
+    # repository before and after raced the other xdist workers' own files in CI.
+    written: list[Path] = []
+    real_open = io.open
+
+    def spy(file: object, mode: str = "r", *args: object, **kwargs: object) -> object:
+        if isinstance(file, (str, os.PathLike)) and any(c in mode for c in "wax+"):
+            written.append(Path(cast(str, os.fspath(file))).resolve())
+        return real_open(file, mode, *args, **kwargs)  # type: ignore[call-overload]  # io.open's overloads
+
+    monkeypatch.setattr(io, "open", spy)
+    monkeypatch.setattr(builtins, "open", spy)
     out = tmp_path / "report.md"
-    before = {p for p in REPO.rglob("*") if p.is_file() and ".git" not in p.parts}
     assert report.main(["--inputs", str(tmp_path / "empty"), "--out", str(out)]) in (0, 1)
+    monkeypatch.undo()
     text = out.read_text(encoding="utf-8")
     for area in AREAS_10_14_2:
         assert re.search(rf"^#+ .*\b{re.escape(area)}\b", text, re.MULTILINE), area
-    after = {p for p in REPO.rglob("*") if p.is_file() and ".git" not in p.parts}
-    assert after == before, "the report wrote inside the repository"
+    assert out.resolve() in written
+    inside = [w for w in written if w.is_relative_to(REPO.resolve())]
+    assert inside == [], "the report wrote inside the repository"
 
 
 def test_ac1_the_report_workflow_neither_commits_nor_deploys() -> None:

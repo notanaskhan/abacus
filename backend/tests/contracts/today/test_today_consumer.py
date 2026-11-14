@@ -37,7 +37,11 @@ ROUTES: list[tuple[str, str, str]] = [
 ]
 # Served by I-02-T10 (today, drill-in), T13 (builds), T16 (history), T14 (questions).
 # S41 built the briefing reads (I-02); the rest stay stubs.
-BUILT = {("get", "/v1/me/today"), ("get", "/v1/me/today/work-items/{work_item_id}")}
+BUILT = {
+    ("get", "/v1/me/today"),
+    ("get", "/v1/me/today/work-items/{work_item_id}"),
+    ("post", "/v1/me/today/builds"),  # S42: the briefing rebuild (202)
+}
 UNBUILT = {(m, p) for m, p, _ in ROUTES} - BUILT
 
 ARTBOARD_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
