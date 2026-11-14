@@ -23,6 +23,12 @@ import {
 import { harborview, ridgeline } from "../seed/tax-entity-allocation";
 import { CITATIONS, sheetCells } from "../seed/tax-entity-sheets";
 import {
+  ASSIGNEES,
+  type IssuesState,
+  issueDetail,
+  ridgelineIssues,
+} from "../seed/tax-entity-issues";
+import {
   type MemoState,
   RIDGELINE_GENERAL,
   RIDGELINE_OPPORTUNITIES,
@@ -34,9 +40,15 @@ const R = "/v1/tax-returns/{return_id}";
 
 export function taxEntityHandlers(
   snapshot: Snapshot,
-  options: { proposed?: boolean; memo?: MemoState } = {},
+  options: { proposed?: boolean; memo?: MemoState; issues?: IssuesState } = {},
 ): Record<string, FixtureHandler> {
   return {
+    // T-05-T58: TXP-10's queue, the issue detail and the picker (the artboard's state).
+    [`GET ${R}/issues`]: (req) =>
+      json(ridgelineIssues(options.issues ?? "a", req.query.get("show_resolved") === "true")),
+    "GET /v1/issues/{issue_id}": (req) =>
+      json(issueDetail(req.params.issue_id ?? "", options.issues ?? "a")),
+    [`GET ${R}/issue-assignees`]: () => json(ASSIGNEES),
     // T-05-T59: TXP-01's memo (the artboard's state), the rail and the opportunities.
     [`GET ${R}/memo`]: () => json(ridgelineMemo(options.memo ?? "adopted")),
     [`GET ${R}/general-information`]: () => json(RIDGELINE_GENERAL),

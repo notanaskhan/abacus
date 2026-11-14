@@ -4,13 +4,16 @@
 import { defineScenarios } from "../../app-core/fixture-mode";
 import { taxEntityHandlers } from "../handlers/tax-entity";
 import { CLOCKS, PERSONAS, type Snapshot } from "../seed/tax-entity";
+import type { IssuesState } from "../seed/tax-entity-issues";
 
 function at(state: string, clock: keyof typeof CLOCKS, snapshot: Snapshot) {
+  const issues: IssuesState =
+    state === "c" ? "c" : state === "d" ? "d" : state === "f" ? "f" : state === "b" ? "b" : "a";
   return {
     state,
     persona: PERSONAS.olivia,
     clock: CLOCKS[clock],
-    handlers: taxEntityHandlers(snapshot),
+    handlers: taxEntityHandlers(snapshot, { issues }),
   };
 }
 
