@@ -19,4 +19,12 @@ export const COPY = {
   skip: "Skip",
   planReady: "Plan ready — approve?",
   viewRun: "View run",
+  // W-02-T22 (DF-04): why the composer is off, and the gated tabs.
+  paused: "Agents are paused for your firm.",
+  consentOff: "Agents are off for this taxpayer — §7216 consent isn't on file",
+  notOnTeam: "You can read this session; only its owner's team can ask here.",
+  requestConsent: "Request consent",
+  agentsPlanned: "Agents arrive with the agent library.",
+  connectPlanned: "Connect arrives with the connector catalogue.",
+  flagOff: "Workbench isn't turned on for your firm.",
 } as const;

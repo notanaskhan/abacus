@@ -63,6 +63,10 @@ export interface ChatThreadProps {
   /** W-02-T17: Edit and resend on the person's own bubble (the consumer drafts it again and
    * sends it as a new turn naming the edited item). */
   onEditResend?: (seq: number, text: string) => void;
+  /** W-02-T22 (DF-04): the composer is drawn disabled with this reason, never hidden. */
+  composerDisabledReason?: string;
+  /** W-02-T22: a permitted role's action beside the reason ("Request consent"). */
+  composerAction?: ReactNode;
 }
 
 const NEUTRAL = "This item can’t be shown here.";
@@ -502,9 +506,19 @@ export function ChatThread(props: ChatThreadProps): JSX.Element {
         </button>
       ) : null}
       {above ? <div className="mx-[16px] mb-[9px]">{above}</div> : null}
+      {props.composerDisabledReason !== undefined ? (
+        <p
+          role="note"
+          data-composer-reason
+          className="mx-[16px] mb-[6px] flex items-center gap-[8px] text-[12px] text-ink-2"
+        >
+          <span className="flex-1">{props.composerDisabledReason}</span>
+          {props.composerAction ?? null}
+        </p>
+      ) : null}
       <Composer
         placeholder={composerPlaceholder}
-        disabled={false}
+        disabled={props.composerDisabledReason !== undefined}
         draft={props.draft}
         onSend={onSend}
       />

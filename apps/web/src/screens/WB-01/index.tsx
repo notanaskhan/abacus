@@ -12,12 +12,14 @@ import type { SessionSnapshotOut, SessionSummaryOut } from "@abacus/api-client";
 import {
   ChatHeader,
   ConfirmDialog,
+  EmptyState,
   ErrorState,
   type MenuItem,
   RestrictedState,
   type SessionRow,
   SessionList,
   WorkbenchLayout,
+  type WorkbenchTab,
   registryWord,
 } from "@abacus/ui";
 import { type JSX, useState } from "react";
@@ -138,10 +140,24 @@ export function WB01({
   const [deleting, setDeleting] = useState<string | null>(null);
   const runId = lastRunId(snapshot.data);
   const manage = snapshot.data?.allowed_actions.includes("manage") === true;
+  // W-02-T22: Agents and Connect are planned (W-03, W-01): their words, never a blank pane.
+  const [tab, setTab] = useState<WorkbenchTab>("sessions");
+  if (tab !== "sessions") {
+    const words = tab === "agents" ? COPY.agentsPlanned : COPY.connectPlanned;
+    return (
+      <WorkbenchLayout
+        tab={tab}
+        onTab={setTab}
+        list={<EmptyState title={words} icon="clock" />}
+        chat={<EmptyState title={words} icon="clock" />}
+      />
+    );
+  }
   return (
     <>
       <WorkbenchLayout
         tab="sessions"
+        onTab={setTab}
         list={
           list.isError ? (
             <ErrorState noun="sessions" onRetry={() => void list.refetch()} />
