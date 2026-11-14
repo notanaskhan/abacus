@@ -20,3 +20,8 @@ workpapers.section_drafter:
 notices.responder:
   medium: "0.25"
   small: "0.08"
+# briefing.today v1 (I-02-T20; I-02 §6.3; DEC-4935): the spec's budget, at most $0.10 a briefing on
+# the medium tier. The real run's median must stay within 10 % of it and at or under the cap.
+briefing.today:
+  medium: "0.10"
+

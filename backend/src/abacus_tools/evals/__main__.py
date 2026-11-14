@@ -64,9 +64,14 @@ def main(argv: list[str]) -> int:
     if args.agent == "briefing_today":  # I-02-T09: briefing.today's graders (fake model)
         from abacus_tools.evals.briefing_today import main as briefing_main
 
-        if args.route != "fake":
-            print("briefing_today: real routes arrive with I-02-T08's clearance")
-            return 2
+        if args.route != "fake":  # I-02-T20: the evaluation account's direct and Bedrock runs
+            from abacus_tools.evals.briefing_today_real import real_main as briefing_real
+
+            return briefing_real(
+                cast(str, args.route),
+                cast(Path, args.out),
+                "fast" if args.subset == "fast" else "full",
+            )
         return briefing_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
     if args.agent == "workbench_assistant":  # W-02-T07: workbench.assistant's turn graders
         from abacus_tools.evals.workbench_assistant import main as workbench_main

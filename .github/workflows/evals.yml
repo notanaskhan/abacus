@@ -32,6 +32,8 @@ jobs:
       - run: corepack enable
       - run: make setup
       - run: make evals EVAL_ARGS="--subset full"
+      # I-02-T20: briefing.today's full suite on the fake model, nightly.
+      - run: make evals-briefing-full
       - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
