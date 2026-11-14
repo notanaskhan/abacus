@@ -24,4 +24,16 @@ notices.responder:
 # the medium tier. The real run's median must stay within 10 % of it and at or under the cap.
 briefing.today:
   medium: "0.10"
+# The entity return capabilities (T-05-T64; T-05 §6; DEC-4936): each spec's own budget on its tier
+# (tax.account_mapper $0.05 small; tax.agreement_reader $0.20 and tax.memo_drafter $0.30 medium;
+# decisions.recommender's tax modes $0.03 medium). A Bedrock clearance run's median must stay
+# within 10 % of its row.
+tax.account_mapper:
+  small: "0.05"
+tax.agreement_reader:
+  medium: "0.20"
+tax.memo_drafter:
+  medium: "0.30"
+decisions.recommender:
+  medium: "0.03"
 
