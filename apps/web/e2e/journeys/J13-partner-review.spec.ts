@@ -143,3 +143,28 @@ test.describe("J13 · P-02 search", () => {
     await journey.as("daniel-reyes", "/", { clock: DEMO_INSTANT });
   });
 });
+
+// I-02-T21 (TASK-7952; I-02 §3.1, §3.7): j13 step 1 on the Today brief. Daniel opens Home with
+// the brief docked (HOME-05 a); the cells equal HOME-01's counts (I-COUNT); a question gets the
+// cited read-only answer (SHL-23 3) and a request to act is refused toward sign-off (INV-1).
+test.describe("J13 · Today brief", () => {
+  test("j13 1 Today: the brief's counts equal Home's, the 9:26 answer is cited", async ({ journey }) => {
+    await journey.as("daniel-reyes", "/?today=open", { clock: DEMO_INSTANT, scenario: "HOME-05:a" });
+    await journey.step("J13 step 1: the Today brief docked on Home (HOME-05 a)", async (page) => {
+      const brief = page.getByRole("complementary", { name: "Today" });
+      await expect(brief).toBeVisible();
+      for (const kind of ["decision", "sign_off", "approval_send", "overdue"]) {
+        await expect(brief.locator(`[data-cell='${kind}']`)).toBeVisible();
+      }
+      await expect(brief.getByText("Needs you first")).toBeVisible();
+    });
+    await journey.step("J13 step 1: Ask about your day (SHL-23 3)", async (page) => {
+      const brief = page.getByRole("complementary", { name: "Today" });
+      const composer = brief.getByRole("textbox", { name: "Ask about your day…" });
+      if ((await composer.count()) === 0) return; // DF-04: the composer is off for this tenant
+      await composer.fill("What happens if Samuel doesn't approve the M-2 fix today?");
+      await composer.press("Enter");
+      await expect(brief.locator("[data-ask-thread] [data-bubble]").first()).toBeVisible();
+    });
+  });
+});

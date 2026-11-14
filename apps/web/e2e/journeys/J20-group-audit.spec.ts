@@ -15,4 +15,13 @@ test.describe("J20 group audit", () => {
       await journey.as("hannah-leclerc", "/audits");
     },
   );
+  // I-02-T21: j20 step 8, the group-audit partner's Today brief (Harlow & Pike late items), waits
+  // on A-09's group audit screens.
+  test.fixme(
+    "j20 8 Today: the Pruett & Lang interim memo is 1 day late in Margaret's brief (SHL-23 5)",
+    owner("A-09 · group audit · S45 onward"),
+    async ({ journey }) => {
+      await journey.as("margaret-okonkwo", "/?today=open");
+    },
+  );
 });
