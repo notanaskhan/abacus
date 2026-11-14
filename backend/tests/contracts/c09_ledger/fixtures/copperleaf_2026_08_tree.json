@@ -1,0 +1,16 @@
+{
+  "_note": "C-01-T08: Copperleaf Coffee Co. August 2026 account tree totals and the accounts SPEC-655 names (AC-35, AC-37, AC-39); figures verbatim from C-01 §3 and the CLS-04/CLS-05 handoff. The full figure book is C-01-T13.",
+  "client_entity_id": "00000000-0000-4000-8000-0000000c0f01",
+  "snapshot_id": "00000000-0000-4000-8000-0000000c0f02",
+  "period": "2026-08",
+  "accounts": [
+    {"external_id": "35", "name": "Operating Checking", "classification": "asset", "account_type": "Bank", "mask": "••4410"},
+    {"external_id": "36", "name": "Business Savings", "classification": "asset", "account_type": "Bank", "mask": "••4436"},
+    {"external_id": "81", "name": "Prepaid Insurance", "classification": "asset", "account_type": "Other Current Asset"}
+  ],
+  "balances": [
+    {"external_id": "35", "period": "2026-08", "balance": "184610.50", "activity": "0.00"},
+    {"external_id": "81", "period": "2026-08", "balance": "3500.00", "activity": "0.00"}
+  ],
+  "totals": {"asset": "539055.45", "liability": "163543.05", "equity": "375512.40"}
+}
