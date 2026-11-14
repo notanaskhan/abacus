@@ -72764,6 +72764,33 @@
         "title": "PlanOut",
         "type": "object"
       },
+      "PlanReadOut": {
+        "description": "WB-03a \"Data it will read\": Tax returns 224 \u00b7 Tax engagements 214 \u00b7 Binders 241.",
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "title": "Count",
+            "type": "integer"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "label",
+          "count"
+        ],
+        "title": "PlanReadOut",
+        "type": "object"
+      },
       "PlanReviewDiffOut": {
         "description": "EBP-02 b2's ribbon: what the current version adds to this earlier one, from code.",
         "properties": {
@@ -72955,6 +72982,45 @@
           "label"
         ],
         "title": "PlanStepRefOut",
+        "type": "object"
+      },
+      "PlanWriteOut": {
+        "description": "WB-03a \"Writes that need your approval\", with the person who approves it.",
+        "properties": {
+          "action": {
+            "cls": "internal",
+            "title": "Action",
+            "type": "string"
+          },
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Approver Name"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "step_key": {
+            "cls": "internal",
+            "title": "Step Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_key",
+          "action",
+          "label"
+        ],
+        "title": "PlanWriteOut",
         "type": "object"
       },
       "PlanningMaterialityVersionOut": {
@@ -89741,6 +89807,18 @@
             "title": "Citations Count",
             "type": "integer"
           },
+          "failed_items": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Failed Items",
+            "type": "integer"
+          },
+          "gaps": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Gaps",
+            "type": "integer"
+          },
           "records_read": {
             "cls": "internal",
             "default": 0,
@@ -90145,6 +90223,24 @@
             "title": "Expected Version",
             "type": "integer"
           },
+          "labels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxProperties": 200,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Labels"
+          },
           "steps": {
             "cls": "internal",
             "items": {
@@ -90197,6 +90293,14 @@
             "title": "Id",
             "type": "string"
           },
+          "reads": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PlanReadOut"
+            },
+            "title": "Reads",
+            "type": "array"
+          },
           "run_id": {
             "cls": "internal",
             "format": "uuid",
@@ -90235,6 +90339,14 @@
             "cls": "internal",
             "title": "Version",
             "type": "integer"
+          },
+          "writes": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PlanWriteOut"
+            },
+            "title": "Writes",
+            "type": "array"
           }
         },
         "required": [
@@ -90704,6 +90816,24 @@
           "run_id"
         ],
         "title": "RunStartedOut",
+        "type": "object"
+      },
+      "RunStepRetryIn": {
+        "additionalProperties": false,
+        "description": "W-02-T19 (additive; AC-G4): `failed_items` re-reads only the step's failure ledger.",
+        "properties": {
+          "scope": {
+            "cls": "internal",
+            "default": "all",
+            "enum": [
+              "all",
+              "failed_items"
+            ],
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "title": "RunStepRetryIn",
         "type": "object"
       },
       "RunTraceOut": {
@@ -125576,7 +125706,7 @@
     },
     "/v1/agent-runs/{run_id}/steps/{step_id}/retry": {
       "post": {
-        "description": "Re-dispatches only the failed step.",
+        "description": "Re-dispatches only the failed step; W-02-T19: with `scope: failed_items`, only the items\nits failure ledger names (\"Retry those 3\").",
         "operationId": "retry_step",
         "parameters": [
           {
@@ -125643,6 +125773,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RunStepRetryIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
             "content": {

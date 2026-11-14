@@ -24,6 +24,11 @@ newest approved plan version (AC-W10); `stop` cancels what runs and what waits. 
 that fails after its retries fails its step only. A whole-run retry is a child run
 (`run_commands.retry_run`). Histories: `agent-run-v2-{approved, question-answered,
 question-skipped, decision-resumed, step-retried, stopped}.json` (`record_agent_run`).
+W-02-T19 (behind `workflow.patched("w02-failed-items")`, W-02 §4.4): `items_retry` re-reads only
+the references a step's per-item failure ledger names (scope `failed_items`, AC-G4) as a new row
+linked by `retry_of_step_id`. A failed step re-queues as a retry does; a step that succeeded with
+gaps re-reads beside the plan, so the steps that already used its answer do not run again. History:
+`agent-run-v1-failed-items-retry.json`.
 """
 
 from __future__ import annotations
@@ -51,6 +56,8 @@ with workflow.unsafe.imports_passed_through():
 RUN_ID_PREFIX: Final = "agent_run:"
 # P-10-T32: questions, decisions, retries, redirects and stop (ADR-090: `workflow.patched`).
 PART_2: Final = "agent-run-v2-part-2"
+# W-02-T19 (ADR-090): a retry of only the items a step could not read.
+FAILED_ITEMS: Final = "w02-failed-items"
 _SHORT = timedelta(seconds=30)
 _STEP = timedelta(minutes=15)
 _RETRY = RetryPolicy(maximum_attempts=5, initial_interval=timedelta(seconds=2))
@@ -77,6 +84,7 @@ class AgentRunWorkflow:
         self._stop = False
         self._redirected = False
         self._retries: list[str] = []
+        self._item_retries: list[str] = []  # W-02-T19
 
     @workflow.signal(name="question_answered")
     def question_answered(self) -> None:
@@ -92,6 +100,11 @@ class AgentRunWorkflow:
     def step_retry(self, step_key: str) -> None:
         """A person retried a failed step (AC-W6): it runs again as a new row."""
         self._retries.append(step_key)
+
+    @workflow.signal(name="items_retry")
+    def items_retry(self, step_key: str) -> None:
+        """W-02-T19 (AC-G4): a person retried only the items a step could not read."""
+        self._item_retries.append(step_key)
 
     @workflow.signal(name="redirected")
     def redirected(self) -> None:
@@ -188,6 +201,7 @@ class AgentRunWorkflow:
         next_seq = len(steps) + 1
         running: dict[str, asyncio.Task[StepOutcome]] = {}
         retried: dict[str, int] = {}  # a retried step's failed seq, for its new row
+        scoped: dict[str, str] = {}  # W-02-T19: a re-queued step's retry scope
         paused = False
         while not schedule.done:
             if part2 and self._stop:
@@ -211,27 +225,26 @@ class AgentRunWorkflow:
                         seq_of[key] = next_seq
                         next_seq += 1
                 self._retries.clear()
+            if self._item_retries and workflow.patched(FAILED_ITEMS):
+                next_seq = self._start_item_retries(
+                    p, schedule, seq_of, next_seq, retried, scoped, running
+                )
             paused = await self._act(
                 "agents.run_v2.paused", p.tenant_id, facts.engagement_id, result_type=bool
             )
             for step in schedule.start(paused=paused):
                 retry_of = retried.pop(step.key, None)
-                running[step.key] = asyncio.ensure_future(
-                    workflow.execute_activity(
-                        "agents.run_v2.execute_step",
-                        args=[
-                            p.tenant_id,
-                            p.run_id,
-                            seq_of[step.key],
-                            step.dump(),
-                            2 if retry_of is not None else 1,
-                            retry_of,
-                        ],
-                        result_type=StepOutcome,
-                        start_to_close_timeout=_STEP,
-                        retry_policy=_STEP_RETRY,
-                    )
-                )
+                args: list[Any] = [
+                    p.tenant_id,
+                    p.run_id,
+                    seq_of[step.key],
+                    step.dump(),
+                    2 if retry_of is not None else 1,
+                    retry_of,
+                ]
+                if step.key in scoped:  # W-02-T19: only under the patch
+                    args.append(scoped.pop(step.key))
+                running[step.key] = self._execute(args)
             if running:
                 await self._state(p, "running")
                 if part2:
@@ -244,7 +257,8 @@ class AgentRunWorkflow:
                     )
                 for key, task in list(running.items()):
                     if task.done():
-                        schedule.finish(key, _outcome(task).state)
+                        if key in schedule.states:  # an items retry is not a plan step
+                            schedule.finish(key, _outcome(task).state)
                         del running[key]
                 continue
             if paused:
@@ -256,7 +270,7 @@ class AgentRunWorkflow:
             if part2 and schedule.waiting:
                 await self._held(p, schedule, seq_of)
                 continue
-            if part2 and (self._retries or self._redirected):
+            if part2 and (self._retries or self._item_retries or self._redirected):
                 continue
             if schedule.stalled:
                 break  # nothing can start and no person is awaited: the run ends
@@ -264,8 +278,57 @@ class AgentRunWorkflow:
         terminal = state if state in ("succeeded", "failed", "cancelled") else "failed"
         return await self._end(p, terminal, None if terminal == "succeeded" else "steps_failed")
 
+    def _execute(self, args: list[Any]) -> asyncio.Task[StepOutcome]:
+        return asyncio.ensure_future(
+            workflow.execute_activity(
+                "agents.run_v2.execute_step",
+                args=args,
+                result_type=StepOutcome,
+                start_to_close_timeout=_STEP,
+                retry_policy=_STEP_RETRY,
+            )
+        )
+
+    def _start_item_retries(
+        self,
+        p: AgentRunInput,
+        schedule: Schedule,
+        seq_of: dict[str, int],
+        next_seq: int,
+        retried: dict[str, int],
+        scoped: dict[str, str],
+        running: dict[str, asyncio.Task[StepOutcome]],
+    ) -> int:
+        """W-02-T19 (AC-G4): each asked step re-reads only its failed items as a new row. A
+        failed step re-queues (its dependants with it); a step that succeeded with gaps re-reads
+        on its own, beside the plan. Returns the next free `seq`."""
+        for key in self._item_retries:
+            failed_seq = seq_of.get(key)
+            step = next((s for s in schedule.steps if s.key == key), None)
+            if failed_seq is None or step is None:
+                continue
+            if schedule.states.get(key) == "failed" and schedule.retry(key):
+                retried[key] = failed_seq
+                scoped[key] = "failed_items"
+            elif schedule.states.get(key) == "succeeded":
+                running[f"{key}#items:{next_seq}"] = self._execute(
+                    [p.tenant_id, p.run_id, next_seq, step.dump(), 2, failed_seq, "failed_items"]
+                )
+            else:
+                continue
+            seq_of[key] = next_seq
+            next_seq += 1
+        self._item_retries.clear()
+        return next_seq
+
     def _interrupted(self) -> bool:
-        return self._woken or self._stop or bool(self._retries) or self._redirected
+        return (
+            self._woken
+            or self._stop
+            or bool(self._retries)
+            or bool(self._item_retries)
+            or self._redirected
+        )
 
     async def _held(self, p: AgentRunInput, schedule: Schedule, seq_of: dict[str, int]) -> None:
         """Part 2 (AC-W4, AC-W5): nothing runs and a branch waits on a person. The run shows why;

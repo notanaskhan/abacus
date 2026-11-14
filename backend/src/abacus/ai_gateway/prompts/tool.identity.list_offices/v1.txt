@@ -1,0 +1,1 @@
+List the firm's offices by name. Offices are filters for counting work by office, never an access boundary.

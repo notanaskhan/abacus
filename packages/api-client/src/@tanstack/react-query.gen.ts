@@ -255,7 +255,8 @@ export const signOffRunMutation = (options?: Partial<Options<SignOffRunData>>): 
 /**
  * Retry Step Route
  *
- * Re-dispatches only the failed step.
+ * Re-dispatches only the failed step; W-02-T19: with `scope: failed_items`, only the items
+ * its failure ledger names ("Retry those 3").
  */
 export const retryStepMutation = (options?: Partial<Options<RetryStepData>>): UseMutationOptions<RetryStepResponse, RetryStepError, Options<RetryStepData>> => {
     const mutationOptions: UseMutationOptions<RetryStepResponse, RetryStepError, Options<RetryStepData>> = {

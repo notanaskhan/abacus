@@ -16,6 +16,7 @@ from abacus.modules.agents.file_tools import FILE_TOOLS  # P-10-T38
 from abacus.modules.agents.tools.registry import AgentTool, register_tool
 from abacus.modules.engagements.api import AGENT_TOOLS as ENGAGEMENTS
 from abacus.modules.evidence.api import AGENT_TOOLS as EVIDENCE
+from abacus.modules.identity.api import AGENT_TOOLS as IDENTITY  # W-02-T19
 from abacus.modules.ledger.api import AGENT_TOOLS as LEDGER
 from abacus.modules.requests.api import AGENT_TOOLS as REQUESTS
 
@@ -24,6 +25,7 @@ DECLARED: Final[tuple[ToolDecl, ...]] = (
     *REQUESTS,
     *EVIDENCE,
     *LEDGER,
+    *IDENTITY,
     *AGENTS,
     *FILE_TOOLS,
 )

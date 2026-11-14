@@ -105,6 +105,11 @@ class Counters:
     writes_waiting: int = 0
     agent_ms: int = 0
     agent_minutes: int = 0
+    # W-02-T19 (0872): from each plan step's latest row's failure ledger, by code. `gaps` is the
+    # number of steps that could not read everything ("Prepared with 1 gap"); `failed_items`
+    # the references still unread ("3 of 241").
+    gaps: int = 0
+    failed_items: int = 0
 
 
 @dataclass(frozen=True)
@@ -141,7 +146,12 @@ _FACTS = text(
     "EXISTS (SELECT 1 FROM agent_run_steps s WHERE s.run_id = r.id) AS stepped, "
     "(SELECT max(p.version) FROM agent_plans p WHERE p.run_id = r.id) AS plan_version, "
     "(SELECT p.steps FROM agent_plans p WHERE p.run_id = r.id ORDER BY p.version DESC LIMIT 1) "
-    "AS plan_steps FROM agent_runs r WHERE r.id = ANY(:ids)"
+    "AS plan_steps, l.gaps, l.failed_items FROM agent_runs r "
+    "LEFT JOIN LATERAL (SELECT count(*) FILTER (WHERE jsonb_array_length(x.failed_items) > 0) "
+    "AS gaps, coalesce(sum(jsonb_array_length(x.failed_items)), 0) AS failed_items FROM ("
+    "SELECT DISTINCT ON (s.plan_step_key) s.failed_items FROM agent_run_steps s "
+    "WHERE s.run_id = r.id AND s.plan_step_key IS NOT NULL ORDER BY s.plan_step_key, s.seq DESC"
+    ") x) l ON true WHERE r.id = ANY(:ids)"
 ).bindparams(bindparam("ids", type_=ARRAY(PgUUID(as_uuid=True))))
 
 
@@ -164,6 +174,8 @@ async def v2_facts(session: AsyncSession, run_ids: Sequence[UUID]) -> dict[UUID,
                 r.writes_waiting or 0,
                 r.agent_ms or 0,
                 r.agent_minutes or 0,
+                int(r.gaps or 0),
+                int(r.failed_items or 0),
             ),
             r.runs_as_user_id,
             r.trigger_kind,

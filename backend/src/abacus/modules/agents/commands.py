@@ -31,8 +31,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Final, cast
 from uuid import UUID
@@ -45,8 +45,10 @@ from abacus.kernel.dispatch import signal_workflow
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.agents.events import RunPlanDecided
-from abacus.modules.agents.run_commands import RunNotEnded, retry_step, wake
-from abacus.modules.agents.run_plan import PlanStep
+from abacus.modules.agents.run_commands import RetryScope, RunNotEnded, retry_step, wake
+from abacus.modules.agents.file_tools import FOLDER_LABELS
+from abacus.modules.agents.run_activities import plan_rules
+from abacus.modules.agents.run_plan import READ_SOURCES, PlanStep, validate_plan
 from abacus.modules.agents.run_views import TERMINAL
 from abacus.modules.agents.run_waits import run_workflow_id
 from abacus.modules.agents.runs import (
@@ -149,6 +151,25 @@ async def _head(ctx: AuthContext, run_id: UUID, action: str) -> RunHead:
 
 
 @dataclass(frozen=True)
+class PlanRead:
+    """WB-03a "Data it will read": one source, its words (code's) and its count."""
+
+    source: str
+    label: str
+    count: int
+
+
+@dataclass(frozen=True)
+class PlanWrite:
+    """WB-03a "Writes that need your approval": the step, its action and who approves it."""
+
+    step_key: str
+    action: str
+    label: str
+    approver_name: str | None
+
+
+@dataclass(frozen=True)
 class PlanView:
     id: UUID
     run_id: UUID
@@ -158,6 +179,9 @@ class PlanView:
     sources: list[str]
     decided_by: str | None
     decided_at: datetime | None
+    # W-02-T19: the plan card's fields, derived by code from the version's steps.
+    reads: list[PlanRead] = field(default_factory=list[PlanRead])
+    writes: list[PlanWrite] = field(default_factory=list[PlanWrite])
 
 
 # The run's row is locked, not the plan's: `agent_plans` is insert-only (no UPDATE grant, so no
@@ -175,6 +199,7 @@ async def _decide(
     expected_version: int,
     state: str,
     steps: Sequence[str] | None = None,
+    labels: Mapping[str, str] | None = None,
 ) -> PlanView:
     head = await _head(ctx, run_id, "agent_run.approve_plan")
     async with uow(ctx.tenant) as tx:
@@ -188,7 +213,15 @@ async def _decide(
         if state == "edited":
             if latest.state == "cancelled":  # a cancelled plan is not edited back to life
                 raise PlanNotDecidable(facts={"state": "cancelled"})
-            current = _edited(current, steps or ())
+            current = _edited(current, steps or (), labels or {})
+            # W-02-T19 (AC-P3): an edited plan is validated again before it may be approved:
+            # its writes declared, no reserved action, each approver still holding the write.
+            problems = validate_plan(
+                current,
+                await plan_rules(str(ctx.tenant_id), str(run_id), [s.dump() for s in current]),
+            )
+            if problems:
+                raise PlanEditInvalid(facts={"reason": "plan_invalid", "problems": problems})
         elif (state == "approved" and latest.state not in _DECIDABLE) or (
             state == "cancelled" and (latest.state not in _DECIDABLE or head.state != _AWAITING)
         ):
@@ -239,16 +272,25 @@ async def _decide(
     return await plan_view(ctx, run_id)
 
 
-def _edited(current: list[PlanStep], keys: Sequence[str]) -> list[PlanStep]:
-    """The newest version's steps, kept and reordered by key; nothing new is added."""
+def _edited(
+    current: list[PlanStep], keys: Sequence[str], labels: Mapping[str, str]
+) -> list[PlanStep]:
+    """The newest version's steps, kept and reordered by key; nothing new is added. W-02-T19
+    (WB-03a2, steps become fields): a kept step's label may be reworded; what it does (tool,
+    arguments, writes, approver) is not editable here."""
     by_key = {s.key: s for s in current}
     if len(set(keys)) != len(keys) or any(k not in by_key for k in keys):
         raise PlanEditInvalid(facts={"reason": "unknown_or_repeated_key"})
+    if any(k not in keys for k in labels):
+        raise PlanEditInvalid(facts={"reason": "label_for_dropped_step"})
     kept = set(keys)
     for key in keys:
         if any(d not in kept for d in by_key[key].depends_on):
             raise PlanEditInvalid(facts={"reason": "depends_on_dropped"})
-    return [by_key[k] for k in keys]
+    return [
+        replace(by_key[k], label=labels[k].strip()) if labels.get(k, "").strip() else by_key[k]
+        for k in keys
+    ]
 
 
 async def approve_plan(ctx: AuthContext, run_id: UUID, expected_version: int) -> PlanView:
@@ -256,9 +298,13 @@ async def approve_plan(ctx: AuthContext, run_id: UUID, expected_version: int) ->
 
 
 async def edit_plan(
-    ctx: AuthContext, run_id: UUID, expected_version: int, steps: Sequence[str]
+    ctx: AuthContext,
+    run_id: UUID,
+    expected_version: int,
+    steps: Sequence[str],
+    labels: Mapping[str, str] | None = None,
 ) -> PlanView:
-    return await _decide(ctx, run_id, expected_version, "edited", steps)
+    return await _decide(ctx, run_id, expected_version, "edited", steps, labels)
 
 
 async def cancel_plan(ctx: AuthContext, run_id: UUID, expected_version: int) -> PlanView:
@@ -278,17 +324,60 @@ async def plan_view(ctx: AuthContext, run_id: UUID) -> PlanView:
         ).first()
     if row is None:
         raise NotFound("agent_plan")
-    names = await names_of([row.decided_by]) if row.decided_by else {}
+    steps = [PlanStep.parse(s) for s in cast(list[dict[str, object]], row.steps or [])]
+    approvers = {UUID(s.approver_user_id) for s in steps if s.writes and s.approver_user_id}
+    names = await names_of([u for u in [row.decided_by, *approvers] if u is not None])
     return PlanView(
         row.id,
         run_id,
         int(row.version),
         str(row.state),
-        [PlanStep.parse(s) for s in cast(list[dict[str, object]], row.steps or [])],
+        steps,
         [str(s) for s in cast(list[object], row.sources or [])],
         names.get(row.decided_by) if row.decided_by else None,
         row.decided_at,
+        plan_reads(steps),
+        [
+            PlanWrite(
+                s.key,
+                write,
+                write_label(s, steps),
+                names.get(UUID(s.approver_user_id)) if s.approver_user_id else None,
+            )
+            for s in steps
+            for write in s.writes
+        ],
     )
+
+
+def plan_reads(steps: Sequence[PlanStep]) -> list[PlanRead]:
+    """W-02-T19 (WB-03a): each declared source once, in first-read order, at its largest count."""
+    found: dict[str, int] = {}
+    for step in steps:
+        for source, count in step.reads:
+            if source in READ_SOURCES and count >= 0:
+                found[source] = max(found.get(source, 0), count)
+    return [PlanRead(s, READ_SOURCES[s], n) for s, n in found.items()]
+
+
+def write_label(step: PlanStep, steps: Sequence[PlanStep]) -> str:
+    """A write's words, rendered by code from what the step will do: a file save names the
+    workbook its build step makes and the folder it goes to (WB-03a "Create file … in Files ›
+    …"); anything else is the step's label."""
+    if step.tool == "files.propose_save":
+        folder = FOLDER_LABELS.get(str(step.arguments.get("folder") or "deliverables"))
+        build = next(
+            (
+                s
+                for s in steps
+                if s.key in step.depends_on and s.tool == "files.build_workbook"
+            ),
+            None,
+        )
+        name = build.arguments.get("name") if build is not None else None
+        if folder is not None and isinstance(name, str) and name:
+            return f"Create file {name}.xlsx in Files \u203a {folder}"
+    return step.label
 
 
 # --- questions ---------------------------------------------------------------------------------
@@ -473,7 +562,9 @@ async def redirect(ctx: AuthContext, run_id: UUID, body: str) -> None:
     await wake(ctx.tenant_id, run_id, "redirected")
 
 
-async def retry(ctx: AuthContext, run_id: UUID, step_id: UUID) -> str:
+async def retry(
+    ctx: AuthContext, run_id: UUID, step_id: UUID, scope: RetryScope = "all"
+) -> str:
     await _live(ctx, run_id)
     async with tenant_session(ctx.tenant) as session:
         seq = await session.scalar(
@@ -482,7 +573,7 @@ async def retry(ctx: AuthContext, run_id: UUID, step_id: UUID) -> str:
         )
     if seq is None:
         raise NotFound("agent_run_step")
-    return await retry_step(ctx, run_id, int(seq))
+    return await retry_step(ctx, run_id, int(seq), scope)
 
 
 async def stop(ctx: AuthContext, run_id: UUID) -> None:

@@ -42,7 +42,12 @@ from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.agents.proposals import ProposedRow, create_proposal
 from abacus.modules.engagements.api import client_of
 from abacus.modules.evidence.api import file_approved_copy, store_workbook, stored_object
-from abacus.modules.identity.api import AgentContext, consumed_grant
+from abacus.modules.identity.api import (
+    AgentContext,
+    consumed_grant,
+    engagement_resource,
+    member_could,
+)
 
 Int = classified("internal")
 Conf = classified("confidential")
@@ -339,6 +344,47 @@ async def save_approved(caller: ToolCaller, args: SaveApprovedIn) -> SaveApprove
     return SaveApprovedOut(evidence_version_id=version, grant_id=grant_id)
 
 
+# --- W-02-T19 (W-02 §4.1, AC-Q2): `files.list_folders`, where a save could go --------------------
+
+
+class ListFoldersIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    writable_only: Annotated[bool, Int] = True
+    parent_ref: Annotated[str | None, Field(max_length=80), Int] = None
+
+
+class FolderRow(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[str, Int]  # the folder's ref, as `files.propose_save` names it
+    label: Annotated[str, Int]
+    path: Annotated[str, Int]
+    writable: Annotated[bool, Int]
+
+
+class ListFoldersOut(BaseModel):
+    folders: Annotated[list[FolderRow], Field(max_length=12), Int]
+    # A firm-level run has no engagement folders; firm-wide folders arrive with a firm store.
+    firm_folders: Annotated[Literal["unavailable"] | None, Int] = None
+
+
+async def list_folders(agent: AgentContext, args: ListFoldersIn) -> ListFoldersOut:
+    """The folders `files.propose_save` can name on the run's engagement, each marked writable
+    when the person the run acts for (who approves the save) holds `file.save` there now. Reads no
+    document. `parent_ref` narrows to one folder."""
+    if agent.engagement_id is None:
+        return ListFoldersOut(folders=[], firm_folders="unavailable")
+    resource = await engagement_resource(agent.tenant, agent.engagement_id)
+    writable = await member_could(agent.tenant_id, agent.initiator.user_id, SAVE, resource)
+    rows = [
+        FolderRow(id=key, label=label, path=f"Files \u203a {label}", writable=writable)
+        for key, label in FOLDER_LABELS.items()
+        if args.parent_ref in (None, key)
+    ]
+    return ListFoldersOut(folders=[r for r in rows if r.writable or not args.writable_only])
+
+
 FILE_TOOLS: Final = (
     ToolDecl(
         "files.build_workbook", "compute", PROPOSE, "confidential", BuildWorkbookIn,
@@ -351,5 +397,9 @@ FILE_TOOLS: Final = (
     ToolDecl(
         SAVE_TOOL, "approved_write", SAVE, "confidential", SaveApprovedIn, SaveApprovedOut,
         save_approved, scope_action=PROPOSE,
+    ),
+    ToolDecl(
+        "files.list_folders", "read", PROPOSE, "internal", ListFoldersIn, ListFoldersOut,
+        list_folders, records_read="folder",
     ),
 )  # fmt: skip

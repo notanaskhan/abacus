@@ -19,14 +19,22 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final, Literal, Protocol
+from typing import Annotated, Final, Literal, Protocol
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
 
 ToolKind = Literal["read", "compute", "propose", "approved_write"]
+# W-02-T19 (DEC-4930): the per-item failure ledger. A read that reaches many items and cannot read
+# some answers what it read and names the rest here, by reference and code, never content. A tool
+# that supports re-reading only those items takes them back as `only_refs` (`ONLY_REFS`).
+ONLY_REFS: Final = "only_refs"
+MAX_FAILED_ITEMS: Final = 1000
+_CODE: Final = r"^[a-z][a-z0-9_]*$"
+_INT: Final = classified("internal")
 DataClass = Literal["internal", "confidential", "restricted", "tri"]
 MAX_ROWS: Final = 200
 
@@ -40,6 +48,17 @@ class ToolCaller(Protocol):
 
     @property
     def engagement_id(self) -> UUID | None: ...
+
+
+class FailedItem(BaseModel):
+    """One item a step could not read (W-02 §4.2 `failed_items[]`): identifiers and a code only."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    ref_type: Annotated[str, Field(min_length=1, max_length=40, pattern=_CODE), _INT]
+    ref_id: Annotated[str, Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_.:-]+$"), _INT]
+    source: Annotated[str, Field(min_length=1, max_length=40, pattern=_CODE), _INT]
+    error_code: Annotated[str, Field(min_length=1, max_length=40, pattern=_CODE), _INT]
 
 
 @dataclass(frozen=True)

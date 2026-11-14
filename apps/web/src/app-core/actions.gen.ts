@@ -397,6 +397,7 @@ export const ACTIONS = [
   "notice_response.edit",
   "notice_response.mark_sent",
   "notice_response.send_for_signature",
+  "org_structure.list",
   "org_structure.manage",
   "org_structure.read",
   "party_in_interest.manage",
