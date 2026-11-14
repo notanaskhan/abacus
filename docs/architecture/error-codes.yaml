@@ -2261,6 +2261,11 @@ codes:
     - abacus.modules.tax.consent_capture.OnePurposePerDocument
     summary: 'A document would carry more than one purpose (Treas. Reg. §301.7216-3; T-01-T30): a template
       whose terms name another purpose, or one template version asked to serve two.'
+  open_items:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.contract_work.OpenItems
+    summary: L1 sign-off on a reconciliation with open items (AC-42).
   open_review_notes:
     status: 409
     raised_by:
@@ -2580,6 +2585,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.requests.questionnaires.AlreadySent
+  question_template_required:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.contract_work.QuestionTemplateRequired
+    summary: A transaction question needs the firm's DB template (DV-7; template wording only).
   questionnaire_closed:
     status: 409
     raised_by:
@@ -3243,6 +3253,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.statement_review.BalancePrinted
     summary: A balance the statement prints can't be replaced by a typed one.
+  statement_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.contract_work.StatementNotAvailable
+    summary: The statement is still requested (CLS-05 g; AC-43).
   statement_not_reconciled:
     status: 409
     raised_by:
