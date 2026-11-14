@@ -12,3 +12,9 @@ declare module "node:path" {
 declare module "node:url" {
   export function fileURLToPath(url: string): string;
 }
+
+// F-07-T19: a specimen's page image, imported as its URL (Vite and Vitest resolve the asset).
+declare module "*.png" {
+  const src: string;
+  export default src;
+}
