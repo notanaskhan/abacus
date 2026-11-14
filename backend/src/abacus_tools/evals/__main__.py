@@ -109,6 +109,17 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.workbook_fix import main as workbook_fix_main
 
         return workbook_fix_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+    if args.agent in (
+        "tax_account_mapper", "tax_agreement_reader", "tax_memo_drafter", "tax_recommender_modes"
+    ) and args.route != "fake":  # T-05-T64: the evaluation account's clearance runs
+        from abacus_tools.evals.tax_entity_real import real_main as entity_real
+
+        return entity_real(
+            args.agent,
+            cast(str, args.route),
+            cast(Path, args.out),
+            "fast" if args.subset == "fast" else "full",
+        )
     if args.agent in ("tax_memo_drafter", "tax_recommender_modes"):  # T-05-T30, frozen
         from abacus_tools.evals.tax_entity_part2 import main as part2_main
 
