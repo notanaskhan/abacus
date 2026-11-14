@@ -38,7 +38,12 @@ from abacus.kernel.dispatch import signal_with_start
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.agents.api import capability_ready, open_turn_run, subject_engagement
+from abacus.modules.agents.api import (
+    capability_ready,
+    firm_capability_blocked,
+    open_turn_run,
+    subject_engagement,
+)
 from abacus.modules.engagements.api import client_of, get_ref
 from abacus.modules.identity.api import (
     AuthContext,
@@ -360,11 +365,15 @@ async def post_message(
         ready, blocked = await capability_ready(ctx, UUID(engagement), capability)
         if ready:
             blocked = None
-    if engagement is not None and capability is not None and blocked is None:
+    today = engagement is None and ref_of(row.context_refs, "today_brief") is not None
+    if today and capability is not None:
+        # I-02-T14 (DEC-4932): the Today session is firm-level; its turn runs with no engagement.
+        blocked = await firm_capability_blocked(ctx, capability)
+    if (engagement is not None or today) and capability is not None and blocked is None:
         run_id = await open_turn_run(
             ctx,
             agent_id=capability,
-            engagement_id=UUID(engagement),
+            engagement_id=UUID(engagement) if engagement is not None else None,
             session_id=session_id,
             inputs={"session_id": str(session_id), "kind": kind},
         )

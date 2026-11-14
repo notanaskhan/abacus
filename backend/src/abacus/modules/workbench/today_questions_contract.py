@@ -6,13 +6,14 @@ session for the day (a `workbench_session` with context kind `today_brief`, crea
 question, listed under Mine with a "Today · <date>" chip, Q4). `propose` and `approved_write` tools
 are withheld whatever `workbench.plans` says (INV-1). The answer is read through the session's
 items and its `session:<id>` topic. It answers, in order: the matrix (`briefing.ask`),
-`today_brief.enabled` (404), `workbench.enabled` (404: the composer is hidden), then 501 until
-I-02-T14.
+`today_brief.enabled` (404), `workbench.enabled` (404: the composer is hidden). I-02-T14
+(DEC-4932): live (`today_questions.ask`); 409 `capability_unavailable {reason}` before anything is
+written, 409 `brief_not_current` for another day's brief, 404 before today's brief exists.
 """
 
 from __future__ import annotations
 
-from typing import Annotated, NoReturn
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -20,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TODAY_BRIEF_ENABLED, WORKBENCH_ENABLED
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -48,10 +49,6 @@ class TodayQuestionAcceptedOut(BaseModel):
 today_questions_router = AbacusRouter(prefix="/v1/me/today", tags=["today"])
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
-
-
 @today_questions_router.post(
     "/questions",
     action="briefing.ask",
@@ -63,7 +60,10 @@ async def today_question_route(
     body: TodayQuestionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> TodayQuestionAcceptedOut:
     """409 `capability_unavailable {reason}` when the assistant is unavailable (DF-04)."""
+    from abacus.modules.workbench.today_questions import ask
+
     for flag in (TODAY_BRIEF_ENABLED, WORKBENCH_ENABLED):
         if not await flag_enabled(ctx.tenant, flag):
             raise NotFound(flag.name)
-    _not_yet()
+    asked = await ask(ctx, body.text, body.brief_id, idempotency_key)
+    return TodayQuestionAcceptedOut(session_id=asked.session_id, item_id=asked.item_id)

@@ -285,6 +285,9 @@ from abacus.modules.agents.session_turns import open_plan_child_run as open_plan
 from abacus.modules.agents.session_turns import open_turn_run as open_turn_run
 from abacus.modules.agents.session_turns import run_session_turn as run_session_turn
 from abacus.modules.agents.session_turns import (
+    firm_capability_blocked as firm_capability_blocked,  # I-02-T14
+)
+from abacus.modules.agents.session_turns import (
     turn_capability_ready as turn_capability_ready,
 )
 from abacus.modules.agents.shadow_score import (
@@ -727,6 +730,7 @@ __all__ = [
     "open_plan_child_run",
     "open_question_count",
     "open_turn_run",
+    "firm_capability_blocked",
     "override_rate",
     "pending_proposal_count",
     "pending_suggestion",

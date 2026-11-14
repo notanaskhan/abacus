@@ -12,6 +12,8 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-14 (S43): I-02-T14 a Today question, identifiers only (DEC-60)
+        "today_brief.question_asked",
         # reviewed 2026-11-12 (S37): T-04-T36 K-1 activities and treatments
         "pass_through_activity.created",
         "pass_through_activity.released",

@@ -77,3 +77,14 @@ invalidation on `user:{me}`); builds and forced rebuilds are audited by `agents`
 `apps/web/src/fixtures/seed/today.ts` (SHL-23 1–7, HOME-05 a–f: Daniel, the Ridgeline drill-in, a
 question accepted, Margaret, Margaret on Dec 1, quiet, building, `by_engagement`) through
 `fixtures/handlers/today.ts` in the E0 scenario. Consumer tests: I-02-T05.
+
+## Live since I-02-T14 (2026-11-14, DEC-4932)
+`POST /v1/me/today/questions` is live: availability first (firm-level `workbench.assistant`
+readiness; 409 `capability_unavailable {reason}` with nothing written), 409 `brief_not_current`
+for another day's brief, 404 before today's brief exists. One Today session per viewer per day
+(`context_refs` `{kind: today_brief, id: <date>}` and the capability; title "Today · Mon Sep 14",
+`title_source` manual), created with one `context_added` item (the brief's code lines and the
+day's briefing ids). The turn runs firm-level (no engagement) and never plans: a request to act
+ends in the `today_read_only` notice (the thread points to SHL-12). Audit
+`today_brief.question_asked {session, item}`.
+
