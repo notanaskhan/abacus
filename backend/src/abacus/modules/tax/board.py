@@ -23,6 +23,8 @@ Hale: 79 open, 145 done, 224 total).
 
 from __future__ import annotations
 
+import re
+
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -40,6 +42,7 @@ from abacus.modules.engagements.api import (
     work_item_facts,
     work_item_offices,
 )
+from abacus.modules.agents.api import DrillRow
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
 from abacus.modules.platform.api import SearchDocument
 from abacus.modules.tax.returns_contract import (
@@ -369,3 +372,29 @@ __all__ = [
     "returns_by_office",
     "summary",
 ]
+
+
+# --- W-02-T20 (DEC-4933): a season workbook's result group, for the Workbench drill ------------
+
+_SEASON: Final = re.compile(r"\bTY(\d{4})\b")
+
+
+async def season_group(ctx: AuthContext, artifact_name: str, status: str) -> tuple[str, list[DrillRow]] | None:
+    """`status:<code>`: the viewer's returns of the workbook's tax year in that status, as TAX-01
+    lists them (walls and visibility applied; nothing hidden is listed or counted), each linking
+    to TAX-02. The year is the artifact's own ("TY2025 Season Progress"), else the board's."""
+    from abacus.kernel._statuses import ReturnStatus
+
+    if status not in {s.value for s in ReturnStatus}:
+        return None
+    named = _SEASON.search(artifact_name)
+    board = await _board(ctx, int(named.group(1)) if named else None)
+    rows = sorted(
+        ((r, f) for r, f in board.rows if r.status == status),
+        key=lambda rf: (rf[1].client_name.casefold(), rf[0].form, str(rf[0].work_item_id)),
+    )
+    return status.replace("_", " ").capitalize(), [
+        DrillRow("tax_return", r.work_item_id, f.client_name, f"Form {r.form}",
+                 f"/tax-returns/{r.work_item_id}")
+        for r, f in rows
+    ]  # fmt: skip

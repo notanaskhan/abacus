@@ -121735,10 +121735,6 @@ export type ArtifactDownloadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ArtifactDownloadError = ArtifactDownloadErrors[keyof ArtifactDownloadErrors];
@@ -121798,10 +121794,6 @@ export type ArtifactPreviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ArtifactPreviewError = ArtifactPreviewErrors[keyof ArtifactPreviewErrors];
@@ -134049,10 +134041,6 @@ export type SessionDrillErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SessionDrillError = SessionDrillErrors[keyof SessionDrillErrors];
