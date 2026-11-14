@@ -6,8 +6,8 @@
 // search with the f empty state ("No sessions match 'K-3'."), row markers (amber dot, spinner, Ready
 // for review), "· via Agent" through `formatActor` (INV-5), inline rename and the delete dialog on
 // rows the server lets the viewer manage (AC-L4, AC-L5), and the header: Bug opens the run trace
-// (WB-09), the Paperclip chip names the context count, Create Agent… is a planned link (W-03). The
-// thread states a–g are W-02-T17's; a locked row never draws the session's content (INV-3).
+// (WB-09), the Paperclip chip names the context count, Create Agent… is a planned link (W-03). W-02-T17:
+// the thread states (Thread.tsx); a locked row never draws the session's content (INV-3).
 import type { SessionSnapshotOut, SessionSummaryOut } from "@abacus/api-client";
 import {
   ChatHeader,
@@ -36,6 +36,7 @@ import {
 } from "../../domain/workbench";
 import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
+import { Thread } from "./Thread";
 
 export interface WB01Props {
   filter: SessionFilter;
@@ -190,6 +191,15 @@ export function WB01({
                       }
                     : {})}
                   {...(PLANNED_VISIBLE && onCreateAgent !== undefined ? { onCreateAgent } : {})}
+                />
+              ) : null}
+              {selected !== null && sessionId !== null ? (
+                <Thread
+                  snapshot={snapshot.data}
+                  sessionId={sessionId}
+                  onOpenRun={(run) => {
+                    openOverlay({ key: "run-trace", args: [run] });
+                  }}
                 />
               ) : null}
             </div>

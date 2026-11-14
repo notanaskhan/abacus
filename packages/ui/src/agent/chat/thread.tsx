@@ -60,6 +60,9 @@ export interface ChatThreadProps {
   onOpenRun?: (runId: string) => void;
   onArtifact?: (artifactId: string, intent: ArtifactIntent) => void;
   onSend?: (body: string) => void;
+  /** W-02-T17: Edit and resend on the person's own bubble (the consumer drafts it again and
+   * sends it as a new turn naming the edited item). */
+  onEditResend?: (seq: number, text: string) => void;
 }
 
 const NEUTRAL = "This item can’t be shown here.";
@@ -76,9 +79,58 @@ function NeutralRow(): JSX.Element {
   );
 }
 
-function MeBubble({ text }: { text: string }): JSX.Element {
+function MeBubble({
+  text,
+  onEdit,
+}: {
+  text: string;
+  /** W-02-T17 (WB-01): the bubble's "···" menu: Copy, and Edit and resend (the person's own). */
+  onEdit?: (() => void) | undefined;
+}): JSX.Element {
+  const [menu, setMenu] = useState(false);
   return (
-    <div className="flex justify-end">
+    <div className="group flex items-center justify-end gap-[4px]">
+      {onEdit !== undefined ? (
+        <span className="relative">
+          <button
+            type="button"
+            aria-label="Message actions"
+            aria-expanded={menu}
+            onClick={() => {
+              setMenu(!menu);
+            }}
+            className="flex size-[22px] items-center justify-center rounded-pill text-ink-3 opacity-0 group-hover:opacity-100 focus:opacity-100"
+          >
+            <Icon name="ellipsis" size={13} />
+          </button>
+          {menu ? (
+            <span role="menu" className="absolute right-0 z-10 mt-[4px] flex w-[240px] flex-col rounded-[10px] bg-card py-[4px] shadow-e2">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenu(false);
+                  void navigator.clipboard?.writeText(text).catch(() => undefined);
+                }}
+                className="px-[10px] py-[6px] text-left text-[13px] text-ink hover:bg-nested"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenu(false);
+                  onEdit();
+                }}
+                className="px-[10px] py-[6px] text-left text-[13px] text-ink hover:bg-nested"
+              >
+                Edit and resend
+              </button>
+            </span>
+          ) : null}
+        </span>
+      ) : null}
       <p
         data-bubble="me"
         className="max-w-[56%] rounded-[14px] bg-espresso px-[14px] py-[10px] text-[13.5px] leading-[1.45] text-on-dark"
@@ -341,7 +393,16 @@ function render(
   const still = props.still === true || !revealed.has(item.id);
   switch (item.kind as ThreadItemKind) {
     case "user_message":
-      return <MeBubble text={str(item.payload.body)} />;
+      return (
+        <MeBubble
+          text={str(item.payload.body)}
+          onEdit={
+            props.onEditResend === undefined
+              ? undefined
+              : () => props.onEditResend?.(item.seq, str(item.payload.body))
+          }
+        />
+      );
     case "answer":
       return <MeBubble text={str(item.payload.title) || str(item.payload.body)} />;
     case "agent_blocks": {

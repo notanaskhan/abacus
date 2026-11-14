@@ -10,4 +10,13 @@ export const COPY = {
   lockedTitle: "You can't open this session",
   lockedBody: (client: string, contacts: readonly string[]) =>
     `It reads ${client}, a client you don't have access to. ${contacts.join(" or ")} can share what you need.`,
+  // W-02-T17: the thread's fixed words (the code's notices and slots).
+  nothingWritten: "Nothing was written.",
+  plansOff: "I can't make changes from Workbench yet. I can read and answer; a plan to write needs plans turned on for your firm.",
+  todayReadOnly: "I can't approve, sign off or send from here. Those stay with you on their own screens.",
+  unavailable: "AI isn't available for real client data yet",
+  turnFailed: "I couldn't finish that turn.",
+  skip: "Skip",
+  planReady: "Plan ready — approve?",
+  viewRun: "View run",
 } as const;

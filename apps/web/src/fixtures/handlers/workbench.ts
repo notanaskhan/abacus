@@ -15,6 +15,8 @@ import {
   contextOptions,
   e0Rows,
 } from "../seed/workbench";
+import { TODAY_SESSION } from "../seed/today";
+import { SESSION_ID as SEASON_SESSION, threadItems as seasonItems } from "../seed/tpl04-sessions";
 
 type Filter = "all" | "mine" | "via_agent" | "running" | "needs_answer";
 const FILTERS: readonly Filter[] = ["all", "mine", "via_agent", "running", "needs_answer"];
@@ -56,6 +58,22 @@ export function workbenchHandlers(
     "POST /v1/workbench/sessions": () => {
       live.unshift(NEW_SESSION);
       return json(NEW_SESSION, 201);
+    },
+    // W-02-T17 (I-02-T17's Today session too): the selected session's snapshot. Hannah's TY2025
+    // season progress reads WB-01 a (the discovery block and the 1-of-2 question).
+    "GET /v1/workbench/sessions/{session_id}": ({ params }) => {
+      if (params.session_id === TODAY_SESSION.id) return json(TODAY_SESSION);
+      if (params.session_id !== SEASON_SESSION) return json({ detail: { code: "not_found" } }, 404);
+      return json({
+        id: SEASON_SESSION,
+        title: "TY2025 season progress by office",
+        state: "awaiting_answer",
+        origin: "manual",
+        locked: false,
+        allowed_actions: ["message", "manage"],
+        last_item_at: "2026-09-14T14:24:00Z",
+        items: seasonItems("a"),
+      });
     },
     "PATCH /v1/workbench/sessions/{session_id}": ({ params, body }) => {
       const at = live.findIndex((r) => r.id === params.session_id);
