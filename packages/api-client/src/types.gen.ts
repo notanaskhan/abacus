@@ -5761,6 +5761,143 @@ export type BenchmarkOut = {
 };
 
 /**
+ * BeneficiariesOut
+ *
+ * GET …/beneficiaries: TXT-03 (AC-9.1 to AC-11.3).
+ */
+export type BeneficiariesOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'instrument.attach' | 'instrument.read_run' | 'instrument_determination.edit' | 'instrument_interpretation.reopen' | 'fai_line.edit' | 'trust_distribution.edit' | 'fiduciary_computation.recompute' | 'fiduciary_computation.export' | 'fiduciary_election.record' | 'sign_off.l1' | 'sign_off.l2' | 'sign_off.l3' | 'k1_package.release' | 'k1_package.resend'>;
+    /**
+     * Computation Id
+     */
+    computation_id: string | null;
+    election: SixtyFiveDayCardOut;
+    /**
+     * Release Reason
+     */
+    release_reason: string | null;
+    /**
+     * Release Steps
+     */
+    release_steps: Array<ReleaseStepOut>;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Rows
+     */
+    rows: Array<BeneficiaryRowOut>;
+    totals: BeneficiaryTotalsOut | null;
+};
+
+/**
+ * BeneficiaryPaymentOut
+ */
+export type BeneficiaryPaymentOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Paid On
+     */
+    paid_on: string;
+};
+
+/**
+ * BeneficiaryRowOut
+ */
+export type BeneficiaryRowOut = {
+    /**
+     * Box 1
+     */
+    box_1: string;
+    /**
+     * Box 2A
+     */
+    box_2a: string;
+    /**
+     * Box 2B
+     */
+    box_2b: string;
+    /**
+     * Contact Id
+     */
+    contact_id: string;
+    /**
+     * Delivery
+     */
+    delivery: 'portal_k1_recipient' | 'firm_1040_client';
+    /**
+     * Distributions
+     */
+    distributions: string;
+    /**
+     * Dni Allocated
+     */
+    dni_allocated: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Package Id
+     */
+    package_id: string | null;
+    /**
+     * Package Status
+     */
+    package_status: string | null;
+    /**
+     * Payments
+     */
+    payments: Array<BeneficiaryPaymentOut>;
+    /**
+     * Share
+     */
+    share: string;
+};
+
+/**
+ * BeneficiaryTotalsOut
+ */
+export type BeneficiaryTotalsOut = {
+    /**
+     * Box 1
+     */
+    box_1: string;
+    /**
+     * Box 2A
+     */
+    box_2a: string;
+    /**
+     * Box 2B
+     */
+    box_2b: string;
+    /**
+     * Distributions
+     */
+    distributions: string;
+    /**
+     * Dni Allocated
+     */
+    dni_allocated: string;
+    /**
+     * Income Distribution Deduction
+     */
+    income_distribution_deduction: string;
+    /**
+     * Share
+     */
+    share: string;
+    tie: TieOutTallyStatus;
+};
+
+/**
  * BinderCategoryOut
  */
 export type BinderCategoryOut = {
@@ -8452,6 +8589,69 @@ export type ClauseDefOutOutput = {
      * Title
      */
     title: string;
+};
+
+/**
+ * ClauseMarkIn
+ *
+ * Manual clause marking when segmentation `needs_review` (label and regions picked in the
+ * reader).
+ */
+export type ClauseMarkIn = {
+    /**
+     * Heading
+     */
+    heading?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Parent Clause Id
+     */
+    parent_clause_id?: string | null;
+    /**
+     * Regions
+     */
+    regions: Array<ClauseRegionIn>;
+};
+
+/**
+ * ClauseRegionIn
+ */
+export type ClauseRegionIn = {
+    /**
+     * Bbox
+     */
+    bbox: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Page
+     */
+    page: number;
+};
+
+/**
+ * ClauseRegionOut
+ */
+export type ClauseRegionOut = {
+    /**
+     * Bbox
+     */
+    bbox: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Page
+     */
+    page: number;
 };
 
 /**
@@ -13842,6 +14042,62 @@ export type DestinationRef = {
 };
 
 /**
+ * DeterminationEditIn
+ *
+ * A human edit: a new version with a reason; a clause for governed keys (AC-3.1 to 3.3).
+ */
+export type DeterminationEditIn = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Value Code
+     */
+    value_code: string;
+    /**
+     * Value Text
+     */
+    value_text: string;
+};
+
+/**
+ * DeterminationRecordIn
+ *
+ * The agents-off path: a person records a determination (AC-1.6, AC-3.1).
+ */
+export type DeterminationRecordIn = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Key
+     */
+    key: 'grantor_status' | 'trust_type' | 'fai_definition' | 'trustee_fees' | 'principal_invaded' | 'exemption' | 'election_65_day';
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Value Code
+     */
+    value_code: string;
+    /**
+     * Value Text
+     */
+    value_text: string;
+};
+
+/**
  * DiffOpOut
  */
 export type DiffOpOut = {
@@ -18541,6 +18797,523 @@ export type ErrorOut = {
 };
 
 /**
+ * EstateAssetEditIn
+ *
+ * `valued` needs ≥ 1 citation and a human setter (service and DB).
+ */
+export type EstateAssetEditIn = {
+    /**
+     * Avd Value
+     */
+    avd_value?: number | string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Dod Value
+     */
+    dod_value: number | string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+    status: EstateInventoryItemStatus;
+    /**
+     * Support Text
+     */
+    support_text?: string | null;
+};
+
+/**
+ * EstateAssetIn
+ */
+export type EstateAssetIn = {
+    /**
+     * Avd Value
+     */
+    avd_value?: number | string | null;
+    /**
+     * Basis Rule
+     */
+    basis_rule: 'stepped_up' | 'ird_no_step_up' | 'non_probate_excluded';
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Dod Value
+     */
+    dod_value: number | string;
+    /**
+     * Schedule
+     */
+    schedule: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I';
+    /**
+     * Support Text
+     */
+    support_text?: string | null;
+};
+
+/**
+ * EstateAssetOut
+ */
+export type EstateAssetOut = {
+    /**
+     * Avd Value
+     */
+    avd_value: string | null;
+    /**
+     * Basis Rule
+     */
+    basis_rule: 'stepped_up' | 'ird_no_step_up' | 'non_probate_excluded';
+    /**
+     * Basis To 1041
+     */
+    basis_to_1041: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Dod Value
+     */
+    dod_value: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string | null;
+    /**
+     * Schedule
+     */
+    schedule: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I';
+    status: EstateInventoryItemStatus;
+    /**
+     * Support Text
+     */
+    support_text: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * EstateComputationLabelStatus
+ */
+export type EstateComputationLabelStatus = 'accrued_tie_out_shadow' | 'engine_import';
+
+/**
+ * EstateComputationLineOut
+ */
+export type EstateComputationLineOut = {
+    /**
+     * Derivation Tile
+     */
+    derivation_tile: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string | null;
+};
+
+/**
+ * EstateComputationOut
+ *
+ * TXT-04 c (AC-13.1, AC-13.2).
+ */
+export type EstateComputationOut = {
+    /**
+     * Avd Available
+     */
+    avd_available: boolean;
+    /**
+     * Computation Id
+     */
+    computation_id: string;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Filing Banner
+     */
+    filing_banner: string | null;
+    /**
+     * Filing Required
+     */
+    filing_required: boolean;
+    header: EstateHeaderOut;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    label: EstateComputationLabelStatus;
+    /**
+     * Lines
+     */
+    lines: Array<EstateComputationLineOut>;
+    /**
+     * Parameter Set
+     */
+    parameter_set: string;
+    state_card: EstateStateCardOut;
+    /**
+     * Version No
+     */
+    version_no: number;
+    without_dsue: EstateWithoutDsueOut;
+};
+
+/**
+ * EstateDeductionEditIn
+ */
+export type EstateDeductionEditIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    election: EstateDeductionElectionStatus;
+    /**
+     * Estimated
+     */
+    estimated: boolean;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * EstateDeductionElectionStatus
+ */
+export type EstateDeductionElectionStatus = 'none' | 's642g_pending' | 's642g_706' | 's642g_1041';
+
+/**
+ * EstateDeductionIn
+ */
+export type EstateDeductionIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    election?: EstateDeductionElectionStatus;
+    /**
+     * Estimated
+     */
+    estimated?: boolean;
+    /**
+     * Schedule
+     */
+    schedule: 'J_funeral' | 'J_administration' | 'K' | 'L' | 'M' | 'O';
+};
+
+/**
+ * EstateDeductionOut
+ */
+export type EstateDeductionOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    election: EstateDeductionElectionStatus;
+    /**
+     * Estimated
+     */
+    estimated: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Schedule
+     */
+    schedule: 'J_funeral' | 'J_administration' | 'K' | 'L' | 'M' | 'O';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * EstateDeductionsOut
+ *
+ * TXT-04 b: 28,500 + 240,000 + 131,500 + 500,000 = 900,000 (AC-12.4).
+ */
+export type EstateDeductionsOut = {
+    /**
+     * Deductions
+     */
+    deductions: Array<EstateDeductionOut>;
+    header: EstateHeaderOut;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
+ * EstateDerivationOut
+ *
+ * TXT-04 f: rows, a note and the Provenance link to SHL-09 (AC-13.5).
+ */
+export type EstateDerivationOut = {
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * Provenance Id
+     */
+    provenance_id: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<EstateDerivationRowOut>;
+    /**
+     * Tile
+     */
+    tile: string;
+};
+
+/**
+ * EstateDerivationRowOut
+ */
+export type EstateDerivationRowOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string | null;
+};
+
+/**
+ * EstateDueChipOut
+ *
+ * From the practice due-date engine (AC-14.1): "Due Nov 2, 2026 · 4768 to May 3, 2027".
+ */
+export type EstateDueChipOut = {
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Extended
+     */
+    extended: boolean;
+    /**
+     * Extension To
+     */
+    extension_to: string;
+    /**
+     * Form 8971 Due On
+     */
+    form_8971_due_on: string | null;
+};
+
+/**
+ * EstateGiftsOut
+ *
+ * TXT-04 d (AC-13.4).
+ */
+export type EstateGiftsOut = {
+    /**
+     * Adjusted Taxable Gifts
+     */
+    adjusted_taxable_gifts: string;
+    /**
+     * Gifts
+     */
+    gifts: Array<GiftHistoryRowOut>;
+    header: EstateHeaderOut;
+    tie: TieOutTallyStatus;
+};
+
+/**
+ * EstateHeaderOut
+ */
+export type EstateHeaderOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'estate_workpaper.edit' | 'sign_off.l4' | 'request_item.send'>;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Date Of Death
+     */
+    date_of_death: string;
+    /**
+     * Decedent Name
+     */
+    decedent_name: string;
+    due: EstateDueChipOut;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Tallies
+     */
+    tallies: Array<EstateTallyOut>;
+    /**
+     * Values Sign Off Stale
+     */
+    values_sign_off_stale: boolean;
+    /**
+     * Values Signed By Initials
+     */
+    values_signed_by_initials: string | null;
+};
+
+/**
+ * EstateInventoryItemStatus
+ */
+export type EstateInventoryItemStatus = 'gathering_support' | 'valued';
+
+/**
+ * EstateInventoryOut
+ *
+ * TXT-04 a: six schedules foot 16,400,000 / 15,993,000 / 12,688,000 (AC-12.1).
+ */
+export type EstateInventoryOut = {
+    /**
+     * Assets
+     */
+    assets: Array<EstateAssetOut>;
+    header: EstateHeaderOut;
+    totals: EstateInventoryTotalsOut;
+};
+
+/**
+ * EstateInventoryTotalsOut
+ */
+export type EstateInventoryTotalsOut = {
+    /**
+     * Avd Value
+     */
+    avd_value: string;
+    /**
+     * Basis To 1041
+     */
+    basis_to_1041: string;
+    /**
+     * Dod Value
+     */
+    dod_value: string;
+};
+
+/**
+ * EstateStateCardOut
+ *
+ * Illinois Form 700: a status and a review point, never a figure (AC-13.3; OQ-10).
+ */
+export type EstateStateCardOut = {
+    /**
+     * Issue Id
+     */
+    issue_id: string | null;
+    /**
+     * Required
+     */
+    required: boolean;
+    /**
+     * State
+     */
+    state: string;
+    /**
+     * Status
+     */
+    status: 'pending';
+};
+
+/**
+ * EstateTallyOut
+ */
+export type EstateTallyOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    state: TieOutTallyStatus | null;
+    /**
+     * Value
+     */
+    value: string | null;
+};
+
+/**
+ * EstateWithoutDsueOut
+ */
+export type EstateWithoutDsueOut = {
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Tax
+     */
+    tax: string;
+};
+
+/**
  * EstimateInstallmentOut
  */
 export type EstimateInstallmentOut = {
@@ -19800,6 +20573,108 @@ export type FactorIn = {
 };
 
 /**
+ * FaiImportIn
+ */
+export type FaiImportIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+};
+
+/**
+ * FaiLineEditIn
+ */
+export type FaiLineEditIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * FaiLineIn
+ */
+export type FaiLineIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Kind
+     */
+    kind: 'interest' | 'ordinary_dividends' | 'qualified_dividends' | 'tax_exempt_interest' | 'capital_gain' | 'rents' | 'other_income';
+    /**
+     * Parent Line Id
+     */
+    parent_line_id?: string | null;
+};
+
+/**
+ * FaiLineOut
+ */
+export type FaiLineOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'interest' | 'ordinary_dividends' | 'qualified_dividends' | 'tax_exempt_interest' | 'capital_gain' | 'rents' | 'other_income';
+    /**
+     * Parent Line Id
+     */
+    parent_line_id: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * FaiLinesOut
+ */
+export type FaiLinesOut = {
+    /**
+     * Lines
+     */
+    lines: Array<FaiLineOut>;
+};
+
+/**
  * FeeLineIn
  *
  * One part of the fee (`$6,500 for the section 754 work`).
@@ -19813,6 +20688,201 @@ export type FeeLineIn = {
      * Label
      */
     label: string;
+};
+
+/**
+ * FiduciaryCharacterAmountOut
+ */
+export type FiduciaryCharacterAmountOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Party
+     */
+    party: string;
+};
+
+/**
+ * FiduciaryCharacterRowOut
+ */
+export type FiduciaryCharacterRowOut = {
+    /**
+     * By Party
+     */
+    by_party: Array<FiduciaryCharacterAmountOut>;
+    /**
+     * Kind
+     */
+    kind: 'interest' | 'ordinary_dividends' | 'qualified_dividends' | 'total';
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
+ * FiduciaryComputationOut
+ *
+ * GET …/fiduciary-computation: every figure, share and tie from the engine (AC-6.1 to 7.2).
+ */
+export type FiduciaryComputationOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'instrument.attach' | 'instrument.read_run' | 'instrument_determination.edit' | 'instrument_interpretation.reopen' | 'fai_line.edit' | 'trust_distribution.edit' | 'fiduciary_computation.recompute' | 'fiduciary_computation.export' | 'fiduciary_election.record' | 'sign_off.l1' | 'sign_off.l2' | 'sign_off.l3' | 'k1_package.release' | 'k1_package.resend'>;
+    /**
+     * Banner
+     */
+    banner: string | null;
+    /**
+     * By Character
+     */
+    by_character: Array<FiduciaryCharacterRowOut>;
+    /**
+     * Computation Id
+     */
+    computation_id: string;
+    /**
+     * Computed At
+     */
+    computed_at: string;
+    /**
+     * Engine Name
+     */
+    engine_name: 'fiduciary';
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Nodes
+     */
+    nodes: Array<FiduciaryTreeNodeOut>;
+    /**
+     * Notes
+     */
+    notes: Array<string>;
+    /**
+     * Parameter Set
+     */
+    parameter_set: string;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Sign Off Stale
+     */
+    sign_off_stale: boolean;
+    /**
+     * Signed By Initials
+     */
+    signed_by_initials: string | null;
+    /**
+     * Tallies
+     */
+    tallies: Array<FiduciaryTallyOut>;
+    /**
+     * Version No
+     */
+    version_no: number;
+    /**
+     * View
+     */
+    view: 'tree' | 'character';
+};
+
+/**
+ * FiduciaryRecomputeOut
+ */
+export type FiduciaryRecomputeOut = {
+    /**
+     * Computation Id
+     */
+    computation_id: string;
+    /**
+     * Created
+     */
+    created: boolean;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * FiduciaryTallyOut
+ */
+export type FiduciaryTallyOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    state: TieOutTallyStatus | null;
+    /**
+     * Value
+     */
+    value: string | null;
+};
+
+/**
+ * FiduciaryTreeNodeOut
+ */
+export type FiduciaryTreeNodeOut = {
+    /**
+     * Box Label
+     */
+    box_label: string | null;
+    /**
+     * Changed
+     */
+    changed: boolean;
+    /**
+     * Clause Labels
+     */
+    clause_labels: Array<string>;
+    /**
+     * Highlighted
+     */
+    highlighted: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Parent Key
+     */
+    parent_key: string | null;
+    /**
+     * Prior Value
+     */
+    prior_value: string | null;
+    /**
+     * Provenance Id
+     */
+    provenance_id: string | null;
+    /**
+     * Value
+     */
+    value: string | null;
 };
 
 /**
@@ -23024,6 +24094,120 @@ export type GeneratedVersionOut = {
 };
 
 /**
+ * GiftHistoryEditIn
+ */
+export type GiftHistoryEditIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Filed On
+     */
+    filed_on?: string | null;
+    /**
+     * Form 709 Status
+     */
+    form_709_status: 'filed' | 'not_required' | 'missing';
+    /**
+     * Gift Amount
+     */
+    gift_amount: number | string;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * GiftHistoryIn
+ */
+export type GiftHistoryIn = {
+    /**
+     * Asset
+     */
+    asset: string;
+    /**
+     * Donee Name
+     */
+    donee_name: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Filed On
+     */
+    filed_on?: string | null;
+    /**
+     * Form 709 Status
+     */
+    form_709_status: 'filed' | 'not_required' | 'missing';
+    /**
+     * Gift Amount
+     */
+    gift_amount: number | string;
+    /**
+     * Year
+     */
+    year: number;
+};
+
+/**
+ * GiftHistoryRowOut
+ */
+export type GiftHistoryRowOut = {
+    /**
+     * Annual Exclusion
+     */
+    annual_exclusion: string;
+    /**
+     * Asset
+     */
+    asset: string;
+    /**
+     * Donee Name
+     */
+    donee_name: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string | null;
+    /**
+     * Filed On
+     */
+    filed_on: string | null;
+    /**
+     * Form 709 Status
+     */
+    form_709_status: 'filed' | 'not_required' | 'missing';
+    /**
+     * Gift Amount
+     */
+    gift_amount: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Taxable Gift
+     */
+    taxable_gift: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Year
+     */
+    year: number;
+};
+
+/**
  * GlAccountDifferenceOut
  */
 export type GlAccountDifferenceOut = {
@@ -23588,6 +24772,40 @@ export type GovernanceSendIn = {
      * Seen Hash
      */
     seen_hash: string;
+};
+
+/**
+ * GoverningInstrumentOut
+ */
+export type GoverningInstrumentOut = {
+    /**
+     * Attached At
+     */
+    attached_at: string;
+    /**
+     * Attached By Name
+     */
+    attached_by_name: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Supersedes Instrument Id
+     */
+    supersedes_instrument_id: string | null;
 };
 
 /**
@@ -25912,6 +27130,290 @@ export type InstallmentPatchIn = {
 };
 
 /**
+ * InstrumentAttachIn
+ */
+export type InstrumentAttachIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+};
+
+/**
+ * InstrumentCitedByOut
+ */
+export type InstrumentCitedByOut = {
+    /**
+     * Clause Labels
+     */
+    clause_labels: Array<string>;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Target
+     */
+    target: 'trust_calculation' | 'return_field';
+    /**
+     * Target Ref
+     */
+    target_ref: string;
+};
+
+/**
+ * InstrumentClauseOut
+ *
+ * A clause: label, heading, pages, regions and a hash. Never its text (AC-15.3).
+ */
+export type InstrumentClauseOut = {
+    /**
+     * Heading
+     */
+    heading: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Ordinal
+     */
+    ordinal: number;
+    /**
+     * Page From
+     */
+    page_from: number;
+    /**
+     * Page To
+     */
+    page_to: number;
+    /**
+     * Parent Clause Id
+     */
+    parent_clause_id: string | null;
+    /**
+     * Regions
+     */
+    regions: Array<ClauseRegionOut>;
+    /**
+     * Text Sha256
+     */
+    text_sha256: string;
+};
+
+/**
+ * InstrumentClausesOut
+ */
+export type InstrumentClausesOut = {
+    /**
+     * Clauses
+     */
+    clauses: Array<InstrumentClauseOut>;
+    /**
+     * Instrument Id
+     */
+    instrument_id: string;
+    /**
+     * Segmentation Id
+     */
+    segmentation_id: string;
+    status: InstrumentSegmentationStatus;
+};
+
+/**
+ * InstrumentDeterminationOut
+ */
+export type InstrumentDeterminationOut = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Clause Labels
+     */
+    clause_labels: Array<string>;
+    /**
+     * Clause Required
+     */
+    clause_required: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: 'grantor_status' | 'trust_type' | 'fai_definition' | 'trustee_fees' | 'principal_invaded' | 'exemption' | 'election_65_day';
+    /**
+     * Rationale Ref
+     */
+    rationale_ref: string | null;
+    /**
+     * Set By Kind
+     */
+    set_by_kind: 'agent' | 'human';
+    /**
+     * Set By Name
+     */
+    set_by_name: string;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string | null;
+    /**
+     * Value Code
+     */
+    value_code: string;
+    /**
+     * Value Text
+     */
+    value_text: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * InstrumentInterpretationOut
+ */
+export type InstrumentInterpretationOut = {
+    /**
+     * Adopted By Name
+     */
+    adopted_by_name: string | null;
+    /**
+     * Adopted On
+     */
+    adopted_on: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Approved On
+     */
+    approved_on: string | null;
+    /**
+     * Clause Citation Count
+     */
+    clause_citation_count: number;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Read Run Id
+     */
+    read_run_id: string | null;
+    /**
+     * Scenario
+     */
+    scenario: 'base' | 'principal_invaded';
+    status: InstrumentInterpretationStatus;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * InstrumentInterpretationStatus
+ */
+export type InstrumentInterpretationStatus = 'unread' | 'reading' | 'proposed' | 'adopted' | 'approved' | 'reopened';
+
+/**
+ * InstrumentOut
+ *
+ * GET …/instrument: TXT-01's whole read (AC-1.1 to AC-5.2).
+ */
+export type InstrumentOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'instrument.attach' | 'instrument.read_run' | 'instrument_determination.edit' | 'instrument_interpretation.reopen' | 'fai_line.edit' | 'trust_distribution.edit' | 'fiduciary_computation.recompute' | 'fiduciary_computation.export' | 'fiduciary_election.record' | 'sign_off.l1' | 'sign_off.l2' | 'sign_off.l3' | 'k1_package.release' | 'k1_package.resend'>;
+    /**
+     * Cited By
+     */
+    cited_by: Array<InstrumentCitedByOut>;
+    /**
+     * Determinations
+     */
+    determinations: Array<InstrumentDeterminationOut>;
+    instrument: GoverningInstrumentOut | null;
+    interpretation: InstrumentInterpretationOut | null;
+    profile: TrustProfileOut;
+    reader: InstrumentReaderOut;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    segmentation: InstrumentSegmentationOut | null;
+};
+
+/**
+ * InstrumentReaderOut
+ */
+export type InstrumentReaderOut = {
+    /**
+     * Availability
+     */
+    availability: 'available' | 'agents_off' | 'consent_required' | 'capability_unavailable';
+    /**
+     * Consents Required
+     */
+    consents_required: number;
+    /**
+     * Consents Signed
+     */
+    consents_signed: number;
+    /**
+     * Progress Label
+     */
+    progress_label: string | null;
+    /**
+     * Run Id
+     */
+    run_id: string | null;
+};
+
+/**
+ * InstrumentSegmentationOut
+ */
+export type InstrumentSegmentationOut = {
+    /**
+     * Clause Count
+     */
+    clause_count: number;
+    /**
+     * Confidence
+     */
+    confidence: string;
+    /**
+     * Id
+     */
+    id: string;
+    status: InstrumentSegmentationStatus;
+    /**
+     * Text Source
+     */
+    text_source: 'text_layer' | 'ocr';
+};
+
+/**
+ * InstrumentSegmentationStatus
+ */
+export type InstrumentSegmentationStatus = 'segmented' | 'needs_review';
+
+/**
  * IntakeAttachIn
  */
 export type IntakeAttachIn = {
@@ -26728,6 +28230,16 @@ export type IntakeWaitingFileOut = {
  * IntegrationStatus
  */
 export type IntegrationStatus = 'available' | 'connecting' | 'connected' | 'needs_attention' | 'needs_reauth' | 'disconnected' | 'coming_soon' | 'paused';
+
+/**
+ * InterpretationReopenIn
+ */
+export type InterpretationReopenIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
 
 /**
  * InvestmentRowOut
@@ -39963,6 +41475,16 @@ export type ReadAllOut = {
 };
 
 /**
+ * ReaderRunAcceptedOut
+ */
+export type ReaderRunAcceptedOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+};
+
+/**
  * ReadinessFactOut
  */
 export type ReadinessFactOut = {
@@ -40948,6 +42470,32 @@ export type ReleaseRunAcceptedOut = {
      * Status Url
      */
     status_url: string;
+};
+
+/**
+ * ReleaseStepOut
+ */
+export type ReleaseStepOut = {
+    /**
+     * At
+     */
+    at: string | null;
+    /**
+     * By Name
+     */
+    by_name: string | null;
+    /**
+     * Key
+     */
+    key: 'final_approval' | 'form_8879_f';
+    /**
+     * Met
+     */
+    met: boolean;
+    /**
+     * Superseded By Change
+     */
+    superseded_by_change: boolean;
 };
 
 /**
@@ -48706,6 +50254,126 @@ export type SignupOut = {
 };
 
 /**
+ * SixtyFiveDayCardOut
+ */
+export type SixtyFiveDayCardOut = {
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Closed
+     */
+    closed: boolean;
+    /**
+     * Decision Owner Name
+     */
+    decision_owner_name: string | null;
+    /**
+     * Distributions In Window
+     */
+    distributions_in_window: string | null;
+    /**
+     * Next Tax Year
+     */
+    next_tax_year: number;
+    /**
+     * Next Window End
+     */
+    next_window_end: string;
+    /**
+     * Paid On
+     */
+    paid_on: string | null;
+    /**
+     * Paragraph
+     */
+    paragraph: string | null;
+    status: SixtyFiveDayElectionStatus;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Window End
+     */
+    window_end: string;
+    /**
+     * Window Start
+     */
+    window_start: string;
+};
+
+/**
+ * SixtyFiveDayElectionIn
+ *
+ * The trustee's decision, recorded by a person (human-only; AC-11.2).
+ */
+export type SixtyFiveDayElectionIn = {
+    /**
+     * Amount
+     */
+    amount?: number | string | null;
+    /**
+     * Decision Owner Contact Id
+     */
+    decision_owner_contact_id: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Paid On
+     */
+    paid_on?: string | null;
+    status: SixtyFiveDayElectionStatus;
+};
+
+/**
+ * SixtyFiveDayElectionOut
+ */
+export type SixtyFiveDayElectionOut = {
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Paid On
+     */
+    paid_on: string | null;
+    /**
+     * Recorded By Name
+     */
+    recorded_by_name: string;
+    /**
+     * Seq
+     */
+    seq: number;
+    status: SixtyFiveDayElectionStatus;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Window End
+     */
+    window_end: string;
+};
+
+/**
+ * SixtyFiveDayElectionStatus
+ */
+export type SixtyFiveDayElectionStatus = 'not_made' | 'elected';
+
+/**
  * SnapshotIn
  */
 export type SnapshotIn = {
@@ -55932,6 +57600,318 @@ export type TrustAdoptIn = {
      * Evidence Version Id
      */
     evidence_version_id: string;
+};
+
+/**
+ * TrustDistributionEditIn
+ */
+export type TrustDistributionEditIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Clause Id
+     */
+    clause_id?: string | null;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Paid On
+     */
+    paid_on: string;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Source
+     */
+    source: 'income' | 'principal';
+};
+
+/**
+ * TrustDistributionIn
+ */
+export type TrustDistributionIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Beneficiary Contact Id
+     */
+    beneficiary_contact_id: string;
+    /**
+     * Clause Id
+     */
+    clause_id?: string | null;
+    /**
+     * Form
+     */
+    form?: 'cash' | 'in_kind';
+    /**
+     * Paid On
+     */
+    paid_on: string;
+    /**
+     * Source
+     */
+    source?: 'income' | 'principal';
+};
+
+/**
+ * TrustDistributionOut
+ */
+export type TrustDistributionOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Beneficiary Contact Id
+     */
+    beneficiary_contact_id: string;
+    /**
+     * Beneficiary Name
+     */
+    beneficiary_name: string;
+    /**
+     * Clause Id
+     */
+    clause_id: string | null;
+    /**
+     * Form
+     */
+    form: 'cash' | 'in_kind';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Paid On
+     */
+    paid_on: string;
+    /**
+     * Prior Amount
+     */
+    prior_amount: string | null;
+    /**
+     * Sixty Five Day Election Id
+     */
+    sixty_five_day_election_id: string | null;
+    /**
+     * Source
+     */
+    source: 'income' | 'principal';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TrustDistributionsOut
+ */
+export type TrustDistributionsOut = {
+    /**
+     * Distributions
+     */
+    distributions: Array<TrustDistributionOut>;
+};
+
+/**
+ * TrustExpenseEditIn
+ */
+export type TrustExpenseEditIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Charged To
+     */
+    charged_to: 'income' | 'principal';
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Clause Id
+     */
+    clause_id?: string | null;
+    /**
+     * Deductible
+     */
+    deductible: boolean;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * TrustExpenseIn
+ */
+export type TrustExpenseIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Charged To
+     */
+    charged_to: 'income' | 'principal';
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Clause Id
+     */
+    clause_id?: string | null;
+    /**
+     * Deductible
+     */
+    deductible: boolean;
+    /**
+     * Kind
+     */
+    kind: 'trustee_fee' | 'legal' | 'accounting' | 'tax_preparation' | 'other';
+};
+
+/**
+ * TrustExpenseOut
+ */
+export type TrustExpenseOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Charged To
+     */
+    charged_to: 'income' | 'principal';
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Clause Id
+     */
+    clause_id: string | null;
+    /**
+     * Deductible
+     */
+    deductible: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'trustee_fee' | 'legal' | 'accounting' | 'tax_preparation' | 'other';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TrustExpensesOut
+ */
+export type TrustExpensesOut = {
+    /**
+     * Expenses
+     */
+    expenses: Array<TrustExpenseOut>;
+};
+
+/**
+ * TrustProfileOut
+ */
+export type TrustProfileOut = {
+    /**
+     * Agreement Date
+     */
+    agreement_date: string | null;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Ein Last4
+     */
+    ein_last4: string | null;
+    /**
+     * Fiduciary Kind
+     */
+    fiduciary_kind: 'trust' | 'estate';
+    /**
+     * Irrevocable Since
+     */
+    irrevocable_since: string | null;
+    /**
+     * Residency State
+     */
+    residency_state: string | null;
+    /**
+     * Revocable
+     */
+    revocable: boolean;
+    /**
+     * Settlor Died Year
+     */
+    settlor_died_year: number | null;
+    /**
+     * Settlor Name
+     */
+    settlor_name: string | null;
+    /**
+     * State Form
+     */
+    state_form: string | null;
+};
+
+/**
+ * TrusteeQuestionDraftOut
+ *
+ * A C5 question draft for the trustee contact; sending is C5's `request_item.send` (Undo).
+ */
+export type TrusteeQuestionDraftOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Recipient Contact Id
+     */
+    recipient_contact_id: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+};
+
+/**
+ * TrusteeQuestionIn
+ */
+export type TrusteeQuestionIn = {
+    /**
+     * Options
+     */
+    options?: Array<string>;
+    /**
+     * Template Id
+     */
+    template_id: string;
 };
 
 /**
@@ -134075,6 +136055,126 @@ export type BulkAssignResponses = {
 
 export type BulkAssignResponse = BulkAssignResponses[keyof BulkAssignResponses];
 
+export type GiftHistoryAddData = {
+    body: GiftHistoryIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/client-entities/{client_entity_id}/gift-history';
+};
+
+export type GiftHistoryAddErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GiftHistoryAddError = GiftHistoryAddErrors[keyof GiftHistoryAddErrors];
+
+export type GiftHistoryAddResponses = {
+    /**
+     * Successful Response
+     */
+    201: GiftHistoryRowOut;
+};
+
+export type GiftHistoryAddResponse = GiftHistoryAddResponses[keyof GiftHistoryAddResponses];
+
+export type SixtyFiveDayElectionData = {
+    body: SixtyFiveDayElectionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+    };
+    query?: never;
+    url: '/v1/tax/client-entities/{client_entity_id}/sixty-five-day-elections/{tax_year}';
+};
+
+export type SixtyFiveDayElectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SixtyFiveDayElectionError = SixtyFiveDayElectionErrors[keyof SixtyFiveDayElectionErrors];
+
+export type SixtyFiveDayElectionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SixtyFiveDayElectionOut;
+};
+
+export type SixtyFiveDayElectionResponse = SixtyFiveDayElectionResponses[keyof SixtyFiveDayElectionResponses];
+
 export type DocumentApprovalReverseData = {
     body: DocumentApprovalReverseIn;
     headers?: {
@@ -134134,6 +136234,126 @@ export type DocumentApprovalReverseResponses = {
 };
 
 export type DocumentApprovalReverseResponse = DocumentApprovalReverseResponses[keyof DocumentApprovalReverseResponses];
+
+export type EstateAssetEditData = {
+    body: EstateAssetEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Asset Id
+         */
+        asset_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/estate-assets/{asset_id}';
+};
+
+export type EstateAssetEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateAssetEditError = EstateAssetEditErrors[keyof EstateAssetEditErrors];
+
+export type EstateAssetEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstateAssetOut;
+};
+
+export type EstateAssetEditResponse = EstateAssetEditResponses[keyof EstateAssetEditResponses];
+
+export type EstateDeductionEditData = {
+    body: EstateDeductionEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Deduction Id
+         */
+        deduction_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/estate-deductions/{deduction_id}';
+};
+
+export type EstateDeductionEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateDeductionEditError = EstateDeductionEditErrors[keyof EstateDeductionEditErrors];
+
+export type EstateDeductionEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstateDeductionOut;
+};
+
+export type EstateDeductionEditResponse = EstateDeductionEditResponses[keyof EstateDeductionEditResponses];
 
 export type TaxEstimatesData = {
     body?: never;
@@ -135036,6 +137256,362 @@ export type ExtensionsSubmitResponses = {
 
 export type ExtensionsSubmitResponse = ExtensionsSubmitResponses[keyof ExtensionsSubmitResponses];
 
+export type FaiLineEditData = {
+    body: FaiLineEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Line Id
+         */
+        line_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/fai-lines/{line_id}';
+};
+
+export type FaiLineEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FaiLineEditError = FaiLineEditErrors[keyof FaiLineEditErrors];
+
+export type FaiLineEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: FaiLineOut;
+};
+
+export type FaiLineEditResponse = FaiLineEditResponses[keyof FaiLineEditResponses];
+
+export type GiftHistoryEditData = {
+    body: GiftHistoryEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Gift Id
+         */
+        gift_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/gift-history-items/{gift_id}';
+};
+
+export type GiftHistoryEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GiftHistoryEditError = GiftHistoryEditErrors[keyof GiftHistoryEditErrors];
+
+export type GiftHistoryEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: GiftHistoryRowOut;
+};
+
+export type GiftHistoryEditResponse = GiftHistoryEditResponses[keyof GiftHistoryEditResponses];
+
+export type InstrumentClausesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Instrument Id
+         */
+        instrument_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/governing-instruments/{instrument_id}/clauses';
+};
+
+export type InstrumentClausesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstrumentClausesError = InstrumentClausesErrors[keyof InstrumentClausesErrors];
+
+export type InstrumentClausesResponses = {
+    /**
+     * Successful Response
+     */
+    200: InstrumentClausesOut;
+};
+
+export type InstrumentClausesResponse = InstrumentClausesResponses[keyof InstrumentClausesResponses];
+
+export type InstrumentClauseMarkData = {
+    body: ClauseMarkIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Instrument Id
+         */
+        instrument_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/governing-instruments/{instrument_id}/clauses';
+};
+
+export type InstrumentClauseMarkErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstrumentClauseMarkError = InstrumentClauseMarkErrors[keyof InstrumentClauseMarkErrors];
+
+export type InstrumentClauseMarkResponses = {
+    /**
+     * Successful Response
+     */
+    201: InstrumentClauseOut;
+};
+
+export type InstrumentClauseMarkResponse = InstrumentClauseMarkResponses[keyof InstrumentClauseMarkResponses];
+
+export type DeterminationEditData = {
+    body: DeterminationEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Determination Id
+         */
+        determination_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/instrument-determinations/{determination_id}';
+};
+
+export type DeterminationEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeterminationEditError = DeterminationEditErrors[keyof DeterminationEditErrors];
+
+export type DeterminationEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: InstrumentDeterminationOut;
+};
+
+export type DeterminationEditResponse = DeterminationEditResponses[keyof DeterminationEditResponses];
+
+export type InterpretationReopenData = {
+    body: InterpretationReopenIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Interpretation Id
+         */
+        interpretation_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/instrument-interpretations/{interpretation_id}/reopen';
+};
+
+export type InterpretationReopenErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InterpretationReopenError = InterpretationReopenErrors[keyof InterpretationReopenErrors];
+
+export type InterpretationReopenResponses = {
+    /**
+     * Successful Response
+     */
+    200: InstrumentInterpretationOut;
+};
+
+export type InterpretationReopenResponse = InterpretationReopenResponses[keyof InterpretationReopenResponses];
+
 export type K1ActivityData = {
     body?: never;
     headers?: {
@@ -135272,6 +137848,62 @@ export type PaymentsResponses = {
 
 export type PaymentsResponse = PaymentsResponses[keyof PaymentsResponses];
 
+export type BeneficiariesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/beneficiaries';
+};
+
+export type BeneficiariesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BeneficiariesError = BeneficiariesErrors[keyof BeneficiariesErrors];
+
+export type BeneficiariesResponses = {
+    /**
+     * Successful Response
+     */
+    200: BeneficiariesOut;
+};
+
+export type BeneficiariesResponse = BeneficiariesResponses[keyof BeneficiariesResponses];
+
 export type DocumentApprovalData = {
     body: DocumentApprovalIn;
     headers?: {
@@ -135392,6 +138024,770 @@ export type DraftRunResponses = {
 
 export type DraftRunResponse = DraftRunResponses[keyof DraftRunResponses];
 
+export type EstateAssetAddData = {
+    body: EstateAssetIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/estate/assets';
+};
+
+export type EstateAssetAddErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateAssetAddError = EstateAssetAddErrors[keyof EstateAssetAddErrors];
+
+export type EstateAssetAddResponses = {
+    /**
+     * Successful Response
+     */
+    201: EstateAssetOut;
+};
+
+export type EstateAssetAddResponse = EstateAssetAddResponses[keyof EstateAssetAddResponses];
+
+export type EstateComputationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/estate/computation';
+};
+
+export type EstateComputationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateComputationError = EstateComputationErrors[keyof EstateComputationErrors];
+
+export type EstateComputationResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstateComputationOut;
+};
+
+export type EstateComputationResponse = EstateComputationResponses[keyof EstateComputationResponses];
+
+export type EstateDeductionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/estate/deductions';
+};
+
+export type EstateDeductionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateDeductionsError = EstateDeductionsErrors[keyof EstateDeductionsErrors];
+
+export type EstateDeductionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstateDeductionsOut;
+};
+
+export type EstateDeductionsResponse = EstateDeductionsResponses[keyof EstateDeductionsResponses];
+
+export type EstateDeductionAddData = {
+    body: EstateDeductionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/estate/deductions';
+};
+
+export type EstateDeductionAddErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateDeductionAddError = EstateDeductionAddErrors[keyof EstateDeductionAddErrors];
+
+export type EstateDeductionAddResponses = {
+    /**
+     * Successful Response
+     */
+    201: EstateDeductionOut;
+};
+
+export type EstateDeductionAddResponse = EstateDeductionAddResponses[keyof EstateDeductionAddResponses];
+
+export type EstateDerivationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Tile
+         */
+        tile: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/estate/derivations/{tile}';
+};
+
+export type EstateDerivationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateDerivationError = EstateDerivationErrors[keyof EstateDerivationErrors];
+
+export type EstateDerivationResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstateDerivationOut;
+};
+
+export type EstateDerivationResponse = EstateDerivationResponses[keyof EstateDerivationResponses];
+
+export type EstateGiftsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/estate/gifts';
+};
+
+export type EstateGiftsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateGiftsError = EstateGiftsErrors[keyof EstateGiftsErrors];
+
+export type EstateGiftsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstateGiftsOut;
+};
+
+export type EstateGiftsResponse = EstateGiftsResponses[keyof EstateGiftsResponses];
+
+export type EstateInventoryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/estate/inventory';
+};
+
+export type EstateInventoryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstateInventoryError = EstateInventoryErrors[keyof EstateInventoryErrors];
+
+export type EstateInventoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstateInventoryOut;
+};
+
+export type EstateInventoryResponse = EstateInventoryResponses[keyof EstateInventoryResponses];
+
+export type FaiLinesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/fai-lines';
+};
+
+export type FaiLinesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FaiLinesError = FaiLinesErrors[keyof FaiLinesErrors];
+
+export type FaiLinesResponses = {
+    /**
+     * Successful Response
+     */
+    200: FaiLinesOut;
+};
+
+export type FaiLinesResponse = FaiLinesResponses[keyof FaiLinesResponses];
+
+export type FaiLineAddData = {
+    body: FaiLineIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/fai-lines';
+};
+
+export type FaiLineAddErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FaiLineAddError = FaiLineAddErrors[keyof FaiLineAddErrors];
+
+export type FaiLineAddResponses = {
+    /**
+     * Successful Response
+     */
+    201: FaiLineOut;
+};
+
+export type FaiLineAddResponse = FaiLineAddResponses[keyof FaiLineAddResponses];
+
+export type FaiLinesImportData = {
+    body: FaiImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/fai-lines/import-from-statement';
+};
+
+export type FaiLinesImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FaiLinesImportError = FaiLinesImportErrors[keyof FaiLinesImportErrors];
+
+export type FaiLinesImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: FaiLinesOut;
+};
+
+export type FaiLinesImportResponse = FaiLinesImportResponses[keyof FaiLinesImportResponses];
+
+export type FiduciaryComputationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * View
+         */
+        view?: 'tree' | 'character';
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/tax/returns/{return_id}/fiduciary-computation';
+};
+
+export type FiduciaryComputationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FiduciaryComputationError = FiduciaryComputationErrors[keyof FiduciaryComputationErrors];
+
+export type FiduciaryComputationResponses = {
+    /**
+     * Successful Response
+     */
+    200: FiduciaryComputationOut;
+};
+
+export type FiduciaryComputationResponse = FiduciaryComputationResponses[keyof FiduciaryComputationResponses];
+
+export type FiduciaryExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Version
+         */
+        version?: number | null;
+    };
+    url: '/v1/tax/returns/{return_id}/fiduciary-computation.xlsx';
+};
+
+export type FiduciaryExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FiduciaryExportError = FiduciaryExportErrors[keyof FiduciaryExportErrors];
+
+export type FiduciaryExportResponses = {
+    /**
+     * Response Fiduciary Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type FiduciaryExportResponse = FiduciaryExportResponses[keyof FiduciaryExportResponses];
+
+export type FiduciaryRecomputeData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/fiduciary-computation/recompute';
+};
+
+export type FiduciaryRecomputeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FiduciaryRecomputeError = FiduciaryRecomputeErrors[keyof FiduciaryRecomputeErrors];
+
+export type FiduciaryRecomputeResponses = {
+    /**
+     * Successful Response
+     */
+    200: FiduciaryRecomputeOut;
+};
+
+export type FiduciaryRecomputeResponse = FiduciaryRecomputeResponses[keyof FiduciaryRecomputeResponses];
+
 export type FinalApprovalRequestData = {
     body: FinalApprovalRequestIn;
     headers?: {
@@ -135451,6 +138847,308 @@ export type FinalApprovalRequestResponses = {
 };
 
 export type FinalApprovalRequestResponse = FinalApprovalRequestResponses[keyof FinalApprovalRequestResponses];
+
+export type InstrumentData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/instrument';
+};
+
+export type InstrumentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstrumentError = InstrumentErrors[keyof InstrumentErrors];
+
+export type InstrumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: InstrumentOut;
+};
+
+export type InstrumentResponse = InstrumentResponses[keyof InstrumentResponses];
+
+export type InstrumentAttachData = {
+    body: InstrumentAttachIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/instrument';
+};
+
+export type InstrumentAttachErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstrumentAttachError = InstrumentAttachErrors[keyof InstrumentAttachErrors];
+
+export type InstrumentAttachResponses = {
+    /**
+     * Successful Response
+     */
+    201: InstrumentOut;
+};
+
+export type InstrumentAttachResponse = InstrumentAttachResponses[keyof InstrumentAttachResponses];
+
+export type InstrumentCitedByData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/instrument/cited-by';
+};
+
+export type InstrumentCitedByErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstrumentCitedByError = InstrumentCitedByErrors[keyof InstrumentCitedByErrors];
+
+export type InstrumentCitedByResponses = {
+    /**
+     * Response Instrument Cited By
+     *
+     * Successful Response
+     */
+    200: Array<InstrumentCitedByOut>;
+};
+
+export type InstrumentCitedByResponse = InstrumentCitedByResponses[keyof InstrumentCitedByResponses];
+
+export type DeterminationRecordData = {
+    body: DeterminationRecordIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/instrument/determinations';
+};
+
+export type DeterminationRecordErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeterminationRecordError = DeterminationRecordErrors[keyof DeterminationRecordErrors];
+
+export type DeterminationRecordResponses = {
+    /**
+     * Successful Response
+     */
+    201: InstrumentDeterminationOut;
+};
+
+export type DeterminationRecordResponse = DeterminationRecordResponses[keyof DeterminationRecordResponses];
+
+export type InstrumentReadData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/instrument/read';
+};
+
+export type InstrumentReadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstrumentReadError = InstrumentReadErrors[keyof InstrumentReadErrors];
+
+export type InstrumentReadResponses = {
+    /**
+     * Successful Response
+     */
+    202: ReaderRunAcceptedOut;
+};
+
+export type InstrumentReadResponse = InstrumentReadResponses[keyof InstrumentReadResponses];
 
 export type ReturnIssuesExportData = {
     body?: never;
@@ -136043,6 +139741,290 @@ export type StateAllocationXlsxResponses = {
 
 export type StateAllocationXlsxResponse = StateAllocationXlsxResponses[keyof StateAllocationXlsxResponses];
 
+export type TrustDistributionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/trust-distributions';
+};
+
+export type TrustDistributionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TrustDistributionsError = TrustDistributionsErrors[keyof TrustDistributionsErrors];
+
+export type TrustDistributionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TrustDistributionsOut;
+};
+
+export type TrustDistributionsResponse = TrustDistributionsResponses[keyof TrustDistributionsResponses];
+
+export type TrustDistributionAddData = {
+    body: TrustDistributionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/trust-distributions';
+};
+
+export type TrustDistributionAddErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TrustDistributionAddError = TrustDistributionAddErrors[keyof TrustDistributionAddErrors];
+
+export type TrustDistributionAddResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrustDistributionOut;
+};
+
+export type TrustDistributionAddResponse = TrustDistributionAddResponses[keyof TrustDistributionAddResponses];
+
+export type TrustExpensesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/trust-expenses';
+};
+
+export type TrustExpensesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TrustExpensesError = TrustExpensesErrors[keyof TrustExpensesErrors];
+
+export type TrustExpensesResponses = {
+    /**
+     * Successful Response
+     */
+    200: TrustExpensesOut;
+};
+
+export type TrustExpensesResponse = TrustExpensesResponses[keyof TrustExpensesResponses];
+
+export type TrustExpenseAddData = {
+    body: TrustExpenseIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/trust-expenses';
+};
+
+export type TrustExpenseAddErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TrustExpenseAddError = TrustExpenseAddErrors[keyof TrustExpenseAddErrors];
+
+export type TrustExpenseAddResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrustExpenseOut;
+};
+
+export type TrustExpenseAddResponse = TrustExpenseAddResponses[keyof TrustExpenseAddResponses];
+
+export type TrusteeQuestionData = {
+    body: TrusteeQuestionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/trustee-questions';
+};
+
+export type TrusteeQuestionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TrusteeQuestionError = TrusteeQuestionErrors[keyof TrusteeQuestionErrors];
+
+export type TrusteeQuestionResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrusteeQuestionDraftOut;
+};
+
+export type TrusteeQuestionResponse = TrusteeQuestionResponses[keyof TrusteeQuestionResponses];
+
 export type WorksheetsData = {
     body?: never;
     headers?: {
@@ -136154,6 +140136,126 @@ export type WorkspaceResponses = {
 };
 
 export type WorkspaceResponse = WorkspaceResponses[keyof WorkspaceResponses];
+
+export type TrustDistributionEditData = {
+    body: TrustDistributionEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Distribution Id
+         */
+        distribution_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/trust-distributions/{distribution_id}';
+};
+
+export type TrustDistributionEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TrustDistributionEditError = TrustDistributionEditErrors[keyof TrustDistributionEditErrors];
+
+export type TrustDistributionEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: TrustDistributionOut;
+};
+
+export type TrustDistributionEditResponse = TrustDistributionEditResponses[keyof TrustDistributionEditResponses];
+
+export type TrustExpenseEditData = {
+    body: TrustExpenseEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Expense Id
+         */
+        expense_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/trust-expenses/{expense_id}';
+};
+
+export type TrustExpenseEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TrustExpenseEditError = TrustExpenseEditErrors[keyof TrustExpenseEditErrors];
+
+export type TrustExpenseEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: TrustExpenseOut;
+};
+
+export type TrustExpenseEditResponse = TrustExpenseEditResponses[keyof TrustExpenseEditResponses];
 
 export type WorksheetFieldsData = {
     body?: never;

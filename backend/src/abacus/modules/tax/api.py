@@ -62,6 +62,7 @@ from abacus.modules.tax.due_dates import (
 from abacus.modules.tax.engine_contract import engine_router, portal_filing_router
 from abacus.modules.tax.engine_import import import_file as import_engine_file
 from abacus.modules.tax.engine_sync import register as register_engine_sync
+from abacus.modules.tax.estate_contract import estate_router
 from abacus.modules.tax.estimates import (
     create_estimate_schedule,
     patch_installment,
@@ -73,6 +74,7 @@ from abacus.modules.tax.estimates import (
 from abacus.modules.tax.extensions import ProposedPayment, flag_new_likely, send_confirmation
 from abacus.modules.tax.extensions import patch as patch_extension
 from abacus.modules.tax.extensions import prepare as prepare_extensions
+from abacus.modules.tax.fiduciary_contract import fiduciary_router
 from abacus.modules.tax.filed_delivery import FiledReturn, filed_returns
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.k1_packages import draft_k1_blockers, package_scope
@@ -155,6 +157,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     schedules_router,  # extensions, estimates and payments (T-03-T02 stub)
     workspace_router,  # RW-1 and WS-1, the return workspace (T-04-T05 stub)
     workbook_router,  # tax workbook v1, entity returns (T-05-T06 stub; dark)
+    fiduciary_router,  # FW-1 fiduciary workpapers, TXT-01 to TXT-03 (T-07-T05 stub; dark)
+    estate_router,  # EW-1 estate workpapers, TXT-04 (T-07-T05 stub; dark)
 )
 
 

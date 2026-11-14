@@ -1532,6 +1532,16 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion_errors.InternalAmountInText
     summary: Client-facing letter text may not carry a materiality amount.
+  interpretation_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.fiduciary_contract.InterpretationLocked
+    summary: 'AC-4.2: approved determinations are locked; a manager reopens them with a reason.'
+  interpretation_not_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.fiduciary_contract.InterpretationNotApproved
+    summary: 'AC-6.5: no approved instrument interpretation, so the trust calculation cannot compute.'
   invalid:
     status: 422
     raised_by:
@@ -2148,6 +2158,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.filing.NotRejected
+  not_segmented:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.fiduciary_contract.NotSegmented
+    summary: 'AC-1.3: the instrument''s clauses need checking before a reader run (manual marking).'
   not_self:
     status: 409
     raised_by:
