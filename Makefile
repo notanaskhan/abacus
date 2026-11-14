@@ -290,6 +290,14 @@ evals-conformance-fast:
 evals-tax-fast:
 	cd backend && uv run python -m abacus_tools.evals --agent tax_return --subset fast
 
+# I-02-T20: briefing.today's suite, fast subset on the fake model (code only; thresholds frozen).
+evals-briefing-fast:
+	cd backend && uv run python -m abacus_tools.evals --agent briefing_today --subset fast
+
+# I-02-T20: the nightly full suite on the fake model.
+evals-briefing-full:
+	cd backend && uv run python -m abacus_tools.evals --agent briefing_today --subset full
+
 # T-05-T18: the entity return agents' suites part 1 on the fake model (thresholds frozen).
 evals-entity-fast:
 	cd backend && uv run python -m abacus_tools.evals --agent tax_account_mapper --subset fast
