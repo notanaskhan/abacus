@@ -715,3 +715,14 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 | 2026-11-12 | Watermark       | DEC-78's "Draft — not for filing", inside the server-rendered page image; the kit never draws or removes it (§11 R4)                                                                                     |
 | 2026-11-12 | Saved prompts   | WB-01h/i and WB-02g/h are W-03's WB-12 picker in a consumer slot prefilling the Composer; no T4 prop (DF-43 open)                                                                                        |
 | 2026-11-12 | T13 chip fit    | F-07-T10 (DEC-4625): `chipsThatFit(height, n)`: numeral 26 + pad 8 + n × (22 + 4), leaving 18 for "+n more"; 3 at 144 h, cap 4. The done check draws at 12 px (registry floor)                           |
+
+### Tier-4 close-out (F-07-T19 to F-07-T23)
+
+| Date       | Item            | Decision |
+| ---------- | --------------- | -------- |
+| 2026-11-14 | TPL-17 faces    | F-07-T19 (DEC-4944): TPL-17 a–f draw T17 on F-07-T15's six rendered faces and manifest; each traced field is a viewer region by its manifest `match_id`; K-1 rows carry the handoff's figures as written with the server's tie state. |
+| 2026-11-14 | Watermark       | The K-1 preview (TPL-17e) shows the draft mark only as the server's page image carries it; the specimen draws no overlay (F-07-T23 removed one). |
+| 2026-11-14 | Consumer tests  | F-07-T21: the tier-4 view models' fields are asserted in the providers' contracts shard; T-06 and T-08 get contract requests in `docs/contracts/requests/`. |
+| 2026-11-14 | Lock            | F-07-T22: Tier B locked for TPL-13 (a, a′, b–f), TPL-14 (a–f) and TPL-17 (a–f, page body masked); Tier D for T13, T14, T17; axe on every board and the open day popover. |
+| 2026-11-14 | Thread props    | W-02-T17/T22 added `onEditResend`, `composerDisabledReason` and `composerAction` to `ChatThread` (additive). |
+

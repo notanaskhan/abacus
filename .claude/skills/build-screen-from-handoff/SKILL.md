@@ -139,3 +139,17 @@ SHL-09 to SHL-16 settled four deviations. A screen hosting them inherits these; 
 - INB-02's destination picker is a tree the server builds per reader (`triage_apply.py`); every
   node is re-authorised server-side. The client never filters destinations itself, and a
   candidate is shown only if the server returned it.
+
+## Tier-4 templates (F-07-T23)
+- **T4** (WB-*): bind `ChatThread` to the session snapshot; drop `context_added`, `context_removed`
+  and `drill` items from the thread; map a notice's `code` to fixed copy; the open question is the
+  `QuestionCard` in `above`; register `plan` (and later `run_card`, `approval`) slots; pass
+  `composerDisabledReason` from `GET /v1/agents/capabilities` (DF-04).
+- **T13** (calendar): items come from the deadline read model (see
+  `docs/contracts/requests/t08-deadlines.md`); the grid never computes a date or a count.
+- **T14** (graph): nodes and edges as `docs/contracts/requests/t08-relationships.md` names them;
+  saved positions per viewer; a walled node's label is masked by the server.
+- **T17** (form): pages and the field manifest from the renderer; the watermark is in the page
+  image; Download only in the ⋯ menu; Go to lights the manifest `match_id`.
+- Read `docs/design/templates-tier4.md` before building on any of them.
+
