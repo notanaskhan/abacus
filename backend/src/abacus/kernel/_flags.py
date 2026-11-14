@@ -519,6 +519,21 @@ TAX_ENTITY_WORKSPACE = Flag(
     kind="boolean",
     default="false",
 )
+TAX_ESTATE_WORKPAPERS = Flag(
+    name="tax.estate_workpapers",
+    kind="boolean",
+    default="false",
+)
+TAX_FIDUCIARY_K1_RELEASE = Flag(
+    name="tax.fiduciary_k1_release",
+    kind="boolean",
+    default="false",
+)
+TAX_FIDUCIARY_WORKPAPERS = Flag(
+    name="tax.fiduciary_workpapers",
+    kind="boolean",
+    default="false",
+)
 TAX_INDIVIDUAL_WORKPAPERS = Flag(
     name="tax.individual_workpapers",
     kind="boolean",
@@ -675,6 +690,9 @@ FLAGS: dict[str, Flag] = {
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
     "tax.entity_agents": TAX_ENTITY_AGENTS,
     "tax.entity_workspace": TAX_ENTITY_WORKSPACE,
+    "tax.estate_workpapers": TAX_ESTATE_WORKPAPERS,
+    "tax.fiduciary_k1_release": TAX_FIDUCIARY_K1_RELEASE,
+    "tax.fiduciary_workpapers": TAX_FIDUCIARY_WORKPAPERS,
     "tax.individual_workpapers": TAX_INDIVIDUAL_WORKPAPERS,
     "tax.review_workspace": TAX_REVIEW_WORKSPACE,
     "tax.workbook_run": TAX_WORKBOOK_RUN,
