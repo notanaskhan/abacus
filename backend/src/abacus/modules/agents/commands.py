@@ -56,7 +56,7 @@ from abacus.modules.agents.runs import (
     _run,  # pyright: ignore[reportPrivateUsage] -- same module
     run_view,
 )
-from abacus.modules.identity.api import AuthContext, Forbidden, names_of
+from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
 
 _AWAITING: Final = "awaiting_plan_approval"
 _ENDED: Final = frozenset({"succeeded", "approved", "partially_approved", "rejected", "failed"})
@@ -122,29 +122,38 @@ def _sha(value: str) -> str:
 @dataclass(frozen=True)
 class RunHead:
     id: UUID
-    engagement_id: UUID
+    # None for a firm-level run (W-02-T21: a Workbench firm session's plan run).
+    engagement_id: UUID | None
     state: str | None
     plan_id: UUID | None
     signed_off_by: UUID | None
 
 
 async def _head(ctx: AuthContext, run_id: UUID, action: str) -> RunHead:
-    """The run, authorised `action` on its engagement (404 walled or unknown), and a person."""
-    run = await _run(ctx, run_id, action)
-    require_live_human(ctx, action)
+    """The run, authorised `action` on its engagement (404 walled or unknown), and a person.
+    W-02-T21 (DEC-4943): a firm-level run (no engagement) is its initiator's alone: anyone else
+    reads 404, and the initiator needs the action at firm level."""
     async with tenant_session(ctx.tenant) as session:
         row = (
             await session.execute(
                 text(
-                    "SELECT r.state, r.plan_id, s.signed_by AS signed_off_by FROM agent_runs r "
+                    "SELECT r.state, r.plan_id, r.engagement_id, r.initiator_user_id, r.shadow, "
+                    "s.signed_by AS signed_off_by FROM agent_runs r "
                     "LEFT JOIN run_sign_offs s ON s.run_id = r.id WHERE r.id = :run"
                 ),
                 {"run": run_id},
             )
         ).first()
-    if row is None or run.engagement_id is None:
+    if row is None or row.shadow:
         raise NotFound("agent_run")
-    return RunHead(run_id, run.engagement_id, row.state, row.plan_id, row.signed_off_by)
+    if row.engagement_id is None:
+        if row.initiator_user_id != ctx.user_id:
+            raise NotFound("agent_run")
+        await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    else:
+        await _run(ctx, run_id, action)
+    require_live_human(ctx, action)
+    return RunHead(run_id, row.engagement_id, row.state, row.plan_id, row.signed_off_by)
 
 
 # --- plan --------------------------------------------------------------------------------------
@@ -309,6 +318,12 @@ async def edit_plan(
 
 async def cancel_plan(ctx: AuthContext, run_id: UUID, expected_version: int) -> PlanView:
     return await _decide(ctx, run_id, expected_version, "cancelled")
+
+
+async def read_plan(ctx: AuthContext, run_id: UUID) -> PlanView:
+    """W-02-T21: the run's newest plan version for its reader (`agent_run.read`, as `_head`)."""
+    await _head(ctx, run_id, "agent_run.read")
+    return await plan_view(ctx, run_id)
 
 
 async def plan_view(ctx: AuthContext, run_id: UUID) -> PlanView:
@@ -809,6 +824,7 @@ __all__ = [
     "edit_plan",
     "open_items",
     "plan_view",
+    "read_plan",
     "redirect",
     "require_live_human",
     "retry",

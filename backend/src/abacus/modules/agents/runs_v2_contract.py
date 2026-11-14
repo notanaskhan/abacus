@@ -579,6 +579,14 @@ async def set_auto_mode_route(
     )
 
 
+@runs_v2_router.get("/{run_id}/plan", action="agent_run.read", response_model=RunPlanOut)
+async def run_plan_route(run_id: UUID, ctx: Ctx) -> RunPlanOut:
+    """W-02-T21 (DEC-4943): the plan card's newest version (steps, reads with counts, writes with
+    the approver). A firm-level run is its initiator's alone."""
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
+    return _plan_out(await commands.read_plan(ctx, run_id))
+
+
 @runs_v2_router.post(
     "/{run_id}/plan/approve",
     action="agent_run.approve_plan",
