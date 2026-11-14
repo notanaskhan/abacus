@@ -39,6 +39,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.AccountsMissing
     summary: 'SPEC-038 Q3: bank and payables accounts are confirmed before selecting.'
+  accounts_not_reconciled:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.contract.AccountsNotReconciled
+    summary: 'In review below 21 of 21: `facts.account_external_id` names the first account (AC-9).'
   ack_exists:
     status: 409
     raised_by:
@@ -2433,6 +2438,11 @@ codes:
     raised_by:
     - abacus.modules.agents.commands.PlanVersionConflict
     summary: '`expected_version` is not the plan''s newest version: someone decided first.'
+  plan_version_pinned:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.contract.PlanVersionPinned
+    summary: The close's plan version was pinned at BD1 and never changes (QC-2, AC-18).
   planning_invalid:
     status: 422
     raised_by:
@@ -2850,8 +2860,9 @@ codes:
   run_in_progress:
     status: 409
     raised_by:
+    - abacus.modules.closes.contract.CloseRunInProgress
     - abacus.modules.tax.workbook_contract.RunInProgress
-    summary: 'A workbook run of this return is still open: one at a time (TXP-00).'
+    summary: A run of this close is still open, so it cannot move to In review or start another.
   run_keys_invalid:
     status: 422
     raised_by:
@@ -3476,6 +3487,11 @@ codes:
     raised_by:
     - abacus.modules.tax.tax_profile.TranscriptNotComparable
     summary: Only a parsed Wage & Income transcript is compared with a return.
+  transition_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.contract.TransitionNotAvailable
+    summary: Approved, Delivered and Locked until C-02 registers their guards (fail closed, AC-11).
   transition_refused:
     status: 409
     raised_by:
@@ -3494,6 +3510,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.ebp_investments.NoTrustReport
     summary: 'No adopted trust lines yet: the point cannot be evaluated against nothing.'
+  unadopted_rows:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.contract.UnadoptedRows
+    summary: A drafted plan row nobody adopted blocks publishing (P-35; AC-22).
   unbalanced_entry:
     status: 422
     raised_by:
