@@ -13,6 +13,7 @@ TABLES: frozenset[str] = frozenset(
         "gl_account_balances",
         "gl_entries",
         "ledger_snapshots",
+        "ledger_accounts",  # C-01-T10 (0882): the chart of accounts per snapshot
         "trial_balance_lines",
         "trial_balances",  # SPEC-309 (TASK-320): the trial balance of record
         "trial_balance_versions",
@@ -34,6 +35,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "gl_account_balances",  # SPEC-034 (TASK-069): ADR-004
         "gl_entries",  # SPEC-034 (TASK-069): ADR-004
         "ledger_snapshots",
+        "ledger_accounts",  # C-01-T10 (0882)
         "trial_balance_lines",
         "trial_balance_versions",  # SPEC-309 (TASK-320)
         "trial_balance_annotations",
@@ -60,12 +62,19 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "gl_entries": frozenset(
         {"tenant_id", "snapshot_id", "line_no", "account_code", "posted_on", "reference"}
         | {"kind", "counterparty", "description", "debit", "credit", "source_ref"}
+        | {"offset_account_ref", "payee", "txn_type", "external_txn_id"}  # C-01-T10 (0882)
     ),
     "ledger_snapshots": frozenset(
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
         | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
         | {"label"}  # A-02-T04 (0149); `source_kind` is generated
         | {"source_evidence_version_id", "extraction_run_id"}  # A-05-T28 (0659)
+        | {"period_kind", "period"}  # C-01-T10 (0882): monthly CAS snapshots
+    ),
+    "ledger_accounts": frozenset(
+        {"tenant_id", "client_entity_id", "snapshot_id", "external_id", "number", "name"}
+        | {"classification", "account_type", "account_subtype", "parent_external_id", "mask"}
+        | {"is_contra", "active"}
     ),
     "trial_balance_lines": frozenset(
         {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit"}
