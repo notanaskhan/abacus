@@ -115,7 +115,7 @@ def _routes() -> Iterator[tuple[str, str]]:
     for router in (c1.closes_router, c2.close_work_router, c2.portal_close_router):
         for route in router.routes:
             for method in getattr(route, "methods", ()):
-                yield route.path, method.lower()  # type: ignore[attr-defined]
+                yield route.path, method.lower()  # type: ignore[attr-defined]  # the registry under test
 
 
 def test_every_route_is_published_with_one_action_and_a_501_until_built() -> None:
@@ -130,10 +130,10 @@ def test_every_route_is_published_with_one_action_and_a_501_until_built() -> Non
 
 def test_portal_routes_live_under_the_portal_prefix_only() -> None:
     for route in c2.portal_close_router.routes:
-        assert route.path.startswith("/v1/portal/")  # type: ignore[attr-defined]
+        assert route.path.startswith("/v1/portal/")  # type: ignore[attr-defined]  # the registry under test
     for router in (c1.closes_router, c2.close_work_router):
         for route in router.routes:
-            assert not route.path.startswith("/v1/portal/")  # type: ignore[attr-defined]
+            assert not route.path.startswith("/v1/portal/")  # type: ignore[attr-defined]  # the registry under test
 
 
 async def _guard(ctx: AuthContext, close_id: object) -> None:
@@ -142,7 +142,7 @@ async def _guard(ctx: AuthContext, close_id: object) -> None:
 
 def test_the_status_guard_slot_fails_closed_until_c02_registers() -> None:
     for status in ("approved", "delivered", "locked"):
-        c1._guards.pop(status, None)  # pyright: ignore[reportPrivateUsage]
+        c1._guards.pop(status, None)  # pyright: ignore[reportPrivateUsage]  # the registry under test
         with pytest.raises(TransitionNotAvailable):
             status_guard(status)
     try:
@@ -151,9 +151,9 @@ def test_the_status_guard_slot_fails_closed_until_c02_registers() -> None:
         with pytest.raises(ValueError):
             register_status_guard("approved", _guard)  # one guard per status
         with pytest.raises(ValueError):
-            register_status_guard("in_review", _guard)  # type: ignore[arg-type]
+            register_status_guard("in_review", _guard)  # type: ignore[arg-type]  # a deliberately wrong guard shape, the test's point
     finally:
-        c1._guards.pop("approved", None)  # pyright: ignore[reportPrivateUsage]
+        c1._guards.pop("approved", None)  # pyright: ignore[reportPrivateUsage]  # resets the registry
 
 
 def test_the_contract_doc_lists_every_route() -> None:

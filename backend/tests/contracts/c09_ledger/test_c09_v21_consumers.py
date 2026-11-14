@@ -93,7 +93,7 @@ def _paths() -> dict[str, dict[str, dict[str, object]]]:
 def test_sync_routes_are_published_with_one_action_and_a_501() -> None:
     paths = _paths()
     routes = [
-        (route.path, m.lower())  # type: ignore[attr-defined]
+        (route.path, m.lower())  # type: ignore[attr-defined]  # an untyped route or JSON shape read by the test
         for route in sync.ledger_sync_router.routes
         for m in getattr(route, "methods", ())
     ]

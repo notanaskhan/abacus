@@ -64,10 +64,10 @@ def test_inv1_the_artifact_download_is_fresh_mfa_or_denied_to_everyone_but_peopl
 def _ctx(actor: str = "human") -> AuthContext:
     me = uuid.uuid4()
     return AuthContext(
-        TenantContext(uuid.uuid4(), cast(Any, actor), str(me)),
+        TenantContext(uuid.uuid4(), cast(Any, actor), str(me)),  # Any: the actor kind under test
         me,
         uuid.uuid4(),
-        cast(Any, "staff"),
+        cast(Any, "staff"),  # Any: a role literal the test needs, not a typed member
         None,
     )
 

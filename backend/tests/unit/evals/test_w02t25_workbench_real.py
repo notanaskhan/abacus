@@ -49,7 +49,7 @@ def test_clearance_fails_closed(
 ) -> None:
     verdict = real.clearance("bedrock", below, attempts, limit)
     assert verdict["cleared"] is False
-    assert reason in verdict["reasons"]  # type: ignore[operator]
+    assert reason in verdict["reasons"]  # type: ignore[operator]  # a JSON list read untyped
 
 
 def test_a_direct_run_never_clears_for_production() -> None:
