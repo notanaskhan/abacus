@@ -27,4 +27,7 @@ export const COPY = {
   agentsPlanned: "Agents arrive with the agent library.",
   connectPlanned: "Connect arrives with the connector catalogue.",
   flagOff: "Workbench isn't turned on for your firm.",
+  // W-02-T21: the approved save's line (Undo for 10 seconds, DEC-24).
+  savedApproved: "Approved · the workbook is filed in 10 seconds",
+  undo: "Undo",
 } as const;

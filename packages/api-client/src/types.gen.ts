@@ -58702,6 +58702,58 @@ export type RedirectRunResponses = {
 
 export type RedirectRunResponse = RedirectRunResponses[keyof RedirectRunResponses];
 
+export type RunPlanData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/v1/agent-runs/{run_id}/plan';
+};
+
+export type RunPlanErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RunPlanError = RunPlanErrors[keyof RunPlanErrors];
+
+export type RunPlanResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunPlanOut;
+};
+
+export type RunPlanResponse = RunPlanResponses[keyof RunPlanResponses];
+
 export type ApproveRunPlanData = {
     body: PlanDecisionIn;
     headers: {

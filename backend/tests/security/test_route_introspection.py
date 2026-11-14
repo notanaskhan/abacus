@@ -862,6 +862,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PATCH", "/v1/workbench/sessions/{session_id}", "session.manage"),
     ("POST", "/v1/agent-feedback", "agent_feedback.create"),
     ("POST", "/v1/agent-runs/{run_id}/messages", "agent_run.control"),
+    ("GET", "/v1/agent-runs/{run_id}/plan", "agent_run.read"),  # W-02-T21
     ("POST", "/v1/agent-runs/{run_id}/plan/approve", "agent_run.approve_plan"),
     ("POST", "/v1/agent-runs/{run_id}/plan/cancel", "agent_run.approve_plan"),
     ("POST", "/v1/agent-runs/{run_id}/plan/edit", "agent_run.approve_plan"),
