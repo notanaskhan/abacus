@@ -2,6 +2,7 @@ import { areaRoutes } from "./areas";
 import { auditRoutes } from "./audits";
 import { binderRoutes } from "./binders";
 import { clientRoutes } from "./clients";
+import { closeRoutes } from "./closes";
 import { engagementRoutes } from "./engagements";
 import { filesRoutes } from "./files";
 import { homeRoutes } from "./home";
@@ -38,7 +39,7 @@ export const FIRM_AREAS = [
   { key: "binders", label: "Binders", routes: binderRoutes },
   { key: "notices", label: "Notices", routes: noticeRoutes },
   { key: "audits", label: "Audits", routes: auditRoutes },
-  { key: "closes", label: "Closes", routes: [] },
+  { key: "closes", label: "Closes", routes: closeRoutes },
   { key: "signatures", label: "Signatures", routes: signatureRoutes },
   { key: "settings", label: "Settings", routes: settingsRoutes },
 ] as const;
@@ -65,6 +66,8 @@ export const firmRoutes = [
   ...noticeRoutes,
   // W-02-T08: WB-01 to WB-03 behind `workbench.enabled`.
   ...workbenchRoutes,
+  // C-01-T12: the close shell behind `closes.engine` (CLS-02 to CLS-06, CLS-09, CLS-10).
+  ...closeRoutes,
   // P-01-T02: the Engagements index and the flag-off landings of planned areas.
   ...areaRoutes,
 ] as const;
