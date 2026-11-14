@@ -42,3 +42,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: connections.ledger_sync
+    description: 'C-01 hourly QuickBooks Online read for CAS closes (SPEC-655 F5): LedgerSyncWorkflow, GET and POST /v1/client-entities/{eid}/ledger-sync (sync status, Sync now). Read only (CONN-001). Off: no sync ticks run and the routes answer 404. Per firm, default off. C-01-T02.'
+    owner: notanaskhan
+    created: 2026-11-14
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false

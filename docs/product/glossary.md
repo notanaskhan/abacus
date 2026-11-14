@@ -591,6 +591,25 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Tie-out (entity returns) | An entity return's tie-out tally against its source or the engine import, the same `tie_out_tally` words as a tie-out check (tie · off n · Check · Pending · Ties once posted · Reconciled). | `tie_out` | — |
 | Partner (of a partnership) | An owner of a partnership's interest, the K-1 recipient on a 1065. Never the firm's partner role (`engagement_partner`, `firm_partner`). | `partner` (`return_partners`) | — |
 
+## New terms: close engine (C-01-T02)
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Close plan version | One numbered version of a client's close plan: draft, published (immutable, effective from a period) or discarded. A close pins the version effective for its period at BD1 publication and never changes (QC-2). | `close_plan_versions` | `revision` |
+| Plan row | One procedure of a close plan version: account, procedure, method, evidence, source, review level, frequency, threshold. UI "procedure". | `close_plan_rows` | — |
+| Close template | An industry starting point for a close plan (Café with Square/Shopify and others): database content imported through `POST /v1/close-templates:import`, never a commit. | `close_templates` | — |
+| Close request (UI) | A request generated into a close's `close_intake` binder from a plan's request template on business day 1. UI only; the code is a `request_item`. | `request_item` in a `close_intake` binder | — |
+| Incorporation | A person accepting a received upload into the close's work (`incorporation_state = incorporated`); undo and return to client are its siblings (P-06). | `incorporation_state` | `ingest`, `accept file` |
+| Transaction question | A question to the client about one transaction, in the firm's template wording with code facts; a person sends it; the client sees only its client wording (QC-9). | `transaction_questions` | `query` |
+| Reconciling item | One item between the bank and book sides of a reconciliation: deposit in transit, outstanding check, unrecorded deposit or withdrawal, bank or book error. Insert-only; resolutions are a person's. | `reconciling_items` | — |
+| Statement line | One line of a bank statement derived from P-11's extracted tables, with its page and cell box. | `statement_lines` | — |
+| Arrangement | A prepaid, fixed asset, accrual or deferred revenue the schedule computes from (CLS-04 O2 drawer); each edit is a new version. | `arrangements` (+ `arrangement_versions`) | — |
+| Schedule result | A schedule's computed balance against the GL for one close: tie, off, ties once posted or recorded. Insert-only. | `close_schedule_results` | — |
+| Analytic line | One tested line of a close's flux set. UI "flux line". | `analytic_lines` | `variance row` |
+| Close entry recording | The link between an approved entry and the QuickBooks journal entry a sync found for it. UI "Recorded in QuickBooks". | `close_entry_recordings` | `posted` (C-01 posts nothing) |
+| Sync schedule | A connection's ledger sync cadence and business hours, with its change-data-capture cursor. | `sync_schedules` | — |
+| Meter budget | A firm's monthly allowance of metered provider calls (Intuit reads); reaching it pauses scheduled syncs. | `connection_meter_usage` | `quota` |
+
 ## Legacy identifiers: rename or freeze
 
 | Identifier | Problem | Action | When |
