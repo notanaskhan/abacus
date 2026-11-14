@@ -7604,6 +7604,85 @@ async def _entity_run_recorded(conn: asyncpg.Connection, _: Scenario, event: Eve
     )
 
 
+# --- T-05-T62 (DEC-4937): Ridgeline part 2, the memo, the fix and Run 3 --------------------------
+
+
+async def _entity_memo_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The Sep 10 memo draft: its run through agents' recorder, its version through tax's
+    synthetic-only memo recorder (TXP-01's text, verbatim)."""
+    from abacus.modules.agents.api import RecordedRun, RecordedStep, record_synthetic_run
+    from abacus.modules.tax.api import record_synthetic_memo
+    from abacus_tools.synthetic.scenarios.brightwater_hale.entity_memo import SECTIONS
+
+    ctx = await _staff_context(conn, event)
+    return_id = _entity_return(event)
+    run_id = UUID(stable_id(f"memo-run:{event.data['return']}:1"))
+    with frozen(_feld_at(event)):
+        await record_synthetic_run(
+            TenantContext(TENANT, "human", str(ctx.user_id)),
+            RecordedRun(
+                agent_id="tax.memo_drafter",
+                engagement_id=_entity_engagement(event),
+                initiator_user_id=ctx.user_id,
+                run_number=4,  # after Runs 1 and 2; Run 3 (9:52) is the re-run
+                state="succeeded",
+                steps=[RecordedStep(key="draft_memo", level=0, label="Draft the preparer memo",
+                                    state="succeeded", kind="model", reached=True)],  # fmt: skip
+                work_item_ref=f"tax_return:{return_id}",
+                id=run_id,
+            ),
+        )
+        await record_synthetic_memo(
+            ctx, return_id, run_id=run_id, on_behalf_of=ctx.user_id, sections=SECTIONS
+        )
+
+
+async def _entity_memo_signed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """L1 adopt by Olivia Brandt (Sep 10) or L2 approve by Samuel Ito (Sep 14, 9:40 AM), through
+    the memo service's own sign-off (P-04)."""
+    from abacus.modules.tax.api import memo_row, sign_memo
+
+    ctx = await _staff_context(conn, event)
+    return_id = _entity_return(event)
+    memo = await memo_row(ctx.tenant, return_id)
+    if memo is None or not memo.version:
+        return
+    level = 1 if int(str(event.data["level"])) == 1 else 2
+    with frozen(_feld_at(event)):
+        await sign_memo(ctx, return_id, level=level, seen_hash=memo.content_hash or "")
+
+
+async def _entity_fix_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """9:51 AM: the M-2 fix approved, through tax's synthetic-only fix recorder."""
+    from abacus.modules.tax.api import record_synthetic_fix
+    from abacus_tools.synthetic.scenarios.brightwater_hale.entity_slice import FIX_ADDS
+
+    ctx = await _staff_context(conn, event)
+    with frozen(_feld_at(event)):
+        await record_synthetic_fix(
+            ctx, _entity_engagement(event), _entity_return(event),
+            {cell: Decimal(amount) for cell, amount in FIX_ADDS},
+        )  # fmt: skip
+
+
+async def _ridgeline_issue_resolved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """After Run 3: the M-2 review point resolved by the person who approved the fix (TXP-10's
+    badge reads 10)."""
+    from abacus.modules.review.api import move_issue
+
+    ctx = await _staff_context(conn, event)
+    async with as_tenant(conn, TENANT):
+        row = await conn.fetchrow(
+            "SELECT id, version, status FROM issues WHERE work_item_id = $1 AND source_ref = $2",
+            _entity_return(event),
+            f"scenario:{event.data['issue']}",
+        )
+    if row is None or row["status"] in ("resolved", "verified"):
+        return
+    with frozen(_feld_at(event)):
+        await move_issue(ctx, row["id"], "resolved", int(row["version"]))
+
+
 # --- W-02-T13 (DEC-4717): WB-01's sessions (`--slice workbench`) --------------------------------
 
 
@@ -7894,6 +7973,10 @@ HANDLERS: Final[dict[str, Handler]] = {
     "tax.allocation_drafted": _entity_allocation_drafted,
     "review.allocation_signed": _entity_allocation_signed,
     "agents.entity_run_recorded": _entity_run_recorded,
+    "tax.memo_recorded": _entity_memo_recorded,  # T-05-T62
+    "review.memo_signed": _entity_memo_signed,
+    "tax.fix_recorded": _entity_fix_recorded,
+    "review.ridgeline_issue_resolved": _ridgeline_issue_resolved,
     # W-02-T13 (`--slice workbench`): WB-01's rows.
     "workbench.session_recorded": _workbench_session_recorded,
 }

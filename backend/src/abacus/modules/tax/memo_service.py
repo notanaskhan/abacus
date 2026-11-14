@@ -781,3 +781,86 @@ __all__ = [
     "sources_of",
     "start_draft",
 ]
+
+
+# --- T-05-T62 (DEC-4937): the synthetic-only memo recorder ---------------------------------------
+
+
+async def record_synthetic_memo(
+    ctx: AuthContext,
+    return_id: UUID,
+    *,
+    run_id: UUID,
+    on_behalf_of: UUID,
+    sections: Sequence[tuple[str, str, int | None]],
+) -> int:
+    """The scenario loader's one way to put a drafted memo in place for the Brightwater Hale
+    tenant: one agent-drafted version from `sections` (`(key, text, source n)`), its fingerprint
+    from code's facts now (so a later figure change turns it Stale by code), and a `drafted` event
+    naming the recorded run. Refuses every firm that is not synthetic (404). Idempotent: a memo
+    that has a version is left as it is."""
+    from abacus.kernel.errors import NotFound
+    from abacus.modules.identity.api import is_synthetic_firm
+    from abacus.modules.tax.memo_drafter import Stored, content_hash_of
+
+    if not await is_synthetic_firm(ctx.tenant):
+        raise NotFound("preparer_memo")
+    existing = await memo_row(ctx.tenant, return_id)
+    if existing is not None and existing.version:
+        return existing.version
+    _form_of, _values, now = await facts_now(ctx.tenant, return_id)
+    stored = [
+        Stored(key, ({"text": body, "citations": (
+            [{"n": n, "start": 0, "end": len(body)}] if n is not None else [])},), False)
+        for key, body, n in sections
+    ]  # fmt: skip
+    digest = content_hash_of(stored)
+    fp = fingerprint_of([f.fact for f in now])
+    from abacus.modules.engagements.api import work_item_engagement
+
+    engagement_id = await work_item_engagement(ctx.tenant, return_id)
+    if engagement_id is None:
+        raise NotFound("tax_return")
+    async with uow(ctx.tenant) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO preparer_memos (tenant_id, engagement_id, work_item_id) "
+                "VALUES (:t, :e, :r) ON CONFLICT (work_item_id) DO NOTHING"
+            ),
+            {"t": ctx.tenant_id, "e": engagement_id, "r": return_id},
+        )
+        memo_id = await tx.session.scalar(
+            text("SELECT id FROM preparer_memos WHERE work_item_id = :r FOR UPDATE"),
+            {"r": return_id},
+        )
+        scope = {"t": ctx.tenant_id, "e": engagement_id, "r": return_id, "m": memo_id}
+        await tx.session.execute(
+            text(
+                "INSERT INTO preparer_memo_versions (tenant_id, engagement_id, work_item_id, "
+                "memo_id, version_no, sections, cause, created_by_kind, agent_run_id, "
+                "on_behalf_of_user_id, content_hash, figure_fingerprint) VALUES (:t, :e, :r, :m, "
+                "1, CAST(:sections AS jsonb), 'draft', 'agent', :run, :by, :hash, :fp)"
+            ),
+            {**scope, "sections": json.dumps([s.as_json() for s in stored]), "run": run_id,
+             "by": on_behalf_of, "hash": digest, "fp": fp},  # fmt: skip
+        )
+        await tx.session.execute(
+            text(
+                "UPDATE preparer_memos SET current_version_no = 1, drafted_run_id = :run, "
+                "content_hash = :hash, figure_fingerprint = :fp, updated_at = clock_timestamp() "
+                "WHERE id = :m"
+            ),
+            {"m": memo_id, "run": run_id, "hash": digest, "fp": fp},
+        )
+        await tx.session.execute(
+            _EVENT,
+            {**scope, "event": "drafted", "v": 1,
+             "ref": json.dumps({"dropped": 0, "run": str(run_id)})},  # fmt: skip
+        )
+        tx.record(
+            "tax_memo.drafted",
+            target=Target(TARGET, memo_id),
+            after=Ref(version_no=1, content_hash=digest, run=run_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=return_id),
+        )
+    return 1
