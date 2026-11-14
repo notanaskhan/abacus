@@ -84,7 +84,8 @@ export function RulePopover({
       </dl>
       <button
         type="button"
-        className="self-start text-[12px] text-ink underline-offset-2 hover:underline"
+        // A 24px hit area around the 17px link line (SC 2.5.8; DEC-4740).
+        className="relative self-start text-[12px] text-ink underline-offset-2 before:absolute before:inset-x-0 before:-inset-y-[4px] before:content-[''] hover:underline"
         onClick={() => onOpenReturn?.(chip)}
       >
         {listCopy.openReturn}

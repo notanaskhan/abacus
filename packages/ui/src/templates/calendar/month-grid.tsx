@@ -130,86 +130,91 @@ export function MonthGrid({
     run();
   }
 
+  // The day popover sits beside the grid, not in it: a grid holds rows only (axe
+  // aria-required-children; DEC-4740).
   return (
-    <div
-      ref={grid}
-      role="grid"
-      aria-label={label}
-      data-month-grid={month}
-      className="relative flex min-h-0 flex-col border-hair border-t-[0.5px] border-l-[0.5px]"
-      onKeyDown={onKey}
-    >
-      <div role="row" className="grid grid-cols-7" style={{ height: HEADER_H }}>
-        {WEEKDAYS.map((w) => (
-          <div
-            key={w}
-            role="columnheader"
-            className="flex items-center border-hair border-r-[0.5px] border-b-[0.5px] bg-band-hd px-[8px] text-[11.5px] font-medium text-ink-3"
-          >
-            {w}
+    <div className="relative flex min-h-0 flex-col">
+      <div
+        ref={grid}
+        role="grid"
+        aria-label={label}
+        data-month-grid={month}
+        className="flex min-h-0 flex-col border-hair border-t-[0.5px] border-l-[0.5px]"
+        onKeyDown={onKey}
+      >
+        <div role="row" className="grid grid-cols-7" style={{ height: HEADER_H }}>
+          {WEEKDAYS.map((w) => (
+            <div
+              key={w}
+              role="columnheader"
+              className="flex items-center border-hair border-r-[0.5px] border-b-[0.5px] bg-band-hd px-[8px] text-[11.5px] font-medium text-ink-3"
+            >
+              {w}
+            </div>
+          ))}
+        </div>
+        {weeks.map((week) => (
+          <div key={week[0]} role="row" className="grid grid-cols-7">
+            {week.map((day) => {
+              const items = byDay.get(day) ?? [];
+              const shown = chipsThatFit(cellH, items.length);
+              const more = items.length - shown;
+              const isToday = day === today;
+              return (
+                <div
+                  key={day}
+                  role="gridcell"
+                  data-day={day}
+                  tabIndex={day === focused ? 0 : -1}
+                  aria-label={`${longDay(day)}, ${copy.deadlines(items.length)}`}
+                  aria-selected={day === focused}
+                  className="flex min-w-0 flex-col gap-[4px] overflow-hidden border-hair border-r-[0.5px] border-b-[0.5px] bg-card p-[4px] outline-none focus-visible:ring-[1.5px] focus-visible:ring-espresso focus-visible:ring-inset"
+                  style={{ height: cellH }}
+                >
+                  <span className="flex h-[22px] items-center gap-[6px]">
+                    <span
+                      className={cn(
+                        "flex h-[22px] min-w-[22px] items-center justify-center text-[12.5px]",
+                        isToday && "rounded-full bg-espresso text-on-dark",
+                        // Days outside the month in ink-3: ink-4 fails 4.5:1 on the card (DEC-4740).
+                        !isToday && (inMonth(day) ? "text-ink-2" : "text-ink-3"),
+                      )}
+                      {...(isToday ? { "data-today": "" } : {})}
+                    >
+                      {Number(day.slice(8))}
+                    </span>
+                    {holiday.has(day) ? (
+                      <span className="truncate text-[11px] text-ink-3">{holiday.get(day)}</span>
+                    ) : null}
+                  </span>
+                  {items.slice(0, shown).map((c) => (
+                    <DueChip
+                      key={c.id}
+                      chip={c}
+                      copy={copy}
+                      {...(onOpenChip === undefined ? {} : { onOpen: onOpenChip })}
+                      {...(onHoverChip === undefined ? {} : { onHover: onHoverChip })}
+                      {...(onFocusChip === undefined ? {} : { onFocusIn: onFocusChip })}
+                      {...(onLeaveChip === undefined ? {} : { onLeave: onLeaveChip })}
+                    />
+                  ))}
+                  {more > 0 ? (
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      data-more={day}
+                      className="self-start text-[11.5px] text-ink-3 hover:text-ink"
+                      onClick={() => onExpandDay?.(day)}
+                    >
+                      {copy.more(more)}
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
-      {weeks.map((week) => (
-        <div key={week[0]} role="row" className="grid grid-cols-7">
-          {week.map((day) => {
-            const items = byDay.get(day) ?? [];
-            const shown = chipsThatFit(cellH, items.length);
-            const more = items.length - shown;
-            const isToday = day === today;
-            return (
-              <div
-                key={day}
-                role="gridcell"
-                data-day={day}
-                tabIndex={day === focused ? 0 : -1}
-                aria-label={`${longDay(day)}, ${copy.deadlines(items.length)}`}
-                aria-selected={day === focused}
-                className="flex min-w-0 flex-col gap-[4px] overflow-hidden border-hair border-r-[0.5px] border-b-[0.5px] bg-card p-[4px] outline-none focus-visible:ring-[1.5px] focus-visible:ring-espresso focus-visible:ring-inset"
-                style={{ height: cellH }}
-              >
-                <span className="flex h-[22px] items-center gap-[6px]">
-                  <span
-                    className={cn(
-                      "flex h-[22px] min-w-[22px] items-center justify-center text-[12.5px]",
-                      isToday && "rounded-full bg-espresso text-on-dark",
-                      !isToday && (inMonth(day) ? "text-ink-2" : "text-ink-4"),
-                    )}
-                    {...(isToday ? { "data-today": "" } : {})}
-                  >
-                    {Number(day.slice(8))}
-                  </span>
-                  {holiday.has(day) ? (
-                    <span className="truncate text-[11px] text-ink-3">{holiday.get(day)}</span>
-                  ) : null}
-                </span>
-                {items.slice(0, shown).map((c) => (
-                  <DueChip
-                    key={c.id}
-                    chip={c}
-                    copy={copy}
-                    {...(onOpenChip === undefined ? {} : { onOpen: onOpenChip })}
-                    {...(onHoverChip === undefined ? {} : { onHover: onHoverChip })}
-                    {...(onFocusChip === undefined ? {} : { onFocusIn: onFocusChip })}
-                    {...(onLeaveChip === undefined ? {} : { onLeave: onLeaveChip })}
-                  />
-                ))}
-                {more > 0 ? (
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    data-more={day}
-                    className="self-start text-[11.5px] text-ink-3 hover:text-ink"
-                    onClick={() => onExpandDay?.(day)}
-                  >
-                    {copy.more(more)}
-                  </button>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      ))}
       {expanded === undefined ? null : (
         <DayPopover
           day={expanded}
