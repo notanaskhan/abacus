@@ -69,3 +69,30 @@ Runbooks: RB-17 (consents), RB-19 (bridge failure).
   (the frame's tabs, flag-gated); the export's field-profile hook is `export_fields`.
 - Engines: `compute/individual` (mutation scope `tax/individual`, CPA memo `tax-individual@v1`).
 - Flip and rollback: `docs/runbooks/tax-workspace-flip.md`.
+
+## Entity returns (T-05; SPEC-651; T-05-T71)
+The 1065 entity-return workspace (TXP-00, 01, 02, 05, 06, 07, 10, 11), behind `tax.entity_workspace`,
+`tax.workbook_run` and `tax.entity_agents`, and the `tax_entity_returns` entitlement (requires the
+CPA review for a firm that isn't synthetic).
+- **Workbook** (`workbook_service.py`): numbered sheets of review fields on the return; engines
+  write `formula`, `engine_import` or `tb_linked` values, a person writes `human` with a citation
+  note, an agent never writes a cell. Formulas: workpapers' E13 engine (see its README).
+- **Run** (`entity_run_plan.py`, `run_steps.py`): P-10's engagement run with the
+  `tax.entity_workbook` provider, ten code steps in six groups, at most 3 at once, `keep_human` on
+  every step; a model-backed step without both §7216 consents becomes the `consent_7216` question.
+- **Edits, imports, fixes** (`cell_edit.py`, `workbook_imports.py`, `workbook_fix.py`): a person's
+  bounded edit with a checkpoint; hostile CSV/xlsx imports as `engine_import` cells; the fix flow's
+  closed-grammar instructions proposed by the run and applied on approval.
+- **Structure and capital** (`allocation_structure.py`, `entity_partners.py`,
+  `entity_schedules.py`): ownership periods, the allocation structure approved by an L3 sign-off,
+  Schedule K, capital and M-2.
+- **TRI** (`entity_tri.py`): every workbook value, memo section and K-1 box is Restricted `tri`;
+  every model call names `entity_return_subjects` (DEC-4928).
+- **Final approval** (`entity_guards.py`): the L4 blockers (trial balance, unmapped accounts,
+  structure not approved, tie-out off unacknowledged …), owned by `approval.py`.
+- **Export** (`workbook_export.py`): Open in Excel through `workpapers.api.render_workbook`,
+  fresh MFA, audited with the file's SHA-256.
+- **Still to land:** the CCH file-bridge export section and the reconciliation to the engine of
+  record (T-05-T60, T61) and the Ridgeline slice 2 (T-05-T62), open in S43; this section grows with
+  them (T-05-T71 part 2). Operating runbook: `docs/runbooks/entity-return-workbook.md`.
+
