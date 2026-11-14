@@ -520,3 +520,50 @@ __all__ = [
     "workbook_form",
     "written_amounts",
 ]
+
+
+# --- T-05-T62 (DEC-4937): the synthetic-only fix recorder ----------------------------------------
+
+
+async def record_synthetic_fix(
+    person: object, engagement_id: UUID, return_id: UUID, adds: Mapping[str, Decimal]
+) -> int:
+    """The scenario loader's approved fix for the Brightwater Hale tenant (TXP-00 B): each cell
+    of `adds` takes its current value plus the amount as the approver's value (`human`), the
+    dependents are recomputed, the memo's staleness is checked and the approver's checkpoint
+    "Fix approved by …" is saved, as `apply_fix` does after a person's approval. The scenario
+    records Run 3 through agents' recorder, so no re-run is started here. Refuses every firm that
+    is not synthetic (404)."""
+    from abacus.kernel.errors import NotFound
+    from abacus.modules.identity.api import AuthContext, display_names, is_synthetic_firm
+    from abacus.modules.review.api import current_values, save_checkpoint
+    from abacus.modules.tax.memo_service import check_stale
+
+    if not isinstance(person, AuthContext) or not await is_synthetic_firm(person.tenant):
+        raise NotFound("workbook")
+    form = await workbook_form(person.tenant, return_id)
+    if form is None:
+        raise NotFound("workbook")
+    values = await current_values(person.tenant, WORKBOOK, return_id)
+    fixed = {key: _decimal(values.get(key)) or Decimal(0) for key in adds}
+    fixed = {key: (fixed[key] or Decimal(0)) + amount for key, amount in adds.items()}
+    names = await display_names([person.user_id])
+    note = f"Fix approved by {names.get(person.user_id, 'A person')}"
+    dependents = recompute(form, values, dict(fixed))
+    writes = [CellWrite(k, v, "human", citation_note=note) for k, v in fixed.items()] + [
+        CellWrite(k, v, "formula", formula=str(values[f"{k}:f"]["v"]))
+        for k, v in dependents.items()
+        if values.get(f"{k}:f", {}).get("v")
+    ]
+    async with uow(person.tenant) as tx:
+        await write_cells(tx, engagement_id=engagement_id, return_id=return_id, writes=writes,
+                          on_behalf_of_user_id=person.user_id)  # fmt: skip
+        tx.record(
+            "workbook.fix_applied",
+            target=Target(WORKBOOK, return_id),
+            after=Ref(cells=len(fixed), recomputed=len(dependents)),
+            scope=Scope(engagement_id=engagement_id),
+        )
+    await check_stale(person.tenant_id, return_id)
+    await save_checkpoint(person, WORKBOOK, return_id, note)
+    return len(fixed)

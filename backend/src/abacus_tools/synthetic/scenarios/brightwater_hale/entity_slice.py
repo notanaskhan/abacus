@@ -19,6 +19,14 @@ assignment's word layers in evidence, T-05-T62); 05's beginning carries the 6/30
 server's 05 has no Transfers column; Pell Street Ventures 2,100,000 - 331,405 = 1,768,595, Pell
 Street II 331,405); TJE-1 rides 06 line 18a (6,200), not a 02 column. Opt-in (`--slice entity`),
 after `tax_board` (the returns).
+
+**Part 2** (T-05-T62; TASK-7942; DEC-4937): the memo drafted (TXP-01's text through tax's
+synthetic-only memo recorder) and adopted by Olivia Brandt on Sep 10, approved by Samuel Ito on
+Sep 14 at 9:40 AM; the M-2 fix approved by Daniel Reyes at 9:51 (each partner's 18a share into 05
+income and ending capital, Item L 6,860,000 → 6,866,200, through the synthetic-only fix recorder,
+which turns the approved memo Stale by code); Run 3 at 9:52 (TXP-00 B); the M-2 review point
+resolved, so TXP-10's badge reads 10. Named snapshots (`epochs.py`): Sep 8 10:02 AM, Sep 10 4:12
+PM, E0 (Sep 14 9:24 AM) and Sep 14 9:52 AM.
 """
 
 from __future__ import annotations
@@ -175,6 +183,19 @@ def _replay(events: list[Event]) -> list[Event]:
 
 RUN_1_AT: Final = datetime(2026, 9, 8, 10, 2, tzinfo=CT)
 RUN_2_AT: Final = datetime(2026, 9, 10, 15, 31, tzinfo=CT)
+# T-05-T62 (part 2, DEC-4937): the memo, its sign-offs, the M-2 fix and Run 3 (DF-34's Sep 14).
+MEMO_DRAFTED_AT: Final = datetime(2026, 9, 10, 16, 20, tzinfo=CT)
+MEMO_ADOPTED_AT: Final = datetime(2026, 9, 10, 16, 40, tzinfo=CT)
+MEMO_APPROVED_AT: Final = datetime(2026, 9, 14, 9, 40, tzinfo=CT)
+FIX_APPROVED_AT: Final = datetime(2026, 9, 14, 9, 51, tzinfo=CT)
+RUN_3_AT: Final = datetime(2026, 9, 14, 9, 52, tzinfo=CT)
+# The M-2 fix (TXP-11 → TXP-00 B): each partner's 18a share of the 6,200 tax-exempt interest
+# joins its 05 income and ending capital, so Item L moves 6,860,000 → 6,866,200.
+FIX_ADDS: Final = tuple(
+    (f"05!{col}{n}", share)
+    for n, share in enumerate(next(s for line, *_r, s in SCHEDULE_K if line == "18a"), start=2)
+    for col in ("E", "F")
+)
 
 
 @register_slice(SLICE)
@@ -204,12 +225,28 @@ def entity_events() -> list[Event]:
               "review.allocation_signed", "SI", SLICE, {"return": RIDGELINE, "level": 3}),
         Event("entity:ridgeline:run2", RUN_2_AT, "agents.entity_run_recorded", "OB", SLICE,
               {"return": RIDGELINE, "run_number": 2, "state": "succeeded"}),
+        # T-05-T62 (part 2): the memo drafted and adopted Sep 10, approved Sep 14 9:40 AM; the
+        # fix approved 9:51; Run 3 at 9:52 (TXP-00 B); the M-2 review point resolved (badge 10).
+        Event("entity:ridgeline:memo", MEMO_DRAFTED_AT, "tax.memo_recorded", "OB", SLICE,
+              {"return": RIDGELINE}),
+        Event("entity:ridgeline:memo-l1", MEMO_ADOPTED_AT, "review.memo_signed", "OB", SLICE,
+              {"return": RIDGELINE, "level": 1}),
+        Event("entity:ridgeline:memo-l2", MEMO_APPROVED_AT, "review.memo_signed", "SI", SLICE,
+              {"return": RIDGELINE, "level": 2}),
+        Event("entity:ridgeline:fix", FIX_APPROVED_AT, "tax.fix_recorded", "DR", SLICE,
+              {"return": RIDGELINE}),
+        Event("entity:ridgeline:run3", RUN_3_AT, "agents.entity_run_recorded", "DR", SLICE,
+              {"return": RIDGELINE, "run_number": 3, "state": "succeeded"}),
+        Event("entity:ridgeline:m2-resolved", RUN_3_AT + timedelta(seconds=30),
+              "review.ridgeline_issue_resolved", "DR", SLICE,
+              {"return": RIDGELINE, "issue": "tax-exempt-interest"}),
     ]  # fmt: skip
     return flags + _replay(events)
 
 
 __all__ = [
     "CAPITAL",
+    "FIX_ADDS",
     "FLAGS",
     "HARBORVIEW",
     "HARBORVIEW_RUNGS",
