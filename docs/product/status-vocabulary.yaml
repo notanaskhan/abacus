@@ -321,6 +321,74 @@ objects:
       done:            {label: "Done",            variant: null, disc: check_olive, terminal: true, derived: false}
       failed:          {label: "Failed",          variant: null, disc: x_brick, terminal: false, derived: false}
 
+  # ---- C-01 close engine (C-01-T03; DF-23, DF-31; SPEC-655 AC-9 to AC-11, QC-6) ----
+  # The six canonical close states are `close` above (blueprint 3.3.1); "On hold" is a side flag,
+  # never a state, and there is no "Closed". CLS-01's four tiles count Approved under In review and
+  # Locked under Delivered (QC-6); the Status chip offers all six.
+  close_flag:   # closes.on_hold: shown beside the status pill, never instead of it
+    source: "C-01 §3 US-1.4; DF-23"
+    codes:
+      on_hold: {label: "On hold", variant: amber, terminal: false, derived: false, context_labels: {with_reason: "On hold · {reason}"}}
+
+  close_procedure:   # the code name of the close_task row (close_procedures; chapter 09 §9.5.3)
+    source: "C-01 §4.2 T09; blueprint 3.3.1 close_task"
+    codes:
+      queued:          {label: "Queued",          variant: null, disc: ring, terminal: false, derived: false}
+      running:         {label: "Running",         variant: null, disc: spinner, terminal: false, derived: false}   # ink-2 spinner, never amber
+      needs_attention: {label: "Needs attention", variant: null, disc: triangle_amber, terminal: false, derived: false}
+      done:            {label: "Done",            variant: null, disc: check_olive, terminal: true, derived: false}
+      failed:          {label: "Failed",          variant: null, disc: x_brick, terminal: false, derived: false}
+
+  close_incorporation:   # request_items.incorporation_state on a close_intake binder (P-06; CLS-03)
+    source: "C-01 §3 US-3.3; CLS-03 a, b"
+    codes:
+      pending:      {label: "Pending incorporation", variant: amber, terminal: false, derived: false}
+      incorporated: {label: "Incorporated", variant: green, terminal: true, derived: false, context_labels: {at: "Incorporated {time}"}}
+      returned:     {label: "Returned · {reason}", variant: red-tint, terminal: false, derived: false}
+
+  close_tally:   # reconciliations.tally and close_schedule_results.tie (CLS-04, CLS-05)
+    source: "C-01 §4.2 T11; CLS-04 a, b, c′, d; CLS-05 a, b, d"
+    codes:
+      pending:          {label: "Pending", variant: muted, terminal: false, derived: false}
+      tie:              {label: "tie", variant: green, terminal: false, derived: false}
+      "off":            {label: "off {amount}", variant: amber, terminal: false, derived: false}
+      ties_once_posted: {label: "Ties once posted", variant: null, disc: conic_dot_amber, text_tone: amber, terminal: false, derived: false}
+      recorded:         {label: "Recorded in QuickBooks", variant: green-tint, terminal: false, derived: false, context_labels: {with_entry: "Recorded in QuickBooks · JE {number}"}}   # DV-1, DV-2: never "posted"
+      reconciled:       {label: "Reconciled", variant: green, terminal: true, derived: false}
+
+  analytic_line:   # CLS-10 flux lines (analytic_lines.status)
+    source: "C-01 §4.2 T11; CLS-10 a to e"
+    codes:
+      within_threshold: {label: "Within threshold", variant: null, disc: check_olive, terminal: false, derived: false}
+      unexplained:      {label: "Unexplained", variant: amber, terminal: false, derived: false}
+      explained_draft:  {label: "Explained · draft", variant: null, disc: ring, terminal: false, derived: false}   # agent draft until a person adopts it
+      explained:        {label: "Explained", variant: state, terminal: false, derived: false}
+      accepted:         {label: "Accepted · {initials}", variant: green, terminal: true, derived: false}   # a Manager or Partner; never the agent
+
+  close_plan_version:   # CLS-09 plan versions
+    source: "C-01 §4.2 T09; CLS-09 a, b, b2, f"
+    codes:
+      draft:     {label: "Draft v{n}", variant: neutral, terminal: false, derived: false}
+      published: {label: "Published v{n}", variant: green, terminal: false, derived: false}
+      discarded: {label: "Discarded", variant: muted, terminal: true, derived: false}
+
+  transaction_question:   # requests.transaction_questions (CLS-06 b, c; POR-11 b, c)
+    source: "C-01 §4.2 T11; CLS-06; POR-11"
+    codes:
+      open:      {label: "Waiting on client", variant: amber, terminal: false, derived: false, client_label: "To do"}
+      answered:  {label: "Client answered", variant: green-tint, terminal: true, derived: false, client_label: "Answered · {time}"}
+      withdrawn: {label: "Withdrawn", variant: muted, terminal: true, derived: false, client_label: "No longer needed"}
+
+  ledger_sync:   # the CLS-02 rail and CLS-04 header sync line (connections sync facts; C9 v2.1)
+    source: "C-01 §3 US-5.1, US-5.2; CLS-02; CLS-04"
+    codes:
+      synced:       {label: "Synced {time} · next {next}", variant: null, terminal: false, derived: true}
+      syncing:      {label: "Syncing…", variant: null, disc: spinner, terminal: false, derived: true}
+      rate_limited: {label: "rate limit · retrying {time}", variant: amber, terminal: false, derived: true}
+      needs_reauth: {label: "Needs reauth", variant: red-tint, terminal: false, derived: true}
+      paused:       {label: "Paused · monthly QuickBooks call budget reached", variant: amber, terminal: false, derived: true}
+      not_connected: {label: "Not connected", variant: muted, terminal: false, derived: true}
+
   proposed_entry:   # AJE
     source: "blueprint 3.3.1"
     codes:
