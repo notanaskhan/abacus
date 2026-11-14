@@ -11,13 +11,7 @@ import { type JSX, useState } from "react";
 import { FormRendererLayout } from "../templates/form-renderer";
 import { MatchScope } from "../tracing/match";
 import { Artboard } from "./portal";
-import {
-  TPL17_DIAGNOSTICS,
-  TPL17_K1S,
-  TPL17_THUMBS,
-  TPL17_TOTAL,
-  tpl17File,
-} from "./tpl17-data";
+import { TPL17_DIAGNOSTICS, TPL17_K1S, TPL17_THUMBS, TPL17_TOTAL, tpl17File } from "./tpl17-data";
 
 export type Tpl17State = "a" | "b" | "c" | "d" | "e" | "f";
 
@@ -30,13 +24,39 @@ interface Board {
 }
 
 export const TPL17_BOARDS: readonly Board[] = [
-  { id: "a", name: "Page 1 with K-1s", note: "Form 1065 · page 1 of 6; the five K-1s tie to Schedule K", page: 1 },
-  { id: "b", name: "Schedule K trace", note: "Pages 4–5: lines 2, 5, 18a, 19a and 20a lit", page: 2 },
+  {
+    id: "a",
+    name: "Page 1 with K-1s",
+    note: "Form 1065 · page 1 of 6; the five K-1s tie to Schedule K",
+    page: 1,
+  },
+  {
+    id: "b",
+    name: "Schedule K trace",
+    note: "Pages 4–5: lines 2, 5, 18a, 19a and 20a lit",
+    page: 2,
+  },
   { id: "c", name: "Diagnostics", note: "1 error and 2 warnings, each with Go to", page: 1 },
-  { id: "d", name: "M-2 as drafted", note: "Page 6: line 9 6,860,000, off 6,200 vs Schedule L", page: 4 },
-  { id: "e", name: "K-1 preview", note: "Jonah Feld, DRAFT · pre-release (in the page image)", page: 5 },
-  { id: "f", name: "Loading", note: "Thumbnails and the page as skeletons", page: 1, loading: true },
-];  // fmt: skip
+  {
+    id: "d",
+    name: "M-2 as drafted",
+    note: "Page 6: line 9 6,860,000, off 6,200 vs Schedule L",
+    page: 4,
+  },
+  {
+    id: "e",
+    name: "K-1 preview",
+    note: "Jonah Feld, DRAFT · pre-release (in the page image)",
+    page: 5,
+  },
+  {
+    id: "f",
+    name: "Loading",
+    note: "Thumbnails and the page as skeletons",
+    page: 1,
+    loading: true,
+  },
+]; // fmt: skip
 
 /** The diagnostics as the layout lists them: the handoff's title, then its body. */
 export const TPL17_LAYOUT_DIAGNOSTICS = TPL17_DIAGNOSTICS.map((d) => ({
@@ -47,7 +67,12 @@ export const TPL17_LAYOUT_DIAGNOSTICS = TPL17_DIAGNOSTICS.map((d) => ({
 function Tpl17({ board }: { board: Board }): JSX.Element {
   const [page, setPage] = useState(board.page);
   return (
-    <Artboard id={`tpl-17${board.id}`} badge={`TPL-17${board.id}`} name={board.name} note={board.note}>
+    <Artboard
+      id={`tpl-17${board.id}`}
+      badge={`TPL-17${board.id}`}
+      name={board.name}
+      note={board.note}
+    >
       <MatchScope>
         <div className="relative h-[800px] w-[1400px] bg-shell" data-tpl17={board.id}>
           <FormRendererLayout

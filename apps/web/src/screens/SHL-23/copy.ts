@@ -45,7 +45,8 @@ export const COPY = {
   noHistory: "No earlier briefs yet.",
   pastBrief: (day: string) => `Brief for ${day} · read only`,
   thinking: "Accrued Agent is answering…",
-  readOnly: "I can't approve, sign off or send from Today. Those stay with you on their own screens.",
+  readOnly:
+    "I can't approve, sign off or send from Today. Those stay with you on their own screens.",
   openSignOff: "Open sign-off",
   askFailed: "I couldn't answer that just now.",
 } as const;

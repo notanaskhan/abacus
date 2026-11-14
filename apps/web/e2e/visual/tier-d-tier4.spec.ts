@@ -8,15 +8,20 @@ import { openGallery, specimen } from "./support";
 async function box(target: Locator): Promise<{ x: number; y: number; w: number; h: number }> {
   const b = await target.first().boundingBox();
   if (b === null) throw new Error("no box");
-  return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) };
+  return {
+    x: Math.round(b.x),
+    y: Math.round(b.y),
+    w: Math.round(b.width),
+    h: Math.round(b.height),
+  };
 }
 
 test("T13 (TPL-13a): the 42 h subbar above one full-width pane", async ({ page }) => {
   await openGallery(page);
   const board = specimen(page, "tpl-13", "[data-artboard='tpl-13a']");
   await expect(board.locator("[data-calendar]")).toBeVisible();
-  const sub = board.getByRole("group").first();
-  expect((await box(sub)).h).toBeLessThanOrEqual(42);
+  // T13's subbar (the month stepper, Today and the view switch) is 42 high.
+  expect((await box(board.locator("[data-subbar]"))).h).toBe(42);
 });
 
 for (const st of ["a", "b", "f"] as const) {
@@ -40,6 +45,8 @@ for (const st of ["a", "b", "c", "d", "e"] as const) {
     expect((await box(rail)).w).toBe(120);
     const thumb = await box(rail.getByRole("button").first());
     expect([thumb.w, thumb.h]).toEqual([96, 124]);
-    expect((await box(board.locator("[data-diagnostics]").locator(".."))).w).toBeLessThanOrEqual(330);
+    expect((await box(board.locator("[data-diagnostics]").locator(".."))).w).toBeLessThanOrEqual(
+      330,
+    );
   });
 }

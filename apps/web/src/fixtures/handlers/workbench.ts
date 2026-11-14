@@ -63,7 +63,8 @@ export function workbenchHandlers(
     // season progress reads WB-01 a (the discovery block and the 1-of-2 question).
     "GET /v1/workbench/sessions/{session_id}": ({ params }) => {
       if (params.session_id === TODAY_SESSION.id) return json(TODAY_SESSION);
-      if (params.session_id !== SEASON_SESSION) return json({ detail: { code: "not_found" } }, 404);
+      if (params.session_id !== SEASON_SESSION)
+        return json({ detail: { code: "not_found" } }, 404);
       return json({
         id: SEASON_SESSION,
         title: "TY2025 season progress by office",

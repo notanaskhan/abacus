@@ -46,7 +46,9 @@ export function threadItems(items: readonly SessionItemOut[]): ThreadItem[] {
             ...i,
             payload: {
               ...i.payload,
-              text: NOTICE_WORDS[typeof i.payload["code"] === "string" ? i.payload["code"] : ""] ?? COPY.turnFailed,
+              text:
+                NOTICE_WORDS[typeof i.payload["code"] === "string" ? i.payload["code"] : ""] ??
+                COPY.turnFailed,
             },
           }
         : (i as ThreadItem),
@@ -83,7 +85,9 @@ export const UNAVAILABLE_WORDS: Readonly<Record<string, string>> = {
 };
 
 export function availabilityOf(
-  caps: { items?: readonly { capability: string; available: boolean; reason?: string | null }[] } | undefined,
+  caps:
+    | { items?: readonly { capability: string; available: boolean; reason?: string | null }[] }
+    | undefined,
   capability = "workbench.assistant",
 ): { reason: string | null; consent: boolean } {
   const hit = caps?.items?.find((c) => c.capability === capability);
@@ -121,7 +125,9 @@ export function Thread({
   const [approved, setApproved] = useState<{ proposal: string; decision: string } | null>(null);
   const available = availabilityOf(caps.data);
   const retry = useMutation(retryStepMutation());
-  const [editing, setEditing] = useState<{ seq: number; nonce: number; text: string } | null>(null);
+  const [editing, setEditing] = useState<{ seq: number; nonce: number; text: string } | null>(
+    null,
+  );
   const items = snapshot?.items ?? [];
   const asked = openQuestion(items);
   const question = asked === null ? null : questionOf(asked);
@@ -163,41 +169,56 @@ export function Thread({
       items={threadItems(items)}
       locked={snapshot?.locked === true}
       {...(questionCard !== null || undoLine !== null
-        ? { above: <>{undoLine}{questionCard}</> }
+        ? {
+            above: (
+              <>
+                {undoLine}
+                {questionCard}
+              </>
+            ),
+          }
         : {})}
       {...(editing === null ? {} : { draft: { text: editing.text, nonce: editing.nonce } })}
       {...(available.reason === null ? {} : { composerDisabledReason: available.reason })}
       {...(available.consent && onRequestConsent !== undefined
         ? {
             composerAction: (
-              <button type="button" onClick={onRequestConsent} className="text-ink hover:underline">
+              <button
+                type="button"
+                onClick={onRequestConsent}
+                className="text-ink hover:underline"
+              >
                 {COPY.requestConsent}
               </button>
             ),
           }
         : {})}
       slots={{
-        plan: planSlot ?? ((item) => (
-          <div data-row="plan" className="rounded-[12px] bg-card p-[12px] text-[13px] shadow-e1">
-            <p className="font-medium text-ink">{COPY.planReady}</p>
-            {item.run_id ? (
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenRun(item.run_id ?? "");
-                }}
-                className="mt-[4px] text-[12.5px] text-ink-2 hover:underline"
-              >
-                {COPY.viewRun}
-              </button>
-            ) : null}
-          </div>
-        )),
+        plan:
+          planSlot ??
+          ((item) => (
+            <div data-row="plan" className="rounded-[12px] bg-card p-[12px] text-[13px] shadow-e1">
+              <p className="font-medium text-ink">{COPY.planReady}</p>
+              {item.run_id ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenRun(item.run_id ?? "");
+                  }}
+                  className="mt-[4px] text-[12.5px] text-ink-2 hover:underline"
+                >
+                  {COPY.viewRun}
+                </button>
+              ) : null}
+            </div>
+          )),
         question: () => null, // the open one is above the composer; answered ones read as turns
       }}
       onOpenRun={onOpenRun}
       onArtifact={(artifactId, intent) => {
-        const row = items.find((i) => i.kind === "artifact" && i.payload["artifact_id"] === artifactId);
+        const row = items.find(
+          (i) => i.kind === "artifact" && i.payload["artifact_id"] === artifactId,
+        );
         if (intent === "open") {
           onOpenArtifact?.(artifactId);
           return;
@@ -238,11 +259,7 @@ export function Thread({
       {...(owner
         ? {
             onSend: (body: string) => {
-              void post.post(
-                sessionId,
-                body,
-                editing === null ? {} : { editsSeq: editing.seq },
-              );
+              void post.post(sessionId, body, editing === null ? {} : { editsSeq: editing.seq });
               setEditing(null);
             },
             onEditResend: (seq: number, text: string) => {

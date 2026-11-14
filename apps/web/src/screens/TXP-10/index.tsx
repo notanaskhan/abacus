@@ -11,7 +11,15 @@ import type {
   WorkbookReturnIssueOut,
   WorkbookReturnIssuesOut,
 } from "@abacus/api-client";
-import { AgentText, Button, EmptyState, Icon, Pill, Spinner, time as formatTime } from "@abacus/ui";
+import {
+  AgentText,
+  Button,
+  EmptyState,
+  Icon,
+  Pill,
+  Spinner,
+  time as formatTime,
+} from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { COPY, SEVERITY, STATUS } from "./copy";
 
@@ -63,7 +71,9 @@ function Row({
           className={`mt-[3px] h-[13px] w-[13px] flex-none rounded-full border ${done ? "border-green bg-green" : "border-stroke"}`}
         />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className={`line-clamp-2 text-[13px] leading-[1.32] ${done ? "text-ink-2" : "text-ink"}`}>
+          <span
+            className={`line-clamp-2 text-[13px] leading-[1.32] ${done ? "text-ink-2" : "text-ink"}`}
+          >
             {issue.title}
           </span>
           {issue.step ? <span className="text-[11.5px] text-ink-3">{issue.step}</span> : null}
@@ -115,13 +125,21 @@ function Detail({
       <header className="flex h-[46px] flex-none items-center px-[14px]">
         <span className="flex-1 text-center text-[14.5px] font-medium text-ink">{COPY.issue}</span>
         {open ? (
-          <Button variant="primary" size="sm" onClick={() => { setResolving(true); }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setResolving(true);
+            }}
+          >
             {COPY.resolve}
           </Button>
         ) : null}
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <h2 className={`border-b border-hair px-[14px] py-[12px] text-[15px] leading-[1.3] font-medium ${open ? "text-ink" : "text-ink-2"}`}>
+        <h2
+          className={`border-b border-hair px-[14px] py-[12px] text-[15px] leading-[1.3] font-medium ${open ? "text-ink" : "text-ink-2"}`}
+        >
           {issue.title}
           {!open ? <Pill variant="green-tint">{COPY.resolved}</Pill> : null}
         </h2>
@@ -132,14 +150,20 @@ function Detail({
               <button
                 type="button"
                 disabled={!open}
-                onClick={() => { setPicking(!picking); }}
+                onClick={() => {
+                  setPicking(!picking);
+                }}
                 className="inline-flex items-center gap-[6px] text-ink"
               >
                 {issue.assignee?.name ?? "—"}
                 {open ? <Icon name="chevron-down" size={12} /> : null}
               </button>
               {picking ? (
-                <ul role="listbox" aria-label={COPY.assignedTo} className="absolute z-10 mt-[4px] w-[260px] rounded-[10px] bg-card py-[4px] shadow-e2">
+                <ul
+                  role="listbox"
+                  aria-label={COPY.assignedTo}
+                  className="absolute z-10 mt-[4px] w-[260px] rounded-[10px] bg-card py-[4px] shadow-e2"
+                >
                   {(assignees ?? []).map((o) => (
                     <li key={`${o.kind}:${o.id ?? "agent"}`}>
                       <button
@@ -153,7 +177,9 @@ function Detail({
                         className="flex w-full flex-col px-[10px] py-[6px] text-left hover:bg-nested"
                       >
                         <span className="text-[13px] text-ink">{o.name}</span>
-                        {o.detail ? <span className="text-[11.5px] text-ink-3">{o.detail}</span> : null}
+                        {o.detail ? (
+                          <span className="text-[11.5px] text-ink-3">{o.detail}</span>
+                        ) : null}
                       </button>
                     </li>
                   ))}
@@ -212,7 +238,10 @@ function Detail({
         {fix !== null ? (
           <Band title={COPY.proposedFix}>
             {fixing ? (
-              <p data-agent-fixing className="flex items-center gap-[6px] text-[12.5px] text-ink-2">
+              <p
+                data-agent-fixing
+                className="flex items-center gap-[6px] text-[12.5px] text-ink-2"
+              >
                 <Spinner label={fix.label} size={10} />
                 {`${fix.label} · ${COPY.agentFixing}`}
               </p>
@@ -232,7 +261,10 @@ function Detail({
         ) : null}
         {waiting && detail?.client_wording ? (
           <Band title={COPY.clientRequest}>
-            <div data-por04-preview className="rounded-[10px] bg-card p-[10px] text-[12.5px] text-ink shadow-e1">
+            <div
+              data-por04-preview
+              className="rounded-[10px] bg-card p-[10px] text-[12.5px] text-ink shadow-e1"
+            >
               {detail.client_wording}
             </div>
             <div className="mt-[8px] flex gap-[6px]">
@@ -249,18 +281,30 @@ function Detail({
           </Band>
         ) : null}
         {resolving ? (
-          <div role="dialog" aria-label={COPY.noteLabel} className="m-[14px] rounded-[10px] bg-card p-[12px] shadow-e2">
+          <div
+            role="dialog"
+            aria-label={COPY.noteLabel}
+            className="m-[14px] rounded-[10px] bg-card p-[12px] shadow-e2"
+          >
             <label className="flex flex-col gap-[4px] text-[12px] text-ink-2">
               {COPY.noteLabel}
               <textarea
                 value={note}
                 placeholder={COPY.notePlaceholder}
-                onChange={(e) => { setNote(e.target.value); }}
+                onChange={(e) => {
+                  setNote(e.target.value);
+                }}
                 className="min-h-[72px] rounded-[8px] bg-nested p-[8px] text-[12.5px] text-ink"
               />
             </label>
             <div className="mt-[8px] flex justify-end gap-[6px]">
-              <Button variant="ghost" size="sm" onClick={() => { setResolving(false); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setResolving(false);
+                }}
+              >
                 {COPY.cancel}
               </Button>
               <Button
@@ -291,14 +335,22 @@ function Detail({
 }
 
 export function TXP10(props: TXP10Props): JSX.Element {
-  const { queue, selectedId, detail, showResolved, query, onQuery, onShowResolved, onSelect } = props;
+  const { queue, selectedId, detail, showResolved, query, onQuery, onShowResolved, onSelect } =
+    props;
   const items = queue?.items ?? [];
   const selected = items.find((i) => i.id === selectedId) ?? null;
   const sections = queue?.sections ?? [];
   const resolved = items.filter((i) => !OPEN.has(i.status));
   return (
-    <div data-screen="TXP-10" data-badge={queue?.open_total ?? 0} className="flex min-h-0 flex-1 gap-[8px]">
-      <aside aria-label={COPY.issues} className="flex w-[470px] flex-none flex-col rounded-[12px] bg-card shadow-e1">
+    <div
+      data-screen="TXP-10"
+      data-badge={queue?.open_total ?? 0}
+      className="flex min-h-0 flex-1 gap-[8px]"
+    >
+      <aside
+        aria-label={COPY.issues}
+        className="flex w-[470px] flex-none flex-col rounded-[12px] bg-card shadow-e1"
+      >
         <header className="flex h-[46px] flex-none items-center gap-[6px] px-[10px]">
           <input
             aria-label={COPY.search}
@@ -307,7 +359,9 @@ export function TXP10(props: TXP10Props): JSX.Element {
             onChange={(e) => onQuery?.(e.target.value)}
             className="h-[28px] w-[120px] rounded-[7px] bg-nested px-[8px] text-[12.5px]"
           />
-          <span className="flex-1 text-center text-[14.5px] font-medium text-ink">{COPY.issues}</span>
+          <span className="flex-1 text-center text-[14.5px] font-medium text-ink">
+            {COPY.issues}
+          </span>
           <Button variant="ghost" size="sm" onClick={() => onShowResolved?.(!showResolved)}>
             {showResolved ? COPY.hideResolved : COPY.showResolved}
           </Button>
@@ -326,7 +380,12 @@ export function TXP10(props: TXP10Props): JSX.Element {
                   {items
                     .filter((i) => i.section === s.key && OPEN.has(i.status))
                     .map((i) => (
-                      <Row key={i.id} issue={i} selected={i.id === selectedId} onSelect={onSelect} />
+                      <Row
+                        key={i.id}
+                        issue={i}
+                        selected={i.id === selectedId}
+                        onSelect={onSelect}
+                      />
                     ))}
                 </ul>
               </section>
@@ -336,7 +395,9 @@ export function TXP10(props: TXP10Props): JSX.Element {
             <section data-section="resolved">
               <h3 className="flex h-[34px] items-center bg-band px-[12px] text-[14px] font-medium text-ink">
                 <span className="flex-1">{COPY.resolved}</span>
-                <span className="text-[12px] text-ink-3 tabular-nums">{queue?.resolved_total ?? resolved.length}</span>
+                <span className="text-[12px] text-ink-3 tabular-nums">
+                  {queue?.resolved_total ?? resolved.length}
+                </span>
               </h3>
               <ul>
                 {resolved.map((i) => (

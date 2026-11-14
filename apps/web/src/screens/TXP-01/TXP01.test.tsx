@@ -82,7 +82,11 @@ describe("TXP-01 Review › Summary", () => {
   it("D: the stale banner lists the changed figure and regenerates only those sections", () => {
     const regenerate = vi.fn();
     render(
-      <TXP01 memo={ridgelineMemo("stale")} general={RIDGELINE_GENERAL} onRegenerate={regenerate} />,
+      <TXP01
+        memo={ridgelineMemo("stale")}
+        general={RIDGELINE_GENERAL}
+        onRegenerate={regenerate}
+      />,
     );
     const banner = document.querySelector("[data-stale-banner]");
     expect(banner?.textContent).toContain("Ending capital 6,860,000 → 6,866,200");

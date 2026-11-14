@@ -718,11 +718,10 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 
 ### Tier-4 close-out (F-07-T19 to F-07-T23)
 
-| Date       | Item            | Decision |
-| ---------- | --------------- | -------- |
-| 2026-11-14 | TPL-17 faces    | F-07-T19 (DEC-4944): TPL-17 a–f draw T17 on F-07-T15's six rendered faces and manifest; each traced field is a viewer region by its manifest `match_id`; K-1 rows carry the handoff's figures as written with the server's tie state. |
-| 2026-11-14 | Watermark       | The K-1 preview (TPL-17e) shows the draft mark only as the server's page image carries it; the specimen draws no overlay (F-07-T23 removed one). |
-| 2026-11-14 | Consumer tests  | F-07-T21: the tier-4 view models' fields are asserted in the providers' contracts shard; T-06 and T-08 get contract requests in `docs/contracts/requests/`. |
-| 2026-11-14 | Lock            | F-07-T22: Tier B locked for TPL-13 (a, a′, b–f), TPL-14 (a–f) and TPL-17 (a–f, page body masked); Tier D for T13, T14, T17; axe on every board and the open day popover. |
-| 2026-11-14 | Thread props    | W-02-T17/T22 added `onEditResend`, `composerDisabledReason` and `composerAction` to `ChatThread` (additive). |
-
+| Date       | Item           | Decision                                                                                                                                                                                                                              |
+| ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-14 | TPL-17 faces   | F-07-T19 (DEC-4944): TPL-17 a–f draw T17 on F-07-T15's six rendered faces and manifest; each traced field is a viewer region by its manifest `match_id`; K-1 rows carry the handoff's figures as written with the server's tie state. |
+| 2026-11-14 | Watermark      | The K-1 preview (TPL-17e) shows the draft mark only as the server's page image carries it; the specimen draws no overlay (F-07-T23 removed one).                                                                                      |
+| 2026-11-14 | Consumer tests | F-07-T21: the tier-4 view models' fields are asserted in the providers' contracts shard; T-06 and T-08 get contract requests in `docs/contracts/requests/`.                                                                           |
+| 2026-11-14 | Lock           | F-07-T22: Tier B locked for TPL-13 (a, a′, b–f), TPL-14 (a–f) and TPL-17 (a–f, page body masked); Tier D for T13, T14, T17; axe on every board and the open day popover.                                                              |
+| 2026-11-14 | Thread props   | W-02-T17/T22 added `onEditResend`, `composerDisabledReason` and `composerAction` to `ChatThread` (additive).                                                                                                                          |

@@ -100,7 +100,11 @@ export function usePostMessage() {
   return {
     ...m,
     /** W-02-T17: `answersSeq` answers an open question; `editsSeq` resends an edited message. */
-    post: (sessionId: string, body: string, opts: { answersSeq?: number; editsSeq?: number } = {}) =>
+    post: (
+      sessionId: string,
+      body: string,
+      opts: { answersSeq?: number; editsSeq?: number } = {},
+    ) =>
       m.mutateAsync({
         path: { session_id: sessionId },
         body: {

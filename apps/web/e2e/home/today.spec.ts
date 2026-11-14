@@ -7,7 +7,11 @@ import { type Page, expect, test } from "@playwright/test";
 
 const SERIOUS = new Set(["serious", "critical"]);
 
-test.use({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
+test.use({
+  viewport: { width: 1440, height: 900 },
+  deviceScaleFactor: 1,
+  reducedMotion: "reduce",
+});
 
 async function board(page: Page, screen: "HOME-05" | "SHL-23", st: string) {
   await page.goto(`/components/screens/${screen}?st=${st}&frame=1&static=1`);
@@ -17,7 +21,9 @@ async function board(page: Page, screen: "HOME-05" | "SHL-23", st: string) {
 }
 
 async function axeClean(page: Page, st: string): Promise<void> {
-  const { violations } = await new AxeBuilder({ page }).include(`[data-artboard='${st}']`).analyze();
+  const { violations } = await new AxeBuilder({ page })
+    .include(`[data-artboard='${st}']`)
+    .analyze();
   expect(violations.filter((v) => SERIOUS.has(v.impact ?? "")).map((v) => v.id)).toEqual([]);
 }
 
@@ -55,7 +61,9 @@ test("building, then the quiet day (SHL-23 7 and 6)", async ({ page }) => {
   await expect(quiet.getByText("Nothing needs you first.")).toBeVisible();
 });
 
-test("the drill-in: Basis reserved, Assign opens the prefilled to-do (SHL-23 2)", async ({ page }) => {
+test("the drill-in: Basis reserved, Assign opens the prefilled to-do (SHL-23 2)", async ({
+  page,
+}) => {
   const b = await board(page, "SHL-23", "2");
   await expect(b.getByText("Reserved to you — not assignable")).toBeVisible();
 });

@@ -204,6 +204,8 @@ import {
   scenarios as cli08Scenarios,
 } from "./CLI-08/scenarios";
 import { HOME01 } from "./HOME-01";
+import { HOME05 } from "./HOME-05";
+import { scenarios as home05Scenarios } from "../fixtures/scenarios/HOME-05";
 import {
   type Home01State,
   OFFICE as HOME01_OFFICE,
@@ -1633,6 +1635,35 @@ function Home01Artboard({ params }: { params: FixtureParams }): JSX.Element | nu
 }
 
 registerScreen("HOME-01", { title: "Home dashboard", Component: Home01Artboard });
+
+// I-02-T21 (TASK-7952): HOME-05's artboards a–f on their fixture scenarios, for Tier D and axe.
+// c opens collapsed; f is the flag-off fallback (its scenario answers 404 on every Today route).
+const HOME05_STATES = ["a", "b", "c", "d", "e", "f"] as const;
+type Home05State = (typeof HOME05_STATES)[number];
+
+function Home05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Home05State = HOME05_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      home05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div data-artboard={state} className="flex min-h-0 flex-1 flex-col">
+      <HOME05 key={state} initialCollapsed={state === "c"} />
+    </div>
+  );
+}
+
+registerScreen("HOME-05", { title: "Home with Today brief", Component: Home05Artboard });
 
 function Home02Frame({ state }: { state: Home02State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

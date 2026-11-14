@@ -64,20 +64,53 @@ const DRAFT = "Draft K-1 · pre-release";
 
 /** The K-1 list (box 2 · box 5 · box 18A · box 19A), the handoff's figures as written. */
 export const TPL17_K1S: readonly (K1ListRow & { boxes: readonly string[]; handoff: string })[] = [
-  { id: "ridgeline-gp", name: "Ridgeline GP LLC", amount: "24632", status: DRAFT,
-    boxes: ["24632", "368", "124", "12000"], handoff: "—" },
-  { id: "meera-shah", name: "Meera Shah", amount: "468008", status: DRAFT,
-    boxes: ["468008", "6992", "2356", "228000"], handoff: "→ Shah 1040 · draft" },
-  { id: "pell-street-ventures", name: "Pell Street Ventures LLC", amount: "400270", status: DRAFT,
-    boxes: ["400270", "5980", "2015", "180000"], handoff: "—" },
-  { id: "pell-street-ii", name: "Pell Street II LLC (7/1–12/31)", amount: "30790", status: DRAFT,
-    boxes: ["30790", "460", "155", "30000"], handoff: "—" },
-  { id: "jonah-feld", name: "Jonah Feld", amount: "307900", status: DRAFT,
-    boxes: ["307900", "4600", "1550", "150000"], handoff: "→ Feld 1040 · draft" },
-];  // fmt: skip
+  {
+    id: "ridgeline-gp",
+    name: "Ridgeline GP LLC",
+    amount: "24632",
+    status: DRAFT,
+    boxes: ["24632", "368", "124", "12000"],
+    handoff: "—",
+  },
+  {
+    id: "meera-shah",
+    name: "Meera Shah",
+    amount: "468008",
+    status: DRAFT,
+    boxes: ["468008", "6992", "2356", "228000"],
+    handoff: "→ Shah 1040 · draft",
+  },
+  {
+    id: "pell-street-ventures",
+    name: "Pell Street Ventures LLC",
+    amount: "400270",
+    status: DRAFT,
+    boxes: ["400270", "5980", "2015", "180000"],
+    handoff: "—",
+  },
+  {
+    id: "pell-street-ii",
+    name: "Pell Street II LLC (7/1–12/31)",
+    amount: "30790",
+    status: DRAFT,
+    boxes: ["30790", "460", "155", "30000"],
+    handoff: "—",
+  },
+  {
+    id: "jonah-feld",
+    name: "Jonah Feld",
+    amount: "307900",
+    status: DRAFT,
+    boxes: ["307900", "4600", "1550", "150000"],
+    handoff: "→ Feld 1040 · draft",
+  },
+]; // fmt: skip
 
 /** Total = Schedule K (the server's tie state; the specimen never sums). */
-export const TPL17_TOTAL = { boxes: ["1231600", "18400", "6200", "600000"], state: "tie" as const };
+export const TPL17_TOTAL = {
+  boxes: ["1231600", "18400", "6200", "600000"],
+  state: "tie" as const,
+};
 
 export const TPL17_DIAGNOSTICS: readonly (FormDiagnostic & { title: string })[] = [
   {

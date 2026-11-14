@@ -34,7 +34,10 @@ export function Issues({
   const [query, setQuery] = useState("");
   const [showResolved, setShowResolved] = useState(false);
   const queue = useQuery(
-    entityIssuesOptions({ path, query: { show_resolved: showResolved, ...(query ? { q: query } : {}) } }),
+    entityIssuesOptions({
+      path,
+      query: { show_resolved: showResolved, ...(query ? { q: query } : {}) },
+    }),
   );
   const detail = useQuery({
     ...issueOptions({ path: { issue_id: selected ?? "" } }),
@@ -42,7 +45,9 @@ export function Issues({
   });
   const assignees = useQuery(entityIssueAssigneesOptions({ path }));
   const refresh = () => {
-    void client.invalidateQueries({ queryKey: entityIssuesOptions({ path }).queryKey.slice(0, 1) });
+    void client.invalidateQueries({
+      queryKey: entityIssuesOptions({ path }).queryKey.slice(0, 1),
+    });
     if (selected !== null) {
       void client.invalidateQueries({
         queryKey: issueOptions({ path: { issue_id: selected } }).queryKey,

@@ -16,9 +16,19 @@ const PLAN: RunPlanOut = {
   version: 1,
   state: "proposed",
   steps: [
-    { key: "s1", label: "Read TY2025 returns, engagements and binders (read-only)", level: 0, writes: false },
+    {
+      key: "s1",
+      label: "Read TY2025 returns, engagements and binders (read-only)",
+      level: 0,
+      writes: false,
+    },
     { key: "s2", label: "Group open returns by stage and office", level: 1, writes: false },
-    { key: "s3", label: "Build the workbook: Summary, Gather, Prepare, Review, Deliver", level: 2, writes: false },
+    {
+      key: "s3",
+      label: "Build the workbook: Summary, Gather, Prepare, Review, Deliver",
+      level: 2,
+      writes: false,
+    },
     { key: "s4", label: "Save the workbook to Files", level: 3, writes: true },
   ],
   sources: [],
@@ -32,7 +42,8 @@ const PLAN: RunPlanOut = {
     {
       step_key: "s4",
       action: "file.propose",
-      label: "Create file TY2025 Season Progress — by office.xlsx in Files › Firm reports › TY2025 season",
+      label:
+        "Create file TY2025 Season Progress — by office.xlsx in Files › Firm reports › TY2025 season",
       approver_name: "Hannah Leclerc",
     },
   ],
@@ -72,7 +83,12 @@ describe("WB-03 run arc: the plan card", () => {
   it("g: a cancelled plan reads one muted line", () => {
     render(
       <PlanCardView
-        plan={{ ...PLAN, state: "cancelled", decided_by: "Hannah Leclerc", decided_at: "2026-09-14T14:24:00Z" }}
+        plan={{
+          ...PLAN,
+          state: "cancelled",
+          decided_by: "Hannah Leclerc",
+          decided_at: "2026-09-14T14:24:00Z",
+        }}
         canDecide
       />,
     );
