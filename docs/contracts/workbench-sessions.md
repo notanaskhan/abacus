@@ -97,3 +97,14 @@ No agent, system, support or portal principal holds `session.*` or `run_artifact
 E0 fixtures: `apps/web/src/fixtures/seed/workbench.ts` (WB-01 a–g lists and counts, WB-02 picker
 tabs and attached context, WB-03 d drill and d2 preview), footed in
 `apps/web/src/fixtures/workbench.foot.test.ts`. Consumer tests: W-02-T05.
+
+## Live since W-02-T20 (2026-11-14, DEC-4933)
+Preview, download and drill answer from `agents/run_artifacts.py`. Preview reads the stored
+workbook's values (read-only, formulas never evaluated; a trailing single-value row after a blank
+row is the `footnote`). Download returns the stored bytes and writes one `run_artifact.downloaded`
+`{artifact, sha256}`. Drill: group keys are `<source>:<value>`; tax registers `status` (the
+viewer's returns of the workbook's tax year in that status, TAX-01 visibility, TAX-02 links
+`/tax-returns/{id}`); an unknown group is 422 `drill_group_unknown`; the item stores references
+only (names resolved at read). A firm-level run's artifact is readable only by the person it ran
+for; anyone else reads 404.
+

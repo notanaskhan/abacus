@@ -19,6 +19,10 @@ from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 # P-10-T43 (DEC-4301): a workbench session's turns are runs; workbench runs them inline.
 # P-10-T44 (DEC-4302): frozen trace exports, the run_events prune and A-07's archive hook.
 from abacus.modules.agents.capability_availability import capability_ready as capability_ready
+from abacus.modules.agents.run_artifacts import DrillRow as DrillRow  # W-02-T20
+from abacus.modules.agents.run_artifacts import (
+    register_drill_source as register_drill_source,
+)
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
 from abacus.modules.agents.code_runs import (  # A-07-T32: code-only runs, v1 path
@@ -685,6 +689,8 @@ __all__ = [
     "briefing_fact_id",
     "briefing_why_gone",
     "capability_ready",
+    "DrillRow",
+    "register_drill_source",
     "check",
     "check_live",
     "check_notice_answer",

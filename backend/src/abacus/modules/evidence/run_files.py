@@ -58,6 +58,14 @@ def stored_object(
     return stored
 
 
+async def read_run_artifact(
+    tenant_id: UUID, key: str, version_id: str, sha256: str, size: int
+) -> bytes:
+    """W-02-T20: a run artifact's stored bytes, fingerprint-checked on read (the preview and the
+    download serve exactly what was stored, never a recomputation)."""
+    return await storage.get(tenant_id, stored_object(tenant_id, key, version_id, sha256, size))
+
+
 async def file_approved_copy(
     tx: UnitOfWork,
     *,

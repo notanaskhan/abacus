@@ -112,6 +112,11 @@ filing.register()  # T-01-T36: the `tax_return` envelope source (C7 v1.1)
 
 # F-03-T22: the `tax_return` work-item kind.
 register_work_item_kind("tax_return", TaxReturnKind())
+# W-02-T20 (DEC-4933): a season workbook's `status:<code>` group drills to its returns.
+from abacus.modules.agents.api import register_drill_source  # noqa: E402
+from abacus.modules.tax.board import season_group  # noqa: E402
+
+register_drill_source("status", season_group)
 
 # DEC-121: the audit explorer asks which engagement each `tax_return` target belongs to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)

@@ -288,6 +288,7 @@ from abacus.modules.evidence.run_files import (
     WorkbookTooLarge,
     file_approved_copy,
     store_workbook,
+    read_run_artifact,
     stored_object,
 )
 
@@ -792,6 +793,7 @@ __all__ = [
     "start_trust_layer_backfill",
     "store_generated",
     "store_workbook",
+    "read_run_artifact",
     "stored_object",
     "suggest_by_name",
     "supported_citations",
