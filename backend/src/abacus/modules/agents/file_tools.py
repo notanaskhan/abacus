@@ -63,6 +63,28 @@ FOLDER_LABELS: Final = {
     "correspondence": "Correspondence",
 }
 CellValue = str | int | Decimal | bool | None
+# W-02-T23 (WB-01b, AC-W5): the save question's option key for "Attach it to this session only".
+# A run whose person chose it declares no write outside Workbench: `files.propose_save` refuses.
+ATTACH_ONLY: Final = "attach_only"
+_ATTACH_ONLY_CHOSEN: Final = text(
+    "SELECT EXISTS (SELECT 1 FROM agent_questions WHERE run_id = :run AND state = 'answered' "
+    "AND jsonb_path_exists(answer, '$.** ? (@ == \"attach_only\")'))"
+)
+
+
+def access_sentence(folder: str) -> str:
+    """WB-03d's access sentence, from the folder's access list (AC-W1). An engagement folder is
+    open to the people who can read the engagement (walls and need-to-know, ADR-020); the
+    firm-wide "Office managers in Chicago, Denver and New York" sentence needs a firm folder
+    store, which no row has built yet (W-02 §11 R5)."""
+    label = FOLDER_LABELS.get(folder, folder)
+    return f"The engagement team can open {label}."
+
+
+async def attach_only_chosen(tenant: TenantContext, run_id: UUID) -> bool:
+    """True when the run's person answered the save question "Attach it to this session only"."""
+    async with tenant_session(tenant) as session:
+        return bool(await session.scalar(_ATTACH_ONLY_CHOSEN, {"run": run_id}))
 
 
 def _agent(caller: ToolCaller) -> AgentContext:
@@ -117,6 +139,8 @@ class ProposeSaveIn(BaseModel):
 
 class ProposeSaveOut(BaseModel):
     proposal_id: Annotated[UUID, Int]
+    # W-02-T23 (AC-W1): who can open the folder, computed by code from its access list.
+    access_sentence: Annotated[str, Conf] = ""
 
 
 class SaveApprovedIn(BaseModel):
@@ -236,10 +260,16 @@ async def propose_save(caller: ToolCaller, args: ProposeSaveIn) -> ProposeSaveOu
     """WB-03d's "Save to Files" card: a `file_save` proposal a person decides."""
     agent = _agent(caller)
     engagement = _engagement(agent)
+    if await attach_only_chosen(agent.tenant, agent.agent_run_id):  # AC-W5
+        raise DomainInvalid("save_not_requested")
+    resource = await engagement_resource(agent.tenant, engagement)
+    if not await member_could(agent.tenant_id, agent.initiator.user_id, SAVE, resource):
+        raise DomainInvalid("folder_not_writable")  # AC-Q2: only folders the approver can write
     row = await _artifact(agent.tenant, agent.agent_run_id, args.artifact_id)
     if row.state != "draft":
         raise DomainInvalid("artifact_not_draft")
     name = row.name
+    access = access_sentence(args.folder)
     cites = tuple(UUID(str(c)) for c in row.cites or [])
     proposal = await create_proposal(
         agent,
@@ -258,7 +288,7 @@ async def propose_save(caller: ToolCaller, args: ProposeSaveIn) -> ProposeSaveOu
                 citation_ids=cites,
             )
         ],
-        set_ref={"artifact_id": str(args.artifact_id), "folder": args.folder},
+        set_ref={"artifact_id": str(args.artifact_id), "folder": args.folder, "access": access},
     )
     async with uow(agent.tenant) as tx:
         await tx.session.execute(
@@ -271,7 +301,7 @@ async def propose_save(caller: ToolCaller, args: ProposeSaveIn) -> ProposeSaveOu
             after=Ref(proposal=proposal),
             scope=Scope(engagement_id=engagement),
         )
-    return ProposeSaveOut(proposal_id=proposal)
+    return ProposeSaveOut(proposal_id=proposal, access_sentence=access)
 
 
 _PROPOSAL: Final = text(
