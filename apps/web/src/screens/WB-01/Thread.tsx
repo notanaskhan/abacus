@@ -7,7 +7,7 @@
 // (`nothing_written`, `plans_off`, `today_read_only`) in fixed words, and the person's bubble menu
 // (Copy, Edit and resend). A locked session draws nothing (INV-3); the composer is the owner's.
 import type { SessionItemOut, SessionSnapshotOut } from "@abacus/api-client";
-import { retryStepMutation } from "@abacus/api-client/query";
+import { listCapabilitiesOptions, retryStepMutation } from "@abacus/api-client/query";
 import {
   ChatThread,
   type QuestionAnswer,
@@ -15,7 +15,7 @@ import {
   type QuestionPayload,
   type ThreadItem,
 } from "@abacus/ui";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { usePostMessage } from "../../domain/workbench";
 import { COPY } from "./copy";
@@ -66,16 +66,43 @@ export function questionOf(item: SessionItemOut): QuestionPayload | null {
   return { question_id: q.question_id ?? item.id, ...q, steps: q.steps } as QuestionPayload;
 }
 
+/** W-02-T22 (DF-04): the assistant's availability in words, and whether consent can be asked. */
+export const UNAVAILABLE_WORDS: Readonly<Record<string, string>> = {
+  ai_excluded: COPY.unavailable,
+  ai_policy_off: COPY.unavailable,
+  paused: COPY.paused,
+  consent_7216: COPY.consentOff,
+  not_on_team: COPY.notOnTeam,
+  capability_unavailable: COPY.unavailable,
+};
+
+export function availabilityOf(
+  caps: { items?: readonly { capability: string; available: boolean; reason?: string | null }[] } | undefined,
+  capability = "workbench.assistant",
+): { reason: string | null; consent: boolean } {
+  const hit = caps?.items?.find((c) => c.capability === capability);
+  if (caps === undefined) return { reason: null, consent: false };
+  if (hit === undefined) return { reason: COPY.unavailable, consent: false };
+  if (hit.available) return { reason: null, consent: false };
+  const code = hit.reason ?? "capability_unavailable";
+  return { reason: UNAVAILABLE_WORDS[code] ?? COPY.unavailable, consent: code === "consent_7216" };
+}
+
 export function Thread({
   snapshot,
   sessionId,
   onOpenRun,
+  onRequestConsent,
 }: {
   snapshot: SessionSnapshotOut | undefined;
   sessionId: string;
   onOpenRun: (runId: string) => void;
+  /** W-02-T22: "Request consent" for a permitted role (C19's consent request, a person's act). */
+  onRequestConsent?: () => void;
 }): JSX.Element {
   const post = usePostMessage();
+  const caps = useQuery({ ...listCapabilitiesOptions(), retry: false });
+  const available = availabilityOf(caps.data);
   const retry = useMutation(retryStepMutation());
   const [editing, setEditing] = useState<{ seq: number; nonce: number; text: string } | null>(null);
   const items = snapshot?.items ?? [];
@@ -98,6 +125,16 @@ export function Thread({
         ? { above: <QuestionCard question={question} onAnswer={answer} busy={post.isPending} /> }
         : {})}
       {...(editing === null ? {} : { draft: { text: editing.text, nonce: editing.nonce } })}
+      {...(available.reason === null ? {} : { composerDisabledReason: available.reason })}
+      {...(available.consent && onRequestConsent !== undefined
+        ? {
+            composerAction: (
+              <button type="button" onClick={onRequestConsent} className="text-ink hover:underline">
+                {COPY.requestConsent}
+              </button>
+            ),
+          }
+        : {})}
       slots={{
         plan: (item) => (
           <div data-row="plan" className="rounded-[12px] bg-card p-[12px] text-[13px] shadow-e1">
