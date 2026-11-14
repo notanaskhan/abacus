@@ -106,6 +106,21 @@ CLIENTS_TAX_PROFILE = Flag(
     kind="boolean",
     default="false",
 )
+CLOSES_AGENT = Flag(
+    name="closes.agent",
+    kind="boolean",
+    default="false",
+)
+CLOSES_ENGINE = Flag(
+    name="closes.engine",
+    kind="boolean",
+    default="false",
+)
+CLOSES_PORTAL_REQUESTS = Flag(
+    name="closes.portal_requests",
+    kind="boolean",
+    default="false",
+)
 COLLABORATION_V2 = Flag(
     name="collaboration.v2",
     kind="boolean",
@@ -128,6 +143,11 @@ COMPLIANCE_INCIDENTS = Flag(
 )
 COMPLIANCE_LEGAL_HOLDS = Flag(
     name="compliance.legal_holds",
+    kind="boolean",
+    default="false",
+)
+CONNECTIONS_LEDGER_SYNC = Flag(
+    name="connections.ledger_sync",
     kind="boolean",
     default="false",
 )
@@ -576,11 +596,15 @@ FLAGS: dict[str, Flag] = {
     "audits.report_release": AUDITS_REPORT_RELEASE,
     "binders.engine": BINDERS_ENGINE,
     "clients.tax_profile": CLIENTS_TAX_PROFILE,
+    "closes.agent": CLOSES_AGENT,
+    "closes.engine": CLOSES_ENGINE,
+    "closes.portal_requests": CLOSES_PORTAL_REQUESTS,
     "collaboration.v2": COLLABORATION_V2,
     "communications.firm_sender_domain": COMMUNICATIONS_FIRM_SENDER_DOMAIN,
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,
     "compliance.incidents": COMPLIANCE_INCIDENTS,
     "compliance.legal_holds": COMPLIANCE_LEGAL_HOLDS,
+    "connections.ledger_sync": CONNECTIONS_LEDGER_SYNC,
     "connections.live_ledger": CONNECTIONS_LIVE_LEDGER,
     "connections.portal_v2": CONNECTIONS_PORTAL_V2,
     "consents.registry": CONSENTS_REGISTRY,

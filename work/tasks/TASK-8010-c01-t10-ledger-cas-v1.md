@@ -16,7 +16,7 @@ plan_key: C-01-T10
 migration ledger_cas_v1 and sync tables.
 
 ## Plan
-1. [ ] Migration 0881 on 0880, expand-only: ledger_accounts (insert-only), ledger_snapshots period_kind/period, gl_entries register columns, sync_schedules, sync_runs api_calls and dataset widening, connection_meter_usage (epic §4.2 T10).
+1. [ ] Migration 0882 on 0881, expand-only: ledger_accounts (insert-only), ledger_snapshots period_kind/period, gl_entries register columns, sync_schedules, sync_runs api_calls and dataset widening, connection_meter_usage (epic §4.2 T10).
 2. [ ] Registry and IMMUTABLE_TABLES entries.
 Rollback: downgrade; nothing reads the columns yet.
 

@@ -1,0 +1,36 @@
+# The closes module's actions (ADR-027; P-39, F-03-T07). Compiled with every other module's file
+# into identity/authz/_matrix.py by `make regenerate`.
+#
+# C-01-T02, the S44 protected bundle (C-01 §4.3, §4.8; SPEC-655). Every human verb is agent: deny;
+# the agent's only C-01 grants stay suggestion.create, issue.create and decision_card.raise under
+# task_scope (agents.yaml, review.yaml). Platform support and every portal principal are denied on
+# every firm route. CAS closes are non-attest work, so independence is not required (an attest
+# client's entries are held by classify_entry, P-13). Walls and tenant apply as everywhere.
+# QC-3 (staff start runs and incorporate only with close_preparer on that close): function_in
+# binds every allowed role, so staff is denied here until the compiler has a per-role condition
+# (TASK-8002 partial); partners, managers and seniors start runs.
+
+actions:
+  # --- Portfolio and the close record (CLS-01, CLS-02) ---
+  close.read:               {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: task_scope, system: deny}   # CLS-01 rows and tiles, CLS-02 summary, run view, requests tree, accounts, reconciliations, issues facets
+  close.create:             {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: allow}   # POST /v1/engagements/{id}/closes:generate (12 closes; also ENG-03's monthly-close step)
+  close.assign:             {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # PUT /v1/closes/{id}/assignees: close_preparer, close_reviewer (a Senior sees read-only pickers)
+  close.status_move:        {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # POST /v1/closes/{id}/status: In review, back to In progress, the On hold flag (human-only; server gates)
+  # --- Runs (CLS-02 a to e) ---
+  close_run.start:          {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # POST /v1/closes/{id}/runs (human-only; Idempotency-Key)
+  close_run.retry:          {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # retry a failed procedure as a new step (human-only)
+  # --- Close plans and templates (CLS-09) ---
+  close_plan.read:          {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: task_scope, system: deny}   # plan, versions and history
+  close_plan.edit:          {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # drafts, rows, request templates (If-Match)
+  close_plan.request_publish: {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # C13 gate close_plan_publish_requested for Managers and Partners (QC-8)
+  close_plan.publish:       {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # publish a version with effective_from (human-only)
+  close_plan.draft_from_history: {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # a person starts close.agent mode planner; rows arrive as suggestions
+  close_template.import:    {firm_admin: allow, firm_partner: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # POST /v1/close-templates:import (DB content, never a commit)
+  # --- Accounts, schedules, reconciliation (CLS-04, CLS-05) ---
+  arrangement.edit:         {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # O2 drawer: a new arrangement version per edit
+  reconciliation.resolve_item: {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # carry forward or cleared, with a required note (human-only)
+  # --- Flux (CLS-10) ---
+  flux.read:                {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: task_scope, system: deny}   # sets, lines and explanations; flux.xlsx
+  flux.explain:             {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # a person starts close.agent mode flux
+  flux.edit:                {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # a person edits an explanation (If-Match)
+  flux.accept:              {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: deny, system: deny}   # Manager or Partner accepts (human-only; a Senior gets 403)
