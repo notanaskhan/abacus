@@ -117502,7 +117502,9 @@
                 "tax_ownership.edit",
                 "allocation_structure.edit",
                 "tax_memo.edit",
-                "tax_memo.draft"
+                "tax_memo.draft",
+                "tax_memo.adopt",
+                "tax_memo.approve"
               ],
               "type": "string"
             },
@@ -119339,6 +119341,60 @@
         "title": "WorkbookMemoAdoptIn",
         "type": "object"
       },
+      "WorkbookMemoCitationOut": {
+        "additionalProperties": false,
+        "description": "T-05-T59 (additive; DEC-4939): one marker's source as code re-read it: `n` the marker,\n`title` and `loc` rendered by code from the cell, `quote` the cell's value, `match` the cell\naddress TXP-01 lights (SHL-07's display contract, C4 \u00a73.2).",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "loc": {
+            "cls": "internal",
+            "title": "Loc",
+            "type": "string"
+          },
+          "match": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Match"
+          },
+          "n": {
+            "cls": "internal",
+            "title": "N",
+            "type": "integer"
+          },
+          "quote": {
+            "cls": "restricted",
+            "title": "Quote",
+            "type": "string",
+            "x-tri": true
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "n",
+          "title",
+          "loc",
+          "quote"
+        ],
+        "title": "WorkbookMemoCitationOut",
+        "type": "object"
+      },
       "WorkbookMemoDraftIn": {
         "additionalProperties": false,
         "properties": {
@@ -119369,12 +119425,27 @@
                 "tax_ownership.edit",
                 "allocation_structure.edit",
                 "tax_memo.edit",
-                "tax_memo.draft"
+                "tax_memo.draft",
+                "tax_memo.adopt",
+                "tax_memo.approve"
               ],
               "type": "string"
             },
             "title": "Allowed Actions",
             "type": "array"
+          },
+          "memo_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Memo Id"
           },
           "sections": {
             "cls": "restricted",
@@ -119408,6 +119479,12 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -119460,6 +119537,15 @@
             },
             "title": "Citation Ids",
             "type": "array"
+          },
+          "citations": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorkbookMemoCitationOut"
+            },
+            "title": "Citations",
+            "type": "array",
+            "x-tri": true
           },
           "human_owned": {
             "cls": "internal",
@@ -119545,7 +119631,9 @@
                 "tax_ownership.edit",
                 "allocation_structure.edit",
                 "tax_memo.edit",
-                "tax_memo.draft"
+                "tax_memo.draft",
+                "tax_memo.adopt",
+                "tax_memo.approve"
               ],
               "type": "string"
             },
@@ -119772,7 +119860,9 @@
                 "tax_ownership.edit",
                 "allocation_structure.edit",
                 "tax_memo.edit",
-                "tax_memo.draft"
+                "tax_memo.draft",
+                "tax_memo.adopt",
+                "tax_memo.approve"
               ],
               "type": "string"
             },
@@ -275297,16 +275387,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Memo Route",
