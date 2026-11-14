@@ -23,6 +23,7 @@ import {
   type ToolbarProps,
 } from "@abacus/ui";
 import { type JSX, useState } from "react";
+import { PREPARED_WITHOUT_AGENTS } from "../../domain/tax";
 import { COPY } from "./copy";
 
 const m = (id: string): MatchId => `txp01:${id}` as MatchId;
@@ -111,6 +112,10 @@ export interface TXP01Props {
   onOpenLink?: (linkId: string) => void;
   /** The signed-in person (who would approve: INV-1). */
   viewerName?: string;
+  /** T-05-T66: whether the memo drafter may be offered (false while capabilities load). */
+  agentOffered?: boolean;
+  /** T-05-T66: why the memo drafter is not offered (agents off, stage, §7216), or null. */
+  agentReason?: string | null;
 }
 
 export function TXP01({
@@ -125,6 +130,8 @@ export function TXP01({
   onSaveSection,
   onOpenLink,
   viewerName,
+  agentOffered = true,
+  agentReason = null,
 }: TXP01Props): JSX.Element {
   const [confirming, setConfirming] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -149,7 +156,8 @@ export function TXP01({
           }
         : {}),
       edit: actions.has("tax_memo.edit"),
-      regenerate: actions.has("tax_memo.draft"),
+      // T-05-T66: never offer a draft the agent cannot run; the memo stays a person's to write.
+      regenerate: actions.has("tax_memo.draft") && agentOffered,
     },
   };
   return (
@@ -158,6 +166,11 @@ export function TXP01({
       data-state={memo?.status ?? "drafting"}
       className="flex min-h-0 flex-1"
     >
+      {agentReason !== null ? (
+        <p role="note" data-agents-off="tax.memo_drafter" className="text-meta text-ink-2">
+          {PREPARED_WITHOUT_AGENTS} · {agentReason}
+        </p>
+      ) : null}
       <DocumentOnWell
         bare
         document={document}
