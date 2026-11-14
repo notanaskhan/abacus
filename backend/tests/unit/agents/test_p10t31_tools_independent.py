@@ -153,6 +153,8 @@ def _call(agent: AgentContext, name: str, arguments: dict[str, object]) -> ToolC
 INDIRECT: dict[str, str] = {
     "binders.read": "the season's binders through BND-01's visible() index",
     "workpapers.read_section": "the paper's own engagement, refused outside the run's (404)",
+    # W-02-T19 (DEC-4930): firm structure, no client data; `org_structure.list` gates it.
+    "identity.list_offices": "the firm's office names only, no client scope to leave",
 }
 
 

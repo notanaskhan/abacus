@@ -2,8 +2,8 @@
 id: TASK-7956
 title: "F-07-T23: tier-4 docs and hand-off (templates-tier4.md, DECISIONS close-out, skill notes, hand-off notes)"
 plan_key: F-07-T23
-spec: SPEC-652 (F-07 §10)
-acceptance_criteria: [AC]  # a fresh session can start WB-01, HOME-03, CLI-03 or TAX-11 from the doc and skill alone
+spec: SPEC-652  # F-07 §10
+acceptance_criteria: [AC-6]  # a fresh session can start WB-01, HOME-03, CLI-03 or TAX-11 from the doc and skill alone
 risk_zone: amber
 status: in-review
 branch: f07-t23-tier4-docs

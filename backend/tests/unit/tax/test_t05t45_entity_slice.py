@@ -55,7 +55,8 @@ def test_the_slice_replays_facts_then_structures_signoffs_and_runs() -> None:
     kinds = [ev.kind for ev in sorted(events, key=lambda ev: ev.at)]
     assert kinds.index("tax.entity_seeded") < kinds.index("tax.allocation_drafted")
     assert kinds.count("review.allocation_signed") == 4
-    assert kinds.count("agents.entity_run_recorded") == 2
+    # T-05-T62 (DEC-4937) adds Run 3, the re-run after the M-2 fix (TXP-10 D).
+    assert kinds.count("agents.entity_run_recorded") == 3
     assert all(ev.data.get("at") for ev in events)
 
 

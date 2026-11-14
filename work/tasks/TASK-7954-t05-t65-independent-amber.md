@@ -2,8 +2,8 @@
 id: TASK-7954
 title: "T-05-T65: independent AC tests (ADR-078) for AY's amber services part 2 (T-05-T32, T40, T42, T50, T51, T52, T54, T57, T61)"
 plan_key: T-05-T65
-spec: SPEC-651 (T-05 §3 F7–F11)
-acceptance_criteria: [AC]
+spec: SPEC-651  # T-05 §3 F7–F11
+acceptance_criteria: [AC-F7, AC-F8, AC-F9, AC-F10, AC-F11]
 risk_zone: amber
 status: in-review
 branch: t05-t65-independent-amber

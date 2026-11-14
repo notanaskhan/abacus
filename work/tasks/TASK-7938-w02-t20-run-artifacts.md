@@ -2,7 +2,7 @@
 id: TASK-7938
 title: "W-02-T20: run artifacts and drill (preview, audited download, code-rendered drill)"
 plan_key: W-02-T20
-spec: W-02 §3.8, §4.3
+spec: SPEC-653  # W-02 §3.8, §4.3
 acceptance_criteria: [AC-R2, AC-R3, AC-R4]
 risk_zone: red
 status: in-review

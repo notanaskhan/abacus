@@ -47,6 +47,7 @@ from abacus.modules.practice.today.contract import (
     HistoryPage,
     HistoryRow,
     LeadFact,
+    LeadKey,
     TodayVM,
 )
 
@@ -444,14 +445,14 @@ async def _downstream(
 
 __all__ = [
     "CELLS",
-    "QuestionContext",
-    "question_context",
-    "question_lines",
     "Item",
+    "QuestionContext",
     "assemble",
     "cards_of",
     "cell_of",
     "drill",
+    "question_context",
+    "question_lines",
     "row_of",
     "tone_of",
     "urgency",
@@ -528,7 +529,7 @@ async def _ask_availability(ctx: AuthContext) -> Availability:
     return Availability(narrative=True, ask=True)
 
 
-async def history(ctx: AuthContext, before: date | None, limit: int) -> HistoryPage:
+async def past_briefs(ctx: AuthContext, before: date | None, limit: int) -> HistoryPage:
     """Earlier briefs by day, the viewer's own, 90 days at most (Q3), newest first."""
     from abacus.modules.agents.api import briefing_snapshots_of
 
@@ -536,8 +537,12 @@ async def history(ctx: AuthContext, before: date | None, limit: int) -> HistoryP
     rows = await briefing_snapshots_of(ctx, before or today, limit + 1, today)
     page = rows[:limit]
     return HistoryPage(
-        items=[HistoryRow(brief_id=r.id, brief_date=r.brief_date, built_at=r.built_at,
-                          counts=r.counts) for r in page],  # fmt: skip
+        items=[
+            HistoryRow(
+                brief_id=r.id, brief_date=r.brief_date, built_at=r.built_at, counts=r.counts
+            )
+            for r in page
+        ],
         next_cursor=page[-1].brief_date.isoformat() if len(rows) > limit else None,
     )
 
@@ -578,13 +583,18 @@ async def past_brief(ctx: AuthContext, brief_id: UUID) -> TodayVM:
         first_name=first,
         items=sum(found.counts.get(c, 0) for c in CELLS[:-1]),
         engagements=len(cards),
-        cells=[CountCell(kind=c, count=found.counts.get(c, 0), href=f"/home/approvals?band={c}")
-               for c in CELLS],  # fmt: skip
+        cells=[
+            CountCell(kind=c, count=found.counts.get(c, 0), href=f"/home/approvals?band={c}")
+            for c in CELLS
+        ],
         lead_facts=[
-            LeadFact(key=str(f["key"]), values=dict(cast(dict[str, int], f.get("values") or {})),
-                     refs=[UUID(str(r)) for r in cast(list[object], f.get("refs") or [])])
+            LeadFact(
+                key=cast(LeadKey, str(f["key"])),
+                values=dict(cast(dict[str, int], f.get("values") or {})),
+                refs=[UUID(str(r)) for r in cast(list[object], f.get("refs") or [])],
+            )
             for f in found.lead_facts
-        ],  # fmt: skip
+        ],
         needs_you_first=[],
         cards=cards,
         groups=[],
@@ -592,4 +602,3 @@ async def past_brief(ctx: AuthContext, brief_id: UUID) -> TodayVM:
         status="ready",
         built_at=found.built_at,
     )
-

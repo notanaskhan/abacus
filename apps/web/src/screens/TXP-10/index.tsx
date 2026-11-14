@@ -11,7 +11,7 @@ import type {
   WorkbookReturnIssueOut,
   WorkbookReturnIssuesOut,
 } from "@abacus/api-client";
-import { AgentText, Button, EmptyState, Icon, Pill, Spinner } from "@abacus/ui";
+import { AgentText, Button, EmptyState, Icon, Pill, Spinner, time as formatTime } from "@abacus/ui";
 import { type JSX, useState } from "react";
 import { COPY, SEVERITY, STATUS } from "./copy";
 
@@ -170,7 +170,7 @@ function Detail({
             <dd data-status={issue.status} className="flex flex-1 items-center gap-[6px] text-ink">
               {fixing ? <Spinner label={COPY.agentFixing} size={10} /> : null}
               {!open && resolvedBy !== undefined
-                ? COPY.resolvedBy(resolvedBy.actor_name, new Date(resolvedBy.at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }))
+                ? COPY.resolvedBy(resolvedBy.actor_name, formatTime(resolvedBy.at))
                 : (STATUS[issue.status] ?? issue.status)}
             </dd>
           </div>

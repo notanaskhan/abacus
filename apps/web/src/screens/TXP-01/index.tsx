@@ -125,7 +125,7 @@ export function TXP01({
   const [confirming, setConfirming] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const actions = new Set(memo?.allowed_actions ?? []);
+  const actions = new Set(memo?.memo_actions ?? []);
   const drafting = memo === undefined || memo.status === "drafting";
   const approved = memo?.status === "approved";
   const document: DocumentVM = {
@@ -239,7 +239,7 @@ export function TXP01({
             </div>
           </div>
         ) : null}
-        {drafting || memo === undefined ? null : (
+        {drafting ? null : (
           <>
             <h3 className="mb-[6px] text-[16px] font-medium text-ink">
               {general

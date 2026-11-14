@@ -24,7 +24,6 @@ Hale: 79 open, 145 done, 224 total).
 from __future__ import annotations
 
 import re
-
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -36,13 +35,13 @@ from sqlalchemy import text
 from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.modules.agents.api import DrillRow
 from abacus.modules.engagements.api import (
     WorkItemFacts,
     assign_work_item,
     work_item_facts,
     work_item_offices,
 )
-from abacus.modules.agents.api import DrillRow
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
 from abacus.modules.platform.api import SearchDocument
 from abacus.modules.tax.returns_contract import (
@@ -379,7 +378,9 @@ __all__ = [
 _SEASON: Final = re.compile(r"\bTY(\d{4})\b")
 
 
-async def season_group(ctx: AuthContext, artifact_name: str, status: str) -> tuple[str, list[DrillRow]] | None:
+async def season_group(
+    ctx: AuthContext, artifact_name: str, status: str
+) -> tuple[str, list[DrillRow]] | None:
     """`status:<code>`: the viewer's returns of the workbook's tax year in that status, as TAX-01
     lists them (walls and visibility applied; nothing hidden is listed or counted), each linking
     to TAX-02. The year is the artifact's own ("TY2025 Season Progress"), else the board's."""

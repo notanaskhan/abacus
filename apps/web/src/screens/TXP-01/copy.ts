@@ -7,7 +7,7 @@ export const COPY = {
   memoTitle: (entity: string, year: number, form: string) =>
     `${entity} — ${String(year)} Form ${form} preparer memo`,
   edit: "Edit",
-  regenerate: "Regenerate",
+  regenerate: "Regenerate…", // opens the confirm dialog: the kit's ellipsis rule
   drafting: "Accrued Agent is drafting the memo",
   watermark: "DRAFT",
   variables: "Variables",

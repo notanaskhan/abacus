@@ -22,6 +22,7 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
+import { nowMs } from "../../app-core/clock";
 import { usePostMessage } from "../../domain/workbench";
 import { COPY } from "./copy";
 
@@ -45,7 +46,7 @@ export function threadItems(items: readonly SessionItemOut[]): ThreadItem[] {
             ...i,
             payload: {
               ...i.payload,
-              text: NOTICE_WORDS[String(i.payload["code"] ?? "")] ?? COPY.turnFailed,
+              text: NOTICE_WORDS[typeof i.payload["code"] === "string" ? i.payload["code"] : ""] ?? COPY.turnFailed,
             },
           }
         : (i as ThreadItem),
@@ -68,7 +69,7 @@ export function questionOf(item: SessionItemOut): QuestionPayload | null {
   // The turn's item nests it (`{v, turn_of, question}`); a recorded thread may carry it flat.
   const q = (item.payload["question"] ?? item.payload) as Partial<QuestionPayload> | undefined;
   if (q === undefined || !Array.isArray(q.steps) || q.steps.length === 0) return null;
-  return { question_id: q.question_id ?? item.id, ...q, steps: q.steps } as QuestionPayload;
+  return { question_id: q.question_id ?? item.id, ...q, steps: q.steps };
 }
 
 /** W-02-T22 (DF-04): the assistant's availability in words, and whether consent can be asked. */
@@ -227,7 +228,7 @@ export function Thread({
         const runId = row?.run_id;
         if (!runId) return;
         // W-02-T21 (AC-G4): a step with a failure ledger re-reads only those items.
-        const failed = Number(row?.payload["failed"] ?? 0);
+        const failed = Number(row.payload["failed"] ?? 0);
         retry.mutate({
           path: { run_id: runId, step_id: stepId },
           ...(failed > 0 ? { body: { scope: "failed_items" as const } } : {}),
@@ -245,7 +246,7 @@ export function Thread({
               setEditing(null);
             },
             onEditResend: (seq: number, text: string) => {
-              setEditing({ seq, text, nonce: Date.now() });
+              setEditing({ seq, text, nonce: nowMs() });
             },
           }
         : {})}

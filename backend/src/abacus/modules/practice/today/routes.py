@@ -9,13 +9,13 @@ caller's own brief (`viewer_user_id = caller`).
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated, NoReturn
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
 
 from abacus.kernel._flags import TODAY_BRIEF_ENABLED
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 from abacus.modules.practice.today.contract import (
@@ -35,10 +35,6 @@ today_router = AbacusRouter(prefix="/v1/me/today", tags=["today"])
 async def today_gate(ctx: AuthContext) -> None:
     if not await flag_enabled(ctx.tenant, TODAY_BRIEF_ENABLED):
         raise NotFound(TODAY_BRIEF_ENABLED.name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 @today_router.get("", action="briefing.read", response_model=TodayVM)
@@ -103,15 +99,13 @@ async def today_history_route(
     limit: Annotated[int, Query(ge=1, le=90)] = 30,
 ) -> HistoryPage:
     """Earlier briefs by day, the caller's own, 90 days at most (Q3). I-02-T17 (DEC-4938)."""
-    from abacus.modules.practice.today.assembly import history
+    from abacus.modules.practice.today.assembly import past_briefs
 
     await today_gate(ctx)
-    return await history(ctx, before, limit)
+    return await past_briefs(ctx, before, limit)
 
 
-@today_router.get(
-    "/history/{brief_id}", action="briefing.read", response_model=TodayVM
-)
+@today_router.get("/history/{brief_id}", action="briefing.read", response_model=TodayVM)
 async def today_history_brief_route(brief_id: UUID, ctx: Ctx) -> TodayVM:
     """A past brief, read-only; walls re-checked at read. I-02-T17 (DEC-4938)."""
     from abacus.modules.practice.today.assembly import past_brief

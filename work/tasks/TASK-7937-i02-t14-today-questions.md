@@ -2,8 +2,8 @@
 id: TASK-7937
 title: "I-02-T14: Today questions (POST /v1/me/today/questions on a firm-level Today session, read only)"
 plan_key: I-02-T14
-spec: SPEC-654 (I-02 §3.7, §6.2)
-acceptance_criteria: [AC-3.7]
+spec: SPEC-654  # I-02 §3.7, §6.2
+acceptance_criteria: [AC-7]
 risk_zone: red
 status: in-review
 branch: i02-t14-today-questions

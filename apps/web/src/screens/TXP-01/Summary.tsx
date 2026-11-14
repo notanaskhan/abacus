@@ -16,7 +16,7 @@ import { signOffLadder } from "@abacus/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useSession } from "../../app-core/session";
-import type { SignOffWriter } from "../../domain/review/signoffs";
+import type { SignOffWriter } from "../../domain/review";
 import { SignOffSheet } from "../SHL-12";
 import { TXP01 } from "./index";
 

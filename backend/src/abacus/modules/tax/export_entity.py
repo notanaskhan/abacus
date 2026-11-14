@@ -1,6 +1,6 @@
-"""The entity section of the engine export (T-05-T60; T-05 F11; `docs/contracts/tax-engine-bridge.md`
-§6; ADR-150 W2 `tax_engine_file_bridge`, ADR P-18; DEC-49, DEC-77, DEC-78; DEC-4931). RED: what
-leaves the firm for the engine.
+"""The entity section of the engine export (T-05-T60; T-05 F11;
+`docs/contracts/tax-engine-bridge.md` §6; ADR-150 W2 `tax_engine_file_bridge`, ADR P-18; DEC-49,
+DEC-77, DEC-78; DEC-4931). RED: what leaves the firm for the engine.
 
 An entity return (Form 1065) exports through T-01's file bridge (`export.export_return`, a
 person's, after the signer's final approval, consuming that approval's grant) with two more sheets
@@ -93,9 +93,7 @@ def ttb_lines(values: Values) -> list[TtbLine]:
     ]
 
 
-def allocations(
-    values: Values, return_id: UUID, known: Mapping[str, UUID]
-) -> list[Allocation]:
+def allocations(values: Values, return_id: UUID, known: Mapping[str, UUID]) -> list[Allocation]:
     """Sheet 06's Schedule K lines (A the line) by sheet 09's partner columns (row 1 the partner,
     the line's row its share). A partner with no recipient yet keeps a stable derived id."""
     partners: list[tuple[str, str]] = []
@@ -133,9 +131,7 @@ async def entity_section(
     at = await checkpoint_recorded_at(tenant, checkpoint_id)
     values = (await values_as_of(tenant, WORKBOOK, [return_id], at)).get(return_id, {})
     known = {name: rid for rid, name in await recipients(tenant, return_id)}
-    return EntitySection(
-        tuple(ttb_lines(values)), tuple(allocations(values, return_id, known))
-    )
+    return EntitySection(tuple(ttb_lines(values)), tuple(allocations(values, return_id, known)))
 
 
 __all__ = [

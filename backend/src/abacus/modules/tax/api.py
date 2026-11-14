@@ -114,6 +114,7 @@ filing.register()  # T-01-T36: the `tax_return` envelope source (C7 v1.1)
 register_work_item_kind("tax_return", TaxReturnKind())
 # W-02-T20 (DEC-4933): a season workbook's `status:<code>` group drills to its returns.
 from abacus.modules.agents.api import register_drill_source  # noqa: E402
+from abacus.modules.tax.board import season_group  # noqa: E402
 from abacus.modules.tax.memo_service import memo_row as memo_row  # noqa: E402  T-05-T62
 from abacus.modules.tax.memo_service import (  # noqa: E402
     record_synthetic_memo as record_synthetic_memo,
@@ -122,7 +123,6 @@ from abacus.modules.tax.memo_service import sign_memo as sign_memo  # noqa: E402
 from abacus.modules.tax.workbook_fix import (  # noqa: E402
     record_synthetic_fix as record_synthetic_fix,
 )
-from abacus.modules.tax.board import season_group  # noqa: E402
 
 register_drill_source("status", season_group)
 

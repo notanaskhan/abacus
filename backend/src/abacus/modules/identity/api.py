@@ -8,6 +8,7 @@ from abacus.kernel.clock import register_tenant_clock
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.uow.relay import register_grant_consumer
 from abacus.modules.identity.access_end import sweep_access_ends_activity
+from abacus.modules.identity.agent_tools import AGENT_TOOLS  # W-02-T19: identity.list_offices
 from abacus.modules.identity.annual_independence import has_current_annual_confirmation
 from abacus.modules.identity.audit_facts import (
     AuditFact,
@@ -391,7 +392,6 @@ from abacus.modules.identity.slots import (
     revoke_contact_links,
     target_events,
 )
-from abacus.modules.identity.agent_tools import AGENT_TOOLS  # W-02-T19: identity.list_offices
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
 from abacus.modules.identity.support import Staff, staff_from_token
 from abacus.modules.identity.team import (
@@ -506,10 +506,10 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
 )
 
 __all__ = [
-    "AGENT_TOOLS",
     "ACCESS_END_ID",
     "ACTION_KEY",
     "ACTIVITIES",
+    "AGENT_TOOLS",
     "ALLOW_LETTER_EXCEPTIONS",
     "AUTH_SESSION_PURGE_ID",
     "CODE_DIGITS",

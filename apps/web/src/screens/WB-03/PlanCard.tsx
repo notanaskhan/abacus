@@ -10,7 +10,7 @@ import {
   editRunPlanMutation,
   runPlanOptions,
 } from "@abacus/api-client/query";
-import { Button, time as clockTime } from "@abacus/ui";
+import { Button, count, time as clockTime } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { COPY } from "./copy";
@@ -78,7 +78,7 @@ export function PlanCardView({
         <>
           <h4 className="mt-[10px] text-[11.5px] text-ink-3">{COPY.dataItWillRead}</h4>
           <p data-plan-reads className="text-[12.5px] text-ink-2">
-            {(plan.reads ?? []).map((r) => `${r.label} ${r.count.toLocaleString("en-US")}`).join(" · ")}
+            {(plan.reads ?? []).map((r) => `${r.label} ${count(r.count)}`).join(" · ")}
           </p>
         </>
       ) : null}

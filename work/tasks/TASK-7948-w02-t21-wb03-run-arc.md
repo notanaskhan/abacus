@@ -2,8 +2,8 @@
 id: TASK-7948
 title: "W-02-T21: WB-03 run arc (PlanCard, gathering and results on the thread, Save to Files with Undo, O4 preview, Retry those 3, cancelled line)"
 plan_key: W-02-T21
-spec: SPEC-653 (W-02 §3.6–§3.8; WB-03 a, a2, b–g, d2)
-acceptance_criteria: [AC]  # WB-03 states pass with axe; no Approve control for a non-owner
+spec: SPEC-653  # W-02 §3.6–§3.8; WB-03 a, a2, b–g, d2
+acceptance_criteria: [AC-P1, AC-P2, AC-G1, AC-W1]  # WB-03 states pass with axe; no Approve control for a non-owner
 risk_zone: green
 status: in-review
 branch: w02-t21-wb03-run-arc

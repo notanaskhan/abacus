@@ -511,7 +511,8 @@ async def _finish_step(
         if outcome.failed_items:
             await tx.session.execute(
                 text(
-                    "UPDATE agent_run_steps SET failed_items = CAST(:items AS jsonb) WHERE id = :id"
+                    "UPDATE agent_run_steps SET failed_items = CAST(:items AS jsonb) "
+                    "WHERE id = :id"
                 ),
                 {"items": json.dumps(list(outcome.failed_items)), "id": step_id},
             )

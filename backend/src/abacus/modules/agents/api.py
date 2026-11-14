@@ -19,10 +19,6 @@ from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 # P-10-T43 (DEC-4301): a workbench session's turns are runs; workbench runs them inline.
 # P-10-T44 (DEC-4302): frozen trace exports, the run_events prune and A-07's archive hook.
 from abacus.modules.agents.capability_availability import capability_ready as capability_ready
-from abacus.modules.agents.run_artifacts import DrillRow as DrillRow  # W-02-T20
-from abacus.modules.agents.run_artifacts import (
-    register_drill_source as register_drill_source,
-)
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
 from abacus.modules.agents.code_runs import (  # A-07-T32: code-only runs, v1 path
@@ -176,6 +172,13 @@ from abacus.modules.agents.routes import (
 from abacus.modules.agents.run_activities import PlanState as RunV2PlanState
 from abacus.modules.agents.run_activities import RunFacts as RunV2Facts
 from abacus.modules.agents.run_activities import StepOutcome as RunV2StepOutcome
+from abacus.modules.agents.run_artifacts import DrillRow as DrillRow  # W-02-T20
+from abacus.modules.agents.run_artifacts import (
+    register_drill_source as register_drill_source,
+)
+from abacus.modules.agents.run_artifacts import (
+    register_drill_writer as register_drill_writer,
+)
 from abacus.modules.agents.run_artifacts_contract import (
     run_artifacts_router,
     session_drill_router,
@@ -285,12 +288,12 @@ from abacus.modules.agents.session_subjects import (
 from abacus.modules.agents.session_subjects import subject_engagement as subject_engagement
 from abacus.modules.agents.session_turns import TurnOutcome as TurnOutcome
 from abacus.modules.agents.session_turns import dispatch_run as dispatch_run
-from abacus.modules.agents.session_turns import open_plan_child_run as open_plan_child_run
-from abacus.modules.agents.session_turns import open_turn_run as open_turn_run
-from abacus.modules.agents.session_turns import run_session_turn as run_session_turn
 from abacus.modules.agents.session_turns import (
     firm_capability_blocked as firm_capability_blocked,  # I-02-T14
 )
+from abacus.modules.agents.session_turns import open_plan_child_run as open_plan_child_run
+from abacus.modules.agents.session_turns import open_turn_run as open_turn_run
+from abacus.modules.agents.session_turns import run_session_turn as run_session_turn
 from abacus.modules.agents.session_turns import (
     turn_capability_ready as turn_capability_ready,
 )
@@ -314,6 +317,11 @@ from abacus.modules.agents.stage_admin import (
 )
 from abacus.modules.agents.stage_routes import platform_stages_router
 from abacus.modules.agents.stages import assistants, stage_for, starts_in_shadow
+from abacus.modules.agents.today_context import TodayContext as TodayContext  # I-02-T14
+from abacus.modules.agents.today_context import (
+    register_today_context as register_today_context,
+)
+from abacus.modules.agents.today_context import today_context as today_context
 
 # P-10-T28: importing the catalogue registers every module's declared tools.
 from abacus.modules.agents.tools.catalogue import DECLARED as DECLARED
@@ -574,6 +582,7 @@ __all__ = [
     "DraftOutcome",
     "DraftedCell",
     "DraftingNotEnabled",
+    "DrillRow",
     "EffectiveAiPolicy",
     "EngagementAgent",
     "EngagementGraph",
@@ -669,6 +678,7 @@ __all__ = [
     "SuggestionChanged",
     "ThresholdEvaluation",
     "ThresholdPolicy",
+    "TodayContext",
     "ToolFacts",
     "TracePdfRenderer",
     "TurnOutcome",
@@ -687,10 +697,10 @@ __all__ = [
     "begin_code_run",
     "blocks",
     "briefing_fact_id",
+    "briefing_snapshot_of",
+    "briefing_snapshots_of",
     "briefing_why_gone",
     "capability_ready",
-    "DrillRow",
-    "register_drill_source",
     "check",
     "check_live",
     "check_notice_answer",
@@ -712,13 +722,12 @@ __all__ = [
     "effective_ai_policy",
     "engagement_graph",
     "ensure_briefings",
-    "briefing_snapshot_of",
-    "briefing_snapshots_of",
     "extract_notice_fields",
     "fact",
     "fail_code_run",
     "fail_run",
     "finish_code_run",
+    "firm_capability_blocked",
     "graph_router",
     "has_never_verb",
     "install_fake_responses",
@@ -738,7 +747,6 @@ __all__ = [
     "open_plan_child_run",
     "open_question_count",
     "open_turn_run",
-    "firm_capability_blocked",
     "override_rate",
     "pending_proposal_count",
     "pending_suggestion",
@@ -751,6 +759,8 @@ __all__ = [
     "record_synthetic_run",
     "register_change_set_applier",
     "register_decision_source",
+    "register_drill_source",
+    "register_drill_writer",
     "register_engagement_run_agent",
     "register_mode_mapping",
     "register_mode_plan",
@@ -763,6 +773,7 @@ __all__ = [
     "register_suggestion_applier",
     "register_suggestion_target",
     "register_threshold_policy",
+    "register_today_context",
     "register_trace_pdf_renderer",
     "registry_problems",
     "request_review",
@@ -795,6 +806,7 @@ __all__ = [
     "subject_engagement",
     "template_drafts_router",
     "text_part",
+    "today_context",
     "tool_output_for_model",
     "turn_capability_ready",
     "txt",
@@ -850,17 +862,17 @@ from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
 from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
     ensure_briefings as ensure_briefings,
 )
-from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
-    why_gone as briefing_why_gone,
-)
-from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
-    write_snapshot as write_briefing_snapshot,
-)
 from abacus.modules.agents.briefing.dispatch import (  # noqa: E402  I-02-T17
     snapshot_of as briefing_snapshot_of,
 )
 from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
     snapshots_of as briefing_snapshots_of,
+)
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
+    why_gone as briefing_why_gone,
+)
+from abacus.modules.agents.briefing.dispatch import (  # noqa: E402
+    write_snapshot as write_briefing_snapshot,
 )
 
 _briefing_dispatch.register()

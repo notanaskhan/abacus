@@ -49,6 +49,11 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # P-10-T14: the legacy run backfill asks which session first named each run.
 register_session_links(session_links)
+# W-02-T20 (DEC-4933): the drill item lives in the session tables, so workbench writes it.
+from abacus.modules.agents.api import register_drill_writer  # noqa: E402
+from abacus.modules.workbench.run_drill import append_drill  # noqa: E402
+
+register_drill_writer(append_drill)
 
 # The worker's parts (P-39): the session workflow and its turn activity; no subscriptions yet.
 SUBSCRIPTIONS: Mapping[str, Callable[[OutboxEvent], Awaitable[None]]] = {}

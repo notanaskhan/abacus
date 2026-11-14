@@ -68,7 +68,7 @@ def test_ac_p1_the_plan_card_reads_its_sources_with_counts_in_code_words() -> No
 def test_ac_p1_the_write_names_the_built_file_and_its_folder() -> None:
     steps = _season_plan()
     label = commands.write_label(steps[3], steps)
-    assert label == "Create file TY2025 Season Progress — by office.xlsx in Files › Deliverables"
+    assert label == "Create file TY2025 Season Progress — by office.xlsx in Files › Deliverables"  # noqa: RUF001 -- the handoff's words
 
 
 def test_a_plan_declaring_an_unknown_source_or_a_bad_count_is_refused() -> None:
@@ -95,7 +95,7 @@ def test_ac_p3_an_edit_rewords_kept_steps_and_never_their_effect() -> None:
     assert edited[1].label == "Group open returns by office only"
     assert edited[1].tool == steps[1].tool and edited[3].writes == steps[3].writes
     with pytest.raises(commands.PlanEditInvalid):
-        commands._edited(steps, ["s1", "s2"], {"s4": "Save it"})  # pyright: ignore[reportPrivateUsage]
+        commands._edited(steps, ["s1", "s2"], {"s4": "Save it"})  # pyright: ignore[reportPrivateUsage] -- stand-in
 
 
 def test_ac_p3_an_edited_plan_whose_approver_lost_the_write_is_refused() -> None:
@@ -135,7 +135,7 @@ def test_a_tool_outcome_lifts_the_outputs_ledger() -> None:
 
     item = FailedItem(ref_type="binder", ref_id="b1", source="binders", error_code="x")
     assert _failed_items(BindersOut(binders=[], total=0, failed_items=[item])) == [item]
-    assert _failed_items(SimpleNamespace(failed_items="no")) == []  # type: ignore[arg-type]
+    assert _failed_items(SimpleNamespace(failed_items="no")) == []  # type: ignore[arg-type] -- stand-in
 
 
 @dataclass(frozen=True)
@@ -147,7 +147,7 @@ class _Row:
     status: str = "open"
     total_count: int = 4
     done_count: int = 1
-    last_client_activity_at: Any = None
+    last_client_activity_at: Any = None  # Any: a test stand-in
 
 
 @pytest.mark.asyncio
@@ -169,7 +169,7 @@ async def test_ac_g4_binders_read_names_the_binders_it_could_not_reach(
 
     monkeypatch.setattr(binder_index, "list_binders", fake_list)
     args = agent_tools.BindersIn(tax_year=2025, only_refs=[back, gone_a, gone_b])
-    out = await agent_tools.read_binders(SimpleNamespace(), args)  # type: ignore[arg-type]
+    out = await agent_tools.read_binders(SimpleNamespace(), args)  # type: ignore[arg-type] -- stand-in
     assert [b.id for b in out.binders] == [back]
     assert sorted(i.ref_id for i in out.failed_items) == sorted([str(gone_a), str(gone_b)])
     assert {i.error_code for i in out.failed_items} == {"not_readable"}
@@ -177,7 +177,7 @@ async def test_ac_g4_binders_read_names_the_binders_it_could_not_reach(
 
 
 def test_only_tools_that_take_only_refs_can_retry_items() -> None:
-    import abacus.modules.agents.tools.catalogue  # noqa: F401 -- registers the tools
+    import abacus.modules.agents.tools.catalogue  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the tools
     from abacus.modules.agents.run_commands import takes_only_refs
 
     assert takes_only_refs("binders.read")
@@ -186,7 +186,7 @@ def test_only_tools_that_take_only_refs_can_retry_items() -> None:
 
 
 def test_the_two_red_tools_are_registered_read_only() -> None:
-    import abacus.modules.agents.tools.catalogue  # noqa: F401
+    import abacus.modules.agents.tools.catalogue  # noqa: F401  # pyright: ignore[reportUnusedImport] -- stand-in
     from abacus.modules.agents.tools.registry import registered_tools
 
     tools = registered_tools()
@@ -210,7 +210,8 @@ async def test_list_offices_reads_the_slot(monkeypatch: pytest.MonkeyPatch) -> N
 
     monkeypatch.setattr(agent_tools, "firm_offices", fake)
     out = await agent_tools.list_offices(
-        SimpleNamespace(tenant=None), agent_tools.ListOfficesIn()  # type: ignore[arg-type]
+        SimpleNamespace(tenant=None),  # type: ignore[arg-type] -- stand-in
+        agent_tools.ListOfficesIn(),
     )
     assert [o.name for o in out.offices] == ["Chicago", "Denver", "New York"] and out.total == 3
 
@@ -233,12 +234,13 @@ async def test_list_folders_marks_what_the_approver_can_write(
         tenant=None, tenant_id=uuid4(), engagement_id=uuid4(),
         initiator=SimpleNamespace(user_id=uuid4()),
     )  # fmt: skip
-    none = await file_tools.list_folders(agent, file_tools.ListFoldersIn())  # type: ignore[arg-type]
+    none = await file_tools.list_folders(agent, file_tools.ListFoldersIn())  # type: ignore[arg-type] -- stand-in
     assert none.folders == []
-    every = await file_tools.list_folders(agent, file_tools.ListFoldersIn(writable_only=False))  # type: ignore[arg-type]
+    every = await file_tools.list_folders(agent, file_tools.ListFoldersIn(writable_only=False))  # type: ignore[arg-type] -- stand-in
     assert [f.id for f in every.folders] == ["deliverables", "workpapers", "correspondence"]
     assert not any(f.writable for f in every.folders)
     firm = await file_tools.list_folders(
-        SimpleNamespace(engagement_id=None), file_tools.ListFoldersIn()  # type: ignore[arg-type]
+        SimpleNamespace(engagement_id=None),  # type: ignore[arg-type] -- stand-in
+        file_tools.ListFoldersIn(),
     )
     assert firm.firm_folders == "unavailable"

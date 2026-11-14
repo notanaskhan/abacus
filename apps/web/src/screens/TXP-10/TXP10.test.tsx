@@ -2,7 +2,7 @@
 // journey from A to D runs live on staging and the badge reads 10 afterwards." Here: each state
 // from the fixtures (the server's shapes), the moves calling their host callbacks; the staging
 // walk is the end pass's.
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ASSIGNEES,
@@ -92,8 +92,9 @@ describe("TXP-10 Return › Issues (1065)", () => {
     const resolve = vi.fn();
     at("a", { onResolve: resolve });
     fireEvent.click(screen.getByRole("button", { name: COPY.resolve }));
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Settled by the fix." } });
-    fireEvent.click(screen.getByRole("button", { name: COPY.confirmResolve }));
+    const note = within(screen.getByRole("dialog", { name: COPY.noteLabel }));
+    fireEvent.change(note.getByRole("textbox"), { target: { value: "Settled by the fix." } });
+    fireEvent.click(note.getByRole("button", { name: COPY.confirmResolve }));
     expect(resolve).toHaveBeenCalledWith(expect.objectContaining({ id: TAX_EXEMPT }), "Settled by the fix.");
   });
 

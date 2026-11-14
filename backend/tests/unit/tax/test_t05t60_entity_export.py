@@ -18,6 +18,7 @@ import io
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -79,10 +80,12 @@ def _section() -> export_entity.EntitySection:
 
 def test_the_workbook_carries_the_entity_sheets_and_is_byte_stable() -> None:
     at = datetime(2026, 1, 1, tzinfo=UTC)
-    args = {"engine_id": "2025P:RIDGELINE", "tax_year": 2025, "form": "1065", "values": {},
-            "at": at, "entity": _section()}  # fmt: skip
-    first = export.workbook(**args)  # type: ignore[arg-type]
-    assert first == export.workbook(**args)  # type: ignore[arg-type]
+    args: dict[str, Any] = {  # Any: the workbook's keyword arguments
+        "engine_id": "2025P:RIDGELINE", "tax_year": 2025, "form": "1065", "values": {},
+        "at": at, "entity": _section(),
+    }  # fmt: skip
+    first = export.workbook(**args)
+    assert first == export.workbook(**args)
     book = load_workbook(io.BytesIO(first))
     assert book.sheetnames == ["Return", "Fields", "TTB", "Allocations"]
     ttb = [list(r) for r in book["TTB"].iter_rows(values_only=True)]
@@ -115,7 +118,7 @@ async def test_export_is_refused_while_unmapped_is_above_zero(
     monkeypatch.setattr(export_entity, "engagement_of_return", engagement)
     monkeypatch.setattr(export_entity, "unmapped_accounts", count)
     with pytest.raises(ExportUnmapped):
-        await require_mapped(object(), RETURN)  # type: ignore[arg-type]
+        await require_mapped(object(), RETURN)  # type: ignore[arg-type] -- stand-in
 
 
 @pytest.mark.asyncio
@@ -128,7 +131,7 @@ async def test_a_fully_mapped_return_passes_the_gate(monkeypatch: pytest.MonkeyP
 
     monkeypatch.setattr(export_entity, "engagement_of_return", engagement)
     monkeypatch.setattr(export_entity, "unmapped_accounts", count)
-    await require_mapped(object(), RETURN)  # type: ignore[arg-type]
+    await require_mapped(object(), RETURN)  # type: ignore[arg-type] -- stand-in
 
 
 def test_the_unmapped_gate_runs_before_the_grant_is_spent() -> None:
@@ -144,14 +147,16 @@ _NETWORK = {"httpx", "requests", "aiohttp", "urllib", "socket", "boto3", "botoco
 
 def test_the_entity_section_imports_no_network_client_and_names_no_transmit_verb() -> None:
     tree = ast.parse(SRC.read_text(encoding="utf-8"))
-    imported = {
-        (n.module or "").split(".")[0] if isinstance(n, ast.ImportFrom) else a.name.split(".")[0]
-        for n in ast.walk(tree)
-        if isinstance(n, ast.Import | ast.ImportFrom)
-        for a in (n.names if isinstance(n, ast.Import) else [n])  # type: ignore[union-attr]
-    }
+    imported: set[str] = set()
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            imported |= {a.name.split(".")[0] for a in n.names}
+        elif isinstance(n, ast.ImportFrom):
+            imported.add((n.module or "").split(".")[0])
     assert not imported & _NETWORK
-    names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)}
+    names = {
+        n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)
+    }
     assert not any(v in name for name in names for v in ("transmit", "submit", "send", "file_"))
 
 

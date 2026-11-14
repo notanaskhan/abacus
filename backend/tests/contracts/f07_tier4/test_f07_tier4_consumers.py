@@ -40,7 +40,11 @@ READS: list[tuple[str, str, set[str]]] = [
     ("T17", "ViewerRegionOut", {"match_id", "page", "rects", "label"}),
     ("T17", "ViewerManifestOut", {"page_count", "pages", "pii_masks", "status"}),
     # T13 · C21: a deadline's original and extended due dates (the calendar's cells).
-    ("T13", "DueDateOut", {"form", "tax_year", "original_due_on", "extended_due_on", "extension_form"}),
+    (
+        "T13",
+        "DueDateOut",
+        {"form", "tax_year", "original_due_on", "extended_due_on", "extension_form"},
+    ),
     # T14 · the relationship rows the graph's edges read (C12 lands with T-08; the client's own
     # relationships are read today).
     ("T14", "ClientRelationshipOut", {"id", "kind", "from_entity_id", "to_entity_id", "percent"}),
@@ -58,7 +62,9 @@ def test_each_field_a_tier4_template_reads_is_published(
 
 def test_t4s_item_kinds_include_context_and_drill() -> None:
     """WB-01 and WB-03 read context and drill items; the snapshot must name them (I-02-T17)."""
-    kind = cast(dict[str, object], cast(dict[str, object], SCHEMAS["SessionItemOut"]["properties"])["kind"])
+    kind = cast(
+        dict[str, object], cast(dict[str, object], SCHEMAS["SessionItemOut"]["properties"])["kind"]
+    )
     values = set(cast(list[str], kind.get("enum", [])))
     assert {"context_added", "context_removed", "drill", "question", "plan"} <= values
 
@@ -68,7 +74,9 @@ def test_t17s_manifest_regions_carry_the_servers_match_id() -> None:
     assert "match_id" in cast(list[str], SCHEMAS["ViewerRegionOut"].get("required", []))
 
 
-@pytest.mark.parametrize("request_doc", ["t08-deadlines.md", "t08-relationships.md", "t06-form-pages.md"])
+@pytest.mark.parametrize(
+    "request_doc", ["t08-deadlines.md", "t08-relationships.md", "t06-form-pages.md"]
+)
 def test_the_three_contract_requests_list_states_and_seed_figures(request_doc: str) -> None:
     body = (ROOT / "docs/contracts/requests" / request_doc).read_text(encoding="utf-8")
     assert "## Screen states" in body and "## Seed figures" in body and "## Fields" in body

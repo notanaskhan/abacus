@@ -2,8 +2,8 @@
 id: TASK-7951
 title: "F-07-T22: tier-4 lock (Tier D for T13, T14, T17; Tier B for TPL-13, TPL-14, TPL-17; axe, keyboard, reduced motion, forced colours)"
 plan_key: F-07-T22
-spec: SPEC-652 (F-07 §5.4)
-acceptance_criteria: [AC]  # four specimens Tier B locked, templates pass Tier D, axe 0 serious/critical
+spec: SPEC-652  # F-07 §5.4
+acceptance_criteria: [AC-6]  # four specimens Tier B locked, templates pass Tier D, axe 0 serious/critical
 risk_zone: green
 status: in-review
 branch: f07-t22-tier4-lock

@@ -64,10 +64,10 @@ WorkbookAction = Literal[
     "allocation_structure.edit",
     "tax_memo.edit",
     "tax_memo.draft",
-    # T-05-T59 (additive): TXP-01's Adopt (L1) and Approve (L2) buttons, as hints.
-    "tax_memo.adopt",
-    "tax_memo.approve",
 ]
+# T-05-T59 (DEC-4939): TXP-01's buttons as hints, in their own field (`memo_actions`) so the frozen
+# v1 `WorkbookAction` enum is not widened (the portal freeze check, P-08-T28).
+MemoAction = Literal["tax_memo.edit", "tax_memo.draft", "tax_memo.adopt", "tax_memo.approve"]
 
 
 def _cfg() -> ConfigDict:
@@ -859,6 +859,8 @@ class WorkbookMemoOut(BaseModel):
     seen_hash: Annotated[str, Internal]
     stale_fields: Annotated[list[str], Internal] = Field(default_factory=list[str])
     allowed_actions: Annotated[list[WorkbookAction], Internal]
+    # T-05-T59 (additive): Edit, Regenerate, Adopt (L1) and Approve (L2) as the viewer may.
+    memo_actions: Annotated[list[MemoAction], Internal] = Field(default_factory=list[MemoAction])
     # T-05-T59 (additive): the memo's sign-off target (SHL-12's `preparer_memo`) and its version.
     memo_id: Annotated[UUID | None, Internal] = None
     version: Annotated[int, Internal] = 0
@@ -2188,22 +2190,19 @@ async def entity_issue_resolve_route(
     return WorkbookIssueResolvedOut(issue_id=issue_id, noted=bool((body.note or "").strip()))
 
 
-@workbook_router.get(
-    f"{_R}/memo", action="tax_memo.read", response_model=WorkbookMemoOut
-)
+@workbook_router.get(f"{_R}/memo", action="tax_memo.read", response_model=WorkbookMemoOut)
 async def entity_memo_route(return_id: UUID, ctx: Ctx) -> WorkbookMemoOut:
     """TXP-01 (T-05-T54, DEC-4909): sections, status (stale computed on cited figures) and the
     moved figures in words."""
-    from abacus.modules.tax.memo_service import read_memo
-
     import uuid
 
-    from abacus.modules.tax.memo_service import memo_actions
+    from abacus.modules.tax.memo_service import memo_actions, read_memo
 
     await _flag_on(ctx)
     resource = await _memo_read(ctx, return_id)
     memo = await read_memo(ctx, return_id)
     base = memo.memo_id or return_id
+    held = await memo_actions(ctx, return_id, resource, memo)
 
     def cited(n: int) -> WorkbookMemoCitationOut:
         source = memo.sources[n - 1] if 0 < n <= len(memo.sources) else None
@@ -2230,9 +2229,8 @@ async def entity_memo_route(return_id: UUID, ctx: Ctx) -> WorkbookMemoOut:
         ],
         seen_hash=memo.seen_hash,
         stale_fields=memo.stale_fields,
-        allowed_actions=cast(
-            list[WorkbookAction], await memo_actions(ctx, return_id, resource, memo)
-        ),
+        allowed_actions=[cast(WorkbookAction, a) for a in held if a in get_args(WorkbookAction)],
+        memo_actions=cast(list[MemoAction], held),
         memo_id=memo.memo_id,
         version=memo.version,
     )

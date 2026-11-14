@@ -74,7 +74,7 @@ class PlanStep:
         )
 
     def dump(self) -> dict[str, object]:
-        return {
+        out: dict[str, object] = {
             "key": self.key,
             "label": self.label,
             "level": self.level,
@@ -85,7 +85,10 @@ class PlanStep:
             "writes": list(self.writes),
             "approver_user_id": self.approver_user_id,
             "reads_clients": list(self.reads_clients),
-        } | ({"reads": [{"source": s, "count": n} for s, n in self.reads]} if self.reads else {})
+        }
+        if self.reads:
+            out["reads"] = [{"source": s, "count": n} for s, n in self.reads]
+        return out
 
 
 def _reads(raw: object) -> tuple[tuple[str, int], ...]:
@@ -100,9 +103,7 @@ def _reads(raw: object) -> tuple[tuple[str, int], ...]:
             continue
         entry = cast(dict[str, object], item)
         count = entry.get("count")
-        found.append(
-            (str(entry.get("source") or ""), count if isinstance(count, int) else -1)
-        )
+        found.append((str(entry.get("source") or ""), count if isinstance(count, int) else -1))
     return tuple(found)
 
 

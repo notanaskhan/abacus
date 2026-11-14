@@ -405,22 +405,27 @@ def cites_of(section: Mapping[str, object]) -> tuple[int, ...]:
 MEMO_ACTIONS: Final = ("tax_memo.edit", "tax_memo.draft", "tax_memo.adopt", "tax_memo.approve")
 
 
-async def memo_actions(ctx: AuthContext, return_id: UUID, resource: object, view: MemoView) -> list[str]:
+async def memo_actions(
+    ctx: AuthContext, return_id: UUID, resource: object, view: MemoView
+) -> list[str]:
     """T-05-T59 (DEC-4939): the buttons TXP-01 may show the viewer, as hints (each route decides
     again): Edit and Regenerate by their matrix actions; Adopt (L1) on a drafted memo not yet
     adopted; Approve (L2) on an adopted memo, never to one of its preparers."""
-    from abacus.modules.identity.api import allowed_actions
+    from abacus.modules.identity.api import Resource, allowed_actions
 
-    held = set(await allowed_actions(ctx, resource, ["tax_memo.edit", "tax_memo.draft",
-                                                     "sign_off.create"]))  # type: ignore[arg-type]  # fmt: skip
+    asked = ["tax_memo.edit", "tax_memo.draft", "sign_off.create"]
+    held = set(await allowed_actions(ctx, cast(Resource, resource), asked))
     out = [a for a in ("tax_memo.edit", "tax_memo.draft") if a in held]
     if view.version == 0 or "sign_off.create" not in held:
         return out
     if view.last_event not in ("adopted", "approved"):
         out.append("tax_memo.adopt")
-    elif view.last_event == "adopted" and view.memo_id is not None:
-        if ctx.user_id not in await preparers(ctx.tenant, view.memo_id):
-            out.append("tax_memo.approve")
+    elif (
+        view.last_event == "adopted"
+        and view.memo_id is not None
+        and ctx.user_id not in await preparers(ctx.tenant, view.memo_id)
+    ):
+        out.append("tax_memo.approve")
     return out
 
 
@@ -893,8 +898,14 @@ async def record_synthetic_memo(
                 "on_behalf_of_user_id, content_hash, figure_fingerprint) VALUES (:t, :e, :r, :m, "
                 "1, CAST(:sections AS jsonb), 'draft', 'agent', :run, :by, :hash, :fp)"
             ),
-            {**scope, "sections": json.dumps([s.as_json() for s in stored]), "run": run_id,
-             "by": on_behalf_of, "hash": digest, "fp": fp},  # fmt: skip
+            {
+                **scope,
+                "sections": json.dumps([s.as_json() for s in stored]),
+                "run": run_id,
+                "by": on_behalf_of,
+                "hash": digest,
+                "fp": fp,
+            },
         )
         await tx.session.execute(
             text(
@@ -906,8 +917,12 @@ async def record_synthetic_memo(
         )
         await tx.session.execute(
             _EVENT,
-            {**scope, "event": "drafted", "v": 1,
-             "ref": json.dumps({"dropped": 0, "run": str(run_id)})},  # fmt: skip
+            {
+                **scope,
+                "event": "drafted",
+                "v": 1,
+                "ref": json.dumps({"dropped": 0, "run": str(run_id)}),
+            },
         )
         tx.record(
             "tax_memo.drafted",

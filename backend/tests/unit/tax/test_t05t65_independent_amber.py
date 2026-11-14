@@ -2,7 +2,7 @@
 """T-05-T65 (TASK-7954; ADR-078): independent acceptance tests for ayushkbhatia's amber services
 on the entity return, part 2 (T-05-T32, T40, T42, T50, T51, T52, T54, T57, T61).
 
-Written from the T-05 epic's acceptance (§3 F7–F11) and the contracts, not from the
+Written from the T-05 epic's acceptance (§3 F7-F11) and the contracts, not from the
 implementations; pure functions only (the database clauses ride on T-05-T67's API journey).
 
 - T51/T32: the queue's counts are the open issues by section, before any filter (the badge).
@@ -19,14 +19,12 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
-import pytest
-
 
 def _issue(section: str, status: str = "open", step: str | None = None):  # noqa: ANN202
     from abacus.modules.tax.entity_issues import QueueIssue
 
     return QueueIssue(
-        id=uuid4(), title="t", section=section, step=step, status=status, kind="review_point",  # type: ignore[arg-type]
+        id=uuid4(), title="t", section=section, step=step, status=status, kind="review_point",  # type: ignore[arg-type] -- stand-in
         priority="medium", source_kind=None, category_path=None, blocks=("final_approval",),
         assignee=None, links=(), request_item_id=None, version=1,
         created_at=datetime(2026, 9, 10, tzinfo=UTC), allowed_actions=(),
@@ -66,9 +64,12 @@ def test_t54_a_memo_is_stale_exactly_when_a_cited_figure_moves() -> None:
     from abacus.modules.tax.memo_service import moved
 
     facts = ms.memo_facts({"05!F2": {"v": "6860000"}, "05!A2": {"v": "Meera Shah"}})
-    if not facts:
-        pytest.skip("no capital facts on this layout")
-    later = [replace(f, fact=replace(f.fact, value=str(Decimal(f.fact.value) + 6200)))
+    assert facts, "the capital layout yields facts"
+
+    def bumped(value: str) -> str:
+        return str(Decimal(value.replace(",", "")) + 6200)
+
+    later = [replace(f, fact=f.fact.model_copy(update={"value": bumped(f.fact.value)}))
              if f.fact.value.replace(",", "").isdigit() else f for f in facts]  # fmt: skip
     assert moved(facts, facts) == []
     lines = [line for _, line in moved(facts, later)]

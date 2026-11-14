@@ -150,9 +150,9 @@ class ToolOutcome(BaseModel):
     # W-02-T19 (additive; DEC-4930): the items a read could not reach, by reference and code
     # (`kernel.agent_tools.FailedItem`). Lifted from the output's own `failed_items`; empty for a
     # tool that reads all or nothing.
-    failed_items: Annotated[
-        list[FailedItem], Field(max_length=1000), classified("internal")
-    ] = Field(default_factory=list[FailedItem])
+    failed_items: Annotated[list[FailedItem], Field(max_length=1000), classified("internal")] = (
+        Field(default_factory=list[FailedItem])
+    )
 
 
 @dataclass(frozen=True)

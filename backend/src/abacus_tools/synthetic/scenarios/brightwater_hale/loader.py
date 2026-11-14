@@ -7626,8 +7626,16 @@ async def _entity_memo_recorded(conn: asyncpg.Connection, _: Scenario, event: Ev
                 initiator_user_id=ctx.user_id,
                 run_number=4,  # after Runs 1 and 2; Run 3 (9:52) is the re-run
                 state="succeeded",
-                steps=[RecordedStep(key="draft_memo", level=0, label="Draft the preparer memo",
-                                    state="succeeded", kind="model", reached=True)],  # fmt: skip
+                steps=[
+                    RecordedStep(
+                        key="draft_memo",
+                        level=0,
+                        label="Draft the preparer memo",
+                        state="succeeded",
+                        kind="model",
+                        reached=True,
+                    )
+                ],
                 work_item_ref=f"tax_return:{return_id}",
                 id=run_id,
             ),

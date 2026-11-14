@@ -2,8 +2,8 @@
 id: TASK-7940
 title: "I-02-T20: eval runs for briefing.today (fast on PRs, nightly full, signed direct and Bedrock reports)"
 plan_key: I-02-T20
-spec: SPEC-654 (I-02 §6.3)
-acceptance_criteria: [AC]  # committed Bedrock and direct reports meet every frozen threshold at ≤ $0.10 a briefing
+spec: SPEC-654  # I-02 §6.3
+acceptance_criteria: [AC-3]  # committed Bedrock and direct reports meet every frozen threshold at ≤ $0.10 a briefing
 risk_zone: red
 status: in-review
 branch: i02-t20-briefing-evals

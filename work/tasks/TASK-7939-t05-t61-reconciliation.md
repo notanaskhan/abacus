@@ -2,7 +2,7 @@
 id: TASK-7939
 title: "T-05-T61: reconciliation to the engine of record (Schedule K, K-1 boxes, ending capital, M-2)"
 plan_key: T-05-T61
-spec: SPEC-651 (T-05 F11)
+spec: SPEC-651  # T-05 F11
 acceptance_criteria: [AC-F11]
 risk_zone: amber
 status: in-review

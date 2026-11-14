@@ -114,7 +114,7 @@ function MeBubble({
                 role="menuitem"
                 onClick={() => {
                   setMenu(false);
-                  void navigator.clipboard?.writeText(text).catch(() => undefined);
+                  void navigator.clipboard.writeText(text).catch(() => undefined);
                 }}
                 className="px-[10px] py-[6px] text-left text-[13px] text-ink hover:bg-nested"
               >

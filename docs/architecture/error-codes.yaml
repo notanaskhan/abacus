@@ -823,6 +823,11 @@ codes:
     - abacus.modules.agents.section_draft.DraftingNotEnabled
     - abacus.modules.assurance.materiality.RecommendationNotEnabled
     summary: 'A real firm the section drafter isn''t cleared for (SPEC-036): synthetic firms only.'
+  drill_group_unknown:
+    status: 422
+    raised_by:
+    - abacus.modules.agents.run_artifacts.DrillGroupUnknown
+    summary: The group key names no registered source, or a group the source does not know.
   due_date_required:
     status: 422
     raised_by:
@@ -1107,6 +1112,11 @@ codes:
     - abacus.modules.evidence.export_currency.ExportStale
     summary: 'Evidence or requests changed after the final export''s snapshot: export again, then record
       the archive (`facts.event_seq` names the newer event).'
+  export_unmapped:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.export_entity.ExportUnmapped
+    summary: An account of the newest trial balance has no form line, or there is no trial balance.
   extension_form_required:
     status: 422
     raised_by:
@@ -1953,6 +1963,11 @@ codes:
     raised_by:
     - abacus.modules.tax.extensions.NoExtensionForm
     summary: The published rules name no extension form or dates for this return's form.
+  no_failed_items:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.run_commands.NoFailedItems
+    summary: 'W-02-T19: a `failed_items` retry needs a ledger to re-read, on a tool that can.'
   no_failed_sync:
     status: 409
     raised_by:

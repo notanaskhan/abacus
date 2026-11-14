@@ -21,7 +21,6 @@ else reads 404 (no existence leak, DEC-43).
 from __future__ import annotations
 
 import io
-import json
 import re
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
@@ -92,6 +91,16 @@ DrillSource = Callable[[AuthContext, str, str], Awaitable[tuple[str, list[DrillR
 _SOURCES: dict[str, DrillSource] = {}
 
 
+# The session item's writer: (viewer, session, key hash, payload) -> item id. Workbench owns the
+# session tables and registers it (OWN-001); it answers the item already written under the key.
+DrillWriter = Callable[[AuthContext, UUID, str, dict[str, object]], Awaitable[UUID]]
+_WRITER: list[DrillWriter] = []
+
+
+def register_drill_writer(writer: DrillWriter) -> None:
+    _WRITER[:] = [writer]
+
+
 def register_drill_source(prefix: str, source: DrillSource) -> None:
     """The owning module registers how a group of its records is listed (ADR-106 slot)."""
     if prefix in _SOURCES and _SOURCES[prefix] is not source:
@@ -108,7 +117,7 @@ _ARTIFACT: Final = text(
 
 async def _readable(ctx: AuthContext, artifact_id: UUID, action: str) -> object:
     """The artifact's row once the viewer may take `action` on its run (module docstring)."""
-    if ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client:
         raise NotFound("run_artifact")
     async with tenant_session(ctx.tenant) as session:
         row = (await session.execute(_ARTIFACT, {"id": artifact_id})).first()
@@ -159,8 +168,9 @@ def _cell(value: object, bold: bool) -> Cell:
     return Cell(shown, "number" if _NUMBER.match(shown) else "text", bold)
 
 
-def preview_of(content: bytes, sheet: str | None) -> tuple[list[str], str, list[str],
-                                                           list[list[Cell]], str | None]:  # fmt: skip
+def preview_of(
+    content: bytes, sheet: str | None
+) -> tuple[list[str], str, list[str], list[list[Cell]], str | None]:
     """The stored workbook's tabs and one sheet's header, rows and footnote (values only)."""
     book = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     try:
@@ -172,7 +182,7 @@ def preview_of(content: bytes, sheet: str | None) -> tuple[list[str], str, list[
     if not rows:
         return names, chosen, [], [], None
     header = ["" if v is None else str(v) for v in rows[0]]
-    body = [list(r) for r in rows[1:MAX_PREVIEW_ROWS + 1]]
+    body = [list(r) for r in rows[1 : MAX_PREVIEW_ROWS + 1]]
     footnote: str | None = None
     filled = [[v for v in r if v not in (None, "")] for r in body]
     if len(body) >= 2 and not filled[-2] and len(filled[-1]) == 1:
@@ -203,16 +213,6 @@ async def download(ctx: AuthContext, artifact_id: UUID) -> tuple[str, bytes]:
     return row.name, content
 
 
-_LOCK: Final = text(
-    "SELECT item_seq, owner_user_id FROM workbench_sessions WHERE id = :id AND deleted_at IS NULL "
-    "FOR UPDATE"
-)
-_BY_KEY: Final = text(
-    "SELECT id, payload FROM session_items WHERE session_id = :s AND kind = 'drill' "
-    "AND payload->>'key' = :key LIMIT 1"
-)
-
-
 def drill_title(words: str, total: int) -> str:
     return f"{words} {total}"
 
@@ -231,13 +231,8 @@ async def drill(
         raise DrillGroupUnknown(facts={"group_key": group_key})
     words, rows = found
     title = drill_title(words, len(rows))
-    async with tenant_session(ctx.tenant) as session:
-        again = (await session.execute(_BY_KEY, {"s": session_id, "key": key_hash})).first()
-    if again is not None:
-        return Drill(again.id, group_key, title, len(rows), rows)
-    payload = {
+    payload: dict[str, object] = {
         "v": 1,
-        "key": key_hash,
         "artifact_id": str(artifact_id),
         "group_key": group_key,
         "title": title,
@@ -245,35 +240,9 @@ async def drill(
             {"ref_type": r.ref_type, "ref_id": str(r.ref_id), "href": r.href} for r in rows
         ],  # names are resolved again at read time (DEC-61): the item keeps references only
     }
-    async with uow(ctx.tenant) as tx:
-        locked = (await tx.session.execute(_LOCK, {"id": session_id})).first()
-        if locked is None or locked.owner_user_id != ctx.user_id:
-            raise NotFound("session")
-        seq = int(locked.item_seq) + 1
-        item_id = cast(
-            UUID,
-            await tx.session.scalar(
-                text(
-                    "INSERT INTO session_items (tenant_id, session_id, seq, kind, payload, "
-                    "actor_kind, actor_id, classification) VALUES (:t, :s, :seq, 'drill', "
-                    "CAST(:payload AS jsonb), 'human', :me, 'confidential') RETURNING id"
-                ),
-                {"t": ctx.tenant_id, "s": session_id, "seq": seq, "payload": json.dumps(payload),
-                 "me": str(ctx.user_id)},  # fmt: skip
-            ),
-        )
-        await tx.session.execute(
-            text(
-                "UPDATE workbench_sessions SET item_seq = :seq, last_item_at = clock_timestamp() "
-                "WHERE id = :id"
-            ),
-            {"seq": seq, "id": session_id},
-        )
-        tx.record(
-            "session.drill_appended",
-            target=Target("workbench_session", session_id),
-            after=Ref(seq=seq, artifact=artifact_id),
-        )
+    if not _WRITER:
+        raise NotFound("session")  # workbench is not mounted: there is no session to append to
+    item_id = await _WRITER[0](ctx, session_id, key_hash, payload)
     return Drill(item_id, group_key, title, len(rows), rows)
 
 

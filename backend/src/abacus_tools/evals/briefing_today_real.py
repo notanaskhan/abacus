@@ -40,8 +40,8 @@ from typing import Final
 
 from abacus_tools.evals.briefing_today import CAPABILITY, FROZEN
 from abacus_tools.evals.gate import COST_TOLERANCE
-from abacus_tools.evals.runtime_conformance_real import median_cost, signed, verified
 from abacus_tools.evals.runtime_conformance_real import Attempt as _CostAttempt
+from abacus_tools.evals.runtime_conformance_real import median_cost, signed, verified
 from abacus_tools.evals.tax_return_real import TRI_NOTE, baseline, parity_fresh
 
 ROUTES: Final = ("direct", "bedrock")

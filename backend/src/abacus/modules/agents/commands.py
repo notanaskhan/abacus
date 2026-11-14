@@ -45,9 +45,9 @@ from abacus.kernel.dispatch import signal_workflow
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.agents.events import RunPlanDecided
-from abacus.modules.agents.run_commands import RetryScope, RunNotEnded, retry_step, wake
 from abacus.modules.agents.file_tools import FOLDER_LABELS
 from abacus.modules.agents.run_activities import plan_rules
+from abacus.modules.agents.run_commands import RetryScope, RunNotEnded, retry_step, wake
 from abacus.modules.agents.run_plan import READ_SOURCES, PlanStep, validate_plan
 from abacus.modules.agents.run_views import TERMINAL
 from abacus.modules.agents.run_waits import run_workflow_id
@@ -282,7 +282,7 @@ async def _decide(
 
 
 def _edited(
-    current: list[PlanStep], keys: Sequence[str], labels: Mapping[str, str]
+    current: list[PlanStep], keys: Sequence[str], labels: Mapping[str, str] | None = None
 ) -> list[PlanStep]:
     """The newest version's steps, kept and reordered by key; nothing new is added. W-02-T19
     (WB-03a2, steps become fields): a kept step's label may be reworded; what it does (tool,
@@ -290,6 +290,7 @@ def _edited(
     by_key = {s.key: s for s in current}
     if len(set(keys)) != len(keys) or any(k not in by_key for k in keys):
         raise PlanEditInvalid(facts={"reason": "unknown_or_repeated_key"})
+    labels = labels or {}
     if any(k not in keys for k in labels):
         raise PlanEditInvalid(facts={"reason": "label_for_dropped_step"})
     kept = set(keys)
@@ -377,16 +378,12 @@ def plan_reads(steps: Sequence[PlanStep]) -> list[PlanRead]:
 
 def write_label(step: PlanStep, steps: Sequence[PlanStep]) -> str:
     """A write's words, rendered by code from what the step will do: a file save names the
-    workbook its build step makes and the folder it goes to (WB-03a "Create file … in Files ›
+    workbook its build step makes and the folder it goes to (WB-03a "Create file … in Files >
     …"); anything else is the step's label."""
     if step.tool == "files.propose_save":
         folder = FOLDER_LABELS.get(str(step.arguments.get("folder") or "deliverables"))
         build = next(
-            (
-                s
-                for s in steps
-                if s.key in step.depends_on and s.tool == "files.build_workbook"
-            ),
+            (s for s in steps if s.key in step.depends_on and s.tool == "files.build_workbook"),
             None,
         )
         name = build.arguments.get("name") if build is not None else None
@@ -577,9 +574,7 @@ async def redirect(ctx: AuthContext, run_id: UUID, body: str) -> None:
     await wake(ctx.tenant_id, run_id, "redirected")
 
 
-async def retry(
-    ctx: AuthContext, run_id: UUID, step_id: UUID, scope: RetryScope = "all"
-) -> str:
+async def retry(ctx: AuthContext, run_id: UUID, step_id: UUID, scope: RetryScope = "all") -> str:
     await _live(ctx, run_id)
     async with tenant_session(ctx.tenant) as session:
         seq = await session.scalar(

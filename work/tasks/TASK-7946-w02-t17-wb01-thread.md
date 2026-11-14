@@ -2,8 +2,8 @@
 id: TASK-7946
 title: "W-02-T17: WB-01 thread states (discovery, QuestionCard steps, run rows, ChatErrorRow, locked, bubble menu)"
 plan_key: W-02-T17
-spec: SPEC-653 (W-02 §3.4–§3.7; WB-01 a–e, g)
-acceptance_criteria: [AC]  # WB-01 a-e and g pass in Vitest with axe clean; locked renders no item or figure
+spec: SPEC-653  # W-02 §3.4–§3.7; WB-01 a–e, g
+acceptance_criteria: [AC-A3, AC-A4, AC-A5]  # WB-01 a-e and g pass in Vitest with axe clean; locked renders no item or figure
 risk_zone: green
 status: in-review
 branch: w02-t17-wb01-thread

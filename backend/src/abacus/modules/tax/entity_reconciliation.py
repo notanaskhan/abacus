@@ -7,7 +7,7 @@ person approves a CCH import checkpoint:
   total);
 - **each partner's K-1 boxes**: `k1.<partner_ref>.<line>` against sheet 09's partner column;
 - **ending capital**: `capital.<partner_ref>.ending` against sheet 05 F;
-- **M-2**: `m2.<n>` against sheet 07 as drafted (lines 1–9, footed by code).
+- **M-2**: `m2.<n>` against sheet 07 as drafted (lines 1-9, footed by code).
 
 `partner_ref` is the id the export's `Allocations` sheet carried (`export_entity.allocations`), so
 an import names the same partner. The engine's figures are the values its approved import wrote
@@ -80,9 +80,7 @@ def _amount(cell: Mapping[str, object] | None) -> Decimal | None:
         return None
 
 
-def workbook_figures(
-    values: Values, return_id: UUID, known: Mapping[str, UUID]
-) -> list[Figure]:
+def workbook_figures(values: Values, return_id: UUID, known: Mapping[str, UUID]) -> list[Figure]:
     """Accrued's own figures for every key the engine owns (module docstring), by code."""
     out: list[Figure] = []
     n = 2
@@ -141,7 +139,8 @@ async def reconcile(tenant: TenantContext, return_id: UUID) -> list[ReconRow]:
 
 
 async def raise_differences(ctx: AuthContext, return_id: UUID) -> int:
-    """After an approved import: one `engine_diagnostic` issue per difference (module docstring)."""
+    """After an approved import: one `engine_diagnostic` issue per difference (module
+    docstring)."""
     raised = 0
     for row in differences(await reconcile(ctx.tenant, return_id)):
         await record_engine_issue(
