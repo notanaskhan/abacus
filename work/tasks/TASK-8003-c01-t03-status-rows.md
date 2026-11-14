@@ -2,7 +2,7 @@
 id: TASK-8003
 title: "C-01-T03: close status registry rows and copy registries (DF-23)"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-9, AC-10, AC-11]
 risk_zone: amber
 status: in-review
 branch: c01-t03-status-rows

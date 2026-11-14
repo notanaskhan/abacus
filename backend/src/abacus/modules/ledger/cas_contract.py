@@ -84,8 +84,8 @@ class AccountTreeOut(BaseModel):
     client_entity_id: Annotated[UUID, Internal]
     snapshot_id: Annotated[UUID, Internal]
     period: Period
-    accounts: list[LedgerAccountOut]
-    balances: list[MonthlyBalanceOut]
+    accounts: Annotated[list[LedgerAccountOut], Internal]
+    balances: Annotated[list[MonthlyBalanceOut], Internal]
     totals: Annotated[dict[Classification, Decimal], Confidential]
 
 
@@ -117,7 +117,7 @@ class PeriodComparisonOut(BaseModel):
 
     current_period: Period
     prior_period: Period
-    lines: list[PeriodComparisonLineOut]
+    lines: Annotated[list[PeriodComparisonLineOut], Internal]
 
 
 async def account_tree(

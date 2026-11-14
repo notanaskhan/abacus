@@ -6,7 +6,7 @@
 | Status | **stub** (C-01-T04 part 1, 2026-11-14; C-01-T05 part 2); every route answers 501 behind `closes.engine` until its build task; freezes at the end of S45 (C-01 §8), additive after |
 | Provider epic | C-01 (SPEC-655) |
 | Consumers | CLS-01, 02, 03, 04, 05, 06, 09, 10 and POR-11 (C-01 FE rows); C-02 (CLS-07, 08, 11, 12, 13 hosts and the Approved, Delivered and Locked guards), K-04 (close board provider), I-01 (HOME-01 count, HOME-02 gates), P-08 (portal home source), P-02 (search), W-02 (WB-01c run rows), K-02 (KNW-04a examples), G-03 (public reads, 2029) |
-| Flags | `closes.engine` (firm routes), `closes.portal_requests` (portal questions), `closes.agent` (model modes); entitlement `closes` |
+| Flags | `closes.engine` (firm routes), `closes.portal_requests` (portal questions), `closes.agent` (model modes); entitlement `cas_closes` (DEC-5015) |
 | Code | `backend/src/abacus/modules/closes/contract.py` (part 1), `closes/contract_work.py` (part 2) |
 | Matrix | C-01-T02's rows in `docs/architecture/permission-matrix/closes.yaml`, `requests.yaml` (transaction questions) and `connections.yaml` (ledger sync) |
 

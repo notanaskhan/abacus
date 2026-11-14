@@ -2,7 +2,7 @@
 id: TASK-8027
 title: "T-05-T73 part 1: the M18 entity returns flip plan (RB-84)"
 spec: SPEC-651
-acceptance_criteria: []
+acceptance_criteria: [AC-13]
 risk_zone: green
 status: in-review
 branch: t05-t73-flip-plan

@@ -103,7 +103,7 @@ class RequestNodeOut(BaseModel):
     linked: Annotated[int, Field(ge=0), Internal] = 0  # "Linked (n)", the C5 fulfilment count
     screening: Annotated[Literal["clear", "partly", "flagged", "running"] | None, Internal] = None
     overdue: Annotated[bool, Internal] = False
-    children: list[RequestNodeOut] = []
+    children: Annotated[list[RequestNodeOut], Internal] = []
 
 
 class RequestTreeOut(BaseModel):
@@ -114,7 +114,7 @@ class RequestTreeOut(BaseModel):
     publishes_on: Annotated[date | None, Internal] = None  # "Requests publish Oct 1 (BD1)…"
     plan_version: Annotated[int | None, Field(ge=1), Internal] = None
     marked_done_by: Annotated[str | None, Confidential] = None  # "Marked done by Ben Ashby"
-    nodes: list[RequestNodeOut]
+    nodes: Annotated[list[RequestNodeOut], Internal]
 
 
 class QuestionnaireAnswerOut(BaseModel):
@@ -132,7 +132,7 @@ class CloseQuestionnaireOut(BaseModel):
 
     answered: Annotated[int, Field(ge=0), Internal]
     total: Annotated[int, Field(ge=0), Internal]
-    items: list[QuestionnaireAnswerOut]
+    items: Annotated[list[QuestionnaireAnswerOut], Internal]
 
 
 class CitedFigureOut(BaseModel):
@@ -155,7 +155,7 @@ class IntakeSummaryOut(BaseModel):
 
     evidence_version_id: Annotated[UUID, Internal]
     label: Annotated[Literal["summarized_by_agent", "totals_from_file"], Internal]
-    figures: list[CitedFigureOut]
+    figures: Annotated[list[CitedFigureOut], Internal]
     paragraph: Annotated[str | None, Confidential] = None
     run_id: Annotated[UUID | None, Internal] = None
 
@@ -180,7 +180,7 @@ class AccountNodeOut(BaseModel):
     balance: Money
     tally: Annotated[TallyWord | None, Internal] = None
     off_by: MaybeMoney = None
-    children: list[AccountNodeOut] = []
+    children: Annotated[list[AccountNodeOut], Internal] = []
 
 
 class AccountTreeOut(BaseModel):
@@ -190,7 +190,7 @@ class AccountTreeOut(BaseModel):
     snapshot_id: Annotated[UUID, Internal]
     synced_at: Annotated[datetime | None, Internal] = None
     totals: Annotated[dict[Classification, Decimal], Confidential]
-    nodes: list[AccountNodeOut]
+    nodes: Annotated[list[AccountNodeOut], Internal]
 
 
 class RegisterLineOut(BaseModel):
@@ -212,7 +212,7 @@ class CloseRegisterOut(BaseModel):
     model_config = _cfg()
 
     account_external_id: Annotated[str, Internal]
-    items: list[RegisterLineOut]
+    items: Annotated[list[RegisterLineOut], Internal]
     next_cursor: Annotated[str | None, Internal] = None
 
 
@@ -251,7 +251,7 @@ class EntryRecordingOut(BaseModel):
     entry_number: Annotated[str, Confidential]  # "AJE-02"
     external_txn_id: Annotated[str, Internal]  # "48214"
     found_at: Annotated[datetime, Internal]
-    confirmed_by: ClosePersonOut | None = None
+    confirmed_by: Annotated[ClosePersonOut | None, Internal] = None
 
 
 class CloseWorkpaperOut(BaseModel):
@@ -268,9 +268,9 @@ class CloseWorkpaperOut(BaseModel):
     pending_entry_number: Annotated[str | None, Confidential] = None
     approval: Annotated[str | None, Confidential] = None  # "Approved by RM under BH AJE …"
     note: Annotated[str | None, Confidential] = None  # "Record it in QuickBooks; …"
-    recording: EntryRecordingOut | None = None
-    arrangements: list[ArrangementOut]
-    lines: list[ScheduleLineOut]
+    recording: Annotated[EntryRecordingOut | None, Internal] = None
+    arrangements: Annotated[list[ArrangementOut], Internal]
+    lines: Annotated[list[ScheduleLineOut], Internal]
     review_issue_id: Annotated[UUID | None, Internal] = None
 
 
@@ -329,7 +329,7 @@ class ReconcilingItemOut(BaseModel):
     days_at_period_end: Annotated[int, Field(ge=0), Internal]
     amount: Money
     stale: Annotated[bool, Internal] = False  # "Stale > 90 days"
-    region: StatementRegionOut | None = None
+    region: Annotated[StatementRegionOut | None, Internal] = None
     register_line_ref: Annotated[str | None, Internal] = None
     issue_id: Annotated[UUID | None, Internal] = None
     proposed_entry_id: Annotated[UUID | None, Internal] = None
@@ -344,7 +344,7 @@ class CloseStatementLineOut(BaseModel):
     description: Annotated[str, Confidential]
     withdrawal: MaybeMoney = None
     deposit: MaybeMoney = None
-    region: StatementRegionOut
+    region: Annotated[StatementRegionOut, Internal]
     matched: Annotated[bool, Internal]
     low_confidence: Annotated[bool, Internal] = False  # outlined; never auto-matched (AC-40)
 
@@ -368,9 +368,9 @@ class CloseReconciliationOut(BaseModel):
     adjusted_book: Money
     difference: MaybeMoney = None
     tally: Annotated[TallyWord, Internal]
-    items: list[ReconcilingItemOut]
-    statement_lines: list[CloseStatementLineOut]
-    signed_off_by: ClosePersonOut | None = None
+    items: Annotated[list[ReconcilingItemOut], Internal]
+    statement_lines: Annotated[list[CloseStatementLineOut], Internal]
+    signed_off_by: Annotated[ClosePersonOut | None, Internal] = None
     sign_off_stale: Annotated[bool, Internal] = False
     sign_off_blockers: Annotated[list[str], Internal] = []
     engine_version: Annotated[str, Internal]
@@ -400,7 +400,7 @@ class EntryDraftOut(BaseModel):
     model_config = _cfg()
 
     suggestion_id: Annotated[UUID | None, Internal] = None
-    lines: list[EntryLineOut]
+    lines: Annotated[list[EntryLineOut], Internal]
     reasoning: Annotated[str | None, Confidential] = None
     citation_ids: Annotated[list[UUID], Internal] = []
     drafted_by: Annotated[Literal["agent", "code"], Internal]
@@ -411,7 +411,7 @@ class EntryProposalIn(BaseModel):
 
     reconciliation_item_id: Annotated[UUID | None, Internal] = None
     description: Annotated[str, Field(min_length=1, max_length=500), Confidential]
-    lines: Annotated[list[EntryLineOut], Field(min_length=2, max_length=50)]
+    lines: Annotated[list[EntryLineOut], Field(min_length=2, max_length=50), Internal]
 
 
 # --- CLS-06 review and transaction questions -----------------------------------------------------
@@ -432,7 +432,7 @@ class CloseIssueOut(BaseModel):
     account_external_id: Annotated[str | None, Internal] = None
     register_line_ref: Annotated[str | None, Internal] = None
     question_id: Annotated[UUID | None, Internal] = None
-    resolved_by: ClosePersonOut | None = None
+    resolved_by: Annotated[ClosePersonOut | None, Internal] = None
 
 
 class CloseIssuesOut(BaseModel):
@@ -443,8 +443,8 @@ class CloseIssuesOut(BaseModel):
     open: Annotated[int, Field(ge=0), Internal]
     by_severity: Annotated[dict[Severity, int], Internal]
     notes: Annotated[int, Field(ge=0), Internal]
-    items: list[CloseIssueOut]
-    adjustments: PlannedLinkOut | None = None  # CLS-07 (C-02), planned
+    items: Annotated[list[CloseIssueOut], Internal]
+    adjustments: Annotated[PlannedLinkOut | None, Internal] = None  # CLS-07 (C-02), planned
 
 
 class TransactionQuestionIn(BaseModel):
@@ -464,7 +464,7 @@ class TransactionQuestionOut(BaseModel):
     question_id: Annotated[UUID, Internal]
     issue_id: Annotated[UUID | None, Internal] = None
     status: Annotated[QuestionStatus, Internal]
-    asked_by: ClosePersonOut
+    asked_by: Annotated[ClosePersonOut, Internal]
     asked_at: Annotated[datetime, Internal]
     answered_at: Annotated[datetime | None, Internal] = None
 
@@ -495,8 +495,8 @@ class FluxLineOut(BaseModel):
     test: Annotated[FluxTest, Internal]
     status: Annotated[FluxLineStatus, Internal]
     explanation: Annotated[str | None, Confidential] = None
-    drivers: list[FluxDriverOut] = []
-    accepted_by: ClosePersonOut | None = None
+    drivers: Annotated[list[FluxDriverOut], Internal] = []
+    accepted_by: Annotated[ClosePersonOut | None, Internal] = None
     row_version: Annotated[int, Field(ge=1), Internal] = 1
 
 
@@ -510,7 +510,7 @@ class FluxSetOut(BaseModel):
     explained: Annotated[int, Field(ge=0), Internal]
     unexplained: Annotated[int, Field(ge=0), Internal]
     budget_available: Annotated[bool, Internal] = False  # "No budget on file"
-    lines: list[FluxLineOut]
+    lines: Annotated[list[FluxLineOut], Internal]
     engine_version: Annotated[str, Internal]
 
 
@@ -547,7 +547,7 @@ class PortalQuestionOut(BaseModel):
 class PortalQuestionsOut(BaseModel):
     model_config = _cfg()
 
-    items: list[PortalQuestionOut]
+    items: Annotated[list[PortalQuestionOut], Internal]
 
 
 class PortalAnswerIn(BaseModel):

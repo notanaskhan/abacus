@@ -2,7 +2,7 @@
 id: TASK-8016
 title: "T-07-T01: SPEC-656, gate check by P-ID, screen contracts TXT-01 to TXT-04"
 spec: SPEC-656
-acceptance_criteria: []
+acceptance_criteria: [AC-0]
 risk_zone: green
 status: in-review
 branch: t07-t01-trusts-spec

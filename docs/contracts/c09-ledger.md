@@ -231,8 +231,9 @@ unknown entity answers 404 (`not_visible` is never a separate code: no existence
 
 | Method · path | Action | Response |
 |---|---|---|
-| `GET /v1/client-entities/{eid}/ledger-sync` | `ledger.read` | `LedgerSyncStatusOut`: state in `ledger_sync` words, last and next sync, retry time, failure code, meter (calls, budget, ok · warning · exhausted) |
-| `POST /v1/client-entities/{eid}/ledger-sync` (Idempotency-Key) | `ledger.sync_now` | `SyncNowOut` (202); 409 `ledger_not_connected` |
+| *(route named `ledger-pull`, not the epic's `ledger-sync`: ADR-040's path test refuses "sync" under a ledger path; DEC-5015)* | | |
+| `GET /v1/client-entities/{eid}/ledger-pull` | `ledger.read` | `LedgerSyncStatusOut`: state in `ledger_sync` words, last and next sync, retry time, failure code, meter (calls, budget, ok · warning · exhausted) |
+| `POST /v1/client-entities/{eid}/ledger-pull` (Idempotency-Key) | `ledger.sync_now` | `SyncNowOut` (202); 409 `ledger_not_connected` |
 
 Order: a client principal 404; `connections.ledger_sync` off 404; Sync now refuses non-persons 403;
 then 501. Tables: C-01-T10 (`ledger_accounts`, monthly `period_kind`, register columns on

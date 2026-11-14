@@ -2,7 +2,7 @@
 id: TASK-8024
 title: "T-05-T66 part 1: agent-off states, the shared gate and TXP-01"
 spec: SPEC-651
-acceptance_criteria: [AC-13.1]
+acceptance_criteria: [AC-13]
 risk_zone: green
 status: in-review
 branch: t05-t66-agent-off-states

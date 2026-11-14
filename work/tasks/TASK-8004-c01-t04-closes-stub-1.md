@@ -2,7 +2,7 @@
 id: TASK-8004
 title: "C-01-T04: closes contract stub PR 1 — portfolio, record, runs, plans"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-1, AC-2, AC-14, AC-28, AC-54]
 risk_zone: amber
 status: in-review
 branch: c01-t04-closes-stub-1

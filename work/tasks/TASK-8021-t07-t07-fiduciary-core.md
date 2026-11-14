@@ -2,7 +2,7 @@
 id: TASK-8021
 title: "T-07-T07: migration fiduciary_core (expand-only)"
 spec: SPEC-656
-acceptance_criteria: []
+acceptance_criteria: [AC-15]
 risk_zone: amber
 status: in-review
 branch: t07-t07-fiduciary-core

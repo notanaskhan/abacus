@@ -2,7 +2,7 @@
 id: TASK-8013
 title: "W-02-T24 part 1: independent AC and security tests for W-02-T03, T12 and T15"
 spec: SPEC-653
-acceptance_criteria: []
+acceptance_criteria: [AC-W1, AC-W2]
 risk_zone: red
 status: in-review
 branch: w02-t24-independent-part1

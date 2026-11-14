@@ -1131,6 +1131,7 @@
             "type": "string"
           },
           "children": {
+            "cls": "internal",
             "default": [],
             "items": {
               "$ref": "#/components/schemas/AccountNodeOut"
@@ -1543,6 +1544,7 @@
             "type": "string"
           },
           "nodes": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/AccountNodeOut"
             },
@@ -12384,7 +12386,8 @@
             "title": "Computation Id"
           },
           "election": {
-            "$ref": "#/components/schemas/SixtyFiveDayCardOut"
+            "$ref": "#/components/schemas/SixtyFiveDayCardOut",
+            "cls": "internal"
           },
           "release_reason": {
             "anyOf": [
@@ -12399,6 +12402,7 @@
             "title": "Release Reason"
           },
           "release_steps": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ReleaseStepOut"
             },
@@ -12412,6 +12416,7 @@
             "type": "string"
           },
           "rows": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/BeneficiaryRowOut"
             },
@@ -12426,7 +12431,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           }
         },
         "required": [
@@ -12549,6 +12555,7 @@
             "title": "Package Status"
           },
           "payments": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/BeneficiaryPaymentOut"
             },
@@ -18606,6 +18613,7 @@
             "title": "Parent Clause Id"
           },
           "regions": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ClauseRegionIn"
             },
@@ -21071,7 +21079,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "severity": {
             "cls": "internal",
@@ -21134,7 +21143,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "by_severity": {
             "additionalProperties": {
@@ -21152,6 +21162,7 @@
             "type": "object"
           },
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CloseIssueOut"
             },
@@ -21185,6 +21196,7 @@
         "description": "The list envelope (ADR P-36) with the tiles and the summary line; walled closes are\nabsent from all three (INV-3, AC-4).",
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CloseRowOut"
             },
@@ -21204,10 +21216,12 @@
             "title": "Next Cursor"
           },
           "summary": {
-            "$ref": "#/components/schemas/CloseSummaryLineOut"
+            "$ref": "#/components/schemas/CloseSummaryLineOut",
+            "cls": "internal"
           },
           "tiles": {
-            "$ref": "#/components/schemas/CloseTilesOut"
+            "$ref": "#/components/schemas/CloseTilesOut",
+            "cls": "internal"
           }
         },
         "required": [
@@ -21272,7 +21286,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "portal_status": {
             "cls": "internal",
@@ -21419,6 +21434,7 @@
             "type": "integer"
           },
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/QuestionnaireAnswerOut"
             },
@@ -21517,6 +21533,7 @@
             "type": "string"
           },
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ReconcilingItemOut"
             },
@@ -21558,7 +21575,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "statement_evidence_version_id": {
             "anyOf": [
@@ -21574,6 +21592,7 @@
             "title": "Statement Evidence Version Id"
           },
           "statement_lines": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CloseStatementLineOut"
             },
@@ -21639,6 +21658,7 @@
             "type": "string"
           },
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/RegisterLineOut"
             },
@@ -21788,7 +21808,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "reconciled_pct": {
             "cls": "internal",
@@ -21805,7 +21826,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "run_no": {
             "cls": "internal",
@@ -21923,6 +21945,7 @@
             "title": "Finished At"
           },
           "groups": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CloseTaskGroupOut"
             },
@@ -21967,7 +21990,8 @@
             "type": "string"
           },
           "started_by": {
-            "$ref": "#/components/schemas/ClosePersonOut"
+            "$ref": "#/components/schemas/ClosePersonOut",
+            "cls": "internal"
           },
           "status": {
             "cls": "internal",
@@ -22007,6 +22031,7 @@
         "additionalProperties": false,
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CloseRunHistoryItemOut"
             },
@@ -22060,7 +22085,8 @@
             "type": "boolean"
           },
           "region": {
-            "$ref": "#/components/schemas/StatementRegionOut"
+            "$ref": "#/components/schemas/StatementRegionOut",
+            "cls": "internal"
           },
           "statement_line_id": {
             "cls": "internal",
@@ -22312,6 +22338,7 @@
             "title": "Plan Version"
           },
           "planned_links": {
+            "cls": "internal",
             "default": [],
             "items": {
               "$ref": "#/components/schemas/PlannedLinkOut"
@@ -22320,7 +22347,8 @@
             "type": "array"
           },
           "portal": {
-            "$ref": "#/components/schemas/ClosePortalBlockOut"
+            "$ref": "#/components/schemas/ClosePortalBlockOut",
+            "cls": "internal"
           },
           "preparer": {
             "anyOf": [
@@ -22330,7 +22358,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "previous_period_close_id": {
             "anyOf": [
@@ -22366,7 +22395,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "row_version": {
             "cls": "internal",
@@ -22402,7 +22432,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           }
         },
         "required": [
@@ -22490,6 +22521,7 @@
             "type": "string"
           },
           "procedures": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CloseProcedureOut"
             },
@@ -22522,6 +22554,7 @@
             "type": "string"
           },
           "request_templates": {
+            "cls": "internal",
             "default": [],
             "items": {
               "$ref": "#/components/schemas/RequestTemplateIn"
@@ -22531,6 +22564,7 @@
             "type": "array"
           },
           "rows": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/PlanRowIn"
             },
@@ -22609,6 +22643,7 @@
         "additionalProperties": false,
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CloseTemplateOut"
             },
@@ -22687,6 +22722,7 @@
             "title": "Approval"
           },
           "arrangements": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ArrangementOut"
             },
@@ -22700,6 +22736,7 @@
             "type": "string"
           },
           "lines": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ScheduleLineOut"
             },
@@ -22751,7 +22788,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "review_issue_id": {
             "anyOf": [
@@ -38227,6 +38265,7 @@
             "type": "string"
           },
           "lines": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EntryLineOut-Output"
             },
@@ -38568,6 +38607,7 @@
             "type": "string"
           },
           "lines": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EntryLineOut-Input"
             },
@@ -38609,7 +38649,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "entry_number": {
             "cls": "confidential",
@@ -40674,7 +40715,8 @@
             "type": "boolean"
           },
           "header": {
-            "$ref": "#/components/schemas/EstateHeaderOut"
+            "$ref": "#/components/schemas/EstateHeaderOut",
+            "cls": "internal"
           },
           "inputs_hash": {
             "cls": "internal",
@@ -40686,6 +40728,7 @@
             "cls": "internal"
           },
           "lines": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EstateComputationLineOut"
             },
@@ -40698,7 +40741,8 @@
             "type": "string"
           },
           "state_card": {
-            "$ref": "#/components/schemas/EstateStateCardOut"
+            "$ref": "#/components/schemas/EstateStateCardOut",
+            "cls": "internal"
           },
           "version_no": {
             "cls": "internal",
@@ -40706,7 +40750,8 @@
             "type": "integer"
           },
           "without_dsue": {
-            "$ref": "#/components/schemas/EstateWithoutDsueOut"
+            "$ref": "#/components/schemas/EstateWithoutDsueOut",
+            "cls": "internal"
           }
         },
         "required": [
@@ -40940,6 +40985,7 @@
         "description": "TXT-04 b: 28,500 + 240,000 + 131,500 + 500,000 = 900,000 (AC-12.4).",
         "properties": {
           "deductions": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EstateDeductionOut"
             },
@@ -40947,7 +40993,8 @@
             "type": "array"
           },
           "header": {
-            "$ref": "#/components/schemas/EstateHeaderOut"
+            "$ref": "#/components/schemas/EstateHeaderOut",
+            "cls": "internal"
           },
           "total": {
             "cls": "restricted",
@@ -40995,6 +41042,7 @@
             "title": "Provenance Id"
           },
           "rows": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EstateDerivationRowOut"
             },
@@ -41099,6 +41147,7 @@
             "x-tri": true
           },
           "gifts": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/GiftHistoryRowOut"
             },
@@ -41106,7 +41155,8 @@
             "type": "array"
           },
           "header": {
-            "$ref": "#/components/schemas/EstateHeaderOut"
+            "$ref": "#/components/schemas/EstateHeaderOut",
+            "cls": "internal"
           },
           "tie": {
             "$ref": "#/components/schemas/TieOutTallyStatus",
@@ -41155,7 +41205,8 @@
             "type": "string"
           },
           "due": {
-            "$ref": "#/components/schemas/EstateDueChipOut"
+            "$ref": "#/components/schemas/EstateDueChipOut",
+            "cls": "internal"
           },
           "return_id": {
             "cls": "internal",
@@ -41164,6 +41215,7 @@
             "type": "string"
           },
           "tallies": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EstateTallyOut"
             },
@@ -41214,6 +41266,7 @@
         "description": "TXT-04 a: six schedules foot 16,400,000 / 15,993,000 / 12,688,000 (AC-12.1).",
         "properties": {
           "assets": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EstateAssetOut"
             },
@@ -41221,10 +41274,12 @@
             "type": "array"
           },
           "header": {
-            "$ref": "#/components/schemas/EstateHeaderOut"
+            "$ref": "#/components/schemas/EstateHeaderOut",
+            "cls": "internal"
           },
           "totals": {
-            "$ref": "#/components/schemas/EstateInventoryTotalsOut"
+            "$ref": "#/components/schemas/EstateInventoryTotalsOut",
+            "cls": "internal"
           }
         },
         "required": [
@@ -44586,6 +44641,7 @@
       "FaiLinesOut": {
         "properties": {
           "lines": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/FaiLineOut"
             },
@@ -44650,6 +44706,7 @@
       "FiduciaryCharacterRowOut": {
         "properties": {
           "by_party": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/FiduciaryCharacterAmountOut"
             },
@@ -44724,6 +44781,7 @@
             "x-tri": true
           },
           "by_character": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/FiduciaryCharacterRowOut"
             },
@@ -44759,6 +44817,7 @@
             "type": "string"
           },
           "nodes": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/FiduciaryTreeNodeOut"
             },
@@ -44803,6 +44862,7 @@
             "title": "Signed By Initials"
           },
           "tallies": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/FiduciaryTallyOut"
             },
@@ -48881,7 +48941,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "caption": {
             "cls": "confidential",
@@ -48921,6 +48982,7 @@
             "type": "string"
           },
           "drivers": {
+            "cls": "internal",
             "default": [],
             "items": {
               "$ref": "#/components/schemas/FluxDriverOut"
@@ -49036,6 +49098,7 @@
             "type": "integer"
           },
           "lines": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/FluxLineOut"
             },
@@ -58051,6 +58114,7 @@
             "title": "Parent Clause Id"
           },
           "regions": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ClauseRegionOut"
             },
@@ -58080,6 +58144,7 @@
       "InstrumentClausesOut": {
         "properties": {
           "clauses": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/InstrumentClauseOut"
             },
@@ -58386,6 +58451,7 @@
             "type": "array"
           },
           "cited_by": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/InstrumentCitedByOut"
             },
@@ -58393,6 +58459,7 @@
             "type": "array"
           },
           "determinations": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/InstrumentDeterminationOut"
             },
@@ -58407,7 +58474,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "interpretation": {
             "anyOf": [
@@ -58417,13 +58485,16 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "profile": {
-            "$ref": "#/components/schemas/TrustProfileOut"
+            "$ref": "#/components/schemas/TrustProfileOut",
+            "cls": "internal"
           },
           "reader": {
-            "$ref": "#/components/schemas/InstrumentReaderOut"
+            "$ref": "#/components/schemas/InstrumentReaderOut",
+            "cls": "internal"
           },
           "return_id": {
             "cls": "internal",
@@ -58439,7 +58510,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           }
         },
         "required": [
@@ -59864,6 +59936,7 @@
             "type": "string"
           },
           "figures": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CitedFigureOut"
             },
@@ -65128,7 +65201,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "next_sync_at": {
             "anyOf": [
@@ -78996,6 +79070,7 @@
         "additionalProperties": false,
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/PlanHistoryItemOut"
             },
@@ -79640,7 +79715,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           }
         },
         "required": [
@@ -79946,9 +80022,11 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "request_templates": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/RequestTemplateOut"
             },
@@ -79962,6 +80040,7 @@
             "type": "integer"
           },
           "rows": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/PlanRowOut"
             },
@@ -79979,7 +80058,8 @@
             "type": "string"
           },
           "tally": {
-            "$ref": "#/components/schemas/PlanTallyOut"
+            "$ref": "#/components/schemas/PlanTallyOut",
+            "cls": "internal"
           },
           "version": {
             "cls": "internal",
@@ -83010,6 +83090,7 @@
         "additionalProperties": false,
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/PortalQuestionOut"
             },
@@ -88667,7 +88748,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "register_line_ref": {
             "anyOf": [
@@ -92485,6 +92567,7 @@
         "description": "One node of the intake tree: a category or a request with its counts (CLS-03).",
         "properties": {
           "children": {
+            "cls": "internal",
             "default": [],
             "items": {
               "$ref": "#/components/schemas/RequestNodeOut"
@@ -92743,6 +92826,7 @@
             "title": "Marked Done By"
           },
           "nodes": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/RequestNodeOut"
             },
@@ -99435,6 +99519,7 @@
         "additionalProperties": false,
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/RunningCloseOut"
             },
@@ -111128,7 +111213,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "to": {
             "anyOf": [
@@ -121513,7 +121599,8 @@
             "type": "string"
           },
           "asked_by": {
-            "$ref": "#/components/schemas/ClosePersonOut"
+            "$ref": "#/components/schemas/ClosePersonOut",
+            "cls": "internal"
           },
           "issue_id": {
             "anyOf": [
@@ -122961,6 +123048,7 @@
       "TrustDistributionsOut": {
         "properties": {
           "distributions": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/TrustDistributionOut"
             },
@@ -123217,6 +123305,7 @@
       "TrustExpensesOut": {
         "properties": {
           "expenses": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/TrustExpenseOut"
             },
@@ -123251,18 +123340,16 @@
             "title": "Client Entity Id",
             "type": "string"
           },
-          "ein_last4": {
+          "ein": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/MaskedTinOut"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "restricted",
-            "title": "Ein Last4",
-            "x-tri": true
+            "cls": "internal"
           },
           "fiduciary_kind": {
             "cls": "internal",
@@ -123350,7 +123437,7 @@
           "settlor_died_year",
           "residency_state",
           "state_form",
-          "ein_last4"
+          "ein"
         ],
         "title": "TrustProfileOut",
         "type": "object"
@@ -158940,7 +159027,7 @@
         "x-abacus-action": "tax_election.manage"
       }
     },
-    "/v1/client-entities/{client_entity_id}/ledger-sync": {
+    "/v1/client-entities/{client_entity_id}/ledger-pull": {
       "get": {
         "description": "The entity's sync facts (C-01-T17).",
         "operationId": "ledger_sync_status",

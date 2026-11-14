@@ -88,6 +88,20 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # C-01-T04, T05 and T-07-T05 (S44 stubs): status moves, adoption, publication, a resolution,
+    # an answer, a reopen, an import-from-statement and an idempotent recompute act on existing
+    # records, so 200.
+    "/v1/analytic-lines/{line_id}/accept",
+    "/v1/clients/{client_id}/close-plan/drafts/{version}/publish",
+    "/v1/clients/{client_id}/close-plan/drafts/{version}/request-publish",
+    "/v1/clients/{client_id}/close-plan/drafts/{version}/rows/{row_id}:adopt",
+    "/v1/clients/{client_id}/close-plan/drafts/{version}/rows:adopt-all",
+    "/v1/closes/{close_id}/status",
+    "/v1/portal/questions/{question_id}/answer",
+    "/v1/reconciliations/{reconciliation_id}/items/{item_id}/resolve",
+    "/v1/tax/instrument-interpretations/{interpretation_id}/reopen",
+    "/v1/tax/returns/{return_id}/fai-lines/import-from-statement",
+    "/v1/tax/returns/{return_id}/fiduciary-computation/recompute",
     # P-02-T01 (C15 v1 stub, DEC-4504): a search reads by POST (the query stays out of URLs and
     # logs), and recording a recent upserts the person's one row per object, so 200.
     "/v1/search",
@@ -538,6 +552,14 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/agent-runs/{run_id}/messages",
         "/v1/agent-runs/{run_id}/steps/{step_id}/retry",
         "/v1/agent-runs/{run_id}/stop",
+        # C-01-T04, T05, T07 (S44): a run, a retry, a draft from history, an explanation and a
+        # ledger sync start work; T-07-T05: a reader run starts the workflow, so 202.
+        "/v1/analytic-lines/{line_id}/explain",
+        "/v1/client-entities/{client_entity_id}/ledger-pull",
+        "/v1/clients/{client_id}/close-plan/draft-from-history",
+        "/v1/closes/{close_id}/runs",
+        "/v1/closes/{close_id}/runs/{run_no}/steps/{step_id}/retry",
+        "/v1/tax/returns/{return_id}/instrument/read",
         "/v1/audits/{work_item_id}/ebp/participant-accounts/run",
         "/v1/engagements/{engagement_id}/runs",
         "/v1/workbench/sessions/{session_id}/messages",
@@ -558,6 +580,26 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
+        # C-01-T04, T05, T07 and T-07-T05 (S44 stubs): each inserts a new row, 201.
+        "/v1/clients/{client_id}/close-plan/drafts",
+        "/v1/clients/{client_id}/close-plan/drafts/{version}/request-templates",
+        "/v1/clients/{client_id}/close-plan/drafts/{version}/rows",
+        "/v1/close-templates:import",
+        "/v1/closes/{close_id}/accounts/{account_ref}/arrangements",
+        "/v1/closes/{close_id}/entries",
+        "/v1/engagements/{engagement_id}/closes:generate",
+        "/v1/issues/{issue_id}/transaction-questions",
+        "/v1/register-lines/{line_ref}/recategorization-proposals",
+        "/v1/tax/client-entities/{client_entity_id}/gift-history",
+        "/v1/tax/governing-instruments/{instrument_id}/clauses",
+        "/v1/tax/returns/{return_id}/estate/assets",
+        "/v1/tax/returns/{return_id}/estate/deductions",
+        "/v1/tax/returns/{return_id}/fai-lines",
+        "/v1/tax/returns/{return_id}/instrument",
+        "/v1/tax/returns/{return_id}/instrument/determinations",
+        "/v1/tax/returns/{return_id}/trust-distributions",
+        "/v1/tax/returns/{return_id}/trust-expenses",
+        "/v1/tax/returns/{return_id}/trustee-questions",
         # T-05-T41 (DEC-4702): an approval records a sign-off and an approved version, 201.
         "/v1/tax-returns/{return_id}/allocation-structure/approve",
         # W-02-T02/T03 (SPEC-653): attaching context and a drill each insert a session item, 201.

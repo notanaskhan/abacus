@@ -51,7 +51,9 @@ describe("copy bans (R-04)", () => {
 
 describe("copy bans (DV-2)", () => {
   it("TXT-02 and TXT-04 never say Ties", () => {
-    const hits = TIE_ROOTS.flatMap(existing).filter((path) => TIES.test(readFileSync(path, "utf8")));
+    const hits = TIE_ROOTS.flatMap(existing).filter((path) =>
+      TIES.test(readFileSync(path, "utf8")),
+    );
     expect(hits).toEqual([]);
   });
 

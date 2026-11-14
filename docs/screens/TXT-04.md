@@ -57,6 +57,10 @@ Matrix actions from `permission-matrix/tax.yaml` (T-07-T03): every write is a pe
 | 2023 Form 709 | FIL-01 | live |
 | Approve values… | SHL-12 L4 | live (DV-8) |
 | Extension | TAX-13 | live |
+| Checkpoints | SHL-16 · checkpoints | live |
+| Export | TAX-09 · export to CCH Axcess | live |
+| Row → source document | SHL-08 · source viewer | live |
+| DSUE support | TAX-06 · issues · DSUE support | live |
 
 ## Notes
 

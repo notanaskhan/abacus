@@ -2,7 +2,7 @@
 id: TASK-8002
 title: "C-01-T02: S44 protected bundle — closes matrix, four flags, entitlement, registries, glossary"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-12, AC-50, AC-54]
 risk_zone: red
 status: in-review
 branch: c01-t02-protected-bundle

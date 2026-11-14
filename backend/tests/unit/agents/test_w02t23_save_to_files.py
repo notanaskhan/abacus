@@ -25,5 +25,6 @@ def test_the_save_tool_stays_a_proposal_and_the_save_an_approved_write() -> None
     assert kinds[f.SAVE_TOOL] == "approved_write"
 
 
-def test_ac_w1_the_proposal_reply_carries_the_sentence() -> None:
-    assert "access_sentence" in f.ProposeSaveOut.model_fields
+def test_c17_the_propose_reply_stays_identifiers_only() -> None:
+    # The access sentence rides on the proposal's set_ref (AC-W1), never the tool's answer.
+    assert set(f.ProposeSaveOut.model_fields) == {"proposal_id"}

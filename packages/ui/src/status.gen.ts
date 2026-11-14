@@ -1470,7 +1470,7 @@ export const STATUS_REGISTRY = {
       "variant": "green-tint",
       "terminal": true,
       "derived": false,
-      "clientLabel": "Answered · {time}"
+      "clientLabel": "Answered {time}"
     },
     "withdrawn": {
       "label": "Withdrawn",

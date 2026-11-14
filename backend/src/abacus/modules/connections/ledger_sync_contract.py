@@ -1,9 +1,9 @@
 """The ledger sync routes, C9 v2.1 sync-status facts (C-01-T07; C-01 §4.3, §4.5; SPEC-655 F5;
 `docs/contracts/c09-ledger.md` "C9 v2.1"). Provider: connections (red).
 
-- `GET /v1/client-entities/{eid}/ledger-sync`: the entity's sync facts (last sync, next sync,
+- `GET /v1/client-entities/{eid}/ledger-pull`: the entity's sync facts (last sync, next sync,
   failure code, meter state) in `ledger_sync` words (`ledger.read`).
-- `POST /v1/client-entities/{eid}/ledger-sync`: Sync now, one pull at once, logged
+- `POST /v1/client-entities/{eid}/ledger-pull`: Sync now, one pull at once, logged
   `ledger.sync_now` (Senior and above; a live person's, INV-1).
 
 Every route answers, in order: a client principal 404; `connections.ledger_sync` off 404; the
@@ -67,7 +67,7 @@ class LedgerSyncStatusOut(BaseModel):
     next_sync_at: Annotated[datetime | None, Internal] = None
     retry_at: Annotated[datetime | None, Internal] = None  # "rate limit · retrying 10:07 AM"
     failure_code: Annotated[str | None, Field(pattern=r"^[a-z][a-z0-9_]{0,63}$"), Internal] = None
-    meter: MeterOut | None = None
+    meter: Annotated[MeterOut | None, Internal] = None
 
 
 class SyncNowOut(BaseModel):
@@ -90,7 +90,7 @@ def _not_yet() -> NoReturn:
 
 
 @ledger_sync_router.get(
-    "/{client_entity_id}/ledger-sync",
+    "/{client_entity_id}/ledger-pull",
     action="ledger.read",
     response_model=LedgerSyncStatusOut,
     errors=(501,),
@@ -102,7 +102,7 @@ async def ledger_sync_status_route(client_entity_id: UUID, ctx: Ctx) -> LedgerSy
 
 
 @ledger_sync_router.post(
-    "/{client_entity_id}/ledger-sync",
+    "/{client_entity_id}/ledger-pull",
     action="ledger.sync_now",
     response_model=SyncNowOut,
     status_code=202,

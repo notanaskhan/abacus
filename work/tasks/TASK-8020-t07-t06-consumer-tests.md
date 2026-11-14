@@ -2,7 +2,7 @@
 id: TASK-8020
 title: "T-07-T06: consumer contract tests for the contracts T-07 consumes in new ways"
 spec: SPEC-656
-acceptance_criteria: []
+acceptance_criteria: [AC-15]
 risk_zone: amber
 status: in-review
 branch: t07-t06-consumer-tests

@@ -2,7 +2,7 @@
 id: TASK-8005
 title: "C-01-T05: closes contract stub PR 2 — intake, accounts, reconciliation, review, flux, portal"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-23, AC-35, AC-39, AC-44, AC-48, AC-54]
 risk_zone: amber
 status: in-review
 branch: c01-t05-closes-stub-2

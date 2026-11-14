@@ -1,8 +1,8 @@
 ---
 id: TASK-8000
 title: "S44 kickoff: scan, order and numbers"
-spec: S44
-acceptance_criteria: []
+spec: SPEC-000  # sprint record
+acceptance_criteria: [AC-1]  # every S44 row is placed: ready, partly, chained or not code
 risk_zone: green
 status: in-review
 branch: s44 kickoff

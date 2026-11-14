@@ -58,10 +58,12 @@ def test_the_agent_keeps_only_its_three_task_scoped_writes() -> None:
 
 
 @pytest.mark.parametrize("action", ["close.create"])
-def test_generating_closes_is_a_manager_or_the_system(action: str) -> None:
+def test_generating_closes_is_a_managers_or_partners_act(action: str) -> None:
     cells = ACTIONS[action]
     assert cells["agent"] == "deny"
-    assert cells["system"] == "allow"  # ENG-03's monthly-close step generates the 12 closes
+    assert (
+        cells["system"] == "deny"
+    )  # DEC-5015: a person generates the 12 closes, also from ENG-03
     assert cells.get("senior", "deny") == "deny"
 
 
@@ -99,6 +101,8 @@ def test_the_four_flags_are_registered_off_by_default() -> None:
         assert flag.default == "false"
 
 
-def test_closes_is_a_module_entitlement_without_a_review() -> None:
-    assert "closes" in MODULES
-    assert "closes" not in REVIEWED_MODULES
+def test_cas_closes_is_a_module_entitlement_without_a_review() -> None:
+    # DEC-5015: the entitlement is `cas_closes`, so `closes.*` stay rollout flags.
+    assert "cas_closes" in MODULES
+    assert "cas_closes" not in REVIEWED_MODULES
+    assert "closes" not in MODULES

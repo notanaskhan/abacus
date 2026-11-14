@@ -420,7 +420,7 @@ objects:
     source: "C-01 §4.2 T11; CLS-06; POR-11"
     codes:
       open:      {label: "Waiting on client", variant: amber, terminal: false, derived: false, client_label: "To do"}
-      answered:  {label: "Client answered", variant: green-tint, terminal: true, derived: false, client_label: "Answered · {time}"}
+      answered:  {label: "Client answered", variant: green-tint, terminal: true, derived: false, client_label: "Answered {time}"}
       withdrawn: {label: "Withdrawn", variant: muted, terminal: true, derived: false, client_label: "No longer needed"}
 
   ledger_sync:   # the CLS-02 rail and CLS-04 header sync line (connections sync facts; C9 v2.1)

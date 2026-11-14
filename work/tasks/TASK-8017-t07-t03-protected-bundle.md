@@ -2,7 +2,7 @@
 id: TASK-8017
 title: "T-07-T03: protected bundle: tax.yaml fiduciary and estate actions, three flags, gate kinds, notification kinds, error codes"
 spec: SPEC-656
-acceptance_criteria: []
+acceptance_criteria: [AC-15]
 risk_zone: red
 status: in-review
 branch: t07-t03-protected-bundle

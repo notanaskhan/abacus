@@ -2,7 +2,7 @@
 id: TASK-8009
 title: "C-01-T09: migration closes_v1 — record, plans, versions, rows, templates, procedures"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-9, AC-14, AC-19, AC-22, AC-28]
 risk_zone: amber
 status: in-review
 branch: c01-t09-closes-v1
