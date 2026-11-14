@@ -22,6 +22,11 @@ for (const st of ["a", "b", "d", "e"]) {
     const pane = frame.getByRole("complementary", { name: "Today" });
     await expect(pane).toBeVisible();
     expect((await box(pane)).w).toBe(470);
+    if (st === "e") {
+      // Building (SHL-23 e): the counts line and skeleton cards, no header until the brief lands.
+      await expect(frame.locator("[data-screen='SHL-23'][data-state='building']")).toBeVisible();
+      return;
+    }
     expect((await box(frame.locator("[data-screen='SHL-23'] header"))).h).toBe(46);
   });
 }

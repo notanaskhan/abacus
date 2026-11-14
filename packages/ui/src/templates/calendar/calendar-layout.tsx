@@ -86,7 +86,10 @@ export function CalendarLayout({
   const empty = chips.length === 0 && filtered;
   return (
     <section data-calendar={view} className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      <div className="relative flex h-[42px] flex-none items-center gap-[6px] px-[12px]">
+      <div
+        data-subbar
+        className="relative flex h-[42px] flex-none items-center gap-[6px] px-[12px]"
+      >
         <Button
           variant="ghost"
           size="sm"
