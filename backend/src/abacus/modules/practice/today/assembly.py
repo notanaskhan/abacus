@@ -434,6 +434,9 @@ async def _downstream(
 
 __all__ = [
     "CELLS",
+    "QuestionContext",
+    "question_context",
+    "question_lines",
     "Item",
     "assemble",
     "cards_of",
@@ -443,3 +446,55 @@ __all__ = [
     "tone_of",
     "urgency",
 ]
+
+
+# --- I-02-T14: the brief as a Today session's context (code's lines, never model text) -------
+
+_CELL_WORDS: Final = {
+    "decision": "Decisions",
+    "sign_off": "Sign-offs",
+    "approval_send": "Approvals and sends",
+    "signature": "Signatures",
+    "needs_attention": "Needs attention",
+    "overdue": "Overdue",
+}
+
+
+@dataclass(frozen=True)
+class QuestionContext:
+    """What a Today question's turn reads of the day (I-02 §6.2): the snapshot's id, its date,
+    the chip ("Today · Mon Sep 14") and the summary lines code wrote from the brief's facts."""
+
+    brief_id: UUID | None
+    brief_date: date
+    chip_label: str
+    lines: tuple[str, ...]
+    briefing_ids: tuple[UUID, ...]
+
+
+def question_lines(vm: TodayVM) -> list[str]:
+    """The brief's identifier facts as plain lines: the totals, each cell's count, then each card's
+    engagement with its gates' titles and code context lines. No briefing prose: verified blocks
+    are read by reference (the briefing ids), never copied as text."""
+    lines = [f"{vm.items} items across {vm.engagements} engagements"]
+    lines.append(
+        " · ".join(f"{_CELL_WORDS.get(c.kind, c.kind)} {c.count}" for c in vm.cells if c.count)
+    )
+    for card in vm.cards:
+        rows = "; ".join(f"{r.title} ({r.context_line})" for r in card.rows)
+        more = f"; and {card.more} more" if card.more else ""
+        lines.append(f"{card.label}: {rows}{more}")
+    return [line for line in lines if line]
+
+
+async def question_context(ctx: AuthContext) -> QuestionContext:
+    """Today's brief as the viewer sees it now, for a question's context (walls applied)."""
+    vm = await assemble(ctx, None)
+    chip = f"Today · {vm.brief_date.strftime('%a %b')} {vm.brief_date.day}"
+    return QuestionContext(
+        vm.brief_id,
+        vm.brief_date,
+        chip,
+        tuple(question_lines(vm)),
+        tuple(c.briefing_id for c in vm.cards if c.briefing_id is not None),
+    )

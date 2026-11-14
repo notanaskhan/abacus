@@ -253,10 +253,15 @@ async def turn_v2(tenant_id: str, session_id: str, kind: str, seq: int) -> TurnD
                 base,
                 int(str(edits)) if edits is not None else None,
             )
-            plans = await flag_enabled(tenant, _plans_flag())
+            # I-02-T14 (INV-1): a Today session never plans, whatever `workbench.plans` says.
+            today = _is_today(row.context_refs)
+            plans = False if today else await flag_enabled(tenant, _plans_flag())
             outcome = await run_session_turn(
                 UUID(tenant_id), item.run_id, request, pinned_clients=pinned, plans=plans
             )
+            if today and outcome.failure == "plans_off":
+                # A request to act: the read-only answer points to SHL-12; no plan row exists.
+                outcome = TurnOutcome("failed", failure=TODAY_READ_ONLY)
             if outcome.status == "plan_proposed" and outcome.plan:
                 child = await open_plan_child_run(UUID(tenant_id), item.run_id, outcome.plan)
             elif outcome.status == "plan_proposed":
@@ -303,6 +308,16 @@ async def turn_v2(tenant_id: str, session_id: str, kind: str, seq: int) -> TurnD
     return v1._done_from(written)  # pyright: ignore[reportPrivateUsage] -- shared with v1
 
 
+TODAY_READ_ONLY: Final = "today_read_only"  # I-02-T14: act on SHL-12, not in Today
+
+
+def _is_today(refs: object) -> bool:
+    return isinstance(refs, list) and any(
+        isinstance(r, dict) and r.get("kind") == "today_brief"  # pyright: ignore[reportUnknownMemberType] -- a JSON list
+        for r in cast(list[object], refs)
+    )
+
+
 def _plans_flag():  # noqa: ANN202 -- the kernel's Flag
     from abacus.kernel._flags import WORKBENCH_PLANS
 
@@ -327,6 +342,7 @@ __all__ = [
     "BUDGET",
     "KEEP_TURNS",
     "NOTHING_WRITTEN",
+    "TODAY_READ_ONLY",
     "PastItem",
     "context_layer",
     "conversation_layer",

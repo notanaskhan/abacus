@@ -26,6 +26,7 @@ from abacus.modules.practice.due_dates_contract import (
 from abacus.modules.practice.due_dates_routes import router as due_dates_router
 from abacus.modules.practice.home_contract import router as home_router
 from abacus.modules.practice.jobs import ACTIVITIES, SCHEDULES, SUBSCRIPTIONS, WORKFLOWS
+from abacus.modules.practice.today.assembly import QuestionContext, question_context  # I-02-T14
 from abacus.modules.practice.today.routes import today_router
 from abacus.modules.practice.workflows import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
 from abacus.modules.tax.api import register_due_dates_source, register_extension_dates_source
@@ -55,10 +56,12 @@ __all__ = [
     "InstallmentDue",
     "InstallmentDueDates",
     "Location",
+    "QuestionContext",
     "add_business_days",
     "clock_due",
     "due_dates_for",
     "due_dates_for_extension",
     "installments_for",
+    "question_context",
     "rebuild_home_activity",
 ]

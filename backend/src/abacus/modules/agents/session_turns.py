@@ -86,20 +86,23 @@ async def open_turn_run(
     ctx: AuthContext,
     *,
     agent_id: str,
-    engagement_id: UUID,
+    engagement_id: UUID | None,
     session_id: UUID,
     inputs: Mapping[str, object],
 ) -> UUID:
     """The turn's run row for the person posting (module docstring). The caller has authorised
     `session.create` and owns the session; the engagement is read through `get_ref` (a wall
-    answers 404) and must be readable."""
+    answers 404) and must be readable. I-02-T14 (DEC-4932): a firm-level session (the Today
+    session) runs its turn with no engagement: the run holds only firm-scoped actions, so its
+    engagement-scoped tools refuse and it answers from its session's code context."""
     if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden("session.create", "role")
     spec = spec_v2(agent_id)
     if spec.id in TEST_ONLY and not await is_synthetic_firm(ctx.tenant):
         raise NotFound("agent_capability")  # never installable for a real firm (P-10-T40)
-    ref = await get_ref(ctx, engagement_id)
-    await authorise(ctx, "engagement.read", ref.resource())
+    if engagement_id is not None:
+        ref = await get_ref(ctx, engagement_id)
+        await authorise(ctx, "engagement.read", ref.resource())
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(_SEED, {"t": ctx.tenant_id, "name": COUNTER})
         number = cast(int, await tx.session.scalar(_NEXT, {"name": COUNTER}))
@@ -328,13 +331,26 @@ async def turn_capability_ready(tenant: TenantContext, run_id: UUID) -> str | No
                 {"r": run_id},
             )
         ).first()
-    if row is None or row.engagement_id is None or row.initiator_user_id is None:
+    if row is None or row.initiator_user_id is None:
         return "capability_unavailable"
     person = await member_context(tenant.tenant_id, row.initiator_user_id)
     if person is None:
         return "initiator_left"
+    if row.engagement_id is None:  # I-02-T14: a firm-level turn reads the firm's facts only
+        return await firm_capability_blocked(person, str(row.agent_id))
     ready, blocked = await capability_ready(person, row.engagement_id, str(row.agent_id))
     return None if ready else (blocked or "capability_unavailable")
+
+
+async def firm_capability_blocked(person: AuthContext, capability: str) -> str | None:
+    """I-02-T14: a capability's firm-level readiness (pause, AI policy), None when ready."""
+    from abacus.modules.agents.capability_availability import capabilities_for
+
+    found = {a.capability: a for a in await capabilities_for(person, None)}
+    hit = found.get(capability)
+    if hit is None:
+        return "capability_unavailable"
+    return None if hit.available else (hit.reason or "capability_unavailable")
 
 
 async def _record_turn(tenant_id: UUID, run_id: UUID, active_ms: int, cost: Decimal) -> list[str]:
