@@ -263,6 +263,58 @@ class CloseTaskStatus(StrEnum):
     FAILED = "failed"
 
 
+class CloseFlagStatus(StrEnum):
+    ON_HOLD = "on_hold"
+
+
+class CloseProcedureStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    NEEDS_ATTENTION = "needs_attention"
+    DONE = "done"
+    FAILED = "failed"
+
+
+class CloseIncorporationStatus(StrEnum):
+    PENDING = "pending"
+    INCORPORATED = "incorporated"
+    RETURNED = "returned"
+
+
+class CloseTallyStatus(StrEnum):
+    PENDING = "pending"
+    TIE = "tie"
+    OFF = "off"
+    TIES_ONCE_POSTED = "ties_once_posted"
+    RECORDED = "recorded"
+    RECONCILED = "reconciled"
+
+
+class AnalyticLineStatus(StrEnum):
+    WITHIN_THRESHOLD = "within_threshold"
+    UNEXPLAINED = "unexplained"
+    EXPLAINED_DRAFT = "explained_draft"
+    EXPLAINED = "explained"
+    ACCEPTED = "accepted"
+
+
+class ClosePlanVersionStatus(StrEnum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    DISCARDED = "discarded"
+
+
+class TransactionQuestionStatus(StrEnum):
+    OPEN = "open"
+    ANSWERED = "answered"
+    WITHDRAWN = "withdrawn"
+
+
+class LedgerSyncStatus(StrEnum):
+    pass
+    # derived, never stored: synced, syncing, rate_limited, needs_reauth, paused, not_connected
+
+
 class ProposedEntryStatus(StrEnum):
     PROPOSED = "proposed"
     WITHIN_THRESHOLD = "within_threshold"
@@ -1555,6 +1607,48 @@ STORED: dict[str, tuple[str, ...]] = {
         "needs_attention",
         "done",
         "failed",
+    ),
+    "close_flag": (
+        "on_hold",
+    ),
+    "close_procedure": (
+        "queued",
+        "running",
+        "needs_attention",
+        "done",
+        "failed",
+    ),
+    "close_incorporation": (
+        "pending",
+        "incorporated",
+        "returned",
+    ),
+    "close_tally": (
+        "pending",
+        "tie",
+        "off",
+        "ties_once_posted",
+        "recorded",
+        "reconciled",
+    ),
+    "analytic_line": (
+        "within_threshold",
+        "unexplained",
+        "explained_draft",
+        "explained",
+        "accepted",
+    ),
+    "close_plan_version": (
+        "draft",
+        "published",
+        "discarded",
+    ),
+    "transaction_question": (
+        "open",
+        "answered",
+        "withdrawn",
+    ),
+    "ledger_sync": (
     ),
     "proposed_entry": (
         "proposed",

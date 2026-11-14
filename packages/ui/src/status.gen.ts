@@ -1155,6 +1155,236 @@ export const STATUS_REGISTRY = {
       "disc": "x_brick"
     }
   },
+  "close_flag": {
+    "on_hold": {
+      "label": "On hold",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "with_reason": "On hold · {reason}"
+      }
+    }
+  },
+  "close_procedure": {
+    "queued": {
+      "label": "Queued",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "running": {
+      "label": "Running",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "needs_attention": {
+      "label": "Needs attention",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "triangle_amber"
+    },
+    "done": {
+      "label": "Done",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "x_brick"
+    }
+  },
+  "close_incorporation": {
+    "pending": {
+      "label": "Pending incorporation",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "incorporated": {
+      "label": "Incorporated",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "at": "Incorporated {time}"
+      }
+    },
+    "returned": {
+      "label": "Returned · {reason}",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "close_tally": {
+    "pending": {
+      "label": "Pending",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "tie": {
+      "label": "tie",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "off": {
+      "label": "off {amount}",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "ties_once_posted": {
+      "label": "Ties once posted",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "conic_dot_amber",
+      "textTone": "amber"
+    },
+    "recorded": {
+      "label": "Recorded in QuickBooks",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "with_entry": "Recorded in QuickBooks · JE {number}"
+      }
+    },
+    "reconciled": {
+      "label": "Reconciled",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "analytic_line": {
+    "within_threshold": {
+      "label": "Within threshold",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "unexplained": {
+      "label": "Unexplained",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "explained_draft": {
+      "label": "Explained · draft",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "explained": {
+      "label": "Explained",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "accepted": {
+      "label": "Accepted · {initials}",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "close_plan_version": {
+    "draft": {
+      "label": "Draft v{n}",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published v{n}",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "discarded": {
+      "label": "Discarded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "transaction_question": {
+    "open": {
+      "label": "Waiting on client",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "clientLabel": "To do"
+    },
+    "answered": {
+      "label": "Client answered",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "clientLabel": "Answered · {time}"
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false,
+      "clientLabel": "No longer needed"
+    }
+  },
+  "ledger_sync": {
+    "synced": {
+      "label": "Synced {time} · next {next}",
+      "variant": null,
+      "terminal": false,
+      "derived": true
+    },
+    "syncing": {
+      "label": "Syncing…",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "spinner"
+    },
+    "rate_limited": {
+      "label": "rate limit · retrying {time}",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "needs_reauth": {
+      "label": "Needs reauth",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "paused": {
+      "label": "Paused · monthly QuickBooks call budget reached",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "not_connected": {
+      "label": "Not connected",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
+    }
+  },
   "proposed_entry": {
     "proposed": {
       "label": "Proposed",
