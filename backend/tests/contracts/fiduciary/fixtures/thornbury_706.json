@@ -1,0 +1,31 @@
+{
+  "_source": "T-07 §3.12 AC-12.1, AC-12.4, §3.13 AC-13.1 (TXT-04 a, b, c); SPEC-656 AC-15.3. Typed against EW-1 for consumers.",
+  "estate": "Estate of Walter Thornbury",
+  "date_of_death": "2026-02-02",
+  "assets": [
+    {"schedule": "A", "description": "Residence", "dod_value": "3850000.00", "avd_value": "3790000.00", "basis_to_1041": "3850000.00", "status": "valued"},
+    {"schedule": "B", "description": "Harborline brokerage", "dod_value": "8240000.00", "avd_value": "7965000.00", "basis_to_1041": "8240000.00", "status": "valued"},
+    {"schedule": "C", "description": "Cash", "dod_value": "412000.00", "avd_value": "412000.00", "basis_to_1041": "412000.00", "status": "valued"},
+    {"schedule": "D", "description": "Life insurance (Form 712 requested)", "dod_value": "1000000.00", "avd_value": "1000000.00", "basis_to_1041": null, "status": "gathering_support"},
+    {"schedule": "F", "description": "Tangible personal property", "dod_value": "186000.00", "avd_value": "186000.00", "basis_to_1041": "186000.00", "status": "gathering_support"},
+    {"schedule": "I", "description": "IRA (IRD; no step-up)", "dod_value": "2712000.00", "avd_value": "2640000.00", "basis_to_1041": null, "status": "valued"}
+  ],
+  "deductions": [
+    {"schedule": "J_funeral", "amount": "28500.00"},
+    {"schedule": "J_administration", "amount": "240000.00", "election": "s642g_pending"},
+    {"schedule": "K", "amount": "131500.00"},
+    {"schedule": "O", "amount": "500000.00"}
+  ],
+  "expected": {
+    "gross_estate": "16400000.00",
+    "avd_total": "15993000.00",
+    "basis_to_1041": "12688000.00",
+    "deductions": "900000.00",
+    "taxable_estate": "15500000.00",
+    "adjusted_taxable_gifts": "1200000.00",
+    "tentative_tax": "6625800.00",
+    "credit": "7145800.00",
+    "without_dsue_tax": "680000.00",
+    "label": "accrued_tie_out_shadow"
+  }
+}
