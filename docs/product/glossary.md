@@ -600,13 +600,13 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Close template | An industry starting point for a close plan (Café with Square/Shopify and others): database content imported through `POST /v1/close-templates:import`, never a commit. | `close_templates` | — |
 | Close request (UI) | A request generated into a close's `close_intake` binder from a plan's request template on business day 1. UI only; the code is a `request_item`. | `request_item` in a `close_intake` binder | — |
 | Incorporation | A person accepting a received upload into the close's work (`incorporation_state = incorporated`); undo and return to client are its siblings (P-06). | `incorporation_state` | `ingest`, `accept file` |
-| Transaction question | A question to the client about one transaction, in the firm's template wording with code facts; a person sends it; the client sees only its client wording (QC-9). | `transaction_questions` | `query` |
+| Transaction question | A question to the client about one transaction, in the firm's template wording with code facts; a person sends it; the client sees only its client wording (QC-9). | `transaction_questions` | — |
 | Reconciling item | One item between the bank and book sides of a reconciliation: deposit in transit, outstanding check, unrecorded deposit or withdrawal, bank or book error. Insert-only; resolutions are a person's. | `reconciling_items` | — |
 | Statement line | One line of a bank statement derived from P-11's extracted tables, with its page and cell box. | `statement_lines` | — |
 | Arrangement | A prepaid, fixed asset, accrual or deferred revenue the schedule computes from (CLS-04 O2 drawer); each edit is a new version. | `arrangements` (+ `arrangement_versions`) | — |
 | Schedule result | A schedule's computed balance against the GL for one close: tie, off, ties once posted or recorded. Insert-only. | `close_schedule_results` | — |
 | Analytic line | One tested line of a close's flux set. UI "flux line". | `analytic_lines` | `variance row` |
-| Close entry recording | The link between an approved entry and the QuickBooks journal entry a sync found for it. UI "Recorded in QuickBooks". | `close_entry_recordings` | `posted` (C-01 posts nothing) |
+| Close entry recording | The link between an approved entry and the QuickBooks journal entry a sync found for it. UI "Recorded in QuickBooks". | `close_entry_recordings` | — (C-01 posts nothing: the UI says "Recorded in QuickBooks", never that Accrued posted) |
 | Sync schedule | A connection's ledger sync cadence and business hours, with its change-data-capture cursor. | `sync_schedules` | — |
 | Meter budget | A firm's monthly allowance of metered provider calls (Intuit reads); reaching it pauses scheduled syncs. | `connection_meter_usage` | `quota` |
 
@@ -656,18 +656,18 @@ Lint rules L1–L12 check these against the copy registry.
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
-| Governing instrument | The trust agreement (or its amendment) attached to a 1041 from the client's files; an amendment is a new instrument that supersedes the old one, never an edit. | `governing_instruments` | `trust document`, `will` |
-| Instrument clause | One labelled passage of the instrument (Art. III(a)) found by code segmentation, with its pages, regions and a text hash; no clause text is stored. Cited by the `instrument_clause` citation kind (ADR-343). | `instrument_clauses` | `section`, `paragraph` |
-| Instrument interpretation | The set of seven determinations for one return: Unread, Reading, Proposed, Adopted (L1), Approved (L3), Reopened. | `instrument_interpretations` | `reading` (as a noun) |
-| Instrument determination | One tax meaning drawn from the instrument (grantor status, trust type, FAI definition, trustee fees, principal invaded, exemption, 65-day election), each clause-governed key with a clause citation. | `instrument_determinations` (+ versions) | `finding`, `conclusion` |
-| FAI line | A fiduciary accounting income line (interest, ordinary dividends with its qualified subset, tax-exempt interest, capital gain, rents, other) with its citation to the custodial statement. | `fai_lines` (+ versions) | `income item` |
+| Governing instrument | The trust agreement (or its amendment) attached to a 1041 from the client's files; an amendment is a new instrument that supersedes the old one, never an edit. | `governing_instruments` | — |
+| Instrument clause | One labelled passage of the instrument (Art. III(a)) found by code segmentation, with its pages, regions and a text hash; no clause text is stored. Cited by the `instrument_clause` citation kind (ADR-343). | `instrument_clauses` | — |
+| Instrument interpretation | The set of seven determinations for one return: Unread, Reading, Proposed, Adopted (L1), Approved (L3), Reopened. | `instrument_interpretations` | — |
+| Instrument determination | One tax meaning drawn from the instrument (grantor status, trust type, FAI definition, trustee fees, principal invaded, exemption, 65-day election), each clause-governed key with a clause citation. | `instrument_determinations` (+ versions) | — |
+| FAI line | A fiduciary accounting income line (interest, ordinary dividends with its qualified subset, tax-exempt interest, capital gain, rents, other) with its citation to the custodial statement. | `fai_lines` (+ versions) | — |
 | Trust expense | An expense with what it is charged to (income or principal), whether it is deductible and the clause that governs it. | `trust_expenses` (+ versions) | — |
-| Trust distribution | A payment to a beneficiary with its date, source (income or principal), clause basis and reason; each change is a new version. | `trust_distributions` (+ versions) | `payout` |
-| Fiduciary computation | Code's FAI → DNI → IDD → allocation → K-1 (1041) boxes for one version of the inputs; insert-only, with `engine_version` and `inputs_hash`. UI "Trust Calculation". | `fai_dni_computations` | `DNI worksheet` |
+| Trust distribution | A payment to a beneficiary with its date, source (income or principal), clause basis and reason; each change is a new version. | `trust_distributions` (+ versions) | — |
+| Fiduciary computation | Code's FAI → DNI → IDD → allocation → K-1 (1041) boxes for one version of the inputs; insert-only, with `engine_version` and `inputs_hash`. UI "Trust Calculation". | `fai_dni_computations` | — |
 | Beneficiary allocation | One beneficiary's DNI share and K-1 (1041) boxes in a computation; Σ boxes equals the income distribution deduction. | `beneficiary_allocations` | — |
-| 65-day election | The trustee's §663(b) decision to treat a payment in the first 65 days of a year as paid on the prior Dec 31: Not made or Elected. Recorded by a person; the trustee is the decision owner. | `sixty_five_day_elections` | `65 day rule` |
-| Estate inventory item | A Form 706 schedule row with its date-of-death and alternate values and its basis rule: Gathering or Valued (DF-31). | `estate_inventory_items` (+ versions) | `asset line` |
+| 65-day election | The trustee's §663(b) decision to treat a payment in the first 65 days of a year as paid on the prior Dec 31: Not made or Elected. Recorded by a person; the trustee is the decision owner. | `sixty_five_day_elections` | — |
+| Estate inventory item | A Form 706 schedule row with its date-of-death and alternate values and its basis rule: Gathering or Valued (DF-31). | `estate_inventory_items` (+ versions) | — |
 | Estate deduction | A Schedule J, K, L, M or O deduction, with the §642(g) choice where it applies. | `estate_deductions` (+ versions) | — |
 | Gift history item | A prior gift by the decedent with its Form 709 status; annual exclusion and taxable gift are computed, never stored. | `gift_history_items` (+ versions) | — |
-| Accrued tie-out (shadow) | The label on an Accrued figure that the engine of record owns (the 706 tentative tax and credit) until a CCH import exists (DEC-77). | `estate_computations.label = accrued_tie_out_shadow` | `estimate`, `preliminary tax` |
-| tie | The only tally word for a footing that holds (blueprint §3.3.1); never "Ties" (DV-2). | `tie_out_tally.tie` | `Ties`, `Balanced` |
+| Accrued tie-out (shadow) | The label on an Accrued figure that the engine of record owns (the 706 tentative tax and credit) until a CCH import exists (DEC-77). | `estate_computations.label = accrued_tie_out_shadow` | — |
+| tie | The only tally word for a footing that holds (blueprint §3.3.1); never "Ties" (DV-2). | `tie_out_tally.tie` | — |
