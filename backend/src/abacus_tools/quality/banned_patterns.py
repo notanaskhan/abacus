@@ -1699,12 +1699,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "signatures", "communications"}
     | {"agents", "integrations"},
-    # C-01-T02 (C-01 §4.8): the close reads the business-day calendar (practice) and the ledger
-    # sync facts (connections) through their api.py; neither imports closes.
     "closes": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}
-    | {"integrations", "practice", "connections"},
+    | {"integrations"},
     # N-04-T12 (DEC-2240, DEC-2262): the response drafts from the firm's report template
     # (methodology's versions, reporting's template blocks); neither imports notices.
     "notices": _BASE

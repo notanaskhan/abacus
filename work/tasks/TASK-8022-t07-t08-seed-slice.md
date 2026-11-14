@@ -2,7 +2,7 @@
 id: TASK-8022
 title: "T-07-T08: Brightwater Hale fiduciary and estate slice"
 spec: SPEC-656
-acceptance_criteria: []
+acceptance_criteria: [AC-15]
 risk_zone: amber
 status: in-review
 branch: t07-t08-seed-slice

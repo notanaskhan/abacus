@@ -2,7 +2,7 @@
 id: TASK-8007
 title: "C-01-T07: C9 v2.1 additive stub — monthly CAS ledger datasets and sync facts"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-32, AC-33, AC-34]
 risk_zone: red
 status: in-review
 branch: c01-t07-c9-v21-stub

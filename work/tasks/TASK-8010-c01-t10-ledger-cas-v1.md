@@ -2,7 +2,7 @@
 id: TASK-8010
 title: "C-01-T10: migration ledger_cas_v1 and sync tables"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-32, AC-34]
 risk_zone: red
 status: in-review
 branch: c01-t10-ledger-cas-v1

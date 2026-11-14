@@ -7500,6 +7500,18 @@ async def _entity_allocation_drafted(conn: asyncpg.Connection, _: Scenario, even
     return_id = _entity_return(event)
     if await versions(ctx.tenant, return_id):
         return
+    # S44 end pass (T-05-T67 found it): the structure's editor and its L3 approver hold their
+    # engagement roles on the entity return's engagement (Daniel Reyes signs, Samuel Ito
+    # approves), as the notices slice seats its tax team; the service refuses anyone else.
+    for seat, role in (("DR", "engagement_partner"), ("SI", "manager")):
+        await conn.execute(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+            TENANT,
+            _entity_engagement(event),
+            user_id_of(_SEATS[seat]),
+            role,
+        )
     if event.data["return"] == _ent.RIDGELINE:
         draft = Draft(
             kind="straight_percentage",

@@ -161,7 +161,7 @@ correct. All money is `Decimal`.
 - **AC-51** (F11, INV-3) Every C-01 list goes through `visible()`; walled objects answer 404 and never appear in counts, search or notifications.
 - **AC-52** (F11, INV-4) Portal principals read only granted closes through the portal serializer; responses carry no firm-only field.
 - **AC-53** (F11) Attest clients' entries always classify Review required; nothing in C-01 posts for any client.
-- **AC-54** (§4.7) Each of `closes.engine`, `closes.portal_requests`, `closes.agent` and `connections.ledger_sync` defaults off; off answers 404 `feature_disabled` after authorising; the `closes` entitlement gates the module independently.
+- **AC-54** (§4.7) Each of `closes.engine`, `closes.portal_requests`, `closes.agent` and `connections.ledger_sync` defaults off; off answers 404 `feature_disabled` after authorising; the `cas_closes` entitlement gates the module independently (DEC-5015).
 
 ## 5. Task map
 | Sprint | Rows |

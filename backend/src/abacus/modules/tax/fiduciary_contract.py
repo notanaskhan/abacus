@@ -33,7 +33,13 @@ from abacus.kernel._statuses import (
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    current_context,
+    mask_tins_for,
+)
+from abacus.modules.organisations.api import MaskedTinOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -136,6 +142,18 @@ def _stub(route: str) -> NotImplementedYet:
     return NotImplementedYet(route)
 
 
+async def _instrument_read(ctx: AuthContext, return_id: UUID) -> InstrumentOut:
+    """The TXT-01 read model; T-07-T12 builds it. Callers pass it through `mask_tins_for`."""
+    del ctx, return_id
+    raise _stub("instrument")
+
+
+async def _instrument_attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) -> None:
+    """Record the governing instrument (AC-1.2); T-07-T12 builds it."""
+    del ctx, return_id, body
+    raise _stub("instrument_attach")
+
+
 # --- TXT-01 models -------------------------------------------------------------------------------
 
 
@@ -151,7 +169,9 @@ class TrustProfileOut(BaseModel):
     settlor_died_year: Annotated[int | None, Confidential]
     residency_state: Annotated[str | None, Confidential]
     state_form: Annotated[str | None, Confidential]
-    ein_last4: Annotated[str | None, Tri]  # sealed TIN: last four only (P-12)
+    ein: Annotated[
+        MaskedTinOut | None, Internal
+    ]  # sealed TIN: kind and last four only (P-12; C-clients AC-22)
 
 
 class GoverningInstrumentOut(BaseModel):
@@ -234,13 +254,13 @@ class InstrumentOut(BaseModel):
     model_config = _frozen()
 
     return_id: Annotated[UUID, Internal]
-    profile: TrustProfileOut
-    instrument: GoverningInstrumentOut | None
-    segmentation: InstrumentSegmentationOut | None
-    interpretation: InstrumentInterpretationOut | None
-    determinations: list[InstrumentDeterminationOut]
-    cited_by: list[InstrumentCitedByOut]
-    reader: InstrumentReaderOut
+    profile: Annotated[TrustProfileOut, Internal]
+    instrument: Annotated[GoverningInstrumentOut | None, Internal]
+    segmentation: Annotated[InstrumentSegmentationOut | None, Internal]
+    interpretation: Annotated[InstrumentInterpretationOut | None, Internal]
+    determinations: Annotated[list[InstrumentDeterminationOut], Internal]
+    cited_by: Annotated[list[InstrumentCitedByOut], Internal]
+    reader: Annotated[InstrumentReaderOut, Internal]
     allowed_actions: Annotated[list[FiduciaryAction], Internal]
 
 
@@ -263,7 +283,7 @@ class InstrumentClauseOut(BaseModel):
     parent_clause_id: Annotated[UUID | None, Internal]
     page_from: Annotated[int, Internal]
     page_to: Annotated[int, Internal]
-    regions: list[ClauseRegionOut]
+    regions: Annotated[list[ClauseRegionOut], Internal]
     text_sha256: Annotated[str, Internal]
 
 
@@ -273,7 +293,7 @@ class InstrumentClausesOut(BaseModel):
     instrument_id: Annotated[UUID, Internal]
     segmentation_id: Annotated[UUID, Internal]
     status: Annotated[InstrumentSegmentationStatus, Internal]
-    clauses: list[InstrumentClauseOut]
+    clauses: Annotated[list[InstrumentClauseOut], Internal]
 
 
 class InstrumentAttachIn(BaseModel):
@@ -298,7 +318,7 @@ class ClauseMarkIn(BaseModel):
     label: Annotated[str, Field(min_length=1, max_length=40), Internal]
     heading: Annotated[str | None, Field(max_length=200), Confidential] = None
     parent_clause_id: Annotated[UUID | None, Internal] = None
-    regions: Annotated[list[ClauseRegionIn], Field(min_length=1, max_length=50)]
+    regions: Annotated[list[ClauseRegionIn], Field(min_length=1, max_length=50), Internal]
 
 
 class ReaderRunAcceptedOut(BaseModel):
@@ -370,7 +390,7 @@ class FiduciaryCharacterRowOut(BaseModel):
         Literal["interest", "ordinary_dividends", "qualified_dividends", "total"], Internal
     ]
     total: Money
-    by_party: list[FiduciaryCharacterAmountOut]
+    by_party: Annotated[list[FiduciaryCharacterAmountOut], Internal]
 
 
 class FiduciaryTallyOut(BaseModel):
@@ -396,9 +416,9 @@ class FiduciaryComputationOut(BaseModel):
     inputs_hash: Annotated[str, Internal]
     parameter_set: Annotated[str, Internal]
     computed_at: Annotated[datetime, Internal]
-    nodes: list[FiduciaryTreeNodeOut]
-    by_character: list[FiduciaryCharacterRowOut]
-    tallies: list[FiduciaryTallyOut]
+    nodes: Annotated[list[FiduciaryTreeNodeOut], Internal]
+    by_character: Annotated[list[FiduciaryCharacterRowOut], Internal]
+    tallies: Annotated[list[FiduciaryTallyOut], Internal]
     notes: Annotated[list[str], Tri]  # engine-built sentences with code values
     banner: Annotated[str | None, Tri]  # "Theo's Dec 15 distribution edited · re-approval needed"
     signed_by_initials: Annotated[str | None, Internal]
@@ -429,7 +449,7 @@ class FaiLineOut(BaseModel):
 class FaiLinesOut(BaseModel):
     model_config = _frozen()
 
-    lines: list[FaiLineOut]
+    lines: Annotated[list[FaiLineOut], Internal]
 
 
 class FaiLineIn(BaseModel):
@@ -473,7 +493,7 @@ class TrustExpenseOut(BaseModel):
 class TrustExpensesOut(BaseModel):
     model_config = _frozen()
 
-    expenses: list[TrustExpenseOut]
+    expenses: Annotated[list[TrustExpenseOut], Internal]
 
 
 class TrustExpenseIn(BaseModel):
@@ -518,7 +538,7 @@ class TrustDistributionOut(BaseModel):
 class TrustDistributionsOut(BaseModel):
     model_config = _frozen()
 
-    distributions: list[TrustDistributionOut]
+    distributions: Annotated[list[TrustDistributionOut], Internal]
 
 
 class TrustDistributionIn(BaseModel):
@@ -558,7 +578,7 @@ class BeneficiaryRowOut(BaseModel):
 
     contact_id: Annotated[UUID, Internal]
     name: Annotated[str, Confidential]
-    payments: list[BeneficiaryPaymentOut]
+    payments: Annotated[list[BeneficiaryPaymentOut], Internal]
     distributions: Money
     share: Share
     dni_allocated: Money
@@ -617,10 +637,10 @@ class BeneficiariesOut(BaseModel):
 
     return_id: Annotated[UUID, Internal]
     computation_id: Annotated[UUID | None, Internal]  # None before a signed computation (e)
-    rows: list[BeneficiaryRowOut]
-    totals: BeneficiaryTotalsOut | None
-    election: SixtyFiveDayCardOut
-    release_steps: list[ReleaseStepOut]
+    rows: Annotated[list[BeneficiaryRowOut], Internal]
+    totals: Annotated[BeneficiaryTotalsOut | None, Internal]
+    election: Annotated[SixtyFiveDayCardOut, Internal]
+    release_steps: Annotated[list[ReleaseStepOut], Internal]
     release_reason: Annotated[str | None, Internal]  # the accessible reason when disabled
     allowed_actions: Annotated[list[FiduciaryAction], Internal]
 
@@ -678,9 +698,10 @@ _R = "/returns/{return_id}"
     f"{_R}/instrument", action="instrument.read", response_model=InstrumentOut, errors=(501,)
 )
 async def instrument_route(return_id: UUID, ctx: Ctx) -> InstrumentOut:
-    """TXT-01: profile, instrument, segmentation, determinations, cited-by, reader (T-07-T12)."""
+    """TXT-01: profile, instrument, segmentation, determinations, cited-by, reader (T-07-T12).
+    The profile's EIN is TIN-tagged: the read goes through the one central mask (AC9.4)."""
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("instrument")
+    return await mask_tins_for(ctx, await _instrument_read(ctx, return_id))
 
 
 @fiduciary_router.post(
@@ -690,9 +711,11 @@ async def instrument_route(return_id: UUID, ctx: Ctx) -> InstrumentOut:
 async def instrument_attach_route(
     return_id: UUID, body: InstrumentAttachIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> InstrumentOut:
-    """Attach a client-level file as the governing instrument (AC-1.2; T-07-T12)."""
+    """Attach a client-level file as the governing instrument (AC-1.2; T-07-T12); answers the
+    read, masked for an offshore reader (AC9.4)."""
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("instrument_attach")
+    await _instrument_attach(ctx, return_id, body)
+    return await mask_tins_for(ctx, await _instrument_read(ctx, return_id))
 
 
 @fiduciary_router.get(

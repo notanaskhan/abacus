@@ -2,7 +2,7 @@
 id: TASK-8018
 title: "T-07-T04: glossary and status-vocabulary rows for trusts and estates"
 spec: SPEC-656
-acceptance_criteria: []
+acceptance_criteria: [AC-15]
 risk_zone: red
 status: in-review
 branch: t07-t04-vocabulary

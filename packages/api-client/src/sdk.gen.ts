@@ -2435,7 +2435,7 @@ export const putElection = <ThrowOnError extends boolean = false>(options: Optio
  */
 export const ledgerSyncStatus = <ThrowOnError extends boolean = false>(options: Options<LedgerSyncStatusData, ThrowOnError>): RequestResult<LedgerSyncStatusResponses, LedgerSyncStatusErrors, ThrowOnError> => (options.client ?? client).get<LedgerSyncStatusResponses, LedgerSyncStatusErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/v1/client-entities/{client_entity_id}/ledger-sync',
+    url: '/v1/client-entities/{client_entity_id}/ledger-pull',
     ...options
 });
 
@@ -2446,7 +2446,7 @@ export const ledgerSyncStatus = <ThrowOnError extends boolean = false>(options: 
  */
 export const ledgerSyncNow = <ThrowOnError extends boolean = false>(options: Options<LedgerSyncNowData, ThrowOnError>): RequestResult<LedgerSyncNowResponses, LedgerSyncNowErrors, ThrowOnError> => (options.client ?? client).post<LedgerSyncNowResponses, LedgerSyncNowErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/v1/client-entities/{client_entity_id}/ledger-sync',
+    url: '/v1/client-entities/{client_entity_id}/ledger-pull',
     ...options
 });
 

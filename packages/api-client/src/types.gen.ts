@@ -57846,10 +57846,7 @@ export type TrustProfileOut = {
      * Client Entity Id
      */
     client_entity_id: string;
-    /**
-     * Ein Last4
-     */
-    ein_last4: string | null;
+    ein: MaskedTinOut | null;
     /**
      * Fiduciary Kind
      */
@@ -74212,7 +74209,7 @@ export type LedgerSyncStatusData = {
         client_entity_id: string;
     };
     query?: never;
-    url: '/v1/client-entities/{client_entity_id}/ledger-sync';
+    url: '/v1/client-entities/{client_entity_id}/ledger-pull';
 };
 
 export type LedgerSyncStatusErrors = {
@@ -74272,7 +74269,7 @@ export type LedgerSyncNowData = {
         client_entity_id: string;
     };
     query?: never;
-    url: '/v1/client-entities/{client_entity_id}/ledger-sync';
+    url: '/v1/client-entities/{client_entity_id}/ledger-pull';
 };
 
 export type LedgerSyncNowErrors = {

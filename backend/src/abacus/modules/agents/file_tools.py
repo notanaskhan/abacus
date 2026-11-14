@@ -139,8 +139,6 @@ class ProposeSaveIn(BaseModel):
 
 class ProposeSaveOut(BaseModel):
     proposal_id: Annotated[UUID, Int]
-    # W-02-T23 (AC-W1): who can open the folder, computed by code from its access list.
-    access_sentence: Annotated[str, Conf] = ""
 
 
 class SaveApprovedIn(BaseModel):
@@ -288,6 +286,7 @@ async def propose_save(caller: ToolCaller, args: ProposeSaveIn) -> ProposeSaveOu
                 citation_ids=cites,
             )
         ],
+        # W-02-T23 (AC-W1): the card's access sentence travels with the proposal, not the reply.
         set_ref={"artifact_id": str(args.artifact_id), "folder": args.folder, "access": access},
     )
     async with uow(agent.tenant) as tx:
@@ -301,7 +300,7 @@ async def propose_save(caller: ToolCaller, args: ProposeSaveIn) -> ProposeSaveOu
             after=Ref(proposal=proposal),
             scope=Scope(engagement_id=engagement),
         )
-    return ProposeSaveOut(proposal_id=proposal, access_sentence=access)
+    return ProposeSaveOut(proposal_id=proposal)  # C17: a propose tool answers identifiers only
 
 
 _PROPOSAL: Final = text(

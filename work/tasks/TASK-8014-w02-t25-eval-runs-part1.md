@@ -2,7 +2,7 @@
 id: TASK-8014
 title: "W-02-T25 part 1: workbench.assistant eval runs on the fake model, real-route runner, cost baseline"
 spec: SPEC-653
-acceptance_criteria: []
+acceptance_criteria: [AC-W1]
 risk_zone: red
 status: in-review
 branch: w02-t25-eval-runs-part1

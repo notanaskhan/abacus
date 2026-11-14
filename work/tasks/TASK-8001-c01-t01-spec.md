@@ -2,7 +2,7 @@
 id: TASK-8001
 title: "C-01-T01: SPEC-655, gate check by P-ID, QC-1 to QC-9, task plans"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-1, AC-14, AC-23, AC-28, AC-32, AC-35, AC-39, AC-44, AC-48, AC-50]
 risk_zone: amber
 status: in-review
 branch: c01-t01-close-spec

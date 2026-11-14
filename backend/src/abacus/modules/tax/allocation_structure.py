@@ -653,7 +653,7 @@ async def save_draft(
         tx.record(
             "allocation_structure.drafted",
             target=Target(TARGET, structure_id),
-            after=Ref(version_no=current + 1, kind=draft.kind, content_hash=draft.hash()),
+            after=Ref(version_no=current + 1, content_hash=draft.hash()),  # the kind is on the row
             scope=Scope(engagement_id=engagement_id, work_item_id=return_id),
         )
     return structure_id

@@ -2,7 +2,7 @@
 id: TASK-8006
 title: "C-01-T06: consumer contract tests for the closes stubs"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-1, AC-23, AC-54]
 risk_zone: amber
 status: in-review
 branch: c01-t06-consumer-tests

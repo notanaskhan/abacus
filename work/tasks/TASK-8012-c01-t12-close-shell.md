@@ -2,7 +2,7 @@
 id: TASK-8012
 title: "C-01-T12: close shell — /closes subtree, RecordHeader close variant, manifest, handlers"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-7, AC-54]
 risk_zone: green
 status: in-review
 branch: c01-t12-close-shell

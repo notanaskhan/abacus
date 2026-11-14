@@ -55,6 +55,7 @@ Matrix actions from `permission-matrix/tax.yaml` (T-07-T03): every write is a pe
 | Ask the trustee → Send | POR-04 question variant (C5) | live (DV-15) |
 | K-1 preview | TAX-11 | planned (T-06) |
 | Add to planning | TAX-15 | planned (T-08; hidden in production, DV-6) |
+| Calculation segment | TXT-02 · Review › Trust Calculation | planned (T-07-T17) |
 
 ## Notes
 

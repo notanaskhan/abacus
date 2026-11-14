@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from abacus.api.export_openapi import document
@@ -93,13 +94,14 @@ def _paths() -> dict[str, dict[str, dict[str, object]]]:
 def test_sync_routes_are_published_with_one_action_and_a_501() -> None:
     paths = _paths()
     routes = [
-        (route.path, m.lower())  # type: ignore[attr-defined]  # an untyped route or JSON shape read by the test
+        (route.path, m.lower())
         for route in sync.ledger_sync_router.routes
-        for m in getattr(route, "methods", ())
+        if isinstance(route, APIRoute)
+        for m in route.methods or ()
     ]
     assert sorted(routes) == [
-        ("/v1/client-entities/{client_entity_id}/ledger-sync", "get"),
-        ("/v1/client-entities/{client_entity_id}/ledger-sync", "post"),
+        ("/v1/client-entities/{client_entity_id}/ledger-pull", "get"),
+        ("/v1/client-entities/{client_entity_id}/ledger-pull", "post"),
     ]
     for path, method in routes:
         op = paths[path][method]

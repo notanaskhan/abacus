@@ -2,7 +2,7 @@
 id: TASK-8015
 title: "T-05-T71 part 1: entity-return workbook runbook, workpapers formula and tax entity README sections, tax-engine skill"
 spec: SPEC-651
-acceptance_criteria: []
+acceptance_criteria: [AC-11, AC-13]
 risk_zone: green
 status: in-review
 branch: t05-t71-docs-part1

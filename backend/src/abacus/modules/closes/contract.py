@@ -206,8 +206,8 @@ class CloseRowOut(BaseModel):
     open_issues: Annotated[int, Field(ge=0), Internal]
     due_on: Annotated[date | None, Internal] = None
     days_past_due: Annotated[int | None, Field(ge=1), Internal] = None  # firm business days
-    preparer: ClosePersonOut | None = None
-    reviewer: ClosePersonOut | None = None
+    preparer: Annotated[ClosePersonOut | None, Internal] = None
+    reviewer: Annotated[ClosePersonOut | None, Internal] = None
     running: Annotated[bool, Internal] = False
     run_no: Annotated[int, Field(ge=0), Internal] = 0
     allowed_actions: Annotated[list[CloseAction], Internal] = []
@@ -240,9 +240,9 @@ class CloseListOut(BaseModel):
 
     model_config = _cfg()
 
-    items: list[CloseRowOut]
-    tiles: CloseTilesOut
-    summary: CloseSummaryLineOut
+    items: Annotated[list[CloseRowOut], Internal]
+    tiles: Annotated[CloseTilesOut, Internal]
+    summary: Annotated[CloseSummaryLineOut, Internal]
     next_cursor: Annotated[str | None, Internal] = None
 
 
@@ -264,7 +264,7 @@ class RunningCloseOut(BaseModel):
 class RunningClosesOut(BaseModel):
     model_config = _cfg()
 
-    items: list[RunningCloseOut]
+    items: Annotated[list[RunningCloseOut], Internal]
 
 
 # --- CLS-02 the close record ---------------------------------------------------------------------
@@ -291,7 +291,7 @@ class ClosePortalBlockOut(BaseModel):
     contact_name: Annotated[str | None, Confidential] = None
     portal_status: Annotated[Literal["active", "invited", "none"], Internal] = "none"
     requests_pending: Annotated[int, Field(ge=0), Internal] = 0
-    messages: PlannedLinkOut | None = None  # INB-04 (N-03), planned
+    messages: Annotated[PlannedLinkOut | None, Internal] = None  # INB-04 (N-03), planned
 
 
 class CloseSummaryOut(BaseModel):
@@ -312,8 +312,8 @@ class CloseSummaryOut(BaseModel):
     on_hold: Annotated[bool, Internal] = False
     on_hold_reason: Annotated[str | None, Confidential] = None
     attest: Annotated[bool, Internal] = False
-    preparer: ClosePersonOut | None = None
-    reviewer: ClosePersonOut | None = None
+    preparer: Annotated[ClosePersonOut | None, Internal] = None
+    reviewer: Annotated[ClosePersonOut | None, Internal] = None
     open_issues: Annotated[int, Field(ge=0), Internal]
     documents_in_binder: Annotated[int, Field(ge=0), Internal]
     accounts_reconciled: Annotated[int, Field(ge=0), Internal]
@@ -323,10 +323,10 @@ class CloseSummaryOut(BaseModel):
     requests_publish_on: Annotated[date | None, Internal] = None
     plan_version: Annotated[int | None, Field(ge=1), Internal] = None
     run_no: Annotated[int, Field(ge=0), Internal] = 0
-    sync: CloseSyncOut | None = None
-    portal: ClosePortalBlockOut
+    sync: Annotated[CloseSyncOut | None, Internal] = None
+    portal: Annotated[ClosePortalBlockOut, Internal]
     in_review_blocked_by: Annotated[str | None, Internal] = None  # the reason code shown
-    planned_links: list[PlannedLinkOut] = []
+    planned_links: Annotated[list[PlannedLinkOut], Internal] = []
     allowed_actions: Annotated[list[CloseAction], Internal] = []
     row_version: Annotated[int, Field(ge=1), Internal]
 
@@ -351,7 +351,7 @@ class StatusMoveIn(BaseModel):
     model_config = _cfg()
 
     to: Annotated[Literal["in_review", "in_progress"] | GuardedStatus | None, Internal] = None
-    on_hold: OnHoldIn | None = None
+    on_hold: Annotated[OnHoldIn | None, Internal] = None
     clear_hold: Annotated[bool, Internal] = False
 
 
@@ -396,7 +396,7 @@ class CloseTaskGroupOut(BaseModel):
 
     key: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,63}$"), Internal]
     label: Annotated[str, Confidential]
-    procedures: list[CloseProcedureOut]
+    procedures: Annotated[list[CloseProcedureOut], Internal]
 
 
 class CloseRunOut(BaseModel):
@@ -407,7 +407,7 @@ class CloseRunOut(BaseModel):
     run_id: Annotated[UUID, Internal]
     run_no: Annotated[int, Field(ge=1), Internal]
     status: Annotated[RunStatus, Internal]
-    started_by: ClosePersonOut
+    started_by: Annotated[ClosePersonOut, Internal]
     started_at: Annotated[datetime, Internal]
     finished_at: Annotated[datetime | None, Internal] = None
     done: Annotated[int, Field(ge=0), Internal]
@@ -415,7 +415,7 @@ class CloseRunOut(BaseModel):
     running: Annotated[int, Field(ge=0, le=3), Internal]  # never more than 3 at once
     open_issues: Annotated[int, Field(ge=0), Internal]
     read_only: Annotated[bool, Internal] = False  # an earlier run in the history
-    groups: list[CloseTaskGroupOut]
+    groups: Annotated[list[CloseTaskGroupOut], Internal]
 
 
 class CloseRunHistoryItemOut(BaseModel):
@@ -431,7 +431,7 @@ class CloseRunHistoryItemOut(BaseModel):
 class CloseRunsOut(BaseModel):
     model_config = _cfg()
 
-    items: list[CloseRunHistoryItemOut]
+    items: Annotated[list[CloseRunHistoryItemOut], Internal]
     ready_to_run: Annotated[int, Field(ge=0), Internal] = 0  # "Ready to run 22 tasks" (c)
 
 
@@ -477,7 +477,7 @@ class PlanRowOut(BaseModel):
     source: Annotated[PlanSource, Internal]
     review_level: Annotated[ReviewLevel, Internal]
     frequency: Annotated[Frequency, Internal]  # a word, never a cron string
-    threshold: ThresholdRefOut | None = None
+    threshold: Annotated[ThresholdRefOut | None, Internal] = None
     drafted: Annotated[bool, Internal] = False  # outlined tick until adopted (CLS-09 c)
     adopted: Annotated[bool, Internal] = True
     changed_from_previous: Annotated[bool, Internal] = False  # "Changed" (CLS-09 b)
@@ -513,12 +513,12 @@ class PlanVersionOut(BaseModel):
     effective_from: Annotated[str | None, Internal] = None
     change_note: Annotated[str | None, Confidential] = None
     drafted_by: Annotated[str, Confidential]  # "Raj Malhotra via Agent · Close Planner" (DV-4)
-    published_by: ClosePersonOut | None = None
+    published_by: Annotated[ClosePersonOut | None, Internal] = None
     published_at: Annotated[datetime | None, Internal] = None
     publish_requested: Annotated[bool, Internal] = False
-    rows: list[PlanRowOut]
-    request_templates: list[RequestTemplateOut]
-    tally: PlanTallyOut
+    rows: Annotated[list[PlanRowOut], Internal]
+    request_templates: Annotated[list[RequestTemplateOut], Internal]
+    tally: Annotated[PlanTallyOut, Internal]
     allowed_actions: Annotated[list[CloseAction], Internal] = []
     row_version: Annotated[int, Field(ge=1), Internal]
 
@@ -535,7 +535,7 @@ class PlanHistoryItemOut(BaseModel):
 class PlanHistoryOut(BaseModel):
     model_config = _cfg()
 
-    items: list[PlanHistoryItemOut]
+    items: Annotated[list[PlanHistoryItemOut], Internal]
 
 
 class PlanDraftIn(BaseModel):
@@ -618,7 +618,7 @@ class CloseTemplateOut(BaseModel):
 class CloseTemplatesOut(BaseModel):
     model_config = _cfg()
 
-    items: list[CloseTemplateOut]
+    items: Annotated[list[CloseTemplateOut], Internal]
 
 
 class CloseTemplateImportIn(BaseModel):
@@ -627,8 +627,8 @@ class CloseTemplateImportIn(BaseModel):
     key: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]{0,63}$"), Internal]
     name: Annotated[str, Field(min_length=1, max_length=200), Confidential]
     version: Annotated[int, Field(ge=1), Internal]
-    rows: Annotated[list[PlanRowIn], Field(min_length=1, max_length=200)]
-    request_templates: Annotated[list[RequestTemplateIn], Field(max_length=100)] = []
+    rows: Annotated[list[PlanRowIn], Field(min_length=1, max_length=200), Internal]
+    request_templates: Annotated[list[RequestTemplateIn], Field(max_length=100), Internal] = []
 
 
 # --- routes (each 501, one action) ---------------------------------------------------------------

@@ -103,7 +103,7 @@ def test_c21_a_calendar_1041_extends_to_sep_30() -> None:
     rule = Rule(
         form="1041",
         fye_rule="calendar_year",
-        original=Offset(months=3, day=15),
+        original=Offset(months=4, day=15),
         extension_form="7004",
         extension_months=5,
         extension_day=30,

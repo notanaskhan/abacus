@@ -2,7 +2,7 @@
 id: TASK-8019
 title: "T-07-T05: contract stubs for the fiduciary and estate families"
 spec: SPEC-656
-acceptance_criteria: []
+acceptance_criteria: [AC-15]
 risk_zone: amber
 status: in-review
 branch: t07-t05-stubs

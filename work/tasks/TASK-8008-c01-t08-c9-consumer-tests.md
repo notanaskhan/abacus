@@ -2,7 +2,7 @@
 id: TASK-8008
 title: "C-01-T08: C9 v2.1 consumer contract tests"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-32, AC-33]
 risk_zone: red
 status: in-review
 branch: c01-t08-c9-consumer-tests

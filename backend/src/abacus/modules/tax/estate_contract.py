@@ -85,8 +85,8 @@ class EstateHeaderOut(BaseModel):
     client_entity_id: Annotated[UUID, Internal]
     decedent_name: Annotated[str, Confidential]
     date_of_death: Annotated[date, Confidential]
-    due: EstateDueChipOut
-    tallies: list[EstateTallyOut]
+    due: Annotated[EstateDueChipOut, Internal]
+    tallies: Annotated[list[EstateTallyOut], Internal]
     values_signed_by_initials: Annotated[str | None, Internal]  # L4 (c1)
     values_sign_off_stale: Annotated[bool, Internal]
     allowed_actions: Annotated[list[EstateAction], Internal]
@@ -122,9 +122,9 @@ class EstateInventoryOut(BaseModel):
 
     model_config = _frozen()
 
-    header: EstateHeaderOut
-    assets: list[EstateAssetOut]
-    totals: EstateInventoryTotalsOut
+    header: Annotated[EstateHeaderOut, Internal]
+    assets: Annotated[list[EstateAssetOut], Internal]
+    totals: Annotated[EstateInventoryTotalsOut, Internal]
 
 
 class EstateDeductionOut(BaseModel):
@@ -145,8 +145,8 @@ class EstateDeductionsOut(BaseModel):
 
     model_config = _frozen()
 
-    header: EstateHeaderOut
-    deductions: list[EstateDeductionOut]
+    header: Annotated[EstateHeaderOut, Internal]
+    deductions: Annotated[list[EstateDeductionOut], Internal]
     total: Money
 
 
@@ -182,16 +182,16 @@ class EstateComputationOut(BaseModel):
 
     model_config = _frozen()
 
-    header: EstateHeaderOut
+    header: Annotated[EstateHeaderOut, Internal]
     computation_id: Annotated[UUID, Internal]
     version_no: Annotated[int, Internal]
     engine_version: Annotated[str, Internal]
     inputs_hash: Annotated[str, Internal]
     parameter_set: Annotated[str, Internal]
     label: Annotated[EstateComputationLabelStatus, Internal]
-    lines: list[EstateComputationLineOut]
-    without_dsue: EstateWithoutDsueOut
-    state_card: EstateStateCardOut
+    lines: Annotated[list[EstateComputationLineOut], Internal]
+    without_dsue: Annotated[EstateWithoutDsueOut, Internal]
+    state_card: Annotated[EstateStateCardOut, Internal]
     filing_required: Annotated[bool, Internal]
     filing_banner: Annotated[str | None, Tri]
     avd_available: Annotated[bool, Internal]
@@ -218,8 +218,8 @@ class EstateGiftsOut(BaseModel):
 
     model_config = _frozen()
 
-    header: EstateHeaderOut
-    gifts: list[GiftHistoryRowOut]
+    header: Annotated[EstateHeaderOut, Internal]
+    gifts: Annotated[list[GiftHistoryRowOut], Internal]
     adjusted_taxable_gifts: Money
     tie: Annotated[TieOutTallyStatus, Internal]
 
@@ -237,7 +237,7 @@ class EstateDerivationOut(BaseModel):
     model_config = _frozen()
 
     tile: Annotated[str, Internal]
-    rows: list[EstateDerivationRowOut]
+    rows: Annotated[list[EstateDerivationRowOut], Internal]
     note: Annotated[str | None, Tri]
     provenance_id: Annotated[UUID | None, Internal]
 
