@@ -13,10 +13,12 @@ import {
   entityOpportunitiesOptions,
 } from "@abacus/api-client/query";
 import { signOffLadder } from "@abacus/api-client";
+import { listCapabilitiesOptions } from "@abacus/api-client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useSession } from "../../app-core/session";
 import type { SignOffWriter } from "../../domain/review";
+import { ENTITY_CAPABILITIES, entityAgentGate } from "../../domain/tax";
 import { SignOffSheet } from "../SHL-12";
 import { TXP01 } from "./index";
 
@@ -26,6 +28,9 @@ export function Summary({ returnId }: { returnId: string }): JSX.Element {
   const session = useSession();
   const memo = useQuery(entityMemoOptions({ path }));
   const general = useQuery(entityGeneralInformationOptions({ path }));
+  // T-05-T66: the memo drafter's availability for this firm (agents off, stage, §7216).
+  const caps = useQuery({ ...listCapabilitiesOptions(), retry: false });
+  const gate = entityAgentGate(caps.data, ENTITY_CAPABILITIES.memo);
   const opportunities = useQuery({
     ...entityOpportunitiesOptions({ path }),
     enabled: memo.data?.status === "approved",
@@ -72,6 +77,8 @@ export function Summary({ returnId }: { returnId: string }): JSX.Element {
       ) : null}
       <TXP01
         memo={m}
+        agentOffered={gate.offered}
+        agentReason={gate.reason}
         general={general.data}
         opportunities={opportunities.data?.items ?? []}
         {...(session.user === null ? {} : { viewerName: session.user.displayName })}

@@ -116,3 +116,20 @@ describe("TXP-01 Review › Summary", () => {
     expect(save).toHaveBeenCalledWith("overview", "A person's words.");
   });
 });
+
+describe("TXP-01 agents off (T-05-T66; SPEC-651 AC-13.1)", () => {
+  it("offers no Regenerate and names why the memo is prepared without agents", () => {
+    render(
+      <TXP01
+        memo={ridgelineMemo("adopted")}
+        general={RIDGELINE_GENERAL}
+        agentOffered={false}
+        agentReason="Accrued Agent is off for this firm. Prepare this by hand."
+      />,
+    );
+    expect(screen.queryByRole("button", { name: COPY.regenerate })).toBeNull();
+    const note = document.querySelector("[data-agents-off='tax.memo_drafter']");
+    expect(note?.textContent).toContain("Prepared without agents");
+    expect(note?.textContent).toContain("Prepare this by hand");
+  });
+});
