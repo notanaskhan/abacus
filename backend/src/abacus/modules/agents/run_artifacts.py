@@ -228,7 +228,7 @@ async def drill(
     source = _SOURCES.get(prefix)
     found = None if source is None else await source(ctx, row.name, value)
     if found is None:
-        raise DrillGroupUnknown(facts={"group_key": group_key})
+        raise DrillGroupUnknown(facts={"source": prefix})  # the key itself may exceed a fact's 64
     words, rows = found
     title = drill_title(words, len(rows))
     payload: dict[str, object] = {

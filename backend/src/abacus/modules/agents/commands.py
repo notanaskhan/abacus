@@ -230,7 +230,13 @@ async def _decide(
                 await plan_rules(str(ctx.tenant_id), str(run_id), [s.dump() for s in current]),
             )
             if problems:
-                raise PlanEditInvalid(facts={"reason": "plan_invalid", "problems": problems})
+                raise PlanEditInvalid(
+                    facts={
+                        "reason": "plan_invalid",
+                        "problem": problems[0],
+                        "count": len(problems),
+                    }
+                )  # facts are identifiers only: the first code and how many
         elif (state == "approved" and latest.state not in _DECIDABLE) or (
             state == "cancelled" and (latest.state not in _DECIDABLE or head.state != _AWAITING)
         ):

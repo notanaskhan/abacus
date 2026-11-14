@@ -27,6 +27,8 @@
         "agent_minutes": 0,
         "agent_ms": 0,
         "citations_count": 0,
+        "failed_items": 0,
+        "gaps": 0,
         "records_read": 0,
         "writes_done": 0,
         "writes_waiting": 0

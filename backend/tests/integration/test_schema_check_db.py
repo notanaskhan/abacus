@@ -2384,6 +2384,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"records_read", "started_at", "state", "usage_record_ids"}
             # P-09-T08 (0751, DEC-3005): the step's sample references and its source.
             | {"sample_refs", "source_ref"}
+            # W-02-T19 (0872, DEC-4930): the per-item failure ledger, set when the step ends.
+            | {"failed_items"}
         ),
         "engagement_ai_settings": frozenset({"auto_mode", "auto_mode_set_at", "auto_mode_set_by"}),
         "run_artifacts": frozenset({"saved_to", "state", "version"}),

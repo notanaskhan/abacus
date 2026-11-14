@@ -33,15 +33,29 @@ from .walls_support import Net
 
 pytestmark = pytest.mark.asyncio
 STEPS = [
-    {"key": "tb", "label": "Trial balance", "level": 0, "kind": "tool"},
+    # W-02-T19 (AC-P3): an edit is re-validated, so each tool step names its registered tool.
+    {
+        "key": "tb",
+        "label": "Trial balance",
+        "level": 0,
+        "kind": "tool",
+        "tool": "engagements.read",
+    },
     {
         "key": "materiality",
         "label": "Materiality",
         "level": 1,
         "kind": "tool",
+        "tool": "methodology.read_step",
         "depends_on": ["tb"],
     },
-    {"key": "analytics", "label": "Planning analytics", "level": 1, "kind": "tool"},
+    {
+        "key": "analytics",
+        "label": "Planning analytics",
+        "level": 1,
+        "kind": "tool",
+        "tool": "engagements.read_team",
+    },
 ]
 Signals = list[tuple[str, str, tuple[object, ...]]]
 
