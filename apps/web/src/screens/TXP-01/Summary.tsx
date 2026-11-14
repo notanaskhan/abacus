@@ -30,7 +30,8 @@ export function Summary({ returnId }: { returnId: string }): JSX.Element {
     ...entityOpportunitiesOptions({ path }),
     enabled: memo.data?.status === "approved",
   });
-  const refresh = () => void client.invalidateQueries({ queryKey: entityMemoOptions({ path }).queryKey });
+  const refresh = () =>
+    void client.invalidateQueries({ queryKey: entityMemoOptions({ path }).queryKey });
   const draft = useMutation({ ...entityMemoDraftMutation(), onSuccess: refresh });
   const section = useMutation({ ...entityMemoSectionMutation(), onSuccess: refresh });
   const adopt = useMutation(entityMemoAdoptMutation());

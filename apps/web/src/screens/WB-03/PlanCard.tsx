@@ -40,7 +40,10 @@ export function PlanCardView({
   if (plan.state === "cancelled") {
     return (
       <p data-plan="cancelled" className="text-[12.5px] text-ink-3">
-        {COPY.cancelled(plan.decided_by ?? "", plan.decided_at ? clockTime(plan.decided_at, { tz: timeZone }) : "")}
+        {COPY.cancelled(
+          plan.decided_by ?? "",
+          plan.decided_at ? clockTime(plan.decided_at, { tz: timeZone }) : "",
+        )}
       </p>
     );
   }
@@ -99,7 +102,14 @@ export function PlanCardView({
         <div className="mt-[10px] flex justify-end gap-[6px]">
           {editing ? (
             <>
-              <Button variant="ghost" size="sm" onClick={() => { setEditing(false); setLabels({}); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditing(false);
+                  setLabels({});
+                }}
+              >
                 {COPY.cancelEdit}
               </Button>
               <Button
@@ -119,7 +129,13 @@ export function PlanCardView({
               <Button variant="ghost" size="sm" onClick={onCancel}>
                 {COPY.cancelPlan}
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => { setEditing(true); }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setEditing(true);
+                }}
+              >
                 {COPY.editPlan}
               </Button>
               <Button variant="primary" size="sm" disabled={busy === true} onClick={onApprove}>
@@ -134,11 +150,18 @@ export function PlanCardView({
 }
 
 /** The live card: the plan read and the owner's three decisions against the version seen. */
-export function PlanCard({ runId, canDecide }: { runId: string; canDecide: boolean }): JSX.Element | null {
+export function PlanCard({
+  runId,
+  canDecide,
+}: {
+  runId: string;
+  canDecide: boolean;
+}): JSX.Element | null {
   const client = useQueryClient();
   const path = { run_id: runId };
   const plan = useQuery({ ...runPlanOptions({ path }), retry: false });
-  const refresh = () => void client.invalidateQueries({ queryKey: runPlanOptions({ path }).queryKey });
+  const refresh = () =>
+    void client.invalidateQueries({ queryKey: runPlanOptions({ path }).queryKey });
   const approve = useMutation({ ...approveRunPlanMutation(), onSuccess: refresh });
   const edit = useMutation({ ...editRunPlanMutation(), onSuccess: refresh });
   const cancel = useMutation({ ...cancelRunPlanMutation(), onSuccess: refresh });

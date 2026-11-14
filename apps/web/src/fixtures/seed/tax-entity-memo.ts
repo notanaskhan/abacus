@@ -96,7 +96,10 @@ export const RIDGELINE_GENERAL: WorkbookGeneralInformationOut = {
 
 export const RIDGELINE_OPPORTUNITIES: WorkbookOpportunitiesOut = {
   items: [
-    { key: stableId("opportunity:ridgeline:cost-seg"), title: "Cost segregation study — Elm Street" },
+    {
+      key: stableId("opportunity:ridgeline:cost-seg"),
+      title: "Cost segregation study — Elm Street",
+    },
     { key: stableId("opportunity:ridgeline:754"), title: "§754 election" },
     { key: stableId("opportunity:ridgeline:nyc-ptet"), title: "NYC PTET for TY2027" },
   ],

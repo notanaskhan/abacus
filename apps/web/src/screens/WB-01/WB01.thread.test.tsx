@@ -29,7 +29,11 @@ const snap = (items: SessionItemOut[], over: Record<string, unknown> = {}) => ({
 
 describe("WB-01 thread states", () => {
   it("a: the discovery block and the open question 1 of 2 above the composer", () => {
-    render(wrap(<Thread snapshot={snap(season("a"))} sessionId={SESSION_ID} onOpenRun={() => undefined} />));
+    render(
+      wrap(
+        <Thread snapshot={snap(season("a"))} sessionId={SESSION_ID} onOpenRun={() => undefined} />,
+      ),
+    );
     expect(screen.getByText(QUESTION.steps[0]?.q ?? "")).toBeTruthy();
     expect(document.querySelectorAll("[data-item='agent_blocks']").length).toBe(2);
   });
@@ -46,11 +50,19 @@ describe("WB-01 thread states", () => {
   it("the code's notices read their fixed words, never model text", () => {
     const items = threadItems([
       {
-        id: "n", seq: 9, kind: "notice", actor_kind: "system", created_at: "2026-09-14T14:30:00Z",
+        id: "n",
+        seq: 9,
+        kind: "notice",
+        actor_kind: "system",
+        created_at: "2026-09-14T14:30:00Z",
         payload: { v: 1, code: "nothing_written" },
       },
       {
-        id: "m", seq: 10, kind: "notice", actor_kind: "system", created_at: "2026-09-14T14:30:00Z",
+        id: "m",
+        seq: 10,
+        kind: "notice",
+        actor_kind: "system",
+        created_at: "2026-09-14T14:30:00Z",
         payload: { v: 1, code: "plans_off" },
       },
     ] as SessionItemOut[]);
@@ -62,14 +74,25 @@ describe("WB-01 thread states", () => {
 
   it("context and drill rows are left out of the thread (WB-02's and WB-03's)", () => {
     const items = threadItems([
-      { id: "c", seq: 1, kind: "context_added", actor_kind: "system", created_at: "", payload: {} },
+      {
+        id: "c",
+        seq: 1,
+        kind: "context_added",
+        actor_kind: "system",
+        created_at: "",
+        payload: {},
+      },
       { id: "d", seq: 2, kind: "drill", actor_kind: "human", created_at: "", payload: {} },
     ] as SessionItemOut[]);
     expect(items).toEqual([]);
   });
 
   it("the person's bubble menu offers Copy and Edit and resend", () => {
-    render(wrap(<Thread snapshot={snap(season("a"))} sessionId={SESSION_ID} onOpenRun={() => undefined} />));
+    render(
+      wrap(
+        <Thread snapshot={snap(season("a"))} sessionId={SESSION_ID} onOpenRun={() => undefined} />,
+      ),
+    );
     fireEvent.click(screen.getAllByRole("button", { name: "Message actions" })[0] as Element);
     expect(screen.getByRole("menuitem", { name: "Copy" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Edit and resend" })).toBeTruthy();
@@ -78,7 +101,11 @@ describe("WB-01 thread states", () => {
   it("g: a locked session renders no thread item or figure", () => {
     render(
       wrap(
-        <Thread snapshot={snap(season("a"), { locked: true })} sessionId={SESSION_ID} onOpenRun={() => undefined} />,
+        <Thread
+          snapshot={snap(season("a"), { locked: true })}
+          sessionId={SESSION_ID}
+          onOpenRun={() => undefined}
+        />,
       ),
     );
     expect(document.querySelectorAll("[data-item]").length).toBe(0);
@@ -87,7 +114,13 @@ describe("WB-01 thread states", () => {
 
   it("a viewer who is not the owner gets no composer actions and no question card", () => {
     render(
-      wrap(<Thread snapshot={snap(season("a"), { allowed_actions: [] })} sessionId={SESSION_ID} onOpenRun={() => undefined} />),
+      wrap(
+        <Thread
+          snapshot={snap(season("a"), { allowed_actions: [] })}
+          sessionId={SESSION_ID}
+          onOpenRun={() => undefined}
+        />,
+      ),
     );
     expect(screen.queryByText(QUESTION.steps[0]?.q ?? "")).toBeNull();
     expect(COPY.viewRun).toBe("View run");

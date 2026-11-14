@@ -55,6 +55,10 @@ BUILT = {
     ("get", "/v1/workbench/context-options"),
     ("post", "/v1/workbench/sessions/{session_id}/context"),
     ("delete", "/v1/workbench/sessions/{session_id}/context/{item_id}"),
+    # S43 (W-02-T20, DEC-4933): preview, audited download and the drill item.
+    ("get", "/v1/run-artifacts/{artifact_id}/preview"),
+    ("get", "/v1/run-artifacts/{artifact_id}/download"),
+    ("post", "/v1/workbench/sessions/{session_id}/drill"),
 }
 UNBUILT = {(m, p) for m, p, _ in ROUTES} - BUILT
 

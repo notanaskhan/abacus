@@ -66,7 +66,11 @@ export function railOf(
               title: COPY.sourcesGroup,
               rows: [...cited.values()]
                 .sort((a, b) => a.n - b.n)
-                .map((c) => ({ key: `[${String(c.n)}] ${c.title}`, value: c.quote, match: m(c.id) })),
+                .map((c) => ({
+                  key: `[${String(c.n)}] ${c.title}`,
+                  value: c.quote,
+                  match: m(c.id),
+                })),
             },
           ]),
     ],
@@ -140,14 +144,20 @@ export function TXP01({
       : {}),
     actions: {
       ...(actions.has("tax_memo.approve") || actions.has("tax_memo.adopt")
-        ? { approve: { actor: { kind: "human" as const, name: viewerName ?? "" }, object: "memo" } }
+        ? {
+            approve: { actor: { kind: "human" as const, name: viewerName ?? "" }, object: "memo" },
+          }
         : {}),
       edit: actions.has("tax_memo.edit"),
       regenerate: actions.has("tax_memo.draft"),
     },
   };
   return (
-    <div data-screen="TXP-01" data-state={memo?.status ?? "drafting"} className="flex min-h-0 flex-1">
+    <div
+      data-screen="TXP-01"
+      data-state={memo?.status ?? "drafting"}
+      className="flex min-h-0 flex-1"
+    >
       <DocumentOnWell
         bare
         document={document}
@@ -193,11 +203,21 @@ export function TXP01({
           </div>
         ) : null}
         {confirming ? (
-          <div role="dialog" aria-label={COPY.confirmTitle} className="mb-[12px] rounded-[10px] bg-card p-[12px] shadow-e2">
+          <div
+            role="dialog"
+            aria-label={COPY.confirmTitle}
+            className="mb-[12px] rounded-[10px] bg-card p-[12px] shadow-e2"
+          >
             <p className="text-[13px] font-medium text-ink">{COPY.confirmTitle}</p>
             <p className="mt-[4px] text-[12px] text-ink-2">{COPY.confirmBody}</p>
             <div className="mt-[8px] flex justify-end gap-[6px]">
-              <Button variant="ghost" size="sm" onClick={() => { setConfirming(false); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setConfirming(false);
+                }}
+              >
                 {COPY.cancel}
               </Button>
               <Button
@@ -218,11 +238,19 @@ export function TXP01({
             <textarea
               aria-label={memo?.sections.find((s) => s.key === editing)?.title ?? editing}
               value={draft}
-              onChange={(e) => { setDraft(e.target.value); }}
+              onChange={(e) => {
+                setDraft(e.target.value);
+              }}
               className="min-h-[120px] rounded-[8px] bg-card p-[8px] text-[12.5px] shadow-e1"
             />
             <div className="flex justify-end gap-[6px]">
-              <Button variant="ghost" size="sm" onClick={() => { setEditing(null); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditing(null);
+                }}
+              >
                 {COPY.cancel}
               </Button>
               <Button
@@ -253,7 +281,10 @@ export function TXP01({
                 <ul className="mt-[4px] flex flex-col gap-[6px]">
                   {opportunities.map((o) => (
                     <li key={o.key} className="flex items-center gap-[8px]">
-                      <span aria-hidden className="h-[16px] w-[16px] rounded-full border border-hair" />
+                      <span
+                        aria-hidden
+                        className="h-[16px] w-[16px] rounded-full border border-hair"
+                      />
                       <span className="flex-1 text-[13px] font-medium text-ink">{o.title}</span>
                       <Button variant="ghost" size="sm" disabled title={COPY.planned}>
                         {COPY.raise}

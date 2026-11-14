@@ -194,7 +194,9 @@ function GroupBand({
                 >
                   {item.title}
                 </button>
-                {item.detail ? <span className="text-[12px] text-ink-2">{item.detail}</span> : null}
+                {item.detail ? (
+                  <span className="text-[12px] text-ink-2">{item.detail}</span>
+                ) : null}
                 <span className="flex gap-[6px]">
                   <Button
                     variant="secondary"

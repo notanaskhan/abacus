@@ -59,7 +59,10 @@ test("test_tpl17a_thumbnails_click_and_keys_change_the_page", async ({ page }) =
   });
   await rail.getByRole("button", { name: "Page 2" }).focus();
   await page.keyboard.press("Enter");
-  await expect(rail.getByRole("button", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
+  await expect(rail.getByRole("button", { name: "Page 2" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 });
 
 test("test_tier4_forced_colours_keep_every_board_readable", async ({ page }) => {

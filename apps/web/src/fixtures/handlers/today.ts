@@ -20,6 +20,5 @@ export function todayHandlers(): Record<string, FixtureHandler> {
     "GET /v1/me/today/history": () => json(HISTORY),
     "GET /v1/me/today/history/{brief_id}": () => json(danielToday()),
     "POST /v1/me/today/questions": () => json(QUESTION_ACCEPTED, 202),
-
   };
 }

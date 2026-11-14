@@ -5,12 +5,7 @@
 // assignable"), the History list and a past brief's read-only header, and the ask thread (the
 // person's bubble and the cited answer card from the Today session's items; a request to act
 // reads the read-only notice pointing to SHL-12). Nothing here counts or composes a figure.
-import type {
-  AssignPrefill,
-  DrillVm,
-  HistoryPage,
-  SessionItemOut,
-} from "@abacus/api-client";
+import type { AssignPrefill, DrillVm, HistoryPage, SessionItemOut } from "@abacus/api-client";
 import {
   type AgentBlocksPayload,
   type AgentBlocksProps,
@@ -295,7 +290,11 @@ export function AskThread({
               data-answer
               className="rounded-[10px] bg-card p-[10px] text-[12.5px] text-ink-2 shadow-e1"
             >
-              <AgentBlocks blocks={blocks} facts={{}} {...(cites === undefined ? {} : { cites })} />
+              <AgentBlocks
+                blocks={blocks}
+                facts={{}}
+                {...(cites === undefined ? {} : { cites })}
+              />
             </div>
           );
         }
@@ -304,7 +303,11 @@ export function AskThread({
           return (
             <div key={item.id} data-notice="today_read_only" className="text-[12px] text-ink-2">
               <p>{COPY.readOnly}</p>
-              <Button variant="ghost" size="sm" onClick={() => onOpen?.("/home/approvals?band=sign_off")}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpen?.("/home/approvals?band=sign_off")}
+              >
                 {COPY.openSignOff}
               </Button>
             </div>

@@ -88,6 +88,10 @@ BUILT = {
     ("POST", f"{_R}/issues/{{issue_id}}/reminders"),
     ("POST", f"{_R}/issues/{{issue_id}}/resolve"),
     ("POST", f"{_R}/memo/approve"),
+    # S43 (T-05-T59, DEC-4939): the memo read is served live (citations, `memo_actions`).
+    ("GET", f"{_R}/memo"),
+    # S43 (T-05-T61, DEC-4934): reconciliation to the engine of record.
+    ("GET", f"{_R}/reconciliation"),
 }
 
 

@@ -56,7 +56,11 @@ test.describe("J23 collaboration (P-05-T15)", () => {
 // as HOME-01 b (TPL-11 "Waiting on you 4"); a walled engagement is absent from every cell.
 test.describe("J23 · Today brief", () => {
   test("j23 1 Today: Margaret's four items, nothing walled counted", async ({ journey }) => {
-    await journey.as("margaret-okonkwo", "/?today=open", { clock: DEMO_INSTANT, scenario: "HOME-05:d" });
+    await journey.as("margaret-okonkwo", "/?today=open", {
+      clock: DEMO_INSTANT,
+      scenario: "HOME-05:d",
+      flags: ["today_brief.enabled"], // E0 leaves the brief off; HOME-05 docks it behind the flag
+    });
     await journey.step("J23 step 1: Margaret's brief (SHL-23 4)", async (page) => {
       const brief = page.getByRole("complementary", { name: "Today" });
       await expect(brief).toBeVisible();

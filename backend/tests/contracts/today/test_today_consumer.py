@@ -41,6 +41,9 @@ BUILT = {
     ("get", "/v1/me/today"),
     ("get", "/v1/me/today/work-items/{work_item_id}"),
     ("post", "/v1/me/today/builds"),  # S42: the briefing rebuild (202)
+    # S43 (I-02-T17, DEC-4938): earlier briefs and one day's brief.
+    ("get", "/v1/me/today/history"),
+    ("get", "/v1/me/today/history/{brief_id}"),
 }
 UNBUILT = {(m, p) for m, p, _ in ROUTES} - BUILT
 

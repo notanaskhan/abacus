@@ -8,7 +8,12 @@ import { openGallery, specimen } from "./support";
 async function box(target: Locator): Promise<{ x: number; y: number; w: number; h: number }> {
   const b = await target.first().boundingBox();
   if (b === null) throw new Error("no box");
-  return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) };
+  return {
+    x: Math.round(b.x),
+    y: Math.round(b.y),
+    w: Math.round(b.width),
+    h: Math.round(b.height),
+  };
 }
 
 test("T13 (TPL-13a): the 42 h subbar above one full-width pane", async ({ page }) => {
@@ -40,6 +45,8 @@ for (const st of ["a", "b", "c", "d", "e"] as const) {
     expect((await box(rail)).w).toBe(120);
     const thumb = await box(rail.getByRole("button").first());
     expect([thumb.w, thumb.h]).toEqual([96, 124]);
-    expect((await box(board.locator("[data-diagnostics]").locator(".."))).w).toBeLessThanOrEqual(330);
+    expect((await box(board.locator("[data-diagnostics]").locator(".."))).w).toBeLessThanOrEqual(
+      330,
+    );
   });
 }

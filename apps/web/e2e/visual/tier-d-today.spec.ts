@@ -7,7 +7,12 @@ import { openGallery } from "./support";
 async function box(target: Locator): Promise<{ x: number; y: number; w: number; h: number }> {
   const b = await target.first().boundingBox();
   if (b === null) throw new Error("no box");
-  return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) };
+  return {
+    x: Math.round(b.x),
+    y: Math.round(b.y),
+    w: Math.round(b.width),
+    h: Math.round(b.height),
+  };
 }
 
 for (const st of ["a", "b", "d", "e"]) {
@@ -21,7 +26,9 @@ for (const st of ["a", "b", "d", "e"]) {
   });
 }
 
-test("HOME-05 c: collapsed, the Open Today row is 32 h and HOME-01 fills the width", async ({ page }) => {
+test("HOME-05 c: collapsed, the Open Today row is 32 h and HOME-01 fills the width", async ({
+  page,
+}) => {
   await openGallery(page, "screens/HOME-05?st=c");
   const frame = page.locator("[data-artboard='c']");
   await expect(frame.locator("[data-state='c']")).toBeVisible();

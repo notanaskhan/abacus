@@ -148,8 +148,14 @@ test.describe("J13 · P-02 search", () => {
 // the brief docked (HOME-05 a); the cells equal HOME-01's counts (I-COUNT); a question gets the
 // cited read-only answer (SHL-23 3) and a request to act is refused toward sign-off (INV-1).
 test.describe("J13 · Today brief", () => {
-  test("j13 1 Today: the brief's counts equal Home's, the 9:26 answer is cited", async ({ journey }) => {
-    await journey.as("daniel-reyes", "/?today=open", { clock: DEMO_INSTANT, scenario: "HOME-05:a" });
+  test("j13 1 Today: the brief's counts equal Home's, the 9:26 answer is cited", async ({
+    journey,
+  }) => {
+    await journey.as("daniel-reyes", "/?today=open", {
+      clock: DEMO_INSTANT,
+      scenario: "HOME-05:a",
+      flags: ["today_brief.enabled"], // E0 leaves the brief off; HOME-05 docks it behind the flag
+    });
     await journey.step("J13 step 1: the Today brief docked on Home (HOME-05 a)", async (page) => {
       const brief = page.getByRole("complementary", { name: "Today" });
       await expect(brief).toBeVisible();

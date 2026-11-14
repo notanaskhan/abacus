@@ -108,7 +108,10 @@ function MeBubble({
             <Icon name="ellipsis" size={13} />
           </button>
           {menu ? (
-            <span role="menu" className="absolute right-0 z-10 mt-[4px] flex w-[240px] flex-col rounded-[10px] bg-card py-[4px] shadow-e2">
+            <span
+              role="menu"
+              className="absolute right-0 z-10 mt-[4px] flex w-[240px] flex-col rounded-[10px] bg-card py-[4px] shadow-e2"
+            >
               <button
                 type="button"
                 role="menuitem"

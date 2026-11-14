@@ -36,7 +36,9 @@ describe("TXP-10 Return › Issues (1065)", () => {
     at("a");
     const counts = [...document.querySelectorAll("[data-section] h3")].map((h) => h.textContent);
     expect(counts).toEqual(["Waiting on the client5", "Review points6"]);
-    expect(document.querySelector("[data-screen='TXP-10']")?.getAttribute("data-badge")).toBe("11");
+    expect(document.querySelector("[data-screen='TXP-10']")?.getAttribute("data-badge")).toBe(
+      "11",
+    );
     expect(screen.getByText(COPY.whatItBlocks)).toBeTruthy();
     expect(document.querySelectorAll("[data-cell]").length).toBe(7);
   });
@@ -63,7 +65,10 @@ describe("TXP-10 Return › Issues (1065)", () => {
     at("a", { onAssign: assign });
     fireEvent.click(screen.getByRole("button", { name: /Accrued Agent/ }));
     fireEvent.click(screen.getByRole("option", { name: /Samuel Ito/ }));
-    expect(assign).toHaveBeenCalledWith(expect.objectContaining({ id: TAX_EXEMPT }), ASSIGNEES.items[1]);
+    expect(assign).toHaveBeenCalledWith(
+      expect.objectContaining({ id: TAX_EXEMPT }),
+      ASSIGNEES.items[1],
+    );
   });
 
   it("B: the waiting item shows its POR-04 preview and Send reminder", () => {
@@ -79,12 +84,16 @@ describe("TXP-10 Return › Issues (1065)", () => {
     expect(document.querySelector("[data-agent-fixing]")?.textContent).toContain(
       "Writing 05 Capital!H8:H12 and 07 M-2!C9",
     );
-    expect(document.querySelector("[data-status]")?.getAttribute("data-status")).toBe("in_progress");
+    expect(document.querySelector("[data-status]")?.getAttribute("data-status")).toBe(
+      "in_progress",
+    );
   });
 
   it("D: resolved by Samuel Ito; the badge reads 10", () => {
     at("d", { showResolved: true });
-    expect(document.querySelector("[data-screen='TXP-10']")?.getAttribute("data-badge")).toBe("10");
+    expect(document.querySelector("[data-screen='TXP-10']")?.getAttribute("data-badge")).toBe(
+      "10",
+    );
     expect(screen.getAllByText(COPY.resolved).length).toBeGreaterThan(0);
   });
 
@@ -95,16 +104,27 @@ describe("TXP-10 Return › Issues (1065)", () => {
     const note = within(screen.getByRole("dialog", { name: COPY.noteLabel }));
     fireEvent.change(note.getByRole("textbox"), { target: { value: "Settled by the fix." } });
     fireEvent.click(note.getByRole("button", { name: COPY.confirmResolve }));
-    expect(resolve).toHaveBeenCalledWith(expect.objectContaining({ id: TAX_EXEMPT }), "Settled by the fix.");
+    expect(resolve).toHaveBeenCalledWith(
+      expect.objectContaining({ id: TAX_EXEMPT }),
+      "Settled by the fix.",
+    );
   });
 
   it("E and F: no issue selected, and no open issues", () => {
     render(
-      <TXP10 queue={ridgelineIssues("a")} selectedId={null} detail={undefined} showResolved={false} query="" />,
+      <TXP10
+        queue={ridgelineIssues("a")}
+        selectedId={null}
+        detail={undefined}
+        showResolved={false}
+        query=""
+      />,
     );
     expect(screen.getByText(COPY.selectIssue)).toBeTruthy();
     cleanup();
     at("f");
-    expect(screen.getAllByText(COPY.noOpen).length + screen.getAllByText(COPY.selectIssue).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(COPY.noOpen).length + screen.getAllByText(COPY.selectIssue).length,
+    ).toBeGreaterThan(0);
   });
 });
