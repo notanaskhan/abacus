@@ -4,7 +4,7 @@ title: "R-02-T13: the seed-demo load read against the figures book"
 spec: SPEC-000  # code partial (S0-S38 inventory, bucket C)
 acceptance_criteria: [AC-1]  # the row's acceptance
 risk_zone: green
-status: in-review
+status: done
 branch: r02-t13-seed-demo-load
 worktree: /Users/ayushkbhatia/Accrued/abacus-lo39-rec
 created: 2026-11-14
@@ -26,4 +26,4 @@ fixture to one figures book statically; no load had been shown.
 ## Progress log
 - 2026-11-14: written; ruff and pyright clean. Not run locally (the test lock was held, then Docker
   stopped); it runs in the batch merge's CI.
-
+- 2026-11-14: merged; passed in main CI 43522183908 (0152ac5d6). Row done.
