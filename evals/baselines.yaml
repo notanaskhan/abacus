@@ -20,3 +20,7 @@ workpapers.section_drafter:
 notices.responder:
   medium: "0.25"
   small: "0.08"
+# workbench.assistant v1 (W-02-T25; W-02 §6; DEC-5005): the spec's budget, about $0.60 a run on
+# the medium tier (inferred, W-02 T25). The real run's median must stay within 10 % of it.
+workbench.assistant:
+  medium: "0.60"

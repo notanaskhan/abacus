@@ -71,10 +71,11 @@ def main(argv: list[str]) -> int:
     if args.agent == "workbench_assistant":  # W-02-T07: workbench.assistant's turn graders
         from abacus_tools.evals.workbench_assistant import main as workbench_main
 
-        if args.route != "fake":
-            print("workbench_assistant: real routes arrive with W-02-T12 and W-02-T25")
-            return 2
         subset = "fast" if args.subset == "fast" else "full"
+        if args.route != "fake":  # W-02-T25: the evaluation account's direct and Bedrock runs
+            from abacus_tools.evals.workbench_assistant_real import real_main as workbench_real
+
+            return workbench_real(cast(str, args.route), cast(Path, args.out), subset)
         return workbench_main(cast(Path, args.out), subset)
     if args.agent == "runtime_conformance" and args.route != "fake":  # P-10-T46: real routes
         from abacus_tools.evals.runtime_conformance_real import real_main as conformance_real
