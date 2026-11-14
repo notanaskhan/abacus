@@ -263,6 +263,42 @@ class CloseTaskStatus(StrEnum):
     FAILED = "failed"
 
 
+class InstrumentInterpretationStatus(StrEnum):
+    UNREAD = "unread"
+    READING = "reading"
+    PROPOSED = "proposed"
+    ADOPTED = "adopted"
+    APPROVED = "approved"
+    REOPENED = "reopened"
+
+
+class InstrumentSegmentationStatus(StrEnum):
+    SEGMENTED = "segmented"
+    NEEDS_REVIEW = "needs_review"
+
+
+class SixtyFiveDayElectionStatus(StrEnum):
+    NOT_MADE = "not_made"
+    ELECTED = "elected"
+
+
+class EstateInventoryItemStatus(StrEnum):
+    GATHERING_SUPPORT = "gathering_support"
+    VALUED = "valued"
+
+
+class EstateDeductionElectionStatus(StrEnum):
+    NONE = "none"
+    S642G_PENDING = "s642g_pending"
+    S642G_706 = "s642g_706"
+    S642G_1041 = "s642g_1041"
+
+
+class EstateComputationLabelStatus(StrEnum):
+    ACCRUED_TIE_OUT_SHADOW = "accrued_tie_out_shadow"
+    ENGINE_IMPORT = "engine_import"
+
+
 class CloseFlagStatus(StrEnum):
     ON_HOLD = "on_hold"
 
@@ -1607,6 +1643,36 @@ STORED: dict[str, tuple[str, ...]] = {
         "needs_attention",
         "done",
         "failed",
+    ),
+    "instrument_interpretation": (
+        "unread",
+        "reading",
+        "proposed",
+        "adopted",
+        "approved",
+        "reopened",
+    ),
+    "instrument_segmentation": (
+        "segmented",
+        "needs_review",
+    ),
+    "sixty_five_day_election": (
+        "not_made",
+        "elected",
+    ),
+    "estate_inventory_item": (
+        "gathering_support",
+        "valued",
+    ),
+    "estate_deduction_election": (
+        "none",
+        "s642g_pending",
+        "s642g_706",
+        "s642g_1041",
+    ),
+    "estate_computation_label": (
+        "accrued_tie_out_shadow",
+        "engine_import",
     ),
     "close_flag": (
         "on_hold",
