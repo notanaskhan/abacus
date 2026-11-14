@@ -24,6 +24,11 @@ ADR-150 W2 `tax_engine_file_bridge`; DEC-1462). RED: what leaves the firm for th
   human-only audit register (`engine_export.generated`, `.marked_exported`, 0561), and the grant
   itself (issued only by a person's decision).
 
+T-05-T60 (DEC-4931): an entity return (Form 1065) adds the entity section, sheets `TTB` (by
+CCH line code) and `Allocations` (partner by Schedule K line), from the approved checkpoint only
+(`export_entity.py`), and is refused while any account is unmapped (409 `export_unmapped`, before
+the grant is spent). The never-transmit and human-only rules above hold for it unchanged.
+
 Values are TRI: never logged, never in an error's facts.
 """
 
@@ -61,6 +66,14 @@ from abacus.modules.integrations.api import engine_return_id, export_settings, w
 from abacus.modules.review.api import current_checkpoint
 from abacus.modules.tax import engine_repository as repo
 from abacus.modules.tax.engine_sync import ReadyToTransmit
+from abacus.modules.tax.export_entity import (
+    ALLOCATION_HEADER,
+    ENTITY_FORMS,
+    TTB_HEADER,
+    EntitySection,
+    entity_section,
+    require_mapped,
+)
 from abacus.modules.tax.export_fields import export_values
 
 TARGET: Final = "tax_return"
@@ -173,6 +186,7 @@ def workbook(
     form: str,
     values: dict[str, dict[str, object]],
     at: datetime,
+    entity: EntitySection | None = None,
 ) -> bytes:
     """Sheet `Return` (a key, value header, then `return_id` without its version, `tax_year`,
     `form`) and sheet `Fields` (contract §6), the same bytes for the same input; the fake engine's
@@ -190,6 +204,22 @@ def workbook(
     for key in sorted(values):
         line = key.rsplit(".", 1)[-1]
         fields.append([key, form, line, _text(values[key].get("v"))])
+    if entity is not None:  # T-05-T60: the entity section, in the workbook's own order
+        ttb = book.create_sheet("TTB")
+        ttb.append(list(TTB_HEADER))
+        for row in entity.ttb:
+            ttb.append([_text(row.cch_line_code), _text(row.label), _text(row.amount)])
+        shares = book.create_sheet("Allocations")
+        shares.append(list(ALLOCATION_HEADER))
+        for share in entity.allocations:
+            shares.append(
+                [
+                    str(share.partner_ref),
+                    _text(share.partner),
+                    _text(share.schedule_k_line),
+                    _text(share.amount),
+                ]
+            )
     book.properties.creator = ""
     book.properties.lastModifiedBy = ""
     raw = io.BytesIO()
@@ -311,6 +341,9 @@ async def export_return(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID) 
     if str(facts.status) not in EXPORTABLE or checkpoint is None or checkpoint[0] != checkpoint_id:
         raise NotFinalApproved(facts={"work_item_id": str(return_id)})
     content = checkpoint[1]
+    is_entity = str(facts.form) in ENTITY_FORMS
+    if is_entity:  # T-05-T60: blocked while Unmapped > 0, before the grant is spent
+        await require_mapped(ctx.tenant, return_id)
     grant = await latest_grant(ctx.tenant, Target(TARGET, return_id), APPROVE)
     if grant is None:
         raise NotFinalApproved(facts={"work_item_id": str(return_id)})
@@ -339,12 +372,14 @@ async def export_return(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID) 
     # T-04-T30 (AC-10.1): the values the approved checkpoint covered, worksheet fields by their
     # engine key; never a later edit.
     values = await export_values(ctx.tenant, return_id, checkpoint_id)
+    section = await entity_section(ctx.tenant, return_id, checkpoint_id) if is_entity else None
     content_bytes = workbook(
         engine_id=engine_id,
         tax_year=int(facts.tax_year),
         form=form,
         values=values,
         at=at,
+        entity=section,
     )
     file_name = f"{engine_id.replace(':', '_')}_V{version}.xlsx"
     screened = await screen_and_stage(ctx.tenant_id, content_bytes, file_name, None)
