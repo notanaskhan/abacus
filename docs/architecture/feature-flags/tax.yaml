@@ -93,3 +93,27 @@ flags:
     kind: variant
     values: [tax.preparer_memo@v1]
     default: tax.preparer_memo@v1
+  - name: tax.fiduciary_workpapers
+    description: "TXT-01 Instrument and TXT-02 Trust Calculation: their routes, TAX-05's Review sub-row items and the fiduciary endpoints. Off: the 1041 review proceeds on TAX-05 worksheets (T-04). T-07-T03, DEC-5007."
+    owner: ayushkbhatia
+    created: 2026-11-14
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.fiduciary_k1_release
+    description: "TXT-03 Beneficiaries, K-1s and the 65-day election: route, election and trustee-question endpoints and the 1041 release branch. Off: 1041 packages release through TXP-12 (T-02). T-07-T03, DEC-5007."
+    owner: ayushkbhatia
+    created: 2026-11-14
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.estate_workpapers
+    description: "TXT-04 Gift and estate workpapers (706 / 709): route and estate endpoints. Off: the 706 shows TAX-02's overview only. T-07-T03, DEC-5007."
+    owner: ayushkbhatia
+    created: 2026-11-14
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
