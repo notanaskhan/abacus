@@ -40,6 +40,7 @@ What staff carry between Accrued and CCH Axcess. `abacus_tools/fakes/cch_axcess.
 | File | Format | Columns or content |
 |---|---|---|
 | Export workbook (Accrued → engine; built by T-01-T25) | `.xlsx` | Sheet `Return`: key/value rows `return_id`, `tax_year`, `form`. Sheet `Fields`: `field_key`, `form`, `line`, `value` |
+| Entity section (Form 1065; T-05-T60, DEC-4931) | same `.xlsx` | Sheet `TTB`: `cch_line_code`, `label`, `amount` (sheet 03 Form Lines). Sheet `Allocations`: `partner_ref`, `partner`, `schedule_k_line`, `amount` (sheet 06 lines by sheet 09 partners). Both from the approved checkpoint only; refused with 409 `export_unmapped` while any account is unmapped. The CCH line code is the 1065 form-line key, validated in shadow on the pilot firm's Axcess (T-05 OQ-1) |
 | Values (`values`) | CSV, UTF-8, `\n` | `return_id, version, field_key, form, line, value`; `version` reads `V<n>` |
 | Diagnostics (`diagnostics`) | CSV | `return_id, version, severity, code, form, field_key, message`; severity `error`, `warning` or `informational` |
 | PDFs (`pdfs`) | PDF | One file per kind: client copy, Form 8879, NY TR-579-IT, next year's 1040-ES and IT-2105 vouchers, K-1; named `<engine id with _>_<kind>.pdf` |
