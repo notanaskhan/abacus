@@ -24902,6 +24902,8 @@ export const entityReconciliationQueryKey = (options: Options<EntityReconciliati
 
 /**
  * Entity Reconciliation Route
+ *
+ * T-05-T61 (DEC-4934): the engine's approved figures beside the workbook's, by code.
  */
 export const entityReconciliationOptions = (options: Options<EntityReconciliationData>) => queryOptions<EntityReconciliationResponse, EntityReconciliationError, EntityReconciliationResponse, ReturnType<typeof entityReconciliationQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

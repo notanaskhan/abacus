@@ -119822,6 +119822,12 @@
       "WorkbookReconciliationOut": {
         "additionalProperties": false,
         "properties": {
+          "accrued_label": {
+            "cls": "internal",
+            "default": "Accrued tie-out (shadow)",
+            "title": "Accrued Label",
+            "type": "string"
+          },
           "checkpoint_id": {
             "anyOf": [
               {
@@ -119875,6 +119881,12 @@
             "title": "Accrued",
             "x-tri": true
           },
+          "differs": {
+            "cls": "internal",
+            "default": false,
+            "title": "Differs",
+            "type": "boolean"
+          },
           "engine": {
             "anyOf": [
               {
@@ -119906,6 +119918,18 @@
             ],
             "cls": "internal",
             "title": "Issue Id"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Label"
           }
         },
         "required": [
@@ -276380,6 +276404,7 @@
     },
     "/v1/tax-returns/{return_id}/reconciliation": {
       "get": {
+        "description": "T-05-T61 (DEC-4934): the engine's approved figures beside the workbook's, by code.",
         "operationId": "entity_reconciliation",
         "parameters": [
           {
@@ -276492,16 +276517,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Entity Reconciliation Route",

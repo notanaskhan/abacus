@@ -30,6 +30,8 @@ from datetime import datetime
 from typing import Final, Literal, cast
 from uuid import UUID
 
+from sqlalchemy import text
+
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, run_isolated
@@ -498,7 +500,23 @@ async def resolve_import(
             target=Target(SUBJECT, import_id),
             after=Ref(return_id=row.return_id, accepted=len(taken), of=len(rows)),
         )
+    if not rejecting and await _is_entity(ctx, cast(UUID, row.return_id)):
+        # T-05-T61 (DEC-4934): the approved figures reconciled to the workbook, one
+        # engine_diagnostic issue per difference.
+        from abacus.modules.tax.entity_reconciliation import raise_differences
+
+        await raise_differences(ctx, cast(UUID, row.return_id))
     return await import_view(ctx, import_id)
+
+
+async def _is_entity(ctx: AuthContext, return_id: UUID) -> bool:
+    from abacus.modules.tax.export_entity import ENTITY_FORMS
+
+    async with tenant_session(ctx.tenant) as session:
+        form = await session.scalar(
+            text("SELECT form FROM tax_returns WHERE work_item_id = :r"), {"r": return_id}
+        )
+    return str(form) in ENTITY_FORMS
 
 
 # --- the chip ------------------------------------------------------------------------------------
