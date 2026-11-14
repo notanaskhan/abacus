@@ -19,6 +19,9 @@ TABLES: frozenset[str] = frozenset(
         "connection_consents",
         "connection_consent_links",
         "reconnect_requests",
+        # 0882 (C-01-T10): the CAS sync cadence and metered calls.
+        "sync_schedules",
+        "connection_meter_usage",
         # 0215 (A-02-T16 review M1): retired grants until the provider's revoke answers.
         "connection_grant_revocations",
         # 0790 (A-02-T33): which firm a state's hash belongs to, for the connect host's hand-off.
@@ -54,6 +57,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"period_start", "period_end", "started_by", "client_entity_id"}
         | {"trigger", "label"}  # 0195 (A-02-T13)
     ),
+    "sync_schedules": frozenset(
+        {"tenant_id", "connection_id", "cadence", "business_hours", "next_run_at"}
+    ),
+    "connection_meter_usage": frozenset({"tenant_id", "provider", "month", "budget"}),
     "connection_states": frozenset(
         {"tenant_id", "engagement_id", "client_entity_id", "user_id", "provider"}
         | {"state_hash", "expires_at"}
@@ -94,7 +101,12 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "snapshot_id"}
         | {"raw_size_bytes", "raw_pulled_at", "failure_code", "finished_at", "source"}
         | {"evidence_version_id", "queued_reason", "estimated_start_at"}
+        | {"api_calls"}  # 0882 (C-01-T10)
     ),
+    "sync_schedules": frozenset(
+        {"cadence", "business_hours", "paused_reason", "next_run_at", "cdc_cursor"}
+    ),
+    "connection_meter_usage": frozenset({"calls", "budget", "updated_at"}),
     "connection_states": frozenset({"used_at"}),  # SPEC-020: spent once
     "reconnect_requests": frozenset({"fulfilled_at"}),  # 0195: cleared on reconnect
 }
