@@ -56331,6 +56331,10 @@ export type WorkbookPartnersOut = {
  */
 export type WorkbookReconciliationOut = {
     /**
+     * Accrued Label
+     */
+    accrued_label?: string;
+    /**
      * Checkpoint Id
      */
     checkpoint_id?: string | null;
@@ -56353,6 +56357,10 @@ export type WorkbookReconciliationRowOut = {
      */
     accrued?: string | null;
     /**
+     * Differs
+     */
+    differs?: boolean;
+    /**
      * Engine
      */
     engine?: string | null;
@@ -56364,6 +56372,10 @@ export type WorkbookReconciliationRowOut = {
      * Issue Id
      */
     issue_id?: string | null;
+    /**
+     * Label
+     */
+    label?: string | null;
 };
 
 /**
@@ -127513,10 +127525,6 @@ export type EntityReconciliationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityReconciliationError = EntityReconciliationErrors[keyof EntityReconciliationErrors];

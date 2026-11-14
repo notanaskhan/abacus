@@ -15278,6 +15278,8 @@ export const entityPartners = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Entity Reconciliation Route
+ *
+ * T-05-T61 (DEC-4934): the engine's approved figures beside the workbook's, by code.
  */
 export const entityReconciliation = <ThrowOnError extends boolean = false>(options: Options<EntityReconciliationData, ThrowOnError>): RequestResult<EntityReconciliationResponses, EntityReconciliationErrors, ThrowOnError> => (options.client ?? client).get<EntityReconciliationResponses, EntityReconciliationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

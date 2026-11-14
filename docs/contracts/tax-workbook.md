@@ -268,3 +268,12 @@ unknown version. Audited `workbook.exported`.
 named regenerates a stale memo's affected sections). `PATCH …/memo/sections/{key}` (409
 `memo_version_conflict`). `POST …/memo/adopt` (L1) and new `POST …/memo/approve` (L2; 403
 `preparer_cannot_approve`). `GET …/opportunities` answers. Event `tax_memo.went_stale`.
+
+## Live since T-05-T61 (2026-11-14, DEC-4934)
+`GET /v1/tax-returns/{id}/reconciliation` compares the engine's approved figures (engine keys
+`schedule_k.<line>`, `k1.<partner_ref>.<line>`, `capital.<partner_ref>.ending`, `m2.<n>`, the
+values an approved CCH import wrote on the return) with the workbook's, by code. Rows gain
+`label` and `differs`; the response gains `accrued_label` ("Accrued tie-out (shadow)").
+Approving an entity import raises one `engine_diagnostic` issue per difference
+(`source_ref recon:<key>`, a figure-free title), each blocking final approval.
+

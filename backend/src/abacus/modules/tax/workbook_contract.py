@@ -881,6 +881,9 @@ class WorkbookReconciliationRowOut(BaseModel):
     accrued: Annotated[MaybeMoney, Tri] = None
     engine: Annotated[MaybeMoney, Tri] = None
     issue_id: Annotated[UUID | None, Internal] = None
+    # T-05-T61 (additive): the line's words (code's) and whether it needs explaining.
+    label: Annotated[str | None, Confidential] = None
+    differs: Annotated[bool, Internal] = False
 
 
 class WorkbookReconciliationOut(BaseModel):
@@ -889,6 +892,8 @@ class WorkbookReconciliationOut(BaseModel):
     checkpoint_id: Annotated[UUID | None, Internal] = None
     rows: Annotated[list[WorkbookReconciliationRowOut], Tri]
     differences: Annotated[int, Field(ge=0), Internal]
+    # T-05-T61 (additive; DEC-77): the words beside Accrued's figures the engine owns.
+    accrued_label: Annotated[str, Internal] = "Accrued tie-out (shadow)"
 
 
 class WorkbookAcceptedOut(BaseModel):
@@ -2302,13 +2307,31 @@ async def entity_opportunities_route(return_id: UUID, ctx: Ctx) -> WorkbookOppor
 @workbook_router.get(
     f"{_R}/reconciliation", action="tax_reconciliation.read",
     response_model=WorkbookReconciliationOut,
-    errors=(501,),
 )  # fmt: skip
 async def entity_reconciliation_route(
     return_id: UUID, ctx: Ctx, checkpoint: Annotated[UUID | None, Query()] = None
 ) -> WorkbookReconciliationOut:
+    """T-05-T61 (DEC-4934): the engine's approved figures beside the workbook's, by code."""
+    from abacus.modules.tax.entity_reconciliation import SHADOW_LABEL, differences, reconcile
+    from abacus.modules.tax.overview import load_return, return_resource
+
     await _flag_on(ctx)
-    _not_yet()
+    loaded = await load_return(ctx, return_id)
+    await authorise(ctx, "tax_reconciliation.read", await return_resource(ctx, loaded))
+    rows = await reconcile(ctx.tenant, return_id)
+    explain = {r.key for r in differences(rows)}
+    return WorkbookReconciliationOut(
+        checkpoint_id=checkpoint,
+        rows=[
+            WorkbookReconciliationRowOut(
+                field_key=r.key, accrued=r.accrued, engine=r.engine, label=r.label,
+                differs=r.key in explain,
+            )
+            for r in rows
+        ],
+        differences=len(explain),
+        accrued_label=SHADOW_LABEL,
+    )  # fmt: skip
 
 
 __all__ = ["workbook_router"]
