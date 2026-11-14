@@ -297,6 +297,13 @@ evals-briefing-fast:
 # I-02-T20: the nightly full suite on the fake model.
 evals-briefing-full:
 	cd backend && uv run python -m abacus_tools.evals --agent briefing_today --subset full
+# W-02-T25: workbench.assistant's suite, fast subset on the fake model (thresholds frozen, T07).
+evals-workbench-fast:
+	cd backend && uv run python -m abacus_tools.evals --agent workbench_assistant --subset fast
+
+# W-02-T25: the nightly full suite on the fake model.
+evals-workbench-full:
+	cd backend && uv run python -m abacus_tools.evals --agent workbench_assistant --subset full
 
 # T-05-T18: the entity return agents' suites part 1 on the fake model (thresholds frozen).
 evals-entity-fast:
