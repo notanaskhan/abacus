@@ -22,15 +22,25 @@ import {
 } from "../seed/tax-entity-schedule-k";
 import { harborview, ridgeline } from "../seed/tax-entity-allocation";
 import { CITATIONS, sheetCells } from "../seed/tax-entity-sheets";
+import {
+  type MemoState,
+  RIDGELINE_GENERAL,
+  RIDGELINE_OPPORTUNITIES,
+  ridgelineMemo,
+} from "../seed/tax-entity-memo";
 
 const notYet = () => json({ detail: "not_implemented" }, 501);
 const R = "/v1/tax-returns/{return_id}";
 
 export function taxEntityHandlers(
   snapshot: Snapshot,
-  options: { proposed?: boolean } = {},
+  options: { proposed?: boolean; memo?: MemoState } = {},
 ): Record<string, FixtureHandler> {
   return {
+    // T-05-T59: TXP-01's memo (the artboard's state), the rail and the opportunities.
+    [`GET ${R}/memo`]: () => json(ridgelineMemo(options.memo ?? "adopted")),
+    [`GET ${R}/general-information`]: () => json(RIDGELINE_GENERAL),
+    [`GET ${R}/memo/opportunities`]: () => json(RIDGELINE_OPPORTUNITIES),
     [`GET ${R}/workbook/sheets/{sheet}`]: (req) =>
       json(sheetCells(snapshot, req.params.sheet ?? "05", options.proposed === true)),
     // T-05-T38 rest (DEC-4630): the workbook's versions (Run 1 and Run 2 finished) and the

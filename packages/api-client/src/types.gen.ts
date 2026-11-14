@@ -55238,7 +55238,7 @@ export type WorkbookAllocationStructureOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
     /**
      * Checks
      */
@@ -56087,6 +56087,40 @@ export type WorkbookMemoAdoptIn = {
 };
 
 /**
+ * WorkbookMemoCitationOut
+ *
+ * T-05-T59 (additive; DEC-4939): one marker's source as code re-read it: `n` the marker,
+ * `title` and `loc` rendered by code from the cell, `quote` the cell's value, `match` the cell
+ * address TXP-01 lights (SHL-07's display contract, C4 §3.2).
+ */
+export type WorkbookMemoCitationOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Loc
+     */
+    loc: string;
+    /**
+     * Match
+     */
+    match?: string | null;
+    /**
+     * N
+     */
+    n: number;
+    /**
+     * Quote
+     */
+    quote: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * WorkbookMemoDraftIn
  */
 export type WorkbookMemoDraftIn = {
@@ -56103,7 +56137,11 @@ export type WorkbookMemoOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
+    /**
+     * Memo Id
+     */
+    memo_id?: string | null;
     /**
      * Sections
      */
@@ -56120,6 +56158,10 @@ export type WorkbookMemoOut = {
      * Status
      */
     status: 'drafting' | 'adopted' | 'approved' | 'stale';
+    /**
+     * Version
+     */
+    version?: number;
 };
 
 /**
@@ -56148,6 +56190,10 @@ export type WorkbookMemoSectionOut = {
      * Citation Ids
      */
     citation_ids?: Array<string>;
+    /**
+     * Citations
+     */
+    citations?: Array<WorkbookMemoCitationOut>;
     /**
      * Human Owned
      */
@@ -56197,7 +56243,7 @@ export type WorkbookOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
     /**
      * Return Id
      */
@@ -56307,7 +56353,7 @@ export type WorkbookPartnersOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
     /**
      * Partners
      */
@@ -126976,10 +127022,6 @@ export type EntityMemoErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EntityMemoError = EntityMemoErrors[keyof EntityMemoErrors];

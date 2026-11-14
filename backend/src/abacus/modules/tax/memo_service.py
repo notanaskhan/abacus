@@ -34,7 +34,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Final, Literal, cast
@@ -263,6 +263,8 @@ class MemoSectionView:
     title: str
     body: str
     human_owned: bool
+    # T-05-T59 (DEC-4939): the source positions the section's segments cite, in order.
+    cites: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -272,6 +274,12 @@ class MemoView:
     seen_hash: str
     stale_fields: list[str]
     version: int
+    # T-05-T59 (DEC-4939): the memo's sources as the drafter saw them (position n = index + 1),
+    # each a workbook cell re-read by code at the draft's time, and the memo's id for stable ids.
+    sources: list[MemoSource] = field(default_factory=list["MemoSource"])
+    memo_id: UUID | None = None
+    last_event: str | None = None
+    drafted_by_run: bool = False
 
 
 async def memo_row(tenant: TenantContext, return_id: UUID) -> MemoRow | None:
@@ -355,6 +363,13 @@ async def read_memo(ctx: AuthContext, return_id: UUID) -> MemoView:
             stale_lines = [line for _, line in moved(then, now)]
         else:
             status = "approved" if last == "approved" else "adopted"
+    form, _, _ = await facts_now(ctx.tenant, return_id)
+    from abacus.modules.review.api import values_as_of
+
+    values_then = (await values_as_of(ctx.tenant, WORKBOOK, [return_id], drafted_at)).get(
+        return_id, {}
+    )
+    sources = sources_of(form, values_then, await facts_then(ctx.tenant, return_id, drafted_at))
     return MemoView(
         status=status,
         sections=[
@@ -363,13 +378,50 @@ async def read_memo(ctx: AuthContext, return_id: UUID) -> MemoView:
                 SECTION_TITLES.get(str(s["key"]), str(s["key"])),
                 body_of(s),
                 bool(s.get("human_owned")),
+                cites_of(s),
             )
             for s in sections
         ],
         seen_hash=memo.content_hash or "",
         stale_fields=stale_lines,
         version=memo.version,
+        sources=sources,
+        memo_id=memo.id,
+        last_event=last,
     )
+
+
+def cites_of(section: Mapping[str, object]) -> tuple[int, ...]:
+    """T-05-T59: the source positions a stored section cites, first use first, once each."""
+    found: list[int] = []
+    for seg in cast(list[Mapping[str, object]], section.get("segments") or []):
+        for c in cast(list[Mapping[str, object]], seg.get("citations") or []):
+            n = c.get("n")
+            if isinstance(n, int) and n not in found:
+                found.append(n)
+    return tuple(found)
+
+
+MEMO_ACTIONS: Final = ("tax_memo.edit", "tax_memo.draft", "tax_memo.adopt", "tax_memo.approve")
+
+
+async def memo_actions(ctx: AuthContext, return_id: UUID, resource: object, view: MemoView) -> list[str]:
+    """T-05-T59 (DEC-4939): the buttons TXP-01 may show the viewer, as hints (each route decides
+    again): Edit and Regenerate by their matrix actions; Adopt (L1) on a drafted memo not yet
+    adopted; Approve (L2) on an adopted memo, never to one of its preparers."""
+    from abacus.modules.identity.api import allowed_actions
+
+    held = set(await allowed_actions(ctx, resource, ["tax_memo.edit", "tax_memo.draft",
+                                                     "sign_off.create"]))  # type: ignore[arg-type]  # fmt: skip
+    out = [a for a in ("tax_memo.edit", "tax_memo.draft") if a in held]
+    if view.version == 0 or "sign_off.create" not in held:
+        return out
+    if view.last_event not in ("adopted", "approved"):
+        out.append("tax_memo.adopt")
+    elif view.last_event == "adopted" and view.memo_id is not None:
+        if ctx.user_id not in await preparers(ctx.tenant, view.memo_id):
+            out.append("tax_memo.approve")
+    return out
 
 
 # --- draft (the person's run) -------------------------------------------------------------------

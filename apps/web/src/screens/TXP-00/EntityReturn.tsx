@@ -15,6 +15,7 @@ import { EntityReturnLayout, NOT_BUILT } from "./EntityReturnLayout";
 import { Financials } from "../TXP-02/Financials";
 import { ScheduleK } from "../TXP-05/ScheduleK";
 import { Workpaper } from "../TXP-11/Workpaper";
+import { Summary } from "../TXP-01/Summary";
 import { TXP00, frameOf } from "./index";
 
 export type EntitySlug = "agent" | "issues" | "workpaper" | "activity" | "review";
@@ -79,6 +80,8 @@ export function EntityReturn({
         <Financials returnId={returnId} form={form} taxYear={record.data.row.tax_year} />
       ) : section.review === "schedule-k" ? (
         <ScheduleK returnId={returnId} onOpen={onOpen} />
+      ) : section.review === "summary" ? (
+        <Summary returnId={returnId} />
       ) : section.tab === "workpaper" ? (
         <Workpaper returnId={returnId} />
       ) : (

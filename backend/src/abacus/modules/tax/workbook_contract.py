@@ -64,6 +64,9 @@ WorkbookAction = Literal[
     "allocation_structure.edit",
     "tax_memo.edit",
     "tax_memo.draft",
+    # T-05-T59 (additive): TXP-01's Adopt (L1) and Approve (L2) buttons, as hints.
+    "tax_memo.adopt",
+    "tax_memo.approve",
 ]
 
 
@@ -819,6 +822,21 @@ class WorkbookIssueResolveIn(BaseModel):
     note: Annotated[str | None, Field(max_length=1000), Confidential] = None
 
 
+class WorkbookMemoCitationOut(BaseModel):
+    """T-05-T59 (additive; DEC-4939): one marker's source as code re-read it: `n` the marker,
+    `title` and `loc` rendered by code from the cell, `quote` the cell's value, `match` the cell
+    address TXP-01 lights (SHL-07's display contract, C4 §3.2)."""
+
+    model_config = _cfg()
+
+    id: Annotated[UUID, Internal]
+    n: Annotated[int, Internal]
+    title: Annotated[str, Internal]
+    loc: Annotated[str, Internal]
+    quote: Annotated[str, Tri]
+    match: Annotated[str | None, Internal] = None
+
+
 class WorkbookMemoSectionOut(BaseModel):
     model_config = _cfg()
 
@@ -828,6 +846,9 @@ class WorkbookMemoSectionOut(BaseModel):
     human_owned: Annotated[bool, Internal]
     citation_ids: Annotated[list[UUID], Internal] = Field(default_factory=list[UUID])
     version: Annotated[int, Internal]
+    citations: Annotated[list[WorkbookMemoCitationOut], Tri] = Field(
+        default_factory=list[WorkbookMemoCitationOut]
+    )
 
 
 class WorkbookMemoOut(BaseModel):
@@ -838,6 +859,9 @@ class WorkbookMemoOut(BaseModel):
     seen_hash: Annotated[str, Internal]
     stale_fields: Annotated[list[str], Internal] = Field(default_factory=list[str])
     allowed_actions: Annotated[list[WorkbookAction], Internal]
+    # T-05-T59 (additive): the memo's sign-off target (SHL-12's `preparer_memo`) and its version.
+    memo_id: Annotated[UUID | None, Internal] = None
+    version: Annotated[int, Internal] = 0
 
 
 class WorkbookMemoDraftIn(BaseModel):
@@ -2165,16 +2189,31 @@ async def entity_issue_resolve_route(
 
 
 @workbook_router.get(
-    f"{_R}/memo", action="tax_memo.read", response_model=WorkbookMemoOut, errors=(501,)
+    f"{_R}/memo", action="tax_memo.read", response_model=WorkbookMemoOut
 )
 async def entity_memo_route(return_id: UUID, ctx: Ctx) -> WorkbookMemoOut:
     """TXP-01 (T-05-T54, DEC-4909): sections, status (stale computed on cited figures) and the
     moved figures in words."""
     from abacus.modules.tax.memo_service import read_memo
 
+    import uuid
+
+    from abacus.modules.tax.memo_service import memo_actions
+
     await _flag_on(ctx)
-    await _memo_read(ctx, return_id)
+    resource = await _memo_read(ctx, return_id)
     memo = await read_memo(ctx, return_id)
+    base = memo.memo_id or return_id
+
+    def cited(n: int) -> WorkbookMemoCitationOut:
+        source = memo.sources[n - 1] if 0 < n <= len(memo.sources) else None
+        title, _, loc = (source.label if source else f"Source {n}").partition("!")
+        return WorkbookMemoCitationOut(
+            id=uuid.uuid5(base, f"{memo.version}:{n}"), n=n,
+            title=title, loc=loc or title, quote=source.quote if source else "",
+            match=source.label if source else None,
+        )  # fmt: skip
+
     return WorkbookMemoOut(
         status=memo.status,
         sections=[
@@ -2184,12 +2223,18 @@ async def entity_memo_route(return_id: UUID, ctx: Ctx) -> WorkbookMemoOut:
                 body=s.body,
                 human_owned=s.human_owned,
                 version=memo.version,
+                citations=[cited(n) for n in s.cites],
+                citation_ids=[cited(n).id for n in s.cites],
             )
             for s in memo.sections
         ],
         seen_hash=memo.seen_hash,
         stale_fields=memo.stale_fields,
-        allowed_actions=[],
+        allowed_actions=cast(
+            list[WorkbookAction], await memo_actions(ctx, return_id, resource, memo)
+        ),
+        memo_id=memo.memo_id,
+        version=memo.version,
     )
 
 

@@ -51,6 +51,8 @@ export interface DocumentOnWellProps {
   onVariable?: (id: string, value: string) => void;
   frame?: boolean;
   embedded?: boolean;
+  /** T-05-T59: the panes alone, in a host's frame (no app shell, toolbar or record header). */
+  bare?: boolean;
   height?: number;
   className?: string;
 }
@@ -135,6 +137,7 @@ export function DocumentOnWell({
   onVariable,
   frame = false,
   embedded = false,
+  bare = false,
   height,
   className,
 }: DocumentOnWellProps): JSX.Element {
@@ -283,6 +286,27 @@ export function DocumentOnWell({
     </Pane>,
   ];
 
+  const body = (
+    <MatchScope {...(store === undefined ? {} : { store })}>
+      <div
+        data-template="t10"
+        data-status={document.status}
+        className="flex min-h-0 min-w-0 flex-1"
+      >
+        <SplitLayout
+          preset="document"
+          height={height === undefined ? "viewport" : height - CHROME}
+          narrow={false}
+          className="w-full bg-transparent p-0"
+        >
+          {panes}
+        </SplitLayout>
+      </div>
+    </MatchScope>
+  );
+  // T-05-T59 (additive): inside a host's own frame (TXP-01 in the entity return's layout) the
+  // panes draw without a second app shell.
+  if (bare) return body;
   return (
     <AppShell
       toolbar={toolbar}
@@ -293,22 +317,7 @@ export function DocumentOnWell({
       record={record}
       {...(tabs === undefined ? {} : { tabs })}
     >
-      <MatchScope {...(store === undefined ? {} : { store })}>
-        <div
-          data-template="t10"
-          data-status={document.status}
-          className="flex min-h-0 min-w-0 flex-1"
-        >
-          <SplitLayout
-            preset="document"
-            height={height === undefined ? "viewport" : height - CHROME}
-            narrow={false}
-            className="w-full bg-transparent p-0"
-          >
-            {panes}
-          </SplitLayout>
-        </div>
-      </MatchScope>
+      {body}
     </AppShell>
   );
 }
