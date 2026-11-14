@@ -2,7 +2,7 @@
 // countersigns and the engagement's G3 is met; nobody else countersigns for her. The fixture walk
 // uses the built artboards: SIG-01 c (Completed) and ENG-04 d (signed and countersigned, locked).
 // The E14 Granite Peak walk runs on staging (M13); the hosted runs are fixme until then.
-import { expect, test } from "../harness";
+import { DEMO_INSTANT, expect, test } from "../harness";
 import { M13, artboard, skipUnhosted } from "../signatures/support";
 import { P05_LIVE, nothingBlocks, p05 } from "./p05-support";
 
@@ -48,6 +48,20 @@ test.describe("J23 collaboration (P-05-T15)", () => {
       await expect(page.getByText("Marcus Delaney").first()).toBeVisible();
       await expect(page.getByRole("button", { name: /^Sign off/ })).toHaveCount(0);
       await nothingBlocks(page);
+    });
+  });
+});
+
+// I-02-T21 (TASK-7952; I-02 §3.2): j23 step 1 on the Today brief. Margaret's four items, the same
+// as HOME-01 b (TPL-11 "Waiting on you 4"); a walled engagement is absent from every cell.
+test.describe("J23 · Today brief", () => {
+  test("j23 1 Today: Margaret's four items, nothing walled counted", async ({ journey }) => {
+    await journey.as("margaret-okonkwo", "/?today=open", { clock: DEMO_INSTANT, scenario: "HOME-05:d" });
+    await journey.step("J23 step 1: Margaret's brief (SHL-23 4)", async (page) => {
+      const brief = page.getByRole("complementary", { name: "Today" });
+      await expect(brief).toBeVisible();
+      await expect(brief.getByText("Good morning, Margaret")).toBeVisible();
+      await expect(brief.locator("[data-cell='decision']")).toContainText("2");
     });
   });
 });

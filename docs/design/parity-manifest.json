@@ -6231,6 +6231,119 @@
         "[data-reveal]",
         "[data-form-face]"
       ]
+    },
+    "home-05a.window": {
+      "page": "screens/HOME-05?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/HOME-05 Home with Today brief/screenshots/HOME-05a.png",
+      "sha256": "c818c30592c420d998a5475949eec989d86d57a359c3cef957b2fc88235f4602",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "time"
+      ]
+    },
+    "home-05b.window": {
+      "page": "screens/HOME-05?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/HOME-05 Home with Today brief/screenshots/HOME-05b.png",
+      "sha256": "8d5525a3e3f503dbf3de6bda7224bf15a957f1692d37aabe1db8cec79d6ee9d2",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "time"
+      ]
+    },
+    "home-05c.window": {
+      "page": "screens/HOME-05?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/HOME-05 Home with Today brief/screenshots/HOME-05c.png",
+      "sha256": "6d233e3149f6efa37c5595204e30c0798c763e6d6cd51180caef004f09c13183",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "time"
+      ]
+    },
+    "home-05d.window": {
+      "page": "screens/HOME-05?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/HOME-05 Home with Today brief/screenshots/HOME-05d.png",
+      "sha256": "05d9966cb3d784a1cc758cb6d9d68f55b515868464a77a44270b069b515d84ab",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "time"
+      ]
+    },
+    "home-05e.window": {
+      "page": "screens/HOME-05?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/HOME-05 Home with Today brief/screenshots/HOME-05e.png",
+      "sha256": "83d39c0f4eeac771fa491e0e423c289b3718e176703126c0a5068a10983c63c4",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "time"
+      ]
+    },
+    "home-05f.window": {
+      "page": "screens/HOME-05?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/HOME-05 Home with Today brief/screenshots/HOME-05f.png",
+      "sha256": "0ca6317c2a00b04e672c29c0d028fd87a47baa3d0d3acbbdb024f31be4aeb4ef",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "time"
+      ]
+    },
+    "shl-23full.window": {
+      "page": "screens/SHL-23?st=full",
+      "selector": "[data-artboard=\"full\"]",
+      "source": "handoff/screens/SHL-23 Today brief panel/screenshots/SHL-23a.png",
+      "sha256": "324a2d3d95530a84d303e6246840779c69f3c8cf380e8ab4184f622c130ee3ea",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "time"
+      ]
+    },
+    "shl-23-1.window": {
+      "page": "screens/SHL-23?st=1",
+      "selector": "[data-artboard=\"1\"]",
+      "source": "handoff/screens/SHL-23 Today brief panel/screenshots/SHL-23b.png",
+      "sha256": "664871571e7c17acb5653f97453942ffccf4f90e9673abbb248b3716068afdd3",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "time"
+      ],
+      "deviation": "SHL-23b is the seven-frame state board; frame 1 is compared, report only (Tier C)"
     }
   }
 }
