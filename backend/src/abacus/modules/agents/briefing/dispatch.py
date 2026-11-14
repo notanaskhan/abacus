@@ -328,7 +328,7 @@ async def write_snapshot(viewer: object, vm: object) -> UUID:
     return snapshot
 
 
-# --- I-02-T17 (DEC-4938): the viewer's earlier days, read only ------------------------------------
+# --- I-02-T17 (DEC-4938): the viewer's earlier days, read only --------------------------------
 
 
 @dataclass(frozen=True)
@@ -354,7 +354,7 @@ HISTORY_DAYS: Final = 90  # I-02 Q3: a viewer's briefs are kept and listed for 9
 
 
 def _snapshot(r: object) -> SnapshotRow:
-    row = cast(Any, r)
+    row = cast(Any, r)  # Any: a SQL row's columns
     return SnapshotRow(
         row.id, row.brief_date, row.built_at, _ints(dict(row.counts or {})),
         list(row.lead_facts or []), list(row.card_refs or []),
@@ -453,14 +453,14 @@ __all__ = [
     "DailyBriefingBuilt",
     "Dispatched",
     "RebuildLimit",
+    "SnapshotRow",
     "current_why",
     "due",
     "ensure_briefings",
     "forced_today",
     "register",
-    "unavailable_reason",
-    "write_snapshot",
-    "SnapshotRow",
     "snapshot_of",
     "snapshots_of",
+    "unavailable_reason",
+    "write_snapshot",
 ]

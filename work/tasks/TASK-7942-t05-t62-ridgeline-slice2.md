@@ -2,8 +2,8 @@
 id: TASK-7942
 title: "T-05-T62: Brightwater Hale Ridgeline slice part 2 (memo adopted and approved, fix, Run 3, issue resolved, named snapshots)"
 plan_key: T-05-T62
-spec: SPEC-651 (T-05 §5.3)
-acceptance_criteria: [AC]  # each named snapshot reproduces its artboards from the database; Sep 14 matches DF-34
+spec: SPEC-651  # T-05 §5.3
+acceptance_criteria: [AC-F14]  # each named snapshot reproduces its artboards from the database; Sep 14 matches DF-34
 risk_zone: amber
 status: in-review
 branch: t05-t62-ridgeline-slice2

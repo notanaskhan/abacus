@@ -14,6 +14,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 from types import SimpleNamespace
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -24,7 +25,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT, snapsho
 
 
 def _clock(e: object) -> datetime:
-    return datetime.fromisoformat(str(e.data["at"]))  # type: ignore[attr-defined]
+    return datetime.fromisoformat(str(e.data["at"]))  # type: ignore[attr-defined] -- stand-in
 
 
 def test_the_sep_14_timeline_is_df34s() -> None:
@@ -62,7 +63,9 @@ def test_the_memo_is_txp01s_text_with_its_markers() -> None:
     cited = [n for _k, _t, n in SECTIONS if n is not None]
     assert cited == [1, 2, 3, 4, 5, 6]
     text = dict((k, t) for k, t, _n in SECTIONS)
-    assert "28,595 excess of price over capital is a §743(b) placeholder" in text["structural_events"]
+    assert (
+        "28,595 excess of price over capital is a §743(b) placeholder" in text["structural_events"]
+    )
 
 
 @pytest.mark.asyncio
@@ -74,14 +77,14 @@ async def test_the_recorders_refuse_a_real_firm(monkeypatch: pytest.MonkeyPatch)
         return False
 
     monkeypatch.setattr("abacus.modules.identity.api.is_synthetic_firm", real)
-    ctx = SimpleNamespace(tenant=None)
+    ctx: Any = SimpleNamespace(tenant=None)  # Any: a test stand-in
     with pytest.raises(NotFound):
         await memo_service.record_synthetic_memo(
-            ctx, uuid4(), run_id=uuid4(), on_behalf_of=uuid4(), sections=SECTIONS  # type: ignore[arg-type]
+            ctx,
+            uuid4(),
+            run_id=uuid4(),
+            on_behalf_of=uuid4(),
+            sections=SECTIONS,
         )
-    from abacus.modules.identity.api import AuthContext
-
-    person = object.__new__(AuthContext)
-    object.__setattr__(person, "tenant", None) if False else None
     with pytest.raises(NotFound):
         await workbook_fix.record_synthetic_fix(object(), uuid4(), uuid4(), {})

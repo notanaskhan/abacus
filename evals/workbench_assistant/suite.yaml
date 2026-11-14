@@ -60,6 +60,7 @@ defaults:
       - tax_year
       - binder_ids
       - cursor
+      - only_refs  # W-02-T19 (DEC-4930): Retry those 3 re-reads the failure ledger only
     identity.list_offices:
       required: []
       accepted: []

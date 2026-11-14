@@ -13,6 +13,7 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -31,7 +32,7 @@ def _attempts(cost: str = "0.06", judge: float = 4.4, n: int = 40) -> list[real.
 
 def _clear(route: str = "bedrock", **kw: object) -> dict[str, object]:
     attempts = kw.pop("attempts", _attempts())
-    return real.clearance(route, kw.pop("rates", ALL), attempts, Decimal("0.10"),  # type: ignore[arg-type]
+    return real.clearance(route, kw.pop("rates", ALL), attempts, Decimal("0.10"),  # type: ignore[arg-type] -- stand-in
                           last_parity=date(2028, 6, 1), today=TODAY)  # fmt: skip
 
 
@@ -42,7 +43,7 @@ def test_a_bedrock_run_meeting_everything_clears() -> None:
 
 
 def test_the_direct_route_never_clears_on_its_own() -> None:
-    assert "not_the_production_route" in _clear("direct")["reasons"]  # type: ignore[operator]
+    assert "not_the_production_route" in _clear("direct")["reasons"]  # type: ignore[operator] -- stand-in
 
 
 @pytest.mark.parametrize(
@@ -51,14 +52,16 @@ def test_the_direct_route_never_clears_on_its_own() -> None:
         ({"rates": ALL | {"number_provenance": 0.99}}, "below_threshold:number_provenance"),
         ({"attempts": _attempts(judge=3.9)}, "judge_below_floor"),
         ({"attempts": _attempts(cost="0.12")}, "over_cost_cap"),
-        ({"attempts": [real.BriefingAttempt("x", False, True, Decimal("0.05"), 9000, 4.5)]},
-         "zero_tolerance_case_failed"),
+        (
+            {"attempts": [real.BriefingAttempt("x", False, True, Decimal("0.05"), 9000, 4.5)]},
+            "zero_tolerance_case_failed",
+        ),
         ({"attempts": [real.BriefingAttempt("x", True, False, None, None, 4.5)]}, "errored"),
     ],
 )
 def test_each_shortfall_is_named(kwargs: dict[str, object], reason: str) -> None:
-    found = _clear(**kwargs)
-    assert found["client_data"] == "none" and reason in found["reasons"]  # type: ignore[operator]
+    found = _clear(**cast(dict[str, Any], kwargs))  # Any: a test stand-in
+    assert found["client_data"] == "none" and reason in found["reasons"]  # type: ignore[operator] -- stand-in
 
 
 def test_p95_is_nearest_rank() -> None:

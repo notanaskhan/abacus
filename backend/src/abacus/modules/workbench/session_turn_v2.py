@@ -313,7 +313,7 @@ TODAY_READ_ONLY: Final = "today_read_only"  # I-02-T14: act on SHL-12, not in To
 
 def _is_today(refs: object) -> bool:
     return isinstance(refs, list) and any(
-        isinstance(r, dict) and r.get("kind") == "today_brief"  # pyright: ignore[reportUnknownMemberType] -- a JSON list
+        isinstance(r, dict) and cast(dict[str, object], r).get("kind") == "today_brief"
         for r in cast(list[object], refs)
     )
 

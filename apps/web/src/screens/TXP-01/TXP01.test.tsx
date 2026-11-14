@@ -27,22 +27,22 @@ describe("TXP-01 Review › Summary", () => {
     );
     expect(cites.length).toBe(5);
     for (const c of cites) {
-      if (c.kind !== "cite") continue;
       expect(sources?.rows.some((r) => r.match === c.citation?.match)).toBe(true);
     }
   });
 
-  it("A2: hovering a marker lights its source row within 360 ms", async () => {
+  it("A2: hovering a marker lights its source row within 360 ms", () => {
     vi.useFakeTimers();
     render(<TXP01 memo={ridgelineMemo("adopted")} general={RIDGELINE_GENERAL} />);
-    const marker = document.querySelector("[data-cite]") ?? document.querySelector("sup");
+    const marker = document.querySelector("[data-cite-marker]");
     expect(marker).toBeTruthy();
     if (marker === null) return;
-    fireEvent.mouseEnter(marker);
-    await act(async () => {
+    fireEvent.pointerEnter(marker);
+    act(() => {
       vi.advanceTimersByTime(360);
     });
-    expect(document.querySelectorAll("[data-lit='true'], [data-match-lit='true']").length).toBeGreaterThan(0);
+    // the rail's source row (not the marker itself) carries the light
+    expect(document.querySelectorAll("[data-match][data-lit]").length).toBeGreaterThan(0);
   });
 
   it("A3: Approve memo opens the host's SHL-12 (the reviewer's L2)", () => {

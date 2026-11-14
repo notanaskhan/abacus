@@ -2,8 +2,8 @@
 id: TASK-7941
 title: "T-05-T64: Bedrock clearance for tax.account_mapper, tax.agreement_reader, tax.memo_drafter and the recommender modes"
 plan_key: T-05-T64
-spec: SPEC-651 (T-05 §6)
-acceptance_criteria: [AC]  # all four show client_data cleared with committed Bedrock reports
+spec: SPEC-651  # T-05 §6
+acceptance_criteria: [AC-F13]  # all four show client_data cleared with committed Bedrock reports
 risk_zone: red
 status: in-review
 branch: t05-t64-bedrock-clearance

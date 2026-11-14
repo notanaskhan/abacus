@@ -129,7 +129,7 @@ export function TodayDrill({
             </Button>
           ) : null}
           {drill.open_href ? (
-            <Button variant="primary" size="sm" onClick={() => onOpen?.(drill.open_href ?? "")}>
+            <Button variant="primary" size="sm" onClick={() => onOpen?.(drill.open_href)}>
               {COPY.openReturn}
               <Icon name="chevron-right" size={12} />
             </Button>
@@ -287,7 +287,7 @@ export function AskThread({
           );
         }
         if (item.kind === "agent_blocks") {
-          const blocks = item.payload["blocks"] as unknown as AgentBlocksPayload;
+          const blocks = item.payload["blocks"] as AgentBlocksPayload;
           const cites = item.payload["cites"] as AgentBlocksProps["cites"] | undefined;
           return (
             <div

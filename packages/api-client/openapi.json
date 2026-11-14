@@ -117502,9 +117502,7 @@
                 "tax_ownership.edit",
                 "allocation_structure.edit",
                 "tax_memo.edit",
-                "tax_memo.draft",
-                "tax_memo.adopt",
-                "tax_memo.approve"
+                "tax_memo.draft"
               ],
               "type": "string"
             },
@@ -119425,13 +119423,25 @@
                 "tax_ownership.edit",
                 "allocation_structure.edit",
                 "tax_memo.edit",
+                "tax_memo.draft"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "memo_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "tax_memo.edit",
                 "tax_memo.draft",
                 "tax_memo.adopt",
                 "tax_memo.approve"
               ],
               "type": "string"
             },
-            "title": "Allowed Actions",
+            "title": "Memo Actions",
             "type": "array"
           },
           "memo_id": {
@@ -119631,9 +119641,7 @@
                 "tax_ownership.edit",
                 "allocation_structure.edit",
                 "tax_memo.edit",
-                "tax_memo.draft",
-                "tax_memo.adopt",
-                "tax_memo.approve"
+                "tax_memo.draft"
               ],
               "type": "string"
             },
@@ -119860,9 +119868,7 @@
                 "tax_ownership.edit",
                 "allocation_structure.edit",
                 "tax_memo.edit",
-                "tax_memo.draft",
-                "tax_memo.adopt",
-                "tax_memo.approve"
+                "tax_memo.draft"
               ],
               "type": "string"
             },

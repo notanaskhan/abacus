@@ -2,7 +2,7 @@
 id: TASK-7935
 title: "W-02-T19: session plans and partial failure in agents (plan card fields, edit re-validation, failure ledger, failed_items retry, identity.list_offices, files.list_folders)"
 plan_key: W-02-T19
-spec: W-02 §3.6, §3.7, §4.2, §4.4
+spec: SPEC-653  # W-02 §3.6, §3.7, §4.2, §4.4
 acceptance_criteria: [AC-P1, AC-P3, AC-G3, AC-G4]
 risk_zone: red
 status: in-review

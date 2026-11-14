@@ -18,6 +18,7 @@ that weakens it fails here.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -27,11 +28,12 @@ MATRIX = ROOT / "docs/architecture/permission-matrix"
 
 
 def _rule(module: str, action: str) -> dict[str, object]:
-    raw = yaml.safe_load((MATRIX / f"{module}.yaml").read_text(encoding="utf-8"))
-    actions = raw.get("actions", raw)
+    body = (MATRIX / f"{module}.yaml").read_text(encoding="utf-8")
+    raw = cast(dict[str, Any], yaml.safe_load(body))  # Any: parsed YAML
+    actions = cast(dict[str, Any], raw.get("actions", raw))  # Any: a test stand-in
     found = actions.get(action)
     assert isinstance(found, dict), f"{module}.yaml has no {action}"
-    return found
+    return cast(dict[str, object], found)
 
 
 # --- T22: logged TIN reveal and offshore masking ------------------------------------------------
@@ -104,7 +106,7 @@ def test_t31_a_failed_step_skips_only_its_dependants() -> None:
     ["unmapped_accounts", "allocation_not_approved", "trial_balance_missing"],
 )
 def test_t53_each_entity_blocker_has_its_words(blocker: str) -> None:
-    import abacus.modules.tax.api  # noqa: F401 -- registers the entity provider
+    import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the entity provider
     from abacus.modules.tax.approval import blocker_words
 
     words = blocker_words(blocker)
@@ -143,4 +145,6 @@ def test_t60_no_tax_module_names_a_transmit_function() -> None:
         for n in ast.walk(ast.parse(f.read_text(encoding="utf-8")))
         if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)
     }
-    assert not [n for n in names if n.startswith(("transmit", "submit_to_irs", "efile_send"))]
+    # `transmitted_on` reads the date a person recorded (filing.py); no verb sends anything.
+    verbs = [n for n in names if n.startswith(("transmit_", "submit_to_irs", "efile_send"))]
+    assert not verbs and "transmit" not in names

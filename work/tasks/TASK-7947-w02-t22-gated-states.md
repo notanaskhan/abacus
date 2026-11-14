@@ -2,8 +2,8 @@
 id: TASK-7947
 title: "W-02-T22: unavailable and gated states (DF-04, Request consent, flag-off, Agents and Connect)"
 plan_key: W-02-T22
-spec: SPEC-653 (W-02 §3.9)
-acceptance_criteria: [AC]  # words and a disabled composer with its reason; no control the server would refuse
+spec: SPEC-653  # W-02 §3.9
+acceptance_criteria: [AC-D1, AC-D2, AC-D3]  # words and a disabled composer with its reason; no control the server would refuse
 risk_zone: green
 status: in-review
 branch: w02-t22-gated-states

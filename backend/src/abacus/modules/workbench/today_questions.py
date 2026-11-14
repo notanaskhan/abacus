@@ -1,5 +1,5 @@
-"""Today questions (I-02-T14; I-02 §3.7, §6.2; SPEC-654; `docs/contracts/today.md`; DEC-60, DEC-4932).
-Amber here; the turn runs on `agents`' session workflow v2 (red).
+"""Today questions (I-02-T14; I-02 §3.7, §6.2; SPEC-654; `docs/contracts/today.md`; DEC-60,
+DEC-4932). Amber here; the turn runs on `agents`' session workflow v2 (red).
 
 `POST /v1/me/today/questions {text, brief_id}` appends a person's question to their **Today
 session for the day**: one `workbench_session` per viewer per day, titled and chipped
@@ -36,7 +36,7 @@ from sqlalchemy import text
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.agents.api import firm_capability_blocked
+from abacus.modules.agents.api import firm_capability_blocked, today_context
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.workbench.sessions import CapabilityUnavailable, Posted, post_message
 
@@ -63,7 +63,7 @@ def today_ref(day: date) -> dict[str, str]:
 
 def is_today_session(refs: list[dict[str, str]] | object) -> bool:
     return isinstance(refs, list) and any(
-        isinstance(r, dict) and r.get("kind") == TODAY_KIND  # pyright: ignore[reportUnknownMemberType] -- a JSON list
+        isinstance(r, dict) and cast(dict[str, object], r).get("kind") == TODAY_KIND
         for r in cast(list[object], refs)
     )
 
@@ -127,15 +127,16 @@ async def _today_session(ctx: AuthContext, day: date, chip: str, lines: tuple[st
     return session_id
 
 
-async def ask(ctx: AuthContext, body: str, brief_id: UUID, idempotency_key: str) -> TodayAsked:
+async def post_question(
+    ctx: AuthContext, body: str, brief_id: UUID, idempotency_key: str
+) -> TodayAsked:
     """The question route's service (module docstring). The route checked the matrix
-    (`briefing.ask`) and both flags."""
-    from abacus.modules.practice.api import question_context
-
+    (`briefing.ask`) and both flags. The brief is read through agents' Today slot, which
+    practice fills (workbench may not import practice; ADR-008)."""
     blocked = await firm_capability_blocked(ctx, ASSISTANT)
     if blocked is not None:
         raise CapabilityUnavailable(facts={"reason": blocked})
-    day = await question_context(ctx)
+    day = await today_context(ctx)
     if day.brief_id is not None and day.brief_id != brief_id:
         raise BriefNotCurrent(facts={"brief_id": str(day.brief_id)})
     if day.brief_id is None:
@@ -159,7 +160,7 @@ __all__ = [
     "TODAY_KIND",
     "BriefNotCurrent",
     "TodayAsked",
-    "ask",
     "is_today_session",
+    "post_question",
     "today_ref",
 ]

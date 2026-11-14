@@ -15,7 +15,9 @@ Today cases' to judge (I-02 §6.3) and the full path is I-02-T21's journey.
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 from types import SimpleNamespace
+from typing import cast
 from uuid import uuid4
 
 import pytest
@@ -39,7 +41,7 @@ def _vm(brief_id: object = None) -> TodayVM:
     )  # fmt: skip
     return TodayVM(
         brief_date=date(2025, 9, 14),
-        brief_id=brief_id,  # type: ignore[arg-type]
+        brief_id=brief_id,  # type: ignore[arg-type] -- stand-in
         first_name="Daniel",
         items=11,
         engagements=4,
@@ -60,7 +62,8 @@ def test_the_context_lines_are_codes_facts_not_briefing_prose() -> None:
     assert lines[0] == "11 items across 4 engagements"
     assert lines[1] == "Decisions 2"  # a zero cell is left out
     assert lines[2] == (
-        "Ridgeline Holdings LP: M-2 fix — Ridgeline Holdings LP (Waiting on Samuel Ito); and 2 more"
+        "Ridgeline Holdings LP: M-2 fix — Ridgeline Holdings LP (Waiting on Samuel Ito); "
+        "and 2 more"
     )
 
 
@@ -72,7 +75,7 @@ async def test_the_chip_reads_today_and_the_day(monkeypatch: pytest.MonkeyPatch)
         return _vm(brief)
 
     monkeypatch.setattr(assembly, "assemble", fake)
-    found = await assembly.question_context(SimpleNamespace())  # type: ignore[arg-type]
+    found = await assembly.question_context(SimpleNamespace())  # type: ignore[arg-type] -- stand-in
     assert found.chip_label == "Today · Sun Sep 14"
     assert found.brief_id == brief and len(found.briefing_ids) == 1
 
@@ -81,13 +84,13 @@ def test_a_today_session_is_known_by_its_context_kind() -> None:
     refs = [today_questions.today_ref(date(2025, 9, 14)), {"kind": "capability", "id": "x"}]
     assert today_questions.is_today_session(refs)
     assert session_turn_v2._is_today(refs)  # pyright: ignore[reportPrivateUsage] -- the turn's check
-    assert not session_turn_v2._is_today([{"kind": "engagement", "id": "e"}])  # pyright: ignore[reportPrivateUsage]
+    assert not session_turn_v2._is_today([{"kind": "engagement", "id": "e"}])  # pyright: ignore[reportPrivateUsage] -- stand-in
     assert refs[0] == {"kind": "today_brief", "id": "2025-09-14"}
 
 
 def test_a_today_turn_never_plans_whatever_workbench_plans_says() -> None:
     source = session_turn_v2.__file__
-    body = open(source, encoding="utf-8").read()
+    body = Path(source).read_text(encoding="utf-8")
     assert "plans = False if today else" in body
     assert 'if today and outcome.failure == "plans_off"' in body
     assert session_turn_v2.TODAY_READ_ONLY == today_questions.READ_ONLY_NOTICE
@@ -105,14 +108,12 @@ async def test_an_unavailable_assistant_writes_nothing(monkeypatch: pytest.Monke
     monkeypatch.setattr(today_questions, "_today_session", never)
     monkeypatch.setattr(today_questions, "post_message", never)
     with pytest.raises(CapabilityUnavailable) as raised:
-        await today_questions.ask(SimpleNamespace(), "What's late?", uuid4(), "k1")  # type: ignore[arg-type]
+        await today_questions.post_question(SimpleNamespace(), "What's late?", uuid4(), "k1")  # type: ignore[arg-type] -- stand-in
     assert raised.value.facts == {"reason": "paused"}
 
 
 @pytest.mark.asyncio
 async def test_another_days_brief_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
-    from abacus.modules.practice import api as practice_api
-
     async def ready(*_: object) -> None:
         return None
 
@@ -121,9 +122,9 @@ async def test_another_days_brief_is_refused(monkeypatch: pytest.MonkeyPatch) ->
                                lines=(), briefing_ids=())  # fmt: skip
 
     monkeypatch.setattr(today_questions, "firm_capability_blocked", ready)
-    monkeypatch.setattr(practice_api, "question_context", day)
+    monkeypatch.setattr(today_questions, "today_context", day)
     with pytest.raises(today_questions.BriefNotCurrent):
-        await today_questions.ask(SimpleNamespace(), "What's late?", uuid4(), "k1")  # type: ignore[arg-type]
+        await today_questions.post_question(SimpleNamespace(), "What's late?", uuid4(), "k1")  # type: ignore[arg-type] -- stand-in
 
 
 def test_the_question_text_is_restricted_and_capped_at_1000() -> None:
@@ -134,12 +135,12 @@ def test_the_question_text_is_restricted_and_capped_at_1000() -> None:
     TodayQuestionIn(text="x" * 1000, brief_id=uuid4())
     with pytest.raises(ValidationError):
         TodayQuestionIn(text="x" * 1001, brief_id=uuid4())
-    meta = TodayQuestionIn.model_fields["text"].metadata
-    assert any(getattr(m, "level", None) == "restricted" or "restricted" in repr(m) for m in meta)
+    extra = TodayQuestionIn.model_fields["text"].json_schema_extra
+    assert isinstance(extra, dict) and cast(dict[str, object], extra).get("cls") == "restricted"
 
 
 def test_the_audit_event_names_ids_only() -> None:
-    body = open(today_questions.__file__, encoding="utf-8").read()
+    body = Path(today_questions.__file__).read_text(encoding="utf-8")
     start = body.index('"today_brief.question_asked"')
     call = body[start : body.index(")", body.index("after=Ref(", start)) + 1]
     assert "after=Ref(session=session_id, item=posted.item_id)" in call
@@ -149,6 +150,17 @@ def test_the_audit_event_names_ids_only() -> None:
 def test_a_firm_level_turn_reads_the_firms_readiness_only() -> None:
     from abacus.modules.agents import session_turns
 
-    body = open(session_turns.__file__, encoding="utf-8").read()
+    body = Path(session_turns.__file__).read_text(encoding="utf-8")
     assert "if row.engagement_id is None:  # I-02-T14" in body
     assert callable(session_turns.firm_capability_blocked)
+
+
+def test_practice_fills_the_today_slot_workbench_reads() -> None:
+    """ADR-008: workbench may not import practice; the brief reaches the turn through agents."""
+    # importing practice's api registers the source
+    import abacus.modules.practice.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- slot
+    from abacus.modules.agents import today_context
+
+    sources = today_context._SOURCE  # pyright: ignore[reportPrivateUsage] -- the slot
+    assert sources == [assembly.question_context]
+    assert "modules.practice" not in Path(today_questions.__file__).read_text(encoding="utf-8")

@@ -2,8 +2,8 @@
 id: TASK-7943
 title: "I-02-T17: Today drill-in, assign, history and ask (SHL-23 2, 3; HOME-05 b)"
 plan_key: I-02-T17
-spec: SPEC-654 (I-02 §3.5–§3.8)
-acceptance_criteria: [AC]  # the to-do by Create; Basis reserved; the 9:26 answer's three chips
+spec: SPEC-654  # I-02 §3.5–§3.8
+acceptance_criteria: [AC-6, AC-7, AC-8]  # the to-do by Create; Basis reserved; the 9:26 answer's three chips
 risk_zone: green
 status: in-review
 branch: i02-t17-today-drill

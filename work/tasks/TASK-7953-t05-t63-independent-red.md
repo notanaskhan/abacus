@@ -2,8 +2,8 @@
 id: TASK-7953
 title: "T-05-T63: independent AC tests (ADR-078) for N's red work (T-05-T22, T25, T26, T31, T53, T60)"
 plan_key: T-05-T63
-spec: SPEC-651 (T-05 §3)
-acceptance_criteria: [AC]
+spec: SPEC-651  # T-05 §3
+acceptance_criteria: [AC-F11, AC-F12]
 risk_zone: red
 status: in-review
 branch: t05-t63-independent-red

@@ -6,6 +6,7 @@ First routes: the C13 home half (I-01-T02), `GET /v1/home`. C21 part A
 parts (I-01-T12): the client-activity projector and its daily prune.
 """
 
+from abacus.modules.agents.api import register_today_context
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.practice.activity import rebuild_home_activity
 from abacus.modules.practice.due_dates import (
@@ -33,6 +34,7 @@ from abacus.modules.tax.api import register_due_dates_source, register_extension
 
 # T-02-T10: the return's due dates come from these rules; tax never imports practice (T08).
 register_due_dates_source(due_dates_for)
+register_today_context(question_context)  # I-02-T14: workbench's Today turn reads the brief
 register_extension_dates_source(due_dates_for_extension)
 
 # The routers the API mounts, in order (P-39; F-03-T07).

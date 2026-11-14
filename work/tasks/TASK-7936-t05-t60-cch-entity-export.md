@@ -2,7 +2,7 @@
 id: TASK-7936
 title: "T-05-T60: CCH file-bridge export section for entity returns (TTB by CCH line code, partner allocations by Schedule K line)"
 plan_key: T-05-T60
-spec: SPEC-651 (T-05 F11)
+spec: SPEC-651  # T-05 F11
 acceptance_criteria: [AC-F11]  # export before final approval refused; only a person marks the entity return transmitted
 risk_zone: red
 status: in-review

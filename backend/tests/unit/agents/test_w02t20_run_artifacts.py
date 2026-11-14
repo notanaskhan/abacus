@@ -14,6 +14,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -77,17 +78,20 @@ async def test_ac_r4_the_tax_source_lists_the_visible_returns_in_that_status(
         return SimpleNamespace(rows=rows)
 
     monkeypatch.setattr(board, "_board", fake_board)
-    found = await board.season_group(SimpleNamespace(), "TY2025 Season Progress — by office.xlsx",
-                                     "action_required")  # type: ignore[arg-type]  # fmt: skip
+    ctx: Any = SimpleNamespace()  # Any: a test stand-in
+    found = await board.season_group(ctx, "TY2025 Season Progress — by office.xlsx",
+                                     "action_required")  # fmt: skip
     assert found is not None
     words, listed = found
     assert words == "Action required" and len(listed) == 11 and years == [2025]
     assert all(x.href == f"/tax-returns/{x.ref_id}" for x in listed)
-    assert await board.season_group(SimpleNamespace(), "x", "not_a_status") is None  # type: ignore[arg-type]
+    assert await board.season_group(SimpleNamespace(), "x", "not_a_status") is None  # type: ignore[arg-type] -- stand-in
 
 
 @pytest.mark.asyncio
-async def test_an_unknown_group_is_refused_without_writing(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_an_unknown_group_is_refused_without_writing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     row = SimpleNamespace(session_id=(sid := uuid4()), name="TY2025.xlsx")
 
     async def readable(*_: object) -> object:
@@ -95,13 +99,13 @@ async def test_an_unknown_group_is_refused_without_writing(monkeypatch: pytest.M
 
     monkeypatch.setattr(run_artifacts, "_readable", readable)
     with pytest.raises(run_artifacts.DrillGroupUnknown):
-        await run_artifacts.drill(SimpleNamespace(), sid, uuid4(), "office:chicago", "k")  # type: ignore[arg-type]
+        await run_artifacts.drill(SimpleNamespace(), sid, uuid4(), "office:chicago", "k")  # type: ignore[arg-type] -- stand-in
     with pytest.raises(run_artifacts.NotFound):
-        await run_artifacts.drill(SimpleNamespace(), uuid4(), uuid4(), "status:prepared", "k")  # type: ignore[arg-type]
+        await run_artifacts.drill(SimpleNamespace(), uuid4(), uuid4(), "status:prepared", "k")  # type: ignore[arg-type] -- stand-in
 
 
 def test_tax_registers_the_status_source() -> None:
-    import abacus.modules.tax.api  # noqa: F401
+    import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- stand-in
 
     assert "status" in run_artifacts.drill_sources()
 
@@ -117,4 +121,17 @@ def test_the_download_is_audited_once_with_ids_only() -> None:
     start = body.index("async def download(")
     chunk = body[start : body.index("return row.name, content", start)]
     assert chunk.count("tx.record(") == 1
-    assert 'after=Ref(artifact=row.id, sha256=row.sha256)' in chunk
+    assert "after=Ref(artifact=row.id, sha256=row.sha256)" in chunk
+
+
+def test_workbench_writes_the_drill_item_not_agents() -> None:
+    """OWN-001: the session tables are workbench's; agents lists the group and hands the item to
+    the writer workbench registers."""
+    # importing workbench's api registers the writer
+    import abacus.modules.workbench.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- slot
+    from abacus.modules.workbench.run_drill import append_drill
+
+    writers = run_artifacts._WRITER  # pyright: ignore[reportPrivateUsage] -- the slot
+    assert writers == [append_drill]
+    body = Path(run_artifacts.__file__).read_text(encoding="utf-8")
+    assert "session_items" not in body and "workbench_sessions" not in body

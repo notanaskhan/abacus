@@ -261,9 +261,7 @@ class RunPlanOut(BaseModel):
     decided_at: Annotated[datetime | None, Internal] = None
     # W-02-T19 (additive): the plan card's fields, derived by code from the version's steps.
     reads: Annotated[list[PlanReadOut], Internal] = Field(default_factory=list[PlanReadOut])
-    writes: Annotated[list[PlanWriteOut], Confidential] = Field(
-        default_factory=list[PlanWriteOut]
-    )
+    writes: Annotated[list[PlanWriteOut], Confidential] = Field(default_factory=list[PlanWriteOut])
 
 
 class QuestionOptionOut(BaseModel):

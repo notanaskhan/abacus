@@ -287,8 +287,8 @@ from abacus.modules.evidence.routes import firm_router, router
 from abacus.modules.evidence.run_files import (
     WorkbookTooLarge,
     file_approved_copy,
-    store_workbook,
     read_run_artifact,
+    store_workbook,
     stored_object,
 )
 
@@ -752,6 +752,7 @@ __all__ = [
     "put_record",
     "quote_in",
     "read_content",
+    "read_run_artifact",
     "read_staged",
     "read_version",
     "record_agent_classification",
@@ -793,7 +794,6 @@ __all__ = [
     "start_trust_layer_backfill",
     "store_generated",
     "store_workbook",
-    "read_run_artifact",
     "stored_object",
     "suggest_by_name",
     "supported_citations",

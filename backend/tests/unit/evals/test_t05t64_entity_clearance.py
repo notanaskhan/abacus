@@ -69,14 +69,14 @@ def test_the_baseline_rows_are_each_specs_budget() -> None:
 def test_each_shortfall_is_named(route: str, parity: date | None, cost: str, reason: str) -> None:
     found = real.clearance("tax_account_mapper", route, _ok("tax_account_mapper"),
                            _attempts(cost), last_parity=parity, today=TODAY)  # fmt: skip
-    assert found["client_data"] == "none" and reason in found["reasons"]  # type: ignore[operator]
+    assert found["client_data"] == "none" and reason in found["reasons"]  # type: ignore[operator] -- stand-in
 
 
 def test_a_threshold_short_by_a_hair_does_not_clear() -> None:
     rates = _ok("tax_agreement_reader") | {"citation_verified": 0.999}
     found = real.clearance("tax_agreement_reader", "bedrock", rates, _attempts("0.1"),
                            last_parity=FRESH, today=TODAY)  # fmt: skip
-    assert "below_threshold:citation_verified" in found["reasons"]  # type: ignore[operator]
+    assert "below_threshold:citation_verified" in found["reasons"]  # type: ignore[operator] -- stand-in
 
 
 def test_the_report_is_signed(monkeypatch: pytest.MonkeyPatch) -> None:

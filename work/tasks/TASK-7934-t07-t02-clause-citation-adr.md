@@ -2,8 +2,8 @@
 id: TASK-7934
 title: "T-07-T02: ADR P-48 amendment, instrument_clause as the eleventh citation kind (ADR-343)"
 plan_key: T-07-T02
-spec: none (ADR task; T-07 §0.1, §11.2 OQ-1)
-acceptance_criteria: [AC]  # the amendment states the kind stores no instrument text, only ids, regions and a quote hash; T-07-T11 merges nothing before it is Accepted on origin/main
+spec: SPEC-000  # row: none (ADR task; T-07 §0.1, §11.2 OQ-1)
+acceptance_criteria: [AC-1]  # the amendment states the kind stores no instrument text, only ids, regions and a quote hash; T-07-T11 merges nothing before it is Accepted on origin/main
 risk_zone: red
 status: in-review
 branch: t07-t02-clause-citation-adr

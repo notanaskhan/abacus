@@ -55238,7 +55238,7 @@ export type WorkbookAllocationStructureOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
     /**
      * Checks
      */
@@ -56137,7 +56137,11 @@ export type WorkbookMemoOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
+    /**
+     * Memo Actions
+     */
+    memo_actions?: Array<'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
     /**
      * Memo Id
      */
@@ -56243,7 +56247,7 @@ export type WorkbookOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
     /**
      * Return Id
      */
@@ -56353,7 +56357,7 @@ export type WorkbookPartnersOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft' | 'tax_memo.adopt' | 'tax_memo.approve'>;
+    allowed_actions: Array<'workbook.edit' | 'workbook.export' | 'workbook_import.create' | 'workbook_run.start' | 'tax_ownership.edit' | 'allocation_structure.edit' | 'tax_memo.edit' | 'tax_memo.draft'>;
     /**
      * Partners
      */

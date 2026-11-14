@@ -30,6 +30,8 @@ def test_the_fifteen_first_tools_are_registered() -> None:
     files = {"files.build_workbook", "files.propose_save", "files.save_approved"}
     # W-02-T11 (DEC-4716) declares `binders.read` beside requests' first tools.
     workbench = {"binders.read"}
+    # W-02-T19 (DEC-4930): the offices read the season plan groups by.
+    workbench |= {"identity.list_offices", "files.list_folders"}
     assert {d.name for d in DECLARED} == FIRST | files | workbench
 
 

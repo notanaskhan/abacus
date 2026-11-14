@@ -41,8 +41,17 @@ SessionState = Literal[
 # I-02-T17 (DEC-4938, additive): the kinds in W-02-T06 (context and drill items) read
 # back too; without them a session with attached context or a drill could not be read.
 SessionItemKind = Literal[
-    "user_message", "agent_blocks", "plan", "question", "answer", "tool_card", "artifact", "notice",
-    "context_added", "context_removed", "drill",
+    "user_message",
+    "agent_blocks",
+    "plan",
+    "question",
+    "answer",
+    "tool_card",
+    "artifact",
+    "notice",
+    "context_added",
+    "context_removed",
+    "drill",
 ]
 SessionActorKind = Literal["human", "agent", "system"]
 

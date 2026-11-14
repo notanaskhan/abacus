@@ -2,8 +2,8 @@
 id: TASK-7950
 title: "F-07-T21: consumer contract tests for the tier-4 view models (C6, C4, C11, C21) and contract-request drafts"
 plan_key: F-07-T21
-spec: SPEC-652 (F-07 §4.5)
-acceptance_criteria: [AC]  # assertions run in each provider's CI; three contract requests list states and seed figures
+spec: SPEC-652  # F-07 §4.5
+acceptance_criteria: [AC-6]  # assertions run in each provider's CI; three contract requests list states and seed figures
 risk_zone: green
 status: in-review
 branch: f07-t21-consumer-tests

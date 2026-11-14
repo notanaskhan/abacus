@@ -2,8 +2,8 @@
 id: TASK-7955
 title: "I-02-T22: rollout and close-out (code part: §7216 subjects on the briefing call, RB-83 budgets and runbook)"
 plan_key: I-02-T22
-spec: SPEC-654 (I-02 §7)
-acceptance_criteria: [AC]  # flag on only for synthetic tenants; runbook drill logged; ledger and log carry actuals
+spec: SPEC-654  # I-02 §7
+acceptance_criteria: [AC-10]  # flag on only for synthetic tenants; runbook drill logged; ledger and log carry actuals
 risk_zone: red
 status: in-review
 branch: i02-t22-today-rollout

@@ -2,8 +2,8 @@
 id: TASK-7952
 title: "I-02-T21: journeys, parity and accessibility (j13 and j23 step 1, j20 step 8 fixme, today.spec.ts, Tier C report, Tier D)"
 plan_key: I-02-T21
-spec: SPEC-654 (I-02 §3, §5)
-acceptance_criteria: [AC]  # named scenarios pass on staging with INV-1..INV-5 and axe; parity recorded in both contracts
+spec: SPEC-654  # I-02 §3, §5
+acceptance_criteria: [AC-11]  # named scenarios pass on staging with INV-1..INV-5 and axe; parity recorded in both contracts
 risk_zone: green
 status: in-review
 branch: i02-t21-today-journeys

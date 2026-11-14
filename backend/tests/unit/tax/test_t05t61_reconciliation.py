@@ -35,7 +35,10 @@ VALUES: dict[str, dict[str, object]] = {
 KNOWN = {"Meera Shah": uuid4(), "Daniel Reyes": uuid4()}
 
 
-def _engine(figures: list[recon.Figure], bump: str | None = None) -> dict[str, dict[str, Any]]:
+_Cells = dict[str, dict[str, Any]]  # Any: the engine's JSON cells
+
+
+def _engine(figures: list[recon.Figure], bump: str | None = None) -> _Cells:
     out = {f.key: {"v": str(f.amount)} for f in figures}
     if bump is not None:
         out[bump] = {"v": str(Decimal(str(out[bump]["v"])) + 1)}
@@ -62,7 +65,7 @@ def test_a_matching_import_reports_zero_unexplained_differences() -> None:
 def test_a_one_dollar_difference_is_one_row_to_explain() -> None:
     figures = recon.workbook_figures(VALUES, RETURN, KNOWN)
     found = recon.differences(recon.compare(figures, _engine(figures, bump="schedule_k.1")))
-    assert [(r.key, r.engine - r.accrued) for r in found] == [("schedule_k.1", Decimal(1))]  # type: ignore[operator]
+    assert [(r.key, r.engine - r.accrued) for r in found] == [("schedule_k.1", Decimal(1))]  # type: ignore[operator] -- stand-in
 
 
 def test_an_engine_figure_accrued_lacks_needs_explaining() -> None:
@@ -78,19 +81,19 @@ async def test_each_difference_raises_one_issue_naming_the_line_not_the_figure(
 ) -> None:
     figures = recon.workbook_figures(VALUES, RETURN, KNOWN)
     rows = recon.compare(figures, _engine(figures, bump="schedule_k.1"))
-    raised: list[dict[str, Any]] = []
+    raised: list[dict[str, Any]] = []  # Any: a test stand-in
 
     async def fake_reconcile(*_: object) -> list[recon.ReconRow]:
         return rows
 
-    async def fake_issue(_ctx: object, **kwargs: Any) -> object:
+    async def fake_issue(_ctx: object, **kwargs: object) -> object:
         raised.append(kwargs)
         return uuid4()
 
     monkeypatch.setattr(recon, "reconcile", fake_reconcile)
     monkeypatch.setattr(recon, "record_engine_issue", fake_issue)
     ctx = type("Ctx", (), {"tenant": None})()
-    assert await recon.raise_differences(ctx, RETURN) == 1  # type: ignore[arg-type]
+    assert await recon.raise_differences(ctx, RETURN) == 1  # type: ignore[arg-type] -- stand-in
     assert raised[0]["source_ref"] == "recon:schedule_k.1"
     assert raised[0]["title"] == "CCH reconciliation · Schedule K line 1"
     assert "600000" not in raised[0]["title"]

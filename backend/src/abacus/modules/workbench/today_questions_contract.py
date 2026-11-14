@@ -7,8 +7,9 @@ question, listed under Mine with a "Today · <date>" chip, Q4). `propose` and `a
 are withheld whatever `workbench.plans` says (INV-1). The answer is read through the session's
 items and its `session:<id>` topic. It answers, in order: the matrix (`briefing.ask`),
 `today_brief.enabled` (404), `workbench.enabled` (404: the composer is hidden). I-02-T14
-(DEC-4932): live (`today_questions.ask`); 409 `capability_unavailable {reason}` before anything is
-written, 409 `brief_not_current` for another day's brief, 404 before today's brief exists.
+(DEC-4932): live (`today_questions.post_question`); 409 `capability_unavailable {reason}` before
+anything is written, 409 `brief_not_current` for another day's brief, 404 before today's brief
+exists.
 """
 
 from __future__ import annotations
@@ -60,10 +61,10 @@ async def today_question_route(
     body: TodayQuestionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> TodayQuestionAcceptedOut:
     """409 `capability_unavailable {reason}` when the assistant is unavailable (DF-04)."""
-    from abacus.modules.workbench.today_questions import ask
+    from abacus.modules.workbench.today_questions import post_question
 
     for flag in (TODAY_BRIEF_ENABLED, WORKBENCH_ENABLED):
         if not await flag_enabled(ctx.tenant, flag):
             raise NotFound(flag.name)
-    asked = await ask(ctx, body.text, body.brief_id, idempotency_key)
+    asked = await post_question(ctx, body.text, body.brief_id, idempotency_key)
     return TodayQuestionAcceptedOut(session_id=asked.session_id, item_id=asked.item_id)

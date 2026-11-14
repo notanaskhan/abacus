@@ -234,7 +234,7 @@ class AgentRunWorkflow:
             )
             for step in schedule.start(paused=paused):
                 retry_of = retried.pop(step.key, None)
-                args: list[Any] = [
+                args: list[Any] = [  # Any: mixed args
                     p.tenant_id,
                     p.run_id,
                     seq_of[step.key],
@@ -278,7 +278,7 @@ class AgentRunWorkflow:
         terminal = state if state in ("succeeded", "failed", "cancelled") else "failed"
         return await self._end(p, terminal, None if terminal == "succeeded" else "steps_failed")
 
-    def _execute(self, args: list[Any]) -> asyncio.Task[StepOutcome]:
+    def _execute(self, args: list[Any]) -> asyncio.Task[StepOutcome]:  # Any: mixed args
         return asyncio.ensure_future(
             workflow.execute_activity(
                 "agents.run_v2.execute_step",

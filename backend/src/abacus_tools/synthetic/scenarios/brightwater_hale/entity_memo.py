@@ -1,7 +1,7 @@
 """Ridgeline's preparer memo as drafted on Sep 10 (T-05-T62; TASK-7942; TXP-01 verbatim; DEC-4937).
 
 The scenario's recorded draft: each section's text exactly as the TXP-01 handoff shows it, with
-the source position its citation marker names ([1]–[6]; none where the artboard shows none). The
+the source position its citation marker names ([1]-[6]; none where the artboard shows none). The
 memo service stores it as one agent-drafted version through its synthetic-only recorder; the
 fingerprint is code's over the facts then, so the 9:51 fix turns the approved memo Stale by code.
 """

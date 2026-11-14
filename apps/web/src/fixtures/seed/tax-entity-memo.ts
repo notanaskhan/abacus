@@ -54,6 +54,7 @@ export function ridgelineMemo(state: MemoState): WorkbookMemoOut {
       seen_hash: "",
       stale_fields: [],
       allowed_actions: [],
+      memo_actions: [],
       memo_id: MEMO_ID,
       version: 0,
     };
@@ -71,7 +72,8 @@ export function ridgelineMemo(state: MemoState): WorkbookMemoOut {
     })),
     seen_hash: "sha256:ridgeline-memo-v1",
     stale_fields: state === "stale" ? ["Ending capital 6,860,000 → 6,866,200"] : [],
-    allowed_actions:
+    allowed_actions: ["tax_memo.edit", "tax_memo.draft"],
+    memo_actions:
       state === "adopted"
         ? ["tax_memo.edit", "tax_memo.draft", "tax_memo.approve"]
         : ["tax_memo.edit", "tax_memo.draft"],
