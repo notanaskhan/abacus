@@ -713,10 +713,10 @@ INSERT_COLUMNS["partner_tin_reveals"] = frozenset(
 # T-05-T42 (0860, DEC-4705): workbook sections (stable sign-off targets) and the notes of
 # sign-offs given while a tie-out was off (sealed).
 # T-05-T51 (0870, DEC-4904): a person's sealed note when resolving an issue no approved fix closed.
-TABLES: frozenset[str] = _TABLES_0831 | frozenset(
+_TABLES_0870: frozenset[str] = _TABLES_0831 | frozenset(
     {"tax_workbook_sections", "tax_section_acknowledgements", "tax_issue_resolution_notes"}
 )
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0831 | frozenset(
+_INSERT_ONLY_0870: frozenset[str] = _INSERT_ONLY_0831 | frozenset(
     {"tax_workbook_sections", "tax_section_acknowledgements", "tax_issue_resolution_notes"}
 )
 INSERT_COLUMNS["tax_workbook_sections"] = frozenset(
@@ -730,4 +730,255 @@ INSERT_COLUMNS["tax_section_acknowledgements"] = frozenset(
 INSERT_COLUMNS["tax_issue_resolution_notes"] = frozenset(
     {"tenant_id", "engagement_id", "work_item_id", "issue_id", "note_sealed", "note_sha256"}
     | {"created_by"}
+)
+
+
+# T-07-T07 (0883, DEC-5010): fiduciary_core. Parents and versions are insert-only (the current
+# version is the latest seq); trust profiles and interpretations update the columns below.
+_FIDUCIARY_0883: frozenset[str] = frozenset(
+    {
+        "trust_profiles",
+        "governing_instruments",
+        "instrument_segmentations",
+        "instrument_clauses",
+        "instrument_interpretations",
+        "instrument_determinations",
+        "instrument_determination_versions",
+        "fai_lines",
+        "fai_line_versions",
+        "trust_expenses",
+        "trust_expense_versions",
+        "trust_distributions",
+        "trust_distribution_versions",
+        "fai_dni_computations",
+        "beneficiary_allocations",
+        "sixty_five_day_elections",
+    }
+)
+TABLES: frozenset[str] = _TABLES_0870 | _FIDUCIARY_0883
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0870 | frozenset(
+    {
+        "governing_instruments",
+        "instrument_segmentations",
+        "instrument_clauses",
+        "instrument_determinations",
+        "instrument_determination_versions",
+        "fai_lines",
+        "fai_line_versions",
+        "trust_expenses",
+        "trust_expense_versions",
+        "trust_distributions",
+        "trust_distribution_versions",
+        "fai_dni_computations",
+        "beneficiary_allocations",
+        "sixty_five_day_elections",
+    }
+)
+INSERT_COLUMNS["trust_profiles"] = frozenset(
+    {
+        "client_entity_id",
+        "tenant_id",
+        "fiduciary_kind",
+        "agreement_date",
+        "revocable",
+        "irrevocable_since",
+        "settlor_name_sealed",
+        "settlor_died_year",
+        "remainder_sealed",
+        "residency_state",
+        "residency_basis",
+        "state_form",
+        "created_by",
+    }
+)
+INSERT_COLUMNS["governing_instruments"] = frozenset(
+    {
+        "tenant_id",
+        "client_entity_id",
+        "evidence_version_id",
+        "supersedes_instrument_id",
+        "attached_by",
+    }
+)
+INSERT_COLUMNS["instrument_segmentations"] = frozenset(
+    {
+        "tenant_id",
+        "instrument_id",
+        "segmentation_version",
+        "text_source",
+        "status",
+        "confidence",
+        "clause_count",
+        "layer_sha256",
+    }
+)
+INSERT_COLUMNS["instrument_clauses"] = frozenset(
+    {
+        "tenant_id",
+        "segmentation_id",
+        "label",
+        "heading",
+        "ordinal",
+        "parent_clause_id",
+        "page_from",
+        "page_to",
+        "regions",
+        "text_sha256",
+        "marked_by",
+    }
+)
+INSERT_COLUMNS["instrument_interpretations"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "instrument_id", "segmentation_id"}
+)
+INSERT_COLUMNS["instrument_determinations"] = frozenset({"tenant_id", "interpretation_id", "key"})
+INSERT_COLUMNS["instrument_determination_versions"] = frozenset(
+    {
+        "tenant_id",
+        "determination_id",
+        "key",
+        "seq",
+        "value_code",
+        "value_text_sealed",
+        "rationale_ref",
+        "citation_ids",
+        "set_by_kind",
+        "set_by_id",
+        "reason_sealed",
+        "suggestion_id",
+    }
+)
+INSERT_COLUMNS["fai_lines"] = frozenset(
+    {
+        "tenant_id",
+        "engagement_id",
+        "work_item_id",
+        "kind",
+        "parent_line_id",
+        "description",
+        "created_by",
+    }
+)
+INSERT_COLUMNS["fai_line_versions"] = frozenset(
+    {
+        "tenant_id",
+        "line_id",
+        "seq",
+        "amount",
+        "citation_ids",
+        "set_by_kind",
+        "set_by_id",
+        "reason_sealed",
+    }
+)
+INSERT_COLUMNS["trust_expenses"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "kind", "created_by"}
+)
+INSERT_COLUMNS["trust_expense_versions"] = frozenset(
+    {
+        "tenant_id",
+        "expense_id",
+        "seq",
+        "charged_to",
+        "amount",
+        "deductible",
+        "clause_id",
+        "citation_ids",
+        "set_by_kind",
+        "set_by_id",
+        "reason_sealed",
+    }
+)
+INSERT_COLUMNS["trust_distributions"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "beneficiary_contact_id", "created_by"}
+)
+INSERT_COLUMNS["trust_distribution_versions"] = frozenset(
+    {
+        "tenant_id",
+        "distribution_id",
+        "seq",
+        "paid_on",
+        "amount",
+        "form",
+        "source",
+        "clause_id",
+        "sixty_five_day_election_id",
+        "set_by_kind",
+        "set_by_id",
+        "reason_sealed",
+    }
+)
+INSERT_COLUMNS["fai_dni_computations"] = frozenset(
+    {
+        "tenant_id",
+        "engagement_id",
+        "work_item_id",
+        "version_no",
+        "interpretation_hash",
+        "inputs_hash",
+        "engine_name",
+        "engine_version",
+        "parameter_set",
+        "income_distribution_deduction",
+        "outputs",
+        "prior_computation_id",
+        "content_hash",
+    }
+)
+INSERT_COLUMNS["beneficiary_allocations"] = frozenset(
+    {
+        "tenant_id",
+        "computation_id",
+        "beneficiary_contact_id",
+        "distributions",
+        "share",
+        "dni_allocated",
+        "box_1",
+        "box_2a",
+        "box_2b",
+        "box_other",
+    }
+)
+INSERT_COLUMNS["sixty_five_day_elections"] = frozenset(
+    {
+        "tenant_id",
+        "client_entity_id",
+        "tax_year",
+        "seq",
+        "status",
+        "amount",
+        "paid_on",
+        "window_end",
+        "decision_owner_contact_id",
+        "recorded_by_user_id",
+        "recorded_on_return_id",
+        "evidence_version_id",
+        "actor_kind",
+    }
+)
+UPDATE_COLUMNS["trust_profiles"] = frozenset(
+    {
+        "agreement_date",
+        "revocable",
+        "irrevocable_since",
+        "settlor_name_sealed",
+        "settlor_died_year",
+        "remainder_sealed",
+        "residency_state",
+        "residency_basis",
+        "state_form",
+        "row_version",
+    }
+)
+UPDATE_COLUMNS["instrument_interpretations"] = frozenset(
+    {
+        "status",
+        "scenario",
+        "read_run_id",
+        "version_no",
+        "content_hash",
+        "locked_at",
+        "reopen_reason_sealed",
+        "superseded_at",
+        "row_version",
+    }
 )
