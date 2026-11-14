@@ -179,8 +179,25 @@ def input_of(
     )
 
 
+def tri_subjects(subjects: Sequence[object]) -> list[object]:
+    """I-02-T22 (DEC-4945; the S42 security review's Low item): the engagement's §7216 subjects
+    for the gateway, every TRI one the collector named (entity, tax year). The gateway checks
+    consent only for the subjects a call names (`enforce_tri_consent`), so naming them closes the
+    reliance on dispatch's pre-check alone."""
+    from abacus.ai_gateway import DataSubject
+
+    return [
+        DataSubject(getattr(s, "entity_id", None), getattr(s, "tax_year", None))
+        for s in subjects
+        if getattr(s, "tri", False)
+    ]
+
+
 async def _call(
-    agent: object, given: BriefingInput, repair: Sequence[str]
+    agent: object,
+    given: BriefingInput,
+    repair: Sequence[str],
+    subjects: Sequence[object] = (),
 ) -> EngagementBriefing | None:
     from abacus.ai_gateway import Attribution, ContextBuilder, GatewayCall, call
     from abacus.modules.agents.api import spec_v2
@@ -189,7 +206,12 @@ async def _call(
     task: dict[str, object] = given.model_dump()
     if repair:
         task["repair"] = list(repair)  # the codes the last answer failed (one repair)
-    context = ContextBuilder().task(task, untrusted=("gates",)).build()
+    context = (
+        ContextBuilder()
+        .task(task, untrusted=("gates",))
+        .subjects(*tri_subjects(subjects))  # type: ignore[arg-type] -- DataSubject rows
+        .build()
+    )
     try:
         result = await call(
             GatewayCall(
@@ -336,12 +358,12 @@ async def build_engagement_briefing(
     ):
         return Built("unchanged", prior.id)
     given = input_of(facts, engagement_label, titles)
-    answer = await _call(agent, given, ())
+    answer = await _call(agent, given, (), facts.subjects)
     if answer is None:
         return Built("failed", await store("failed", None, facts.facts_hash, None))
     codes = validate(answer, facts, recommendations)
     if codes:
-        repaired = await _call(agent, given, codes)
+        repaired = await _call(agent, given, codes, facts.subjects)
         if repaired is not None and not validate(repaired, facts, recommendations):
             answer, codes = repaired, []
     status = "unverified" if codes else "ready"
