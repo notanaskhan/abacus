@@ -5978,6 +5978,259 @@
       "crop": "window",
       "tier": "D",
       "deviation": "T4 renders the seed session, not the kit's sample threads (DEC-4510): geometry only, in e2e/visual/tier-d-workbench.spec.ts"
+    },
+    "tpl-13.tpl-13a": {
+      "selector": "[data-artboard=\"tpl-13a\"]",
+      "source": "handoff/screens/TPL-13 Calendar specimen - firm deadlines- September 2026/screenshots/TPL-13a.png",
+      "sha256": "c7739267e1edc56b94621f80c715d1acac889aedf38eae65cf21fd393b422ad1",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-13.tpl-13a2": {
+      "selector": "[data-artboard=\"tpl-13a2\"]",
+      "source": "handoff/screens/TPL-13 Calendar specimen - firm deadlines- September 2026/screenshots/TPL-13ap.png",
+      "sha256": "73ee6db9f25f08b1f105cbe3ee851ec6210c44672be521848fc78054f8c8dc91",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-13.tpl-13b": {
+      "selector": "[data-artboard=\"tpl-13b\"]",
+      "source": "handoff/screens/TPL-13 Calendar specimen - firm deadlines- September 2026/screenshots/TPL-13b.png",
+      "sha256": "5f41a5d0eaa90d9143b96b7e187ec67b5f4cb7af3d230289d8a4ce80e447cf13",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-13.tpl-13c": {
+      "selector": "[data-artboard=\"tpl-13c\"]",
+      "source": "handoff/screens/TPL-13 Calendar specimen - firm deadlines- September 2026/screenshots/TPL-13c.png",
+      "sha256": "1954c89cde1fb64af420bf68126c819fe048592de5d8e949ec321e005ba90e36",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-13.tpl-13d": {
+      "selector": "[data-artboard=\"tpl-13d\"]",
+      "source": "handoff/screens/TPL-13 Calendar specimen - firm deadlines- September 2026/screenshots/TPL-13d.png",
+      "sha256": "2ea6916331a0085fe73df4fac9f91f9cd9f1714f425dfe56f1544b9e473a8366",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-13.tpl-13e": {
+      "selector": "[data-artboard=\"tpl-13e\"]",
+      "source": "handoff/screens/TPL-13 Calendar specimen - firm deadlines- September 2026/screenshots/TPL-13e.png",
+      "sha256": "cf76d0cf4e9a0802f88b90d48075ff92dbd7933ba9af75e77d91112dd7e1462f",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-13.tpl-13f": {
+      "selector": "[data-artboard=\"tpl-13f\"]",
+      "source": "handoff/screens/TPL-13 Calendar specimen - firm deadlines- September 2026/screenshots/TPL-13f.png",
+      "sha256": "43a07dee7a25199dedd0c1aa915703909f9f1488fa64a23acf09450f14674e23",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-14.tpl-14a": {
+      "selector": "[data-artboard=\"tpl-14a\"]",
+      "source": "handoff/screens/TPL-14 Graph canvas specimen - Ridgeline relationships/screenshots/TPL-14a.png",
+      "sha256": "2f5f8da7d881f94189473cc88cb7528d6a4673cd1abfb10b4e4f47cfb74beae8",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-14.tpl-14b": {
+      "selector": "[data-artboard=\"tpl-14b\"]",
+      "source": "handoff/screens/TPL-14 Graph canvas specimen - Ridgeline relationships/screenshots/TPL-14b.png",
+      "sha256": "a0e0abed8f7f5da277c6970e30da3a3f1b8ef8c48bd9841fa06b2b610dfb55ab",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-14.tpl-14c": {
+      "selector": "[data-artboard=\"tpl-14c\"]",
+      "source": "handoff/screens/TPL-14 Graph canvas specimen - Ridgeline relationships/screenshots/TPL-14c.png",
+      "sha256": "0b7f6878454334da114308b79081f78a6f45756c0e8de52579cfdf931effeec5",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-14.tpl-14d": {
+      "selector": "[data-artboard=\"tpl-14d\"]",
+      "source": "handoff/screens/TPL-14 Graph canvas specimen - Ridgeline relationships/screenshots/TPL-14d.png",
+      "sha256": "e5617232451e4013e60c3af32a397a1cc73b79917770da639bada23db26e0332",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-14.tpl-14e": {
+      "selector": "[data-artboard=\"tpl-14e\"]",
+      "source": "handoff/screens/TPL-14 Graph canvas specimen - Ridgeline relationships/screenshots/TPL-14e.png",
+      "sha256": "0fc7b12624c256a22a5c53132cffee9d74dcd9a0bde8d74155a4b825c04ac2eb",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-14.tpl-14f": {
+      "selector": "[data-artboard=\"tpl-14f\"]",
+      "source": "handoff/screens/TPL-14 Graph canvas specimen - Ridgeline relationships/screenshots/TPL-14f.png",
+      "sha256": "b986572e1b2e24d8bc13d19750d0e62cd5185e9c88aaafa558909437cb09ba22",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]"
+      ]
+    },
+    "tpl-17.tpl-17a": {
+      "selector": "[data-artboard=\"tpl-17a\"]",
+      "source": "handoff/screens/TPL-17 Form renderer specimen - Ridgeline 2025 Form 1065/screenshots/TPL-17a.png",
+      "sha256": "7a1ac98c305091cb5d4b49e901a19230f9785e7e10cca8a88ba85b344319f52d",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "[data-form-face]"
+      ]
+    },
+    "tpl-17.tpl-17b": {
+      "selector": "[data-artboard=\"tpl-17b\"]",
+      "source": "handoff/screens/TPL-17 Form renderer specimen - Ridgeline 2025 Form 1065/screenshots/TPL-17b.png",
+      "sha256": "0a4bbe4568f9bf8fac4e3a1e0d92f126a17877677578b8ce9681f1ec5b680b5f",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "[data-form-face]"
+      ]
+    },
+    "tpl-17.tpl-17c": {
+      "selector": "[data-artboard=\"tpl-17c\"]",
+      "source": "handoff/screens/TPL-17 Form renderer specimen - Ridgeline 2025 Form 1065/screenshots/TPL-17c.png",
+      "sha256": "b8dba7b2357e9eaf6177d05222b3c8b00318797b88dcf36a301c6dab903c961b",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "[data-form-face]"
+      ]
+    },
+    "tpl-17.tpl-17d": {
+      "selector": "[data-artboard=\"tpl-17d\"]",
+      "source": "handoff/screens/TPL-17 Form renderer specimen - Ridgeline 2025 Form 1065/screenshots/TPL-17d.png",
+      "sha256": "acfcdcc0b547579f887cae2991adf55f5ffd3aa564526a34ccb43cfcc646137c",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "[data-form-face]"
+      ]
+    },
+    "tpl-17.tpl-17e": {
+      "selector": "[data-artboard=\"tpl-17e\"]",
+      "source": "handoff/screens/TPL-17 Form renderer specimen - Ridgeline 2025 Form 1065/screenshots/TPL-17e.png",
+      "sha256": "cdda6a554a83a42336566910da25ddc1bea24d302414b07e912bdec5e8cf4f2f",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "[data-form-face]"
+      ]
+    },
+    "tpl-17.tpl-17f": {
+      "selector": "[data-artboard=\"tpl-17f\"]",
+      "source": "handoff/screens/TPL-17 Form renderer specimen - Ridgeline 2025 Form 1065/screenshots/TPL-17f.png",
+      "sha256": "e6caea40eae848120c5441761140f453aa8574260f096c26246618d6cbdaaf8e",
+      "crop": "window",
+      "tier": "B",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-pulse]",
+        "[data-reveal]",
+        "[data-form-face]"
+      ]
     }
   }
 }
