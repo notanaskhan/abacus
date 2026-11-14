@@ -16,7 +16,7 @@ plan_key: C-01-T09
 migration closes_v1 — record, plans, versions, rows, templates, procedures.
 
 ## Plan
-1. [ ] Migration 0880 on 0871, expand-only: columns on `closes`; tables close_plans, close_plan_versions, close_plan_rows, close_request_templates, close_templates, close_procedures via `tenant_table()`; checks, partial unique draft index, freeze and forward-only triggers (epic §4.2 T09).
+1. [ ] Migration 0881 on 0880, expand-only: columns on `closes`; tables close_plans, close_plan_versions, close_plan_rows, close_request_templates, close_templates, close_procedures via `tenant_table()`; checks, partial unique draft index, freeze and forward-only triggers (epic §4.2 T09).
 2. [ ] `closes/registry.py` columns; retention record type `cas_workpaper` (7 years, GOVERNANCE).
 3. [ ] Downgrade drops only what it added.
 Rollback: downgrade; no data before T14.

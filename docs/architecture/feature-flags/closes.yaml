@@ -1,0 +1,32 @@
+# The closes module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's file
+# into kernel/_flags.py by `make regenerate`.
+#
+# C-01-T02, the S44 protected bundle (C-01 §0, §4.7; SPEC-655 AC-54). The plan's dates (created in
+# the Thu Jun 29, 2028 train, expiring Tue Aug 29, 2028) map onto the solo edition's calendar.
+# The `closes` module entitlement (DEC-55, ADR P-28) stays the permanent switch; these carry rollout.
+
+flags:
+  - name: closes.engine
+    description: 'C-01 close engine (SPEC-655; CLS-01, 02, 03, 04, 05, 06, 09, 10): every /v1/closes*, /v1/clients/{id}/close-plan*, /v1/close-templates*, /v1/reconciliations*, /v1/analytic-lines* route and the /closes UI. Off: those routes answer 404 feature_disabled after authorising and the UI shows the C-20 "not turned on" state. On: 501 not_implemented until each route''s task lands. Per firm, default off. C-01-T02.'
+    owner: ayushkbhatia
+    created: 2026-11-14
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: closes.portal_requests
+    description: 'C-01 portal close requests and transaction questions (POR-11; the portal close home source): GET /v1/portal/closes/{id}/questions and POST /v1/portal/questions/{qid}/answer, and transaction questions sent to clients. Off: 404 and the portal shows no close requests. Template wording only (DEC-79). Per firm, default off. C-01-T02.'
+    owner: ayushkbhatia
+    created: 2026-11-14
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: closes.agent
+    description: 'C-01 close.agent model modes (intake, bank_rec, aje, flux, planner). Off: the close run completes on code alone and the texts fall back to templates ("Totals from the file", templated why-surfaced text; DV-3); Explain and Draft from ledger history are disabled with their reason. Per firm, default off. C-01-T02.'
+    owner: ayushkbhatia
+    created: 2026-11-14
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
