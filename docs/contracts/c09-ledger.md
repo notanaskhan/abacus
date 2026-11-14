@@ -208,3 +208,33 @@ The v2 contract is `docs/contracts/ledger-mapping.md` (stub, A-03-T03, 2026-10-3
 - auto-creating the set on version 1 (needs a firm-default grouping set);
 - the `mapping_set_stale` C16 kind (ayushkbhatia);
 - the AUD-31 screen's shapes.
+
+## C9 v2.1 · CAS monthly datasets and sync facts (C-01-T07, additive)
+
+Stub (C-01-T07, 2026-11-14); provider ledger and connections (red); consumers closes (CLS-04,
+CLS-05, CLS-10). Freezes with `docs/contracts/closes.md` (end of S45). Readers of C9 v1 and v2 are
+unaffected. Read only: no write method or route (CONN-001, ADR-040).
+
+**Python (ledger.api; `ledger/cas_contract.py`; served by C-01-T18):**
+
+| Function | Returns |
+|---|---|
+| `account_tree(tenant, client_entity_id, period)` | `AccountTreeOut`: accounts (classification, type, subtype, mask, contra, active), monthly balances, totals by classification |
+| `monthly_balances(tenant, client_entity_id, periods)` | `list[MonthlyBalanceOut]` |
+| `register_lines(tenant, client_entity_id, external_id, period, cursor=)` | `(list[RegisterLineOut], next_cursor)`: offset account, payee, memo, external id; each a `ledger_line` citable |
+| `compare_periods(tenant, client_entity_id, current, prior)` | `PeriodComparisonOut` (prior `None` when not available) |
+
+Refusals: 409 `stale_source` (a superseded snapshot), 409 `period_not_available`; a walled or
+unknown entity answers 404 (`not_visible` is never a separate code: no existence leak).
+
+**Routes (connections; `connections/ledger_sync_contract.py`; served by C-01-T17):**
+
+| Method · path | Action | Response |
+|---|---|---|
+| `GET /v1/client-entities/{eid}/ledger-sync` | `ledger.read` | `LedgerSyncStatusOut`: state in `ledger_sync` words, last and next sync, retry time, failure code, meter (calls, budget, ok · warning · exhausted) |
+| `POST /v1/client-entities/{eid}/ledger-sync` (Idempotency-Key) | `ledger.sync_now` | `SyncNowOut` (202); 409 `ledger_not_connected` |
+
+Order: a client principal 404; `connections.ledger_sync` off 404; Sync now refuses non-persons 403;
+then 501. Tables: C-01-T10 (`ledger_accounts`, monthly `period_kind`, register columns on
+`gl_entries`, `sync_schedules`, `connection_meter_usage`).
+

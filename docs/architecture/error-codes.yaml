@@ -1687,6 +1687,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.connections.ledger_import.ImportOff
+  ledger_not_connected:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.ledger_sync_contract.LedgerNotConnected
+    summary: Sync now on an entity without a live ledger connection.
   legal_hold_active:
     status: 409
     raised_by:
@@ -1873,6 +1878,11 @@ codes:
     raised_by:
     - abacus.modules.collaboration.errors.MentionNotAllowed
     - abacus.modules.requests.comments.MentionNotAllowed
+  meter_budget_exhausted:
+    status: 409
+    raised_by:
+    - abacus.modules.connections.ledger_sync_contract.MeterBudgetExhausted
+    summary: 'Scheduled syncs paused: the firm''s monthly Intuit call budget is reached (QC-5).'
   methodology_already_applied:
     status: 409
     raised_by:
@@ -2378,6 +2388,11 @@ codes:
     raised_by:
     - abacus.modules.agents.ai_policy_service.PendingVersionExists
     summary: 'A version is already awaiting approval: withdraw it first.'
+  period_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.cas_contract.PeriodNotAvailable
+    summary: 'No monthly snapshot for the period (August 2025 is not in the seed: CLS-10 d).'
   person_invalid:
     status: 422
     raised_by:
@@ -3172,6 +3187,11 @@ codes:
     raised_by:
     - abacus.modules.tax.k1_disclosures.StaleDisclosure
     summary: 'The consent names a version that is not the newest: read the newest and decide again.'
+  stale_source:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.cas_contract.StaleSource
+    summary: The snapshot asked for was superseded by a newer sync; read the newest (`facts.snapshot`).
   stale_version:
     status: 409
     raised_by:

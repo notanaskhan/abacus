@@ -63,6 +63,10 @@ from abacus.modules.connections.gl_import import WORKFLOWS as GL_WORKFLOWS
 from abacus.modules.connections.gl_import import on_ledger_snapshot_recorded
 from abacus.modules.connections.grants import GrantRevocationRequested, revoke_retired
 from abacus.modules.connections.health import check_connection_health_activity
+from abacus.modules.connections.ledger_sync_contract import (
+    LedgerSyncStatusOut,
+    ledger_sync_router,
+)
 from abacus.modules.connections.models import Connection
 from abacus.modules.connections.pipeline import (
     RunFailed,
@@ -159,6 +163,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     connection_router,
     complete_router,
+    ledger_sync_router,  # C-01-T07: C9 v2.1 sync status and Sync now (stub)
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
@@ -199,6 +204,7 @@ __all__ = [
     "GlImportWorkflow",
     "LedgerAlreadyConnected",
     "LedgerSnapshotRecorded",
+    "LedgerSyncStatusOut",  # C-01-T07: C9 v2.1 sync facts
     "NoConnection",
     "NotSupported",
     "Period",
