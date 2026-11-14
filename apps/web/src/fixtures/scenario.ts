@@ -8,6 +8,7 @@ import { type Scenario, defineScenarios } from "../app-core/fixture-mode";
 import { DEFAULT_PERSONA, seedHandlers } from "./handlers";
 import { clientRecordHandlers } from "./handlers/client-record";
 import { clientHandlers } from "./handlers/clients";
+import { closeHandlers } from "./handlers/closes";
 import { engagementRecordHandlers } from "./handlers/engagement-record";
 import { engagementHandlers } from "./handlers/engagements";
 import { todayHandlers } from "./handlers/today";
@@ -32,6 +33,8 @@ export function seedScenario(): Scenario {
         ...workbenchHandlers(),
         // I-02-T03: the Today brief (SHL-23, HOME-05).
         ...todayHandlers(),
+        // C-01-T12: the close shell (CLS-02 record bar; the screens' reads stay 501).
+        ...closeHandlers(),
       },
     },
   }).e0;
