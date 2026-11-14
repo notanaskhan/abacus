@@ -321,6 +321,50 @@ objects:
       done:            {label: "Done",            variant: null, disc: check_olive, terminal: true, derived: false}
       failed:          {label: "Failed",          variant: null, disc: x_brick, terminal: false, derived: false}
 
+  # ---- T-07 trusts and estates (T-07-T04; DF-31; SPEC-656 AC-15.2; DEC-5008) ----
+  # The tally on TXT-02 and TXT-04 is `tie_out_tally` above: "tie", never "Ties" (DV-2).
+  instrument_interpretation:   # instrument_interpretations.status (TXT-01 header and band pills)
+    source: "T-07 §4.2 M1; TXT-01 a, b, d, d2; SPEC-656 AC-1.1, AC-4.2, AC-5.2"
+    codes:
+      unread:   {label: "Unread", variant: muted, terminal: false, derived: false}
+      reading:  {label: "Reading", variant: null, disc: spinner, terminal: false, derived: false}   # ink-2 spinner, never amber
+      proposed: {label: "Proposed", variant: neutral, terminal: false, derived: false, context_labels: {by_agent: "Proposed by Accrued Agent"}}
+      adopted:  {label: "Adopted", variant: state, terminal: false, derived: false, context_labels: {by: "Adopted by {name} {date}"}}
+      approved: {label: "Approved", variant: green, terminal: false, derived: false, context_labels: {by: "Approved · {name} · {date}"}}
+      reopened: {label: "Reopened", variant: amber, terminal: false, derived: false}
+
+  instrument_segmentation:   # instrument_segmentations.status
+    source: "T-07 §4.2 M1; SPEC-656 AC-1.3"
+    codes:
+      segmented:    {label: "Segmented", variant: null, disc: check_olive, terminal: true, derived: false}
+      needs_review: {label: "Clauses need checking", variant: amber, terminal: false, derived: false}
+
+  sixty_five_day_election:   # sixty_five_day_elections.status (TXT-03 tally and card)
+    source: "T-07 §4.2 M1; TXT-03 a, c; SPEC-656 AC-9.2, AC-11.2"
+    codes:
+      not_made: {label: "Not made", variant: muted, terminal: false, derived: false}
+      elected:  {label: "Elected for TY{year}", variant: green-tint, terminal: false, derived: false, context_labels: {paid: "Elected for TY{year} · {amount} paid {date}"}}
+
+  estate_inventory_item:   # estate_inventory_item_versions.status (TXT-04 a; DV-9, DF-31)
+    source: "T-07 §2.5 DV-9; TXT-04 a; SPEC-656 AC-12.1"
+    codes:
+      gathering_support: {label: "Gathering", variant: amber, terminal: false, derived: false}
+      valued:            {label: "Valued", variant: green-tint, terminal: false, derived: false}   # a person sets it, with ≥ 1 citation
+
+  estate_deduction_election:   # estate_deduction_versions.election (TXT-04 b)
+    source: "T-07 §4.2 M2; TXT-04 b; SPEC-656 AC-12.4"
+    codes:
+      none:          {label: "—", variant: null, terminal: true, derived: false}
+      s642g_pending: {label: "§642(g) election: 706 or estate 1041 — pending", variant: amber, terminal: false, derived: false}
+      s642g_706:     {label: "§642(g): deducted on the 706", variant: green-tint, terminal: true, derived: false}
+      s642g_1041:    {label: "§642(g): deducted on the estate 1041", variant: green-tint, terminal: true, derived: false}
+
+  estate_computation_label:   # estate_computations.label (TXT-04 c; DEC-77, DV-7)
+    source: "T-07 §2.5 DV-7; SPEC-656 AC-13.1"
+    codes:
+      accrued_tie_out_shadow: {label: "Accrued tie-out (shadow)", variant: muted, terminal: false, derived: false}
+      engine_import:          {label: "From CCH Axcess", variant: null, terminal: false, derived: false}
+
   # ---- C-01 close engine (C-01-T03; DF-23, DF-31; SPEC-655 AC-9 to AC-11, QC-6) ----
   # The six canonical close states are `close` above (blueprint 3.3.1); "On hold" is a side flag,
   # never a state, and there is no "Closed". CLS-01's four tiles count Approved under In review and

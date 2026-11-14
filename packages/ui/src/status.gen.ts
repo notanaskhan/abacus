@@ -1155,6 +1155,140 @@ export const STATUS_REGISTRY = {
       "disc": "x_brick"
     }
   },
+  "instrument_interpretation": {
+    "unread": {
+      "label": "Unread",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "reading": {
+      "label": "Reading",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "proposed": {
+      "label": "Proposed",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by_agent": `Proposed by ${PRODUCT} Agent`
+      }
+    },
+    "adopted": {
+      "label": "Adopted",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "Adopted by {name} {date}"
+      }
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "Approved · {name} · {date}"
+      }
+    },
+    "reopened": {
+      "label": "Reopened",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "instrument_segmentation": {
+    "segmented": {
+      "label": "Segmented",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "needs_review": {
+      "label": "Clauses need checking",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "sixty_five_day_election": {
+    "not_made": {
+      "label": "Not made",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "elected": {
+      "label": "Elected for TY{year}",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "paid": "Elected for TY{year} · {amount} paid {date}"
+      }
+    }
+  },
+  "estate_inventory_item": {
+    "gathering_support": {
+      "label": "Gathering",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "valued": {
+      "label": "Valued",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "estate_deduction_election": {
+    "none": {
+      "label": "—",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "s642g_pending": {
+      "label": "§642(g) election: 706 or estate 1041 — pending",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "s642g_706": {
+      "label": "§642(g): deducted on the 706",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "s642g_1041": {
+      "label": "§642(g): deducted on the estate 1041",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "estate_computation_label": {
+    "accrued_tie_out_shadow": {
+      "label": `${PRODUCT} tie-out (shadow)`,
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "engine_import": {
+      "label": "From CCH Axcess",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
+  },
   "close_flag": {
     "on_hold": {
       "label": "On hold",

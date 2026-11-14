@@ -19,6 +19,24 @@ function files(dir: string): string[] {
   });
 }
 
+// T-07-T04 (DV-2; SPEC-656 AC-15.2): the tally word on TXT-02 and TXT-04 is §3.3.1's "tie", never
+// the built canvas's "Ties". Scans the two screens and the fiduciary and estate domain folders.
+const TIE_ROOTS = [
+  join(WEB, "src", "screens", "TXT-02"),
+  join(WEB, "src", "screens", "TXT-04"),
+  join(WEB, "src", "domain", "tax", "fiduciary"),
+  join(WEB, "src", "domain", "tax", "estate"),
+];
+const TIES = /\bTies\b/u;
+
+function existing(dir: string): string[] {
+  try {
+    return statSync(dir).isDirectory() ? files(dir) : [];
+  } catch {
+    return [];
+  }
+}
+
 describe("copy bans (R-04)", () => {
   it("never says Accrued transmits or e-files a return", () => {
     const hits = ROOTS.flatMap(files).filter((path) => BANNED.test(readFileSync(path, "utf8")));
@@ -28,5 +46,17 @@ describe("copy bans (R-04)", () => {
   it("the ban catches the phrase", () => {
     expect(BANNED.test("Accrued transmits the return")).toBe(true);
     expect(BANNED.test("Transmission record")).toBe(false);
+  });
+});
+
+describe("copy bans (DV-2)", () => {
+  it("TXT-02 and TXT-04 never say Ties", () => {
+    const hits = TIE_ROOTS.flatMap(existing).filter((path) => TIES.test(readFileSync(path, "utf8")));
+    expect(hits).toEqual([]);
+  });
+
+  it("the ban catches the word and spares tie", () => {
+    expect(TIES.test("Σ K-1s = DEDUCTION · Ties")).toBe(true);
+    expect(TIES.test("Σ K-1s = DEDUCTION · tie")).toBe(false);
   });
 });
