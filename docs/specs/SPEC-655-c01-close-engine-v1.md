@@ -110,7 +110,7 @@ correct. All money is `Decimal`.
 - **AC-16** (US-2.2) Draft v4 from v3; a source change reads "Changed"; Raj's action is "Request publish…", which raises one `close_plan_publish_requested` gate and publishes nothing (QC-8).
 - **AC-17** (US-2.2) Publish v4 effective 2026-09 confirms "applies from the September 2026 close; August stays on v3"; the published version is immutable (trigger); `close_plan.published` emitted.
 - **AC-18** (US-2.2, QC-2) A pinned close never changes plan version.
-- **AC-19** (US-2.2) A stale If-Match answers 412 `stale_version` naming the other editor.
+- **AC-19** (US-2.2) A stale If-Match answers 409 `stale_version` naming the other editor (the repo answers stale versions with 409, ADR-139; the epic says 412).
 - **AC-20** (US-2.3) Four template cards come from DB content imported through `/v1/close-templates:import`; no template text is committed.
 - **AC-21** (US-2.3) "Draft from ledger history" starts `close.agent` mode `planner` attributed "Raj Malhotra via Agent"; code profiles the history; the model picks from closed option sets.
 - **AC-22** (US-2.3, INV-1) Publish with an unadopted drafted row answers 409 `unadopted_rows`; adoption is a person's click.
