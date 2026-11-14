@@ -22,6 +22,7 @@ inspector with the masked TIN and Reveal intent, the K-1 band and linked work, s
 ## Partial
 - List view draws its own T1 table (IndexList's column model wants a query host); Tier D and
   the gallery page land with the TPL-14 specimen (F-07-T17) and the lock (F-07-T22).
+- Closed by S43 (2026-11-14, main 322ca3310): F-07-T22 (#1980): the gallery page and the lock.
 
 ## Progress log
 - 2026-11-13: built; tests written, not run (S42 end pass).

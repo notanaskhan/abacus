@@ -22,6 +22,7 @@ Finish W-02-T16's partial: the answer's Internal Control link navigates to AUD-0
 
 ## Partial
 - WB-03's thread answers use W-02-T17's renderer (S43); the same callback lands there.
+- Closed by S43 (2026-11-14, main 322ca3310): W-02-T21 (#1977): WB-03's thread answers use W-02-T17's renderer.
 
 ## Progress log
 - 2026-11-13: built in the S42 partials round; tests written, run at the partials end pass.

@@ -31,6 +31,7 @@ regenerate, and the opportunities list.
 - No §752 liabilities or depreciation facts yet: their sheets' layouts have no reader (the
   drafter marks those sections "Unsupported" rather than inventing figures).
 - `allowed_actions` on the memo read is empty until TXP-01 (T-05-T59) defines its buttons.
+- Closed by S43 (2026-11-14, main 322ca3310): T-05-T59 (#1967): C4 citation ids and actions on the memo read; the buttons ride `memo_actions` (DEC-4947, #1991).
 
 ## Progress log
 - 2026-11-13: built; tests written, not run (S42 end pass).

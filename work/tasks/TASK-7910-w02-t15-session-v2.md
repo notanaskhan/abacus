@@ -30,6 +30,7 @@ pinned scope, first-message title, edit-and-resend, deterministic compaction, th
 ## Partial
 - ~~Replay histories~~: read-only, child-run (end pass) and side-queue (TASK-7928) recorded; compaction and the plans gate add no workflow command (DEC-4924).
 - The FE renders `nothing_written` and `plans_off` notices with W-02-T17's thread states.
+- Closed by S43 (2026-11-14, main 322ca3310): W-02-T17 (#1971): WB-01 renders the `nothing_written` and `plans_off` notices.
 
 ## Progress log
 - 2026-11-13: built; tests written, not run (S42 end pass).

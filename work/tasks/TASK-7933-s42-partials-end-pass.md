@@ -23,6 +23,7 @@ The S42 partials round's end pass over #1932–#1941: stage-1 gates, the full ba
 
 ## Partial
 - I-02-T22: name each engagement's TRI subjects on the briefing call (defence in depth).
+- Closed by S43 (2026-11-14, main 322ca3310): I-02-T22 (#1986): the briefing call names its TRI subjects (DEC-4945).
 
 ## Progress log
 - 2026-11-13: built in the S42 partials round; tests written, run at the partials end pass.

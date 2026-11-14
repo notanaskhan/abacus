@@ -24,6 +24,7 @@ lint forbidding agent/chat, graph and forms-gov.
 - "A trace not from a manifest match_id" is held by the type (`MatchId` only from
   `contractMatchId`) and the no-match diagnostic test; a trace-outline test against the TPL-17
   manifest lands with the specimen (F-07-T19, S43).
+- Closed by S43 (2026-11-14, main 322ca3310): F-07-T19 (#1978): the specimen and its manifest.
 
 ## Progress log
 - 2026-11-13: written, not run (S42 end pass).

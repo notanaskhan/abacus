@@ -22,6 +22,7 @@ Finish I-02-T16's layout partial: with the Today pane docked, HOME-01 renders th
 
 ## Partial
 - Tier D pixel parity is I-02-T21 (S43).
+- Closed by S43 (2026-11-14, main 322ca3310): I-02-T21 (#1981): Tier D.
 
 ## Progress log
 - 2026-11-13: built in the S42 partials round; tests written, run at the partials end pass.

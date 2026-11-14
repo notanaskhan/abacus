@@ -23,6 +23,7 @@ diagnostics; loading.
 ## Partial
 - Tier D parity of T17a/T17b runs with the TPL-17 specimen (F-07-T19, S43) and the lock
   (F-07-T22); the FieldLayer is the viewer's region layer (no separate component).
+- Closed by S43 (2026-11-14, main 322ca3310): F-07-T19 (#1978) and F-07-T22 (#1980): the TPL-17 specimen and T17 parity.
 
 ## Progress log
 - 2026-11-13: built; tests written, not run (S42 end pass).
