@@ -1,6 +1,7 @@
 // CLS screens of the design handoff (F-04-T14), seeded by scripts/seed-manifest.mjs.
 // It adds new IDs above the marker and never edits an entry; a screen's builder sets status,
-// path and folder when the screen is built.
+// path and folder when the screen is built. C-01-T12 routes the close shell: CLS-02 to CLS-06,
+// CLS-09 and CLS-10 have paths (still `planned` until each screen row builds its body).
 import type { Manifest } from "./types";
 
 export const clsScreens = {
@@ -10,19 +11,27 @@ export const clsScreens = {
     path: null,
     navArea: "Closes",
   },
-  "CLS-02": { name: "Close › Overview · run", status: "planned", path: null },
-  "CLS-03": { name: "Close › Intake · Copperleaf August 2026", status: "planned", path: null },
+  "CLS-02": { name: "Close › Overview · run", status: "planned", path: "/closes/$closeId" },
+  "CLS-03": {
+    name: "Close › Intake · Copperleaf August 2026",
+    status: "planned",
+    path: "/closes/$closeId/intake",
+  },
   "CLS-04": {
     name: "Close › Accounts · Prepaid Insurance workpaper",
     status: "planned",
-    path: null,
+    path: "/closes/$closeId/accounts",
   },
   "CLS-05": {
     name: "Close › Reconciliation · Operating Checking (Front Range Bank) ••4410, Aug 31, 2026",
     status: "planned",
-    path: null,
+    path: "/closes/$closeId/accounts/$accountRef",
   },
-  "CLS-06": { name: "Close › Review · Copperleaf August 2026", status: "planned", path: null },
+  "CLS-06": {
+    name: "Close › Review · Copperleaf August 2026",
+    status: "planned",
+    path: "/closes/$closeId/review",
+  },
   "CLS-07": {
     name: "Adjustments & thresholds · Copperleaf August 2026",
     status: "planned",
@@ -37,12 +46,12 @@ export const clsScreens = {
   "CLS-09": {
     name: "Close plan editor · Copperleaf close plan v3",
     status: "planned",
-    path: null,
+    path: "/close-plans/$clientId",
   },
   "CLS-10": {
     name: "Flux analysis · Copperleaf August vs July 2026",
     status: "planned",
-    path: null,
+    path: "/closes/$closeId/flux",
   },
   "CLS-11": {
     name: "GL sync console · Copperleaf · QuickBooks Online",
