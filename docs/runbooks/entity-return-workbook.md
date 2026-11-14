@@ -82,9 +82,32 @@ recompute checkpoint for a person: nothing recomputes by itself.
    engine version (T-05-T39, T-05-T70) must be signed before the module holds for a real firm.
 
 ## 6. CCH differences
-Waits on T-05-T60 (CCH file-bridge export section) and T-05-T61 (reconciliation to the engine of
-record), both open in S43 (#1954, #1957). Until they merge, RB-19 covers the bridge, and the
-section is written with them (T-05-T71 part 2).
+**What it looks like.** After a CCH import checkpoint is approved, TXP-10 lists one
+`engine_diagnostic` issue per line that differs (Schedule K total, a partner's K-1 box, ending
+capital or an M-2 line), and final approval shows the blocker. The issue title names the line,
+never a figure.
+
+1. **Confirm the import is the right one.** On TAX-09 (T-01), check the checkpoint's file name,
+   tax year and engine return id against the return. A wrong file is rejected, never edited: run
+   a new import.
+2. **Read the difference on the cell.** "View work" on the issue opens TXP-11 at the workbook
+   cell. SHL-09 shows its formula and sources, and the import's value sits beside it. Values are
+   TRI: never copy them into chat, email or a ticket.
+3. **Decide which side is wrong.**
+   - **The workbook is wrong.** A person fixes the cell, or approves a proposed fix through
+     TXP-10. The recompute marks dependent sign-offs stale, and the next approved import closes
+     the issue.
+   - **The engine is wrong.** The preparer corrects it in CCH and exports again. A new import
+     checkpoint, approved by a person, closes the issue.
+   - **A known layout difference** (the CCH line code before the firm validates the layout; T-05
+     OQ-1, R-05). Record it as the issue's resolution note (sealed). Never override the figure.
+4. **No silent closes.** An issue closes only when a later approved import matches, or a person
+   resolves it with a sealed note (T-05-T51). Final approval stays blocked until then (`approval.py`).
+5. **Never transmit.** Nothing in Accrued sends the return. The ERO transmits in CCH, and a person
+   records the transmission (TAX-12).
+
+Export refused with 409 `export_unmapped`: map the remaining accounts on TXP-02 (Unmapped must
+read 0), then export again. The final approval's grant is not spent by a refused export.
 
 ## 7. Roll back
 - **Flags off, in reverse order:** `tax.entity_agents`, then `tax.workbook_run`, then

@@ -92,7 +92,23 @@ CPA review for a firm that isn't synthetic).
   structure not approved, tie-out off unacknowledged …), owned by `approval.py`.
 - **Export** (`workbook_export.py`): Open in Excel through `workpapers.api.render_workbook`,
   fresh MFA, audited with the file's SHA-256.
-- **Still to land:** the CCH file-bridge export section and the reconciliation to the engine of
-  record (T-05-T60, T61) and the Ridgeline slice 2 (T-05-T62), open in S43; this section grows with
-  them (T-05-T71 part 2). Operating runbook: `docs/runbooks/entity-return-workbook.md`.
+- **CCH export section** (`export_entity.py`, RED; T-05-T60, DEC-4931): two more sheets on T-01's
+  file bridge, built by code from the **approved checkpoint only** (`review.api.values_as_of`):
+  `TTB` (the tax trial balance by CCH line code, from sheet 03) and `Allocations` (each partner's
+  share of each Schedule K line, keyed `partner_ref`). Blocked while Unmapped > 0 (409
+  `export_unmapped`), checked before the final approval's grant is spent. Never transmits (R-04):
+  a person carries the file and marks it exported. The CCH line code is the 1065 form-line key
+  until the pilot firm's Axcess validates the layout in shadow (T-05 OQ-1, R-05).
+- **Reconciliation** (`entity_reconciliation.py`; T-05-T61, DEC-4934): once a person approves a CCH
+  import checkpoint, code compares Schedule K totals, each partner's K-1 boxes, ending capital and
+  M-2 with the workbook. Each difference raises one `engine_diagnostic` issue (`source_ref =
+  recon:<key>`, deduplicated per work item) that blocks final approval; its title names the line,
+  never a figure. Accrued's engine-owned figures read "Accrued tie-out (shadow)" beside the
+  engine's (DEC-77).
+- **Seed** (T-05-T45, T62): Ridgeline and Harborview through the synthetic-only recorders
+  (`entity_seed.py`, the memo and fix recorders): Run 1, Run 2, the memo adopted and approved, the
+  M-2 fix at 9:51 and Run 3 at 9:52; named snapshots Sep 8 10:02 AM, Sep 10 4:12 PM, E0 and 9:52 AM.
+  The LPA and assignment word layers are not loaded yet, so the agreement reader's run is not
+  seeded (TASK-7942 partial).
+- Operating runbook: `docs/runbooks/entity-return-workbook.md`.
 

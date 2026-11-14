@@ -22,6 +22,7 @@ plan_key: T-05-T71
 4. [ ] Part 2 (waits on S43): the runbook's "CCH differences" section and the README's CCH bridge and reconciliation lines (T-05-T60, T61: #1954, #1957), the Ridgeline slice 2 (T-05-T62: #1960), and the screen contracts' Deviations (with T-05-T66's states).
 
 ## Progress log
+- `2026-11-14` — Part 2 built after S43 merged: the tax README gains the CCH export section, the reconciliation and the seed bullets (T-05-T60, T61, T62); the runbook's §6 CCH differences is written (diagnose, decide which side is wrong, no silent closes, never transmit). TASK-8015 covers both parts.
 - `2026-11-14` — Part 1 written from the modules' docstrings on main (workbook_service, entity_run_plan, run_steps, cell_edit, workbook_imports, workbook_fix, workbook_export, entity_tri, entity_guards, formula, dag).
 
 ## Decisions made during this task
