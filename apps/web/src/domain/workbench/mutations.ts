@@ -99,10 +99,15 @@ export function usePostMessage() {
   const m = useMutation(postSessionMessageMutation());
   return {
     ...m,
-    post: (sessionId: string, body: string) =>
+    /** W-02-T17: `answersSeq` answers an open question; `editsSeq` resends an edited message. */
+    post: (sessionId: string, body: string, opts: { answersSeq?: number; editsSeq?: number } = {}) =>
       m.mutateAsync({
         path: { session_id: sessionId },
-        body: { body },
+        body: {
+          body,
+          ...(opts.answersSeq === undefined ? {} : { answers_seq: opts.answersSeq }),
+          ...(opts.editsSeq === undefined ? {} : { edits_seq: opts.editsSeq }),
+        },
         headers: { "Idempotency-Key": key() },
       }),
   };
