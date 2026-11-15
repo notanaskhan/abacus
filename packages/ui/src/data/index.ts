@@ -56,6 +56,26 @@ export {
 
 // F-06-T19: the calc tree beside the source-workbook grid (T6e).
 export { CalcTree, type CalcTreeProps, type CalcTreeStep } from "./CalcTree";
+// A-09-T08: the group-audit L2 kits.
+export {
+  EntityTree,
+  type EntityNode,
+  type EntityTreeProps,
+  moveEntity,
+  shiftEntity,
+} from "./EntityTree";
+export {
+  type Milestone,
+  type MilestoneState,
+  MilestoneTimeline,
+  type MilestoneTimelineProps,
+} from "./MilestoneTimeline";
+export {
+  CoverageBar,
+  type CoverageBarProps,
+  type CoverageMeasure,
+  type CoverageSegment,
+} from "./CoverageBar";
 export {
   MAPPING_COLUMNS,
   MappingTable,

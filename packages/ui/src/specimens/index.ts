@@ -1,4 +1,5 @@
 import { AgentBlocksSpecimen } from "./agent-blocks";
+import { CoverageBarSpecimen, EntityTreeSpecimen, MilestoneTimelineSpecimen } from "./group-audit";
 import type { ComponentType } from "react";
 import {
   ButtonSpecimen,
@@ -431,6 +432,15 @@ export const SPECIMENS: readonly Specimen[] = [
   // DataTable grammars 3 (F-05-T52): grid, leadsheet, field rows, virtualisation
   { id: "c-01-grid", kit: "C-01", title: "Grid grammar", Component: GridSpecimen },
   { id: "c-01-calc-tree", kit: "C-01", title: "Calc tree", Component: CalcTreeSpecimen },
+  // A-09-T08: the group-audit L2 kits (AUD-32, AUD-34, AUD-35)
+  { id: "c-35-entity-tree", kit: "C-35", title: "EntityTree", Component: EntityTreeSpecimen },
+  {
+    id: "c-38-milestone-timeline",
+    kit: "C-38",
+    title: "MilestoneTimeline",
+    Component: MilestoneTimelineSpecimen,
+  },
+  { id: "l2-coverage-bar", kit: "C-01", title: "CoverageBar", Component: CoverageBarSpecimen },
   { id: "c-01-leadsheet", kit: "C-01", title: "Leadsheet grammar", Component: LeadsheetSpecimen },
   { id: "c-01-fields", kit: "C-01", title: "Field rows", Component: FieldRowsSpecimen },
   { id: "c-01-virtual", kit: "C-01", title: "Virtualisation", Component: VirtualGridSpecimen },
