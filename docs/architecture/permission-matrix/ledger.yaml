@@ -1,0 +1,11 @@
+# The ledger module's actions (ADR-027; P-39). Compiled with every other module's file into
+# identity/authz/_matrix.py by `make regenerate`. A-09-T02 (SPEC-658; DEC-5037): consolidation in
+# ledger (DEC-66). Every finalize and lock is a named manager's or EP's (INV-1); the agent reads at
+# task_scope; every portal principal and the link principal deny.
+
+actions:
+  consolidation.read:                     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, quality_partner: in_scope, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: task_scope, system: deny, independence: required}   # structure, attachments, consolidated TB by level and entity, attribution
+  consolidation.edit:                     {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, independence: required}   # create, details, structure, attach TBs, not needed, bulk upload, pull all, discard
+  consolidation.finalize:                 {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, independence: required}   # human-only; freezes the structure (trigger); 409 trial_balance_missing
+  consolidation.lock:                     {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, independence: required}   # lock; reopen with a reason (stales sign-offs and coverage, OQ-2)
+  consolidation.export:                   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, quality_partner: in_scope, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, independence: required}   # the consolidating schedule xlsx, deterministic, audited

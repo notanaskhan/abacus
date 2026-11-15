@@ -58,3 +58,9 @@ actions:
   proposed_entry.client_decide: {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-08 e: accept or decline, attest clients
   uncorrected_misstatements.acknowledge: {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-08 e2
   close_package.client_decide: {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-08 a to c: C-02 or A-08 registers the kind
+  # --- A-09-T02 the component auditor room (POR-23; DEC-67, DEC-5037). A `component_auditor` grant holds
+  # `client_contributor` on its `component` scope only (as `tcwg` on a governance room); MFA is mandatory (OQ-4).
+  component_room.read:                    {client_contributor: allow, client_admin: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, scope_only: required}   # the room, the letter and deliverables in client words
+  component_instructions.acknowledge:     {client_contributor: allow, client_admin: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # acknowledge the instructions (POR-23 b)
+  component_deliverable.upload:           {client_contributor: allow, client_admin: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, scope_only: required}   # upload against a deliverable or the picker; a new evidence version
+  component_room.ask:                     {client_contributor: allow, client_admin: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, scope_only: required}   # the shared component_thread (P-05 share guard)

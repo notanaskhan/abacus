@@ -65,11 +65,15 @@ RESOLUTION_ENTITIES = frozenset(
     | {"k1_package", "questionnaire_template"}
     # A-08-T03 (I-AGENT-NEVER, SPEC-657 AC-9.1): sample expansions and every confirmation write.
     | {"sample_expansion", "confirmation"}
+    # A-09-T02 (SPEC-658 AC-0.1): finalizing, locking, approving and posting eliminations, sending
+    # instructions and reviewing deliverables are a person's.
+    | {"consolidation", "elimination"}
 )
 RESOLUTION_ACTIONS = frozenset(
     {"issue.resolve", "issue.verify", "issue.reopen", "evidence.accept", "evidence.reject"}
     # A-08-T03 (SPEC-657 AC-9.1): adopting results, accepting explanations, sending questions.
     | {"test.adopt", "analytics.accept", "client_question.send"}
+    | {"component_instructions.send", "component_deliverable.review"}
 )
 PRINCIPALS = ("agent", "system", "support")
 PREPARER_VARIANTS = (("preparer", "deny"), ("not_preparer", "allow"), ("no_facts", "deny"))
