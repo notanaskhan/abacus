@@ -1,7 +1,7 @@
 ---
 id: ADR-156
 title: Tenant key provisioning - one multi-Region key per firm, created by a keyops worker
-status: proposed
+status: accepted
 date: 2026-10-22
 deciders: ayushkbhatia
 risk_zone: red
@@ -11,6 +11,8 @@ risk_zone: red
 > - Accepted ADRs are binding. Code that contradicts one must not be written.
 > - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
+
+**Accepted on 2026-11-15** by ayushkbhatia (DEC-5052; solo edition, AMENDMENT-solo), at the S45 end pass. It is binding from here; the S45 rows built on it as proposed (A-08, A-09, W-01) stand as written.
 
 ## Context
 **Open by 2026-11-13; accept by 2026-11-27.** ADR-035 says each firm has its own key and that deletion needs dual control, ADR-096 says keys exist in both regions, and ADR-104 seals content client-side under the tenant key. None of them says how a key comes to exist, who may create it, or when a firm may start storing content. Without a defined path, a key is created by hand or by whichever role has the widest rights. This ADR is P-65, drafted under Q-01-T22 and built under Q-01-T19, T27 and T45. The decision below is chapter 06 D-OPS-07 and section 1.9 (the chapter calls the proposal P-38) and the Q-01 epic section F7. It extends ADR-035; it does not replace it.

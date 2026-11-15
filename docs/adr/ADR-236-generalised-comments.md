@@ -1,7 +1,7 @@
 ---
 id: ADR-236
 title: "Generalised comments: polymorphic version-aware anchors in collaboration, Resolve and Reopen as thread events, Correct and Redact, never edit or delete (amends ADR-109)"
-status: proposed
+status: accepted
 date: 2026-11-09
 deciders: ayushkbhatia  # solo edition; acceptance is his (red ADRs never default on silence)
 risk_zone: red
@@ -18,6 +18,8 @@ calls this proposal ADR-209; that number is a P-ID alias (`docs/adr/backlog.md`)
 next free number on `main`. Until it is accepted, P-05 builds only what is reversible and dark: the
 SPEC, the protected bundle, 501 stubs and an expand-only migration (S33). The comments v2 service
 (P-05-T05, S34) starts only after acceptance (P-05 §11.1 R-2).
+
+**Accepted on 2026-11-15** by ayushkbhatia (DEC-5052; solo edition, AMENDMENT-solo), at the S45 end pass. It is binding from here; the S45 rows built on it as proposed (A-08, A-09, W-01) stand as written.
 
 ## Context
 ADR-109 made comments append-only, pinned to a version and internal unless shared, but anchored

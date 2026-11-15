@@ -1,7 +1,7 @@
 ---
 id: ADR-233
 title: "Agent model: capability specs in code, firm definitions only narrow them, one principal (amends ADR-046, ADR-047, ADR-048, ADR-057, ADR-061)"
-status: proposed
+status: accepted
 date: 2026-11-06
 deciders: ayushkbhatia  # solo edition; acceptance is his (red ADRs never default on silence)
 risk_zone: red
@@ -16,6 +16,8 @@ proposal: P-22
 **Status note.** Drafted by P-10-T58 (TASK-5105), from chapter 05 AG-01 and chapter 03 §7. The plan's
 number for this proposal (ADR-157) is a P-ID alias: on `main` that number is another ADR, so
 `docs/adr/backlog.md` gives this one.
+
+**Accepted on 2026-11-15** by ayushkbhatia (DEC-5052; solo edition, AMENDMENT-solo), at the S45 end pass. It is binding from here; the S45 rows built on it as proposed (A-08, A-09, W-01) stand as written.
 
 ## Context
 ADR-047 requires repo-declared agents. Workbench lets a firm make agents. Both must hold: a firm may

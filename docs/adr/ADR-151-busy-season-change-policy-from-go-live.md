@@ -1,7 +1,7 @@
 ---
 id: ADR-151
 title: Busy-season change policy - the freeze starts at the first real go-live
-status: proposed
+status: accepted
 date: 2026-10-20
 deciders: ayushkbhatia
 risk_zone: red
@@ -11,6 +11,8 @@ risk_zone: red
 > - Accepted ADRs are binding. Code that contradicts one must not be written.
 > - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
+
+**Accepted on 2026-11-15** by ayushkbhatia (DEC-5052; solo edition, AMENDMENT-solo), at the S45 end pass. It is binding from here; the S45 rows built on it as proposed (A-08, A-09, W-01) stand as written.
 
 ## Context
 **Accept with the Dec 14-18, 2026 bundle** (sprint S4). ADR-092 freezes January to March and starts now, tuned to audit. With no real firm before May 2027, a freeze through Q1 2027 would slow building on staging for no risk reduction. Plan decision DEC-68 settles this; this ADR is P-29. Plan risk zone is amber; this file carries red as instructed.

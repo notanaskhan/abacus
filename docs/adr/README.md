@@ -139,13 +139,13 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-148](ADR-148-entitlements-agent-minutes-budgets.md) | Entitlements, agent-minutes and two-layer budgets | amber | accepted |
 | [ADR-149](ADR-149-e-signature-record-mode-then-docusign.md) | E-signature - record mode first, then DocuSign embedded with ID Verification behind an EnvelopeProvider port | red | superseded by ADR-342 |
 | [ADR-150](ADR-150-integrations-module-write-capabilities.md) | Integrations module and the declared write-capability framework | red | accepted |
-| [ADR-151](ADR-151-busy-season-change-policy-from-go-live.md) | Busy-season change policy - the freeze starts at the first real go-live | red | proposed |
+| [ADR-151](ADR-151-busy-season-change-policy-from-go-live.md) | Busy-season change policy - the freeze starts at the first real go-live | red | accepted |
 | [ADR-152](ADR-152-unauthenticated-operational-routes.md) | Unauthenticated operational routes - /healthz and portal branding on an explicit allowlist | red | accepted |
 | [ADR-153](ADR-153-malware-scanning-service.md) | Malware scanning service - ClamAV clamd, synchronous, fail closed | red | proposed |
 | [ADR-154](ADR-154-observability-on-call-vendors.md) | Observability and on-call vendors - CloudWatch, X-Ray, Sentry and Better Stack | red | proposed |
 | [ADR-155](ADR-155-design-system.md) | packages/ui is the Accrued design system - Tailwind v4 tokens, self-hosted fonts, Radix for behaviour, the AA ink ladder | amber | accepted |
-| [ADR-156](ADR-156-tenant-key-provisioning.md) | Tenant key provisioning - one multi-Region key per firm, created by a keyops worker | red | proposed |
-| [ADR-157](ADR-157-platform-controls-kill-switches.md) | Platform controls and kill switches - database rows read through one function, changed only by operators | red | proposed |
+| [ADR-156](ADR-156-tenant-key-provisioning.md) | Tenant key provisioning - one multi-Region key per firm, created by a keyops worker | red | accepted |
+| [ADR-157](ADR-157-platform-controls-kill-switches.md) | Platform controls and kill switches - database rows read through one function, changed only by operators | red | accepted |
 | [ADR-158](ADR-158-client-scoped-files-cross-engagement-fulfilment.md) | Client-scoped files and cross-engagement fulfilment - evidence with a client and no engagement; reuse by reference, same client only | red | accepted |
 | [ADR-159](ADR-159-archive-seal-immutability-hash-chain-object-lock.md) | Archive seal, database immutability, the audit hash chain and Object Lock modes | red | proposed |
 | [ADR-160](ADR-160-review-grammar.md) | Review grammar - sign-offs, review notes, issues, decision cards, checkpoints and field history in one red review module | red | accepted |
@@ -158,7 +158,7 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-167](ADR-167-tri-pii-field-flags-gateway-tin-refusal-consent-gate-shape.md) | TRI, phi and pii_kind field flags beside the four classification levels; the gateway refuses TIN patterns in model context; the shape of the section 7216 consent gate | red | accepted |
 | [ADR-168](ADR-168-portal-opaque-sessions.md) | Portal sessions: opaque access tokens checked against `auth_sessions`, pinned to tenant and host, after the portal's own email code (an exception to ADR-020 for portal clients) | red | accepted |
 | [ADR-169](ADR-169-canonical-run-states-durable-run-records-c6-v1.md) | Canonical agent run states with the legacy status map; decision-relevant run records persisted at completion under engagement retention; the C6 v1 stub shape | red | accepted |
-| [ADR-179](ADR-179-retention-holds-destruction-export-dual-control.md) | Retention per record type and service line with counsel-set legal floors as reference data, reference-counted legal holds, dual-approved destruction and dual-control firm export | red | proposed |
+| [ADR-179](ADR-179-retention-holds-destruction-export-dual-control.md) | Retention per record type and service line with counsel-set legal floors as reference data, reference-counted legal holds, dual-approved destruction and dual-control firm export | red | accepted |
 | [ADR-183](ADR-183-service-line-content-visibility.md) | Service-line content visibility: a firm may open a line's content, read-only, to its members; never Audit, attest clients, walled or offshore members, or admins | red | accepted |
 | [ADR-186](ADR-186-autonomy-policy-versions-auto-mode.md) | Autonomy policy versions and Auto mode: a versioned, stricter-only firm AI policy published by the QM owner and approved by a second partner | red | accepted |
 | [ADR-187](ADR-187-policy-principal-dormant.md) | Policy principal (dormant): the `policy` actor kind designed, stored off and locked, rendered in fixture mode only | red | accepted |
@@ -167,10 +167,10 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-230](ADR-230-structured-agent-output.md) | Structured agent output (AgentBlocks): a closed block schema, numbers by reference, no model markup (amends ADR-065) | red | accepted |
 | [ADR-231](ADR-231-tax-computation-boundary.md) | Tax computation boundary: the engine of record computes tax, credits and filed forms; Accrued shows engine values only from approved imports | amber | accepted |
 | [ADR-232](ADR-232-real-time-via-sse.md) | Real time via SSE: identifier-only events through AbacusRouter, polling as the permanent fallback (extends ADR-013, ADR-023) | amber | proposed |
-| [ADR-233](ADR-233-agent-model-capabilities-and-definitions.md) | Agent model: capability specs in code, firm definitions only narrow them, one principal (amends ADR-046, ADR-047, ADR-048, ADR-057, ADR-061) | red | proposed |
+| [ADR-233](ADR-233-agent-model-capabilities-and-definitions.md) | Agent model: capability specs in code, firm definitions only narrow them, one principal (amends ADR-046, ADR-047, ADR-048, ADR-057, ADR-061) | red | accepted |
 | [ADR-234](ADR-234-gateway-conversations-and-tool-use.md) | Gateway conversations and tool use: ai_gateway.converse() beside call(), no token streaming to browsers (amends ADR-019, ADR-049, ADR-051, ADR-055) | red | proposed |
 | [ADR-235](ADR-235-workbench-sessions.md) | Workbench sessions: a conversation over typed tool plans, every write planned and approved (amends ADR-063) | red | proposed |
-| [ADR-236](ADR-236-generalised-comments.md) | Generalised comments: polymorphic version-aware anchors in collaboration, Resolve and Reopen as thread events, Correct and Redact, never edit or delete (amends ADR-109) | red | proposed |
+| [ADR-236](ADR-236-generalised-comments.md) | Generalised comments: polymorphic version-aware anchors in collaboration, Resolve and Reopen as thread events, Correct and Redact, never edit or delete (amends ADR-109) | red | accepted |
 | [ADR-237](ADR-237-workbook-formula-engine.md) | Workbook formula engine: a closed grammar over firm-authored cells, no eval, client strings stay text in Excel (amends ADR-052 for tax workbooks) | red | proposed |
 | [ADR-241](ADR-241-search-in-postgres.md) | Search in Postgres: a metadata-only `search_documents` projection with tsvector and pg_trgm, filtered under RLS and `visible()` at query time, no hidden-by-wall counts | amber | accepted |
 | [ADR-300](ADR-300-platform-reference-data-split.md) | Platform reference data split: frequently changing calendars are versioned, effective-dated database reference sets published by two people; engine parameters stay CPA-reviewed repo files | amber | accepted |
@@ -180,4 +180,4 @@ All accepted ADRs are binding. See `_TEMPLATE.md` to propose a new one.
 | [ADR-341](ADR-341-multi-entity-engagements-and-consolidation.md) | Multi-entity engagements and consolidation: engagement entities, ledger-owned mapping and consolidation, the taxonomy as firm content (P-63) | red | accepted |
 | [ADR-342](ADR-342-e-signature-provider-docuseal.md) | E-signature provider: DocuSeal (cloud) replaces DocuSign behind the EsignProvider port; record mode first; 8879 KBA only once confirmed in writing and accepted by counsel (P-26) | red | accepted |
 | [ADR-343](ADR-343-citation-kind-instrument-clause.md) | Citation v2 amendment: `instrument_clause` as the eleventh kind, ids, regions and a quote hash only, verified from the sealed layer, moved on a superseding instrument (P-48 amendment) | red | accepted |
-| [ADR-400](ADR-400-document-extracted-ledger-snapshots.md) | Document-extracted ledger snapshots and GL journal-entry fields: provenance on the snapshot, verified and footing lines only, human adoption; JE fields where exports carry them (P-58) | red | proposed |
+| [ADR-400](ADR-400-document-extracted-ledger-snapshots.md) | Document-extracted ledger snapshots and GL journal-entry fields: provenance on the snapshot, verified and footing lines only, human adoption; JE fields where exports carry them (P-58) | red | accepted |

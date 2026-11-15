@@ -1,7 +1,7 @@
 ---
 id: ADR-400
 title: "Document-extracted ledger snapshots and GL journal-entry fields"
-status: proposed
+status: accepted
 date: 2026-10-30
 deciders: notanaskhan, ayushkbhatia
 risk_zone: red
@@ -20,6 +20,8 @@ before any ledger code from A-05-T28 or A-08-T09 merges. Red: it changes the pro
 (`ledger_snapshots`, `gl_entries`) and the protected GL parsers (`connections/gl_formats.py`,
 `connections/general_ledger.py`), so both founders accept it and it never defaults on silence
 (chapter 09 §9.0).
+
+**Accepted on 2026-11-15** by ayushkbhatia (DEC-5052; solo edition, AMENDMENT-solo), at the S45 end pass. It is binding from here; the S45 rows built on it as proposed (A-08, A-09, W-01) stand as written.
 
 ## Context
 
