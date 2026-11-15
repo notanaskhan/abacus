@@ -17,7 +17,9 @@ Deviations, recorded: Ridgeline's structure is drafted by a person, not adopted 
 reader's proposal (the reader's run and its two bbox clause citations need the LPA and the
 assignment's word layers in evidence, T-05-T62); 05's beginning carries the 6/30 transfer (the
 server's 05 has no Transfers column; Pell Street Ventures 2,100,000 - 331,405 = 1,768,595, Pell
-Street II 331,405); TJE-1 rides 06 line 18a (6,200), not a 02 column. Opt-in (`--slice entity`),
+Street II 331,405); TJE-1 rides 06 line 18a (6,200), not a 02 column. L1 on each structure is
+its return's preparer (Olivia Brandt on Ridgeline, Dina Sato on Harborview), never the drafting
+partner: `sign_off.prepare` is manager, senior and staff (DEC-5017). Opt-in (`--slice entity`),
 after `tax_board` (the returns).
 
 **Part 2** (T-05-T62; TASK-7942; DEC-4937): the memo drafted (TXP-01's text through tax's
@@ -95,6 +97,19 @@ TB: Final = (
     ("5800", "Other operating expenses", "64000", "0"),
     ("4510-T", "Tax-exempt interest — Sch K 18a (tax only)", "0", "0"),
 )
+
+# Each account's Form 1065 line (TXP-02 verbatim; the public keys of `tax_form_lines.1065.ty2025`).
+FORM_LINES: Final = {
+    "1000": "L1", "1100": "L2a", "1200": "L5", "1300": "L13", "1500": "L11", "1600": "L9a",
+    "1650": "L9b", "2000": "L15", "2050": "L17", "2100": "L17", "2500": "L18", "3000": "L21",
+    "3100": "M-2 2a", "3200": "M-2 6a", "4000": "8825 Rents", "4100": "8825 Rents",
+    "4500": "K 5", "4510": "M-3 perm.", "4510-T": "K 18a", "5000": "8825 Repairs",
+    "5100": "8825 Utilities", "5200": "8825 Other", "5300": "8825 Taxes",
+    "5400": "8825 Insurance", "5500": "8825 Interest", "5600": "8825 Deprec.",
+    "5700": "8825 Legal/prof.", "5800": "8825 Other",
+}  # fmt: skip
+TB_PULLED_AT: Final = datetime(2026, 9, 8, 9, 30, tzinfo=CT)  # QuickBooks Online, before Run 1
+MAPPED_AT: Final = datetime(2026, 9, 9, 10, 15, tzinfo=CT)  # Samuel maps the 28 (TXP-02 a)
 
 # 05 Capital (TXP-11 verbatim): name, beginning (after the 6/30 transfer), contributions,
 # distributions, income, ending as drafted.
@@ -210,17 +225,21 @@ def entity_events() -> list[Event]:
         Event("entity:harborview:structure", datetime(2026, 8, 27, 14, 0, tzinfo=CT),
               "tax.allocation_drafted", "DR", SLICE, {"return": HARBORVIEW}),
         Event("entity:harborview:l1", datetime(2026, 8, 27, 14, 5, tzinfo=CT),
-              "review.allocation_signed", "DR", SLICE, {"return": HARBORVIEW, "level": 1}),
+              "review.allocation_signed", "DS", SLICE, {"return": HARBORVIEW, "level": 1}),
         Event("entity:harborview:l3", datetime(2026, 8, 28, 11, 0, tzinfo=CT),
               "review.allocation_signed", "SI", SLICE, {"return": HARBORVIEW, "level": 3}),
         Event("entity:ridgeline:seeded", datetime(2026, 9, 8, 9, 0, tzinfo=CT),
               "tax.entity_seeded", "OB", SLICE, {"return": RIDGELINE}),
+        Event("entity:ridgeline:tb", TB_PULLED_AT, "ledger.entity_tb_recorded", "OB", SLICE,
+              {"return": RIDGELINE}),
+        Event("entity:ridgeline:mapped", MAPPED_AT, "ledger.entity_tb_mapped", "SI", SLICE,
+              {"return": RIDGELINE}),
         Event("entity:ridgeline:run1", RUN_1_AT, "agents.entity_run_recorded", "OB", SLICE,
               {"return": RIDGELINE, "run_number": 1, "state": "waiting_on_inputs"}),
         Event("entity:ridgeline:structure", datetime(2026, 9, 8, 15, 0, tzinfo=CT),
               "tax.allocation_drafted", "DR", SLICE, {"return": RIDGELINE}),
         Event("entity:ridgeline:l1", datetime(2026, 9, 8, 15, 5, tzinfo=CT),
-              "review.allocation_signed", "DR", SLICE, {"return": RIDGELINE, "level": 1}),
+              "review.allocation_signed", "OB", SLICE, {"return": RIDGELINE, "level": 1}),
         Event("entity:ridgeline:l3", datetime(2026, 9, 9, 10, 0, tzinfo=CT),
               "review.allocation_signed", "SI", SLICE, {"return": RIDGELINE, "level": 3}),
         Event("entity:ridgeline:run2", RUN_2_AT, "agents.entity_run_recorded", "OB", SLICE,

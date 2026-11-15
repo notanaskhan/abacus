@@ -666,13 +666,17 @@ async def save(ctx: Actor, target_type: str, target_id: UUID, name: str | None) 
             author_ref=str(person.user_id),
             cause="manual_save",
             status="saved",
-            content_hash=facts.content_hash,
+            # S44 end pass: a reviewable's hash may carry the `sha256:` prefix (the tax
+            # workbook's does); the column stores the bare hex, as the other insert path does.
+            content_hash=facts.content_hash.removeprefix("sha256:"),
             name=name,
         )
         tx.record(
             "checkpoint.saved",
             target=Target(SUBJECT, checkpoint_id),
-            after=Ref(seq=seq, target=facts.target_id, content=facts.content_hash),
+            after=Ref(
+                seq=seq, target=facts.target_id, content=facts.content_hash.removeprefix("sha256:")
+            ),
             scope=_scope(facts),
         )
     return await _card(person, checkpoint_id)

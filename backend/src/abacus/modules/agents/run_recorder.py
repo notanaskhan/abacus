@@ -91,10 +91,9 @@ _COUNTERS: Final = (
 )
 _RUN = text(
     "INSERT INTO agent_runs (id, tenant_id, agent_id, spec_version, engagement_id, "
-    "initiator_user_id, task_scope, state, state_reason, blocked_on, run_number, mode, "
-    "trigger_kind, work_item_ref, runs_as_user_id, test) VALUES (:id, :tenant, :agent, 2, "
-    ":engagement, :initiator, :scope, :state, :reason, CAST(:blocked AS jsonb), :number, "
-    "'run', :trigger, :work_item, :initiator, true)"
+    "initiator_user_id, task_scope, state, run_number, mode, trigger_kind, work_item_ref, "
+    "runs_as_user_id, test) VALUES (:id, :tenant, :agent, 2, :engagement, :initiator, :scope, "
+    "'running', :number, 'run', :trigger, :work_item, :initiator, true)"
 )
 _PLAN = text(
     "INSERT INTO agent_plans (id, tenant_id, run_id, version, steps, state, decided_by, "
@@ -116,8 +115,8 @@ _EVENT = text(
 _FINISH = text(
     "UPDATE agent_runs SET plan_id = :plan, event_seq = :seq, records_read = :records_read, "
     "citations_count = :citations_count, writes_done = :writes_done, "
-    "writes_waiting = :writes_waiting, agent_ms = :agent_ms, agent_minutes = :agent_minutes "
-    "WHERE id = :run"
+    "writes_waiting = :writes_waiting, agent_ms = :agent_ms, agent_minutes = :agent_minutes, "
+    "state = :state, state_reason = :reason, blocked_on = CAST(:blocked AS jsonb) WHERE id = :run"
 )
 
 
@@ -155,9 +154,6 @@ async def record_synthetic_run(tenant: TenantContext, run: RecordedRun) -> UUID:
                 "engagement": run.engagement_id,
                 "initiator": run.initiator_user_id,
                 "scope": list(run.task_scope),
-                "state": run.state,
-                "reason": run.state_reason,
-                "blocked": None if run.blocked_on is None else json.dumps(dict(run.blocked_on)),
                 "number": run.run_number,
                 "trigger": run.trigger_kind,
                 "work_item": run.work_item_ref,
@@ -225,8 +221,19 @@ async def record_synthetic_run(tenant: TenantContext, run: RecordedRun) -> UUID:
                 },
             )
         counters = {c: int(run.counters.get(c, 0)) for c in _COUNTERS}
+        # S44 end pass: the run is inserted `running` and reaches its recorded state here, in one
+        # update, so the forward-only trigger (0680) never sees a finished run change.
         await tx.session.execute(
-            _FINISH, {"plan": plan_id, "seq": len(run.items), "run": run.id, **counters}
+            _FINISH,
+            {
+                "plan": plan_id,
+                "seq": len(run.items),
+                "run": run.id,
+                "state": run.state,
+                "reason": run.state_reason,
+                "blocked": None if run.blocked_on is None else json.dumps(dict(run.blocked_on)),
+                **counters,
+            },
         )
         tx.record(
             "agent_run.recorded_synthetic",
