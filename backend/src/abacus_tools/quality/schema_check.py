@@ -308,6 +308,7 @@ GLOBAL_TABLES = frozenset(
     | {"incident_propagations"}  # 0143 (Q-02-T33)
     | {"standards_sets"}  # 0180 (K-01-T02): reference data, K-02's publish path writes it
     | {"integration_catalog"}  # 0194 (A-02-T12)
+    | {"integration_catalog_imports"}  # 0890 (W-01-T04): the operator's import log
     | {"safeguards_controls", "safeguards_control_set_log"}  # 0242 (G-02-T20)
     # 0400 (K-02-T03, ADR-300): the platform reference sets.
     | {"reference_sets", "reference_set_versions", "reference_set_publications"}

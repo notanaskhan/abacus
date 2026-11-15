@@ -13,13 +13,42 @@ TABLES: frozenset[str] = frozenset(
         "firm_integrations",
         "integration_secrets",
         "integration_mappings",  # 0466 (T-01-T20)
+        # W-01-T04 (0890): C20 v2 Connect.
+        "integration_catalog_imports",  # platform; the operator writes, the app reads
+        "user_integrations",
+        "integration_oauth_states",
+        "integration_events",
+        "integration_interest",
     }
 )
-INSERT_ONLY: frozenset[str] = frozenset()
+INSERT_ONLY: frozenset[str] = frozenset({"integration_events"})  # W-01-T04: append-only
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
-    "firm_integrations": frozenset({"tenant_id", "catalog_key", "status", "mode", "created_by"}),
+    "firm_integrations": frozenset(
+        {"tenant_id", "catalog_key", "status", "mode", "created_by"}
+        # W-01-T04 (0890): the drawer's facts.
+        | {"status_reason_code", "status_changed_at", "token_renews_at", "granted_scopes"}
+        | {"consent_version", "connected_by", "connected_at"}
+    ),
     # Sealed once, never updated; deleting the row removes the only sealed copy.
-    "integration_secrets": frozenset({"tenant_id", "firm_integration_id", "sealed", "key_id"}),
+    "integration_secrets": frozenset(
+        {"tenant_id", "firm_integration_id", "sealed", "key_id"}
+        | {"user_integration_id"}  # W-01-T04 (0890): a personal install's secret
+    ),
+    "user_integrations": frozenset(
+        {"tenant_id", "user_id", "catalog_key", "status", "status_reason_code"}
+        | {"status_changed_at", "connected_at", "token_renews_at", "granted_scopes"}
+        | {"consent_version"}
+    ),
+    "integration_oauth_states": frozenset(
+        {"state_sha256", "tenant_id", "user_id", "catalog_key", "scope_kind", "purpose"}
+        | {"pkce_verifier_sealed", "expires_at"}
+    ),
+    "integration_events": frozenset(
+        {"tenant_id", "install_kind", "install_id", "catalog_key", "kind", "at"}
+        | {"actor_user_id", "subject_type", "subject_id", "run_id", "code", "http_status"}
+        | {"latency_ms"}
+    ),
+    "integration_interest": frozenset({"tenant_id", "user_id", "catalog_key"}),
     # T-01-T20 (0466): ADM-08's settings and mappings.
     "integration_mappings": frozenset(
         {"tenant_id", "firm_integration_id", "kind", "source_key", "target_value", "direction"}
@@ -27,7 +56,17 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
 }
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
-    "firm_integrations": frozenset({"status", "version"}),
+    "firm_integrations": frozenset(
+        {"status", "version"}
+        | {"status_reason_code", "status_changed_at", "token_renews_at", "last_sync_at"}
+        | {"granted_scopes", "consent_version", "connected_by", "connected_at"}
+    ),
+    "user_integrations": frozenset(
+        {"status", "status_reason_code", "status_changed_at", "connected_at", "token_renews_at"}
+        | {"last_sync_at", "granted_scopes", "consent_version", "version"}
+    ),
+    "integration_oauth_states": frozenset({"spent_at"}),
+    "integration_interest": frozenset({"notified_at"}),
     "integration_mappings": frozenset(
         {"target_value", "direction", "version", "updated_by", "updated_at"}
     ),
