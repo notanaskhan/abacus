@@ -342,18 +342,6 @@ export type AcceptedInvitationOut = {
 };
 
 /**
- * AcceptedOut
- *
- * A write's answer once live (its task widens it): the record's id.
- */
-export type AcceptedOut = {
-    /**
-     * Id
-     */
-    id: string;
-};
-
-/**
  * AccessLogRow
  *
  * One audit event targeting the item's versions, in the actor grammar.
@@ -981,6 +969,58 @@ export type ActivityRefOut = {
      * Type
      */
     type: string;
+};
+
+/**
+ * AddressVerificationIn
+ */
+export type AddressVerificationIn = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Method
+     */
+    method: string;
+    /**
+     * Sources
+     */
+    sources: Array<'client_supplied' | 'prior_year' | 'website' | 'phone' | 'public_register' | 'bank_published'>;
+};
+
+/**
+ * AddressVerificationOut
+ */
+export type AddressVerificationOut = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Independent
+     */
+    independent: boolean;
+    /**
+     * Method
+     */
+    method: string;
+    /**
+     * Sources
+     */
+    sources: Array<'client_supplied' | 'prior_year' | 'website' | 'phone' | 'public_register' | 'bank_published'>;
+    /**
+     * Verified By Name
+     */
+    verified_by_name: string;
+    /**
+     * Verified On
+     */
+    verified_on: string;
 };
 
 /**
@@ -2086,6 +2126,24 @@ export type AlsoRequiredOut = {
      * Value
      */
     value: string | null;
+};
+
+/**
+ * AlternativeProcedureIn
+ */
+export type AlternativeProcedureIn = {
+    /**
+     * Amount
+     */
+    amount?: number | string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
 };
 
 /**
@@ -3639,6 +3697,24 @@ export type AttachmentIn = {
      * Upload Id
      */
     upload_id: string;
+};
+
+/**
+ * AttachmentOut
+ */
+export type AttachmentOut = {
+    /**
+     * Attachment Id
+     */
+    attachment_id: string;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
 };
 
 /**
@@ -5459,32 +5535,17 @@ export type AuthRedirectOut = {
 };
 
 /**
- * AuthorizationOut
- *
- * The authorization on file for the form and year (T-01's register): NOT-01's column,
- * NOT-02's card. `can_represent` is code's (a Form 2848 for the form and year).
+ * AuthorizationIn
  */
-export type AuthorizationOut = {
+export type AuthorizationIn = {
     /**
-     * Authorization Id
+     * Confirmation Ids
      */
-    authorization_id?: string | null;
+    confirmation_ids: Array<string>;
     /**
-     * Can Represent
+     * Signer Contact Id
      */
-    can_represent: boolean;
-    /**
-     * Kind
-     */
-    kind: 'form_8821' | 'form_2848' | 'state_poa' | 'none';
-    /**
-     * Label
-     */
-    label: string;
-    /**
-     * On File
-     */
-    on_file: boolean;
+    signer_contact_id: string;
 };
 
 /**
@@ -10557,6 +10618,26 @@ export type CloseWorkpaperOut = {
 };
 
 /**
+ * CodeRequestIn
+ */
+export type CodeRequestIn = {
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
+ * CodeVerifyIn
+ */
+export type CodeVerifyIn = {
+    /**
+     * Code
+     */
+    code: string;
+};
+
+/**
  * ComingNextOut
  *
  * A C1 milestone the client may see (R-02 AC-21); nothing about how far along it is.
@@ -11203,6 +11284,129 @@ export type ConfirmIn = {
 };
 
 /**
+ * ConfirmationCreateIn
+ */
+export type ConfirmationCreateIn = {
+    /**
+     * Address Value
+     */
+    address_value: string;
+    /**
+     * Channel
+     */
+    channel: 'accrued_link' | 'network_recorded' | 'mail_recorded';
+    /**
+     * Respondent Name
+     */
+    respondent_name: string;
+    /**
+     * Respondent Org
+     */
+    respondent_org: string;
+    /**
+     * Sample Item Ref
+     */
+    sample_item_ref?: string | null;
+    /**
+     * Tb Account Refs
+     */
+    tb_account_refs?: Array<string>;
+    /**
+     * Type
+     */
+    type: 'bank' | 'accounts_receivable' | 'accounts_payable' | 'other';
+};
+
+/**
+ * ConfirmationDetailOut
+ *
+ * The O2 480 drawer (AUD-14 a): Response, Reconciliation, Classification, Why surfaced.
+ */
+export type ConfirmationDetailOut = {
+    /**
+     * Address Verifications
+     */
+    address_verifications: Array<AddressVerificationOut>;
+    /**
+     * Finding Id
+     */
+    finding_id: string | null;
+    /**
+     * Lines
+     */
+    lines: Array<ConfirmationLineOut>;
+    /**
+     * Misstatement Id
+     */
+    misstatement_id: string | null;
+    reconciliation: AbacusModulesAssuranceConfirmationsContractModelsReconciliationOut | null;
+    response: ResponseSummaryOut | null;
+    row: ConfirmationRowOut;
+    /**
+     * Why Surfaced Suggestion Id
+     */
+    why_surfaced_suggestion_id: string | null;
+};
+
+/**
+ * ConfirmationIdOut
+ */
+export type ConfirmationIdOut = {
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * ConfirmationLineOut
+ */
+export type ConfirmationLineOut = {
+    /**
+     * Account Last4
+     */
+    account_last4: string | null;
+    /**
+     * Book Amount
+     */
+    book_amount: string;
+    /**
+     * Confirmed Amount
+     */
+    confirmed_amount: string | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Difference
+     */
+    difference: string | null;
+    /**
+     * Position
+     */
+    position: number;
+};
+
+/**
+ * ConfirmationLogOut
+ */
+export type ConfirmationLogOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'confirmation.create' | 'confirmation.export'>;
+    /**
+     * Items
+     */
+    items: Array<ConfirmationRowOut>;
+    /**
+     * Links Paused
+     */
+    links_paused: boolean;
+};
+
+/**
  * ConfirmationOut
  */
 export type ConfirmationOut = {
@@ -11254,6 +11458,91 @@ export type ConfirmationRequestOut = {
      * Sent At
      */
     sent_at: string;
+};
+
+/**
+ * ConfirmationRowOut
+ *
+ * One AUD-14 log row: C1…C4, its status and sub-line facts.
+ */
+export type ConfirmationRowOut = {
+    /**
+     * Address Independent
+     */
+    address_independent: boolean;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'confirmation.verify_address' | 'confirmation.request_authorization' | 'confirmation.send' | 'confirmation.record_response' | 'confirmation.reconcile' | 'confirmation.accept_reconciliation' | 'confirmation.record_alternative' | 'confirmation.close' | 'finding.create'>;
+    /**
+     * Authorization On File
+     */
+    authorization_on_file: boolean;
+    /**
+     * Book Total
+     */
+    book_total: string;
+    /**
+     * Channel
+     */
+    channel: 'accrued_link' | 'network_recorded' | 'mail_recorded';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Number
+     */
+    number: string;
+    /**
+     * Responded At
+     */
+    responded_at: string | null;
+    /**
+     * Respondent Org
+     */
+    respondent_org: string;
+    /**
+     * Sample Item Ref
+     */
+    sample_item_ref: string | null;
+    /**
+     * Second Request At
+     */
+    second_request_at: string | null;
+    /**
+     * Sent At
+     */
+    sent_at: string | null;
+    status: ConfirmationStatus;
+    /**
+     * Type
+     */
+    type: 'bank' | 'accounts_receivable' | 'accounts_payable' | 'other';
+    /**
+     * Viewed At
+     */
+    viewed_at: string | null;
+};
+
+/**
+ * ConfirmationStatus
+ */
+export type ConfirmationStatus = 'draft' | 'authorization_requested' | 'sent' | 'responded' | 'exception' | 'alternative_procedures' | 'closed';
+
+/**
+ * ConfirmationSummaryOut
+ */
+export type ConfirmationSummaryOut = {
+    coverage: AbacusModulesAssuranceConfirmationsContractModelsCoverageOut | null;
+    /**
+     * Tiles
+     */
+    tiles: Array<AbacusModulesAssuranceConfirmationsContractModelsStatusTileOut>;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -12822,30 +13111,6 @@ export type CoverageGapsOut = {
      * Unmapped Accounts
      */
     unmapped_accounts: Array<GraphAccountOut>;
-};
-
-/**
- * CoverageOut
- *
- * Material areas from C9 mapping against assessed risks, by code (AC4.7: 10 of 10, R8).
- */
-export type CoverageOut = {
-    /**
-     * Covered
-     */
-    covered: number;
-    /**
-     * Material Areas
-     */
-    material_areas: number;
-    /**
-     * Unaddressed Codes
-     */
-    unaddressed_codes: Array<string>;
-    /**
-     * Wording Run Id
-     */
-    wording_run_id: string | null;
 };
 
 /**
@@ -19719,6 +19984,31 @@ export type EvidenceVersionOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * ExceptionPrefillOut
+ *
+ * SHL-15's prefill; a person submits it through `assurance.api.record_finding` (or, below
+ * clearly trivial, `record_misstatement`).
+ */
+export type ExceptionPrefillOut = {
+    /**
+     * Below Clearly Trivial
+     */
+    below_clearly_trivial: boolean;
+    /**
+     * Confirmation Id
+     */
+    confirmation_id: string;
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Route
+     */
+    route: 'finding' | 'misstatement';
 };
 
 /**
@@ -27736,7 +28026,7 @@ export type IntakeOut = {
      * Assignee User Id
      */
     assignee_user_id?: string | null;
-    authorization: AuthorizationOut;
+    authorization: AbacusModulesNoticesContractAuthorizationOut;
     /**
      * Created Work Item Id
      */
@@ -35666,7 +35956,7 @@ export type NoticeRowOut = {
     agency_name: string;
     amounts: AmountsOut;
     assignee: NoticePersonOut | null;
-    authorization: AuthorizationOut;
+    authorization: AbacusModulesNoticesContractAuthorizationOut;
     /**
      * Client Entity Id
      */
@@ -41758,33 +42048,81 @@ export type RecipientsIn = {
 };
 
 /**
- * ReconciliationOut
+ * ReconciliationIn
  */
-export type ReconciliationOut = {
+export type ReconciliationIn = {
     /**
-     * Closing
+     * Classification
      */
-    closing: string | null;
+    classification?: 'factual' | 'judgmental' | 'projected' | null;
     /**
-     * Difference
+     * Items
      */
-    difference: string | null;
+    items: Array<ReconciliationItemIn>;
+};
+
+/**
+ * ReconciliationItemIn
+ */
+export type ReconciliationItemIn = {
     /**
-     * Expected Closing
+     * Amount
      */
-    expected_closing: string | null;
+    amount: number | string;
     /**
-     * Lines Total
+     * Citation Ids
      */
-    lines_total: string;
+    citation_ids: Array<string>;
     /**
-     * Opening
+     * Description
      */
-    opening: string | null;
+    description: string;
     /**
-     * Reconciled
+     * Item Date
      */
-    reconciled: boolean;
+    item_date?: string | null;
+    /**
+     * Recorded On
+     */
+    recorded_on?: string | null;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id?: string | null;
+};
+
+/**
+ * ReconciliationItemOut
+ */
+export type ReconciliationItemOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Date
+     */
+    item_date: string | null;
+    /**
+     * Proposed By Agent
+     */
+    proposed_by_agent: boolean;
+    /**
+     * Recorded On
+     */
+    recorded_on: string | null;
 };
 
 /**
@@ -41963,6 +42301,28 @@ export type RecordRefOut = {
      * Type
      */
     type: string;
+};
+
+/**
+ * RecordedResponseIn
+ */
+export type RecordedResponseIn = {
+    /**
+     * Agrees
+     */
+    agrees: boolean;
+    /**
+     * Confirmed Amounts
+     */
+    confirmed_amounts: Array<number | string>;
+    /**
+     * Evidence Version Ids
+     */
+    evidence_version_ids: Array<string>;
+    /**
+     * Received On
+     */
+    received_on: string;
 };
 
 /**
@@ -43788,6 +44148,222 @@ export type RespondedOut = {
 };
 
 /**
+ * RespondentAccountIn
+ */
+export type RespondentAccountIn = {
+    /**
+     * Account Last4
+     */
+    account_last4?: string | null;
+    /**
+     * Balance
+     */
+    balance: number | string;
+    /**
+     * Description
+     */
+    description: string;
+};
+
+/**
+ * RespondentAccountOut
+ */
+export type RespondentAccountOut = {
+    /**
+     * Balance Per Client
+     */
+    balance_per_client: string;
+    /**
+     * Description
+     */
+    description: string;
+};
+
+/**
+ * RespondentBalanceIn
+ */
+export type RespondentBalanceIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+};
+
+/**
+ * RespondentInvoiceOut
+ */
+export type RespondentInvoiceOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Invoice Date
+     */
+    invoice_date: string;
+    /**
+     * Number
+     */
+    number: string;
+};
+
+/**
+ * RespondentReceiptOut
+ */
+export type RespondentReceiptOut = {
+    /**
+     * Agrees
+     */
+    agrees: boolean;
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Receipt Id
+     */
+    receipt_id: string;
+    /**
+     * Reference
+     */
+    reference: string;
+    /**
+     * Respondent Balance
+     */
+    respondent_balance: string | null;
+    /**
+     * Submitted At
+     */
+    submitted_at: string;
+    /**
+     * Verified Email
+     */
+    verified_email: string;
+};
+
+/**
+ * RespondentRequestOut
+ *
+ * One confirmation's render data, and nothing else (AC-7.1, INV-4): no engagement, no other
+ * customer, no portal link, no staff.
+ */
+export type RespondentRequestOut = {
+    /**
+     * As Of
+     */
+    as_of: string;
+    /**
+     * Authorization Text
+     */
+    authorization_text: string;
+    /**
+     * Authorized By
+     */
+    authorized_by: string;
+    /**
+     * Authorized On
+     */
+    authorized_on: string;
+    /**
+     * Balance Per Client
+     */
+    balance_per_client: string | null;
+    /**
+     * Client Accounts
+     */
+    client_accounts: Array<RespondentAccountOut>;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Firm Name
+     */
+    firm_name: string;
+    /**
+     * Invoices
+     */
+    invoices: Array<RespondentInvoiceOut>;
+    /**
+     * List Every Account
+     */
+    list_every_account: boolean;
+    /**
+     * Reference
+     */
+    reference: string;
+    /**
+     * Respondent Org
+     */
+    respondent_org: string;
+    /**
+     * Type
+     */
+    type: 'bank' | 'accounts_receivable' | 'accounts_payable' | 'other';
+};
+
+/**
+ * RespondentResponseIn
+ */
+export type RespondentResponseIn = {
+    /**
+     * Accounts
+     */
+    accounts?: Array<RespondentAccountIn>;
+    /**
+     * Agrees
+     */
+    agrees: boolean;
+    /**
+     * Attachment Ids
+     */
+    attachment_ids?: Array<string>;
+    /**
+     * Attestation
+     */
+    attestation: true;
+    /**
+     * Balances
+     */
+    balances?: Array<RespondentBalanceIn>;
+    /**
+     * Explanation
+     */
+    explanation?: string | null;
+    /**
+     * Respondent Company
+     */
+    respondent_company: string;
+    /**
+     * Respondent Name
+     */
+    respondent_name: string;
+    /**
+     * Respondent Title
+     */
+    respondent_title?: string | null;
+};
+
+/**
+ * RespondentViewOut
+ *
+ * `open` with the request, `answered` (with the receipt right after a submission), or
+ * `expired`: the one answer for unknown, revoked, expired and paused links (DV-7).
+ */
+export type RespondentViewOut = {
+    /**
+     * Answered On
+     */
+    answered_on?: string | null;
+    receipt?: RespondentReceiptOut | null;
+    request?: RespondentRequestOut | null;
+    /**
+     * State
+     */
+    state: 'open' | 'expired' | 'answered';
+};
+
+/**
  * ResponseEditIn
  */
 export type ResponseEditIn = {
@@ -43917,6 +44493,44 @@ export type ResponseOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * ResponseSummaryOut
+ */
+export type ResponseSummaryOut = {
+    /**
+     * Agrees
+     */
+    agrees: boolean;
+    /**
+     * Attachment Version Ids
+     */
+    attachment_version_ids: Array<string>;
+    /**
+     * Attested
+     */
+    attested: boolean;
+    /**
+     * Explanation
+     */
+    explanation: string | null;
+    /**
+     * Respondent Name
+     */
+    respondent_name: string;
+    /**
+     * Respondent Title
+     */
+    respondent_title: string | null;
+    /**
+     * Submitted At
+     */
+    submitted_at: string;
+    /**
+     * Via
+     */
+    via: 'respondent_page' | 'recorded';
 };
 
 /**
@@ -48422,6 +49036,16 @@ export type SecuritySessionPageOut = {
 };
 
 /**
+ * SeenHashIn
+ */
+export type SeenHashIn = {
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
  * SeenVersionIn
  */
 export type SeenVersionIn = {
@@ -52088,7 +52712,7 @@ export type StatementOut = {
      * Printed Opening
      */
     printed_opening: boolean;
-    reconciliation: ReconciliationOut;
+    reconciliation: AbacusModulesEvidenceRoutesReconciliationOut;
     /**
      * Signs Flipped
      */
@@ -52242,17 +52866,6 @@ export type StatusMoveIn = {
      * To
      */
     to?: 'in_review' | 'in_progress' | 'approved' | 'delivered' | 'locked' | null;
-};
-
-/**
- * StatusTileOut
- */
-export type StatusTileOut = {
-    /**
-     * Count
-     */
-    count: number;
-    status: ReturnStatus;
 };
 
 /**
@@ -54214,7 +54827,7 @@ export type TaxReturnSummaryOut = {
     /**
      * Tiles
      */
-    tiles: Array<StatusTileOut>;
+    tiles: Array<AbacusModulesTaxReturnsContractStatusTileOut>;
     /**
      * Total
      */
@@ -58362,6 +58975,16 @@ export type VarianceThresholdsPayloadOutput = {
 };
 
 /**
+ * VerifiedOut
+ */
+export type VerifiedOut = {
+    /**
+     * Verified
+     */
+    verified: boolean;
+};
+
+/**
  * VersionActivityOut
  */
 export type VersionActivityOut = {
@@ -62055,6 +62678,123 @@ export type AbacusModulesAssuranceCompletionRoutesEqrOut = {
 };
 
 /**
+ * AcceptedOut
+ */
+export type AbacusModulesAssuranceConfirmationsContractModelsAcceptedOut = {
+    /**
+     * Accepted
+     */
+    accepted?: boolean;
+};
+
+/**
+ * AuthorizationOut
+ */
+export type AbacusModulesAssuranceConfirmationsContractModelsAuthorizationOut = {
+    /**
+     * Confirmation Ids
+     */
+    confirmation_ids: Array<string>;
+    /**
+     * Envelope Id
+     */
+    envelope_id: string;
+};
+
+/**
+ * CoverageOut
+ *
+ * 'AR sent for confirmation $897,950.00 of $5,860,000.00 (15.3%) · confirmed … · CT …'.
+ */
+export type AbacusModulesAssuranceConfirmationsContractModelsCoverageOut = {
+    /**
+     * Clearly Trivial
+     */
+    clearly_trivial: string;
+    /**
+     * Confirmed Total
+     */
+    confirmed_total: string;
+    /**
+     * Differences Total
+     */
+    differences_total: string;
+    /**
+     * Population Total
+     */
+    population_total: string;
+    /**
+     * Sent Pct
+     */
+    sent_pct: string;
+    /**
+     * Sent Total
+     */
+    sent_total: string;
+};
+
+/**
+ * ReconciliationOut
+ */
+export type AbacusModulesAssuranceConfirmationsContractModelsReconciliationOut = {
+    /**
+     * Accepted At
+     */
+    accepted_at: string | null;
+    /**
+     * Accepted By Name
+     */
+    accepted_by_name: string | null;
+    /**
+     * Balance Per Books
+     */
+    balance_per_books: string;
+    /**
+     * Balance Per Respondent
+     */
+    balance_per_respondent: string;
+    /**
+     * Below Clearly Trivial
+     */
+    below_clearly_trivial: boolean | null;
+    /**
+     * Classification
+     */
+    classification: 'factual' | 'judgmental' | 'projected' | null;
+    /**
+     * Items
+     */
+    items: Array<ReconciliationItemOut>;
+    /**
+     * Unreconciled
+     */
+    unreconciled: string;
+};
+
+/**
+ * StatusTileOut
+ */
+export type AbacusModulesAssuranceConfirmationsContractModelsStatusTileOut = {
+    /**
+     * Count
+     */
+    count: number;
+    status: ConfirmationStatus;
+};
+
+/**
+ * AcceptedOut
+ *
+ * A write's answer once live (its task widens it): the record's id.
+ */
+export type AbacusModulesAssuranceEbpContractAcceptedOut = {
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
  * ProviderOut
  */
 export type AbacusModulesAssuranceEbpContractProviderOut = {
@@ -62198,6 +62938,30 @@ export type AbacusModulesAssuranceFindingsContractMisstatementOut = {
 };
 
 /**
+ * CoverageOut
+ *
+ * Material areas from C9 mapping against assessed risks, by code (AC4.7: 10 of 10, R8).
+ */
+export type AbacusModulesAssurancePlanningContractCoverageOut = {
+    /**
+     * Covered
+     */
+    covered: number;
+    /**
+     * Material Areas
+     */
+    material_areas: number;
+    /**
+     * Unaddressed Codes
+     */
+    unaddressed_codes: Array<string>;
+    /**
+     * Wording Run Id
+     */
+    wording_run_id: string | null;
+};
+
+/**
  * ProviderOut
  */
 export type AbacusModulesConnectionsRoutesProviderOut = {
@@ -62291,6 +63055,36 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
      * Verified
      */
     verified: boolean;
+};
+
+/**
+ * ReconciliationOut
+ */
+export type AbacusModulesEvidenceRoutesReconciliationOut = {
+    /**
+     * Closing
+     */
+    closing: string | null;
+    /**
+     * Difference
+     */
+    difference: string | null;
+    /**
+     * Expected Closing
+     */
+    expected_closing: string | null;
+    /**
+     * Lines Total
+     */
+    lines_total: string;
+    /**
+     * Opening
+     */
+    opening: string | null;
+    /**
+     * Reconciled
+     */
+    reconciled: boolean;
 };
 
 /**
@@ -62599,6 +63393,35 @@ export type AbacusModulesMethodologyContractStepOut = {
 };
 
 /**
+ * AuthorizationOut
+ *
+ * The authorization on file for the form and year (T-01's register): NOT-01's column,
+ * NOT-02's card. `can_represent` is code's (a Form 2848 for the form and year).
+ */
+export type AbacusModulesNoticesContractAuthorizationOut = {
+    /**
+     * Authorization Id
+     */
+    authorization_id?: string | null;
+    /**
+     * Can Represent
+     */
+    can_represent: boolean;
+    /**
+     * Kind
+     */
+    kind: 'form_8821' | 'form_2848' | 'state_poa' | 'none';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * On File
+     */
+    on_file: boolean;
+};
+
+/**
  * ApprovalOut
  */
 export type AbacusModulesReportingContractApprovalOut = {
@@ -62713,6 +63536,17 @@ export type AbacusModulesSignaturesContractRevealIn = {
      * Reason
      */
     reason: string;
+};
+
+/**
+ * StatusTileOut
+ */
+export type AbacusModulesTaxReturnsContractStatusTileOut = {
+    /**
+     * Count
+     */
+    count: number;
+    status: ReturnStatus;
 };
 
 /**
@@ -65925,7 +66759,7 @@ export type EbpCertificationResponses = {
     /**
      * Successful Response
      */
-    200: AcceptedOut;
+    200: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpCertificationResponse = EbpCertificationResponses[keyof EbpCertificationResponses];
@@ -66469,7 +67303,7 @@ export type EbpForm5500KeyResponses = {
     /**
      * Successful Response
      */
-    200: AcceptedOut;
+    200: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpForm5500KeyResponse = EbpForm5500KeyResponses[keyof EbpForm5500KeyResponses];
@@ -66529,7 +67363,7 @@ export type EbpForm5500NoteResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpForm5500NoteResponse = EbpForm5500NoteResponses[keyof EbpForm5500NoteResponses];
@@ -66637,7 +67471,7 @@ export type EbpSchedule4iRenderResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpSchedule4iRenderResponse = EbpSchedule4iRenderResponses[keyof EbpSchedule4iRenderResponses];
@@ -66932,7 +67766,7 @@ export type EbpCorrectionResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpCorrectionResponse = EbpCorrectionResponses[keyof EbpCorrectionResponses];
@@ -67883,7 +68717,7 @@ export type EbpPlanReviewStartResponses = {
     /**
      * Successful Response
      */
-    202: AcceptedOut;
+    202: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpPlanReviewStartResponse = EbpPlanReviewStartResponses[keyof EbpPlanReviewStartResponses];
@@ -68052,7 +68886,7 @@ export type EbpProviderCreateResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpProviderCreateResponse = EbpProviderCreateResponses[keyof EbpProviderCreateResponses];
@@ -68116,7 +68950,7 @@ export type EbpProviderInviteResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpProviderInviteResponse = EbpProviderInviteResponses[keyof EbpProviderInviteResponses];
@@ -68292,7 +69126,7 @@ export type EbpTrustAdoptResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpTrustAdoptResponse = EbpTrustAdoptResponses[keyof EbpTrustAdoptResponses];
@@ -68784,7 +69618,7 @@ export type EstimateMethodResponses = {
     /**
      * Successful Response
      */
-    200: AcceptedOut;
+    200: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EstimateMethodResponse = EstimateMethodResponses[keyof EstimateMethodResponses];
@@ -68852,7 +69686,7 @@ export type EstimateConclusionResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EstimateConclusionResponse = EstimateConclusionResponses[keyof EstimateConclusionResponses];
@@ -69936,7 +70770,7 @@ export type PartyInInterestCreateResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type PartyInInterestCreateResponse = PartyInInterestCreateResponses[keyof PartyInInterestCreateResponses];
@@ -70172,7 +71006,7 @@ export type RelatedPartyCreateResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type RelatedPartyCreateResponse = RelatedPartyCreateResponses[keyof RelatedPartyCreateResponses];
@@ -70232,7 +71066,7 @@ export type RelatedPartyActivityResponses = {
     /**
      * Successful Response
      */
-    200: AcceptedOut;
+    200: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type RelatedPartyActivityResponse = RelatedPartyActivityResponses[keyof RelatedPartyActivityResponses];
@@ -70296,7 +71130,7 @@ export type RelatedPartyScreenOutResponses = {
     /**
      * Successful Response
      */
-    200: AcceptedOut;
+    200: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type RelatedPartyScreenOutResponse = RelatedPartyScreenOutResponses[keyof RelatedPartyScreenOutResponses];
@@ -71947,7 +72781,7 @@ export type EbpTestCreateResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpTestCreateResponse = EbpTestCreateResponses[keyof EbpTestCreateResponses];
@@ -72079,7 +72913,7 @@ export type EbpTestMarkResponses = {
     /**
      * Successful Response
      */
-    200: AcceptedOut;
+    200: AbacusModulesAssuranceEbpContractAcceptedOut;
 };
 
 export type EbpTestMarkResponse = EbpTestMarkResponses[keyof EbpTestMarkResponses];
@@ -78545,6 +79379,972 @@ export type ShareThreadResponses = {
 };
 
 export type ShareThreadResponse = ShareThreadResponses[keyof ShareThreadResponses];
+
+export type RespondentViewData = {
+    body?: never;
+    path: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/v1/confirm/{token}';
+};
+
+export type RespondentViewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RespondentViewError = RespondentViewErrors[keyof RespondentViewErrors];
+
+export type RespondentViewResponses = {
+    /**
+     * Successful Response
+     */
+    200: RespondentViewOut;
+};
+
+export type RespondentViewResponse = RespondentViewResponses[keyof RespondentViewResponses];
+
+export type UploadAttachmentData = {
+    body?: never;
+    path: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/v1/confirm/{token}/attachments';
+};
+
+export type UploadAttachmentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * The file type is not accepted
+     */
+    415: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type UploadAttachmentError = UploadAttachmentErrors[keyof UploadAttachmentErrors];
+
+export type UploadAttachmentResponses = {
+    /**
+     * Successful Response
+     */
+    201: AttachmentOut;
+};
+
+export type UploadAttachmentResponse = UploadAttachmentResponses[keyof UploadAttachmentResponses];
+
+export type RequestCodeData = {
+    body: CodeRequestIn;
+    path: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/v1/confirm/{token}/code';
+};
+
+export type RequestCodeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RequestCodeError = RequestCodeErrors[keyof RequestCodeErrors];
+
+export type RequestCodeResponses = {
+    /**
+     * Successful Response
+     */
+    202: AbacusModulesAssuranceConfirmationsContractModelsAcceptedOut;
+};
+
+export type RequestCodeResponse = RequestCodeResponses[keyof RequestCodeResponses];
+
+export type VerifyCodeData = {
+    body: CodeVerifyIn;
+    path: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/v1/confirm/{token}/code/verify';
+};
+
+export type VerifyCodeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type VerifyCodeError = VerifyCodeErrors[keyof VerifyCodeErrors];
+
+export type VerifyCodeResponses = {
+    /**
+     * Successful Response
+     */
+    200: VerifiedOut;
+};
+
+export type VerifyCodeResponse = VerifyCodeResponses[keyof VerifyCodeResponses];
+
+export type SubmitResponseData = {
+    body: RespondentResponseIn;
+    path: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/v1/confirm/{token}/response';
+};
+
+export type SubmitResponseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SubmitResponseError = SubmitResponseErrors[keyof SubmitResponseErrors];
+
+export type SubmitResponseResponses = {
+    /**
+     * Successful Response
+     */
+    201: RespondentReceiptOut;
+};
+
+export type SubmitResponseResponse = SubmitResponseResponses[keyof SubmitResponseResponses];
+
+export type GetConfirmationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}';
+};
+
+export type GetConfirmationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetConfirmationError = GetConfirmationErrors[keyof GetConfirmationErrors];
+
+export type GetConfirmationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationDetailOut;
+};
+
+export type GetConfirmationResponse = GetConfirmationResponses[keyof GetConfirmationResponses];
+
+export type AcceptReconciliationData = {
+    body: SeenHashIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/accept-reconciliation';
+};
+
+export type AcceptReconciliationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AcceptReconciliationError = AcceptReconciliationErrors[keyof AcceptReconciliationErrors];
+
+export type AcceptReconciliationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationIdOut;
+};
+
+export type AcceptReconciliationResponse = AcceptReconciliationResponses[keyof AcceptReconciliationResponses];
+
+export type VerifyAddressData = {
+    body: AddressVerificationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/address-verifications';
+};
+
+export type VerifyAddressErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VerifyAddressError = VerifyAddressErrors[keyof VerifyAddressErrors];
+
+export type VerifyAddressResponses = {
+    /**
+     * Successful Response
+     */
+    201: AddressVerificationOut;
+};
+
+export type VerifyAddressResponse = VerifyAddressResponses[keyof VerifyAddressResponses];
+
+export type RecordAlternativeData = {
+    body: AlternativeProcedureIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/alternative-procedures';
+};
+
+export type RecordAlternativeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RecordAlternativeError = RecordAlternativeErrors[keyof RecordAlternativeErrors];
+
+export type RecordAlternativeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationIdOut;
+};
+
+export type RecordAlternativeResponse = RecordAlternativeResponses[keyof RecordAlternativeResponses];
+
+export type CloseConfirmationData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/close';
+};
+
+export type CloseConfirmationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CloseConfirmationError = CloseConfirmationErrors[keyof CloseConfirmationErrors];
+
+export type CloseConfirmationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationIdOut;
+};
+
+export type CloseConfirmationResponse = CloseConfirmationResponses[keyof CloseConfirmationResponses];
+
+export type ExceptionPrefillData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/exception';
+};
+
+export type ExceptionPrefillErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExceptionPrefillError = ExceptionPrefillErrors[keyof ExceptionPrefillErrors];
+
+export type ExceptionPrefillResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExceptionPrefillOut;
+};
+
+export type ExceptionPrefillResponse = ExceptionPrefillResponses[keyof ExceptionPrefillResponses];
+
+export type ReconcileData = {
+    body: ReconciliationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/reconciliation';
+};
+
+export type ReconcileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReconcileError = ReconcileErrors[keyof ReconcileErrors];
+
+export type ReconcileResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationIdOut;
+};
+
+export type ReconcileResponse = ReconcileResponses[keyof ReconcileResponses];
+
+export type RecordResponseData = {
+    body: RecordedResponseIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/record-response';
+};
+
+export type RecordResponseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RecordResponseError = RecordResponseErrors[keyof RecordResponseErrors];
+
+export type RecordResponseResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationIdOut;
+};
+
+export type RecordResponseResponse = RecordResponseResponses[keyof RecordResponseResponses];
+
+export type RespondentPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/respondent-preview';
+};
+
+export type RespondentPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RespondentPreviewError = RespondentPreviewErrors[keyof RespondentPreviewErrors];
+
+export type RespondentPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: RespondentViewOut;
+};
+
+export type RespondentPreviewResponse = RespondentPreviewResponses[keyof RespondentPreviewResponses];
+
+export type RevokeLinkData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/revoke-link';
+};
+
+export type RevokeLinkErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RevokeLinkError = RevokeLinkErrors[keyof RevokeLinkErrors];
+
+export type RevokeLinkResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationIdOut;
+};
+
+export type RevokeLinkResponse = RevokeLinkResponses[keyof RevokeLinkResponses];
+
+export type SecondRequestData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/second-request';
+};
+
+export type SecondRequestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SecondRequestError = SecondRequestErrors[keyof SecondRequestErrors];
+
+export type SecondRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationIdOut;
+};
+
+export type SecondRequestResponse = SecondRequestResponses[keyof SecondRequestResponses];
+
+export type SendConfirmationData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/send';
+};
+
+export type SendConfirmationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SendConfirmationError = SendConfirmationErrors[keyof SendConfirmationErrors];
+
+export type SendConfirmationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationIdOut;
+};
+
+export type SendConfirmationResponse = SendConfirmationResponses[keyof SendConfirmationResponses];
 
 export type RunConflictCheckData = {
     body: ConflictCheckIn;
@@ -96066,7 +97866,7 @@ export type RiskCoverageResponses = {
     /**
      * Successful Response
      */
-    200: CoverageOut;
+    200: AbacusModulesAssurancePlanningContractCoverageOut;
 };
 
 export type RiskCoverageResponse = RiskCoverageResponses[keyof RiskCoverageResponses];
@@ -141751,6 +143551,300 @@ export type AdjustedTbResponses = {
 };
 
 export type AdjustedTbResponse = AdjustedTbResponses[keyof AdjustedTbResponses];
+
+export type ListConfirmationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/confirmations';
+};
+
+export type ListConfirmationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListConfirmationsError = ListConfirmationsErrors[keyof ListConfirmationsErrors];
+
+export type ListConfirmationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationLogOut;
+};
+
+export type ListConfirmationsResponse = ListConfirmationsResponses[keyof ListConfirmationsResponses];
+
+export type CreateConfirmationData = {
+    body: ConfirmationCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/confirmations';
+};
+
+export type CreateConfirmationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateConfirmationError = CreateConfirmationErrors[keyof CreateConfirmationErrors];
+
+export type CreateConfirmationResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConfirmationIdOut;
+};
+
+export type CreateConfirmationResponse = CreateConfirmationResponses[keyof CreateConfirmationResponses];
+
+export type RequestAuthorization2Data = {
+    body: AuthorizationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/confirmations/authorization';
+};
+
+export type RequestAuthorization2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RequestAuthorization2Error = RequestAuthorization2Errors[keyof RequestAuthorization2Errors];
+
+export type RequestAuthorization2Responses = {
+    /**
+     * Successful Response
+     */
+    201: AbacusModulesAssuranceConfirmationsContractModelsAuthorizationOut;
+};
+
+export type RequestAuthorization2Response = RequestAuthorization2Responses[keyof RequestAuthorization2Responses];
+
+export type ExportConfirmationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/confirmations/export.xlsx';
+};
+
+export type ExportConfirmationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExportConfirmationsError = ExportConfirmationsErrors[keyof ExportConfirmationsErrors];
+
+export type ExportConfirmationsResponses = {
+    /**
+     * Response Export Confirmations
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ExportConfirmationsResponse = ExportConfirmationsResponses[keyof ExportConfirmationsResponses];
+
+export type ConfirmationSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/confirmations/summary';
+};
+
+export type ConfirmationSummaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConfirmationSummaryError = ConfirmationSummaryErrors[keyof ConfirmationSummaryErrors];
+
+export type ConfirmationSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationSummaryOut;
+};
+
+export type ConfirmationSummaryResponse = ConfirmationSummaryResponses[keyof ConfirmationSummaryResponses];
 
 export type ConsultationsData = {
     body?: never;

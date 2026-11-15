@@ -735,6 +735,10 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     # ADR-152 amendment (DEC-1281): the DocuSeal webhook, signature-verified, under
     # `PROVIDER_WEBHOOK`.
     | {"/v1/webhooks/docuseal/{tenant_id}/{install_id}"}
+    # ADR-152 amendment (proposed; A-08-T02, DEC-5029): the public confirmation family, under
+    # `LINK_PRINCIPAL`, exactly the five paths the amendment enumerates.
+    | {"/v1/confirm/{token}", "/v1/confirm/{token}/code", "/v1/confirm/{token}/code/verify"}
+    | {"/v1/confirm/{token}/attachments", "/v1/confirm/{token}/response"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"

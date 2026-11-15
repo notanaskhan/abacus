@@ -64,6 +64,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.archive_additions.AdditionDecided
+  address_not_verified:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.confirmations_contract.AddressNotVerified
+    summary: 'Send refused: no address verification cites a non-client source (AC-6.1).'
   adjustment_state:
     status: 409
     raised_by:
@@ -110,6 +115,11 @@ codes:
     raised_by:
     - abacus.modules.agents.review_start.ReviewUnavailable
     summary: No real model route is enabled for the reviewer here (TASK-059 D3).
+  already_answered:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.confirmations_contract.AlreadyAnswered
+    summary: 'A replayed response: the link was consumed (AC-7.5).'
   already_approved:
     status: 409
     raised_by:
@@ -288,6 +298,11 @@ codes:
     raised_by:
     - abacus.modules.identity.service_lines.AuditLocked
     summary: Audit content is visible to the engagement team only; it can never be widened.
+  authorization_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.confirmations_contract.AuthorizationMissing
+    summary: 'Send refused: the client''s authorization envelope is not on file (AC-6.3).'
   authorization_not_on_file:
     status: 409
     raised_by:
@@ -562,6 +577,7 @@ codes:
     raised_by:
     - abacus.modules.organisations.consent_gate.TriConsentRequired
     - abacus.modules.requests.lifecycle.ConsentRequired
+    - abacus.modules.tax.instrument_reader.ConsentRequired
     - abacus.modules.tax.memo_service.ConsentRequired
     summary: A read of tax return information without the taxpayer's `use` and `ai_disclosure` consents
       in force (`facts.client_entity_id`, `facts.purpose`).
@@ -1541,6 +1557,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.fiduciary_contract.InterpretationNotApproved
+    - abacus.modules.tax.instruments.service.NotApproved
     summary: 'AC-6.5: no approved instrument interpretation, so the trust calculation cannot compute.'
   invalid:
     status: 422
@@ -2118,6 +2135,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.unlock.NotLocked
     summary: The file isn't a password-protected PDF.
+  not_monthly_close:
+    status: 422
+    raised_by:
+    - abacus.modules.closes.service.NotMonthlyClose
+    summary: Closes are generated only for a `cas_monthly_close` engagement.
   not_moved:
     status: 409
     raised_by:
@@ -2264,6 +2286,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.holds.NotifyNotMember
     summary: Everyone on the notify list must be a current member of the firm's staff.
+  number_provenance:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.instrument_tools.NumberProvenance
+    summary: A figure in the proposed text that is none of the facts it names (INV-2).
   office_code_taken:
     status: 409
     raised_by:
@@ -2290,6 +2317,10 @@ codes:
     - abacus.modules.identity.offshore.OffshoreConsentRequired
     summary: An offshore member can't be assigned to a client without a valid offshore-disclosure consent
       (AC9.3).
+  on_hold_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.closes.service.OnHoldReasonRequired
   one_hq:
     status: 409
     raised_by:
@@ -3001,6 +3032,11 @@ codes:
     - abacus.modules.platform.incident_register.SecondDeciderInvalid
     summary: The first decision names nobody, or someone who cannot fill the other seat (a partner if
       the QI decides first, the QI if a partner does).
+  segmentation_final:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.instruments.service.SegmentationFinal
+    summary: Clauses are marked by hand only while the segmentation needs review.
   segregation:
     status: 409
     raised_by:
@@ -3232,6 +3268,7 @@ codes:
     - abacus.modules.assurance.mapping_live.StaleVersion
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.assurance.rep_letters.StaleLetter
+    - abacus.modules.closes.service.StaleClose
     - abacus.modules.collaboration.errors.StaleVersion
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
@@ -3589,6 +3626,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.sign_offs.UncitedChange
+    - abacus.modules.tax.instruments.service.UncitedChange
     summary: 'R-SO-6: an agent value carries no citation (INV-2).'
   uncited_finding:
     status: 422
@@ -3708,6 +3746,11 @@ codes:
     raised_by:
     - abacus.modules.agents.proposal_slots.UnregisteredTarget
     summary: Nobody accepts suggestions on this target type.
+  unverified_citation:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.instrument_tools.UnverifiedCitation
+    summary: 'A clause citation the verifier refused: the proposal is rejected whole (INV-2).'
   unverified_sources:
     status: 409
     raised_by:
@@ -3751,6 +3794,7 @@ codes:
     - abacus.modules.reporting.statements.StaleAnswer
     - abacus.modules.tax.estimates.EstimateMoved
     - abacus.modules.tax.extensions.ExtensionMoved
+    - abacus.modules.tax.instruments.service.VersionConflict
     - abacus.modules.workpapers.attribute_grid.TestMoved
     - abacus.modules.workpapers.core.VersionConflict
     - abacus.modules.workpapers.procedures.ProcedureMoved

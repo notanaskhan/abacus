@@ -99,6 +99,7 @@ from abacus.modules.assurance.completion_targets import (
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
+from abacus.modules.assurance.confirmations_contract import router as confirmations_router
 from abacus.modules.assurance.draft_mappings import gap_inputs, risk_inputs, risk_narrative_inputs
 from abacus.modules.assurance.ebp_contract import ResultIn as EbpResultIn  # TASK-7815: the seed
 from abacus.modules.assurance.ebp_contract import TestIn as EbpTestIn  # TASK-7815: the seed
@@ -277,6 +278,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     audit_completion_router,  # A-07-T04 AUD-18/AUD-19 stub (docs/contracts/audit-completion.md)
     audit_release_router,  # A-07-T05 AUD-21 to AUD-25 stub (docs/contracts/audit-completion.md)
     schedule_h_mappings_router,  # A-05-T62 close: the firm's Schedule H line mapping (DEC-2823)
+    confirmations_router,  # A-08-T06 confirmations stub (docs/contracts/confirmations.md)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
