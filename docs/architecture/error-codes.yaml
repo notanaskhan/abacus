@@ -524,6 +524,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.aud27.ConclusionAlreadyRequested
+  confirm_name_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.integrations.connect_contract.ConfirmNameMismatch
   confirmed_out_of_order:
     status: 422
     raised_by:
@@ -533,6 +537,10 @@ codes:
     status: 409
     raised_by:
     - abacus.kernel.errors.DomainConflict
+  connect_declined:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.connect_contract.ConnectDeclined
   connection_failed:
     status: 409
     raised_by:
@@ -1250,6 +1258,10 @@ codes:
     raised_by:
     - abacus.modules.requests.client_undo.FirmAlreadyActed
     summary: 'The firm has acted on the request or the binder since: the client''s Undo is closed.'
+  firm_app_disabled:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.connect_contract.FirmAppDisabled
   firm_role_held:
     status: 409
     raised_by:
@@ -1561,6 +1573,10 @@ codes:
     raised_by:
     - abacus.modules.communications.intake_contract.IntakeNotAllowed
     summary: The principal's shell cannot use intake (third party, K-1 only, TCWG, prospect).
+  integration_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.connect_contract.IntegrationNotAvailable
   integrity_failed:
     status: 409
     raised_by:
@@ -1595,6 +1611,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.connections.connect.InvalidState
+    - abacus.modules.integrations.connect_contract.InvalidState
     summary: 'The state is unknown, someone else''s, already used or expired: nothing is created.'
   invitation_expired:
     status: 409
@@ -2613,6 +2630,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.review.service.PreparerCannotReview
+  prerequisite_scope_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.integrations.connect_contract.PrerequisiteScopeMissing
   presumption_not_rebuttable:
     status: 422
     raised_by:

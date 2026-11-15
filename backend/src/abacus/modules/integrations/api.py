@@ -38,6 +38,7 @@ from abacus.modules.integrations.catalog import (
     listing_of,
 )
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
+from abacus.modules.integrations.connect_contract import router as connect_router
 from abacus.modules.integrations.engine_profile import EngineFieldProfile, engine_field_profile
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -92,6 +93,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     engine_settings_router,  # ADM-08 tax-engine settings (T-01-T02 stub)
     portal_router,  # C20 v1: POR-16, live since A-02-T16
     firm_router,  # C20 v1: reconnect requests (live since A-02-T23); pulls a stub until T30
+    connect_router,  # C20 v2: W-01-T03 Connect stub (WB-10, WB-11)
 )
 
 __all__ = [
