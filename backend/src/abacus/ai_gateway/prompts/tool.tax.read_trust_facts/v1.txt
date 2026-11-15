@@ -1,0 +1,1 @@
+Read the trust's facts for the tax year: distributions and expenses with their fact ids and amounts, the trust profile's facts and the prior year's approved determinations. Name a figure only by its fact id.
