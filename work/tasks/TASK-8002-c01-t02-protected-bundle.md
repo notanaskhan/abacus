@@ -33,3 +33,4 @@ Rollback: revert the PR; every flag is default off and no route mounts yet.
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-5002 | QC-3 fails closed: staff denied until a per-role function condition exists | no |
+- `2026-11-15` — QC-3's partial closed by TASK-8071 (DEC-5057): `staff_function_in: close_preparer` on `close_run.start` and `close_run.retry`.

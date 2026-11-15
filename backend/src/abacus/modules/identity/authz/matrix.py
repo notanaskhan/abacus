@@ -100,6 +100,9 @@ CONDITION_KEYS: frozenset[str] = frozenset(
     # A-08-T03 (SPEC-657; ADR-146, ADR-152 amendment): the target names the actor as its approver;
     # a link principal reaches only the one object its link names; and its email code is verified.
     | {"is_named_approver", "link_scope_only", "email_verified"}
+    # C-01-T02 (QC-3, DEC-5057): a function the actor must hold on the work item when `staff` is
+    # the only role granting the action (a close's `close_preparer`); other roles are unaffected.
+    | {"staff_function_in"}
 )
 # T-01-T11: the §7216 purposes a `consent` condition may list (0402's `consents.purpose`).
 CONSENT_PURPOSES: tuple[str, ...] = (
@@ -140,6 +143,8 @@ class Rule:
     # F-03-T24 conditions (§4.4); empty or None when the action has none.
     level_in: frozenset[str] = frozenset()
     function_in: frozenset[str] = frozenset()
+    # C-01-T02 (QC-3): binds staff only; see CONDITION_KEYS.
+    staff_function_in: frozenset[str] = frozenset()
     not_offshore: bool = False
     attest_client: Literal["deny", "only"] | None = None
     gates_met: tuple[str, ...] = ()
@@ -191,6 +196,7 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
     modifiers: set[str] = set()
     level_in: frozenset[str] = frozenset()
     function_in: frozenset[str] = frozenset()
+    staff_function_in: frozenset[str] = frozenset()
     gates_met: tuple[str, ...] = ()
     consent: frozenset[str] = frozenset()
     attest_client: Literal["deny", "only"] | None = None
@@ -202,6 +208,8 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
             level_in = frozenset(_listed(action, key, value, LEVELS))
         elif key == "function_in":
             function_in = frozenset(_listed(action, key, value, FUNCTIONS))
+        elif key == "staff_function_in":
+            staff_function_in = frozenset(_listed(action, key, value, FUNCTIONS))
         elif key == "gates_met":
             gates_met = tuple(_listed(action, key, value, GATES))
         elif key == "consent":
@@ -244,6 +252,7 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
         independence="independence" in modifiers,
         level_in=level_in,
         function_in=function_in,
+        staff_function_in=staff_function_in,
         not_offshore="not_offshore" in flags,
         attest_client=attest_client,
         gates_met=gates_met,

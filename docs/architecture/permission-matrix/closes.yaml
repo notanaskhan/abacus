@@ -6,9 +6,8 @@
 # task_scope (agents.yaml, review.yaml). Platform support and every portal principal are denied on
 # every firm route. CAS closes are non-attest work, so independence is not required (an attest
 # client's entries are held by classify_entry, P-13). Walls and tenant apply as everywhere.
-# QC-3 (staff start runs and incorporate only with close_preparer on that close): function_in
-# binds every allowed role, so staff is denied here until the compiler has a per-role condition
-# (TASK-8002 partial); partners, managers and seniors start runs.
+# QC-3 (staff start runs only with close_preparer on that close): `staff_function_in` binds staff
+# alone (DEC-5057, TASK-8071); partners, managers and seniors start runs without it.
 
 actions:
   # --- Portfolio and the close record (CLS-01, CLS-02) ---
@@ -17,8 +16,8 @@ actions:
   close.assign:             {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # PUT /v1/closes/{id}/assignees: close_preparer, close_reviewer (a Senior sees read-only pickers)
   close.status_move:        {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/closes/{id}/status: In review, back to In progress, the On hold flag (human-only; server gates)
   # --- Runs (CLS-02 a to e) ---
-  close_run.start:          {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/closes/{id}/runs (human-only; Idempotency-Key)
-  close_run.retry:          {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # retry a failed procedure as a new step (human-only)
+  close_run.start:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, staff_function_in: close_preparer, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/closes/{id}/runs (human-only; Idempotency-Key)
+  close_run.retry:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, staff_function_in: close_preparer, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # retry a failed procedure as a new step (human-only)
   # --- Close plans and templates (CLS-09) ---
   close_plan.read:          {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, platform_support: deny, platform_support_content: deny, agent: task_scope, system: deny}   # plan, versions and history
   close_plan.edit:          {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # drafts, rows, request templates (If-Match)

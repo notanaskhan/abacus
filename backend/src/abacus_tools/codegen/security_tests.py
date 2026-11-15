@@ -122,6 +122,8 @@ def expected(rule: Rule, role: str) -> str:
         return "deny"
     if rule.level_in or rule.function_in or rule.not_offshore:
         return "deny"
+    if rule.staff_function_in and role == "staff":
+        return "deny"  # C-01-T02 (QC-3): no work-item functions in the harness (fail closed)
     if rule.attest_client is not None or rule.gates_met:
         return "deny"
     if rule.scope_only and role in CLIENT_ROLES:
