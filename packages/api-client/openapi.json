@@ -58385,6 +58385,32 @@
             "title": "Scenario",
             "type": "string"
           },
+          "scenario_banner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Scenario Banner",
+            "x-tri": true
+          },
+          "scenario_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Scenario Note",
+            "x-tri": true
+          },
           "status": {
             "$ref": "#/components/schemas/InstrumentInterpretationStatus",
             "cls": "internal"

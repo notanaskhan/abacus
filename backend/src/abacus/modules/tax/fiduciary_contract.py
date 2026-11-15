@@ -213,6 +213,10 @@ class InstrumentInterpretationOut(BaseModel):
     approved_by_name: Annotated[str | None, Confidential]
     approved_on: Annotated[date | None, Internal]
     clause_citation_count: Annotated[int, Internal]
+    # T-07-T15 (TXT-01 c): the principal-invaded scenario's banner and note, composed by code
+    # from the engine's figures (T-07-T16 fills them); the browser never composes a figure.
+    scenario_banner: Annotated[str | None, Tri] = None
+    scenario_note: Annotated[str | None, Tri] = None
 
 
 class InstrumentDeterminationOut(BaseModel):

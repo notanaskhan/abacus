@@ -2,3 +2,4 @@
 export { useDraftK1Source } from "./k1";
 export * from "./agents";
 export * from "./entityReturn";
+export * from "./instrument";

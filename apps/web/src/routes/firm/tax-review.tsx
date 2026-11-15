@@ -161,6 +161,35 @@ function Workspace({
   );
 }
 
+// TXT-01 (T-07-T15): the trust's instrument under the 1041's Review, behind
+// `tax.fiduciary_workpapers`; `?ov=signoff` opens SHL-12 at L3 on the interpretation.
+const InstrumentScreen = lazyScreen(async () => (await import("../../screens/TXT-01")).TXT01);
+
+export const taxInstrumentRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/review/instrument",
+  validateSearch,
+  component: function TaxInstrumentPage(): JSX.Element {
+    const returnId = useParam("returnId");
+    const navigate = useNavigate();
+    return (
+      <Workspace tab="review" title="Instrument">
+        <FeatureGate
+          flag="tax.fiduciary_workpapers"
+          fallback={<FlagOffState flag="tax.fiduciary_workpapers" label="Instrument" />}
+        >
+          <InstrumentScreen
+            returnId={returnId}
+            onApprove={() => {
+              void navigate({ to: ".", search: { ov: "signoff" } });
+            }}
+          />
+        </FeatureGate>
+      </Workspace>
+    );
+  },
+});
+
 export const taxReviewRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/tax-returns/$returnId/review/$section",
@@ -276,6 +305,7 @@ export const taxResidencyRoute = createRoute({
 });
 
 export const taxReviewRoutes = [
+  taxInstrumentRoute,
   taxReviewRoute,
   taxIssuesRoute,
   taxActivityRoute,
