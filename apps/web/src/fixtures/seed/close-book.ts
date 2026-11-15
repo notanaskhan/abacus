@@ -24,6 +24,7 @@ import type {
   ReconcilingItemOut,
   RequestTemplateOut,
   RunningClosesOut,
+  StatementRegionOut,
 } from "@abacus/api-client";
 import { CLOSE_IDS } from "./closes";
 import { entityIdOf, slugOfClient } from "./clients";
@@ -132,6 +133,7 @@ function row([
   return {
     close_id: closeIdOfRef(ref),
     engagement_id: stableId(`engagement:${slug}:2026-close`),
+    client_id: stableId(`client:${slug}`),
     client_entity_id: entityIdOf(slug, client),
     client_name: client,
     period: PERIOD,
@@ -239,10 +241,10 @@ function groups(): CloseTaskGroupOut[] {
     key,
     label,
     procedures: procs.map(([name, status, meta, open], i) => {
-      const id = stableId(`close-procedure:${key}:${i}`);
+      const id = stableId(`close-procedure:${key}:${String(i)}`);
       return {
         procedure_id: id,
-        run_step_id: stableId(`run-step:${key}:${i}`),
+        run_step_id: stableId(`run-step:${key}:${String(i)}`),
         label: name,
         status,
         meta,
@@ -310,7 +312,7 @@ export function runningCloses(): RunningClosesOut {
 // --- CLS-05 Operating Checking ••4410 ---------------------------------------------------------
 
 const STATEMENT = stableId("evidence-version:copperleaf:frontrange-4410-2026-08");
-const region = (key: string, page: number, line: number) => ({
+const region = (key: string, page: number, line: number): StatementRegionOut => ({
   page_no: page,
   bbox: [0.06, 0.18 + line * 0.045, 0.88, 0.04],
   citation_id: stableId(`citation:4410:${key}`),
@@ -342,12 +344,12 @@ export const ISSUE_IDS = {
 /** CLS-05 a: difference $0.00 with two open items (the stale #2281 and the $380.00 refund). */
 export function copperleafReconciliation4410(): CloseReconciliationOut {
   const statementLines: CloseStatementLineOut[] = PAGE_2.map(([date, description, w, d], i) => ({
-    statement_line_id: stableId(`statement-line:4410:${i}`),
+    statement_line_id: stableId(`statement-line:4410:${String(i)}`),
     txn_date: date,
     description,
     withdrawal: w,
     deposit: d,
-    region: region(`line-${i}`, 2, i),
+    region: region(`line-${String(i)}`, 2, i),
     matched: description !== "ROCKY RIDGE DAIRY CO REFUND",
     low_confidence: false,
   }));
@@ -484,14 +486,21 @@ const FLUX: Flux[] = [
   ["insurance", "Insurance", 700, 700],
   ["interest", "Interest expense", 525, 520],
 ];
-const money = (n: number) => n.toFixed(2);
+/** Whole dollars as the contract's two-place decimal string ("7670.00", "-1530.00"). */
+const money = (n: number): string => `${String(Math.trunc(n))}.00`;
+/** Tenths of a percent as a one-place decimal string ("12.5", "-38.4", "0.0"). */
+function tenths(t: number): string {
+  const sign = t < 0 ? "-" : "";
+  const abs = Math.abs(t);
+  return `${sign}${String(Math.floor(abs / 10))}.${String(abs % 10)}`;
+}
 
 /** CLS-10 a: 13 lines tested, 2 over both thresholds (Payroll explained as a draft, Repairs not). */
 export function copperleafFlux(): FluxSetOut {
   const lines: FluxLineOut[] = FLUX.map(([key, caption, prior, current]) => {
     const change = current - prior;
-    const pct = Math.round((change * 1000) / prior) / 10;
-    const over = Math.abs(pct) > 10 && Math.abs(change) > 2_500;
+    const t = Math.round((change * 1000) / prior);
+    const over = Math.abs(t) > 100 && Math.abs(change) > 2_500;
     const status: FluxLineOut["status"] = !over
       ? "within_threshold"
       : key === "payroll"
@@ -504,7 +513,7 @@ export function copperleafFlux(): FluxSetOut {
       prior: money(prior),
       current: money(current),
       change: money(change),
-      change_pct: pct.toFixed(1),
+      change_pct: tenths(t),
       test: over ? "over_both" : "within",
       status,
       drivers:
@@ -518,7 +527,7 @@ export function copperleafFlux(): FluxSetOut {
             ).map(([label, amount], i) => ({
               label,
               amount: money(amount),
-              citation_id: stableId(`citation:payroll-register:${i}`),
+              citation_id: stableId(`citation:payroll-register:${String(i)}`),
             }))
           : [],
       row_version: 1,
@@ -776,7 +785,7 @@ export const REQUEST_TEMPLATES = [
 export function copperleafPlanV3(): PlanVersionOut {
   const rows: PlanRowOut[] = PLAN.map(
     ([cls, account, procedure, method, evidence, source, review], i) => ({
-      row_id: stableId(`close-plan-row:copperleaf:v3:${i}`),
+      row_id: stableId(`close-plan-row:copperleaf:v3:${String(i)}`),
       position: i,
       account_name: account,
       account_class: cls,
@@ -792,7 +801,7 @@ export function copperleafPlanV3(): PlanVersionOut {
     }),
   );
   const requests: RequestTemplateOut[] = REQUEST_TEMPLATES.map((title, i) => ({
-    template_id: stableId(`close-request-template:copperleaf:v3:${i}`),
+    template_id: stableId(`close-request-template:copperleaf:v3:${String(i)}`),
     title,
     category_path: [],
     due_business_day: 3,

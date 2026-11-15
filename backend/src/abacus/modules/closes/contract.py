@@ -197,6 +197,7 @@ class CloseRowOut(BaseModel):
 
     close_id: Annotated[UUID, Internal]
     engagement_id: Annotated[UUID, Internal]
+    client_id: Annotated[UUID, Internal]  # C-01-T33: "View plan" opens CLS-09 by client
     client_entity_id: Annotated[UUID | None, Internal]
     client_name: Annotated[str, Confidential]
     period: Period

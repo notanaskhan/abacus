@@ -21737,6 +21737,12 @@
             "cls": "internal",
             "title": "Client Entity Id"
           },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
           "client_name": {
             "cls": "confidential",
             "title": "Client Name",
@@ -21857,6 +21863,7 @@
         "required": [
           "close_id",
           "engagement_id",
+          "client_id",
           "client_entity_id",
           "client_name",
           "period",
