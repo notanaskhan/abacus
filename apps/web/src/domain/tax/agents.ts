@@ -9,6 +9,7 @@ export const ENTITY_CAPABILITIES = {
   memo: "tax.memo_drafter",
   mapper: "tax.account_mapper",
   agreement: "tax.agreement_reader",
+  fixRunner: "issues.fix_runner", // TXP-10's fix instructions (T-05-T66)
 } as const;
 export type EntityCapability = (typeof ENTITY_CAPABILITIES)[keyof typeof ENTITY_CAPABILITIES];
 

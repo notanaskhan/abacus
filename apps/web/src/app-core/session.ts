@@ -18,6 +18,8 @@ export const MODULES = [
   "tax_returns",
   "ebp_audits",
   "assurance_completion", // A-06-T37 (0713): AUD-15/16/17/20 and adjustments
+  "tax_entity_returns", // T-05-T04: TXP-00 to TXP-11 (requires_review; T-05-T66 locks without it)
+  "cas_closes", // C-01-T02: CLS-01 to CLS-10 and POR-11
 ] as const;
 export type Module = (typeof MODULES)[number];
 

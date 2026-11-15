@@ -27,6 +27,7 @@ import {
   amount,
 } from "@abacus/ui";
 import type { JSX } from "react";
+import { AgentsOffNote, ENTITY_CAPABILITIES } from "../../domain/tax";
 import { COPY } from "./copy";
 
 export type Txp02View = "account" | "line";
@@ -259,6 +260,8 @@ export interface TXP02Props {
   /** C8's entries on the return: the footnote names each; its reference opens the drawer (a3). */
   entries?: readonly WorkbookJournalEntryOut[] | undefined;
   onOpenEntry?: (entry: WorkbookJournalEntryOut) => void;
+  /** T-05-T66 (AC-13.1): why the account mapper is not offered; "Map…" stays the person's pick. */
+  agentReason?: string | null;
 }
 
 export function TXP02({
@@ -276,11 +279,17 @@ export function TXP02({
   onJournalEntry,
   entries = [],
   onOpenEntry,
+  agentReason = null,
 }: TXP02Props): JSX.Element {
   const rows = tb === undefined ? [] : tableRows(tb);
   const hasPriorYear = tb?.rows.some((r) => r.prior_year !== null && r.prior_year !== undefined);
   return (
     <div data-screen="TXP-02" className="flex min-h-0 flex-1 flex-col">
+      {agentReason !== null ? (
+        <div className="px-[12px] pt-[8px]">
+          <AgentsOffNote capability={ENTITY_CAPABILITIES.mapper} reason={agentReason} />
+        </div>
+      ) : null}
       <div className="flex h-[44px] flex-none items-center gap-[8px] px-[12px]">
         <Segmented
           size="small"

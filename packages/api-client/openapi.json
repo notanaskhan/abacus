@@ -136707,6 +136707,14 @@
             "cls": "internal",
             "title": "State",
             "type": "string"
+          },
+          "waiting_on": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Waiting On",
+            "type": "array"
           }
         },
         "required": [

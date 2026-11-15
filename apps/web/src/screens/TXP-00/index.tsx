@@ -59,9 +59,24 @@ export interface TXP00Props {
   onOpenItems?: (taskKey: string) => void;
   onAnswer?: (answer: unknown) => void;
   onComposer?: () => void;
+  /** T-05-T66 (AC-13.1): what the newest run waits on (`consent_7216`), from its `blocked_on`. */
+  waitingOn?: readonly string[];
 }
 
-function RunCard({ frame, onRun }: { frame: Txp00Frame; onRun?: () => void }): JSX.Element {
+/** D's waiting line: the consent a run waits on is named; any other wait is the answer. */
+export function waitingLine(waitingOn: readonly string[]): string {
+  return waitingOn.includes("consent_7216") ? COPY.waitingConsent : COPY.waiting;
+}
+
+function RunCard({
+  frame,
+  onRun,
+  waitingOn = [],
+}: {
+  frame: Txp00Frame;
+  onRun?: () => void;
+  waitingOn?: readonly string[];
+}): JSX.Element {
   const [title, sub, progress, started, pct] =
     frame === "b"
       ? [COPY.runningTitle, COPY.runningSub, COPY.runningProgress, COPY.runningStarted, 70]
@@ -88,7 +103,7 @@ function RunCard({ frame, onRun }: { frame: Txp00Frame; onRun?: () => void }): J
           {frame === "d" ? (
             <p data-waiting className="flex items-center gap-[6px] text-[12.5px] text-ink-3">
               <span aria-hidden="true" className="size-[8px] rounded-pill bg-amber" />
-              {COPY.waiting}
+              {waitingLine(waitingOn)}
             </p>
           ) : frame === "e" ? (
             <p className="text-[12.5px] font-medium text-red-ink">{COPY.failedTitle}</p>
@@ -272,7 +287,11 @@ export function TXP00(props: TXP00Props): JSX.Element {
           ) : null}
           {COPY.workbook}
         </h2>
-        <RunCard frame={frame} {...(props.onRun ? { onRun: props.onRun } : {})} />
+        <RunCard
+          frame={frame}
+          waitingOn={props.waitingOn ?? []}
+          {...(props.onRun ? { onRun: props.onRun } : {})}
+        />
         <div className="min-h-0 flex-1 overflow-y-auto">
           {GROUPS.map((g) => (
             <TaskGroup key={g.key} group={g} frame={frame} props={props} />

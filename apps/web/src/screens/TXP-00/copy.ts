@@ -37,6 +37,12 @@ export const COPY = {
   idleSub:
     "Ready to run 10 steps · sources: QuickBooks Online, 2025 Binder (19 documents), 2024 Form 1065",
   waiting: "Waiting on 1 answer",
+  // T-05-T66 (AC-13.2; T-05-T03's undesigned copy): the entity workpapers' entitlement is refused.
+  lockedTitle: "Entity return workpapers are locked",
+  lockedBody:
+    "Your firm's entity returns module is not enabled yet. The return's overview stays open; the workpapers open once it is.",
+  // T-05-T66 (AC-13.1; T-05-T03's undesigned copy): a run waiting on the client's §7216 consent.
+  waitingConsent: "Waiting on this client's §7216 AI consent",
   failedTitle: "Stopped at Import trial balance",
   failedBody: "QuickBooks Online token expired — reconnect in Workbench › Connect",
   runningCapital:

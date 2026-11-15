@@ -64183,6 +64183,10 @@ export type WorkbookRunRowOut = {
      * State
      */
     state: string;
+    /**
+     * Waiting On
+     */
+    waiting_on?: Array<string>;
 };
 
 /**

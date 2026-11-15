@@ -14,6 +14,7 @@ import type {
 } from "@abacus/api-client";
 import { AgentText, Button, FullSheet, Pill, Tag, Tooltip, amount, cn } from "@abacus/ui";
 import type { JSX } from "react";
+import { AgentsOffNote, ENTITY_CAPABILITIES } from "../../domain/tax";
 import { COPY } from "./copy";
 
 const FILLS = ["bg-viz-p1", "bg-viz-p2", "bg-viz-p3", "bg-surface-deep", "bg-viz-p4"] as const;
@@ -140,6 +141,8 @@ export interface TXP06Props {
   onCitation?: (citationId: string) => void;
   /** The Item L rollforward check opens TXP-07. */
   onItemL?: () => void;
+  /** T-05-T66 (AC-13.1): why the agreement reader is not offered; the structure is keyed by hand. */
+  agentReason?: string | null;
 }
 
 function Rail({
@@ -151,9 +154,17 @@ function Rail({
   onItemL,
   approvedBy,
   approvedOn,
+  agentReason = null,
 }: Pick<
   TXP06Props,
-  "selected" | "onSelect" | "onApprove" | "onCitation" | "onItemL" | "approvedBy" | "approvedOn"
+  | "selected"
+  | "onSelect"
+  | "onApprove"
+  | "onCitation"
+  | "onItemL"
+  | "approvedBy"
+  | "approvedOn"
+  | "agentReason"
 > & {
   s: WorkbookAllocationStructureOut;
 }): JSX.Element {
@@ -167,6 +178,7 @@ function Rail({
     : COPY.method.waterfall;
   return (
     <aside className="flex w-[236px] flex-none flex-col gap-[10px] rounded-pane bg-card p-[12px] shadow-e1">
+      <AgentsOffNote capability={ENTITY_CAPABILITIES.agreement} reason={agentReason} />
       <div className="flex justify-end">
         {pending ? (
           <Button variant="primary" size="sm" onClick={onApprove}>
@@ -642,6 +654,7 @@ export function TXP06({
   onApprove,
   onCitation,
   onItemL,
+  agentReason = null,
 }: TXP06Props): JSX.Element {
   const s = editing !== null && preview !== undefined ? preview : structure;
   const body =
@@ -650,6 +663,7 @@ export function TXP06({
     ) : (
       <div data-screen="TXP-06" className="flex min-h-0 flex-1 gap-[10px] p-[12px]">
         <Rail
+          agentReason={agentReason}
           s={s}
           selected={selected}
           {...(onSelect === undefined ? {} : { onSelect })}

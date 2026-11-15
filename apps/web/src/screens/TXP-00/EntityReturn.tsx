@@ -8,7 +8,7 @@ import { EmptyState, Spinner } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import type { JSX } from "react";
-import { useFlag } from "../../app-core/flags";
+import { useEntitlement, useFlag } from "../../app-core/flags";
 import { SCREEN_OF, type Section, isEntityForm, sectionOf, slugOf } from "../../domain/tax";
 import { to } from "../../routes/to";
 import { EntityReturnLayout, NOT_BUILT } from "./EntityReturnLayout";
@@ -17,6 +17,7 @@ import { ScheduleK } from "../TXP-05/ScheduleK";
 import { Workpaper } from "../TXP-11/Workpaper";
 import { Summary } from "../TXP-01/Summary";
 import { Issues } from "../TXP-10/Issues";
+import { COPY } from "./copy";
 import { TXP00, frameOf } from "./index";
 
 export type EntitySlug = "agent" | "issues" | "workpaper" | "activity" | "review";
@@ -46,6 +47,8 @@ export function EntityReturn({
 }: EntityReturnProps): JSX.Element {
   const navigate = useNavigate();
   const entityOn = useFlag("tax.entity_workspace") === true;
+  // T-05-T66 (AC-13.2): a firm without `tax_entity_returns` keeps the coordination view, locked.
+  const entitled = useEntitlement("tax_entity_returns");
   // With the flag off nothing is fetched: the route's own screen draws as before.
   const record = useQuery({
     ...returnRecordOptions({ path: { return_id: returnId } }),
@@ -57,6 +60,16 @@ export function EntityReturn({
   }
   const form = record.data.row.form;
   if (!isEntityForm(form)) return overview;
+  if (!entitled) {
+    return (
+      <div data-entity-locked className="flex min-h-0 flex-1 flex-col gap-[10px]">
+        <EmptyState icon="lock" className="flex-none" title={COPY.lockedTitle}>
+          {COPY.lockedBody}
+        </EmptyState>
+        {overview}
+      </div>
+    );
+  }
   const section: Section | null = slug === "review" ? sectionOf("review", review) : { tab: slug };
   if (section === null) {
     return <Navigate {...to.TAX02({ returnId })} replace />;
@@ -107,5 +120,11 @@ function AgentTab({
 }): JSX.Element {
   const runs = useQuery(entityRunsOptions({ path: { return_id: returnId } }));
   if (runs.data === undefined) return <Spinner label="Loading the workbook runs" />;
-  return <TXP00 frame={frameOf(runs.data.items)} onComposer={onComposer} />;
+  return (
+    <TXP00
+      frame={frameOf(runs.data.items)}
+      waitingOn={runs.data.items[0]?.waiting_on ?? []}
+      onComposer={onComposer}
+    />
+  );
 }
