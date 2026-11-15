@@ -1,0 +1,24 @@
+# Fiduciary engine parameters, TY2025 (T-07-T09; T-07 §4.4; DEC-77; SPEC-656 AC-6, AC-11).
+# PROTECTED: reviewed yearly with the tax CPA and pinned by the fiduciary goldens
+# (backend/tests/golden/fiduciary/). A change is a reviewed policy change with its goldens in the
+# same diff. The payments engine's parameters (../ty<year>.yaml) are a separate file.
+version: 1
+tax_year: 2025
+reviewed_by: null   # the CPA's handle once the TY2025 memo is signed (T-07-T10 review packet)
+source: "IRC §§642(b), 643(a), 651, 652, 661, 662, 663(b), 1(e), 1411"
+
+# IRC §642(b): the personal exemption by entity type. Fixed by statute (not indexed).
+exemption:
+  estate: "600"
+  simple_trust: "300"
+  complex_trust: "100"
+  qualified_disability_trust: null   # indexed; set from the year's Rev. Proc. when needed
+
+# IRC §663(b): distributions within 65 days after year-end may be treated as paid in the year.
+sixty_five_day_election_days: 65
+
+# The planning paragraph's code-filled values (TXT-03 65-day card, DEC-79 template).
+# IRC §1(e) top bracket threshold for estates and trusts; null until the year's Rev. Proc. is
+# read into this file by a reviewed change.
+top_bracket_threshold: "15650"
+niit_rate_pct: "3.8"   # IRC §1411
