@@ -61,6 +61,12 @@ Golden-tested engine parameters reviewed yearly with the tax CPA, named here and
 is a reviewed policy change with its goldens in the same diff; `tax/compute` imports only
 `abacus.kernel.numeric` and `abacus.kernel.calendar` (the import-linter compute contract).
 
+## Fiduciary engine parameter files (T-07-T09, DEC-5023; T-07 §4.4, DEC-77)
+The fiduciary engine's yearly parameters (§642(b) exemptions, the §663(b) window, the §1(e) top
+bracket threshold, the §1411 rate), reviewed with the tax CPA and pinned by the fiduciary
+goldens (`backend/tests/golden/fiduciary/`): `backend/src/abacus/modules/tax/compute/parameters/
+fiduciary/*.yaml`. Red files, like the payments parameters above.
+
 
 ## Entity return engines and the workbook formula engine (T-05-T04; T-05 §4.4, ADR-237)
 Red files: `backend/src/abacus/modules/tax/compute/entity/` (allocation, interim closings,
