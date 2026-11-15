@@ -1,0 +1,74 @@
+# T-07-T10 (TASK-8037; ADR-078; SPEC-656 §3.6): the Calloway Family Trust TY2025 fiduciary
+# goldens, transcribed from docs/plan/epics/T-07.md §3 and the TXT-01 to TXT-03 handoff before the
+# engine was read. Each case cites its screen and state. Amounts are exact Decimal text.
+inputs:
+  tax_year: 2025
+  entity_type: complex_trust
+  fai_lines:
+    - {key: interest, character: interest, amount: "107500"}
+    - {key: dividends, character: ordinary_dividends, amount: "322500", qualified: "258000"}
+  expenses:
+    - {key: trustee_fees, amount: "30000", charged_to: principal, clause_ref: "Art. V(c)"}
+  distributions:
+    - {beneficiary: nora, name: Nora Calloway, paid_on: "2025-06-30", amount: "80000"}
+    - {beneficiary: nora, name: Nora Calloway, paid_on: "2025-12-15", amount: "80000"}
+    - {beneficiary: theo, name: Theo Calloway, paid_on: "2025-12-15", amount: "80000"}
+
+cases:
+  base:
+    cites: "TXT-02 a (AC-6.1); TXT-03 a (AC-9.2)"
+    fai: "430000"
+    expense_by_character: {interest: "7500", ordinary_dividends: "22500"}
+    dni: "400000"
+    dni_by_character: {interest: "100000", ordinary_dividends: "300000"}
+    dni_qualified: "240000"
+    distributions: "240000"
+    idd: "240000"
+    shares_pct: {nora: "66.7", theo: "33.3"}
+    boxes:
+      nora: {box_1: "40000", box_2a: "120000", box_2b: "96000", dni: "160000"}
+      theo: {box_1: "20000", box_2a: "60000", box_2b: "48000", dni: "80000"}
+    totals: {box_1: "60000", box_2a: "180000", box_2b: "144000"}
+    retained_dni: "160000"
+    exemption: "100"
+    taxable_income: "159900"
+    fai_not_distributed: "190000"
+  theo_changed:
+    cites: "TXT-02 d (AC-7.1)"
+    theo_dec_15: "100000"
+    distributions: "260000"
+    idd: "260000"
+    shares_pct: {nora: "61.5", theo: "38.5"}
+    boxes:
+      theo: {box_1: "25000", box_2a: "75000", box_2b: "60000", dni: "100000"}
+    retained_dni: "140000"
+    taxable_income: "139900"
+  principal_invaded:
+    cites: "TXT-01 c (AC-5.1)"
+    theo_principal: {paid_on: "2025-09-01", amount: "25000", clause_ref: "Art. IV(b)"}
+    distributions: "265000"
+    idd: "265000"
+    carried: {nora: "160000", theo: "105000"}
+    retained_dni: "135000"
+  by_character:
+    cites: "TXT-02 c"
+    interest: "100000"
+    ordinary_dividends: "300000"
+    qualified: "240000"
+    trust_share: {box_1: "40000", box_2a: "120000", box_2b: "96000"}
+  simple_trust:
+    cites: "T-07 §3.6 variant (§651): all FAI deemed distributed"
+    exemption: "300"
+    idd: "400000"
+    retained_dni: "0"
+  gains_in_dni:
+    cites: "AC-6.2 variant: a clause includes gains in DNI"
+    gains: "50000"
+    dni: "450000"
+    gains_out_dni: "400000"
+    gains_out_taxable_income: "209900"
+windows:
+  cites: "TXT-03 65-day card (AC-11.1)"
+  2025: "2026-03-06"
+  2026: "2027-03-06"
+  2027: "2028-03-05"
