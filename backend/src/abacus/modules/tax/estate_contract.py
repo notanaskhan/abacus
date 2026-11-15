@@ -23,6 +23,7 @@ from abacus.kernel._statuses import (
     EstateComputationLabelStatus,
     EstateDeductionElectionStatus,
     EstateInventoryItemStatus,
+    GiftForm709Status,
     TieOutTallyStatus,
 )
 from abacus.kernel.classification import classified
@@ -40,7 +41,7 @@ MaybeMoney = Annotated[Decimal | None, Field(max_digits=20, decimal_places=2), T
 Schedule = Literal["A", "B", "C", "D", "E", "F", "G", "H", "I"]
 BasisRule = Literal["stepped_up", "ird_no_step_up", "non_probate_excluded"]
 DeductionSchedule = Literal["J_funeral", "J_administration", "K", "L", "M", "O"]
-Form709Status = Literal["filed", "not_required", "missing"]
+Form709Status = GiftForm709Status  # the `gift_form_709` registry object (DEC-5018)
 EstateSection = Literal["inventory", "deductions", "computation", "gifts"]
 EstateAction = Literal["estate_workpaper.edit", "sign_off.l4", "request_item.send"]
 
@@ -171,7 +172,7 @@ class EstateStateCardOut(BaseModel):
 
     model_config = _frozen()
 
-    state: Annotated[str, Internal]
+    jurisdiction: Annotated[str, Internal]  # the US state, "IL" (not a status; DEC-5018)
     required: Annotated[bool, Internal]
     status: Annotated[Literal["pending"], Internal]
     issue_id: Annotated[UUID | None, Internal]

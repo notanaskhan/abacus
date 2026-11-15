@@ -16712,6 +16712,7 @@ export const finalApprovalRequest = <ThrowOnError extends boolean = false>(optio
  * Instrument Route
  *
  * TXT-01: profile, instrument, segmentation, determinations, cited-by, reader (T-07-T12).
+ * The profile's EIN is TIN-tagged: the read goes through the one central mask (AC9.4).
  */
 export const instrument = <ThrowOnError extends boolean = false>(options: Options<InstrumentData, ThrowOnError>): RequestResult<InstrumentResponses, InstrumentErrors, ThrowOnError> => (options.client ?? client).get<InstrumentResponses, InstrumentErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -16722,7 +16723,8 @@ export const instrument = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Instrument Attach Route
  *
- * Attach a client-level file as the governing instrument (AC-1.2; T-07-T12).
+ * Attach a client-level file as the governing instrument (AC-1.2; T-07-T12); answers the
+ * read, masked for an offshore reader (AC9.4).
  */
 export const instrumentAttach = <ThrowOnError extends boolean = false>(options: Options<InstrumentAttachData, ThrowOnError>): RequestResult<InstrumentAttachResponses, InstrumentAttachErrors, ThrowOnError> => (options.client ?? client).post<InstrumentAttachResponses, InstrumentAttachErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

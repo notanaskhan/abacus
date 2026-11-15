@@ -299,6 +299,26 @@ class EstateComputationLabelStatus(StrEnum):
     ENGINE_IMPORT = "engine_import"
 
 
+class CloseRunStatus(StrEnum):
+    RUNNING = "running"
+    NEEDS_INPUT = "needs_input"
+    COMPLETE = "complete"
+    COMPLETE_WITH_EXCEPTIONS = "complete_with_exceptions"
+    FAILED = "failed"
+
+
+class ConnectionMeterStatus(StrEnum):
+    OK = "ok"
+    WARNING = "warning"
+    EXHAUSTED = "exhausted"
+
+
+class GiftForm709Status(StrEnum):
+    FILED = "filed"
+    NOT_REQUIRED = "not_required"
+    MISSING = "missing"
+
+
 class CloseFlagStatus(StrEnum):
     ON_HOLD = "on_hold"
 
@@ -1673,6 +1693,23 @@ STORED: dict[str, tuple[str, ...]] = {
     "estate_computation_label": (
         "accrued_tie_out_shadow",
         "engine_import",
+    ),
+    "close_run": (
+        "running",
+        "needs_input",
+        "complete",
+        "complete_with_exceptions",
+        "failed",
+    ),
+    "connection_meter": (
+        "ok",
+        "warning",
+        "exhausted",
+    ),
+    "gift_form_709": (
+        "filed",
+        "not_required",
+        "missing",
     ),
     "close_flag": (
         "on_hold",

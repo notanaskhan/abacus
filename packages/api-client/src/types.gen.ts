@@ -5848,10 +5848,7 @@ export type BeneficiaryRowOut = {
      * Package Id
      */
     package_id: string | null;
-    /**
-     * Package Status
-     */
-    package_status: string | null;
+    package_status: K1PackageStatus | null;
     /**
      * Payments
      */
@@ -9753,10 +9750,7 @@ export type CloseIssueOut = {
      * Severity
      */
     severity: 'high' | 'medium' | 'low';
-    /**
-     * Status
-     */
-    status: string;
+    status: IssueStatus;
     /**
      * Title
      */
@@ -10122,10 +10116,7 @@ export type CloseRunHistoryItemOut = {
      * Started At
      */
     started_at: string;
-    /**
-     * Status
-     */
-    status: 'running' | 'needs_input' | 'complete' | 'complete_with_exceptions' | 'failed';
+    status: CloseRunStatus;
     /**
      * Total
      */
@@ -10175,15 +10166,17 @@ export type CloseRunOut = {
      */
     started_at: string;
     started_by: ClosePersonOut;
-    /**
-     * Status
-     */
-    status: 'running' | 'needs_input' | 'complete' | 'complete_with_exceptions' | 'failed';
+    status: CloseRunStatus;
     /**
      * Total
      */
     total: number;
 };
+
+/**
+ * CloseRunStatus
+ */
+export type CloseRunStatus = 'running' | 'needs_input' | 'complete' | 'complete_with_exceptions' | 'failed';
 
 /**
  * CloseRunsOut
@@ -11434,6 +11427,11 @@ export type ConnectionDisconnectIn = {
      */
     seen_version: number;
 };
+
+/**
+ * ConnectionMeterStatus
+ */
+export type ConnectionMeterStatus = 'ok' | 'warning' | 'exhausted';
 
 /**
  * ConnectionOut
@@ -19267,13 +19265,13 @@ export type EstateStateCardOut = {
      */
     issue_id: string | null;
     /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+    /**
      * Required
      */
     required: boolean;
-    /**
-     * State
-     */
-    state: string;
     /**
      * Status
      */
@@ -24094,6 +24092,11 @@ export type GeneratedVersionOut = {
 };
 
 /**
+ * GiftForm709Status
+ */
+export type GiftForm709Status = 'filed' | 'not_required' | 'missing';
+
+/**
  * GiftHistoryEditIn
  */
 export type GiftHistoryEditIn = {
@@ -24109,10 +24112,7 @@ export type GiftHistoryEditIn = {
      * Filed On
      */
     filed_on?: string | null;
-    /**
-     * Form 709 Status
-     */
-    form_709_status: 'filed' | 'not_required' | 'missing';
+    form_709_status: GiftForm709Status;
     /**
      * Gift Amount
      */
@@ -24143,10 +24143,7 @@ export type GiftHistoryIn = {
      * Filed On
      */
     filed_on?: string | null;
-    /**
-     * Form 709 Status
-     */
-    form_709_status: 'filed' | 'not_required' | 'missing';
+    form_709_status: GiftForm709Status;
     /**
      * Gift Amount
      */
@@ -24181,10 +24178,7 @@ export type GiftHistoryRowOut = {
      * Filed On
      */
     filed_on: string | null;
-    /**
-     * Form 709 Status
-     */
-    form_709_status: 'filed' | 'not_required' | 'missing';
+    form_709_status: GiftForm709Status;
     /**
      * Gift Amount
      */
@@ -34881,10 +34875,7 @@ export type MeterOut = {
      * Month
      */
     month: string;
-    /**
-     * State
-     */
-    state: 'ok' | 'warning' | 'exhausted';
+    state: ConnectionMeterStatus;
 };
 
 /**
@@ -43149,6 +43140,11 @@ export type RepresentationToggleIn = {
 };
 
 /**
+ * RequestCloseStatus
+ */
+export type RequestCloseStatus = 'requested' | 'received' | 'matched' | 'pending_incorporation' | 'incorporated';
+
+/**
  * RequestDraftOut
  *
  * A C5 request **draft** (SHL-14 prefill); a person sends it.
@@ -43542,10 +43538,7 @@ export type RequestNodeOut = {
      * Screening
      */
     screening?: 'clear' | 'partly' | 'flagged' | 'running' | null;
-    /**
-     * Status
-     */
-    status?: string | null;
+    status?: RequestCloseStatus | null;
     /**
      * Title
      */

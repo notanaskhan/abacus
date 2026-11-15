@@ -21,6 +21,7 @@ from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import CONNECTIONS_LEDGER_SYNC
+from abacus.kernel._statuses import ConnectionMeterStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
@@ -51,7 +52,7 @@ class MeterOut(BaseModel):
     month: Annotated[str, Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$"), Internal]
     calls: Annotated[int, Field(ge=0), Internal]
     budget: Annotated[int | None, Field(ge=0), Internal] = None
-    state: Annotated[Literal["ok", "warning", "exhausted"], Internal]  # 80% and 100% (QC-5)
+    state: Annotated[ConnectionMeterStatus, Internal]  # 80% and 100% (QC-5; DEC-5018)
 
 
 class LedgerSyncStatusOut(BaseModel):
