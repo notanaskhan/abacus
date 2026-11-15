@@ -37,13 +37,13 @@ TONES: Final = {
 
 
 @cache
-def document() -> dict[str, Any]:
-    return cast(dict[str, Any], json.loads(_DOC.read_text(encoding="utf-8")))
+def document() -> dict[str, Any]:  # Any: the content document's JSON, read as data
+    return cast(dict[str, Any], json.loads(_DOC.read_text(encoding="utf-8")))  # Any: JSON
 
 
-def rows(at: datetime = E0) -> list[dict[str, Any]]:
+def rows(at: datetime = E0) -> list[dict[str, Any]]:  # Any: content rows as JSON
     """The tiles published by `at`, in sort order."""
-    items = cast(list[dict[str, Any]], document()["items"])
+    items = cast(list[dict[str, Any]], document()["items"])  # Any: content rows as JSON
     live = [r for r in items if datetime.fromisoformat(str(r["published_at"])) <= at]
     return sorted(live, key=lambda r: int(r["sort_order"]))
 
