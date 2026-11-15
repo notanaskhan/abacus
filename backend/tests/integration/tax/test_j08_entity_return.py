@@ -12,9 +12,17 @@ through tax's and review's service APIs, never by re-deriving a figure:
 - reconciliation before any CCH import compares nothing and raises no difference (F11);
 - the agents-off variant: the loaded day made zero model calls (usage ledger empty).
 
-Part 2 (recorded in TASK-8026): the declined-consent variant, the K-1 drafts and the CCH import
-round trip on this database; the DB clauses T-05-T63 and T65 left here (the consent_7216 refusal
-on every model step, the TJE layers' balance, hostile import parsing, the fix flow's checkpoints).
+Part 2 (TASK-8074, DEC-5060), on the same loaded day, after part 1's reads:
+
+- K-1 drafts: Ridgeline's five K-1 packages read Draft (sheet 09's recipients);
+- T-05-T63's DB clause: the TJE layers balance (every TJE nets to zero, so TTB foots like ATB);
+- T-05-T65's DB clauses: the M-2 fix left the workbook a checkpoint trail, and a hostile import
+  file is refused with its problems, never parsed into cells;
+- the declined-consent variant (T-05-T63): with Ridgeline's §7216 consent revoked, every model
+  step of a full run plan waits on `consent_7216` and every code step still computes.
+
+The CCH round trip (export, import, a 1-dollar `engine_diagnostic`) waits on T-05-T60's
+unvalidated CCH Axcess entity layout (T-05 OQ-1, human).
 """
 
 from __future__ import annotations
@@ -26,21 +34,28 @@ from collections.abc import Iterator
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from tests.integration.agent_tests.support import Seeder
 from tests.integration.conftest import MigratedDatabase
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
-from abacus.modules.review.api import current_values
+from abacus.modules.adjustments.api import adjusted_tb
+from abacus.modules.agents.api import PlanRequest
+from abacus.modules.identity.api import AuthContext
+from abacus.modules.review.api import current_values, list_checkpoints
 from abacus.modules.tax.entity_guards import entity_blockers
 from abacus.modules.tax.entity_reconciliation import differences, reconcile
+from abacus.modules.tax.entity_run_plan import consent_in_force, entity_workbook_plan, selected
+from abacus.modules.tax.workbook_imports import ImportInvalid, parse
 from abacus.modules.tax.workbook_service import WORKBOOK
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
+from abacus_tools.synthetic.scenarios.brightwater_hale.people import SEATS
 
 pytestmark = pytest.mark.asyncio
 TENANT = loader.TENANT
@@ -151,3 +166,58 @@ async def test_j08_the_return_reaches_final_approval_without_a_blocker(
     # Agents-off variant (F13): the loaded day made no model call at all.
     calls = await seed.value("SELECT count(*) FROM usage_records WHERE tenant_id = $1", TENANT)
     assert calls == 0
+
+    # --- part 2 (TASK-8074) ----------------------------------------------------------------
+    samuel = loader.user_id_of(next(x for x in SEATS if x.initials == "SI"))
+    person = AuthContext(
+        TenantContext(TENANT, "human", str(samuel)), samuel, uuid.UUID(int=0), None, system_now()
+    )
+
+    # K-1 drafts: five packages, Draft, from sheet 09's recipients.
+    drafts = await seed.rows(
+        "SELECT status FROM k1_packages WHERE tenant_id = $1 AND work_item_id = $2",
+        TENANT,
+        return_id,
+    )
+    assert len(drafts) == 5 and {d["status"] for d in drafts} == {"draft"}
+
+    # T-05-T63: the TJE layers balance; TTB foots to zero as ATB does.
+    layers = cast(Any, await adjusted_tb(person, return_id, "ttb"))  # Any: the layers view
+    assert sum((ln.tje or Decimal(0) for ln in layers.lines), Decimal(0)) == 0
+    assert sum((ln.ttb for ln in layers.lines), Decimal(0)) == sum(
+        (ln.atb for ln in layers.lines), Decimal(0)
+    )
+
+    # T-05-T65 (T50): the 9:51 fix left the workbook a checkpoint trail, one current.
+    trail = await list_checkpoints(person, WORKBOOK, return_id, "all")
+    assert trail.items and trail.current_checkpoint_id is not None
+
+    # T-05-T65 (T40): a hostile import file is refused with its problems, never read into cells.
+    for hostile in (b"", b"=cmd|' /C calc'!A0\n" * 3, b"\x00" * 64):
+        with pytest.raises(ImportInvalid):
+            parse("depreciation_register", hostile)
+
+    # The declined-consent variant (T-05-T63): no §7216 consent in force, so every model step of
+    # a full plan waits on `consent_7216` while every code step still computes.
+    await seed.run(
+        "UPDATE consents SET status = 'revoked', revoked_at = now() WHERE tenant_id = $1 "
+        "AND status = 'signed' AND client_entity_id = (SELECT client_entity_id FROM tax_returns "
+        "WHERE work_item_id = $2)",
+        TENANT,
+        return_id,
+    )
+    assert not await consent_in_force(tenant, return_id)
+    engagement = cast(
+        uuid.UUID,
+        await seed.value(
+            "SELECT engagement_id FROM tax_returns WHERE work_item_id = $1", return_id
+        ),
+    )
+    plan = await entity_workbook_plan(tenant, engagement, PlanRequest(return_id, "all"))
+    model = {s.key for s in selected("all", ()) if s.model}
+    assert model, "the full plan has model steps"
+    for step in plan:
+        if step.key in model:
+            assert step.kind == "question" and step.arguments["question_key"] == "consent_7216"
+        elif step.key != "convention_706d":
+            assert step.kind == "compute", step.key

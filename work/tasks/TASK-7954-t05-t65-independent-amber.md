@@ -22,3 +22,4 @@ updated: 2026-11-14
 
 ## Progress log
 - 2026-11-14: written, not run (S43 end pass).
+- `2026-11-15` — The database clauses are written in T-05-T67's journey (TASK-8074, DEC-5060).
