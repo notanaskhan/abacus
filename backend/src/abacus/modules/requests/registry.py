@@ -25,6 +25,9 @@ TABLES: frozenset[str] = frozenset(
         "request_upload_intents",
         "binder_activity",
         "fulfilment_withdrawals",  # P-06-T19 (0145; ADR-162)
+        # C-01-T11 (0885): transaction questions (CLS-06, POR-11).
+        "transaction_questions",
+        "transaction_question_events",
         # T-02-T16 (0467): questionnaires v1.
         "questionnaire_templates",
         "questionnaire_template_versions",
@@ -38,6 +41,7 @@ TABLES: frozenset[str] = frozenset(
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset(
     {
+        "transaction_question_events",  # C-01-T11 (0885)
         "request_categories",  # F-03-T14 (0070)
         "client_item_responses",  # SPEC-042 (TASK-106): as the client said
         "client_list_done",  # SPEC-042 (TASK-106): as the client said
@@ -206,4 +210,16 @@ UPDATE_COLUMNS["questions"] = UPDATE_COLUMNS["questions"] | frozenset(
     {"section_id", "position", "client_wording", "help_text", "internal_helper", "required"}
     | {"show_when", "conditional_on_question_id", "conditional_value", "choices"}
     | {"amount_parts", "effect_rules", "retired_at", "type"}
+)
+# C-01-T11 (0885): transaction questions; template wording only, the client's answer sealed.
+INSERT_COLUMNS["transaction_questions"] = frozenset(
+    {"tenant_id", "work_item_id", "request_list_id", "issue_id", "template_id"}
+    | {"template_version", "client_wording", "context", "asked_by", "assignee_contact_id"}
+)
+INSERT_COLUMNS["transaction_question_events"] = frozenset(
+    {"tenant_id", "question_id", "kind", "actor_kind", "actor_id", "contact_id"}
+)
+UPDATE_COLUMNS["transaction_questions"] = frozenset(
+    {"status", "answer_sealed", "answered_by_contact_id", "answered_at"}
+    | {"fulfils_request_item_id", "row_version"}
 )

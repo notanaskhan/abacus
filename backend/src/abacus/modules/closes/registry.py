@@ -15,9 +15,27 @@ TABLES: frozenset[str] = frozenset(
         "close_request_templates",
         "close_templates",
         "close_procedures",
+        # C-01-T11 (0885): reconciliations, schedules, flux and recordings.
+        "reconciliations",
+        "reconciling_items",
+        "reconciling_item_resolutions",
+        "statement_lines",
+        "reconciliation_matches",
+        "arrangements",
+        "arrangement_versions",
+        "close_schedule_results",
+        "analytic_sets",
+        "analytic_lines",
+        "analytic_explanations",
+        "close_entry_recordings",
     }
 )
-INSERT_ONLY: frozenset[str] = frozenset({"close_templates"})
+# Insert-only (ADR-004): a recompute or an edit is a new row or version, never an update.
+INSERT_ONLY: frozenset[str] = frozenset(
+    {"close_templates", "reconciliations", "reconciling_item_resolutions", "statement_lines"}
+    | {"reconciliation_matches", "arrangements", "arrangement_versions"}
+    | {"close_schedule_results", "analytic_sets"}
+)
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "closes": frozenset(
         {"tenant_id", "work_item_id", "engagement_id", "period"}
@@ -70,4 +88,65 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "close_procedures": frozenset(
         {"status", "meta", "open_count", "failure_code", "started_at", "finished_at"}
     ),
+}
+
+# C-01-T11 (0885).
+INSERT_COLUMNS |= {
+    "reconciliations": frozenset(
+        {"tenant_id", "close_id", "account_external_id", "period", "version"}
+        | {"statement_evidence_version_id", "balance_per_bank", "adjusted_bank", "book_balance"}
+        | {"adjusted_book", "difference", "tally", "engine_version", "inputs_hash"}
+        | {"content_hash"}
+    ),
+    "statement_lines": frozenset(
+        {"tenant_id", "evidence_version_id", "page_no", "bbox", "txn_date", "description"}
+        | {"withdrawal", "deposit", "running_balance", "source_table_id", "confidence"}
+    ),
+    "reconciling_items": frozenset(
+        {"tenant_id", "reconciliation_id", "side", "kind", "ref", "txn_date"}
+        | {"days_at_period_end", "amount", "stale", "statement_line_id", "register_line_ref"}
+        | {"issue_id", "proposed_entry_id", "carried_from_item_id"}
+    ),
+    "reconciling_item_resolutions": frozenset(
+        {"tenant_id", "item_id", "resolution", "note", "actor_id", "actor_kind"}
+    ),
+    "reconciliation_matches": frozenset(
+        {"tenant_id", "reconciliation_id", "statement_line_id", "register_line_ref"}
+        | {"match_rule"}
+    ),
+    "arrangements": frozenset(
+        {"tenant_id", "client_entity_id", "account_external_id", "kind", "created_by"}
+    ),
+    "arrangement_versions": frozenset(
+        {"tenant_id", "arrangement_id", "version", "description", "expense_account_ref"}
+        | {"scheduled_total", "starting_balance", "starting_on", "frequency", "start_on"}
+        | {"finish_on", "source_citation_id", "actor_id"}
+    ),
+    "close_schedule_results": frozenset(
+        {"tenant_id", "close_id", "arrangement_id", "period", "inflows", "aje"}
+        | {"ending_balance", "gl_balance", "tie", "engine_version", "inputs_hash"}
+    ),
+    "analytic_sets": frozenset(
+        {"tenant_id", "close_id", "basis", "threshold_policy_version_id", "version"}
+        | {"engine_version", "inputs_hash"}
+    ),
+    "analytic_lines": frozenset(
+        {"tenant_id", "set_id", "position", "line_key", "caption", "prior", "current"}
+        | {"change", "change_pct", "test", "status"}
+    ),
+    "analytic_explanations": frozenset(
+        {"tenant_id", "close_id", "line_key", "version", "text_sealed", "drivers"}
+        | {"citation_ids", "author_kind", "suggestion_id"}
+    ),
+    "close_entry_recordings": frozenset(
+        {"tenant_id", "close_id", "proposed_entry_id", "ledger_snapshot_id"}
+        | {"external_txn_id", "match_rule"}
+    ),
+}
+# Set-once (trigger `closes_set_once`) or forward-only (`analytic_line_forward`) columns.
+UPDATE_COLUMNS |= {
+    "reconciling_items": frozenset({"issue_id", "proposed_entry_id"}),
+    "analytic_lines": frozenset({"status"}),
+    "analytic_explanations": frozenset({"accepted_by", "accepted_actor_kind", "accepted_at"}),
+    "close_entry_recordings": frozenset({"confirmed_by", "confirmed_at"}),
 }
