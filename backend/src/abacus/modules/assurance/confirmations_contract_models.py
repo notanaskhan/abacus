@@ -95,7 +95,7 @@ class StatusTileOut(BaseModel):
     count: Annotated[int, Field(ge=0), classified("internal")]
 
 
-class CoverageOut(BaseModel):
+class ConfirmationCoverageOut(BaseModel):
     """'AR sent for confirmation $897,950.00 of $5,860,000.00 (15.3%) · confirmed … · CT …'."""
 
     model_config = ConfigDict(frozen=True)
@@ -113,7 +113,7 @@ class ConfirmationSummaryOut(BaseModel):
 
     tiles: Annotated[list[StatusTileOut], classified("internal")]  # sum to the log's count
     total: Annotated[int, Field(ge=0), classified("internal")]
-    coverage: Annotated[CoverageOut | None, classified("internal")]
+    coverage: Annotated[ConfirmationCoverageOut | None, classified("internal")]
 
 
 class AddressVerificationOut(BaseModel):

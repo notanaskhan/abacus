@@ -1,6 +1,31 @@
 {
   "components": {
     "schemas": {
+      "AcceptExplanationsIn": {
+        "additionalProperties": false,
+        "properties": {
+          "line_positions": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Line Positions",
+            "type": "array"
+          },
+          "seen_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Seen Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "line_positions",
+          "seen_hash"
+        ],
+        "title": "AcceptExplanationsIn",
+        "type": "object"
+      },
       "AcceptIn": {
         "additionalProperties": false,
         "properties": {
@@ -2551,53 +2576,6 @@
         "title": "AdoptBody",
         "type": "object"
       },
-      "AdoptIn": {
-        "additionalProperties": false,
-        "properties": {
-          "item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                "maxItems": 500,
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Item Ids"
-          }
-        },
-        "title": "AdoptIn",
-        "type": "object"
-      },
-      "AdoptOut": {
-        "additionalProperties": false,
-        "properties": {
-          "adopted": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Adopted",
-            "type": "integer"
-          },
-          "row_version": {
-            "cls": "internal",
-            "minimum": 1.0,
-            "title": "Row Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "adopted",
-          "row_version"
-        ],
-        "title": "AdoptOut",
-        "type": "object"
-      },
       "AdoptSuggestionIn": {
         "additionalProperties": false,
         "description": "Adopt as proposed, or with an edited value and its citation note (decision `edited`).",
@@ -5124,6 +5102,318 @@
         ],
         "title": "AnalysisRunOut",
         "type": "object"
+      },
+      "AnalyticsLineOut": {
+        "properties": {
+          "caption": {
+            "cls": "confidential",
+            "title": "Caption",
+            "type": "string"
+          },
+          "change": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Change",
+            "type": "string"
+          },
+          "change_pct": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Change Pct",
+            "type": "string"
+          },
+          "cy": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cy",
+            "type": "string"
+          },
+          "derived": {
+            "cls": "internal",
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "evaluated": {
+            "cls": "internal",
+            "title": "Evaluated",
+            "type": "boolean"
+          },
+          "expectation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExpectationOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExplanationOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "fs_line_key": {
+            "cls": "internal",
+            "title": "Fs Line Key",
+            "type": "string"
+          },
+          "group_key": {
+            "cls": "internal",
+            "title": "Group Key",
+            "type": "string"
+          },
+          "over": {
+            "cls": "internal",
+            "title": "Over",
+            "type": "boolean"
+          },
+          "position": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "py": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Py",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsLineStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "position",
+          "fs_line_key",
+          "caption",
+          "group_key",
+          "cy",
+          "py",
+          "change",
+          "change_pct",
+          "evaluated",
+          "over",
+          "derived",
+          "status",
+          "explanation",
+          "expectation"
+        ],
+        "title": "AnalyticsLineOut",
+        "type": "object"
+      },
+      "AnalyticsLineStatus": {
+        "enum": [
+          "within",
+          "unexplained",
+          "explained",
+          "accepted"
+        ],
+        "title": "AnalyticsLineStatus",
+        "type": "string"
+      },
+      "AnalyticsRunIn": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "audit_flux",
+              "ssars_review"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "layer": {
+            "enum": [
+              "unadjusted",
+              "adjusted"
+            ],
+            "title": "Layer",
+            "type": "string"
+          },
+          "py_source": {
+            "enum": [
+              "prior_engagement",
+              "import"
+            ],
+            "title": "Py Source",
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "preliminary",
+              "substantive",
+              "final",
+              "review"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "trial_balance_id": {
+            "format": "uuid",
+            "title": "Trial Balance Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "stage",
+          "trial_balance_id",
+          "layer",
+          "py_source"
+        ],
+        "title": "AnalyticsRunIn",
+        "type": "object"
+      },
+      "AnalyticsRunOut": {
+        "properties": {
+          "analytics_set_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Analytics Set Id",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "analytics_set_id",
+          "version_no"
+        ],
+        "title": "AnalyticsRunOut",
+        "type": "object"
+      },
+      "AnalyticsSetOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "public",
+            "items": {
+              "enum": [
+                "analytics.explain",
+                "analytics.accept",
+                "analytics.configure",
+                "client_question.send",
+                "analytics.export"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "basis_label": {
+            "cls": "internal",
+            "title": "Basis Label",
+            "type": "string"
+          },
+          "engine_version": {
+            "cls": "internal",
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "audit_flux",
+              "ssars_review"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lines": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "stage": {
+            "cls": "internal",
+            "enum": [
+              "preliminary",
+              "substantive",
+              "final",
+              "review"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalyticsSetStatus",
+            "cls": "internal"
+          },
+          "tallies": {
+            "$ref": "#/components/schemas/TalliesOut",
+            "cls": "internal"
+          },
+          "threshold": {
+            "$ref": "#/components/schemas/ThresholdOut",
+            "cls": "internal"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "stage",
+          "version_no",
+          "status",
+          "basis_label",
+          "threshold",
+          "tallies",
+          "lines",
+          "engine_version",
+          "inputs_hash",
+          "allowed_actions"
+        ],
+        "title": "AnalyticsSetOut",
+        "type": "object"
+      },
+      "AnalyticsSetStatus": {
+        "enum": [
+          "computing",
+          "current",
+          "out_of_date",
+          "superseded"
+        ],
+        "title": "AnalyticsSetStatus",
+        "type": "string"
       },
       "AnchorCountsIn": {
         "additionalProperties": false,
@@ -20403,6 +20693,63 @@
         "title": "ClientPreviewOut",
         "type": "object"
       },
+      "ClientQuestionsIn": {
+        "additionalProperties": false,
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionCardIn"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Cards",
+            "type": "array"
+          },
+          "line_positions": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Line Positions",
+            "type": "array"
+          },
+          "recipient_contact_id": {
+            "format": "uuid",
+            "title": "Recipient Contact Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "line_positions",
+          "cards",
+          "recipient_contact_id"
+        ],
+        "title": "ClientQuestionsIn",
+        "type": "object"
+      },
+      "ClientQuestionsOut": {
+        "properties": {
+          "questionnaire_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Questionnaire Id",
+            "type": "string"
+          },
+          "sent_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "questionnaire_id",
+          "sent_at"
+        ],
+        "title": "ClientQuestionsOut",
+        "type": "object"
+      },
       "ClientRecordOut": {
         "description": "CLI-02's subbar facts, rail Details and Team, and tab counts. The Team band's Partner is\nthe stored relationship partner; Manager and Preparer are derived (DEC-62, DEC-138).",
         "properties": {
@@ -24421,6 +24768,57 @@
         "title": "ConfirmIn",
         "type": "object"
       },
+      "ConfirmationCoverageOut": {
+        "description": "'AR sent for confirmation $897,950.00 of $5,860,000.00 (15.3%) \u00b7 confirmed \u2026 \u00b7 CT \u2026'.",
+        "properties": {
+          "clearly_trivial": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Clearly Trivial",
+            "type": "string"
+          },
+          "confirmed_total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confirmed Total",
+            "type": "string"
+          },
+          "differences_total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Differences Total",
+            "type": "string"
+          },
+          "population_total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Population Total",
+            "type": "string"
+          },
+          "sent_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sent Pct",
+            "type": "string"
+          },
+          "sent_total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sent Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "population_total",
+          "sent_total",
+          "sent_pct",
+          "confirmed_total",
+          "differences_total",
+          "clearly_trivial"
+        ],
+        "title": "ConfirmationCoverageOut",
+        "type": "object"
+      },
       "ConfirmationCreateIn": {
         "additionalProperties": false,
         "properties": {
@@ -25004,7 +25402,7 @@
           "coverage": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/abacus__modules__assurance__confirmations_contract_models__CoverageOut"
+                "$ref": "#/components/schemas/ConfirmationCoverageOut"
               },
               {
                 "type": "null"
@@ -28337,6 +28735,52 @@
         "title": "CoverageGapsOut",
         "type": "object"
       },
+      "CoverageOut": {
+        "description": "Material areas from C9 mapping against assessed risks, by code (AC4.7: 10 of 10, R8).",
+        "properties": {
+          "covered": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Covered",
+            "type": "integer"
+          },
+          "material_areas": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Material Areas",
+            "type": "integer"
+          },
+          "unaddressed_codes": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unaddressed Codes",
+            "type": "array"
+          },
+          "wording_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Wording Run Id"
+          }
+        },
+        "required": [
+          "material_areas",
+          "covered",
+          "unaddressed_codes",
+          "wording_run_id"
+        ],
+        "title": "CoverageOut",
+        "type": "object"
+      },
       "CreatedNoticeOut": {
         "properties": {
           "engagement_id": {
@@ -28508,6 +28952,100 @@
           }
         },
         "title": "CriteriaIO",
+        "type": "object"
+      },
+      "CriteriaIn": {
+        "additionalProperties": false,
+        "properties": {
+          "overrides": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "default": {},
+            "maxProperties": 5,
+            "propertyNames": {
+              "enum": [
+                "weekend_holiday",
+                "round_amount",
+                "post_close",
+                "manual_by_role",
+                "keywords"
+              ]
+            },
+            "title": "Overrides",
+            "type": "object"
+          },
+          "policy_version_id": {
+            "format": "uuid",
+            "title": "Policy Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "policy_version_id"
+        ],
+        "title": "CriteriaIn",
+        "type": "object"
+      },
+      "CriterionOut": {
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/JeCriterionStatus",
+            "cls": "internal"
+          },
+          "hit_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Hit Count",
+            "type": "integer"
+          },
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "weekend_holiday",
+              "round_amount",
+              "post_close",
+              "manual_by_role",
+              "keywords"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "missing_fields": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Fields",
+            "type": "array"
+          },
+          "params": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "internal",
+            "title": "Params",
+            "type": "object"
+          },
+          "position": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Position",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "position",
+          "key",
+          "params",
+          "availability",
+          "missing_fields",
+          "hit_count"
+        ],
+        "title": "CriterionOut",
         "type": "object"
       },
       "CuecOut": {
@@ -30965,6 +31503,92 @@
         "title": "DeterminationRecordIn",
         "type": "object"
       },
+      "DeviationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "attribute_key": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Attribute Key",
+            "type": "string"
+          },
+          "citation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "description": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "item_position": {
+            "minimum": 1.0,
+            "title": "Item Position",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_position",
+          "attribute_key",
+          "description",
+          "citation_ids"
+        ],
+        "title": "DeviationIn",
+        "type": "object"
+      },
+      "DeviationLogOut": {
+        "description": "'0 deviations \u00b7 upper deviation limit 8.8% < tolerable 10%' (code's UDL, A-03).",
+        "properties": {
+          "comparison": {
+            "cls": "internal",
+            "enum": [
+              "below",
+              "above"
+            ],
+            "title": "Comparison",
+            "type": "string"
+          },
+          "deviations": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Deviations",
+            "type": "integer"
+          },
+          "sample_size": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Sample Size",
+            "type": "integer"
+          },
+          "tolerable_rate": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Tolerable Rate",
+            "type": "string"
+          },
+          "upper_deviation_limit": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Upper Deviation Limit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deviations",
+          "sample_size",
+          "upper_deviation_limit",
+          "tolerable_rate",
+          "comparison"
+        ],
+        "title": "DeviationLogOut",
+        "type": "object"
+      },
       "DiffOpOut": {
         "properties": {
           "op": {
@@ -32383,7 +33007,7 @@
           "tie": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TieOut"
+                "$ref": "#/components/schemas/abacus__modules__evidence__files_shapes__TieOut"
               },
               {
                 "type": "null"
@@ -43105,45 +43729,6 @@
         "title": "EvidenceVersionOut",
         "type": "object"
       },
-      "ExceptionPrefillOut": {
-        "description": "SHL-15's prefill; a person submits it through `assurance.api.record_finding` (or, below\nclearly trivial, `record_misstatement`).",
-        "properties": {
-          "below_clearly_trivial": {
-            "cls": "internal",
-            "title": "Below Clearly Trivial",
-            "type": "boolean"
-          },
-          "confirmation_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Confirmation Id",
-            "type": "string"
-          },
-          "difference": {
-            "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Difference",
-            "type": "string"
-          },
-          "route": {
-            "cls": "internal",
-            "enum": [
-              "finding",
-              "misstatement"
-            ],
-            "title": "Route",
-            "type": "string"
-          }
-        },
-        "required": [
-          "confirmation_id",
-          "difference",
-          "below_clearly_trivial",
-          "route"
-        ],
-        "title": "ExceptionPrefillOut",
-        "type": "object"
-      },
       "ExclusionBody": {
         "additionalProperties": false,
         "properties": {
@@ -43226,6 +43811,252 @@
           "reason"
         ],
         "title": "ExclusionOut",
+        "type": "object"
+      },
+      "ExpansionDecisionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "seen_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Seen Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "seen_hash"
+        ],
+        "title": "ExpansionDecisionIn",
+        "type": "object"
+      },
+      "ExpansionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "add_by_score": {
+            "default": 0,
+            "maximum": 500.0,
+            "minimum": 0.0,
+            "title": "Add By Score",
+            "type": "integer"
+          },
+          "add_item_keys": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500,
+            "title": "Add Item Keys",
+            "type": "array"
+          },
+          "add_unpredictable": {
+            "default": 0,
+            "maximum": 500.0,
+            "minimum": 0.0,
+            "title": "Add Unpredictable",
+            "type": "integer"
+          },
+          "approver_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver User Id"
+          },
+          "rationale": {
+            "cls": "confidential",
+            "maxLength": 2000,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "rationale_suggestion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale Suggestion Id"
+          }
+        },
+        "required": [
+          "rationale"
+        ],
+        "title": "ExpansionIn",
+        "type": "object"
+      },
+      "ExpansionOut": {
+        "properties": {
+          "add_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Add Count",
+            "type": "integer"
+          },
+          "approver_initials": {
+            "cls": "internal",
+            "title": "Approver Initials",
+            "type": "string"
+          },
+          "approver_name": {
+            "cls": "confidential",
+            "title": "Approver Name",
+            "type": "string"
+          },
+          "base_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Base Count",
+            "type": "integer"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "requested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "resulting_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Resulting Count",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SampleExpansionStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "base_count",
+          "add_count",
+          "resulting_count",
+          "approver_name",
+          "approver_initials",
+          "requested_at"
+        ],
+        "title": "ExpansionOut",
+        "type": "object"
+      },
+      "ExpectationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Basis",
+            "type": "string"
+          },
+          "citation_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "high_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Pct"
+          },
+          "low_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Pct"
+          }
+        },
+        "required": [
+          "basis"
+        ],
+        "title": "ExpectationIn",
+        "type": "object"
+      },
+      "ExpectationOut": {
+        "properties": {
+          "basis": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "title": "Basis",
+            "type": "string"
+          },
+          "high_pct": {
+            "anyOf": [
+              {
+                "cls": "confidential",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Pct"
+          },
+          "low_pct": {
+            "anyOf": [
+              {
+                "cls": "confidential",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Pct"
+          }
+        },
+        "required": [
+          "low_pct",
+          "high_pct",
+          "basis"
+        ],
+        "title": "ExpectationOut",
         "type": "object"
       },
       "ExpenseRowOut": {
@@ -43602,6 +44433,135 @@
           "agent_run_id"
         ],
         "title": "ExplainAcceptedOut",
+        "type": "object"
+      },
+      "ExplanationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "suggestion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion Id"
+          },
+          "text": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "citation_ids"
+        ],
+        "title": "ExplanationIn",
+        "type": "object"
+      },
+      "ExplanationOut": {
+        "properties": {
+          "accepted_by_initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Accepted By Initials"
+          },
+          "authored_by_name": {
+            "cls": "confidential",
+            "title": "Authored By Name",
+            "type": "string"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "client_answered_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Answered On"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "agent",
+              "staff",
+              "client_answer"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "suggestion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggestion Id"
+          },
+          "text": {
+            "cls": "confidential",
+            "maxLength": 1000,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "citation_ids",
+          "source",
+          "suggestion_id",
+          "authored_by_name",
+          "client_answered_on",
+          "accepted_by_initials"
+        ],
+        "title": "ExplanationOut",
         "type": "object"
       },
       "ExportCreateIn": {
@@ -58488,6 +59448,96 @@
         "title": "InherentFactorOut",
         "type": "object"
       },
+      "InquiryProgramIn": {
+        "additionalProperties": false,
+        "properties": {
+          "methodology_program_id": {
+            "format": "uuid",
+            "title": "Methodology Program Id",
+            "type": "string"
+          },
+          "recipient_contact_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Recipient Contact Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "methodology_program_id",
+          "recipient_contact_ids"
+        ],
+        "title": "InquiryProgramIn",
+        "type": "object"
+      },
+      "InquiryProgramOut": {
+        "properties": {
+          "published": {
+            "cls": "internal",
+            "title": "Published",
+            "type": "boolean"
+          },
+          "questionnaire_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Questionnaire Id",
+            "type": "string"
+          },
+          "questions": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Questions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "questionnaire_id",
+          "questions",
+          "published"
+        ],
+        "title": "InquiryProgramOut",
+        "type": "object"
+      },
+      "InquirySummaryOut": {
+        "properties": {
+          "answered": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Answered",
+            "type": "integer"
+          },
+          "open": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Open",
+            "type": "integer"
+          },
+          "questionnaire_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Questionnaire Id"
+          }
+        },
+        "required": [
+          "answered",
+          "open",
+          "questionnaire_id"
+        ],
+        "title": "InquirySummaryOut",
+        "type": "object"
+      },
       "InstallmentDatesOut": {
         "description": "C21 additive (T-03-T04): an estimate form's installment due dates with provenance.",
         "properties": {
@@ -63370,6 +64420,158 @@
         ],
         "title": "ItemVersionOut",
         "type": "object"
+      },
+      "JeCriterionStatus": {
+        "enum": [
+          "available",
+          "not_available"
+        ],
+        "title": "JeCriterionStatus",
+        "type": "string"
+      },
+      "JeTestCreateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "gl_snapshot_id": {
+            "format": "uuid",
+            "title": "Gl Snapshot Id",
+            "type": "string"
+          },
+          "period_end": {
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "post_close_through": {
+            "format": "date",
+            "title": "Post Close Through",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gl_snapshot_id",
+          "period_start",
+          "period_end",
+          "post_close_through"
+        ],
+        "title": "JeTestCreateIn",
+        "type": "object"
+      },
+      "JeTestOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "public",
+            "items": {
+              "enum": [
+                "je_test.configure",
+                "je_test.score",
+                "sample_set.create"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "criteria": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/CriterionOut"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engine Version"
+          },
+          "entries_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Entries Count",
+            "type": "integer"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lines_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Lines Count",
+            "type": "integer"
+          },
+          "score_version": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Score Version",
+            "type": "integer"
+          },
+          "selection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/abacus__modules__sampling__fieldwork_contract__SelectionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JeTestStatus",
+            "cls": "internal"
+          },
+          "tie": {
+            "$ref": "#/components/schemas/abacus__modules__sampling__fieldwork_contract__TieOut",
+            "cls": "internal"
+          },
+          "unique_flagged": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Unique Flagged",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "entries_count",
+          "lines_count",
+          "tie",
+          "criteria",
+          "unique_flagged",
+          "score_version",
+          "engine_version",
+          "selection",
+          "allowed_actions"
+        ],
+        "title": "JeTestOut",
+        "type": "object"
+      },
+      "JeTestStatus": {
+        "enum": [
+          "draft",
+          "scoring",
+          "scored",
+          "failed"
+        ],
+        "title": "JeTestStatus",
+        "type": "string"
       },
       "JoinedOut": {
         "properties": {
@@ -85050,6 +86252,63 @@
         "title": "PortalVisibilityOut",
         "type": "object"
       },
+      "PostingUserRoleIn": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Id"
+          },
+          "posting_user": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Posting User",
+            "type": "string"
+          },
+          "role_class": {
+            "enum": [
+              "senior_management",
+              "accounting_staff",
+              "system",
+              "unknown"
+            ],
+            "title": "Role Class",
+            "type": "string"
+          }
+        },
+        "required": [
+          "posting_user",
+          "role_class"
+        ],
+        "title": "PostingUserRoleIn",
+        "type": "object"
+      },
+      "PostingUserRolesIn": {
+        "additionalProperties": false,
+        "properties": {
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/PostingUserRoleIn"
+            },
+            "maxItems": 500,
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "roles"
+        ],
+        "title": "PostingUserRolesIn",
+        "type": "object"
+      },
       "PostponementArea": {
         "additionalProperties": false,
         "properties": {
@@ -85541,6 +86800,83 @@
         "title": "PriorChoiceOut",
         "type": "object"
       },
+      "PriorYearFigureIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "citation_id": {
+            "format": "uuid",
+            "title": "Citation Id",
+            "type": "string"
+          },
+          "fs_line_key": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Fs Line Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fs_line_key",
+          "amount",
+          "citation_id"
+        ],
+        "title": "PriorYearFigureIn",
+        "type": "object"
+      },
+      "PriorYearFiguresIn": {
+        "additionalProperties": false,
+        "properties": {
+          "figures": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PriorYearFigureIn"
+            },
+            "maxItems": 500,
+            "title": "Figures",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "prior_engagement",
+              "import"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "PriorYearFiguresIn",
+        "type": "object"
+      },
+      "PriorYearFiguresOut": {
+        "properties": {
+          "count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "PriorYearFiguresOut",
+        "type": "object"
+      },
       "PriorYearOut": {
         "properties": {
           "amount": {
@@ -85717,7 +87053,7 @@
           "selection": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/SelectionOut"
+                "$ref": "#/components/schemas/abacus__modules__fieldwork__routes__SelectionOut"
               },
               {
                 "type": "null"
@@ -87052,6 +88388,36 @@
         "title": "ProposedTemplateOut",
         "type": "object"
       },
+      "ProvenanceOut": {
+        "description": "SHL-09: the cell and its formula ('TB!D14').",
+        "properties": {
+          "cell": {
+            "cls": "internal",
+            "title": "Cell",
+            "type": "string"
+          },
+          "formula": {
+            "cls": "internal",
+            "title": "Formula",
+            "type": "string"
+          },
+          "sources": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cell",
+          "formula",
+          "sources"
+        ],
+        "title": "ProvenanceOut",
+        "type": "object"
+      },
       "ProvidedOut": {
         "properties": {
           "on": {
@@ -87671,6 +89037,29 @@
           }
         },
         "title": "QuestionAnswerIn",
+        "type": "object"
+      },
+      "QuestionCardIn": {
+        "additionalProperties": false,
+        "properties": {
+          "template_key": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Template Key",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_key",
+          "text"
+        ],
+        "title": "QuestionCardIn",
         "type": "object"
       },
       "QuestionCreateIn": {
@@ -88580,6 +89969,40 @@
           "assignee_user_id"
         ],
         "title": "QueueEntryOut",
+        "type": "object"
+      },
+      "RailRowOut": {
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "inquiries",
+              "analytics",
+              "read_fs",
+              "fs",
+              "report",
+              "approval"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "state": {
+            "cls": "internal",
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "state"
+        ],
+        "title": "RailRowOut",
         "type": "object"
       },
       "RaiseNoteBody": {
@@ -91125,6 +92548,29 @@
           "skipped"
         ],
         "title": "RemindOut",
+        "type": "object"
+      },
+      "ReminderIn": {
+        "additionalProperties": false,
+        "properties": {
+          "template_key": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Template Key",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_key",
+          "text"
+        ],
+        "title": "ReminderIn",
         "type": "object"
       },
       "RemindersIn": {
@@ -101598,6 +103044,16 @@
         "title": "SafeguardsOut",
         "type": "object"
       },
+      "SampleExpansionStatus": {
+        "enum": [
+          "pending_approval",
+          "approved",
+          "rejected",
+          "withdrawn"
+        ],
+        "title": "SampleExpansionStatus",
+        "type": "string"
+      },
       "SampleItemOut": {
         "description": "One selected item; display fields only (Restricted columns are never copied, ADR-031).",
         "properties": {
@@ -102328,6 +103784,145 @@
           "id"
         ],
         "title": "ScopeRef",
+        "type": "object"
+      },
+      "ScoreRunOut": {
+        "properties": {
+          "je_test_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Je Test Id",
+            "type": "string"
+          },
+          "score_version": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Score Version",
+            "type": "integer"
+          },
+          "workflow_id": {
+            "cls": "internal",
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "je_test_id",
+          "score_version",
+          "workflow_id"
+        ],
+        "title": "ScoreRunOut",
+        "type": "object"
+      },
+      "ScoredEntriesOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ScoredEntryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ScoredEntriesOut",
+        "type": "object"
+      },
+      "ScoredEntryOut": {
+        "description": "One scored entry: never a score without its reason codes (AVOID).",
+        "properties": {
+          "account_last4": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Account Last4"
+          },
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "title": "Description",
+            "type": "string"
+          },
+          "entry_ref": {
+            "cls": "confidential",
+            "title": "Entry Ref",
+            "type": "string"
+          },
+          "posted_on": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Posted On",
+            "type": "string"
+          },
+          "reason_codes": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "weekend",
+                "holiday",
+                "round_amount",
+                "post_close",
+                "manual_by_role",
+                "keyword"
+              ],
+              "type": "string"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
+          "score": {
+            "cls": "internal",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "integer"
+          },
+          "selected": {
+            "cls": "internal",
+            "title": "Selected",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry_ref",
+          "posted_on",
+          "amount",
+          "account_last4",
+          "description",
+          "score",
+          "reason_codes",
+          "selected"
+        ],
+        "title": "ScoredEntryOut",
         "type": "object"
       },
       "ScreenOutIn": {
@@ -104670,47 +106265,44 @@
         "title": "SegmentsOut",
         "type": "object"
       },
-      "SelectionOut": {
+      "SelectionIn": {
+        "additionalProperties": false,
         "properties": {
-          "by_rule": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "cls": "internal",
-            "title": "By Rule",
-            "type": "object"
+          "score_min": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Min"
           },
-          "created_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
+          "top_n": {
+            "anyOf": [
+              {
+                "maximum": 5000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top N"
           },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "item_count": {
-            "cls": "internal",
-            "title": "Item Count",
-            "type": "integer"
-          },
-          "seed": {
-            "cls": "internal",
-            "title": "Seed",
+          "unpredictable_n": {
+            "default": 0,
+            "maximum": 500.0,
+            "minimum": 0.0,
+            "title": "Unpredictable N",
             "type": "integer"
           }
         },
-        "required": [
-          "id",
-          "item_count",
-          "by_rule",
-          "seed",
-          "created_at"
-        ],
-        "title": "SelectionOut",
+        "title": "SelectionIn",
         "type": "object"
       },
       "SelectionSupportOut": {
@@ -109793,6 +111385,104 @@
           "early_adopt_ssars27"
         ],
         "title": "SsarsCasSettingsPayload",
+        "type": "object"
+      },
+      "SsarsWorkspaceOut": {
+        "description": "AUD-26: the mode from the engagement type (read-only), its rail and summaries.",
+        "properties": {
+          "analytics_set_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Analytics Set Id"
+          },
+          "approval_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Approval Label"
+          },
+          "inquiries": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InquirySummaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "legend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Legend"
+          },
+          "mode": {
+            "cls": "internal",
+            "enum": [
+              "review",
+              "compilation",
+              "preparation"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "rail": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RailRowOut"
+            },
+            "title": "Rail",
+            "type": "array"
+          },
+          "report_available": {
+            "cls": "internal",
+            "title": "Report Available",
+            "type": "boolean"
+          },
+          "standard": {
+            "cls": "internal",
+            "enum": [
+              "AR-C 90",
+              "AR-C 80",
+              "AR-C 70"
+            ],
+            "title": "Standard",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "standard",
+          "rail",
+          "analytics_set_id",
+          "inquiries",
+          "legend",
+          "report_available",
+          "approval_label"
+        ],
+        "title": "SsarsWorkspaceOut",
         "type": "object"
       },
       "SsoExemptAccountIn": {
@@ -115303,6 +116993,48 @@
         "title": "TakenOut",
         "type": "object"
       },
+      "TalliesOut": {
+        "properties": {
+          "explained": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Explained",
+            "type": "integer"
+          },
+          "lines": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Lines",
+            "type": "integer"
+          },
+          "over_threshold": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Over Threshold",
+            "type": "integer"
+          },
+          "tb_balanced": {
+            "cls": "internal",
+            "title": "Tb Balanced",
+            "type": "boolean"
+          },
+          "unexplained": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Unexplained",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "lines",
+          "over_threshold",
+          "explained",
+          "unexplained",
+          "tb_balanced"
+        ],
+        "title": "TalliesOut",
+        "type": "object"
+      },
       "TallyOut": {
         "description": "Counted from the rows by code (AC4.1: 10 \u00b7 2 (+1 proposed) \u00b7 2 \u00b7 3 \u00b7 1 \u00b7 Pending).",
         "examples": [
@@ -119703,6 +121435,35 @@
         "title": "TestIn",
         "type": "object"
       },
+      "TestRunOut": {
+        "description": "A `fieldwork_attribute` run started by a person; attributed '<person> via Agent'.",
+        "properties": {
+          "initiator_name": {
+            "cls": "confidential",
+            "title": "Initiator Name",
+            "type": "string"
+          },
+          "items": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Items",
+            "type": "integer"
+          },
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "items",
+          "initiator_name"
+        ],
+        "title": "TestRunOut",
+        "type": "object"
+      },
       "TextRetryOut": {
         "description": "`queued`, or `refused` with the first failing gate's reason (never retried by itself).",
         "properties": {
@@ -120424,6 +122185,76 @@
         "title": "ThreadShareIn",
         "type": "object"
       },
+      "ThresholdOut": {
+        "description": "'10% and $116,250' with the materiality it came from and the deciding partner.",
+        "properties": {
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "decider_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Decider Name"
+          },
+          "materiality_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Materiality Version Id"
+          },
+          "overall_materiality": {
+            "anyOf": [
+              {
+                "cls": "confidential",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Materiality"
+          },
+          "pct": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Pct",
+            "type": "string"
+          },
+          "provisional": {
+            "cls": "internal",
+            "title": "Provisional",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pct",
+          "amount",
+          "materiality_version_id",
+          "overall_materiality",
+          "provisional",
+          "decider_name"
+        ],
+        "title": "ThresholdOut",
+        "type": "object"
+      },
       "ThresholdRefOut": {
         "additionalProperties": false,
         "description": "A row's threshold cell; it links to KNW-04 (K-02).",
@@ -120769,48 +122600,6 @@
           "linked_at"
         ],
         "title": "TieIssueLinkOut",
-        "type": "object"
-      },
-      "TieOut": {
-        "description": "Virtual documents' total against a mapped TB account; computed by code (ADR-050, DV-13).",
-        "properties": {
-          "account_number": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Account Number"
-          },
-          "ties": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Ties"
-          },
-          "total": {
-            "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Total",
-            "type": "string"
-          }
-        },
-        "required": [
-          "total",
-          "account_number",
-          "ties"
-        ],
-        "title": "TieOut",
         "type": "object"
       },
       "TieOutCheckBody": {
@@ -133313,6 +135102,30 @@
         "title": "RejectIn",
         "type": "object"
       },
+      "abacus__modules__agents__routes__AdoptIn": {
+        "additionalProperties": false,
+        "properties": {
+          "item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 500,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Item Ids"
+          }
+        },
+        "title": "AdoptIn",
+        "type": "object"
+      },
       "abacus__modules__agents__routes__ApprovalIn": {
         "additionalProperties": false,
         "properties": {
@@ -133607,55 +135420,43 @@
         "title": "AuthorizationOut",
         "type": "object"
       },
-      "abacus__modules__assurance__confirmations_contract_models__CoverageOut": {
-        "description": "'AR sent for confirmation $897,950.00 of $5,860,000.00 (15.3%) \u00b7 confirmed \u2026 \u00b7 CT \u2026'.",
+      "abacus__modules__assurance__confirmations_contract_models__ExceptionPrefillOut": {
+        "description": "SHL-15's prefill; a person submits it through `assurance.api.record_finding` (or, below\nclearly trivial, `record_misstatement`).",
         "properties": {
-          "clearly_trivial": {
-            "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Clearly Trivial",
-            "type": "string"
-          },
-          "confirmed_total": {
-            "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Confirmed Total",
-            "type": "string"
-          },
-          "differences_total": {
-            "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Differences Total",
-            "type": "string"
-          },
-          "population_total": {
-            "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Population Total",
-            "type": "string"
-          },
-          "sent_pct": {
+          "below_clearly_trivial": {
             "cls": "internal",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Sent Pct",
+            "title": "Below Clearly Trivial",
+            "type": "boolean"
+          },
+          "confirmation_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Confirmation Id",
             "type": "string"
           },
-          "sent_total": {
+          "difference": {
             "cls": "confidential",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Sent Total",
+            "title": "Difference",
+            "type": "string"
+          },
+          "route": {
+            "cls": "internal",
+            "enum": [
+              "finding",
+              "misstatement"
+            ],
+            "title": "Route",
             "type": "string"
           }
         },
         "required": [
-          "population_total",
-          "sent_total",
-          "sent_pct",
-          "confirmed_total",
-          "differences_total",
-          "clearly_trivial"
+          "confirmation_id",
+          "difference",
+          "below_clearly_trivial",
+          "route"
         ],
-        "title": "CoverageOut",
+        "title": "ExceptionPrefillOut",
         "type": "object"
       },
       "abacus__modules__assurance__confirmations_contract_models__ReconciliationOut": {
@@ -134182,50 +135983,27 @@
         "title": "MisstatementOut",
         "type": "object"
       },
-      "abacus__modules__assurance__planning_contract__CoverageOut": {
-        "description": "Material areas from C9 mapping against assessed risks, by code (AC4.7: 10 of 10, R8).",
+      "abacus__modules__closes__contract__AdoptOut": {
+        "additionalProperties": false,
         "properties": {
-          "covered": {
+          "adopted": {
             "cls": "internal",
             "minimum": 0.0,
-            "title": "Covered",
+            "title": "Adopted",
             "type": "integer"
           },
-          "material_areas": {
+          "row_version": {
             "cls": "internal",
-            "minimum": 0.0,
-            "title": "Material Areas",
+            "minimum": 1.0,
+            "title": "Row Version",
             "type": "integer"
-          },
-          "unaddressed_codes": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Unaddressed Codes",
-            "type": "array"
-          },
-          "wording_run_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Wording Run Id"
           }
         },
         "required": [
-          "material_areas",
-          "covered",
-          "unaddressed_codes",
-          "wording_run_id"
+          "adopted",
+          "row_version"
         ],
-        "title": "CoverageOut",
+        "title": "AdoptOut",
         "type": "object"
       },
       "abacus__modules__connections__routes__ProviderOut": {
@@ -134354,6 +136132,48 @@
           "done"
         ],
         "title": "StepOut",
+        "type": "object"
+      },
+      "abacus__modules__evidence__files_shapes__TieOut": {
+        "description": "Virtual documents' total against a mapped TB account; computed by code (ADR-050, DV-13).",
+        "properties": {
+          "account_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Account Number"
+          },
+          "ties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ties"
+          },
+          "total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "total",
+          "account_number",
+          "ties"
+        ],
+        "title": "TieOut",
         "type": "object"
       },
       "abacus__modules__evidence__routes__CitationOut": {
@@ -134884,6 +136704,49 @@
         "title": "ResultIn",
         "type": "object"
       },
+      "abacus__modules__fieldwork__routes__SelectionOut": {
+        "properties": {
+          "by_rule": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "By Rule",
+            "type": "object"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "item_count": {
+            "cls": "internal",
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "seed": {
+            "cls": "internal",
+            "title": "Seed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "item_count",
+          "by_rule",
+          "seed",
+          "created_at"
+        ],
+        "title": "SelectionOut",
+        "type": "object"
+      },
       "abacus__modules__fieldwork__routes__StartIn": {
         "additionalProperties": false,
         "properties": {
@@ -135366,6 +137229,140 @@
         "title": "PopulationOut",
         "type": "object"
       },
+      "abacus__modules__sampling__fieldwork_contract__SelectionOut": {
+        "properties": {
+          "approved_by_initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved By Initials"
+          },
+          "approved_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approved On"
+          },
+          "by_score": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "By Score",
+            "type": "integer"
+          },
+          "pending_expansion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExpansionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "sample_set_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Sample Set Id",
+            "type": "string"
+          },
+          "sampler_version": {
+            "cls": "internal",
+            "title": "Sampler Version",
+            "type": "string"
+          },
+          "score_min": {
+            "cls": "internal",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score Min",
+            "type": "integer"
+          },
+          "seed": {
+            "cls": "internal",
+            "title": "Seed",
+            "type": "string"
+          },
+          "unpredictable": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Unpredictable",
+            "type": "integer"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sample_set_id",
+          "version_no",
+          "by_score",
+          "unpredictable",
+          "score_min",
+          "seed",
+          "sampler_version",
+          "approved_by_initials",
+          "approved_on"
+        ],
+        "title": "SelectionOut",
+        "type": "object"
+      },
+      "abacus__modules__sampling__fieldwork_contract__TieOut": {
+        "description": "'Opening TB + JE activity = closing TB for 214 of 214 accounts \u00b7 $0.00'.",
+        "properties": {
+          "accounts_tied": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Accounts Tied",
+            "type": "integer"
+          },
+          "accounts_total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Accounts Total",
+            "type": "integer"
+          },
+          "difference": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Difference",
+            "type": "string"
+          },
+          "result": {
+            "cls": "internal",
+            "enum": [
+              "tie",
+              "difference"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accounts_tied",
+          "accounts_total",
+          "difference",
+          "result"
+        ],
+        "title": "TieOut",
+        "type": "object"
+      },
       "abacus__modules__signatures__contract__RevealIn": {
         "additionalProperties": false,
         "description": "A reveal's reason.",
@@ -135401,6 +137398,103 @@
           "count"
         ],
         "title": "StatusTileOut",
+        "type": "object"
+      },
+      "abacus__modules__workpapers__fieldwork_tests_contract__AdoptIn": {
+        "additionalProperties": false,
+        "properties": {
+          "seen_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Seen Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seen_hash"
+        ],
+        "title": "AdoptIn",
+        "type": "object"
+      },
+      "abacus__modules__workpapers__fieldwork_tests_contract__AdoptOut": {
+        "properties": {
+          "adopted_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Adopted At",
+            "type": "string"
+          },
+          "content_hash": {
+            "cls": "internal",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "sign_off_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Sign Off Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sign_off_id",
+          "content_hash",
+          "adopted_at"
+        ],
+        "title": "AdoptOut",
+        "type": "object"
+      },
+      "abacus__modules__workpapers__fieldwork_tests_contract__ExceptionPrefillOut": {
+        "description": "SHL-15's prefill; a person submits it through `assurance.api.record_finding`.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "test_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Test Id",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "test_id",
+          "item_id",
+          "title",
+          "amount",
+          "citation_ids"
+        ],
+        "title": "ExceptionPrefillOut",
         "type": "object"
       }
     },
@@ -138585,6 +140679,952 @@
           "closes"
         ],
         "x-abacus-action": "flux.edit"
+      }
+    },
+    "/v1/analytics-sets/{analytics_set_id}": {
+      "get": {
+        "operationId": "get_analytics_set",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Analytics Set",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "analytics.read"
+      }
+    },
+    "/v1/analytics-sets/{analytics_set_id}/client-questions": {
+      "post": {
+        "description": "A T-02 questionnaire to POR-05 from firm templates a person edited; a person sends.",
+        "operationId": "send_client_questions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientQuestionsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientQuestionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Send Client Questions",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "client_question.send"
+      }
+    },
+    "/v1/analytics-sets/{analytics_set_id}/explanations/accept": {
+      "post": {
+        "description": "SHL-10; the acceptor is never the explanation's author (I-SEGREGATION).",
+        "operationId": "accept_explanations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptExplanationsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Accept Explanations",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "analytics.accept"
+      }
+    },
+    "/v1/analytics-sets/{analytics_set_id}/export.xlsx": {
+      "get": {
+        "operationId": "export_analytics",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Export Analytics",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Export Analytics",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "analytics.export"
+      }
+    },
+    "/v1/analytics-sets/{analytics_set_id}/lines/{position}/expectation": {
+      "put": {
+        "operationId": "put_expectation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "position",
+            "required": true,
+            "schema": {
+              "title": "Position",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpectationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsLineOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Put Expectation",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "analytics.configure"
+      }
+    },
+    "/v1/analytics-sets/{analytics_set_id}/lines/{position}/explanation": {
+      "put": {
+        "description": "422 `explanation_uncited` without a verified citation (INV-2).",
+        "operationId": "put_explanation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "position",
+            "required": true,
+            "schema": {
+              "title": "Position",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplanationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsLineOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Put Explanation",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "analytics.explain"
+      }
+    },
+    "/v1/analytics-sets/{analytics_set_id}/lines/{position}/provenance": {
+      "get": {
+        "operationId": "line_provenance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "position",
+            "required": true,
+            "schema": {
+              "title": "Position",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProvenanceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Line Provenance",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "analytics.read"
       }
     },
     "/v1/approval-batches": {
@@ -165005,7 +168045,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdoptOut"
+                  "$ref": "#/components/schemas/abacus__modules__closes__contract__AdoptOut"
                 }
               }
             },
@@ -165143,7 +168183,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdoptOut"
+                  "$ref": "#/components/schemas/abacus__modules__closes__contract__AdoptOut"
                 }
               }
             },
@@ -171760,7 +174800,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExceptionPrefillOut"
+                  "$ref": "#/components/schemas/abacus__modules__assurance__confirmations_contract_models__ExceptionPrefillOut"
                 }
               }
             },
@@ -198015,7 +201055,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdoptIn"
+                "$ref": "#/components/schemas/abacus__modules__agents__routes__AdoptIn"
               }
             }
           },
@@ -211034,7 +214074,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__assurance__planning_contract__CoverageOut"
+                  "$ref": "#/components/schemas/CoverageOut"
                 }
               }
             },
@@ -251188,6 +254228,851 @@
         "x-abacus-action": "issue.verify"
       }
     },
+    "/v1/je-tests/{je_test_id}": {
+      "get": {
+        "operationId": "get_je_test",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "je_test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Je Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JeTestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Get Je Test",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "je_test.read"
+      }
+    },
+    "/v1/je-tests/{je_test_id}/criteria": {
+      "put": {
+        "operationId": "put_criteria",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "je_test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Je Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriteriaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JeTestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Put Criteria",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "je_test.configure"
+      }
+    },
+    "/v1/je-tests/{je_test_id}/entries": {
+      "get": {
+        "operationId": "list_entries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "je_test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Je Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "criterion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "weekend_holiday",
+                    "round_amount",
+                    "post_close",
+                    "manual_by_role",
+                    "keywords"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Criterion"
+            }
+          },
+          {
+            "in": "query",
+            "name": "selected",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Selected"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoredEntriesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "List Entries",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "je_test.read"
+      }
+    },
+    "/v1/je-tests/{je_test_id}/posting-user-roles": {
+      "put": {
+        "operationId": "put_posting_user_roles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "je_test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Je Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostingUserRolesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JeTestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Put Posting User Roles",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "je_test.configure"
+      }
+    },
+    "/v1/je-tests/{je_test_id}/score": {
+      "post": {
+        "description": "202: `JeScoringWorkflow` (409 `population_not_tied`).",
+        "operationId": "score",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "je_test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Je Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Score",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "je_test.score"
+      }
+    },
+    "/v1/je-tests/{je_test_id}/selection": {
+      "post": {
+        "description": "A sample-set version, method `je_score_selection`, through `SampleDrawWorkflow`.",
+        "operationId": "draw_selection",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "je_test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Je Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__sampling__fieldwork_contract__SelectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Draw Selection",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "sample_set.create"
+      }
+    },
     "/v1/k1-furnishing-disclosures": {
       "post": {
         "description": "S20e (DV-12): a firm admin's new version of the counsel-approved text (content, never a\nseed for a real firm).",
@@ -283935,6 +287820,291 @@
         "x-abacus-action": "run_content.read"
       }
     },
+    "/v1/sample-expansions/{expansion_id}/decide": {
+      "post": {
+        "description": "The named approver only, never the requester; 409 `content_changed`.",
+        "operationId": "decide_expansion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "expansion_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Expansion Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpansionDecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpansionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Decide Expansion",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "sample_expansion.decide"
+      }
+    },
+    "/v1/sample-expansions/{expansion_id}/withdraw": {
+      "post": {
+        "operationId": "withdraw_expansion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "expansion_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Expansion Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpansionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Withdraw Expansion",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "sample_expansion.request"
+      }
+    },
     "/v1/sample-sets/{sample_set_id}": {
       "get": {
         "operationId": "sample_set",
@@ -284056,6 +288226,154 @@
           "sampling"
         ],
         "x-abacus-action": "sample_set.read"
+      }
+    },
+    "/v1/sample-sets/{sample_set_id}/expansions": {
+      "post": {
+        "description": "422 `expansion_rationale_required`, `approver_required`; nothing changes until approved.",
+        "operationId": "request_expansion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sample_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sample Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpansionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpansionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Request Expansion",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "sample_expansion.request"
       }
     },
     "/v1/sample-sets/{sample_set_id}/versions": {
@@ -308470,6 +312788,685 @@
         "x-abacus-action": "own"
       }
     },
+    "/v1/tests/{test_id}/adopt": {
+      "post": {
+        "description": "L1 through `review.api.record_sign_off` with the version's content hash.",
+        "operationId": "adopt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/abacus__modules__workpapers__fieldwork_tests_contract__AdoptIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__workpapers__fieldwork_tests_contract__AdoptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Adopt",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "test.adopt"
+      }
+    },
+    "/v1/tests/{test_id}/deviations": {
+      "post": {
+        "description": "Insert-only; the UDL recomputes in code (0 of 25 \u21d2 8.8%; 2 of 25 \u21d2 19.9%).",
+        "operationId": "log_deviation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationLogOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Log Deviation",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "test.mark"
+      }
+    },
+    "/v1/tests/{test_id}/export.xlsx": {
+      "get": {
+        "description": "'JE Testing.xlsx': byte-identical per version, accounts masked to the last four.",
+        "operationId": "export_test",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Export Test",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Export Test",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "test.export"
+      }
+    },
+    "/v1/tests/{test_id}/items/{item_id}/exception": {
+      "post": {
+        "operationId": "exception_prefill",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__workpapers__fieldwork_tests_contract__ExceptionPrefillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Exception Prefill",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "finding.create"
+      }
+    },
+    "/v1/tests/{test_id}/runs": {
+      "post": {
+        "description": "Begin\u2026 / Re-run (behind `audits.fieldwork_agents`; DF-04 on a closed data boundary).",
+        "operationId": "start_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "test_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Test Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Start Run",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "test.run"
+      }
+    },
     "/v1/thread-comments/{comment_id}/redact": {
       "post": {
         "description": "Firm admin with a fresh MFA (matrix); 409 `already_redacted`. A retry with the key after a\nredaction answers 409 too: the comment is redacted either way.",
@@ -311832,6 +316829,154 @@
         "x-abacus-action": "adjusted_tb.read"
       }
     },
+    "/v1/work-items/{work_item_id}/analytics-sets": {
+      "post": {
+        "description": "202: `FluxAnalyticsWorkflow`; a recompute is a new version, never an edit.",
+        "operationId": "run_analytics",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsRunIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Run Analytics",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "analytics.run"
+      }
+    },
     "/v1/work-items/{work_item_id}/confirmations": {
       "get": {
         "description": "AUD-14's log (filters type, respondent, status, channel, q) with `allowed_actions`.",
@@ -313352,6 +318497,154 @@
         "x-abacus-action": "finding.create"
       }
     },
+    "/v1/work-items/{work_item_id}/je-tests": {
+      "post": {
+        "description": "The population, its completeness tie and a draft test.",
+        "operationId": "create_je_test",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JeTestCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JeTestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Create Je Test",
+        "tags": [
+          "fieldwork-testing"
+        ],
+        "x-abacus-action": "je_test.create"
+      }
+    },
     "/v1/work-items/{work_item_id}/misstatements": {
       "get": {
         "operationId": "misstatements",
@@ -313599,6 +318892,142 @@
           "sampling"
         ],
         "x-abacus-action": "population.create"
+      }
+    },
+    "/v1/work-items/{work_item_id}/prior-year-figures": {
+      "put": {
+        "operationId": "put_prior_year_figures",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriorYearFiguresIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriorYearFiguresOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Put Prior Year Figures",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "analytics.configure"
       }
     },
     "/v1/work-items/{work_item_id}/proposed-entries": {
@@ -314515,6 +319944,555 @@
           "assurance"
         ],
         "x-abacus-action": "sign_off.read"
+      }
+    },
+    "/v1/work-items/{work_item_id}/ssars": {
+      "get": {
+        "operationId": "ssars_workspace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SsarsWorkspaceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ssars Workspace",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "ssars.read"
+      }
+    },
+    "/v1/work-items/{work_item_id}/ssars/inquiries": {
+      "post": {
+        "description": "The inquiry program from methodology content to a questionnaire.",
+        "operationId": "build_inquiries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InquiryProgramIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquiryProgramOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Build Inquiries",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "ssars.inquiry_manage"
+      }
+    },
+    "/v1/work-items/{work_item_id}/ssars/publish": {
+      "post": {
+        "operationId": "publish_inquiries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquiryProgramOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Publish Inquiries",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "ssars.inquiry_manage"
+      }
+    },
+    "/v1/work-items/{work_item_id}/ssars/remind": {
+      "post": {
+        "description": "A templated reminder a person edits and sends (DV-4).",
+        "operationId": "remind",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientQuestionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Remind",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "client_question.send"
       }
     },
     "/v1/work-items/{work_item_id}/sum": {

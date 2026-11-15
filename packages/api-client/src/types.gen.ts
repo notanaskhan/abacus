@@ -5,6 +5,20 @@ export type ClientOptions = {
 };
 
 /**
+ * AcceptExplanationsIn
+ */
+export type AcceptExplanationsIn = {
+    /**
+     * Line Positions
+     */
+    line_positions: Array<number>;
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
  * AcceptIn
  */
 export type AcceptIn = {
@@ -1202,30 +1216,6 @@ export type AdoptBody = {
 };
 
 /**
- * AdoptIn
- */
-export type AdoptIn = {
-    /**
-     * Item Ids
-     */
-    item_ids?: Array<string> | null;
-};
-
-/**
- * AdoptOut
- */
-export type AdoptOut = {
-    /**
-     * Adopted
-     */
-    adopted: number;
-    /**
-     * Row Version
-     */
-    row_version: number;
-};
-
-/**
  * AdoptSuggestionIn
  *
  * Adopt as proposed, or with an edited value and its citation note (decision `edited`).
@@ -2330,6 +2320,154 @@ export type AnalysisRunOut = {
      */
     version: number;
 };
+
+/**
+ * AnalyticsLineOut
+ */
+export type AnalyticsLineOut = {
+    /**
+     * Caption
+     */
+    caption: string;
+    /**
+     * Change
+     */
+    change: string;
+    /**
+     * Change Pct
+     */
+    change_pct: string;
+    /**
+     * Cy
+     */
+    cy: string;
+    /**
+     * Derived
+     */
+    derived: boolean;
+    /**
+     * Evaluated
+     */
+    evaluated: boolean;
+    expectation: ExpectationOut | null;
+    explanation: ExplanationOut | null;
+    /**
+     * Fs Line Key
+     */
+    fs_line_key: string;
+    /**
+     * Group Key
+     */
+    group_key: string;
+    /**
+     * Over
+     */
+    over: boolean;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Py
+     */
+    py: string;
+    status: AnalyticsLineStatus | null;
+};
+
+/**
+ * AnalyticsLineStatus
+ */
+export type AnalyticsLineStatus = 'within' | 'unexplained' | 'explained' | 'accepted';
+
+/**
+ * AnalyticsRunIn
+ */
+export type AnalyticsRunIn = {
+    /**
+     * Kind
+     */
+    kind: 'audit_flux' | 'ssars_review';
+    /**
+     * Layer
+     */
+    layer: 'unadjusted' | 'adjusted';
+    /**
+     * Py Source
+     */
+    py_source: 'prior_engagement' | 'import';
+    /**
+     * Stage
+     */
+    stage: 'preliminary' | 'substantive' | 'final' | 'review';
+    /**
+     * Trial Balance Id
+     */
+    trial_balance_id: string;
+};
+
+/**
+ * AnalyticsRunOut
+ */
+export type AnalyticsRunOut = {
+    /**
+     * Analytics Set Id
+     */
+    analytics_set_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * AnalyticsSetOut
+ */
+export type AnalyticsSetOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'analytics.explain' | 'analytics.accept' | 'analytics.configure' | 'client_question.send' | 'analytics.export'>;
+    /**
+     * Basis Label
+     */
+    basis_label: string;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Kind
+     */
+    kind: 'audit_flux' | 'ssars_review';
+    /**
+     * Lines
+     */
+    lines: Array<AnalyticsLineOut>;
+    /**
+     * Stage
+     */
+    stage: 'preliminary' | 'substantive' | 'final' | 'review';
+    status: AnalyticsSetStatus;
+    tallies: TalliesOut;
+    threshold: ThresholdOut;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * AnalyticsSetStatus
+ */
+export type AnalyticsSetStatus = 'computing' | 'current' | 'out_of_date' | 'superseded';
 
 /**
  * AnchorCountsIn
@@ -9460,6 +9598,38 @@ export type ClientPreviewOut = {
 };
 
 /**
+ * ClientQuestionsIn
+ */
+export type ClientQuestionsIn = {
+    /**
+     * Cards
+     */
+    cards: Array<QuestionCardIn>;
+    /**
+     * Line Positions
+     */
+    line_positions: Array<number>;
+    /**
+     * Recipient Contact Id
+     */
+    recipient_contact_id: string;
+};
+
+/**
+ * ClientQuestionsOut
+ */
+export type ClientQuestionsOut = {
+    /**
+     * Questionnaire Id
+     */
+    questionnaire_id: string;
+    /**
+     * Sent At
+     */
+    sent_at: string;
+};
+
+/**
  * ClientRecordOut
  *
  * CLI-02's subbar facts, rail Details and Team, and tab counts. The Team band's Partner is
@@ -11284,6 +11454,38 @@ export type ConfirmIn = {
 };
 
 /**
+ * ConfirmationCoverageOut
+ *
+ * 'AR sent for confirmation $897,950.00 of $5,860,000.00 (15.3%) · confirmed … · CT …'.
+ */
+export type ConfirmationCoverageOut = {
+    /**
+     * Clearly Trivial
+     */
+    clearly_trivial: string;
+    /**
+     * Confirmed Total
+     */
+    confirmed_total: string;
+    /**
+     * Differences Total
+     */
+    differences_total: string;
+    /**
+     * Population Total
+     */
+    population_total: string;
+    /**
+     * Sent Pct
+     */
+    sent_pct: string;
+    /**
+     * Sent Total
+     */
+    sent_total: string;
+};
+
+/**
  * ConfirmationCreateIn
  */
 export type ConfirmationCreateIn = {
@@ -11534,7 +11736,7 @@ export type ConfirmationStatus = 'draft' | 'authorization_requested' | 'sent' | 
  * ConfirmationSummaryOut
  */
 export type ConfirmationSummaryOut = {
-    coverage: AbacusModulesAssuranceConfirmationsContractModelsCoverageOut | null;
+    coverage: ConfirmationCoverageOut | null;
     /**
      * Tiles
      */
@@ -13114,6 +13316,30 @@ export type CoverageGapsOut = {
 };
 
 /**
+ * CoverageOut
+ *
+ * Material areas from C9 mapping against assessed risks, by code (AC4.7: 10 of 10, R8).
+ */
+export type CoverageOut = {
+    /**
+     * Covered
+     */
+    covered: number;
+    /**
+     * Material Areas
+     */
+    material_areas: number;
+    /**
+     * Unaddressed Codes
+     */
+    unaddressed_codes: Array<string>;
+    /**
+     * Wording Run Id
+     */
+    wording_run_id: string | null;
+};
+
+/**
  * CreatedNoticeOut
  */
 export type CreatedNoticeOut = {
@@ -13197,6 +13423,53 @@ export type CriteriaIoOutput = {
      * Window Days
      */
     window_days?: number;
+};
+
+/**
+ * CriteriaIn
+ */
+export type CriteriaIn = {
+    /**
+     * Overrides
+     */
+    overrides?: {
+        [key: string]: {
+            [key: string]: string;
+        };
+    };
+    /**
+     * Policy Version Id
+     */
+    policy_version_id: string;
+};
+
+/**
+ * CriterionOut
+ */
+export type CriterionOut = {
+    availability: JeCriterionStatus;
+    /**
+     * Hit Count
+     */
+    hit_count: number;
+    /**
+     * Key
+     */
+    key: 'weekend_holiday' | 'round_amount' | 'post_close' | 'manual_by_role' | 'keywords';
+    /**
+     * Missing Fields
+     */
+    missing_fields: Array<string>;
+    /**
+     * Params
+     */
+    params: {
+        [key: string]: string;
+    };
+    /**
+     * Position
+     */
+    position: number;
 };
 
 /**
@@ -14365,6 +14638,56 @@ export type DeterminationRecordIn = {
 };
 
 /**
+ * DeviationIn
+ */
+export type DeviationIn = {
+    /**
+     * Attribute Key
+     */
+    attribute_key: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Item Position
+     */
+    item_position: number;
+};
+
+/**
+ * DeviationLogOut
+ *
+ * '0 deviations · upper deviation limit 8.8% < tolerable 10%' (code's UDL, A-03).
+ */
+export type DeviationLogOut = {
+    /**
+     * Comparison
+     */
+    comparison: 'below' | 'above';
+    /**
+     * Deviations
+     */
+    deviations: number;
+    /**
+     * Sample Size
+     */
+    sample_size: number;
+    /**
+     * Tolerable Rate
+     */
+    tolerable_rate: string;
+    /**
+     * Upper Deviation Limit
+     */
+    upper_deviation_limit: string;
+};
+
+/**
  * DiffOpOut
  */
 export type DiffOpOut = {
@@ -15100,7 +15423,7 @@ export type DrawerOut = {
      * Thumbnail Ref
      */
     thumbnail_ref: string | null;
-    tie: TieOut | null;
+    tie: AbacusModulesEvidenceFilesShapesTieOut | null;
     /**
      * Versions
      */
@@ -19987,31 +20310,6 @@ export type EvidenceVersionOut = {
 };
 
 /**
- * ExceptionPrefillOut
- *
- * SHL-15's prefill; a person submits it through `assurance.api.record_finding` (or, below
- * clearly trivial, `record_misstatement`).
- */
-export type ExceptionPrefillOut = {
-    /**
-     * Below Clearly Trivial
-     */
-    below_clearly_trivial: boolean;
-    /**
-     * Confirmation Id
-     */
-    confirmation_id: string;
-    /**
-     * Difference
-     */
-    difference: string;
-    /**
-     * Route
-     */
-    route: 'finding' | 'misstatement';
-};
-
-/**
  * ExclusionBody
  */
 export type ExclusionBody = {
@@ -20057,6 +20355,125 @@ export type ExclusionOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * ExpansionDecisionIn
+ */
+export type ExpansionDecisionIn = {
+    /**
+     * Decision
+     */
+    decision: 'approved' | 'rejected';
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * ExpansionIn
+ */
+export type ExpansionIn = {
+    /**
+     * Add By Score
+     */
+    add_by_score?: number;
+    /**
+     * Add Item Keys
+     */
+    add_item_keys?: Array<string>;
+    /**
+     * Add Unpredictable
+     */
+    add_unpredictable?: number;
+    /**
+     * Approver User Id
+     */
+    approver_user_id?: string | null;
+    /**
+     * Rationale
+     */
+    rationale: string;
+    /**
+     * Rationale Suggestion Id
+     */
+    rationale_suggestion_id?: string | null;
+};
+
+/**
+ * ExpansionOut
+ */
+export type ExpansionOut = {
+    /**
+     * Add Count
+     */
+    add_count: number;
+    /**
+     * Approver Initials
+     */
+    approver_initials: string;
+    /**
+     * Approver Name
+     */
+    approver_name: string;
+    /**
+     * Base Count
+     */
+    base_count: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Requested At
+     */
+    requested_at: string;
+    /**
+     * Resulting Count
+     */
+    resulting_count: number;
+    status: SampleExpansionStatus;
+};
+
+/**
+ * ExpectationIn
+ */
+export type ExpectationIn = {
+    /**
+     * Basis
+     */
+    basis: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * High Pct
+     */
+    high_pct?: number | string | null;
+    /**
+     * Low Pct
+     */
+    low_pct?: number | string | null;
+};
+
+/**
+ * ExpectationOut
+ */
+export type ExpectationOut = {
+    /**
+     * Basis
+     */
+    basis: string;
+    /**
+     * High Pct
+     */
+    high_pct: string | null;
+    /**
+     * Low Pct
+     */
+    low_pct: string | null;
 };
 
 /**
@@ -20218,6 +20635,62 @@ export type ExplainAcceptedOut = {
      * Issue Id
      */
     issue_id: string;
+};
+
+/**
+ * ExplanationIn
+ */
+export type ExplanationIn = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id?: string | null;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * ExplanationOut
+ */
+export type ExplanationOut = {
+    /**
+     * Accepted By Initials
+     */
+    accepted_by_initials: string | null;
+    /**
+     * Authored By Name
+     */
+    authored_by_name: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Client Answered On
+     */
+    client_answered_on: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Source
+     */
+    source: 'agent' | 'staff' | 'client_answer';
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string | null;
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -27308,6 +27781,56 @@ export type InherentFactorOut = {
 };
 
 /**
+ * InquiryProgramIn
+ */
+export type InquiryProgramIn = {
+    /**
+     * Methodology Program Id
+     */
+    methodology_program_id: string;
+    /**
+     * Recipient Contact Ids
+     */
+    recipient_contact_ids: Array<string>;
+};
+
+/**
+ * InquiryProgramOut
+ */
+export type InquiryProgramOut = {
+    /**
+     * Published
+     */
+    published: boolean;
+    /**
+     * Questionnaire Id
+     */
+    questionnaire_id: string;
+    /**
+     * Questions
+     */
+    questions: number;
+};
+
+/**
+ * InquirySummaryOut
+ */
+export type InquirySummaryOut = {
+    /**
+     * Answered
+     */
+    answered: number;
+    /**
+     * Open
+     */
+    open: number;
+    /**
+     * Questionnaire Id
+     */
+    questionnaire_id: string | null;
+};
+
+/**
  * InstallmentDatesOut
  *
  * C21 additive (T-03-T04): an estimate form's installment due dates with provenance.
@@ -29540,6 +30063,79 @@ export type ItemVersionOut = {
      */
     version_no: number;
 };
+
+/**
+ * JeCriterionStatus
+ */
+export type JeCriterionStatus = 'available' | 'not_available';
+
+/**
+ * JeTestCreateIn
+ */
+export type JeTestCreateIn = {
+    /**
+     * Gl Snapshot Id
+     */
+    gl_snapshot_id: string;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Period Start
+     */
+    period_start: string;
+    /**
+     * Post Close Through
+     */
+    post_close_through: string;
+};
+
+/**
+ * JeTestOut
+ */
+export type JeTestOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'je_test.configure' | 'je_test.score' | 'sample_set.create'>;
+    /**
+     * Criteria
+     */
+    criteria: Array<CriterionOut>;
+    /**
+     * Engine Version
+     */
+    engine_version: string | null;
+    /**
+     * Entries Count
+     */
+    entries_count: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Lines Count
+     */
+    lines_count: number;
+    /**
+     * Score Version
+     */
+    score_version: number;
+    selection: AbacusModulesSamplingFieldworkContractSelectionOut | null;
+    status: JeTestStatus;
+    tie: AbacusModulesSamplingFieldworkContractTieOut;
+    /**
+     * Unique Flagged
+     */
+    unique_flagged: number;
+};
+
+/**
+ * JeTestStatus
+ */
+export type JeTestStatus = 'draft' | 'scoring' | 'scored' | 'failed';
 
 /**
  * JoinedOut
@@ -40008,6 +40604,34 @@ export type PortalVisibilityOut = {
 };
 
 /**
+ * PostingUserRoleIn
+ */
+export type PostingUserRoleIn = {
+    /**
+     * Citation Id
+     */
+    citation_id?: string | null;
+    /**
+     * Posting User
+     */
+    posting_user: string;
+    /**
+     * Role Class
+     */
+    role_class: 'senior_management' | 'accounting_staff' | 'system' | 'unknown';
+};
+
+/**
+ * PostingUserRolesIn
+ */
+export type PostingUserRolesIn = {
+    /**
+     * Roles
+     */
+    roles: Array<PostingUserRoleIn>;
+};
+
+/**
  * PostponementArea
  */
 export type PostponementArea = {
@@ -40267,6 +40891,48 @@ export type PriorChoiceOut = {
 };
 
 /**
+ * PriorYearFigureIn
+ */
+export type PriorYearFigureIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Citation Id
+     */
+    citation_id: string;
+    /**
+     * Fs Line Key
+     */
+    fs_line_key: string;
+};
+
+/**
+ * PriorYearFiguresIn
+ */
+export type PriorYearFiguresIn = {
+    /**
+     * Figures
+     */
+    figures?: Array<PriorYearFigureIn>;
+    /**
+     * Source
+     */
+    source: 'prior_engagement' | 'import';
+};
+
+/**
+ * PriorYearFiguresOut
+ */
+export type PriorYearFiguresOut = {
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * PriorYearOut
  */
 export type PriorYearOut = {
@@ -40363,7 +41029,7 @@ export type ProcedureOut = {
         [key: string]: unknown;
     };
     population?: AbacusModulesFieldworkRoutesPopulationOut | null;
-    selection?: SelectionOut | null;
+    selection?: AbacusModulesFieldworkRoutesSelectionOut | null;
     /**
      * Status
      */
@@ -41005,6 +41671,26 @@ export type ProposedTemplateOut = {
 };
 
 /**
+ * ProvenanceOut
+ *
+ * SHL-09: the cell and its formula ('TB!D14').
+ */
+export type ProvenanceOut = {
+    /**
+     * Cell
+     */
+    cell: string;
+    /**
+     * Formula
+     */
+    formula: string;
+    /**
+     * Sources
+     */
+    sources: Array<string>;
+};
+
+/**
  * ProvidedOut
  */
 export type ProvidedOut = {
@@ -41285,6 +41971,20 @@ export type QuestionAnswerIn = {
      * Text
      */
     text?: string | null;
+};
+
+/**
+ * QuestionCardIn
+ */
+export type QuestionCardIn = {
+    /**
+     * Template Key
+     */
+    template_key: string;
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -41670,6 +42370,24 @@ export type QueueEntryOut = {
      * Request Item Id
      */
     request_item_id: string;
+};
+
+/**
+ * RailRowOut
+ */
+export type RailRowOut = {
+    /**
+     * Key
+     */
+    key: 'inquiries' | 'analytics' | 'read_fs' | 'fs' | 'report' | 'approval';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * State
+     */
+    state: string;
 };
 
 /**
@@ -42905,6 +43623,20 @@ export type RemindOut = {
      * Skipped
      */
     skipped: Array<string>;
+};
+
+/**
+ * ReminderIn
+ */
+export type ReminderIn = {
+    /**
+     * Template Key
+     */
+    template_key: string;
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -47616,6 +48348,11 @@ export type SafeguardsOut = {
 };
 
 /**
+ * SampleExpansionStatus
+ */
+export type SampleExpansionStatus = 'pending_approval' | 'approved' | 'rejected' | 'withdrawn';
+
+/**
  * SampleItemOut
  *
  * One selected item; display fields only (Restricted columns are never copied, ADR-031).
@@ -47962,6 +48699,78 @@ export type ScopeRef = {
      * Kind
      */
     kind: 'client' | 'client_entity' | 'engagement';
+};
+
+/**
+ * ScoreRunOut
+ */
+export type ScoreRunOut = {
+    /**
+     * Je Test Id
+     */
+    je_test_id: string;
+    /**
+     * Score Version
+     */
+    score_version: number;
+    /**
+     * Workflow Id
+     */
+    workflow_id: string;
+};
+
+/**
+ * ScoredEntriesOut
+ */
+export type ScoredEntriesOut = {
+    /**
+     * Items
+     */
+    items: Array<ScoredEntryOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+};
+
+/**
+ * ScoredEntryOut
+ *
+ * One scored entry: never a score without its reason codes (AVOID).
+ */
+export type ScoredEntryOut = {
+    /**
+     * Account Last4
+     */
+    account_last4: string | null;
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Entry Ref
+     */
+    entry_ref: string;
+    /**
+     * Posted On
+     */
+    posted_on: string;
+    /**
+     * Reason Codes
+     */
+    reason_codes: Array<'weekend' | 'holiday' | 'round_amount' | 'post_close' | 'manual_by_role' | 'keyword'>;
+    /**
+     * Score
+     */
+    score: number;
+    /**
+     * Selected
+     */
+    selected: boolean;
 };
 
 /**
@@ -49077,31 +49886,21 @@ export type SegmentsOut = {
 };
 
 /**
- * SelectionOut
+ * SelectionIn
  */
-export type SelectionOut = {
+export type SelectionIn = {
     /**
-     * By Rule
+     * Score Min
      */
-    by_rule: {
-        [key: string]: number;
-    };
+    score_min?: number | null;
     /**
-     * Created At
+     * Top N
      */
-    created_at: string;
+    top_n?: number | null;
     /**
-     * Id
+     * Unpredictable N
      */
-    id: string;
-    /**
-     * Item Count
-     */
-    item_count: number;
-    /**
-     * Seed
-     */
-    seed: number;
+    unpredictable_n?: number;
 };
 
 /**
@@ -51571,6 +52370,43 @@ export type SsarsCasSettingsPayload = {
      * Kind
      */
     kind: 'ssars_cas_settings';
+};
+
+/**
+ * SsarsWorkspaceOut
+ *
+ * AUD-26: the mode from the engagement type (read-only), its rail and summaries.
+ */
+export type SsarsWorkspaceOut = {
+    /**
+     * Analytics Set Id
+     */
+    analytics_set_id: string | null;
+    /**
+     * Approval Label
+     */
+    approval_label: string | null;
+    inquiries: InquirySummaryOut | null;
+    /**
+     * Legend
+     */
+    legend: string | null;
+    /**
+     * Mode
+     */
+    mode: 'review' | 'compilation' | 'preparation';
+    /**
+     * Rail
+     */
+    rail: Array<RailRowOut>;
+    /**
+     * Report Available
+     */
+    report_available: boolean;
+    /**
+     * Standard
+     */
+    standard: 'AR-C 90' | 'AR-C 80' | 'AR-C 70';
 };
 
 /**
@@ -54098,6 +54934,32 @@ export type TakenOut = {
 };
 
 /**
+ * TalliesOut
+ */
+export type TalliesOut = {
+    /**
+     * Explained
+     */
+    explained: number;
+    /**
+     * Lines
+     */
+    lines: number;
+    /**
+     * Over Threshold
+     */
+    over_threshold: number;
+    /**
+     * Tb Balanced
+     */
+    tb_balanced: boolean;
+    /**
+     * Unexplained
+     */
+    unexplained: number;
+};
+
+/**
  * TallyOut
  *
  * Counted from the rows by code (AC4.1: 10 · 2 (+1 proposed) · 2 · 3 · 1 · Pending).
@@ -56094,6 +56956,26 @@ export type TestIn = {
 };
 
 /**
+ * TestRunOut
+ *
+ * A `fieldwork_attribute` run started by a person; attributed '<person> via Agent'.
+ */
+export type TestRunOut = {
+    /**
+     * Initiator Name
+     */
+    initiator_name: string;
+    /**
+     * Items
+     */
+    items: number;
+    /**
+     * Run Id
+     */
+    run_id: string;
+};
+
+/**
  * TextRetryOut
  *
  * `queued`, or `refused` with the first failing gate's reason (never retried by itself).
@@ -56463,6 +57345,38 @@ export type ThreadShareIn = {
 };
 
 /**
+ * ThresholdOut
+ *
+ * '10% and $116,250' with the materiality it came from and the deciding partner.
+ */
+export type ThresholdOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Decider Name
+     */
+    decider_name: string | null;
+    /**
+     * Materiality Version Id
+     */
+    materiality_version_id: string | null;
+    /**
+     * Overall Materiality
+     */
+    overall_materiality: string | null;
+    /**
+     * Pct
+     */
+    pct: string;
+    /**
+     * Provisional
+     */
+    provisional: boolean;
+};
+
+/**
  * ThresholdRefOut
  *
  * A row's threshold cell; it links to KNW-04 (K-02).
@@ -56628,26 +57542,6 @@ export type TieIssueLinkOut = {
      * Version No
      */
     version_no: number;
-};
-
-/**
- * TieOut
- *
- * Virtual documents' total against a mapped TB account; computed by code (ADR-050, DV-13).
- */
-export type TieOut = {
-    /**
-     * Account Number
-     */
-    account_number: string | null;
-    /**
-     * Ties
-     */
-    ties: boolean | null;
-    /**
-     * Total
-     */
-    total: string;
 };
 
 /**
@@ -62569,6 +63463,16 @@ export type AbacusModulesAdjustmentsContractRejectIn = {
 };
 
 /**
+ * AdoptIn
+ */
+export type AbacusModulesAgentsRoutesAdoptIn = {
+    /**
+     * Item Ids
+     */
+    item_ids?: Array<string> | null;
+};
+
+/**
  * ApprovalIn
  */
 export type AbacusModulesAgentsRoutesApprovalIn = {
@@ -62702,35 +63606,28 @@ export type AbacusModulesAssuranceConfirmationsContractModelsAuthorizationOut = 
 };
 
 /**
- * CoverageOut
+ * ExceptionPrefillOut
  *
- * 'AR sent for confirmation $897,950.00 of $5,860,000.00 (15.3%) · confirmed … · CT …'.
+ * SHL-15's prefill; a person submits it through `assurance.api.record_finding` (or, below
+ * clearly trivial, `record_misstatement`).
  */
-export type AbacusModulesAssuranceConfirmationsContractModelsCoverageOut = {
+export type AbacusModulesAssuranceConfirmationsContractModelsExceptionPrefillOut = {
     /**
-     * Clearly Trivial
+     * Below Clearly Trivial
      */
-    clearly_trivial: string;
+    below_clearly_trivial: boolean;
     /**
-     * Confirmed Total
+     * Confirmation Id
      */
-    confirmed_total: string;
+    confirmation_id: string;
     /**
-     * Differences Total
+     * Difference
      */
-    differences_total: string;
+    difference: string;
     /**
-     * Population Total
+     * Route
      */
-    population_total: string;
-    /**
-     * Sent Pct
-     */
-    sent_pct: string;
-    /**
-     * Sent Total
-     */
-    sent_total: string;
+    route: 'finding' | 'misstatement';
 };
 
 /**
@@ -62938,27 +63835,17 @@ export type AbacusModulesAssuranceFindingsContractMisstatementOut = {
 };
 
 /**
- * CoverageOut
- *
- * Material areas from C9 mapping against assessed risks, by code (AC4.7: 10 of 10, R8).
+ * AdoptOut
  */
-export type AbacusModulesAssurancePlanningContractCoverageOut = {
+export type AbacusModulesClosesContractAdoptOut = {
     /**
-     * Covered
+     * Adopted
      */
-    covered: number;
+    adopted: number;
     /**
-     * Material Areas
+     * Row Version
      */
-    material_areas: number;
-    /**
-     * Unaddressed Codes
-     */
-    unaddressed_codes: Array<string>;
-    /**
-     * Wording Run Id
-     */
-    wording_run_id: string | null;
+    row_version: number;
 };
 
 /**
@@ -63027,6 +63914,26 @@ export type AbacusModulesEngagementsRoutesStepOut = {
      * Id
      */
     id: 'sso' | 'team' | 'methodology' | 'autonomy' | 'budget' | 'walls' | 'engagement';
+};
+
+/**
+ * TieOut
+ *
+ * Virtual documents' total against a mapped TB account; computed by code (ADR-050, DV-13).
+ */
+export type AbacusModulesEvidenceFilesShapesTieOut = {
+    /**
+     * Account Number
+     */
+    account_number: string | null;
+    /**
+     * Ties
+     */
+    ties: boolean | null;
+    /**
+     * Total
+     */
+    total: string;
 };
 
 /**
@@ -63273,6 +64180,34 @@ export type AbacusModulesFieldworkRoutesResultIn = {
      * Result
      */
     result: 'supported' | 'exception' | 'not_tested';
+};
+
+/**
+ * SelectionOut
+ */
+export type AbacusModulesFieldworkRoutesSelectionOut = {
+    /**
+     * By Rule
+     */
+    by_rule: {
+        [key: string]: number;
+    };
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Count
+     */
+    item_count: number;
+    /**
+     * Seed
+     */
+    seed: number;
 };
 
 /**
@@ -63527,6 +64462,73 @@ export type AbacusModulesSamplingContractPopulationOut = {
 };
 
 /**
+ * SelectionOut
+ */
+export type AbacusModulesSamplingFieldworkContractSelectionOut = {
+    /**
+     * Approved By Initials
+     */
+    approved_by_initials: string | null;
+    /**
+     * Approved On
+     */
+    approved_on: string | null;
+    /**
+     * By Score
+     */
+    by_score: number;
+    pending_expansion?: ExpansionOut | null;
+    /**
+     * Sample Set Id
+     */
+    sample_set_id: string;
+    /**
+     * Sampler Version
+     */
+    sampler_version: string;
+    /**
+     * Score Min
+     */
+    score_min: number;
+    /**
+     * Seed
+     */
+    seed: string;
+    /**
+     * Unpredictable
+     */
+    unpredictable: number;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * TieOut
+ *
+ * 'Opening TB + JE activity = closing TB for 214 of 214 accounts · $0.00'.
+ */
+export type AbacusModulesSamplingFieldworkContractTieOut = {
+    /**
+     * Accounts Tied
+     */
+    accounts_tied: number;
+    /**
+     * Accounts Total
+     */
+    accounts_total: number;
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Result
+     */
+    result: 'tie' | 'difference';
+};
+
+/**
  * RevealIn
  *
  * A reveal's reason.
@@ -63547,6 +64549,62 @@ export type AbacusModulesTaxReturnsContractStatusTileOut = {
      */
     count: number;
     status: ReturnStatus;
+};
+
+/**
+ * AdoptIn
+ */
+export type AbacusModulesWorkpapersFieldworkTestsContractAdoptIn = {
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
+ * AdoptOut
+ */
+export type AbacusModulesWorkpapersFieldworkTestsContractAdoptOut = {
+    /**
+     * Adopted At
+     */
+    adopted_at: string;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Sign Off Id
+     */
+    sign_off_id: string;
+};
+
+/**
+ * ExceptionPrefillOut
+ *
+ * SHL-15's prefill; a person submits it through `assurance.api.record_finding`.
+ */
+export type AbacusModulesWorkpapersFieldworkTestsContractExceptionPrefillOut = {
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Test Id
+     */
+    test_id: string;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -65012,6 +66070,436 @@ export type EditFluxExplanationResponses = {
 };
 
 export type EditFluxExplanationResponse = EditFluxExplanationResponses[keyof EditFluxExplanationResponses];
+
+export type GetAnalyticsSetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}';
+};
+
+export type GetAnalyticsSetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetAnalyticsSetError = GetAnalyticsSetErrors[keyof GetAnalyticsSetErrors];
+
+export type GetAnalyticsSetResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalyticsSetOut;
+};
+
+export type GetAnalyticsSetResponse = GetAnalyticsSetResponses[keyof GetAnalyticsSetResponses];
+
+export type SendClientQuestionsData = {
+    body: ClientQuestionsIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}/client-questions';
+};
+
+export type SendClientQuestionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SendClientQuestionsError = SendClientQuestionsErrors[keyof SendClientQuestionsErrors];
+
+export type SendClientQuestionsResponses = {
+    /**
+     * Successful Response
+     */
+    201: ClientQuestionsOut;
+};
+
+export type SendClientQuestionsResponse = SendClientQuestionsResponses[keyof SendClientQuestionsResponses];
+
+export type AcceptExplanationsData = {
+    body: AcceptExplanationsIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}/explanations/accept';
+};
+
+export type AcceptExplanationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AcceptExplanationsError = AcceptExplanationsErrors[keyof AcceptExplanationsErrors];
+
+export type AcceptExplanationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalyticsSetOut;
+};
+
+export type AcceptExplanationsResponse = AcceptExplanationsResponses[keyof AcceptExplanationsResponses];
+
+export type ExportAnalyticsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}/export.xlsx';
+};
+
+export type ExportAnalyticsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExportAnalyticsError = ExportAnalyticsErrors[keyof ExportAnalyticsErrors];
+
+export type ExportAnalyticsResponses = {
+    /**
+     * Response Export Analytics
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ExportAnalyticsResponse = ExportAnalyticsResponses[keyof ExportAnalyticsResponses];
+
+export type PutExpectationData = {
+    body: ExpectationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+        /**
+         * Position
+         */
+        position: number;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}/lines/{position}/expectation';
+};
+
+export type PutExpectationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutExpectationError = PutExpectationErrors[keyof PutExpectationErrors];
+
+export type PutExpectationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalyticsLineOut;
+};
+
+export type PutExpectationResponse = PutExpectationResponses[keyof PutExpectationResponses];
+
+export type PutExplanationData = {
+    body: ExplanationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+        /**
+         * Position
+         */
+        position: number;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}/lines/{position}/explanation';
+};
+
+export type PutExplanationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutExplanationError = PutExplanationErrors[keyof PutExplanationErrors];
+
+export type PutExplanationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalyticsLineOut;
+};
+
+export type PutExplanationResponse = PutExplanationResponses[keyof PutExplanationResponses];
+
+export type LineProvenanceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+        /**
+         * Position
+         */
+        position: number;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}/lines/{position}/provenance';
+};
+
+export type LineProvenanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LineProvenanceError = LineProvenanceErrors[keyof LineProvenanceErrors];
+
+export type LineProvenanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProvenanceOut;
+};
+
+export type LineProvenanceResponse = LineProvenanceResponses[keyof LineProvenanceResponses];
 
 export type ApprovalBatchData = {
     body: BatchIn;
@@ -76920,7 +78408,7 @@ export type AdoptPlanRowResponses = {
     /**
      * Successful Response
      */
-    200: AdoptOut;
+    200: AbacusModulesClosesContractAdoptOut;
 };
 
 export type AdoptPlanRowResponse = AdoptPlanRowResponses[keyof AdoptPlanRowResponses];
@@ -76984,7 +78472,7 @@ export type AdoptAllPlanRowsResponses = {
     /**
      * Successful Response
      */
-    200: AdoptOut;
+    200: AbacusModulesClosesContractAdoptOut;
 };
 
 export type AdoptAllPlanRowsResponse = AdoptAllPlanRowsResponses[keyof AdoptAllPlanRowsResponses];
@@ -79969,7 +81457,7 @@ export type ExceptionPrefillResponses = {
     /**
      * Successful Response
      */
-    200: ExceptionPrefillOut;
+    200: AbacusModulesAssuranceConfirmationsContractModelsExceptionPrefillOut;
 };
 
 export type ExceptionPrefillResponse = ExceptionPrefillResponses[keyof ExceptionPrefillResponses];
@@ -91846,7 +93334,7 @@ export type ProcedureTailorResponses = {
 export type ProcedureTailorResponse = ProcedureTailorResponses[keyof ProcedureTailorResponses];
 
 export type AdoptData = {
-    body: AdoptIn;
+    body: AbacusModulesAgentsRoutesAdoptIn;
     headers?: {
         /**
          * Authorization
@@ -97866,7 +99354,7 @@ export type RiskCoverageResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAssurancePlanningContractCoverageOut;
+    200: CoverageOut;
 };
 
 export type RiskCoverageResponse = RiskCoverageResponses[keyof RiskCoverageResponses];
@@ -116074,6 +117562,379 @@ export type IssueVerifyResponses = {
 
 export type IssueVerifyResponse = IssueVerifyResponses[keyof IssueVerifyResponses];
 
+export type GetJeTestData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Je Test Id
+         */
+        je_test_id: string;
+    };
+    query?: never;
+    url: '/v1/je-tests/{je_test_id}';
+};
+
+export type GetJeTestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetJeTestError = GetJeTestErrors[keyof GetJeTestErrors];
+
+export type GetJeTestResponses = {
+    /**
+     * Successful Response
+     */
+    200: JeTestOut;
+};
+
+export type GetJeTestResponse = GetJeTestResponses[keyof GetJeTestResponses];
+
+export type PutCriteriaData = {
+    body: CriteriaIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Je Test Id
+         */
+        je_test_id: string;
+    };
+    query?: never;
+    url: '/v1/je-tests/{je_test_id}/criteria';
+};
+
+export type PutCriteriaErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutCriteriaError = PutCriteriaErrors[keyof PutCriteriaErrors];
+
+export type PutCriteriaResponses = {
+    /**
+     * Successful Response
+     */
+    200: JeTestOut;
+};
+
+export type PutCriteriaResponse = PutCriteriaResponses[keyof PutCriteriaResponses];
+
+export type ListEntriesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Je Test Id
+         */
+        je_test_id: string;
+    };
+    query?: {
+        /**
+         * Criterion
+         */
+        criterion?: 'weekend_holiday' | 'round_amount' | 'post_close' | 'manual_by_role' | 'keywords' | null;
+        /**
+         * Selected
+         */
+        selected?: boolean | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/je-tests/{je_test_id}/entries';
+};
+
+export type ListEntriesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListEntriesError = ListEntriesErrors[keyof ListEntriesErrors];
+
+export type ListEntriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScoredEntriesOut;
+};
+
+export type ListEntriesResponse = ListEntriesResponses[keyof ListEntriesResponses];
+
+export type PutPostingUserRolesData = {
+    body: PostingUserRolesIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Je Test Id
+         */
+        je_test_id: string;
+    };
+    query?: never;
+    url: '/v1/je-tests/{je_test_id}/posting-user-roles';
+};
+
+export type PutPostingUserRolesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutPostingUserRolesError = PutPostingUserRolesErrors[keyof PutPostingUserRolesErrors];
+
+export type PutPostingUserRolesResponses = {
+    /**
+     * Successful Response
+     */
+    200: JeTestOut;
+};
+
+export type PutPostingUserRolesResponse = PutPostingUserRolesResponses[keyof PutPostingUserRolesResponses];
+
+export type ScoreData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Je Test Id
+         */
+        je_test_id: string;
+    };
+    query?: never;
+    url: '/v1/je-tests/{je_test_id}/score';
+};
+
+export type ScoreErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ScoreError = ScoreErrors[keyof ScoreErrors];
+
+export type ScoreResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScoreRunOut;
+};
+
+export type ScoreResponse = ScoreResponses[keyof ScoreResponses];
+
+export type DrawSelectionData = {
+    body: SelectionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Je Test Id
+         */
+        je_test_id: string;
+    };
+    query?: never;
+    url: '/v1/je-tests/{je_test_id}/selection';
+};
+
+export type DrawSelectionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DrawSelectionError = DrawSelectionErrors[keyof DrawSelectionErrors];
+
+export type DrawSelectionResponses = {
+    /**
+     * Successful Response
+     */
+    201: AbacusModulesSamplingFieldworkContractSelectionOut;
+};
+
+export type DrawSelectionResponse = DrawSelectionResponses[keyof DrawSelectionResponses];
+
 export type ImportK1DisclosureData = {
     body: K1DisclosureIn;
     headers?: {
@@ -130986,6 +132847,134 @@ export type ArtifactPreviewResponses = {
 
 export type ArtifactPreviewResponse = ArtifactPreviewResponses[keyof ArtifactPreviewResponses];
 
+export type DecideExpansionData = {
+    body: ExpansionDecisionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Expansion Id
+         */
+        expansion_id: string;
+    };
+    query?: never;
+    url: '/v1/sample-expansions/{expansion_id}/decide';
+};
+
+export type DecideExpansionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DecideExpansionError = DecideExpansionErrors[keyof DecideExpansionErrors];
+
+export type DecideExpansionResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExpansionOut;
+};
+
+export type DecideExpansionResponse = DecideExpansionResponses[keyof DecideExpansionResponses];
+
+export type WithdrawExpansionData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Expansion Id
+         */
+        expansion_id: string;
+    };
+    query?: never;
+    url: '/v1/sample-expansions/{expansion_id}/withdraw';
+};
+
+export type WithdrawExpansionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WithdrawExpansionError = WithdrawExpansionErrors[keyof WithdrawExpansionErrors];
+
+export type WithdrawExpansionResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExpansionOut;
+};
+
+export type WithdrawExpansionResponse = WithdrawExpansionResponses[keyof WithdrawExpansionResponses];
+
 export type SampleSetData = {
     body?: never;
     headers?: {
@@ -131042,6 +133031,70 @@ export type SampleSetResponses = {
 };
 
 export type SampleSetResponse = SampleSetResponses[keyof SampleSetResponses];
+
+export type RequestExpansionData = {
+    body: ExpansionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sample Set Id
+         */
+        sample_set_id: string;
+    };
+    query?: never;
+    url: '/v1/sample-sets/{sample_set_id}/expansions';
+};
+
+export type RequestExpansionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RequestExpansionError = RequestExpansionErrors[keyof RequestExpansionErrors];
+
+export type RequestExpansionResponses = {
+    /**
+     * Successful Response
+     */
+    201: ExpansionOut;
+};
+
+export type RequestExpansionResponse = RequestExpansionResponses[keyof RequestExpansionResponses];
 
 export type SampleVersionCreateData = {
     body: VersionIn;
@@ -142059,6 +144112,316 @@ export type BrowserErrorResponses = {
 
 export type BrowserErrorResponse = BrowserErrorResponses[keyof BrowserErrorResponses];
 
+export type Adopt2Data = {
+    body: AbacusModulesWorkpapersFieldworkTestsContractAdoptIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Test Id
+         */
+        test_id: string;
+    };
+    query?: never;
+    url: '/v1/tests/{test_id}/adopt';
+};
+
+export type Adopt2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type Adopt2Error = Adopt2Errors[keyof Adopt2Errors];
+
+export type Adopt2Responses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesWorkpapersFieldworkTestsContractAdoptOut;
+};
+
+export type Adopt2Response = Adopt2Responses[keyof Adopt2Responses];
+
+export type LogDeviationData = {
+    body: DeviationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Test Id
+         */
+        test_id: string;
+    };
+    query?: never;
+    url: '/v1/tests/{test_id}/deviations';
+};
+
+export type LogDeviationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LogDeviationError = LogDeviationErrors[keyof LogDeviationErrors];
+
+export type LogDeviationResponses = {
+    /**
+     * Successful Response
+     */
+    201: DeviationLogOut;
+};
+
+export type LogDeviationResponse = LogDeviationResponses[keyof LogDeviationResponses];
+
+export type ExportTestData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Test Id
+         */
+        test_id: string;
+    };
+    query?: never;
+    url: '/v1/tests/{test_id}/export.xlsx';
+};
+
+export type ExportTestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExportTestError = ExportTestErrors[keyof ExportTestErrors];
+
+export type ExportTestResponses = {
+    /**
+     * Response Export Test
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ExportTestResponse = ExportTestResponses[keyof ExportTestResponses];
+
+export type ExceptionPrefill2Data = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Test Id
+         */
+        test_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/tests/{test_id}/items/{item_id}/exception';
+};
+
+export type ExceptionPrefill2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExceptionPrefill2Error = ExceptionPrefill2Errors[keyof ExceptionPrefill2Errors];
+
+export type ExceptionPrefill2Responses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesWorkpapersFieldworkTestsContractExceptionPrefillOut;
+};
+
+export type ExceptionPrefill2Response = ExceptionPrefill2Responses[keyof ExceptionPrefill2Responses];
+
+export type StartRunData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Test Id
+         */
+        test_id: string;
+    };
+    query?: never;
+    url: '/v1/tests/{test_id}/runs';
+};
+
+export type StartRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StartRunError = StartRunErrors[keyof StartRunErrors];
+
+export type StartRunResponses = {
+    /**
+     * Successful Response
+     */
+    202: TestRunOut;
+};
+
+export type StartRunResponse = StartRunResponses[keyof StartRunResponses];
+
 export type RedactThreadCommentData = {
     body: ThreadRedactIn;
     headers?: {
@@ -143552,6 +145915,70 @@ export type AdjustedTbResponses = {
 
 export type AdjustedTbResponse = AdjustedTbResponses[keyof AdjustedTbResponses];
 
+export type RunAnalyticsData = {
+    body: AnalyticsRunIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/analytics-sets';
+};
+
+export type RunAnalyticsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RunAnalyticsError = RunAnalyticsErrors[keyof RunAnalyticsErrors];
+
+export type RunAnalyticsResponses = {
+    /**
+     * Successful Response
+     */
+    202: AnalyticsRunOut;
+};
+
+export type RunAnalyticsResponse = RunAnalyticsResponses[keyof RunAnalyticsResponses];
+
 export type ListConfirmationsData = {
     body?: never;
     headers?: {
@@ -144251,6 +146678,70 @@ export type AuditFindingCreateResponses = {
 
 export type AuditFindingCreateResponse = AuditFindingCreateResponses[keyof AuditFindingCreateResponses];
 
+export type CreateJeTestData = {
+    body: JeTestCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/je-tests';
+};
+
+export type CreateJeTestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateJeTestError = CreateJeTestErrors[keyof CreateJeTestErrors];
+
+export type CreateJeTestResponses = {
+    /**
+     * Successful Response
+     */
+    201: JeTestOut;
+};
+
+export type CreateJeTestResponse = CreateJeTestResponses[keyof CreateJeTestResponses];
+
 export type MisstatementsData = {
     body?: never;
     headers?: {
@@ -144363,6 +146854,66 @@ export type PopulationCreateResponses = {
 };
 
 export type PopulationCreateResponse = PopulationCreateResponses[keyof PopulationCreateResponses];
+
+export type PutPriorYearFiguresData = {
+    body: PriorYearFiguresIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/prior-year-figures';
+};
+
+export type PutPriorYearFiguresErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PutPriorYearFiguresError = PutPriorYearFiguresErrors[keyof PutPriorYearFiguresErrors];
+
+export type PutPriorYearFiguresResponses = {
+    /**
+     * Successful Response
+     */
+    200: PriorYearFiguresOut;
+};
+
+export type PutPriorYearFiguresResponse = PutPriorYearFiguresResponses[keyof PutPriorYearFiguresResponses];
 
 export type ProposedEntriesData = {
     body?: never;
@@ -144774,6 +147325,254 @@ export type SignOffMatrixResponses = {
 };
 
 export type SignOffMatrixResponse = SignOffMatrixResponses[keyof SignOffMatrixResponses];
+
+export type SsarsWorkspaceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/ssars';
+};
+
+export type SsarsWorkspaceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SsarsWorkspaceError = SsarsWorkspaceErrors[keyof SsarsWorkspaceErrors];
+
+export type SsarsWorkspaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: SsarsWorkspaceOut;
+};
+
+export type SsarsWorkspaceResponse = SsarsWorkspaceResponses[keyof SsarsWorkspaceResponses];
+
+export type BuildInquiriesData = {
+    body: InquiryProgramIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/ssars/inquiries';
+};
+
+export type BuildInquiriesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BuildInquiriesError = BuildInquiriesErrors[keyof BuildInquiriesErrors];
+
+export type BuildInquiriesResponses = {
+    /**
+     * Successful Response
+     */
+    201: InquiryProgramOut;
+};
+
+export type BuildInquiriesResponse = BuildInquiriesResponses[keyof BuildInquiriesResponses];
+
+export type PublishInquiriesData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/ssars/publish';
+};
+
+export type PublishInquiriesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PublishInquiriesError = PublishInquiriesErrors[keyof PublishInquiriesErrors];
+
+export type PublishInquiriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: InquiryProgramOut;
+};
+
+export type PublishInquiriesResponse = PublishInquiriesResponses[keyof PublishInquiriesResponses];
+
+export type RemindData = {
+    body: ReminderIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/ssars/remind';
+};
+
+export type RemindErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RemindError = RemindErrors[keyof RemindErrors];
+
+export type RemindResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientQuestionsOut;
+};
+
+export type RemindResponse = RemindResponses[keyof RemindResponses];
 
 export type SumData = {
     body?: never;
