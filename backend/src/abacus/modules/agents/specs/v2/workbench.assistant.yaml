@@ -1,4 +1,5 @@
-# workbench.assistant v1 (W-02-T12; W-02 §6; TASK-7715; DEC-4718). The Workbench's assistant: a loop
+# workbench.assistant v2 (W-02-T23 rest, TASK-8072, DEC-5058: the save question offers attach_only;
+# v1 W-02-T12; W-02 §6; TASK-7715; DEC-4718). The Workbench's assistant: a loop
 # in a firm-level or engagement session. Read and compute tools answer; a turn that would save a
 # file answers with a plan the session's owner approves, and its one write is the P-10 files pair
 # (propose, then the approved write after a person's approval with Undo). Never `tri`: the season's
@@ -7,10 +8,10 @@
 # exports, transmits, adopts, publishes, resolves, accepts or rejects. Source of truth: compiled
 # into ../_specs_v2.py by `python -m abacus_tools.codegen.agent_specs_v2`.
 id: workbench.assistant
-version: 1
+version: 2
 purpose: Answer a person's questions about the firm's work from records they can open, ask when something is ambiguous, and plan any file it would save for the person to approve.
 shape: loop
-prompt: workbench.assistant@v1
+prompt: workbench.assistant@v2
 tier: medium
 escalation_tier: large
 input_schema: AssistantInput
