@@ -1,19 +1,52 @@
-// C-01-T12: the close shell in fixture mode, typed against the closes stubs (C-01-T04, T05).
-// `GET /v1/closes/{close_id}` answers Copperleaf August for every close id (the shell's record
-// bar and Review count); the screens' own reads stay 501 here until their rows add scenarios
-// from the figure book (C-01-T13).
+// C-01-T12 and C-01-T13: the closes screens in fixture mode, typed against the closes stubs
+// (C-01-T04, T05) and drawn from the Copperleaf figure book (`seed/close-book.ts`). The record
+// answers Copperleaf August for every close id; the portfolio filters by the CLS-01 query
+// (`status`, `past_due`, `attest`, `q`); the reads a later row owns stay 501 until it lands.
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
+import {
+  closesPortfolio,
+  copperleafFlux,
+  copperleafIssues,
+  copperleafPlanV3,
+  copperleafPortalQuestions,
+  copperleafReconciliation4410,
+  copperleafRun2,
+  copperleafRuns,
+  runningCloses,
+} from "../seed/close-book";
 import { copperleafAugust } from "../seed/closes";
 
 const notYet = () => json({ detail: "not_implemented" }, 501);
 
 export function closeHandlers(): Record<string, FixtureHandler> {
   return {
+    "GET /v1/closes": ({ query }) => {
+      const status = query.get("status");
+      const attest = query.get("attest");
+      const q = query.get("q")?.toLowerCase();
+      return json(
+        closesPortfolio(
+          (r) =>
+            (status == null ||
+              (status === "past_due" ? r.days_past_due != null : r.status === status)) &&
+            (attest == null || r.attest === (attest === "true")) &&
+            (q == null || r.client_name.toLowerCase().includes(q)),
+        ),
+      );
+    },
+    "GET /v1/closes/running": () => json(runningCloses()),
     "GET /v1/closes/{close_id}": () => json(copperleafAugust()),
-    "GET /v1/closes/{close_id}/runs": notYet,
+    "GET /v1/closes/{close_id}/runs": () => json(copperleafRuns()),
+    "GET /v1/closes/{close_id}/runs/{run_no}": ({ params }) =>
+      params.run_no === "2" ? json(copperleafRun2()) : notYet(),
+    "GET /v1/closes/{close_id}/reconciliations/{account_ref}": ({ params }) =>
+      params.account_ref === "35" ? json(copperleafReconciliation4410()) : notYet(),
+    "GET /v1/closes/{close_id}/issues": () => json(copperleafIssues()),
+    "GET /v1/closes/{close_id}/flux": ({ query }) =>
+      (query.get("basis") ?? "mom") === "mom" ? json(copperleafFlux()) : notYet(),
+    "GET /v1/clients/{client_id}/close-plan": () => json(copperleafPlanV3()),
+    "GET /v1/portal/closes/{close_id}/questions": () => json(copperleafPortalQuestions()),
     "GET /v1/closes/{close_id}/requests": notYet,
     "GET /v1/closes/{close_id}/accounts": notYet,
-    "GET /v1/closes/{close_id}/issues": notYet,
-    "GET /v1/closes/{close_id}/flux": notYet,
   };
 }

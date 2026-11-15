@@ -1,0 +1,150 @@
+{
+  "_doc": "C-01-T13 (TASK-8031; SPEC-655): the Copperleaf CAS figure book, August 2026, transcribed from docs/plan/epics/C-01.md §5.3 (seed facts that must foot) and the CLS-01, CLS-02, CLS-05, CLS-06, CLS-09, CLS-10 and POR-11 handoff screens, never from the code. Read by backend/tests/golden/scenario/test_c01t13_close_figures.py (the synthetic close slice) and apps/web/src/fixtures/contracts/close-figures.test.ts (the screens' fixtures). Amounts are strings in dollars and cents; flux amounts are whole dollars as CLS-10 shows them.",
+  "clock": "2026-09-14T09:24:00-05:00",
+  "client": "Copperleaf Coffee Roasters, Inc.",
+  "portfolio": {
+    "period": "2026-08",
+    "closes": 22,
+    "tiles": {"not_started": 3, "in_progress": 11, "in_review": 5, "delivered": 3},
+    "open_issues": 51,
+    "past_due": 2,
+    "running": 3,
+    "rows": [
+      ["Copperleaf Coffee Roasters, Inc.", "in_progress", 9, 21, 7, "2026-09-08", 4, "RM", "PR", true],
+      ["Juniper & Oak Interiors, LLC", "delivered", 21, 21, 0, "2026-09-10", null, "EG", "PR", false],
+      ["Two Rivers Brewing Co.", "in_progress", 13, 21, 3, "2026-09-15", null, "EG", "HV", false],
+      ["Larkspur Floral, Inc.", "in_review", 21, 21, 2, "2026-09-15", null, "IV", "HV", false],
+      ["Pinecrest Pediatrics, PC", "delivered", 21, 21, 0, "2026-09-09", null, "EW", "PR", false],
+      ["Cedar Hollow Farms, LLC", "in_progress", 8, 21, 5, "2026-09-18", null, "EG", "HV", true],
+      ["Summit Line Logistics, Inc.", "in_progress", 12, 22, 4, "2026-09-15", null, "RF", "HV", false],
+      ["Bramble & Finch Design, LLC", "in_review", 21, 21, 1, "2026-09-16", null, "IV", "RF", false],
+      ["Hollis Creek Veterinary, PC", "in_progress", 10, 21, 3, "2026-09-18", null, "EW", "HV", true],
+      ["Alder & Ash Furniture Co.", "in_progress", 15, 21, 2, "2026-09-16", null, "RF", "PR", false],
+      ["Bluebird Bakery Co.", "in_progress", 6, 21, 6, "2026-09-10", 2, "IV", "RF", false],
+      ["Canyon Pass Climbing Gym, LLC", "not_started", 0, 21, 0, "2026-09-20", null, "EG", "HV", false],
+      ["Foxglove Studio, LLC", "in_review", 21, 21, 1, "2026-09-16", null, "IV", "RF", false],
+      ["Granary Row Market, Inc.", "in_progress", 11, 21, 4, "2026-09-17", null, "RF", "PR", false],
+      ["Ironwood Landscape Co.", "not_started", 0, 21, 0, "2026-09-21", null, "EW", "HV", false],
+      ["Kettle & Kiln Pottery, LLC", "in_progress", 14, 21, 2, "2026-09-17", null, "IV", "RF", false],
+      ["Lumen Dental Lab, Inc.", "in_review", 21, 21, 2, "2026-09-15", null, "EW", "HV", false],
+      ["Maple & Main Hardware, Inc.", "in_progress", 10, 23, 5, "2026-09-18", null, "RF", "PR", false],
+      ["Northfield Pet Clinic, PC", "in_progress", 12, 21, 3, "2026-09-17", null, "EG", "HV", false],
+      ["Orchard Lane Wellness, LLC", "delivered", 21, 21, 0, "2026-09-11", null, "IV", "RF", false],
+      ["Prairie Wind Solar Installers, Inc.", "not_started", 0, 21, 0, "2026-09-25", null, "EW", "HV", false],
+      ["Quill & Press Printing Co.", "in_review", 21, 21, 1, "2026-09-16", null, "RF", "PR", false]
+    ],
+    "_rows": "client, status, reconciled, total, open issues, due, days past due, preparer, reviewer, running",
+    "initials": {"RM": "Raj Malhotra", "PR": "Priya Raman", "EG": "Ezra Gold", "IV": "Ivy Vance", "EW": "Erin Walsh", "RF": "Rosa Fuentes", "HV": "Helen Voss"}
+  },
+  "record": {
+    "open_issues": 7, "documents_in_binder": 58, "accounts_reconciled": 9, "accounts_total": 21,
+    "reconciled_pct": 43, "due_on": "2026-09-08", "days_past_due": 4
+  },
+  "runs": {
+    "run_1": {"started_at": "2026-09-02T08:15:00-05:00", "total": 22, "done": 22, "issues_raised": 8},
+    "run_2": {
+      "started_at": "2026-09-14T09:06:00-05:00", "total": 9, "done": 6, "running": 3, "open_items": 4,
+      "groups": [
+        ["recategorize", "Recategorize Revenue and Expenses", 2, 2],
+        ["reconcile_statements", "Reconcile to Statements", 3, 2],
+        ["third_party_sales", "Reconcile Third Party Sales (Square, Shopify)", 2, 1],
+        ["amortize_prepaids", "Identify and Amortize Prepaids", 1, 1],
+        ["depreciate_fixed_assets", "Identify and Depreciate Fixed Assets", 1, 0]
+      ],
+      "_groups": "key, label, total, done at 9:24"
+    }
+  },
+  "issues": {
+    "open": 7, "medium": 2, "low": 5, "notes": 4,
+    "items": [
+      ["medium", "flux", "Sound Electric $3,200.00 booked to Repairs & Maintenance — up 400% on July", "Repairs & Maintenance", true],
+      ["medium", "schedule", "Accrued expenses entry $14,900.00 is above the $10,000 other-accruals threshold", "Accrued Expenses", false],
+      ["low", "bank_rec", "Outstanding check #2281 dated Feb 2026 has not cleared", "Operating Checking (Front Range Bank) ••4410", false],
+      ["low", "bank_rec", "Vendor refund $380.00 on the Aug 27 statement is not recorded in the books", "Operating Checking ••4410", false],
+      ["low", "schedule", "Prepaid insurance ties once the $700 August amortization posts", "Prepaid Insurance", false],
+      ["low", "flux", "Payroll up 12.5% on July — new hires, merit increases and overtime", "Payroll Expenses", false],
+      ["low", "bank_rec", "Amex statement cycle ends Aug 22, not on the calendar month", "Amex Business Card ••1009", false]
+    ],
+    "_items": "severity, class, title, account, waiting on client"
+  },
+  "tree": {
+    "assets": "539055.45", "liabilities": "163543.05", "equity": "375512.40",
+    "bank": "256610.50", "other_current_assets_after_aje_02": "49124.95"
+  },
+  "reconciliation_4410": {
+    "balance_per_bank": "184236.18",
+    "deposit_in_transit": "6412.40",
+    "outstanding_checks": "5658.08",
+    "adjusted_bank": "184990.50",
+    "book_balance": "184610.50",
+    "unrecorded_refund": "380.00",
+    "adjusted_book": "184990.50",
+    "difference": "0.00",
+    "open_items": 2,
+    "checks": [["#2281", "2026-02-19", "Highline Espresso Service", "1240.00", 193], ["#2287", "2026-08-26", "Denver Paper Supply", "3615.75", 5], ["#2290", "2026-08-28", "Mile High Window Cleaning", "802.33", 3]],
+    "stale_after_days": 90
+  },
+  "square": {"gross": "73166.90", "fees": "1684.54", "net": "71482.36", "transfers": 21},
+  "prepaid_insurance": {"annual": "8400.00", "months": 12, "monthly": "700.00", "gl": "3500.00", "schedule": "2800.00"},
+  "flux": {
+    "basis": "mom", "threshold_pct": "10", "threshold_usd": "2500", "tested": 13, "over": 2,
+    "lines": [
+      ["revenue", "Revenue", "205300", "214600", "within"],
+      ["cogs", "Cost of goods sold", "81170", "84860", "within"],
+      ["payroll", "Payroll", "61240", "68910", "over_both"],
+      ["rent", "Rent", "9800", "9800", "within"],
+      ["merchant_fees", "Merchant fees", "4710", "4980", "within"],
+      ["legal_professional", "Legal & professional fees", "4800", "4840", "within"],
+      ["repairs_maintenance", "Repairs & maintenance", "640", "3200", "over_both"],
+      ["utilities_facilities", "Utilities & facilities", "2960", "3140", "within"],
+      ["marketing", "Marketing", "3980", "2450", "within"],
+      ["depreciation", "Depreciation", "2140", "2140", "within"],
+      ["software", "Software & subscriptions", "1180", "1265", "within"],
+      ["insurance", "Insurance", "700", "700", "within"],
+      ["interest", "Interest expense", "525", "520", "within"]
+    ],
+    "payroll_drivers": [["New hires", "4350"], ["Merit increases", "1850"], ["Overtime", "1470"]],
+    "gross_profit": ["124130", "129740"],
+    "operating_expenses": ["92150", "101425"],
+    "net_income": ["31455", "27795"]
+  },
+  "plan": {
+    "version": 3, "accounts": 21, "procedures": 23, "manager": 8, "senior": 15, "requests_per_month": 8,
+    "v4_requests_per_month": 7, "published_on": "2026-06-02", "published_by": "Priya Raman",
+    "rows": [
+      ["bank", "Operating Checking (Front Range Bank) ••4410", "reconciliation", "bank_feed", "senior_signoff"],
+      ["bank", "Payroll Checking (Front Range Bank) ••4428", "reconciliation", "bank_feed", "senior_signoff"],
+      ["bank", "Business Savings (Front Range Bank) ••4436", "reconciliation", "client_upload", "senior_signoff"],
+      ["accounts_receivable", "Accounts Receivable", "aging", "quickbooks_online", "senior_signoff"],
+      ["other_current_assets", "Undeposited Funds", "clear_and_age", "quickbooks_online", "senior_signoff"],
+      ["other_current_assets", "Square Clearing", "third_party_sales", "client_upload", "senior_signoff"],
+      ["other_current_assets", "Shopify Clearing", "third_party_sales", "client_upload", "senior_signoff"],
+      ["other_current_assets", "Inventory", "rollforward", "quickbooks_online", "manager_approval"],
+      ["other_current_assets", "Prepaid Insurance", "amortization", "files", "senior_signoff"],
+      ["fixed_assets", "Roasting Equipment", "rollforward", "accrued_register", "manager_approval"],
+      ["fixed_assets", "Furniture & Fixtures", "rollforward", "accrued_register", "manager_approval"],
+      ["fixed_assets", "Leasehold Improvements", "rollforward", "accrued_register", "manager_approval"],
+      ["fixed_assets", "Accumulated Depreciation", "depreciation", "accrued_register", "manager_approval"],
+      ["credit_cards", "Amex Business Card ••1009", "reconciliation", "client_upload", "senior_signoff"],
+      ["accounts_payable", "Accounts Payable", "aging_cutoff", "client_upload", "senior_signoff"],
+      ["other_current_liabilities", "Accrued Payroll", "accrual", "client_upload", "senior_signoff"],
+      ["other_current_liabilities", "Accrued Expenses", "accrual", "quickbooks_online", "manager_approval"],
+      ["other_current_liabilities", "Deferred Revenue — Subscriptions", "rollforward", "client_upload", "manager_approval"],
+      ["other_current_liabilities", "Sales Tax Payable", "tie_to_return", "quickbooks_online", "senior_signoff"],
+      ["other_current_liabilities", "Payroll Liabilities", "tie_to_filings", "client_upload", "senior_signoff"],
+      ["long_term_liabilities", "Equipment Loan (Front Range Bank)", "amortization", "client_upload", "senior_signoff"],
+      ["income_statement", "Revenue & expenses", "recategorize", "quickbooks_online", "senior_signoff"],
+      ["income_statement", "Revenue & expenses", "flux", "quickbooks_online", "manager_approval"]
+    ],
+    "_rows": "class, account, procedure, source, review level",
+    "request_templates": [
+      "Business Savings ••4436 statement", "Square payout report", "Shopify payout report",
+      "Amex statement", "AP aging", "Payroll register", "Subscription billing report", "Loan statement"
+    ]
+  },
+  "portal": {
+    "requests": 9, "received": 7, "open": 2, "questions": 3,
+    "open_requests": ["Front Range Bank savings ••4436 statement — August", "Sound Electric invoice — Aug 18 ($3,200)"]
+  },
+  "knw_04a": {"total": "20020.00", "parts": ["11860.00", "700.00", "2140.00", "5320.00"], "held": "14900.00"}
+}
