@@ -2,7 +2,7 @@
 id: TASK-8026
 title: "T-05-T67 part 1: API-level J08 journey on the loaded Ridgeline return"
 spec: SPEC-651
-acceptance_criteria: [AC-11.1, AC-11.2, AC-12.1, AC-13.1, AC-14.1]
+acceptance_criteria: [AC-11, AC-12, AC-13, AC-14]
 risk_zone: green
 status: in-review
 branch: t05-t67-j08-api-journey

@@ -296,7 +296,7 @@ def _tokens(text: str) -> list[_Token]:
         if char.isdigit() or (char == "." and index + 1 < length and text[index + 1].isdigit()):
             # A digit-led word followed by "!" is a bare sheet title (`05!H12`).
             word = _match_at(_DIGIT_WORD, text, index)
-            if word is None:  # the digit at `index` always matches; kept for the type checker
+            if word is None:  # pragma: no cover - the digit at `index` always matches
                 raise FormulaError(FormulaErrorCode.SYNTAX, start)
             after = index + len(word)
             if after < length and text[after] == "!":
@@ -304,7 +304,7 @@ def _tokens(text: str) -> list[_Token]:
                 index = after + 1
                 continue
             number = _match_at(_NUMBER, text, index)
-            if number is None:
+            if number is None:  # pragma: no cover - a digit, or "." and a digit, always matches
                 raise FormulaError(FormulaErrorCode.SYNTAX, start)
             tokens.append(_Token(_Kind.NUMBER, number, start))
             index += len(number)
@@ -450,7 +450,7 @@ class _Parser:
             if not isinstance(value, Number) or start.kind is not _Kind.NUMBER:
                 raise FormulaError(FormulaErrorCode.TYPE, percent.position)
             return Percent(value.value)
-        if isinstance(value, RangeRef):
+        if isinstance(value, RangeRef):  # pragma: no cover - `_reference` refuses it first
             raise FormulaError(FormulaErrorCode.TYPE, 0)
         return value
 
@@ -475,7 +475,7 @@ class _Parser:
 
     def _cell(self, token: _Token, sheet: str | None) -> CellRef:
         match = re.fullmatch(_CELL, token.text)
-        if match is None:
+        if match is None:  # pragma: no cover - a CELL token is emitted only when it matches
             raise FormulaError(FormulaErrorCode.REF_INVALID, token.position)
         column = column_number(match.group(1))
         row = int(match.group(2))
@@ -516,7 +516,7 @@ class _Parser:
     def _call(self, name: _Token) -> Call:
         try:
             function = Function(name.text)
-        except ValueError as exc:
+        except ValueError as exc:  # pragma: no cover - the tokenizer refuses the name first
             raise FormulaError(FormulaErrorCode.UNSUPPORTED_FUNCTION, name.position) from exc
         self._expect(_Kind.LPAREN)
         self._enter(name.position)
