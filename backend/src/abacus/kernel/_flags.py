@@ -66,6 +66,11 @@ AUDIT_TRAIL_ENGAGEMENT_ACTIVITY = Flag(
     kind="boolean",
     default="false",
 )
+AUDITS_ANALYTICS = Flag(
+    name="audits.analytics",
+    kind="boolean",
+    default="false",
+)
 AUDITS_ARCHIVE = Flag(
     name="audits.archive",
     kind="boolean",
@@ -86,6 +91,21 @@ AUDITS_COMPLETION = Flag(
     kind="boolean",
     default="false",
 )
+AUDITS_CONFIRMATIONS = Flag(
+    name="audits.confirmations",
+    kind="boolean",
+    default="false",
+)
+AUDITS_FIELDWORK_AGENTS = Flag(
+    name="audits.fieldwork_agents",
+    kind="boolean",
+    default="false",
+)
+AUDITS_FIELDWORK_TESTING = Flag(
+    name="audits.fieldwork_testing",
+    kind="boolean",
+    default="false",
+)
 AUDITS_LETTERS = Flag(
     name="audits.letters",
     kind="boolean",
@@ -93,6 +113,11 @@ AUDITS_LETTERS = Flag(
 )
 AUDITS_REPORT_RELEASE = Flag(
     name="audits.report_release",
+    kind="boolean",
+    default="false",
+)
+AUDITS_SSARS_WORKSPACE = Flag(
+    name="audits.ssars_workspace",
     kind="boolean",
     default="false",
 )
@@ -472,6 +497,11 @@ RUN_TRACE_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+SAMPLING_MONETARY_UNIT = Flag(
+    name="sampling.monetary_unit",
+    kind="boolean",
+    default="false",
+)
 SAMPLING_SAMPLE_SETS = Flag(
     name="sampling.sample_sets",
     kind="boolean",
@@ -611,12 +641,17 @@ FLAGS: dict[str, Flag] = {
     "audit_log.explorer": AUDIT_LOG_EXPLORER,
     "audit_log.values": AUDIT_LOG_VALUES,
     "audit_trail.engagement_activity": AUDIT_TRAIL_ENGAGEMENT_ACTIVITY,
+    "audits.analytics": AUDITS_ANALYTICS,
     "audits.archive": AUDITS_ARCHIVE,
     "audits.binder_export": AUDITS_BINDER_EXPORT,
     "audits.cockpit": AUDITS_COCKPIT,
     "audits.completion": AUDITS_COMPLETION,
+    "audits.confirmations": AUDITS_CONFIRMATIONS,
+    "audits.fieldwork_agents": AUDITS_FIELDWORK_AGENTS,
+    "audits.fieldwork_testing": AUDITS_FIELDWORK_TESTING,
     "audits.letters": AUDITS_LETTERS,
     "audits.report_release": AUDITS_REPORT_RELEASE,
+    "audits.ssars_workspace": AUDITS_SSARS_WORKSPACE,
     "binders.engine": BINDERS_ENGINE,
     "clients.tax_profile": CLIENTS_TAX_PROFILE,
     "closes.agent": CLOSES_AGENT,
@@ -688,6 +723,7 @@ FLAGS: dict[str, Flag] = {
     "review.checkpoints": REVIEW_CHECKPOINTS,
     "rules.reference_sets": RULES_REFERENCE_SETS,
     "run_trace.enabled": RUN_TRACE_ENABLED,
+    "sampling.monetary_unit": SAMPLING_MONETARY_UNIT,
     "sampling.sample_sets": SAMPLING_SAMPLE_SETS,
     "screening.card": SCREENING_CARD,
     "search.agent_mode": SEARCH_AGENT_MODE,

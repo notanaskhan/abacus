@@ -29,5 +29,6 @@ roles: [firm_admin, practice_leader, quality_partner, security_admin,
         eqr_reviewer, specialist, client_service,   # F-03-T23 (chapter 03 §4.2); client_service's cells: F-03-T30 (ADR-147)
         client_admin, client_contributor,
         third_party,   # R-01-T13 (DEC-387): a request_item grant's holder, `delegated_only` cells only
+        link_principal,   # A-08-T03 (ADR-146; ADR-152 amendment): one object through a signed link, `link_scope_only` cells only
         agent, system,
         platform_support, platform_support_content]   # SPEC-012: break-glass, read-only

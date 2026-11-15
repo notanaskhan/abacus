@@ -28,6 +28,12 @@ are not registered, or not known for this resource, denies (fail closed).
   signed and in force now, by the registered consent checks (`register_consent_check`). A
   resource condition: it binds agents and system runs too. No subjects, or an unregistered
   purpose, fails closed.
+- `is_named_approver` (A-08-T03): the actor is the person the target names as its approver
+  (`TargetFacts.approver_user_id`, e.g. a sample expansion's); a person's condition.
+- `link_scope_only` (A-08-T03; ADR-146, the ADR-152 amendment): the actor is a link principal and
+  the target is the one object its link names. Its facts are the link authenticator's (A-08-T15);
+  until it registers them, every action carrying the condition denies.
+- `email_verified` (A-08-T03): the link principal's emailed code is verified for this page.
 
 The three target conditions are a person's: an agent or a system run never meets them, whatever its
 initiator could do, and a support session never does either (its facts are not resolved).
@@ -66,6 +72,11 @@ class ConditionFacts:
     owner: bool | None = None
     # T-01-T11: the §7216 purposes every data subject of the target holds now (None: unknown).
     consents: frozenset[str] | None = None
+    # A-08-T03: whether the actor is the target's named approver; whether a link principal's
+    # link names the target; whether its email code is verified (None: unknown, fails closed).
+    named_approver: bool | None = None
+    link_scope: bool | None = None
+    email_verified: bool | None = None
 
 
 def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
@@ -74,9 +85,21 @@ def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
     initiator is authorised; the resource conditions apply to every actor. The target
     conditions (`not_preparer_of_target`, `reserved_role`) are a named person's: a non-person
     never meets them."""
-    if (rule.not_preparer_of_target or rule.reserved_role or rule.owner_of_target) and not person:
+    if (
+        rule.not_preparer_of_target
+        or rule.reserved_role
+        or rule.owner_of_target
+        or rule.is_named_approver
+    ) and not person:
+        return False
+    # A-08-T03: the link conditions bind every actor; only the link authenticator meets them.
+    if rule.link_scope_only and facts.link_scope is not True:
+        return False
+    if rule.email_verified and facts.email_verified is not True:
         return False
     if person:
+        if rule.is_named_approver and facts.named_approver is not True:
+            return False
         if rule.owner_of_target and facts.owner is not True:
             return False
         if rule.not_preparer_of_target and facts.preparer is not False:

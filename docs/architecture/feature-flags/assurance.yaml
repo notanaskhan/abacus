@@ -122,3 +122,43 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: audits.fieldwork_testing
+    description: 'A-08 AUD-12 testing workspace: JE tests, tests of details and controls on the shared grid, adopt, exceptions and sample expansion (R2). Off: 404 and the C-20 not-turned-on state; nothing already recorded changes. Per firm, default off. A-08-T03, DEC-5030.'
+    owner: ayushkbhatia
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audits.analytics
+    description: 'A-08 AUD-13 analytics and the flux routes (preliminary, substantive, final). Off: 404 and the not-turned-on state. Per firm, default off. A-08-T03, DEC-5030.'
+    owner: ayushkbhatia
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audits.confirmations
+    description: 'A-08 AUD-14 confirmations manager (firm routes). Off: 404; respondent links are also governed by the confirmation_links platform control (ADR-157), which pauses the public /v1/confirm/* family. Per firm, default off. A-08-T03, DEC-5030.'
+    owner: ayushkbhatia
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audits.ssars_workspace
+    description: 'A-08 AUD-26 SSARS workspace dispatch for review, compilation and preparation work items. Off: the work item opens its existing record page. Per firm, default off. A-08-T03, DEC-5030.'
+    owner: ayushkbhatia
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audits.fieldwork_agents
+    description: 'A-08 agent modes fieldwork_attribute, flux_explain and confirmation_reconcile on workpapers.section_drafter. Off: the modes never run and code steps still do (DF-04 on a closed data boundary). Per firm, default off. A-08-T03, DEC-5030.'
+    owner: notanaskhan
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false

@@ -29,7 +29,10 @@ from abacus.kernel.config import settings
 from abacus.modules.platform.api import OPERATOR_HANDLE
 from abacus_tools.db_connect import connect as connect_db
 
-CONTROLS: Final = ("ai_pause", "model_route_block", "email_pause", "read_only", "portal_sign_in")
+CONTROLS: Final = (
+    *("ai_pause", "model_route_block", "email_pause", "read_only", "portal_sign_in"),
+    "confirmation_links",  # A-08-T03 (0887): the public confirmation family and link issuance
+)
 _FIRM_ONLY: Final = frozenset({"portal_sign_in"})
 _PLATFORM_ONLY: Final = frozenset({"model_route_block"})
 ROUTES: Final = ("direct", "bedrock")

@@ -97,6 +97,9 @@ CONDITION_KEYS: frozenset[str] = frozenset(
     # T-01-T11 (C19; ADR P-12): `consent: use,ai_disclosure` - every data subject of the target
     # holds a consent for each listed purpose, signed and in force now.
     | {"consent"}
+    # A-08-T03 (SPEC-657; ADR-146, ADR-152 amendment): the target names the actor as its approver;
+    # a link principal reaches only the one object its link names; and its email code is verified.
+    | {"is_named_approver", "link_scope_only", "email_verified"}
 )
 # T-01-T11: the §7216 purposes a `consent` condition may list (0402's `consents.purpose`).
 CONSENT_PURPOSES: tuple[str, ...] = (
@@ -111,6 +114,7 @@ CONSENT_PURPOSES: tuple[str, ...] = (
 _FLAG_CONDITIONS = (
     *("not_offshore", "scope_only", "not_preparer_of_target", "reserved_role"),
     "owner_of_target",  # K-02-T01
+    *("is_named_approver", "link_scope_only", "email_verified"),  # A-08-T03
 )
 # A-07-T14 (ADR P-43): what an action may still do after a lock. The trigger names its tables.
 ARCHIVED_EXEMPT_KINDS: tuple[str, ...] = ("archive_addition", "verify", "legal_hold", "export")
@@ -148,6 +152,11 @@ class Rule:
     owner_of_target: bool = False
     # T-01-T11 (C19): the §7216 purposes every data subject of the target must hold.
     consent: frozenset[str] = frozenset()
+    # A-08-T03: the actor is the person the target names as its approver (a sample expansion's
+    # `approver_user_id`); a link principal acts on its one object only, with a verified email.
+    is_named_approver: bool = False
+    link_scope_only: bool = False
+    email_verified: bool = False
     # The firm setting each `firm_setting(<name>)` role decision names.
     firm_settings: tuple[tuple[str, str], ...] = ()
     # A-07-T14 (ADR P-43): this action still acts on an archived engagement or locked work item.
@@ -243,6 +252,9 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
         reserved_role="reserved_role" in flags,
         owner_of_target="owner_of_target" in flags,
         consent=consent,
+        is_named_approver="is_named_approver" in flags,
+        link_scope_only="link_scope_only" in flags,
+        email_verified="email_verified" in flags,
         firm_settings=tuple(settings),
         archived_exempt=archived_exempt,
     )
