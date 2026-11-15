@@ -5074,7 +5074,7 @@ export const runningClosesQueryKey = (options?: Options<RunningClosesData>) => c
 /**
  * Running Closes Route
  *
- * The running pill and popover (C-01-T20).
+ * The running pill and popover (C-01-T14 over C-01-T20's procedures).
  */
 export const runningClosesOptions = (options?: Options<RunningClosesData>) => queryOptions<RunningClosesResponse, RunningClosesError, RunningClosesResponse, ReturnType<typeof runningClosesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -5237,7 +5237,8 @@ export const closeWorkpaperXlsxOptions = (options: Options<CloseWorkpaperXlsxDat
 /**
  * Close Assignees Route
  *
- * Managers and Partners reassign preparer and reviewer (AC-8; C-01-T14).
+ * Managers and Partners reassign preparer and reviewer (AC-8; C-01-T14). The service
+ * refuses and audits a non-human caller (INV-1).
  */
 export const closeAssigneesMutation = (options?: Partial<Options<CloseAssigneesData>>): UseMutationOptions<CloseAssigneesResponse, CloseAssigneesError, Options<CloseAssigneesData>> => {
     const mutationOptions: UseMutationOptions<CloseAssigneesResponse, CloseAssigneesError, Options<CloseAssigneesData>> = {
@@ -5470,7 +5471,8 @@ export const retryCloseProcedureMutation = (options?: Partial<Options<RetryClose
  * Close Status Route
  *
  * Gated moves and the On hold flag (AC-9 to AC-12; C-01-T14): 409
- * `accounts_not_reconciled`, `run_in_progress` or `transition_not_available`.
+ * `accounts_not_reconciled`, `run_in_progress` or `transition_not_available`; an agent is
+ * refused 403 and the refusal audited (`decision.refused_non_human`).
  */
 export const closeStatusMutation = (options?: Partial<Options<CloseStatusData>>): UseMutationOptions<CloseStatusResponse, CloseStatusError, Options<CloseStatusData>> => {
     const mutationOptions: UseMutationOptions<CloseStatusResponse, CloseStatusError, Options<CloseStatusData>> = {

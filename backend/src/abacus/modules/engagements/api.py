@@ -271,6 +271,7 @@ from abacus.modules.engagements.work_items import (
     WorkItemExists,
     archive_work_item,
     assign_work_item,
+    reassign_work_item,  # C-01-T14: a close's preparer and reviewer
     assurance_item,
     assurance_item_id,
     client_tax_years,
@@ -551,6 +552,7 @@ __all__ = [
     "area_for",
     "assign_eqr",
     "assign_work_item",
+    "reassign_work_item",
     "assigned_work",
     "assurance_index",
     "assurance_item",

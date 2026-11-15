@@ -76758,10 +76758,6 @@ export type ListClosesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListClosesError = ListClosesErrors[keyof ListClosesErrors];
@@ -76809,10 +76805,6 @@ export type RunningClosesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RunningClosesError = RunningClosesErrors[keyof RunningClosesErrors];
@@ -76865,10 +76857,6 @@ export type CloseSummaryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseSummaryError = CloseSummaryErrors[keyof CloseSummaryErrors];
@@ -77245,10 +77233,6 @@ export type CloseAssigneesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseAssigneesError = CloseAssigneesErrors[keyof CloseAssigneesErrors];
@@ -78003,10 +77987,6 @@ export type CloseStatusErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseStatusError = CloseStatusErrors[keyof CloseStatusErrors];
@@ -83264,10 +83244,6 @@ export type GenerateClosesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GenerateClosesError = GenerateClosesErrors[keyof GenerateClosesErrors];

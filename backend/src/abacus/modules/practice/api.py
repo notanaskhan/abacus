@@ -11,6 +11,7 @@ from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.practice.activity import rebuild_home_activity
 from abacus.modules.practice.due_dates import (
     add_business_days,
+    business_days_between,
     clock_due,
     due_dates_for,
     due_dates_for_extension,
@@ -60,6 +61,7 @@ __all__ = [
     "Location",
     "QuestionContext",
     "add_business_days",
+    "business_days_between",
     "clock_due",
     "due_dates_for",
     "due_dates_for_extension",

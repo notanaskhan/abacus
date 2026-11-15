@@ -395,6 +395,38 @@ async def issue_awaits_client(tenant: TenantContext, issue_id: UUID) -> bool:
         return bool(await session.scalar(_AWAITS_CLIENT, {"i": issue_id}))
 
 
+# C-01-T14 (AC-2, AC-7): open counts and states for the close engine, read by their owner so
+# closes never queries `issues` (OWN-001). "Open" is every state a person has not settled.
+_OPEN_STATES: Final = ("open", "in_progress", "reopened", "under_evaluation")
+_OPEN_BY_WORK_ITEM = text(
+    "SELECT work_item_id, count(*) FROM issues "
+    "WHERE work_item_id = ANY(:ids) AND status = ANY(:open) GROUP BY work_item_id"
+)
+_OPEN_AMONG = text("SELECT id FROM issues WHERE id = ANY(:ids) AND status = ANY(:open)")
+
+
+async def open_issue_counts(tenant: TenantContext, work_item_ids: list[UUID]) -> dict[UUID, int]:
+    """Open issues per work item, for a caller already authorised on (or filtering by
+    `visible()`) those work items; a work item with none is absent."""
+    if not work_item_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            _OPEN_BY_WORK_ITEM, {"ids": work_item_ids, "open": list(_OPEN_STATES)}
+        )
+        return {item: int(n) for item, n in rows.all()}
+
+
+async def open_issues_among(tenant: TenantContext, issue_ids: list[UUID]) -> frozenset[UUID]:
+    """Which of these issues are still open (a reconciling item's issue keeps its account from
+    counting as reconciled)."""
+    if not issue_ids:
+        return frozenset()
+    async with tenant_session(tenant) as session:
+        found = await session.scalars(_OPEN_AMONG, {"ids": issue_ids, "open": list(_OPEN_STATES)})
+        return frozenset(found)
+
+
 async def update_issue(
     ctx: AuthContext,
     issue_id: UUID,

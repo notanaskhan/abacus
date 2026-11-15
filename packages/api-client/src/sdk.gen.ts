@@ -2977,7 +2977,7 @@ export const listCloses = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Running Closes Route
  *
- * The running pill and popover (C-01-T20).
+ * The running pill and popover (C-01-T14 over C-01-T20's procedures).
  */
 export const runningCloses = <ThrowOnError extends boolean = false>(options?: Options<RunningClosesData, ThrowOnError>): RequestResult<RunningClosesResponses, RunningClosesErrors, ThrowOnError> => (options?.client ?? client).get<RunningClosesResponses, RunningClosesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3054,7 +3054,8 @@ export const closeWorkpaperXlsx = <ThrowOnError extends boolean = false>(options
 /**
  * Close Assignees Route
  *
- * Managers and Partners reassign preparer and reviewer (AC-8; C-01-T14).
+ * Managers and Partners reassign preparer and reviewer (AC-8; C-01-T14). The service
+ * refuses and audits a non-human caller (INV-1).
  */
 export const closeAssignees = <ThrowOnError extends boolean = false>(options: Options<CloseAssigneesData, ThrowOnError>): RequestResult<CloseAssigneesResponses, CloseAssigneesErrors, ThrowOnError> => (options.client ?? client).put<CloseAssigneesResponses, CloseAssigneesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3195,7 +3196,8 @@ export const retryCloseProcedure = <ThrowOnError extends boolean = false>(option
  * Close Status Route
  *
  * Gated moves and the On hold flag (AC-9 to AC-12; C-01-T14): 409
- * `accounts_not_reconciled`, `run_in_progress` or `transition_not_available`.
+ * `accounts_not_reconciled`, `run_in_progress` or `transition_not_available`; an agent is
+ * refused 403 and the refusal audited (`decision.refused_non_human`).
  */
 export const closeStatus = <ThrowOnError extends boolean = false>(options: Options<CloseStatusData, ThrowOnError>): RequestResult<CloseStatusResponses, CloseStatusErrors, ThrowOnError> => (options.client ?? client).post<CloseStatusResponses, CloseStatusErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

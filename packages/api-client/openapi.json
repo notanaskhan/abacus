@@ -164824,16 +164824,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Closes Route",
@@ -164845,7 +164835,7 @@
     },
     "/v1/closes/running": {
       "get": {
-        "description": "The running pill and popover (C-01-T20).",
+        "description": "The running pill and popover (C-01-T14 over C-01-T20's procedures).",
         "operationId": "running_closes",
         "parameters": [
           {
@@ -164931,16 +164921,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Running Closes Route",
@@ -165048,16 +165028,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Close Summary Route",
@@ -165763,7 +165733,7 @@
     },
     "/v1/closes/{close_id}/assignees": {
       "put": {
-        "description": "Managers and Partners reassign preparer and reviewer (AC-8; C-01-T14).",
+        "description": "Managers and Partners reassign preparer and reviewer (AC-8; C-01-T14). The service\nrefuses and audits a non-human caller (INV-1).",
         "operationId": "close_assignees",
         "parameters": [
           {
@@ -165890,16 +165860,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Close Assignees Route",
@@ -167434,7 +167394,7 @@
     },
     "/v1/closes/{close_id}/status": {
       "post": {
-        "description": "Gated moves and the On hold flag (AC-9 to AC-12; C-01-T14): 409\n`accounts_not_reconciled`, `run_in_progress` or `transition_not_available`.",
+        "description": "Gated moves and the On hold flag (AC-9 to AC-12; C-01-T14): 409\n`accounts_not_reconciled`, `run_in_progress` or `transition_not_available`; an agent is\nrefused 403 and the refusal audited (`decision.refused_non_human`).",
         "operationId": "close_status",
         "parameters": [
           {
@@ -167561,16 +167521,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Close Status Route",
@@ -179381,16 +179331,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Generate Closes Route",

@@ -161,8 +161,10 @@ def status_guard(to_status: str) -> StatusGuard:
 
 
 async def close_for(tenant: TenantContext, work_item_id: UUID) -> CloseFacts:
-    """The close's facts (C-01-T14)."""
-    raise NotImplementedYet
+    """The close's facts (C-01-T14; `service.close_for`)."""
+    from abacus.modules.closes import service
+
+    return await service.close_for(tenant, work_item_id)
 
 
 # --- people and links ----------------------------------------------------------------------------
@@ -660,7 +662,7 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
-@closes_router.get("/closes", action="close.read", response_model=CloseListOut, errors=(501,))
+@closes_router.get("/closes", action="close.read", response_model=CloseListOut, errors=())
 async def list_closes_route(
     ctx: Ctx,
     period: Annotated[str, Query(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")],
@@ -672,47 +674,62 @@ async def list_closes_route(
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> CloseListOut:
     """CLS-01 rows, tiles and the summary line through `visible()` (C-01-T14)."""
+    from abacus.modules.closes import service
+
     await _engine_on(ctx)
-    _not_yet()
+    return await service.list_closes(
+        ctx, period=period, status=status, preparer=preparer, reviewer=reviewer, attest=attest,
+        q=q,
+    )  # fmt: skip
 
 
 @closes_router.get(
-    "/closes/running", action="close.read", response_model=RunningClosesOut, errors=(501,)
+    "/closes/running", action="close.read", response_model=RunningClosesOut, errors=()
 )
 async def running_closes_route(ctx: Ctx) -> RunningClosesOut:
-    """The running pill and popover (C-01-T20)."""
+    """The running pill and popover (C-01-T14 over C-01-T20's procedures)."""
+    from abacus.modules.closes import service
+
     await _engine_on(ctx)
-    _not_yet()
+    return await service.running_closes(ctx)
 
 
-@closes_router.get(_C, action="close.read", response_model=CloseSummaryOut, errors=(501,))
+@closes_router.get(_C, action="close.read", response_model=CloseSummaryOut, errors=())
 async def close_summary_route(close_id: UUID, ctx: Ctx) -> CloseSummaryOut:
     """CLS-02's record; a walled close answers 404 (AC-4; C-01-T14)."""
+    from abacus.modules.closes import service
+
     await _engine_on(ctx)
-    _not_yet()
+    return await service.close_summary(ctx, close_id)
 
 
 @closes_router.put(
-    f"{_C}/assignees", action="close.assign", response_model=CloseSummaryOut, errors=(409, 501)
+    f"{_C}/assignees", action="close.assign", response_model=CloseSummaryOut, errors=(409,)
 )
 async def close_assignees_route(
     close_id: UUID, body: AssigneesIn, ctx: Ctx, if_match: IfMatch
 ) -> CloseSummaryOut:
-    """Managers and Partners reassign preparer and reviewer (AC-8; C-01-T14)."""
-    await _human_route(ctx, "close.assign")
-    _not_yet()
+    """Managers and Partners reassign preparer and reviewer (AC-8; C-01-T14). The service
+    refuses and audits a non-human caller (INV-1)."""
+    from abacus.modules.closes import service
+
+    await _engine_on(ctx)
+    return await service.set_assignees(ctx, close_id, body, if_match)
 
 
 @closes_router.post(
-    f"{_C}/status", action="close.status_move", response_model=CloseSummaryOut, errors=(409, 501)
+    f"{_C}/status", action="close.status_move", response_model=CloseSummaryOut, errors=(409,)
 )
 async def close_status_route(
     close_id: UUID, body: StatusMoveIn, ctx: Ctx, if_match: IfMatch
 ) -> CloseSummaryOut:
     """Gated moves and the On hold flag (AC-9 to AC-12; C-01-T14): 409
-    `accounts_not_reconciled`, `run_in_progress` or `transition_not_available`."""
-    await _human_route(ctx, "close.status_move")
-    _not_yet()
+    `accounts_not_reconciled`, `run_in_progress` or `transition_not_available`; an agent is
+    refused 403 and the refusal audited (`decision.refused_non_human`)."""
+    from abacus.modules.closes import service
+
+    await _engine_on(ctx)
+    return await service.move_status(ctx, close_id, body, if_match)
 
 
 @closes_router.post(
@@ -720,15 +737,19 @@ async def close_status_route(
     action="close.create",
     response_model=GenerateClosesOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def generate_closes_route(
     engagement_id: UUID, body: GenerateClosesIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> GenerateClosesOut:
     """Twelve closes for a Monthly close engagement; a period that exists answers 409
     `work_item_exists` (AC-13; C-01-T14)."""
+    from abacus.modules.closes import service
+
     await _human_route(ctx, "close.create")
-    _not_yet()
+    return GenerateClosesOut(
+        close_ids=await service.generate_closes(ctx, engagement_id, body.year)
+    )
 
 
 @closes_router.post(
