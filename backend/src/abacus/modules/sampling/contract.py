@@ -787,4 +787,7 @@ async def sample_item_requests_route(
     return await item_requests.create(ctx, sample_set_id, version_no, body, idempotency_key)
 
 
-ROUTERS = (work_items_router, populations_router, sample_sets_router)
+# A-08-T05: the fieldwork-testing stub's JE tests and sample expansions (DEC-5032).
+from abacus.modules.sampling.fieldwork_contract import router as fieldwork_router  # noqa: E402
+
+ROUTERS = (work_items_router, populations_router, sample_sets_router, fieldwork_router)

@@ -256,6 +256,10 @@ codes:
     - abacus.modules.identity.walls.ApproverNotPartner
     summary: The named approver must be an active partner-level member other than the walled person and
       the wall's creator, who can see the client (not walled from it).
+  approver_required:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.fieldwork_contract.ApproverRequired
   archive_locked:
     status: 409
     raised_by:
@@ -629,6 +633,7 @@ codes:
     - abacus.modules.assurance.mapping_live.ContentChanged
     - abacus.modules.assurance.release.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
+    - abacus.modules.sampling.fieldwork_contract.ContentChanged
     - abacus.modules.sampling.sample_sets.ContentChanged
     - abacus.modules.tax.approval.ContentChanged
     summary: 'The target changed since the signer saw it: nothing is written.'
@@ -1089,11 +1094,20 @@ codes:
     raised_by:
     - abacus.modules.assurance.soc_reports.ExceptionNotHigh
     summary: 'AC7.5: only a High-impact exception routes to Findings.'
+  expansion_rationale_required:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.fieldwork_contract.ExpansionRationaleRequired
   explain_unavailable:
     status: 409
     raised_by:
     - abacus.modules.review.issue_resolutions.ExplainUnavailable
     summary: No explainer is registered for the issue's record type (fail closed, T-04-T31).
+  explanation_uncited:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.analytics_contract.ExplanationUncited
+    summary: An explanation without a verified citation cannot be saved as Explained (AC-5.3).
   export_disabled:
     status: 409
     raised_by:
@@ -2038,6 +2052,11 @@ codes:
     raised_by:
     - abacus.modules.agents.ai_policy_service.NoPendingVersion
     summary: There is no version awaiting approval with that number.
+  no_report_for_preparation:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.analytics_contract.NoReportForPreparation
+    summary: 'AR-C 70: no report for a preparation work item (AC-8.6).'
   no_sender_address:
     status: 422
     raised_by:
@@ -2548,8 +2567,9 @@ codes:
   population_not_tied:
     status: 409
     raised_by:
+    - abacus.modules.sampling.fieldwork_contract.PopulationNotTied
     - abacus.modules.sampling.sample_sets.PopulationNotTied
-    summary: 'A tie of the version''s population is off or unchecked: nobody may approve it.'
+    summary: Scoring refused until the population's completeness tie reads `tie` (AC-1.1).
   population_unreadable:
     status: 422
     raised_by:

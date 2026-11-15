@@ -50,6 +50,7 @@ from abacus.modules.workpapers.drafting import (
     paper_id_of_kind,
     paper_of_kind,
 )
+from abacus.modules.workpapers.fieldwork_tests_contract import router as fieldwork_tests_router
 from abacus.modules.workpapers.guards import register_sign_off_guard
 from abacus.modules.workpapers.layouts import (
     AddressInvalid,
@@ -93,6 +94,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     checks_router,
     a04_router,  # A-04-T01 workpaper core stub (docs/contracts/workpapers-core.md)
+    fieldwork_tests_router,  # A-08-T05 fieldwork-testing stub (fieldwork-testing.md)
 )
 
 # P-05-T09: a paper's sheets, rows and cells carry comment threads and to-dos (AUD-09).

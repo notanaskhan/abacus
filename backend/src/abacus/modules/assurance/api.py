@@ -34,6 +34,7 @@ from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBSCRIPTIONS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
 from abacus.modules.assurance.agent_capabilities import register as register_agent_capabilities
+from abacus.modules.assurance.analytics_contract import router as analytics_router
 from abacus.modules.assurance.archive_additions import ACTIVITIES as ARCHIVE_VERIFY_ACTIVITIES
 from abacus.modules.assurance.archive_additions import SCHEDULES as ARCHIVE_VERIFY_SCHEDULES
 from abacus.modules.assurance.archive_additions import WORKFLOWS as ARCHIVE_VERIFY_WORKFLOWS
@@ -279,6 +280,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     audit_release_router,  # A-07-T05 AUD-21 to AUD-25 stub (docs/contracts/audit-completion.md)
     schedule_h_mappings_router,  # A-05-T62 close: the firm's Schedule H line mapping (DEC-2823)
     confirmations_router,  # A-08-T06 confirmations stub (docs/contracts/confirmations.md)
+    analytics_router,  # A-08-T05 analytics and SSARS stubs (audit-analytics, ssars-workspace)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
