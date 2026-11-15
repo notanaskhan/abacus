@@ -54,6 +54,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "source"}
         | {"raw_fingerprint", "tb_snapshot_id", "line_count", "total_debit", "total_credit"}
         | {"kind"}  # SPEC-038 (TASK-086)
+        | {"je_fields_available"}  # A-08-T09 (0888)
     ),
     "gl_account_balances": frozenset(
         {"tenant_id", "snapshot_id", "account_code", "account_name", "opening", "debit"}
@@ -63,6 +64,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "snapshot_id", "line_no", "account_code", "posted_on", "reference"}
         | {"kind", "counterparty", "description", "debit", "credit", "source_ref"}
         | {"offset_account_ref", "payee", "txn_type", "external_txn_id"}  # C-01-T10 (0882)
+        | {"posted_by", "entered_at", "source", "approver"}  # A-08-T09 (0888)
     ),
     "ledger_snapshots": frozenset(
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}

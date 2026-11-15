@@ -14,9 +14,9 @@ from __future__ import annotations
 import unicodedata
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Final, Protocol
+from typing import Final, Literal, Protocol
 
 MAX_DETAILS: Final = 5
 # Balance sheet accounts by the common US numbering (assets, liabilities, equity), used only when
@@ -37,6 +37,12 @@ class GlEntry:
     debit: Decimal
     credit: Decimal
     source_ref: str
+    # A-08-T09 (ADR-400, P-58): where the export carries them. `posted_by` and `approver` are
+    # confidential user names and never logged; `source` is manual or system.
+    posted_by: str | None = None
+    entered_at: datetime | None = None
+    source: Literal["manual", "system"] | None = None
+    approver: str | None = None
 
 
 @dataclass(frozen=True)
@@ -57,6 +63,8 @@ class GlSummary:
     months: frozenset[tuple[int, int]]  # (year, month) with at least one line
     outside_period: int  # lines dated outside the fiscal year
     has_openings: bool  # the export printed opening balances
+    # A-08-T09: the JE fields the file actually carried (a column present in its header row).
+    je_fields_available: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
