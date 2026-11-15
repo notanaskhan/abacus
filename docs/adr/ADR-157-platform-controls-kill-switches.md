@@ -1,7 +1,7 @@
 ---
 id: ADR-157
 title: Platform controls and kill switches - database rows read through one function, changed only by operators
-status: proposed
+status: accepted
 date: 2026-10-22
 deciders: ayushkbhatia
 risk_zone: red
@@ -11,6 +11,8 @@ risk_zone: red
 > - Accepted ADRs are binding. Code that contradicts one must not be written.
 > - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
+
+**Accepted on 2026-11-15** by ayushkbhatia (DEC-5052; solo edition, AMENDMENT-solo), at the S45 end pass. It is binding from here; the S45 rows built on it as proposed (A-08, A-09, W-01) stand as written.
 
 ## Context
 **Open by 2026-11-13; accept by 2026-11-27.** ADR-097 names the kill switches (platform-wide AI pause, per-firm and per-engagement agent pause, connector provider disable, feature flags, read-only mode) and requires a game day. Today only the per-firm agent pause (`firms.agents_paused_at`), the per-engagement pause and feature flags exist. There is no platform-wide AI pause, no outbound-email pause, no read-only mode and no portal sign-in disable. In a SEV1 the on-call person needs to stop AI, stop email or stop writes, for one firm or for everyone, within seconds and without a deploy. This ADR is P-66, drafted under Q-01-T22 and built under Q-01-T19, T36 and T37. The decision below is chapter 06 section 3.8 (the chapter calls the proposal P-40) and the Q-01 epic section F8. It implements ADR-097; it does not replace it.

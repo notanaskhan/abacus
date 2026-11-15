@@ -56,8 +56,8 @@ inputs = {'memo': Untrusted(entry.memo)}
 prompt += f'Memo: {entry.memo}'
 ```
 
-## Amendment: link principals on the public confirmation page (proposed 2026-11-15; A-08-T02, DEC-5029)
-**Status of this amendment: proposed** (with the ADR-152 amendment). POR-17 is the first surface a stranger can call. The repository has no separate threat-model file under `docs/architecture` for principals, so the link-principal threats live here beside the AI threats (A-08 §0.1).
+## Amendment: link principals on the public confirmation page (accepted 2026-11-15; A-08-T02, DEC-5029, DEC-5052)
+**Status of this amendment: accepted** on 2026-11-15 by ayushkbhatia (DEC-5052), with the ADR-152 amendment. POR-17 is the first surface a stranger can call. The repository has no separate threat-model file under `docs/architecture` for principals, so the link-principal threats live here beside the AI threats (A-08 §0.1).
 
 | Threat | How it happens | Controls |
 |---|---|---|

@@ -1,7 +1,7 @@
 ---
 id: ADR-179
 title: Retention per record type and service line with counsel-set legal floors as reference data, reference-counted legal holds, dual-approved destruction and dual-control firm export
-status: proposed
+status: accepted
 date: 2026-10-25
 deciders: ayushkbhatia, notanaskhan
 risk_zone: red
@@ -12,6 +12,8 @@ risk_zone: red
 > - If a task seems to require breaking an ADR, propose a new ADR that supersedes it. Never work around it silently.
 > - Never edit an accepted ADR. Propose a new one that supersedes it.
 > - **This ADR is proposed.** It is P-14 in `docs/adr/backlog.md` (DEC-71, DEC-72). It never defaults on silence: it is red and its floors are counsel's. It is accepted only by both deciders on `origin/main`, with counsel's floor input recorded (Q-02-T05). Until then, ADR-032, ADR-033, ADR-034 and ADR-036 bind as written, and the parts of this text already built (§"What is built") stand on their own DEC rows.
+
+**Accepted on 2026-11-15** by ayushkbhatia (DEC-5052; solo edition, AMENDMENT-solo), at the S45 end pass. It is binding from here; the S45 rows built on it as proposed (A-08, A-09, W-01) stand as written.
 
 ## Context
 ADR-032 sets retention per engagement type with two platform minimums written into the ADR (five years for private-company audits, seven for public-company audits) and a seven-year default. ADR-033 lets firm admins hold an engagement or a client. ADR-034 offboards by export and crypto-shredding under dual control. ADR-036 lets one person with fresh MFA export an engagement. Real client data (the M7 gate, Fri Apr 16, 2027) needs more than that:

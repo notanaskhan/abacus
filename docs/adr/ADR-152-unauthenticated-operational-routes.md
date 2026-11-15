@@ -81,8 +81,8 @@ Proposed under N-02-T01 for DocuSign Connect, retargeted to DocuSeal by ADR-342 
 - No GET: the state stays out of request lines and logs.
 - (2026-11-10; TASK-6990, DEC-3990) "The request's own `Host`" is the viewer host defined by ADR-163's viewer-host amendment: the load balancer's `X-Forwarded-Host` behind CloudFront, else `Host`.
 
-## Amendment: public respondent access, the `/v1/confirm/*` family (proposed 2026-11-15; A-08-T02, DEC-5029)
-**Status of this amendment: proposed.** Both deciders accept it; until then no `/v1/confirm/*` route answers outside the fixture tenant (A-08-T06 serves stub fixtures there only). P-09 (ADR-146) already decides link principals; this amendment adds the concrete route family to the exception list, as A-08 §0.1 and OQ-2 direct (no new P-ID).
+## Amendment: public respondent access, the `/v1/confirm/*` family (accepted 2026-11-15; A-08-T02, DEC-5029, DEC-5052)
+**Status of this amendment: accepted** on 2026-11-15 by ayushkbhatia (DEC-5052). Live `/v1/confirm/*` routes still answer only once A-08's services replace the S45 stub (A-08-T06 serves fixtures in local and test only). P-09 (ADR-146) already decides link principals; this amendment adds the concrete route family to the exception list, as A-08 §0.1 and OQ-2 direct (no new P-ID).
 - **Five paths join the ROUTE-001 exception list**, inside `AbacusRouter` under a `LINK_PRINCIPAL` marker that the router accepts on these paths only (as `PRE_SESSION` and `PORTAL_PUBLIC`):
   `GET /v1/confirm/{token}` · `POST /v1/confirm/{token}/code` · `POST /v1/confirm/{token}/code/verify` · `POST /v1/confirm/{token}/attachments` · `POST /v1/confirm/{token}/response`.
   No other path may carry the marker; a new purpose (R-03 intake) is a further amendment.
