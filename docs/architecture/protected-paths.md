@@ -43,6 +43,12 @@ and `abacus.kernel.calendar`; the import-linter contract that says so is switche
 which adds `backend/src/abacus/kernel/numeric.py` and `backend/src/abacus/kernel/calendar.py` to
 the red files.
 
+## Consolidation compute and goldens (A-09-T02, DEC-5037; ADR-341, P-63)
+`backend/src/abacus/modules/ledger/compute/consolidation.py` (pure: levels, consolidated balances,
+ties, "off n" and per-entity attribution, `kernel.numeric` only, under the compute import-linter
+contract) and `backend/tests/golden/consolidation/**` (the Harlow & Pike goldens the audit CPA
+reviews). Red: a change is a reviewed engine change with its goldens, approved by the non-author.
+
 ## Notices parameter files (N-04-T01, DEC-2050; N-04 §4.2, DEC-76)
 Golden-tested parameters reviewed with the tax CPA, named here and in `notices/README.md` as red
 files: `backend/src/abacus/modules/notices/compute/notice_types.yaml` and
