@@ -48,6 +48,7 @@ LEGACY_DOTTED: Final = frozenset(
 AGENT_KINDS: Final = frozenset(
     {
         "run_finished",
+        "instrument_read_finished",  # T-07-T03: the reader's run ended
         "run_needs_input",
         "proposal_routed",
         "trigger_run_finished",

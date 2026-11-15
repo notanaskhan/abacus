@@ -66,7 +66,9 @@ notifications.register_kind_source(code, event, recipients, subject)
 
 **`pending`:** true while the row still waits on the viewer. Its kind's `pending_resolver` decides this at read time, so an upload accepted elsewhere drops out of Approvals.
 
-**`inline_actions`:** a closed set, `accept_document`, `return_document` and `open_sign_off`. Agent-originated kinds (`run_finished`, `run_needs_input`, `proposal_routed`, `trigger_run_finished`, `template_update_available`) carry none (INV-1). A contract test enforces this (P-01-T14).
+**`inline_actions`:** a closed set, `accept_document`, `return_document` and `open_sign_off`. Agent-originated kinds (`run_finished`, `run_needs_input`, `proposal_routed`, `trigger_run_finished`, `template_update_available`, `instrument_read_finished`) carry none (INV-1).
+
+**T-07-T03 kinds (TASK-8069):** `instrument_interpretation_ready` (approval, from `instrument_interpretation.adopted`, to the engagement's managers except the adopter) and `instrument_read_finished` (run, from `instrument_read.finished`, to the person who started the read). Both name the return (`tax_return`, `work_item_id`); no email by default. A contract test enforces this (P-01-T14).
 
 **Preference defaults:** `in_app` is true. `email` is the kind's `email_default`. Email also needs `notifications.email` to be on for the firm.
 
