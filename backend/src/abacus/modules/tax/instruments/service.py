@@ -80,6 +80,7 @@ from abacus.modules.tax.instrument_events import (
     InstrumentInterpretationApproved,
     InstrumentInterpretationReopened,
 )
+from abacus.modules.tax.instruments import repository as repo
 from abacus.modules.tax.instruments.segment import SEGMENTATION_VERSION, segment
 
 TARGET: Final = "instrument_interpretation"
@@ -123,15 +124,9 @@ class _Return:
     tax_year: int
 
 
-_RETURN: Final = text(
-    "SELECT work_item_id, engagement_id, client_entity_id, form, tax_year FROM tax_returns "
-    "WHERE work_item_id = :r"
-)
-
-
 async def _return(tenant: TenantContext, return_id: UUID) -> _Return:
     async with tenant_session(tenant) as session:
-        row = (await session.execute(_RETURN, {"r": return_id})).first()
+        row = (await session.execute(repo.RETURN, {"r": return_id})).first()
     if row is None or row.client_entity_id is None or row.form not in ("1041", "706"):
         raise NotFound("tax_return")
     return _Return(row[0], row[1], row[2], row[3], int(row[4]))
@@ -151,40 +146,9 @@ def _human(ctx: AuthContext, action: str) -> None:
 
 # --- reads --------------------------------------------------------------------------------------
 
-_PROFILE: Final = text(
-    "SELECT fiduciary_kind, agreement_date, revocable, irrevocable_since, settlor_name_sealed, "
-    "settlor_died_year, residency_state, state_form FROM trust_profiles "
-    "WHERE client_entity_id = :e"
-)
-_INSTRUMENT: Final = text(
-    "SELECT id, evidence_version_id, supersedes_instrument_id, attached_by, attached_at "
-    "FROM governing_instruments WHERE client_entity_id = :e "
-    "AND NOT EXISTS (SELECT 1 FROM governing_instruments n WHERE n.supersedes_instrument_id = "
-    "governing_instruments.id) ORDER BY attached_at DESC LIMIT 1"
-)
-_SEGMENTATION: Final = text(
-    "SELECT id, status, text_source, confidence, clause_count FROM instrument_segmentations "
-    "WHERE instrument_id = :i ORDER BY created_at DESC LIMIT 1"
-)
-_INTERPRETATION: Final = text(
-    "SELECT id, status, scenario, read_run_id, version_no, content_hash, locked_at, row_version, "
-    "instrument_id, segmentation_id FROM instrument_interpretations "
-    "WHERE work_item_id = :w AND superseded_at IS NULL"
-)
-_DETERMINATIONS: Final = text(
-    "SELECT d.id, d.key, v.seq, v.value_code, v.value_text_sealed, v.rationale_ref, "
-    "v.citation_ids, v.set_by_kind, v.set_by_id, v.suggestion_id "
-    "FROM instrument_determinations d JOIN LATERAL (SELECT * FROM "
-    "instrument_determination_versions x WHERE x.determination_id = d.id "
-    "ORDER BY x.seq DESC LIMIT 1) v ON true WHERE d.interpretation_id = :i ORDER BY d.key"
-)
-_CLAUSE_LABELS: Final = text(
-    "SELECT c.id, c.label FROM instrument_clauses c WHERE c.segmentation_id = :s"
-)
-
 
 async def _profile(session: AsyncSession, tenant: TenantContext, entity: UUID) -> TrustProfileOut:
-    row = (await session.execute(_PROFILE, {"e": entity})).first()
+    row = (await session.execute(repo.PROFILE, {"e": entity})).first()
     if row is None:
         return TrustProfileOut(
             client_entity_id=entity,
@@ -225,10 +189,10 @@ async def _determinations(
     interpretation: Row[Any],  # Any: a raw text() row of tax_instrument_interpretations
     locked: bool,
 ) -> list[InstrumentDeterminationOut]:
-    rows = list((await session.execute(_DETERMINATIONS, {"i": interpretation.id})).all())
+    rows = list((await session.execute(repo.DETERMINATIONS, {"i": interpretation.id})).all())
     labels = {
         r.id: r.label
-        for r in (await session.execute(_CLAUSE_LABELS, {"s": interpretation.segmentation_id}))
+        for r in (await session.execute(repo.CLAUSE_LABELS, {"s": interpretation.segmentation_id}))
     }
     people = await names_of(
         sorted({r.set_by_id for r in rows if r.set_by_kind == "human"}, key=str)
@@ -276,13 +240,13 @@ async def instrument_read(ctx: AuthContext, return_id: UUID) -> InstrumentOut:
     await _authorised(ctx, ret.engagement_id, "instrument.read")
     async with tenant_session(ctx.tenant) as session:
         profile = await _profile(session, ctx.tenant, ret.client_entity_id)
-        instrument = (await session.execute(_INSTRUMENT, {"e": ret.client_entity_id})).first()
+        instrument = (await session.execute(repo.INSTRUMENT, {"e": ret.client_entity_id})).first()
         segmentation = (
-            (await session.execute(_SEGMENTATION, {"i": instrument.id})).first()
+            (await session.execute(repo.SEGMENTATION, {"i": instrument.id})).first()
             if instrument is not None
             else None
         )
-        interp = (await session.execute(_INTERPRETATION, {"w": return_id})).first()
+        interp = (await session.execute(repo.INTERPRETATION, {"w": return_id})).first()
         determinations = (
             await _determinations(session, ctx.tenant, interp, interp.status == "approved")
             if interp is not None
@@ -363,33 +327,6 @@ async def _interpretation_out(
 
 # --- attach and segment (AC-1.2, AC-1.3) --------------------------------------------------------
 
-_NEW_PROFILE: Final = text(
-    "INSERT INTO trust_profiles (client_entity_id, tenant_id, fiduciary_kind, created_by) "
-    "VALUES (:e, :t, :k, :u) ON CONFLICT (client_entity_id) DO NOTHING"
-)
-_NEW_INSTRUMENT: Final = text(
-    "INSERT INTO governing_instruments (tenant_id, client_entity_id, evidence_version_id, "
-    "supersedes_instrument_id, attached_by) VALUES (:t, :e, :v, :s, :u) RETURNING id"
-)
-_NEW_SEGMENTATION: Final = text(
-    "INSERT INTO instrument_segmentations (tenant_id, instrument_id, segmentation_version, "
-    "text_source, status, confidence, clause_count, layer_sha256) "
-    "VALUES (:t, :i, :sv, :src, :st, :c, :n, :h) RETURNING id"
-)
-_NEW_CLAUSE: Final = text(
-    "INSERT INTO instrument_clauses (tenant_id, segmentation_id, label, heading, ordinal, "
-    "parent_clause_id, page_from, page_to, regions, text_sha256, marked_by) VALUES (:t, :s, "
-    ":label, :heading, :ordinal, :parent, :pf, :pt, CAST(:regions AS jsonb), :h, :by) RETURNING id"
-)
-_SUPERSEDE_INTERPRETATION: Final = text(
-    "UPDATE instrument_interpretations SET superseded_at = abacus_now(), "
-    "row_version = row_version + 1 WHERE work_item_id = :w AND superseded_at IS NULL"
-)
-_NEW_INTERPRETATION: Final = text(
-    "INSERT INTO instrument_interpretations (tenant_id, engagement_id, work_item_id, "
-    "instrument_id, segmentation_id) VALUES (:t, :e, :w, :i, :s) RETURNING id"
-)
-
 
 async def attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) -> None:
     _human(ctx, "instrument.attach")
@@ -402,7 +339,7 @@ async def attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) ->
     found = segment(layers)
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
-            _NEW_PROFILE,
+            repo.NEW_PROFILE,
             {
                 "e": ret.client_entity_id,
                 "t": ctx.tenant_id,
@@ -410,11 +347,11 @@ async def attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) ->
                 "k": "estate" if ret.form == "706" else "trust",
             },
         )
-        previous = (await tx.session.execute(_INSTRUMENT, {"e": ret.client_entity_id})).first()
+        previous = (await tx.session.execute(repo.INSTRUMENT, {"e": ret.client_entity_id})).first()
         instrument_id = cast(
             UUID,
             await tx.session.scalar(
-                _NEW_INSTRUMENT,
+                repo.NEW_INSTRUMENT,
                 {
                     "t": ctx.tenant_id,
                     "e": ret.client_entity_id,
@@ -427,7 +364,7 @@ async def attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) ->
         segmentation_id = cast(
             UUID,
             await tx.session.scalar(
-                _NEW_SEGMENTATION,
+                repo.NEW_SEGMENTATION,
                 {
                     "t": ctx.tenant_id,
                     "i": instrument_id,
@@ -445,7 +382,7 @@ async def attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) ->
             ids[clause.label] = cast(
                 UUID,
                 await tx.session.scalar(
-                    _NEW_CLAUSE,
+                    repo.NEW_CLAUSE,
                     {
                         "t": ctx.tenant_id,
                         "s": segmentation_id,
@@ -461,9 +398,9 @@ async def attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) ->
                     },
                 ),
             )
-        await tx.session.execute(_SUPERSEDE_INTERPRETATION, {"w": return_id})
+        await tx.session.execute(repo.SUPERSEDE_INTERPRETATION, {"w": return_id})
         await tx.session.execute(
-            _NEW_INTERPRETATION,
+            repo.NEW_INTERPRETATION,
             {
                 "t": ctx.tenant_id,
                 "e": ret.engagement_id,
@@ -481,24 +418,13 @@ async def attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) ->
 
 # --- clauses (AC-1.3) ---------------------------------------------------------------------------
 
-_INSTRUMENT_BY_ID: Final = text(
-    "SELECT g.id, g.client_entity_id FROM governing_instruments g WHERE g.id = :i"
-)
-_CLAUSES: Final = text(
-    "SELECT id, label, heading, ordinal, parent_clause_id, page_from, page_to, regions, "
-    "text_sha256 FROM instrument_clauses WHERE segmentation_id = :s ORDER BY ordinal"
-)
-_RETURN_OF_ENTITY: Final = text(
-    "SELECT engagement_id FROM tax_returns WHERE client_entity_id = :e AND form IN ('1041', '706')"
-)
-
 
 async def _instrument_scope(ctx: AuthContext, instrument_id: UUID, action: str) -> UUID:
     """The instrument's entity, authorised on one of the entity's fiduciary returns."""
     async with tenant_session(ctx.tenant) as session:
-        row = (await session.execute(_INSTRUMENT_BY_ID, {"i": instrument_id})).first()
+        row = (await session.execute(repo.INSTRUMENT_BY_ID, {"i": instrument_id})).first()
         engagements = (
-            list(await session.scalars(_RETURN_OF_ENTITY, {"e": row.client_entity_id}))
+            list(await session.scalars(repo.RETURN_OF_ENTITY, {"e": row.client_entity_id}))
             if row is not None
             else []
         )
@@ -536,10 +462,10 @@ def _clause_out(
 async def clauses(ctx: AuthContext, instrument_id: UUID) -> InstrumentClausesOut:
     await _instrument_scope(ctx, instrument_id, "instrument.read")
     async with tenant_session(ctx.tenant) as session:
-        seg = (await session.execute(_SEGMENTATION, {"i": instrument_id})).first()
+        seg = (await session.execute(repo.SEGMENTATION, {"i": instrument_id})).first()
         if seg is None:
             raise NotFound("instrument_segmentation")
-        rows = list((await session.execute(_CLAUSES, {"s": seg.id})).all())
+        rows = list((await session.execute(repo.CLAUSES, {"s": seg.id})).all())
     return InstrumentClausesOut(
         instrument_id=instrument_id,
         segmentation_id=seg.id,
@@ -556,7 +482,7 @@ async def mark_clause(
     _human(ctx, "instrument.attach")
     await _instrument_scope(ctx, instrument_id, "instrument.attach")
     async with tenant_session(ctx.tenant) as session:
-        seg = (await session.execute(_SEGMENTATION, {"i": instrument_id})).first()
+        seg = (await session.execute(repo.SEGMENTATION, {"i": instrument_id})).first()
         version = await session.scalar(
             text("SELECT evidence_version_id FROM governing_instruments WHERE id = :i"),
             {"i": instrument_id},
@@ -569,7 +495,7 @@ async def mark_clause(
     regions = [{"page": r.page, "bbox": [round(v, 2) for v in r.bbox]} for r in body.regions]
     async with uow(ctx.tenant) as tx:
         clause_id = await tx.session.scalar(
-            _NEW_CLAUSE,
+            repo.NEW_CLAUSE,
             {
                 "t": ctx.tenant_id,
                 "s": seg.id,
@@ -589,7 +515,7 @@ async def mark_clause(
         )
         row = (
             await tx.session.execute(
-                text(_CLAUSES.text.replace("WHERE segmentation_id = :s", "WHERE id = :c")),
+                text(repo.CLAUSES.text.replace("WHERE segmentation_id = :s", "WHERE id = :c")),
                 {"c": clause_id},
             )
         ).first()
@@ -618,41 +544,6 @@ def _words_in(
 
 # --- determinations (AC-1.6, AC-3.1 to AC-3.3) --------------------------------------------------
 
-_DETERMINATION_OF: Final = text(
-    "SELECT d.id, d.key, d.interpretation_id, i.work_item_id, i.engagement_id, i.status, "
-    "(SELECT max(seq) FROM instrument_determination_versions v WHERE v.determination_id = d.id) "
-    "AS seq FROM instrument_determinations d JOIN instrument_interpretations i "
-    "ON i.id = d.interpretation_id WHERE d.id = :d"
-)
-_NEW_DETERMINATION: Final = text(
-    "INSERT INTO instrument_determinations (tenant_id, interpretation_id, key) "
-    "VALUES (:t, :i, :k) ON CONFLICT (interpretation_id, key) DO NOTHING"
-)
-_DETERMINATION_ID: Final = text(
-    "SELECT id FROM instrument_determinations WHERE interpretation_id = :i AND key = :k"
-)
-_NEW_VERSION: Final = text(
-    "INSERT INTO instrument_determination_versions (tenant_id, determination_id, key, seq, "
-    "value_code, value_text_sealed, rationale_ref, citation_ids, set_by_kind, set_by_id, "
-    "reason_sealed) VALUES (:t, :d, :k, :seq, :code, :value, :rationale, :citations, 'human', "
-    ":u, :reason)"
-)
-_ADOPT: Final = text(
-    "UPDATE instrument_interpretations SET status = 'adopted', version_no = version_no + 1, "
-    "content_hash = :h, row_version = row_version + 1 WHERE id = :i"
-)
-# T-07-T03 (AC-4.1): the status before a person's write, so the move into Adopted is announced
-# once (the gate and `instrument_interpretation_ready`), not on every later edit.
-_BEFORE_ADOPT: Final = text(
-    "SELECT status, engagement_id, work_item_id FROM instrument_interpretations "
-    "WHERE id = :i FOR UPDATE"
-)
-_HASH_ROWS: Final = text(
-    "SELECT d.key, v.seq, v.value_code, v.citation_ids FROM instrument_determinations d "
-    "JOIN LATERAL (SELECT * FROM instrument_determination_versions x WHERE x.determination_id "
-    "= d.id ORDER BY x.seq DESC LIMIT 1) v ON true WHERE d.interpretation_id = :i ORDER BY d.key"
-)
-
 
 async def _cited(
     ctx: AuthContext, engagement_id: UUID, key: str, citation_ids: Sequence[UUID]
@@ -674,7 +565,7 @@ async def _content_hash(session: AsyncSession, interpretation_id: UUID) -> str:
             "value": r.value_code,
             "citations": sorted(map(str, r.citation_ids)),
         }
-        for r in (await session.execute(_HASH_ROWS, {"i": interpretation_id})).all()
+        for r in (await session.execute(repo.HASH_ROWS, {"i": interpretation_id})).all()
     ]
     return hashlib.sha256(json.dumps(rows, sort_keys=True).encode("utf-8")).hexdigest()
 
@@ -695,13 +586,14 @@ async def _write_version(
     )
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
-            _NEW_DETERMINATION, {"t": ctx.tenant_id, "i": interpretation_id, "k": key}
+            repo.NEW_DETERMINATION, {"t": ctx.tenant_id, "i": interpretation_id, "k": key}
         )
         determination = cast(
-            UUID, await tx.session.scalar(_DETERMINATION_ID, {"i": interpretation_id, "k": key})
+            UUID,
+            await tx.session.scalar(repo.DETERMINATION_ID, {"i": interpretation_id, "k": key}),
         )
         await tx.session.execute(
-            _NEW_VERSION,
+            repo.NEW_VERSION,
             {
                 "t": ctx.tenant_id,
                 "d": determination,
@@ -715,9 +607,9 @@ async def _write_version(
                 "reason": sealed_reason,
             },
         )
-        before = (await tx.session.execute(_BEFORE_ADOPT, {"i": interpretation_id})).first()
+        before = (await tx.session.execute(repo.BEFORE_ADOPT, {"i": interpretation_id})).first()
         await tx.session.execute(
-            _ADOPT,
+            repo.ADOPT,
             {"i": interpretation_id, "h": await _content_hash(tx.session, interpretation_id)},
         )
         if before is not None and before.status != "adopted":
@@ -745,9 +637,9 @@ async def record_determination(
     ret = await _return(ctx.tenant, return_id)
     await _authorised(ctx, ret.engagement_id, "instrument_determination.edit")
     async with tenant_session(ctx.tenant) as session:
-        interp = (await session.execute(_INTERPRETATION, {"w": return_id})).first()
+        interp = (await session.execute(repo.INTERPRETATION, {"w": return_id})).first()
         existing = (
-            await session.scalar(_DETERMINATION_ID, {"i": interp.id, "k": body.key})
+            await session.scalar(repo.DETERMINATION_ID, {"i": interp.id, "k": body.key})
             if interp is not None
             else None
         )
@@ -770,7 +662,7 @@ async def edit_determination(
     """A new version with a reason (AC-3.2); the version read must be the latest (AC-3.3)."""
     _human(ctx, "instrument_determination.edit")
     async with tenant_session(ctx.tenant) as session:
-        row = (await session.execute(_DETERMINATION_OF, {"d": determination_id})).first()
+        row = (await session.execute(repo.DETERMINATION_OF, {"d": determination_id})).first()
     if row is None:
         raise NotFound("instrument_determination")
     await _authorised(ctx, row.engagement_id, "instrument_determination.edit")
@@ -804,27 +696,13 @@ async def _determination_out(
 
 # --- reopen (AC-5.2) and the L3 lock (AC-4.2) ---------------------------------------------------
 
-_INTERPRETATION_BY_ID: Final = text(
-    "SELECT id, engagement_id, work_item_id, status FROM instrument_interpretations WHERE id = :i"
-)
-_REOPEN: Final = text(
-    "UPDATE instrument_interpretations SET status = 'reopened', locked_at = NULL, "
-    "reopen_reason_sealed = :r, version_no = version_no + 1, row_version = row_version + 1 "
-    "WHERE id = :i AND status = 'approved' RETURNING id"
-)
-_LOCK: Final = text(
-    "UPDATE instrument_interpretations SET status = 'approved', locked_at = abacus_now(), "
-    "row_version = row_version + 1 WHERE id = :i AND status IN ('adopted', 'proposed') "
-    "AND superseded_at IS NULL RETURNING engagement_id"
-)
-
 
 async def reopen(
     ctx: AuthContext, interpretation_id: UUID, body: InterpretationReopenIn
 ) -> InstrumentInterpretationOut:
     _human(ctx, "instrument_interpretation.reopen")
     async with tenant_session(ctx.tenant) as session:
-        row = (await session.execute(_INTERPRETATION_BY_ID, {"i": interpretation_id})).first()
+        row = (await session.execute(repo.INTERPRETATION_BY_ID, {"i": interpretation_id})).first()
     if row is None:
         raise NotFound("instrument_interpretation")
     await _authorised(ctx, row.engagement_id, "instrument_interpretation.reopen")
@@ -832,7 +710,7 @@ async def reopen(
         raise NotApproved(facts={"status": row.status})
     reason = await seal(ctx.tenant_id, body.reason.strip().encode(), _REOPEN_AAD)
     async with uow(ctx.tenant) as tx:
-        if await tx.session.scalar(_REOPEN, {"i": interpretation_id, "r": reason}) is None:
+        if await tx.session.scalar(repo.REOPEN, {"i": interpretation_id, "r": reason}) is None:
             raise NotApproved(facts={"status": "changed"})
         tx.record(
             "instrument_interpretation.reopened",
@@ -844,7 +722,7 @@ async def reopen(
             )
         )
     async with tenant_session(ctx.tenant) as session:
-        fresh = (await session.execute(_INTERPRETATION, {"w": row.work_item_id})).first()
+        fresh = (await session.execute(repo.INTERPRETATION, {"w": row.work_item_id})).first()
     if fresh is None:
         raise NotFound("instrument_interpretation")
     return await _interpretation_out(ctx.tenant, fresh)
@@ -861,7 +739,7 @@ async def on_sign_off_recorded(event: OutboxEvent) -> None:
         return
     tenant = TenantContext(event.tenant_id, "system", "tax:instrument_lock")
     async with uow(tenant) as tx:
-        engagement = await tx.session.scalar(_LOCK, {"i": UUID(target)})
+        engagement = await tx.session.scalar(repo.LOCK, {"i": UUID(target)})
         if engagement is not None:
             tx.record("instrument_interpretation.approved", target=Target(TARGET, UUID(target)))
             tx.emit(
@@ -873,25 +751,12 @@ async def on_sign_off_recorded(event: OutboxEvent) -> None:
 
 # --- the reviewable (DEC-84: L1 and L3) ---------------------------------------------------------
 
-_REVIEWABLES: Final = text(
-    "SELECT i.id, i.content_hash, i.version_no, i.work_item_id, i.status FROM "
-    "instrument_interpretations i WHERE i.engagement_id = :e AND i.superseded_at IS NULL"
-)
-_REVIEWABLE: Final = text(
-    "SELECT i.id, i.engagement_id, i.work_item_id, i.content_hash, i.version_no, i.status, "
-    "(SELECT array_agg(DISTINCT v.set_by_id) FROM instrument_determinations d "
-    "JOIN instrument_determination_versions v ON v.determination_id = d.id "
-    "WHERE d.interpretation_id = i.id AND v.set_by_kind = 'human') AS preparers, "
-    "(SELECT count(*) FROM instrument_determinations d WHERE d.interpretation_id = i.id) AS keys "
-    "FROM instrument_interpretations i WHERE i.id = :i"
-)
-
 
 async def interpretation_reviewables(
     tenant: TenantContext, engagement_id: UUID
 ) -> list[Reviewable]:
     async with tenant_session(tenant) as session:
-        rows = list((await session.execute(_REVIEWABLES, {"e": engagement_id})).all())
+        rows = list((await session.execute(repo.REVIEWABLES, {"e": engagement_id})).all())
     return [
         Reviewable(
             TARGET,
@@ -907,7 +772,7 @@ async def interpretation_reviewables(
 
 async def interpretation_facts(tenant: TenantContext, target_id: UUID) -> ReviewableFacts | None:
     async with tenant_session(tenant) as session:
-        r = (await session.execute(_REVIEWABLE, {"i": target_id})).first()
+        r = (await session.execute(repo.REVIEWABLE, {"i": target_id})).first()
     if r is None:
         return None
     keys = int(r.keys or 0)
