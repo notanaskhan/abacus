@@ -26,6 +26,11 @@ TABLES: frozenset[str] = frozenset(
         "fs_line_range_rules",
         "mapping_sets",
         "mapping_set_edits",
+        # A-09-T05 (0889): group consolidation (P-63, ADR-341; DEC-66).
+        "consolidations",
+        "consolidation_entities",
+        "consolidation_trial_balances",
+        "consolidation_events",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -45,10 +50,29 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "fs_line_range_rules",
         "mapping_sets",
         "mapping_set_edits",
+        "consolidation_events",  # A-09-T05 (0889): finalized, locked, reopened by a person
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    # A-09-T05 (0889): group consolidation.
+    "consolidations": frozenset(
+        {"id", "tenant_id", "engagement_id", "work_item_id", "name", "year_end"}
+        | {"reporting_currency", "interim_period_end", "prior_period_end"}
+        | {"source_connection_id", "created_by"}
+    ),
+    "consolidation_entities": frozenset(
+        {"id", "tenant_id", "consolidation_id", "client_entity_id", "parent_id", "level"}
+        | {"ownership_pct", "city", "component_auditor_id", "position"}
+    ),
+    "consolidation_trial_balances": frozenset(
+        {"id", "tenant_id", "consolidation_entity_id", "label", "period_kind"}
+        | {"period_start", "period_end", "ledger_snapshot_id", "state", "source"}
+        | {"evidence_version_id", "not_needed_reason", "attached_by"}
+    ),
+    "consolidation_events": frozenset(
+        {"tenant_id", "consolidation_id", "kind", "reason", "actor_kind", "actor_id"}
+    ),
     # General ledger detail (SPEC-034; TASK-069): snapshots, balances, entries; imports.
     "gl_snapshots": frozenset(
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "source"}
@@ -125,6 +149,17 @@ INSERT_COLUMNS.update(
     }
 )
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # A-09-T05 (0889): a draft's details and structure; finalize and lock (triggers keep them
+    # forward-only); a replaced TB slot points at its successor.
+    "consolidations": frozenset(
+        {"name", "year_end", "interim_period_end", "prior_period_end", "source_connection_id"}
+        | {"status", "lock_state", "finalized_by", "finalized_at", "finalized_actor_kind"}
+        | {"locked_by", "locked_at", "locked_actor_kind", "row_version"}
+    ),
+    "consolidation_entities": frozenset(
+        {"parent_id", "level", "city", "component_auditor_id", "position"}
+    ),
+    "consolidation_trial_balances": frozenset({"superseded_by"}),
     "trial_balances": frozenset({"current_version_no"}),  # SPEC-309: the current version
     # SPEC-316: a draft version is published once (a trigger freezes it afterwards).
     "grouping_set_versions": frozenset(
