@@ -144,15 +144,17 @@ def _stub(route: str) -> NotImplementedYet:
 
 
 async def _instrument_read(ctx: AuthContext, return_id: UUID) -> InstrumentOut:
-    """The TXT-01 read model; T-07-T12 builds it. Callers pass it through `mask_tins_for`."""
-    del ctx, return_id
-    raise _stub("instrument")
+    """The TXT-01 read model (T-07-T12). Callers pass it through `mask_tins_for`."""
+    from abacus.modules.tax.instruments import service
+
+    return await service.instrument_read(ctx, return_id)
 
 
 async def _instrument_attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) -> None:
-    """Record the governing instrument (AC-1.2); T-07-T12 builds it."""
-    del ctx, return_id, body
-    raise _stub("instrument_attach")
+    """Record and segment the governing instrument (AC-1.2, AC-1.3; T-07-T12)."""
+    from abacus.modules.tax.instruments import service
+
+    await service.attach(ctx, return_id, body)
 
 
 # --- TXT-01 models -------------------------------------------------------------------------------
@@ -696,7 +698,7 @@ _R = "/returns/{return_id}"
 
 
 @fiduciary_router.get(
-    f"{_R}/instrument", action="instrument.read", response_model=InstrumentOut, errors=(501,)
+    f"{_R}/instrument", action="instrument.read", response_model=InstrumentOut, errors=()
 )
 async def instrument_route(return_id: UUID, ctx: Ctx) -> InstrumentOut:
     """TXT-01: profile, instrument, segmentation, determinations, cited-by, reader (T-07-T12).
@@ -707,7 +709,7 @@ async def instrument_route(return_id: UUID, ctx: Ctx) -> InstrumentOut:
 
 @fiduciary_router.post(
     f"{_R}/instrument", action="instrument.attach", response_model=InstrumentOut,
-    status_code=201, errors=(409, 501),
+    status_code=201, errors=(409,),
 )  # fmt: skip
 async def instrument_attach_route(
     return_id: UUID, body: InstrumentAttachIn, ctx: Ctx, idempotency_key: IdempotencyKey
@@ -721,24 +723,28 @@ async def instrument_attach_route(
 
 @fiduciary_router.get(
     "/governing-instruments/{instrument_id}/clauses", action="instrument.read",
-    response_model=InstrumentClausesOut, errors=(501,),
+    response_model=InstrumentClausesOut, errors=(),
 )  # fmt: skip
 async def instrument_clauses_route(instrument_id: UUID, ctx: Ctx) -> InstrumentClausesOut:
     """The clause tree: labels, headings, pages, regions, hashes; no text (AC-1.3, AC-15.3)."""
+    from abacus.modules.tax.instruments import service
+
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("instrument_clauses")
+    return await service.clauses(ctx, instrument_id)
 
 
 @fiduciary_router.post(
     "/governing-instruments/{instrument_id}/clauses", action="instrument.attach",
-    response_model=InstrumentClauseOut, status_code=201, errors=(409, 501),
+    response_model=InstrumentClauseOut, status_code=201, errors=(409,),
 )  # fmt: skip
 async def instrument_clause_mark_route(
     instrument_id: UUID, body: ClauseMarkIn, ctx: Ctx
 ) -> InstrumentClauseOut:
     """Manual clause marking while segmentation `needs_review` (AC-1.3; T-07-T12)."""
+    from abacus.modules.tax.instruments import service
+
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("instrument_clause_mark")
+    return await service.mark_clause(ctx, instrument_id, body)
 
 
 @fiduciary_router.post(
@@ -756,49 +762,57 @@ async def instrument_read_route(
 
 @fiduciary_router.post(
     f"{_R}/instrument/determinations", action="instrument_determination.edit",
-    response_model=InstrumentDeterminationOut, status_code=201, errors=(409, 501),
+    response_model=InstrumentDeterminationOut, status_code=201, errors=(409,),
 )  # fmt: skip
 async def determination_record_route(
     return_id: UUID, body: DeterminationRecordIn, ctx: Ctx
 ) -> InstrumentDeterminationOut:
     """The agents-off path (AC-1.6): 422 `uncited_change` for a governed key without a clause."""
+    from abacus.modules.tax.instruments import service
+
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("determination_record")
+    return await service.record_determination(ctx, return_id, body)
 
 
 @fiduciary_router.patch(
     "/instrument-determinations/{determination_id}", action="instrument_determination.edit",
-    response_model=InstrumentDeterminationOut, errors=(409, 501),
+    response_model=InstrumentDeterminationOut, errors=(409,),
 )  # fmt: skip
 async def determination_edit_route(
     determination_id: UUID, body: DeterminationEditIn, ctx: Ctx
 ) -> InstrumentDeterminationOut:
     """A new version: 422 `uncited_change`; 409 `version_conflict`, `interpretation_locked`."""
+    from abacus.modules.tax.instruments import service
+
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("determination_edit")
+    return await service.edit_determination(ctx, determination_id, body)
 
 
 @fiduciary_router.post(
     "/instrument-interpretations/{interpretation_id}/reopen",
     action="instrument_interpretation.reopen", response_model=InstrumentInterpretationOut,
-    errors=(409, 501),
+    errors=(409,),
 )  # fmt: skip
 async def interpretation_reopen_route(
     interpretation_id: UUID, body: InterpretationReopenIn, ctx: Ctx
 ) -> InstrumentInterpretationOut:
     """Unlock after L3; stales the TXT-02 sign-off (AC-5.2; T-07-T12)."""
+    from abacus.modules.tax.instruments import service
+
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("interpretation_reopen")
+    return await service.reopen(ctx, interpretation_id, body)
 
 
 @fiduciary_router.get(
     f"{_R}/instrument/cited-by", action="instrument.read",
-    response_model=list[InstrumentCitedByOut], errors=(501,),
+    response_model=list[InstrumentCitedByOut], errors=(),
 )  # fmt: skip
 async def instrument_cited_by_route(return_id: UUID, ctx: Ctx) -> list[InstrumentCitedByOut]:
     """Computation rows and return fields citing each clause (AC-2.4)."""
+    from abacus.modules.tax.instruments import service
+
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("instrument_cited_by")
+    return (await service.instrument_read(ctx, return_id)).cited_by
 
 
 @fiduciary_router.get(
