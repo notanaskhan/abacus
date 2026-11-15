@@ -28,7 +28,6 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import cast
 
-import asyncpg
 import pytest
 from tests.integration.agent_tests.support import Seeder
 from tests.integration.conftest import MigratedDatabase
@@ -65,20 +64,17 @@ async def _publish_line_set(dsn: str) -> None:
     payload = {"kind": "tax_form_lines", "form": "1065", "tax_year": 2025,
                "rows": [_line(k) for k in keys]}  # fmt: skip
     raw = json.dumps(payload)
-    conn = await asyncpg.connect(dsn)
-    try:
-        version = await conn.fetchval(
-            "SELECT reference_set_draft($1, 'tax_form_lines', 'Form 1065 lines (synthetic)', "
-            "'US', $2, NULL, 2025, $3, $4::jsonb, $5, '[]'::jsonb, $2, 'j08')",
-            "tax_form_lines.1065.ty2025.j08",
-            "ayushkbhatia",
-            date(2025, 1, 1),
-            raw,
-            "sha256:" + hashlib.sha256(raw.encode()).hexdigest(),
-        )
-        await conn.execute("SELECT reference_set_publish($1, 'notanaskhan', 'j08')", version)
-    finally:
-        await conn.close()
+    owner = Seeder(dsn)  # the tests' one connection helper (DB-001)
+    version = await owner.value(
+        "SELECT reference_set_draft($1, 'tax_form_lines', 'Form 1065 lines (synthetic)', "
+        "'US', $2, NULL, 2025, $3, $4::jsonb, $5, '[]'::jsonb, $2, 'j08')",
+        "tax_form_lines.1065.ty2025.j08",
+        "ayushkbhatia",
+        date(2025, 1, 1),
+        raw,
+        "sha256:" + hashlib.sha256(raw.encode()).hexdigest(),
+    )
+    await owner.value("SELECT reference_set_publish($1, 'notanaskhan', 'j08')", version)
 
 
 @pytest.fixture(scope="module")
