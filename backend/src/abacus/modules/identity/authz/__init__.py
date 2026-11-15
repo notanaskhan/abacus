@@ -245,6 +245,8 @@ class TargetFacts:
     owner_user_id: UUID | None = None
     # T-01-T11 (C19): the client entities whose §7216 consents a `consent` condition reads.
     consent_subjects: frozenset[UUID] | None = None
+    # A-08-T03: the person the target names as its approver, for `is_named_approver`.
+    approver_user_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -793,6 +795,7 @@ async def _condition_facts(
     preparer: bool | None = None
     reserved_holder: bool | None = None
     owner: bool | None = None
+    named_approver: bool | None = None
     client_actor = bool(roles & CLIENT_ACTOR_ROLES)
     if isinstance(ctx, AuthContext):
         if rule.level_in or rule.not_offshore:
@@ -815,6 +818,8 @@ async def _condition_facts(
                 # K-02-T01: the named owner, and a partner member now (a former partner who
                 # still owns the standard cannot publish it until it is reassigned).
                 owner = target.owner_user_id == ctx.user_id and await _partner_level(ctx)
+            if rule.is_named_approver and target.approver_user_id is not None:
+                named_approver = target.approver_user_id == ctx.user_id
     attest: bool | None = None
     if rule.attest_client is not None and resource.engagement_id and LOOKUPS.attest:
         attest = await LOOKUPS.attest(ctx.tenant, resource.engagement_id)
@@ -836,6 +841,7 @@ async def _condition_facts(
         reserved_holder=reserved_holder,
         owner=owner,
         consents=consents,
+        named_approver=named_approver,
     )
 
 

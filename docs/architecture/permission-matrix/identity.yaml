@@ -56,3 +56,6 @@ actions:
   staff.unlock:             {security_admin: allow, firm_admin: allow, agent: deny, system: deny, mfa_recent: required}   # clear a staff sign-in lock where WorkOS allows (SPEC-349 Q7)
   # --- T-01-T02 (DEC-1156): the ERO designation (a membership attribute, T-01-T37).
   member.set_ero:             {firm_admin: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # PUT /v1/firm/members/{id}/ero
+  # --- A-08-T03: link principals (ADR-146; ADR-152 amendment); issuance is the sender's, inside confirmation.send.
+  link_principal.revoke:              {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, independence: required}   # revoke a respondent link (also on a second request)
+  link_principal.expire:              {system: allow, agent: deny, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny}   # ConfirmationFollowUpWorkflow expires a link at expires_at

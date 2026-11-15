@@ -28,7 +28,14 @@ from abacus.kernel.db import platform_transaction
 from abacus.kernel.logging import get_logger
 
 ControlName = Literal[
-    "ai_pause", "model_route_block", "email_pause", "read_only", "portal_sign_in"
+    "ai_pause",
+    "model_route_block",
+    "email_pause",
+    "read_only",
+    "portal_sign_in",
+    # A-08-T03 (0887; ADR-152 amendment): pauses the public `/v1/confirm/*` family and link
+    # issuance, per firm or for everyone; read by the link authenticator (A-08-T15).
+    "confirmation_links",
 ]
 CACHE_SECONDS: Final = 10.0
 _FAIL_CLOSED: Final = frozenset({"ai_pause", "read_only"})

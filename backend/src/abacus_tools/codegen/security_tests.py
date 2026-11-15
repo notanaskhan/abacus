@@ -63,9 +63,13 @@ RESOLUTION_ENTITIES = frozenset(
     # T-02-T03 (I-AGENT-NEVER extended): releasing, resending and sharing K-1s, and publishing an
     # organizer template, are a person's.
     | {"k1_package", "questionnaire_template"}
+    # A-08-T03 (I-AGENT-NEVER, SPEC-657 AC-9.1): sample expansions and every confirmation write.
+    | {"sample_expansion", "confirmation"}
 )
 RESOLUTION_ACTIONS = frozenset(
     {"issue.resolve", "issue.verify", "issue.reopen", "evidence.accept", "evidence.reject"}
+    # A-08-T03 (SPEC-657 AC-9.1): adopting results, accepting explanations, sending questions.
+    | {"test.adopt", "analytics.accept", "client_question.send"}
 )
 PRINCIPALS = ("agent", "system", "support")
 PREPARER_VARIANTS = (("preparer", "deny"), ("not_preparer", "allow"), ("no_facts", "deny"))
@@ -122,6 +126,8 @@ def expected(rule: Rule, role: str) -> str:
         return "deny"  # P-04-T15, K-02-T01: no target facts in the harness (fail closed)
     if rule.consent:
         return "deny"  # T-01-T11: no data subjects in the harness (fail closed)
+    if rule.is_named_approver or rule.link_scope_only or rule.email_verified:
+        return "deny"  # A-08-T03: no approver or link facts in the harness (fail closed)
     return "allow"
 
 
