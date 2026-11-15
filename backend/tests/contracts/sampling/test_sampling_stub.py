@@ -14,6 +14,7 @@ from types import SimpleNamespace
 from typing import cast
 
 import pytest
+from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from abacus.api.export_openapi import document
@@ -25,6 +26,7 @@ from abacus.kernel.errors import NotFound
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.sampling import contract
 from abacus.modules.sampling import contract_fixtures as fx
+from abacus.modules.sampling.fieldwork_contract import router as fieldwork_router
 
 Json = dict[str, object]
 DOC = cast(Json, json.loads(document()))
@@ -96,7 +98,15 @@ def test_ac11_each_sampling_route_declares_its_one_action_and_documents_404_and_
 
 def test_ac11_the_family_is_exactly_these_routes() -> None:
     prefixes = ("/v1/populations", "/v1/sample-sets", f"{WI}/sample-sets", f"{WI}/populations")
-    family = {(m, p) for p, ops in PATHS.items() if p.startswith(prefixes) for m in ops}
+    # A-08-T05 (S45): sample expansion lives under /v1/sample-sets with its own suite
+    # (tests/contracts/a08_fieldwork).
+    fieldwork = {r.path for r in fieldwork_router.routes if isinstance(r, APIRoute)}
+    family = {
+        (m, p)
+        for p, ops in PATHS.items()
+        if p.startswith(prefixes) and p not in fieldwork
+        for m in ops
+    }
     assert family == set(ROUTES)
 
 

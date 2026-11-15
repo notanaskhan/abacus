@@ -13,12 +13,12 @@ import json
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from abacus_tools.synthetic.scenarios.brightwater_hale import close_slice as seed
 
 HERE: Final = Path(__file__).resolve().parent
-BOOK: Final[dict[str, Any]] = json.loads(
+BOOK: Final[dict[str, Any]] = json.loads(  # Any: the figure book's JSON
     (HERE / "brightwater_hale" / "copperleaf_close_figures.json").read_text(encoding="utf-8")
 )
 D = Decimal
@@ -80,7 +80,7 @@ def test_ac_copperleaf_reads_43_percent_9_of_21_seven_open_4_days_past_due() -> 
 def test_ac_no_kit_sample_data() -> None:
     names = {c.client for c in seed.PORTFOLIO} | set(seed.PEOPLE.values())
     assert "Elena Ruiz" not in names
-    assert all(c.status != "closed" for c in seed.PORTFOLIO)  # type: ignore[comparison-overlap]
+    assert all(c.status != "closed" for c in seed.PORTFOLIO)
 
 
 # --- CLS-02 runs --------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ def test_ac_portal_9_requests_is_7_received_plus_2_open_and_3_questions() -> Non
 
 def test_ac_knw_04a_20020_within_and_14900_held() -> None:
     book = BOOK["knw_04a"]
-    parts = seed.KNW_04A["within"]
+    parts = cast("tuple[D, ...]", seed.KNW_04A["within"])
     assert [str(p) for p in parts] == book["parts"]
     assert sum(parts, D(0)) == D(book["total"])
     assert seed.KNW_04A["held"] == D(book["held"]) > D("10000")  # the other-accruals threshold

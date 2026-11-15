@@ -89,14 +89,15 @@ def upgrade() -> None:
             document_sha256 text NOT NULL CHECK (document_sha256 ~ '^[0-9a-f]{64}$'),
             added integer NOT NULL DEFAULT 0 CHECK (added >= 0),
             changed integer NOT NULL DEFAULT 0 CHECK (changed >= 0),
-            hidden integer NOT NULL DEFAULT 0 CHECK (hidden >= 0),
+            unpublished integer NOT NULL DEFAULT 0 CHECK (unpublished >= 0),
             note text NOT NULL CHECK (length(btrim(note)) BETWEEN 1 AND 500),
             created_at timestamptz NOT NULL DEFAULT clock_timestamp()
         )
         """
     )
-    # Platform content: the app reads it, the operator role writes it, nobody edits a log row.
-    op.execute("GRANT SELECT ON integration_catalog_imports TO abacus_app")
+    # Platform content, definers only (as `integration_catalog`, 0194): the operator role writes
+    # it, the app reaches it only through a definer, and nobody edits a log row.
+    op.execute("REVOKE ALL ON integration_catalog_imports FROM abacus_app")
     op.execute("GRANT SELECT, INSERT ON integration_catalog_imports TO abacus_ops")
     op.execute(
         """

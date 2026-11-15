@@ -44,7 +44,7 @@ def test_c4_document_text_is_a_kind_the_clause_verifier_reuses() -> None:
 
 def test_c4_instrument_clause_is_registered_with_its_segmentation_source() -> None:
     """T-07-T11 joins here (T-07-T06's deferred assertion)."""
-    import abacus.modules.tax.api  # noqa: F401  (registers the citable)
+    import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the citable
     from abacus.modules.evidence.citations.registry import SOURCES, citable
 
     assert "instrument_clause" in KINDS

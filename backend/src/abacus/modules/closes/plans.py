@@ -64,6 +64,8 @@ from abacus.modules.engagements.api import (
 )
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
 
+type _Row = Row[Any]  # Any: a raw text() row of close_plan_versions or close_plan_rows
+
 READ: Final = "close_plan.read"
 EDIT: Final = "close_plan.edit"
 PUBLISH: Final = "close_plan.publish"
@@ -146,11 +148,14 @@ async def _plan_id(session: AsyncSession, entity: UUID) -> UUID | None:
     return cast(UUID | None, await session.scalar(_PLAN, {"e": entity}))
 
 
-async def _versions(session: AsyncSession, plan_id: UUID) -> list[Row[Any]]:
+async def _versions(session: AsyncSession, plan_id: UUID) -> list[_Row]:
     return list((await session.execute(_VERSIONS, {"p": plan_id})).all())
 
 
-def _row_out(r: Row[Any], previous: dict[str, tuple[object, ...]] | None) -> PlanRowOut:
+def _row_out(
+    r: _Row,
+    previous: dict[str, tuple[object, ...]] | None,
+) -> PlanRowOut:
     threshold = r.threshold_ref or None
     if isinstance(threshold, str):
         threshold = json.loads(threshold)
@@ -182,7 +187,9 @@ def _row_out(r: Row[Any], previous: dict[str, tuple[object, ...]] | None) -> Pla
     )
 
 
-def _signatures(rows: Sequence[Row[Any]]) -> dict[str, tuple[object, ...]]:
+def _signatures(
+    rows: Sequence[_Row],
+) -> dict[str, tuple[object, ...]]:
     return {
         f"{r.account_external_id}:{r.account_name}:{r.procedure}": (
             r.procedure,
@@ -197,7 +204,11 @@ def _signatures(rows: Sequence[Row[Any]]) -> dict[str, tuple[object, ...]]:
 
 
 async def _version_out(
-    ctx: AuthContext, session: AsyncSession, plan_id: UUID, v: Row[Any], prior: Row[Any] | None
+    ctx: AuthContext,
+    session: AsyncSession,
+    plan_id: UUID,
+    v: _Row,
+    prior: _Row | None,
 ) -> PlanVersionOut:
     rows = list((await session.execute(_ROWS, {"v": v.id})).all())
     previous = None
@@ -404,7 +415,7 @@ async def create_draft(ctx: AuthContext, client_id: UUID, body: PlanDraftIn) -> 
 
 async def _draft(
     session: AsyncSession, entity: UUID, version: int, seen: int
-) -> tuple[UUID, Row[Any]]:
+) -> tuple[UUID, _Row]:
     plan_id = await _plan_id(session, entity)
     if plan_id is None:
         raise NotFound("close_plan")
@@ -414,8 +425,8 @@ async def _draft(
     if found.status != "draft":
         raise VersionNotDraft(facts={"version": version})
     if found.row_version != seen:
-        names = await names_of([found.drafted_by])
-        raise StaleClose(facts={"editor": names.get(found.drafted_by, "another person")})
+        # Facts carry identifiers only: the screen names the editor from the id (CLS-09 f).
+        raise StaleClose(facts={"editor_user_id": str(found.drafted_by)})
     return plan_id, found
 
 
@@ -448,6 +459,23 @@ _PATCHABLE: Final = (
 )
 
 
+# One fixed statement for every PATCH (SQL-001): each column takes its new value only when the
+# body set it; the rest keep theirs.
+_PATCH_ROW: Final = text(
+    "UPDATE close_plan_rows SET "
+    "procedure = CASE WHEN :set_procedure THEN :procedure ELSE procedure END, "
+    "method = CASE WHEN :set_method THEN :method ELSE method END, "
+    "evidence_required = CASE WHEN :set_evidence_required THEN :evidence_required "
+    "ELSE evidence_required END, "
+    "source = CASE WHEN :set_source THEN :source ELSE source END, "
+    "review_level = CASE WHEN :set_review_level THEN :review_level ELSE review_level END, "
+    "frequency = CASE WHEN :set_frequency THEN :frequency ELSE frequency END, "
+    "threshold_ref = CASE WHEN :set_threshold_ref THEN CAST(:threshold_ref AS jsonb) "
+    "ELSE threshold_ref END "
+    "WHERE id = :row AND version_id = :v RETURNING id"
+)
+
+
 async def patch_row(
     ctx: AuthContext,
     client_id: UUID,
@@ -465,17 +493,11 @@ async def patch_row(
     async with uow(ctx.tenant) as tx:
         plan_id, draft = await _draft(tx.session, ref.client_entity_id, version, seen)
         if changes:
-            sets = ", ".join(
-                f"{k} = CAST(:{k} AS jsonb)" if k == "threshold_ref" else f"{k} = :{k}"
-                for k in changes
-            )
-            moved = await tx.session.scalar(
-                text(
-                    f"UPDATE close_plan_rows SET {sets} WHERE id = :row AND version_id = :v "  # noqa: S608
-                    "RETURNING id"
-                ),
-                {**changes, "row": row_id, "v": draft.id},
-            )
+            params: dict[str, object] = {"row": row_id, "v": draft.id}
+            for k in (*_PATCHABLE, "threshold_ref"):
+                params[f"set_{k}"] = k in changes
+                params[k] = changes.get(k)
+            moved = await tx.session.scalar(_PATCH_ROW, params)
             if moved is None:
                 raise NotFound("close_plan_row")
             await _bump(tx.session, draft.id, seen)
@@ -608,7 +630,7 @@ async def publish(
         tx.record(
             "close_plan.published",
             target=Target("close_plan", plan_id),
-            after=Ref(version=version, effective_from=body.effective_from),
+            after=Ref(version=version),  # a Ref carries no dates or text
         )
         tx.emit(ClosePlanPublished(plan_id=plan_id, version_id=draft.id, engagement_id=ref.id))
     return await get_plan(ctx, client_id, version)
@@ -625,24 +647,24 @@ async def request_publish(ctx: AuthContext, client_id: UUID, version: int) -> Pl
     """A Senior asks; one gate waits on the engagement's Managers and Partners (QC-8)."""
     _human(ctx, REQUEST)
     ref = await _scope(ctx, client_id, REQUEST)
-    async with uow(ctx.tenant) as tx:
-        plan_id = await _plan_id(tx.session, ref.client_entity_id)
+    async with tenant_session(ctx.tenant) as session:
+        plan_id = await _plan_id(session, ref.client_entity_id)
         if plan_id is None:
             raise NotFound("close_plan")
-        draft = next(
-            (v for v in await _versions(tx.session, plan_id) if v.version == version), None
+        draft = next((v for v in await _versions(session, plan_id) if v.version == version), None)
+    if draft is None:
+        raise NotFound("close_plan_version")
+    if draft.status != "draft":
+        raise VersionNotDraft(facts={"version": version})
+    if draft.publish_requested_at is not None:
+        return await get_plan(ctx, client_id, version)  # asked already: one gate, nothing written
+    async with uow(ctx.tenant) as tx:
+        if await tx.session.scalar(_REQUEST, {"v": draft.id, "u": ctx.user_id}) is None:
+            raise StaleClose(facts={"version": version})  # asked or moved since the read
+        tx.record("close_plan.publish_requested", target=Target("close_plan", plan_id))
+        tx.emit(
+            ClosePlanPublishRequested(plan_id=plan_id, version_id=draft.id, engagement_id=ref.id)
         )
-        if draft is None:
-            raise NotFound("close_plan_version")
-        if draft.status != "draft":
-            raise VersionNotDraft(facts={"version": version})
-        if await tx.session.scalar(_REQUEST, {"v": draft.id, "u": ctx.user_id}) is not None:
-            tx.record("close_plan.publish_requested", target=Target("close_plan", plan_id))
-            tx.emit(
-                ClosePlanPublishRequested(
-                    plan_id=plan_id, version_id=draft.id, engagement_id=ref.id
-                )
-            )
     return await get_plan(ctx, client_id, version)
 
 
@@ -707,7 +729,9 @@ _IMPORT = text(
 )
 
 
-def _template_out(r: Row[Any]) -> CloseTemplateOut:
+def _template_out(
+    r: _Row,
+) -> CloseTemplateOut:
     stored: object = r.rows
     rows = cast(list[object], stored if isinstance(stored, list) else json.loads(str(stored)))
     raw: object = r.request_templates

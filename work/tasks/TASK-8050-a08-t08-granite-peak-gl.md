@@ -2,7 +2,7 @@
 id: TASK-8050
 title: "A-08-T08: Brightwater Hale fieldwork content — Granite Peak FY2026 GL generator (part)"
 spec: SPEC-657
-acceptance_criteria: [AC-0.8, AC-1.1, AC-1.2]
+acceptance_criteria: [AC-0, AC-1]
 risk_zone: amber
 status: in-review
 branch: a08-t08-granite-peak-gl
@@ -24,7 +24,7 @@ accounts tied, synthetic posting users with roles, JE-26-17994 and JE-26-17950, 
 Rollback: revert; nothing loads it yet.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Built (DEC-5035). A one-off run: 18,426 / 412,903; hits 142 · 38 · 61 · 17 · 9 →
   236; 34 ≥ 61; tie 214 of 214, failure None; 45.5 MB. Tests run at the end pass.
 - **Partial:** support PDFs, AR population and confirmations, Lakeshore, Fenwick, Juniper & Oak,

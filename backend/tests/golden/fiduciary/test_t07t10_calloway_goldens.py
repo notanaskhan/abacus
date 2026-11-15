@@ -179,7 +179,7 @@ _distribution = st.tuples(
 
 def _with(rows: list[tuple[str, Decimal, str]]) -> f.FiduciaryResult:
     distributions = tuple(
-        f.Distribution(who, who.title(), date(2025, 12, 15), amount, source)  # type: ignore[arg-type]
+        f.Distribution(who, who.title(), date(2025, 12, 15), amount, source)  # type: ignore[arg-type] -- the golden's source literal
         for who, amount, source in rows
     )
     return f.compute(_inputs(distributions=distributions))

@@ -49,7 +49,10 @@ def conditions_met(monkeypatch: pytest.MonkeyPatch) -> MeetConditions:
             resource,
             work_item_id=uuid.uuid4(),
             target=TargetFacts(
-                preparer_user_ids=frozenset(), reserved_role=role, reserved_user_id=ctx.user_id
+                preparer_user_ids=frozenset(),
+                reserved_role=role,
+                reserved_user_id=ctx.user_id,
+                approver_user_id=ctx.user_id,  # A-08-T03: `is_named_approver`
             ),
         )
 

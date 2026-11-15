@@ -2,7 +2,7 @@
 id: TASK-8036
 title: "T-07-T09: fiduciary engine tax/compute/fiduciary.py"
 spec: SPEC-656
-acceptance_criteria: [AC-5.1, AC-6.1, AC-6.2, AC-7.1, AC-11.1]
+acceptance_criteria: [AC-5, AC-6, AC-7, AC-11]
 risk_zone: amber
 status: in-review
 branch: t07-t09-fiduciary-engine
@@ -26,7 +26,7 @@ the tie, simple-trust and estate variants, the 65-day window, parameter files, `
 Rollback: revert; nothing calls the engine until T-07-T16's computation service.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built. A local run of the engine reproduces TXT-02 a (FAI 430,000; fees 7,500 /
   22,500; DNI 400,000 = 100,000 + 300,000, qualified 240,000; IDD 240,000; Nora 40,000 / 120,000 /
   96,000, Theo 20,000 / 60,000 / 48,000; retained 160,000; taxable income 159,900), TXT-02 d

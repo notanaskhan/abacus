@@ -2,7 +2,7 @@
 id: TASK-8054
 title: "A-09-T03: contract stubs — C9 v2.1 consolidation, C8 v1.1 eliminations, group audit, component room"
 spec: SPEC-658
-acceptance_criteria: [AC-0.3]
+acceptance_criteria: [AC-0]
 risk_zone: amber
 status: in-review
 branch: a09-t03-group-stubs
@@ -24,7 +24,7 @@ Contract first for A-09: classified models, 501 routes under one action each beh
 Rollback: revert; no table, no write.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5039). ruff, pyright and web tsc clean; footings checked by a one-off
   run. Consumer tests are A-09-T06.
 - **Mistake twice:** generic model and handler names collided in the OpenAPI document again

@@ -2,7 +2,7 @@
 id: TASK-8037
 title: "T-07-T10: ADR-078 goldens and properties for the fiduciary engine"
 spec: SPEC-656
-acceptance_criteria: [AC-5.1, AC-6.1, AC-7.1, AC-9.2, AC-11.1]
+acceptance_criteria: [AC-5, AC-6, AC-7, AC-9, AC-11]
 risk_zone: amber
 status: in-review
 branch: t07-t10-fiduciary-goldens
@@ -24,7 +24,7 @@ packet.
 3. [x] `docs/quality/fiduciary-cpa-review-packet.md`.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built. Solo edition: the "transcribed by N" independence is one builder's
   (AMENDMENT-solo); the YAML was written from the epic's figures, not read back from the engine.
   Not run (end pass).

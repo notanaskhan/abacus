@@ -25,10 +25,6 @@ def test_ac0_2_eliminations_decisions_and_deliverables() -> None:
         "rejected",
     ]
     assert {m.value for m in s.GroupMaterialityDecisionStatus} == {"pending", "decided"}
-    assert [m.value for m in s.ComponentDeliverableStatus] == [
-        "expected",
-        "received",
-        "reviewed",
-        "late",
-        "returned",
-    ]
+    # The stored words; "late" and "returned" are derived (the due date, `returned_at`), so the
+    # vocabulary carries them and the enum does not.
+    assert [m.value for m in s.ComponentDeliverableStatus] == ["expected", "received", "reviewed"]

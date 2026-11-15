@@ -113,6 +113,10 @@ def test_ac1_ac3_the_catalogue_content_foots() -> None:
 
 
 def test_ac5_no_tile_carries_kit_or_payment_copy() -> None:
+    # DEC-89 / DF-36: no payment-collection copy anywhere (the kit's Stripe text is wrong); the
+    # Stripe row itself stays and only reads payments and payouts.
     text = json.dumps(cat.document()).lower()
-    for banned in ("stripe", "collect payment", "accept payments", "lorem"):
+    for banned in ("collect payment", "accept payments", "payment link", "get paid", "lorem"):
         assert banned not in text
+    stripe = next(r for r in cat.document()["items"] if r["key"] == "stripe")
+    assert stripe["description"].lower().startswith("read client payments and payouts")

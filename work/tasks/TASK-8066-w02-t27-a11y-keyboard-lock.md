@@ -1,8 +1,8 @@
 ---
 id: TASK-8066
 title: "W-02-T27: Workbench accessibility and keyboard lock"
-spec: W-02
-acceptance_criteria: [W-02 §10]
+spec: SPEC-653
+acceptance_criteria: [AC-Q1, AC-Q2, AC-C3, AC-W1]
 risk_zone: green
 status: in-review
 branch: w02-t27-a11y-keyboard

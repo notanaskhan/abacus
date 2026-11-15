@@ -87,6 +87,8 @@ describe("T-04-T12 review workspace frame", () => {
   it("the new routes are the workspace's, behind tax.review_workspace", () => {
     expect(REVIEW_FLAG).toBe("tax.review_workspace");
     expect(taxReviewRoutes.map((r) => (r.options as { path: string }).path)).toEqual([
+      // T-07-T15: TXT-01, behind its own flag; first, so the static path wins over $section.
+      "/tax-returns/$returnId/review/instrument",
       "/tax-returns/$returnId/review/$section",
       "/tax-returns/$returnId/issues",
       "/tax-returns/$returnId/activity",

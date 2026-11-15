@@ -2,7 +2,7 @@
 id: TASK-8048
 title: "A-08-T09: GL JE fields (ADR P-58), expand-only migration 0888, column maps, journal_entries"
 spec: SPEC-657
-acceptance_criteria: [AC-0.7, AC-1.3]
+acceptance_criteria: [AC-0, AC-1]
 risk_zone: red
 status: in-review
 branch: a08-t09-gl-je-fields
@@ -27,7 +27,7 @@ availability fact per snapshot, and `ledger.api.journal_entries` grouped by refe
 Rollback: downgrade 0888 drops the five columns; no data depends on them yet.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Built (DEC-5033). ruff and pyright clean on ledger and connections. Tests
   written, run at the end pass (with migrations up/down/up).
 - **Human:** `work/approvals/A-08-T09.yaml` by Ayush (non-author approval) and ADR-400 acceptance

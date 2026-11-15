@@ -118,12 +118,38 @@ def _routes() -> Iterator[tuple[str, str]]:
                 yield route.path, method.lower()  # type: ignore[attr-defined]  # the registry under test
 
 
+# C-01-T14 and T15 (S45) built the record and the plan services: these answer for real now.
+BUILT: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("/v1/closes", "get"),
+        ("/v1/closes/running", "get"),
+        ("/v1/closes/{close_id}", "get"),
+        ("/v1/closes/{close_id}/assignees", "put"),
+        ("/v1/closes/{close_id}/status", "post"),
+        ("/v1/engagements/{engagement_id}/closes:generate", "post"),
+        ("/v1/clients/{client_id}/close-plan", "get"),
+        ("/v1/clients/{client_id}/close-plan/versions", "get"),
+        ("/v1/clients/{client_id}/close-plan/drafts", "post"),
+        ("/v1/clients/{client_id}/close-plan/drafts/{version}/rows/{row_id}", "patch"),
+        ("/v1/clients/{client_id}/close-plan/drafts/{version}/rows", "post"),
+        ("/v1/clients/{client_id}/close-plan/drafts/{version}/request-templates", "post"),
+        ("/v1/clients/{client_id}/close-plan/drafts/{version}/publish", "post"),
+        ("/v1/clients/{client_id}/close-plan/drafts/{version}/request-publish", "post"),
+        ("/v1/clients/{client_id}/close-plan/drafts/{version}/rows/{row_id}:adopt", "post"),
+        ("/v1/clients/{client_id}/close-plan/drafts/{version}/rows:adopt-all", "post"),
+        ("/v1/close-templates", "get"),
+        ("/v1/close-templates:import", "post"),
+    }
+)
+
+
 def test_every_route_is_published_with_one_action_and_a_501_until_built() -> None:
     paths = _paths()
     seen = list(_routes())
     for path, method in seen:
         op = paths[path][method]
-        assert "501" in cast(dict[str, object], op["responses"]), (method, path)
+        if (path, method) not in BUILT:
+            assert "501" in cast(dict[str, object], op["responses"]), (method, path)
         assert op.get("x-abacus-action"), (method, path)
     assert len(seen) == 46  # 23 in part 1, 23 in part 2
 

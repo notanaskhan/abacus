@@ -53,6 +53,7 @@ Matrix actions from `permission-matrix/{ledger,adjustments,assurance,portal,conn
 | Preview as Pruett & Lang | POR-23 (read-only projection) | live |
 | Make reference | SHL-11 | live |
 | Today Late item | HOME-05 | planned (I-02) |
+| tooltip or toast inside kits/AUD35 Component Auditors | AUD-34 | designed (handoff link graph) |
 
 ## Notes
 

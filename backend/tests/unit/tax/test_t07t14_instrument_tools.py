@@ -17,6 +17,8 @@ import abacus.modules.tax.api  # registers the tools
 from abacus.modules.agents.tools import registry
 from abacus.modules.tax import instrument_tools as tools
 
+type _Fake = Any  # Any: agent and context doubles
+
 assert abacus.modules.tax.api
 
 NAMES = ("tax.read_instrument_clauses", "tax.read_trust_facts", "tax.propose_trust_determinations")
@@ -43,7 +45,7 @@ def test_figures_skip_clause_labels_statutes_and_years() -> None:
     text = (
         "Complex trust under Art. III(a) and §663(b) since 2011; trustee fees 30,000 to principal"
     )
-    assert tools._figures(text) == [Decimal("30000")]
+    assert tools._figures(text) == [Decimal("30000")]  # pyright: ignore[reportPrivateUsage] -- the figure extractor
 
 
 def _args(value_text: str, fact_ids: list[str], clauses: bool = True) -> tools.DeterminationsIn:
@@ -74,7 +76,7 @@ def facts(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 async def test_a_figure_that_is_not_a_named_fact_fails_number_provenance(facts: None) -> None:
-    agent = cast(Any, object())
+    agent = cast(_Fake, object())
     with pytest.raises(tools.NumberProvenance):
         await tools.propose_trust_determinations(
             agent, _args("Fees of 31,000 to principal", ["expense:fees"])
@@ -88,6 +90,6 @@ async def test_a_figure_that_is_not_a_named_fact_fails_number_provenance(facts: 
 async def test_a_governed_key_without_a_clause_is_rejected(facts: None) -> None:
     with pytest.raises(tools.UnverifiedCitation):
         await tools.propose_trust_determinations(
-            cast(Any, object()),
+            cast(_Fake, object()),
             _args("Fees of 30,000 to principal", ["expense:fees"], clauses=False),
         )

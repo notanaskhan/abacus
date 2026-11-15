@@ -487,6 +487,9 @@ LOWER_CASE_BY_SOURCE = {"tie", "off {amount}"}
 # compound the table spells with capitals.
 CAPITALISED_BY_SOURCE = {
     "TB-linked",
+    # AUD-14 b spells the confirmation context "Authorization requested · Waiting on {name}"
+    # (A-08-T01; verbatim from the handoff, the signer's name after it).
+    "Waiting",
     # TXI-01's field state names the tax engine: "Recomputed by CCH Axcess after import" (T-04-T04;
     # verbatim from the screen contract, DEC-3019).
     "Axcess",
@@ -601,6 +604,11 @@ HOME_OBJECTS = {
 # ---------------------------------------------------------------------------------------------
 # Fields named `state` or `status` that are not an object status.
 NOT_A_STATUS = {
+    # W-01-T03 (S45, DEC-5046): the OAuth `state` round-trip of a personal connect, never a
+    # status; and a capability's grant on WB-11's "may do" card (allowed, off for this firm,
+    # never).
+    "ConnectCompleteIn.state": "the OAuth state round-trip value, not a vocabulary",
+    "ConnectMayDoRowOut.state": "a capability grant on the may-do card, not a lifecycle status",
     # A-05 (EBP-08): a statement row's key, a participant status or "total", never a status.
     "AccountGroupOut.status": "an EBP-08 statement row key (a participant status, or total)",
     "FlowStepOut.state": "position of a step in a flow (done, current, todo)",
@@ -696,6 +704,8 @@ UNTYPED = {
     # S40 (I-02-T03, P-02-T08): Today's gate rows and search rows carry each owner's own C2 code
     # (`{code, context}` for search) until the SHL-23 and SHL-02 builds type them per source.
     "GateRow.state", "SearchItemOut.status",
+    # S45 (A-08-T05): the SSARS rail carries each row's own registry word until AUD-26 types it.
+    "RailRowOut.state",
     # Main CI triage 2026-11-01, recorded for their owners: N-02 (ENG-04 composer, S13) carries
     # the envelope's status as a string; T-02-T18 (TAX-03 intake) and T-02-T25 (TXP-12) carry
     # each source row's own status word until those screens type them.

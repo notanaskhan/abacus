@@ -25,7 +25,7 @@ artboard.
 4. `fixtures/contracts/connect-figures.test.ts` (Python consumer tests ride W-01-T06).
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5046). ruff, pyright, tsc and eslint clean; footings checked by a
   one-off run. **Mistake a third time:** a generic schema name (`ConsentOut`) collided in the
   OpenAPI document; the lint candidate (unique schema names and operation ids) is now overdue.

@@ -271,7 +271,6 @@ from abacus.modules.engagements.work_items import (
     WorkItemExists,
     archive_work_item,
     assign_work_item,
-    reassign_work_item,  # C-01-T14: a close's preparer and reviewer
     assurance_item,
     assurance_item_id,
     client_tax_years,
@@ -284,6 +283,7 @@ from abacus.modules.engagements.work_items import (
     lock_engagement,
     mfa_tri_scope,
     portal_work_items,
+    reassign_work_item,  # C-01-T14: a close's preparer and reviewer
     set_assurance_profile,
     set_work_item_due,
     wall_assignment_count,
@@ -552,7 +552,6 @@ __all__ = [
     "area_for",
     "assign_eqr",
     "assign_work_item",
-    "reassign_work_item",
     "assigned_work",
     "assurance_index",
     "assurance_item",
@@ -629,6 +628,7 @@ __all__ = [
     "progress_of",
     "publish_drafted_version",
     "readable_client",
+    "reassign_work_item",
     "recorded_letter",
     "register_auto_retrieval",
     "register_client_approval_kind",

@@ -2,7 +2,7 @@
 id: TASK-8058
 title: "A-09-T08: L2 kits — C-35 EntityTree, C-38 MilestoneTimeline, CoverageBar, with specimens"
 spec: SPEC-658
-acceptance_criteria: [AC-0.7]
+acceptance_criteria: [AC-0]
 risk_zone: green
 status: in-review
 branch: a09-t08-l2-kits
@@ -22,6 +22,6 @@ keyboard alone.
 3. `data/group-kits.test.tsx`.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5043). tsc and eslint clean. Tests and the axe pass on the specimens
   run at the end pass.

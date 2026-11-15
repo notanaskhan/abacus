@@ -43,7 +43,7 @@ def _entry(n: int, **kw: object) -> js.JeEntry:
         "source": "system",
     }
     base.update(kw)
-    return js.JeEntry(**base)  # pyright: ignore[reportArgumentType]
+    return js.JeEntry(**base)  # pyright: ignore[reportArgumentType] -- the test feeds a bad field on purpose
 
 
 def _seed_population() -> list[js.JeEntry]:
@@ -53,7 +53,7 @@ def _seed_population() -> list[js.JeEntry]:
     for n in range(1, 301):
         kw: dict[str, object] = {}
         if 1 <= n <= 142:
-            kw["posted_on"] = date(2026, 7, 3) if n <= 4 else _SATURDAY
+            kw["posted_on"] = date(2026, 5, 25) if n <= 4 else _SATURDAY
         if 131 <= n <= 168:
             kw["amount"] = Decimal("50000.00")
         if 169 <= n <= 229:
@@ -80,7 +80,9 @@ def test_ac0_9_the_seed_hits_are_reproduced() -> None:
 
 def test_ac1_2_holiday_and_weekend_are_distinct_reasons() -> None:
     by_ref = {s.entry_ref: s for s in js.score(_inputs(), _seed_population()).scores}
-    assert by_ref["JE-26-00001"].reason_codes == ("holiday",)  # Fri Jul 3, 2026
+    # Memorial Day, Mon May 25, 2026: in the period, so the holiday alone (a Jul 3 posting
+    # would also be post-close).
+    assert by_ref["JE-26-00001"].reason_codes == ("holiday",)
     assert by_ref["JE-26-00010"].reason_codes == ("weekend",)
     assert by_ref["JE-26-00135"].reason_codes == ("weekend", "round_amount")
 
@@ -211,7 +213,7 @@ def test_bad_parameters_are_refused(criterion: js.Criterion, name: str) -> None:
 
 
 def test_an_unknown_key_is_refused() -> None:
-    bad = js.Criterion("velocity", 10)  # pyright: ignore[reportArgumentType]
+    bad = js.Criterion("velocity", 10)  # pyright: ignore[reportArgumentType] -- an unknown kind on purpose
     with pytest.raises(js.InvalidCriteria):
         js.score(js.Inputs((bad,), HOLIDAYS, PERIOD_END), [_entry(1)])
 

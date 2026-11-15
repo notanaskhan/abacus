@@ -1551,6 +1551,18 @@ LIST_EXEMPT = frozenset(
         # P-10-T49 (DEC-4401): the v2 plan and proposal gate sources, the same projector reads.
         ("src/abacus/modules/agents/repository.py", "run_plans_for_gates"),
         ("src/abacus/modules/agents/repository.py", "run_proposals_for_gates"),
+        # C-01-T14/T15/T33 (DEC-5053, TASK-8032/8033/8035): CLS-01 and CLS-02 lookups by ids
+        # the service has already narrowed with `work_item_facts(ctx, "close", "close.read")`
+        # (the work items' `visible()`), or by the plan versions those visible closes pin.
+        # `neighbours` returns the previous and next period ids for the record bar, which the
+        # service then narrows to the viewer's visible closes.
+        ("src/abacus/modules/closes/repository.py", "closes_by_ids"),
+        ("src/abacus/modules/closes/repository.py", "neighbours"),
+        ("src/abacus/modules/closes/repository.py", "plan_versions"),
+        ("src/abacus/modules/closes/repository.py", "effective_versions"),
+        ("src/abacus/modules/closes/repository.py", "plan_accounts"),
+        ("src/abacus/modules/closes/repository.py", "computed"),
+        ("src/abacus/modules/closes/repository.py", "running_runs"),
     }
 )
 
@@ -1706,12 +1718,12 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "signatures", "communications"}
     | {"agents", "integrations"},
-    # C-01-T14 (C-01 §4.8): past due and BD1 on practice's business-day calendar (practice never
-    # imports closes, so the edge stays acyclic).
+    # C-01-T14 (C-01 §4.8): past due and BD1 on the platform's legal holidays and
+    # `kernel.calendar` (`closes.business_days`); `practice` stays an edge nothing imports (I-02).
     "closes": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}
-    | {"integrations", "practice"},
+    | {"integrations"},
     # N-04-T12 (DEC-2240, DEC-2262): the response drafts from the firm's report template
     # (methodology's versions, reporting's template blocks); neither imports notices.
     "notices": _BASE

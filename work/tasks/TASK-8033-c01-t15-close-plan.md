@@ -29,7 +29,7 @@ request-publish as a HOME-02 gate, history, the template import endpoint and BD1
 Rollback: revert; no migration.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built. Tallies are computed from the rows (Manager = manager approval, Senior =
   the rest; requests = client-visible templates). Publishing pins closes past BD1 first
   (DEC-5021), then the trigger refuses unadopted drafted rows (409 `unadopted_rows`). A

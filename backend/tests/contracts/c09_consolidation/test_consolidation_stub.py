@@ -47,7 +47,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("patch", P): "elimination.edit",
     ("post", f"{P}/approve"): "elimination.approve",
     ("post", f"{E}/approve"): "elimination.approve",
-    ("post", f"{P}/post"): "elimination.post",
+    ("post", f"{P}/apply"): "elimination.apply",
     ("post", f"{P}/reject"): "elimination.approve",
     ("post", f"{E}/propose"): "elimination.propose_run",
 }

@@ -48,6 +48,14 @@ _ROWS = {
     "issue": text(
         "SELECT issue_id, engagement_id FROM tax_issue_resolution_notes WHERE issue_id = ANY(:ids)"
     ),
+    # T-07-T12 (S45): a return's instrument interpretation and its determinations.
+    "instrument_interpretation": text(
+        "SELECT id, engagement_id FROM instrument_interpretations WHERE id = ANY(:ids)"
+    ),
+    "instrument_determination": text(
+        "SELECT d.id, i.engagement_id FROM instrument_determinations d "
+        "JOIN instrument_interpretations i ON i.id = d.interpretation_id WHERE d.id = ANY(:ids)"
+    ),
 }
 # T-05-T35 (DEC-4620): the entity workbook's events (`workbook.step_written`,
 # `workbook.cell_edited`) target the return's work item, like `tax_return`.
@@ -62,6 +70,15 @@ _ENTITIES = {
     "transcript": text("SELECT id, client_entity_id FROM transcripts WHERE id = ANY(:ids)"),
     "estimate_schedule": text(
         "SELECT id, client_entity_id FROM estimate_schedules WHERE id = ANY(:ids)"
+    ),
+    # T-07-T12 (S45): a trust's governing instrument and its clauses belong to the client entity.
+    "governing_instrument": text(
+        "SELECT id, client_entity_id FROM governing_instruments WHERE id = ANY(:ids)"
+    ),
+    "instrument_clause": text(
+        "SELECT c.id, g.client_entity_id FROM instrument_clauses c "
+        "JOIN instrument_segmentations s ON s.id = c.segmentation_id "
+        "JOIN governing_instruments g ON g.id = s.instrument_id WHERE c.id = ANY(:ids)"
     ),
 }
 ENTITY_KINDS = frozenset(_ENTITIES)

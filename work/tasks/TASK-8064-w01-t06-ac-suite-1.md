@@ -17,7 +17,7 @@ AY's independent suite over N's red Connect work, failing against the 501 stubs 
 are not built, and the consumer tests that run in N's CI now.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Written (DEC-5049). ruff, pyright and banned_patterns clean on the new files.
 - **Partial:** AC-9 to AC-11, AC-17 to AC-23, AC-25, AC-32, AC-33, AC-35 move to suite 2 with
   their services. The strict xfails here are removed in the change that implements each.

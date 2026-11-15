@@ -2,7 +2,7 @@
 // fixtures. The book is backend/tests/golden/scenario/brightwater_hale/copperleaf_close_figures.json,
 // transcribed from the epic and the handoff; backend/tests/golden/scenario/test_c01t13_close_figures.py
 // foots the synthetic close slice against the same book, so a figure that drifts on either side
-// fails. The reconciled percentage is code's (half up), never the artboard's cell (DEC-5019).
+// fails. The reconciled percentage is code's (half up), never the artboard's cell (DEC-5054).
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

@@ -36,7 +36,7 @@ status machine, assignments, the portfolio with tiles and summary, the record's 
 Rollback: revert; no migration.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built. A move to In review at 20 of 21 answers 409 `accounts_not_reconciled`
   with `account` = the first missing plan account; a run in progress answers `run_in_progress`;
   Approved, Delivered and Locked run C-02's guard or fail closed; an agent is refused 403 and

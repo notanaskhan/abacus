@@ -302,7 +302,7 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
       // Binders is routed by P-06-T09 (BND-01); its flag-off page is BND-01.test.tsx's.
       // Notices is routed by N-04-T05 (NOT-01); `notices.workspace` retired at N-04-T27.
       // Audits is routed by A-01-T11 (AUD-01); its flag-off page is AUD-01.test.tsx's.
-      "Closes",
+      // Closes is routed by C-01-T33 (CLS-01); its flag-off page is behind `closes.engine`.
       // Signatures is routed by N-02-T40 (SIG-01); its flag-off page is behind `signatures.envelopes`.
     ]);
     expect(areaLandingRoutes.map((r) => r.fullPath)).toEqual(planned.map((a) => a.path));

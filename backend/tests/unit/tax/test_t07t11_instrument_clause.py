@@ -18,6 +18,9 @@ from abacus.modules.evidence.api import CitationAnchor, CitationClaim, CitationV
 from abacus.modules.evidence.citations.registry import KINDS, SOURCES
 from abacus.modules.tax import instrument_citations as ic
 
+type _Fake = Any  # Any: test doubles for the session, unit of work and actor
+type _Regions = list[dict[str, Any]]  # Any: stored jsonb regions
+
 INSTRUMENT, SEGMENTATION, CLAUSE, VERSION = (uuid.uuid4() for _ in range(4))
 ANCHOR = CitationAnchor("instrument_determination", uuid.uuid4(), engagement_id=uuid.uuid4())
 REGIONS = [{"page": 3, "bbox": [72, 400, 540, 720]}, {"page": 4, "bbox": [72, 72, 540, 210]}]
@@ -32,7 +35,7 @@ class _Row:
     heading: str | None = None
     page_from: int = 3
     page_to: int = 4
-    regions: list[dict[str, Any]] = field(default_factory=lambda: list(REGIONS))
+    regions: _Regions = field(default_factory=lambda: list(REGIONS))
     evidence_version_id: uuid.UUID = VERSION
 
 
@@ -96,7 +99,10 @@ async def _verify(
         clause if clause is not None else _Row(), seg if seg is not None else _Row()
     )
     return await ic.verify_instrument_clause(
-        cast(Any, _Tx(session)), cast(Any, None), claim, ANCHOR
+        cast(_Fake, _Tx(session)),
+        cast(_Fake, None),
+        claim,
+        ANCHOR,
     )
 
 
@@ -120,7 +126,10 @@ async def test_a_quote_inside_the_clause_regions_verifies_with_its_match_id(
 async def test_a_fabricated_clause_id_is_source_not_found(pages: list[tuple[int, str]]) -> None:
     session = _Session(None, _Row())
     verdict = await ic.verify_instrument_clause(
-        cast(Any, _Tx(session)), cast(Any, None), _claim(), ANCHOR
+        cast(_Fake, _Tx(session)),
+        cast(_Fake, None),
+        _claim(),
+        ANCHOR,
     )
     assert verdict.reason == "source_not_found" and pages == []
 
@@ -150,7 +159,9 @@ async def test_a_malformed_locator_or_regions_never_verify(pages: list[tuple[int
 
 async def test_display_reads_art_iii_a_and_its_pages() -> None:
     session = _Session(_Row(), _Row())
-    label = await ic.display_instrument_clause(cast(Any, session), _claim().locator, uuid.uuid4())
+    label = await ic.display_instrument_clause(
+        cast(_Fake, session), _claim().locator, uuid.uuid4()
+    )
     assert (label.title, label.loc) == ("Art. III(a)", "Trust agreement · pages 3–4")  # noqa: RUF001
-    withheld = await ic.display_instrument_clause(cast(Any, session), _claim().locator, None)
+    withheld = await ic.display_instrument_clause(cast(_Fake, session), _claim().locator, None)
     assert withheld.title == "Trust agreement" and withheld.loc == ""

@@ -2,7 +2,7 @@
 id: TASK-8055
 title: "A-09-T05: migration 0889 ledger_consolidation (red, expand-only)"
 spec: SPEC-658
-acceptance_criteria: [AC-0.4, AC-1.1, AC-1.3]
+acceptance_criteria: [AC-0, AC-1]
 risk_zone: red
 status: in-review
 branch: a09-t05-ledger-consolidation
@@ -23,6 +23,6 @@ the engagement's entities, a human finalize and a frozen structure after finaliz
 Rollback: downgrade drops the four tables and two functions (no other table references them).
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5040). ruff and pyright clean. Up/down/up, schema_check (grants and
   pins) and the DB test run at the end pass under the test lock.

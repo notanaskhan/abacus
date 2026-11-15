@@ -16,9 +16,14 @@ from their handoff unit of work (P-03-T10).
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import cast
 from uuid import UUID
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import transaction_context
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
@@ -153,3 +158,23 @@ async def record_citations(
         )
         n += 1
     return recorded
+
+
+async def citation_locators(
+    session: AsyncSession, ids: Sequence[UUID], kind: str
+) -> dict[UUID, dict[str, object]]:
+    """T-07-T12 (OWN-001): the stored locators of the given citations of one kind, for a module
+    that cites its own records (tax's `instrument_clause`) and maps a citation back to them. The
+    caller's tenant session scopes the read; rows of another kind are not returned."""
+    if not ids:
+        return {}
+    rows = await session.execute(
+        text("SELECT id, locator FROM citations WHERE id = ANY(:ids) AND kind = :k"),
+        {"ids": list(ids), "k": kind},
+    )
+    out: dict[UUID, dict[str, object]] = {}
+    for citation_id, locator in rows.all():
+        held = cast(object, locator if isinstance(locator, dict) else json.loads(str(locator)))
+        if isinstance(held, dict):
+            out[cast(UUID, citation_id)] = cast(dict[str, object], held)
+    return out

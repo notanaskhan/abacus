@@ -10,6 +10,7 @@ Recorded synthetic responses only (no real company data).
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import cast
@@ -30,13 +31,17 @@ from .test_qbo_connector import (
     GENERAL_LEDGER,
     MONTH,
     Recorder,
-    _connector,
-    _held,
+    _connector,  # pyright: ignore[reportPrivateUsage] -- C-01-T16's connector helper
+    _held,  # pyright: ignore[reportPrivateUsage] -- C-01-T16's held-token helper
 )
 
 
 @pytest.fixture(autouse=True)
-def _fresh_throttle() -> None:
+def _fresh_throttle() -> Iterator[None]:
+    # The limiter and breaker are process state: clear them before and after, so a full window
+    # here never throttles another QBO test on the same worker.
+    qbo_throttle.reset()
+    yield
     qbo_throttle.reset()
 
 
@@ -88,7 +93,7 @@ async def test_ac_pulls_read_the_v2_datasets_with_the_pinned_minor_version() -> 
     recorder = Recorder()
     connector = _connector(recorder, _held())
     for dataset in ("accounts", "gl_detail", "trial_balance_month"):
-        await connector.pull(dataset, MONTH, None)  # type: ignore[arg-type]
+        await connector.pull(dataset, MONTH, None)
     urls = [url for _, url in recorder.sent]
     assert all(f"minorversion={qbo.MINOR_VERSION}" in url for url in urls)
     assert any("/query?query=select%20%2A%20from%20Account" in url for url in urls)
@@ -115,7 +120,7 @@ async def test_ac_changes_since_names_the_datasets_to_pull_again() -> None:
 
 
 class _Throttled(Recorder):
-    async def request(self, method: str, url: str, **_: object) -> EgressResponse:  # type: ignore[override]
+    async def request(self, method: str, url: str, **_: object) -> EgressResponse:
         self.sent.append((method.upper(), url))
         return EgressResponse(429, {"Retry-After": "7"}, b"")
 
@@ -137,11 +142,11 @@ async def test_ac33_a_429_is_rate_limited_with_retry_after_and_five_open_the_bre
 
 async def test_ac33_each_realm_stays_inside_its_window() -> None:
     connector = _connector(Recorder(), _held())
-    realm = qbo_throttle._realms.setdefault(
+    realm = qbo_throttle._realms.setdefault(  # pyright: ignore[reportPrivateUsage] -- the throttle's window
         "9341453052194873",
-        qbo_throttle._Realm(),
+        qbo_throttle._Realm(),  # pyright: ignore[reportPrivateUsage] -- the throttle's window
     )
-    now = qbo_throttle._clock()
+    now = qbo_throttle._clock()  # pyright: ignore[reportPrivateUsage] -- the throttle's clock
     realm.calls.extend([now] * qbo_throttle.PER_MINUTE)
     with pytest.raises(RateLimited) as limited:
         await connector.pull(

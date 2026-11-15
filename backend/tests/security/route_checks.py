@@ -28,6 +28,7 @@ from abacus.api.public_routes import PUBLIC_ROUTES
 from abacus.modules.identity.api import (
     ACTION_KEY,
     IDENTITY,
+    LINK_PRINCIPAL,
     OWN,
     PORTAL_PUBLIC,
     PRE_SESSION,
@@ -43,6 +44,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.identity.routing import (
     current_invitee,
+    link_principal,
     portal_public,
     pre_session,
     provider_webhook,
@@ -61,6 +63,9 @@ MARKER_AUTH: dict[str, Callable[..., object]] = {
     PORTAL_PUBLIC: portal_public,
     # ADR-152 amendment (DEC-1281): the DocuSeal webhook verifies the provider's signature.
     PROVIDER_WEBHOOK: provider_webhook,
+    # ADR-152 amendment (A-08-T06, DEC-5031): the `/v1/confirm/*` path token names one link
+    # principal; no session, the uniform `expired` view for any other token.
+    LINK_PRINCIPAL: link_principal,
 }
 AUTHENTICATION: frozenset[Callable[..., object]] = frozenset(
     {current_context, *MARKER_AUTH.values()}
@@ -105,7 +110,7 @@ def route_problems(application: FastAPI, method: str, path: str, action: str) ->
     if route.response_model is None and route.status_code != NO_CONTENT:
         problems.append(f"{method} {path} has no response model")
     if (
-        declared in (PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK)
+        declared in (PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK, LINK_PRINCIPAL)
         and path not in PUBLIC_ROUTE_EXCEPTIONS
     ):
         problems.append(f"{method} {path} is public but not on the ROUTE-001 exception list")

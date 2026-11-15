@@ -393,7 +393,10 @@ def _allocate(
                 beneficiary=beneficiary,
                 name=names[beneficiary],
                 distributions=paid_by[beneficiary],
-                share=(weights[i] / total_weight).quantize(Decimal("0.000001")),
+                # No distribution paid (every amount $0): no share, nothing allocated.
+                share=(weights[i] / total_weight).quantize(Decimal("0.000001"))
+                if total_weight != 0
+                else ZERO,
                 dni_allocated=taxable,
                 box_1=split["interest"][i],
                 box_2a=split["ordinary_dividends"][i],

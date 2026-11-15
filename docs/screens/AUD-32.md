@@ -50,6 +50,8 @@ Matrix actions from `permission-matrix/{ledger,adjustments,assurance,portal,conn
 | Request reconnection… | POR-16 (client) | live |
 | Finalize | AUD-31 b | live |
 | + Add → From Source Docs | AUD-03 | live |
+| tooltip or toast inside kits/AUD32 Consolidation | SHL-08 | designed (handoff link graph) |
+| tooltip or toast inside kits/AUD32 Consolidation | AUD-33 | designed (handoff link graph) |
 
 ## Notes
 

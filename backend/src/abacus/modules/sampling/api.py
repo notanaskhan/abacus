@@ -25,6 +25,9 @@ from abacus.modules.sampling.compute import (
     udl,
     udl_percent,
 )
+from abacus.modules.sampling.compute import (
+    je_scoring as je_scoring,  # A-08-T10: the JE scoring engine, for the Granite Peak scenario
+)
 from abacus.modules.sampling.contract import (
     ROUTERS,
     ApproveIn,
@@ -163,6 +166,7 @@ __all__ = [
     "create_population",
     "create_sample_set",
     "draw",
+    "je_scoring",
     "manual_kinds_for",
     "population_view",
     "projected_misstatement",

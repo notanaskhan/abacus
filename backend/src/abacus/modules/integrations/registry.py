@@ -14,7 +14,7 @@ TABLES: frozenset[str] = frozenset(
         "integration_secrets",
         "integration_mappings",  # 0466 (T-01-T20)
         # W-01-T04 (0890): C20 v2 Connect.
-        "integration_catalog_imports",  # platform; the operator writes, the app reads
+        "integration_catalog_imports",  # platform; the operator writes, definers read
         "user_integrations",
         "integration_oauth_states",
         "integration_events",

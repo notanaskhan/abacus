@@ -337,6 +337,7 @@ __all__ = [
     "FixRunInput",
     "FixRunOutcome",
     "FixRunWorkflow",
+    "InstrumentReaderWorkflow",
     "IssueExplainWorkflow",
     "K1DeliveryInput",
     "K1ReleaseFailure",
@@ -347,6 +348,8 @@ __all__ = [
     "ModeRunInput",
     "ModeRunOutcome",
     "ProposedPayment",
+    "ReaderRunInput",
+    "ReaderRunOutcome",
     "ReturnDrafterWorkflow",
     "SeedField",
     "SeedSection",
@@ -378,6 +381,7 @@ __all__ = [
     "patch_installment",
     "patch_schedule",
     "prepare_extensions",
+    "reader_workflow_id",
     "recompute_unfiled",
     "record_sync_state",
     "record_synthetic_workspace",
@@ -441,6 +445,12 @@ _instrument_tools.register()
 
 # T-07-T13: InstrumentReaderWorkflow (the reader's run, one activity).
 from abacus.modules.tax import instrument_reader as _instrument_reader  # noqa: E402
+from abacus.modules.tax.instrument_reader import (  # noqa: E402  (S45 history recorder)
+    InstrumentReaderWorkflow,
+    ReaderRunInput,
+    ReaderRunOutcome,
+    reader_workflow_id,
+)
 
 WORKFLOWS.update(_instrument_reader.WORKFLOWS)
 ACTIVITIES = (*ACTIVITIES, *_instrument_reader.ACTIVITIES)  # pyright: ignore[reportConstantRedefinition] -- the worker reads the final tuple

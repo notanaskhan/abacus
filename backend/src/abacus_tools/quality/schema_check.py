@@ -78,6 +78,8 @@ NON_TENANT_TABLES = frozenset(
     | {"incident_propagations"}
     # 0194 (A-02-T12): the integration catalogue is platform content; definers only.
     | {"integration_catalog"}
+    # 0890 (W-01-T04): the operator's catalogue import log; definers only.
+    | {"integration_catalog_imports"}
     # 0242 (G-02-T20): the Pub 4557 control definitions are platform content; definers only.
     | {"safeguards_controls", "safeguards_control_set_log"}
     # 0400 (K-02-T03, ADR-300): reference sets are public law, two-person published; definers.

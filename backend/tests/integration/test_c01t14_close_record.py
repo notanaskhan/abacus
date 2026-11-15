@@ -9,15 +9,16 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime
 
 import pytest
 
 import abacus.modules.closes.api  # registers the `close` kind
-from abacus.kernel.db import TenantContext, configure_engine
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import uow
-from abacus.modules.closes import service
+from abacus.modules.closes import business_days, service
 from abacus.modules.closes.contract import (
     AccountsNotReconciled,
     OnHoldIn,
@@ -104,7 +105,9 @@ class _Firm:
 
     def ctx(self, user: uuid.UUID | None = None, actor_kind: str = "human") -> AuthContext:
         who = user or self.partner
-        tenant = TenantContext(self.tenant, actor_kind, str(who))  # type: ignore[arg-type]
+        # An agent acts for a person (Q-02-T16): its audit rows carry the person it acts for.
+        on_behalf = who if actor_kind == "agent" else None
+        tenant = TenantContext(self.tenant, actor_kind, str(who), on_behalf)  # type: ignore[arg-type] -- the test's actor kind literal
         return AuthContext(tenant, who, uuid.uuid4(), None, datetime.now(UTC))
 
     async def plan(self, entity: uuid.UUID, accounts: list[str]) -> uuid.UUID:
@@ -165,8 +168,9 @@ class _Firm:
         )
         await self.seed.run(
             "INSERT INTO sign_offs (tenant_id, engagement_id, target_type, target_id, level, "
-            "signed_by, content_hash) SELECT $1, engagement_id, 'reconciliation', $2, 1, $3, $4 "
-            "FROM closes WHERE work_item_id = $5",
+            "signed_by, actor_kind, actor_id, content_hash) SELECT $1, engagement_id, "
+            "'reconciliation', $2, 1, $3::uuid, 'human', $3::uuid::text, $4 FROM closes "
+            "WHERE work_item_id = $5",
             self.tenant,
             rec,
             self.partner,
@@ -176,9 +180,13 @@ class _Firm:
 
 
 @pytest.fixture
-async def firm(migrated_db: MigratedDatabase) -> _Firm:
+async def firm(migrated_db: MigratedDatabase) -> AsyncIterator[_Firm]:
+    # Fresh pools on this test's loop (the identity engine, for names_of, rebuilds from the
+    # settings), disposed after it: no connection outlives its loop.
+    await dispose_engine()
     configure_engine(migrated_db.app_url)
-    return await _Firm(Seeder(migrated_db.superuser_dsn)).make()
+    yield await _Firm(Seeder(migrated_db.superuser_dsn)).make()
+    await dispose_engine()
 
 
 async def _august(firm: _Firm, client: str = "Copperleaf Coffee Roasters, Inc.") -> uuid.UUID:
@@ -187,7 +195,15 @@ async def _august(firm: _Firm, client: str = "Copperleaf Coffee Roasters, Inc.")
     return closes[7]
 
 
-async def test_ac13_twelve_closes_with_bd1_and_due_dates(firm: _Firm) -> None:
+async def test_ac13_twelve_closes_with_bd1_and_due_dates(
+    firm: _Firm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The platform's `legal_holidays` set is K-02's (its suite publishes and reads it); here the
+    # calendar holds Labor Day 2026 so BD7 is counted past it.
+    async def labor_day(_latest: date) -> frozenset[date]:
+        return frozenset({date(2026, 9, 7)})
+
+    monkeypatch.setattr(business_days, "_holidays", labor_day)
     engagement, _, _ = await firm.engagement("Copperleaf Coffee Roasters, Inc.")
     created = await service.generate_closes(firm.ctx(), engagement, 2026)
     assert len(created) == 12
@@ -224,7 +240,11 @@ async def test_ac9_in_review_at_20_of_21_names_the_missing_account(firm: _Firm) 
         await service.move_status(
             firm.ctx(), close, StatusMoveIn(to="in_review"), str(summary.row_version)
         )
-    assert refused.value.facts["account"] == "Account 21"
+    row_21 = await firm.seed.value(
+        "SELECT id FROM close_plan_rows WHERE tenant_id = $1 AND account_name = 'Account 21'",
+        firm.tenant,
+    )
+    assert refused.value.facts["plan_row_id"] == str(row_21)
     await firm.reconcile(close, accounts[20])
     moved = await service.move_status(
         firm.ctx(), close, StatusMoveIn(to="in_review"), str(summary.row_version)
@@ -284,8 +304,8 @@ async def test_ac4_walled_closes_are_absent_from_rows_tiles_and_summary(firm: _F
     walled = (await service.generate_closes(firm.ctx(), walled_engagement, 2026))[7]
     raj = await firm.user("Raj Malhotra")
     for engagement in (
-        await firm.seed.value("SELECT engagement_id FROM closes WHERE work_item_id <> $1 "
-                              "LIMIT 1", walled),
+        await firm.seed.value("SELECT engagement_id FROM closes WHERE tenant_id = $1 "
+                              "AND engagement_id <> $2 LIMIT 1", firm.tenant, walled_engagement),
         walled_engagement,
     ):  # fmt: skip
         await firm.seed.run(

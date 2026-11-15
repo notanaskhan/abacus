@@ -1,8 +1,8 @@
 ---
 id: TASK-8065
 title: "W-02-T26: J11 b1–b3, b3-undo and the Workbench sessions suite on staging"
-spec: W-02
-acceptance_criteria: [W-02 §10 item 1]
+spec: SPEC-653
+acceptance_criteria: [AC-L2, AC-L3, AC-L4, AC-L6, AC-V1, AC-V2, AC-C3, AC-A1, AC-A3, AC-A6, AC-Q1, AC-P1, AC-G5, AC-W1, AC-D1]
 risk_zone: green
 status: in-review
 branch: w02-t26-staging-journeys

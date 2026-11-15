@@ -2,8 +2,8 @@
 // Every figure is the handoff's (CLS-01, CLS-02, CLS-05, CLS-06, CLS-09, CLS-10, POR-11) at the E0
 // clock, Mon 14 Sep 2026 9:24 AM CT; `fixtures/contracts/close-figures.test.ts` foots these against
 // backend/tests/golden/scenario/brightwater_hale/copperleaf_close_figures.json, the same book the
-// synthetic close slice is checked against. No kit sample data: no "13-task close run", no
-// "Closed", no Elena Ruiz.
+// synthetic close slice is checked against. No kit sample data: no kit close run, no "Closed"
+// close and no kit person.
 import type {
   CloseIssueOut,
   CloseIssuesOut,
@@ -159,11 +159,13 @@ export function closeRows(): CloseRowOut[] {
   return ROWS.map(row);
 }
 
-/** CLS-01 a: the list envelope with the four tiles and the summary line, through a filter. */
+/** CLS-01 a: the list envelope through a filter. The tiles and the summary line count the
+ * period's closes before any filter, as `closes.service.list_closes` does, so a tile never reads
+ * 0 because it is the one selected (CLS-01 b). */
 export function closesPortfolio(filter: (r: CloseRowOut) => boolean = () => true): CloseListOut {
   const all = closeRows();
   const items = all.filter(filter);
-  const count = (s: CloseRowOut["status"][]) => items.filter((r) => s.includes(r.status)).length;
+  const count = (s: CloseRowOut["status"][]) => all.filter((r) => s.includes(r.status)).length;
   return {
     items,
     tiles: {
@@ -173,9 +175,9 @@ export function closesPortfolio(filter: (r: CloseRowOut) => boolean = () => true
       delivered: count(["delivered", "locked"]),
     },
     summary: {
-      open_issues: items.reduce((n, r) => n + r.open_issues, 0),
-      past_due: items.filter((r) => r.days_past_due != null).length,
-      running: items.filter((r) => r.running).length,
+      open_issues: all.reduce((n, r) => n + r.open_issues, 0),
+      past_due: all.filter((r) => r.days_past_due != null).length,
+      running: all.filter((r) => r.running).length,
     },
     next_cursor: null,
   };

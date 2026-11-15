@@ -39,9 +39,9 @@ from abacus.modules.assurance.confirmations_contract_models import (
     AlternativeProcedureIn,
     AttachmentOut,
     AuthorizationIn,
-    AuthorizationOut,
     CodeRequestIn,
     CodeVerifyIn,
+    ConfirmationAuthorizationOut,
     ConfirmationCreateIn,
     ConfirmationDetailOut,
     ConfirmationLogOut,
@@ -66,7 +66,8 @@ from abacus.modules.identity.api import (
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
-# The path token: never in a query string, never logged (the access log redacts `/v1/confirm/*`).
+# The path token: never in a query string, never logged (uvicorn's access log is off and spans
+# carry only the route template, `kernel.telemetry`).
 Token = Annotated[str, Path(min_length=16, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")]
 # Every public answer takes at least this long from receipt (the amendment's padded floor).
 CONFIRM_PAD_SECONDS: Final = 0.4
@@ -169,13 +170,13 @@ async def create_confirmation(
 @router.post(
     f"{_WI}/authorization",
     action="confirmation.request_authorization",
-    response_model=AuthorizationOut,
+    response_model=ConfirmationAuthorizationOut,
     status_code=201,
     errors=(409, 501),
 )
-async def request_authorization(
+async def confirmation_request_authorization(
     work_item_id: UUID, body: AuthorizationIn, ctx: Ctx, _key: IdempotencyKey
-) -> AuthorizationOut:
+) -> ConfirmationAuthorizationOut:
     """One C7 envelope (purpose `confirmation_authorization`) for the confirmations named."""
     await _gate(ctx, work_item_id, "confirmation.request_authorization")
     raise _todo("A-08-T18")
@@ -310,7 +311,7 @@ async def record_alternative(
 @router.post(
     f"{_C}/exception", action="finding.create", response_model=ExceptionPrefillOut, errors=(501,)
 )
-async def exception_prefill(confirmation_id: UUID, ctx: Ctx) -> ExceptionPrefillOut:
+async def confirmation_exception_prefill(confirmation_id: UUID, ctx: Ctx) -> ExceptionPrefillOut:
     """SHL-15's prefill; Below CT routes to `record_misstatement`."""
     await _gate_record(ctx)
     raise _todo("A-08-T18")

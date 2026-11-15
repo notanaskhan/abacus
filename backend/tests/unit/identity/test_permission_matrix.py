@@ -208,7 +208,10 @@ def _arranged(
         archived,
         work_item_id=uuid.uuid4(),
         target=TargetFacts(
-            preparer_user_ids=frozenset(), reserved_role=role, reserved_user_id=ctx.user_id
+            preparer_user_ids=frozenset(),
+            reserved_role=role,
+            reserved_user_id=ctx.user_id,
+            approver_user_id=ctx.user_id,  # A-08-T03: `is_named_approver`
         ),
     )
     return ctx, resource
@@ -331,6 +334,8 @@ def test_ac20_the_yaml_has_the_expected_role_partition() -> None:
         "firm_partner",
         # P-07-T36 (DEC-373): derived from a staff member's manager level, never held.
         "firm_manager",
+        # A-08-T03 (DEC-5030): a confirmation respondent, `link_scope_only` cells only.
+        "link_principal",
     }
 
 

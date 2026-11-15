@@ -2,7 +2,7 @@
 id: TASK-8045
 title: "A-08-T03: fieldwork protected bundle (matrix, conditions, link_principal role, flags, control)"
 spec: SPEC-657
-acceptance_criteria: [AC-0.3, AC-9.1]
+acceptance_criteria: [AC-0, AC-9]
 risk_zone: red
 status: in-review
 branch: a08-t03-protected-bundle
@@ -28,7 +28,7 @@ The S45 protected bundle every later A-08 row builds on: per-module matrix rows,
 Rollback: revert; downgrade 0887 drops any `confirmation_links` row.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Built (DEC-5030). Codegen clean (permission_matrix, role_templates,
   feature_flags, security_tests); pyright clean on touched files. Tests written
   (`test_a08t03_conditions.py`, regenerated security suites), run at the end pass.

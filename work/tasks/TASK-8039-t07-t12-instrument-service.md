@@ -2,7 +2,7 @@
 id: TASK-8039
 title: "T-07-T12: instrument service — attach, segment, clauses, determinations, review, lock"
 spec: SPEC-656
-acceptance_criteria: [AC-1.1, AC-1.2, AC-1.3, AC-1.6, AC-3.1, AC-3.2, AC-3.3, AC-4.1, AC-4.2, AC-5.2]
+acceptance_criteria: [AC-1, AC-3, AC-4, AC-5]
 risk_zone: amber
 status: in-review
 branch: t07-t12-instrument-service
@@ -29,7 +29,7 @@ lock and reopen.
 Rollback: revert; the tables (0883) stay empty.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5025). A local run of the segmenter on a synthetic layer with the
   agreement's structure gives Art. I to V with III(a)/(b), IV(a)/(b) and V(c), III(a) over pages 3
   and 4, confidence 1.0. Not run otherwise (end pass).

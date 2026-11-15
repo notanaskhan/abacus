@@ -52,8 +52,8 @@ class ConfirmationLineOut(BaseModel):
     description: Name
     account_last4: Annotated[str | None, Field(pattern=r"^\d{4}$"), classified("confidential")]
     book_amount: Money
-    confirmed_amount: Money | None
-    difference: Money | None  # code's, from the response
+    confirmed_amount: Annotated[Money | None, classified("confidential")]
+    difference: Annotated[Money | None, classified("confidential")]  # code's, from the response
 
 
 class ConfirmationRowOut(BaseModel):
@@ -184,10 +184,10 @@ class ConfirmationDetailOut(BaseModel):
 class ConfirmationCreateIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    type: ConfirmationType
+    type: Annotated[ConfirmationType, classified("internal")]
     respondent_name: Name
     respondent_org: Name
-    channel: Channel
+    channel: Annotated[Channel, classified("internal")]
     address_value: Annotated[str, Field(min_length=3, max_length=320), classified("confidential")]
     sample_item_ref: Annotated[str | None, Field(max_length=100), classified("internal")] = None
     tb_account_refs: Annotated[list[str], Field(max_length=50), classified("internal")] = []
@@ -197,18 +197,20 @@ class AddressVerificationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     method: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
-    sources: Annotated[list[AddressSource], Field(min_length=1)]
-    citation_ids: Annotated[list[UUID], Field(min_length=1)]
+    sources: Annotated[list[AddressSource], Field(min_length=1), classified("internal")]
+    citation_ids: Annotated[list[UUID], Field(min_length=1), classified("internal")]
 
 
 class AuthorizationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    confirmation_ids: Annotated[list[UUID], Field(min_length=1, max_length=200)]
-    signer_contact_id: UUID
+    confirmation_ids: Annotated[
+        list[UUID], Field(min_length=1, max_length=200), classified("internal")
+    ]
+    signer_contact_id: Annotated[UUID, classified("internal")]
 
 
-class AuthorizationOut(BaseModel):
+class ConfirmationAuthorizationOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     envelope_id: Annotated[UUID, classified("internal")]
@@ -218,42 +220,42 @@ class AuthorizationOut(BaseModel):
 class RecordedResponseIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    agrees: bool
-    confirmed_amounts: Annotated[list[Decimal], Field(max_length=50)]
-    evidence_version_ids: Annotated[list[UUID], Field(min_length=1)]
-    received_on: date
+    agrees: Annotated[bool, classified("confidential")]
+    confirmed_amounts: Annotated[list[Decimal], Field(max_length=50), classified("confidential")]
+    evidence_version_ids: Annotated[list[UUID], Field(min_length=1), classified("internal")]
+    received_on: Annotated[date, classified("confidential")]
 
 
 class ReconciliationItemIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     description: Text
-    amount: Decimal
-    item_date: date | None = None
-    recorded_on: date | None = None
-    citation_ids: Annotated[list[UUID], Field(min_length=1)]
-    suggestion_id: UUID | None = None
+    amount: Annotated[Decimal, classified("confidential")]
+    item_date: Annotated[date | None, classified("confidential")] = None
+    recorded_on: Annotated[date | None, classified("confidential")] = None
+    citation_ids: Annotated[list[UUID], Field(min_length=1), classified("internal")]
+    suggestion_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ReconciliationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    items: Annotated[list[ReconciliationItemIn], Field(max_length=50)]
-    classification: Classification | None = None
+    items: Annotated[list[ReconciliationItemIn], Field(max_length=50), classified("internal")]
+    classification: Annotated[Classification | None, classified("internal")] = None
 
 
 class SeenHashIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    seen_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    seen_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
 
 
 class AlternativeProcedureIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     description: Text
-    amount: Decimal | None = None
-    citation_ids: Annotated[list[UUID], Field(min_length=1)]
+    amount: Annotated[Decimal | None, classified("confidential")] = None
+    citation_ids: Annotated[list[UUID], Field(min_length=1), classified("internal")]
 
 
 class ExceptionPrefillOut(BaseModel):
@@ -301,7 +303,7 @@ class RespondentRequestOut(BaseModel):
     authorization_text: Annotated[str, Field(max_length=2000), classified("confidential")]
     authorized_by: Name
     authorized_on: Annotated[date, classified("confidential")]
-    balance_per_client: Money | None
+    balance_per_client: Annotated[Money | None, classified("confidential")]
     invoices: Annotated[list[RespondentInvoiceOut], classified("confidential")]
     client_accounts: Annotated[list[RespondentAccountOut], classified("confidential")]
     list_every_account: Annotated[bool, classified("public")]  # the bank variant (f)
@@ -313,7 +315,7 @@ class RespondentReceiptOut(BaseModel):
     receipt_id: Annotated[str, Field(max_length=40), classified("internal")]
     reference: Annotated[str, classified("internal")]
     agrees: Annotated[bool, classified("confidential")]
-    respondent_balance: Money | None
+    respondent_balance: Annotated[Money | None, classified("confidential")]
     difference: Money  # the server's, never the page's
     submitted_at: Annotated[datetime, classified("internal")]
     verified_email: Annotated[str, Field(max_length=320), classified("confidential")]
@@ -358,29 +360,37 @@ class VerifiedOut(BaseModel):
 class RespondentBalanceIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    amount: Annotated[Decimal, Field(max_digits=20, decimal_places=2)]
+    amount: Annotated[Decimal, Field(max_digits=20, decimal_places=2), classified("confidential")]
 
 
 class RespondentAccountIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     description: Name
-    account_last4: Annotated[str | None, Field(pattern=r"^\d{4}$")] = None
-    balance: Annotated[Decimal, Field(max_digits=20, decimal_places=2)]
+    account_last4: Annotated[str | None, Field(pattern=r"^\d{4}$"), classified("confidential")] = (
+        None
+    )
+    balance: Annotated[Decimal, Field(max_digits=20, decimal_places=2), classified("confidential")]
 
 
 class RespondentResponseIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    agrees: bool
-    balances: Annotated[list[RespondentBalanceIn], Field(max_length=20)] = []
-    accounts: Annotated[list[RespondentAccountIn], Field(max_length=50)] = []
-    explanation: Annotated[str | None, Field(max_length=2000)] = None
-    attachment_ids: Annotated[list[UUID], Field(max_length=10)] = []
+    agrees: Annotated[bool, classified("confidential")]
+    balances: Annotated[
+        list[RespondentBalanceIn], Field(max_length=20), classified("confidential")
+    ] = []
+    accounts: Annotated[
+        list[RespondentAccountIn], Field(max_length=50), classified("confidential")
+    ] = []
+    explanation: Annotated[str | None, Field(max_length=2000), classified("confidential")] = None
+    attachment_ids: Annotated[list[UUID], Field(max_length=10), classified("internal")] = []
     respondent_name: Name
-    respondent_title: Annotated[str | None, Field(max_length=200)] = None
+    respondent_title: Annotated[str | None, Field(max_length=200), classified("confidential")] = (
+        None
+    )
     respondent_company: Name
-    attestation: Literal[True]
+    attestation: Annotated[Literal[True], classified("confidential")]
 
 
 class AttachmentOut(BaseModel):

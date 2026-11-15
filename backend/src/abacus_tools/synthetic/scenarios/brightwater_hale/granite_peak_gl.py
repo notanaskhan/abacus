@@ -32,7 +32,7 @@ from decimal import Decimal
 from itertools import pairwise
 from typing import Final, Literal
 
-from abacus.modules.sampling.compute import je_scoring as js
+from abacus.modules.sampling.api import je_scoring as js
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import Rng
 
 CLIENT: Final = "Granite Peak Outdoor Supply, Inc."

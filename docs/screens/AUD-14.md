@@ -53,6 +53,7 @@ Matrix actions from `permission-matrix/{sampling,workpapers,assurance,identity}.
 | Preview | POR-17 preview | live |
 | Exception… | SHL-15 → AUD-15 / AUD-16 | live |
 | Attachment chip | SHL-08 | live |
+| Opens SHL-09 · where this balance comes from | SHL-09 | designed (handoff link graph) |
 
 ## Notes
 

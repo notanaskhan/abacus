@@ -365,7 +365,7 @@ objects:
       accrued_tie_out_shadow: {label: "Accrued tie-out (shadow)", variant: muted, terminal: false, derived: false}
       engine_import:          {label: "From CCH Axcess", variant: null, terminal: false, derived: false}
 
-  # ---- S44 end pass (DEC-5018): status fields the C-01 and T-07 stubs type ----
+  # ---- S44 end pass (DEC-5053): status fields the C-01 and T-07 stubs type ----
   close_run:   # CloseRunOut.status, CloseRunHistoryItemOut.status (CLS-02 run header)
     source: "C-01 §4.3 T04; CLS-02"
     codes:
@@ -1786,7 +1786,7 @@ objects:
     source: "A-08 §2.1, §4.2 M3; AUD-14 a–e; DF-05 (statuses into §3.3.1), DF-31; SPEC-657 AC-6.1–AC-6.8"
     codes:
       draft:                   {label: "Draft", variant: neutral, terminal: false, derived: false}
-      authorization_requested: {label: "Authorization requested", variant: amber, terminal: false, derived: false, context_labels: {waiting: "Authorization requested · Waiting on {name} (SIG-02)"}}
+      authorization_requested: {label: "Authorization requested", variant: amber, terminal: false, derived: false, context_labels: {waiting: "Authorization requested · Waiting on {name}"}}
       sent:                    {label: "Sent", variant: state, terminal: false, derived: false, context_labels: {viewed: "Viewed {date}", second_request: "2nd request {date}", paused: "Respondent links paused"}}
       responded:               {label: "Responded", variant: state, terminal: false, derived: false}
       exception:               {label: "Exception", variant: red-tint, terminal: false, derived: false}

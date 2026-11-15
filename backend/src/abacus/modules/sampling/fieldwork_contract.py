@@ -63,10 +63,10 @@ class ContentChanged(DomainConflict):
 class JeTestCreateIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    gl_snapshot_id: UUID
-    period_start: date
-    period_end: date
-    post_close_through: date
+    gl_snapshot_id: Annotated[UUID, classified("internal")]
+    period_start: Annotated[date, classified("confidential")]
+    period_end: Annotated[date, classified("confidential")]
+    post_close_through: Annotated[date, classified("confidential")]
 
 
 class TieOut(BaseModel):
@@ -128,22 +128,24 @@ class JeTestOut(BaseModel):
 class CriteriaIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    policy_version_id: UUID
-    overrides: Annotated[dict[CriterionKey, dict[str, str]], Field(max_length=5)] = {}
+    policy_version_id: Annotated[UUID, classified("internal")]
+    overrides: Annotated[
+        dict[CriterionKey, dict[str, str]], Field(max_length=5), classified("internal")
+    ] = {}
 
 
 class PostingUserRoleIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    posting_user: Annotated[str, Field(min_length=1, max_length=120)]
-    role_class: RoleClass
-    citation_id: UUID | None = None
+    posting_user: Annotated[str, Field(min_length=1, max_length=120), classified("confidential")]
+    role_class: Annotated[RoleClass, classified("internal")]
+    citation_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class PostingUserRolesIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    roles: Annotated[list[PostingUserRoleIn], Field(max_length=500)]
+    roles: Annotated[list[PostingUserRoleIn], Field(max_length=500), classified("confidential")]
 
 
 class ScoredEntryOut(BaseModel):
@@ -179,20 +181,20 @@ class ScoreRunOut(BaseModel):
 class SelectionIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    score_min: Annotated[int | None, Field(ge=0, le=100)] = None
-    top_n: Annotated[int | None, Field(ge=1, le=5000)] = None
-    unpredictable_n: Annotated[int, Field(ge=0, le=500)] = 0
+    score_min: Annotated[int | None, Field(ge=0, le=100), classified("internal")] = None
+    top_n: Annotated[int | None, Field(ge=1, le=5000), classified("internal")] = None
+    unpredictable_n: Annotated[int, Field(ge=0, le=500), classified("internal")] = 0
 
 
 class ExpansionIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    add_by_score: Annotated[int, Field(ge=0, le=500)] = 0
-    add_unpredictable: Annotated[int, Field(ge=0, le=500)] = 0
-    add_item_keys: Annotated[list[str], Field(max_length=500)] = []
+    add_by_score: Annotated[int, Field(ge=0, le=500), classified("internal")] = 0
+    add_unpredictable: Annotated[int, Field(ge=0, le=500), classified("internal")] = 0
+    add_item_keys: Annotated[list[str], Field(max_length=500), classified("internal")] = []
     rationale: Annotated[str, Field(max_length=2000), classified("confidential")]
-    rationale_suggestion_id: UUID | None = None
-    approver_user_id: UUID | None = None
+    rationale_suggestion_id: Annotated[UUID | None, classified("internal")] = None
+    approver_user_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ExpansionOut(BaseModel):
@@ -211,8 +213,8 @@ class ExpansionOut(BaseModel):
 class ExpansionDecisionIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    decision: Literal["approved", "rejected"]
-    seen_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    decision: Annotated[Literal["approved", "rejected"], classified("internal")]
+    seen_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
 
 
 SelectionOut.model_rebuild()

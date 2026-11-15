@@ -5,6 +5,7 @@
         "additionalProperties": false,
         "properties": {
           "line_positions": {
+            "cls": "internal",
             "items": {
               "type": "integer"
             },
@@ -14,6 +15,7 @@
             "type": "array"
           },
           "seen_hash": {
+            "cls": "internal",
             "pattern": "^[0-9a-f]{64}$",
             "title": "Seen Hash",
             "type": "string"
@@ -2059,6 +2061,7 @@
         "additionalProperties": false,
         "properties": {
           "citation_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2075,6 +2078,7 @@
             "type": "string"
           },
           "sources": {
+            "cls": "internal",
             "items": {
               "enum": [
                 "client_supplied",
@@ -4657,9 +4661,11 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           },
           "citation_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -5232,6 +5238,7 @@
         "additionalProperties": false,
         "properties": {
           "kind": {
+            "cls": "internal",
             "enum": [
               "audit_flux",
               "ssars_review"
@@ -5240,6 +5247,7 @@
             "type": "string"
           },
           "layer": {
+            "cls": "internal",
             "enum": [
               "unadjusted",
               "adjusted"
@@ -5248,6 +5256,7 @@
             "type": "string"
           },
           "py_source": {
+            "cls": "internal",
             "enum": [
               "prior_engagement",
               "import"
@@ -5256,6 +5265,7 @@
             "type": "string"
           },
           "stage": {
+            "cls": "internal",
             "enum": [
               "preliminary",
               "substantive",
@@ -5266,6 +5276,7 @@
             "type": "string"
           },
           "trial_balance_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Trial Balance Id",
             "type": "string"
@@ -12234,6 +12245,7 @@
         "additionalProperties": false,
         "properties": {
           "confirmation_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -12244,6 +12256,7 @@
             "type": "array"
           },
           "signer_contact_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Signer Contact Id",
             "type": "string"
@@ -12254,6 +12267,58 @@
           "signer_contact_id"
         ],
         "title": "AuthorizationIn",
+        "type": "object"
+      },
+      "AuthorizationOut": {
+        "description": "The authorization on file for the form and year (T-01's register): NOT-01's column,\nNOT-02's card. `can_represent` is code's (a Form 2848 for the form and year).",
+        "properties": {
+          "authorization_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Authorization Id"
+          },
+          "can_represent": {
+            "cls": "internal",
+            "title": "Can Represent",
+            "type": "boolean"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "form_8821",
+              "form_2848",
+              "state_poa",
+              "none"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "on_file": {
+            "cls": "internal",
+            "title": "On File",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "on_file",
+          "can_represent"
+        ],
+        "title": "AuthorizationOut",
         "type": "object"
       },
       "AutoModeDefaults": {
@@ -20697,6 +20762,7 @@
         "additionalProperties": false,
         "properties": {
           "cards": {
+            "cls": "confidential",
             "items": {
               "$ref": "#/components/schemas/QuestionCardIn"
             },
@@ -20706,6 +20772,7 @@
             "type": "array"
           },
           "line_positions": {
+            "cls": "internal",
             "items": {
               "type": "integer"
             },
@@ -20715,6 +20782,7 @@
             "type": "array"
           },
           "recipient_contact_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Recipient Contact Id",
             "type": "string"
@@ -24296,9 +24364,11 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "City"
           },
           "component_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Component Id",
             "type": "string"
@@ -24313,9 +24383,11 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Ep Contact Id"
           },
           "organisation_name": {
+            "cls": "confidential",
             "maxLength": 200,
             "minLength": 1,
             "title": "Organisation Name",
@@ -24478,11 +24550,13 @@
         "additionalProperties": false,
         "properties": {
           "due_on": {
+            "cls": "confidential",
             "format": "date",
             "title": "Due On",
             "type": "string"
           },
           "title": {
+            "cls": "confidential",
             "maxLength": 200,
             "minLength": 1,
             "title": "Title",
@@ -24644,12 +24718,14 @@
         "additionalProperties": false,
         "properties": {
           "body": {
+            "cls": "confidential",
             "maxLength": 20000,
             "minLength": 1,
             "title": "Body",
             "type": "string"
           },
           "number": {
+            "cls": "internal",
             "maximum": 20.0,
             "minimum": 1.0,
             "title": "Number",
@@ -24728,11 +24804,13 @@
         "additionalProperties": false,
         "properties": {
           "recipient_contact_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Recipient Contact Id",
             "type": "string"
           },
           "version_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Version Id",
             "type": "string"
@@ -25309,6 +25387,31 @@
         "title": "ConfirmIn",
         "type": "object"
       },
+      "ConfirmationAuthorizationOut": {
+        "properties": {
+          "confirmation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Confirmation Ids",
+            "type": "array"
+          },
+          "envelope_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Envelope Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "envelope_id",
+          "confirmation_ids"
+        ],
+        "title": "ConfirmationAuthorizationOut",
+        "type": "object"
+      },
       "ConfirmationCoverageOut": {
         "description": "'AR sent for confirmation $897,950.00 of $5,860,000.00 (15.3%) \u00b7 confirmed \u2026 \u00b7 CT \u2026'.",
         "properties": {
@@ -25371,6 +25474,7 @@
             "type": "string"
           },
           "channel": {
+            "cls": "internal",
             "enum": [
               "accrued_link",
               "network_recorded",
@@ -25417,6 +25521,7 @@
             "type": "array"
           },
           "type": {
+            "cls": "internal",
             "enum": [
               "bank",
               "accounts_receivable",
@@ -25582,6 +25687,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Confirmed Amount"
           },
           "description": {
@@ -25602,6 +25708,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Difference"
           },
           "position": {
@@ -26360,14 +26467,6 @@
             "title": "Dry Run",
             "type": "boolean"
           },
-          "hidden": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Hidden",
-            "type": "array"
-          },
           "id": {
             "anyOf": [
               {
@@ -26380,6 +26479,14 @@
             ],
             "cls": "internal",
             "title": "Id"
+          },
+          "unpublished": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unpublished",
+            "type": "array"
           }
         },
         "required": [
@@ -26387,7 +26494,7 @@
           "dry_run",
           "added",
           "changed",
-          "hidden",
+          "unpublished",
           "document_sha256"
         ],
         "title": "ConnectCatalogImportOut",
@@ -26758,12 +26865,14 @@
         "additionalProperties": false,
         "properties": {
           "confirm_name": {
+            "cls": "confidential",
             "maxLength": 80,
             "minLength": 1,
             "title": "Confirm Name",
             "type": "string"
           },
           "seen_version": {
+            "cls": "internal",
             "minimum": 1.0,
             "title": "Seen Version",
             "type": "integer"
@@ -28938,6 +29047,7 @@
         "additionalProperties": false,
         "properties": {
           "seen_version": {
+            "cls": "internal",
             "minimum": 1.0,
             "title": "Seen Version",
             "type": "integer"
@@ -28962,9 +29072,11 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Interim Period End"
           },
           "name": {
+            "cls": "confidential",
             "maxLength": 200,
             "minLength": 1,
             "title": "Name",
@@ -28980,9 +29092,11 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Prior Period End"
           },
           "reporting_currency": {
+            "cls": "internal",
             "const": "USD",
             "title": "Reporting Currency",
             "type": "string"
@@ -28997,9 +29111,11 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Source Connection Id"
           },
           "year_end": {
+            "cls": "confidential",
             "format": "date",
             "title": "Year End",
             "type": "string"
@@ -31037,6 +31153,7 @@
               },
               "type": "object"
             },
+            "cls": "internal",
             "default": {},
             "maxProperties": 5,
             "propertyNames": {
@@ -31052,6 +31169,7 @@
             "type": "object"
           },
           "policy_version_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Policy Version Id",
             "type": "string"
@@ -32760,6 +32878,7 @@
         "additionalProperties": false,
         "properties": {
           "reason": {
+            "cls": "confidential",
             "maxLength": 1000,
             "minLength": 1,
             "title": "Reason",
@@ -33596,12 +33715,14 @@
         "additionalProperties": false,
         "properties": {
           "attribute_key": {
+            "cls": "internal",
             "maxLength": 80,
             "minLength": 1,
             "title": "Attribute Key",
             "type": "string"
           },
           "citation_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -33611,12 +33732,14 @@
             "type": "array"
           },
           "description": {
+            "cls": "confidential",
             "maxLength": 2000,
             "minLength": 1,
             "title": "Description",
             "type": "string"
           },
           "item_position": {
+            "cls": "internal",
             "minimum": 1.0,
             "title": "Item Position",
             "type": "integer"
@@ -37050,6 +37173,7 @@
         "additionalProperties": false,
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -37080,18 +37204,21 @@
         "additionalProperties": false,
         "properties": {
           "consolidation_level": {
+            "cls": "internal",
             "maximum": 3.0,
             "minimum": 1.0,
             "title": "Consolidation Level",
             "type": "integer"
           },
           "description": {
+            "cls": "confidential",
             "maxLength": 300,
             "minLength": 1,
             "title": "Description",
             "type": "string"
           },
           "lines": {
+            "cls": "confidential",
             "items": {
               "$ref": "#/components/schemas/EliminationLineIn"
             },
@@ -37113,12 +37240,14 @@
         "additionalProperties": false,
         "properties": {
           "caption": {
+            "cls": "confidential",
             "maxLength": 200,
             "minLength": 1,
             "title": "Caption",
             "type": "string"
           },
           "client_entity_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Client Entity Id",
             "type": "string"
@@ -37134,6 +37263,7 @@
                 "type": "string"
               }
             ],
+            "cls": "confidential",
             "default": "0",
             "title": "Credit"
           },
@@ -37148,6 +37278,7 @@
                 "type": "string"
               }
             ],
+            "cls": "confidential",
             "default": "0",
             "title": "Debit"
           }
@@ -46234,6 +46365,7 @@
         "additionalProperties": false,
         "properties": {
           "decision": {
+            "cls": "internal",
             "enum": [
               "approved",
               "rejected"
@@ -46242,6 +46374,7 @@
             "type": "string"
           },
           "seen_hash": {
+            "cls": "internal",
             "pattern": "^[0-9a-f]{64}$",
             "title": "Seen Hash",
             "type": "string"
@@ -46258,6 +46391,7 @@
         "additionalProperties": false,
         "properties": {
           "add_by_score": {
+            "cls": "internal",
             "default": 0,
             "maximum": 500.0,
             "minimum": 0.0,
@@ -46265,6 +46399,7 @@
             "type": "integer"
           },
           "add_item_keys": {
+            "cls": "internal",
             "default": [],
             "items": {
               "type": "string"
@@ -46274,6 +46409,7 @@
             "type": "array"
           },
           "add_unpredictable": {
+            "cls": "internal",
             "default": 0,
             "maximum": 500.0,
             "minimum": 0.0,
@@ -46290,6 +46426,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Approver User Id"
           },
           "rationale": {
@@ -46308,6 +46445,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Rationale Suggestion Id"
           }
         },
@@ -46381,12 +46519,14 @@
         "additionalProperties": false,
         "properties": {
           "basis": {
+            "cls": "internal",
             "maxLength": 300,
             "minLength": 1,
             "title": "Basis",
             "type": "string"
           },
           "citation_ids": {
+            "cls": "internal",
             "default": [],
             "items": {
               "format": "uuid",
@@ -46409,6 +46549,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "High Pct"
           },
           "low_pct": {
@@ -46424,6 +46565,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Low Pct"
           }
         },
@@ -46452,6 +46594,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "High Pct"
           },
           "low_pct": {
@@ -46465,6 +46608,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Low Pct"
           }
         },
@@ -46856,6 +47000,7 @@
         "additionalProperties": false,
         "properties": {
           "citation_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -46874,9 +47019,11 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Suggestion Id"
           },
           "text": {
+            "cls": "confidential",
             "maxLength": 1000,
             "minLength": 1,
             "title": "Text",
@@ -57893,9 +58040,11 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Component Pm"
           },
           "performed_by": {
+            "cls": "internal",
             "enum": [
               "group_team",
               "component_auditor"
@@ -57904,6 +58053,7 @@
             "type": "string"
           },
           "planned_work": {
+            "cls": "internal",
             "enum": [
               "full_scope",
               "specific_procedures",
@@ -57913,6 +58063,7 @@
             "type": "string"
           },
           "scope_areas": {
+            "cls": "internal",
             "default": [],
             "items": {
               "type": "string"
@@ -57942,6 +58093,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Component Pm"
           },
           "entity_name": {
@@ -58249,6 +58401,7 @@
         "additionalProperties": false,
         "properties": {
           "reason": {
+            "cls": "confidential",
             "maxLength": 500,
             "minLength": 1,
             "title": "Reason",
@@ -58301,6 +58454,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Clearly Trivial"
           },
           "component_pm_total": {
@@ -58379,6 +58533,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Group Materiality"
           },
           "options": {
@@ -58400,6 +58555,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Performance Materiality"
           }
         },
@@ -58534,6 +58690,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Intercompany Off By"
           },
           "mapped": {
@@ -58558,6 +58715,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Off By"
           },
           "total_assets": {
@@ -62437,11 +62595,13 @@
         "additionalProperties": false,
         "properties": {
           "methodology_program_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Methodology Program Id",
             "type": "string"
           },
           "recipient_contact_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -64078,7 +64238,7 @@
             "title": "Assignee User Id"
           },
           "authorization": {
-            "$ref": "#/components/schemas/abacus__modules__notices__contract__AuthorizationOut",
+            "$ref": "#/components/schemas/AuthorizationOut",
             "cls": "internal"
           },
           "created_work_item_id": {
@@ -67418,21 +67578,25 @@
         "additionalProperties": false,
         "properties": {
           "gl_snapshot_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Gl Snapshot Id",
             "type": "string"
           },
           "period_end": {
+            "cls": "confidential",
             "format": "date",
             "title": "Period End",
             "type": "string"
           },
           "period_start": {
+            "cls": "confidential",
             "format": "date",
             "title": "Period Start",
             "type": "string"
           },
           "post_close_through": {
+            "cls": "confidential",
             "format": "date",
             "title": "Post Close Through",
             "type": "string"
@@ -80679,7 +80843,7 @@
             "cls": "internal"
           },
           "authorization": {
-            "$ref": "#/components/schemas/abacus__modules__notices__contract__AuthorizationOut",
+            "$ref": "#/components/schemas/AuthorizationOut",
             "cls": "internal"
           },
           "client_entity_id": {
@@ -89250,15 +89414,18 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Citation Id"
           },
           "posting_user": {
+            "cls": "confidential",
             "maxLength": 120,
             "minLength": 1,
             "title": "Posting User",
             "type": "string"
           },
           "role_class": {
+            "cls": "internal",
             "enum": [
               "senior_management",
               "accounting_staff",
@@ -89280,6 +89447,7 @@
         "additionalProperties": false,
         "properties": {
           "roles": {
+            "cls": "confidential",
             "items": {
               "$ref": "#/components/schemas/PostingUserRoleIn"
             },
@@ -89798,14 +89966,17 @@
                 "type": "string"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           },
           "citation_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Citation Id",
             "type": "string"
           },
           "fs_line_key": {
+            "cls": "internal",
             "maxLength": 120,
             "minLength": 1,
             "title": "Fs Line Key",
@@ -89824,6 +89995,7 @@
         "additionalProperties": false,
         "properties": {
           "figures": {
+            "cls": "confidential",
             "default": [],
             "items": {
               "$ref": "#/components/schemas/PriorYearFigureIn"
@@ -89833,6 +90005,7 @@
             "type": "array"
           },
           "source": {
+            "cls": "internal",
             "enum": [
               "prior_engagement",
               "import"
@@ -92028,12 +92201,14 @@
         "additionalProperties": false,
         "properties": {
           "template_key": {
+            "cls": "internal",
             "maxLength": 120,
             "minLength": 1,
             "title": "Template Key",
             "type": "string"
           },
           "text": {
+            "cls": "confidential",
             "maxLength": 2000,
             "minLength": 1,
             "title": "Text",
@@ -93717,9 +93892,11 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Classification"
           },
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ReconciliationItemIn"
             },
@@ -93747,9 +93924,11 @@
                 "type": "string"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           },
           "citation_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -93775,6 +93954,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Item Date"
           },
           "recorded_on": {
@@ -93787,6 +93967,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Recorded On"
           },
           "suggestion_id": {
@@ -93799,6 +93980,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Suggestion Id"
           }
         },
@@ -94302,10 +94484,12 @@
         "additionalProperties": false,
         "properties": {
           "agrees": {
+            "cls": "confidential",
             "title": "Agrees",
             "type": "boolean"
           },
           "confirmed_amounts": {
+            "cls": "confidential",
             "items": {
               "anyOf": [
                 {
@@ -94322,6 +94506,7 @@
             "type": "array"
           },
           "evidence_version_ids": {
+            "cls": "internal",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -94331,6 +94516,7 @@
             "type": "array"
           },
           "received_on": {
+            "cls": "confidential",
             "format": "date",
             "title": "Received On",
             "type": "string"
@@ -95539,12 +95725,14 @@
         "additionalProperties": false,
         "properties": {
           "template_key": {
+            "cls": "internal",
             "maxLength": 120,
             "minLength": 1,
             "title": "Template Key",
             "type": "string"
           },
           "text": {
+            "cls": "confidential",
             "maxLength": 2000,
             "minLength": 1,
             "title": "Text",
@@ -98395,6 +98583,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Account Last4"
           },
           "balance": {
@@ -98407,6 +98596,7 @@
                 "type": "string"
               }
             ],
+            "cls": "confidential",
             "title": "Balance"
           },
           "description": {
@@ -98460,6 +98650,7 @@
                 "type": "string"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           }
         },
@@ -98533,6 +98724,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Respondent Balance"
           },
           "submitted_at": {
@@ -98599,6 +98791,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Balance Per Client"
           },
           "client_accounts": {
@@ -98681,6 +98874,7 @@
         "additionalProperties": false,
         "properties": {
           "accounts": {
+            "cls": "confidential",
             "default": [],
             "items": {
               "$ref": "#/components/schemas/RespondentAccountIn"
@@ -98690,10 +98884,12 @@
             "type": "array"
           },
           "agrees": {
+            "cls": "confidential",
             "title": "Agrees",
             "type": "boolean"
           },
           "attachment_ids": {
+            "cls": "internal",
             "default": [],
             "items": {
               "format": "uuid",
@@ -98704,11 +98900,13 @@
             "type": "array"
           },
           "attestation": {
+            "cls": "confidential",
             "const": true,
             "title": "Attestation",
             "type": "boolean"
           },
           "balances": {
+            "cls": "confidential",
             "default": [],
             "items": {
               "$ref": "#/components/schemas/RespondentBalanceIn"
@@ -98727,6 +98925,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Explanation"
           },
           "respondent_company": {
@@ -98753,6 +98952,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Respondent Title"
           }
         },
@@ -103369,6 +103569,7 @@
         "additionalProperties": false,
         "properties": {
           "body": {
+            "cls": "confidential",
             "maxLength": 4000,
             "minLength": 1,
             "title": "Body",
@@ -109410,6 +109611,7 @@
         "additionalProperties": false,
         "properties": {
           "seen_hash": {
+            "cls": "internal",
             "pattern": "^[0-9a-f]{64}$",
             "title": "Seen Hash",
             "type": "string"
@@ -109493,6 +109695,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Score Min"
           },
           "top_n": {
@@ -109506,9 +109709,11 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Top N"
           },
           "unpredictable_n": {
+            "cls": "internal",
             "default": 0,
             "maximum": 500.0,
             "minimum": 0.0,
@@ -118046,9 +118251,11 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "City"
           },
           "client_entity_id": {
+            "cls": "internal",
             "format": "uuid",
             "title": "Client Entity Id",
             "type": "string"
@@ -118063,15 +118270,18 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Component Auditor Id"
           },
           "level": {
+            "cls": "internal",
             "maximum": 3.0,
             "minimum": 1.0,
             "title": "Level",
             "type": "integer"
           },
           "ownership_pct": {
+            "cls": "confidential",
             "const": 100,
             "title": "Ownership Pct",
             "type": "integer"
@@ -118086,6 +118296,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Parent Client Entity Id"
           }
         },
@@ -118101,6 +118312,7 @@
         "additionalProperties": false,
         "properties": {
           "entities": {
+            "cls": "confidential",
             "items": {
               "$ref": "#/components/schemas/StructureEntityIn"
             },
@@ -122021,6 +122233,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Connection Id"
           },
           "evidence_version_id": {
@@ -122033,9 +122246,11 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Evidence Version Id"
           },
           "label": {
+            "cls": "confidential",
             "enum": [
               "standard",
               "interim",
@@ -122047,6 +122262,7 @@
             "type": "string"
           },
           "period_kind": {
+            "cls": "internal",
             "enum": [
               "current",
               "prior"
@@ -122055,6 +122271,7 @@
             "type": "string"
           },
           "source": {
+            "cls": "internal",
             "enum": [
               "upload",
               "evidence",
@@ -122073,6 +122290,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Upload Id"
           }
         },
@@ -123051,6 +123269,7 @@
         "additionalProperties": false,
         "properties": {
           "reason": {
+            "cls": "confidential",
             "maxLength": 500,
             "minLength": 1,
             "title": "Reason",
@@ -125683,6 +125902,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Overall Materiality"
           },
           "pct": {
@@ -129441,6 +129661,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Total Debits"
           }
         },
@@ -138945,31 +139166,6 @@
         "title": "AcceptedOut",
         "type": "object"
       },
-      "abacus__modules__assurance__confirmations_contract_models__AuthorizationOut": {
-        "properties": {
-          "confirmation_ids": {
-            "cls": "internal",
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Confirmation Ids",
-            "type": "array"
-          },
-          "envelope_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Envelope Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "envelope_id",
-          "confirmation_ids"
-        ],
-        "title": "AuthorizationOut",
-        "type": "object"
-      },
       "abacus__modules__assurance__confirmations_contract_models__ExceptionPrefillOut": {
         "description": "SHL-15's prefill; a person submits it through `assurance.api.record_finding` (or, below\nclearly trivial, `record_misstatement`).",
         "properties": {
@@ -140534,58 +140730,6 @@
         "title": "StepOut",
         "type": "object"
       },
-      "abacus__modules__notices__contract__AuthorizationOut": {
-        "description": "The authorization on file for the form and year (T-01's register): NOT-01's column,\nNOT-02's card. `can_represent` is code's (a Form 2848 for the form and year).",
-        "properties": {
-          "authorization_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Authorization Id"
-          },
-          "can_represent": {
-            "cls": "internal",
-            "title": "Can Represent",
-            "type": "boolean"
-          },
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "form_8821",
-              "form_2848",
-              "state_poa",
-              "none"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "label": {
-            "cls": "internal",
-            "title": "Label",
-            "type": "string"
-          },
-          "on_file": {
-            "cls": "internal",
-            "title": "On File",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "kind",
-          "label",
-          "on_file",
-          "can_represent"
-        ],
-        "title": "AuthorizationOut",
-        "type": "object"
-      },
       "abacus__modules__reporting__contract__ApprovalOut": {
         "properties": {
           "at": {
@@ -140954,6 +141098,7 @@
         "additionalProperties": false,
         "properties": {
           "seen_hash": {
+            "cls": "internal",
             "pattern": "^[0-9a-f]{64}$",
             "title": "Seen Hash",
             "type": "string"
@@ -182425,7 +182570,7 @@
     "/v1/confirmations/{confirmation_id}/exception": {
       "post": {
         "description": "SHL-15's prefill; Below CT routes to `record_misstatement`.",
-        "operationId": "exception_prefill",
+        "operationId": "confirmation_exception_prefill",
         "parameters": [
           {
             "in": "path",
@@ -182532,7 +182677,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Exception Prefill",
+        "summary": "Confirmation Exception Prefill",
         "tags": [
           "confirmations"
         ],
@@ -293255,6 +293400,144 @@
         "x-abacus-action": "elimination.edit"
       }
     },
+    "/v1/proposed-entries/{entry_id}/elimination/apply": {
+      "post": {
+        "description": "`posting_target = consolidation_layer`; no entity snapshot or client ledger changes.",
+        "operationId": "group_apply_elimination",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EliminationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Group Apply Elimination",
+        "tags": [
+          "group-audit"
+        ],
+        "x-abacus-action": "elimination.apply"
+      }
+    },
     "/v1/proposed-entries/{entry_id}/elimination/approve": {
       "post": {
         "description": "409 `unbalanced_entry`; one human decision, never a policy actor (P-08).",
@@ -293391,144 +293674,6 @@
           "group-audit"
         ],
         "x-abacus-action": "elimination.approve"
-      }
-    },
-    "/v1/proposed-entries/{entry_id}/elimination/post": {
-      "post": {
-        "description": "`posting_target = consolidation_layer`; no entity snapshot or client ledger changes.",
-        "operationId": "group_post_elimination",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "entry_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Entry Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Idempotency-Key",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "title": "Idempotency-Key",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Abacus-Tenant",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Abacus-Tenant"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EliminationOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
-          }
-        },
-        "summary": "Group Post Elimination",
-        "tags": [
-          "group-audit"
-        ],
-        "x-abacus-action": "elimination.post"
       }
     },
     "/v1/proposed-entries/{entry_id}/elimination/reject": {
@@ -324306,7 +324451,7 @@
     "/v1/tests/{test_id}/adopt": {
       "post": {
         "description": "L1 through `review.api.record_sign_off` with the version's content hash.",
-        "operationId": "adopt",
+        "operationId": "fieldwork_test_adopt",
         "parameters": [
           {
             "in": "path",
@@ -324444,7 +324589,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Adopt",
+        "summary": "Fieldwork Test Adopt",
         "tags": [
           "fieldwork-testing"
         ],
@@ -324720,7 +324865,7 @@
     },
     "/v1/tests/{test_id}/items/{item_id}/exception": {
       "post": {
-        "operationId": "exception_prefill",
+        "operationId": "fieldwork_test_exception_prefill",
         "parameters": [
           {
             "in": "path",
@@ -324837,7 +324982,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Exception Prefill",
+        "summary": "Fieldwork Test Exception Prefill",
         "tags": [
           "fieldwork-testing"
         ],
@@ -328748,7 +328893,7 @@
     "/v1/work-items/{work_item_id}/confirmations/authorization": {
       "post": {
         "description": "One C7 envelope (purpose `confirmation_authorization`) for the confirmations named.",
-        "operationId": "request_authorization",
+        "operationId": "confirmation_request_authorization",
         "parameters": [
           {
             "in": "path",
@@ -328819,7 +328964,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__assurance__confirmations_contract_models__AuthorizationOut"
+                  "$ref": "#/components/schemas/ConfirmationAuthorizationOut"
                 }
               }
             },
@@ -328886,7 +329031,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Request Authorization",
+        "summary": "Confirmation Request Authorization",
         "tags": [
           "confirmations"
         ],

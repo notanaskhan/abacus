@@ -469,6 +469,45 @@ NOT_CREATING = {
     "/v1/misstatements/{misstatement_id}/pass-to-sum",
     "/v1/proposed-entries/{entry_id}/client-decision:record",
     "/v1/proposed-entries/{entry_id}/reject",
+    # S45 stubs (A-08-T05/T06, A-09-T03, W-01-T03): decisions and state changes on an existing
+    # row, 200.
+    "/v1/analytics-sets/{analytics_set_id}/explanations/accept",
+    "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/bulk-upload",
+    "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/finalize",
+    "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/lock",
+    "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/reopen",
+    "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/trial-balances/{tb_id}/not-needed",
+    "/v1/component-deliverables/{deliverable_id}/return",
+    "/v1/component-deliverables/{deliverable_id}/review",
+    "/v1/component-instructions/{instructions_id}/send",
+    "/v1/confirm/{token}/code/verify",
+    "/v1/confirmations/{confirmation_id}/accept-reconciliation",
+    "/v1/confirmations/{confirmation_id}/alternative-procedures",
+    "/v1/confirmations/{confirmation_id}/close",
+    "/v1/confirmations/{confirmation_id}/exception",
+    "/v1/confirmations/{confirmation_id}/reconciliation",
+    "/v1/confirmations/{confirmation_id}/record-response",
+    "/v1/confirmations/{confirmation_id}/revoke-link",
+    "/v1/confirmations/{confirmation_id}/second-request",
+    "/v1/confirmations/{confirmation_id}/send",
+    "/v1/consolidations/{consolidation_id}/eliminations/approve",
+    "/v1/integrations/connect/complete",
+    "/v1/integrations/{key}/connect",
+    "/v1/integrations/{key}/disconnect",
+    "/v1/integrations/{key}/interest",
+    "/v1/me/integrations/{key}/connect",
+    "/v1/me/integrations/{key}/disconnect",
+    "/v1/platform/integration-catalog/imports",
+    "/v1/portal/component-rooms/{room_id}/instructions/acknowledge",
+    "/v1/proposed-entries/{entry_id}/elimination/apply",
+    "/v1/proposed-entries/{entry_id}/elimination/approve",
+    "/v1/proposed-entries/{entry_id}/elimination/reject",
+    "/v1/sample-expansions/{expansion_id}/decide",
+    "/v1/sample-expansions/{expansion_id}/withdraw",
+    "/v1/tests/{test_id}/adopt",
+    "/v1/tests/{test_id}/items/{item_id}/exception",
+    "/v1/work-items/{work_item_id}/ssars/publish",
+    "/v1/work-items/{work_item_id}/ssars/remind",
 }
 
 
@@ -575,6 +614,13 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/me/today/questions",
         # T-05-T51 (S42): reminders are drafted for the follow-up queue, sent later, so 202.
         "/v1/tax-returns/{return_id}/issues/{issue_id}/reminders",
+        # S45 stubs (A-08-T05/T06, A-09-T03, W-01-T03): each starts a run or a job, so 202.
+        "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/pull-all",
+        "/v1/confirm/{token}/code",
+        "/v1/consolidations/{consolidation_id}/eliminations/propose",
+        "/v1/je-tests/{je_test_id}/score",
+        "/v1/tests/{test_id}/runs",
+        "/v1/work-items/{work_item_id}/analytics-sets",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -956,6 +1002,30 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/workbench/sessions",
         # T-05-T54 (S42): the memo's approval records a sign-off row, so 201.
         "/v1/tax-returns/{return_id}/memo/approve",
+        # S45 stubs (A-08-T05/T06, A-09-T03, W-01-T03): each inserts a new row, 201.
+        "/v1/analytics-sets/{analytics_set_id}/client-questions",
+        "/v1/audits/{work_item_id}/component-auditors",
+        "/v1/audits/{work_item_id}/consolidations",
+        "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/entities/{entity_id}/trial-balances",
+        "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/structure/proposal",
+        "/v1/audits/{work_item_id}/decisions/group-materiality",
+        "/v1/component-auditors/{auditor_id}/deliverables",
+        "/v1/component-auditors/{auditor_id}/instructions/draft",
+        "/v1/component-auditors/{auditor_id}/make-reference",
+        "/v1/confirm/{token}/attachments",
+        "/v1/confirm/{token}/response",
+        "/v1/confirmations/{confirmation_id}/address-verifications",
+        "/v1/consolidations/{consolidation_id}/eliminations",
+        "/v1/je-tests/{je_test_id}/selection",
+        "/v1/portal/component-rooms/{room_id}/deliverables/{deliverable_id}/uploads",
+        "/v1/portal/component-rooms/{room_id}/drops",
+        "/v1/portal/component-rooms/{room_id}/questions",
+        "/v1/sample-sets/{sample_set_id}/expansions",
+        "/v1/tests/{test_id}/deviations",
+        "/v1/work-items/{work_item_id}/confirmations",
+        "/v1/work-items/{work_item_id}/confirmations/authorization",
+        "/v1/work-items/{work_item_id}/je-tests",
+        "/v1/work-items/{work_item_id}/ssars/inquiries",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

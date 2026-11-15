@@ -32,7 +32,11 @@ from fastapi.routing import APIRoute
 from abacus.api import create_app
 from abacus.api import public_routes as public_routes_module
 from abacus.api.public_routes import PUBLIC_ROUTES, READINESS_CHECKS
-from abacus.modules.identity.routing import PORTAL_PUBLIC_PATHS, PRE_SESSION_PATHS
+from abacus.modules.identity.routing import (
+    LINK_PRINCIPAL_PATHS,
+    PORTAL_PUBLIC_PATHS,
+    PRE_SESSION_PATHS,
+)
 from abacus_tools.quality import banned_patterns as bp
 
 from .support import cached_app, closed_endpoint, use_environment
@@ -115,9 +119,11 @@ async def test_ac24_every_other_route_refuses_a_caller_without_a_token(app: Fast
         for route in routes:
             # ADR-165: the staff sign-in routes answer before any session exists; they are on the
             # protected exception list and authenticate themselves (state, PKCE, cookie, CSRF).
+            # The ADR-152 amendment (A-08-T06): the `/v1/confirm/*` family's path token names one
+            # link principal; its uniform `expired` answer is the A-08 confirmations suite's.
             if (
                 route.path in PUBLIC_ROUTES
-                or route.path in PRE_SESSION_PATHS | PORTAL_PUBLIC_PATHS
+                or route.path in PRE_SESSION_PATHS | PORTAL_PUBLIC_PATHS | LINK_PRINCIPAL_PATHS
             ):
                 continue
             url = re.sub(r"\{[^}]+\}", str(uuid.uuid4()), route.path)

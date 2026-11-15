@@ -29,7 +29,7 @@ the List · Board toggle hidden while `board.enabled` is off, and `scenarios.ts`
 5. [x] `docs/screens/CLS-01.md`.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built. Also tidied C-01-T13's fixtures for the web lint rules (no `toFixed`,
   numbers through `String`, no non-null assertions in its figure test). `tsc` and eslint clean on
   the touched files; vitest not run (end pass).
@@ -37,4 +37,4 @@ the List · Board toggle hidden while `board.enabled` is off, and `scenarios.ts`
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| — | DV-a to DV-d recorded in the screen contract (DEC-5019, QC-7) | no |
+| — | DV-a to DV-d recorded in the screen contract (DEC-5054, QC-7) | no |

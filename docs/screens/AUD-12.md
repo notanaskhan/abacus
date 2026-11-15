@@ -61,6 +61,16 @@ Matrix actions from `permission-matrix/{sampling,workpapers,assurance,identity}.
 | Flag → EBP-03 | EBP-03 | live |
 | Rail rows | AUD-03 · AUD-06 · AUD-07 · AUD-08 · AUD-04 · AUD-09 · AUD-11 · AUD-29 | live where built, else planned |
 | NetSuite GL detail | SHL-08 | live |
+| Opens CLI-02 · client record | CLI-02 | designed (handoff link graph) |
+| Opens KNW-03 · program editor | KNW-03 | designed (handoff link graph) |
+| Opens EBP-01 · plan profile | EBP-01 | designed (handoff link graph) |
+| Opens AUD-10 · service organizations & SOC 1 | AUD-10 | designed (handoff link graph) |
+| Opens EBP-02 · plan provisions review | EBP-02 | designed (handoff link graph) |
+| Opens EBP-06 · investments & certification | EBP-06 | designed (handoff link graph) |
+| Opens EBP-05 · distributions & loans | EBP-05 | designed (handoff link graph) |
+| Opens EBP-08 · participant accounts | EBP-08 | designed (handoff link graph) |
+| Opens EBP-09 · admin expenses & compliance | EBP-09 | designed (handoff link graph) |
+| Opens EBP-07 · Form 5500 tie-out | EBP-07 | designed (handoff link graph) |
 
 ## Notes
 

@@ -118,8 +118,8 @@ export function EntityTree({
       const plan: Record<string, [EntityNode[] | null, string] | undefined> = {
         ArrowUp: [moveEntity(nodes, i, -1), "move up"],
         ArrowDown: [moveEntity(nodes, i, 1), "move down"],
-        ArrowRight: [shiftEntity(nodes, i, 1, maxLevel), "indent"],
-        ArrowLeft: [shiftEntity(nodes, i, -1, maxLevel), "outdent"],
+        ArrowRight: [shiftEntity(nodes, i, 1, maxLevel), "move in"],
+        ArrowLeft: [shiftEntity(nodes, i, -1, maxLevel), "move out"],
       };
       const step = plan[event.key];
       if (step !== undefined) {

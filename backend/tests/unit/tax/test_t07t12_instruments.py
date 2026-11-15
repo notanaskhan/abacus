@@ -18,6 +18,8 @@ import pytest
 from abacus.modules.tax.instruments import segment as seg
 from abacus.modules.tax.instruments import service
 
+type _Fake = Any  # Any: a bare context double
+
 
 @dataclass(frozen=True)
 class _W:
@@ -36,7 +38,8 @@ class _P:
 
 
 def _line(text: str, top: float, indent: float = 72.0) -> list[_W]:
-    out, x = [], indent
+    out: list[_W] = []
+    x = indent
     for word in text.split():
         out.append(_W(word, x, top, x + 6 * len(word), top + 10))
         x += 6 * len(word) + 4
@@ -104,9 +107,9 @@ async def test_ac31_an_uncited_trust_type_edit_is_refused(monkeypatch: pytest.Mo
         return frozenset()
 
     monkeypatch.setattr(service, "supported_citations", supported)
-    ctx = cast(Any, type("Ctx", (), {"tenant": None})())
+    ctx = cast(_Fake, type("Ctx", (), {"tenant": None})())
     with pytest.raises(service.UncitedChange):
-        await service._cited(ctx, uuid.uuid4(), "trust_type", [])
+        await service._cited(ctx, uuid.uuid4(), "trust_type", [])  # pyright: ignore[reportPrivateUsage] -- the citation guard
     with pytest.raises(service.UncitedChange):  # a citation that is not verified and live
-        await service._cited(ctx, uuid.uuid4(), "trust_type", [uuid.uuid4()])
-    await service._cited(ctx, uuid.uuid4(), "exemption", [])
+        await service._cited(ctx, uuid.uuid4(), "trust_type", [uuid.uuid4()])  # pyright: ignore[reportPrivateUsage] -- the citation guard
+    await service._cited(ctx, uuid.uuid4(), "exemption", [])  # pyright: ignore[reportPrivateUsage] -- the citation guard
