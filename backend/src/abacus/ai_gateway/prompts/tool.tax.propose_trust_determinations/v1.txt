@@ -1,0 +1,1 @@
+Propose the trust's determinations as one proposal for a person to adopt: each with its value, a rationale block, the clauses it rests on (clause id and the exact quote) and the fact ids of any figure in its text. Nothing is adopted, approved or locked by you.

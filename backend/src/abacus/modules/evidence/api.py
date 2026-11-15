@@ -132,6 +132,10 @@ from abacus.modules.evidence.extracted_read import (
 )
 from abacus.modules.evidence.extraction import Extraction, extract_isolated
 from abacus.modules.evidence.extraction import Table as ExtractedTable
+from abacus.modules.evidence.file_facts import (  # T-07-T12: TXT-01's instrument header
+    VersionFileFacts,
+    version_file_facts,
+)
 from abacus.modules.evidence.filed_copies import file_copy_onto_work_item
 from abacus.modules.evidence.files import FolderProvider, register_folder_provider
 from abacus.modules.evidence.files_contract import files_router
@@ -245,14 +249,11 @@ from abacus.modules.evidence.records import (
     put_record,
     record_key,
 )
-from abacus.modules.evidence.file_facts import (  # T-07-T12: TXT-01's instrument header
-    VersionFileFacts,
-    version_file_facts,
-)
 from abacus.modules.evidence.region_sources import (  # T-07-T11 (ADR-343 §4)
     RegionHit,
     register_region_source,
 )
+from abacus.modules.evidence.region_text import masked_region_text  # T-07-T14
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
     CREDIT_COLUMN,
@@ -543,8 +544,6 @@ from abacus.modules.evidence.retention_anchor import (  # noqa: E402
 from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
 
 __all__ = [
-    "VersionFileFacts",
-    "version_file_facts",
     "ACTIVITIES",
     "AGENT_TOOLS",
     "ANCHOR_ID",
@@ -673,6 +672,7 @@ __all__ = [
     "UploadChecksRecorded",
     "UploadInput",
     "UploadProcessing",
+    "VersionFileFacts",
     "WithdrawalPurgeInput",
     "Word",
     "WorkbookTooLarge",
@@ -751,6 +751,7 @@ __all__ = [
     "mark_sources_superseded",
     "masked_pages",
     "masked_preview_upload",
+    "masked_region_text",
     "masked_rows",
     "match_material",
     "normalised_text",
@@ -823,6 +824,7 @@ __all__ = [
     "verified_citation_ids",
     "verify_document_citation",
     "version_content",
+    "version_file_facts",
     "version_fingerprint",
     "version_titles",
     "version_view",
