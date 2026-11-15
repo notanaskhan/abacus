@@ -245,6 +245,10 @@ from abacus.modules.evidence.records import (
     put_record,
     record_key,
 )
+from abacus.modules.evidence.file_facts import (  # T-07-T12: TXT-01's instrument header
+    VersionFileFacts,
+    version_file_facts,
+)
 from abacus.modules.evidence.region_sources import (  # T-07-T11 (ADR-343 §4)
     RegionHit,
     register_region_source,
@@ -539,6 +543,8 @@ from abacus.modules.evidence.retention_anchor import (  # noqa: E402
 from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
 
 __all__ = [
+    "VersionFileFacts",
+    "version_file_facts",
     "ACTIVITIES",
     "AGENT_TOOLS",
     "ANCHOR_ID",

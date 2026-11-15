@@ -178,6 +178,15 @@ async def _filing_acknowledged(event: OutboxEvent) -> None:
 
 _answer_effects.register()  # T-03-T06 (DEC-2352): review points from organizer answers
 
+
+async def _on_sign_off_recorded(event: OutboxEvent) -> None:
+    """The record projection's L1 (T-02-T13) and the instrument's L3 lock (T-07-T12)."""
+    await on_sign_off_recorded(event)
+    from abacus.modules.tax.instruments.service import on_sign_off_recorded as lock_on_l3
+
+    await lock_on_l3(event)
+
+
 SUBSCRIPTIONS = {
     "reference_set.published": _reference_set_published,
     "filing.acknowledged": _filing_acknowledged,
@@ -187,7 +196,7 @@ SUBSCRIPTIONS = {
     "envelope.completed": consent_capture.on_envelope_completed,
     # T-02-T13: the record projection (a published binder opens intake; the L1 marks prepared).
     "binder.published": on_binder_published,
-    "sign_off.recorded": on_sign_off_recorded,
+    "sign_off.recorded": _on_sign_off_recorded,
     # T-02-T21: a release starts its workflow; a resend gives the corrected contact access.
     **k1_release.SUBSCRIPTIONS,
     # T-01-T37: a published filed return emails the client's owners "Deliverable ready".
@@ -419,6 +428,11 @@ from abacus.modules.tax.instrument_citations import (  # noqa: E402
 from abacus.modules.tax.instrument_citations import register as _register_clause  # noqa: E402
 
 _register_clause()
+
+# T-07-T12 (DEC-84): the instrument interpretation is reviewed at L1 and L3.
+from abacus.modules.tax.instruments import service as _instruments  # noqa: E402
+
+_instruments.register()
 
 # T-04-T15 (DEC-3208): the workspace's reviewables, field owner, suggestion targets and appliers.
 from abacus.modules.tax.worksheet_review import (  # noqa: E402

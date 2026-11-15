@@ -137337,10 +137337,6 @@ export type InstrumentClausesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InstrumentClausesError = InstrumentClausesErrors[keyof InstrumentClausesErrors];
@@ -137397,10 +137393,6 @@ export type InstrumentClauseMarkErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InstrumentClauseMarkError = InstrumentClauseMarkErrors[keyof InstrumentClauseMarkErrors];
@@ -137457,10 +137449,6 @@ export type DeterminationEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeterminationEditError = DeterminationEditErrors[keyof DeterminationEditErrors];
@@ -137517,10 +137505,6 @@ export type InterpretationReopenErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InterpretationReopenError = InterpretationReopenErrors[keyof InterpretationReopenErrors];
@@ -138809,10 +138793,6 @@ export type InstrumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InstrumentError = InstrumentErrors[keyof InstrumentErrors];
@@ -138873,10 +138853,6 @@ export type InstrumentAttachErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InstrumentAttachError = InstrumentAttachErrors[keyof InstrumentAttachErrors];
@@ -138929,10 +138905,6 @@ export type InstrumentCitedByErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InstrumentCitedByError = InstrumentCitedByErrors[keyof InstrumentCitedByErrors];
@@ -138991,10 +138963,6 @@ export type DeterminationRecordErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeterminationRecordError = DeterminationRecordErrors[keyof DeterminationRecordErrors];
