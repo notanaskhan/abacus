@@ -497,6 +497,67 @@ async def assign_work_item(
         tx.record("work_item.assigned", target=Target("engagement", engagement_id))
 
 
+async def reassign_work_item(
+    ctx: AuthContext,
+    work_item_id: UUID,
+    function: str,
+    user_id: UUID | None,
+    *,
+    authorised_under: str,
+    on_changed: str | None = None,
+) -> bool:
+    """C-01-T14 (AC-8): one person holds `function` on the work item, or nobody: every current
+    holder's assignment ends and the new one begins in one unit of work with its audit events
+    (`work_item.unassigned`, `work_item.assigned`, and `on_changed` when the caller's module
+    names the change, `close.assignee_changed`). The same checks as `assign_work_item` apply to
+    the new holder (team, wall, EQR, G2); `user_id` None only clears. False when nothing
+    changed."""
+    if function not in WORK_ITEM_FUNCTIONS:
+        raise DomainInvalid(facts={"field": "function"})
+    async with tenant_session(ctx.tenant) as session:
+        engagement_id = await session.scalar(
+            select(WorkItem.engagement_id).where(WorkItem.id == work_item_id)
+        )
+    if engagement_id is None:
+        raise NotFound
+    async with uow(ctx.tenant) as tx:
+        ref = await lock_ref(tx, engagement_id)
+        await authorise(ctx, authorised_under, ref.resource())
+        current = list(await tx.session.scalars(_HOLDERS, {"w": work_item_id, "f": function}))
+        if (user_id is None and not current) or current == [user_id]:
+            return False
+        if user_id is not None:
+            standing = await team_standing(ctx.tenant, engagement_id, user_id)
+            if standing in ("none", "client"):
+                raise NotFound("team_member")
+            client_id = await client_of(ctx.tenant, engagement_id)
+            if client_id is None:
+                raise NotFound
+            await assert_assignable(ctx.tenant, user_id, client_id)
+            if (standing == "eqr") != (function == "eqr"):
+                raise DomainInvalid(facts={"field": "function"})
+            if await g2_blocks(ctx.tenant, engagement_id, user_id):
+                raise GateUnmet(facts={"gate": "G2", "user_id": str(user_id)})
+        values = {
+            "tenant_id": ctx.tenant_id,
+            "work_item_id": work_item_id,
+            "engagement_id": engagement_id,
+            "function": function,
+            "assigned_by": ctx.user_id,
+        }
+        for holder in current:
+            if holder == user_id:
+                continue
+            await tx.session.execute(_UNASSIGN, {**values, "user_id": holder})
+            tx.record("work_item.unassigned", target=Target("engagement", engagement_id))
+        if user_id is not None and user_id not in current:
+            await tx.session.execute(_ASSIGN, {**values, "user_id": user_id})
+            tx.record("work_item.assigned", target=Target("engagement", engagement_id))
+        if on_changed is not None:
+            tx.record(on_changed, target=Target("work_item", work_item_id))
+    return True
+
+
 class AssuranceKind:
     """The `assurance` kind: its subtype row (one per engagement; the trigger makes the first)."""
 

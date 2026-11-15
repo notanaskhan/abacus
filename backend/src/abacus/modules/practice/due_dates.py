@@ -229,6 +229,20 @@ async def add_business_days(start: date, n: int, jurisdiction: str = "US") -> da
     return calendar.add_business_days(start, n, holidays)
 
 
+async def business_days_between(start: date, end: date, jurisdiction: str = "US") -> int:
+    """C-01-T14 (AC-3, QC-7): the business days after `start` up to and including `end`, by
+    the same calendar as `add_business_days` (0 when `end` is not after `start`). A close due
+    Thu Sep 10 is 2 business days past due on Mon Sep 14 by the calendar; the close engine counts
+    past due this way."""
+    if end <= start:
+        return 0
+    holidays, _ = await _holidays(await _roll_as_of(end))
+    return sum(
+        calendar.is_business_day(start + timedelta(days=d), holidays)
+        for d in range(1, (end - start).days + 1)
+    )
+
+
 def clock_due(kind: ClockKind, start: date) -> ClockDue:
     """A calendar-day clock: +60 (AU-C 230, 265), +30 (FTC), 3 years (8879 retention, from the
     later of the due date and the IRS received date); never rolled."""

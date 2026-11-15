@@ -1699,10 +1699,12 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "signatures", "communications"}
     | {"agents", "integrations"},
+    # C-01-T14 (C-01 §4.8): past due and BD1 on practice's business-day calendar (practice never
+    # imports closes, so the edge stays acyclic).
     "closes": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}
-    | {"integrations"},
+    | {"integrations", "practice"},
     # N-04-T12 (DEC-2240, DEC-2262): the response drafts from the firm's report template
     # (methodology's versions, reporting's template blocks); neither imports notices.
     "notices": _BASE

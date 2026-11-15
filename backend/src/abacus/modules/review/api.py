@@ -106,6 +106,8 @@ from abacus.modules.review.issues import (
     issue_links,  # T-05-T51: TXP-10's linked cells and request items
     issue_row,
     list_issues,  # T-04-T23: TAX-06 counts and the CSV export
+    open_issue_counts,  # C-01-T14: CLS-01 and CLS-02 open counts
+    open_issues_among,  # C-01-T14: an open item's issue blocks the reconciled count
     read_issue,
     record_engine_issue,  # T-01-T26: engine diagnostics
     record_rule_issue,
@@ -351,6 +353,8 @@ __all__ = [
     "latest_sources",
     "list_checkpoints",
     "list_issues",
+    "open_issue_counts",
+    "open_issues_among",
     "move_issue",  # A-06-T11: resolve or mark not applicable through the issue
     "note_states",
     "notes_for",
