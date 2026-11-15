@@ -27,12 +27,13 @@ import json
 import re
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import ClassVar, Final, cast
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.egress import EgressClient, EgressRefused, EgressResponse
 from abacus.kernel.logging import get_logger
+from abacus.modules.connections import qbo_throttle
 from abacus.modules.connections.connector import (
     Capabilities,
     Connector,
@@ -41,6 +42,7 @@ from abacus.modules.connections.connector import (
     Dataset,
     NotSupported,
     Period,
+    RateLimited,
     RawPayload,
     Unavailable,
 )
@@ -76,6 +78,18 @@ MINOR_VERSION: Final = "75"
 REALM_SEPARATOR: Final = "~"
 _EARLY_REFRESH: Final = timedelta(minutes=5)
 _REAUTH_ERRORS: Final = frozenset({"invalid_grant"})
+# C-01-T16 (C9 v2.1): the chart of accounts is read 1,000 at a time (Intuit's page cap); the
+# CDC entities name what a sync must pull again.
+PAGE_SIZE: Final = 1000
+_ACCOUNT_ENTITIES: Final = ("Account",)
+_TXN_ENTITIES: Final = (
+    "JournalEntry", "Purchase", "Deposit", "Transfer", "Bill", "BillPayment", "Payment",
+    "SalesReceipt", "Invoice", "RefundReceipt", "VendorCredit", "CreditMemo",
+)  # fmt: skip
+_CDC_ENTITIES: Final = ",".join(_ACCOUNT_ENTITIES + _TXN_ENTITIES)
+_CURSOR: Final = re.compile(r"[1-9][0-9]{0,6}")
+# The GL detail's columns, by Intuit's column keys (the report is read only for these).
+GL_COLUMNS: Final = "tx_date,txn_type,doc_num,name,memo,split_acc,subt_nat_amount"
 
 _log = get_logger(__name__)
 
@@ -227,10 +241,15 @@ class QuickBooksOnlineConnector(Connector):
         self._client = client
         self._credentials = QboCredentials.opened(credentials) if credentials else None
         self._on_rotate = on_rotate
+        # C-01-T16: API calls this connector made, for the meter (C-01-T17); OAuth excluded.
+        self.calls = 0
 
     def capabilities(self) -> Capabilities:
         return Capabilities(
-            datasets=frozenset({"trial_balance"}), oauth=True, incremental=False, attachments=False
+            datasets=frozenset({"trial_balance", "accounts", "gl_detail", "trial_balance_month"}),
+            oauth=True,
+            incremental=True,
+            attachments=False,
         )
 
     async def authorise_url(
@@ -403,35 +422,91 @@ class QuickBooksOnlineConnector(Connector):
         return self._credentials
 
     async def _get(self, path: str, endpoint: str) -> EgressResponse:
+        """One read of the books, inside the realm's limiter and the provider's breaker
+        (ADR-043), counted for the meter. A 429 is `rate_limited` with Intuit's Retry-After."""
         held = self._held()
-        response = await self._call(
-            "GET",
-            f"https://{self._app.api_host}/v3/company/{_realm(held.realm_id)}{path}",
-            endpoint=endpoint,
-            headers={"Authorization": f"Bearer {held.access_token}", "Accept": MEDIA_TYPE},
-        )
+        realm = _realm(held.realm_id)
+        async with qbo_throttle.Slot(realm):
+            self.calls += 1
+            response = await self._call(
+                "GET",
+                f"https://{self._app.api_host}/v3/company/{realm}{path}",
+                endpoint=endpoint,
+                headers={"Authorization": f"Bearer {held.access_token}", "Accept": MEDIA_TYPE},
+            )
+        if response.status_code == 429:
+            qbo_throttle.failed()
+            raise RateLimited("rate_limited", qbo_throttle.retry_after(dict(response.headers)))
+        if response.status_code >= 500:
+            qbo_throttle.failed()
+            raise Unavailable("provider_unavailable")
+        qbo_throttle.succeeded()
         if response.status_code == 401:
             raise ConnectorError("token_expired")
-        if response.status_code == 429 or response.status_code >= 500:
-            raise Unavailable("provider_unavailable")
         if response.status_code != 200:
             raise ConnectorError("provider_error")
         return response
 
     async def pull(self, dataset: Dataset, period: Period, cursor: str | None) -> RawPayload:
+        """The provider's bytes for one dataset and period (ADR-038). `trial_balance` and
+        `trial_balance_month` read the TrialBalance report for the period (a month for the
+        close engine); `gl_detail` reads the GeneralLedger report's register columns for the
+        period (one month a pull: large reports in date-range chunks, ADR-043); `accounts` reads
+        the chart of accounts a page at a time, `cursor` the next start position."""
         if dataset not in self.capabilities().datasets:
             raise NotSupported("dataset")
         start, end = period.start.isoformat(), period.end.isoformat()
+        if dataset in ("trial_balance", "trial_balance_month"):
+            response = await self._get(
+                f"/reports/TrialBalance?start_date={start}&end_date={end}"
+                f"&accounting_method=Accrual&minorversion={MINOR_VERSION}",
+                dataset,
+            )
+            request = f"{dataset} {start}..{end}"
+            return RawPayload(response.content, MEDIA_TYPE, PROVIDER, system_now(), request)
+        if dataset == "gl_detail":
+            response = await self._get(
+                f"/reports/GeneralLedger?start_date={start}&end_date={end}"
+                f"&accounting_method=Accrual&columns={_percent(GL_COLUMNS)}"
+                f"&minorversion={MINOR_VERSION}",
+                dataset,
+            )
+            request = f"gl_detail {start}..{end}"
+            return RawPayload(response.content, MEDIA_TYPE, PROVIDER, system_now(), request)
+        position = 1
+        if cursor is not None:
+            if not _CURSOR.fullmatch(cursor):
+                raise ConnectorError("invalid_cursor")
+            position = int(cursor)
+        # Intuit query language over integers the connector computes, never caller text.
+        query = f"select * from Account startposition {position} maxresults {PAGE_SIZE}"  # noqa: S608
         response = await self._get(
-            f"/reports/TrialBalance?start_date={start}&end_date={end}"
-            f"&accounting_method=Accrual&minorversion={MINOR_VERSION}",
-            "trial_balance",
+            f"/query?query={_percent(query)}&minorversion={MINOR_VERSION}", dataset
         )
-        request = f"trial_balance {start}..{end}"
-        return RawPayload(response.content, MEDIA_TYPE, PROVIDER, system_now(), request)
+        returned = _account_count(response.content)
+        following = str(position + PAGE_SIZE) if returned == PAGE_SIZE else None
+        return RawPayload(
+            response.content, MEDIA_TYPE, PROVIDER, system_now(),
+            f"accounts from {position}", next_cursor=following,
+        )  # fmt: skip
 
     async def changes_since(self, since: datetime) -> Sequence[str]:
-        raise NotSupported("incremental")
+        """Which datasets changed since `since` (Intuit's CDC; at most 30 days back): `accounts`
+        when an account changed, `gl_detail` and `trial_balance_month` when any transaction
+        did. Only names leave here; the sync pulls the datasets again."""
+        stamp = since.astimezone(UTC).isoformat(timespec="seconds")
+        response = await self._get(
+            f"/cdc?entities={_CDC_ENTITIES}&changedSince={_percent(stamp)}"
+            f"&minorversion={MINOR_VERSION}",
+            "cdc",
+        )
+        entities = _cdc_entities(response.content)
+        changed: list[str] = []
+        if entities & set(_ACCOUNT_ENTITIES):
+            changed.append("accounts")
+        if entities & set(_TXN_ENTITIES):
+            changed.extend(("gl_detail", "trial_balance_month"))
+        return tuple(changed)
 
     async def fetch_attachment(self, ref: str) -> RawPayload:
         raise NotSupported("attachments")
@@ -442,6 +517,45 @@ class QuickBooksOnlineConnector(Connector):
             f"/companyinfo/{_realm(held.realm_id)}?minorversion={MINOR_VERSION}", "companyinfo"
         )
         return True
+
+
+def _account_count(content: bytes) -> int:
+    """How many accounts a query page returned (0 for anything unreadable: no next page)."""
+    try:
+        raw: object = json.loads(content)
+    except ValueError:
+        return 0
+    if not isinstance(raw, dict):
+        return 0
+    response = cast(dict[str, object], raw).get("QueryResponse")
+    if not isinstance(response, dict):
+        return 0
+    accounts = cast(dict[str, object], response).get("Account")
+    return len(cast(list[object], accounts)) if isinstance(accounts, list) else 0
+
+
+def _cdc_entities(content: bytes) -> set[str]:
+    """The entity names a CDC response carries rows for (names only; rows are re-read)."""
+    try:
+        raw: object = json.loads(content)
+    except ValueError:
+        raise ConnectorError("provider_error") from None
+    found: set[str] = set()
+    known = set(_ACCOUNT_ENTITIES + _TXN_ENTITIES)
+    blocks = cast(dict[str, object], raw).get("CDCResponse") if isinstance(raw, dict) else None
+    for block in cast(list[object], blocks) if isinstance(blocks, list) else []:
+        responses = (
+            cast(dict[str, object], block).get("QueryResponse")
+            if isinstance(block, dict)
+            else None
+        )
+        for response in cast(list[object], responses) if isinstance(responses, list) else []:
+            if not isinstance(response, dict):
+                continue
+            for name, rows in cast(dict[str, object], response).items():
+                if name in known and isinstance(rows, list) and rows:
+                    found.add(name)
+    return found
 
 
 def _oauth_error(content: bytes) -> str:

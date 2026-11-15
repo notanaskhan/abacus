@@ -1,0 +1,9 @@
+{"QueryResponse": {"Account": [
+  {"Id": "35", "Name": "Operating Checking", "AcctNum": "1010", "Classification": "Asset", "AccountType": "Bank", "AccountSubType": "Checking", "Active": true, "SubAccount": false},
+  {"Id": "36", "Name": "Business Savings", "AcctNum": "1020", "Classification": "Asset", "AccountType": "Bank", "AccountSubType": "Savings", "Active": true, "SubAccount": false},
+  {"Id": "81", "Name": "Prepaid Insurance", "AcctNum": "1310", "Classification": "Asset", "AccountType": "Other Current Asset", "AccountSubType": "PrepaidExpenses", "Active": true, "SubAccount": false},
+  {"Id": "90", "Name": "Accumulated Depreciation", "AcctNum": "1590", "Classification": "Asset", "AccountType": "Fixed Asset", "AccountSubType": "AccumulatedDepreciation", "Active": true, "SubAccount": false},
+  {"Id": "91", "Name": "Roasting Equipment", "AcctNum": "1510", "Classification": "Asset", "AccountType": "Fixed Asset", "AccountSubType": "MachineryAndEquipment", "ParentRef": {"value": "89"}, "Active": true, "SubAccount": true},
+  {"Id": "72", "Name": "Repairs & Maintenance", "AcctNum": "6400", "Classification": "Expense", "AccountType": "Expense", "AccountSubType": "RepairMaintenance", "Active": true, "SubAccount": false},
+  {"Id": "4", "Name": "Sales", "AcctNum": "4000", "Classification": "Revenue", "AccountType": "Income", "AccountSubType": "SalesOfProductIncome", "Active": true, "SubAccount": false}
+], "startPosition": 1, "maxResults": 7}, "time": "2026-09-14T07:24:00.000-07:00"}
