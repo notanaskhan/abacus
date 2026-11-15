@@ -7488,6 +7488,111 @@ def _is_number(value: str) -> bool:
     return value.lstrip("-").replace(".", "", 1).isdigit()
 
 
+async def _entity_return_entity(conn: asyncpg.Connection, return_id: UUID) -> UUID:
+    found = await tenant_value(
+        conn, TENANT, "SELECT client_entity_id FROM tax_returns WHERE work_item_id = $1", return_id
+    )
+    if found is None:
+        raise LookupError(f"no tax return {return_id}")
+    return cast(UUID, found)
+
+
+async def _entity_tb_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Ridgeline's 2025 unadjusted trial balance from QuickBooks Online, adopted as the
+    return's trial balance of record (C9; DEC-5019): what `import_trial_balance` reads."""
+    from abacus.modules.ledger.api import adopt_trial_balance as adopt_tb
+    from abacus.modules.ledger.api import engagement_trial_balances
+
+    ctx = await _staff_context(conn, event)
+    return_id = _entity_return(event)
+    engagement = _entity_engagement(event)
+    if await engagement_trial_balances(ctx.tenant, engagement):
+        return
+    entity = await _entity_return_entity(conn, return_id)
+    start, end = date(2025, 1, 1), date(2025, 12, 31)
+    lines = tuple(
+        LedgerLine(
+            code,
+            name,
+            Decimal(utb) if Decimal(utb) > 0 else Decimal(0),
+            -Decimal(utb) if Decimal(utb) < 0 else Decimal(0),
+            f"qbo:{code}",
+        )
+        for code, name, utb, _aje in _ent.TB
+    )
+    debit = sum((line.debit for line in lines), Decimal(0))
+    credit = sum((line.credit for line in lines), Decimal(0))
+    async with uow(ctx.tenant) as tx:
+        snapshot = await record_snapshot(
+            tx,
+            client_entity_id=entity,
+            period_start=start,
+            period_end=end,
+            tb=NormalisedTrialBalance(start, end, "USD", lines, debit, credit),
+            raw_fingerprint=_fingerprint("ridgeline-ty2025-tb", *lines),
+            pulled_at=event.at,
+            source="quickbooks_online",
+        )
+        await adopt_tb(
+            tx,
+            tenant_id=TENANT,
+            engagement_id=engagement,
+            work_item_id=return_id,
+            client_entity_id=entity,
+            snapshot_id=snapshot.id,
+            prior_snapshot_id=None,
+            label="standard",
+            display_unit="whole_dollars",
+            user_id=ctx.user_id,
+            actor_kind="human",
+        )
+
+
+async def _entity_tb_mapped(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Samuel maps the 28 accounts to their Form 1065 lines (TXP-02 a; T-05-T26's tax set),
+    once the TY2025 line set is published. The set is CPA-reviewed platform content loaded with
+    the reference-data CLI, never seed: without it the accounts stay Unmapped (DEC-5019)."""
+    from abacus.modules.ledger.api import (
+        engagement_trial_balances,
+        ensure_tax_mapping_set,
+        record_form_line,
+    )
+    from abacus.modules.platform.api import tax_form_lines_for
+
+    ctx = await _staff_context(conn, event)
+    engagement = _entity_engagement(event)
+    try:
+        lines = await tax_form_lines_for("1065", 2025, as_of=event.at.date())
+    except LookupError:
+        return
+    balances = await engagement_trial_balances(ctx.tenant, engagement)
+    if not balances:
+        return
+    newest = max(balances, key=lambda b: (b.period_end, b.current_version_no))
+    keys = frozenset(line.key for line in lines.lines if line.mappable)
+    with frozen(_feld_at(event)):
+        async with uow(ctx.tenant) as tx:
+            mapping_set = await ensure_tax_mapping_set(
+                tx,
+                tenant_id=TENANT,
+                engagement_id=engagement,
+                trial_balance_id=newest.id,
+                reference_set_version_id=lines.reference_set_version_id,
+                created_by=ctx.user_id,
+            )
+            for code, key in _ent.FORM_LINES.items():
+                await record_form_line(
+                    tx,
+                    tenant_id=TENANT,
+                    mapping_set_id=mapping_set,
+                    engagement_id=engagement,
+                    account_code=code,
+                    form_line_key=key,
+                    keys=keys,
+                    edited_by=ctx.user_id,
+                )
+
+
 async def _entity_allocation_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """The structure through the allocation service as the partner (Pending approval)."""
     from abacus.modules.tax.api import AllocationDraft as Draft
@@ -7501,12 +7606,14 @@ async def _entity_allocation_drafted(conn: asyncpg.Connection, _: Scenario, even
     if await versions(ctx.tenant, return_id):
         return
     # S44 end pass (T-05-T67 found it): the structure's editor and its L3 approver hold their
-    # engagement roles on the entity return's engagement (Daniel Reyes signs, Samuel Ito
-    # approves), as the notices slice seats its tax team; the service refuses anyone else.
-    for seat, role in (("DR", "engagement_partner"), ("SI", "manager")):
+    # engagement roles on the entity return's engagement (Daniel Reyes drafts, the preparer signs
+    # L1, Samuel Ito approves at L3; DEC-5017), as the notices slice seats its tax team.
+    preparer = ("OB", "senior") if event.data["return"] == _ent.RIDGELINE else ("DS", "staff")
+    for seat, role in (("DR", "engagement_partner"), ("SI", "manager"), preparer):
         await conn.execute(
             "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
-            "VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+            "VALUES ($1, $2, $3, $4) ON CONFLICT (tenant_id, engagement_id, user_id) "
+            "DO UPDATE SET role = EXCLUDED.role",  # the board seeds Samuel as the reviewer
             TENANT,
             _entity_engagement(event),
             user_id_of(_SEATS[seat]),
@@ -7541,8 +7648,8 @@ async def _entity_allocation_drafted(conn: asyncpg.Connection, _: Scenario, even
 
 
 async def _entity_allocation_signed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    """L1 by the drafter through P-04; L3 by Samuel through the allocation service's approve
-    (the scenario records its own runs: no re-run)."""
+    """L1 by the return's preparer through P-04 (DEC-5017); L3 by Samuel through the allocation
+    service's approve (the scenario records its own runs: no re-run)."""
     from abacus.modules.review.api import sign_target
     from abacus.modules.tax.api import ALLOCATION_TARGET as TARGET
     from abacus.modules.tax.api import allocation_versions as versions
@@ -7556,6 +7663,8 @@ async def _entity_allocation_signed(conn: asyncpg.Connection, _: Scenario, event
     pending = found[0]
     level = int(str(event.data["level"]))
     with frozen(_feld_at(event)):
+        # The signer confirms their own independence first (G2; sign_off levels require it).
+        await answer_independence(ctx, _entity_engagement(event), confirm=True, note=None)
         if level == 1:
             await sign_target(
                 ctx, TARGET, pending.id, 1, pending.content_hash, SIGN_OFF_STATEMENTS[1].version
@@ -7638,6 +7747,7 @@ async def _entity_memo_recorded(conn: asyncpg.Connection, _: Scenario, event: Ev
                 initiator_user_id=ctx.user_id,
                 run_number=4,  # after Runs 1 and 2; Run 3 (9:52) is the re-run
                 state="succeeded",
+                plan_decided_at=event.at,  # Olivia asked for the draft: its one-step plan is hers
                 steps=[
                     RecordedStep(
                         key="draft_memo",
@@ -7990,6 +8100,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "review.feld_checkpoint_named": _feld_checkpoint_named,
     # T-05-T45 (`--slice entity`): facts and cells, then the structure, its sign-offs and the runs.
     "tax.entity_seeded": _entity_seeded,
+    "ledger.entity_tb_recorded": _entity_tb_recorded,
+    "ledger.entity_tb_mapped": _entity_tb_mapped,
     "tax.allocation_drafted": _entity_allocation_drafted,
     "review.allocation_signed": _entity_allocation_signed,
     "agents.entity_run_recorded": _entity_run_recorded,

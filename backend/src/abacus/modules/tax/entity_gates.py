@@ -62,15 +62,27 @@ async def engagement_of_return(tenant: TenantContext, return_id: UUID) -> UUID |
 
 
 async def unmapped_accounts(tenant: TenantContext, engagement_id: UUID) -> int | None:
-    """Accounts of the newest trial balance without a form line; None with no trial balance."""
-    from abacus.modules.ledger.api import engagement_trial_balances, mapped_trial_balance
+    """Accounts of the newest trial balance without a Form 1065 line, read from the trial
+    balance's tax form-line set (T-05-T26; TXP-02's Unmapped tally): every account while no tax
+    set exists yet; None with no trial balance. S44 (DEC-5019): it read the audit FS set
+    (`fs_line`), which a 1065 never maps, so a mapped return still read trial_balance_missing."""
+    from abacus.modules.ledger.api import (
+        engagement_trial_balances,
+        form_line_rows,
+        tax_mapping_set,
+        trial_balance_view,
+        unmapped_form_lines,
+    )
 
     balances = await engagement_trial_balances(tenant, engagement_id)
     if not balances:
         return None
     newest = max(balances, key=lambda b: (b.period_end, b.current_version_no))
-    mapped = await mapped_trial_balance(tenant, engagement_id, newest.id)
-    return None if mapped is None else int(mapped.unmapped)
+    view = await trial_balance_view(tenant, engagement_id, newest.id)
+    accounts = [line.account_code for line in view.lines]
+    mapping_set = await tax_mapping_set(tenant, newest.id)
+    rows = {} if mapping_set is None else await form_line_rows(tenant, mapping_set)
+    return unmapped_form_lines(accounts, rows)
 
 
 async def allocation_approved(tenant: TenantContext, return_id: UUID) -> bool:

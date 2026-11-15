@@ -484,8 +484,11 @@ class WorkItemRun:
 
 
 _WORK_ITEM_RUNS: Final = text(
-    "SELECT id, run_number, initiator_user_id, created_at, state, finished_at FROM agent_runs "
-    "WHERE agent_id = :agent AND work_item_ref = :ref ORDER BY created_at DESC LIMIT :limit"
+    # S44 end pass: agent_runs has `started_at`, not `created_at` (0010); the read model keeps
+    # its `created_at` name for the run's start.
+    "SELECT id, run_number, initiator_user_id, started_at AS created_at, state, finished_at "
+    "FROM agent_runs WHERE agent_id = :agent AND work_item_ref = :ref "
+    "ORDER BY started_at DESC LIMIT :limit"
 )
 
 
