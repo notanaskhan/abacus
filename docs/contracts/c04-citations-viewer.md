@@ -243,3 +243,24 @@ Module: `evidence/ocr_contract.py`.
 - **Fixture targets for consumers.** Santos CP14 (a photo) and Whitley CP2000: CP2000, TY2024,
   753.01 = 686.40 + 66.61, respond by Sep 23, 2026. Also Feld 1095-C and the Iyer 1099-DIV
   CORRECTED (box 1b 3,310.00).
+
+## v1.2 additive: the eleventh kind, `instrument_clause` (T-07-T11, 2026-11-15, ADR-343)
+
+- **Kind** `instrument_clause`, source `instrument_segmentation` (`segmentation_id`); locator
+  `{instrument_id, segmentation_id, clause_id}`, ids only, the row adding `quote_sha256`; no
+  instrument text is stored. `match_id` = `ic:<segmentation_id>#<clause_id>` (server-derived).
+  Migration 0886 widens `citations.kind`'s CHECK.
+- **Verifier** (owned by `tax`, registered from `tax/api.py`): resolves the clause in the named
+  segmentation and instrument (`source_not_found`, `locator_invalid`), then re-reads each clause
+  region as a `document_text` claim on the instrument's evidence version (`evidence.read` on the
+  anchor's engagement first; the masked layer); a quote inside a region verifies, found only
+  elsewhere is `bbox_mismatch`, nowhere `quote_not_found`.
+- **Display**: the clause's label and heading ("Art. III(a)"), `loc` "Trust agreement · pages
+  3–4"; code-held, never model text.
+- **Regions**: `GET /v1/evidence-versions/{v}/regions?match_ids=ic:…` lights the clause's regions
+  on the instrument's version (the owner's region source, `evidence.api.register_region_source`),
+  labelled with the clause label; a multi-page clause lights its first page's regions in v1.2.
+- **Moved**: an instrument superseded by a new `governing_instruments` row moves every clause
+  citation of its segmentations (`tax.api.move_clause_citations`, in the attaching unit of work;
+  cause `instrument:<id>`). Re-segmenting the same version is not a move.
+

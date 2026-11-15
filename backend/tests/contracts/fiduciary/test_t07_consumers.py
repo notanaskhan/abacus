@@ -3,8 +3,9 @@ T-07 consumes in new ways, run in the providers' stage 2. Each test names the pr
 value T-07 reads, so a rename fails here first. Plus FW-1 / EW-1's own route inventory and the
 typed footing fixtures consumers build on (AC-15.3).
 
-The C4 `instrument_clause` kind itself (ADR-343) registers with T-07-T11; until then this suite
-pins the `document_text` verifier the clause kind reuses and the ADR's locator keys."""
+The C4 `instrument_clause` kind itself (ADR-343) registered with T-07-T11 (TASK-8038): the suite
+pins the kind, its source and its registered verifier, the `document_text` verifier it reuses and
+the ADR's locator keys."""
 
 from __future__ import annotations
 
@@ -39,6 +40,16 @@ ADR_343 = Path(__file__).parents[4] / "docs" / "adr" / "ADR-343-citation-kind-in
 
 def test_c4_document_text_is_a_kind_the_clause_verifier_reuses() -> None:
     assert "document_text" in KINDS
+
+
+def test_c4_instrument_clause_is_registered_with_its_segmentation_source() -> None:
+    """T-07-T11 joins here (T-07-T06's deferred assertion)."""
+    import abacus.modules.tax.api  # noqa: F401  (registers the citable)
+    from abacus.modules.evidence.citations.registry import SOURCES, citable
+
+    assert "instrument_clause" in KINDS
+    assert SOURCES["instrument_clause"] == ("instrument_segmentation", "segmentation_id")
+    assert citable("instrument_clause") is not None
 
 
 def test_c4_adr_343_names_the_locator_t07_writes() -> None:
