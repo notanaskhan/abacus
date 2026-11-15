@@ -18,6 +18,7 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'briefing.today': ('briefing.today
     'tax.account_mapper': ('tax.map_accounts@v1', 1),
     'tax.agreement_reader': ('tax.agreement_reader@v1', 1),
     'tax.assistant': ('tax.assistant@v1', 1),
+    'tax.instrument_reader': ('tax.instrument_reader@v1', 1),
     'tax.memo_drafter': ('tax.preparer_memo@v1', 1),
     'tax.return_analyst': ('tax.return_analyst.explain@v1', 1),
     'tax.return_drafter': ('tax.return_drafter@v1', 1),

@@ -139023,10 +139023,6 @@ export type InstrumentReadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type InstrumentReadError = InstrumentReadErrors[keyof InstrumentReadErrors];

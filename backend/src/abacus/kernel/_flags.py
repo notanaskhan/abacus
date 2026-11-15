@@ -416,6 +416,14 @@ PROMPT_TAX_AGREEMENT_READER = Flag(
         "tax.agreement_reader@v1",
     ),
 )
+PROMPT_TAX_INSTRUMENT_READER = Flag(
+    name="prompt.tax.instrument_reader",
+    kind="variant",
+    default="tax.instrument_reader@v1",
+    values=(
+        "tax.instrument_reader@v1",
+    ),
+)
 PROMPT_TAX_MEMO_DRAFTER = Flag(
     name="prompt.tax.memo_drafter",
     kind="variant",
@@ -670,6 +678,7 @@ FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "prompt.tax.account_mapper": PROMPT_TAX_ACCOUNT_MAPPER,
     "prompt.tax.agreement_reader": PROMPT_TAX_AGREEMENT_READER,
+    "prompt.tax.instrument_reader": PROMPT_TAX_INSTRUMENT_READER,
     "prompt.tax.memo_drafter": PROMPT_TAX_MEMO_DRAFTER,
     "realtime.sse": REALTIME_SSE,
     "reporting.fs_disclosure": REPORTING_FS_DISCLOSURE,

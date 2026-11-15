@@ -9,3 +9,6 @@ from __future__ import annotations
 from abacus.modules.tax import tools  # registers the tax.* tools at import
 
 __all__ = ["tools"]
+# T-07-T14: the instrument reader's tools (tax.read_instrument_clauses, tax.read_trust_facts,
+# tax.propose_trust_determinations) register at their module's import.
+from abacus.modules.tax import instrument_tools as instrument_tools

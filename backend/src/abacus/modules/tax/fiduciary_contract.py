@@ -749,15 +749,17 @@ async def instrument_clause_mark_route(
 
 @fiduciary_router.post(
     f"{_R}/instrument/read", action="instrument.read_run", response_model=ReaderRunAcceptedOut,
-    status_code=202, errors=(409, 501),
+    status_code=202, errors=(409,),
 )  # fmt: skip
 async def instrument_read_route(
     return_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReaderRunAcceptedOut:
     """Start `InstrumentReaderWorkflow`: 409 `consent_required`, `capability_unavailable`,
     `not_segmented` before any model call (AC-1.4, AC-1.5; T-07-T13)."""
+    from abacus.modules.tax.instrument_reader import start_read
+
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("instrument_read")
+    return ReaderRunAcceptedOut(run_id=await start_read(ctx, return_id))
 
 
 @fiduciary_router.post(

@@ -439,6 +439,12 @@ from abacus.modules.tax import instrument_tools as _instrument_tools  # noqa: E4
 
 _instrument_tools.register()
 
+# T-07-T13: InstrumentReaderWorkflow (the reader's run, one activity).
+from abacus.modules.tax import instrument_reader as _instrument_reader  # noqa: E402
+
+WORKFLOWS.update(_instrument_reader.WORKFLOWS)
+ACTIVITIES = (*ACTIVITIES, *_instrument_reader.ACTIVITIES)  # pyright: ignore[reportConstantRedefinition] -- the worker reads the final tuple
+
 # T-04-T15 (DEC-3208): the workspace's reviewables, field owner, suggestion targets and appliers.
 from abacus.modules.tax.worksheet_review import (  # noqa: E402
     register as _register_worksheet_review,
