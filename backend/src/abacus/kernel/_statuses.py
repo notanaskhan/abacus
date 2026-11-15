@@ -1442,6 +1442,66 @@ class AllocationStructureStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
+class ConfirmationStatus(StrEnum):
+    DRAFT = "draft"
+    AUTHORIZATION_REQUESTED = "authorization_requested"
+    SENT = "sent"
+    RESPONDED = "responded"
+    EXCEPTION = "exception"
+    ALTERNATIVE_PROCEDURES = "alternative_procedures"
+    CLOSED = "closed"
+
+
+class LinkPrincipalStatus(StrEnum):
+    ISSUED = "issued"
+    OPENED = "opened"
+    LOCKED = "locked"
+    CONSUMED = "consumed"
+    EXPIRED = "expired"
+    REVOKED = "revoked"
+
+
+class JeTestStatus(StrEnum):
+    DRAFT = "draft"
+    SCORING = "scoring"
+    SCORED = "scored"
+    FAILED = "failed"
+
+
+class JeCriterionStatus(StrEnum):
+    AVAILABLE = "available"
+    NOT_AVAILABLE = "not_available"
+
+
+class FieldworkTestResultStatus(StrEnum):
+    AGENT_TESTED = "agent_tested"
+    NEEDS_HUMAN = "needs_human"
+    ADOPTED = "adopted"
+    EXCEPTION = "exception"
+    # derived, never stored: testing
+
+
+class SampleExpansionStatus(StrEnum):
+    PENDING_APPROVAL = "pending_approval"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"
+
+
+class AnalyticsSetStatus(StrEnum):
+    COMPUTING = "computing"
+    CURRENT = "current"
+    OUT_OF_DATE = "out_of_date"
+    SUPERSEDED = "superseded"
+
+
+class AnalyticsLineStatus(StrEnum):
+    WITHIN = "within"
+    UNEXPLAINED = "unexplained"
+    EXPLAINED = "explained"
+    ACCEPTED = "accepted"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -2611,6 +2671,57 @@ STORED: dict[str, tuple[str, ...]] = {
         "pending_approval",
         "approved",
         "superseded",
+    ),
+    "confirmation": (
+        "draft",
+        "authorization_requested",
+        "sent",
+        "responded",
+        "exception",
+        "alternative_procedures",
+        "closed",
+    ),
+    "link_principal": (
+        "issued",
+        "opened",
+        "locked",
+        "consumed",
+        "expired",
+        "revoked",
+    ),
+    "je_test": (
+        "draft",
+        "scoring",
+        "scored",
+        "failed",
+    ),
+    "je_criterion": (
+        "available",
+        "not_available",
+    ),
+    "fieldwork_test_result": (
+        "agent_tested",
+        "needs_human",
+        "adopted",
+        "exception",
+    ),
+    "sample_expansion": (
+        "pending_approval",
+        "approved",
+        "rejected",
+        "withdrawn",
+    ),
+    "analytics_set": (
+        "computing",
+        "current",
+        "out_of_date",
+        "superseded",
+    ),
+    "analytics_line": (
+        "within",
+        "unexplained",
+        "explained",
+        "accepted",
     ),
 }
 CHECKS: dict[str, str] = {

@@ -339,7 +339,7 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Passed on SUM | A misstatement the client declined to correct that the engagement partner leaves uncorrected and accumulates on the SUM, with a reason (DF-28). Not "waived". | `audit_misstatements.status = passed_on_sum` | waived |
 | SUM (summary of uncorrected misstatements) | Code's evaluation of uncorrected misstatements under rollover and iron curtain against materiality (AU-C 450), frozen as a snapshot for the EP's conclusion. | `sum_snapshots` | — |
 | Consultation | A recorded question to a named colleague and its conclusion, concluded only by the person consulted (DEC-83 minimal). | `consultations` | — |
-| Confirmation | Link-principal responses (POR-17). | `confirmations` | — |
+| Confirmation | An external (AU-C 505) confirmation request the firm controls, positive form only, to a bank, customer or vendor; see the A-08 rows below. Not an independence confirmation. | `confirmations` | — |
 | Component / component auditor | POR-23. | `components`, `component_auditors`, `component_instructions`, `component_deliverables` | — |
 | Report / representation letter / governance communication | G7 and G8. | `audit_reports`, `report_releases`, `representation_letters`, `governance_communications` | — |
 | Audit section | One row of the audit cockpit rail (AUD-02, AUD-03): a band (`overview`, `planning`, `group`, `fieldwork`, `completion`, `reporting`), a title, a state from the registry's `audit_section` words and a route. A row renders only when its owner registered it with `register_audit_section`; an unregistered section is hidden, never shown with a made-up state (A-01 DV-1). UI is the section's own title ("Trial Balance", "Source Documents"). | `audit_section`, `register_audit_section` | `workflow_step`, `rail_item` |
@@ -671,3 +671,21 @@ Lint rules L1–L12 check these against the copy registry.
 | Gift history item | A prior gift by the decedent with its Form 709 status; annual exclusion and taxable gift are computed, never stored. | `gift_history_items` (+ versions) | — |
 | Accrued tie-out (shadow) | The label on an Accrued figure that the engine of record owns (the 706 tentative tax and credit) until a CCH import exists (DEC-77). | `estate_computations.label = accrued_tie_out_shadow` | — |
 | tie | The only tally word for a footing that holds (blueprint §3.3.1); never "Ties" (DV-2). | `tie_out_tally.tie` | — |
+
+## New terms: audit fieldwork depth (A-08-T01, merged from T04)
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Confirmation | An AU-C 505 request to a third party (bank, customer, vendor) the firm controls from draft to close: positive form only, sent only to an independently verified address, after the client's signed authorization. Statuses: Draft, Authorization requested, Sent, Responded, Exception, Alternative procedures, Closed. Never the independence confirmation of SPEC-025 (`MyConfirmations`, `IndependenceConfirmation`). | `confirmations`, `confirmation_lines` | `external confirmation request`, `verification` |
+| Confirmation response | The respondent's one answer on POR-17: agrees or not, balances, explanation and attachments, attested and with a verified email; insert-only, the difference computed by the server. Hostile content. | `confirmation_responses` | `reply` |
+| Address verification | How the firm established that a respondent's address is independent of the client (sources and citations). A confirmation cannot be sent without one that cites a non-client source. | `address_verifications` | `address check` |
+| Link principal | A single-purpose actor reached by a signed link plus an emailed code; it reads or submits exactly one object and has no session beyond the page (ADR-146). Its tokens and codes are stored hashed. | `link_principals`, `actor_kind = link_principal` | `guest`, `anonymous user` |
+| JE test | AU-C 240 journal-entry testing over one GL population proved complete by a code tie, scored by the firm's risk criteria. | `je_tests` | `JE review`, `journal scan` |
+| Risk criterion | One firm-defined JE test criterion (weekend or holiday, round amount, post-close, manual by role, keywords) with its parameters and hit count; "Not available from this ledger" when the export lacks the fields (P-58). | `je_test_criteria` | `rule`, `flag type` |
+| JE score | Code's 0–100 score for one entry with the reason codes that produced it; never shown without them. Insert-only per score version. | `je_scores` | `risk rating` |
+| Sample expansion | A request to add items to an approved sample (next by score, unpredictable picks or named items), with a required rationale and a named approver who is not the requester. Nothing changes until approved. | `sample_expansions` | `resample` |
+| Analytics set | One computed version of flux analytics (audit preliminary, substantive, final; or SSARS review) over a TB layer against prior-year figures, with its dual threshold. Recompute is a new version. | `analytics_sets`, `analytics_lines` | `flux report` |
+| Explanation | Why an analytics line moved, counted only with at least one verified citation; agent text is a suggestion; a manager accepts, never the author. | `analytics_explanations` | `comment`, `note` |
+| Expectation | An SSARS review expectation for a line (range and basis) set before comparison. | `analytics_expectations` | `estimate` |
+| Inquiry | One question in an SSARS inquiry program, sent to the client as a POR-05 questionnaire; status words are the request words (Requested, Answered). | `questionnaire kind ssars_inquiry` | `interview` |
+| Conclusion (SSARS) | What an AR-C 90 review reaches. SSARS surfaces (AUD-26, AR-C 70/80/90) never say "opinion". | — | `opinion` |

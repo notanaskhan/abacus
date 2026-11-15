@@ -1751,6 +1751,75 @@ objects:
       approved:         {label: "Approved", variant: green-tint, terminal: false, derived: false}   # a, b
       superseded:       {label: "Superseded", variant: soon, terminal: true, derived: false}   # a later structure was approved
 
+  # --- A-08 audit fieldwork depth (A-08-T01, merged from T04; DF-05, DF-31; SPEC-657) ---
+  confirmation:   # confirmations.status (AUD-14 tiles, rows and drawer; AU-C 505). Tiles sum to the log
+    source: "A-08 §2.1, §4.2 M3; AUD-14 a–e; DF-05 (statuses into §3.3.1), DF-31; SPEC-657 AC-6.1–AC-6.8"
+    codes:
+      draft:                   {label: "Draft", variant: neutral, terminal: false, derived: false}
+      authorization_requested: {label: "Authorization requested", variant: amber, terminal: false, derived: false, context_labels: {waiting: "Authorization requested · Waiting on {name} (SIG-02)"}}
+      sent:                    {label: "Sent", variant: state, terminal: false, derived: false, context_labels: {viewed: "Viewed {date}", second_request: "2nd request {date}", paused: "Respondent links paused"}}
+      responded:               {label: "Responded", variant: state, terminal: false, derived: false}
+      exception:               {label: "Exception", variant: red-tint, terminal: false, derived: false}
+      alternative_procedures:  {label: "Alternative procedures", variant: amber, terminal: false, derived: false}
+      closed:                  {label: "Closed", variant: green, terminal: true, derived: false}
+
+  link_principal:   # link_principals state (identity; POR-17 renders only open, expired or answered)
+    source: "A-08 §4.2 M4, §3 F7; POR-17 a, b, d, e; DV-7 (unknown, revoked and expired read alike)"
+    codes:
+      issued:   {label: "Issued", variant: neutral, terminal: false, derived: false}
+      opened:   {label: "Opened", variant: state, terminal: false, derived: false}
+      locked:   {label: "Locked", variant: amber, terminal: false, derived: false}   # five wrong codes, 15 minutes
+      consumed: {label: "Answered", variant: green-tint, terminal: true, derived: false, context_labels: {respondent: "This confirmation was already answered on {date}."}}
+      expired:  {label: "Expired", variant: muted, terminal: true, derived: false}
+      revoked:  {label: "Revoked", variant: muted, terminal: true, derived: false}   # the respondent sees the expired copy
+
+  je_test:   # je_tests.status (AUD-12 a JE variant)
+    source: "A-08 §4.2 M2; AUD-12 a, d; SPEC-657 AC-1.1, AC-1.2"
+    codes:
+      draft:   {label: "Draft", variant: neutral, terminal: false, derived: false}
+      scoring: {label: "Scoring", variant: null, disc: spinner, terminal: false, derived: false}
+      scored:  {label: "Scored", variant: green-tint, terminal: false, derived: false}
+      failed:  {label: "Failed", variant: red-tint, terminal: false, derived: false}
+
+  je_criterion:   # je_test_criteria availability (AUD-12 a criteria table; P-58 path)
+    source: "A-08 §3 F1 (P-58 'Not available from this ledger'); SPEC-657 AC-1.3"
+    codes:
+      available:     {label: "Available", variant: null, terminal: false, derived: false}
+      not_available: {label: "Not available from this ledger", variant: muted, terminal: false, derived: false}
+
+  fieldwork_test_result:   # AUD-12 row result view words over A-05's results (never stored by the agent as pass/exception)
+    source: "A-08 §3 F1, F2; AUD-12 a, d, e; I-AGENT-NEVER"
+    codes:
+      testing:      {label: "Testing", variant: null, disc: spinner, terminal: false, derived: true}   # d: a run is on the row
+      agent_tested: {label: "Agent-tested", variant: outline, terminal: false, derived: false}   # outlined ✓ until a person adopts
+      needs_human:  {label: "Needs human", variant: amber, terminal: false, derived: false}
+      adopted:      {label: "Adopted", variant: green-tint, terminal: false, derived: false, context_labels: {by: "✓ {initials}"}}
+      exception:    {label: "Exception", variant: red-tint, terminal: false, derived: false}
+
+  sample_expansion:   # sample_expansions.status (AUD-12 R2 f, g, h; AU-C 530)
+    source: "A-08 §4.2 M5, §3 F3; AUD-12 f, g, h; SPEC-657 AC-3.1–AC-3.4"
+    codes:
+      pending_approval: {label: "Pending approval", variant: amber, terminal: false, derived: false, context_labels: {waiting: "Waiting on {name}", header: "{n} + {m} pending approval ({initials})"}}
+      approved:         {label: "Approved", variant: green-tint, terminal: true, derived: false}
+      rejected:         {label: "Rejected", variant: red-tint, terminal: true, derived: false}
+      withdrawn:        {label: "Withdrawn", variant: muted, terminal: true, derived: false}
+
+  analytics_set:   # analytics_sets.status (AUD-13, AUD-26 a)
+    source: "A-08 §4.2 M7; AUD-13 a, b, e; SPEC-657 AC-5.2"
+    codes:
+      computing:   {label: "Pending", variant: null, disc: spinner, terminal: false, derived: false}   # b: tallies read Pending
+      current:     {label: "Current", variant: null, terminal: false, derived: false}
+      out_of_date: {label: "Out of date", variant: amber, terminal: false, derived: false}   # an adjustment was approved after the final set
+      superseded:  {label: "Superseded", variant: soon, terminal: true, derived: false}
+
+  analytics_line:   # analytics_lines.status (AUD-13 table; amber never red)
+    source: "A-08 §4.2 M7, §3 F5, F8; AUD-13 a, d; AUD-26 a, e; SPEC-657 AC-5.1, AC-5.5, AC-5.6"
+    codes:
+      within:      {label: "Within", variant: null, terminal: false, derived: false}
+      unexplained: {label: "Unexplained", variant: amber, terminal: false, derived: false}
+      explained:   {label: "Explained", variant: state, terminal: false, derived: false, context_labels: {client_answer: "Client answer {date} · {name}"}}
+      accepted:    {label: "Accepted", variant: green-tint, terminal: false, derived: false, context_labels: {by: "Accepted · {initials}"}}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}
