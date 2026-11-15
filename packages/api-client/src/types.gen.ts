@@ -11245,6 +11245,273 @@ export type ComplianceTestOut = {
 };
 
 /**
+ * ComponentAuditorIn
+ */
+export type ComponentAuditorIn = {
+    /**
+     * City
+     */
+    city?: string | null;
+    /**
+     * Component Id
+     */
+    component_id: string;
+    /**
+     * Ep Contact Id
+     */
+    ep_contact_id?: string | null;
+    /**
+     * Organisation Name
+     */
+    organisation_name: string;
+};
+
+/**
+ * ComponentAuditorOut
+ */
+export type ComponentAuditorOut = {
+    /**
+     * City
+     */
+    city: string | null;
+    /**
+     * Competence Evaluated At
+     */
+    competence_evaluated_at: string | null;
+    /**
+     * Component Id
+     */
+    component_id: string;
+    /**
+     * Contact Name
+     */
+    contact_name: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Independence Confirmed At
+     */
+    independence_confirmed_at: string | null;
+    instructions_status: ComponentInstructionsStatus | null;
+    /**
+     * Make Reference
+     */
+    make_reference: boolean;
+    /**
+     * Organisation Name
+     */
+    organisation_name: string;
+    /**
+     * Peer Review Obtained On
+     */
+    peer_review_obtained_on: string | null;
+    /**
+     * Questionnaire Received On
+     */
+    questionnaire_received_on: string | null;
+};
+
+/**
+ * ComponentAuditorsOut
+ */
+export type ComponentAuditorsOut = {
+    /**
+     * Items
+     */
+    items: Array<ComponentAuditorOut>;
+};
+
+/**
+ * ComponentDeliverableIn
+ */
+export type ComponentDeliverableIn = {
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ComponentDeliverableOut
+ */
+export type ComponentDeliverableOut = {
+    /**
+     * Days Late
+     */
+    days_late: number | null;
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Received At
+     */
+    received_at: string | null;
+    /**
+     * Return Reason
+     */
+    return_reason: string | null;
+    /**
+     * Reviewed By Name
+     */
+    reviewed_by_name: string | null;
+    status: ComponentDeliverableStatus;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ComponentDeliverableStatus
+ */
+export type ComponentDeliverableStatus = 'expected' | 'received' | 'reviewed';
+
+/**
+ * ComponentDeliverablesOut
+ */
+export type ComponentDeliverablesOut = {
+    /**
+     * Items
+     */
+    items: Array<ComponentDeliverableOut>;
+};
+
+/**
+ * ComponentInstructionSectionOut
+ */
+export type ComponentInstructionSectionOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Needs Input
+     */
+    needs_input: boolean;
+    /**
+     * Number
+     */
+    number: number;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ComponentInstructionsEditIn
+ */
+export type ComponentInstructionsEditIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Number
+     */
+    number: number;
+};
+
+/**
+ * ComponentInstructionsOut
+ */
+export type ComponentInstructionsOut = {
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Provenance
+     */
+    provenance: string;
+    /**
+     * Sections
+     */
+    sections: Array<ComponentInstructionSectionOut>;
+    /**
+     * Send Blocked Reason
+     */
+    send_blocked_reason: string | null;
+    status: ComponentInstructionsStatus;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * ComponentInstructionsSendIn
+ */
+export type ComponentInstructionsSendIn = {
+    /**
+     * Recipient Contact Id
+     */
+    recipient_contact_id: string;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * ComponentInstructionsStatus
+ */
+export type ComponentInstructionsStatus = 'draft' | 'sent' | 'acknowledged';
+
+/**
+ * ComponentRoomOut
+ */
+export type ComponentRoomOut = {
+    /**
+     * Acknowledged On
+     */
+    acknowledged_on: string | null;
+    /**
+     * Component Name
+     */
+    component_name: string;
+    /**
+     * Deliverables
+     */
+    deliverables: Array<RoomDeliverableOut>;
+    /**
+     * Expected
+     */
+    expected: number;
+    /**
+     * Firm Name
+     */
+    firm_name: string;
+    /**
+     * Group Name
+     */
+    group_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Uploaded
+     */
+    uploaded: number;
+};
+
+/**
  * ComposerLetterOut
  *
  * `GET /v1/engagements/{id}/letter/composer`: the ENG-04 projection.
@@ -12577,6 +12844,198 @@ export type ConsentTermsOut = {
      */
     statement_version: string;
 };
+
+/**
+ * ConsolidatedTbOut
+ */
+export type ConsolidatedTbOut = {
+    /**
+     * Columns
+     */
+    columns: Array<string>;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Rows
+     */
+    rows: Array<TbRowOut>;
+    tallies: GroupTalliesOut;
+    /**
+     * View
+     */
+    view: string;
+};
+
+/**
+ * ConsolidationEntityOut
+ */
+export type ConsolidationEntityOut = {
+    /**
+     * City
+     */
+    city: string | null;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Component Auditor Name
+     */
+    component_auditor_name: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Ownership Pct
+     */
+    ownership_pct: string;
+    /**
+     * Parent Id
+     */
+    parent_id: string | null;
+    /**
+     * Trial Balances
+     */
+    trial_balances: Array<TrialBalanceSlotOut>;
+};
+
+/**
+ * ConsolidationFinalizeIn
+ */
+export type ConsolidationFinalizeIn = {
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * ConsolidationIn
+ */
+export type ConsolidationIn = {
+    /**
+     * Interim Period End
+     */
+    interim_period_end?: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Prior Period End
+     */
+    prior_period_end?: string | null;
+    /**
+     * Reporting Currency
+     */
+    reporting_currency: 'USD';
+    /**
+     * Source Connection Id
+     */
+    source_connection_id?: string | null;
+    /**
+     * Year End
+     */
+    year_end: string;
+};
+
+/**
+ * ConsolidationLockStatus
+ */
+export type ConsolidationLockStatus = 'open' | 'locked';
+
+/**
+ * ConsolidationOut
+ */
+export type ConsolidationOut = {
+    /**
+     * All Balanced
+     */
+    all_balanced: boolean;
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'consolidation.edit' | 'consolidation.finalize' | 'consolidation.lock'>;
+    /**
+     * Entities
+     */
+    entities: Array<ConsolidationEntityOut>;
+    /**
+     * Finalized At
+     */
+    finalized_at: string | null;
+    /**
+     * Finalized By Name
+     */
+    finalized_by_name: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Interim Period End
+     */
+    interim_period_end: string | null;
+    /**
+     * Interim Total Debits
+     */
+    interim_total_debits: string;
+    lock_state: ConsolidationLockStatus;
+    /**
+     * Missing
+     */
+    missing: Array<string>;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Prior Period End
+     */
+    prior_period_end: string | null;
+    /**
+     * Reporting Currency
+     */
+    reporting_currency: 'USD';
+    /**
+     * Row Version
+     */
+    row_version: number;
+    status: ConsolidationStatus;
+    /**
+     * Tiers
+     */
+    tiers: number;
+    /**
+     * Year End
+     */
+    year_end: string;
+};
+
+/**
+ * ConsolidationStatus
+ */
+export type ConsolidationStatus = 'draft' | 'finalized' | 'discarded';
+
+/**
+ * ConsolidationTbStatus
+ */
+export type ConsolidationTbStatus = 'missing' | 'attached' | 'not_needed' | 'needs_reauth';
 
 /**
  * ConsultationConcludeIn
@@ -14273,6 +14732,16 @@ export type DeliverablePublishOut = {
      * Published At
      */
     published_at: string;
+};
+
+/**
+ * DeliverableReturnIn
+ */
+export type DeliverableReturnIn = {
+    /**
+     * Reason
+     */
+    reason: string;
 };
 
 /**
@@ -16364,6 +16833,164 @@ export type EligibilitySampleRowOut = {
      * Result
      */
     result: 'not_started' | 'agent_tested' | 'needs_human' | 'pass' | 'exception' | 'no_effect';
+};
+
+/**
+ * EliminationApproveItemsIn
+ */
+export type EliminationApproveItemsIn = {
+    /**
+     * Items
+     */
+    items: Array<string>;
+};
+
+/**
+ * EliminationEntryStatus
+ */
+export type EliminationEntryStatus = 'proposed' | 'approved' | 'posted' | 'rejected';
+
+/**
+ * EliminationIn
+ */
+export type EliminationIn = {
+    /**
+     * Consolidation Level
+     */
+    consolidation_level: number;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Lines
+     */
+    lines: Array<EliminationLineIn>;
+};
+
+/**
+ * EliminationLineIn
+ */
+export type EliminationLineIn = {
+    /**
+     * Caption
+     */
+    caption: string;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Credit
+     */
+    credit?: number | string;
+    /**
+     * Debit
+     */
+    debit?: number | string;
+};
+
+/**
+ * EliminationLineOut
+ */
+export type EliminationLineOut = {
+    /**
+     * Caption
+     */
+    caption: string;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string | null;
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Debit
+     */
+    debit: string;
+};
+
+/**
+ * EliminationOut
+ */
+export type EliminationOut = {
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Computation
+     */
+    computation: string | null;
+    /**
+     * Consolidation Level
+     */
+    consolidation_level: number;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Display Code
+     */
+    display_code: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Lines
+     */
+    lines: Array<EliminationLineOut>;
+    /**
+     * Off By
+     */
+    off_by: string;
+    /**
+     * Posted At
+     */
+    posted_at: string | null;
+    /**
+     * Posting Target
+     */
+    posting_target: 'consolidation_layer';
+    /**
+     * Proposed By Run Id
+     */
+    proposed_by_run_id: string | null;
+    status: EliminationEntryStatus;
+    /**
+     * Total Credit
+     */
+    total_credit: string;
+    /**
+     * Total Debit
+     */
+    total_debit: string;
+};
+
+/**
+ * EliminationsOut
+ */
+export type EliminationsOut = {
+    /**
+     * Items
+     */
+    items: Array<EliminationOut>;
+    /**
+     * Total Credit
+     */
+    total_credit: string;
+    /**
+     * Total Debit
+     */
+    total_debit: string;
 };
 
 /**
@@ -25871,6 +26498,110 @@ export type Group = {
 };
 
 /**
+ * GroupComponentIn
+ */
+export type GroupComponentIn = {
+    /**
+     * Component Pm
+     */
+    component_pm?: number | string | null;
+    /**
+     * Performed By
+     */
+    performed_by: 'group_team' | 'component_auditor';
+    /**
+     * Planned Work
+     */
+    planned_work: 'full_scope' | 'specific_procedures' | 'analytical_only';
+    /**
+     * Scope Areas
+     */
+    scope_areas?: Array<string>;
+};
+
+/**
+ * GroupComponentOut
+ */
+export type GroupComponentOut = {
+    /**
+     * Component Pm
+     */
+    component_pm: string | null;
+    /**
+     * Entity Name
+     */
+    entity_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Performed By
+     */
+    performed_by: 'group_team' | 'component_auditor';
+    /**
+     * Planned Work
+     */
+    planned_work: 'full_scope' | 'specific_procedures' | 'analytical_only' | null;
+    /**
+     * Pm Pct Of Group
+     */
+    pm_pct_of_group: string | null;
+    /**
+     * Scope Areas
+     */
+    scope_areas: Array<string>;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string | null;
+};
+
+/**
+ * GroupCoverageOut
+ */
+export type GroupCoverageOut = {
+    /**
+     * Full Scope
+     */
+    full_scope: string;
+    /**
+     * Full Scope Pct
+     */
+    full_scope_pct: string;
+    /**
+     * Measure
+     */
+    measure: 'third_party_sales' | 'total_assets';
+    /**
+     * Specific Procedures
+     */
+    specific_procedures: string;
+    /**
+     * Specific Procedures Pct
+     */
+    specific_procedures_pct: string;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
+ * GroupDecisionCardOut
+ */
+export type GroupDecisionCardOut = {
+    /**
+     * Decision Card Id
+     */
+    decision_card_id: string;
+    /**
+     * Kind
+     */
+    kind: 'group_materiality' | 'make_reference';
+};
+
+/**
  * GroupItem
  */
 export type GroupItem = {
@@ -25911,6 +26642,114 @@ export type GroupItem = {
 };
 
 /**
+ * GroupMaterialityOptionOut
+ */
+export type GroupMaterialityOptionOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Base
+     */
+    base: string;
+    /**
+     * Benchmark
+     */
+    benchmark: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Rate Pct
+     */
+    rate_pct: string;
+    /**
+     * Recommended
+     */
+    recommended: boolean;
+};
+
+/**
+ * GroupReasonIn
+ */
+export type GroupReasonIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * GroupRunRefOut
+ */
+export type GroupRunRefOut = {
+    /**
+     * Workflow Id
+     */
+    workflow_id: string;
+};
+
+/**
+ * GroupScopingOut
+ */
+export type GroupScopingOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'component.edit' | 'group_materiality.propose' | 'decision.decide'>;
+    /**
+     * Clearly Trivial
+     */
+    clearly_trivial: string | null;
+    /**
+     * Component Pm Total
+     */
+    component_pm_total: string;
+    /**
+     * Components
+     */
+    components: Array<GroupComponentOut>;
+    /**
+     * Coverage
+     */
+    coverage: Array<GroupCoverageOut>;
+    /**
+     * Decided
+     */
+    decided: boolean;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    /**
+     * Decided By Name
+     */
+    decided_by_name: string | null;
+    /**
+     * Decision Card Id
+     */
+    decision_card_id: string | null;
+    /**
+     * Group Materiality
+     */
+    group_materiality: string | null;
+    /**
+     * Options
+     */
+    options: Array<GroupMaterialityOptionOut>;
+    /**
+     * Performance Materiality
+     */
+    performance_materiality: string | null;
+};
+
+/**
  * GroupSubtotalOut
  *
  * A grouping's subtotal; `off` when the source TB carries a summary line that disagrees.
@@ -25936,6 +26775,58 @@ export type GroupSubtotalOut = {
      * Subtotal
      */
     subtotal: string;
+};
+
+/**
+ * GroupSuggestionRefOut
+ */
+export type GroupSuggestionRefOut = {
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string;
+};
+
+/**
+ * GroupTalliesOut
+ */
+export type GroupTalliesOut = {
+    /**
+     * Accounts
+     */
+    accounts: number;
+    /**
+     * Balanced
+     */
+    balanced: 'tie' | 'off' | 'pending';
+    /**
+     * Eliminations Posted
+     */
+    eliminations_posted: number;
+    /**
+     * Intercompany
+     */
+    intercompany: 'tie' | 'off' | 'pending';
+    /**
+     * Intercompany Off By
+     */
+    intercompany_off_by: string | null;
+    /**
+     * Mapped
+     */
+    mapped: number;
+    /**
+     * Net Income
+     */
+    net_income: string;
+    /**
+     * Off By
+     */
+    off_by: string | null;
+    /**
+     * Total Assets
+     */
+    total_assets: string;
 };
 
 /**
@@ -47057,6 +47948,46 @@ export type RollforwardComponentOut = {
 };
 
 /**
+ * RoomAcknowledgedOut
+ */
+export type RoomAcknowledgedOut = {
+    /**
+     * Acknowledged On
+     */
+    acknowledged_on: string;
+};
+
+/**
+ * RoomDeliverableOut
+ */
+export type RoomDeliverableOut = {
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Return Note
+     */
+    return_note: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Uploaded On
+     */
+    uploaded_on: string | null;
+    /**
+     * Word
+     */
+    word: 'due' | 'you_uploaded' | 'overdue' | 'returned';
+};
+
+/**
  * RoomInquiriesOut
  */
 export type RoomInquiriesOut = {
@@ -47084,6 +48015,23 @@ export type RoomInquiryOut = {
      * Questionnaire Id
      */
     questionnaire_id: string;
+};
+
+/**
+ * RoomInstructionsOut
+ *
+ * The letter as HTML text sections (a PDF download beside it); only this component's PM and
+ * the clearly-trivial threshold, never group materiality (OQ-6).
+ */
+export type RoomInstructionsOut = {
+    /**
+     * Sections
+     */
+    sections: Array<RoomSectionOut>;
+    /**
+     * Sent On
+     */
+    sent_on: string;
 };
 
 /**
@@ -47121,6 +48069,48 @@ export type RoomLetterRowOut = {
 };
 
 /**
+ * RoomQuestionIn
+ */
+export type RoomQuestionIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * RoomQuestionOut
+ */
+export type RoomQuestionOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Author Name
+     */
+    author_name: string;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * RoomQuestionsOut
+ */
+export type RoomQuestionsOut = {
+    /**
+     * Items
+     */
+    items: Array<RoomQuestionOut>;
+};
+
+/**
  * RoomReportsOut
  */
 export type RoomReportsOut = {
@@ -47128,6 +48118,24 @@ export type RoomReportsOut = {
      * Items
      */
     items: Array<DeliverableRowOut>;
+};
+
+/**
+ * RoomSectionOut
+ */
+export type RoomSectionOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Number
+     */
+    number: number;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -47166,6 +48174,20 @@ export type RoomSuggestionOut = {
      * Request Item Id
      */
     request_item_id?: string | null;
+};
+
+/**
+ * RoomUploadOut
+ */
+export type RoomUploadOut = {
+    /**
+     * Deliverable Id
+     */
+    deliverable_id: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
 };
 
 /**
@@ -53922,6 +54944,46 @@ export type StreamTopicsOut = {
 };
 
 /**
+ * StructureEntityIn
+ */
+export type StructureEntityIn = {
+    /**
+     * City
+     */
+    city?: string | null;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Component Auditor Id
+     */
+    component_auditor_id?: string | null;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Ownership Pct
+     */
+    ownership_pct: 100;
+    /**
+     * Parent Client Entity Id
+     */
+    parent_client_entity_id?: string | null;
+};
+
+/**
+ * StructureIn
+ */
+export type StructureIn = {
+    /**
+     * Entities
+     */
+    entities: Array<StructureEntityIn>;
+};
+
+/**
  * SubProcessorOut
  *
  * A sub-processor row, generated from the provider-terms register (DF-16): "Amazon Web
@@ -55697,6 +56759,54 @@ export type TaxReturnSummaryOut = {
 };
 
 /**
+ * TbAttachIn
+ */
+export type TbAttachIn = {
+    /**
+     * Connection Id
+     */
+    connection_id?: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Label
+     */
+    label: 'standard' | 'interim' | 'prior' | 'budget' | 'preliminary';
+    /**
+     * Period Kind
+     */
+    period_kind: 'current' | 'prior';
+    /**
+     * Source
+     */
+    source: 'upload' | 'evidence' | 'connection';
+    /**
+     * Upload Id
+     */
+    upload_id?: string | null;
+};
+
+/**
+ * TbCellOut
+ */
+export type TbCellOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Column
+     */
+    column: string;
+    /**
+     * Elimination Codes
+     */
+    elimination_codes: Array<string>;
+};
+
+/**
  * TbChecksSummaryOut
  *
  * The check strip's tally; each check's result is `GET …/checks` (SPEC-310).
@@ -56118,6 +57228,16 @@ export type TbNamedTotalOut = {
 };
 
 /**
+ * TbNotNeededIn
+ */
+export type TbNotNeededIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
  * TbProvenanceOut
  *
  * The caption's facts ("Imported by Simone Baptiste from a NetSuite export, Sep 11, 10:02
@@ -56148,6 +57268,24 @@ export type TbProvenanceOut = {
      * Source Kind
      */
     source_kind: 'import' | 'connector' | 'fake' | 'other';
+};
+
+/**
+ * TbRowOut
+ */
+export type TbRowOut = {
+    /**
+     * Caption
+     */
+    caption: string;
+    /**
+     * Cells
+     */
+    cells: Array<TbCellOut>;
+    /**
+     * Section
+     */
+    section: 'assets' | 'liabilities_equity' | 'income';
 };
 
 /**
@@ -59084,6 +60222,45 @@ export type TrialBalanceOut = {
      * Period Start
      */
     period_start: string;
+};
+
+/**
+ * TrialBalanceSlotOut
+ */
+export type TrialBalanceSlotOut = {
+    /**
+     * File Name
+     */
+    file_name: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: 'standard' | 'interim' | 'prior' | 'budget' | 'preliminary';
+    /**
+     * Not Needed Reason
+     */
+    not_needed_reason: string | null;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Period Kind
+     */
+    period_kind: 'current' | 'prior';
+    /**
+     * Period Start
+     */
+    period_start: string;
+    state: ConsolidationTbStatus;
+    /**
+     * Total Debits
+     */
+    total_debits: string | null;
 };
 
 /**
@@ -68134,6 +69311,1193 @@ export type CompletionReadinessResponses = {
 
 export type CompletionReadinessResponse = CompletionReadinessResponses[keyof CompletionReadinessResponses];
 
+export type GroupListComponentAuditorsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/component-auditors';
+};
+
+export type GroupListComponentAuditorsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupListComponentAuditorsError = GroupListComponentAuditorsErrors[keyof GroupListComponentAuditorsErrors];
+
+export type GroupListComponentAuditorsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentAuditorsOut;
+};
+
+export type GroupListComponentAuditorsResponse = GroupListComponentAuditorsResponses[keyof GroupListComponentAuditorsResponses];
+
+export type GroupAddComponentAuditorData = {
+    body: ComponentAuditorIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/component-auditors';
+};
+
+export type GroupAddComponentAuditorErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupAddComponentAuditorError = GroupAddComponentAuditorErrors[keyof GroupAddComponentAuditorErrors];
+
+export type GroupAddComponentAuditorResponses = {
+    /**
+     * Successful Response
+     */
+    201: ComponentAuditorOut;
+};
+
+export type GroupAddComponentAuditorResponse = GroupAddComponentAuditorResponses[keyof GroupAddComponentAuditorResponses];
+
+export type GroupCreateConsolidationData = {
+    body: ConsolidationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations';
+};
+
+export type GroupCreateConsolidationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupCreateConsolidationError = GroupCreateConsolidationErrors[keyof GroupCreateConsolidationErrors];
+
+export type GroupCreateConsolidationResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConsolidationOut;
+};
+
+export type GroupCreateConsolidationResponse = GroupCreateConsolidationResponses[keyof GroupCreateConsolidationResponses];
+
+export type GroupDiscardConsolidationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}';
+};
+
+export type GroupDiscardConsolidationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupDiscardConsolidationError = GroupDiscardConsolidationErrors[keyof GroupDiscardConsolidationErrors];
+
+export type GroupDiscardConsolidationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidationOut;
+};
+
+export type GroupDiscardConsolidationResponse = GroupDiscardConsolidationResponses[keyof GroupDiscardConsolidationResponses];
+
+export type GroupGetConsolidationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}';
+};
+
+export type GroupGetConsolidationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupGetConsolidationError = GroupGetConsolidationErrors[keyof GroupGetConsolidationErrors];
+
+export type GroupGetConsolidationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidationOut;
+};
+
+export type GroupGetConsolidationResponse = GroupGetConsolidationResponses[keyof GroupGetConsolidationResponses];
+
+export type GroupEditConsolidationData = {
+    body: ConsolidationIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}';
+};
+
+export type GroupEditConsolidationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupEditConsolidationError = GroupEditConsolidationErrors[keyof GroupEditConsolidationErrors];
+
+export type GroupEditConsolidationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidationOut;
+};
+
+export type GroupEditConsolidationResponse = GroupEditConsolidationResponses[keyof GroupEditConsolidationResponses];
+
+export type GroupBulkUploadData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/bulk-upload';
+};
+
+export type GroupBulkUploadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupBulkUploadError = GroupBulkUploadErrors[keyof GroupBulkUploadErrors];
+
+export type GroupBulkUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidationOut;
+};
+
+export type GroupBulkUploadResponse = GroupBulkUploadResponses[keyof GroupBulkUploadResponses];
+
+export type GroupAttachTrialBalanceData = {
+    body: TbAttachIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+        /**
+         * Entity Id
+         */
+        entity_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/entities/{entity_id}/trial-balances';
+};
+
+export type GroupAttachTrialBalanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupAttachTrialBalanceError = GroupAttachTrialBalanceErrors[keyof GroupAttachTrialBalanceErrors];
+
+export type GroupAttachTrialBalanceResponses = {
+    /**
+     * Successful Response
+     */
+    201: TrialBalanceSlotOut;
+};
+
+export type GroupAttachTrialBalanceResponse = GroupAttachTrialBalanceResponses[keyof GroupAttachTrialBalanceResponses];
+
+export type GroupExportConsolidationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/export.xlsx';
+};
+
+export type GroupExportConsolidationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupExportConsolidationError = GroupExportConsolidationErrors[keyof GroupExportConsolidationErrors];
+
+export type GroupExportConsolidationResponses = {
+    /**
+     * Response Group Export Consolidation
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type GroupExportConsolidationResponse = GroupExportConsolidationResponses[keyof GroupExportConsolidationResponses];
+
+export type GroupFinalizeData = {
+    body: ConsolidationFinalizeIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/finalize';
+};
+
+export type GroupFinalizeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupFinalizeError = GroupFinalizeErrors[keyof GroupFinalizeErrors];
+
+export type GroupFinalizeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidationOut;
+};
+
+export type GroupFinalizeResponse = GroupFinalizeResponses[keyof GroupFinalizeResponses];
+
+export type GroupLockData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/lock';
+};
+
+export type GroupLockErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupLockError = GroupLockErrors[keyof GroupLockErrors];
+
+export type GroupLockResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidationOut;
+};
+
+export type GroupLockResponse = GroupLockResponses[keyof GroupLockResponses];
+
+export type GroupPullAllData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/pull-all';
+};
+
+export type GroupPullAllErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupPullAllError = GroupPullAllErrors[keyof GroupPullAllErrors];
+
+export type GroupPullAllResponses = {
+    /**
+     * Successful Response
+     */
+    202: GroupRunRefOut;
+};
+
+export type GroupPullAllResponse = GroupPullAllResponses[keyof GroupPullAllResponses];
+
+export type GroupReopenData = {
+    body: GroupReasonIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/reopen';
+};
+
+export type GroupReopenErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupReopenError = GroupReopenErrors[keyof GroupReopenErrors];
+
+export type GroupReopenResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidationOut;
+};
+
+export type GroupReopenResponse = GroupReopenResponses[keyof GroupReopenResponses];
+
+export type GroupSaveStructureData = {
+    body: StructureIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/structure';
+};
+
+export type GroupSaveStructureErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupSaveStructureError = GroupSaveStructureErrors[keyof GroupSaveStructureErrors];
+
+export type GroupSaveStructureResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidationOut;
+};
+
+export type GroupSaveStructureResponse = GroupSaveStructureResponses[keyof GroupSaveStructureResponses];
+
+export type GroupProposeStructureData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/structure/proposal';
+};
+
+export type GroupProposeStructureErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupProposeStructureError = GroupProposeStructureErrors[keyof GroupProposeStructureErrors];
+
+export type GroupProposeStructureResponses = {
+    /**
+     * Successful Response
+     */
+    201: GroupSuggestionRefOut;
+};
+
+export type GroupProposeStructureResponse = GroupProposeStructureResponses[keyof GroupProposeStructureResponses];
+
+export type GroupConsolidatedTbData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: {
+        /**
+         * Level
+         */
+        level?: number;
+        /**
+         * View
+         */
+        view?: string;
+    };
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/tb';
+};
+
+export type GroupConsolidatedTbErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupConsolidatedTbError = GroupConsolidatedTbErrors[keyof GroupConsolidatedTbErrors];
+
+export type GroupConsolidatedTbResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsolidatedTbOut;
+};
+
+export type GroupConsolidatedTbResponse = GroupConsolidatedTbResponses[keyof GroupConsolidatedTbResponses];
+
+export type GroupMarkNotNeededData = {
+    body: TbNotNeededIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+        /**
+         * Tb Id
+         */
+        tb_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/consolidations/{consolidation_id}/trial-balances/{tb_id}/not-needed';
+};
+
+export type GroupMarkNotNeededErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupMarkNotNeededError = GroupMarkNotNeededErrors[keyof GroupMarkNotNeededErrors];
+
+export type GroupMarkNotNeededResponses = {
+    /**
+     * Successful Response
+     */
+    200: TrialBalanceSlotOut;
+};
+
+export type GroupMarkNotNeededResponse = GroupMarkNotNeededResponses[keyof GroupMarkNotNeededResponses];
+
+export type GroupRaiseGroupMaterialityData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/decisions/group-materiality';
+};
+
+export type GroupRaiseGroupMaterialityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupRaiseGroupMaterialityError = GroupRaiseGroupMaterialityErrors[keyof GroupRaiseGroupMaterialityErrors];
+
+export type GroupRaiseGroupMaterialityResponses = {
+    /**
+     * Successful Response
+     */
+    201: GroupDecisionCardOut;
+};
+
+export type GroupRaiseGroupMaterialityResponse = GroupRaiseGroupMaterialityResponses[keyof GroupRaiseGroupMaterialityResponses];
+
 export type EbpCertificationReadData = {
     body?: never;
     headers?: {
@@ -71974,6 +74338,120 @@ export type GovernanceRecipientsPutResponses = {
 };
 
 export type GovernanceRecipientsPutResponse = GovernanceRecipientsPutResponses[keyof GovernanceRecipientsPutResponses];
+
+export type GroupScopingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/group-scoping';
+};
+
+export type GroupScopingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupScopingError = GroupScopingErrors[keyof GroupScopingErrors];
+
+export type GroupScopingResponses = {
+    /**
+     * Successful Response
+     */
+    200: GroupScopingOut;
+};
+
+export type GroupScopingResponse = GroupScopingResponses[keyof GroupScopingResponses];
+
+export type GroupExportGroupScopingData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/group-scoping/export.xlsx';
+};
+
+export type GroupExportGroupScopingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupExportGroupScopingError = GroupExportGroupScopingErrors[keyof GroupExportGroupScopingErrors];
+
+export type GroupExportGroupScopingResponses = {
+    /**
+     * Response Group Export Group Scoping
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type GroupExportGroupScopingResponse = GroupExportGroupScopingResponses[keyof GroupExportGroupScopingResponses];
 
 export type LegalLettersData = {
     body?: never;
@@ -80868,6 +83346,574 @@ export type ShareThreadResponses = {
 
 export type ShareThreadResponse = ShareThreadResponses[keyof ShareThreadResponses];
 
+export type GroupListDeliverablesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Auditor Id
+         */
+        auditor_id: string;
+    };
+    query?: never;
+    url: '/v1/component-auditors/{auditor_id}/deliverables';
+};
+
+export type GroupListDeliverablesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupListDeliverablesError = GroupListDeliverablesErrors[keyof GroupListDeliverablesErrors];
+
+export type GroupListDeliverablesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentDeliverablesOut;
+};
+
+export type GroupListDeliverablesResponse = GroupListDeliverablesResponses[keyof GroupListDeliverablesResponses];
+
+export type GroupAddDeliverableData = {
+    body: ComponentDeliverableIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Auditor Id
+         */
+        auditor_id: string;
+    };
+    query?: never;
+    url: '/v1/component-auditors/{auditor_id}/deliverables';
+};
+
+export type GroupAddDeliverableErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupAddDeliverableError = GroupAddDeliverableErrors[keyof GroupAddDeliverableErrors];
+
+export type GroupAddDeliverableResponses = {
+    /**
+     * Successful Response
+     */
+    201: ComponentDeliverableOut;
+};
+
+export type GroupAddDeliverableResponse = GroupAddDeliverableResponses[keyof GroupAddDeliverableResponses];
+
+export type GroupDraftInstructionsData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Auditor Id
+         */
+        auditor_id: string;
+    };
+    query?: never;
+    url: '/v1/component-auditors/{auditor_id}/instructions/draft';
+};
+
+export type GroupDraftInstructionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupDraftInstructionsError = GroupDraftInstructionsErrors[keyof GroupDraftInstructionsErrors];
+
+export type GroupDraftInstructionsResponses = {
+    /**
+     * Successful Response
+     */
+    201: ComponentInstructionsOut;
+};
+
+export type GroupDraftInstructionsResponse = GroupDraftInstructionsResponses[keyof GroupDraftInstructionsResponses];
+
+export type GroupRaiseMakeReferenceData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Auditor Id
+         */
+        auditor_id: string;
+    };
+    query?: never;
+    url: '/v1/component-auditors/{auditor_id}/make-reference';
+};
+
+export type GroupRaiseMakeReferenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupRaiseMakeReferenceError = GroupRaiseMakeReferenceErrors[keyof GroupRaiseMakeReferenceErrors];
+
+export type GroupRaiseMakeReferenceResponses = {
+    /**
+     * Successful Response
+     */
+    201: GroupDecisionCardOut;
+};
+
+export type GroupRaiseMakeReferenceResponse = GroupRaiseMakeReferenceResponses[keyof GroupRaiseMakeReferenceResponses];
+
+export type GroupReturnDeliverableData = {
+    body: DeliverableReturnIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Deliverable Id
+         */
+        deliverable_id: string;
+    };
+    query?: never;
+    url: '/v1/component-deliverables/{deliverable_id}/return';
+};
+
+export type GroupReturnDeliverableErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupReturnDeliverableError = GroupReturnDeliverableErrors[keyof GroupReturnDeliverableErrors];
+
+export type GroupReturnDeliverableResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentDeliverableOut;
+};
+
+export type GroupReturnDeliverableResponse = GroupReturnDeliverableResponses[keyof GroupReturnDeliverableResponses];
+
+export type GroupReviewDeliverableData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Deliverable Id
+         */
+        deliverable_id: string;
+    };
+    query?: never;
+    url: '/v1/component-deliverables/{deliverable_id}/review';
+};
+
+export type GroupReviewDeliverableErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupReviewDeliverableError = GroupReviewDeliverableErrors[keyof GroupReviewDeliverableErrors];
+
+export type GroupReviewDeliverableResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentDeliverableOut;
+};
+
+export type GroupReviewDeliverableResponse = GroupReviewDeliverableResponses[keyof GroupReviewDeliverableResponses];
+
+export type GroupEditInstructionsData = {
+    body: ComponentInstructionsEditIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Instructions Id
+         */
+        instructions_id: string;
+    };
+    query?: never;
+    url: '/v1/component-instructions/{instructions_id}';
+};
+
+export type GroupEditInstructionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupEditInstructionsError = GroupEditInstructionsErrors[keyof GroupEditInstructionsErrors];
+
+export type GroupEditInstructionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentInstructionsOut;
+};
+
+export type GroupEditInstructionsResponse = GroupEditInstructionsResponses[keyof GroupEditInstructionsResponses];
+
+export type GroupSendInstructionsData = {
+    body: ComponentInstructionsSendIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Instructions Id
+         */
+        instructions_id: string;
+    };
+    query?: never;
+    url: '/v1/component-instructions/{instructions_id}/send';
+};
+
+export type GroupSendInstructionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupSendInstructionsError = GroupSendInstructionsErrors[keyof GroupSendInstructionsErrors];
+
+export type GroupSendInstructionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentInstructionsOut;
+};
+
+export type GroupSendInstructionsResponse = GroupSendInstructionsResponses[keyof GroupSendInstructionsResponses];
+
+export type GroupEditComponentData = {
+    body: GroupComponentIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Component Id
+         */
+        component_id: string;
+    };
+    query?: never;
+    url: '/v1/components/{component_id}';
+};
+
+export type GroupEditComponentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupEditComponentError = GroupEditComponentErrors[keyof GroupEditComponentErrors];
+
+export type GroupEditComponentResponses = {
+    /**
+     * Successful Response
+     */
+    200: GroupComponentOut;
+};
+
+export type GroupEditComponentResponse = GroupEditComponentResponses[keyof GroupEditComponentResponses];
+
 export type RespondentViewData = {
     body?: never;
     path: {
@@ -82866,6 +85912,254 @@ export type RevokeConsentResponses = {
 };
 
 export type RevokeConsentResponse = RevokeConsentResponses[keyof RevokeConsentResponses];
+
+export type GroupListEliminationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/consolidations/{consolidation_id}/eliminations';
+};
+
+export type GroupListEliminationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupListEliminationsError = GroupListEliminationsErrors[keyof GroupListEliminationsErrors];
+
+export type GroupListEliminationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EliminationsOut;
+};
+
+export type GroupListEliminationsResponse = GroupListEliminationsResponses[keyof GroupListEliminationsResponses];
+
+export type GroupCreateEliminationData = {
+    body: EliminationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/consolidations/{consolidation_id}/eliminations';
+};
+
+export type GroupCreateEliminationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupCreateEliminationError = GroupCreateEliminationErrors[keyof GroupCreateEliminationErrors];
+
+export type GroupCreateEliminationResponses = {
+    /**
+     * Successful Response
+     */
+    201: EliminationOut;
+};
+
+export type GroupCreateEliminationResponse = GroupCreateEliminationResponses[keyof GroupCreateEliminationResponses];
+
+export type GroupApproveEliminationsData = {
+    body: EliminationApproveItemsIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/consolidations/{consolidation_id}/eliminations/approve';
+};
+
+export type GroupApproveEliminationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupApproveEliminationsError = GroupApproveEliminationsErrors[keyof GroupApproveEliminationsErrors];
+
+export type GroupApproveEliminationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EliminationsOut;
+};
+
+export type GroupApproveEliminationsResponse = GroupApproveEliminationsResponses[keyof GroupApproveEliminationsResponses];
+
+export type GroupProposeEliminationsData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consolidation Id
+         */
+        consolidation_id: string;
+    };
+    query?: never;
+    url: '/v1/consolidations/{consolidation_id}/eliminations/propose';
+};
+
+export type GroupProposeEliminationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupProposeEliminationsError = GroupProposeEliminationsErrors[keyof GroupProposeEliminationsErrors];
+
+export type GroupProposeEliminationsResponses = {
+    /**
+     * Successful Response
+     */
+    202: GroupRunRefOut;
+};
+
+export type GroupProposeEliminationsResponse = GroupProposeEliminationsResponses[keyof GroupProposeEliminationsResponses];
 
 export type ConsultationConcludeData = {
     body: ConsultationConcludeIn;
@@ -126221,6 +129515,508 @@ export type PortalCloseQuestionsResponses = {
 
 export type PortalCloseQuestionsResponse = PortalCloseQuestionsResponses[keyof PortalCloseQuestionsResponses];
 
+export type ComponentRoomGetRoomData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}';
+};
+
+export type ComponentRoomGetRoomErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomGetRoomError = ComponentRoomGetRoomErrors[keyof ComponentRoomGetRoomErrors];
+
+export type ComponentRoomGetRoomResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentRoomOut;
+};
+
+export type ComponentRoomGetRoomResponse = ComponentRoomGetRoomResponses[keyof ComponentRoomGetRoomResponses];
+
+export type ComponentRoomUploadData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+        /**
+         * Deliverable Id
+         */
+        deliverable_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}/deliverables/{deliverable_id}/uploads';
+};
+
+export type ComponentRoomUploadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * The file type is not accepted
+     */
+    415: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomUploadError = ComponentRoomUploadErrors[keyof ComponentRoomUploadErrors];
+
+export type ComponentRoomUploadResponses = {
+    /**
+     * Successful Response
+     */
+    201: RoomUploadOut;
+};
+
+export type ComponentRoomUploadResponse = ComponentRoomUploadResponses[keyof ComponentRoomUploadResponses];
+
+export type ComponentRoomDropData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}/drops';
+};
+
+export type ComponentRoomDropErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * The file type is not accepted
+     */
+    415: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomDropError = ComponentRoomDropErrors[keyof ComponentRoomDropErrors];
+
+export type ComponentRoomDropResponses = {
+    /**
+     * Successful Response
+     */
+    201: RoomUploadOut;
+};
+
+export type ComponentRoomDropResponse = ComponentRoomDropResponses[keyof ComponentRoomDropResponses];
+
+export type ComponentRoomGetInstructionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}/instructions';
+};
+
+export type ComponentRoomGetInstructionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomGetInstructionsError = ComponentRoomGetInstructionsErrors[keyof ComponentRoomGetInstructionsErrors];
+
+export type ComponentRoomGetInstructionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoomInstructionsOut;
+};
+
+export type ComponentRoomGetInstructionsResponse = ComponentRoomGetInstructionsResponses[keyof ComponentRoomGetInstructionsResponses];
+
+export type ComponentRoomAcknowledgeData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}/instructions/acknowledge';
+};
+
+export type ComponentRoomAcknowledgeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomAcknowledgeError = ComponentRoomAcknowledgeErrors[keyof ComponentRoomAcknowledgeErrors];
+
+export type ComponentRoomAcknowledgeResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoomAcknowledgedOut;
+};
+
+export type ComponentRoomAcknowledgeResponse = ComponentRoomAcknowledgeResponses[keyof ComponentRoomAcknowledgeResponses];
+
+export type ComponentRoomGetInstructionsPdfData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}/instructions/pdf';
+};
+
+export type ComponentRoomGetInstructionsPdfErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomGetInstructionsPdfError = ComponentRoomGetInstructionsPdfErrors[keyof ComponentRoomGetInstructionsPdfErrors];
+
+export type ComponentRoomGetInstructionsPdfResponses = {
+    /**
+     * Response Component Room Get Instructions Pdf
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ComponentRoomGetInstructionsPdfResponse = ComponentRoomGetInstructionsPdfResponses[keyof ComponentRoomGetInstructionsPdfResponses];
+
+export type ComponentRoomListQuestionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}/questions';
+};
+
+export type ComponentRoomListQuestionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomListQuestionsError = ComponentRoomListQuestionsErrors[keyof ComponentRoomListQuestionsErrors];
+
+export type ComponentRoomListQuestionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoomQuestionsOut;
+};
+
+export type ComponentRoomListQuestionsResponse = ComponentRoomListQuestionsResponses[keyof ComponentRoomListQuestionsResponses];
+
+export type ComponentRoomAskData = {
+    body: RoomQuestionIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}/questions';
+};
+
+export type ComponentRoomAskErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomAskError = ComponentRoomAskErrors[keyof ComponentRoomAskErrors];
+
+export type ComponentRoomAskResponses = {
+    /**
+     * Successful Response
+     */
+    201: RoomQuestionOut;
+};
+
+export type ComponentRoomAskResponse = ComponentRoomAskResponses[keyof ComponentRoomAskResponses];
+
 export type ConnectionDetailData = {
     body?: never;
     headers?: {
@@ -130293,6 +134089,262 @@ export type ProposedEntryRecordResponses = {
 };
 
 export type ProposedEntryRecordResponse = ProposedEntryRecordResponses[keyof ProposedEntryRecordResponses];
+
+export type GroupEditEliminationData = {
+    body: EliminationIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/v1/proposed-entries/{entry_id}/elimination';
+};
+
+export type GroupEditEliminationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupEditEliminationError = GroupEditEliminationErrors[keyof GroupEditEliminationErrors];
+
+export type GroupEditEliminationResponses = {
+    /**
+     * Successful Response
+     */
+    200: EliminationOut;
+};
+
+export type GroupEditEliminationResponse = GroupEditEliminationResponses[keyof GroupEditEliminationResponses];
+
+export type GroupApproveEliminationData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/v1/proposed-entries/{entry_id}/elimination/approve';
+};
+
+export type GroupApproveEliminationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupApproveEliminationError = GroupApproveEliminationErrors[keyof GroupApproveEliminationErrors];
+
+export type GroupApproveEliminationResponses = {
+    /**
+     * Successful Response
+     */
+    200: EliminationOut;
+};
+
+export type GroupApproveEliminationResponse = GroupApproveEliminationResponses[keyof GroupApproveEliminationResponses];
+
+export type GroupPostEliminationData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/v1/proposed-entries/{entry_id}/elimination/post';
+};
+
+export type GroupPostEliminationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupPostEliminationError = GroupPostEliminationErrors[keyof GroupPostEliminationErrors];
+
+export type GroupPostEliminationResponses = {
+    /**
+     * Successful Response
+     */
+    200: EliminationOut;
+};
+
+export type GroupPostEliminationResponse = GroupPostEliminationResponses[keyof GroupPostEliminationResponses];
+
+export type GroupRejectEliminationData = {
+    body: GroupReasonIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/v1/proposed-entries/{entry_id}/elimination/reject';
+};
+
+export type GroupRejectEliminationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupRejectEliminationError = GroupRejectEliminationErrors[keyof GroupRejectEliminationErrors];
+
+export type GroupRejectEliminationResponses = {
+    /**
+     * Successful Response
+     */
+    200: EliminationOut;
+};
+
+export type GroupRejectEliminationResponse = GroupRejectEliminationResponses[keyof GroupRejectEliminationResponses];
 
 export type ProposedEntryRejectData = {
     body: AbacusModulesAdjustmentsContractRejectIn;

@@ -510,6 +510,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion.CompletionInvalid
     - abacus.modules.fieldwork.completion.CompletionInvalid
+  component_pm_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.group_contract.ComponentPmInvalid
+    summary: A component PM at or above group PM, or on an Analytical-only component.
   computed_variable:
     status: 422
     raised_by:
@@ -979,6 +984,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.engine_import.EngineVersionBehind
+  entity_already_covered:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.group_contract.EntityAlreadyCovered
   entity_exists:
     status: 409
     raised_by:
@@ -3385,8 +3394,9 @@ codes:
   structure_invalid:
     status: 422
     raised_by:
+    - abacus.modules.assurance.group_contract.StructureInvalid
     - abacus.modules.tax.allocation_structure.StructureInvalid
-    summary: The engine cannot run the structure; `facts.code` says why (never a partner's figures).
+    summary: A fourth tier, ownership other than 100%, or a currency other than USD (X-06).
   structure_not_pending:
     status: 409
     raised_by:
@@ -3627,6 +3637,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.TrialBalanceInvalid
+  trial_balance_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.group_contract.TrialBalanceMissing
   trust_report_missing:
     status: 409
     raised_by:
@@ -3638,9 +3652,10 @@ codes:
     - abacus.modules.closes.contract.UnadoptedRows
     summary: A drafted plan row nobody adopted blocks publishing (P-35; AC-22).
   unbalanced_entry:
-    status: 422
+    status: 409 or 422
     raised_by:
     - abacus.modules.adjustments.entries.UnbalancedEntry
+    - abacus.modules.assurance.group_contract.UnbalancedEntry
     summary: An entry's debits and credits differ (or a line has both or neither side).
   uncited_change:
     status: 422

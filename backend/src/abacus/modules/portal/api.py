@@ -16,6 +16,7 @@ from abacus.modules.portal.branding import (
     register_branding_settings,
     set_branding,
 )
+from abacus.modules.portal.component_room_contract import router as component_room_router
 from abacus.modules.portal.contract import router
 from abacus.modules.portal.deliverables_contract import deliverables_router, governance_router
 from abacus.modules.portal.documents_routes import documents_router
@@ -34,6 +35,7 @@ SUBSCRIPTIONS = {**_NOTICES, **_APPROVAL_EMAILS}
 # still waiting for their tasks.
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
+    component_room_router,  # A-09-T03 POR-23 stub (docs/contracts/group-audit.md)
     documents_router,
     rooms_router,
     pbc_router,

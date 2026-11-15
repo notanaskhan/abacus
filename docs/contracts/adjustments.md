@@ -38,3 +38,19 @@ Every operation answers 404 to a client principal, 404 with the flag off and 501
 
 ## Screen contract (A-06-T38)
 AUD-16: `docs/screens/AUD-16.md` (artboards, deviations, consumer notes).
+
+## C8 v1.1 · eliminations (A-09-T03; SPEC-658 F4; DEC-5039)
+Additive. A `proposed_entries` row with `kind = 'elimination'` carries `consolidation_id` (required),
+`posting_target = 'consolidation_layer'`, a `display_code` (E1a…) and `proposed_by_run_id`; each line
+carries `client_entity_id` and `consolidation_level`. Routes (stubs in
+`assurance/group_contract.py`): GET/POST `/v1/consolidations/{cid}/eliminations`, PATCH
+`/v1/proposed-entries/{id}/elimination`, POST `…/elimination/approve` (409 `unbalanced_entry`) and the
+per-item POST `/v1/consolidations/{cid}/eliminations/approve`, POST `…/elimination/post` and
+`…/elimination/reject`, POST `/v1/consolidations/{cid}/eliminations/propose` (202). Actions
+`elimination.read`, `.edit`, `.propose_run`, `.approve`, `.post` (A-09-T02).
+
+**The CHECK clause C-02 must keep (A-09-T10):** posted, failed_post and reversed are refused **unless**
+`kind = 'elimination' AND posting_target = 'consolidation_layer'`; C-02's W1 migration extends this
+clause and never replaces it (an AC test fails if the elimination clause disappears).
+Fixture footing: E1a 20,000,000 · E1b 26,000,000 · E2 18,000,000 · E3 240,000 · E4 2,400,000 · E5
+1,200,000 = 67,840,000 Dr = Cr; the eliminations column on assets totals (48,640,000).
