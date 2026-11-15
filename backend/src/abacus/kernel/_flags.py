@@ -302,6 +302,16 @@ INBOX_FIRM_INTAKE = Flag(
     kind="boolean",
     default="false",
 )
+INTEGRATIONS_CONNECT_V1 = Flag(
+    name="integrations.connect_v1",
+    kind="boolean",
+    default="false",
+)
+INTEGRATIONS_HEALTH_MONITOR = Flag(
+    name="integrations.health_monitor",
+    kind="boolean",
+    default="false",
+)
 KNOWLEDGE_CATALOG = Flag(
     name="knowledge.catalog",
     kind="boolean",
@@ -687,6 +697,8 @@ FLAGS: dict[str, Flag] = {
     "follow_ups.scheduled_send": FOLLOW_UPS_SCHEDULED_SEND,
     "guidance.drafting": GUIDANCE_DRAFTING,
     "inbox.firm_intake": INBOX_FIRM_INTAKE,
+    "integrations.connect_v1": INTEGRATIONS_CONNECT_V1,
+    "integrations.health_monitor": INTEGRATIONS_HEALTH_MONITOR,
     "knowledge.catalog": KNOWLEDGE_CATALOG,
     "knowledge.firm_standards": KNOWLEDGE_FIRM_STANDARDS,
     "ledger.gl_import": LEDGER_GL_IMPORT,

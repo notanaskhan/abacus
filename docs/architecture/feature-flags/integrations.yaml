@@ -1,0 +1,18 @@
+# Feature flags of the integrations module (W-01-T02; ADR-089; SPEC-659). make regenerate.
+flags:
+  - name: integrations.connect_v1
+    description: 'W-01 Connect: every new C20 v2 route (catalogue, detail, connect, complete, disconnect, interest, client companies), the live WB-10/WB-11 data mode, the firm-app check on POR-16 starts and the agent admission precondition. Off: those routes answer 404 and Connect keeps the TPL-05e specimen; the live path behaves exactly as before W-01 (AC-34). Per firm, default off. W-01-T02, DEC-5045.'
+    owner: notanaskhan
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: integrations.health_monitor
+    description: 'W-01 health monitor: IntegrationHealthWorkflow transitions and the connection_needs_reauth / integration_available notifications, so a noisy provider can be silenced without hiding Connect. Off: no transition or notification (AC-30). Per firm, default off. W-01-T02, DEC-5045.'
+    owner: notanaskhan
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false

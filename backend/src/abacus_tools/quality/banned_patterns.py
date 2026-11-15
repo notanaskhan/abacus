@@ -1676,7 +1676,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "agents": _BASE
     | {"engagements", "organisations", "evidence", "requests", "ledger", "communications"}
     | {"methodology", "review"}
-    | {"fieldwork"},  # today: SPEC-037 Q4 (TASK-085 D3), the entry assessor reads selected entries
+    | {"fieldwork"}  # today: SPEC-037 Q4 (TASK-085 D3), the entry assessor reads selected entries
+    # W-01-T02 (DEC-5045): the run-admission precondition and the dependents provider read
+    # integrations.api; integrations never imports agents, so the graph stays acyclic.
+    | {"integrations"},
     # Today's fieldwork (procedures, workpapers, findings) splits into workpapers and assurance.
     # TASK-084 adds evidence (support) and requests (asking the client for it).
     "fieldwork": _BASE | {"engagements", "ledger", "sampling", "evidence", "requests"},
