@@ -37,6 +37,13 @@ function existing(dir: string): string[] {
   }
 }
 
+// A-08-T01 (SPEC-657 AC-8.7; A-08 §4.9): SSARS surfaces say "conclusion", never "opinion" (AR-C 90).
+const SSARS_ROOTS = [
+  join(WEB, "src", "screens", "AUD-26"),
+  join(WEB, "src", "domain", "audits", "fieldwork", "ssars"),
+];
+const OPINION = /\bopinions?\b/iu;
+
 describe("copy bans (R-04)", () => {
   it("never says Accrued transmits or e-files a return", () => {
     const hits = ROOTS.flatMap(files).filter((path) => BANNED.test(readFileSync(path, "utf8")));
@@ -60,5 +67,19 @@ describe("copy bans (DV-2)", () => {
   it("the ban catches the word and spares tie", () => {
     expect(TIES.test("Σ K-1s = DEDUCTION · Ties")).toBe(true);
     expect(TIES.test("Σ K-1s = DEDUCTION · tie")).toBe(false);
+  });
+});
+
+describe("copy bans (A-08 SSARS)", () => {
+  it("AUD-26 never says opinion", () => {
+    const hits = SSARS_ROOTS.flatMap(existing).filter((path) =>
+      OPINION.test(readFileSync(path, "utf8")),
+    );
+    expect(hits).toEqual([]);
+  });
+
+  it("the ban catches opinion and spares conclusion", () => {
+    expect(OPINION.test("Review opinion")).toBe(true);
+    expect(OPINION.test("No conclusion yet")).toBe(false);
   });
 });

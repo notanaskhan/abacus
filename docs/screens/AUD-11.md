@@ -53,6 +53,7 @@
 | DV-A2 | a–e | Dock opens on Viewer; the "Sample selector · Version 2" run card, narration and "Sign off run" are absent; parity masks the dock pane | No agent run exists (A-11); the dock kit is P-09 |
 | DV-A3 | a, f | Population SHA-256 is real data; parity masks it | A hash cannot be forced to the design's value |
 | DV-A4 | header | Composed sample-set picker | DF-05 |
+| DV-10 (A-08) | method select | "Monetary unit" option behind `sampling.monetary_unit`, composed from the DF-05 frame: interval, certainty items and a seeded systematic PPS start shown as code facts on the existing method card; no handoff artboard (A-08-T13) | DEC-81, DF-05; SPEC-657 AC-4.1 |
 
 ## Links
 | From | To (manifest builder) | Planned or live |

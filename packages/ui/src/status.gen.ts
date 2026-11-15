@@ -6030,6 +6030,265 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "confirmation": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "authorization_requested": {
+      "label": "Authorization requested",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "waiting": "Authorization requested · Waiting on {name} (SIG-02)"
+      }
+    },
+    "sent": {
+      "label": "Sent",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "viewed": "Viewed {date}",
+        "second_request": "2nd request {date}",
+        "paused": "Respondent links paused"
+      }
+    },
+    "responded": {
+      "label": "Responded",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "exception": {
+      "label": "Exception",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "alternative_procedures": {
+      "label": "Alternative procedures",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "closed": {
+      "label": "Closed",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "link_principal": {
+    "issued": {
+      "label": "Issued",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "opened": {
+      "label": "Opened",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "locked": {
+      "label": "Locked",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "consumed": {
+      "label": "Answered",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "respondent": "This confirmation was already answered on {date}."
+      }
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "revoked": {
+      "label": "Revoked",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "je_test": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "scoring": {
+      "label": "Scoring",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "scored": {
+      "label": "Scored",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "je_criterion": {
+    "available": {
+      "label": "Available",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "not_available": {
+      "label": "Not available from this ledger",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "fieldwork_test_result": {
+    "testing": {
+      "label": "Testing",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "spinner"
+    },
+    "agent_tested": {
+      "label": "Agent-tested",
+      "variant": "outline",
+      "terminal": false,
+      "derived": false
+    },
+    "needs_human": {
+      "label": "Needs human",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "adopted": {
+      "label": "Adopted",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "✓ {initials}"
+      }
+    },
+    "exception": {
+      "label": "Exception",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "sample_expansion": {
+    "pending_approval": {
+      "label": "Pending approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "waiting": "Waiting on {name}",
+        "header": "{n} + {m} pending approval ({initials})"
+      }
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "analytics_set": {
+    "computing": {
+      "label": "Pending",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "current": {
+      "label": "Current",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "out_of_date": {
+      "label": "Out of date",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "analytics_line": {
+    "within": {
+      "label": "Within",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "unexplained": {
+      "label": "Unexplained",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "explained": {
+      "label": "Explained",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "client_answer": "Client answer {date} · {name}"
+      }
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "Accepted · {initials}"
+      }
+    }
   }
 } as const;
 
