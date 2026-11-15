@@ -81,6 +81,19 @@ Proposed under N-02-T01 for DocuSign Connect, retargeted to DocuSeal by ADR-342 
 - No GET: the state stays out of request lines and logs.
 - (2026-11-10; TASK-6990, DEC-3990) "The request's own `Host`" is the viewer host defined by ADR-163's viewer-host amendment: the load balancer's `X-Forwarded-Host` behind CloudFront, else `Host`.
 
+## Amendment: public respondent access, the `/v1/confirm/*` family (proposed 2026-11-15; A-08-T02, DEC-5029)
+**Status of this amendment: proposed.** Both deciders accept it; until then no `/v1/confirm/*` route answers outside the fixture tenant (A-08-T06 serves stub fixtures there only). P-09 (ADR-146) already decides link principals; this amendment adds the concrete route family to the exception list, as A-08 §0.1 and OQ-2 direct (no new P-ID).
+- **Five paths join the ROUTE-001 exception list**, inside `AbacusRouter` under a `LINK_PRINCIPAL` marker that the router accepts on these paths only (as `PRE_SESSION` and `PORTAL_PUBLIC`):
+  `GET /v1/confirm/{token}` · `POST /v1/confirm/{token}/code` · `POST /v1/confirm/{token}/code/verify` · `POST /v1/confirm/{token}/attachments` · `POST /v1/confirm/{token}/response`.
+  No other path may carry the marker; a new purpose (R-03 intake) is a further amendment.
+- **The token authenticates the link principal, never a person.** The handler hashes the path token (SHA-256), resolves it only through the pinned `SECURITY DEFINER` function `identity_resolve_link(token_hash)` (the one pre-tenant read), and proceeds under that tenant's row security as `actor_kind = link_principal` with `link_scope_only`: it reads or submits exactly the one object the link names. The token travels in the path only; the access log and every log line redact it; it is never in a query string.
+- **Uniform, padded answers (no enumeration).** Unknown, expired, revoked and kill-switched tokens answer the same status (200 with state `expired` on GET; 404 on POST), the same body and at least the same padded minimum duration (`CONFIRM_PAD_MS`, 400 ms, measured from receipt). `POST …/code` answers 202 after the padded minimum for any input and any address.
+- **Email code.** Six digits, 10-minute expiry, hashed at rest (`link_principal_challenges.code_hash`); five wrong codes lock the link principal for 15 minutes (ADR-141's lockout mechanics, P-08-T10); a verified code upgrades the page credential (a `__Host-` cookie bound to the link principal, `SameSite=Strict`, CSRF double-submit), never a session.
+- **Edge limits.** WAF rule 6 limits `/v1/confirm/*/code*` to 30 requests per 5 minutes per IP; the other confirm paths share the portal's per-IP rate.
+- **Kill switch.** The `confirmation_links` platform control (ADR-157), per firm and global, is checked before any read or issuance: when active, every `/v1/confirm/*` call renders the expired answer and AUD-14 shows "Respondent links paused".
+- **Single object, single answer.** The response is insert-only; a second submission answers 409 `already_answered` with the original receipt id; attachments go through evidence uploads and the scanner as write-once versions (channel `confirmation_response`), never parsed with formulas evaluated (ADR-052).
+- **What the family never returns:** another confirmation, the engagement, any client portal link or grant, the firm's staff, or any field of the client's record beyond the one confirmation's render data. A client principal reaching any confirmation route gets 404.
+
 ## Revisit when
 A third unauthenticated route is proposed, or branding needs per-visitor data.
 

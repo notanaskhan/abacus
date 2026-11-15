@@ -56,6 +56,18 @@ inputs = {'memo': Untrusted(entry.memo)}
 prompt += f'Memo: {entry.memo}'
 ```
 
+## Amendment: link principals on the public confirmation page (proposed 2026-11-15; A-08-T02, DEC-5029)
+**Status of this amendment: proposed** (with the ADR-152 amendment). POR-17 is the first surface a stranger can call. The repository has no separate threat-model file under `docs/architecture` for principals, so the link-principal threats live here beside the AI threats (A-08 §0.1).
+
+| Threat | How it happens | Controls |
+|---|---|---|
+| Enumeration | Guessing tokens or probing which links exist, are expired or answered | 256-bit random tokens stored hashed; one definer resolver; identical status, body and padded timing for unknown, expired, revoked and kill-switched tokens (DV-7); WAF rule 6; no token in logs or query strings |
+| Phishing | A fake "confirmation" email that copies the firm's | Firm DKIM sender and letterhead (ADR-163); the email and the expired page tell the respondent to call the firm on an independently found number, never the number in the email; no payment language; the link works once |
+| Brute force (codes) | Guessing the six-digit email code | 10-minute codes hashed at rest; five wrong codes lock for 15 minutes; 30 code requests per 5 minutes per IP at the edge; padded 202 for any address |
+| Hostile upload | A respondent attachment carrying malware, macros or prompt text | Evidence uploads with the scanner failing closed (ADR-153), write-once versions, isolated parse, formulas never evaluated; respondent text and attachments are `respondent_text` untrusted input to `confirmation_reconcile`, whose proposals a manager alone accepts (containment eval 1.0) |
+| Scope escape | Using a link to read other customers, the engagement or portal data | `link_scope_only`: one object per link principal; render data for that confirmation only; client principals 404 on every confirmation route (I-CONFIRMATION-ISOLATION) |
+| Replay | Resubmitting or changing an answer | Insert-only response; the link is consumed; 409 `already_answered` with the original receipt |
+
 ## Revisit when
 Never expected to change.
 
