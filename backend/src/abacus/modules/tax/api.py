@@ -453,6 +453,10 @@ from abacus.modules.tax.instrument_reader import (  # noqa: E402  (S45 history r
 )
 
 WORKFLOWS.update(_instrument_reader.WORKFLOWS)
+# T-07-T03 part (TASK-8069): HOME-02's L3 gate on an adopted interpretation.
+from abacus.modules.tax.instrument_gates import register_instrument_gates  # noqa: E402
+
+register_instrument_gates()
 ACTIVITIES = (*ACTIVITIES, *_instrument_reader.ACTIVITIES)  # pyright: ignore[reportConstantRedefinition] -- the worker reads the final tuple
 
 # T-04-T15 (DEC-3208): the workspace's reviewables, field owner, suggestion targets and appliers.

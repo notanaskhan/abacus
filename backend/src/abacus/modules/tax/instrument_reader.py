@@ -359,9 +359,33 @@ async def read_activity(p: ReaderRunInput) -> ReaderRunOutcome:
     except AgentRunNotRunning:
         return ReaderRunOutcome("refused", "run_ended")
     result = await read_instrument(agent, UUID(p.client_entity_id), p.tax_year)
+    await _announce(agent, p, result)
     return ReaderRunOutcome(
         result.outcome, result.code, str(result.proposal_id) if result.proposal_id else None
     )
+
+
+async def _announce(agent: AgentContext, p: ReaderRunInput, result: ReaderResult) -> None:
+    """T-07-T03 (T-07 §4.8): `instrument_read_finished` to the person who started the read, with
+    its outcome (proposed, nothing to propose or refused). The activity's retry re-announces only
+    if the read itself ran again; the bell row is the same subject either way."""
+    from abacus.kernel.uow import Target, uow
+    from abacus.modules.tax.instrument_events import InstrumentReadFinished
+
+    if agent.engagement_id is None:
+        return
+    async with uow(agent.tenant) as tx:
+        tx.record("instrument_read.finished", target=Target("agent_run", agent.agent_run_id))
+        tx.emit(
+            InstrumentReadFinished(
+                run_id=agent.agent_run_id,
+                engagement_id=agent.engagement_id,
+                work_item_id=UUID(p.return_id),
+                user_id=agent.initiator.user_id,
+                outcome=result.outcome,
+                code=result.code,
+            )
+        )
 
 
 WORKFLOWS: dict[type, WorkClass] = {InstrumentReaderWorkflow: "background"}

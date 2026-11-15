@@ -75,6 +75,11 @@ from abacus.modules.tax.fiduciary_contract import (
 )
 from abacus.modules.tax.instrument_citations import KIND as CLAUSE_KIND
 from abacus.modules.tax.instrument_citations import move_clause_citations
+from abacus.modules.tax.instrument_events import (
+    InstrumentInterpretationAdopted,
+    InstrumentInterpretationApproved,
+    InstrumentInterpretationReopened,
+)
 from abacus.modules.tax.instruments.segment import SEGMENTATION_VERSION, segment
 
 TARGET: Final = "instrument_interpretation"
@@ -636,6 +641,12 @@ _ADOPT: Final = text(
     "UPDATE instrument_interpretations SET status = 'adopted', version_no = version_no + 1, "
     "content_hash = :h, row_version = row_version + 1 WHERE id = :i"
 )
+# T-07-T03 (AC-4.1): the status before a person's write, so the move into Adopted is announced
+# once (the gate and `instrument_interpretation_ready`), not on every later edit.
+_BEFORE_ADOPT: Final = text(
+    "SELECT status, engagement_id, work_item_id FROM instrument_interpretations "
+    "WHERE id = :i FOR UPDATE"
+)
 _HASH_ROWS: Final = text(
     "SELECT d.key, v.seq, v.value_code, v.citation_ids FROM instrument_determinations d "
     "JOIN LATERAL (SELECT * FROM instrument_determination_versions x WHERE x.determination_id "
@@ -704,10 +715,20 @@ async def _write_version(
                 "reason": sealed_reason,
             },
         )
+        before = (await tx.session.execute(_BEFORE_ADOPT, {"i": interpretation_id})).first()
         await tx.session.execute(
             _ADOPT,
             {"i": interpretation_id, "h": await _content_hash(tx.session, interpretation_id)},
         )
+        if before is not None and before.status != "adopted":
+            tx.emit(
+                InstrumentInterpretationAdopted(
+                    interpretation_id=interpretation_id,
+                    work_item_id=before.work_item_id,
+                    engagement_id=before.engagement_id,
+                    by_user=ctx.user_id,
+                )
+            )
         tx.record(
             "instrument_determination.recorded",
             target=Target("instrument_determination", determination),
@@ -794,7 +815,7 @@ _REOPEN: Final = text(
 _LOCK: Final = text(
     "UPDATE instrument_interpretations SET status = 'approved', locked_at = abacus_now(), "
     "row_version = row_version + 1 WHERE id = :i AND status IN ('adopted', 'proposed') "
-    "AND superseded_at IS NULL RETURNING id"
+    "AND superseded_at IS NULL RETURNING engagement_id"
 )
 
 
@@ -817,6 +838,11 @@ async def reopen(
             "instrument_interpretation.reopened",
             target=Target("instrument_interpretation", interpretation_id),
         )
+        tx.emit(
+            InstrumentInterpretationReopened(
+                interpretation_id=interpretation_id, engagement_id=row.engagement_id
+            )
+        )
     async with tenant_session(ctx.tenant) as session:
         fresh = (await session.execute(_INTERPRETATION, {"w": row.work_item_id})).first()
     if fresh is None:
@@ -835,8 +861,14 @@ async def on_sign_off_recorded(event: OutboxEvent) -> None:
         return
     tenant = TenantContext(event.tenant_id, "system", "tax:instrument_lock")
     async with uow(tenant) as tx:
-        if await tx.session.scalar(_LOCK, {"i": UUID(target)}) is not None:
+        engagement = await tx.session.scalar(_LOCK, {"i": UUID(target)})
+        if engagement is not None:
             tx.record("instrument_interpretation.approved", target=Target(TARGET, UUID(target)))
+            tx.emit(
+                InstrumentInterpretationApproved(
+                    interpretation_id=UUID(target), engagement_id=cast(UUID, engagement)
+                )
+            )
 
 
 # --- the reviewable (DEC-84: L1 and L3) ---------------------------------------------------------

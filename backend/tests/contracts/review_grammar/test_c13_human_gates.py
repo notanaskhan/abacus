@@ -93,6 +93,10 @@ EVENTS: Final = {
     # C-01-T15 (QC-8): a close plan waits on its Managers' and Partners' publication.
     "close_plan.publish_requested",
     "close_plan.published",
+    # T-07-T03 (TASK-8069): an adopted interpretation waits on the manager's L3.
+    "instrument_interpretation.adopted",
+    "instrument_interpretation.approved",
+    "instrument_interpretation.reopened",
     # P-10-T49 (DEC-4401): a v2 run's plan awaiting approval and its SHL-10 proposals.
     "agent_run.needs_input",
     "agent_run.plan_decided",

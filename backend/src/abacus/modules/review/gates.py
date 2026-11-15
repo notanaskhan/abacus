@@ -166,6 +166,10 @@ C13_EVENTS: Final = frozenset(
         # C-01-T15 (closes, QC-8): a close plan waits on its Managers' and Partners' publication.
         "close_plan.publish_requested",
         "close_plan.published",
+        # T-07-T03 (tax, TASK-8069): an adopted instrument interpretation waits on the L3.
+        "instrument_interpretation.adopted",
+        "instrument_interpretation.approved",
+        "instrument_interpretation.reopened",
     }
 )
 READ: Final = "human_gate.read"

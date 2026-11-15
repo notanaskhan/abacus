@@ -18,6 +18,7 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.subject_states import subject_state
 from abacus.modules.identity.api import (
     engagement_leads,
+    engagement_managers,
     engagement_partners,
     firm_admins,
     hidden_clients,
@@ -337,6 +338,15 @@ async def _firm_export_parties(tenant_id: UUID, payload: dict[str, object]) -> l
     return sorted(p for p in people if p is not None)
 
 
+async def _interpretation_approvers(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """T-07-T03 (T-07 §4.8): the engagement's managers, who give the interpretation's L3; never
+    the person whose write adopted it."""
+    engagement_id, by = _uuid(payload, "engagement_id"), _uuid(payload, "by_user")
+    if engagement_id is None:
+        return []
+    return [u for u in await engagement_managers(tenant_id, engagement_id) if u != by]
+
+
 @dataclass(frozen=True)
 class Kind:
     kind: str  # the stored code; new codes are undotted (C16); the key is the event type
@@ -604,6 +614,14 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "firm_export.ready": Kind(
         "firm_export_ready", _firm_export_parties, "firm_export", "export_id", None
     ),
+    # T-07-T03 (T-07 §4.8): an adopted interpretation, to the managers who approve it at L3;
+    # the reader's end, to the person who started it.
+    "instrument_interpretation.adopted": Kind(
+        "instrument_interpretation_ready", _interpretation_approvers, "tax_return", "work_item_id"
+    ),
+    "instrument_read.finished": Kind(
+        "instrument_read_finished", _member, "tax_return", "work_item_id"
+    ),
 }
 
 
@@ -755,6 +773,10 @@ TEMPLATES: Final[dict[str, str]] = {
     ),
     "firm_export.requested": "A firm data export is waiting for your approval.",
     "firm_export.ready": "The firm data export is ready to download for 7 days.",
+    "instrument_interpretation.adopted": (
+        "The instrument interpretation on {subject} is ready for your approval."
+    ),
+    "instrument_read.finished": "The instrument reader finished on {subject}.",
 }
 
 
@@ -951,6 +973,9 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # P-10-T33: agent-originated (AGENT_KINDS), so no inline action (INV-1).
     NotificationKind("run_needs_input", "run", "MessageSquareText"),
     NotificationKind("run_finished", "run", "Bot"),
+    # T-07-T03: the interpretation's L3 is the managers'; the reader's end is agent-originated.
+    NotificationKind("instrument_interpretation_ready", "approval", "Gavel"),
+    NotificationKind("instrument_read_finished", "run", "Bot"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

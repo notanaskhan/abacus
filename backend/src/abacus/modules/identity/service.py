@@ -286,6 +286,15 @@ async def engagement_partners(tenant_id: UUID, engagement_id: UUID) -> list[UUID
     return sorted({user for user, role in team if role in PARTNER_ROLES})
 
 
+MANAGER_ROLES: frozenset[EngagementRole] = frozenset({"manager"})
+
+
+async def engagement_managers(tenant_id: UUID, engagement_id: UUID) -> list[UUID]:
+    """T-07-T03 (DEC-84): the engagement's managers, who give an instrument interpretation's L3."""
+    team = await team_of(tenant_id, engagement_id)
+    return sorted({user for user, role in team if role in MANAGER_ROLES})
+
+
 EQR_ROLES: frozenset[EngagementRole] = frozenset({"reviewer"})
 
 
