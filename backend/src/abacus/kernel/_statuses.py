@@ -1004,12 +1004,31 @@ class ProjectStatus(StrEnum):
 class ConsolidationStatus(StrEnum):
     DRAFT = "draft"
     FINALIZED = "finalized"
+    DISCARDED = "discarded"
+
+
+class ConsolidationLockStatus(StrEnum):
+    OPEN = "open"
+    LOCKED = "locked"
+
+
+class ConsolidationTbStatus(StrEnum):
+    MISSING = "missing"
+    ATTACHED = "attached"
+    NOT_NEEDED = "not_needed"
+    NEEDS_REAUTH = "needs_reauth"
 
 
 class EliminationEntryStatus(StrEnum):
     PROPOSED = "proposed"
     APPROVED = "approved"
     POSTED = "posted"
+    REJECTED = "rejected"
+
+
+class GroupMaterialityDecisionStatus(StrEnum):
+    PENDING = "pending"
+    DECIDED = "decided"
 
 
 class ComponentStatus(StrEnum):
@@ -1028,7 +1047,7 @@ class ComponentDeliverableStatus(StrEnum):
     EXPECTED = "expected"
     RECEIVED = "received"
     REVIEWED = "reviewed"
-    # derived, never stored: late
+    # derived, never stored: late, returned
 
 
 class LinkedValueStatus(StrEnum):
@@ -2320,11 +2339,27 @@ STORED: dict[str, tuple[str, ...]] = {
     "consolidation": (
         "draft",
         "finalized",
+        "discarded",
+    ),
+    "consolidation_lock": (
+        "open",
+        "locked",
+    ),
+    "consolidation_tb": (
+        "missing",
+        "attached",
+        "not_needed",
+        "needs_reauth",
     ),
     "elimination_entry": (
         "proposed",
         "approved",
         "posted",
+        "rejected",
+    ),
+    "group_materiality_decision": (
+        "pending",
+        "decided",
     ),
     "component": (
         "full_scope",

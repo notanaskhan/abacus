@@ -83,3 +83,25 @@ describe("copy bans (A-08 SSARS)", () => {
     expect(OPINION.test("No conclusion yet")).toBe(false);
   });
 });
+
+// A-09-T04 (SPEC-658 AC-0.2): SAS 149 has no "significant component", and nothing is ever posted to
+// a client system (ADR-040). Scans the group screens and the group-audit domain folder.
+const GROUP_ROOTS = ["AUD-32", "AUD-33", "AUD-34", "AUD-35", "POR-23"]
+  .map((id) => join(WEB, "src", "screens", id))
+  .concat([join(WEB, "src", "domain", "group-audit")]);
+const GROUP_BANNED = /\bsignificant components?\b|\bpost to netsuite\b/iu;
+
+describe("copy bans (A-09 group audit)", () => {
+  it("group screens never say significant component or Post to NetSuite", () => {
+    const hits = GROUP_ROOTS.flatMap(existing).filter((path) =>
+      GROUP_BANNED.test(readFileSync(path, "utf8")),
+    );
+    expect(hits).toEqual([]);
+  });
+
+  it("the ban catches both phrases and spares component", () => {
+    expect(GROUP_BANNED.test("Significant component")).toBe(true);
+    expect(GROUP_BANNED.test("Post to NetSuite")).toBe(true);
+    expect(GROUP_BANNED.test("Component: Harlow & Pike Distribution, Inc.")).toBe(false);
+  });
+});

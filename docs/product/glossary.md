@@ -689,3 +689,16 @@ Lint rules L1–L12 check these against the copy registry.
 | Expectation | An SSARS review expectation for a line (range and basis) set before comparison. | `analytics_expectations` | `estimate` |
 | Inquiry | One question in an SSARS inquiry program, sent to the client as a POR-05 questionnaire; status words are the request words (Requested, Answered). | `questionnaire kind ssars_inquiry` | `interview` |
 | Conclusion (SSARS) | What an AR-C 90 review reaches. SSARS surfaces (AUD-26, AR-C 70/80/90) never say "opinion". | — | `opinion` |
+
+## New terms: group audit (A-09-T04)
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Consolidation | One group's structure (up to three tiers, ownership 100%, USD) with each entity's trial balances attached per label and period, finalized by a manager, then consolidated level by level by code. | `consolidations`, `consolidation_entities`, `consolidation_trial_balances` | `rollup`, `combination` |
+| Component | An entity of the group the engagement scopes: planned work Full scope, Specific procedures or Analytical only, performed by the group team or a component auditor. | `components` | `significant component` |
+| Component auditor | An external firm auditing one component under the group's instructions, holding a `component_auditor` grant on that component only (DEC-67). | `component_auditors` | `other auditor`, `sub-auditor` |
+| Component performance materiality | The PM a component's work uses: manager-entered with a code default from the firm's allocation table, below group PM, none for Analytical only. | `components.component_pm` | `component materiality` |
+| Make reference | The EP's decision to refer to the component auditor's report in the group report (default No; a reserved decision card). | decision kind `make_reference` | — |
+| Elimination | A consolidation entry (E1a…) removing intercompany balances, sales, profit, rent or investment, posted to the consolidation layer only — never to an entity snapshot or a client's ledger. | `proposed_entries.kind = elimination` | `Post to NetSuite`, `adjusting entry` |
+
+Banned phrases (copy lint): "significant component" (SAS 149 dropped it) and "Post to NetSuite" (connectors only read, ADR-040).
