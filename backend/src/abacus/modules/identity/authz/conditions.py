@@ -8,6 +8,7 @@ are not registered, or not known for this resource, denies (fail closed).
 
 - `level_in(...)`         the actor's membership level is one of these
 - `function_in(...)`      the actor holds one of these functions on the target's work item
+- `staff_function_in(...)` the same, binding only when `staff` alone grants the action (QC-3)
 - `not_offshore`          the actor's membership is not offshore
 - `attest_client: deny`   the engagement's client is not an attest client; `only`: it is
 - `gates_met(G…)`         every gate named is met on the engagement
@@ -77,6 +78,8 @@ class ConditionFacts:
     named_approver: bool | None = None
     link_scope: bool | None = None
     email_verified: bool | None = None
+    # C-01-T02 (QC-3): the roles that allowed the action (None: unknown, fails closed).
+    granting_roles: frozenset[str] | None = None
 
 
 def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
@@ -112,6 +115,15 @@ def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
             facts.functions is None or not (facts.functions & rule.function_in)
         ):
             return False
+        # C-01-T02 (QC-3): staff alone acts only while holding one of the listed functions on the
+        # work item; a partner, manager or senior who also grants is not bound by it.
+        if rule.staff_function_in:
+            if facts.granting_roles is None:
+                return False
+            if facts.granting_roles <= {"staff"} and (
+                facts.functions is None or not (facts.functions & rule.staff_function_in)
+            ):
+                return False
         if rule.not_offshore and facts.offshore is not False:
             return False
         if rule.scope_only and facts.client_actor and facts.scope_covered is not True:

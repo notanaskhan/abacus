@@ -191,6 +191,25 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         ConditionFacts(email_verified=True),
         ConditionFacts(email_verified=None),
     ),
+    # C-01-T02 (QC-3, DEC-5057): staff alone starts a close's run only as its preparer.
+    (
+        "staff_function_in",
+        {"staff": "allow", "staff_function_in": "close_preparer"},
+        ConditionFacts(
+            granting_roles=frozenset({"staff"}), functions=frozenset({"close_preparer"})
+        ),
+        ConditionFacts(
+            granting_roles=frozenset({"staff"}), functions=frozenset({"close_reviewer"})
+        ),
+    ),
+    (
+        "staff_function_in",
+        {"staff": "allow", "staff_function_in": "close_preparer"},
+        ConditionFacts(
+            granting_roles=frozenset({"staff"}), functions=frozenset({"close_preparer"})
+        ),
+        ConditionFacts(granting_roles=None, functions=frozenset({"close_preparer"})),
+    ),
 ]
 IDS = [f"{c[0]}-{i}" for i, c in enumerate(CASES)]
 
@@ -355,3 +374,21 @@ async def test_in_scope_never_reaches_beyond_the_scoped_roles(
     resource = Resource.engagement(ctx.tenant_id, uuid.uuid4(), archived=False)
     _, scoped = await authz._in_scope(ctx, "manager", resource, None)  # pyright: ignore[reportPrivateUsage]  # the rule, tested directly
     assert scoped is False
+
+
+def test_staff_function_in_never_binds_a_senior_who_also_grants() -> None:
+    rule = _rule(
+        "probe.act", {"senior": "allow", "staff": "allow", "staff_function_in": "close_preparer"}
+    )
+    senior = ConditionFacts(granting_roles=frozenset({"senior", "staff"}), functions=frozenset())
+    assert conditions_hold(rule, senior, person=True)
+
+
+def test_every_condition_key_counts_as_a_condition() -> None:
+    """DEC-5057: `has_conditions` missed A-08-T03's three, so an action whose only condition was
+    `link_scope_only` skipped the check. Every key the parser knows makes a rule conditional."""
+    values = {"level_in": "partner", "function_in": "close_preparer", "gates_met": "G3"}
+    values |= {"attest_client": "only", "consent": "use", "staff_function_in": "close_preparer"}
+    for key in CONDITION_KEYS:
+        rule = _rule("probe.act", {**ALLOW, key: values.get(key, "required")})
+        assert authz.has_conditions(rule), key

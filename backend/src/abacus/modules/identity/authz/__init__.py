@@ -626,7 +626,7 @@ async def authorise(
         raise _deny(ctx, action, "independence")
     # 3c. Conditions (F-03-T24; chapter 03 §4.4): narrow what the roles allowed; fail closed.
     if has_conditions(rule):
-        facts = await _condition_facts(ctx, resource, rule, roles, member)
+        facts = await _condition_facts(ctx, resource, rule, roles, member, frozenset(granting))
         if not conditions_hold(rule, facts, person=isinstance(ctx, AuthContext)):
             raise _deny(ctx, action, "condition")
     # An agent never exceeds the person it acts for (ADR-025 intersection), checked live.
@@ -765,6 +765,12 @@ def has_conditions(rule: Rule) -> bool:
         or rule.reserved_role
         or rule.owner_of_target
         or bool(rule.consent)
+        # A-08-T03's three were missing (fixed with C-01-T02, DEC-5057): without them here an
+        # action whose only condition is one of them skipped the check (fail open).
+        or rule.is_named_approver
+        or rule.link_scope_only
+        or rule.email_verified
+        or bool(rule.staff_function_in)
     )
 
 
@@ -786,7 +792,12 @@ async def _in_scope(
 
 
 async def _condition_facts(
-    ctx: Actor, resource: Resource, rule: Rule, roles: set[str], member: MemberFacts | None
+    ctx: Actor,
+    resource: Resource,
+    rule: Rule,
+    roles: set[str],
+    member: MemberFacts | None,
+    granting: frozenset[str] | None = None,
 ) -> ConditionFacts:
     level: str | None = None
     offshore: bool | None = None
@@ -802,7 +813,11 @@ async def _condition_facts(
             member = member or await member_facts(ctx.tenant, ctx.user_id)
             if member is not None:
                 level, offshore = member.level, member.offshore
-        if rule.function_in and resource.work_item_id is not None and LOOKUPS.functions:
+        if (
+            (rule.function_in or rule.staff_function_in)
+            and resource.work_item_id is not None
+            and LOOKUPS.functions
+        ):
             functions = await LOOKUPS.functions(ctx.tenant, resource.work_item_id, ctx.user_id)
         if rule.scope_only and client_actor and resource.engagement_id and LOOKUPS.scope:
             scope_covered = await LOOKUPS.scope(
@@ -842,6 +857,7 @@ async def _condition_facts(
         owner=owner,
         consents=consents,
         named_approver=named_approver,
+        granting_roles=granting,
     )
 
 
