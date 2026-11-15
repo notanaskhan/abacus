@@ -1,0 +1,985 @@
+"""The group-audit contract stubs, firm side (A-09-T03; SPEC-658 F1 to F6; DEC-5039).
+Contracts: C9 v2.1 `docs/contracts/ledger-consolidation.md` (consolidations, structure, TB
+attachments, consolidated TB by level and entity), C8 v1.1 (eliminations: `kind = elimination`,
+`posting_target`, line entity and level) and `docs/contracts/group-audit.md` (components,
+scoping, decision kinds, component auditors, instructions, deliverables).
+
+`ledger` stays dependency-free (DEC-66), so `assurance` hosts these routes and calls the ledger
+and adjustments services when they land (A-09-T13, T10). Every route has one matrix action and
+answers, in order: a client principal 404; the action on the work item's engagement (walls 404,
+independence 403); 404 without the firm's `group_audit` entitlement; then 501 naming its task.
+The rollout flags `ledger.consolidation` and `assurance.group_audit` join the gate in A-09-T09.
+Every figure is code's (ADR-050); nothing is ever posted to a client system (ADR-040).
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Annotated, Literal
+from uuid import UUID
+
+from fastapi import Depends, Header, Query, Response
+from pydantic import BaseModel, ConfigDict, Field
+
+from abacus.kernel._statuses import (
+    ComponentDeliverableStatus,
+    ComponentInstructionsStatus,
+    ConsolidationLockStatus,
+    ConsolidationStatus,
+    ConsolidationTbStatus,
+    EliminationEntryStatus,
+)
+from abacus.kernel.classification import classified
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.modules.engagements.api import get_ref, work_item_engagement
+from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
+from abacus.modules.platform.api import entitlement
+
+Ctx = Annotated[AuthContext, Depends(current_context)]
+IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
+IfMatch = Annotated[str, Header(alias="If-Match", min_length=1, max_length=64)]
+Money = Annotated[Decimal, classified("confidential")]
+Firm = Annotated[Decimal, classified("confidential")]  # firm-confidential judgements (materiality)
+Internal = classified("internal")
+Label = Literal["standard", "interim", "prior", "budget", "preliminary"]
+PlannedWork = Literal["full_scope", "specific_procedures", "analytical_only"]
+ENTITLEMENT = "group_audit"
+
+
+class TrialBalanceMissing(DomainConflict):
+    code = "trial_balance_missing"
+
+
+class UnbalancedEntry(DomainConflict):
+    code = "unbalanced_entry"
+
+
+class EntityAlreadyCovered(DomainConflict):
+    code = "entity_already_covered"
+
+
+class StructureInvalid(DomainInvalid):
+    """A fourth tier, ownership other than 100%, or a currency other than USD (X-06)."""
+
+    code = "structure_invalid"
+
+
+class ComponentPmInvalid(DomainInvalid):
+    """A component PM at or above group PM, or on an Analytical-only component."""
+
+    code = "component_pm_invalid"
+
+
+# --- C9 v2.1 consolidation -----------------------------------------------------------------------
+
+
+class ConsolidationIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: Annotated[str, Field(min_length=1, max_length=200)]
+    year_end: date
+    reporting_currency: Literal["USD"]
+    interim_period_end: date | None = None
+    prior_period_end: date | None = None
+    source_connection_id: UUID | None = None
+
+
+class TrialBalanceSlotOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Internal]
+    label: Annotated[Label, Internal]
+    period_kind: Annotated[Literal["current", "prior"], Internal]
+    period_start: Annotated[date, Internal]
+    period_end: Annotated[date, Internal]
+    state: Annotated[ConsolidationTbStatus, Internal]
+    file_name: Annotated[str | None, classified("confidential")]
+    total_debits: Money | None
+    not_needed_reason: Annotated[str | None, classified("confidential")]
+
+
+class ConsolidationEntityOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Internal]
+    client_entity_id: Annotated[UUID, Internal]
+    name: Annotated[str, classified("confidential")]
+    level: Annotated[int, Field(ge=1, le=3), Internal]
+    parent_id: Annotated[UUID | None, Internal]
+    ownership_pct: Annotated[Decimal, Internal]  # always 100 (X-06)
+    city: Annotated[str | None, classified("confidential")]
+    component_auditor_name: Annotated[str | None, classified("confidential")]
+    trial_balances: Annotated[list[TrialBalanceSlotOut], Internal]
+
+
+class ConsolidationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Internal]
+    name: Annotated[str, classified("confidential")]
+    status: Annotated[ConsolidationStatus, Internal]
+    lock_state: Annotated[ConsolidationLockStatus, Internal]
+    year_end: Annotated[date, Internal]
+    reporting_currency: Annotated[Literal["USD"], Internal]
+    interim_period_end: Annotated[date | None, Internal]
+    prior_period_end: Annotated[date | None, Internal]
+    entities: Annotated[list[ConsolidationEntityOut], Internal]
+    tiers: Annotated[int, Internal]
+    interim_total_debits: Money  # code's: 187,860,000
+    all_balanced: Annotated[bool, Internal]
+    missing: Annotated[list[str], Internal]  # the slots that block finalize, named
+    finalized_by_name: Annotated[str | None, classified("confidential")]
+    finalized_at: Annotated[datetime | None, Internal]
+    row_version: Annotated[int, Internal]
+    allowed_actions: Annotated[
+        list[Literal["consolidation.edit", "consolidation.finalize", "consolidation.lock"]],
+        classified("public"),
+    ]
+
+
+class StructureEntityIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    client_entity_id: UUID
+    parent_client_entity_id: UUID | None = None
+    level: Annotated[int, Field(ge=1, le=3)]
+    ownership_pct: Literal[100]
+    city: Annotated[str | None, Field(max_length=120)] = None
+    component_auditor_id: UUID | None = None
+
+
+class StructureIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    entities: Annotated[list[StructureEntityIn], Field(min_length=1, max_length=50)]
+
+
+class TbAttachIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source: Literal["upload", "evidence", "connection"]
+    label: Label
+    period_kind: Literal["current", "prior"]
+    upload_id: UUID | None = None
+    evidence_version_id: UUID | None = None
+    connection_id: UUID | None = None
+
+
+class TbNotNeededIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+class ConsolidationFinalizeIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    seen_version: Annotated[int, Field(ge=1)]
+
+
+class GroupReasonIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+class GroupSuggestionRefOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    suggestion_id: Annotated[UUID, Internal]
+
+
+class GroupRunRefOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    workflow_id: Annotated[str, Internal]
+
+
+class TbCellOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    column: Annotated[str, Internal]  # an entity key, "eliminations" or "consolidated"
+    amount: Money  # debits positive, credits negative
+    elimination_codes: Annotated[list[str], Internal]  # tag chips, eliminations column only
+
+
+class TbRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    caption: Annotated[str, classified("confidential")]
+    section: Annotated[Literal["assets", "liabilities_equity", "income"], Internal]
+    cells: Annotated[list[TbCellOut], Internal]
+
+
+class GroupTalliesOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    total_assets: Money
+    net_income: Money
+    balanced: Annotated[Literal["tie", "off", "pending"], Internal]
+    off_by: Money | None
+    intercompany: Annotated[Literal["tie", "off", "pending"], Internal]
+    intercompany_off_by: Money | None
+    eliminations_posted: Annotated[int, Internal]
+    mapped: Annotated[int, Internal]
+    accounts: Annotated[int, Internal]
+
+
+class ConsolidatedTbOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    level: Annotated[int, Field(ge=1, le=2), Internal]
+    view: Annotated[str, Internal]
+    columns: Annotated[list[str], Internal]
+    rows: Annotated[list[TbRowOut], Internal]
+    tallies: Annotated[GroupTalliesOut, Internal]
+    engine_version: Annotated[str, Internal]
+
+
+# --- C8 v1.1 eliminations ------------------------------------------------------------------------
+
+
+class EliminationLineOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    caption: Annotated[str, classified("confidential")]
+    client_entity_id: Annotated[UUID | None, Internal]
+    debit: Money
+    credit: Money
+
+
+class EliminationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Internal]
+    display_code: Annotated[str, Field(pattern=r"^E\d+[a-z]?$"), Internal]
+    consolidation_level: Annotated[int, Field(ge=1, le=3), Internal]
+    description: Annotated[str, classified("confidential")]
+    status: Annotated[EliminationEntryStatus, Internal]
+    posting_target: Annotated[Literal["consolidation_layer"], Internal]
+    lines: Annotated[list[EliminationLineOut], Internal]
+    total_debit: Money
+    total_credit: Money
+    off_by: Money  # code's; zero when balanced
+    computation: Annotated[str | None, classified("confidential")]  # code's sentence
+    citation_ids: Annotated[list[UUID], Internal]
+    proposed_by_run_id: Annotated[UUID | None, Internal]
+    approved_by_name: Annotated[str | None, classified("confidential")]
+    posted_at: Annotated[datetime | None, Internal]
+
+
+class EliminationsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[EliminationOut], Internal]
+    total_debit: Money
+    total_credit: Money
+
+
+class EliminationLineIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    caption: Annotated[str, Field(min_length=1, max_length=200)]
+    client_entity_id: UUID
+    debit: Annotated[Decimal, Field(ge=0, max_digits=20, decimal_places=2)] = Decimal(0)
+    credit: Annotated[Decimal, Field(ge=0, max_digits=20, decimal_places=2)] = Decimal(0)
+
+
+class EliminationIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    consolidation_level: Annotated[int, Field(ge=1, le=3)]
+    description: Annotated[str, Field(min_length=1, max_length=300)]
+    lines: Annotated[list[EliminationLineIn], Field(min_length=2, max_length=50)]
+
+
+class EliminationApproveItemsIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: Annotated[list[UUID], Field(min_length=1, max_length=100)]
+
+
+# --- group audit ---------------------------------------------------------------------------------
+
+
+class GroupMaterialityOptionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, Internal]
+    benchmark: Annotated[str, Internal]
+    base: Money
+    rate_pct: Firm
+    amount: Firm
+    recommended: Annotated[bool, Internal]
+    citation_ids: Annotated[list[UUID], Internal]
+
+
+class GroupComponentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Internal]
+    entity_name: Annotated[str, classified("confidential")]
+    planned_work: Annotated[PlannedWork | None, Internal]
+    scope_areas: Annotated[list[str], Internal]
+    performed_by: Annotated[Literal["group_team", "component_auditor"], Internal]
+    component_pm: Firm | None
+    pm_pct_of_group: Annotated[Decimal | None, Internal]  # code's: 75 · 58 · 30 · 50
+    suggestion_id: Annotated[UUID | None, Internal]
+
+
+class GroupCoverageOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    measure: Annotated[Literal["third_party_sales", "total_assets"], Internal]
+    total: Money
+    full_scope: Money
+    specific_procedures: Money
+    full_scope_pct: Annotated[Decimal, Internal]
+    specific_procedures_pct: Annotated[Decimal, Internal]
+
+
+class GroupScopingOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    decision_card_id: Annotated[UUID | None, Internal]
+    decided: Annotated[bool, Internal]
+    group_materiality: Firm | None
+    performance_materiality: Firm | None
+    clearly_trivial: Firm | None
+    decided_by_name: Annotated[str | None, classified("confidential")]
+    decided_at: Annotated[datetime | None, Internal]
+    options: Annotated[list[GroupMaterialityOptionOut], Internal]
+    components: Annotated[list[GroupComponentOut], Internal]
+    component_pm_total: Firm
+    coverage: Annotated[list[GroupCoverageOut], Internal]
+    allowed_actions: Annotated[
+        list[Literal["component.edit", "group_materiality.propose", "decision.decide"]],
+        classified("public"),
+    ]
+
+
+class GroupComponentIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    planned_work: PlannedWork
+    scope_areas: Annotated[list[str], Field(max_length=20)] = []
+    performed_by: Literal["group_team", "component_auditor"]
+    component_pm: Annotated[Decimal | None, Field(ge=0, max_digits=20, decimal_places=2)] = None
+
+
+class GroupDecisionCardOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    decision_card_id: Annotated[UUID, Internal]
+    kind: Annotated[Literal["group_materiality", "make_reference"], Internal]
+
+
+class ComponentAuditorOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Internal]
+    organisation_name: Annotated[str, classified("confidential")]
+    city: Annotated[str | None, classified("confidential")]
+    component_id: Annotated[UUID, Internal]
+    contact_name: Annotated[str | None, classified("confidential")]
+    questionnaire_received_on: Annotated[date | None, Internal]
+    competence_evaluated_at: Annotated[datetime | None, Internal]
+    independence_confirmed_at: Annotated[datetime | None, Internal]
+    peer_review_obtained_on: Annotated[date | None, Internal]
+    make_reference: Annotated[bool, Internal]
+    instructions_status: Annotated[ComponentInstructionsStatus | None, Internal]
+
+
+class ComponentAuditorsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[ComponentAuditorOut], Internal]
+
+
+class ComponentAuditorIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    organisation_name: Annotated[str, Field(min_length=1, max_length=200)]
+    city: Annotated[str | None, Field(max_length=120)] = None
+    component_id: UUID
+    ep_contact_id: UUID | None = None
+
+
+class ComponentInstructionSectionOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    number: Annotated[int, Internal]
+    title: Annotated[str, Internal]
+    body: Annotated[str, classified("confidential")]
+    needs_input: Annotated[bool, Internal]
+
+
+class ComponentInstructionsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Internal]
+    status: Annotated[ComponentInstructionsStatus, Internal]
+    version_id: Annotated[UUID, Internal]
+    sections: Annotated[list[ComponentInstructionSectionOut], Internal]
+    provenance: Annotated[str, classified("confidential")]  # "Drafted by Omar Haddad via Agent"
+    send_blocked_reason: Annotated[str | None, Internal]
+    content_hash: Annotated[str, Internal]
+
+
+class ComponentInstructionsEditIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    number: Annotated[int, Field(ge=1, le=20)]
+    body: Annotated[str, Field(min_length=1, max_length=20000)]
+
+
+class ComponentInstructionsSendIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    recipient_contact_id: UUID
+    version_id: UUID
+
+
+class ComponentDeliverableOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, Internal]
+    title: Annotated[str, classified("confidential")]
+    due_on: Annotated[date, Internal]
+    status: Annotated[ComponentDeliverableStatus, Internal]  # Late and Returned are derived
+    days_late: Annotated[int | None, Internal]
+    received_at: Annotated[datetime | None, Internal]
+    reviewed_by_name: Annotated[str | None, classified("confidential")]
+    return_reason: Annotated[str | None, classified("confidential")]
+
+
+class ComponentDeliverablesOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[ComponentDeliverableOut], Internal]
+
+
+class ComponentDeliverableIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: Annotated[str, Field(min_length=1, max_length=200)]
+    due_on: date
+
+
+class DeliverableReturnIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: Annotated[str, Field(min_length=1, max_length=1000)]
+
+
+# --- routes --------------------------------------------------------------------------------------
+
+router = AbacusRouter(prefix="/v1", tags=["group-audit"])
+_A = "/audits/{work_item_id}"
+_C = f"{_A}/consolidations/{{consolidation_id}}"
+
+
+async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
+    if ctx.client:
+        raise NotFound("group_audit")
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    if engagement_id is None:
+        raise NotFound("work_item")
+    ref = await get_ref(ctx, engagement_id)
+    await authorise(ctx, action, ref.resource())
+    if await entitlement(ctx.tenant, ENTITLEMENT) is None:
+        raise NotFound(ENTITLEMENT)
+
+
+async def _gate_record(ctx: AuthContext) -> None:
+    """A record's own path: client 404 and the entitlement; the service authorises."""
+    if ctx.client:
+        raise NotFound("group_audit")
+    if await entitlement(ctx.tenant, ENTITLEMENT) is None:
+        raise NotFound(ENTITLEMENT)
+
+
+def _todo(task: str) -> NotImplementedYet:
+    return NotImplementedYet(task)
+
+
+@router.post(
+    f"{_A}/consolidations",
+    action="consolidation.edit",
+    response_model=ConsolidationOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_create_consolidation(
+    work_item_id: UUID, body: ConsolidationIn, ctx: Ctx, _key: IdempotencyKey
+) -> ConsolidationOut:
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T13")
+
+
+@router.get(_C, action="consolidation.read", response_model=ConsolidationOut, errors=(501,))
+async def group_get_consolidation(
+    work_item_id: UUID, consolidation_id: UUID, ctx: Ctx
+) -> ConsolidationOut:
+    await _gate(ctx, work_item_id, "consolidation.read")
+    raise _todo("A-09-T13")
+
+
+@router.patch(_C, action="consolidation.edit", response_model=ConsolidationOut, errors=(409, 501))
+async def group_edit_consolidation(
+    work_item_id: UUID, consolidation_id: UUID, body: ConsolidationIn, ctx: Ctx, _if: IfMatch
+) -> ConsolidationOut:
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T13")
+
+
+@router.delete(_C, action="consolidation.edit", response_model=ConsolidationOut, errors=(409, 501))
+async def group_discard_consolidation(
+    work_item_id: UUID, consolidation_id: UUID, ctx: Ctx
+) -> ConsolidationOut:
+    """Discard a Draft: status `discarded`, audited, never a hard delete."""
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T13")
+
+
+@router.put(
+    f"{_C}/structure",
+    action="consolidation.edit",
+    response_model=ConsolidationOut,
+    errors=(409, 501),
+)
+async def group_save_structure(
+    work_item_id: UUID, consolidation_id: UUID, body: StructureIn, ctx: Ctx, _if: IfMatch
+) -> ConsolidationOut:
+    """422 `structure_invalid` for a fourth tier or ownership other than 100 (X-06)."""
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T13")
+
+
+@router.post(
+    f"{_C}/structure/proposal",
+    action="consolidation.edit",
+    response_model=GroupSuggestionRefOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_propose_structure(
+    work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> GroupSuggestionRefOut:
+    """A deterministic P-35 suggestion (DV-2); adopt through `POST /v1/suggestions/{id}/adopt`."""
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T14")
+
+
+@router.post(
+    f"{_C}/entities/{{entity_id}}/trial-balances",
+    action="consolidation.edit",
+    response_model=TrialBalanceSlotOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_attach_trial_balance(
+    work_item_id: UUID,
+    consolidation_id: UUID,
+    entity_id: UUID,
+    body: TbAttachIn,
+    ctx: Ctx,
+    _key: IdempotencyKey,
+) -> TrialBalanceSlotOut:
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T13")
+
+
+@router.post(
+    f"{_C}/trial-balances/{{tb_id}}/not-needed",
+    action="consolidation.edit",
+    response_model=TrialBalanceSlotOut,
+    errors=(409, 501),
+)
+async def group_mark_not_needed(
+    work_item_id: UUID, consolidation_id: UUID, tb_id: UUID, body: TbNotNeededIn, ctx: Ctx
+) -> TrialBalanceSlotOut:
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T13")
+
+
+@router.post(
+    f"{_C}/bulk-upload",
+    action="consolidation.edit",
+    response_model=ConsolidationOut,
+    errors=(409, 501),
+)
+async def group_bulk_upload(
+    work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> ConsolidationOut:
+    """A NetSuite "TB by subsidiary" CSV split into one snapshot per covered entity."""
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T18")
+
+
+@router.post(
+    f"{_C}/pull-all",
+    action="consolidation.edit",
+    response_model=GroupRunRefOut,
+    status_code=202,
+    errors=(409, 501),
+)
+async def group_pull_all(
+    work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> GroupRunRefOut:
+    """`ConsolidationPullAll` (synthetic tenants until a live OneWorld connector exists, DV-1)."""
+    await _gate(ctx, work_item_id, "consolidation.edit")
+    raise _todo("A-09-T18")
+
+
+@router.post(
+    f"{_C}/finalize",
+    action="consolidation.finalize",
+    response_model=ConsolidationOut,
+    errors=(409, 501),
+)
+async def group_finalize(
+    work_item_id: UUID,
+    consolidation_id: UUID,
+    body: ConsolidationFinalizeIn,
+    ctx: Ctx,
+    _key: IdempotencyKey,
+) -> ConsolidationOut:
+    """A manager's or EP's human act; 409 `trial_balance_missing` naming the slot."""
+    await _gate(ctx, work_item_id, "consolidation.finalize")
+    raise _todo("A-09-T13")
+
+
+@router.post(
+    f"{_C}/lock", action="consolidation.lock", response_model=ConsolidationOut, errors=(409, 501)
+)
+async def group_lock(
+    work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> ConsolidationOut:
+    await _gate(ctx, work_item_id, "consolidation.lock")
+    raise _todo("A-09-T13")
+
+
+@router.post(
+    f"{_C}/reopen", action="consolidation.lock", response_model=ConsolidationOut, errors=(409, 501)
+)
+async def group_reopen(
+    work_item_id: UUID, consolidation_id: UUID, body: GroupReasonIn, ctx: Ctx, _key: IdempotencyKey
+) -> ConsolidationOut:
+    """With a reason; stales consolidation sign-offs and AUD-34's coverage facts (OQ-2)."""
+    await _gate(ctx, work_item_id, "consolidation.lock")
+    raise _todo("A-09-T13")
+
+
+@router.get(
+    f"{_C}/tb", action="consolidation.read", response_model=ConsolidatedTbOut, errors=(501,)
+)
+async def group_consolidated_tb(
+    work_item_id: UUID,
+    consolidation_id: UUID,
+    ctx: Ctx,
+    level: Annotated[int, Query(ge=1, le=2)] = 1,
+    view: Annotated[str, Query(pattern=r"^(consolidated|entity:[0-9a-f-]{36})$")] = "consolidated",
+) -> ConsolidatedTbOut:
+    """Code's columns, ties, tallies and attribution; no browser arithmetic."""
+    await _gate(ctx, work_item_id, "consolidation.read")
+    raise _todo("A-09-T13")
+
+
+@router.get(
+    f"{_C}/export.xlsx", action="consolidation.export", response_model=bytes, errors=(501,)
+)
+async def group_export_consolidation(
+    work_item_id: UUID, consolidation_id: UUID, ctx: Ctx
+) -> Response:
+    await _gate(ctx, work_item_id, "consolidation.export")
+    raise _todo("A-09-T13")
+
+
+_E = "/consolidations/{consolidation_id}/eliminations"
+
+
+@router.get(_E, action="elimination.read", response_model=EliminationsOut, errors=(501,))
+async def group_list_eliminations(consolidation_id: UUID, ctx: Ctx) -> EliminationsOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T20")
+
+
+@router.post(
+    _E,
+    action="elimination.edit",
+    response_model=EliminationOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_create_elimination(
+    consolidation_id: UUID, body: EliminationIn, ctx: Ctx, _key: IdempotencyKey
+) -> EliminationOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T20")
+
+
+@router.patch(
+    "/proposed-entries/{entry_id}/elimination",
+    action="elimination.edit",
+    response_model=EliminationOut,
+    errors=(409, 501),
+)
+async def group_edit_elimination(
+    entry_id: UUID, body: EliminationIn, ctx: Ctx, _if: IfMatch
+) -> EliminationOut:
+    """Lines while Proposed; the server's "off n"."""
+    await _gate_record(ctx)
+    raise _todo("A-09-T20")
+
+
+@router.post(
+    "/proposed-entries/{entry_id}/elimination/approve",
+    action="elimination.approve",
+    response_model=EliminationOut,
+    errors=(409, 501),
+)
+async def group_approve_elimination(
+    entry_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> EliminationOut:
+    """409 `unbalanced_entry`; one human decision, never a policy actor (P-08)."""
+    await _gate_record(ctx)
+    raise _todo("A-09-T20")
+
+
+@router.post(
+    f"{_E}/approve",
+    action="elimination.approve",
+    response_model=EliminationsOut,
+    errors=(409, 501),
+)
+async def group_approve_eliminations(
+    consolidation_id: UUID, body: EliminationApproveItemsIn, ctx: Ctx, _key: IdempotencyKey
+) -> EliminationsOut:
+    """The per-item confirm list: one human decision per entry."""
+    await _gate_record(ctx)
+    raise _todo("A-09-T20")
+
+
+@router.post(
+    "/proposed-entries/{entry_id}/elimination/post",
+    action="elimination.post",
+    response_model=EliminationOut,
+    errors=(409, 501),
+)
+async def group_post_elimination(entry_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> EliminationOut:
+    """`posting_target = consolidation_layer`; no entity snapshot or client ledger changes."""
+    await _gate_record(ctx)
+    raise _todo("A-09-T20")
+
+
+@router.post(
+    "/proposed-entries/{entry_id}/elimination/reject",
+    action="elimination.approve",
+    response_model=EliminationOut,
+    errors=(409, 501),
+)
+async def group_reject_elimination(
+    entry_id: UUID, body: GroupReasonIn, ctx: Ctx, _key: IdempotencyKey
+) -> EliminationOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T20")
+
+
+@router.post(
+    f"{_E}/propose",
+    action="elimination.propose_run",
+    response_model=GroupRunRefOut,
+    status_code=202,
+    errors=(409, 501),
+)
+async def group_propose_eliminations(
+    consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> GroupRunRefOut:
+    """`EliminationProposal`: amounts by code, notes by the model, cells verified."""
+    await _gate_record(ctx)
+    raise _todo("A-09-T34")
+
+
+@router.get(
+    f"{_A}/group-scoping",
+    action="group_scoping.read",
+    response_model=GroupScopingOut,
+    errors=(501,),
+)
+async def group_scoping(work_item_id: UUID, ctx: Ctx) -> GroupScopingOut:
+    await _gate(ctx, work_item_id, "group_scoping.read")
+    raise _todo("A-09-T23")
+
+
+@router.get(
+    f"{_A}/group-scoping/export.xlsx",
+    action="group_scoping.read",
+    response_model=bytes,
+    errors=(501,),
+)
+async def group_export_group_scoping(work_item_id: UUID, ctx: Ctx) -> Response:
+    await _gate(ctx, work_item_id, "group_scoping.read")
+    raise _todo("A-09-T23")
+
+
+@router.put(
+    "/components/{component_id}",
+    action="component.edit",
+    response_model=GroupComponentOut,
+    errors=(409, 501),
+)
+async def group_edit_component(
+    component_id: UUID, body: GroupComponentIn, ctx: Ctx, _if: IfMatch
+) -> GroupComponentOut:
+    """422 `component_pm_invalid` at or above group PM or on an Analytical-only component."""
+    await _gate_record(ctx)
+    raise _todo("A-09-T23")
+
+
+@router.post(
+    f"{_A}/decisions/group-materiality",
+    action="group_materiality.propose",
+    response_model=GroupDecisionCardOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_raise_group_materiality(
+    work_item_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> GroupDecisionCardOut:
+    """Raises the EP-reserved card; deciding is P-04's `decision.decide` (rationale, fresh MFA)."""
+    await _gate(ctx, work_item_id, "group_materiality.propose")
+    raise _todo("A-09-T23")
+
+
+@router.get(
+    f"{_A}/component-auditors",
+    action="component_auditor.read",
+    response_model=ComponentAuditorsOut,
+    errors=(501,),
+)
+async def group_list_component_auditors(work_item_id: UUID, ctx: Ctx) -> ComponentAuditorsOut:
+    await _gate(ctx, work_item_id, "component_auditor.read")
+    raise _todo("A-09-T27")
+
+
+@router.post(
+    f"{_A}/component-auditors",
+    action="component_auditor.manage",
+    response_model=ComponentAuditorOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_add_component_auditor(
+    work_item_id: UUID, body: ComponentAuditorIn, ctx: Ctx, _key: IdempotencyKey
+) -> ComponentAuditorOut:
+    await _gate(ctx, work_item_id, "component_auditor.manage")
+    raise _todo("A-09-T27")
+
+
+@router.post(
+    "/component-auditors/{auditor_id}/instructions/draft",
+    action="component_instructions.draft",
+    response_model=ComponentInstructionsOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_draft_instructions(
+    auditor_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> ComponentInstructionsOut:
+    """The deterministic template merge on the person's behalf (DV-6)."""
+    await _gate_record(ctx)
+    raise _todo("A-09-T27")
+
+
+@router.patch(
+    "/component-instructions/{instructions_id}",
+    action="component_instructions.edit",
+    response_model=ComponentInstructionsOut,
+    errors=(409, 501),
+)
+async def group_edit_instructions(
+    instructions_id: UUID, body: ComponentInstructionsEditIn, ctx: Ctx, _if: IfMatch
+) -> ComponentInstructionsOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T27")
+
+
+@router.post(
+    "/component-instructions/{instructions_id}/send",
+    action="component_instructions.send",
+    response_model=ComponentInstructionsOut,
+    errors=(409, 501),
+)
+async def group_send_instructions(
+    instructions_id: UUID, body: ComponentInstructionsSendIn, ctx: Ctx, _key: IdempotencyKey
+) -> ComponentInstructionsOut:
+    """A person's send with a 10-second Undo; issues the `component_auditor` grant."""
+    await _gate_record(ctx)
+    raise _todo("A-09-T27")
+
+
+@router.post(
+    "/component-auditors/{auditor_id}/make-reference",
+    action="component_auditor.manage",
+    response_model=GroupDecisionCardOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_raise_make_reference(
+    auditor_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> GroupDecisionCardOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T27")
+
+
+@router.get(
+    "/component-auditors/{auditor_id}/deliverables",
+    action="component_deliverable.read",
+    response_model=ComponentDeliverablesOut,
+    errors=(501,),
+)
+async def group_list_deliverables(auditor_id: UUID, ctx: Ctx) -> ComponentDeliverablesOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T28")
+
+
+@router.post(
+    "/component-auditors/{auditor_id}/deliverables",
+    action="component_deliverable.manage",
+    response_model=ComponentDeliverableOut,
+    status_code=201,
+    errors=(409, 501),
+)
+async def group_add_deliverable(
+    auditor_id: UUID, body: ComponentDeliverableIn, ctx: Ctx, _key: IdempotencyKey
+) -> ComponentDeliverableOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T28")
+
+
+@router.post(
+    "/component-deliverables/{deliverable_id}/review",
+    action="component_deliverable.review",
+    response_model=ComponentDeliverableOut,
+    errors=(409, 501),
+)
+async def group_review_deliverable(
+    deliverable_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> ComponentDeliverableOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T28")
+
+
+@router.post(
+    "/component-deliverables/{deliverable_id}/return",
+    action="component_deliverable.review",
+    response_model=ComponentDeliverableOut,
+    errors=(409, 501),
+)
+async def group_return_deliverable(
+    deliverable_id: UUID, body: DeliverableReturnIn, ctx: Ctx, _key: IdempotencyKey
+) -> ComponentDeliverableOut:
+    await _gate_record(ctx)
+    raise _todo("A-09-T28")

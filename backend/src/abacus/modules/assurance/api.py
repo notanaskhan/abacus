@@ -145,6 +145,7 @@ from abacus.modules.assurance.fraud_brainstorm import SUGGESTION_TARGET as FRAUD
 from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, minutes_gate
 from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
 from abacus.modules.assurance.gates import register as register_gates
+from abacus.modules.assurance.group_contract import router as group_router
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.ic_redraft import SUBSCRIPTIONS as IC_REDRAFT_SUBSCRIPTIONS
 from abacus.modules.assurance.internal_control import AUDIT_KINDS as CONTROL_KINDS
@@ -281,6 +282,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     schedule_h_mappings_router,  # A-05-T62 close: the firm's Schedule H line mapping (DEC-2823)
     confirmations_router,  # A-08-T06 confirmations stub (docs/contracts/confirmations.md)
     analytics_router,  # A-08-T05 analytics and SSARS stubs (audit-analytics, ssars-workspace)
+    group_router,  # A-09-T03 group-audit stubs (ledger-consolidation, group-audit)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
