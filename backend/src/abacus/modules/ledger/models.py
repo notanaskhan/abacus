@@ -7,8 +7,8 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import FetchedValue, Numeric
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import FetchedValue, Numeric, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from abacus.kernel.db import Base
@@ -70,6 +70,10 @@ class GlSnapshot(Base):
     total_debit: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     total_credit: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     created_at: Mapped[datetime]
+    # A-08-T09 (0888; ADR-400): the JE fields this file carried; '{}' for every earlier snapshot.
+    je_fields_available: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), server_default=FetchedValue()
+    )
 
 
 class GlAccountBalance(Base):
@@ -102,6 +106,11 @@ class GlEntryRow(Base):
     debit: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     credit: Mapped[Decimal] = mapped_column(Numeric(20, 2))
     source_ref: Mapped[str]
+    # A-08-T09 (0888; ADR-400): JE fields where the export carried them (confidential names).
+    posted_by: Mapped[str | None]
+    entered_at: Mapped[datetime | None]
+    source: Mapped[str | None]
+    approver: Mapped[str | None]
 
 
 # --- The trial balance of record (SPEC-309; TASK-320; A-02) -------------------------------------

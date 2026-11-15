@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Final, cast
+from typing import Final, Literal, cast
 
 from abacus.kernel.isolation import IsolationFailed, Limits, run_isolated_with
 from abacus.modules.connections.gl_formats import GL_FORMATS, GlFormat
@@ -49,9 +49,18 @@ _FIELDS: Final = (
     "debit",
     "credit",
     "source_ref",
+    # A-08-T09 (ADR-400): the JE fields, empty where the export did not carry them.
+    "posted_by",
+    "entered_at",
+    "source",
+    "approver",
 )
+# A-08-T09: how a source column names a person's entry and a system's (anything else is unknown).
+_MANUAL: Final = frozenset({"manual", "user", "journal", "general journal", "gj", "je"})
+_SYSTEM: Final = frozenset({"system", "automatic", "auto", "subledger", "integration", "import"})
 
 Cell = str | int | float | Decimal | datetime | date | None
+_SOURCES: Final[dict[str, Literal["manual", "system"]]] = {"manual": "manual", "system": "system"}
 
 
 def _clean(value: Cell, limit: int) -> str:
@@ -154,17 +163,49 @@ def _header(row: list[Cell], fmt: GlFormat) -> dict[str, int] | None:
         "balance": fmt.balance_header,
         "account": fmt.account_header,  # flat layouts (TASK-071)
         "code": fmt.code_header,
+        **fmt.je_headers,  # A-08-T09: optional, like the running balance
     }
+    optional = {"balance", *fmt.je_headers}
     found: dict[str, int] = {}
     for role, label in wanted.items():
         if label is None:
             continue
         index = labels.get(label.casefold())
-        if index is None and role != "balance":
+        if index is None and role not in optional:
             return None
         if index is not None:
             found[role] = index
     return found
+
+
+def _entered_at(value: Cell) -> str:
+    """An entry time as ISO text: a datetime cell, or text in a few layouts; else empty."""
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, date):
+        return datetime(value.year, value.month, value.day).isoformat()
+    text = _clean(value, 40)
+    for layout in (
+        "%m/%d/%Y %I:%M %p",
+        "%m/%d/%Y %H:%M",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+    ):
+        try:
+            return datetime.strptime(text, layout).isoformat()
+        except ValueError:
+            continue
+    parsed = _date(value)
+    return "" if parsed is None else datetime(parsed.year, parsed.month, parsed.day).isoformat()
+
+
+def _source(value: Cell) -> str:
+    text = _clean(value, 40).casefold()
+    if text in _MANUAL:
+        return "manual"
+    if text in _SYSTEM:
+        return "system"
+    return ""
 
 
 def parse_gl_to_file(
@@ -277,6 +318,10 @@ def parse_gl_to_file(
                     str(debit),
                     str(credit),
                     f"row-{n}",
+                    _clean(_cell(row, columns, "posted_by"), 120),
+                    _entered_at(_cell(row, columns, "entered_at")),
+                    _source(_cell(row, columns, "source")),
+                    _clean(_cell(row, columns, "approver"), 120),
                 ]
             )
     if columns is None:
@@ -294,6 +339,7 @@ def parse_gl_to_file(
         months=frozenset(state.months),
         outside_period=state.outside,
         has_openings=any(a.opening is not None for a in state.accounts.values()),
+        je_fields_available=frozenset(r for r in fmt.je_headers if r in columns),
     )
 
 
@@ -314,6 +360,12 @@ def read_entries(path: str) -> Iterator[GlEntry]:
                 Decimal(values["debit"]),
                 Decimal(values["credit"]),
                 values["source_ref"],
+                posted_by=values["posted_by"] or None,
+                entered_at=datetime.fromisoformat(values["entered_at"])
+                if values["entered_at"]
+                else None,
+                source=_SOURCES.get(values["source"]),
+                approver=values["approver"] or None,
             )
 
 

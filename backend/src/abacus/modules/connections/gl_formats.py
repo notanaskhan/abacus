@@ -19,6 +19,10 @@ AmountMode = Literal["signed", "split"]
 # `headings`: an account heading row, then its lines; `flat` (TASK-071): every line names its
 # account in a column (or its code and title in two).
 Layout = Literal["headings", "flat"]
+# A-08-T09 (ADR-400, P-58): the journal-entry fields an export may carry. Each is optional in the
+# file: a column the export leaves out is "Not available from this ledger", never a parse error.
+JeField = Literal["posted_by", "entered_at", "source", "approver"]
+JE_FIELDS: Final[tuple[JeField, ...]] = ("posted_by", "entered_at", "source", "approver")
 
 
 @dataclass(frozen=True)
@@ -45,10 +49,26 @@ class GlFormat:
     layout: Layout = "headings"
     account_header: str | None = None  # flat: the account (code and name, or the title)
     code_header: str | None = None  # flat: the account code's own column
+    # A-08-T09 (ADR-400): the JE fields' columns where the system's export carries them.
+    posted_by_header: str | None = None  # the user who entered the entry
+    entered_at_header: str | None = None  # when it was entered (not its posting date)
+    source_header: str | None = None  # manual or system (a journal source column)
+    approver_header: str | None = None  # who approved a manual journal
 
     @property
     def source(self) -> str:
         return f"import_{self.id}"
+
+    @property
+    def je_headers(self) -> dict[JeField, str]:
+        """The JE fields this format can carry, by field."""
+        given: dict[JeField, str | None] = {
+            "posted_by": self.posted_by_header,
+            "entered_at": self.entered_at_header,
+            "source": self.source_header,
+            "approver": self.approver_header,
+        }
+        return {k: v for k, v in given.items() if v is not None}
 
 
 GL_FORMATS: Final[dict[str, GlFormat]] = {
@@ -79,6 +99,10 @@ GL_FORMATS: Final[dict[str, GlFormat]] = {
                 "Select Export (the arrow icon), then Export to CSV.",
                 "Upload the CSV file here.",
             ),
+            # A-08-T09: QuickBooks Online's General Ledger report can add "Create Date" and
+            # "Created By" (Customize, Change columns); it has no source or approver column.
+            posted_by_header="Created By",
+            entered_at_header="Create Date",
         ),
         GlFormat(
             id="xero_gl_xlsx",
@@ -105,6 +129,7 @@ GL_FORMATS: Final[dict[str, GlFormat]] = {
                 "Select Export, then Excel.",
                 "Upload the Excel file here.",
             ),
+            # A-08-T09: Xero's General Ledger Detail has no user, entry time or source column.
         ),
         # TASK-071 (D1): from each system's documented general ledger export; checked against
         # synthetic fixtures until real anonymised samples are shared.
@@ -135,6 +160,8 @@ GL_FORMATS: Final[dict[str, GlFormat]] = {
                 "(.xlsx).",
                 "Upload the Excel file here.",
             ),
+            # A-08-T09: QuickBooks Desktop prints only "Last modified by" and "Entered/Last
+            # Modified", which name the last editor, not the entry's creator: never mapped.
         ),
         GlFormat(
             id="netsuite_gl_csv",
@@ -163,6 +190,12 @@ GL_FORMATS: Final[dict[str, GlFormat]] = {
             ),
             layout="flat",
             account_header="Account",
+            # A-08-T09: NetSuite's columns for created by, date created, the journal's source and
+            # its approver (Approved By, where approval routing is on).
+            posted_by_header="Created By",
+            entered_at_header="Date Created",
+            source_header="Source",
+            approver_header="Approved By",
         ),
         GlFormat(
             id="intacct_gl_csv",
@@ -192,6 +225,11 @@ GL_FORMATS: Final[dict[str, GlFormat]] = {
             layout="flat",
             account_header="Account title",
             code_header="Account no.",
+            # A-08-T09: Sage Intacct's General ledger report lists who created each entry, when,
+            # and whether a person or a subledger posted it.
+            posted_by_header="Created by",
+            entered_at_header="Date created",
+            source_header="Source",
         ),
     )
 }
