@@ -74,6 +74,8 @@ The reader is a **reflowed legal reader** built from the clause tree (OQ-2), not
 - DV-12 required levels: `instrument_interpretation` L1 + L3 (KNW-04 review-level content).
 - DV-13 outbound links are tooltip-only in the canvas; routes and params as above.
 - DV-16 d1, d2, d3 are composed (no artboard); AY records a design follow-up for d1.
+- DV-17 (T-07-T15) c's banner and note come from the read model (`scenario_banner`, `scenario_note`), never composed in the face.
+- DV-18 (T-07-T15) the route is `/tax-returns/$returnId/review/instrument` inside TAX-04's frame; Approve opens `?ov=signoff`.
 
 ## Acceptance
 

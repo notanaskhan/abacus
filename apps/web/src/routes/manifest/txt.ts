@@ -6,8 +6,8 @@ import type { Manifest } from "./types";
 export const txtScreens = {
   "TXT-01": {
     name: "Review › Instrument · Calloway Family Trust 2025 Form 1041",
-    status: "planned",
-    path: null,
+    status: "fixture", // T-07-T15: a–d, d1–d3 on fixtures; live with T-07-T12's service
+    path: "/tax-returns/$returnId/review/instrument",
   },
   "TXT-02": {
     name: "Review › Trust Calculation · Calloway Family Trust",

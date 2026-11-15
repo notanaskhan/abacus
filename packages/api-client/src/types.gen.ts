@@ -27316,6 +27316,14 @@ export type InstrumentInterpretationOut = {
      * Scenario
      */
     scenario: 'base' | 'principal_invaded';
+    /**
+     * Scenario Banner
+     */
+    scenario_banner?: string | null;
+    /**
+     * Scenario Note
+     */
+    scenario_note?: string | null;
     status: InstrumentInterpretationStatus;
     /**
      * Version No
