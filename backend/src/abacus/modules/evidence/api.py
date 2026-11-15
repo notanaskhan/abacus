@@ -40,6 +40,9 @@ from abacus.modules.evidence.citations.registry import (
 from abacus.modules.evidence.citations.registry import Display as CitationLabel
 from abacus.modules.evidence.citations.registry import Verdict as CitationVerdict
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
+from abacus.modules.evidence.citations.verifiers import (  # T-07-T11: a clause's region check
+    verify_document_text as verify_document_citation,
+)
 from abacus.modules.evidence.classification import (
     ClassifiedIntake,
     attachment_tax_years,
@@ -241,6 +244,10 @@ from abacus.modules.evidence.records import (
     get_record,
     put_record,
     record_key,
+)
+from abacus.modules.evidence.region_sources import (  # T-07-T11 (ADR-343 §4)
+    RegionHit,
+    register_region_source,
 )
 from abacus.modules.evidence.render import (
     CODE_COLUMN,
@@ -636,6 +643,7 @@ __all__ = [
     "ReadField",
     "RecordClass",
     "RecordedCitation",
+    "RegionHit",
     "RenderHashMismatch",
     "RevealedField",  # A-05-T18 (DEC-2067)",
     "ReviewMaterial",
@@ -768,6 +776,7 @@ __all__ = [
     "register_intake_source",
     "register_match_picks",
     "register_proposal_source",
+    "register_region_source",
     "render_general_ledger",
     "render_journal_listing",
     "render_preview",
@@ -806,6 +815,7 @@ __all__ = [
     "upload_synthetic",
     "upload_workflow_id",
     "verified_citation_ids",
+    "verify_document_citation",
     "version_content",
     "version_fingerprint",
     "version_titles",

@@ -412,6 +412,14 @@ from abacus.modules.tax.schedule_workflows import (  # noqa: E402
 
 _register_form_line()
 
+# T-07-T11 (ADR-343): the `instrument_clause` citable and its region source.
+from abacus.modules.tax.instrument_citations import (  # noqa: E402
+    move_clause_citations as move_clause_citations,
+)
+from abacus.modules.tax.instrument_citations import register as _register_clause  # noqa: E402
+
+_register_clause()
+
 # T-04-T15 (DEC-3208): the workspace's reviewables, field owner, suggestion targets and appliers.
 from abacus.modules.tax.worksheet_review import (  # noqa: E402
     register as _register_worksheet_review,

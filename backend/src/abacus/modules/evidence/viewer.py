@@ -577,6 +577,18 @@ async def viewer_regions(
         for match, page, rect, label in await field_regions(ctx, version.id, match_ids):
             if match not in regions and len(regions) < MAX_REGIONS:
                 regions[match] = ViewerRegion(match, page, [rect], None, None, None, label)
+        # T-07-T11 (ADR-343 §4): an owner's citations whose source is not this version (an
+        # instrument clause's segmentation) light through the owner's region source.
+        from abacus.modules.evidence.region_sources import owned_regions
+
+        for match, page, rect, label in await owned_regions(ctx, version.id, match_ids):
+            if len(regions) >= MAX_REGIONS:
+                break
+            known = regions.get(match)
+            if known is None:
+                regions[match] = ViewerRegion(match, page, [list(rect)], None, None, None, label)
+            elif known.page == page:
+                known.rects.append(list(rect))
     return list(regions.values())
 
 

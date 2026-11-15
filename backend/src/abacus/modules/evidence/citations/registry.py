@@ -1,10 +1,11 @@
 """The citable kinds and their verifiers (P-03-T06; ADR-166 §2; DEC-218). PROTECTED.
 
-`register_citable(kind, verifier, display)` gives one of the ten kinds a code verifier and a
+`register_citable(kind, verifier, display)` gives one of the eleven kinds a code verifier and a
 display function. Evidence registers `document_text`, `sheet_cell` and `request_item`; a source's
 owner registers its own kind from its `api.py` when it lands (K-01 `methodology_step`, A-04
-`workpaper_cell`, T-04 `tax_form_line`, ...). A kind with no verifier is still recorded, unverified
-with `locator_invalid`, until its owner registers one. A kind is registered once; an eleventh kind
+`workpaper_cell`, T-04 `tax_form_line`, T-07 `instrument_clause`, ...). A kind with no verifier is
+still recorded, unverified with `locator_invalid`, until its owner registers one. A kind is
+registered once. ADR-343 added the eleventh kind, `instrument_clause` (migration 0886); a twelfth
 needs a new ADR.
 
 A verifier first authorises the acting principal to read the cited source on the anchor's
@@ -42,6 +43,7 @@ CitationKind = Literal[
     "tax_form_line",
     "artifact_cell",
     "request_item",
+    "instrument_clause",  # ADR-343 (T-07-T11): a clause of a governing instrument
 ]
 KINDS: Final = frozenset(get_args(CitationKind))
 NIL: Final = UUID(int=0)
@@ -59,6 +61,7 @@ SOURCES: Final[dict[str, tuple[str, str]]] = {
     "tax_form_line": ("tax_return", "return_id"),
     "artifact_cell": ("run_artifact", "run_artifact_id"),
     "request_item": ("request_item", "request_item_id"),
+    "instrument_clause": ("instrument_segmentation", "segmentation_id"),
 }
 
 
@@ -132,7 +135,9 @@ def register_citable(
 ) -> None:
     """Give `kind` its verifier and display function (once; at the owner's import)."""
     if kind not in KINDS:
-        raise ValueError(f"{kind!r} is not a citation kind (ADR-166: ten kinds)")
+        raise ValueError(
+            f"{kind!r} is not a citation kind (ADR-166: ten kinds, ADR-343: the eleventh)"
+        )
     known = _registry.get(kind)
     if known is not None and (known.verifier, known.display) != (verifier, display):
         raise ValueError(f"{kind} already has a verifier")
