@@ -168,6 +168,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "letter.approved",  # N-02-T33: the letter_partner_approval gate closes
         "close_plan.publish_requested",  # C-01-T15 (QC-8): the plan publication gate opens
         "close_plan.published",  # C-01-T15: and closes
+        # T-07-T03 (TASK-8069): the interpretation's L3 gate opens and closes.
+        "instrument_interpretation.approved",
+        "instrument_interpretation.reopened",
         # A-02-T16: grant revocation; A-02-T17: a changed tie-out check makes sign-offs stale.
         "connection_grant.revocation_requested",
         "tie_out_check.changed",

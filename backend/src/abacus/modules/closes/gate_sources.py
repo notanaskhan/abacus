@@ -2,8 +2,9 @@
 
 A Senior's "Request publish…" leaves the draft with `publish_requested_at`; until a Manager or
 Partner publishes or discards it, one HOME-02 gate waits on them. The read action is
-`close_plan.publish`, so only the people the matrix lets publish see the row (need to know);
-the row links to CLS-09, where the person publishes.
+`close_plan.read` (C13 filters rows with `visible()`, which takes reads only: S45 named
+`close_plan.publish` and every HOME-02 list answered 500, DEC-5061); CLS-09's Publish stays
+the matrix's `close_plan.publish`, so a reader without it sees the row but cannot publish.
 """
 
 from __future__ import annotations
@@ -81,6 +82,6 @@ async def present(ctx: AuthContext, rows: Sequence[GateView]) -> Mapping[UUID, G
 
 def register_close_gates() -> None:
     register_gate_source(
-        GateSource(SUBJECT, "final_approval", "close_plan.publish", _EVENTS, publications_due)
+        GateSource(SUBJECT, "final_approval", "close_plan.read", _EVENTS, publications_due)
     )
     register_gate_presenter(SUBJECT, present)

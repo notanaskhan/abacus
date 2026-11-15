@@ -73,6 +73,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import gate_offices
 from abacus.modules.identity.api import (
+    RULES,
     AuthContext,
     firm_role_allows,
     holds_engagement_role,
@@ -233,6 +234,11 @@ def register_gate_source(source: GateSource) -> None:
         raise ValueError(f"firm gate {source.subject_type!r} needs `decides` or `assigned_only`")
     if source.scope == "engagement" and source.decides is not None:
         raise ValueError(f"`decides` is for firm gates; {source.subject_type!r} is engagement")
+    rule = RULES.get(source.read_action)
+    if source.scope == "engagement" and (rule is None or not rule.reads):
+        # DEC-5061: rows are filtered with `visible()`, which takes reads only; a decision action
+        # here answered 500 on every HOME-02 list (S45's close plan gate).
+        raise ValueError(f"gate {source.subject_type!r}: {source.read_action!r} is not a read")
     known = _SOURCES.get(source.subject_type)
     if known is not None and (
         known.kind,

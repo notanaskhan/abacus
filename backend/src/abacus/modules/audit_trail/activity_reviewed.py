@@ -24,6 +24,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "close_plan_row.adopted",
         "close_template.imported",
         # reviewed 2026-11-15 (S45): T-07-T12/T13/T14 the governing instrument and its reading
+        "instrument_read.finished",  # T-07-T03: the reader's run ended, identifiers only
         "instrument.attached",
         "instrument.segmented",
         "instrument_clause.marked",

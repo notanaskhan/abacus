@@ -127,6 +127,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "incident.deadline_approaching",  # G-02-T18 (days 20, 25, 29: the QI and partners)
         "firm_export.requested",  # Q-02-T43 (C16 `firm_export_approval_requested`, the approver)
         "firm_export.ready",  # Q-02-T43 (C16 `firm_export_ready`, requester and approver)
+        "instrument_interpretation.adopted",  # T-07-T03 (C16 `instrument_interpretation_ready`)
+        "instrument_read.finished",  # T-07-T03 (C16 `instrument_read_finished`, to the initiator)
         "connection.needs_reauth",  # A-02-T25 (C16 `connection_needs_reauth`, admins and leads)
         "consent.expiring",  # T-01-T16 (C16 `consent_expiring`, to the consent's requester)
         "reference_set.published",  # K-02-T12 (C16 `rules_table_updated`, firm admins)

@@ -86,8 +86,11 @@ def test_the_portal_holds_only_its_two_question_actions_inside_its_grant() -> No
             assert cells.get(role, "deny") == "deny", (action, role)
 
 
-def test_qc3_staff_cannot_start_runs_until_the_per_role_condition_exists() -> None:
-    assert ACTIONS["close_run.start"].get("staff", "deny") == "deny"
+def test_qc3_staff_start_runs_only_as_the_close_preparer() -> None:
+    """DEC-5057 (TASK-8071): staff hold the run actions only under `staff_function_in`."""
+    for action in ("close_run.start", "close_run.retry"):
+        assert ACTIONS[action].get("staff") == "allow"
+        assert ACTIONS[action].get("staff_function_in") == "close_preparer"
 
 
 def test_the_four_flags_are_registered_off_by_default() -> None:

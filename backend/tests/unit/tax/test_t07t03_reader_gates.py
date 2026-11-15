@@ -85,3 +85,21 @@ def test_the_events_carry_identifiers_and_codes_only() -> None:
         code="consent_required",
     )
     assert set(finished.model_dump()) >= {"run_id", "user_id", "outcome", "code"}
+
+
+def test_a_gate_whose_read_action_is_not_a_read_is_refused_at_registration() -> None:
+    """DEC-5061: C13 filters rows with `visible()`, which takes reads only."""
+
+    async def nothing(*_: object) -> list[gates.OpenGate]:
+        return []
+
+    with pytest.raises(ValueError, match="is not a read"):
+        gates.register_gate_source(
+            gates.GateSource(
+                "probe_decision_gate",
+                "final_approval",
+                "close_plan.publish",
+                frozenset({"close_plan.published"}),
+                nothing,
+            )
+        )
