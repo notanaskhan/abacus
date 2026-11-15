@@ -1,0 +1,19 @@
+{"Header": {"ReportName": "GeneralLedger", "StartPeriod": "2026-08-01", "EndPeriod": "2026-08-31", "Currency": "USD"},
+ "Columns": {"Column": [
+  {"ColTitle": "Date", "ColType": "Date", "MetaData": [{"Name": "ColKey", "Value": "tx_date"}]},
+  {"ColTitle": "Transaction Type", "ColType": "String", "MetaData": [{"Name": "ColKey", "Value": "txn_type"}]},
+  {"ColTitle": "Num", "ColType": "String", "MetaData": [{"Name": "ColKey", "Value": "doc_num"}]},
+  {"ColTitle": "Name", "ColType": "String", "MetaData": [{"Name": "ColKey", "Value": "name"}]},
+  {"ColTitle": "Memo/Description", "ColType": "String", "MetaData": [{"Name": "ColKey", "Value": "memo"}]},
+  {"ColTitle": "Split", "ColType": "String", "MetaData": [{"Name": "ColKey", "Value": "split_acc"}]},
+  {"ColTitle": "Amount", "ColType": "Money", "MetaData": [{"Name": "ColKey", "Value": "subt_nat_amount"}]}
+ ]},
+ "Rows": {"Row": [
+  {"type": "Section", "Header": {"ColData": [{"value": "Operating Checking", "id": "35"}, {"value": ""}, {"value": ""}, {"value": ""}, {"value": ""}, {"value": ""}, {"value": ""}]},
+   "Rows": {"Row": [
+    {"type": "Data", "ColData": [{"value": "2026-08-17"}, {"value": "Deposit", "id": "1402"}, {"value": ""}, {"value": "Square, Inc.", "id": "12"}, {"value": "Square transfer — sales Aug 14–16"}, {"value": "Square Clearing", "id": "38"}, {"value": "7506.48"}]},
+    {"type": "Data", "ColData": [{"value": "2026-08-18"}, {"value": "Check", "id": "1410"}, {"value": "2285"}, {"value": "Sound Electric Contractors, LLC", "id": "58"}, {"value": "Electrical work — espresso bar"}, {"value": "Repairs & Maintenance", "id": "72"}, {"value": "-3200.00"}]},
+    {"type": "Data", "ColData": [{"value": "2026-08-25"}, {"value": "Bill Payment (Check)", "id": "1436"}, {"value": ""}, {"value": "Rocky Ridge Dairy Co.", "id": "61"}, {"value": "Invoice RR-0811"}, {"value": "Accounts Payable", "id": "50"}, {"value": "-2860.00"}]}
+   ]},
+   "Summary": {"ColData": [{"value": "Total for Operating Checking"}, {"value": ""}, {"value": ""}, {"value": ""}, {"value": ""}, {"value": ""}, {"value": "1446.48"}]}}
+ ]}}

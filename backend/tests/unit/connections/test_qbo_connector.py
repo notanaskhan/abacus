@@ -32,6 +32,11 @@ from abacus.modules.ledger.api import NormaliseError
 from .conformance import Check, Harness, HarnessFactory, conformance_params, run_check
 
 FIXTURE = Path(__file__).parent / "fixtures" / "qbo_trial_balance_synthetic.json"
+# C-01-T16: the v2 datasets' recorded synthetic responses.
+ACCOUNTS = Path(__file__).parent / "fixtures" / "qbo_accounts_synthetic.json"
+GENERAL_LEDGER = Path(__file__).parent / "fixtures" / "qbo_general_ledger_synthetic.json"
+CDC = Path(__file__).parent / "fixtures" / "qbo_cdc_synthetic.json"
+MONTH = Period(date(2026, 8, 1), date(2026, 8, 31))
 PERIOD = Period(date(2026, 1, 1), date(2026, 8, 31))
 REALM = "9341453052194873"
 APP = qbo.QboApp("synthetic-client-id", "synthetic-client-secret", "sandbox")
@@ -70,6 +75,12 @@ class Recorder:
             return EgressResponse(200, {}, b"")
         if "/reports/TrialBalance" in url:
             return EgressResponse(200, {}, self.report)
+        if "/reports/GeneralLedger" in url:
+            return EgressResponse(200, {}, GENERAL_LEDGER.read_bytes())
+        if "/query?" in url:
+            return EgressResponse(200, {}, ACCOUNTS.read_bytes())
+        if "/cdc?" in url:
+            return EgressResponse(200, {}, CDC.read_bytes())
         if "/companyinfo/" in url:
             return EgressResponse(200, {}, b'{"CompanyInfo": {"Id": "1"}}')
         return EgressResponse(404, {}, b"")
@@ -93,7 +104,13 @@ def _connector(
 
 def qbo_harness(scratch: Path) -> Harness:
     return Harness(
-        _connector(Recorder(), _held()), {"trial_balance": (PERIOD, FIXTURE.read_bytes())}
+        _connector(Recorder(), _held()),
+        {
+            "trial_balance": (PERIOD, FIXTURE.read_bytes()),
+            "trial_balance_month": (MONTH, FIXTURE.read_bytes()),
+            "gl_detail": (MONTH, GENERAL_LEDGER.read_bytes()),
+            "accounts": (MONTH, ACCOUNTS.read_bytes()),
+        },
     )
 
 

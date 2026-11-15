@@ -20,7 +20,9 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import ClassVar, Literal
 
-Dataset = Literal["trial_balance"]
+# C-01-T16 (C9 v2.1; migration 0882's `sync_runs.dataset`): the chart of accounts, a month's trial
+# balance and the general-ledger detail join the year's trial balance. Additive only.
+Dataset = Literal["trial_balance", "accounts", "gl_detail", "trial_balance_month"]
 # A provider's credentials as the connector serialises them: opaque to everything else, sealed
 # with the tenant's key at rest (ADR-035; SPEC-020 TASK-036 D2).
 Credentials = bytes
@@ -45,6 +47,16 @@ class Unavailable(ConnectorError):
     """Temporary: the provider timed out or is down. Retrying may succeed."""
 
     retryable: ClassVar[bool] = True
+
+
+class RateLimited(Unavailable):
+    """C-01-T16 (ADR-043): the provider throttled the call (HTTP 429) or the connector's own
+    per-company limiter or circuit breaker held it back. Retryable; `retry_after` is the
+    provider's Retry-After in seconds (bounded), or None."""
+
+    def __init__(self, code: str = "rate_limited", retry_after: float | None = None) -> None:
+        super().__init__(code)
+        self.retry_after = retry_after
 
 
 class NotSupported(ConnectorError):
