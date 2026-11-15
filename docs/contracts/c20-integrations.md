@@ -168,3 +168,35 @@ Restricted). Runs and failures are shown only for engagements the reader may rea
 **A-02-T33 (additive, 2026-11-10; DEC-3902):** `POST /v1/connections/handoff` `{state}` (pre-session, ADR-152 amendment) answers `{origin_host}`: the host the flow began on, stored with the state at start from the request's own `Host`, for a state that is unused and unexpired and whose host is the app host or an active portal host of its own firm; 404 `not found` otherwise, one answer. It does not spend the state. The portal bundle's `/client/connect/callback` asks it on the connect host and sends the browser to `https://<origin_host>/client/connect/callback` with the provider's query unchanged; on that host the page completes as before.
 
 **A-02-T28 (additive, 2026-10-27):** `POST /v1/connections/complete` answers `{engagement_id, client_entity_id, reconnected}`; `client_entity_id` is set for an entity-scoped (POR-16) flow and null for the legacy engagement flow, so the portal returns to Connections. QuickBooks Online's `realmId` travels inside `code` as `<code>~<realmId>` (DEC-709).
+
+## C20 v2 · Connect (W-01-T03, 2026-11-15; SPEC-659; DEC-5046)
+Additive. Stub routes in `backend/src/abacus/modules/integrations/connect_contract.py`, behind
+`integrations.connect_v1`; each answers a portal principal 404, then its matrix action on the firm
+(fresh MFA where marked), 404 with the flag off, then 501 naming its task.
+
+| Operation | Method and path | Matrix action | Task |
+|---|---|---|---|
+| Catalogue (WB-10) | GET `/v1/integrations/catalog?category=&status=&q=` | `integration_catalog.read` | T07 |
+| Detail · events (WB-11) | GET `/v1/integrations/{key}` · `…/events?cursor=` | `integration_catalog.read` | T15 |
+| Client companies (WB-11 d) | GET `/v1/integrations/{key}/client-companies?q=&cursor=` | `integration.read_client_companies` | T15 |
+| Firm connect · reconnect | POST `/v1/integrations/{key}/connect` (409 `prerequisite_scope_missing`) | `integration.connect_firm` (MFA) | T08 |
+| Personal connect | POST `/v1/me/integrations/{key}/connect` | `integration.connect_personal` | T08 |
+| Complete | POST `/v1/integrations/connect/complete` `{state, code}` (409 `invalid_state`, `connect_declined`) | `integration.complete_connect` | T08 |
+| Firm disconnect | POST `/v1/integrations/{key}/disconnect` `{confirm_name, seen_version}` (422 `confirm_name_mismatch`, 409 `stale_version`) | `integration.disconnect_firm` (MFA) | T08 |
+| Personal disconnect | POST `/v1/me/integrations/{key}/disconnect` | `integration.disconnect_personal` | T08 |
+| Notify me | POST `/v1/integrations/{key}/interest` | `integration.interest` | T09 |
+| Catalogue import · log | POST `/v1/platform/integration-catalog/imports?dry_run=` · GET `…/imports` | `integration_catalog.import` (no firm role) | T09 |
+
+**Models** (every name prefixed `Connect…`, every field classified): `ConnectCatalogOut` (tiles with
+honest `status`, viewer-relative `viewer_status`, `blocked_reason`, `allowed_actions`; `counts` that
+follow the filters; `categories` with catalogue-total counts; `total`; Build on Accrued rows),
+`ConnectIntegrationDetailOut` (mode-aware `ConnectConnectionCardOut`, may-do rows Read · Write ·
+Never with "Off for this firm", health events labelled at read time, dependents with computed
+`paused`, who can use it, managed by, consent), `ConnectClientCompaniesOut`, `ConnectStartOut`,
+`ConnectCompleteIn` (state and code classified restricted), `ConnectDisconnectIn/Out`,
+`ConnectInterestOut`, `ConnectCatalogImportOut(s)`. No route starts a client connection (R1).
+
+**Fixtures:** the scenario's catalogue content `abacus_tools/synthetic/scenarios/brightwater_hale/files/connect_catalog.json`
+(the canvas `CX.items` list, DF-35/DF-36) read by `connect_catalog.py`, and the front end's copy
+`apps/web/src/fixtures/seed/connect-catalog.json` (a test keeps them identical); E0 53 = 9 + 38 + 6,
+tags 65; E2 55 = 9 + 40 + 6, tags 67; CCH detail with 224 linked returns, five events, five agents.

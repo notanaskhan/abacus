@@ -1,0 +1,839 @@
+{
+ "_source": "Wave 1 - Workbench & Ops canvas CX.items (WB-10 a), and wave 7 (WB-10 h, i) for Drata and Vanta; DF-35/DF-36: the canvas list wins over the kit.",
+ "categories": [
+  {
+   "code": "tax",
+   "label": "Tax Software",
+   "description": "Tax preparation, compliance and e-file"
+  },
+  {
+   "code": "practice",
+   "label": "Practice Management",
+   "description": "Client work, deadlines and team workflow"
+  },
+  {
+   "code": "erp",
+   "label": "ERP",
+   "description": "Client ledgers and financial systems"
+  },
+  {
+   "code": "grc",
+   "label": "GRC & Compliance",
+   "description": "Control requests and evidence"
+  },
+  {
+   "code": "docs",
+   "label": "Document Management",
+   "description": "Client files and supporting documents"
+  },
+  {
+   "code": "comms",
+   "label": "Communications",
+   "description": "Mail, calendars and meetings"
+  },
+  {
+   "code": "prod",
+   "label": "Productivity",
+   "description": "Spreadsheets, notes and everyday tools"
+  },
+  {
+   "code": "crm",
+   "label": "CRM",
+   "description": "Relationships and business development"
+  },
+  {
+   "code": "hris",
+   "label": "HRIS & Payroll",
+   "description": "People and payroll records"
+  },
+  {
+   "code": "spend",
+   "label": "Spend & Payments",
+   "description": "Expenses, payables and payments"
+  }
+ ],
+ "items": [
+  {
+   "key": "cch",
+   "name": "CCH Axcess Tax",
+   "categories": [
+    "tax"
+   ],
+   "status_e0": "connected",
+   "kind": "firm",
+   "description": "Read returns, field values and diagnostics, check e-file status, and export approved returns.",
+   "auth_line": "Firm connection · added by Felix Andersen",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 1
+  },
+  {
+   "key": "cchpm",
+   "name": "CCH Axcess Practice",
+   "categories": [
+    "practice"
+   ],
+   "status_e0": "connected",
+   "kind": "firm",
+   "description": "Read time, WIP and invoices for engagement budgets and billing (ENG-06, ENG-08); hourly sync. Accrued never creates invoices.",
+   "auth_line": "Firm connection · added by Felix Andersen",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 2
+  },
+  {
+   "key": "ultratax",
+   "name": "UltraTax CS",
+   "categories": [
+    "tax"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read returns and diagnostics and export approved returns.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 3
+  },
+  {
+   "key": "workstream",
+   "name": "CCH Axcess Workstream",
+   "categories": [
+    "practice",
+    "tax"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Mirror return status, due dates and assignments with your workflow projects.",
+   "auth_line": "Firm connection",
+   "blocked_reason": "Uses the CCH Axcess firm account, which does not yet grant the Workstream scope. Add the scope in Firm settings › Integrations, then enable.",
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 4
+  },
+  {
+   "key": "qbo",
+   "name": "QuickBooks Online",
+   "categories": [
+    "erp"
+   ],
+   "status_e0": "connected",
+   "kind": "firm",
+   "description": "Read client ledgers and post entries a person approves. Each client connects its own company from the portal.",
+   "auth_line": "Firm app · client-authorized",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 5
+  },
+  {
+   "key": "netsuite",
+   "name": "NetSuite",
+   "categories": [
+    "erp"
+   ],
+   "status_e0": "connected",
+   "kind": "firm",
+   "description": "Read client ledgers and post entries a person approves. Each client connects its own company from the portal.",
+   "auth_line": "Firm app · client-authorized",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 6
+  },
+  {
+   "key": "intacct",
+   "name": "Sage Intacct",
+   "categories": [
+    "erp"
+   ],
+   "status_e0": "connected",
+   "kind": "firm",
+   "description": "Read client ledgers and post entries a person approves. Each client connects its own company from the portal.",
+   "auth_line": "Firm app · client-authorized",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 7
+  },
+  {
+   "key": "xero",
+   "name": "Xero",
+   "categories": [
+    "erp"
+   ],
+   "status_e0": "connected",
+   "kind": "firm",
+   "description": "Read client ledgers and post entries a person approves. Each client connects its own company from the portal.",
+   "auth_line": "Firm app · client-authorized",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 8
+  },
+  {
+   "key": "drata",
+   "name": "Drata",
+   "categories": [
+    "grc"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Sync client-visible control requests and read the evidence clients attach. Clients connect their own workspace; sync is managed per engagement (ATT-09).",
+   "auth_line": "Firm app · client-authorized · request sync is a declared write",
+   "blocked_reason": null,
+   "published_at": "2026-10-01T00:00:00-05:00",
+   "sort_order": 9
+  },
+  {
+   "key": "vanta",
+   "name": "Vanta",
+   "categories": [
+    "grc"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Sync client-visible control requests and read the evidence clients attach. Clients connect their own workspace; sync is managed per engagement (ATT-09).",
+   "auth_line": "Firm app · client-authorized · request sync is a declared write",
+   "blocked_reason": null,
+   "published_at": "2026-10-01T00:00:00-05:00",
+   "sort_order": 10
+  },
+  {
+   "key": "box",
+   "name": "Box",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "connected",
+   "kind": "personal",
+   "description": "Files, folders and comments, acting as you.",
+   "auth_line": "Personal · acting as you",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 11
+  },
+  {
+   "key": "m365",
+   "name": "Microsoft 365",
+   "categories": [
+    "comms",
+    "prod"
+   ],
+   "status_e0": "connected",
+   "kind": "personal",
+   "description": "Mail, calendars and Teams transcripts, acting as you. docs@brightwaterhale.com feeds Inbox.",
+   "auth_line": "Personal + firm mailbox",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 12
+  },
+  {
+   "key": "docusign",
+   "name": "DocuSign",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "connected",
+   "kind": "firm",
+   "description": "Fallback e-signature for envelopes a client cannot sign in the portal.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 13
+  },
+  {
+   "key": "gws",
+   "name": "Google Workspace",
+   "categories": [
+    "prod",
+    "comms"
+   ],
+   "status_e0": "available",
+   "kind": "personal",
+   "description": "Drive, Gmail and Calendar, acting as you.",
+   "auth_line": "Personal",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 14
+  },
+  {
+   "key": "salesforce",
+   "name": "Salesforce",
+   "categories": [
+    "crm"
+   ],
+   "status_e0": "available",
+   "kind": "personal",
+   "description": "Read accounts, contacts and opportunities, signed in as you.",
+   "auth_line": "Personal",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 15
+  },
+  {
+   "key": "adp",
+   "name": "ADP",
+   "categories": [
+    "hris"
+   ],
+   "status_e0": "coming_soon",
+   "kind": "firm",
+   "description": "Payroll and workforce records.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 16
+  },
+  {
+   "key": "bill",
+   "name": "BILL",
+   "categories": [
+    "spend",
+    "erp"
+   ],
+   "status_e0": "coming_soon",
+   "kind": "firm",
+   "description": "Payables, receivables and payments.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 17
+  },
+  {
+   "key": "lacerte",
+   "name": "Lacerte",
+   "categories": [
+    "tax"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read return data and diagnostics for review and two-year comparisons.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 18
+  },
+  {
+   "key": "proconnect",
+   "name": "ProConnect Tax",
+   "categories": [
+    "tax"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read return data and e-file status for review and delivery.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 19
+  },
+  {
+   "key": "gosystem",
+   "name": "GoSystem Tax RS",
+   "categories": [
+    "tax"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read returns, K-1 detail and diagnostics for entity and fiduciary review.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 20
+  },
+  {
+   "key": "drake",
+   "name": "Drake Tax",
+   "categories": [
+    "tax"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read return data and print-ready PDFs for review.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 21
+  },
+  {
+   "key": "proseries",
+   "name": "ProSeries",
+   "categories": [
+    "tax"
+   ],
+   "status_e0": "coming_soon",
+   "kind": "firm",
+   "description": "Return data and diagnostics for review.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 22
+  },
+  {
+   "key": "karbon",
+   "name": "Karbon",
+   "categories": [
+    "practice"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Mirror work items, due dates and assignments, and post status as work moves.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 23
+  },
+  {
+   "key": "taxdome",
+   "name": "TaxDome",
+   "categories": [
+    "practice",
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Mirror jobs and pipelines, and read the documents clients upload there.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 24
+  },
+  {
+   "key": "canopy",
+   "name": "Canopy",
+   "categories": [
+    "practice",
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Mirror workflow tasks and read client documents shared through Canopy.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 25
+  },
+  {
+   "key": "bc",
+   "name": "Microsoft Dynamics 365 Business Central",
+   "categories": [
+    "erp"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read client ledgers and post entries a person approves. Each client connects its own company from the portal.",
+   "auth_line": "Firm app · client-authorized",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 26
+  },
+  {
+   "key": "acumatica",
+   "name": "Acumatica",
+   "categories": [
+    "erp"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read client ledgers and post entries a person approves. Each client connects its own company from the portal.",
+   "auth_line": "Firm app · client-authorized",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 27
+  },
+  {
+   "key": "freshbooks",
+   "name": "FreshBooks",
+   "categories": [
+    "erp"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read client ledgers and post entries a person approves. Each client connects its own company from the portal.",
+   "auth_line": "Firm app · client-authorized",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 28
+  },
+  {
+   "key": "dropbox",
+   "name": "Dropbox",
+   "categories": [
+    "docs",
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "personal",
+   "description": "Files and shared folders, acting as you.",
+   "auth_line": "Personal",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 29
+  },
+  {
+   "key": "smartvault",
+   "name": "SmartVault",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read client folders and file approved documents back to the binder folder.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 30
+  },
+  {
+   "key": "sharefile",
+   "name": "ShareFile",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read shared client folders and file approved documents back.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 31
+  },
+  {
+   "key": "safesend",
+   "name": "SafeSend Returns",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Hand assembled returns to SafeSend for client delivery and signature.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 32
+  },
+  {
+   "key": "acrobat",
+   "name": "Adobe Acrobat Sign",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Alternate e-signature for envelopes a client cannot sign in the portal.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 33
+  },
+  {
+   "key": "egnyte",
+   "name": "Egnyte",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "coming_soon",
+   "kind": "firm",
+   "description": "Firm file shares and client folders.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 34
+  },
+  {
+   "key": "liscio",
+   "name": "Liscio",
+   "categories": [
+    "comms",
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read client messages and the documents they send through Liscio.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 35
+  },
+  {
+   "key": "suralink",
+   "name": "Suralink",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read PBC requests and the documents clients upload for audits.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 36
+  },
+  {
+   "key": "hubdoc",
+   "name": "Hubdoc",
+   "categories": [
+    "docs"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read the bills and receipts clients capture for bookkeeping.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 37
+  },
+  {
+   "key": "teams",
+   "name": "Microsoft Teams",
+   "categories": [
+    "comms",
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Post run updates to a channel and read meeting transcripts you share.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 38
+  },
+  {
+   "key": "slack",
+   "name": "Slack",
+   "categories": [
+    "comms",
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Post run updates and approvals to a channel your team picks.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 39
+  },
+  {
+   "key": "zoom",
+   "name": "Zoom",
+   "categories": [
+    "comms",
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "personal",
+   "description": "Meeting transcripts for follow-up drafts, acting as you.",
+   "auth_line": "Personal",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 40
+  },
+  {
+   "key": "ringcentral",
+   "name": "RingCentral",
+   "categories": [
+    "comms"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Log client calls and voicemail against the client record.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 41
+  },
+  {
+   "key": "front",
+   "name": "Front",
+   "categories": [
+    "comms"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read shared client inboxes and draft replies for a person to send.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 42
+  },
+  {
+   "key": "notion",
+   "name": "Notion",
+   "categories": [
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read the firm wiki pages you choose as knowledge sources.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 43
+  },
+  {
+   "key": "asana",
+   "name": "Asana",
+   "categories": [
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Create tasks from approved follow-ups and read their status.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 44
+  },
+  {
+   "key": "monday",
+   "name": "monday.com",
+   "categories": [
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Mirror boards and items with work in Accrued.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 45
+  },
+  {
+   "key": "smartsheet",
+   "name": "Smartsheet",
+   "categories": [
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read and update shared trackers your team keeps there.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 46
+  },
+  {
+   "key": "calendly",
+   "name": "Calendly",
+   "categories": [
+    "prod"
+   ],
+   "status_e0": "available",
+   "kind": "personal",
+   "description": "Offer client meeting times from your calendar, acting as you.",
+   "auth_line": "Personal",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 47
+  },
+  {
+   "key": "zapier",
+   "name": "Zapier",
+   "categories": [
+    "prod"
+   ],
+   "status_e0": "coming_soon",
+   "kind": "firm",
+   "description": "Trigger your own automations from Accrued events.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 48
+  },
+  {
+   "key": "hubspot",
+   "name": "HubSpot",
+   "categories": [
+    "crm"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read contacts, companies and deals for client intake.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 49
+  },
+  {
+   "key": "stripe",
+   "name": "Stripe",
+   "categories": [
+    "spend",
+    "crm"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read client payments and payouts for reconciliation.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 50
+  },
+  {
+   "key": "gusto",
+   "name": "Gusto",
+   "categories": [
+    "hris"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read payroll registers and census files a client shares.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 51
+  },
+  {
+   "key": "paychex",
+   "name": "Paychex Flex",
+   "categories": [
+    "hris"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read payroll registers and contribution files a client shares.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 52
+  },
+  {
+   "key": "expensify",
+   "name": "Expensify",
+   "categories": [
+    "spend"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read expense reports and receipts for close and review.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 53
+  },
+  {
+   "key": "ramp",
+   "name": "Ramp",
+   "categories": [
+    "spend"
+   ],
+   "status_e0": "available",
+   "kind": "firm",
+   "description": "Read card transactions, receipts and bills for close.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 54
+  },
+  {
+   "key": "brex",
+   "name": "Brex",
+   "categories": [
+    "spend"
+   ],
+   "status_e0": "coming_soon",
+   "kind": "firm",
+   "description": "Card transactions and receipts.",
+   "auth_line": "Firm connection",
+   "blocked_reason": null,
+   "published_at": "2026-01-01T00:00:00-06:00",
+   "sort_order": 55
+  }
+ ]
+}

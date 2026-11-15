@@ -12160,6 +12160,508 @@ export type ConflictSourceOut = {
 };
 
 /**
+ * ConnectBuildOnAccruedRowOut
+ */
+export type ConnectBuildOnAccruedRowOut = {
+    /**
+     * Key
+     */
+    key: 'api_keys' | 'mcp' | 'workflow_sync';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Planned
+     */
+    planned: boolean;
+    /**
+     * Target
+     */
+    target: string;
+};
+
+/**
+ * ConnectCatalogImportOut
+ */
+export type ConnectCatalogImportOut = {
+    /**
+     * Added
+     */
+    added: Array<string>;
+    /**
+     * Changed
+     */
+    changed: Array<string>;
+    /**
+     * Document Sha256
+     */
+    document_sha256: string;
+    /**
+     * Dry Run
+     */
+    dry_run: boolean;
+    /**
+     * Hidden
+     */
+    hidden: Array<string>;
+    /**
+     * Id
+     */
+    id: string | null;
+};
+
+/**
+ * ConnectCatalogImportsOut
+ */
+export type ConnectCatalogImportsOut = {
+    /**
+     * Items
+     */
+    items: Array<ConnectCatalogImportOut>;
+};
+
+/**
+ * ConnectCatalogOut
+ */
+export type ConnectCatalogOut = {
+    /**
+     * Build On Accrued
+     */
+    build_on_accrued: Array<ConnectBuildOnAccruedRowOut>;
+    /**
+     * Categories
+     */
+    categories: Array<ConnectCategoryOut>;
+    counts: ConnectCountsOut;
+    /**
+     * Items
+     */
+    items: Array<ConnectTileOut>;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * ConnectCategoryOut
+ */
+export type ConnectCategoryOut = {
+    /**
+     * Code
+     */
+    code: 'tax' | 'practice' | 'erp' | 'grc' | 'docs' | 'comms' | 'prod' | 'crm' | 'hris' | 'spend';
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * ConnectClientCompaniesOut
+ */
+export type ConnectClientCompaniesOut = {
+    /**
+     * Items
+     */
+    items: Array<ConnectClientCompanyOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+};
+
+/**
+ * ConnectClientCompanyOut
+ */
+export type ConnectClientCompanyOut = {
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Connected By Label
+     */
+    connected_by_label: string;
+    /**
+     * Connected On
+     */
+    connected_on: string | null;
+    /**
+     * Last Sync At
+     */
+    last_sync_at: string | null;
+    /**
+     * Ok
+     */
+    ok: boolean;
+};
+
+/**
+ * ConnectCompleteIn
+ */
+export type ConnectCompleteIn = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
+ * ConnectCompleteOut
+ */
+export type ConnectCompleteOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Status
+     */
+    status: 'connected';
+};
+
+/**
+ * ConnectConsentOut
+ */
+export type ConnectConsentOut = {
+    /**
+     * Heading
+     */
+    heading: string;
+    /**
+     * Never
+     */
+    never: string;
+    /**
+     * Reads
+     */
+    reads: Array<string>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ConnectCountsOut
+ */
+export type ConnectCountsOut = {
+    /**
+     * All
+     */
+    all: number;
+    /**
+     * Available
+     */
+    available: number;
+    /**
+     * Coming Soon
+     */
+    coming_soon: number;
+    /**
+     * Connected
+     */
+    connected: number;
+};
+
+/**
+ * ConnectDependentAgentOut
+ */
+export type ConnectDependentAgentOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * ConnectDependentsOut
+ */
+export type ConnectDependentsOut = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Items
+     */
+    items: Array<ConnectDependentAgentOut>;
+    /**
+     * Paused
+     */
+    paused: boolean;
+};
+
+/**
+ * ConnectDisconnectIn
+ */
+export type ConnectDisconnectIn = {
+    /**
+     * Confirm Name
+     */
+    confirm_name: string;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * ConnectDisconnectOut
+ */
+export type ConnectDisconnectOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Status
+     */
+    status: 'disconnected';
+    /**
+     * Suspended Client Connections
+     */
+    suspended_client_connections: number;
+};
+
+/**
+ * ConnectHealthOut
+ */
+export type ConnectHealthOut = {
+    /**
+     * Events
+     */
+    events: Array<ConnectIntegrationEventOut>;
+    /**
+     * Summary
+     */
+    summary: string;
+};
+
+/**
+ * ConnectIntegrationDetailOut
+ */
+export type ConnectIntegrationDetailOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'integration.connect_firm' | 'integration.disconnect_firm' | 'integration.connect_personal' | 'integration.disconnect_personal' | 'integration.interest'>;
+    connection: ConnectionCardOut;
+    consent: ConnectConsentOut | null;
+    dependents: ConnectDependentsOut;
+    health: ConnectHealthOut;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Managed By
+     */
+    managed_by: string | null;
+    may_do: ConnectMayDoOut;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Status
+     */
+    status: 'available' | 'coming_soon' | 'connecting' | 'connected' | 'needs_attention' | 'needs_reauth' | 'paused' | 'disconnected';
+    /**
+     * Status Line
+     */
+    status_line: string | null;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Who Can Use
+     */
+    who_can_use: string;
+};
+
+/**
+ * ConnectIntegrationEventOut
+ */
+export type ConnectIntegrationEventOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Label
+     */
+    label: string | null;
+    /**
+     * Ok
+     */
+    ok: boolean;
+};
+
+/**
+ * ConnectIntegrationEventsOut
+ */
+export type ConnectIntegrationEventsOut = {
+    /**
+     * Items
+     */
+    items: Array<ConnectIntegrationEventOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor: string | null;
+};
+
+/**
+ * ConnectInterestOut
+ */
+export type ConnectInterestOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Recorded
+     */
+    recorded: boolean;
+};
+
+/**
+ * ConnectMayDoOut
+ */
+export type ConnectMayDoOut = {
+    /**
+     * Never
+     */
+    never: Array<ConnectMayDoRowOut>;
+    /**
+     * Read
+     */
+    read: Array<ConnectMayDoRowOut>;
+    /**
+     * Write
+     */
+    write: Array<ConnectMayDoRowOut>;
+};
+
+/**
+ * ConnectMayDoRowOut
+ */
+export type ConnectMayDoRowOut = {
+    /**
+     * Gate Label
+     */
+    gate_label: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * State
+     */
+    state: 'allowed' | 'off_for_firm' | 'never';
+};
+
+/**
+ * ConnectStartOut
+ */
+export type ConnectStartOut = {
+    /**
+     * Authorise Url
+     */
+    authorise_url: string | null;
+    /**
+     * Status
+     */
+    status: 'connecting' | 'connected';
+};
+
+/**
+ * ConnectTileOut
+ */
+export type ConnectTileOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'integration.connect_firm' | 'integration.disconnect_firm' | 'integration.connect_personal' | 'integration.disconnect_personal' | 'integration.interest'>;
+    /**
+     * Auth Line
+     */
+    auth_line: string;
+    /**
+     * Blocked Reason
+     */
+    blocked_reason: string | null;
+    /**
+     * Categories
+     */
+    categories: Array<'tax' | 'practice' | 'erp' | 'grc' | 'docs' | 'comms' | 'prod' | 'crm' | 'hris' | 'spend'>;
+    /**
+     * Connected By Label
+     */
+    connected_by_label: string | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Icon
+     */
+    icon: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'firm' | 'personal' | 'client_authorised' | 'file_bridge';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Status
+     */
+    status: 'available' | 'coming_soon' | 'connecting' | 'connected' | 'needs_attention' | 'needs_reauth' | 'paused' | 'disconnected';
+    /**
+     * Tone
+     */
+    tone: string;
+    /**
+     * Viewer Status
+     */
+    viewer_status: 'available' | 'coming_soon' | 'connecting' | 'connected' | 'needs_attention' | 'needs_reauth' | 'paused' | 'disconnected';
+};
+
+/**
  * ConnectionActivityOut
  *
  * One line of the connection's activity in the ADM-07 grammar (A-02-T16; INV-5):
@@ -12178,6 +12680,48 @@ export type ConnectionActivityOut = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ConnectionCardOut
+ */
+export type ConnectionCardOut = {
+    /**
+     * Auth Mode Label
+     */
+    auth_mode_label: string;
+    /**
+     * Connected At
+     */
+    connected_at: string | null;
+    /**
+     * Connected By
+     */
+    connected_by: string | null;
+    /**
+     * Last Sync At
+     */
+    last_sync_at: string | null;
+    /**
+     * Linked Count
+     */
+    linked_count: number | null;
+    /**
+     * Linked Label Code
+     */
+    linked_label_code: string | null;
+    /**
+     * Mapping Ref
+     */
+    mapping_ref: string | null;
+    /**
+     * Mode
+     */
+    mode: 'token' | 'firm_app' | 'file_bridge' | 'personal';
+    /**
+     * Token Renews At
+     */
+    token_renews_at: string | null;
 };
 
 /**
@@ -119831,6 +120375,503 @@ export type MatchClientResponses = {
 
 export type MatchClientResponse = MatchClientResponses[keyof MatchClientResponses];
 
+export type ConnectCatalogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Category
+         */
+        category?: 'tax' | 'practice' | 'erp' | 'grc' | 'docs' | 'comms' | 'prod' | 'crm' | 'hris' | 'spend' | null;
+        /**
+         * Status
+         */
+        status?: 'connected' | 'available' | 'coming_soon' | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/v1/integrations/catalog';
+};
+
+export type ConnectCatalogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectCatalogError = ConnectCatalogErrors[keyof ConnectCatalogErrors];
+
+export type ConnectCatalogResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectCatalogOut;
+};
+
+export type ConnectCatalogResponse = ConnectCatalogResponses[keyof ConnectCatalogResponses];
+
+export type ConnectCompleteData = {
+    body: ConnectCompleteIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/integrations/connect/complete';
+};
+
+export type ConnectCompleteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectCompleteError = ConnectCompleteErrors[keyof ConnectCompleteErrors];
+
+export type ConnectCompleteResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectCompleteOut;
+};
+
+export type ConnectCompleteResponse = ConnectCompleteResponses[keyof ConnectCompleteResponses];
+
+export type ConnectDetailData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/integrations/{key}';
+};
+
+export type ConnectDetailErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectDetailError = ConnectDetailErrors[keyof ConnectDetailErrors];
+
+export type ConnectDetailResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectIntegrationDetailOut;
+};
+
+export type ConnectDetailResponse = ConnectDetailResponses[keyof ConnectDetailResponses];
+
+export type ConnectClientCompaniesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/integrations/{key}/client-companies';
+};
+
+export type ConnectClientCompaniesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectClientCompaniesError = ConnectClientCompaniesErrors[keyof ConnectClientCompaniesErrors];
+
+export type ConnectClientCompaniesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectClientCompaniesOut;
+};
+
+export type ConnectClientCompaniesResponse = ConnectClientCompaniesResponses[keyof ConnectClientCompaniesResponses];
+
+export type ConnectFirmData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/integrations/{key}/connect';
+};
+
+export type ConnectFirmErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectFirmError = ConnectFirmErrors[keyof ConnectFirmErrors];
+
+export type ConnectFirmResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectStartOut;
+};
+
+export type ConnectFirmResponse = ConnectFirmResponses[keyof ConnectFirmResponses];
+
+export type DisconnectFirmData = {
+    body: ConnectDisconnectIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/integrations/{key}/disconnect';
+};
+
+export type DisconnectFirmErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DisconnectFirmError = DisconnectFirmErrors[keyof DisconnectFirmErrors];
+
+export type DisconnectFirmResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectDisconnectOut;
+};
+
+export type DisconnectFirmResponse = DisconnectFirmResponses[keyof DisconnectFirmResponses];
+
+export type ConnectEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/integrations/{key}/events';
+};
+
+export type ConnectEventsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectEventsError = ConnectEventsErrors[keyof ConnectEventsErrors];
+
+export type ConnectEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectIntegrationEventsOut;
+};
+
+export type ConnectEventsResponse = ConnectEventsResponses[keyof ConnectEventsResponses];
+
+export type ConnectInterestData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/integrations/{key}/interest';
+};
+
+export type ConnectInterestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectInterestError = ConnectInterestErrors[keyof ConnectInterestErrors];
+
+export type ConnectInterestResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectInterestOut;
+};
+
+export type ConnectInterestResponse = ConnectInterestResponses[keyof ConnectInterestResponses];
+
 export type AcceptInvitationData = {
     body: AcceptInvitationIn;
     headers?: {
@@ -122683,6 +123724,134 @@ export type ConfirmAnnualIndependenceResponses = {
 };
 
 export type ConfirmAnnualIndependenceResponse = ConfirmAnnualIndependenceResponses[keyof ConfirmAnnualIndependenceResponses];
+
+export type ConnectPersonalData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/me/integrations/{key}/connect';
+};
+
+export type ConnectPersonalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectPersonalError = ConnectPersonalErrors[keyof ConnectPersonalErrors];
+
+export type ConnectPersonalResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectStartOut;
+};
+
+export type ConnectPersonalResponse = ConnectPersonalResponses[keyof ConnectPersonalResponses];
+
+export type DisconnectPersonalData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/v1/me/integrations/{key}/disconnect';
+};
+
+export type DisconnectPersonalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DisconnectPersonalError = DisconnectPersonalErrors[keyof DisconnectPersonalErrors];
+
+export type DisconnectPersonalResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectDisconnectOut;
+};
+
+export type DisconnectPersonalResponse = DisconnectPersonalResponses[keyof DisconnectPersonalResponses];
 
 export type NotificationPreferencesData = {
     body?: never;
@@ -127735,6 +128904,121 @@ export type IncidentPropagationLogResponses = {
 };
 
 export type IncidentPropagationLogResponse = IncidentPropagationLogResponses[keyof IncidentPropagationLogResponses];
+
+export type ConnectImportLogData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/integration-catalog/imports';
+};
+
+export type ConnectImportLogErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectImportLogError = ConnectImportLogErrors[keyof ConnectImportLogErrors];
+
+export type ConnectImportLogResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectCatalogImportsOut;
+};
+
+export type ConnectImportLogResponse = ConnectImportLogResponses[keyof ConnectImportLogResponses];
+
+export type ConnectImportData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/platform/integration-catalog/imports';
+};
+
+export type ConnectImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConnectImportError = ConnectImportErrors[keyof ConnectImportErrors];
+
+export type ConnectImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConnectCatalogImportOut;
+};
+
+export type ConnectImportResponse = ConnectImportResponses[keyof ConnectImportResponses];
 
 export type ImportRetentionDefaultsData = {
     body: RetentionDefaultSetIn;
