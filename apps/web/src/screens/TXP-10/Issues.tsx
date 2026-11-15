@@ -17,6 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useOpenOverlay } from "../../app-core/open";
 import { ov } from "../../routes/to";
+import { ENTITY_CAPABILITIES, useEntityAgentGate } from "../../domain/tax";
 import { TXP10 } from "./index";
 
 export function Issues({
@@ -59,8 +60,12 @@ export function Issues({
   const remind = useMutation({ ...entityIssueRemindMutation(), onSuccess: refresh });
   const resolve = useMutation({ ...entityIssueResolveMutation(), onSuccess: refresh });
   const key = () => ({ "Idempotency-Key": crypto.randomUUID() });
+  // T-05-T66 (AC-13.1): fix instructions start the fix runner; off, the control says why.
+  const fixer = useEntityAgentGate(returnId, ENTITY_CAPABILITIES.fixRunner);
   return (
     <TXP10
+      agentOffered={fixer.offered}
+      agentReason={fixer.reason}
       queue={queue.data}
       selectedId={selected}
       detail={detail.data}

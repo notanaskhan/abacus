@@ -1,5 +1,7 @@
 // The tax domain's public entry (T-02-T25).
 export { useDraftK1Source } from "./k1";
 export * from "./agents";
+export { AgentsOffNote } from "./AgentsOffNote";
+export { useEntityAgentGate } from "./useEntityAgentGate";
 export * from "./entityReturn";
 export * from "./instrument";

@@ -251,6 +251,8 @@ class WorkbookRunRowOut(BaseModel):
     started_by: Annotated[str, Confidential]
     started_at: Annotated[datetime, Internal]
     state: Annotated[str, Internal]  # agent_run (C2)
+    # T-05-T66 (AC-13.1): what a waiting run needs, as codes (`consent_7216`); TXP-00 names it.
+    waiting_on: Annotated[list[str], Internal] = Field(default_factory=list[str])
 
 
 class WorkbookRunsOut(BaseModel):
@@ -1445,6 +1447,7 @@ async def entity_runs_route(return_id: UUID, ctx: Ctx) -> WorkbookRunsOut:
                 started_by=names.get(r.initiator_user_id, "") if r.initiator_user_id else "",
                 started_at=r.created_at,
                 state=r.state,
+                waiting_on=list(r.waiting_on),
             )
             for r in runs
         ]

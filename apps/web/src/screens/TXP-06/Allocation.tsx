@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import type { SignOffWriter } from "../../domain/review";
 import { SignOffSheet } from "../SHL-12";
+import { ENTITY_CAPABILITIES, useEntityAgentGate } from "../../domain/tax";
 import { TXP06 } from "./index";
 
 function draftOf(
@@ -53,6 +54,8 @@ export function Allocation({
   onItemL?: () => void;
 }): JSX.Element {
   const path = { return_id: returnId };
+  // T-05-T66 (AC-13.1): with the reader off the structure is keyed by hand; the sheet says why.
+  const reader = useEntityAgentGate(returnId, ENTITY_CAPABILITIES.agreement);
   const client = useQueryClient();
   const structure = useQuery(entityAllocationOptions({ path }));
   const preview = useMutation(entityAllocationPreviewMutation());
@@ -108,6 +111,7 @@ export function Allocation({
         />
       )}
       <TXP06
+        agentReason={reader.offered ? null : reader.reason}
         structure={s}
         preview={editing === null ? undefined : preview.data}
         selected={selected}

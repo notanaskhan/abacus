@@ -21,6 +21,7 @@ import {
   time as formatTime,
 } from "@abacus/ui";
 import { type JSX, useState } from "react";
+import { AgentsOffNote, ENTITY_CAPABILITIES } from "../../domain/tax";
 import { COPY, SEVERITY, STATUS } from "./copy";
 
 const OPEN = new Set(["open", "in_progress", "reopened"]);
@@ -41,6 +42,10 @@ export interface TXP10Props {
   onReviewFix?: (proposalId: string) => void;
   /** SHL-15: the person's fix instructions on the issue. */
   onInstruct?: (issueId: string) => void;
+  /** T-05-T66 (AC-13.1): whether the fix runner is offered (false while loading: fail closed). */
+  agentOffered?: boolean;
+  /** Why it is not offered, in words (null while loading or when offered). */
+  agentReason?: string | null;
   onAssign?: (issue: WorkbookReturnIssueOut, option: WorkbookIssueAssigneeOptionOut) => void;
   onSendToClient?: (issue: WorkbookReturnIssueOut) => void;
   onRemind?: (issue: WorkbookReturnIssueOut) => void;
@@ -104,6 +109,8 @@ function Detail({
   onOpenCell,
   onReviewFix,
   onInstruct,
+  agentOffered = true,
+  agentReason = null,
   onAssign,
   onSendToClient,
   onRemind,
@@ -321,7 +328,20 @@ function Detail({
           </div>
         ) : null}
       </div>
-      {open ? (
+      {open && !agentOffered ? (
+        <div className="m-[12px] flex flex-col gap-[6px]">
+          <AgentsOffNote capability={ENTITY_CAPABILITIES.fixRunner} reason={agentReason} />
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            title={agentReason ?? undefined}
+            className="flex h-[44px] flex-none cursor-not-allowed items-center rounded-[12px] bg-nested px-[12px] text-left text-[13px] text-ink-3 opacity-60"
+          >
+            {COPY.composer}
+          </button>
+        </div>
+      ) : open ? (
         <button
           type="button"
           onClick={() => onInstruct?.(issue.id)}

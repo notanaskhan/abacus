@@ -477,6 +477,9 @@ class WorkItemRun:
     # T-05-T38 rest (DEC-4630): when the run ended (TXP-11's version picker reads the workbook as
     # it stood then); None while it runs.
     finished_at: datetime | None = None
+    # T-05-T66 (AC-13.1): what a waiting run needs (`blocked_on.needs`, codes such as
+    # `consent_7216`); empty when it waits on nothing.
+    waiting_on: tuple[str, ...] = ()
 
     @property
     def active(self) -> bool:
@@ -486,10 +489,21 @@ class WorkItemRun:
 _WORK_ITEM_RUNS: Final = text(
     # S44 end pass: agent_runs has `started_at`, not `created_at` (0010); the read model keeps
     # its `created_at` name for the run's start.
-    "SELECT id, run_number, initiator_user_id, started_at AS created_at, state, finished_at "
+    "SELECT id, run_number, initiator_user_id, started_at AS created_at, state, finished_at, "
+    "blocked_on "
     "FROM agent_runs WHERE agent_id = :agent AND work_item_ref = :ref "
     "ORDER BY started_at DESC LIMIT :limit"
 )
+
+
+def _needs(blocked_on: object) -> tuple[str, ...]:
+    """The codes a run's `blocked_on` names (`{kind: inputs, needs: [...]}`), else none."""
+    if not isinstance(blocked_on, dict):
+        return ()
+    needs = cast(dict[str, object], blocked_on).get("needs")
+    if not isinstance(needs, list):
+        return ()
+    return tuple(str(n) for n in cast(list[object], needs) if isinstance(n, str))
 
 
 async def work_item_runs(
@@ -508,6 +522,7 @@ async def work_item_runs(
                 r.created_at,
                 str(r.state),
                 r.finished_at,
+                _needs(r.blocked_on),
             )
             for r in rows
         ]
