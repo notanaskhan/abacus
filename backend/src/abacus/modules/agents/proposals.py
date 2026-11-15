@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -286,6 +286,28 @@ class Edit:
     n: int
     after: str
     citation_note: str
+
+
+# W-02-T23 (AC-W4, DEC-5058): a kind may check a person's edits before anything is written, e.g.
+# `file_save`'s "Folder > Name" names a folder the approver can write. A validator raises
+# `ProposalInvalid` (422 `proposal_invalid`); a kind with none takes any typed edit.
+EditValidator = Callable[
+    [
+        AuthContext,
+        "Proposal",
+        Sequence["ProposalRow"],
+        Mapping[int, tuple[dict[str, object], str]],
+    ],
+    Awaitable[None],
+]
+_EDIT_VALIDATORS: dict[str, EditValidator] = {}
+
+
+def register_edit_validator(kind: str, validator: EditValidator) -> None:
+    known = _EDIT_VALIDATORS.get(kind)
+    if known is not None and known is not validator:
+        raise ValueError(f"proposal kind {kind!r} already has an edit validator")
+    _EDIT_VALIDATORS[kind] = validator
 
 
 # --- Helpers -----------------------------------------------------------------------------------
@@ -1024,6 +1046,9 @@ async def approve_proposal(
         locked = await _locked(tx, person, proposal, APPROVE, seen_version)
         rows = list(await rows_of(tx.session, locked.id))
         edited = _edits(rows, edits)
+        validator = _EDIT_VALIDATORS.get(locked.kind)
+        if edited and validator is not None:
+            await validator(person, locked, rows, edited)
         elsewhere = await _over_limit(person.tenant, locked, person.user_id, rows, edited)
         if elsewhere is not None:
             raise RoutedElsewhere(facts={"routed_to": str(elsewhere)})

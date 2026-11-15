@@ -25,6 +25,7 @@ only by the runtime for the call it was issued for (`approved_writes.py`).
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Annotated, Final, Literal, cast
@@ -39,11 +40,18 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.safe_xlsx import Sheet
 from abacus.kernel.uow import Ref, Scope, Target, uow
-from abacus.modules.agents.proposals import ProposedRow, create_proposal
+from abacus.modules.agents.models import Proposal, ProposalRow
+from abacus.modules.agents.proposals import (
+    ProposalInvalid,
+    ProposedRow,
+    create_proposal,
+    register_edit_validator,
+)
 from abacus.modules.engagements.api import client_of
 from abacus.modules.evidence.api import file_approved_copy, store_workbook, stored_object
 from abacus.modules.identity.api import (
     AgentContext,
+    AuthContext,
     consumed_grant,
     engagement_resource,
     member_could,
@@ -307,6 +315,47 @@ _PROPOSAL: Final = text(
     "SELECT p.id, p.kind, p.state, p.agent_run_id, p.engagement_id, p.set_ref "
     "FROM proposals p WHERE p.id = :id"
 )
+# W-02-T23 (AC-W4, DEC-5058): the person's Edit... on the card, if their approval carried one.
+_EDITED: Final = text(
+    "SELECT edits FROM proposal_decisions WHERE proposal_id = :p "
+    "AND decision = 'approved_with_edits' AND undoes_decision_id IS NULL "
+    "ORDER BY created_at DESC LIMIT 1"
+)
+_SEPARATOR: Final = " \u203a "  # the card's After text: folder, the separator, name
+_NAME_LIMIT: Final = 200
+_BY_LABEL: Final = {label: kind for kind, label in FOLDER_LABELS.items()}
+
+
+def saved_to(text_value: object) -> tuple[str, str] | None:
+    """The folder kind and file name an edited "Folder > Name" names, or None when it names no
+    folder the card offers or no usable name."""
+    if not isinstance(text_value, str) or _SEPARATOR not in text_value:
+        return None
+    label, name = (part.strip() for part in text_value.split(_SEPARATOR, 1))
+    folder = _BY_LABEL.get(label)
+    if folder is None or not name or len(name) > _NAME_LIMIT or "/" in name or "\\" in name:
+        return None
+    return folder, name
+
+
+async def _validate_save_edit(
+    person: AuthContext,
+    proposal: Proposal,
+    rows: Sequence[ProposalRow],
+    edited: Mapping[int, tuple[dict[str, object], str]],
+) -> None:
+    """AC-W4: an edited "Folder > Name" must name a folder the card offers, with a usable name,
+    and the approver must be able to write there (AC-Q2, as `files.propose_save` checks)."""
+    for value, _note in edited.values():
+        if saved_to(value.get("v")) is None:
+            raise ProposalInvalid(facts={"field": "saved_to"})
+    engagement = cast(UUID, proposal.engagement_id)
+    resource = await engagement_resource(person.tenant, engagement)
+    if not await member_could(person.tenant_id, person.user_id, SAVE, resource):
+        raise ProposalInvalid(facts={"field": "folder_not_writable"})
+
+
+register_edit_validator(FILE_SAVE, _validate_save_edit)
 
 
 async def save_approved(caller: ToolCaller, args: SaveApprovedIn) -> SaveApprovedOut:
@@ -330,6 +379,16 @@ async def save_approved(caller: ToolCaller, args: SaveApprovedIn) -> SaveApprove
     grant_id, approver = found
     ref = cast(dict[str, str], proposal.set_ref or {})
     row = await _artifact(agent.tenant, agent.agent_run_id, UUID(ref["artifact_id"]))
+    folder_kind, title = ref.get("folder", "deliverables"), row.name
+    async with tenant_session(agent.tenant) as session:
+        edits = await session.scalar(_EDITED, {"p": args.proposal_id})
+    # AC-W4: the person's folder and name, when their approval edited the card.
+    for edit in cast(list[dict[str, object]], edits or []):
+        after = edit.get("after")
+        value = cast(dict[str, object], after).get("v") if isinstance(after, dict) else None
+        found = saved_to(value)
+        if found is not None:
+            folder_kind, title = found
     stored = stored_object(
         agent.tenant_id,
         cast(str, row.storage_key),
@@ -349,8 +408,8 @@ async def save_approved(caller: ToolCaller, args: SaveApprovedIn) -> SaveApprove
             tenant_id=agent.tenant_id,
             engagement_id=engagement,
             client_id=client,
-            title=row.name,
-            folder_kind=ref.get("folder", "deliverables"),
+            title=title,
+            folder_kind=folder_kind,
             stored=stored,
             grant_id=grant_id,
             requested_by=approver,

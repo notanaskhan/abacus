@@ -371,7 +371,7 @@ SPECS_V2: dict[str, dict[str, object]] = {   'briefing.today': {   'autonomy': '
                                              'max_tool_calls': 40},
                                'output_schema': 'AssistantTurn',
                                'plan': 'required_when_writes',
-                               'prompt': 'workbench.assistant@v1',
+                               'prompt': 'workbench.assistant@v2',
                                'purpose': "Answer a person's questions about the firm's work from "
                                           'records they can open, ask when something is '
                                           'ambiguous, and plan any file it would save for the '
@@ -414,6 +414,6 @@ SPECS_V2: dict[str, dict[str, object]] = {   'briefing.today': {   'autonomy': '
                                                         'files.list_folders']},
                                'untrusted_inputs': [   'tool_results.evidence',
                                                        'tool_results.client_fields'],
-                               'version': 1,
+                               'version': 2,
                                'work_class': 'interactive'}}
 # fmt: on
