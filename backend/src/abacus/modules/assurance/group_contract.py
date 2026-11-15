@@ -77,12 +77,12 @@ class ComponentPmInvalid(DomainInvalid):
 class ConsolidationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[str, Field(min_length=1, max_length=200)]
-    year_end: date
-    reporting_currency: Literal["USD"]
-    interim_period_end: date | None = None
-    prior_period_end: date | None = None
-    source_connection_id: UUID | None = None
+    name: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+    year_end: Annotated[date, classified("confidential")]
+    reporting_currency: Annotated[Literal["USD"], classified("internal")]
+    interim_period_end: Annotated[date | None, classified("confidential")] = None
+    prior_period_end: Annotated[date | None, classified("confidential")] = None
+    source_connection_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class TrialBalanceSlotOut(BaseModel):
@@ -95,7 +95,7 @@ class TrialBalanceSlotOut(BaseModel):
     period_end: Annotated[date, Internal]
     state: Annotated[ConsolidationTbStatus, Internal]
     file_name: Annotated[str | None, classified("confidential")]
-    total_debits: Money | None
+    total_debits: Annotated[Money | None, classified("confidential")]
     not_needed_reason: Annotated[str | None, classified("confidential")]
 
 
@@ -141,47 +141,49 @@ class ConsolidationOut(BaseModel):
 class StructureEntityIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    client_entity_id: UUID
-    parent_client_entity_id: UUID | None = None
-    level: Annotated[int, Field(ge=1, le=3)]
-    ownership_pct: Literal[100]
-    city: Annotated[str | None, Field(max_length=120)] = None
-    component_auditor_id: UUID | None = None
+    client_entity_id: Annotated[UUID, classified("internal")]
+    parent_client_entity_id: Annotated[UUID | None, classified("internal")] = None
+    level: Annotated[int, Field(ge=1, le=3), classified("internal")]
+    ownership_pct: Annotated[Literal[100], classified("confidential")]
+    city: Annotated[str | None, Field(max_length=120), classified("confidential")] = None
+    component_auditor_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class StructureIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    entities: Annotated[list[StructureEntityIn], Field(min_length=1, max_length=50)]
+    entities: Annotated[
+        list[StructureEntityIn], Field(min_length=1, max_length=50), classified("confidential")
+    ]
 
 
 class TbAttachIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    source: Literal["upload", "evidence", "connection"]
-    label: Label
-    period_kind: Literal["current", "prior"]
-    upload_id: UUID | None = None
-    evidence_version_id: UUID | None = None
-    connection_id: UUID | None = None
+    source: Annotated[Literal["upload", "evidence", "connection"], classified("internal")]
+    label: Annotated[Label, classified("confidential")]
+    period_kind: Annotated[Literal["current", "prior"], classified("internal")]
+    upload_id: Annotated[UUID | None, classified("internal")] = None
+    evidence_version_id: Annotated[UUID | None, classified("internal")] = None
+    connection_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class TbNotNeededIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    reason: Annotated[str, Field(min_length=1, max_length=500)]
+    reason: Annotated[str, Field(min_length=1, max_length=500), classified("confidential")]
 
 
 class ConsolidationFinalizeIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    seen_version: Annotated[int, Field(ge=1)]
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
 
 
 class GroupReasonIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    reason: Annotated[str, Field(min_length=1, max_length=500)]
+    reason: Annotated[str, Field(min_length=1, max_length=500), classified("confidential")]
 
 
 class GroupSuggestionRefOut(BaseModel):
@@ -218,9 +220,9 @@ class GroupTalliesOut(BaseModel):
     total_assets: Money
     net_income: Money
     balanced: Annotated[Literal["tie", "off", "pending"], Internal]
-    off_by: Money | None
+    off_by: Annotated[Money | None, classified("confidential")]
     intercompany: Annotated[Literal["tie", "off", "pending"], Internal]
-    intercompany_off_by: Money | None
+    intercompany_off_by: Annotated[Money | None, classified("confidential")]
     eliminations_posted: Annotated[int, Internal]
     mapped: Annotated[int, Internal]
     accounts: Annotated[int, Internal]
@@ -280,24 +282,30 @@ class EliminationsOut(BaseModel):
 class EliminationLineIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    caption: Annotated[str, Field(min_length=1, max_length=200)]
-    client_entity_id: UUID
-    debit: Annotated[Decimal, Field(ge=0, max_digits=20, decimal_places=2)] = Decimal(0)
-    credit: Annotated[Decimal, Field(ge=0, max_digits=20, decimal_places=2)] = Decimal(0)
+    caption: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+    client_entity_id: Annotated[UUID, classified("internal")]
+    debit: Annotated[
+        Decimal, Field(ge=0, max_digits=20, decimal_places=2), classified("confidential")
+    ] = Decimal(0)
+    credit: Annotated[
+        Decimal, Field(ge=0, max_digits=20, decimal_places=2), classified("confidential")
+    ] = Decimal(0)
 
 
 class EliminationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    consolidation_level: Annotated[int, Field(ge=1, le=3)]
-    description: Annotated[str, Field(min_length=1, max_length=300)]
-    lines: Annotated[list[EliminationLineIn], Field(min_length=2, max_length=50)]
+    consolidation_level: Annotated[int, Field(ge=1, le=3), classified("internal")]
+    description: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    lines: Annotated[
+        list[EliminationLineIn], Field(min_length=2, max_length=50), classified("confidential")
+    ]
 
 
 class EliminationApproveItemsIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    items: Annotated[list[UUID], Field(min_length=1, max_length=100)]
+    items: Annotated[list[UUID], Field(min_length=1, max_length=100), classified("internal")]
 
 
 # --- group audit ---------------------------------------------------------------------------------
@@ -323,7 +331,7 @@ class GroupComponentOut(BaseModel):
     planned_work: Annotated[PlannedWork | None, Internal]
     scope_areas: Annotated[list[str], Internal]
     performed_by: Annotated[Literal["group_team", "component_auditor"], Internal]
-    component_pm: Firm | None
+    component_pm: Annotated[Firm | None, classified("confidential")]
     pm_pct_of_group: Annotated[Decimal | None, Internal]  # code's: 75 · 58 · 30 · 50
     suggestion_id: Annotated[UUID | None, Internal]
 
@@ -344,9 +352,9 @@ class GroupScopingOut(BaseModel):
 
     decision_card_id: Annotated[UUID | None, Internal]
     decided: Annotated[bool, Internal]
-    group_materiality: Firm | None
-    performance_materiality: Firm | None
-    clearly_trivial: Firm | None
+    group_materiality: Annotated[Firm | None, classified("confidential")]
+    performance_materiality: Annotated[Firm | None, classified("confidential")]
+    clearly_trivial: Annotated[Firm | None, classified("confidential")]
     decided_by_name: Annotated[str | None, classified("confidential")]
     decided_at: Annotated[datetime | None, Internal]
     options: Annotated[list[GroupMaterialityOptionOut], Internal]
@@ -362,10 +370,12 @@ class GroupScopingOut(BaseModel):
 class GroupComponentIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    planned_work: PlannedWork
-    scope_areas: Annotated[list[str], Field(max_length=20)] = []
-    performed_by: Literal["group_team", "component_auditor"]
-    component_pm: Annotated[Decimal | None, Field(ge=0, max_digits=20, decimal_places=2)] = None
+    planned_work: Annotated[PlannedWork, classified("internal")]
+    scope_areas: Annotated[list[str], Field(max_length=20), classified("internal")] = []
+    performed_by: Annotated[Literal["group_team", "component_auditor"], classified("internal")]
+    component_pm: Annotated[
+        Decimal | None, Field(ge=0, max_digits=20, decimal_places=2), classified("confidential")
+    ] = None
 
 
 class GroupDecisionCardOut(BaseModel):
@@ -400,10 +410,12 @@ class ComponentAuditorsOut(BaseModel):
 class ComponentAuditorIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    organisation_name: Annotated[str, Field(min_length=1, max_length=200)]
-    city: Annotated[str | None, Field(max_length=120)] = None
-    component_id: UUID
-    ep_contact_id: UUID | None = None
+    organisation_name: Annotated[
+        str, Field(min_length=1, max_length=200), classified("confidential")
+    ]
+    city: Annotated[str | None, Field(max_length=120), classified("confidential")] = None
+    component_id: Annotated[UUID, classified("internal")]
+    ep_contact_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ComponentInstructionSectionOut(BaseModel):
@@ -430,15 +442,15 @@ class ComponentInstructionsOut(BaseModel):
 class ComponentInstructionsEditIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    number: Annotated[int, Field(ge=1, le=20)]
-    body: Annotated[str, Field(min_length=1, max_length=20000)]
+    number: Annotated[int, Field(ge=1, le=20), classified("internal")]
+    body: Annotated[str, Field(min_length=1, max_length=20000), classified("confidential")]
 
 
 class ComponentInstructionsSendIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    recipient_contact_id: UUID
-    version_id: UUID
+    recipient_contact_id: Annotated[UUID, classified("internal")]
+    version_id: Annotated[UUID, classified("internal")]
 
 
 class ComponentDeliverableOut(BaseModel):
@@ -463,14 +475,14 @@ class ComponentDeliverablesOut(BaseModel):
 class ComponentDeliverableIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    title: Annotated[str, Field(min_length=1, max_length=200)]
-    due_on: date
+    title: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
+    due_on: Annotated[date, classified("confidential")]
 
 
 class DeliverableReturnIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    reason: Annotated[str, Field(min_length=1, max_length=1000)]
+    reason: Annotated[str, Field(min_length=1, max_length=1000), classified("confidential")]
 
 
 # --- routes --------------------------------------------------------------------------------------
@@ -763,12 +775,14 @@ async def group_approve_eliminations(
 
 
 @router.post(
-    "/proposed-entries/{entry_id}/elimination/post",
-    action="elimination.post",
+    "/proposed-entries/{entry_id}/elimination/apply",
+    action="elimination.apply",
     response_model=EliminationOut,
     errors=(409, 501),
 )
-async def group_post_elimination(entry_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> EliminationOut:
+async def group_apply_elimination(
+    entry_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> EliminationOut:
     """`posting_target = consolidation_layer`; no entity snapshot or client ledger changes."""
     await _gate_record(ctx)
     raise _todo("A-09-T20")

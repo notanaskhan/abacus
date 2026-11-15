@@ -42,6 +42,9 @@ YAML_ACTIONS = cast(dict[str, dict[str, str]], DOCUMENT["actions"])
 # DEC-462: the firm-level audit read is a read (SPEC-012: support holds reads only).
 READ_VERBS = {"read", "read_metadata", "read_log", "read_firm_level"}
 CONTRACT_ALLOWED = {
+    # A-08-T03 (DEC-5030): the JE scoring run and the link expiry sweep.
+    "je_test.compute",
+    "link_principal.expire",
     "connection.pull",
     "evidence.upload",
     "fulfilment.propose",

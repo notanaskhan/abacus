@@ -25,9 +25,19 @@
 Tier C on a, b, c, e (locked by C-01-T50). Hover and open-menu states are out of pixels except f,
 which runs through its interact script.
 
+
+## Links
+
+| From | To | Status |
+|---|---|---|
+| Copperleaf row, board card and running-pill entry (August 2026 period) | CLS-02 | designed (handoff link graph) |
+| Opens CLS-13 · 1099 / W-9 tracker | CLS-13 | designed (handoff link graph) |
+| Opens ENG-03 with Monthly close preselected · closes are created from an engagement | ENG-03 | designed (handoff link graph) |
+| Opens CLS-09 · close plan editor | CLS-09 | designed (handoff link graph) |
+
 ## Deviations
 
-- **DV-a (DEC-5019).** The reconciled percentage is code's, half up from the two counts; three
+- **DV-a (DEC-5054).** The reconciled percentage is code's, half up from the two counts; three
   artboard cells (Kettle & Kiln 66%, Maple & Main 44%, Northfield 58%) read 67%, 43% and 57%.
 - **DV-b (QC-7).** Copperleaf is due Tue Sep 8 (BD5) and Bluebird Bakery Thu Sep 10 (BD7), so
   the due cells read those dates; the past-due days (4 and 2, business days) are the artboard's.

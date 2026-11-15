@@ -154,6 +154,43 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         ConditionFacts(owner=True),
         ConditionFacts(owner=None),
     ),
+    # A-08-T03 (DEC-5030): the JE approver, and the link principal's scope and email code.
+    (
+        "is_named_approver",
+        {**ALLOW, "is_named_approver": "required"},
+        ConditionFacts(named_approver=True),
+        ConditionFacts(named_approver=False),
+    ),
+    (
+        "is_named_approver",
+        {**ALLOW, "is_named_approver": "required"},
+        ConditionFacts(named_approver=True),
+        ConditionFacts(named_approver=None),
+    ),
+    (
+        "link_scope_only",
+        {"link_principal": "allow", "link_scope_only": "required"},
+        ConditionFacts(link_scope=True),
+        ConditionFacts(link_scope=False),
+    ),
+    (
+        "link_scope_only",
+        {"link_principal": "allow", "link_scope_only": "required"},
+        ConditionFacts(link_scope=True),
+        ConditionFacts(link_scope=None),
+    ),
+    (
+        "email_verified",
+        {"link_principal": "allow", "email_verified": "required"},
+        ConditionFacts(email_verified=True),
+        ConditionFacts(email_verified=False),
+    ),
+    (
+        "email_verified",
+        {"link_principal": "allow", "email_verified": "required"},
+        ConditionFacts(email_verified=True),
+        ConditionFacts(email_verified=None),
+    ),
 ]
 IDS = [f"{c[0]}-{i}" for i, c in enumerate(CASES)]
 

@@ -39,7 +39,7 @@ Every state reads this endpoint set (A-09 §4.3; stubs in A-09-T03):
 
 - `GET …/consolidations/{cid}/tb?level=&view=` (`consolidation.read`) · `GET …/export.xlsx` (`consolidation.export`)
 - `GET|POST /v1/consolidations/{cid}/eliminations` · `PATCH /v1/proposed-entries/{id}` (`elimination.read` / `.edit`)
-- `POST /v1/proposed-entries/{id}/approve` · `POST …/eliminations:approve` · `POST …/{id}/reject` (`elimination.approve`; 409 `unbalanced_entry`) · `POST …/{id}/post` (`elimination.post`)
+- `POST /v1/proposed-entries/{id}/approve` · `POST …/eliminations:approve` · `POST …/{id}/reject` (`elimination.approve`; 409 `unbalanced_entry`) · `POST …/{id}/apply` (`elimination.apply`: to the consolidation layer only; never "post", A-06-T10)
 - `POST /v1/consolidations/{cid}/eliminations/propose` (`elimination.propose_run`) · `POST …/adjustments` (`proposed_entry.create`)
 - `POST …/consolidations/{cid}/lock` · `/reopen` (`consolidation.lock`)
 
@@ -53,6 +53,8 @@ Matrix actions from `permission-matrix/{ledger,adjustments,assurance,portal,conn
 | Elimination tag | cells lit purple 360 ms (tracing) | live |
 | Sign off… | SHL-12 | live |
 | Entity tab | AUD-06 g | live |
+| tooltip or toast inside kits/AUD33 Consolidated TB | SHL-08 | designed (handoff link graph) |
+| tooltip or toast inside kits/AUD33 Consolidated TB | ADM-13 | designed (handoff link graph) |
 
 ## Notes
 

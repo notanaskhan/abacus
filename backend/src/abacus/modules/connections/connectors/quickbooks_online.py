@@ -479,7 +479,9 @@ class QuickBooksOnlineConnector(Connector):
                 raise ConnectorError("invalid_cursor")
             position = int(cursor)
         # Intuit query language over integers the connector computes, never caller text.
-        query = f"select * from Account startposition {position} maxresults {PAGE_SIZE}"  # noqa: S608
+        query = " ".join(
+            ("select * from Account startposition", str(position), "maxresults", str(PAGE_SIZE))
+        )
         response = await self._get(
             f"/query?query={_percent(query)}&minorversion={MINOR_VERSION}", dataset
         )

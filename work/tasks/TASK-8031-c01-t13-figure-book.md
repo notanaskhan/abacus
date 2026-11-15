@@ -32,7 +32,7 @@ the synthetic close slice the seed loads, and typed FE fixtures the CLS screens 
    close-figures.test.ts` foots them against the same book.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built. Every §5.3 fact foots: 22 = 3 + 11 + 5 + 3; 51 open; Copperleaf 9 / 21 =
   43%; Run 2 = 2 + 3 + 2 + 1 + 1 = 9 (6 done, 3 at once, 4 open items), Run 1 = 22; 7 = 2 Medium +
   5 Low, 4 notes; tree 539,055.45 = 163,543.05 + 375,512.40; ••4410 184,236.18 + 6,412.40 −
@@ -42,7 +42,7 @@ the synthetic close slice the seed loads, and typed FE fixtures the CLS screens 
   net income 31,455 → 27,795; plan v3 23 = 8 + 15, 8 requests (7 in v4); POR-11 9 = 7 + 2 and 3
   questions; KNW-04 a 20,020 within, 14,900 held. Not run (end pass).
 - **Decision.** Three CLS-01 percentage cells disagree with their own counts; code's figure wins
-  (DEC-5019).
+  (DEC-5054).
 - **Partial.** CLS-03 (intake tree, questionnaire), CLS-04 (account tree rows, register,
   workpaper) and the decision-card and failed-task variants of CLS-02 get their fixture rows with
   their screen rows (T18–T20, T21, T33+); the figures they need are already in the book. The
@@ -51,4 +51,4 @@ the synthetic close slice the seed loads, and typed FE fixtures the CLS screens 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| DEC-5019 | Reconciled percentage is computed half up; three artboard cells are design slips | no |
+| DEC-5054 | Reconciled percentage is computed half up; three artboard cells are design slips | no |

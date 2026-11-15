@@ -39,7 +39,11 @@ from abacus.modules.evidence.citations.registry import (
 )
 from abacus.modules.evidence.citations.registry import Display as CitationLabel
 from abacus.modules.evidence.citations.registry import Verdict as CitationVerdict
-from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
+from abacus.modules.evidence.citations.service import (
+    RecordedCitation,
+    citation_locators,
+    record_citations,
+)
 from abacus.modules.evidence.citations.verifiers import (  # T-07-T11: a clause's region check
     verify_document_text as verify_document_citation,
 )
@@ -687,6 +691,7 @@ __all__ = [
     "citation_cell_reason",
     "citation_cell_text",
     "citation_display",
+    "citation_locators",
     "citation_sources",
     "classifier_rules",
     "classify_intake",

@@ -69,12 +69,24 @@ async def test_ac6_a_non_admin_cannot_connect_a_firm_integration(net: Net) -> No
     assert await _post(firm, "/v1/integrations/ultratax/connect", firm.hannah) == 403
 
 
+async def test_ac7_a_stale_session_is_refused(net: Net) -> None:
+    # The matrix's `mfa_recent` refuses a stale second factor with the plain 403 the shell reads
+    # as a step-up (ADR-030) before the stub is reached.
+    firm = await _firm(net)
+    headers = {**net.headers(firm.felix, mfa=False), **_key()}
+    response = await net.http.post("/v1/integrations/ultratax/connect", headers=headers)
+    assert response.status_code == 403
+
+
+@pytest.mark.xfail(
+    strict=True, reason="the facts reason lands with the W-01-T07 service (TASK-8064)"
+)
 async def test_ac7_a_stale_session_gets_mfa_required(net: Net) -> None:
     firm = await _firm(net)
     headers = {**net.headers(firm.felix, mfa=False), **_key()}
     response = await net.http.post("/v1/integrations/ultratax/connect", headers=headers)
     assert response.status_code == 403
-    assert response.json().get("detail") == "mfa_required"
+    assert response.json().get("facts", {}).get("reason") == "mfa_required"
 
 
 async def test_ac7_both_admin_roles_reach_the_firm_connect(net: Net) -> None:

@@ -55,11 +55,11 @@ class NoReportForPreparation(DomainConflict):
 class AnalyticsRunIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kind: Kind
-    stage: Stage
-    trial_balance_id: UUID
-    layer: Literal["unadjusted", "adjusted"]
-    py_source: Literal["prior_engagement", "import"]
+    kind: Annotated[Kind, classified("internal")]
+    stage: Annotated[Stage, classified("internal")]
+    trial_balance_id: Annotated[UUID, classified("internal")]
+    layer: Annotated[Literal["unadjusted", "adjusted"], classified("internal")]
+    py_source: Annotated[Literal["prior_engagement", "import"], classified("internal")]
 
 
 class AnalyticsRunOut(BaseModel):
@@ -77,7 +77,7 @@ class ThresholdOut(BaseModel):
     pct: Pct
     amount: Money
     materiality_version_id: Annotated[UUID | None, classified("internal")]
-    overall_materiality: Money | None
+    overall_materiality: Annotated[Money | None, classified("confidential")]
     provisional: Annotated[bool, classified("internal")]
     decider_name: Annotated[str | None, classified("confidential")]
 
@@ -108,8 +108,8 @@ class ExplanationOut(BaseModel):
 class ExpectationOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    low_pct: Pct | None
-    high_pct: Pct | None
+    low_pct: Annotated[Pct | None, classified("confidential")]
+    high_pct: Annotated[Pct | None, classified("confidential")]
     basis: Annotated[str, Field(max_length=300), classified("confidential")]
 
 
@@ -173,40 +173,48 @@ class ProvenanceOut(BaseModel):
 class ExplanationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    text: Annotated[str, Field(min_length=1, max_length=1000)]
-    citation_ids: Annotated[list[UUID], Field(max_length=20)]
-    suggestion_id: UUID | None = None
+    text: Annotated[str, Field(min_length=1, max_length=1000), classified("confidential")]
+    citation_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")]
+    suggestion_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ExpectationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    low_pct: Decimal | None = None
-    high_pct: Decimal | None = None
-    basis: Annotated[str, Field(min_length=1, max_length=300)]
-    citation_ids: Annotated[list[UUID], Field(max_length=20)] = []
+    low_pct: Annotated[Decimal | None, classified("confidential")] = None
+    high_pct: Annotated[Decimal | None, classified("confidential")] = None
+    basis: Annotated[str, Field(min_length=1, max_length=300), classified("internal")]
+    citation_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
 
 
 class AcceptExplanationsIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    line_positions: Annotated[list[int], Field(min_length=1, max_length=200)]
-    seen_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    line_positions: Annotated[
+        list[int], Field(min_length=1, max_length=200), classified("internal")
+    ]
+    seen_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
 
 
 class QuestionCardIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    template_key: Annotated[str, Field(min_length=1, max_length=120)]
-    text: Annotated[str, Field(min_length=1, max_length=2000)]  # the person's edited wording
+    template_key: Annotated[str, Field(min_length=1, max_length=120), classified("internal")]
+    text: Annotated[
+        str, Field(min_length=1, max_length=2000), classified("confidential")
+    ]  # the person's edited wording
 
 
 class ClientQuestionsIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    line_positions: Annotated[list[int], Field(min_length=1, max_length=50)]
-    cards: Annotated[list[QuestionCardIn], Field(min_length=1, max_length=50)]
-    recipient_contact_id: UUID
+    line_positions: Annotated[
+        list[int], Field(min_length=1, max_length=50), classified("internal")
+    ]
+    cards: Annotated[
+        list[QuestionCardIn], Field(min_length=1, max_length=50), classified("confidential")
+    ]
+    recipient_contact_id: Annotated[UUID, classified("internal")]
 
 
 class ClientQuestionsOut(BaseModel):
@@ -219,16 +227,18 @@ class ClientQuestionsOut(BaseModel):
 class PriorYearFigureIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    fs_line_key: Annotated[str, Field(min_length=1, max_length=120)]
-    amount: Decimal
-    citation_id: UUID
+    fs_line_key: Annotated[str, Field(min_length=1, max_length=120), classified("internal")]
+    amount: Annotated[Decimal, classified("confidential")]
+    citation_id: Annotated[UUID, classified("internal")]
 
 
 class PriorYearFiguresIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    source: Literal["prior_engagement", "import"]
-    figures: Annotated[list[PriorYearFigureIn], Field(max_length=500)] = []
+    source: Annotated[Literal["prior_engagement", "import"], classified("internal")]
+    figures: Annotated[
+        list[PriorYearFigureIn], Field(max_length=500), classified("confidential")
+    ] = []
 
 
 class PriorYearFiguresOut(BaseModel):
@@ -277,8 +287,10 @@ class SsarsWorkspaceOut(BaseModel):
 class InquiryProgramIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    methodology_program_id: UUID
-    recipient_contact_ids: Annotated[list[UUID], Field(min_length=1, max_length=20)]
+    methodology_program_id: Annotated[UUID, classified("internal")]
+    recipient_contact_ids: Annotated[
+        list[UUID], Field(min_length=1, max_length=20), classified("internal")
+    ]
 
 
 class InquiryProgramOut(BaseModel):
@@ -292,8 +304,8 @@ class InquiryProgramOut(BaseModel):
 class ReminderIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    template_key: Annotated[str, Field(min_length=1, max_length=120)]
-    text: Annotated[str, Field(min_length=1, max_length=2000)]
+    template_key: Annotated[str, Field(min_length=1, max_length=120), classified("internal")]
+    text: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
 
 
 # --- routes --------------------------------------------------------------------------------------

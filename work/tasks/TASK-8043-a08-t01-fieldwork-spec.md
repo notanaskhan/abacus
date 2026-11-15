@@ -2,7 +2,7 @@
 id: TASK-8043
 title: "A-08-T01: SPEC-657, gate check, AUD-12/13/14/26 and POR-17 screen contracts, vocabulary"
 spec: SPEC-657
-acceptance_criteria: [AC-0.1, AC-0.2]
+acceptance_criteria: [AC-0]
 risk_zone: amber
 status: in-review
 branch: a08-t01-fieldwork-spec
@@ -27,7 +27,7 @@ artboards, the glossary and status rows (merged from T04) and the composed desig
 Rollback: revert; no runtime reads the new words until T05.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Built. Status codegen ran clean. Tests written (`test_a08t01_vocabulary.py`,
   copy-bans), run at the end pass.
 - **Partial (design):** the DF-05 frames (AUD-13 Substantive, AUD-11 MUS) are composed in the

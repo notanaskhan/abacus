@@ -453,7 +453,7 @@ async def apply_determination(tx: UnitOfWork, ctx: AuthContext, value: AdoptedVa
     tx.record(
         "instrument_determination.adopted",
         target=Target(TARGET, value.target_id),
-        after=Ref(key=key, seq=int(row.seq) + 1),
+        after=Ref(seq=int(row.seq) + 1),  # a Ref carries no text (the key)
     )
 
 

@@ -8,10 +8,13 @@ publish answers 403 while request-publish raises one HOME-02 gate, and tallies f
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncIterator
+from datetime import datetime
 
 import pytest
 
-from abacus.kernel.db import configure_engine
+from abacus.kernel.clock import FIRM_ZONE, frozen
+from abacus.kernel.db import configure_engine, dispose_engine
 from abacus.modules.closes import gate_sources, plans, service
 from abacus.modules.closes.contract import (
     PlanDraftIn,
@@ -25,14 +28,24 @@ from abacus.modules.identity.api import Forbidden
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
-from .test_c01t14_close_record import _Firm
+from .test_c01t14_close_record import (
+    _Firm,  # pyright: ignore[reportPrivateUsage] -- C-01-T14's firm seeder
+)
 
 pytestmark = pytest.mark.asyncio
 
 # CLS-09 a: v3's review levels, 8 Manager approvals and 15 Senior sign-offs, 21 accounts and
 # the two income-statement procedures (the figure book's plan, C-01-T13).
-_MANAGER = {"Inventory", "Roasting Equipment", "Furniture & Fixtures", "Leasehold Improvements"}
-_MANAGER |= {"Accumulated Depreciation", "Accrued Expenses", "Deferred Revenue — Subscriptions"}
+_MANAGER = {
+    "Inventory",
+    "Roasting Equipment",
+    "Furniture & Fixtures",
+    "Leasehold Improvements",
+} | {
+    "Accumulated Depreciation",
+    "Accrued Expenses",
+    "Deferred Revenue — Subscriptions",
+}
 
 
 def _rows() -> list[PlanRowIn]:
@@ -81,9 +94,13 @@ def _rows() -> list[PlanRowIn]:
 
 
 @pytest.fixture
-async def firm(migrated_db: MigratedDatabase) -> _Firm:
+async def firm(migrated_db: MigratedDatabase) -> AsyncIterator[_Firm]:
+    # Fresh pools on this test's loop (the identity engine, for names_of, rebuilds from the
+    # settings), disposed after it: no connection outlives its loop.
+    await dispose_engine()
     configure_engine(migrated_db.app_url)
-    return await _Firm(Seeder(migrated_db.superuser_dsn)).make()
+    yield await _Firm(Seeder(migrated_db.superuser_dsn)).make()
+    await dispose_engine()
 
 
 async def _published(firm: _Firm, client: uuid.UUID, effective: str, n: int) -> int:
@@ -111,14 +128,18 @@ async def test_ac14_tally_foots_23_is_manager_8_plus_senior_15(firm: _Firm) -> N
 async def test_ac17_ac18_v4_effective_september_leaves_august_on_v3(firm: _Firm) -> None:
     engagement, client, _ = await firm.engagement("Copperleaf Coffee Roasters, Inc.")
     closes = await service.generate_closes(firm.ctx(), engagement, 2026)
-    for n, effective in ((1, "2026-01"), (2, "2026-03"), (3, "2026-06")):
-        await _published(firm, client, effective, n)
+    # v1 to v3 went out before August's BD1 (Tue Sep 1); v4 is published at E0 (QC-2).
+    with frozen(datetime(2026, 8, 14, 9, 0, tzinfo=FIRM_ZONE)):
+        for n, effective in ((1, "2026-01"), (2, "2026-03"), (3, "2026-06")):
+            await _published(firm, client, effective, n)
     august = closes[7]
     v3 = await firm.seed.value(
         "SELECT v.id FROM close_plan_versions v JOIN close_plans p ON p.id = v.plan_id "
-        "WHERE v.version = 3"
+        "WHERE p.tenant_id = $1 AND v.version = 3",
+        firm.tenant,
     )
-    await _published(firm, client, "2026-09", 4)
+    with frozen(datetime(2026, 9, 14, 9, 24, tzinfo=FIRM_ZONE)):
+        await _published(firm, client, "2026-09", 4)
     pinned = await firm.seed.value(
         "SELECT close_plan_version_id FROM closes WHERE work_item_id = $1", august
     )
@@ -162,7 +183,8 @@ async def test_ac22_publish_refuses_an_unadopted_drafted_row(firm: _Firm) -> Non
     await firm.seed.run(
         "UPDATE close_plan_rows SET drafted_suggestion_id = gen_random_uuid() "
         "WHERE id = (SELECT r.id FROM close_plan_rows r JOIN close_plan_versions v "
-        "ON v.id = r.version_id WHERE v.version = 2 LIMIT 1)"
+        "ON v.id = r.version_id WHERE v.tenant_id = $1 AND v.version = 2 LIMIT 1)",
+        firm.tenant,
     )
     with pytest.raises(UnadoptedRows):
         await plans.publish(
@@ -192,7 +214,7 @@ async def test_ac19_a_stale_if_match_is_409_stale_version(firm: _Firm) -> None:
             firm.ctx(), client, draft.version, row, PlanRowPatchIn(method="again"),
             str(draft.row_version),
         )  # fmt: skip
-    assert stale.value.facts["editor"] == "Priya Raman"
+    assert stale.value.facts["editor_user_id"] == str(firm.partner)
 
 
 async def test_ac15_history_attributes_each_version(firm: _Firm) -> None:

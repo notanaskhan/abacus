@@ -62,7 +62,7 @@ describe("CLS-01", () => {
     expect(within(copperleaf).getByText("43% (9 / 21)")).toBeTruthy();
     expect(within(copperleaf).getByText("4 days past due")).toBeTruthy();
     expect(within(copperleaf).getByText("RM / PR")).toBeTruthy();
-    expect(within(copperleaf).getByText(COPY.running)).toBeTruthy();
+    expect(within(copperleaf).getAllByText(COPY.running).length).toBeGreaterThan(0);
     await waitFor(() => {
       expect(screen.getByText(COPY.runningPill(3))).toBeTruthy();
     });

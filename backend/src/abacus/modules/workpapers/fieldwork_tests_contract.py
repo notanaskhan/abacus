@@ -40,7 +40,7 @@ class TestRunOut(BaseModel):
 class AdoptIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    seen_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    seen_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
 
 
 class AdoptOut(BaseModel):
@@ -66,10 +66,10 @@ class ExceptionPrefillOut(BaseModel):
 class DeviationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    item_position: Annotated[int, Field(ge=1)]
-    attribute_key: Annotated[str, Field(min_length=1, max_length=80)]
-    description: Annotated[str, Field(min_length=1, max_length=2000)]
-    citation_ids: Annotated[list[UUID], Field(min_length=1)]
+    item_position: Annotated[int, Field(ge=1), classified("internal")]
+    attribute_key: Annotated[str, Field(min_length=1, max_length=80), classified("internal")]
+    description: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
+    citation_ids: Annotated[list[UUID], Field(min_length=1), classified("internal")]
 
 
 class DeviationLogOut(BaseModel):
@@ -105,7 +105,9 @@ async def start_run(test_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> TestRunOut
 
 
 @router.post(f"{_T}/adopt", action="test.adopt", response_model=AdoptOut, errors=(409, 501))
-async def adopt(test_id: UUID, body: AdoptIn, ctx: Ctx, _key: IdempotencyKey) -> AdoptOut:
+async def fieldwork_test_adopt(
+    test_id: UUID, body: AdoptIn, ctx: Ctx, _key: IdempotencyKey
+) -> AdoptOut:
     """L1 through `review.api.record_sign_off` with the version's content hash."""
     await _gate(ctx)
     raise NotImplementedYet("A-08-T14")
@@ -117,7 +119,9 @@ async def adopt(test_id: UUID, body: AdoptIn, ctx: Ctx, _key: IdempotencyKey) ->
     response_model=ExceptionPrefillOut,
     errors=(501,),
 )
-async def exception_prefill(test_id: UUID, item_id: UUID, ctx: Ctx) -> ExceptionPrefillOut:
+async def fieldwork_test_exception_prefill(
+    test_id: UUID, item_id: UUID, ctx: Ctx
+) -> ExceptionPrefillOut:
     await _gate(ctx)
     raise NotImplementedYet("A-08-T14")
 

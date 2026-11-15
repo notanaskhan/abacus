@@ -353,11 +353,11 @@ __all__ = [
     "latest_sources",
     "list_checkpoints",
     "list_issues",
-    "open_issue_counts",
-    "open_issues_among",
     "move_issue",  # A-06-T11: resolve or mark not applicable through the issue
     "note_states",
     "notes_for",
+    "open_issue_counts",
+    "open_issues_among",
     "open_note_counts",
     "open_notes",
     "open_text",

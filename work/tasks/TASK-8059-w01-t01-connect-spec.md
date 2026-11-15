@@ -2,7 +2,7 @@
 id: TASK-8059
 title: "W-01-T01: gate check and SPEC-659 Integration catalogue & Connect; C20 v2 issue"
 spec: SPEC-659
-acceptance_criteria: []
+acceptance_criteria: [AC-1, AC-34, AC-35]
 risk_zone: amber
 status: in-review
 branch: w01-t01-connect-spec
@@ -16,5 +16,5 @@ plan_key: W-01-T01
 The gate check by P-ID, the C20 v2 issue, OQ answers and SPEC-659 with AC-1 to AC-35.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Written (DEC-5044).

@@ -6,7 +6,6 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Final
 from uuid import UUID
 
 from sqlalchemy import text
@@ -45,14 +44,22 @@ class CloseRow:
     row_version: int
 
 
-_COLUMNS: Final = (
-    "work_item_id, engagement_id, client_entity_id, period, status, on_hold, on_hold_reason, "
-    "close_plan_version_id, plan_pinned_at, requests_publish_on, due_on, run_no, locked_at, "
-    "row_version"
+# The columns are spelled out in each statement (SQL-001: no built strings).
+_BY_IDS = text(
+    "SELECT work_item_id, engagement_id, client_entity_id, period, status, on_hold, "
+    "on_hold_reason, close_plan_version_id, plan_pinned_at, requests_publish_on, due_on, "
+    "run_no, locked_at, row_version FROM closes WHERE work_item_id = ANY(:ids)"
 )
-_BY_IDS = text(f"SELECT {_COLUMNS} FROM closes WHERE work_item_id = ANY(:ids)")  # noqa: S608
-_ONE = text(f"SELECT {_COLUMNS} FROM closes WHERE work_item_id = :id")  # noqa: S608
-_LOCK = text(f"SELECT {_COLUMNS} FROM closes WHERE work_item_id = :id FOR UPDATE")  # noqa: S608
+_ONE = text(
+    "SELECT work_item_id, engagement_id, client_entity_id, period, status, on_hold, "
+    "on_hold_reason, close_plan_version_id, plan_pinned_at, requests_publish_on, due_on, "
+    "run_no, locked_at, row_version FROM closes WHERE work_item_id = :id"
+)
+_LOCK = text(
+    "SELECT work_item_id, engagement_id, client_entity_id, period, status, on_hold, "
+    "on_hold_reason, close_plan_version_id, plan_pinned_at, requests_publish_on, due_on, "
+    "run_no, locked_at, row_version FROM closes WHERE work_item_id = :id FOR UPDATE"
+)
 _OF_ENGAGEMENT = text("SELECT period FROM closes WHERE engagement_id = :e")
 _NEIGHBOURS = text(
     "SELECT period, work_item_id FROM closes WHERE engagement_id = :e AND period = ANY(:p)"
@@ -60,7 +67,7 @@ _NEIGHBOURS = text(
 
 
 def _row(r: Sequence[object]) -> CloseRow:
-    return CloseRow(*r)  # type: ignore[arg-type]
+    return CloseRow(*r)  # type: ignore[arg-type] -- a closes row in column order, typed by CloseRow
 
 
 async def closes_by_ids(session: AsyncSession, ids: Sequence[UUID]) -> list[CloseRow]:

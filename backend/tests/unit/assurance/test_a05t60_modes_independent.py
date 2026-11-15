@@ -99,6 +99,11 @@ def test_a_mode_module_only_reads(name: str) -> None:
         assert write not in used, (name, write)
 
 
+# Reads of a sealed name that is not a related party's, each reviewed. T-07-T12 (DEC-5055): the
+# trust's settlor on TXT-01's profile, opened only under `instrument.read`.
+NOT_A_RELATED_PARTY = frozenset({"modules/tax/instruments/service.py"})
+
+
 @pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)
 def test_no_read_selects_a_related_party_s_sealed_name() -> None:
     hits = [
@@ -106,7 +111,7 @@ def test_no_read_selects_a_related_party_s_sealed_name() -> None:
         for p in SRC.rglob("*.py")
         if re.search(r"SELECT[^;]*name_sealed", p.read_text(), flags=re.S)
     ]
-    assert hits == []
+    assert [h for h in hits if h not in NOT_A_RELATED_PARTY] == []
 
 
 def test_the_related_parties_read_answers_display_refs_not_names() -> None:

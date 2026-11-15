@@ -35,6 +35,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.closes import repository as repo
+from abacus.modules.closes.business_days import add_business_days, business_days_between
 from abacus.modules.closes.contract import (
     AccountsNotReconciled,
     AssigneesIn,
@@ -69,7 +70,6 @@ from abacus.modules.engagements.api import (
     work_item_facts,
 )
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise, names_of
-from abacus.modules.practice.api import add_business_days, business_days_between
 from abacus.modules.requests.api import binder_document_counts, pending_request_counts
 from abacus.modules.review.api import open_issue_counts, open_issues_among, sign_off_states
 
@@ -166,7 +166,7 @@ async def generate_closes(ctx: AuthContext, engagement_id: UUID, year: int) -> l
 class Reconciled:
     reconciled: int
     total: int
-    missing: tuple[str, ...]  # account names, plan order
+    missing: tuple[UUID, ...]  # the plan rows not yet tied, plan order (ids: facts never name)
 
     @property
     def pct(self) -> int:
@@ -225,10 +225,10 @@ async def reconciled_facts(
     for c in closes:
         version = version_of[c.work_item_id]
         rows: list[repo.PlanAccount] = accounts.get(version, []) if version is not None else []
-        missing: list[str] = []
+        missing: list[UUID] = []
         for row in rows:
             if not _account_ties(c.work_item_id, row, done, signed, open_issues):
-                missing.append(row.account_name)
+                missing.append(row.row_id)
         out[c.work_item_id] = Reconciled(len(rows) - len(missing), len(rows), tuple(missing))
     return out, done.running, number_of
 
@@ -424,6 +424,10 @@ async def close_summary(ctx: AuthContext, close_id: UUID) -> CloseSummaryOut:
     nxt = _period(year + (month == 12), month % 12 + 1)
     async with tenant_session(ctx.tenant) as session:
         around = await repo.neighbours(session, close.engagement_id, [prev, nxt])
+    # The record bar links only to neighbours the viewer may open (a walled or unassigned month
+    # is not named, INV-3).
+    seen = {x.work_item_id for x in await work_item_facts(ctx, KIND, READ)}
+    around = {period: item for period, item in around.items() if item in seen}
     on = await today(ctx.tenant)
     blocked: str | None = None
     if close.status == "in_progress":
@@ -557,7 +561,9 @@ async def move_status(
             if r.total == 0 or r.missing:
                 raise AccountsNotReconciled(
                     facts={
-                        "account": r.missing[0] if r.missing else "plan",
+                        # The first plan row not tied; CLS-02 names its account (facts
+                        # carry identifiers only, never a client's account name).
+                        "plan_row_id": str(r.missing[0]) if r.missing else "plan",
                         "reconciled": r.reconciled,
                         "total": r.total,
                     }
@@ -581,8 +587,10 @@ async def move_status(
             tx.record(
                 "close.status_changed",
                 target=target,
-                before=Ref(status=close.status),
-                after=Ref(status=status),
+                # A Ref carries no text (kernel `_ref_value`): the row versions here, the words on
+                # the CloseStatusChanged event below.
+                before=Ref(row_version=close.row_version),
+                after=Ref(row_version=moved),
             )
             tx.emit(
                 CloseStatusChanged(close_id=close_id, from_status=close.status, to_status=status)
@@ -619,9 +627,7 @@ async def start_close(tx: UnitOfWork, close_id: UUID) -> bool:
         return False
     tx.record(
         "close.status_changed",
-        target=Target("close", close_id),
-        before=Ref(status="not_started"),
-        after=Ref(status="in_progress"),
+        target=Target("close", close_id),  # the words are on the CloseStatusChanged event
     )
     tx.emit(
         CloseStatusChanged(close_id=close_id, from_status="not_started", to_status="in_progress")

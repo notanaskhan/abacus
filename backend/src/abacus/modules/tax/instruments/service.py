@@ -40,6 +40,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import engagement_resource_of
 from abacus.modules.evidence.api import (
+    citation_locators,
     supported_citations,
     version_file_facts,
     version_word_layers,
@@ -214,7 +215,10 @@ async def _profile(session: AsyncSession, tenant: TenantContext, entity: UUID) -
 
 
 async def _determinations(
-    session: AsyncSession, tenant: TenantContext, interpretation: Row[Any], locked: bool
+    session: AsyncSession,
+    tenant: TenantContext,
+    interpretation: Row[Any],  # Any: a raw text() row of tax_instrument_interpretations
+    locked: bool,
 ) -> list[InstrumentDeterminationOut]:
     rows = list((await session.execute(_DETERMINATIONS, {"i": interpretation.id})).all())
     labels = {
@@ -251,20 +255,12 @@ async def _determinations(
 
 
 async def _clause_of_citations(session: AsyncSession, ids: Sequence[UUID]) -> dict[UUID, UUID]:
-    """Citation → clause id, for `instrument_clause` citations (the locator names the clause)."""
-    if not ids:
-        return {}
-    rows = await session.execute(
-        text("SELECT id, locator FROM citations WHERE id = ANY(:ids) AND kind = :k"),
-        {"ids": list(ids), "k": CLAUSE_KIND},
-    )
+    """Citation → clause id, for `instrument_clause` citations (the locator names the clause).
+    The citations are evidence's; it reads their locators (OWN-001)."""
     out: dict[UUID, UUID] = {}
-    for citation_id, locator in rows.all():
-        held = cast(
-            dict[str, object], locator if isinstance(locator, dict) else json.loads(locator)
-        )
+    for citation_id, locator in (await citation_locators(session, ids, CLAUSE_KIND)).items():
         try:
-            out[citation_id] = UUID(str(held.get("clause_id")))
+            out[citation_id] = UUID(str(locator.get("clause_id")))
         except ValueError:
             continue
     return out
@@ -342,7 +338,8 @@ async def instrument_read(ctx: AuthContext, return_id: UUID) -> InstrumentOut:
 
 
 async def _interpretation_out(
-    tenant: TenantContext, interp: Row[Any]
+    tenant: TenantContext,
+    interp: Row[Any],  # Any: a raw text() row of tax_instrument_interpretations
 ) -> InstrumentInterpretationOut:
     return InstrumentInterpretationOut(
         id=interp.id,
@@ -474,7 +471,7 @@ async def attach(ctx: AuthContext, return_id: UUID, body: InstrumentAttachIn) ->
             await move_clause_citations(tx, previous.id, instrument_id)
         target = Target("governing_instrument", instrument_id)
         tx.record("instrument.attached", target=target, after=Ref(clauses=len(found.clauses)))
-        tx.record("instrument.segmented", target=target, after=Ref(status=found.status))
+        tx.record("instrument.segmented", target=target)  # a Ref carries no status words
 
 
 # --- clauses (AC-1.3) ---------------------------------------------------------------------------
@@ -503,16 +500,20 @@ async def _instrument_scope(ctx: AuthContext, instrument_id: UUID, action: str) 
     for engagement_id in engagements:
         try:
             await _authorised(ctx, engagement_id, action)
-            return cast(UUID, row.client_entity_id)  # type: ignore[union-attr]
+            # The row was found above, so it is not None.
+            return cast(UUID, row.client_entity_id)  # type: ignore[union-attr] -- found above
         except (Forbidden, NotFound):
             continue
     raise NotFound("governing_instrument")
 
 
-def _clause_out(r: Row[Any]) -> InstrumentClauseOut:
+def _clause_out(
+    r: Row[Any],  # Any: a raw text() row of tax_instrument_clauses
+) -> InstrumentClauseOut:
     stored: object = r.regions
     regions = cast(
-        list[dict[str, Any]], stored if isinstance(stored, list) else json.loads(str(stored))
+        list[dict[str, Any]],  # Any: stored jsonb regions
+        stored if isinstance(stored, list) else json.loads(str(stored)),
     )
     return InstrumentClauseOut(
         id=r.id,
@@ -592,7 +593,10 @@ async def mark_clause(
     return _clause_out(row)
 
 
-def _words_in(layers: Sequence[Any], regions: Sequence[Any]) -> str:
+def _words_in(
+    layers: Sequence[Any],  # Any: evidence word layers, duck-typed
+    regions: Sequence[Any],  # Any: stored clause regions, duck-typed
+) -> str:
     """The words whose centres fall inside the regions, in reading order."""
     picked: list[str] = []
     for region in regions:
@@ -707,7 +711,7 @@ async def _write_version(
         tx.record(
             "instrument_determination.recorded",
             target=Target("instrument_determination", determination),
-            after=Ref(key=key, seq=seq),
+            after=Ref(seq=seq),  # a Ref carries no text (the key)
         )
     return determination
 

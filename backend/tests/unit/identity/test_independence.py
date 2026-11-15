@@ -154,6 +154,12 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "agent_run.read",  # SPEC-318 (TASK-461)
         "agent_run.sign_off",  # S29
         "agent_run.start",  # S29
+        "analytics.accept",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "analytics.configure",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "analytics.explain",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "analytics.export",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "analytics.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "analytics.run",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "approval_batch.create",  # A-06-T03
         "archive.build_index",  # S26 or S27 matrix mark
         "archive.lock",  # SPEC-314 (TASK-332)
@@ -171,6 +177,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "citation.read",
         "citation.relink",
         "client_access.grant",
+        "client_question.send",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
         "comment.resolve",  # P-05-T02 (DEC-3103)
@@ -180,11 +187,38 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "completion.read",  # SPEC-314 (TASK-332)
         "completion.record",  # SPEC-314 (TASK-332)
         "completion.update",  # S26 or S27 matrix mark
+        "component.edit",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_auditor.manage",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_auditor.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_deliverable.manage",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_deliverable.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_deliverable.request",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_deliverable.review",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_instructions.draft",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_instructions.edit",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "component_instructions.send",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.accept_reconciliation",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.close",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.create",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.export",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.reconcile",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.record_alternative",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.record_response",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.request_authorization",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.send",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "confirmation.verify_address",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "connection.disconnect",  # A-02-T06 security review (DEC-379): POR-16 f
+        "connection.manage_coverage",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "connection.read",  # A-02 §4.4 (TASK-1185)
         "connection.read_log",
         "connection.reconnect_request",  # A-02 §4.4 (TASK-1185)
         "connection.retry",  # A-02 security review (DEC-316): firm side, attest client data
+        "consolidation.edit",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "consolidation.export",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "consolidation.finalize",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "consolidation.lock",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "consolidation.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "consultation.conclude",  # S25 (DEC-2484): the consultations log
         "consultation.create",  # A-06-T04
         "consultation.read",
@@ -218,6 +252,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "ebp_provision.enter",  # A-05-T16 (DEC-2489)
         "ebp_schedule.draft",
         "ebp_schedule.render",
+        "elimination.apply",  # S45 (A-09-T02; DEC-5055 renamed from elimination.post)
+        "elimination.approve",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "elimination.edit",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "elimination.propose_run",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "elimination.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "engagement_ai.configure",  # S29
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
@@ -269,6 +308,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "governance_comm.manage_recipients",  # S26 or S27 matrix mark
         "governance_comm.read",  # S26 or S27 matrix mark
         "governance_comm.request_approval",  # S26 or S27 matrix mark
+        "group_materiality.propose",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "group_scoping.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
         "guidance_draft.request",
@@ -279,12 +320,17 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "inbox_match.request",
         "item.sign_prepared",  # SPEC-040 (TASK-100)
         "item.sign_reviewed",
+        "je_test.configure",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "je_test.create",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "je_test.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "je_test.score",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "ledger.pull",  # A-02 §4.4 (TASK-1185)
         "ledger_import.upload",  # SPEC-028 (TASK-052)
         "ledger_snapshot.create_from_document",
         "legal_letter.request",  # S26 or S27 matrix mark
         "legal_letter.update",  # S26 or S27 matrix mark
         "letter.approve",  # N-02-T02
+        "link_principal.revoke",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "mapping_set.confirm",  # A-03-T01 (DEC-1550)
         "mapping_set.edit",  # SPEC-316 (TASK-345)
         "mapping_set.read",  # A-03-T01 (DEC-1550)
@@ -356,6 +402,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "run_content.read",  # DEC-87 (TASK-5002)
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
+        "sample_expansion.decide",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "sample_expansion.request",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "sample_set.approve",  # A-03-T01 (DEC-1550)
         "sample_set.export",  # A-03-T01 (DEC-1550)
         "sample_set.generate_requests",  # A-03-T01 (DEC-1550)
@@ -374,6 +422,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sign_off.request_re_review",  # S26 or S27 matrix mark
         "sign_off.review",
         "soc_report.evaluate",
+        "ssars.inquiry_manage",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "ssars.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "statement.approve",  # SPEC-312 (TASK-324)
         "statement.draft",  # S26 or S27 matrix mark
         "statement.read",  # S26 or S27 matrix mark
@@ -388,9 +438,12 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sum.request_conclusion",
         "sum.snapshot",
         "sum.update_factors",
+        "test.adopt",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "test.create",
+        "test.export",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "test.mark",
         "test.read",
+        "test.run",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "tie_out_check.define",  # SPEC-310 (TASK-321)
         "todo.assign",  # P-05-T02 (DEC-3103)
         "todo.complete",  # P-05-T02

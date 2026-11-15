@@ -23,6 +23,6 @@ Rollback: downgrade removes the new tables and columns and the backfilled firm-a
 restores the v1 CHECKs.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5047). ruff and pyright clean. Up/down/up on a copy, schema_check and
   an insert-only probe run at the end pass under the test lock.

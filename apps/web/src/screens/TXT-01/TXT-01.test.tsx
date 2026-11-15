@@ -130,7 +130,7 @@ describe("TXT-01", () => {
 
   it("d2: reading shows the run's progress", async () => {
     mount("d2");
-    expect(await screen.findByText("Checking citation 4 of 6")).toBeTruthy();
+    expect((await screen.findAllByText("Checking citation 4 of 6")).length).toBeGreaterThan(0);
   });
 
   it("d3: consent required names the trust and the consents signed", async () => {

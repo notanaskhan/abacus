@@ -5687,6 +5687,35 @@ export type AuthorizationIn = {
 };
 
 /**
+ * AuthorizationOut
+ *
+ * The authorization on file for the form and year (T-01's register): NOT-01's column,
+ * NOT-02's card. `can_represent` is code's (a Form 2848 for the form and year).
+ */
+export type AuthorizationOut = {
+    /**
+     * Authorization Id
+     */
+    authorization_id?: string | null;
+    /**
+     * Can Represent
+     */
+    can_represent: boolean;
+    /**
+     * Kind
+     */
+    kind: 'form_8821' | 'form_2848' | 'state_poa' | 'none';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * On File
+     */
+    on_file: boolean;
+};
+
+/**
  * AutoModeDefaults
  *
  * Fieldset C: Auto mode per engagement type (a standing plan approval). Stored; forced off
@@ -11721,6 +11750,20 @@ export type ConfirmIn = {
 };
 
 /**
+ * ConfirmationAuthorizationOut
+ */
+export type ConfirmationAuthorizationOut = {
+    /**
+     * Confirmation Ids
+     */
+    confirmation_ids: Array<string>;
+    /**
+     * Envelope Id
+     */
+    envelope_id: string;
+};
+
+/**
  * ConfirmationCoverageOut
  *
  * 'AR sent for confirmation $897,950.00 of $5,860,000.00 (15.3%) · confirmed … · CT …'.
@@ -12202,13 +12245,13 @@ export type ConnectCatalogImportOut = {
      */
     dry_run: boolean;
     /**
-     * Hidden
-     */
-    hidden: Array<string>;
-    /**
      * Id
      */
     id: string | null;
+    /**
+     * Unpublished
+     */
+    unpublished: Array<string>;
 };
 
 /**
@@ -29984,7 +30027,7 @@ export type IntakeOut = {
      * Assignee User Id
      */
     assignee_user_id?: string | null;
-    authorization: AbacusModulesNoticesContractAuthorizationOut;
+    authorization: AuthorizationOut;
     /**
      * Created Work Item Id
      */
@@ -37987,7 +38030,7 @@ export type NoticeRowOut = {
     agency_name: string;
     amounts: AmountsOut;
     assignee: NoticePersonOut | null;
-    authorization: AbacusModulesNoticesContractAuthorizationOut;
+    authorization: AuthorizationOut;
     /**
      * Client Entity Id
      */
@@ -65313,20 +65356,6 @@ export type AbacusModulesAssuranceConfirmationsContractModelsAcceptedOut = {
 };
 
 /**
- * AuthorizationOut
- */
-export type AbacusModulesAssuranceConfirmationsContractModelsAuthorizationOut = {
-    /**
-     * Confirmation Ids
-     */
-    confirmation_ids: Array<string>;
-    /**
-     * Envelope Id
-     */
-    envelope_id: string;
-};
-
-/**
  * ExceptionPrefillOut
  *
  * SHL-15's prefill; a person submits it through `assurance.api.record_finding` (or, below
@@ -66046,35 +66075,6 @@ export type AbacusModulesMethodologyContractStepOut = {
      * Text
      */
     text: string;
-};
-
-/**
- * AuthorizationOut
- *
- * The authorization on file for the form and year (T-01's register): NOT-01's column,
- * NOT-02's card. `can_represent` is code's (a Form 2848 for the form and year).
- */
-export type AbacusModulesNoticesContractAuthorizationOut = {
-    /**
-     * Authorization Id
-     */
-    authorization_id?: string | null;
-    /**
-     * Can Represent
-     */
-    can_represent: boolean;
-    /**
-     * Kind
-     */
-    kind: 'form_8821' | 'form_2848' | 'state_poa' | 'none';
-    /**
-     * Label
-     */
-    label: string;
-    /**
-     * On File
-     */
-    on_file: boolean;
 };
 
 /**
@@ -84996,7 +84996,7 @@ export type CloseConfirmationResponses = {
 
 export type CloseConfirmationResponse = CloseConfirmationResponses[keyof CloseConfirmationResponses];
 
-export type ExceptionPrefillData = {
+export type ConfirmationExceptionPrefillData = {
     body?: never;
     headers?: {
         /**
@@ -85018,7 +85018,7 @@ export type ExceptionPrefillData = {
     url: '/v1/confirmations/{confirmation_id}/exception';
 };
 
-export type ExceptionPrefillErrors = {
+export type ConfirmationExceptionPrefillErrors = {
     /**
      * Not authenticated
      */
@@ -85041,16 +85041,16 @@ export type ExceptionPrefillErrors = {
     501: ErrorOut;
 };
 
-export type ExceptionPrefillError = ExceptionPrefillErrors[keyof ExceptionPrefillErrors];
+export type ConfirmationExceptionPrefillError = ConfirmationExceptionPrefillErrors[keyof ConfirmationExceptionPrefillErrors];
 
-export type ExceptionPrefillResponses = {
+export type ConfirmationExceptionPrefillResponses = {
     /**
      * Successful Response
      */
     200: AbacusModulesAssuranceConfirmationsContractModelsExceptionPrefillOut;
 };
 
-export type ExceptionPrefillResponse = ExceptionPrefillResponses[keyof ExceptionPrefillResponses];
+export type ConfirmationExceptionPrefillResponse = ConfirmationExceptionPrefillResponses[keyof ConfirmationExceptionPrefillResponses];
 
 export type ReconcileData = {
     body: ReconciliationIn;
@@ -135438,6 +135438,70 @@ export type GroupEditEliminationResponses = {
 
 export type GroupEditEliminationResponse = GroupEditEliminationResponses[keyof GroupEditEliminationResponses];
 
+export type GroupApplyEliminationData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Entry Id
+         */
+        entry_id: string;
+    };
+    query?: never;
+    url: '/v1/proposed-entries/{entry_id}/elimination/apply';
+};
+
+export type GroupApplyEliminationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupApplyEliminationError = GroupApplyEliminationErrors[keyof GroupApplyEliminationErrors];
+
+export type GroupApplyEliminationResponses = {
+    /**
+     * Successful Response
+     */
+    200: EliminationOut;
+};
+
+export type GroupApplyEliminationResponse = GroupApplyEliminationResponses[keyof GroupApplyEliminationResponses];
+
 export type GroupApproveEliminationData = {
     body?: never;
     headers: {
@@ -135501,70 +135565,6 @@ export type GroupApproveEliminationResponses = {
 };
 
 export type GroupApproveEliminationResponse = GroupApproveEliminationResponses[keyof GroupApproveEliminationResponses];
-
-export type GroupPostEliminationData = {
-    body?: never;
-    headers: {
-        /**
-         * Idempotency-Key
-         */
-        'Idempotency-Key': string;
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-        /**
-         * X-Abacus-Tenant
-         */
-        'X-Abacus-Tenant'?: string | null;
-    };
-    path: {
-        /**
-         * Entry Id
-         */
-        entry_id: string;
-    };
-    query?: never;
-    url: '/v1/proposed-entries/{entry_id}/elimination/post';
-};
-
-export type GroupPostEliminationErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
-};
-
-export type GroupPostEliminationError = GroupPostEliminationErrors[keyof GroupPostEliminationErrors];
-
-export type GroupPostEliminationResponses = {
-    /**
-     * Successful Response
-     */
-    200: EliminationOut;
-};
-
-export type GroupPostEliminationResponse = GroupPostEliminationResponses[keyof GroupPostEliminationResponses];
 
 export type GroupRejectEliminationData = {
     body: GroupReasonIn;
@@ -149448,7 +149448,7 @@ export type BrowserErrorResponses = {
 
 export type BrowserErrorResponse = BrowserErrorResponses[keyof BrowserErrorResponses];
 
-export type Adopt2Data = {
+export type FieldworkTestAdoptData = {
     body: AbacusModulesWorkpapersFieldworkTestsContractAdoptIn;
     headers: {
         /**
@@ -149474,7 +149474,7 @@ export type Adopt2Data = {
     url: '/v1/tests/{test_id}/adopt';
 };
 
-export type Adopt2Errors = {
+export type FieldworkTestAdoptErrors = {
     /**
      * Not authenticated
      */
@@ -149501,16 +149501,16 @@ export type Adopt2Errors = {
     501: ErrorOut;
 };
 
-export type Adopt2Error = Adopt2Errors[keyof Adopt2Errors];
+export type FieldworkTestAdoptError = FieldworkTestAdoptErrors[keyof FieldworkTestAdoptErrors];
 
-export type Adopt2Responses = {
+export type FieldworkTestAdoptResponses = {
     /**
      * Successful Response
      */
     200: AbacusModulesWorkpapersFieldworkTestsContractAdoptOut;
 };
 
-export type Adopt2Response = Adopt2Responses[keyof Adopt2Responses];
+export type FieldworkTestAdoptResponse = FieldworkTestAdoptResponses[keyof FieldworkTestAdoptResponses];
 
 export type LogDeviationData = {
     body: DeviationIn;
@@ -149634,7 +149634,7 @@ export type ExportTestResponses = {
 
 export type ExportTestResponse = ExportTestResponses[keyof ExportTestResponses];
 
-export type ExceptionPrefill2Data = {
+export type FieldworkTestExceptionPrefillData = {
     body?: never;
     headers?: {
         /**
@@ -149660,7 +149660,7 @@ export type ExceptionPrefill2Data = {
     url: '/v1/tests/{test_id}/items/{item_id}/exception';
 };
 
-export type ExceptionPrefill2Errors = {
+export type FieldworkTestExceptionPrefillErrors = {
     /**
      * Not authenticated
      */
@@ -149683,16 +149683,16 @@ export type ExceptionPrefill2Errors = {
     501: ErrorOut;
 };
 
-export type ExceptionPrefill2Error = ExceptionPrefill2Errors[keyof ExceptionPrefill2Errors];
+export type FieldworkTestExceptionPrefillError = FieldworkTestExceptionPrefillErrors[keyof FieldworkTestExceptionPrefillErrors];
 
-export type ExceptionPrefill2Responses = {
+export type FieldworkTestExceptionPrefillResponses = {
     /**
      * Successful Response
      */
     200: AbacusModulesWorkpapersFieldworkTestsContractExceptionPrefillOut;
 };
 
-export type ExceptionPrefill2Response = ExceptionPrefill2Responses[keyof ExceptionPrefill2Responses];
+export type FieldworkTestExceptionPrefillResponse = FieldworkTestExceptionPrefillResponses[keyof FieldworkTestExceptionPrefillResponses];
 
 export type StartRunData = {
     body?: never;
@@ -151431,7 +151431,7 @@ export type CreateConfirmationResponses = {
 
 export type CreateConfirmationResponse = CreateConfirmationResponses[keyof CreateConfirmationResponses];
 
-export type RequestAuthorization2Data = {
+export type ConfirmationRequestAuthorizationData = {
     body: AuthorizationIn;
     headers: {
         /**
@@ -151457,7 +151457,7 @@ export type RequestAuthorization2Data = {
     url: '/v1/work-items/{work_item_id}/confirmations/authorization';
 };
 
-export type RequestAuthorization2Errors = {
+export type ConfirmationRequestAuthorizationErrors = {
     /**
      * Not authenticated
      */
@@ -151484,16 +151484,16 @@ export type RequestAuthorization2Errors = {
     501: ErrorOut;
 };
 
-export type RequestAuthorization2Error = RequestAuthorization2Errors[keyof RequestAuthorization2Errors];
+export type ConfirmationRequestAuthorizationError = ConfirmationRequestAuthorizationErrors[keyof ConfirmationRequestAuthorizationErrors];
 
-export type RequestAuthorization2Responses = {
+export type ConfirmationRequestAuthorizationResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesAssuranceConfirmationsContractModelsAuthorizationOut;
+    201: ConfirmationAuthorizationOut;
 };
 
-export type RequestAuthorization2Response = RequestAuthorization2Responses[keyof RequestAuthorization2Responses];
+export type ConfirmationRequestAuthorizationResponse = ConfirmationRequestAuthorizationResponses[keyof ConfirmationRequestAuthorizationResponses];
 
 export type ExportConfirmationsData = {
     body?: never;

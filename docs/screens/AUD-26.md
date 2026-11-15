@@ -49,6 +49,11 @@ Matrix actions from `permission-matrix/{sampling,workpapers,assurance,identity}.
 | Compilation report (AR-C 80) | AUD-23 compilation mode | live |
 | FS paper preview | AUD-20 render | live |
 | Approval row | POR-08 (C18) | live |
+| Opens the agreement at page 2 (SHL-08) | SHL-08 | designed (handoff link graph) |
+| Opens the run trace (WB-09) | WB-09 | designed (handoff link graph) |
+| Opens CLI-02 · Lakeshore Literacy Alliance | CLI-02 | designed (handoff link graph) |
+| Opens ENG-05 · team and roles | ENG-05 | designed (handoff link graph) |
+| Opens TAX-02 · Lakeshore Literacy Alliance 2025 Form 990 | TAX-02 | designed (handoff link graph) |
 
 ## Notes
 

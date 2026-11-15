@@ -1197,7 +1197,21 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         "connection_states": frozenset({"used_at"}),
         "reconnect_requests": frozenset({"fulfilled_at"}),  # 0195 (A-02-T13)
-        "firm_integrations": frozenset({"status", "version"}),  # 0194 (A-02-T12)
+        # W-01-T04 (0890): the install's status lines, token and sync times, its firm app.
+        "firm_integrations": frozenset(
+            {
+                "connected_at",
+                "connected_by",
+                "consent_version",
+                "granted_scopes",
+                "last_sync_at",
+                "status",
+                "status_changed_at",
+                "status_reason_code",
+                "token_renews_at",
+                "version",
+            }
+        ),  # 0194 (A-02-T12)
         # SPEC-024 (TASK-041): staff invitations.
         "staff_invitations": frozenset({"status", "accepted_by", "accepted_at", "expires_at"}),
         # F-03-T25 (migration 0082): the client record, entity attributes and contacts; the
@@ -2664,6 +2678,64 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "status",
                 "superseded_at",
                 "version_no",
+            }
+        ),
+        # S45 (0885-0890): C-01-T11 closes v2, T-07-T11, A-08-T09, A-09-T05, W-01-T04.
+        "analytic_explanations": frozenset({"accepted_actor_kind", "accepted_at", "accepted_by"}),
+        "analytic_lines": frozenset({"status"}),
+        "close_entry_recordings": frozenset({"confirmed_at", "confirmed_by"}),
+        "consolidation_entities": frozenset(
+            {
+                "city",
+                "component_auditor_id",
+                "level",
+                "parent_id",
+                "position",
+            }
+        ),
+        "consolidation_trial_balances": frozenset({"superseded_by"}),
+        "consolidations": frozenset(
+            {
+                "finalized_actor_kind",
+                "finalized_at",
+                "finalized_by",
+                "interim_period_end",
+                "lock_state",
+                "locked_actor_kind",
+                "locked_at",
+                "locked_by",
+                "name",
+                "prior_period_end",
+                "row_version",
+                "source_connection_id",
+                "status",
+                "year_end",
+            }
+        ),
+        "integration_interest": frozenset({"notified_at"}),
+        "integration_oauth_states": frozenset({"spent_at"}),
+        "reconciling_items": frozenset({"issue_id", "proposed_entry_id"}),
+        "transaction_questions": frozenset(
+            {
+                "answer_sealed",
+                "answered_at",
+                "answered_by_contact_id",
+                "fulfils_request_item_id",
+                "row_version",
+                "status",
+            }
+        ),
+        "user_integrations": frozenset(
+            {
+                "connected_at",
+                "consent_version",
+                "granted_scopes",
+                "last_sync_at",
+                "status",
+                "status_changed_at",
+                "status_reason_code",
+                "token_renews_at",
+                "version",
             }
         ),
     } == sc.APP_UPDATE_COLUMNS

@@ -173,7 +173,8 @@ def test_the_eqr_is_denied_every_mutating_workpaper_act() -> None:
         and not matrix.RULES[action].reads
         and entries.get("eqr_reviewer", "deny") != "deny"
     )
-    assert allowed == ["workpaper.export"]  # a copy out, never a change to the work
+    # A copy out, never a change to the work (A-08-T03 adds the fieldwork test export).
+    assert allowed == ["test.export", "workpaper.export"]
 
 
 def _ctx(user: uuid.UUID, *, kind: str = "human") -> AuthContext:

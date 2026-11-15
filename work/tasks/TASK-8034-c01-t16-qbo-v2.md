@@ -36,7 +36,7 @@ Rollback: revert; the datasets are only pulled by C-01-T17's workflow (not built
 migration (0882 already widened `sync_runs.dataset`).
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan written above before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan written above before building.
 - `2026-11-15` — Built as planned. Every request is still a GET to the API host (or the two
   OAuth POSTs declared as reads); the query language string is built from integers only. Not
   run (end pass: unit suite, conformance, write-interception harness, security review of the

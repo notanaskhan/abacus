@@ -68,6 +68,7 @@ FIRM_LEVEL: Final = frozenset(
         "security_policy",  # G-02-T14: the firm's sign-in policy, exempt account, support switch
         "portal_security_policy",  # G-02-T14: the firm's portal session length
         "audit_export",  # G-02-T17: a person's export of the firm's log (a filter, no client)
+        "close_template",  # C-01-T15: the firm's imported close templates (DB content)
         "firm_export_schedule",  # G-02-T19: the firm's monthly export schedule
         "safeguards_program",  # G-02-T20: the firm's safeguards record
         "safeguards_control",  # G-02-T20: one Pub 4557 control's status

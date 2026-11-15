@@ -2,7 +2,7 @@
 id: TASK-8038
 title: "T-07-T11: instrument_clause citation kind (evidence, red)"
 spec: SPEC-656
-acceptance_criteria: [AC-1.4, AC-6.2]
+acceptance_criteria: [AC-1, AC-6]
 risk_zone: red
 status: in-review
 branch: t07-t11-instrument-clause
@@ -29,7 +29,7 @@ a superseding instrument, and the C4 v1.2 note.
 Rollback: downgrade 0886 (refused while clause citations exist, by design); revert the code.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Built as planned (DEC-5024). Not run (end pass: migrations, unit, contracts,
   the citation eval suite, security review of the red diff).
 - **Partial.** The database path (a seeded instrument with a word layer, the regions read and a

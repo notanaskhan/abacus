@@ -2,7 +2,7 @@
 id: TASK-8056
 title: "A-09-T06: consumer contract tests for the A-09 stubs (pytest + TypeScript fixtures)"
 spec: SPEC-658
-acceptance_criteria: [AC-0.5]
+acceptance_criteria: [AC-0]
 risk_zone: amber
 status: in-review
 branch: a09-t06-consumer-tests
@@ -22,5 +22,5 @@ Consumer suites that fail when a provider renames a field or a seed total stops 
    `fixtures/contracts/group-audit-figures.test.ts`.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Written (DEC-5041). ruff, pyright, tsc, eslint clean. Run at the end pass.

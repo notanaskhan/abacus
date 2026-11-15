@@ -285,8 +285,8 @@ class ConnectCompleteOut(BaseModel):
 class ConnectDisconnectIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    confirm_name: Annotated[str, Field(min_length=1, max_length=80)]
-    seen_version: Annotated[int, Field(ge=1)]
+    confirm_name: Annotated[str, Field(min_length=1, max_length=80), classified("confidential")]
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
 
 
 class ConnectDisconnectOut(BaseModel):
@@ -311,7 +311,7 @@ class ConnectCatalogImportOut(BaseModel):
     dry_run: Annotated[bool, Internal]
     added: Annotated[list[str], Internal]
     changed: Annotated[list[str], Internal]
-    hidden: Annotated[list[str], Internal]
+    unpublished: Annotated[list[str], Internal]  # catalogue keys the import takes off the tiles
     document_sha256: Annotated[str, Internal]
 
 

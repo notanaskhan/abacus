@@ -75,10 +75,14 @@ async def test_the_connector_is_the_port_and_nothing_more(target: targets.Target
     }
     assert public == PORT
     capabilities = connector.capabilities()
-    assert capabilities.datasets == frozenset({"trial_balance"})
+    # C-01-T16 (C9 v2.1, DEC-5022): the chart of accounts, a month's trial balance and the GL
+    # detail join the year's trial balance, read incrementally through CDC; still no attachments.
+    assert capabilities.datasets == frozenset(
+        {"trial_balance", "accounts", "gl_detail", "trial_balance_month"}
+    )
     assert (capabilities.oauth, capabilities.incremental, capabilities.attachments) == (
         True,
-        False,
+        True,
         False,
     )
 
@@ -87,8 +91,7 @@ async def test_undeclared_reads_are_not_supported(target: targets.Target) -> Non
     connector = await _ready(target)
     with pytest.raises(NotSupported):
         await connector.pull("general_ledger", target.period, None)  # type: ignore[arg-type]  # a dataset no connector declares here
-    with pytest.raises(NotSupported):
-        await connector.changes_since(system_now() - timedelta(days=1))
+    # `changes_since` is declared since C-01-T16 (CDC); attachments are not.
     with pytest.raises(NotSupported):
         await connector.fetch_attachment("attachment-1")
 
@@ -208,7 +211,8 @@ class Scripted:
     ("status", "raised", "code"),
     [
         (401, ConnectorError, "token_expired"),
-        (429, Unavailable, "provider_unavailable"),
+        # C-01-T16 (ADR-043): a 429 is RateLimited (retryable, with Retry-After).
+        (429, Unavailable, "rate_limited"),
         (503, Unavailable, "provider_unavailable"),
         (403, ConnectorError, "provider_error"),
         (404, ConnectorError, "provider_error"),

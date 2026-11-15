@@ -8,6 +8,13 @@ API: `close_for`, the fail-closed `register_status_guard` slot C-02 fills (C-01 
 `start_close`, the system's Not started → In progress on the first run or incorporation.
 """
 
+from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
+from abacus.modules.closes.audit_targets import (
+    AUDIT_KINDS,
+    ENTITY_KINDS,
+    audit_entities,
+    audit_owners,
+)
 from abacus.modules.closes.contract import (
     CloseFacts,
     StatusGuard,
@@ -27,6 +34,9 @@ from abacus.modules.engagements.api import register_work_item_kind
 register_work_item_kind("close", CloseKind())
 # C-01-T15 (QC-8): a requested publication waits on the engagement's Managers and Partners.
 register_close_gates()
+# The explorer's owners for a close and its plan (SPEC-304).
+register_engagement_owners(AUDIT_KINDS, audit_owners)
+register_entity_owners(ENTITY_KINDS, audit_entities)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS = (closes_router, close_work_router, portal_close_router)

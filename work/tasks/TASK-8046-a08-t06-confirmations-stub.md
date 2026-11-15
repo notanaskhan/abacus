@@ -2,7 +2,7 @@
 id: TASK-8046
 title: "A-08-T06: confirmations contract stub (firm routes and the public /v1/confirm/* family)"
 spec: SPEC-657
-acceptance_criteria: [AC-0.6, AC-6.8, AC-7.1, AC-7.4, AC-7.5]
+acceptance_criteria: [AC-0, AC-6, AC-7]
 risk_zone: red
 status: in-review
 branch: a08-t06-confirmations-stub
@@ -25,7 +25,7 @@ registered as link-principal routes serving POR-17 fixtures on the fixture tenan
 Rollback: revert; no table, no write.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Built (DEC-5031). ruff and pyright clean; routes mount (22); client
   regenerated. Tests written, run at the end pass.
 - **Note for the end pass:** the public stub is reachable only once the ADR-152 amendment is

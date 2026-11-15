@@ -49,6 +49,7 @@ Matrix actions from `permission-matrix/{ledger,adjustments,assurance,portal,conn
 | Decide… | SHL-11 | live |
 | Draft component instructions… | AUD-35 a | live |
 | Materiality (flag off) | AUD-07 | live |
+| tooltip or toast inside kits/AUD34 Scoping | SHL-13 | designed (handoff link graph) |
 
 ## Notes
 

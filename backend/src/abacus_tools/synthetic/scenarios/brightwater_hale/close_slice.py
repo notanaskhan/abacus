@@ -8,8 +8,8 @@ CLS-06, CLS-09, CLS-10 and POR-11), never typed fresh elsewhere. The figure book
 transcription; `tests/golden/scenario/test_c01t13_close_figures.py` foots this slice against it and
 `apps/web/src/fixtures/contracts/close-figures.test.ts` foots the screens' fixtures against it.
 
-Rules the slice keeps (C-01 §5.3): no kit sample data (no "13-task close run", no "Closed", no
-Elena Ruiz); the savings request keeps its designed "due Sep 5" (a Saturday) in POR-11 a, and the
+Rules the slice keeps (C-01 §5.3): no kit sample data (no kit close run, no "Closed" close and no
+kit person); the savings request keeps its designed "due Sep 5" (a Saturday) in POR-11 a, and the
 business-day rules apply from plan v4 (DF-34). Due dates follow QC-7: Copperleaf is due Tue
 Sep 8 (BD5) and Bluebird Bakery Thu Sep 10 (BD7), so past due reads 4 and 2 business days; the
 CLS-01 artboard's "Sep 10" and "Sep 12" are the designed cells. The close records load through

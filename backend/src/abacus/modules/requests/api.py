@@ -30,6 +30,10 @@ from abacus.modules.requests.binders import (
     register_binder_close_rule,
 )
 from abacus.modules.requests.classification import classify, document_kind
+from abacus.modules.requests.close_counts import (  # C-01-T14: the close record's counts
+    binder_document_counts,
+    pending_request_counts,
+)
 from abacus.modules.requests.closed_binders import (
     BinderClosed,
     refuse_closed_item,
@@ -59,10 +63,6 @@ from abacus.modules.requests.follow_up_reads import (
     follow_up_candidates,
     live_files,
     selection_engagements,
-)
-from abacus.modules.requests.close_counts import (  # C-01-T14: the close record's counts
-    binder_document_counts,
-    pending_request_counts,
 )
 from abacus.modules.requests.home_counts import register_home_counts
 from abacus.modules.requests.lifecycle import (
@@ -286,8 +286,6 @@ register_pilot_metric_source("w5", w5_pbc_via_portal)  # Q-04-T008 (DEC-825)
 from abacus.modules.requests.agent_tools import AGENT_TOOLS  # noqa: E402
 
 __all__ = [
-    "binder_document_counts",
-    "pending_request_counts",
     "ACTIVITIES",
     "AGENT_TOOLS",
     "ROUTERS",
@@ -345,6 +343,7 @@ __all__ = [
     "awaiting_review",
     "awaiting_review_count",
     "binder_card",
+    "binder_document_counts",
     "check_return_comment",
     "classify",
     "client_home",
@@ -382,6 +381,7 @@ __all__ = [
     "pbc_binders",
     "pbc_counts",
     "pbc_counts_of",
+    "pending_request_counts",
     "portal_binder_ref",
     "portal_binder_refs",
     "portal_binder_view",

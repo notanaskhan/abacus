@@ -2,7 +2,7 @@
 id: TASK-8053
 title: "A-09-T04: group-audit glossary and status rows (DF-31), banned terms, screen contracts"
 spec: SPEC-658
-acceptance_criteria: [AC-0.2]
+acceptance_criteria: [AC-0]
 risk_zone: red
 status: in-review
 branch: a09-t04-vocabulary-contracts
@@ -24,5 +24,5 @@ AUD-32 to AUD-35, POR-23 and the AUD-31 group renditions.
 Rollback: revert.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5038). Codegen clean; eslint clean. Tests run at the end pass.

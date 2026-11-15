@@ -676,17 +676,17 @@ Lint rules L1–L12 check these against the copy registry.
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
-| Confirmation | An AU-C 505 request to a third party (bank, customer, vendor) the firm controls from draft to close: positive form only, sent only to an independently verified address, after the client's signed authorization. Statuses: Draft, Authorization requested, Sent, Responded, Exception, Alternative procedures, Closed. Never the independence confirmation of SPEC-025 (`MyConfirmations`, `IndependenceConfirmation`). | `confirmations`, `confirmation_lines` | `external confirmation request`, `verification` |
-| Confirmation response | The respondent's one answer on POR-17: agrees or not, balances, explanation and attachments, attested and with a verified email; insert-only, the difference computed by the server. Hostile content. | `confirmation_responses` | `reply` |
+| Confirmation | An AU-C 505 request to a third party (bank, customer, vendor) the firm controls from draft to close: positive form only, sent only to an independently verified address, after the client's signed authorization. Statuses: Draft, Authorization requested, Sent, Responded, Exception, Alternative procedures, Closed. Never the independence confirmation of SPEC-025 (`MyConfirmations`, `IndependenceConfirmation`). | `confirmations`, `confirmation_lines` | `external confirmation request`, `verification request` |
+| Confirmation response | The respondent's one answer on POR-17: agrees or not, balances, explanation and attachments, attested and with a verified email; insert-only, the difference computed by the server. Hostile content. | `confirmation_responses` | `confirmation reply` |
 | Address verification | How the firm established that a respondent's address is independent of the client (sources and citations). A confirmation cannot be sent without one that cites a non-client source. | `address_verifications` | `address check` |
 | Link principal | A single-purpose actor reached by a signed link plus an emailed code; it reads or submits exactly one object and has no session beyond the page (ADR-146). Its tokens and codes are stored hashed. | `link_principals`, `actor_kind = link_principal` | `guest`, `anonymous user` |
 | JE test | AU-C 240 journal-entry testing over one GL population proved complete by a code tie, scored by the firm's risk criteria. | `je_tests` | `JE review`, `journal scan` |
-| Risk criterion | One firm-defined JE test criterion (weekend or holiday, round amount, post-close, manual by role, keywords) with its parameters and hit count; "Not available from this ledger" when the export lacks the fields (P-58). | `je_test_criteria` | `rule`, `flag type` |
+| Risk criterion | One firm-defined JE test criterion (weekend or holiday, round amount, post-close, manual by role, keywords) with its parameters and hit count; "Not available from this ledger" when the export lacks the fields (P-58). | `je_test_criteria` | `JE rule`, `flag type` |
 | JE score | Code's 0–100 score for one entry with the reason codes that produced it; never shown without them. Insert-only per score version. | `je_scores` | `risk rating` |
 | Sample expansion | A request to add items to an approved sample (next by score, unpredictable picks or named items), with a required rationale and a named approver who is not the requester. Nothing changes until approved. | `sample_expansions` | `resample` |
 | Analytics set | One computed version of flux analytics (audit preliminary, substantive, final; or SSARS review) over a TB layer against prior-year figures, with its dual threshold. Recompute is a new version. | `analytics_sets`, `analytics_lines` | `flux report` |
-| Explanation | Why an analytics line moved, counted only with at least one verified citation; agent text is a suggestion; a manager accepts, never the author. | `analytics_explanations` | `comment`, `note` |
-| Expectation | An SSARS review expectation for a line (range and basis) set before comparison. | `analytics_expectations` | `estimate` |
+| Explanation | Why an analytics line moved, counted only with at least one verified citation; agent text is a suggestion; a manager accepts, never the author. | `analytics_explanations` | `variance comment`, `variance note` |
+| Expectation | An SSARS review expectation for a line (range and basis) set before comparison. | `analytics_expectations` | `flux estimate` |
 | Inquiry | One question in an SSARS inquiry program, sent to the client as a POR-05 questionnaire; status words are the request words (Requested, Answered). | `questionnaire kind ssars_inquiry` | `interview` |
 | Conclusion (SSARS) | What an AR-C 90 review reaches. SSARS surfaces (AUD-26, AR-C 70/80/90) never say "opinion". | — | `opinion` |
 
@@ -707,7 +707,7 @@ Banned phrases (copy lint): "significant component" (SAS 149 dropped it) and "Po
 
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
-| Integration | A firm-installed or personal app Accrued reads from or writes to (DEC-14): firm token, personal OAuth ("acting as you"), firm app for client-authorised ledgers, or file bridge. Distinct from a **connection**, which stays the client-authorised, read-only link to a client entity's system. | `firm_integrations`, `user_integrations` | `connector` (for an install), `plugin` |
+| Integration | A firm-installed or personal app Accrued reads from or writes to (DEC-14): firm token, personal OAuth ("acting as you"), firm app for client-authorised ledgers, or file bridge. Distinct from a **connection**, which stays the client-authorised, read-only link to a client entity's system. | `firm_integrations`, `user_integrations` | `plugin`, `app install` |
 | Personal integration | An integration a person connects as themself; agents they run read what they can read. Disconnected when their membership ends. | `user_integrations` | `user connection` |
 | Firm app | The firm side of a client-authorised integration: enabling it lets clients authorise their own ledgers in the portal; disabling it suspends those connections. | `firm_integrations.mode = firm_app` | `firm connection` (for this) |
 | Catalogue import | An operator's reviewed load of catalogue content (dry run, apply, log with the document's SHA-256); the only way catalogue rows change. | `integration_catalog_imports` | `catalogue deploy` |

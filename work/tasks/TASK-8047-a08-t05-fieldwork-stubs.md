@@ -2,7 +2,7 @@
 id: TASK-8047
 title: "A-08-T05: fieldwork-testing, audit-analytics and SSARS contract stubs, consumer tests"
 spec: SPEC-657
-acceptance_criteria: [AC-0.4, AC-0.5]
+acceptance_criteria: [AC-0]
 risk_zone: amber
 status: in-review
 branch: a08-t05-fieldwork-stubs
@@ -27,7 +27,7 @@ consumer tests over these stubs and the confirmations stub (merged from T07).
 Rollback: revert; no table, no write.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Built (DEC-5032). ruff, pyright, tsc and eslint clean on touched files; the
   footings checked by a one-off import (236; 14 = 8 + 6; 4,174,000; 15.3%). Tests run at the end pass.
 - **Mistake caught:** a second `CoverageOut` model renamed AUD-08's type in the generated client;

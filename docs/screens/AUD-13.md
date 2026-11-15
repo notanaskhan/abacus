@@ -54,6 +54,17 @@ Matrix actions from `permission-matrix/{sampling,workpapers,assurance,identity}.
 | Ask client (2)… | POR-05 questionnaire | live |
 | Accept | SHL-10 | live |
 | Threshold ⓘ | AUD-07 materiality | live |
+| Opens SHL-12 · sign off | SHL-12 | designed (handoff link graph) |
+| Opens CLI-02 · client record | CLI-02 | designed (handoff link graph) |
+| Opens KNW-03 · program editor | KNW-03 | designed (handoff link graph) |
+| Opens AUD-03 · source documents | AUD-03 | designed (handoff link graph) |
+| Opens AUD-29 · activity log | AUD-29 | designed (handoff link graph) |
+| Opens AUD-06 · trial balance & mapping | AUD-06 | designed (handoff link graph) |
+| Opens AUD-08 · risk assessment | AUD-08 | designed (handoff link graph) |
+| Opens AUD-09 · internal control & ITGCs | AUD-09 | designed (handoff link graph) |
+| Opens AUD-11 · sampling | AUD-11 | designed (handoff link graph) |
+| Opens AUD-12 · Controls Testing — Revenue Cycle | AUD-12 | designed (handoff link graph) |
+| Opens AUD-16 · summary of misstatements | AUD-16 | designed (handoff link graph) |
 
 ## Notes
 

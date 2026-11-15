@@ -64,7 +64,7 @@ ReviewLevel = Literal["senior_signoff", "manager_approval"]
 Frequency = Literal["monthly", "quarterly", "annual"]
 PlanVersionStatus = Literal["draft", "published", "discarded"]
 RunScope = Literal["all", "group", "failed_only", "accounts"]
-RunStatus = CloseRunStatus  # the `close_run` registry object (DEC-5018)
+RunStatus = CloseRunStatus  # the `close_run` registry object (DEC-5053)
 CloseAction = Literal[
     "close.assign",
     "close.status_move",

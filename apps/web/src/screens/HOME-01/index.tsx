@@ -204,18 +204,27 @@ function Tiles({
           ];
         }
         if (tile.key === "closes") {
+          // C-01-T33: the tile opens CLS-01 (the closes index is built).
           return [
-            <DashTile
+            <ByOffice
               key="closes"
-              kind="meter"
-              {...(docked ? { width: DOCKED.closes } : {})}
-              value={String(statusN(tile, "in_progress"))}
-              pill={{
-                label: COPY.tiles.closesPill,
-                variant: status("close", "in_progress").variant ?? "amber",
-              }}
-              caption={COPY.tiles.closesCaption(tile.total)}
-            />,
+              tile={tile}
+              name={name}
+              label={COPY.tiles.closesCaption(tile.total)}
+              href={linkOf(to.CLS01())}
+              n={tile.total}
+            >
+              <DashTile
+                kind="meter"
+                {...(docked ? { width: DOCKED.closes } : {})}
+                value={String(statusN(tile, "in_progress"))}
+                pill={{
+                  label: COPY.tiles.closesPill,
+                  variant: status("close", "in_progress").variant ?? "amber",
+                }}
+                caption={COPY.tiles.closesCaption(tile.total)}
+              />
+            </ByOffice>,
           ];
         }
         if (tile.key === "notices") {

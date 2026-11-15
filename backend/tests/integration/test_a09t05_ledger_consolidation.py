@@ -23,9 +23,17 @@ async def _setup(
     tenant = await seed.firm()
     who = await seed.person(tenant)
     site = await seed.site(tenant, who.user_id, "harlow-pike")
+    # One assurance work item per engagement (0068): the site's own, else a new one.
+    found = await seed.value(
+        "SELECT id FROM work_items WHERE tenant_id = $1 AND engagement_id = $2 "
+        "AND kind = 'assurance'",
+        tenant,
+        site.engagement_id,
+    )
     work_item = cast(
         uuid.UUID,
-        await seed.value(
+        found
+        or await seed.value(
             "INSERT INTO work_items (tenant_id, engagement_id, client_id, kind, name, created_by) "
             "VALUES ($1, $2, $3, 'assurance', 'FY2026 group audit', $4) RETURNING id",
             tenant,
@@ -172,5 +180,12 @@ async def test_the_app_role_may_not_update_or_delete_events(migrated_db: Migrate
         "SELECT privilege_type FROM information_schema.role_table_grants "
         "WHERE grantee = 'abacus_app' AND table_name = 'consolidation_events'"
     )
-    assert {g["privilege_type"] for g in grants} >= {"INSERT", "SELECT"}
+    assert {g["privilege_type"] for g in grants} >= {"SELECT"}
     assert not {g["privilege_type"] for g in grants} & {"UPDATE", "DELETE", "TRUNCATE"}
+    # INSERT is granted column by column (`insert_columns`), never UPDATE on any column.
+    columns = await seed.rows(
+        "SELECT DISTINCT privilege_type FROM information_schema.column_privileges "
+        "WHERE grantee = 'abacus_app' AND table_name = 'consolidation_events'"
+    )
+    kinds = {c["privilege_type"] for c in columns}
+    assert "INSERT" in kinds and "UPDATE" not in kinds

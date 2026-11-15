@@ -86,6 +86,7 @@ connector, write execution, ADM-08 and ADM-09 internals, POR-16 UI beyond the fl
 check, a catalogue editor screen, token-expiry pre-warnings, SCIM, palette search.
 
 ## 5. Acceptance criteria (epic §3, verbatim there)
+Criterion ids: AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16, AC-17, AC-18, AC-19, AC-20, AC-21, AC-22, AC-23, AC-24, AC-25, AC-26, AC-27, AC-28, AC-29, AC-30, AC-31, AC-32, AC-33, AC-34, AC-35.
 - **AC-1 to AC-5** Honest catalogue: 53 = 9 + 38 + 6 at E0 with the nine connected tiles; category, status and search filters keep catalogue-total category counts; 55 = 9 + 40 + 6 at E2 (Drata, Vanta); honesty enumerated against registered adapters; no vendor logo, kit text or payment copy.
 - **AC-6 to AC-9** Roles: non-admin firm tiles `aria-disabled` with the managing person's name; firm connect and disconnect `security_admin`/`firm_admin` with fresh MFA (403 `mfa_required`, `max_age_s = 900`); the agent denied every integration action; portal principals 404; managed-by resolved at read time.
 - **AC-10 to AC-13** Personal connect: consent card from `consent_copy` v1; single-use hashed state, 10-minute expiry, PKCE; 409 `invalid_state` / `connect_declined`; membership end disconnects and deletes secrets.

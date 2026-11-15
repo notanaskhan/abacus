@@ -2,7 +2,7 @@
 id: TASK-8040
 title: "T-07-T14: tax tools for the instrument reader (C17) and the determination applier"
 spec: SPEC-656
-acceptance_criteria: [AC-1.4, AC-2.1, AC-2.2, AC-2.3, AC-2.4]
+acceptance_criteria: [AC-1, AC-2]
 risk_zone: amber
 status: in-review
 branch: t07-t14-reader-tools
@@ -26,7 +26,7 @@ suggestion applier for `instrument_determination`.
 Rollback: revert.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5026). Not run (end pass).
 - **Partial.** The tools run only inside T-07-T13's capability; the database path of a proposal
   (citations recorded, the proposal and its adoption) runs in the end pass's integration suite.

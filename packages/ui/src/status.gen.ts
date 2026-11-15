@@ -6164,7 +6164,7 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false,
       "contextLabels": {
-        "waiting": "Authorization requested · Waiting on {name} (SIG-02)"
+        "waiting": "Authorization requested · Waiting on {name}"
       }
     },
     "sent": {

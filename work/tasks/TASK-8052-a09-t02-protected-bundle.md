@@ -2,7 +2,7 @@
 id: TASK-8052
 title: "A-09-T02: S45 group-audit protected bundle #1 (matrix rows, agent-never, protected paths)"
 spec: SPEC-658
-acceptance_criteria: [AC-0.1]
+acceptance_criteria: [AC-0]
 risk_zone: red
 status: in-review
 branch: a09-t02-protected-bundle
@@ -24,6 +24,6 @@ with agent, support and portal deny on every firm write.
 Rollback: revert; no route uses the actions until A-09-T03.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5037). Codegen clean. Tests (regenerated suites) run at the end pass.
 - **Needs:** Ayush's approval of the protected bundle (the plan's "AY's approval file").

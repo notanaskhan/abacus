@@ -2,7 +2,7 @@
 id: TASK-8044
 title: "A-08-T02: ADR P-45 amendment (public respondent access) and link-principal threat model"
 spec: SPEC-657
-acceptance_criteria: [AC-7.2, AC-7.4, AC-7.5, AC-7.6]
+acceptance_criteria: [AC-7]
 risk_zone: red
 status: in-review
 branch: a08-t02-p45-amendment
@@ -25,5 +25,5 @@ the link-principal threats to the threat model, as proposed amendments both deci
 Rollback: revert the two sections.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Drafted (DEC-5029). **Waits on acceptance by Ayush (both founders in the plan).**

@@ -1,4 +1,4 @@
-"""C-01-T11 (S45; TASK-8030; C-01 §4.2 T11; SPEC-655): `closes_v2` and `requests_cas`,
+"""C-01-T11 (S45; TASK-8067; C-01 §4.2 T11; SPEC-655): `closes_v2` and `requests_cas`,
 expand-only.
 
 The close engine's computed and client-facing records:

@@ -1,5 +1,5 @@
 ---
-id: TASK-8030
+id: TASK-8067
 title: "C-01-T11: migration closes_v2 and requests_cas — reconciliations, schedules, flux, recordings, questions"
 spec: SPEC-655
 acceptance_criteria: [AC-9, AC-22]
@@ -38,7 +38,7 @@ Rollback: downgrade drops the triggers, the 14 tables and the three functions; n
 T21–T25.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built: migration **0885** (on 0884). Tally CHECKs make `tie` mean difference 0 and
   `off` a non-zero difference; `pending` (no statement yet) leaves the bank side null. Bank-side
   items are deposits in transit, outstanding checks or bank errors; book-side items the
@@ -51,4 +51,4 @@ T21–T25.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| DEC-5018 | Set-later columns on insert-only tables are column grants plus set-once or forward-only triggers, never open UPDATE | no |
+| DEC-5053 | Set-later columns on insert-only tables are column grants plus set-once or forward-only triggers, never open UPDATE | no |

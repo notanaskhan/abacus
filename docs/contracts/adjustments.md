@@ -45,7 +45,7 @@ Additive. A `proposed_entries` row with `kind = 'elimination'` carries `consolid
 carries `client_entity_id` and `consolidation_level`. Routes (stubs in
 `assurance/group_contract.py`): GET/POST `/v1/consolidations/{cid}/eliminations`, PATCH
 `/v1/proposed-entries/{id}/elimination`, POST `…/elimination/approve` (409 `unbalanced_entry`) and the
-per-item POST `/v1/consolidations/{cid}/eliminations/approve`, POST `…/elimination/post` and
+per-item POST `/v1/consolidations/{cid}/eliminations/approve`, POST `…/elimination/apply` and
 `…/elimination/reject`, POST `/v1/consolidations/{cid}/eliminations/propose` (202). Actions
 `elimination.read`, `.edit`, `.propose_run`, `.approve`, `.post` (A-09-T02).
 

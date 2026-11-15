@@ -23,6 +23,6 @@ The bundle every W-01 row builds on, with both founders' approval in the plan.
 Rollback: revert.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029).
+- `2026-11-15` — Planned at the S45 kickoff (#2010).
 - `2026-11-15` — Built (DEC-5045). Codegen clean. Import-linter and the generated matrix tests run
   at the end pass. **Needs:** both founders' approval (the plan); Ayush approves here.

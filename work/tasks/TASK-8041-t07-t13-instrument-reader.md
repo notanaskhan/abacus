@@ -2,7 +2,7 @@
 id: TASK-8041
 title: "T-07-T13: capability tax.instrument_reader v1 and InstrumentReaderWorkflow"
 spec: SPEC-656
-acceptance_criteria: [AC-1.4, AC-1.5, AC-2.1, AC-2.2, AC-2.3, AC-2.4]
+acceptance_criteria: [AC-1, AC-2]
 risk_zone: red
 status: in-review
 branch: t07-t13-instrument-reader
@@ -29,7 +29,7 @@ the route that starts it, with C19's consent refusal before any model call.
 Rollback: revert; no run starts while `tax.fiduciary_workpapers` is off.
 
 ## Progress log
-- `2026-11-15` — Planned at the S45 kickoff (TASK-8029); plan above written before building.
+- `2026-11-15` — Planned at the S45 kickoff (#2010); plan above written before building.
 - `2026-11-15` — Built (DEC-5027). The spec validator (`agent_specs_v2`) passes. Not run
   otherwise (end pass: unit, the replay test, the eval suite on the fake model, security review).
 - **Partial.** The workflow's recorded replay history is written at the end pass from a real run

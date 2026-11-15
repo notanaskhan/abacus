@@ -12,6 +12,26 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-15 (S45): C-01-T14/T15 the close record and plan, identifiers only
+        "close.on_hold_cleared",
+        "close.on_hold_set",
+        "close.plan_pinned",
+        "close.status_changed",
+        "close_plan.drafted",
+        "close_plan.edited",
+        "close_plan.publish_requested",
+        "close_plan.published",
+        "close_plan_row.adopted",
+        "close_template.imported",
+        # reviewed 2026-11-15 (S45): T-07-T12/T13/T14 the governing instrument and its reading
+        "instrument.attached",
+        "instrument.segmented",
+        "instrument_clause.marked",
+        "instrument_determination.adopted",
+        "instrument_determination.recorded",
+        "instrument_interpretation.approved",
+        "instrument_interpretation.proposed",
+        "instrument_interpretation.reopened",
         # reviewed 2026-11-14 (S43): I-02-T14 a Today question, identifiers only (DEC-60)
         "today_brief.question_asked",
         # reviewed 2026-11-14 (S43): W-02-T20 an artifact download and a session drill

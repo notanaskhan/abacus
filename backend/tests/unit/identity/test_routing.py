@@ -30,6 +30,7 @@ from abacus.kernel.db import TenantContext
 from abacus.modules.identity.api import (
     ACTION_KEY,
     IDENTITY,
+    LINK_PRINCIPAL,
     OWN,
     PORTAL_PUBLIC,
     PRE_SESSION,
@@ -54,6 +55,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.identity.routing import (
     current_invitee,
+    link_principal,
     portal_public,
     pre_session,
     provider_webhook,
@@ -237,7 +239,16 @@ def test_ac20_every_route_declares_an_action_in_the_matrix_or_self() -> None:
     for route in _routes():
         action = declared_action(route)
         assert action is not None, route.path
-        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK)
+        markers = (
+            SELF,
+            STAFF,
+            OWN,
+            IDENTITY,
+            PRE_SESSION,
+            PORTAL_PUBLIC,
+            PROVIDER_WEBHOOK,
+            LINK_PRINCIPAL,
+        )
         assert action in markers or action in MATRIX, (route.path, action)
 
 
@@ -312,6 +323,7 @@ def test_ac20_every_route_has_the_authentication_dependency() -> None:
             pre_session,  # ADR-165: the three sign-in routes authenticate themselves
             portal_public,  # ADR-163: portal branding, Public fields to anyone
             provider_webhook,  # ADR-152: the receiver verifies the provider's signature
+            link_principal,  # ADR-152 amendment: the path token names one link principal
         )
         assert any(d in dependencies for d in auth), route.path
 
