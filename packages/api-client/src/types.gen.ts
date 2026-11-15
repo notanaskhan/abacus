@@ -75558,10 +75558,6 @@ export type ClosePlanErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ClosePlanError = ClosePlanErrors[keyof ClosePlanErrors];
@@ -75682,10 +75678,6 @@ export type CreatePlanDraftErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CreatePlanDraftError = CreatePlanDraftErrors[keyof CreatePlanDraftErrors];
@@ -75750,10 +75742,6 @@ export type PublishPlanErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishPlanError = PublishPlanErrors[keyof PublishPlanErrors];
@@ -75814,10 +75802,6 @@ export type RequestPlanPublishErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RequestPlanPublishError = RequestPlanPublishErrors[keyof RequestPlanPublishErrors];
@@ -75882,10 +75866,6 @@ export type AddRequestTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AddRequestTemplateError = AddRequestTemplateErrors[keyof AddRequestTemplateErrors];
@@ -75950,10 +75930,6 @@ export type AddPlanRowErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AddPlanRowError = AddPlanRowErrors[keyof AddPlanRowErrors];
@@ -76022,10 +75998,6 @@ export type PatchPlanRowErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PatchPlanRowError = PatchPlanRowErrors[keyof PatchPlanRowErrors];
@@ -76094,10 +76066,6 @@ export type AdoptPlanRowErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AdoptPlanRowError = AdoptPlanRowErrors[keyof AdoptPlanRowErrors];
@@ -76162,10 +76130,6 @@ export type AdoptAllPlanRowsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AdoptAllPlanRowsError = AdoptAllPlanRowsErrors[keyof AdoptAllPlanRowsErrors];
@@ -76218,10 +76182,6 @@ export type ClosePlanHistoryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ClosePlanHistoryError = ClosePlanHistoryErrors[keyof ClosePlanHistoryErrors];
@@ -76619,10 +76579,6 @@ export type CloseTemplatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseTemplatesError = CloseTemplatesErrors[keyof CloseTemplatesErrors];
@@ -76678,10 +76634,6 @@ export type ImportCloseTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ImportCloseTemplateError = ImportCloseTemplateErrors[keyof ImportCloseTemplateErrors];
