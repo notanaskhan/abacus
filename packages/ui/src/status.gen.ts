@@ -4389,6 +4389,58 @@ export const STATUS_REGISTRY = {
       "label": "Finalized",
       "variant": "green-tint",
       "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "rail": "Finalized · {time}"
+      }
+    },
+    "discarded": {
+      "label": "Discarded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "consolidation_lock": {
+    "open": {
+      "label": "Open",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "locked": {
+      "label": "Locked",
+      "variant": "soon",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "by": "Locked · {name} · {time}"
+      }
+    }
+  },
+  "consolidation_tb": {
+    "missing": {
+      "label": "Missing",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "attached": {
+      "label": "Balanced ✓",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "not_needed": {
+      "label": "Not needed",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "needs_reauth": {
+      "label": "Needs reauth",
+      "variant": "amber",
+      "terminal": false,
       "derived": false
     }
   },
@@ -4410,6 +4462,30 @@ export const STATUS_REGISTRY = {
       "variant": "green",
       "terminal": true,
       "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "group_materiality_decision": {
+    "pending": {
+      "label": "Blocked on a partner decision",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "decided": {
+      "label": "Complete",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "rail": "Complete · {time}"
+      },
+      "disc": "check_olive"
     }
   },
   "component": {
@@ -4449,7 +4525,8 @@ export const STATUS_REGISTRY = {
       "label": "Acknowledged",
       "variant": "green-tint",
       "terminal": true,
-      "derived": false
+      "derived": false,
+      "clientLabel": "✓ You acknowledged {date}"
     }
   },
   "component_deliverable": {
@@ -4457,25 +4534,39 @@ export const STATUS_REGISTRY = {
       "label": "Expected",
       "variant": "muted",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "clientLabel": "Due {date}"
     },
     "received": {
       "label": "Received",
       "variant": "state",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "clientLabel": "✓ You uploaded {date}"
     },
     "reviewed": {
       "label": "Reviewed",
       "variant": "green-tint",
       "terminal": true,
-      "derived": false
+      "derived": false,
+      "clientLabel": "✓ You uploaded {date}"
     },
     "late": {
       "label": "Late",
       "variant": "red-tint",
       "terminal": false,
-      "derived": true
+      "derived": true,
+      "clientLabel": "Overdue",
+      "contextLabels": {
+        "days": "Late · {n} day"
+      }
+    },
+    "returned": {
+      "label": "Returned",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true,
+      "clientLabel": "Returned · not signed"
     }
   },
   "linked_value": {

@@ -53,3 +53,17 @@
 |---|---|---|
 | Agent run line | SHL-13 dock | planned (A-09; no run in A-03, DV-B1) |
 | Consolidated view | AUD-33 | planned (A-09) |
+
+## Group renditions (A-09-T04; A-09 §2.1, SPEC-658 F3)
+
+Inherited from A-03 (QA-1): the five-entity Harlow & Pike states, built by A-09 over A-03's mapping sets with the entity column and EntitySelector. Route `/audits/$auditId/group/mapping?entity=&filter=` (links use `to.AUD31()`, OQ-8).
+
+| Artboard | State | Data condition | Demo clock | Parity tier | Scenario key |
+|---|---|---|---|---|---|
+| a (group) | Needs review | Mapped 238 of 244 · 6 need review; entity Segmented All 244 · Holdings 32 · Operating Co. 8 · Manufacturing 98 · Distribution 76 · Real Estate 30; split 201 prior-year + 25 number range + 12 description | Mon Sep 14, 2026, 11:40 AM CT (Caleb Dunn) | D · **C locked** | `aud31.group.a` |
+| b (group) | Importing | Ring 61%; per-entity progress after finalize | 10:50 AM CT | D · C report-only (ring masked) | `aud31.group.b` |
+| c (group) | Change made | 1460 Tooling deposits → PP&E › Deposits on equipment; "Edited by CD · was Other assets › Deposits"; PP&E ties 8,400,000 | 11:40 AM CT | D · C report-only | `aud31.group.c` |
+| d (group) | Confirmed | 244 of 244; "Adopted by CD" (one L1 per entity set in one unit of work) | 11:58 AM CT | D · **C locked** | `aud31.group.d` |
+| e (group) | Changed after confirm | Distribution re-pulled; 2 new unmapped; "Changed after sign-off" | 11:40 AM CT | D · C report-only | `aud31.group.e` |
+
+Suggested rows show a confidence word (High · Medium · Low, never a percentage) and one line of reasoning naming no number absent from the computed facts (INV-2). The agent cannot adopt or confirm.
