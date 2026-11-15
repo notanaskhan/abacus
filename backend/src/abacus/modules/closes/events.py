@@ -19,3 +19,24 @@ class CloseStatusChanged(DomainEvent):
     close_id: Annotated[UUID, _I]
     from_status: Annotated[str, _I]
     to_status: Annotated[str, _I]
+
+
+class ClosePlanPublishRequested(DomainEvent):
+    """A Senior asked the engagement's Managers and Partners to publish a draft (QC-8): C13
+    raises one HOME-02 gate (`gate_sources.py`)."""
+
+    event_type: ClassVar[str] = "close_plan.publish_requested"
+
+    plan_id: Annotated[UUID, _I]
+    version_id: Annotated[UUID, _I]
+    engagement_id: Annotated[UUID, _I]
+
+
+class ClosePlanPublished(DomainEvent):
+    """A version published (AC-17): the gate closes; later closes pin it at BD1."""
+
+    event_type: ClassVar[str] = "close_plan.published"
+
+    plan_id: Annotated[UUID, _I]
+    version_id: Annotated[UUID, _I]
+    engagement_id: Annotated[UUID, _I]

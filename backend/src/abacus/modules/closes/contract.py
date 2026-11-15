@@ -804,24 +804,28 @@ async def retry_close_procedure_route(
     _not_yet()
 
 
-@closes_router.get(_P, action="close_plan.read", response_model=PlanVersionOut, errors=(501,))
+@closes_router.get(_P, action="close_plan.read", response_model=PlanVersionOut, errors=())
 async def close_plan_route(
     client_id: UUID,
     ctx: Ctx,
     version: Annotated[int | None, Query(ge=1)] = None,
 ) -> PlanVersionOut:
     """The published plan (or a version) with rows, requests and tally (AC-14; C-01-T15)."""
+    from abacus.modules.closes import plans
+
     await _engine_on(ctx)
-    _not_yet()
+    return await plans.get_plan(ctx, client_id, version)
 
 
 @closes_router.get(
-    f"{_P}/versions", action="close_plan.read", response_model=PlanHistoryOut, errors=(501,)
+    f"{_P}/versions", action="close_plan.read", response_model=PlanHistoryOut, errors=()
 )
 async def close_plan_history_route(client_id: UUID, ctx: Ctx) -> PlanHistoryOut:
     """History with "<person> via Agent" attribution (AC-15; C-01-T15)."""
+    from abacus.modules.closes import plans
+
     await _engine_on(ctx)
-    _not_yet()
+    return await plans.plan_history(ctx, client_id)
 
 
 @closes_router.post(
@@ -829,19 +833,21 @@ async def close_plan_history_route(client_id: UUID, ctx: Ctx) -> PlanHistoryOut:
     action="close_plan.edit",
     response_model=PlanVersionOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def create_plan_draft_route(client_id: UUID, body: PlanDraftIn, ctx: Ctx) -> PlanVersionOut:
     """Draft v(n+1) from a version; one draft per plan (AC-16; C-01-T15)."""
-    await _human_route(ctx, "close_plan.edit")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.create_draft(ctx, client_id, body)
 
 
 @closes_router.patch(
     f"{_P}/drafts/{{version}}/rows/{{row_id}}",
     action="close_plan.edit",
     response_model=PlanRowOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def patch_plan_row_route(
     client_id: UUID,
@@ -853,8 +859,10 @@ async def patch_plan_row_route(
 ) -> PlanRowOut:
     """409 `stale_version` (the repo's code for a stale If-Match) names the other editor (AC-19;
     C-01-T15)."""
-    await _human_route(ctx, "close_plan.edit")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.patch_row(ctx, client_id, version, row_id, body, if_match)
 
 
 @closes_router.post(
@@ -862,7 +870,7 @@ async def patch_plan_row_route(
     action="close_plan.edit",
     response_model=PlanRowOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def add_plan_row_route(
     client_id: UUID,
@@ -871,8 +879,10 @@ async def add_plan_row_route(
     ctx: Ctx,
     if_match: IfMatch,
 ) -> PlanRowOut:
-    await _human_route(ctx, "close_plan.edit")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.add_row(ctx, client_id, version, body, if_match)
 
 
 @closes_router.post(
@@ -880,7 +890,7 @@ async def add_plan_row_route(
     action="close_plan.edit",
     response_model=RequestTemplateOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def add_request_template_route(
     client_id: UUID,
@@ -889,15 +899,17 @@ async def add_request_template_route(
     ctx: Ctx,
     if_match: IfMatch,
 ) -> RequestTemplateOut:
-    await _human_route(ctx, "close_plan.edit")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.add_request_template(ctx, client_id, version, body, if_match)
 
 
 @closes_router.post(
     f"{_P}/drafts/{{version}}/publish",
     action="close_plan.publish",
     response_model=PlanVersionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def publish_plan_route(
     client_id: UUID,
@@ -907,22 +919,26 @@ async def publish_plan_route(
     if_match: IfMatch,
 ) -> PlanVersionOut:
     """A Manager or Partner publishes; 409 `unadopted_rows` (AC-17, AC-22; C-01-T15)."""
-    await _human_route(ctx, "close_plan.publish")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.publish(ctx, client_id, version, body, if_match)
 
 
 @closes_router.post(
     f"{_P}/drafts/{{version}}/request-publish",
     action="close_plan.request_publish",
     response_model=PlanVersionOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def request_plan_publish_route(
     client_id: UUID, version: Annotated[int, Path(ge=1)], ctx: Ctx
 ) -> PlanVersionOut:
     """One `close_plan_publish_requested` gate for Managers and Partners (QC-8; C-01-T15)."""
-    await _human_route(ctx, "close_plan.request_publish")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.request_publish(ctx, client_id, version)
 
 
 @closes_router.post(
@@ -944,7 +960,7 @@ async def draft_plan_from_history_route(
     f"{_P}/drafts/{{version}}/rows/{{row_id}}:adopt",
     action="suggestion.resolve",
     response_model=AdoptOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def adopt_plan_row_route(
     client_id: UUID,
@@ -954,31 +970,37 @@ async def adopt_plan_row_route(
     if_match: IfMatch,
 ) -> AdoptOut:
     """A person adopts a drafted row (P-35 suggestion resolve; AC-22; C-01-T15)."""
-    await _human_route(ctx, "suggestion.resolve")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.adopt(ctx, client_id, version, row_id, if_match)
 
 
 @closes_router.post(
     f"{_P}/drafts/{{version}}/rows:adopt-all",
     action="suggestion.resolve",
     response_model=AdoptOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def adopt_all_plan_rows_route(
     client_id: UUID, version: Annotated[int, Path(ge=1)], ctx: Ctx, if_match: IfMatch
 ) -> AdoptOut:
     """ "Adopt all" by a Senior or above (C-01-T15)."""
-    await _human_route(ctx, "suggestion.resolve")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.adopt(ctx, client_id, version, None, if_match)
 
 
 @closes_router.get(
-    "/close-templates", action="close_plan.read", response_model=CloseTemplatesOut, errors=(501,)
+    "/close-templates", action="close_plan.read", response_model=CloseTemplatesOut, errors=()
 )
 async def close_templates_route(ctx: Ctx) -> CloseTemplatesOut:
     """The firm's industry templates (CLS-09 d; C-01-T15)."""
+    from abacus.modules.closes import plans
+
     await _engine_on(ctx)
-    _not_yet()
+    return await plans.list_templates(ctx)
 
 
 @closes_router.post(
@@ -986,11 +1008,13 @@ async def close_templates_route(ctx: Ctx) -> CloseTemplatesOut:
     action="close_template.import",
     response_model=CloseTemplateOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def import_close_template_route(
     body: CloseTemplateImportIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> CloseTemplateOut:
     """DB content through an import, never a commit (AC-20; C-01-T15)."""
-    await _human_route(ctx, "close_template.import")
-    _not_yet()
+    from abacus.modules.closes import plans
+
+    await _engine_on(ctx)
+    return await plans.import_template(ctx, body)

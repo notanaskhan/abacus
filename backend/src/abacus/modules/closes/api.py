@@ -18,12 +18,15 @@ from abacus.modules.closes.contract import (
     status_guard,
 )
 from abacus.modules.closes.contract_work import close_work_router, portal_close_router
+from abacus.modules.closes.gate_sources import register_close_gates
 from abacus.modules.closes.kind import CloseKind
 from abacus.modules.closes.service import start_close
 from abacus.modules.engagements.api import register_work_item_kind
 
 # F-03-T22: the `close` work-item kind.
 register_work_item_kind("close", CloseKind())
+# C-01-T15 (QC-8): a requested publication waits on the engagement's Managers and Partners.
+register_close_gates()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS = (closes_router, close_work_router, portal_close_router)
