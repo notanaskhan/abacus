@@ -90,7 +90,7 @@ class _Trust(ReturnIn):
 class ClauseRow(BaseModel):
     model_config = _cfg()
 
-    clause_id: Annotated[UUID, Int]
+    id: Annotated[UUID, Int]  # the clause id (rows carry an id, ADR-049)
     label: Annotated[str, Int]
     heading: Annotated[str | None, Tri]
     page_from: Annotated[int, Int]
@@ -151,7 +151,7 @@ async def read_instrument_clauses(agent: AgentContext, args: _Trust) -> ClausesO
         known = [t for t in texts if t is not None]
         out.append(
             ClauseRow(
-                clause_id=r.id, label=r.label, heading=r.heading, page_from=r.page_from,
+                id=r.id, label=r.label, heading=r.heading, page_from=r.page_from,
                 page_to=r.page_to, text=" ".join(known) if len(known) == len(texts) else None,
             )
         )  # fmt: skip
@@ -171,7 +171,7 @@ class Fact(BaseModel):
 
     model_config = _cfg()
 
-    fact_id: Annotated[str, Int]  # "distribution:<id>", "expense:<id>"
+    id: Annotated[str, Int]  # the fact id: "distribution:<id>", "expense:<id>"
     label: Annotated[str, Tri]
     amount: Annotated[Decimal, Tri]
     detail: Annotated[str | None, Tri] = None  # source, charged to, the clause it cites
@@ -230,7 +230,7 @@ async def read_trust_facts(agent: AgentContext, args: _Trust) -> TrustFactsOut:
         settlor_died_year=profile.settlor_died_year if profile is not None else None,
         distributions=[
             Fact(
-                fact_id=f"distribution:{d.id}",
+                id=f"distribution:{d.id}",
                 label=f"Distribution {d.paid_on.isoformat()}",
                 amount=d.amount,
                 detail=d.source,
@@ -238,7 +238,7 @@ async def read_trust_facts(agent: AgentContext, args: _Trust) -> TrustFactsOut:
             for d in distributions
         ],
         expenses=[
-            Fact(fact_id=f"expense:{e.id}", label=e.kind, amount=e.amount, detail=e.charged_to)
+            Fact(id=f"expense:{e.id}", label=e.kind, amount=e.amount, detail=e.charged_to)
             for e in expenses
         ],
         prior_year={p.key: p.value_code for p in prior},
@@ -295,7 +295,7 @@ def _figures(text_: str) -> list[Decimal]:
 
 async def _facts(agent: AgentContext, args: _Trust) -> dict[str, Decimal]:
     facts = await read_trust_facts(agent, args)
-    return {f.fact_id: f.amount for f in (*facts.distributions, *facts.expenses)}
+    return {f.id: f.amount for f in (*facts.distributions, *facts.expenses)}
 
 
 _INTERPRETATION: Final = text(
