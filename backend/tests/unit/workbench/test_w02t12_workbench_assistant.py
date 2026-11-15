@@ -27,7 +27,7 @@ NEVER = ("decide", "approve", "sign_off", "release", "send", "post", "export", "
 
 def test_the_spec_compiles_with_the_w02_tools_and_never_tri() -> None:
     spec = spec_v2(CAPABILITY)
-    assert spec.prompt == "workbench.assistant@v1"
+    assert spec.prompt == "workbench.assistant@v2"  # W-02-T23 rest (DEC-5058): attach_only
     assert spec.autonomy == "propose" and spec.plan == "required_when_writes"
     assert "tri" not in spec.data_classes
     tools = [t for group in spec.tools.by_kind().values() for t in group]

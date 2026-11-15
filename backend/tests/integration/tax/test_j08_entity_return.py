@@ -14,7 +14,7 @@ through tax's and review's service APIs, never by re-deriving a figure:
 
 Part 2 (TASK-8074, DEC-5060), on the same loaded day, after part 1's reads:
 
-- K-1 drafts: Ridgeline's five K-1 packages read Draft (sheet 09's recipients);
+- K-1 drafts: none yet at 9:52 (Run 3, in progress, writes them);
 - T-05-T63's DB clause: the TJE layers balance (every TJE nets to zero, so TTB foots like ATB);
 - T-05-T65's DB clauses: the M-2 fix left the workbook a checkpoint trail, and a hostile import
   file is refused with its problems, never parsed into cells;
@@ -173,13 +173,14 @@ async def test_j08_the_return_reaches_final_approval_without_a_blocker(
         TenantContext(TENANT, "human", str(samuel)), samuel, uuid.UUID(int=0), None, system_now()
     )
 
-    # K-1 drafts: five packages, Draft, from sheet 09's recipients.
-    drafts = await seed.rows(
-        "SELECT status FROM k1_packages WHERE tenant_id = $1 AND work_item_id = $2",
+    # K-1 drafts are Run 3's `federal_k1s` output; at 9:52 Run 3 is still in progress (by design),
+    # so none exist yet and the release (J08 step 16) is TXP-12's journey (DEC-5060).
+    drafts = await seed.value(
+        "SELECT count(*) FROM k1_packages WHERE tenant_id = $1 AND work_item_id = $2",
         TENANT,
         return_id,
     )
-    assert len(drafts) == 5 and {d["status"] for d in drafts} == {"draft"}
+    assert drafts == 0
 
     # T-05-T63: the TJE layers balance; TTB foots to zero as ATB does.
     layers = cast(Any, await adjusted_tb(person, return_id, "ttb"))  # Any: the layers view
