@@ -96,6 +96,16 @@ PORTAL_PUBLIC_PATHS: Final = frozenset({"/v1/portal/branding", "/v1/portal/brand
 # with the firm's install key before anything else and treats the body as a hint only (ADR-041).
 PROVIDER_WEBHOOK: Final = "provider_webhook"
 PROVIDER_WEBHOOK_PATHS: Final = frozenset({"/v1/webhooks/docuseal/{tenant_id}/{install_id}"})
+# A-08-T06 (ADR-152 amendment, proposed; ADR-146; on the ROUTE-001 exception list): the public
+# confirmation family. No session: the path token names one link principal, which the handler
+# resolves (A-08-T15) and authorises for `confirmation.respond*` with `link_scope_only`. Until then
+# the stub serves synthetic fixtures in local and test environments only. No other path may carry
+# this marker.
+LINK_PRINCIPAL: Final = "link_principal"
+LINK_PRINCIPAL_PATHS: Final = frozenset(
+    {"/v1/confirm/{token}", "/v1/confirm/{token}/code", "/v1/confirm/{token}/code/verify"}
+    | {"/v1/confirm/{token}/attachments", "/v1/confirm/{token}/response"}
+)
 # SPEC-013 (Q3): a firm member acting only on their own rows (their notifications). No firm matrix
 # action applies; the service filters to the caller, and support contexts are refused.
 OWN: Final = "own"
@@ -194,6 +204,11 @@ async def portal_public() -> None:
 
 async def provider_webhook() -> None:
     """No principal (ADR-152, DEC-1281): the receiver authenticates the provider's signature."""
+
+
+async def link_principal() -> None:
+    """No session (A-08-T06; ADR-152 amendment): the confirmation page's path token names one
+    link principal, resolved and authorised by the handler, never by a header."""
 
 
 async def current_signed_in(
@@ -364,6 +379,7 @@ class AbacusRoute(APIRoute):
             if (
                 action
                 not in (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK)
+                and action != LINK_PRINCIPAL
                 and action not in checked
                 and response.status_code < 400
             ):
@@ -392,6 +408,7 @@ class AbacusRouter(APIRouter):
         errors: Sequence[int] = (),
     ) -> None:
         markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK)
+        markers = (*markers, LINK_PRINCIPAL)
         if action not in markers and action not in RULES:
             raise ValueError(f"route {path}: action {action!r} is not in the permission matrix")
         if action == PRE_SESSION and self.prefix + path not in PRE_SESSION_PATHS:
@@ -400,6 +417,8 @@ class AbacusRouter(APIRouter):
             raise ValueError(f"route {path}: only portal branding is public (ADR-163)")
         if action == PROVIDER_WEBHOOK and self.prefix + path not in PROVIDER_WEBHOOK_PATHS:
             raise ValueError(f"route {path}: only the listed provider webhooks (ADR-152)")
+        if action == LINK_PRINCIPAL and self.prefix + path not in LINK_PRINCIPAL_PATHS:
+            raise ValueError(f"route {path}: only the confirmation family (ADR-152 amendment)")
         if response_model is None:
             raise ValueError(f"route {path}: a response model is required")
         auth = {
@@ -410,6 +429,7 @@ class AbacusRouter(APIRouter):
             PRE_SESSION: pre_session,
             PORTAL_PUBLIC: portal_public,
             PROVIDER_WEBHOOK: provider_webhook,
+            LINK_PRINCIPAL: link_principal,
         }.get(action, current_context)
         dependencies = [Depends(auth)]
         writes = any(m not in _READS for m in methods)

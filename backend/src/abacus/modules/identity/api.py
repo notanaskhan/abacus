@@ -282,6 +282,7 @@ from abacus.modules.identity.routes import (
 from abacus.modules.identity.routing import (
     ACTION_KEY,
     IDENTITY,
+    LINK_PRINCIPAL,
     OWN,
     PORTAL_PUBLIC,
     PRE_SESSION,
@@ -519,6 +520,7 @@ __all__ = [
     "EQR_ROLES",
     "FULL_ROLES",
     "IDENTITY",
+    "LINK_PRINCIPAL",
     "MFA_RECENT",
     "OFFSHORE_DISCLOSURE",
     "OWN",
