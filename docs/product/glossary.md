@@ -702,3 +702,15 @@ Lint rules L1–L12 check these against the copy registry.
 | Elimination | A consolidation entry (E1a…) removing intercompany balances, sales, profit, rent or investment, posted to the consolidation layer only — never to an entity snapshot or a client's ledger. | `proposed_entries.kind = elimination` | `Post to NetSuite`, `adjusting entry` |
 
 Banned phrases (copy lint): "significant component" (SAS 149 dropped it) and "Post to NetSuite" (connectors only read, ADR-040).
+
+## New terms: Connect (W-01-T02)
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Integration | A firm-installed or personal app Accrued reads from or writes to (DEC-14): firm token, personal OAuth ("acting as you"), firm app for client-authorised ledgers, or file bridge. Distinct from a **connection**, which stays the client-authorised, read-only link to a client entity's system. | `firm_integrations`, `user_integrations` | `connector` (for an install), `plugin` |
+| Personal integration | An integration a person connects as themself; agents they run read what they can read. Disconnected when their membership ends. | `user_integrations` | `user connection` |
+| Firm app | The firm side of a client-authorised integration: enabling it lets clients authorise their own ledgers in the portal; disabling it suspends those connections. | `firm_integrations.mode = firm_app` | `firm connection` (for this) |
+| Catalogue import | An operator's reviewed load of catalogue content (dry run, apply, log with the document's SHA-256); the only way catalogue rows change. | `integration_catalog_imports` | `catalogue deploy` |
+| OAuth state | The hashed, single-use, 10-minute state a connect flow carries, bound to the person, scope and catalogue key. | `integration_oauth_states` | — |
+
+Alias line: chapter 03's `integration_catalogue` and `integration_installs` are this repository's `integration_catalog` and `firm_integrations`.

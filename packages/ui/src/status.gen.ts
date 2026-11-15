@@ -3614,6 +3614,11 @@ export const STATUS_REGISTRY = {
       "variant": null,
       "terminal": false,
       "derived": false,
+      "contextLabels": {
+        "tile": "✓ Connected",
+        "as_you": "✓ Connected as you",
+        "connecting": "Connecting…"
+      },
       "disc": "check_olive"
     },
     "needs_attention": {
@@ -3642,6 +3647,30 @@ export const STATUS_REGISTRY = {
     },
     "paused": {
       "label": "Paused",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "integration_listing": {
+    "available": {
+      "label": "Available",
+      "variant": "outline",
+      "terminal": false,
+      "derived": false
+    },
+    "coming_soon": {
+      "label": "Coming soon",
+      "variant": "soon",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "notify": "Notify me",
+        "recorded": "We'll let you know"
+      }
+    },
+    "hidden": {
+      "label": "Hidden",
       "variant": "muted",
       "terminal": false,
       "derived": false

@@ -993,12 +993,19 @@ objects:
     codes:
       available:    {label: "Available",  variant: outline, terminal: false, derived: false, client_label: "Not connected"}   # POR-16 a: a catalogue card with no connection (A-02-T06, C20 v1)
       connecting:   {label: "Connecting", variant: null, disc: spinner, terminal: false, derived: false}
-      connected:    {label: "Connected",  variant: null, disc: check_olive, terminal: false, derived: false}
+      connected:    {label: "Connected",  variant: null, disc: check_olive, terminal: false, derived: false, context_labels: {tile: "✓ Connected", as_you: "✓ Connected as you", connecting: "Connecting…"}}   # W-01-T02: viewer-relative words on WB-10
       needs_attention: {label: "Needs attention", variant: amber, terminal: false, derived: false}   # blueprint canonical state Degraded; split from needs_reauth on failure code
       needs_reauth: {label: "Needs reauth", variant: amber, terminal: false, derived: false}   # failure codes token_expired / invalid_grant
       disconnected: {label: "Disconnected", variant: neutral, terminal: false, derived: false}   # neutral, not red
       coming_soon:  {label: "Coming soon", variant: soon, terminal: false, derived: false}
       paused:       {label: "Paused", variant: muted, terminal: false, derived: false}   # DF-31; variant not specified in the sources, muted proposed
+
+  integration_listing:   # integration_catalog.listing_status (W-01-T02; C20 v2): the content's listing, before honesty
+    source: "W-01 §4.2; SPEC-659 AC-4"
+    codes:
+      available:   {label: "Available", variant: outline, terminal: false, derived: false}
+      coming_soon: {label: "Coming soon", variant: soon, terminal: false, derived: false, context_labels: {notify: "Notify me", recorded: "We'll let you know"}}
+      hidden:      {label: "Hidden", variant: muted, terminal: false, derived: false}   # never listed
 
   agent_template:
     source: "blueprint 3.3.1"

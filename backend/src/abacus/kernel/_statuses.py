@@ -825,6 +825,12 @@ class IntegrationStatus(StrEnum):
     PAUSED = "paused"
 
 
+class IntegrationListingStatus(StrEnum):
+    AVAILABLE = "available"
+    COMING_SOON = "coming_soon"
+    HIDDEN = "hidden"
+
+
 class AgentTemplateStatus(StrEnum):
     AVAILABLE = "available"
     INSTALLED = "installed"
@@ -2200,6 +2206,11 @@ STORED: dict[str, tuple[str, ...]] = {
         "disconnected",
         "coming_soon",
         "paused",
+    ),
+    "integration_listing": (
+        "available",
+        "coming_soon",
+        "hidden",
     ),
     "agent_template": (
         "available",
