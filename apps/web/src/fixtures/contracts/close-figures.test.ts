@@ -100,10 +100,21 @@ const BOOK = JSON.parse(
       "brightwater_hale",
       "copperleaf_close_figures.json",
     ),
-    "utf-8",
+    "utf8",
   ),
 ) as Book;
 const cents = (s: string | null | undefined) => Math.round(Number(s) * 100);
+
+function nth<T>(xs: readonly T[], i: number): T {
+  const found = xs[i];
+  if (found === undefined) throw new Error(`no item ${String(i)}`);
+  return found;
+}
+
+function found<T>(x: T | undefined): T {
+  if (x === undefined) throw new Error("not found");
+  return x;
+}
 
 describe("CLS-01 portfolio", () => {
   const list = closesPortfolio();
@@ -124,8 +135,10 @@ describe("CLS-01 portfolio", () => {
 
   it("every row matches the book", () => {
     closeRows().forEach((row, i) => {
-      const [client, status, rec, total, issues, due, pastDue, prep, rev, running] =
-        BOOK.portfolio.rows[i]!;
+      const [client, status, rec, total, issues, due, pastDue, prep, rev, running] = nth(
+        BOOK.portfolio.rows,
+        i,
+      );
       expect([row.client_name, row.status, row.accounts_reconciled, row.accounts_total]).toEqual([
         client,
         status,
@@ -153,7 +166,7 @@ describe("CLS-01 portfolio", () => {
     expect(
       closesPortfolio((r) => r.days_past_due != null).items.map((r) => r.client_name),
     ).toEqual([BOOK.client, "Bluebird Bakery Co."]);
-    expect(closesPortfolio((r) => r.attest).items).toHaveLength(0);
+    expect(closesPortfolio((r) => r.attest === true).items).toHaveLength(0);
   });
 });
 
@@ -168,7 +181,7 @@ describe("CLS-02 record and runs", () => {
       BOOK.record.accounts_total,
     ]);
     expect(rec.days_past_due).toBe(BOOK.record.days_past_due);
-    expect(closeRows()[0]!.reconciled_pct).toBe(BOOK.record.reconciled_pct);
+    expect(nth(closeRows(), 0).reconciled_pct).toBe(BOOK.record.reconciled_pct);
   });
 
   it("Run 2 = 2 + 3 + 2 + 1 + 1 = 9, 6 done, 3 at once, 4 open items", () => {
@@ -241,7 +254,7 @@ describe("CLS-10 flux", () => {
     expect(flux.tested).toBe(BOOK.flux.tested);
     expect(flux.lines.filter((l) => l.test === "over_both")).toHaveLength(BOOK.flux.over);
     flux.lines.forEach((line, i) => {
-      const [key, caption, prior, current, test] = BOOK.flux.lines[i]!;
+      const [key, caption, prior, current, test] = nth(BOOK.flux.lines, i);
       expect([
         line.line_key,
         line.caption,
@@ -253,13 +266,15 @@ describe("CLS-10 flux", () => {
   });
 
   it("Payroll +7,670 (12.5%) = 4,350 + 1,850 + 1,470; Repairs +2,560 (400.0%)", () => {
-    const payroll = flux.lines.find((l) => l.line_key === "payroll")!;
+    const payroll = found(flux.lines.find((l) => l.line_key === "payroll"));
     expect([cents(payroll.change), payroll.change_pct]).toEqual([767_000, "12.5"]);
-    expect(payroll.drivers!.reduce((n, d) => n + cents(d.amount), 0)).toBe(cents(payroll.change));
-    expect(payroll.drivers!.map((d) => [d.label, String(cents(d.amount) / 100)])).toEqual(
+    expect((payroll.drivers ?? []).reduce((n, d) => n + cents(d.amount), 0)).toBe(
+      cents(payroll.change),
+    );
+    expect((payroll.drivers ?? []).map((d) => [d.label, String(cents(d.amount) / 100)])).toEqual(
       BOOK.flux.payroll_drivers,
     );
-    const repairs = flux.lines.find((l) => l.line_key === "repairs_maintenance")!;
+    const repairs = found(flux.lines.find((l) => l.line_key === "repairs_maintenance"));
     expect([cents(repairs.change), repairs.change_pct, repairs.status]).toEqual([
       256_000,
       "400.0",

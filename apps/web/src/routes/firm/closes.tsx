@@ -11,10 +11,101 @@ import { appRoute, lazyScreen } from "../root";
 // screen has its own builder (link contract rule 2): Overview `/closes/$closeId` (CLS-02), Intake
 // (CLS-03), Accounts (CLS-04) and an account's reconciliation (CLS-05), Review (CLS-06) and Flux
 // (CLS-10); the plan editor sits at `/close-plans/$clientId` (CLS-09). Any other tab slug is
-// validated in beforeLoad and lands on Overview. `/closes` stays the area landing until CLS-01
-// (C-01-T33) routes it. Deliverables (CLS-08) is C-02's: its tab renders disabled (DV-6).
+// validated in beforeLoad and lands on Overview. `/closes` is CLS-01 (C-01-T33). Deliverables (CLS-08) is C-02's: its tab renders disabled (DV-6).
 
 const Shell = lazyScreen(async () => (await import("../../screens/CLS-02")).CloseShell);
+const Index = lazyScreen(async () => (await import("../../screens/CLS-01")).CLS01);
+
+// CLS-01 (C-01-T33): `/closes` behind `closes.engine`. The filters are the search params
+// (`period`, `status`, `preparer`, `reviewer`, `attest`, `q`), so a filtered view is a link. The
+// words are kept here because routes never reach into a domain.
+const PERIODS = ["2026-06", "2026-07", "2026-08", "2026-09"] as const;
+const STATUSES = ["not_started", "in_progress", "in_review", "delivered", "past_due"] as const;
+const one = <T extends string>(list: readonly T[], v: unknown): v is T =>
+  typeof v === "string" && (list as readonly string[]).includes(v);
+
+interface ClosesSearch {
+  period?: (typeof PERIODS)[number];
+  status?: (typeof STATUSES)[number];
+  preparer?: string;
+  reviewer?: string;
+  attest?: boolean;
+  q?: string;
+}
+
+function validateClosesSearch(search: Record<string, unknown>): ClosesSearch {
+  const text = (v: unknown): string | undefined =>
+    typeof v === "string" && v !== "" ? v : undefined;
+  const out: ClosesSearch = {};
+  if (one(PERIODS, search.period)) out.period = search.period;
+  if (one(STATUSES, search.status)) out.status = search.status;
+  const preparer = text(search.preparer);
+  if (preparer !== undefined) out.preparer = preparer;
+  const reviewer = text(search.reviewer);
+  if (reviewer !== undefined) out.reviewer = reviewer;
+  if (search.attest === true || search.attest === "true") out.attest = true;
+  const q = text(search.q);
+  if (q !== undefined) out.q = q;
+  return out;
+}
+
+export const closesIndexRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/closes",
+  validateSearch: validateClosesSearch,
+  component: function ClosesIndexPage(): JSX.Element {
+    const enabled = useFlag("closes.engine") === true;
+    const search = closesIndexRoute.useSearch();
+    const navigate = useNavigate();
+    if (!enabled) {
+      return (
+        <div data-screen="CLS-01" className="flex min-h-0 flex-1 flex-col">
+          <FlagOffState flag="closes.engine" label="Closes" />
+        </div>
+      );
+    }
+    const filters = {
+      period: search.period ?? "2026-08",
+      status: search.status ?? null,
+      preparer: search.preparer ?? null,
+      reviewer: search.reviewer ?? null,
+      attest: search.attest ?? null,
+      q: search.q ?? "",
+    };
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <Index
+          filters={filters}
+          onFilters={(next) =>
+            void navigate({
+              to: "/closes",
+              search: {
+                ...(next.period === "2026-08" ? {} : { period: next.period }),
+                ...(next.status === null ? {} : { status: next.status }),
+                ...(next.preparer === null ? {} : { preparer: next.preparer }),
+                ...(next.reviewer === null ? {} : { reviewer: next.reviewer }),
+                ...(next.attest === null ? {} : { attest: next.attest }),
+                ...(next.q.trim() === "" ? {} : { q: next.q }),
+              },
+              replace: true,
+            })
+          }
+          onOpen={(closeId) => {
+            void navigate({ to: "/closes/$closeId", params: { closeId } });
+          }}
+          onStartRun={(closeId) => {
+            void navigate({ to: "/closes/$closeId", params: { closeId } });
+          }}
+          onViewPlan={(row) => {
+            // CLS-09 is keyed by the client; the plan resolves its Monthly close engagement
+            // (DEC-5021).
+            void navigate({ to: "/close-plans/$clientId", params: { clientId: row.client_id } });
+          }}
+        />
+      </div>
+    );
+  },
+});
 
 type Tab = "overview" | "intake" | "accounts" | "review" | "deliverables";
 
@@ -45,8 +136,7 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
           go(id, tab);
         }}
         onBack={() => {
-          // `/closes` is the area landing until CLS-01 routes it (C-01-T33): an untyped href.
-          void router.navigate({ href: "/closes" });
+          void router.navigate({ to: "/closes" });
         }}
       />
     </div>
@@ -129,6 +219,7 @@ export const closePlanRoute = createRoute({
 });
 
 export const closeRoutes = [
+  closesIndexRoute,
   closeOverviewRoute,
   closeIntakeRoute,
   closeAccountsRoute,

@@ -321,6 +321,7 @@ async def list_closes(
             CloseRowOut(
                 close_id=c.work_item_id,
                 engagement_id=c.engagement_id,
+                client_id=f.client_id,
                 client_entity_id=c.client_entity_id,
                 client_name=f.client_name,
                 period=c.period,

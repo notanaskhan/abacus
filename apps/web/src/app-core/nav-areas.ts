@@ -35,7 +35,7 @@ const AREA_DATA: Readonly<Record<string, Omit<Area, "label">>> = {
   Binders: { landing: "BND-01", path: "/binders", routed: true },
   Notices: { landing: "NOT-01", path: "/notices", routed: true },
   Audits: { landing: "AUD-01", path: "/audits", routed: true, chord: "a" },
-  Closes: { landing: "CLS-01", path: "/closes", routed: false, chord: "c" },
+  Closes: { landing: "CLS-01", path: "/closes", routed: true, chord: "c" }, // C-01-T33
   Signatures: { landing: "SIG-01", path: "/signatures", routed: true },
 };
 

@@ -7,8 +7,8 @@ import type { Manifest } from "./types";
 export const clsScreens = {
   "CLS-01": {
     name: "Closes index — August 2026",
-    status: "planned",
-    path: null,
+    status: "fixture", // C-01-T33: a–f on the figure book's fixtures; live with C-01-T14's service
+    path: "/closes",
     navArea: "Closes",
   },
   "CLS-02": { name: "Close › Overview · run", status: "planned", path: "/closes/$closeId" },

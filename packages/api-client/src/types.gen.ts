@@ -10049,6 +10049,10 @@ export type CloseRowOut = {
      */
     client_entity_id: string | null;
     /**
+     * Client Id
+     */
+    client_id: string;
+    /**
      * Client Name
      */
     client_name: string;
