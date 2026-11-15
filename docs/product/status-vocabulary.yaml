@@ -365,6 +365,30 @@ objects:
       accrued_tie_out_shadow: {label: "Accrued tie-out (shadow)", variant: muted, terminal: false, derived: false}
       engine_import:          {label: "From CCH Axcess", variant: null, terminal: false, derived: false}
 
+  # ---- S44 end pass (DEC-5018): status fields the C-01 and T-07 stubs type ----
+  close_run:   # CloseRunOut.status, CloseRunHistoryItemOut.status (CLS-02 run header)
+    source: "C-01 §4.3 T04; CLS-02"
+    codes:
+      running:                  {label: "Running", variant: null, disc: spinner, terminal: false, derived: false}
+      needs_input:              {label: "Needs input", variant: amber, terminal: false, derived: false}
+      complete:                 {label: "Complete", variant: green, terminal: true, derived: false}
+      complete_with_exceptions: {label: "Complete with exceptions", variant: amber, terminal: true, derived: false}
+      failed:                   {label: "Failed", variant: null, disc: x_brick, terminal: true, derived: false}
+
+  connection_meter:   # MeterOut.state: the monthly QuickBooks call budget (C-01 QC-5)
+    source: "C-01 §3 QC-5; SPEC-655 AC-34"
+    codes:
+      ok:        {label: "Within budget", variant: muted, terminal: false, derived: false}
+      warning:   {label: "80% of the monthly budget", variant: amber, terminal: false, derived: false}
+      exhausted: {label: "Monthly budget reached", variant: red-tint, terminal: false, derived: false}
+
+  gift_form_709:   # gift_history_item_versions.form_709_status (TXT-04 d)
+    source: "T-07 §4.2 M2; TXT-04 d; SPEC-656 AC-13.4"
+    codes:
+      filed:        {label: "Filed", variant: green-tint, terminal: true, derived: false, context_labels: {on: "Filed {date}"}}
+      not_required: {label: "Not required", variant: muted, terminal: true, derived: false}
+      missing:      {label: "Missing", variant: amber, terminal: false, derived: false}
+
   # ---- C-01 close engine (C-01-T03; DF-23, DF-31; SPEC-655 AC-9 to AC-11, QC-6) ----
   # The six canonical close states are `close` above (blueprint 3.3.1); "On hold" is a side flag,
   # never a state, and there is no "Closed". CLS-01's four tiles count Approved under In review and
@@ -428,7 +452,7 @@ objects:
     codes:
       synced:       {label: "Synced {time} · next {next}", variant: null, terminal: false, derived: true}
       syncing:      {label: "Syncing…", variant: null, disc: spinner, terminal: false, derived: true}
-      rate_limited: {label: "rate limit · retrying {time}", variant: amber, terminal: false, derived: true}
+      rate_limited: {label: "Rate limit · retrying {time}", variant: amber, terminal: false, derived: true}
       needs_reauth: {label: "Needs reauth", variant: red-tint, terminal: false, derived: true}
       paused:       {label: "Paused · monthly QuickBooks call budget reached", variant: amber, terminal: false, derived: true}
       not_connected: {label: "Not connected", variant: muted, terminal: false, derived: true}

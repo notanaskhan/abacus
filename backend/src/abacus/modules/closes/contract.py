@@ -25,6 +25,7 @@ from fastapi import Depends, Header, Path, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import CLOSES_ENGINE
+from abacus.kernel._statuses import CloseRunStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
@@ -63,7 +64,7 @@ ReviewLevel = Literal["senior_signoff", "manager_approval"]
 Frequency = Literal["monthly", "quarterly", "annual"]
 PlanVersionStatus = Literal["draft", "published", "discarded"]
 RunScope = Literal["all", "group", "failed_only", "accounts"]
-RunStatus = Literal["running", "needs_input", "complete", "complete_with_exceptions", "failed"]
+RunStatus = CloseRunStatus  # the `close_run` registry object (DEC-5018)
 CloseAction = Literal[
     "close.assign",
     "close.status_move",

@@ -478,6 +478,7 @@ def test_ac20_the_app_may_update_only_the_declared_connection_and_run_columns() 
             "finished_at",
             "queued_reason",  # TASK-018b
             "estimated_start_at",
+            "api_calls",  # C-01-T10 (0882): the pull counts its QuickBooks API calls
         }
     )
 

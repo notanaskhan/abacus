@@ -24,6 +24,10 @@ from fastapi import Depends, Header, Path, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import CLOSES_ENGINE, CLOSES_PORTAL_REQUESTS
+from abacus.kernel._statuses import (
+    IssueStatus,
+    RequestCloseStatus,
+)
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
@@ -96,7 +100,7 @@ class RequestNodeOut(BaseModel):
     kind: Annotated[Literal["category", "request"], Internal]
     title: Annotated[str, Confidential]
     request_item_id: Annotated[UUID | None, Internal] = None
-    status: Annotated[str | None, Internal] = None  # `request_close` / `close_incorporation`
+    status: Annotated[RequestCloseStatus | None, Internal] = None  # `request_close` (DEC-5018)
     received: Annotated[int, Field(ge=0), Internal] = 0
     total: Annotated[int, Field(ge=0), Internal] = 0
     client_visible: Annotated[bool, Internal] = True  # bank-feed requests are internal (QC-1)
@@ -426,7 +430,7 @@ class CloseIssueOut(BaseModel):
     issue_class: Annotated[
         Literal["bank_rec", "schedule", "flux", "recategorize", "intake"], Internal
     ]
-    status: Annotated[str, Internal]  # P-04's issue words
+    status: Annotated[IssueStatus, Internal]  # P-04's issue words (DEC-5018)
     waiting_on_client: Annotated[bool, Internal] = False
     why_surfaced: Annotated[str | None, Confidential] = None  # mode `bank_rec` or a template
     account_external_id: Annotated[str | None, Internal] = None

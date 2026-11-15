@@ -1289,6 +1289,83 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "close_run": {
+    "running": {
+      "label": "Running",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "needs_input": {
+      "label": "Needs input",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "complete": {
+      "label": "Complete",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "complete_with_exceptions": {
+      "label": "Complete with exceptions",
+      "variant": "amber",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "x_brick"
+    }
+  },
+  "connection_meter": {
+    "ok": {
+      "label": "Within budget",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "warning": {
+      "label": "80% of the monthly budget",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "exhausted": {
+      "label": "Monthly budget reached",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "gift_form_709": {
+    "filed": {
+      "label": "Filed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "true": "Filed {date}"
+      }
+    },
+    "not_required": {
+      "label": "Not required",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "missing": {
+      "label": "Missing",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
   "close_flag": {
     "on_hold": {
       "label": "On hold",
@@ -1495,7 +1572,7 @@ export const STATUS_REGISTRY = {
       "disc": "spinner"
     },
     "rate_limited": {
-      "label": "rate limit · retrying {time}",
+      "label": "Rate limit · retrying {time}",
       "variant": "amber",
       "terminal": false,
       "derived": true

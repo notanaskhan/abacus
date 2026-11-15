@@ -27265,6 +27265,7 @@ export const instrumentQueryKey = (options: Options<InstrumentData>) => createQu
  * Instrument Route
  *
  * TXT-01: profile, instrument, segmentation, determinations, cited-by, reader (T-07-T12).
+ * The profile's EIN is TIN-tagged: the read goes through the one central mask (AC9.4).
  */
 export const instrumentOptions = (options: Options<InstrumentData>) => queryOptions<InstrumentResponse, InstrumentError, InstrumentResponse, ReturnType<typeof instrumentQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -27282,7 +27283,8 @@ export const instrumentOptions = (options: Options<InstrumentData>) => queryOpti
 /**
  * Instrument Attach Route
  *
- * Attach a client-level file as the governing instrument (AC-1.2; T-07-T12).
+ * Attach a client-level file as the governing instrument (AC-1.2; T-07-T12); answers the
+ * read, masked for an offshore reader (AC9.4).
  */
 export const instrumentAttachMutation = (options?: Partial<Options<InstrumentAttachData>>): UseMutationOptions<InstrumentAttachResponse, InstrumentAttachError, Options<InstrumentAttachData>> => {
     const mutationOptions: UseMutationOptions<InstrumentAttachResponse, InstrumentAttachError, Options<InstrumentAttachData>> = {

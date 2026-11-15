@@ -1364,6 +1364,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"raw_pulled_at", "source", "snapshot_id", "evidence_version_id"}
             | {"failure_code", "finished_at"}
             | {"queued_reason", "estimated_start_at"}  # TASK-018b
+            | {"api_calls"}  # C-01-T10 (0882): the pull counts its API calls
         ),
         "comment_reads": frozenset({"last_read_at"}),  # SPEC-032 (TASK-062)
         "gl_imports": frozenset(  # SPEC-034 (TASK-069)
@@ -2578,6 +2579,93 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "work_item_id",
             }
         ),
+        # C-01-T09 (0881, DEC-5004): the close lifecycle, plans and procedures.
+        "closes": frozenset(
+            {
+                "client_entity_id",
+                "close_plan_version_id",
+                "due_on",
+                "locked_at",
+                "on_hold",
+                "on_hold_reason",
+                "plan_pinned_at",
+                "requests_publish_on",
+                "row_version",
+                "run_no",
+                "status",
+            }
+        ),
+        "close_plans": frozenset({"close_due_business_day", "template_key"}),
+        "close_plan_versions": frozenset(
+            {
+                "change_note",
+                "effective_from",
+                "publish_requested_at",
+                "publish_requested_by",
+                "published_actor_kind",
+                "published_at",
+                "published_by",
+                "row_version",
+                "status",
+            }
+        ),
+        "close_plan_rows": frozenset(
+            {
+                "account_class",
+                "account_external_id",
+                "account_name",
+                "adopted_at",
+                "adopted_by",
+                "evidence_required",
+                "frequency",
+                "method",
+                "position",
+                "procedure",
+                "review_level",
+                "source",
+                "threshold_ref",
+            }
+        ),
+        "close_request_templates": frozenset(
+            {"category_path", "client_visible", "due_business_day", "source_row_ids", "title"}
+        ),
+        "close_procedures": frozenset(
+            {"failure_code", "finished_at", "meta", "open_count", "started_at", "status"}
+        ),
+        # C-01-T10 (0882): the hourly read's schedules and meter.
+        "sync_schedules": frozenset(
+            {"business_hours", "cadence", "cdc_cursor", "next_run_at", "paused_reason"}
+        ),
+        "connection_meter_usage": frozenset({"budget", "calls", "updated_at"}),
+        # T-07-T07 (0883, DEC-5010): trust profiles update their facts, interpretations their
+        # lifecycle.
+        "trust_profiles": frozenset(
+            {
+                "agreement_date",
+                "irrevocable_since",
+                "remainder_sealed",
+                "residency_basis",
+                "residency_state",
+                "revocable",
+                "row_version",
+                "settlor_died_year",
+                "settlor_name_sealed",
+                "state_form",
+            }
+        ),
+        "instrument_interpretations": frozenset(
+            {
+                "content_hash",
+                "locked_at",
+                "read_run_id",
+                "reopen_reason_sealed",
+                "row_version",
+                "scenario",
+                "status",
+                "superseded_at",
+                "version_no",
+            }
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -2599,6 +2687,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
         | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
         | {"label"}  # A-02-T04 (0149); `source_kind` is generated
+        | {"period_kind", "period"}  # C-01-T10 (0882): month snapshots for CAS closes
         | {"source_evidence_version_id", "extraction_run_id"}  # A-05-T28 (0659, DEC-2208)
     )
     assert sc.APP_INSERT_COLUMNS["trial_balance_lines"] == frozenset(

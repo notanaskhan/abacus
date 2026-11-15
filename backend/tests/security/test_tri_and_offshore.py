@@ -83,6 +83,10 @@ TIN_ROUTES = {
     ("GET", "/v1/tax-returns/{return_id}/general-information"): "masked",
     ("GET", "/v1/tax-returns/{return_id}/partners"): "masked",
     ("PUT", "/v1/tax-returns/{return_id}/ownership"): "masked",
+    # T-07-T05 (S44 stubs; DEC-5016): TXT-01's trust profile carries the EIN as `MaskedTinOut`,
+    # through the offshore mask once T-07-T12 builds the read.
+    ("GET", "/v1/tax/returns/{return_id}/instrument"): "masked",
+    ("POST", "/v1/tax/returns/{return_id}/instrument"): "masked",
 }
 
 

@@ -12545,14 +12545,13 @@
           "package_status": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/K1PackageStatus"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "internal",
-            "title": "Package Status"
+            "cls": "internal"
           },
           "payments": {
             "cls": "internal",
@@ -21093,9 +21092,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/IssueStatus",
+            "cls": "internal"
           },
           "title": {
             "cls": "confidential",
@@ -21893,16 +21891,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "running",
-              "needs_input",
-              "complete",
-              "complete_with_exceptions",
-              "failed"
-            ],
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/CloseRunStatus",
+            "cls": "internal"
           },
           "total": {
             "cls": "internal",
@@ -21994,16 +21984,8 @@
             "cls": "internal"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "running",
-              "needs_input",
-              "complete",
-              "complete_with_exceptions",
-              "failed"
-            ],
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/CloseRunStatus",
+            "cls": "internal"
           },
           "total": {
             "cls": "internal",
@@ -22026,6 +22008,17 @@
         ],
         "title": "CloseRunOut",
         "type": "object"
+      },
+      "CloseRunStatus": {
+        "enum": [
+          "running",
+          "needs_input",
+          "complete",
+          "complete_with_exceptions",
+          "failed"
+        ],
+        "title": "CloseRunStatus",
+        "type": "string"
       },
       "CloseRunsOut": {
         "additionalProperties": false,
@@ -24711,6 +24704,15 @@
         ],
         "title": "ConnectionDisconnectIn",
         "type": "object"
+      },
+      "ConnectionMeterStatus": {
+        "enum": [
+          "ok",
+          "warning",
+          "exhausted"
+        ],
+        "title": "ConnectionMeterStatus",
+        "type": "string"
       },
       "ConnectionOut": {
         "properties": {
@@ -41338,15 +41340,15 @@
             "cls": "internal",
             "title": "Issue Id"
           },
+          "jurisdiction": {
+            "cls": "internal",
+            "title": "Jurisdiction",
+            "type": "string"
+          },
           "required": {
             "cls": "internal",
             "title": "Required",
             "type": "boolean"
-          },
-          "state": {
-            "cls": "internal",
-            "title": "State",
-            "type": "string"
           },
           "status": {
             "cls": "internal",
@@ -41356,7 +41358,7 @@
           }
         },
         "required": [
-          "state",
+          "jurisdiction",
           "required",
           "status",
           "issue_id"
@@ -51744,6 +51746,15 @@
         "title": "GeneratedVersionOut",
         "type": "object"
       },
+      "GiftForm709Status": {
+        "enum": [
+          "filed",
+          "not_required",
+          "missing"
+        ],
+        "title": "GiftForm709Status",
+        "type": "string"
+      },
       "GiftHistoryEditIn": {
         "additionalProperties": false,
         "properties": {
@@ -51780,14 +51791,8 @@
             "title": "Filed On"
           },
           "form_709_status": {
-            "cls": "internal",
-            "enum": [
-              "filed",
-              "not_required",
-              "missing"
-            ],
-            "title": "Form 709 Status",
-            "type": "string"
+            "$ref": "#/components/schemas/GiftForm709Status",
+            "cls": "internal"
           },
           "gift_amount": {
             "anyOf": [
@@ -51864,14 +51869,8 @@
             "title": "Filed On"
           },
           "form_709_status": {
-            "cls": "internal",
-            "enum": [
-              "filed",
-              "not_required",
-              "missing"
-            ],
-            "title": "Form 709 Status",
-            "type": "string"
+            "$ref": "#/components/schemas/GiftForm709Status",
+            "cls": "internal"
           },
           "gift_amount": {
             "anyOf": [
@@ -51951,14 +51950,8 @@
             "title": "Filed On"
           },
           "form_709_status": {
-            "cls": "internal",
-            "enum": [
-              "filed",
-              "not_required",
-              "missing"
-            ],
-            "title": "Form 709 Status",
-            "type": "string"
+            "$ref": "#/components/schemas/GiftForm709Status",
+            "cls": "internal"
           },
           "gift_amount": {
             "cls": "restricted",
@@ -74018,14 +74011,8 @@
             "type": "string"
           },
           "state": {
-            "cls": "internal",
-            "enum": [
-              "ok",
-              "warning",
-              "exhausted"
-            ],
-            "title": "State",
-            "type": "string"
+            "$ref": "#/components/schemas/ConnectionMeterStatus",
+            "cls": "internal"
           }
         },
         "required": [
@@ -91614,6 +91601,17 @@
         "title": "RepresentationToggleIn",
         "type": "object"
       },
+      "RequestCloseStatus": {
+        "enum": [
+          "requested",
+          "received",
+          "matched",
+          "pending_incorporation",
+          "incorporated"
+        ],
+        "title": "RequestCloseStatus",
+        "type": "string"
+      },
       "RequestDraftOut": {
         "description": "A C5 request **draft** (SHL-14 prefill); a person sends it.",
         "properties": {
@@ -92651,14 +92649,13 @@
           "status": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/RequestCloseStatus"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "internal",
-            "title": "Status"
+            "cls": "internal"
           },
           "title": {
             "cls": "confidential",
@@ -301570,7 +301567,7 @@
     },
     "/v1/tax/returns/{return_id}/instrument": {
       "get": {
-        "description": "TXT-01: profile, instrument, segmentation, determinations, cited-by, reader (T-07-T12).",
+        "description": "TXT-01: profile, instrument, segmentation, determinations, cited-by, reader (T-07-T12).\nThe profile's EIN is TIN-tagged: the read goes through the one central mask (AC9.4).",
         "operationId": "instrument",
         "parameters": [
           {
@@ -301685,7 +301682,7 @@
         "x-abacus-action": "instrument.read"
       },
       "post": {
-        "description": "Attach a client-level file as the governing instrument (AC-1.2; T-07-T12).",
+        "description": "Attach a client-level file as the governing instrument (AC-1.2; T-07-T12); answers the\nread, masked for an offshore reader (AC9.4).",
         "operationId": "instrument_attach",
         "parameters": [
           {

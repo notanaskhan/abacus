@@ -27,6 +27,7 @@ from abacus.kernel._flags import TAX_FIDUCIARY_K1_RELEASE, TAX_FIDUCIARY_WORKPAP
 from abacus.kernel._statuses import (
     InstrumentInterpretationStatus,
     InstrumentSegmentationStatus,
+    K1PackageStatus,
     SixtyFiveDayElectionStatus,
     TieOutTallyStatus,
 )
@@ -587,7 +588,7 @@ class BeneficiaryRowOut(BaseModel):
     box_2b: Money  # qualified dividends
     delivery: Annotated[Delivery, Internal]
     package_id: Annotated[UUID | None, Internal]
-    package_status: Annotated[str | None, Internal]  # T-02's `k1_package` code
+    package_status: Annotated[K1PackageStatus | None, Internal]  # T-02's `k1_package` code
 
 
 class BeneficiaryTotalsOut(BaseModel):
