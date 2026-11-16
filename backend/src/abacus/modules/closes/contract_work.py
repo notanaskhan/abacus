@@ -461,7 +461,8 @@ class TransactionQuestionIn(BaseModel):
 
     model_config = _cfg()
 
-    template_id: Annotated[UUID, Internal]
+    # C-01-T24 (DEC-5301): the firm template's key, as `transaction_questions` holds it.
+    template_id: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{1,79}$"), Internal]
     template_version: Annotated[int, Field(ge=1), Internal]
     client_wording: Annotated[str, Field(min_length=1, max_length=2000), Confidential]
     assignee_contact_id: Annotated[UUID, Internal]
@@ -803,7 +804,11 @@ async def close_issues_route(
 ) -> CloseIssuesOut:
     """CLS-06's queue facets and badge (C-01-T24)."""
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import issues
+
+    return await issues.close_issues(
+        ctx, close_id, issue_class=issue_class, include_resolved=include_resolved
+    )
 
 
 @close_work_router.post(
@@ -821,7 +826,9 @@ async def ask_transaction_question_route(
     await _human_route(ctx, "transaction_question.send")
     if not await flag_enabled(ctx.tenant, CLOSES_PORTAL_REQUESTS):
         raise NotFound(CLOSES_PORTAL_REQUESTS.name)
-    _not_yet()
+    from abacus.modules.closes import issues
+
+    return await issues.ask_question(ctx, issue_id, body)
 
 
 @close_work_router.get(f"{_C}/flux", action="flux.read", response_model=FluxSetOut, errors=(501,))

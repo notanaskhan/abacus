@@ -205,6 +205,15 @@ from abacus.modules.requests.source_documents import (
     source_documents,
 )
 
+# C-01-T24: transaction questions, the shared API (closes asks; the portal answers).
+from abacus.modules.requests.transaction_questions import (
+    QuestionAlreadyAnswered,
+    QuestionRow,
+    questions_for,
+)
+from abacus.modules.requests.transaction_questions import answer as answer_transaction_question
+from abacus.modules.requests.transaction_questions import ask as ask_transaction_question
+
 # P-07-T25 (C5): CLI-04 records, ends and counts a contact's delegated requests through this.
 register_contact_delegations(
     record_contact_delegations, end_contact_delegations, contact_delegations
@@ -329,6 +338,8 @@ __all__ = [
     "PortalCategory",
     "PortalItem",
     "PortalLink",
+    "QuestionAlreadyAnswered",
+    "QuestionRow",
     "QuestionnaireSummary",
     "RequestItemClassified",
     "RequestItemCreated",
@@ -349,7 +360,9 @@ __all__ = [
     "VoidedRuleLink",
     "add_request_item",
     "answer_effect_handler",
+    "answer_transaction_question",
     "apply_drafted_guidance",
+    "ask_transaction_question",
     "assign_template_owner",
     "attach_organizer",
     "awaiting_review",
@@ -410,6 +423,7 @@ __all__ = [
     "questionnaire_from_template",
     "questionnaire_templates",
     "questionnaires_of_list",
+    "questions_for",
     "read_item",
     "read_item_versions",
     "refuse_closed_item",

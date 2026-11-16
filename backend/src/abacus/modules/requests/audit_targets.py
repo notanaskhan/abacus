@@ -32,6 +32,11 @@ _TEXT_OWNERS = {
         "SELECT q.id, n.engagement_id FROM questions q JOIN questionnaires n "
         "ON n.id = q.questionnaire_id WHERE q.id = ANY(:ids)"
     ),
+    # C-01-T24: a transaction question is its work item's engagement's.
+    "transaction_question": text(
+        "SELECT q.id, w.engagement_id FROM transaction_questions q JOIN work_items w "
+        "ON w.id = q.work_item_id WHERE q.id = ANY(:ids)"
+    ),
 }
 AUDIT_KINDS = frozenset(_OWNERS) | frozenset(_TEXT_OWNERS)
 
