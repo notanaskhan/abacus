@@ -73,9 +73,11 @@ def upgrade() -> None:
             tenant_id uuid NOT NULL,
             {_WI},
             number integer NOT NULL CHECK (number > 0),
-            type text NOT NULL CHECK (type IN ('bank', 'accounts_receivable', 'accounts_payable', 'other')),
+            type text NOT NULL
+                CHECK (type IN ('bank', 'accounts_receivable', 'accounts_payable', 'other')),
             form text NOT NULL DEFAULT 'positive' CHECK (form = 'positive'),
-            channel text NOT NULL CHECK (channel IN ('accrued_link', 'network_recorded', 'mail_recorded')),
+            channel text NOT NULL
+                CHECK (channel IN ('accrued_link', 'network_recorded', 'mail_recorded')),
             status text NOT NULL DEFAULT 'draft' CHECK (status IN ({_STATUS})),
             respondent_name_sealed bytea NOT NULL,
             respondent_org text NOT NULL CHECK (length(respondent_org) BETWEEN 1 AND 200),
@@ -194,7 +196,8 @@ def upgrade() -> None:
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
             confirmation_id uuid NOT NULL,
-            decision text NOT NULL CHECK (decision IN ('accept_reconciliation', 'exception', 'close')),
+            decision text NOT NULL CHECK (decision IN ('accept_reconciliation', 'exception',
+            'close')),
             decided_by uuid NOT NULL,
             actor_kind text NOT NULL CHECK (actor_kind = 'human'),
             content_hash text NOT NULL CHECK (content_hash ~ '^[0-9a-f]{64}$'),
@@ -217,26 +220,65 @@ def upgrade() -> None:
     )
     _lock(
         "confirmations",
-        ("tenant_id", "engagement_id", "work_item_id", "number", "type", "channel",
-         "respondent_name_sealed", "respondent_org", "address_sealed", "address_sha256",
-         "sample_item_ref", "tb_account_refs", "created_by"),
+        (
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "number",
+            "type",
+            "channel",
+            "respondent_name_sealed",
+            "respondent_org",
+            "address_sealed",
+            "address_sha256",
+            "sample_item_ref",
+            "tb_account_refs",
+            "created_by",
+        ),
         ("status", "row_version"),
-    )  # fmt: skip
+    )
     _lock(
         "confirmation_lines",
-        ("tenant_id", "confirmation_id", "position", "description", "account_last4", "book_amount"),
+        (
+            "tenant_id",
+            "confirmation_id",
+            "position",
+            "description",
+            "account_last4",
+            "book_amount",
+        ),
     )
     _lock(
         "address_verifications",
-        ("tenant_id", "confirmation_id", "method", "sources", "independent", "citation_ids",
-         "address_sha256", "verified_by", "actor_kind"),
-    )  # fmt: skip
-    _lock("confirmation_events", ("tenant_id", "confirmation_id", "kind", "actor_kind", "actor_id"))
+        (
+            "tenant_id",
+            "confirmation_id",
+            "method",
+            "sources",
+            "independent",
+            "citation_ids",
+            "address_sha256",
+            "verified_by",
+            "actor_kind",
+        ),
+    )
+    _lock(
+        "confirmation_events", ("tenant_id", "confirmation_id", "kind", "actor_kind", "actor_id")
+    )
     _lock(
         "confirmation_responses",
-        ("tenant_id", "confirmation_id", "via", "agrees", "respondent_name_sealed",
-         "confirmed_total", "explanation_sealed", "attested", "attachment_version_ids"),
-    )  # fmt: skip
+        (
+            "tenant_id",
+            "confirmation_id",
+            "via",
+            "agrees",
+            "respondent_name_sealed",
+            "confirmed_total",
+            "explanation_sealed",
+            "attested",
+            "attachment_version_ids",
+        ),
+    )
     _lock(
         "reconciliation_items",
         ("tenant_id", "confirmation_id", "kind", "amount", "citation_ids", "created_by"),

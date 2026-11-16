@@ -2,7 +2,7 @@
 id: TASK-8083
 title: "A-08-T15: Link principals (red): migration 0893, authenticator, page credential, email OTP"
 spec: SPEC-657
-acceptance_criteria: [F6, F7]
+acceptance_criteria: [AC-6, AC-7]
 risk_zone: red
 status: in-review
 branch: a08-t15-link-principals

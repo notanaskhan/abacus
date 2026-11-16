@@ -17,6 +17,7 @@ import {
   type Actor,
   AgentMonogram,
   Button,
+  Drawer,
   HumanAction,
   Icon,
   IconButton,
@@ -32,6 +33,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useId, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useOpenOverlay } from "../../app-core/open";
+import type { OverlayRenderProps } from "../../app-core/overlays";
 import { useOpenSourceViewer } from "../../app-core/overlay-host";
 import { useSession } from "../../app-core/session";
 import { COPY } from "./copy";
@@ -683,5 +685,24 @@ export function ProvenanceTray({
       initialCollapsed={initialCollapsed}
       className={className}
     />
+  );
+}
+
+/** SHL-09 over any host (`?ov=provenance:<type>:<id>:<fieldKey>`): the tray in a drawer, for a
+ * figure that has no anchored ⓘ host of its own (AUD-33's consolidated lines). */
+export function ProvenanceLayer({ ref, close }: OverlayRenderProps): JSX.Element | null {
+  const [type, id, fieldKey] = ref.args;
+  if (type === undefined || id === undefined || fieldKey === undefined) return null;
+  return (
+    <Drawer
+      open
+      onOpenChange={(next) => {
+        if (!next) close();
+      }}
+      title={COPY.label}
+      width={420}
+    >
+      <ProvenanceTray field={{ type, id, fieldKey }} />
+    </Drawer>
   );
 }

@@ -2,7 +2,7 @@
 id: TASK-8085
 title: "A-08-T20: Shared dual-threshold flux engine (workpapers/compute/flux.py)"
 spec: SPEC-657
-acceptance_criteria: [F3]
+acceptance_criteria: [AC-3]
 risk_zone: amber
 status: in-review
 branch: a08-t20-flux-engine

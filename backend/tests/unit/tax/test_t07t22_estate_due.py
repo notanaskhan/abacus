@@ -12,11 +12,7 @@ from abacus.modules.tax import estate_service
 
 
 @pytest.mark.asyncio
-async def test_ac141_the_due_chip(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def no_rule(*_: object, **__: object) -> object:
-        raise LookupError("due_date_rules:706")
-
-    monkeypatch.setattr(estate_service, "due_dates_for", no_rule)
+async def test_ac141_the_due_chip() -> None:
     chip = await estate_service.due_chip(2026, date(2026, 2, 2))
     assert (chip.due_on, chip.extension_to) == (date(2026, 11, 2), date(2027, 5, 3))
     assert chip.form_8971_due_on == date(2026, 12, 2)

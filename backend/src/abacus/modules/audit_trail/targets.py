@@ -39,6 +39,10 @@ FIRM_LEVEL: Final = frozenset(
     {
         "firm",
         "user",
+        # A-08-T15: a public link principal; its subject's events carry the engagement.
+        "link_principal",
+        # T-07-T22: a gift history row is the client entity's, read through its estate return.
+        "gift_history_item",
         "search_index",  # P-02-T06: a firm's search index (reindex requested and completed)
         "realtime",  # P-10-T27: an outbox event's invalidation with no row of its own
         "staff_invitation",

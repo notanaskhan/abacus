@@ -24,6 +24,8 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useId, useMemo, useState } from "react";
+import { useOpenOverlay } from "../../app-core/open";
+import { ov } from "../../routes/to";
 import { COPY } from "./copy";
 
 // AUD-32 Consolidation setup (A-09-T14; SPEC-658; handoff AUD-32): the O6 wizard over AUD-02, on
@@ -515,6 +517,7 @@ export function AUD32({
 }: Aud32Props): JSX.Element {
   const path = { work_item_id: workItemId, consolidation_id: consolidationId };
   const client = useQueryClient();
+  const openOverlay = useOpenOverlay();
   const read = useQuery(groupGetConsolidationOptions({ path }));
   const [step, setStep] = useState<Aud32Step>(initial);
   const [reasonFor, setReasonFor] = useState<TrialBalanceSlotOut | null>(null);
@@ -527,7 +530,14 @@ export function AUD32({
   const finalize = useMutation({
     ...groupFinalizeMutation(),
     onSuccess: () => {
-      toast.show({ kind: "success", text: COPY.toast });
+      toast.show({
+        kind: "success",
+        text: COPY.toast,
+        action: COPY.view,
+        onAction: () => {
+          openOverlay(ov.AUD33(workItemId, consolidationId));
+        },
+      });
       refresh();
     },
   });

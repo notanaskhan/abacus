@@ -11,13 +11,15 @@ from abacus.modules.assurance import confirmations_contract as cc
 
 
 @pytest.mark.asyncio
-async def test_ac_unknown_expired_and_revoked_are_indistinguishable(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_ac_unknown_expired_and_revoked_are_indistinguishable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     async def nothing(token: str) -> None:
         return None
 
     monkeypatch.setattr(cc, "_fixture_mode", lambda: False)
     monkeypatch.setattr(cc, "resolve_link", nothing)
-    answers = []
+    answers: list[tuple[dict[str, object], bool]] = []
     for token in ("unknown-token-aaaaaaaa", "expired-token-bbbbbbbb", "revoked-token-cccccccc"):
         started = time.monotonic()
         view = await cc.respondent_view(token)

@@ -222,6 +222,9 @@ from abacus.modules.evidence.match_material import (
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
 from abacus.modules.evidence.ocr_contract import ocr_router
+
+# T-07-T16: a statement's extracted tables, for the trust import (callers hold ctx).
+from abacus.modules.evidence.ocr_reads import extracted_tables
 from abacus.modules.evidence.pii import column_families, masked_rows, pii_scan_upload
 from abacus.modules.evidence.pii_facts import tin_exposure
 from abacus.modules.evidence.portal_files import (
@@ -728,6 +731,7 @@ __all__ = [
     "extract_isolated",
     "extract_version",
     "extracted_fields_of",
+    "extracted_tables",
     "file_approved_copy",
     "file_copy_onto_work_item",
     "file_engine_copy",

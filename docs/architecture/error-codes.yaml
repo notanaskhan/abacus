@@ -1017,8 +1017,8 @@ codes:
   entity_already_covered:
     status: 409
     raised_by:
+    - abacus.kernel.connection_coverage.EntityAlreadyCovered
     - abacus.modules.assurance.group_contract.EntityAlreadyCovered
-    - abacus.modules.connections.coverage.EntityAlreadyCovered
   entity_exists:
     status: 409
     raised_by:

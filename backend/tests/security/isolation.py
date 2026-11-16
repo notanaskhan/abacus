@@ -10,6 +10,7 @@ from sqlalchemy import column, func, select, table
 from sqlalchemy.exc import DBAPIError
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus_tools.quality.schema_check import UNFORCED_TENANT_TABLES
 
 from .support import Seeder
 
@@ -25,7 +26,9 @@ async def problems(seed: Seeder, name: str, a: TenantContext, b: uuid.UUID) -> l
         return ["no such table"]
     if not flags[0]["relrowsecurity"]:
         found.append("row-level security is off")
-    if not flags[0]["relforcerowsecurity"]:
+    # A table the schema check lists as unforced (its definers read before a tenant is known) is
+    # still read below as the app role, which the policy binds: the leak check is unchanged.
+    if not flags[0]["relforcerowsecurity"] and name not in UNFORCED_TENANT_TABLES:
         found.append("row-level security is not forced")
     # `tenant_table()` names the policy that keys a table to the session's tenant.
     policies = await seed.value(

@@ -12,7 +12,8 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 import abacus.modules.tax.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- import order
-from abacus.modules.tax import export, export_fiduciary as xf
+from abacus.modules.tax import export
+from abacus.modules.tax import export_fiduciary as xf
 from abacus.modules.tax import fiduciary_service as fs
 from abacus.modules.tax.compute import fiduciary as f
 
@@ -26,15 +27,19 @@ def _outputs() -> dict[str, object]:
         f.FiduciaryInputs(
             2025,
             f.Determinations("complex_trust"),
-            (f.FaiLine("interest", "interest", D("107500")),
-             f.FaiLine("dividends", "ordinary_dividends", D("322500"), qualified=D("258000"))),
+            (
+                f.FaiLine("interest", "interest", D("107500")),
+                f.FaiLine("dividends", "ordinary_dividends", D("322500"), qualified=D("258000")),
+            ),
             (f.TrustExpense("fees", D("30000"), "principal"),),
-            (f.Distribution(NORA, "Nora Calloway", date(2025, 6, 30), D("80000")),
-             f.Distribution(NORA, "Nora Calloway", date(2025, 12, 15), D("80000")),
-             f.Distribution(THEO, "Theo Calloway", date(2025, 12, 15), D("80000"))),
+            (
+                f.Distribution(NORA, "Nora Calloway", date(2025, 6, 30), D("80000")),
+                f.Distribution(NORA, "Nora Calloway", date(2025, 12, 15), D("80000")),
+                f.Distribution(THEO, "Theo Calloway", date(2025, 12, 15), D("80000")),
+            ),
         )
-    )  # fmt: skip
-    return fs._outputs(result, {})
+    )
+    return fs.computed_outputs(result, {})
 
 
 def _section() -> xf.FiduciarySection:
@@ -55,9 +60,13 @@ def _engine_from_export(raw: bytes) -> dict[str, dict[str, object]]:
 
 def _export() -> bytes:
     return export.workbook(
-        engine_id="2025F:CALLOWAY", tax_year=2025, form="1041", values={},
-        at=datetime(2026, 1, 1, tzinfo=UTC), fiduciary=_section(),
-    )  # fmt: skip
+        engine_id="2025F:CALLOWAY",
+        tax_year=2025,
+        form="1041",
+        values={},
+        at=datetime(2026, 1, 1, tzinfo=UTC),
+        fiduciary=_section(),
+    )
 
 
 def test_ac_line_18_and_the_k1_boxes_are_exported() -> None:

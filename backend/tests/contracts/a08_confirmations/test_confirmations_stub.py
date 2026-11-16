@@ -113,9 +113,14 @@ async def test_ac7_1_the_summit_trail_page_foots_and_shows_one_confirmation(
         assert other not in dumped
 
 
+async def _no_link(*_: object) -> None:
+    return None  # A-08-T15: a token outside the fixtures resolves to no link principal
+
+
 async def test_ac7_4_unknown_expired_and_out_of_fixture_tokens_read_the_same(
     fixture_env: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr(cc, "resolve_link", _no_link)
     unknown = await cc.respondent_view("x" * 32)
     expired = await cc.respondent_view(fx.TOKENS["d"])
     assert unknown == expired == fx.EXPIRED
@@ -160,6 +165,10 @@ async def test_ac7_5_a_replayed_response_is_already_answered(fixture_env: None) 
         await cc.submit_response(fx.TOKENS["e"], _answer(True))
 
 
-async def test_a_code_request_is_accepted_for_any_token(fixture_env: None) -> None:
+async def test_a_code_request_is_accepted_for_any_token(
+    fixture_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cc, "resolve_link", _no_link)
+    monkeypatch.setattr(cc, "request_link_code", _no_link)
     body = cm.CodeRequestIn(email="anyone@example.com")
     assert await cc.request_code("x" * 32, body) == await cc.request_code(fx.TOKENS["a"], body)

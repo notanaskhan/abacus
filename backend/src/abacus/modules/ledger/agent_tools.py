@@ -259,12 +259,16 @@ class TxnOut(BaseModel):
 
 async def read_transactions(caller: ToolCaller, args: TxnIn) -> TxnOut:
     """`ledger.read_transactions`: the register page as C9 v2.1 serves it (200 rows at most)."""
-    from abacus.modules.ledger.cas_reads import register_lines  # noqa: PLC0415 -- one read
+    from abacus.modules.ledger.cas_reads import register_lines
 
     rows, following = await register_lines(
-        caller.tenant, args.client_entity_id, args.account_external_id, args.period,
-        cursor=args.cursor, limit=min(MAX_ROWS, 200),
-    )  # fmt: skip
+        caller.tenant,
+        args.client_entity_id,
+        args.account_external_id,
+        args.period,
+        cursor=args.cursor,
+        limit=min(MAX_ROWS, 200),
+    )
     return TxnOut(
         period=args.period,
         account_external_id=args.account_external_id,
@@ -279,27 +283,54 @@ async def read_transactions(caller: ToolCaller, args: TxnIn) -> TxnOut:
                 amount=r.amount,
             )
             for r in rows
-        ],  # fmt: skip
+        ],
         next_cursor=following,
     )
 
 
 AGENT_TOOLS: Final = (
     ToolDecl(
-        "ledger.read_tb", "read", READ, "confidential", TbIn, TbOut, read_tb,
-        untrusted=("lines",), records_read="trial_balance_line",
+        "ledger.read_tb",
+        "read",
+        READ,
+        "confidential",
+        TbIn,
+        TbOut,
+        read_tb,
+        untrusted=("lines",),
+        records_read="trial_balance_line",
     ),
     ToolDecl(
-        "ledger.compare_periods", "compute", READ, "confidential", CompareIn, CompareOut,
-        compare_periods, untrusted=("accounts",), records_read="trial_balance_line",
+        "ledger.compare_periods",
+        "compute",
+        READ,
+        "confidential",
+        CompareIn,
+        CompareOut,
+        compare_periods,
+        untrusted=("accounts",),
+        records_read="trial_balance_line",
     ),
     ToolDecl(
-        "ledger.tie_out", "compute", READ, "confidential", TieOutIn, TieOutOut, tie_out,
+        "ledger.tie_out",
+        "compute",
+        READ,
+        "confidential",
+        TieOutIn,
+        TieOutOut,
+        tie_out,
         records_read="trial_balance_line",
     ),
     # C-01-T18: the close month's register (C9 v2.1); payees and memos are client content.
     ToolDecl(
-        "ledger.read_transactions", "read", READ, "confidential", TxnIn, TxnOut,
-        read_transactions, untrusted=("lines",), records_read="gl_entry",
+        "ledger.read_transactions",
+        "read",
+        READ,
+        "confidential",
+        TxnIn,
+        TxnOut,
+        read_transactions,
+        untrusted=("lines",),
+        records_read="gl_entry",
     ),
-)  # fmt: skip
+)

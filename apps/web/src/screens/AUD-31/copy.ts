@@ -86,6 +86,7 @@ export const COPY = {
     changed: "Mapping changed", // (undesigned)
     confirmed: "Mapping confirmed", // (undesigned)
     failed: "That didn't save. Try again.", // (undesigned)
+    view: "View", // a group mapping's confirmed toast opens AUD-33 (the handoff's AUD-31 → AUD-33)
   },
   states: {
     empty: "No trial balance to map yet.",

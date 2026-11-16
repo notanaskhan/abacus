@@ -2,7 +2,7 @@
 id: TASK-8092
 title: "A-09-T11: Migration 0897_connection_coverage (connection-index change)"
 spec: SPEC-658
-acceptance_criteria: [AUD-32]
+acceptance_criteria: [AC-0]
 risk_zone: red
 status: in-review
 branch: a09-t11-connection-coverage

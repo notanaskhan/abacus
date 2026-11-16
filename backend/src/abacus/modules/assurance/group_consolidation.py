@@ -26,6 +26,8 @@ from abacus.kernel._statuses import (
     ConsolidationStatus,
     ConsolidationTbStatus,
 )
+from abacus.kernel.connection_coverage import EntityAlreadyCovered as CoverageTaken
+from abacus.kernel.connection_coverage import cover_entities, covers
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.uow import uow
@@ -43,8 +45,6 @@ from abacus.modules.assurance.group_contract import (
     TrialBalanceMissing,
     TrialBalanceSlotOut,
 )
-from abacus.modules.connections.api import EntityAlreadyCovered as CoverageTaken
-from abacus.modules.connections.api import cover_entities, covers
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
 from abacus.modules.ledger import api as ledger
@@ -332,9 +332,11 @@ async def attach(
         if body.evidence_version_id is None:
             raise NotFound("evidence_version")
         snapshot = await ledger.snapshot_for_slot(
-            ctx.tenant, entity.client_entity_id, key.period_end,
+            ctx.tenant,
+            entity.client_entity_id,
+            key.period_end,
             evidence_version_id=body.evidence_version_id,
-        )  # fmt: skip
+        )
     else:
         if body.upload_id is None:
             raise NotFound("ledger_snapshot")

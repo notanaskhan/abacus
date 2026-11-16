@@ -139,6 +139,13 @@ BUILT: frozenset[tuple[str, str]] = frozenset(
         ("/v1/clients/{client_id}/close-plan/drafts/{version}/rows:adopt-all", "post"),
         ("/v1/close-templates", "get"),
         ("/v1/close-templates:import", "post"),
+        # S46: C-01-T19 intake (TASK-8071) and C-01-T20 the close run (TASK-8073).
+        ("/v1/closes/{close_id}/questionnaire", "get"),
+        ("/v1/closes/{close_id}/requests", "get"),
+        ("/v1/closes/{close_id}/runs", "get"),
+        ("/v1/closes/{close_id}/runs", "post"),
+        ("/v1/closes/{close_id}/runs/{run_no}", "get"),
+        ("/v1/closes/{close_id}/runs/{run_no}/steps/{step_id}/retry", "post"),
     }
 )
 

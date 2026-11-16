@@ -22,7 +22,7 @@ def _scores() -> tuple[sel.Scored, ...]:
     return tuple(sel.Scored(s.entry_ref, s.score) for s in scored.scores)
 
 
-def _draw(seed: int = SEED) -> sel.Selection:
+def _draw(seed: int = SEED) -> sel.ScoreDraw:
     return sel.select(_scores(), score_min=g.SCORE_MIN, top_n=None, unpredictable_n=6, seed=seed)
 
 

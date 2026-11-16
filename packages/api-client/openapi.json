@@ -25483,6 +25483,16 @@
             "title": "Channel",
             "type": "string"
           },
+          "lines": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ConfirmationLineIn"
+            },
+            "maxItems": 50,
+            "title": "Lines",
+            "type": "array"
+          },
           "respondent_name": {
             "cls": "confidential",
             "maxLength": 200,
@@ -25653,6 +25663,51 @@
           "id"
         ],
         "title": "ConfirmationIdOut",
+        "type": "object"
+      },
+      "ConfirmationLineIn": {
+        "additionalProperties": false,
+        "description": "A-08-T16: one book amount the respondent is asked to confirm (from the sample or the TB).",
+        "properties": {
+          "account_last4": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Account Last4"
+          },
+          "book_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Book Amount"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "book_amount"
+        ],
+        "title": "ConfirmationLineIn",
         "type": "object"
       },
       "ConfirmationLineOut": {
@@ -67574,6 +67629,75 @@
         "title": "JeCriterionStatus",
         "type": "string"
       },
+      "JeRiskCriteriaPayload": {
+        "additionalProperties": false,
+        "description": "A-08-T12 (SPEC-657 F1; OQ-7): the firm's JE risk criteria (\"BH JE criteria v1\"). Firm\ncontent, loaded through the import; a JE test copies a version's rows when a person\nconfigures it, and code scores (ADR-050).",
+        "properties": {
+          "criteria": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/JeRiskCriterionRow"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Criteria",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "je_risk_criteria",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "criteria"
+        ],
+        "title": "JeRiskCriteriaPayload",
+        "type": "object"
+      },
+      "JeRiskCriterionRow": {
+        "additionalProperties": false,
+        "description": "One JE risk criterion: its key, weight (0 to 100) and parameters, as text the scoring\nengine (`sampling.compute.je_scoring`) validates.",
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "enum": [
+              "weekend_holiday",
+              "round_amount",
+              "post_close",
+              "manual_by_role",
+              "keywords"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "internal",
+            "default": {},
+            "maxProperties": 10,
+            "title": "Params",
+            "type": "object"
+          },
+          "weight": {
+            "cls": "internal",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "weight"
+        ],
+        "title": "JeRiskCriterionRow",
+        "type": "object"
+      },
       "JeTestCreateIn": {
         "additionalProperties": false,
         "properties": {
@@ -79672,6 +79796,141 @@
         "title": "MisstatementIn",
         "type": "object"
       },
+      "MusConfidenceFactorRow-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Confidence Pct"
+          },
+          "errors": {
+            "cls": "internal",
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Errors",
+            "type": "integer"
+          },
+          "factor": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,4}|(?=[\\d.]{1,9}0*$)\\d{0,4}\\.\\d{0,4}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Factor"
+          }
+        },
+        "required": [
+          "confidence_pct",
+          "errors",
+          "factor"
+        ],
+        "title": "MusConfidenceFactorRow",
+        "type": "object"
+      },
+      "MusConfidenceFactorRow-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Confidence Pct",
+            "type": "string"
+          },
+          "errors": {
+            "cls": "internal",
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Errors",
+            "type": "integer"
+          },
+          "factor": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,4}|(?=[\\d.]{1,9}0*$)\\d{0,4}\\.\\d{0,4}0*$)",
+            "title": "Factor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confidence_pct",
+          "errors",
+          "factor"
+        ],
+        "title": "MusConfidenceFactorRow",
+        "type": "object"
+      },
+      "MusConfidenceFactorsPayload-Input": {
+        "additionalProperties": false,
+        "description": "ADR P-57: the firm's MUS confidence factors (A-08-T13 sizes with them).",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "mus_confidence_factors",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/MusConfidenceFactorRow-Input"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "MusConfidenceFactorsPayload",
+        "type": "object"
+      },
+      "MusConfidenceFactorsPayload-Output": {
+        "additionalProperties": false,
+        "description": "ADR P-57: the firm's MUS confidence factors (A-08-T13 sizes with them).",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "mus_confidence_factors",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/MusConfidenceFactorRow-Output"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "MusConfidenceFactorsPayload",
+        "type": "object"
+      },
       "MyAnnualIndependenceOut": {
         "description": "SHL-03's profile drawer (AC6.1): one's own status for the year and the statement to\nconfirm (absent until the firm publishes one).",
         "properties": {
@@ -82677,7 +82936,9 @@
             "enum": [
               "attribute_nonstatistical",
               "attribute_statistical",
-              "threshold_random_stratified"
+              "threshold_random_stratified",
+              "je_score_selection",
+              "monetary_unit"
             ],
             "title": "Method",
             "type": "string"
@@ -106561,7 +106822,9 @@
             "cls": "internal",
             "enum": [
               "random",
-              "threshold"
+              "threshold",
+              "risk_score",
+              "unpredictable"
             ],
             "title": "Selection Reason",
             "type": "string"
@@ -115788,7 +116051,9 @@
               "materiality_ranges",
               "document_confidence",
               "attribute_sample_sizes",
-              "rmm_matrix"
+              "rmm_matrix",
+              "je_risk_criteria",
+              "mus_confidence_factors"
             ],
             "title": "Kind",
             "type": "string"
@@ -115882,7 +116147,9 @@
                 "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
                 "attribute_sample_sizes": "#/components/schemas/AttributeSampleSizesPayload-Input",
                 "document_confidence": "#/components/schemas/DocumentConfidencePayload-Input",
+                "je_risk_criteria": "#/components/schemas/JeRiskCriteriaPayload",
                 "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Input",
+                "mus_confidence_factors": "#/components/schemas/MusConfidenceFactorsPayload-Input",
                 "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
                 "review_checklist": "#/components/schemas/ReviewChecklistPayload",
                 "review_levels": "#/components/schemas/ReviewLevelsPayload",
@@ -115910,6 +116177,12 @@
               },
               {
                 "$ref": "#/components/schemas/RmmMatrixPayload"
+              },
+              {
+                "$ref": "#/components/schemas/JeRiskCriteriaPayload"
+              },
+              {
+                "$ref": "#/components/schemas/MusConfidenceFactorsPayload-Input"
               },
               {
                 "$ref": "#/components/schemas/ReviewChecklistPayload"
@@ -116238,7 +116511,9 @@
               "materiality_ranges",
               "document_confidence",
               "attribute_sample_sizes",
-              "rmm_matrix"
+              "rmm_matrix",
+              "je_risk_criteria",
+              "mus_confidence_factors"
             ],
             "title": "Kind",
             "type": "string"
@@ -116494,7 +116769,9 @@
                 "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
                 "attribute_sample_sizes": "#/components/schemas/AttributeSampleSizesPayload-Output",
                 "document_confidence": "#/components/schemas/DocumentConfidencePayload-Output",
+                "je_risk_criteria": "#/components/schemas/JeRiskCriteriaPayload",
                 "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Output",
+                "mus_confidence_factors": "#/components/schemas/MusConfidenceFactorsPayload-Output",
                 "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
                 "review_checklist": "#/components/schemas/ReviewChecklistPayload",
                 "review_levels": "#/components/schemas/ReviewLevelsPayload",
@@ -116522,6 +116799,12 @@
               },
               {
                 "$ref": "#/components/schemas/RmmMatrixPayload"
+              },
+              {
+                "$ref": "#/components/schemas/JeRiskCriteriaPayload"
+              },
+              {
+                "$ref": "#/components/schemas/MusConfidenceFactorsPayload-Output"
               },
               {
                 "$ref": "#/components/schemas/ReviewChecklistPayload"
@@ -181565,7 +181848,7 @@
     },
     "/v1/confirm/{token}/code": {
       "post": {
-        "description": "`confirmation.respond_verify`: 202 after the padded floor for any token and any address.\nThe stub sends nothing (A-08-T15 sends a 10-minute code to the typed address).",
+        "description": "`confirmation.respond_verify`: 202 after the padded floor for any token and any address.\nA-08-T15: a live link whose address is the typed one gets a 10-minute code by email.",
         "operationId": "request_code",
         "parameters": [
           {
@@ -181652,7 +181935,7 @@
     },
     "/v1/confirm/{token}/code/verify": {
       "post": {
-        "description": "`confirmation.respond_verify`: a verified code upgrades the page credential (A-08-T15).\nThe stub verifies only the fixture code on an open fixture link; anything else is `false`\nafter the same floor (lockout after five failures lands with A-08-T15).",
+        "description": "`confirmation.respond_verify` (A-08-T15): a right code sets the `__Host-` page credential\nand returns its CSRF value in a header; five wrong codes lock the link for 15 minutes. Every\nfailure is `false` after the same floor. Fixture links (local, test) keep the fixture code.",
         "operationId": "verify_code",
         "parameters": [
           {
@@ -302287,7 +302570,9 @@
                     "materiality_ranges",
                     "document_confidence",
                     "attribute_sample_sizes",
-                    "rmm_matrix"
+                    "rmm_matrix",
+                    "je_risk_criteria",
+                    "mus_confidence_factors"
                   ],
                   "type": "string"
                 },
@@ -315045,16 +315330,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Gift History Add Route",
@@ -315466,16 +315741,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Asset Edit Route",
@@ -315602,16 +315867,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Deduction Edit Route",
@@ -317861,16 +318116,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fai Line Edit Route",
@@ -317997,16 +318242,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Gift History Edit Route",
@@ -319505,16 +319740,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Asset Add Route",
@@ -319621,16 +319846,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Computation Route",
@@ -319737,16 +319952,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Deductions Route",
@@ -319861,16 +320066,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Deduction Add Route",
@@ -319987,16 +320182,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Derivation Route",
@@ -320103,16 +320288,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Gifts Route",
@@ -320219,16 +320394,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Estate Inventory Route",
@@ -320335,16 +320500,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fai Lines Route",
@@ -320460,16 +320615,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fai Line Add Route",
@@ -320597,16 +320742,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fai Lines Import Route",
@@ -320755,16 +320890,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fiduciary Computation Route",
@@ -320891,16 +321016,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fiduciary Export Route",
@@ -321029,16 +321144,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fiduciary Recompute Route",
@@ -323154,16 +323259,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Trust Distributions Route",
@@ -323278,16 +323373,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Trust Distribution Add Route",
@@ -323394,16 +323479,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Trust Expenses Route",
@@ -323518,16 +323593,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Trust Expense Add Route",
@@ -324026,16 +324091,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Trust Distribution Edit Route",
@@ -324162,16 +324217,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Trust Expense Edit Route",

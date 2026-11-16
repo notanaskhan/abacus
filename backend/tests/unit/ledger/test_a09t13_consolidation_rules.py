@@ -16,14 +16,14 @@ import pytest
 from abacus.modules.assurance import group_consolidation as svc
 from abacus.modules.ledger import consolidation as c
 
-H, O, M, D, R = (uuid.uuid4() for _ in range(5))
+H, OP, M, D, R = (uuid.uuid4() for _ in range(5))
 
 
 def _e(cid: uuid.UUID, parent: uuid.UUID | None, level: int) -> c.StructureEntity:
     return c.StructureEntity(cid, parent, level, None, None)
 
 
-HARLOW = [_e(H, None, 1), _e(O, H, 2), _e(M, O, 3), _e(D, O, 3), _e(R, H, 2)]
+HARLOW = [_e(H, None, 1), _e(OP, H, 2), _e(M, OP, 3), _e(D, OP, 3), _e(R, H, 2)]
 
 
 def test_harlow_and_pike_three_tiers_are_valid() -> None:
@@ -34,7 +34,7 @@ def test_harlow_and_pike_three_tiers_are_valid() -> None:
     ("entities", "reason"),
     [
         ([*HARLOW, _e(uuid.uuid4(), M, 4)], "fourth_tier"),
-        ([_e(H, None, 1), _e(O, None, 1)], "one_root"),
+        ([_e(H, None, 1), _e(OP, None, 1)], "one_root"),
         ([_e(H, None, 1), _e(M, H, 3)], "parent_level"),
         ([_e(H, None, 1), _e(H, None, 1)], "duplicate_entity"),
     ],
@@ -82,10 +82,23 @@ def test_missing_is_required_minus_stored() -> None:
         if not (k.consolidation_entity_id == rows[4].id and k.period_kind == "prior")
     )
     facts = c.ConsolidationFacts(
-        uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), "Harlow & Pike FY2026", date(2026, 12, 31),
-        date(2026, 8, 31), date(2025, 12, 31), None, "draft", "open", None, None, 1,
-        tuple(rows), stored, keys,
-    )  # fmt: skip
+        uuid.uuid4(),
+        uuid.uuid4(),
+        uuid.uuid4(),
+        "Harlow & Pike FY2026",
+        date(2026, 12, 31),
+        date(2026, 8, 31),
+        date(2025, 12, 31),
+        None,
+        "draft",
+        "open",
+        None,
+        None,
+        1,
+        tuple(rows),
+        stored,
+        keys,
+    )
     (missing,) = facts.missing()
     assert (missing.consolidation_entity_id, missing.label) == (rows[4].id, "prior")
 

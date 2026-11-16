@@ -9,6 +9,7 @@ continue-as-new that ends the run. A history on disk is never overwritten.
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from pathlib import Path
 
@@ -16,18 +17,18 @@ from temporalio import activity
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.connections.ledger_sync_types import (
+from abacus.modules.connections.api import (
     PLAN_TICK,
     SYNC_ENTITY,
     SYNC_NOW,
     LedgerSyncInput,
+    LedgerSyncWorkflow,
     PlanTickInput,
     PlanTickResult,
     SyncEntityInput,
     SyncEntityResult,
     SyncNowSignal,
 )
-from abacus.modules.connections.ledger_sync_workflow import LedgerSyncWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 
@@ -63,10 +64,8 @@ async def _record(out: Path, stack: Stack) -> None:
             ],
         )
         first_run = handle.result_run_id
-        try:
+        with contextlib.suppress(Exception):  # the run continues as new: its result is not ours
             await handle.result(follow_runs=False)
-        except Exception:  # noqa: BLE001 -- the run ends by continuing as new
-            pass
         run = client.get_workflow_handle(handle.id, run_id=first_run)
         scrubbed = await decoded_and_scrubbed(await run.fetch_history(), payload_codec())
         (out / NAME).write_text(scrubbed.to_json())

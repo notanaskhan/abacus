@@ -126,7 +126,8 @@ def test_t19_every_tax_tool_pins_its_scope_to_the_runs_engagement() -> None:
 
 
 @given(
-    st.integers(min_value=1, max_value=899),
+    # Area 666 is never issued, so it is not an SSN (tin_patterns' documented rule).
+    st.integers(min_value=1, max_value=899).filter(lambda a: a != 666),
     st.integers(min_value=1, max_value=99),
     st.integers(min_value=1, max_value=9999),
 )

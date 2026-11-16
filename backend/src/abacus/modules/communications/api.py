@@ -4,7 +4,6 @@ from datetime import timedelta
 
 from abacus.kernel.audit_owners import register_client_owners, register_engagement_owners
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
-from abacus.modules.communications.link_codes import deliver_link_code
 from abacus.modules.communications import portal_intake
 from abacus.modules.communications.audit_targets import (
     AUDIT_KINDS,
@@ -90,6 +89,7 @@ from abacus.modules.communications.intake_purge_workflow import (
     intake_purge_id,
 )
 from abacus.modules.communications.invitations import deliver_invitation, deliver_staff_invitation
+from abacus.modules.communications.link_codes import deliver_link_code
 from abacus.modules.communications.notification_email import (
     NotificationMail,
     send_notification_email,

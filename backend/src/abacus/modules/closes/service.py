@@ -80,9 +80,19 @@ MOVE: Final = "close.status_move"
 ASSIGN: Final = "close.assign"
 DEFAULT_DUE_BUSINESS_DAY: Final = 7
 _MONTHS: Final = (
-    "January", "February", "March", "April", "May", "June", "July", "August", "September",
-    "October", "November", "December",
-)  # fmt: skip
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
 _TIED_RECONCILIATION: Final = frozenset({"tie", "reconciled"})
 _TIED_SCHEDULE: Final = frozenset({"tie", "recorded"})
 _FINISHED: Final = frozenset({"delivered", "locked"})
@@ -308,9 +318,13 @@ async def list_closes(
     ids = [c.work_item_id for c in closes]
     issues = await open_issue_counts(ctx.tenant, ids)
     people = await _people(
-        {u for c in closes for fn in ("close_preparer", "close_reviewer")
-         for u in facts[c.work_item_id].assignees.get(fn, ())[:1]}
-    )  # fmt: skip
+        {
+            u
+            for c in closes
+            for fn in ("close_preparer", "close_reviewer")
+            for u in facts[c.work_item_id].assignees.get(fn, ())[:1]
+        }
+    )
     rows: list[CloseRowOut] = []
     for c in closes:
         f = facts[c.work_item_id]
@@ -620,9 +634,13 @@ async def set_assignees(
         ("close_reviewer", body.reviewer_user_id),
     ):
         await reassign_work_item(
-            ctx, close_id, function, person, authorised_under=ASSIGN,
+            ctx,
+            close_id,
+            function,
+            person,
+            authorised_under=ASSIGN,
             on_changed="close.assignee_changed",
-        )  # fmt: skip
+        )
     return await close_summary(ctx, close_id)
 
 

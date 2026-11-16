@@ -2,7 +2,7 @@
 id: TASK-8091
 title: "A-09-T10: Migration 0896_adjustments_eliminations"
 spec: SPEC-658
-acceptance_criteria: [AUD-33]
+acceptance_criteria: [AC-0]
 risk_zone: red
 status: in-review
 branch: a09-t10-adjustments-eliminations

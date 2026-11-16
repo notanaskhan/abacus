@@ -93,4 +93,5 @@ export const COPY = {
   },
   finalized: "Finalized",
   toast: "Consolidation finalized · 5 entities · trial balance mapping started",
+  view: "View", // the toast's one action: opens AUD-33 (the handoff's AUD-32 → AUD-33 link)
 } as const;

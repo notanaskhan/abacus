@@ -145,7 +145,7 @@ async def account_tree(
         balance = month.balances.get(account.external_id, ZERO)
         kind = account.classification
         if kind in totals:
-            totals[kind] += balance  # pyright: ignore[reportArgumentType] -- narrowed by the check
+            totals[kind] += balance
         balances.append(
             MonthlyBalanceOut(
                 external_id=account.external_id,
@@ -356,6 +356,12 @@ async def register_row(
     if row is None:
         return snapshot.client_entity_id, None
     return snapshot.client_entity_id, CitedRegisterRow(
-        snapshot_id, snapshot.client_entity_id, row.line_no, row.account_code, row.debit,
-        row.credit, row.payee, row.description,
-    )  # fmt: skip
+        snapshot_id,
+        snapshot.client_entity_id,
+        row.line_no,
+        row.account_code,
+        row.debit,
+        row.credit,
+        row.payee,
+        row.description,
+    )

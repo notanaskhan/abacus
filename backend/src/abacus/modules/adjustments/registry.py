@@ -99,3 +99,68 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         }
     ),
 }
+
+# S46: A-09-T10 (0896) elimination columns.
+INSERT_COLUMNS["proposed_entries"] = INSERT_COLUMNS.get(
+    "proposed_entries", frozenset()
+) | frozenset(
+    {
+        "account_class",
+        "amount",
+        "client_wording_template_version_id",
+        "consolidation_id",
+        "created_by_id",
+        "created_by_kind",
+        "description",
+        "display_code",
+        "engagement_id",
+        "is_attest_client",
+        "kind",
+        "misstatement_id",
+        "number",
+        "on_behalf_of_user_id",
+        "posting_target",
+        "ref",
+        "source_ref",
+        "status",
+        "tenant_id",
+        "threshold_policy_version_id",
+        "threshold_result",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["proposed_entries"] = UPDATE_COLUMNS.get(
+    "proposed_entries", frozenset()
+) | frozenset({"account_class", "amount", "description", "status", "version"})
+INSERT_COLUMNS["proposed_entry_lines"] = INSERT_COLUMNS.get(
+    "proposed_entry_lines", frozenset()
+) | frozenset(
+    {
+        "account_code",
+        "account_name",
+        "account_scope",
+        "client_entity_id",
+        "consolidation_level",
+        "credit",
+        "debit",
+        "engagement_id",
+        "entry_id",
+        "fs_line_key",
+        "line_no",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["proposed_entry_lines"] = UPDATE_COLUMNS.get(
+    "proposed_entry_lines", frozenset()
+) | frozenset(
+    {
+        "account_code",
+        "account_name",
+        "client_entity_id",
+        "consolidation_level",
+        "credit",
+        "debit",
+        "fs_line_key",
+    }
+)

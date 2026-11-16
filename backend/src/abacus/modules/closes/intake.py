@@ -68,9 +68,19 @@ from abacus.modules.requests.api import (
 ACTOR: Final = "closes:request_publish"
 PUBLISH_AT: Final = time(9, 0)
 _MONTHS: Final = (
-    "January", "February", "March", "April", "May", "June", "July", "August", "September",
-    "October", "November", "December",
-)  # fmt: skip
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
 
 _TEMPLATES = text(
     "SELECT t.id, t.title, t.category_path, t.due_business_day, t.client_visible, "
@@ -212,7 +222,8 @@ async def schedule_publish(tenant_id: UUID, close_id: UUID) -> None:
     )
 
 
-# --- CLS-03 reads ---------------------------------------------------------------------------------
+# --- CLS-03 reads
+# ---------------------------------------------------------------------------------
 
 _SOURCE_ROWS = text("SELECT id, source_row_ids FROM close_request_templates WHERE id = ANY(:ids)")
 _RECEIVED: Final = frozenset({"received", "uploaded", "accepted"})
@@ -265,9 +276,11 @@ async def request_tree(
             continue
         if wanted and wanted not in item.title.casefold():
             continue
-        rerun = sources.get(item.template_id, []) if (
-            item.template_id is not None and word == "incorporated"
-        ) else []  # fmt: skip
+        rerun = (
+            sources.get(item.template_id, [])
+            if (item.template_id is not None and word == "incorporated")
+            else []
+        )
         groups[item.category_path].append(
             RequestNodeOut(
                 node_id=f"r:{item.request_item_id}",

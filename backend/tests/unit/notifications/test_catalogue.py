@@ -49,6 +49,14 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        # S46: C-01-T17 `ledger_sync_paused`; A-09-T09 the six group-audit kinds (DEC-5069).
+        "ledger_sync.paused",
+        "consolidation.finalized",
+        "eliminations.proposed",
+        "component_instructions.acknowledged",
+        "component_question.asked",
+        "component_deliverable.uploaded",
+        "component_deliverable.late",
         # S42 (T-05-T52, DEC-4906): C16 `workbook_fix_applied` and `tax_memo_stale`.
         "workbook.fix_applied",
         "tax_memo.went_stale",

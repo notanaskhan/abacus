@@ -14,20 +14,37 @@ from hypothesis import strategies as st
 from abacus.kernel.errors import DomainInvalid
 from abacus.modules.ledger.api import Balance, GlEntry, GlSnapshotView, JournalEntry
 from abacus.modules.sampling import je_tests as svc
-from abacus.modules.sampling.fieldwork_contract import CriterionKey
 from abacus.modules.sampling.compute import je_selection as sel
+from abacus.modules.sampling.fieldwork_contract import CriterionKey
 
 
 def _snapshot(*gaps: Decimal) -> GlSnapshotView:
     balances = tuple(
-        Balance(f"{1000 + n}", "Cash", Decimal(0), Decimal(10), Decimal(0), Decimal(10),
-                Decimal(10) - gap, False)
+        Balance(
+            f"{1000 + n}",
+            "Cash",
+            Decimal(0),
+            Decimal(10),
+            Decimal(0),
+            Decimal(10),
+            Decimal(10) - gap,
+            False,
+        )
         for n, gap in enumerate(gaps)
-    )  # fmt: skip
+    )
     return GlSnapshotView(
-        uuid4(), uuid4(), date(2025, 7, 1), date(2026, 6, 30), "netsuite_gl_csv", "f" * 64,
-        uuid4(), 10, Decimal(10), datetime(2026, 7, 15, tzinfo=UTC), balances,
-    )  # fmt: skip
+        uuid4(),
+        uuid4(),
+        date(2025, 7, 1),
+        date(2026, 6, 30),
+        "netsuite_gl_csv",
+        "f" * 64,
+        uuid4(),
+        10,
+        Decimal(10),
+        datetime(2026, 7, 15, tzinfo=UTC),
+        balances,
+    )
 
 
 def _entry(ref: str | None, on: date, *codes: str) -> JournalEntry:
@@ -38,16 +55,26 @@ def _entry(ref: str | None, on: date, *codes: str) -> JournalEntry:
         for n, code in enumerate(codes, start=1)
     )
     return JournalEntry(
-        (on.isoformat(), "Journal", ref or "", ""), ref, on, lines,
-        sum((x.debit for x in lines), Decimal(0)), None, None, None, None,
-    )  # fmt: skip
+        (on.isoformat(), "Journal", ref or "", ""),
+        ref,
+        on,
+        lines,
+        sum((x.debit for x in lines), Decimal(0)),
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 def test_ac1_1_the_tie_reads_from_the_snapshot_balances() -> None:
     tied = svc.tie_of(_snapshot(Decimal(0), Decimal(0)))
     assert (tied.accounts_tied, tied.accounts_total, tied.difference, tied.result) == (
-        2, 2, Decimal(0), "tie",
-    )  # fmt: skip
+        2,
+        2,
+        Decimal(0),
+        "tie",
+    )
     off = svc.tie_of(_snapshot(Decimal(0), Decimal("12.50")))
     assert (off.accounts_tied, off.result, off.difference) == (1, "difference", Decimal("12.50"))
 

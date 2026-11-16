@@ -67,15 +67,50 @@ class Group:
 
 
 GROUPS: Final[tuple[Group, ...]] = (
-    Group("recategorize", "Recategorize Revenue and Expenses", "close_recategorize", frozenset({"recategorize"})),
-    Group("reconcile", "Reconcile to Statements", "close_reconcile_statement", frozenset({"reconciliation"})),
-    Group("third_party", "Reconcile Third Party Sales", "close_clear_third_party_sales", frozenset({"third_party_sales"})),
-    Group("prepaids", "Identify and Amortize Prepaids", "close_amortize_prepaid", frozenset({"amortization"})),
-    Group("fixed_assets", "Identify and Depreciate Fixed Assets", "close_depreciate_fixed_assets", frozenset({"depreciation"})),
+    Group(
+        "recategorize",
+        "Recategorize Revenue and Expenses",
+        "close_recategorize",
+        frozenset({"recategorize"}),
+    ),
+    Group(
+        "reconcile",
+        "Reconcile to Statements",
+        "close_reconcile_statement",
+        frozenset({"reconciliation"}),
+    ),
+    Group(
+        "third_party",
+        "Reconcile Third Party Sales",
+        "close_clear_third_party_sales",
+        frozenset({"third_party_sales"}),
+    ),
+    Group(
+        "prepaids",
+        "Identify and Amortize Prepaids",
+        "close_amortize_prepaid",
+        frozenset({"amortization"}),
+    ),
+    Group(
+        "fixed_assets",
+        "Identify and Depreciate Fixed Assets",
+        "close_depreciate_fixed_assets",
+        frozenset({"depreciation"}),
+    ),
     Group("accruals", "Roll accruals", "close_roll_accruals", frozenset({"accrual"})),
-    Group("aging", "Age and clear", "close_age_items", frozenset({"aging", "clear_and_age", "aging_cutoff"})),
-    Group("tie_out", "Tie out", "close_tie_out", frozenset({"rollforward", "tie_to_return", "tie_to_filings", "flux"})),
-)  # fmt: skip
+    Group(
+        "aging",
+        "Age and clear",
+        "close_age_items",
+        frozenset({"aging", "clear_and_age", "aging_cutoff"}),
+    ),
+    Group(
+        "tie_out",
+        "Tie out",
+        "close_tie_out",
+        frozenset({"rollforward", "tie_to_return", "tie_to_filings", "flux"}),
+    ),
+)
 GROUP_OF: Final = {p: g for g in GROUPS for p in g.procedures}
 LEVEL: Final = {g.key: n for n, g in enumerate(GROUPS, start=1)}
 
@@ -116,7 +151,7 @@ _PENDING = text(
 
 async def plan_rows(tenant: TenantContext, close_id: UUID) -> list[PlanRow]:
     async with tenant_session(tenant) as session:
-        return [PlanRow(*r) for r in (await session.execute(_ROWS, {"c": close_id})).all()]  # pyright: ignore[reportArgumentType] -- column order
+        return [PlanRow(*r) for r in (await session.execute(_ROWS, {"c": close_id})).all()]
 
 
 @dataclass(frozen=True)
@@ -148,12 +183,16 @@ def select_rows(
         return list(rows)
     if scope == "group":
         wanted = set(keys)
-        return [r for r in rows if GROUP_OF.get(r.procedure) and GROUP_OF[r.procedure].key in wanted]
+        return [
+            r for r in rows if GROUP_OF.get(r.procedure) and GROUP_OF[r.procedure].key in wanted
+        ]
     if scope == "accounts":
         wanted = set(keys)
         return [r for r in rows if r.account_external_id in wanted]
     if scope in ("failed_only", "task"):
-        return [r for r in rows if step_key(r) in (failed if scope == "failed_only" else set(keys))]
+        return [
+            r for r in rows if step_key(r) in (failed if scope == "failed_only" else set(keys))
+        ]
     raise NotFound("run_scope")
 
 
@@ -195,7 +234,11 @@ def plan_steps(
                     "close_id": str(close_id),
                     "plan_row_id": str(row.row_id),
                     "procedure": row.procedure,
-                    **({} if row.account_external_id is None else {"account": row.account_external_id}),
+                    **(
+                        {}
+                        if row.account_external_id is None
+                        else {"account": row.account_external_id}
+                    ),
                 },
                 depends_on=(gate,) if gate else (),
             )
@@ -221,7 +264,11 @@ async def close_run_plan(
     rows = await plan_rows(tenant, request.work_item_id)
     if not rows:
         raise PlanNotPinned(facts={"close": "no_plan_rows"})
-    failed = await failed_keys(tenant, request.work_item_id) if request.scope == "failed_only" else frozenset()
+    failed: frozenset[str] = (
+        await failed_keys(tenant, request.work_item_id)
+        if request.scope == "failed_only"
+        else frozenset()
+    )
     chosen = select_rows(rows, request.scope, request.keys, failed)
     third_party = any(GROUP_OF.get(r.procedure) is GROUP_OF["third_party_sales"] for r in chosen)
     pending = await pending_treatments(tenant, request.work_item_id) if third_party else []

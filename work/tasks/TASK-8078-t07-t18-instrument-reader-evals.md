@@ -2,7 +2,7 @@
 id: TASK-8078
 title: "T-07-T18: Eval suite evals/tax_instrument_reader (protected; frozen thresholds)"
 spec: SPEC-656
-acceptance_criteria: [§6]
+acceptance_criteria: [AC-0]
 risk_zone: red
 status: in-review
 branch: t07-t18-instrument-reader-evals

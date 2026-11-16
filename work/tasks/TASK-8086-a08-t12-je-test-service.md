@@ -2,7 +2,7 @@
 id: TASK-8086
 title: "A-08-T12: JE test service (je_testing migration, scoring workflow, selection)"
 spec: SPEC-657
-acceptance_criteria: [F1, F3, AC-1.1, AC-1.2, AC-1.4]
+acceptance_criteria: [AC-1, AC-3]
 risk_zone: amber
 status: in-review
 branch: a08-t12-je-test-service

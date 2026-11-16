@@ -20,7 +20,9 @@ from abacus.modules.closes.request_publish_types import (
 from abacus.modules.closes.request_publish_workflow import RequestPublishWorkflow
 
 QUEUE = "request-publish"
-GIVEN = PublishInput("00000000-0000-4000-8000-0000000000b1", "00000000-0000-4000-8000-0000000019a1")
+GIVEN = PublishInput(
+    "00000000-0000-4000-8000-0000000000b1", "00000000-0000-4000-8000-0000000019a1"
+)
 asked: list[int] = []
 published: list[str] = []
 waits: list[int] = []
@@ -46,9 +48,11 @@ async def env() -> AsyncGenerator[WorkflowEnvironment]:
     environment = await WorkflowEnvironment.start_time_skipping()
     try:
         async with Worker(
-            environment.client, task_queue=QUEUE, workflows=[RequestPublishWorkflow],
+            environment.client,
+            task_queue=QUEUE,
+            workflows=[RequestPublishWorkflow],
             activities=[_until, _publish],
-        ):  # fmt: skip
+        ):
             yield environment
     finally:
         await environment.shutdown()

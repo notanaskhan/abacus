@@ -12,7 +12,7 @@ import { CALLOWAY_RETURN } from "./TXT-01";
 
 const E0 = seedScenario();
 
-function at(state: string, answer: () => Response | ReturnType<typeof json>): Scenario {
+function at(state: string, answer: () => Response): Scenario {
   return {
     state,
     persona: "samuel-ito",
@@ -39,7 +39,9 @@ export const scenarios = defineScenarios({
   c: at("c", ok("base")),
   d: at("d", ok("changed")),
   e: at("e", ok("signed")),
-  f1: at("f1", () => json({ code: "interpretation_not_approved", detail: "interpretation_not_approved" }, 409)),
+  f1: at("f1", () =>
+    json({ code: "interpretation_not_approved", detail: "interpretation_not_approved" }, 409),
+  ),
   error: at("error", () => json({ detail: "internal" }, 500)),
 });
 

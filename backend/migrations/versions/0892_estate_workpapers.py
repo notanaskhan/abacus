@@ -1,12 +1,13 @@
-"""T-07-T22 (S46; TASK-8079; T-07 §4, F12–F14; SPEC-656 AC-12.1 to AC-14.2): `estate_workpapers`,
+"""T-07-T22 (S46; TASK-8079; T-07 §4, F12-F14; SPEC-656 AC-12.1 to AC-14.2): `estate_workpapers`,
 expand-only, amber.
 
 The Form 706 workpaper of an estate's return (a `tax_return` work item, form 706):
 
 - `estate_profiles` (one per client entity): the decedent's date of death, the deceased spouse's
   unused exclusion (DSUE) carried in and its support citation, and the residence state.
-- `estate_inventory_items` with insert-only `estate_inventory_item_versions`: the schedule (A–I),
-  date-of-death and alternate values, the basis rule, the status (`gathering_support` · `valued`), the
+- `estate_inventory_items` with insert-only `estate_inventory_item_versions`: the schedule (A-I),
+  date-of-death and alternate values, the basis rule, the status (`gathering_support` · `valued`),
+  the
   support and the request item asking for it. `valued` needs a citation and a human setter.
 - `estate_deductions` with insert-only `estate_deduction_versions` (Schedules J, K, L, M, O; the
   §642(g) election a person records).
@@ -89,7 +90,8 @@ def upgrade() -> None:
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
             {_RETURN_COLS},
-            schedule text NOT NULL CHECK (schedule IN ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I')),
+            schedule text NOT NULL
+                CHECK (schedule IN ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I')),
             description text NOT NULL CHECK (length(description) BETWEEN 1 AND 200),
             basis_rule text NOT NULL
                 CHECK (basis_rule IN ('stepped_up', 'ird_no_step_up', 'non_probate_excluded')),
@@ -161,7 +163,7 @@ def upgrade() -> None:
         """
     )
     op.execute(
-        f"""
+        """
         CREATE TABLE gift_history_items (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
@@ -222,44 +224,101 @@ def upgrade() -> None:
     )
     _lock(
         "estate_profiles",
-        ("client_entity_id", "tenant_id", "date_of_death", "dsue_amount", "dsue_citation_ids",
-         "residence_state", "created_by"),
+        (
+            "client_entity_id",
+            "tenant_id",
+            "date_of_death",
+            "dsue_amount",
+            "dsue_citation_ids",
+            "residence_state",
+            "created_by",
+        ),
         ("dsue_amount", "dsue_citation_ids", "residence_state", "row_version"),
-    )  # fmt: skip
+    )
     _lock(
         "estate_inventory_items",
-        ("tenant_id", "engagement_id", "work_item_id", "schedule", "description", "basis_rule",
-         "created_by"),
-    )  # fmt: skip
+        (
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "schedule",
+            "description",
+            "basis_rule",
+            "created_by",
+        ),
+    )
     _lock(
         "estate_inventory_item_versions",
-        ("tenant_id", "item_id", "seq", "dod_value", "avd_value", "status", "support_text",
-         "request_item_id", "citation_ids", "set_by_kind", "set_by_id", "reason_sealed"),
-    )  # fmt: skip
+        (
+            "tenant_id",
+            "item_id",
+            "seq",
+            "dod_value",
+            "avd_value",
+            "status",
+            "support_text",
+            "request_item_id",
+            "citation_ids",
+            "set_by_kind",
+            "set_by_id",
+            "reason_sealed",
+        ),
+    )
     _lock(
         "estate_deductions",
         ("tenant_id", "engagement_id", "work_item_id", "schedule", "description", "created_by"),
     )
     _lock(
         "estate_deduction_versions",
-        ("tenant_id", "deduction_id", "seq", "amount", "estimated", "election", "citation_ids",
-         "set_by_kind", "set_by_id", "reason_sealed"),
-    )  # fmt: skip
+        (
+            "tenant_id",
+            "deduction_id",
+            "seq",
+            "amount",
+            "estimated",
+            "election",
+            "citation_ids",
+            "set_by_kind",
+            "set_by_id",
+            "reason_sealed",
+        ),
+    )
     _lock(
         "gift_history_items",
         ("tenant_id", "client_entity_id", "year", "donee_name_sealed", "asset", "created_by"),
-    )  # fmt: skip
+    )
     _lock(
         "gift_history_item_versions",
-        ("tenant_id", "gift_id", "seq", "gift_amount", "form_709_status", "filed_on",
-         "evidence_version_id", "set_by_kind", "set_by_id", "reason_sealed"),
-    )  # fmt: skip
+        (
+            "tenant_id",
+            "gift_id",
+            "seq",
+            "gift_amount",
+            "form_709_status",
+            "filed_on",
+            "evidence_version_id",
+            "set_by_kind",
+            "set_by_id",
+            "reason_sealed",
+        ),
+    )
     _lock(
         "estate_computations",
-        ("tenant_id", "engagement_id", "work_item_id", "version_no", "inputs_hash",
-         "content_hash", "engine_name", "engine_version", "parameter_set", "label", "outputs",
-         "prior_computation_id"),
-    )  # fmt: skip
+        (
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "version_no",
+            "inputs_hash",
+            "content_hash",
+            "engine_name",
+            "engine_version",
+            "parameter_set",
+            "label",
+            "outputs",
+            "prior_computation_id",
+        ),
+    )
 
 
 def downgrade() -> None:

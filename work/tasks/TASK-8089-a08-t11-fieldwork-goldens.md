@@ -2,7 +2,7 @@
 id: TASK-8089
 title: "A-08-T11: Golden fixtures and Hypothesis properties for the fieldwork engines"
 spec: SPEC-657
-acceptance_criteria: [F1, F3, F5, F6]
+acceptance_criteria: [AC-1, AC-3, AC-5, AC-6]
 risk_zone: amber
 status: in-review
 branch: a08-t11-fieldwork-goldens

@@ -2,7 +2,7 @@
 id: TASK-8084
 title: "A-08-T16: Confirmations core (migration 0894, create, list, summary, address verification, isolation)"
 spec: SPEC-657
-acceptance_criteria: [F6]
+acceptance_criteria: [AC-6]
 risk_zone: amber
 status: in-review
 branch: a08-t16-confirmations-core

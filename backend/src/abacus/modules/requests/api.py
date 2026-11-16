@@ -16,15 +16,6 @@ from abacus.modules.identity.api import (
     register_scopes_resolver,
 )
 from abacus.modules.platform.api import register_audit_value_resolver, register_pilot_metric_source
-from abacus.modules.requests.questionnaires import questionnaires_of_list
-from abacus.modules.requests.close_intake import (
-    CloseRequestSpec,
-    GeneratedIntake,
-    IntakeItem,
-    close_intake_binder,
-    generate_close_intake,
-    intake_items,
-)
 from abacus.modules.requests.answer_effects import SUBSCRIPTIONS as EFFECT_SUBSCRIPTIONS
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.audit_values import request_item_values
@@ -42,6 +33,14 @@ from abacus.modules.requests.classification import classify, document_kind
 from abacus.modules.requests.close_counts import (  # C-01-T14: the close record's counts
     binder_document_counts,
     pending_request_counts,
+)
+from abacus.modules.requests.close_intake import (
+    CloseRequestSpec,
+    GeneratedIntake,
+    IntakeItem,
+    close_intake_binder,
+    generate_close_intake,
+    intake_items,
 )
 from abacus.modules.requests.closed_binders import (
     BinderClosed,
@@ -123,6 +122,7 @@ from abacus.modules.requests.questionnaires import (
     create_questionnaire,
     draft_question,
     questionnaire,
+    questionnaires_of_list,
     send_question,
     work_item_questionnaires,
 )
@@ -295,13 +295,6 @@ register_pilot_metric_source("w5", w5_pbc_via_portal)  # Q-04-T008 (DEC-825)
 from abacus.modules.requests.agent_tools import AGENT_TOOLS  # noqa: E402
 
 __all__ = [
-    "CloseRequestSpec",
-    "GeneratedIntake",
-    "IntakeItem",
-    "close_intake_binder",
-    "generate_close_intake",
-    "intake_items",
-    "questionnaires_of_list",
     "ACTIVITIES",
     "AGENT_TOOLS",
     "ROUTERS",
@@ -312,6 +305,7 @@ __all__ = [
     "BinderProgress",
     "BulkItem",
     "ClientHome",
+    "CloseRequestSpec",
     "ConsentRequired",
     "ContactNotPortalUser",
     "DelegateUpload",
@@ -322,7 +316,9 @@ __all__ = [
     "FollowUpCandidate",
     "FulfilledVersion",
     "FulfilmentRef",
+    "GeneratedIntake",
     "HandlerUnavailable",  # N-04-T13: a handler whose module is off (pending_handler)",
+    "IntakeItem",
     "ItemKind",
     "ItemNotFulfillable",
     "ItemPatch",
@@ -363,6 +359,7 @@ __all__ = [
     "check_return_comment",
     "classify",
     "client_home",
+    "close_intake_binder",
     "create_items_bulk",
     "create_questionnaire",
     "delegate_item",
@@ -381,8 +378,10 @@ __all__ = [
     "fulfil_by_upload",
     "fulfilled_items",
     "fulfilled_versions",
+    "generate_close_intake",
     "import_questionnaire_template",
     "insert_return_comment",
+    "intake_items",
     "item_ref",
     "item_versions",
     "items_of_version",
@@ -410,6 +409,7 @@ __all__ = [
     "questionnaire_editor_read",
     "questionnaire_from_template",
     "questionnaire_templates",
+    "questionnaires_of_list",
     "read_item",
     "read_item_versions",
     "refuse_closed_item",

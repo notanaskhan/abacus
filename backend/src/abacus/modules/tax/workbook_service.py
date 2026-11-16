@@ -320,6 +320,6 @@ def register() -> None:
     )
 
     register_field_owner(
-        FieldOwner(WORKBOOK, cell_value, frozenset({"*"}), label_of=lambda key: key)  # type: ignore[arg-type] -- the owner registry is typed for review-owned values
+        FieldOwner(WORKBOOK, cell_value, frozenset({"*"}), label_of=lambda key: key)
     )
     register_reviewable_facts(WORKBOOK, workbook_facts)  # type: ignore[arg-type] -- the facts registry is typed for review-owned values

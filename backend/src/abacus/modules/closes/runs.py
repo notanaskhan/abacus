@@ -27,8 +27,8 @@ from abacus.modules.agents.api import (
     work_item_runs,
 )
 from abacus.modules.closes.contract import (
-    CloseProcedureOut,
     ClosePersonOut,
+    CloseProcedureOut,
     CloseRunHistoryItemOut,
     CloseRunInProgress,
     CloseRunOut,
@@ -132,13 +132,16 @@ async def run_history(ctx: AuthContext, close_id: UUID) -> CloseRunsOut:
 
 
 async def run_card(ctx: AuthContext, close_id: UUID, run_no: int) -> CloseRunOut:
-    close = await visible_close(ctx, close_id)
+    await visible_close(ctx, close_id)  # the caller sees the close (404 otherwise)
     runs = await work_item_runs(ctx.tenant, work_item_ref(close_id))
     found = next((r for r in runs if max(r.run_number, 1) == run_no), None)
     if found is None:
         raise NotFound("close_run")
     newest = runs[0].run_id
-    labels = {step_key(r): (r.account_name, r.account_external_id, r.procedure) for r in await plan_rows(ctx.tenant, close_id)}
+    labels = {
+        step_key(r): (r.account_name, r.account_external_id, r.procedure)
+        for r in await plan_rows(ctx.tenant, close_id)
+    }
     grouped: dict[str, list[CloseProcedureOut]] = defaultdict(list)
     done = running = 0
     for step in await run_step_rows(ctx.tenant, found.run_id):
@@ -182,13 +185,17 @@ async def run_card(ctx: AuthContext, close_id: UUID, run_no: int) -> CloseRunOut
     )
 
 
-async def retry_step(ctx: AuthContext, close_id: UUID, run_no: int, step_id: UUID) -> CloseProcedureOut:
+async def retry_step(
+    ctx: AuthContext, close_id: UUID, run_no: int, step_id: UUID
+) -> CloseProcedureOut:
     close = await visible_close(ctx, close_id)
     runs = await work_item_runs(ctx.tenant, work_item_ref(close_id))
     found = next((r for r in runs if max(r.run_number, 1) == run_no), None)
     if found is None:
         raise NotFound("close_run")
-    step = next((s for s in await run_step_rows(ctx.tenant, found.run_id) if s.step_id == step_id), None)
+    step = next(
+        (s for s in await run_step_rows(ctx.tenant, found.run_id) if s.step_id == step_id), None
+    )
     if step is None or step.key is None:
         raise NotFound("run_step")
     if step.state != "failed":

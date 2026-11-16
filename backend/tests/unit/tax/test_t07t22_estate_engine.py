@@ -38,8 +38,10 @@ INPUTS = e.EstateInputs(2026, ASSETS, DEDUCTIONS, GIFTS, dsue=D("3000000"), resi
 def test_ac121_the_inventory_foots() -> None:
     r = e.compute(INPUTS)
     assert (r.gross_estate_dod, r.gross_estate_avd, r.basis_to_1041) == (
-        D("16400000.00"), D("15993000.00"), D("12688000.00"),
-    )  # fmt: skip
+        D("16400000.00"),
+        D("15993000.00"),
+        D("12688000.00"),
+    )
     assert r.basis_by_asset["I"] is None and r.basis_by_asset["D"] is None  # by rule
 
 
@@ -47,10 +49,16 @@ def test_ac124_and_ac131_the_computation() -> None:
     r = e.compute(INPUTS)
     assert r.deductions == D("900000.00")
     assert (r.taxable_estate, r.adjusted_taxable_gifts, r.tentative_tax_base) == (
-        D("15500000.00"), D("1200000.00"), D("16700000.00"),
-    )  # fmt: skip
-    assert r.tentative_tax == D("6625800.00")  # 345,800 + 40% × 15,700,000
-    assert (r.applicable_exclusion, r.credit, r.net_tax) == (D("18000000.00"), D("7145800.00"), D("0.00"))
+        D("15500000.00"),
+        D("1200000.00"),
+        D("16700000.00"),
+    )
+    assert r.tentative_tax == D("6625800.00")  # 345,800 + 40% x 15,700,000
+    assert (r.applicable_exclusion, r.credit, r.net_tax) == (
+        D("18000000.00"),
+        D("7145800.00"),
+        D("0.00"),
+    )
     assert (r.credit_without_dsue, r.tax_without_dsue) == (D("5945800.00"), D("680000.00"))
     assert r.filing_threshold_amount == D("17600000.00") and r.filing_required
     assert r.state_required is True  # the Illinois exclusion is 4,000,000; never a figure
@@ -65,9 +73,11 @@ def test_ac132_alternate_valuation_is_not_available_without_tax() -> None:
 def test_ac134_annual_exclusions_by_year() -> None:
     r = e.compute(INPUTS)
     assert [(g.year, g.exclusion, g.taxable) for g in r.gifts] == [
-        (2023, D("17000"), D("1200000.00")), (2024, D("18000"), D("0.00")),
-        (2025, D("19000"), D("0.00")), (2026, D("19000"), D("0.00")),
-    ]  # fmt: skip
+        (2023, D("17000"), D("1200000.00")),
+        (2024, D("18000"), D("0.00")),
+        (2025, D("19000"), D("0.00")),
+        (2026, D("19000"), D("0.00")),
+    ]
 
 
 def test_inputs_hash_is_stable() -> None:

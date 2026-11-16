@@ -66,13 +66,6 @@ from abacus.modules.integrations.api import engine_return_id, export_settings, w
 from abacus.modules.review.api import current_checkpoint
 from abacus.modules.tax import engine_repository as repo
 from abacus.modules.tax.engine_sync import ReadyToTransmit
-from abacus.modules.tax.export_fiduciary import (
-    FIDUCIARY_FORMS,
-    FIELDS_HEADER,
-    K1_HEADER,
-    FiduciarySection,
-    fiduciary_section,
-)
 from abacus.modules.tax.export_entity import (
     ALLOCATION_HEADER,
     ENTITY_FORMS,
@@ -80,6 +73,13 @@ from abacus.modules.tax.export_entity import (
     EntitySection,
     entity_section,
     require_mapped,
+)
+from abacus.modules.tax.export_fiduciary import (
+    FIDUCIARY_FORMS,
+    FIELDS_HEADER,
+    K1_HEADER,
+    FiduciarySection,
+    fiduciary_section,
 )
 from abacus.modules.tax.export_fields import export_values
 

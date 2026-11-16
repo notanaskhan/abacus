@@ -1,13 +1,14 @@
-"""The close run's deterministic executors, as pure functions (C-01-T20; C-01 §4.5, F3, F4; ADR-050:
+"""The close
+run's deterministic executors, as pure functions (C-01-T20; C-01 §4.5, F3, F4; ADR-050:
 code computes, models judge). Each takes plain inputs and returns its figures, its tally and the
 exceptions a person must look at; the run-step handlers (`run_steps.py`) gather the inputs and
 record the results. Money is `Decimal` rounded half-up to cents; nothing here reads a clock, a
 table or a model, so the same inputs give the same output (`ENGINE_VERSION`, `inputs_hash`).
 
 - `reconcile_statement`: bank ending balance ± outstanding items against the book balance
-  (CLS-05): ••4410 184,236.18 + 6,412.40 − 5,658.08 = 184,990.50 = 184,610.50 + 380.00.
+  (CLS-05): ••4410 184,236.18 + 6,412.40 - 5,658.08 = 184,990.50 = 184,610.50 + 380.00.
 - `clear_third_party_sales`: a processor's gross sales less fees and refunds against the deposits
-  that landed (Square 73,166.90 − 1,684.54 = 71,482.36 over 21 transfers); an unmatched transfer
+  that landed (Square 73,166.90 - 1,684.54 = 71,482.36 over 21 transfers); an unmatched transfer
   becomes a `close_treatment` decision, never a guess.
 - `amortize_prepaid`: straight line over the arrangement's months (8,400 / 12 = 700), the
   schedule's ending balance against the GL (3,500 vs 2,800 is off by 700).
@@ -26,7 +27,7 @@ from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 ENGINE_VERSION: Final = "close-procedures/1.0"
 CENT: Final = Decimal("0.01")
@@ -82,12 +83,18 @@ def reconcile_statement(
     difference = money(bank - book)
     stale = tuple(sorted(i.ref for i in items if (period_end - i.txn_date).days > stale_days))
     return Reconciliation(
-        money(balance_per_bank), bank, money(book_balance), book, difference,
-        "tie" if difference == 0 else "off", stale,
-    )  # fmt: skip
+        money(balance_per_bank),
+        bank,
+        money(book_balance),
+        book,
+        difference,
+        "tie" if difference == 0 else "off",
+        stale,
+    )
 
 
-# --- third-party sales clearing -------------------------------------------------------------------
+# --- third-party sales clearing
+# -------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -140,9 +147,16 @@ def clear_third_party_sales(
     deposited = money(sum((d.amount for d in deposits), ZERO))
     difference = money(expected - deposited)
     return Clearing(
-        money(gross), money(fees), money(refunds), expected, deposited, difference, matched,
-        tuple(unmatched), "tie" if difference == 0 and not unmatched else "off",
-    )  # fmt: skip
+        money(gross),
+        money(fees),
+        money(refunds),
+        expected,
+        deposited,
+        difference,
+        matched,
+        tuple(unmatched),
+        "tie" if difference == 0 and not unmatched else "off",
+    )
 
 
 # --- prepaid amortisation ---------------------------------------------------------------------
@@ -174,10 +188,19 @@ def amortize_prepaid(
     expensed = total if elapsed == months else money(monthly * elapsed)
     ending = money(total - expensed)
     off = money(ending - gl_balance)
-    return Schedule(monthly, elapsed, money(expensed), ending, money(gl_balance), off, "tie" if off == 0 else "off")
+    return Schedule(
+        monthly,
+        elapsed,
+        money(expensed),
+        ending,
+        money(gl_balance),
+        off,
+        "tie" if off == 0 else "off",
+    )
 
 
-# --- fixed assets ---------------------------------------------------------------------------------
+# --- fixed assets
+# ---------------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -255,12 +278,17 @@ def recategorize(lines: Sequence[Line], rules: Sequence[Rule]) -> list[Proposal]
             if rule.max_amount is not None and abs(line.amount) > rule.max_amount:
                 continue
             if rule.target_account != line.account:
-                out.append(Proposal(line.ref, line.account, rule.target_account, rule.key, money(line.amount)))
+                out.append(
+                    Proposal(
+                        line.ref, line.account, rule.target_account, rule.key, money(line.amount)
+                    )
+                )
             break
     return out
 
 
-# --- accrual roll ---------------------------------------------------------------------------------
+# --- accrual roll
+# ---------------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -271,7 +299,9 @@ class AccrualRoll:
 
 
 def roll_accruals(prior_estimate: Decimal, current_estimate: Decimal) -> AccrualRoll:
-    return AccrualRoll(money(-prior_estimate), money(current_estimate), money(current_estimate - prior_estimate))
+    return AccrualRoll(
+        money(-prior_estimate), money(current_estimate), money(current_estimate - prior_estimate)
+    )
 
 
 @dataclass(frozen=True)
@@ -288,7 +318,10 @@ def outcome_of(result: object, inputs: object) -> Outcome:
     raw = asdict(result)  # type: ignore[call-overload]  # a dataclass result
     figures = {k: str(v) for k, v in raw.items() if not isinstance(v, (list, tuple))}
     exceptions = tuple(
-        str(x) for k, v in raw.items() if isinstance(v, (list, tuple)) for x in v  # pyright: ignore[reportUnknownVariableType]
+        str(x)
+        for v in raw.values()
+        if isinstance(v, (list, tuple))
+        for x in cast("list[object] | tuple[object, ...]", v)
     )
     tally: Tally = "off" if raw.get("tally") == "off" or raw.get("tie") == "off" else "tie"
     return Outcome(figures, exceptions, tally, inputs_hash(inputs))

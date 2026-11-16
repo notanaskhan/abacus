@@ -3784,7 +3784,7 @@ export const uploadAttachment = <ThrowOnError extends boolean = false>(options: 
  * Request Code
  *
  * `confirmation.respond_verify`: 202 after the padded floor for any token and any address.
- * The stub sends nothing (A-08-T15 sends a 10-minute code to the typed address).
+ * A-08-T15: a live link whose address is the typed one gets a 10-minute code by email.
  */
 export const requestCode = <ThrowOnError extends boolean = false>(options: Options<RequestCodeData, ThrowOnError>): RequestResult<RequestCodeResponses, RequestCodeErrors, ThrowOnError> => (options.client ?? client).post<RequestCodeResponses, RequestCodeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3799,9 +3799,9 @@ export const requestCode = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Verify Code
  *
- * `confirmation.respond_verify`: a verified code upgrades the page credential (A-08-T15).
- * The stub verifies only the fixture code on an open fixture link; anything else is `false`
- * after the same floor (lockout after five failures lands with A-08-T15).
+ * `confirmation.respond_verify` (A-08-T15): a right code sets the `__Host-` page credential
+ * and returns its CSRF value in a header; five wrong codes lock the link for 15 minutes. Every
+ * failure is `false` after the same floor. Fixture links (local, test) keep the fixture code.
  */
 export const verifyCode = <ThrowOnError extends boolean = false>(options: Options<VerifyCodeData, ThrowOnError>): RequestResult<VerifyCodeResponses, VerifyCodeErrors, ThrowOnError> => (options.client ?? client).post<VerifyCodeResponses, VerifyCodeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

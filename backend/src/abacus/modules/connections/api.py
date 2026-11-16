@@ -5,6 +5,9 @@ from datetime import timedelta
 from typing import Any
 
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
+
+# A-09-T11, T13: which entities a connection covers (OneWorld).
+from abacus.kernel.connection_coverage import register_connection_coverage
 from abacus.kernel.dispatch import PlatformSchedule, register_work_classes
 from abacus.kernel.uow import Handler
 from abacus.modules.connections.activities import ACTIVITIES as RUN_ACTIVITIES
@@ -26,9 +29,7 @@ from abacus.modules.connections.connector import (
     Unavailable,
 )
 from abacus.modules.connections.connectors import quickbooks_online
-
-# A-09-T11, T13: which entities a connection covers (OneWorld).
-from abacus.modules.connections.coverage import EntityAlreadyCovered, cover_entities, covers
+from abacus.modules.connections.coverage import cover_entities, covers
 from abacus.modules.connections.entity import (
     ActivityLine,
     AuthorizationRequired,
@@ -68,14 +69,23 @@ from abacus.modules.connections.grants import GrantRevocationRequested, revoke_r
 from abacus.modules.connections.health import check_connection_health_activity
 from abacus.modules.connections.ledger_sync import ACTIVITIES as LEDGER_SYNC_ACTIVITIES
 from abacus.modules.connections.ledger_sync import (
-    SyncScope,
     ensure_sync_workflow,
-    register_sync_scope,
     sync_facts,
 )
 from abacus.modules.connections.ledger_sync_contract import (
     LedgerSyncStatusOut,
     ledger_sync_router,
+)
+from abacus.modules.connections.ledger_sync_types import (
+    PLAN_TICK,
+    SYNC_ENTITY,
+    SYNC_NOW,
+    LedgerSyncInput,
+    PlanTickInput,
+    PlanTickResult,
+    SyncEntityInput,
+    SyncEntityResult,
+    SyncNowSignal,
 )
 from abacus.modules.connections.ledger_sync_workflow import LedgerSyncWorkflow
 from abacus.modules.connections.models import Connection
@@ -189,9 +199,12 @@ __all__ = [
     "ACTIVITIES",
     "CONNECTORS",
     "NETWORKLESS_PROVIDERS",
+    "PLAN_TICK",
     "ROUTERS",
     "SCHEDULES",
     "SUBSCRIPTIONS",
+    "SYNC_ENTITY",
+    "SYNC_NOW",
     "WORKFLOWS",
     "ActionCapReached",
     "ActivityLine",
@@ -211,7 +224,6 @@ __all__ = [
     "ConsentShown",
     "ConsentVersionStale",
     "Dataset",
-    "EntityAlreadyCovered",
     "EntityConnectionView",
     "EntityConnections",
     "FailInput",
@@ -220,11 +232,14 @@ __all__ = [
     "GlImportWorkflow",
     "LedgerAlreadyConnected",
     "LedgerSnapshotRecorded",
+    "LedgerSyncInput",
     "LedgerSyncStatusOut",  # C-01-T07: C9 v2.1 sync facts
     "LedgerSyncWorkflow",
     "NoConnection",
     "NotSupported",
     "Period",
+    "PlanTickInput",
+    "PlanTickResult",
     "RawPayload",
     "ReconnectRequested",
     "RetrievalInput",
@@ -238,7 +253,9 @@ __all__ = [
     "RunSummary",
     "Started",
     "StartedRun",
-    "SyncScope",
+    "SyncEntityInput",
+    "SyncEntityResult",
+    "SyncNowSignal",
     "SyntheticSeedRefused",
     "Unavailable",
     "WorkflowUnavailable",
@@ -250,8 +267,6 @@ __all__ = [
     "connection_detail",
     "connection_router",
     "connector_for",
-    "cover_entities",
-    "covers",
     "disconnect",
     "ensure_sync_workflow",
     "entity_connections",
@@ -268,7 +283,6 @@ __all__ = [
     "qbo_app",
     "quickbooks_online",
     "reconnect_todo_count",
-    "register_sync_scope",
     "render",
     "request_reconnect",
     "retrieval_status",
@@ -285,3 +299,6 @@ __all__ = [
     "validate_run",
     "workflow_id",
 ]
+
+# A-09-T11, T13: the coverage slot the consolidation routes call (kernel.connection_coverage).
+register_connection_coverage(covers, cover_entities)

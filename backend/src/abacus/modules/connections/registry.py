@@ -7,7 +7,7 @@ every module's registry (schema_check), so adding a table edits only this file.
 from __future__ import annotations
 
 # The tables this module owns; no other module reads or writes them (ADR-008).
-TABLES: frozenset[str] = frozenset(
+_TABLES: frozenset[str] = frozenset(
     {
         "ledger_imports",  # SPEC-028 (TASK-052)
         "gl_imports",
@@ -110,3 +110,25 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "connection_states": frozenset({"used_at"}),  # SPEC-020: spent once
     "reconnect_requests": frozenset({"fulfilled_at"}),  # 0195: cleared on reconnect
 }
+
+# S46: A-09-T11 (0897) connection entity coverage; C-01-T17 (0891) sync_schedules
+# retry_at and last_failure_code.
+TABLES: frozenset[str] = _TABLES | frozenset({"connection_entity_coverage"})
+INSERT_COLUMNS["connection_entity_coverage"] = frozenset(
+    {"category", "client_entity_id", "connection_id", "live", "tenant_id"}
+)
+UPDATE_COLUMNS["connection_entity_coverage"] = frozenset({"live"})
+INSERT_COLUMNS["sync_schedules"] = INSERT_COLUMNS.get("sync_schedules", frozenset()) | frozenset(
+    {"business_hours", "cadence", "connection_id", "next_run_at", "tenant_id"}
+)
+UPDATE_COLUMNS["sync_schedules"] = UPDATE_COLUMNS.get("sync_schedules", frozenset()) | frozenset(
+    {
+        "business_hours",
+        "cadence",
+        "cdc_cursor",
+        "last_failure_code",
+        "next_run_at",
+        "paused_reason",
+        "retry_at",
+    }
+)

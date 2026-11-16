@@ -676,9 +676,11 @@ async def close_workpaper_route(
 
 
 @close_work_router.get(
-    f"{_C}/accounts/{{account_ref}}/workpaper.xlsx", action="close.read", response_model=bytes,
+    f"{_C}/accounts/{{account_ref}}/workpaper.xlsx",
+    action="close.read",
+    response_model=bytes,
     errors=(501,),
-)  # fmt: skip
+)
 async def close_workpaper_xlsx_route(
     close_id: UUID, account_ref: AccountRef, ctx: Ctx
 ) -> Response:
@@ -735,9 +737,11 @@ async def recategorize_route(
 
 
 @close_work_router.get(
-    f"{_C}/reconciliations/{{account_ref}}", action="close.read",
-    response_model=CloseReconciliationOut, errors=(409, 501),
-)  # fmt: skip
+    f"{_C}/reconciliations/{{account_ref}}",
+    action="close.read",
+    response_model=CloseReconciliationOut,
+    errors=(409, 501),
+)
 async def close_reconciliation_route(
     close_id: UUID, account_ref: AccountRef, ctx: Ctx
 ) -> CloseReconciliationOut:

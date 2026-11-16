@@ -21,11 +21,17 @@ from .conftest import MigratedDatabase
 pytestmark = pytest.mark.asyncio
 
 _SNAPSHOT = """
-    WITH s AS (
+    WITH tb AS (
+        INSERT INTO ledger_snapshots (tenant_id, client_entity_id, period_start, period_end,
+            pulled_at, source, raw_fingerprint, line_count, total_debit, total_credit)
+        VALUES ($1, $2, '2025-07-01', '2026-06-30', now(), 'import',
+            md5(random()::text) || md5(random()::text), 0, 0, 0)
+        RETURNING id
+    ), s AS (
         INSERT INTO gl_snapshots (tenant_id, client_entity_id, period_start, period_end, source,
             raw_fingerprint, tb_snapshot_id, line_count, total_debit, total_credit)
         VALUES ($1, $2, '2025-07-01', '2026-06-30', 'netsuite_gl_csv',
-            md5(random()::text) || md5(random()::text), gen_random_uuid(), 2, 250, 250)
+            md5(random()::text) || md5(random()::text), (SELECT id FROM tb), 2, 250, 250)
         RETURNING id
     ), e AS (
         INSERT INTO gl_entries (tenant_id, snapshot_id, line_no, account_code, posted_on, debit,
@@ -54,7 +60,8 @@ async def _seed(migrated_db: MigratedDatabase) -> tuple[Seeder, uuid.UUID, uuid.
         "INSERT INTO clients (tenant_id, name) VALUES ($1, 'Probe') RETURNING id", tenant
     )
     entity = await seed.value(
-        "INSERT INTO client_entities (tenant_id, client_id, name) VALUES ($1, $2, 'Probe') RETURNING id",
+        "INSERT INTO client_entities (tenant_id, client_id, name) VALUES ($1, $2, 'Probe') "
+        "RETURNING id",
         tenant,
         client,
     )

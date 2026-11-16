@@ -165,37 +165,83 @@ def upgrade() -> None:
         tenant_table(op, table)
         op.execute(f"REVOKE UPDATE, DELETE, TRUNCATE ON {table} FROM abacus_app")
     insert_columns(
-        op, "je_tests",
-        ("tenant_id", "engagement_id", "work_item_id", "gl_snapshot_id", "period_start",
-         "period_end", "post_close_through", "created_by"),
-    )  # fmt: skip
+        op,
+        "je_tests",
+        (
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "gl_snapshot_id",
+            "period_start",
+            "period_end",
+            "post_close_through",
+            "created_by",
+        ),
+    )
     op.execute(
         "GRANT UPDATE (policy_version_id, status, failure_code, sample_set_id, score_version, "
         "row_version) ON je_tests TO abacus_app"
     )
     insert_columns(
-        op, "je_test_criteria",
-        ("tenant_id", "je_test_id", "configured_version", "position", "key", "weight", "params",
-         "set_by"),
-    )  # fmt: skip
+        op,
+        "je_test_criteria",
+        (
+            "tenant_id",
+            "je_test_id",
+            "configured_version",
+            "position",
+            "key",
+            "weight",
+            "params",
+            "set_by",
+        ),
+    )
     insert_only(op, "je_test_criteria")
     insert_columns(
-        op, "je_posting_user_roles",
-        ("tenant_id", "je_test_id", "posting_user_sha256", "posting_user_sealed", "role_class",
-         "citation_id", "set_by"),
-    )  # fmt: skip
+        op,
+        "je_posting_user_roles",
+        (
+            "tenant_id",
+            "je_test_id",
+            "posting_user_sha256",
+            "posting_user_sealed",
+            "role_class",
+            "citation_id",
+            "set_by",
+        ),
+    )
     insert_only(op, "je_posting_user_roles")
     insert_columns(
-        op, "je_score_runs",
-        ("tenant_id", "je_test_id", "score_version", "engine_version", "inputs_hash",
-         "entries_count", "unique_flagged", "hits"),
-    )  # fmt: skip
+        op,
+        "je_score_runs",
+        (
+            "tenant_id",
+            "je_test_id",
+            "score_version",
+            "engine_version",
+            "inputs_hash",
+            "entries_count",
+            "unique_flagged",
+            "hits",
+        ),
+    )
     insert_only(op, "je_score_runs")
     insert_columns(
-        op, "je_scores",
-        ("tenant_id", "run_id", "entry_ref", "score", "reason_codes", "criteria_mask", "posted_on",
-         "amount", "account_last4", "description"),
-    )  # fmt: skip
+        op,
+        "je_scores",
+        (
+            "tenant_id",
+            "run_id",
+            "entry_ref",
+            "score",
+            "reason_codes",
+            "criteria_mask",
+            "posted_on",
+            "amount",
+            "account_last4",
+            "description",
+        ),
+    )
     insert_only(op, "je_scores")
     _swap("sample_set_versions", "sample_set_versions_method_check", "method", _METHODS_AFTER)
     _swap(

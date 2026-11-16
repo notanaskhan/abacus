@@ -91,7 +91,8 @@ def _paths() -> dict[str, dict[str, dict[str, object]]]:
     return cast(dict[str, dict[str, dict[str, object]]], json.loads(document())["paths"])
 
 
-def test_sync_routes_are_published_with_one_action_and_a_501() -> None:
+def test_sync_routes_are_published_with_one_action_and_served() -> None:
+    """C-01-T17 (TASK-8069) serves both: they answer, no longer 501."""
     paths = _paths()
     routes = [
         (route.path, m.lower())
@@ -105,7 +106,7 @@ def test_sync_routes_are_published_with_one_action_and_a_501() -> None:
     ]
     for path, method in routes:
         op = paths[path][method]
-        assert "501" in cast(dict[str, object], op["responses"])
+        assert "501" not in cast(dict[str, object], op["responses"])
     assert paths[routes[0][0]]["get"]["x-abacus-action"] == "ledger.read"
     assert paths[routes[0][0]]["post"]["x-abacus-action"] == "ledger.sync_now"
 

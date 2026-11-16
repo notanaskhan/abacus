@@ -16,7 +16,17 @@ import {
   closeRequestsOptions,
   viewerTextOptions,
 } from "@abacus/api-client/query";
-import { Button, EmptyState, Icon, Skeleton, Spinner, StatusDisc, Toggle } from "@abacus/ui";
+import {
+  Button,
+  EmptyState,
+  Icon,
+  Skeleton,
+  Spinner,
+  StatusDisc,
+  Toggle,
+  count,
+  prose,
+} from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
 import { COPY, RETURN_REASONS, subLineOf } from "./copy";
@@ -48,15 +58,17 @@ export function requestsOf(nodes: readonly RequestNodeOut[]): RequestNodeOut[] {
 }
 
 /** "7 received of 9" across the tree. */
-export function receivedCount(nodes: readonly RequestNodeOut[]): { received: number; total: number } {
+export function receivedCount(nodes: readonly RequestNodeOut[]): {
+  received: number;
+  total: number;
+} {
   const all = requestsOf(nodes);
   return { received: all.filter((r) => r.status !== "requested").length, total: all.length };
 }
 
 function money(value: string | null | undefined): string {
   if (value === null || value === undefined) return "";
-  const [whole, cents = "00"] = value.split(".");
-  return `$${Number(whole).toLocaleString("en-US")}.${cents.padEnd(2, "0").slice(0, 2)}`;
+  return prose(value, "money");
 }
 
 function Disc({ node }: { node: RequestNodeOut }): JSX.Element {
@@ -139,10 +151,19 @@ function TreeNodes({
               style={{ paddingLeft: [12, 30, 48][Math.min(level, 2)] }}
               className="flex h-[34px] items-center gap-[6px] pr-[12px] text-[13px] font-medium"
             >
-              <Icon name={(n.children ?? []).length > 0 ? "chevron-down" : "chevron-right"} size={12} className="text-ink-3" />
+              <Icon
+                name={(n.children ?? []).length > 0 ? "chevron-down" : "chevron-right"}
+                size={12}
+                className="text-ink-3"
+              />
               {n.title}
             </div>
-            <TreeNodes nodes={n.children ?? []} level={level + 1} selected={selected} onSelect={onSelect} />
+            <TreeNodes
+              nodes={n.children ?? []}
+              level={level + 1}
+              selected={selected}
+              onSelect={onSelect}
+            />
           </li>
         ) : (
           <TreeRow
@@ -150,7 +171,9 @@ function TreeNodes({
             node={n}
             level={level + 1}
             selected={selected === n.request_item_id}
-            onSelect={() => onSelect(n.request_item_id ?? "")}
+            onSelect={() => {
+              onSelect(n.request_item_id ?? "");
+            }}
           />
         ),
       )}
@@ -158,9 +181,20 @@ function TreeNodes({
   );
 }
 
-function Card({ icon, title, children }: { icon: "file-text" | "file"; title: string; children: JSX.Element | JSX.Element[] }): JSX.Element {
+function Card({
+  icon,
+  title,
+  children,
+}: {
+  icon: "file-text" | "file";
+  title: string;
+  children: JSX.Element | JSX.Element[];
+}): JSX.Element {
   return (
-    <section className="m-[10px] overflow-hidden rounded-card bg-card shadow-e1" aria-label={title}>
+    <section
+      className="m-[10px] overflow-hidden rounded-card bg-card shadow-e1"
+      aria-label={title}
+    >
       <h3 className="flex h-[36px] items-center gap-[8px] bg-band-hd px-[13px] text-[13.5px] font-medium">
         <Icon name={icon} size={15} className="text-ink-3" />
         {title}
@@ -191,7 +225,9 @@ function SummaryFigures({
       <div className="mb-[6px] text-[12px] text-ink-3">
         {summary.label === "totals_from_file" ? COPY.totalsFromFile : COPY.summary}
       </div>
-      {summary.paragraph ? <p className="text-[12.5px] leading-[1.5]">{summary.paragraph}</p> : null}
+      {summary.paragraph ? (
+        <p className="text-[12.5px] leading-[1.5]">{summary.paragraph}</p>
+      ) : null}
       <ul className="mt-[8px] flex flex-col gap-[4px]">
         {summary.figures.map((f) => (
           <li key={f.key}>
@@ -199,15 +235,25 @@ function SummaryFigures({
               type="button"
               data-figure={f.key}
               data-cite={f.citation_id}
-              onMouseEnter={() => onLight(f.key)}
-              onMouseLeave={() => onLight(null)}
-              onFocus={() => onLight(f.key)}
-              onBlur={() => onLight(null)}
+              onMouseEnter={() => {
+                onLight(f.key);
+              }}
+              onMouseLeave={() => {
+                onLight(null);
+              }}
+              onFocus={() => {
+                onLight(f.key);
+              }}
+              onBlur={() => {
+                onLight(null);
+              }}
               className="flex w-full items-center justify-between rounded-[4px] px-[4px] text-[12.5px] hover:bg-nested"
             >
               <span className="text-ink-2">{f.label}</span>
               <span className="tabular-nums">
-                {f.amount !== null && f.amount !== undefined ? money(f.amount) : (f.count ?? 0).toLocaleString("en-US")}
+                {f.amount !== null && f.amount !== undefined
+                  ? money(f.amount)
+                  : count(f.count ?? 0)}
               </span>
             </button>
           </li>
@@ -218,9 +264,20 @@ function SummaryFigures({
 }
 
 // The summary figure → the total row's column (C23..F23 in the sheet).
-const FIGURE_COLUMN: Readonly<Record<string, number>> = { transactions: 2, gross: 3, fees: 4, net: 5 };
+const FIGURE_COLUMN: Readonly<Record<string, number>> = {
+  transactions: 2,
+  gross: 3,
+  fees: 4,
+  net: 5,
+};
 
-function SheetView({ sheet, lit }: { sheet: ViewerTextSheetOut; lit: string | null }): JSX.Element {
+function SheetView({
+  sheet,
+  lit,
+}: {
+  sheet: ViewerTextSheetOut;
+  lit: string | null;
+}): JSX.Element {
   const [header, ...rows] = sheet.rows;
   const litColumn = lit === null ? null : (FIGURE_COLUMN[lit] ?? null);
   return (
@@ -239,7 +296,10 @@ function SheetView({ sheet, lit }: { sheet: ViewerTextSheetOut; lit: string | nu
           {rows.map((r, i) => {
             const total = i === rows.length - 1;
             return (
-              <tr key={`${r[0] ?? ""}-${String(i)}`} className={`${i % 2 === 1 ? "bg-zebra" : ""} ${total ? "border-t border-ink font-medium" : ""}`}>
+              <tr
+                key={`${r[0] ?? ""}-${String(i)}`}
+                className={`${i % 2 === 1 ? "bg-zebra" : ""} ${total ? "border-t border-ink font-medium" : ""}`}
+              >
                 {r.map((cell, j) => (
                   <td
                     key={`${String(j)}-${cell}`}
@@ -298,7 +358,10 @@ export function CLS03(props: CLS03Props): JSX.Element {
   if (!tree.data.published) {
     return (
       <div data-screen="CLS-03" data-state="f" className="flex flex-1 items-center justify-center">
-        <EmptyState icon="calendar" title={COPY.notPublished(tree.data.publishes_on ?? null, tree.data.plan_version ?? null)} />
+        <EmptyState
+          icon="calendar"
+          title={COPY.notPublished(tree.data.publishes_on ?? null, tree.data.plan_version ?? null)}
+        />
       </div>
     );
   }
@@ -316,10 +379,22 @@ export function CLS03(props: CLS03Props): JSX.Element {
         <header className="relative flex h-[46px] flex-none items-center justify-center text-[14.5px] font-medium hairline-b">
           {COPY.intake}
           <span className="absolute right-[10px] flex gap-[6px]">
-            <button type="button" aria-label={COPY.sendReminder} onClick={() => id && props.onSendReminder?.(id)} className="flex size-[29px] items-center justify-center rounded-pill bg-card shadow-e1">
+            <button
+              type="button"
+              aria-label={COPY.sendReminder}
+              onClick={() => id && props.onSendReminder?.(id)}
+              className="flex size-[29px] items-center justify-center rounded-pill bg-card shadow-e1"
+            >
               <Icon name="mail" size={14} />
             </button>
-            <button type="button" aria-label={COPY.uploadOnBehalf} onClick={() => setDragging(true)} className="flex size-[29px] items-center justify-center rounded-pill bg-card shadow-e1">
+            <button
+              type="button"
+              aria-label={COPY.uploadOnBehalf}
+              onClick={() => {
+                setDragging(true);
+              }}
+              className="flex size-[29px] items-center justify-center rounded-pill bg-card shadow-e1"
+            >
               <Icon name="upload" size={14} />
             </button>
           </span>
@@ -332,7 +407,9 @@ export function CLS03(props: CLS03Props): JSX.Element {
               e.preventDefault();
               setDragging(true);
             }}
-            onDragLeave={() => setDragging(false)}
+            onDragLeave={() => {
+              setDragging(false);
+            }}
             onDrop={(e) => {
               e.preventDefault();
               setDragging(false);
@@ -341,7 +418,9 @@ export function CLS03(props: CLS03Props): JSX.Element {
             style={{ width: 310 }}
             className={`flex-none overflow-y-auto hairline-r ${dragging ? "bg-chip ring-2 ring-inset ring-espresso" : ""}`}
           >
-            <h3 className="flex h-[36px] items-center px-[12px] text-[13.5px] font-medium">{COPY.requested}</h3>
+            <h3 className="flex h-[36px] items-center px-[12px] text-[13.5px] font-medium">
+              {COPY.requested}
+            </h3>
             <TreeNodes
               nodes={tree.data.nodes}
               level={-1}
@@ -351,12 +430,16 @@ export function CLS03(props: CLS03Props): JSX.Element {
                 setPicker(false);
               }}
             />
-            <h3 className="flex h-[36px] items-center px-[12px] text-[13.5px] font-medium hairline-t">{COPY.questionnaire}</h3>
+            <h3 className="flex h-[36px] items-center px-[12px] text-[13.5px] font-medium hairline-t">
+              {COPY.questionnaire}
+            </h3>
             <button
               type="button"
               data-questionnaire
               aria-current={selection?.kind === "questionnaire" ? "true" : undefined}
-              onClick={() => setSelection({ kind: "questionnaire" })}
+              onClick={() => {
+                setSelection({ kind: "questionnaire" });
+              }}
               className={`flex w-full flex-col px-[30px] py-[6px] text-left ${selection?.kind === "questionnaire" ? "bg-selected font-medium" : "hover:bg-nested"}`}
             >
               <span className="text-[13px]">{COPY.questionnaireTitle}</span>
@@ -367,14 +450,22 @@ export function CLS03(props: CLS03Props): JSX.Element {
               {selection?.kind === "questionnaire" ? (
                 <Card icon="file-text" title={COPY.questionnaireTitle}>
                   <div className="px-[13px] py-[8px] text-[12px] text-ink-3">
-                    {questionnaire.data ? `${String(questionnaire.data.answered)} of ${String(questionnaire.data.total)} answered` : ""}
+                    {questionnaire.data
+                      ? `${String(questionnaire.data.answered)} of ${String(questionnaire.data.total)} answered`
+                      : ""}
                   </div>
                   <ul>
                     {(questionnaire.data?.items ?? []).map((q) => (
-                      <li key={q.question} data-question className="flex flex-col gap-[2px] px-[13px] py-[8px] hairline-t">
+                      <li
+                        key={q.question}
+                        data-question
+                        className="flex flex-col gap-[2px] px-[13px] py-[8px] hairline-t"
+                      >
                         <span className="text-[13px] font-medium">{q.question}</span>
                         {q.answer === null || q.answer === undefined ? (
-                          <span className="text-[12.5px] text-amber-ink">{COPY.awaitingAnswer}</span>
+                          <span className="text-[12.5px] text-amber-ink">
+                            {COPY.awaitingAnswer}
+                          </span>
                         ) : (
                           <>
                             <span className="text-[12.5px] text-ink-2">{q.answer}</span>
@@ -390,7 +481,11 @@ export function CLS03(props: CLS03Props): JSX.Element {
                   <Card icon="file-text" title={COPY.documentRequest}>
                     <Field k={COPY.fields.request}>{chosen.title}</Field>
                     <Field k={COPY.fields.visible}>
-                      <Toggle checked={chosen.client_visible === true} label={COPY.fields.visible} onChange={() => undefined} />
+                      <Toggle
+                        checked={chosen.client_visible === true}
+                        label={COPY.fields.visible}
+                        onChange={() => undefined}
+                      />
                     </Field>
                     <Field k={COPY.fields.due}>{chosen.due_on ?? "—"}</Field>
                   </Card>
@@ -407,7 +502,10 @@ export function CLS03(props: CLS03Props): JSX.Element {
                         </span>
                       </Field>
                       {initial.rescreening === true ? (
-                        <div data-rescreening className="flex items-center gap-[6px] px-[13px] py-[10px] text-[12.5px] text-ink-3 hairline-t">
+                        <div
+                          data-rescreening
+                          className="flex items-center gap-[6px] px-[13px] py-[10px] text-[12.5px] text-ink-3 hairline-t"
+                        >
                           <Spinner size={12} label={COPY.screening} showLabel={false} />
                           {COPY.screening}
                         </div>
@@ -423,10 +521,20 @@ export function CLS03(props: CLS03Props): JSX.Element {
                     <Card icon="file" title={COPY.uploadedDocument}>
                       <EmptyState icon="upload" title={COPY.nothingUploaded} />
                       <div className="flex gap-[8px] px-[13px] py-[10px] hairline-t">
-                        <Button variant="secondary" size="sm" onClick={() => id && props.onSendReminder?.(id)}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => id && props.onSendReminder?.(id)}
+                        >
                           {COPY.sendReminderEllipsis}
                         </Button>
-                        <Button variant="secondary" size="sm" onClick={() => setDragging(true)}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setDragging(true);
+                          }}
+                        >
                           {COPY.uploadOnBehalfEllipsis}
                         </Button>
                       </div>
@@ -440,7 +548,11 @@ export function CLS03(props: CLS03Props): JSX.Element {
                 {incorporated ? (
                   <>
                     {(chosen.rerun_plan_row_ids ?? []).length > 0 ? (
-                      <Button variant="secondary" size="lg" onClick={() => props.onRerun?.(chosen.rerun_plan_row_ids ?? [])}>
+                      <Button
+                        variant="secondary"
+                        size="lg"
+                        onClick={() => props.onRerun?.(chosen.rerun_plan_row_ids ?? [])}
+                      >
                         {COPY.rerunAffected}
                       </Button>
                     ) : null}
@@ -449,20 +561,40 @@ export function CLS03(props: CLS03Props): JSX.Element {
                     </Button>
                   </>
                 ) : picker ? (
-                  <div role="menu" aria-label={COPY.returnToClient} data-picker className="flex flex-col gap-[4px]">
+                  <div
+                    role="menu"
+                    aria-label={COPY.returnToClient}
+                    data-picker
+                    className="flex flex-col gap-[4px]"
+                  >
                     {RETURN_REASONS.map((r) => (
-                      <Button key={r} variant="secondary" size="sm" onClick={() => id && props.onReturn?.(id, r)}>
+                      <Button
+                        key={r}
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => id && props.onReturn?.(id, r)}
+                      >
                         {r}
                       </Button>
                     ))}
                   </div>
                 ) : (
                   <>
-                    <Button variant="primary" size="lg" onClick={() => id && props.onIncorporate?.(id)}>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={() => id && props.onIncorporate?.(id)}
+                    >
                       <Icon name="check" size={14} />
                       {COPY.incorporate}
                     </Button>
-                    <Button variant="secondary" size="lg" onClick={() => setPicker(true)}>
+                    <Button
+                      variant="secondary"
+                      size="lg"
+                      onClick={() => {
+                        setPicker(true);
+                      }}
+                    >
                       {COPY.returnToClient}
                     </Button>
                   </>
@@ -472,7 +604,10 @@ export function CLS03(props: CLS03Props): JSX.Element {
           </div>
         </div>
       </section>
-      <section aria-label={COPY.viewer} className="flex min-w-0 flex-1 flex-col rounded-pane bg-card shadow-e2">
+      <section
+        aria-label={COPY.viewer}
+        className="flex min-w-0 flex-1 flex-col rounded-pane bg-card shadow-e2"
+      >
         <header className="flex h-[46px] flex-none items-center justify-center text-[14px] font-medium hairline-b">
           {received && sheet !== undefined ? sheet.name : ""}
         </header>

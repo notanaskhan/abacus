@@ -2,7 +2,7 @@
 id: TASK-8069
 title: "C-01-T17: LedgerSyncWorkflow: hourly CDC sync, Sync now, meter budget (red)"
 spec: SPEC-655
-acceptance_criteria: [US-5.1, US-5.2]
+acceptance_criteria: [AC-5]
 risk_zone: red
 status: in-review
 branch: c01-t17-ledger-sync

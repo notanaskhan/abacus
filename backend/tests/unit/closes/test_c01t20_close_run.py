@@ -27,7 +27,9 @@ from abacus.modules.closes.run_plan import (
 
 CLOSE = uuid.UUID("00000000-0000-4000-8000-00000000c1a2")
 ROWS = [
-    PlanRow(uuid.uuid4(), n, account, name, procedure, "method", "quickbooks_online", "senior_signoff")
+    PlanRow(
+        uuid.uuid4(), n, account, name, procedure, "method", "quickbooks_online", "senior_signoff"
+    )
     for n, (account, name, procedure) in enumerate(
         [
             ("4000", "Revenue", "recategorize"),
@@ -79,40 +81,63 @@ def test_failed_only_reruns_the_failed_rows() -> None:
 def test_reconcile_foots_the_figure_book() -> None:
     # ••4410: 184,236.18 + 6,412.40 - 5,658.08 = 184,990.50 = 184,610.50 + 380.00
     items = [
-        p.OutstandingItem("bank", "deposit_in_transit", "d1", Decimal("6412.40"), date(2026, 8, 31)),
-        p.OutstandingItem("bank", "outstanding_check", "#2281", Decimal("-5658.08"), date(2026, 2, 19)),
+        p.OutstandingItem(
+            "bank", "deposit_in_transit", "d1", Decimal("6412.40"), date(2026, 8, 31)
+        ),
+        p.OutstandingItem(
+            "bank", "outstanding_check", "#2281", Decimal("-5658.08"), date(2026, 2, 19)
+        ),
         p.OutstandingItem("book", "interest", "int", Decimal("380.00"), date(2026, 8, 31)),
     ]
-    rec = p.reconcile_statement(Decimal("184236.18"), Decimal("184610.50"), items, date(2026, 8, 31))
+    rec = p.reconcile_statement(
+        Decimal("184236.18"), Decimal("184610.50"), items, date(2026, 8, 31)
+    )
     assert (rec.adjusted_bank, rec.adjusted_book, rec.difference, rec.tally) == (
-        Decimal("184990.50"), Decimal("184990.50"), Decimal("0.00"), "tie",
-    )  # fmt: skip
+        Decimal("184990.50"),
+        Decimal("184990.50"),
+        Decimal("0.00"),
+        "tie",
+    )
     assert rec.stale_items == ("#2281",)  # 193 days at period end
 
 
 def test_square_clearing_and_an_unmatched_transfer() -> None:
     payouts = [p.Payout("t1", Decimal("71482.36"), date(2026, 8, 31))]
     deposits = [p.Payout("d1", Decimal("71482.36"), date(2026, 9, 1))]
-    ok = p.clear_third_party_sales(Decimal("73166.90"), Decimal("1684.54"), Decimal(0), payouts, deposits)
-    assert (ok.expected_net, ok.difference, ok.tally) == (Decimal("71482.36"), Decimal("0.00"), "tie")
+    ok = p.clear_third_party_sales(
+        Decimal("73166.90"), Decimal("1684.54"), Decimal(0), payouts, deposits
+    )
+    assert (ok.expected_net, ok.difference, ok.tally) == (
+        Decimal("71482.36"),
+        Decimal("0.00"),
+        "tie",
+    )
     missing = p.clear_third_party_sales(
-        Decimal("6412.40"), Decimal(0), Decimal(0), [p.Payout("x", Decimal("6412.40"), date(2026, 8, 28))], []
+        Decimal("6412.40"),
+        Decimal(0),
+        Decimal(0),
+        [p.Payout("x", Decimal("6412.40"), date(2026, 8, 28))],
+        [],
     )
     assert missing.unmatched == ("x",) and missing.tally == "off"
 
 
 def test_prepaid_8400_over_12_is_700_and_3500_vs_2800_is_off_by_700() -> None:
-    s = p.amortize_prepaid(Decimal("8400"), 12, date(2026, 2, 1), date(2026, 8, 31), Decimal("2800.00"))
+    s = p.amortize_prepaid(
+        Decimal("8400"), 12, date(2026, 2, 1), date(2026, 8, 31), Decimal("2800.00")
+    )
     assert s.monthly == Decimal("700.00") and s.months_elapsed == 7
     assert (s.ending_balance, s.off_by, s.tie) == (Decimal("3500.00"), Decimal("700.00"), "off")
 
 
 def test_the_2500_capitalisation_test() -> None:
     d = p.depreciate_fixed_assets(
-        [p.Addition("grinder", Decimal("2499.99"), 60, date(2026, 8, 1)),
-         p.Addition("roaster", Decimal("36000.00"), 120, date(2026, 8, 1))],
+        [
+            p.Addition("grinder", Decimal("2499.99"), 60, date(2026, 8, 1)),
+            p.Addition("roaster", Decimal("36000.00"), 120, date(2026, 8, 1)),
+        ],
         date(2026, 8, 31),
-    )  # fmt: skip
+    )
     assert d.expensed == ("grinder",) and d.capitalised == ("roaster",)
     assert d.month_charge == Decimal("300.00")
 
@@ -122,8 +147,14 @@ def test_recategorize_first_rule_wins_and_accruals_roll() -> None:
     rules = [p.Rule("repairs", "valley equipment", "6100"), p.Rule("any", "bearing", "6900")]
     assert [x.to_account for x in p.recategorize(lines, rules)] == ["6100"]
     roll = p.roll_accruals(Decimal("1850.00"), Decimal("2140.00"))
-    assert (roll.reversed_prior, roll.booked, roll.net_change) == (Decimal("-1850.00"), Decimal("2140.00"), Decimal("290.00"))
+    assert (roll.reversed_prior, roll.booked, roll.net_change) == (
+        Decimal("-1850.00"),
+        Decimal("2140.00"),
+        Decimal("290.00"),
+    )
 
 
 def test_inputs_hash_is_stable() -> None:
-    assert p.inputs_hash({"b": Decimal("1.00"), "a": [1]}) == p.inputs_hash({"a": [1], "b": Decimal("1.00")})
+    assert p.inputs_hash({"b": Decimal("1.00"), "a": [1]}) == p.inputs_hash(
+        {"a": [1], "b": Decimal("1.00")}
+    )

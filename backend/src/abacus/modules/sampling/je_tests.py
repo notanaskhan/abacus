@@ -949,7 +949,7 @@ async def je_test_view(ctx: AuthContext, je_test_id: UUID) -> JeTestOut:
         allowed = [a for a in allowed if a != "sample_set.create"]
     return JeTestOut(
         id=je_test_id,
-        status=cast(Any, row["status"]),
+        status=cast(Any, row["status"]),  # Any: a JeTestStatus word the CHECK holds
         entries_count=int(run["entries_count"]) if run else 0,
         lines_count=snapshot.line_count,
         tie=tie_of(snapshot),

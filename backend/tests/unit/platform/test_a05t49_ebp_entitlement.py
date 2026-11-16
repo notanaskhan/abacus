@@ -74,7 +74,8 @@ def test_ac_ebp_audits_is_a_reviewed_module_with_its_check_registered() -> None:
     assert assurance_api.__name__  # importing assurance's api registers the check
     assert "ebp_audits" in entitlements.MODULES
     # T-05-T04 adds `tax_entity_returns`, the second reviewed module (its own check, own test).
-    assert {"ebp_audits", "tax_entity_returns"} == entitlements.REVIEWED_MODULES
+    # A-09-T09 (DEC-5069): `group_audit` waits on the consolidation golden-review memo.
+    assert {"ebp_audits", "tax_entity_returns", "group_audit"} == entitlements.REVIEWED_MODULES
     assert entitlements._reviews["ebp_audits"] is review.review_signed  # pyright: ignore[reportPrivateUsage] -- the registration under test
 
 

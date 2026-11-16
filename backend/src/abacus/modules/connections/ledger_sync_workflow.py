@@ -109,7 +109,7 @@ class LedgerSyncWorkflow:
             ticks += 1
             if ticks >= TICKS_PER_RUN or workflow.info().is_continue_as_new_suggested():
                 workflow.continue_as_new(LedgerSyncInput(given.tenant_id, list(self._now)))
-            try:
+            try:  # noqa: SIM105 - the recorded histories replay this shape (ADR-090)
                 await workflow.wait_condition(
                     lambda: bool(self._now),
                     timeout=timedelta(seconds=max(plan.wait_seconds, 1)),

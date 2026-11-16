@@ -16,6 +16,15 @@ Row = dict[str, Any]  # Any: database rows of mixed column types
 Values = Mapping[str, object]
 SCORE_BATCH: Final = 5000
 _PLAIN: Final = text("SELECT * FROM je_tests WHERE id = :i")
+_SCORES_PAGE: Final = text(
+    "SELECT * FROM je_scores WHERE run_id = :r "
+    "AND (CAST(:bit AS integer) IS NULL OR (criteria_mask & CAST(:bit AS integer)) <> 0) "
+    "AND (CAST(:refs AS text[]) IS NULL "
+    "OR (entry_ref = ANY(CAST(:refs AS text[]))) = CAST(:in_refs AS boolean)) "
+    "AND (CAST(:as AS integer) IS NULL OR score < CAST(:as AS integer) "
+    "OR (score = CAST(:as AS integer) AND entry_ref > CAST(:ar AS text))) "
+    "ORDER BY score DESC, entry_ref LIMIT :limit"
+)
 _LOCKED: Final = text("SELECT * FROM je_tests WHERE id = :i FOR UPDATE")
 
 
@@ -239,24 +248,15 @@ async def scores_page(
     after: tuple[int, str] | None,
     limit: int,
 ) -> list[Row]:
-    """A page of scores, score high first then reference (keyset after `(score, ref)`)."""
-    clauses = ["run_id = :r"]
-    params: dict[str, object] = {"r": run_id, "limit": limit}
-    if mask_bit is not None:
-        clauses.append("(criteria_mask & :bit) <> 0")
-        params["bit"] = 1 << mask_bit
-    if refs is not None:
-        clauses.append("entry_ref = ANY(:refs)" if in_refs else "NOT (entry_ref = ANY(:refs))")
-        params["refs"] = list(refs)
-    if after is not None:
-        clauses.append("(score < :as OR (score = :as AND entry_ref > :ar))")
-        params["as"], params["ar"] = after
-    return _rows(
-        await session.execute(
-            text(
-                f"SELECT * FROM je_scores WHERE {' AND '.join(clauses)} "  # noqa: S608 - fixed clauses
-                "ORDER BY score DESC, entry_ref LIMIT :limit"
-            ),
-            params,
-        )
-    )
+    """A page of scores, score high first then reference (keyset after `(score, ref)`); each
+    filter is a bound parameter that is NULL when unset."""
+    params: dict[str, object] = {
+        "r": run_id,
+        "limit": limit,
+        "bit": None if mask_bit is None else 1 << mask_bit,
+        "refs": None if refs is None else list(refs),
+        "in_refs": in_refs,
+        "as": None if after is None else after[0],
+        "ar": None if after is None else after[1],
+    }
+    return _rows(await session.execute(_SCORES_PAGE, params))

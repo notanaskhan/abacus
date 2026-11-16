@@ -7,7 +7,7 @@ every module's registry (schema_check), so adding a table edits only this file.
 from __future__ import annotations
 
 # The tables this module owns; no other module reads or writes them (ADR-008).
-TABLES: frozenset[str] = frozenset(
+_TABLES: frozenset[str] = frozenset(
     {
         "firms",
         "users",
@@ -54,7 +54,7 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY: frozenset[str] = frozenset(
     {"firm_policy_overrides", "client_access_events"}
     | {"engagement_member_events"}  # P-07-T30 (0155)
     # G-01-T13 (0168)
@@ -193,3 +193,24 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"updated_by", "updated_at"}
     ),
 }
+
+# S46: A-08-T15 (0893) link principals.
+TABLES: frozenset[str] = _TABLES | frozenset(
+    {"link_page_credentials", "link_principal_challenges", "link_principals"}
+)
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
+    {"link_page_credentials", "link_principal_challenges"}
+)
+INSERT_COLUMNS["link_principals"] = frozenset(
+    {
+        "created_by",
+        "email_sealed",
+        "email_sha256",
+        "expires_at",
+        "purpose",
+        "subject_id",
+        "tenant_id",
+        "token_sha256",
+    }
+)
+UPDATE_COLUMNS["link_principals"] = frozenset({"revoked_at"})

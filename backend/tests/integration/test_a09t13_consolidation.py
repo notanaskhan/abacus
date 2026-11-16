@@ -56,10 +56,16 @@ async def world(migrated_db: MigratedDatabase) -> AsyncIterator[World]:
     seed = Seeder(migrated_db.superuser_dsn)
     tenant = uuid.uuid4()
     await seed.run("INSERT INTO firms (tenant_id, name) VALUES ($1, 'Probe')", tenant)
-    user = uuid.UUID(str(await seed.value(
-        "INSERT INTO users (idp_issuer, idp_subject, email, display_name) VALUES ('https://probe.test', $1, $2, 'Omar Haddad') RETURNING id",
-        uuid.uuid4().hex, f"{uuid.uuid4().hex}@x.test",
-    )))  # fmt: skip
+    user = uuid.UUID(
+        str(
+            await seed.value(
+                "INSERT INTO users (idp_issuer, idp_subject, email, display_name) VALUES "
+                "('https://probe.test', $1, $2, 'Omar Haddad') RETURNING id",
+                uuid.uuid4().hex,
+                f"{uuid.uuid4().hex}@x.test",
+            )
+        )
+    )
     await seed.run(
         "INSERT INTO memberships (tenant_id, user_id, status) VALUES ($1, $2, 'active')",
         tenant,
@@ -69,30 +75,57 @@ async def world(migrated_db: MigratedDatabase) -> AsyncIterator[World]:
         "INSERT INTO clients (tenant_id, name) VALUES ($1, 'Harlow & Pike') RETURNING id", tenant
     )
     entities = [
-        uuid.UUID(str(await seed.value(
-            "INSERT INTO client_entities (tenant_id, client_id, name) VALUES ($1, $2, $3) RETURNING id",
-            tenant, client, f"Harlow & Pike {n}",
-        )))
+        uuid.UUID(
+            str(
+                await seed.value(
+                    "INSERT INTO client_entities (tenant_id, client_id, name) VALUES ($1, $2, "
+                    "$3) RETURNING id",
+                    tenant,
+                    client,
+                    f"Harlow & Pike {n}",
+                )
+            )
+        )
         for n in NAMES
-    ]  # fmt: skip
-    engagement = uuid.UUID(str(await seed.value(
-        "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, fiscal_period_start, fiscal_period_end, created_by, status) "
-        "VALUES ($1, $2, $3, 'FY2026 Group Audit', '2026-01-01', '2026-12-31', $4, 'active') RETURNING id",
-        tenant, client, entities[0], user,
-    )))  # fmt: skip
+    ]
+    engagement = uuid.UUID(
+        str(
+            await seed.value(
+                "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
+                "fiscal_period_start, fiscal_period_end, created_by, status) "
+                "VALUES ($1, $2, $3, 'FY2026 Group Audit', '2026-01-01', '2026-12-31', $4, "
+                "'active') RETURNING id",
+                tenant,
+                client,
+                entities[0],
+                user,
+            )
+        )
+    )
     for entity in entities[1:]:
         await seed.run(
-            "INSERT INTO engagement_entities (tenant_id, engagement_id, client_entity_id, role) VALUES ($1, $2, $3, 'component')",
-            tenant, engagement, entity,
-        )  # fmt: skip
+            "INSERT INTO engagement_entities (tenant_id, engagement_id, client_entity_id, role) "
+            "VALUES ($1, $2, $3, 'component')",
+            tenant,
+            engagement,
+            entity,
+        )
     await seed.run(
-        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) VALUES ($1, $2, $3, 'engagement_partner')",
-        tenant, engagement, user,
-    )  # fmt: skip
-    work_item = uuid.UUID(str(await seed.value(
-        "INSERT INTO work_items (tenant_id, engagement_id, client_id, kind, name, created_by) VALUES ($1, $2, $3, 'assurance', 'Audit', $4) RETURNING id",
-        tenant, engagement, client, user,
-    )))  # fmt: skip
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) VALUES ($1, "
+        "$2, $3, 'engagement_partner')",
+        tenant,
+        engagement,
+        user,
+    )
+    work_item = uuid.UUID(
+        str(
+            await seed.value(
+                # The engagement opens with its one assurance work item (0069's trigger).
+                "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
+                engagement,
+            )
+        )
+    )
     ctx = AuthContext(
         TenantContext(tenant, "human", str(user)), user, uuid.uuid4(), None, datetime.now(UTC)
     )
@@ -101,27 +134,53 @@ async def world(migrated_db: MigratedDatabase) -> AsyncIterator[World]:
 
 
 async def _snapshot(w: World, entity: uuid.UUID, start: date, end: date, debits: int) -> uuid.UUID:
-    return uuid.UUID(str(await w.seed.value(
-        "INSERT INTO ledger_snapshots (tenant_id, client_entity_id, period_start, period_end, pulled_at, source, raw_fingerprint, line_count, total_debit, total_credit) "
-        "VALUES ($1, $2, $3, $4, now(), 'import', md5(random()::text), 2, $5, $5) RETURNING id",
-        w.ctx.tenant_id, entity, start, end, debits,
-    )))  # fmt: skip
+    return uuid.UUID(
+        str(
+            await w.seed.value(
+                "INSERT INTO ledger_snapshots (tenant_id, client_entity_id, period_start, "
+                "period_end, pulled_at, source, raw_fingerprint, line_count, total_debit, "
+                "total_credit) VALUES ($1, $2, $3, $4, now(), 'import', "
+                "md5(random()::text) || md5(random()::text), 2, $5, $5) RETURNING id",
+                w.ctx.tenant_id,
+                entity,
+                start,
+                end,
+                debits,
+            )
+        )
+    )
 
 
 async def _built(w: World) -> uuid.UUID:
     made = await svc.create(
-        w.ctx, w.work_item, w.engagement,
-        ConsolidationIn(name="Harlow & Pike FY2026", year_end=date(2026, 12, 31), reporting_currency="USD",
-                        interim_period_end=date(2026, 8, 31), prior_period_end=date(2025, 12, 31)),
+        w.ctx,
+        w.work_item,
+        w.engagement,
+        ConsolidationIn(
+            name="Harlow & Pike FY2026",
+            year_end=date(2026, 12, 31),
+            reporting_currency="USD",
+            interim_period_end=date(2026, 8, 31),
+            prior_period_end=date(2025, 12, 31),
+        ),
         uuid.uuid4().hex,
-    )  # fmt: skip
+    )
     h, o, m, d, r = w.entities
     tree = [(h, None, 1), (o, h, 2), (m, o, 3), (d, o, 3), (r, h, 2)]
     view = await svc.save_structure(
-        w.ctx, w.work_item, made.id,
-        StructureIn(entities=[StructureEntityIn(client_entity_id=e, parent_client_entity_id=p, level=lv, ownership_pct=100) for e, p, lv in tree]),
+        w.ctx,
+        w.work_item,
+        made.id,
+        StructureIn(
+            entities=[
+                StructureEntityIn(
+                    client_entity_id=e, parent_client_entity_id=p, level=lv, ownership_pct=100
+                )
+                for e, p, lv in tree
+            ]
+        ),
         str(made.row_version),
-    )  # fmt: skip
+    )
     assert view.tiers == 3 and len(view.missing) == 10
     for entity in view.entities:
         current = await _snapshot(
@@ -186,8 +245,10 @@ async def test_ac_finalize_writes_one_event_and_adopts_five_tbs_then_freezes(wor
     )
     assert done.status == "finalized" and done.finalized_by_name == "Omar Haddad"
     events = await world.seed.rows(
-        "SELECT count(*) AS n FROM audit_events WHERE tenant_id = $1 AND action = 'consolidation.finalized'", world.ctx.tenant_id
-    )  # fmt: skip
+        "SELECT count(*) AS n FROM audit_events WHERE tenant_id = $1 AND action = "
+        "'consolidation.finalized'",
+        world.ctx.tenant_id,
+    )
     assert events[0]["n"] == 1
     tbs = await world.seed.rows(
         "SELECT count(*) AS n FROM trial_balances WHERE work_item_id = $1", world.work_item
@@ -195,7 +256,15 @@ async def test_ac_finalize_writes_one_event_and_adopts_five_tbs_then_freezes(wor
     assert tbs[0]["n"] == 5  # one TB of record per entity: each adoption starts its mapping run
     with pytest.raises(ledger.ConsolidationNotDraft):
         await svc.save_structure(
-            world.ctx, world.work_item, consolidation,
-            StructureIn(entities=[StructureEntityIn(client_entity_id=world.entities[0], level=1, ownership_pct=100)]),
+            world.ctx,
+            world.work_item,
+            consolidation,
+            StructureIn(
+                entities=[
+                    StructureEntityIn(
+                        client_entity_id=world.entities[0], level=1, ownership_pct=100
+                    )
+                ]
+            ),
             str(done.row_version),
-        )  # fmt: skip
+        )

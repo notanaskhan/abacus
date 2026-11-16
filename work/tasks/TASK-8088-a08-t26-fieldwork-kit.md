@@ -2,7 +2,7 @@
 id: TASK-8088
 title: "A-08-T26: Fieldwork L3 kit (apps/web/src/domain/audits/fieldwork) and its gallery board"
 spec: SPEC-657
-acceptance_criteria: [F1, F3, F6]
+acceptance_criteria: [AC-1, AC-3, AC-6]
 risk_zone: green
 status: in-review
 branch: a08-t26-fieldwork-kit

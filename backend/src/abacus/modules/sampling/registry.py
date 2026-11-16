@@ -9,7 +9,7 @@ from __future__ import annotations
 # The tables this module owns; no other module reads or writes them (ADR-008).
 # A-03-T05 (0520; ADR-340): the sampling engine's tables. Fieldwork's journal-entry `populations`
 # (0057) are fieldwork's; these are the sample sets' own (DEC-1554).
-TABLES: frozenset[str] = frozenset(
+_TABLES: frozenset[str] = frozenset(
     {
         "sample_populations",
         "sample_population_records",
@@ -21,7 +21,7 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY: frozenset[str] = frozenset(
     {
         "sample_populations",
         "sample_population_records",
@@ -163,3 +163,82 @@ AUDIT_SECTION: dict[str, str | int] = {
     "title": "Sample Selection",
     "required_action": "sample_set.read",
 }
+
+# S46: A-08-T12 (0895) JE testing.
+TABLES: frozenset[str] = _TABLES | frozenset(
+    {"je_posting_user_roles", "je_score_runs", "je_scores", "je_test_criteria", "je_tests"}
+)
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
+    {"je_posting_user_roles", "je_score_runs", "je_scores", "je_test_criteria"}
+)
+INSERT_COLUMNS["je_posting_user_roles"] = frozenset(
+    {
+        "citation_id",
+        "je_test_id",
+        "posting_user_sealed",
+        "posting_user_sha256",
+        "role_class",
+        "set_by",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["je_score_runs"] = frozenset(
+    {
+        "engine_version",
+        "entries_count",
+        "hits",
+        "inputs_hash",
+        "je_test_id",
+        "score_version",
+        "tenant_id",
+        "unique_flagged",
+    }
+)
+INSERT_COLUMNS["je_scores"] = frozenset(
+    {
+        "account_last4",
+        "amount",
+        "criteria_mask",
+        "description",
+        "entry_ref",
+        "posted_on",
+        "reason_codes",
+        "run_id",
+        "score",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["je_test_criteria"] = frozenset(
+    {
+        "configured_version",
+        "je_test_id",
+        "key",
+        "params",
+        "position",
+        "set_by",
+        "tenant_id",
+        "weight",
+    }
+)
+INSERT_COLUMNS["je_tests"] = frozenset(
+    {
+        "created_by",
+        "engagement_id",
+        "gl_snapshot_id",
+        "period_end",
+        "period_start",
+        "post_close_through",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["je_tests"] = frozenset(
+    {
+        "failure_code",
+        "policy_version_id",
+        "row_version",
+        "sample_set_id",
+        "score_version",
+        "status",
+    }
+)

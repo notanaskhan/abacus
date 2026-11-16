@@ -42,7 +42,9 @@ describe("TXT-02 Trust Calculation", () => {
     show("a");
     const el = await tree();
     expect(el.textContent).not.toContain("$");
-    expect(document.querySelector("[data-row='nora_dni'] [data-highlighted='true']")).not.toBeNull();
+    expect(
+      document.querySelector("[data-row='nora_dni'] [data-highlighted='true']"),
+    ).not.toBeNull();
     expect(document.querySelector("[data-tally='k1_tie']")?.textContent).toContain("tie");
     expect(document.querySelector("[data-row='taxable']")?.textContent).toContain("159,900");
     expect(document.querySelector("[data-row='trustee_fees']")?.textContent).toContain("(30,000)");
@@ -65,7 +67,11 @@ describe("TXT-02 Trust Calculation", () => {
       return r as HTMLElement;
     });
     expect([...row.querySelectorAll("td")].map((t) => t.textContent)).toEqual([
-      "Interest", "100,000", "40,000", "20,000", "40,000",
+      "Interest",
+      "100,000",
+      "40,000",
+      "20,000",
+      "40,000",
     ]);
   });
 
@@ -74,7 +80,9 @@ describe("TXT-02 Trust Calculation", () => {
     await tree();
     expect(document.querySelector("[data-row='paid']")?.textContent).toContain("260,000");
     expect(document.querySelector("[data-row='undistributed']")?.textContent).toContain("140,000");
-    expect(document.querySelector("[data-row='taxable'] [data-prior]")?.textContent).toBe("159,900");
+    expect(document.querySelector("[data-row='taxable'] [data-prior]")?.textContent).toBe(
+      "159,900",
+    );
     expect(document.querySelector("[data-row='taxable']")?.textContent).toContain("139,900");
     expect(document.querySelectorAll("[data-changed]").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Re-approve…" })).toBeTruthy();
@@ -88,13 +96,17 @@ describe("TXT-02 Trust Calculation", () => {
 
   it("f1: waiting on the interpretation", async () => {
     show("f1");
-    expect(await screen.findByText("Approve the instrument interpretation to compute DNI.")).toBeTruthy();
+    expect(
+      await screen.findByText("Approve the instrument interpretation to compute DNI."),
+    ).toBeTruthy();
   });
 
   it("a chevron closes a branch", async () => {
     show("a");
     await tree();
-    const fai = document.querySelector<HTMLButtonElement>("[data-row='fai'] > div [aria-expanded]");
+    const fai = document.querySelector<HTMLButtonElement>(
+      "[data-row='fai'] > div [aria-expanded]",
+    );
     expect(fai?.getAttribute("aria-expanded")).toBe("true");
     fireEvent.click(fai as HTMLButtonElement);
     expect(fai?.getAttribute("aria-expanded")).toBe("false");
@@ -103,6 +115,8 @@ describe("TXT-02 Trust Calculation", () => {
   it("T-07-T21: ?row= lights the row TXT-01's Cited by named", async () => {
     show("a", { row: "dni" });
     await tree();
-    expect(document.querySelector("[data-row='dni'] > div[data-highlighted='true']")).not.toBeNull();
+    expect(
+      document.querySelector("[data-row='dni'] > div[data-highlighted='true']"),
+    ).not.toBeNull();
   });
 });

@@ -811,6 +811,8 @@ function Body({
     case "review_checklist":
     case "attribute_sample_sizes": // A-03-T10: shown on AUD-11's citations, not a KNW-04 section
     case "rmm_matrix": // A-04-T13: read by AUD-08's register, not a KNW-04 section
+    case "je_risk_criteria": // A-08-T12: read by AUD-12's JE test, not a KNW-04 section
+    case "mus_confidence_factors": // A-08-T13: read by AUD-11's MUS sizing
       return null;
   }
 }

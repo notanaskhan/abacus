@@ -49,7 +49,9 @@ function validateSearch(search: Record<string, unknown>): WorkspaceSearch {
     ...(typeof search.ov === "string" && search.ov !== "" ? { ov: search.ov } : {}),
     // A worksheet id goes into an API path: a UUID only, never the URL's raw text.
     ...(typeof search.ws === "string" && UUID.test(search.ws) ? { ws: search.ws } : {}),
-    ...(typeof search.clause === "string" && CLAUSE.test(search.clause) ? { clause: search.clause } : {}),
+    ...(typeof search.clause === "string" && CLAUSE.test(search.clause)
+      ? { clause: search.clause }
+      : {}),
     ...(typeof search.row === "string" && ROW.test(search.row) ? { row: search.row } : {}),
   };
 }
@@ -209,7 +211,9 @@ export const taxInstrumentRoute = createRoute({
 
 // TXT-02 (T-07-T17): the fiduciary calc tree under the 1041's Review; a clause chip opens TXT-01
 // with the clause lit (`?clause=`); Sign off… opens SHL-12 at L2.
-const TrustCalculationScreen = lazyScreen(async () => (await import("../../screens/TXT-02")).TXT02);
+const TrustCalculationScreen = lazyScreen(
+  async () => (await import("../../screens/TXT-02")).TXT02,
+);
 
 export const taxTrustCalculationRoute = createRoute({
   getParentRoute: () => appRoute,

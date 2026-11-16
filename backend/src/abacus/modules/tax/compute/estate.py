@@ -1,4 +1,5 @@
-"""The estate engine (T-07-T22; TASK-8079; T-07 §3.7; SPEC-656 AC-12.1 to AC-13.5; ADR-050, DEC-77).
+"""The estate engine (T-07-T22; TASK-8079; T-07 §3.7; SPEC-656 AC-12.1 to AC-13.5; ADR-050,
+DEC-77).
 
 Pure: `Decimal` in, `Decimal` out; no I/O but the parameter file, no clock. The Form 706 workpaper
 the firm reviews on TXT-04; every figure is labelled "Accrued tie-out (shadow)" until a CCH 706
@@ -12,7 +13,7 @@ import exists (DEC-77), because the engine of record computes the return.
 3. **Adjusted taxable gifts**: each post-1976 gift less the year's annual exclusion (§2503(b)).
 4. **Tentative tax** (§2001(c)) on the taxable estate plus adjusted taxable gifts.
 5. **Credit**: the tentative tax on the applicable exclusion amount, the basic exclusion amount
-   plus the DSUE carried in (§2010(c)); net estate tax = max(0, tentative − credit). The
+   plus the DSUE carried in (§2010(c)); net estate tax = max(0, tentative - credit). The
    Without-DSUE scenario computes the credit on the BEA alone.
 6. **Filing requirement**: gross estate plus adjusted taxable gifts over the BEA (§6018).
 7. **Alternate valuation** (§2032(c)) is available only when it lowers both the gross estate and
@@ -21,7 +22,7 @@ import exists (DEC-77), because the engine of record computes the return.
    engine never computes the state figure (AC-13.3).
 
 Thornbury: 16,400,000 / 15,993,000 / 12,688,000; deductions 900,000; taxable 15,500,000; gifts
-1,200,000; tentative 6,625,800 (345,800 + 40% × 15,700,000); credit on 18,000,000 = 7,145,800;
+1,200,000; tentative 6,625,800 (345,800 + 40% x 15,700,000); credit on 18,000,000 = 7,145,800;
 net tax 0; without DSUE credit 5,945,800 and tax 680,000; 17,600,000 > 15,000,000.
 """
 
@@ -110,8 +111,13 @@ def parameters(tax_year: int) -> EstateParameters:
         version=int(cast(int, raw["version"])),
         bea=Decimal(str(raw["basic_exclusion_amount"])),
         schedule=tuple((Decimal(a), Decimal(b), Decimal(c)) for a, b, c in rows),
-        annual_exclusion={int(k): Decimal(str(v)) for k, v in cast(dict[str, str], raw["annual_exclusion"]).items()},
-        state_exclusions={k: Decimal(str(v)) for k, v in cast(dict[str, str], raw["state_exclusions"]).items()},
+        annual_exclusion={
+            int(k): Decimal(str(v))
+            for k, v in cast(dict[str, str], raw["annual_exclusion"]).items()
+        },
+        state_exclusions={
+            k: Decimal(str(v)) for k, v in cast(dict[str, str], raw["state_exclusions"]).items()
+        },
         filing_months=int(cast(int, raw["filing_months"])),
         extension_months=int(cast(int, raw["extension_months"])),
     )
@@ -183,20 +189,32 @@ def _hash(inputs: EstateInputs) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def _tax_on(taxable: Decimal, gifts: Decimal, exclusion: Decimal, params: EstateParameters) -> Decimal:
+def _tax_on(
+    taxable: Decimal, gifts: Decimal, exclusion: Decimal, params: EstateParameters
+) -> Decimal:
     return max(ZERO, tentative_tax(taxable + gifts, params) - tentative_tax(exclusion, params))
 
 
 def compute(inputs: EstateInputs) -> EstateResult:
     params = parameters(inputs.tax_year)
     dod = _c(sum((a.dod_value for a in inputs.assets), ZERO))
-    avd = _c(sum(((a.avd_value if a.avd_value is not None else a.dod_value) for a in inputs.assets), ZERO))
+    avd = _c(
+        sum(
+            ((a.avd_value if a.avd_value is not None else a.dod_value) for a in inputs.assets),
+            ZERO,
+        )
+    )
     deductions = _c(sum((d.amount for d in inputs.deductions), ZERO))
     gift_lines = tuple(
-        GiftLine(g.key, g.year, _c(g.amount), annual_exclusion(g.year, params),
-                 _c(max(ZERO, g.amount - annual_exclusion(g.year, params))))
+        GiftLine(
+            g.key,
+            g.year,
+            _c(g.amount),
+            annual_exclusion(g.year, params),
+            _c(max(ZERO, g.amount - annual_exclusion(g.year, params))),
+        )
         for g in sorted(inputs.gifts, key=lambda g: (g.year, g.key))
-    )  # fmt: skip
+    )
     gifts = _c(sum((g.taxable for g in gift_lines), ZERO))
     taxable = _c(dod - deductions)
     base = _c(taxable + gifts)
@@ -251,9 +269,15 @@ def outputs_of(result: EstateResult) -> dict[str, object]:
         if isinstance(value, Decimal):
             out[key] = f"{value:.2f}"
         elif key == "gifts":
-            out[key] = [{k: (f"{v:.2f}" if isinstance(v, Decimal) else v) for k, v in g.items()} for g in cast(Sequence[dict[str, object]], value)]
+            out[key] = [
+                {k: (f"{v:.2f}" if isinstance(v, Decimal) else v) for k, v in g.items()}
+                for g in cast(Sequence[dict[str, object]], value)
+            ]
         elif key == "basis_by_asset":
-            out[key] = {k: (None if v is None else f"{v:.2f}") for k, v in cast(dict[str, Decimal | None], value).items()}
+            out[key] = {
+                k: (None if v is None else f"{v:.2f}")
+                for k, v in cast(dict[str, Decimal | None], value).items()
+            }
         else:
             out[key] = value
     return out

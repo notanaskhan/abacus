@@ -25,21 +25,25 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Final
+from typing import Final, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import transaction_context
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.requests.events import RequestItemCreated
 from abacus.modules.requests.models import RequestItem, RequestList
-from abacus.modules.requests.repository import insert_binder, insert_request_item, stamp_sent
+from abacus.modules.requests.repository import (
+    insert_binder,
+    insert_request_item,
+    set_binder,
+    stamp_sent,
+)
 
 KIND: Final = "close_intake"
 AUDIT_AREA: Final = "close"
-WAVE: Final = "close"
 
 
 @dataclass(frozen=True)
@@ -101,11 +105,18 @@ async def generate_close_intake(
             name=name[:200],
             kind=KIND,
             part=1,
+            status="draft",
+            created_from="template",
+            template_ref="close_plan",
+        )
+        # Inserted as a draft, then published (0070/0100's column grants), like `part_for_send`.
+        await set_binder(
+            tx.session,
+            binder.id,
+            allowed_from=("draft",),
             status="published",
             published_at=at,
             published_by=authority,
-            created_from="template",
-            template_ref="close_plan",
         )
         tx.record(
             "request_list.created",
@@ -131,15 +142,18 @@ async def generate_close_intake(
             created_by=authority,
             binder_fields={
                 "title": spec.title[:200],
-                "client_visible": spec.client_visible,
-                "due_on": spec.due_on,
-                "wave": WAVE,
                 "linked_ref": {
                     "type": "close_request_template",
                     "close_template_id": str(spec.template_id),
                     "category_path": list(spec.category_path),
                 },
             },
+        )
+        # Visibility and the due date are set after the insert (0028/0040's update-only grants).
+        await tx.session.execute(
+            update(RequestItem)
+            .where(RequestItem.id == item_id)
+            .values(client_visible=spec.client_visible, due_on=spec.due_on)
         )
         tx.record(
             "request_item.created",
@@ -187,7 +201,9 @@ async def intake_items(session: AsyncSession, binder_id: UUID, today: date) -> l
             IntakeItem(
                 request_item_id=r.id,
                 title=r.title or r.description,
-                category_path=tuple(str(p) for p in path) if isinstance(path, list) else (),
+                category_path=tuple(str(p) for p in cast("list[object]", path))
+                if isinstance(path, list)
+                else (),
                 status=r.status,
                 client_visible=r.client_visible,
                 due_on=r.due_on,

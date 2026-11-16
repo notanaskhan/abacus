@@ -222,18 +222,28 @@ def upgrade() -> None:
         tenant_table(op, table)
         op.execute(f"REVOKE UPDATE, DELETE, TRUNCATE ON {table} FROM abacus_app")
     insert_columns(
-        op, "components",
-        (*_SCOPE_COLS, "consolidation_entity_id", "planned_work", "scope_areas", "performed_by",
-         "component_auditor_id", "component_pm", "created_by"),
-    )  # fmt: skip
+        op,
+        "components",
+        (
+            *_SCOPE_COLS,
+            "consolidation_entity_id",
+            "planned_work",
+            "scope_areas",
+            "performed_by",
+            "component_auditor_id",
+            "component_pm",
+            "created_by",
+        ),
+    )
     op.execute(
         "GRANT UPDATE (planned_work, scope_areas, performed_by, component_auditor_id, "
         "component_pm, row_version) ON components TO abacus_app"
     )
     insert_columns(
-        op, "component_auditors",
+        op,
+        "component_auditors",
         (*_SCOPE_COLS, "organisation_name", "city", "ep_contact_id", "component_id", "created_by"),
-    )  # fmt: skip
+    )
     op.execute(
         "GRANT UPDATE (organisation_name, city, ep_contact_id, component_id, "
         "questionnaire_received_on, competence_evaluated_by, competence_evaluated_at, "
@@ -247,25 +257,43 @@ def upgrade() -> None:
         "TO abacus_app"
     )
     insert_columns(
-        op, "component_instruction_versions",
-        (*_SCOPE_COLS, "instructions_id", "version_no", "sections", "generated_document_id",
-         "drafted_by_run_id", "content_hash", "created_by"),
-    )  # fmt: skip
+        op,
+        "component_instruction_versions",
+        (
+            *_SCOPE_COLS,
+            "instructions_id",
+            "version_no",
+            "sections",
+            "generated_document_id",
+            "drafted_by_run_id",
+            "content_hash",
+            "created_by",
+        ),
+    )
     insert_only(op, "component_instruction_versions")
     insert_columns(
-        op, "component_deliverables",
+        op,
+        "component_deliverables",
         (*_SCOPE_COLS, "component_auditor_id", "title", "due_on"),
-    )  # fmt: skip
+    )
     op.execute(
         "GRANT UPDATE (status, received_at, evidence_item_id, reviewed_by, reviewed_at, "
         "reviewed_actor_kind, returned_at, return_reason, row_version) "
         "ON component_deliverables TO abacus_app"
     )
     insert_columns(
-        op, "component_milestones",
-        (*_SCOPE_COLS, "component_auditor_id", "kind", "label", "due_on", "deliverable_id",
-         "position"),
-    )  # fmt: skip
+        op,
+        "component_milestones",
+        (
+            *_SCOPE_COLS,
+            "component_auditor_id",
+            "kind",
+            "label",
+            "due_on",
+            "deliverable_id",
+            "position",
+        ),
+    )
     op.execute(
         "GRANT UPDATE (due_on, deliverable_id, position) ON component_milestones TO abacus_app"
     )

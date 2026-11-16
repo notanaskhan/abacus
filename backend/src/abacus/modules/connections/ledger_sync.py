@@ -6,7 +6,7 @@ what to do; this module holds every rule, so the workflow stays a loop of identi
 **What is due.** The closes module registers a scope (`register_sync_scope`): the entities with
 an unlocked close and the close months to keep fresh. An entity is due when it has a live ledger
 connection, its schedule is not paused, its `next_run_at` has passed and the firm's clock reads
-inside the schedule's business hours (07:00–19:00 firm time by default, QC-5).
+inside the schedule's business hours (07:00-19:00 firm time by default, QC-5).
 
 **One entity's sync.** In order, each refusal leaves before any provider call:
 1. `connections.ledger_sync` and the live-ledger kill switch (`connections.live_ledger`, A-02-T33)
@@ -32,26 +32,28 @@ provider text. Read only: no write method anywhere (CONN-001, ADR-040).
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select, text
+from sqlalchemy import insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio import activity
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel._flags import CONNECTIONS_LEDGER_SYNC, CONNECTIONS_LIVE_LEDGER
 from abacus.kernel.clock import now as business_now
+from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import dispatch, signal_with_start
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import meter
+from abacus.kernel.sync_scope import SyncScope, scope_of
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.connections.connect import credentials_of
 from abacus.modules.connections.connector import (
@@ -130,33 +132,7 @@ _freshness = meter(__name__).create_histogram(
 )
 
 
-# --- The closes scope (a slot: closes registers, connections never imports closes) -------------
-
-
-@dataclass(frozen=True)
-class SyncScope:
-    """An entity with an unlocked close: its engagement and the close months to keep fresh."""
-
-    client_entity_id: UUID
-    engagement_id: UUID
-    periods: tuple[str, ...]
-
-
-ScopeProvider = Callable[[TenantContext], Awaitable[Sequence[SyncScope]]]
-_scope: list[ScopeProvider] = []
-
-
-def register_sync_scope(provider: ScopeProvider) -> None:
-    """The closes module's entities-due provider (one; C-01 §4.5 `entities_due`)."""
-    if _scope:
-        raise ValueError("a ledger sync scope is already registered")
-    _scope.append(provider)
-
-
-async def scope_of(tenant: TenantContext) -> dict[UUID, SyncScope]:
-    if not _scope:
-        return {}
-    return {s.client_entity_id: s for s in await _scope[0](tenant) if s.periods}
+# The closes scope is the kernel's slot (`kernel.sync_scope`): closes registers, we read.
 
 
 # --- Schedules ----------------------------------------------------------------------------------
@@ -195,9 +171,14 @@ _SET_SCHEDULE = text(
 def _schedule(row: Sequence[object]) -> Schedule:
     hours = cast(dict[str, str], row[1]) if isinstance(row[1], dict) else dict(_DEFAULT_HOURS)
     return Schedule(
-        cast(UUID, row[0]), hours, cast(str | None, row[2]), cast(datetime | None, row[3]),
-        cast(datetime | None, row[4]), cast(datetime | None, row[5]), cast(str | None, row[6]),
-    )  # fmt: skip
+        cast(UUID, row[0]),
+        hours,
+        cast(str | None, row[2]),
+        cast(datetime | None, row[3]),
+        cast(datetime | None, row[4]),
+        cast(datetime | None, row[5]),
+        cast(str | None, row[6]),
+    )
 
 
 async def schedule_of(
@@ -326,7 +307,7 @@ async def plan_tick(tenant_id: UUID) -> TickPlan:
         if connections:
             tx.record(
                 "ledger.sync_planned",
-                target=Target("tenant", tenant_id),
+                target=Target("firm", tenant_id),
                 after=Ref(due=len(due)),
             )
     wait = int((wake - at).total_seconds())
@@ -353,11 +334,14 @@ class _Pulled:
 _METER_SELECT = text(
     "SELECT calls, budget FROM connection_meter_usage WHERE provider = :p AND month = :m"
 )
-_METER_UPSERT = text(
-    "INSERT INTO connection_meter_usage (tenant_id, provider, month, calls) "
-    "VALUES (:t, :p, :m, :n) ON CONFLICT (tenant_id, provider, month) "
-    "DO UPDATE SET calls = connection_meter_usage.calls + EXCLUDED.calls, "
-    "updated_at = clock_timestamp()"
+# The app inserts a month's row without its count, then adds to it (0882's column grants).
+_METER_OPEN = text(
+    "INSERT INTO connection_meter_usage (tenant_id, provider, month) "
+    "VALUES (:t, :p, :m) ON CONFLICT (tenant_id, provider, month) DO NOTHING"
+)
+_METER_ADD = text(
+    "UPDATE connection_meter_usage SET calls = calls + :n, updated_at = clock_timestamp() "
+    "WHERE tenant_id = :t AND provider = :p AND month = :m"
 )
 
 
@@ -370,9 +354,9 @@ async def meter_state(session: AsyncSession, month: str) -> tuple[int, int | Non
 
 async def add_calls(session: AsyncSession, tenant_id: UUID, month: str, calls: int) -> None:
     if calls > 0:
-        await session.execute(
-            _METER_UPSERT, {"t": tenant_id, "p": PROVIDER_METER, "m": month, "n": calls}
-        )
+        key = {"t": tenant_id, "p": PROVIDER_METER, "m": month}
+        await session.execute(_METER_OPEN, key)
+        await session.execute(_METER_ADD, {**key, "n": calls})
 
 
 def _accounts(payloads: Sequence[RawPayload]) -> tuple[MonthAccount, ...]:
@@ -381,21 +365,37 @@ def _accounts(payloads: Sequence[RawPayload]) -> tuple[MonthAccount, ...]:
         for a in parse_qbo_accounts(payload.content):
             out.append(
                 MonthAccount(
-                    a.external_id, a.number, a.name, a.classification, a.account_type,
-                    a.account_subtype, a.parent_external_id, None, a.is_contra, a.active,
+                    a.external_id,
+                    a.number,
+                    a.name,
+                    a.classification,
+                    a.account_type,
+                    a.account_subtype,
+                    a.parent_external_id,
+                    None,
+                    a.is_contra,
+                    a.active,
                 )
-            )  # fmt: skip
+            )
     return tuple(out)
 
 
 def _register(payload: RawPayload) -> tuple[MonthRegisterLine, ...]:
     return tuple(
         MonthRegisterLine(
-            r.line_ref, r.account_ref, r.external_txn_id, r.txn_date, r.txn_type, r.doc_number,
-            r.payee, r.memo, r.offset_account_ref, r.amount,
+            r.line_ref,
+            r.account_ref,
+            r.external_txn_id,
+            r.txn_date,
+            r.txn_type,
+            r.doc_number,
+            r.payee,
+            r.memo,
+            r.offset_account_ref,
+            r.amount,
         )
         for r in parse_qbo_general_ledger(payload.content)
-    )  # fmt: skip
+    )
 
 
 def _tb(payload: RawPayload) -> NormalisedTrialBalance:
@@ -435,8 +435,10 @@ async def _record_runs(
     async with uow(tenant) as tx:
         for no, (item, obj) in enumerate(stored):
             run_id = first_run_id if (no == 0 and first_run_id is not None) else uuid4()
-            tx.session.add(
-                SyncRun(
+            # The app inserts a run's start, then records its raw result (0009's column grants;
+            # `sync_runs_forward_only` keeps it write-once). It ends at its snapshot (0900).
+            await tx.session.execute(
+                insert(SyncRun).values(
                     id=run_id,
                     tenant_id=tenant.tenant_id,
                     client_entity_id=connection.client_entity_id,
@@ -448,16 +450,19 @@ async def _record_runs(
                     dataset=item.dataset,
                     period_start=start,
                     period_end=end,
-                    status="succeeded",
+                    started_by=started_by,
+                )
+            )
+            await tx.session.execute(
+                update(SyncRun)
+                .where(SyncRun.id == run_id)
+                .values(
                     raw_storage_key=obj.key,
                     raw_version_id=obj.version_id,
                     raw_fingerprint=obj.fingerprint,
                     raw_size_bytes=obj.size,
                     raw_pulled_at=item.payload.pulled_at,
                     source=item.payload.source,
-                    started_by=started_by,
-                    started_at=item.payload.pulled_at,
-                    finished_at=item.payload.pulled_at,
                 )
             )
             tx.record(
@@ -472,7 +477,8 @@ async def _record_runs(
 async def _pause(
     tenant: TenantContext, connection: Connection, scope: SyncScope | None, reason: str
 ) -> None:
-    """Pause the entity's scheduled syncs; the firm is told once per pause (`ledger_sync_paused`)."""
+    """Pause the entity's scheduled syncs; the firm is told once per pause
+    (`ledger_sync_paused`)."""
     async with uow(tenant) as tx:
         schedule = await schedule_of(tx.session, connection.id, lock=True)
         if schedule is None or schedule.paused_reason == reason:
@@ -485,10 +491,15 @@ async def _pause(
         await _save(
             tx.session,
             Schedule(
-                schedule.connection_id, schedule.business_hours, reason, schedule.next_run_at,
-                schedule.cdc_cursor, schedule.retry_at, reason,
+                schedule.connection_id,
+                schedule.business_hours,
+                reason,
+                schedule.next_run_at,
+                schedule.cdc_cursor,
+                schedule.retry_at,
+                reason,
             ),
-        )  # fmt: skip
+        )
         tx.emit(
             LedgerSyncPaused(
                 connection_id=connection.id,
@@ -515,10 +526,15 @@ async def _fail(
         await _save(
             tx.session,
             Schedule(
-                schedule.connection_id, schedule.business_hours, schedule.paused_reason,
-                at + TICK, schedule.cdc_cursor, retry_at, code,
+                schedule.connection_id,
+                schedule.business_hours,
+                schedule.paused_reason,
+                at + TICK,
+                schedule.cdc_cursor,
+                retry_at,
+                code,
             ),
-        )  # fmt: skip
+        )
         tx.record("ledger.sync", target=Target("connection", connection.id), after=Ref(ok=0))
 
 
@@ -596,7 +612,9 @@ async def sync_entity(
             start, end = month_bounds(period)
             span = Period(start, end)
             first = await _first_set(tenant, connection.client_entity_id, period)
-            wanted = DATASETS if first else tuple(d for d in DATASETS if d in changed)
+            wanted: tuple[Dataset, ...] = (
+                DATASETS if first else tuple(d for d in DATASETS if d in changed)
+            )
             if not wanted:
                 continue
             pulled: list[_Pulled] = []
@@ -604,9 +622,15 @@ async def sync_entity(
                 for payload in await _pull(connector, dataset, span):
                     pulled.append(_Pulled(dataset, payload))
             ref = await _record_set(
-                tenant, connection, scope, period, pulled, trigger, started_by,
+                tenant,
+                connection,
+                scope,
+                period,
+                pulled,
+                trigger,
+                started_by,
                 request_id if not recorded else None,
-            )  # fmt: skip
+            )
             if ref is not None:
                 recorded.append(ref)
         snapshots = len(recorded)
@@ -653,9 +677,15 @@ async def sync_entity(
         await _save(
             tx.session,
             Schedule(
-                base.connection_id, base.business_hours, None, at + TICK, at, None, None,
+                base.connection_id,
+                base.business_hours,
+                None,
+                at + TICK,
+                at,
+                None,
+                None,
             ),
-        )  # fmt: skip
+        )
         previous = connection.last_sync_at
         await set_connection(tx.session, connection.id, last_sync_at=at)
         if previous is not None:
@@ -680,7 +710,7 @@ async def _meter_only(tenant: TenantContext, month: str, calls: int) -> None:
     async with uow(tenant) as tx:
         await add_calls(tx.session, tenant.tenant_id, month, calls)
         tx.record(
-            "ledger.sync_metered", target=Target("tenant", tenant.tenant_id), after=Ref(n=calls)
+            "ledger.sync_metered", target=Target("firm", tenant.tenant_id), after=Ref(n=calls)
         )
 
 
@@ -721,10 +751,9 @@ async def _record_set(
         )
         for run_id in run_ids:
             await tx.session.execute(
-                text(
-                    "UPDATE sync_runs SET snapshot_id = :s WHERE id = :r AND snapshot_id IS NULL"
-                ),
-                {"s": ref.id, "r": run_id},
+                update(SyncRun)
+                .where(SyncRun.id == run_id, SyncRun.status == "running")
+                .values(snapshot_id=ref.id, status="succeeded", finished_at=system_now())
             )
         if not ref.created:
             tx.record(
