@@ -125,7 +125,7 @@ export function RecordCockpit({
       <div data-cockpit="rail" className="flex w-(--rail-w) flex-none flex-col">
         {rail}
       </div>
-      <Canvas canvas={canvas} />
+      <CockpitCanvasView canvas={canvas} />
       {open && <Dock dock={dock} />}
     </>
   );
@@ -169,7 +169,9 @@ export function RecordCockpit({
   );
 }
 
-function Canvas({ canvas }: { canvas: CockpitCanvas }): JSX.Element {
+/** One cockpit canvas on its own: the cockpit's middle pane, and the same pane in a layer that
+ * opens a section outside its cockpit (AUD-11 over AUD-12, S47). */
+export function CockpitCanvasView({ canvas }: { canvas: CockpitCanvas }): JSX.Element {
   const id = useId();
   const state = canvas.state ?? { kind: "ready" };
   return (

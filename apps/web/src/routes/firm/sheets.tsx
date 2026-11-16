@@ -35,3 +35,7 @@ registerOverlay("engine-sync", { layer: "modal", render });
 registerOverlay("consolidated-tb", { layer: "modal", render });
 // SHL-09 `?ov=provenance:<type>:<id>:<fieldKey>`: a field's provenance tray as a drawer.
 registerOverlay("provenance", { layer: "drawer", render });
+// S47 (TASK-8338): AUD-11 `?ov=sampling:<workItemId>`, the sampling canvas over AUD-12.
+registerOverlay("sampling", { layer: "modal", render });
+// S47 (TASK-8338): WB-11 `?ov=integration:<key>`, the integration detail drawer.
+registerOverlay("integration", { layer: "drawer", render });

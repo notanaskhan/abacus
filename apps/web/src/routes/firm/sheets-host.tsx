@@ -38,6 +38,12 @@ const ConsolidatedTbLayer = lazy(async () => ({
 const ProvenanceLayer = lazy(async () => ({
   default: (await import("../../screens/SHL-09")).ProvenanceLayer,
 }));
+const IntegrationLayer = lazy(async () => ({
+  default: (await import("../../screens/WB-11/live")).IntegrationLayer,
+}));
+const SamplingLayer = lazy(async () => ({
+  default: (await import("../../screens/AUD-11/SamplingLayer")).SamplingLayer,
+}));
 
 export default function SheetsHost(props: OverlayRenderProps): JSX.Element | null {
   const { ref, close } = props;
@@ -51,6 +57,22 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
           <ConsolidatedTbLayer {...props} />
         </Suspense>
       </FeatureGate>
+    );
+  }
+  if (ref.key === "integration") {
+    // S47 (TASK-8338): the API answers 404 with `integrations.connect_v1` off.
+    return (
+      <Suspense fallback={null}>
+        <IntegrationLayer {...props} />
+      </Suspense>
+    );
+  }
+  if (ref.key === "sampling") {
+    // S47 (TASK-8338): the canvas draws `sampling.sample_sets` off itself (C-20).
+    return (
+      <Suspense fallback={null}>
+        <SamplingLayer {...props} />
+      </Suspense>
     );
   }
   if (ref.key === "provenance") {

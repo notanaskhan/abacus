@@ -265902,7 +265902,7 @@
     },
     "/v1/integrations/{key}": {
       "get": {
-        "description": "WB-11: the mode-aware projection.",
+        "description": "WB-11: the mode-aware projection (S47, TASK-8338; `connect_detail.drawer`).",
         "operationId": "connect_detail",
         "parameters": [
           {
@@ -265998,16 +265998,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connect Detail",

@@ -405,12 +405,76 @@ async def connect_catalog(
     "/integrations/{key}",
     action="integration_catalog.read",
     response_model=ConnectIntegrationDetailOut,
-    errors=(501,),
+    errors=(),
 )
 async def connect_detail(key: Key, ctx: Ctx) -> ConnectIntegrationDetailOut:
-    """WB-11: the mode-aware projection."""
+    """WB-11: the mode-aware projection (S47, TASK-8338; `connect_detail.drawer`)."""
     await _gate(ctx, "integration_catalog.read")
-    raise NotImplementedYet("W-01-T15")
+    from abacus.modules.integrations import connect_detail as detail
+
+    found = await detail.drawer(ctx, key)
+    tile, card = found.tile, found.card
+    consent = tile.row.consent_copy if tile.kind == "personal" else None
+    return ConnectIntegrationDetailOut(
+        key=tile.row.key,
+        name=tile.row.name,
+        status=tile.status,
+        status_line=tile.blocked_reason,
+        connection=ConnectionCardOut(
+            mode=cast(Literal["token", "firm_app", "file_bridge", "personal"], card.mode),
+            auth_mode_label=card.auth_mode_label,
+            connected_by=card.connected_by,
+            connected_at=card.connected_at,
+            token_renews_at=card.token_renews_at,
+            last_sync_at=card.last_sync_at,
+            linked_count=None,
+            linked_label_code=None,
+            mapping_ref=None,
+        ),
+        may_do=ConnectMayDoOut(
+            read=[
+                ConnectMayDoRowOut(
+                    label=r.label,
+                    gate_label=None,
+                    state=cast(Literal["allowed", "off_for_firm", "never"], r.state),
+                )
+                for r in found.reads
+            ],
+            write=[],
+            never=[
+                ConnectMayDoRowOut(label=r.label, gate_label=None, state="never")
+                for r in found.never
+            ],
+        ),
+        health=ConnectHealthOut(
+            summary=found.events[0].label if found.events else "",
+            events=[
+                ConnectIntegrationEventOut(
+                    id=str(e.id), kind=e.kind, at=e.at, label=e.label, ok=e.ok
+                )
+                for e in found.events
+            ],
+        ),
+        dependents=ConnectDependentsOut(
+            count=found.dependents.count,
+            paused=found.dependents.paused,
+            items=[ConnectDependentAgentOut(key=k, name=k) for k in found.dependents.keys],
+        ),
+        who_can_use="",
+        managed_by=found.managed_by,
+        consent=(
+            None
+            if consent is None or tile.row.consent_version is None
+            else ConnectConsentOut(
+                heading=str(consent.get("title", "")),
+                reads=[str(x) for x in consent.get("will", [])],
+                never=", ".join(str(x) for x in consent.get("wont", [])),
+                version=tile.row.consent_version,
+            )
+        ),
+        allowed_actions=cast(list[ConnectAction], list(tile.allowed_actions)),
+        version=found.version,
+    )
 
 
 @router.get(

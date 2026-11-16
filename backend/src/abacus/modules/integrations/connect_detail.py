@@ -7,19 +7,33 @@
 - **Dependents** (`dependents`): the capabilities that require the integration, from the agents
   module's provider; `paused` is computed from the install's status (needs reauth, needs
   attention, paused or disconnected), never stored (AC-15).
+- **The drawer** (`drawer`; S47, TASK-8338): WB-11's projection for one viewer, built on WB-10's
+  tile (status, kind, blocked reason, allowed actions) and the install the tile reads (the firm's,
+  or the viewer's own for a personal app). The connection card, the read rows (a scope a recorded
+  grant leaves out reads off for the firm), the recent events and the dependents are live.
+  Partial: the catalogue carries no write, never or who-can-use copy for a firm app, so those are
+  empty until the content does (the personal consent's `wont` lines are its never rows).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final
+from typing import Final, cast
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.modules.identity.api import AuthContext, names_of
+from abacus.modules.integrations.connect_catalog import (
+    Tile,
+    WorkbenchRow,
+    catalogue,
+    connections_manager,
+)
 from abacus.modules.integrations.dependents import dependents_of
+from abacus.modules.integrations.models import FirmIntegration, UserIntegration
 
 PAGE: Final = 50
 _FAILED: Final = frozenset({"token_expired", "health_failed", "run_failed"})
@@ -100,3 +114,113 @@ async def dependents(tenant: TenantContext, catalog_key: str) -> Dependents:
     async with tenant_session(tenant) as session:
         status = await session.scalar(_STATUS, {"k": catalog_key})
     return Dependents(len(keys), status in _PAUSING if status else bool(keys), keys)
+
+
+RECENT: Final = 5
+
+
+@dataclass(frozen=True)
+class Card:
+    mode: str
+    auth_mode_label: str
+    connected_by: str | None
+    connected_at: datetime | None
+    token_renews_at: datetime | None
+    last_sync_at: datetime | None
+
+
+@dataclass(frozen=True)
+class MayDo:
+    label: str
+    state: str  # allowed · off_for_firm · never
+
+
+@dataclass(frozen=True)
+class Drawer:
+    tile: Tile
+    card: Card
+    reads: tuple[MayDo, ...]
+    never: tuple[MayDo, ...]
+    events: tuple[Event, ...]
+    dependents: Dependents
+    managed_by: str | None
+    version: int
+
+
+def _mode(row: WorkbenchRow, install_mode: str | None) -> str:
+    if row.ownership_mode == "personal":
+        return "personal"
+    if row.ownership_mode == "client_authorised":
+        return "firm_app"
+    return install_mode if install_mode in ("token", "file_bridge", "firm_app") else "token"
+
+
+async def drawer(ctx: AuthContext, catalog_key: str) -> Drawer:
+    """WB-11 for the viewer (the route authorised `integration_catalog.read`); 404 for a key
+    WB-10 does not list."""
+    from abacus.kernel.errors import NotFound
+
+    tile = next((t for t in (await catalogue(ctx)).tiles if t.row.key == catalog_key), None)
+    if tile is None:
+        raise NotFound("integration")
+    row = tile.row
+    personal = row.ownership_mode == "personal"
+    async with tenant_session(ctx.tenant) as session:
+        if personal:
+            mine = await session.scalar(
+                select(UserIntegration).where(
+                    UserIntegration.catalog_key == catalog_key,
+                    UserIntegration.user_id == ctx.user_id,
+                    UserIntegration.status != "disconnected",
+                )
+            )
+            granted = tuple(mine.granted_scopes) if mine else None
+            by, at, renews, synced = (
+                (mine.user_id, mine.connected_at, mine.token_renews_at, mine.last_sync_at)
+                if mine
+                else (None, None, None, None)
+            )
+            install_mode, version = None, mine.version if mine else 1
+        else:
+            firm = await session.scalar(
+                select(FirmIntegration).where(
+                    FirmIntegration.catalog_key == catalog_key,
+                    FirmIntegration.status != "disconnected",
+                )
+            )
+            granted = tuple(firm.granted_scopes or ()) if firm else None
+            by, at, renews, synced = (
+                (firm.connected_by, firm.connected_at, firm.token_renews_at, firm.last_sync_at)
+                if firm
+                else (None, None, None, None)
+            )
+            install_mode, version = (firm.mode, firm.version) if firm else (None, 1)
+    mode = _mode(row, install_mode)
+    named = (await names_of([by])).get(by) if by is not None else None
+    reads = tuple(
+        # A read is off for the firm only against a recorded grant (an install that has recorded
+        # no scopes is not tracked for them).
+        MayDo(label, "allowed" if not granted or code in granted else "off_for_firm")
+        for code, label in row.read_scopes
+    )
+    copy = row.consent_copy or {}
+    wont = cast("list[object]", copy.get("wont", [])) if personal else []
+    never = tuple(MayDo(str(line), "never") for line in wont)
+    page, _ = await events(ctx.tenant, catalog_key) if not personal else ([], None)
+    return Drawer(
+        tile=tile,
+        card=Card(
+            mode=mode,
+            auth_mode_label=row.auth_line,
+            connected_by=named,
+            connected_at=at,
+            token_renews_at=None if mode == "file_bridge" else renews,  # AC-23
+            last_sync_at=synced,
+        ),
+        reads=reads,
+        never=never,
+        events=tuple(page[:RECENT]),
+        dependents=await dependents(ctx.tenant, catalog_key),
+        managed_by=None if personal else await connections_manager(ctx.tenant_id),
+        version=version,
+    )

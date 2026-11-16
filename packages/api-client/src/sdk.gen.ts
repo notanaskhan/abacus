@@ -11950,7 +11950,7 @@ export const connectComplete = <ThrowOnError extends boolean = false>(options: O
 /**
  * Connect Detail
  *
- * WB-11: the mode-aware projection.
+ * WB-11: the mode-aware projection (S47, TASK-8338; `connect_detail.drawer`).
  */
 export const connectDetail = <ThrowOnError extends boolean = false>(options: Options<ConnectDetailData, ThrowOnError>): RequestResult<ConnectDetailResponses, ConnectDetailErrors, ThrowOnError> => (options.client ?? client).get<ConnectDetailResponses, ConnectDetailErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
