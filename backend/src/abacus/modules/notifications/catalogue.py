@@ -151,6 +151,12 @@ async def _mentioned(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return sorted({UUID(str(u)) for u in cast(list[object], raw)})
 
 
+async def _expansion_approver(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-08 §4.7 (DEC-5327): the approver a sample expansion names, never its requester."""
+    approver, by = _uuid(payload, "approver_user_id"), _uuid(payload, "requested_by")
+    return [approver] if approver is not None and approver != by else []
+
+
 async def _named_user(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """A-08 §4.7 (DEC-5324): the person a confirmation's event names, while still on the
     engagement's team (the feed re-checks access at read, DEC-61)."""
@@ -453,6 +459,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "component_question.asked": Kind(
         "component_question_asked", _leads, "component", "component_id"
     ),
+    # A-08 §4.7 (A-08-T17, DEC-5327): the named approver of a sample expansion, never the asker.
+    "sample_expansion.requested": Kind(
+        "sample_expansion_approval_requested",
+        _expansion_approver,
+        "sample_expansion",
+        "expansion_id",
+    ),
     # A-08 §4.7 (A-08-T18, DEC-5324): the person a confirmation's event names.
     "confirmation.second_request_due": Kind(
         "confirmation_second_request_due", _named_user, "confirmation", "confirmation_id"
@@ -747,6 +760,9 @@ TEMPLATES: Final[dict[str, str]] = {
         "A component auditor on {engagement} acknowledged the group instructions."
     ),
     "component_question.asked": "A component auditor on {engagement} asked a question.",
+    "sample_expansion.requested": (
+        "A sample expansion on {engagement} is waiting for your approval."
+    ),
     "confirmation.second_request_due": "A confirmation on {engagement} is due a second request.",
     "confirmation.expired_no_response": (
         "A confirmation on {engagement} has no response. Record alternative procedures."
@@ -908,6 +924,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("eliminations_proposed", "approval", "Scale"),
     NotificationKind("component_instructions_acknowledged", "client_activity", "UserCheck"),
     NotificationKind("component_question_asked", "mention", "MessageSquare"),
+    NotificationKind("sample_expansion_approval_requested", "approval", "ListChecks"),
     NotificationKind("confirmation_second_request_due", "deadline", "CalendarClock"),
     NotificationKind("confirmation_expired_no_response", "deadline", "CalendarClock"),
     NotificationKind("confirmation_authorization_signed", "client_activity", "Signature"),

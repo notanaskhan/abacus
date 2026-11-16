@@ -109077,7 +109077,8 @@
               "random",
               "threshold",
               "risk_score",
-              "unpredictable"
+              "unpredictable",
+              "named"
             ],
             "title": "Selection Reason",
             "type": "string"

@@ -26,6 +26,17 @@ INSERTS = (
     "rationale_suggestion_id", "requested_by", "approver_user_id", "content_hash",
 )  # fmt: skip
 UPDATES = ("status", "decided_by", "decided_actor_kind", "decided_at", "resulting_version_id")
+# AC-3.4 (DEC-5327): an expansion's named keys ("Add participants") carry their own reason.
+_REASONS_BEFORE = "('random', 'threshold', 'risk_score', 'unpredictable')"
+_REASONS_AFTER = "('random', 'threshold', 'risk_score', 'unpredictable', 'named')"
+
+
+def _reasons(values: str) -> None:
+    op.execute("ALTER TABLE sample_items DROP CONSTRAINT sample_items_selection_reason_check")
+    op.execute(
+        "ALTER TABLE sample_items ADD CONSTRAINT sample_items_selection_reason_check "
+        f"CHECK (selection_reason IN {values})"
+    )
 
 
 def upgrade() -> None:
@@ -83,7 +94,10 @@ def upgrade() -> None:
     insert_columns(op, "sample_expansions", INSERTS)
     op.execute("REVOKE UPDATE, DELETE ON sample_expansions FROM abacus_app")
     op.execute(f"GRANT UPDATE ({', '.join(UPDATES)}) ON sample_expansions TO abacus_app")
+    _reasons(_REASONS_AFTER)
 
 
 def downgrade() -> None:
+    op.execute("DELETE FROM sample_items WHERE selection_reason = 'named'")
+    _reasons(_REASONS_BEFORE)
     op.execute("DROP TABLE sample_expansions")
