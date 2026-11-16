@@ -46093,6 +46093,14 @@ export type RequestNodeOut = {
      */
     client_visible?: boolean;
     /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
      * Kind
      */
     kind: 'category' | 'request';
