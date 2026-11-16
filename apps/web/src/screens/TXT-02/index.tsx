@@ -113,7 +113,7 @@ function Row({
         ) : null}
         <span className="w-[140px] text-right tabular-nums">
           {node.changed && node.prior_value !== null ? (
-            <s data-prior className="mr-[8px] text-ink-4">
+            <s data-prior className="mr-[8px] text-ink-3">
               {amountWords(node.prior_value)}
             </s>
           ) : null}
@@ -214,7 +214,10 @@ export function TXT02(props: TXT02Props): JSX.Element {
     const waiting = status === 409 || code?.code === "interpretation_not_approved";
     return waiting ? (
       <div data-screen="TXT-02" data-state="f1" className="flex flex-1 flex-col">
-        <div className="flex h-[52px] items-center gap-[20px] px-[16px] text-ink-4 hairline-b">
+        <div
+          aria-hidden="true"
+          className="flex h-[52px] items-center gap-[20px] px-[16px] text-ink-3 hairline-b"
+        >
           — · — · —
         </div>
         <EmptyState icon="scale" title={COPY.waiting} />

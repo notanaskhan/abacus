@@ -148,9 +148,25 @@ test.describe("J19-estate-amended (P-07's steps 0, 2 and 3)", () => {
     async () => {},
   );
 
+  // T-07-T30 (TASK-8361): step 4 on TXT-04's fixture artboards (a inventory, c computation).
+  test("j19 4: the Form 706 workpapers (TXT-04)", async ({ journey }) => {
+    await journey.as("daniel-reyes", "/components/screens/TXT-04?st=a");
+    await journey.step("J19 4 · TXT-04 a: the asset inventory", async (page) => {
+      await expect(
+        page.getByRole("heading", { name: "Asset inventory — date-of-death values" }),
+      ).toBeVisible();
+      await expect(page.getByText("Request appraisal…")).toBeVisible();
+    });
+    await journey.as("daniel-reyes", "/components/screens/TXT-04?st=c");
+    await journey.step("J19 4 · TXT-04 c: the computation, Illinois pending", async (page) => {
+      await expect(page.getByRole("region", { name: "Computation" })).toBeVisible();
+      await expect(page.locator("[data-illinois]")).toBeVisible();
+    });
+  });
+
   test.fixme(
-    "j19 4–8: Form 706 workpapers, partner approval, the Okafor 1040-X",
-    owner("T-04 · TXT-04, TAX-12, TAX-07, TAX-16 (J19's tax steps)"),
+    "j19 5–8: partner approval, the Okafor 1040-X",
+    owner("T-04 · TXT-04 c1 (L4 values, no fixture artboard), TAX-12, TAX-07, TAX-16"),
     async () => {},
   );
 

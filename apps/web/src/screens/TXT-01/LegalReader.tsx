@@ -256,6 +256,7 @@ export function LegalReader({
         </span>
         <span className={capsule}>
           <span
+            role="img"
             aria-label={COPY.reader.highlight}
             className="m-[5px] inline-block size-[15px] rounded-full bg-match-soft"
           />
