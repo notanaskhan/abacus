@@ -676,3 +676,62 @@ async def finalize(
             for s in current
         )
     )
+
+
+# --- lock and reopen (A-09-T19 rest; DEC-5328) -------------------------------------------------
+
+
+class ConsolidationLockState(DomainConflict):
+    code = "consolidation_lock_state"
+
+
+async def lock(
+    tx: UnitOfWork, facts: ConsolidationFacts, *, tenant_id: UUID, user_id: UUID
+) -> None:
+    """A person locks a finalized consolidation (AC-4.5): edits are refused until a reopen."""
+    if facts.status != "finalized" or facts.lock_state != "open":
+        raise ConsolidationLockState(facts={"lock_state": facts.lock_state})
+    done = await tx.session.execute(
+        text(
+            "UPDATE consolidations SET lock_state = 'locked', locked_by = :u, "
+            "locked_at = clock_timestamp(), locked_actor_kind = 'human', "
+            "row_version = row_version + 1 WHERE id = :i AND lock_state = 'open' RETURNING id"
+        ),
+        {"u": user_id, "i": facts.id},
+    )
+    if done.first() is None:
+        raise VersionStale
+    await tx.session.execute(
+        text(
+            "INSERT INTO consolidation_events (tenant_id, consolidation_id, kind, actor_kind, "
+            "actor_id) VALUES (:t, :i, 'locked', 'human', :u)"
+        ),
+        {"t": tenant_id, "i": facts.id, "u": user_id},
+    )
+    tx.record("consolidation.locked", target=Target(TARGET, facts.id))
+
+
+async def reopen(
+    tx: UnitOfWork, facts: ConsolidationFacts, *, tenant_id: UUID, user_id: UUID, reason: str
+) -> None:
+    """A Manager or the EP reopens with a reason (AC-4.5); the event keeps the reason."""
+    if facts.lock_state != "locked":
+        raise ConsolidationLockState(facts={"lock_state": facts.lock_state})
+    done = await tx.session.execute(
+        text(
+            "UPDATE consolidations SET lock_state = 'open', locked_by = NULL, locked_at = NULL, "
+            "locked_actor_kind = NULL, row_version = row_version + 1 "
+            "WHERE id = :i AND lock_state = 'locked' RETURNING id"
+        ),
+        {"i": facts.id},
+    )
+    if done.first() is None:
+        raise VersionStale
+    await tx.session.execute(
+        text(
+            "INSERT INTO consolidation_events (tenant_id, consolidation_id, kind, reason, "
+            "actor_kind, actor_id) VALUES (:t, :i, 'reopened', :r, 'human', :u)"
+        ),
+        {"t": tenant_id, "i": facts.id, "r": reason.strip()[:500], "u": user_id},
+    )
+    tx.record("consolidation.reopened", target=Target(TARGET, facts.id))

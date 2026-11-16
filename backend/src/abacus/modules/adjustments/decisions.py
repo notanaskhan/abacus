@@ -438,6 +438,15 @@ async def reject(ctx: AuthContext, entry_id: UUID, reason_code: str) -> UUID:
     return await _one(ctx, entry_id, "rejected", "rejected", _REJECTABLE, reason_code=reason_code)
 
 
+async def reject_with_note(ctx: AuthContext, entry_id: UUID, reason_code: str, note: str) -> UUID:
+    """A-09-T20 (DEC-5328): `reject` with the person's reason sealed on the decision row (an
+    elimination's reject-with-reason)."""
+    _live_human(ctx, "proposed_entry.reject")
+    return await _one(
+        ctx, entry_id, "rejected", "rejected", _REJECTABLE, reason_code=reason_code, note=note
+    )
+
+
 async def record_client_decision(
     ctx: AuthContext,
     entry_id: UUID,

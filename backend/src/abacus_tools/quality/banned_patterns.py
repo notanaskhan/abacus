@@ -2983,6 +2983,8 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/tax/entity_sections.py",
             # T-05-T54 (DEC-4910): the memo's L1 adopt and L2 approve through `sign_target`.
             "src/abacus/modules/tax/memo_service.py",
+            # A-08-T14 (DEC-5326): an attribute test's L1 adopt, a person's, on its content hash.
+            "src/abacus/modules/workpapers/fieldwork_tests.py",
         ),
     ),
     Rule(

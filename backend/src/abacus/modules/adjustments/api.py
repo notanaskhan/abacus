@@ -48,6 +48,7 @@ from abacus.modules.adjustments.decisions import (  # noqa: E402 -- A-06-T28
     record_client_decision as record_entry_decision,
 )
 from abacus.modules.adjustments.decisions import send as send_entries  # noqa: E402
+from abacus.modules.adjustments.eliminations import EliminationLine  # noqa: E402
 
 # T-05-T33 (DEC-4618): the tax layers for the entity TB read model.
 from abacus.modules.adjustments.entries import Entry as Entry  # noqa: E402 -- T-05-T37 drawer
@@ -61,6 +62,7 @@ __all__ = [
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "EliminationLine",
     "Entry",
     "NewEntry",
     "NewLine",
