@@ -185,8 +185,13 @@ register_available_datasets(available_datasets)
 register_auto_retrieval(auto_retrieve)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.connections.coverage_routes import (  # noqa: E402 -- A-09-T18
+    router as coverage_router,
+)
+
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
+    coverage_router,  # A-09-T18: PUT /v1/connections/{id}/coverage
     connection_router,
     complete_router,
     ledger_sync_router,  # C-01-T07/T17: C9 v2.1 sync status and Sync now
