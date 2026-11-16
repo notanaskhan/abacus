@@ -45,11 +45,16 @@ _LIVE: Final = text(
 
 async def probe_tenant(tenant_id: UUID) -> int:
     """Every live token install of one firm; returns how many were probed."""
+    from abacus.kernel._flags import INTEGRATIONS_HEALTH_MONITOR
+    from abacus.kernel.flags import flag_enabled
     from abacus.modules.identity.api import is_synthetic_firm
     from abacus.modules.integrations.connect_ports import port_for
     from abacus.modules.integrations.secrets import open_secret
 
     tenant = TenantContext(tenant_id, "system", _ACTOR)
+    # SPEC-659 AC-30: the monitor is silent for a firm with `integrations.health_monitor` off.
+    if not await flag_enabled(tenant, INTEGRATIONS_HEALTH_MONITOR, fresh=True):
+        return 0
     synthetic = await is_synthetic_firm(tenant)
     async with tenant_session(tenant) as session:
         installs = (await session.execute(_LIVE)).all()
