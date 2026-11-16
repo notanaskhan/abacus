@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import AUDITS_FIELDWORK_TESTING
 from abacus.kernel.classification import classified
+from abacus.kernel.clock import now
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
@@ -104,26 +105,40 @@ async def start_run(test_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> TestRunOut
     raise NotImplementedYet("A-08-T24")
 
 
-@router.post(f"{_T}/adopt", action="test.adopt", response_model=AdoptOut, errors=(409, 501))
+@router.post(f"{_T}/adopt", action="test.adopt", response_model=AdoptOut, errors=(409,))
 async def fieldwork_test_adopt(
     test_id: UUID, body: AdoptIn, ctx: Ctx, _key: IdempotencyKey
 ) -> AdoptOut:
     """L1 through `review.api.record_sign_off` with the version's content hash."""
     await _gate(ctx)
-    raise NotImplementedYet("A-08-T14")
+    from abacus.modules.workpapers import fieldwork_tests as ft
+
+    signed, content_hash = await ft.adopt(ctx, test_id, body.seen_hash)
+    return AdoptOut(
+        sign_off_id=signed, content_hash=content_hash, adopted_at=await now(ctx.tenant)
+    )
 
 
 @router.post(
     f"{_T}/items/{{item_id}}/exception",
     action="finding.create",
     response_model=ExceptionPrefillOut,
-    errors=(501,),
+    errors=(),
 )
 async def fieldwork_test_exception_prefill(
     test_id: UUID, item_id: UUID, ctx: Ctx
 ) -> ExceptionPrefillOut:
     await _gate(ctx)
-    raise NotImplementedYet("A-08-T14")
+    from abacus.modules.workpapers import fieldwork_tests as ft
+
+    found = await ft.exception_prefill(ctx, test_id, item_id)
+    return ExceptionPrefillOut(
+        test_id=test_id,
+        item_id=item_id,
+        title=found.title[:300],
+        amount=None,
+        citation_ids=list(found.citation_ids),
+    )
 
 
 @router.post(
@@ -131,18 +146,36 @@ async def fieldwork_test_exception_prefill(
     action="test.mark",
     response_model=DeviationLogOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def log_deviation(
     test_id: UUID, body: DeviationIn, ctx: Ctx, _key: IdempotencyKey
 ) -> DeviationLogOut:
     """Insert-only; the UDL recomputes in code (0 of 25 ⇒ 8.8%; 2 of 25 ⇒ 19.9%)."""
     await _gate(ctx)
-    raise NotImplementedYet("A-08-T14")
+    from abacus.modules.workpapers import fieldwork_tests as ft
+
+    log = await ft.log_at_position(
+        ctx, test_id, body.item_position, body.attribute_key, body.description
+    )
+    tolerable = await ft.tolerable_rate(ctx, test_id)
+    udl = log.udl_pct / 100  # the engine answers a percent; the contract a fraction
+    return DeviationLogOut(
+        deviations=log.deviations,
+        sample_size=max(log.tested, 1),
+        upper_deviation_limit=udl,
+        tolerable_rate=tolerable if tolerable is not None else Decimal("0"),
+        comparison="below" if tolerable is not None and udl < tolerable else "above",
+    )
 
 
-@router.get(f"{_T}/export.xlsx", action="test.export", response_model=bytes, errors=(501,))
+@router.get(f"{_T}/export.xlsx", action="test.export", response_model=bytes, errors=())
 async def export_test(test_id: UUID, ctx: Ctx) -> Response:
     """'JE Testing.xlsx': byte-identical per version, accounts masked to the last four."""
     await _gate(ctx)
-    raise NotImplementedYet("A-08-T14")
+    from abacus.modules.workpapers import fieldwork_tests as ft
+
+    return Response(
+        content=await ft.export_xlsx(ctx, test_id),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

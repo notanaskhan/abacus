@@ -97,6 +97,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "sample_expansion.withdrawn",
         # reviewed 2026-11-16 (S47): A-08-T14 the AUD-12 deviation log, identifiers only
         "control_deviation.logged",
+        "attribute_test.exported",  # A-08-T14 (DEC-5326): AUD-12's workbook, identifiers only
         # reviewed 2026-11-16 (S47): C-01-T21 arrangements, reclasses, recordings, identifiers only
         "arrangement.created",
         "arrangement.result_recorded",  # S47 end pass: a schedule tie recomputed (TASK-8337)

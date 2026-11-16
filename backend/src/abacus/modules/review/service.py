@@ -160,8 +160,9 @@ async def record_sign_off(
     target_id: UUID,
     level: int,
     content_hash: str,
-) -> None:
+) -> UUID:
     """Inside the owner's unit of work (the owner has locked the target and computed the hash).
+    Returns the new sign-off's id (S47, additive).
     The level's action is authorised with the target's facts (P-04-T15; DEC-216): its preparers
     are the owner's, from its own records (`ReviewableFacts`), and everyone who has signed L1 on
     it on any content. The L2 and L3 rows refuse them (`not_preparer_of_target`), answered as
@@ -194,7 +195,7 @@ async def record_sign_off(
             raise NotPrepared(str(target_id))
         if level in (2, 3) and preparer.signed_by == ctx.user_id:  # also the matrix (R-SO-3)
             raise PreparerCannotReview(str(target_id))
-    await insert_sign_off(
+    signed = await insert_sign_off(
         tx.session,
         tenant_id=ctx.tenant_id,
         engagement_id=engagement_id,
@@ -209,6 +210,7 @@ async def record_sign_off(
         target=Target(target_type, target_id),
         after=Ref(level=level, content_hash=content_hash),
     )
+    return signed
 
 
 # --- T-01-T18: what a final-approval guard reads -------------------------------------------------

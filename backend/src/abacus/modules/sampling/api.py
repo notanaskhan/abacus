@@ -99,6 +99,7 @@ from abacus.modules.sampling.sample_sets import (
     reviewables,
     sample_set_view,
     section_state,
+    version_row,
 )
 from abacus.modules.sampling.selected_entries import SelectedEntry, selected_entry
 from abacus.modules.sampling.selection import (
@@ -201,4 +202,5 @@ __all__ = [
     "ties",
     "udl",
     "udl_percent",
+    "version_row",
 ]
