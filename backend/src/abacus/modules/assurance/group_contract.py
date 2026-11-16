@@ -595,7 +595,9 @@ async def group_propose_structure(
 ) -> GroupSuggestionRefOut:
     """A deterministic P-35 suggestion (DV-2); adopt through `POST /v1/suggestions/{id}/adopt`."""
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T14")
+    # DV-2's sources: OneWorld parent-subsidiary data arrives with A-09-T18 (client entities hold
+    # no hierarchy), so the deterministic proposal lands there (S46 records, DEC-5083).
+    raise _todo("A-09-T18")
 
 
 @router.post(
@@ -690,7 +692,7 @@ async def group_lock(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> ConsolidationOut:
     await _gate(ctx, work_item_id, "consolidation.lock")
-    raise _todo("A-09-T13")
+    raise _todo("A-09-T19")  # lock, reopen, level TBs and the xlsx (A-09 §9)
 
 
 @router.post(
@@ -701,7 +703,7 @@ async def group_reopen(
 ) -> ConsolidationOut:
     """With a reason; stales consolidation sign-offs and AUD-34's coverage facts (OQ-2)."""
     await _gate(ctx, work_item_id, "consolidation.lock")
-    raise _todo("A-09-T13")
+    raise _todo("A-09-T19")  # lock, reopen, level TBs and the xlsx (A-09 §9)
 
 
 @router.get(
@@ -716,7 +718,7 @@ async def group_consolidated_tb(
 ) -> ConsolidatedTbOut:
     """Code's columns, ties, tallies and attribution; no browser arithmetic."""
     await _gate(ctx, work_item_id, "consolidation.read")
-    raise _todo("A-09-T13")
+    raise _todo("A-09-T19")  # lock, reopen, level TBs and the xlsx (A-09 §9)
 
 
 @router.get(
@@ -726,7 +728,7 @@ async def group_export_consolidation(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx
 ) -> Response:
     await _gate(ctx, work_item_id, "consolidation.export")
-    raise _todo("A-09-T13")
+    raise _todo("A-09-T19")  # lock, reopen, level TBs and the xlsx (A-09 §9)
 
 
 _E = "/consolidations/{consolidation_id}/eliminations"
