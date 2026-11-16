@@ -3,7 +3,7 @@
 // the state pill, "Working" while preparing, and Assistant → TAX-08) over the reviewer's Group A
 // tabs; Review opens Group B. P1 review tabs are planned (T-06): absent in production, drawn
 // disabled where planned screens are. The frame never fetches: the route passes the record.
-import { EmptyState, RecordHeader, SegmentedGroup } from "@abacus/ui";
+import { EmptyState, MAX_OPTIONS_PER_TRACK, RecordHeader, SegmentedGroup } from "@abacus/ui";
 import type { JSX, ReactNode } from "react";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { GROUP_A, GROUP_B, P1_REVIEW, type Section, TAB_LABEL } from "../../domain/tax";
@@ -26,8 +26,14 @@ export interface EntityReturnLayoutProps {
 
 export const NOT_BUILT = "Not built yet";
 
-function reviewOptions(): string[] {
-  return GROUP_B.filter((t) => PLANNED_VISIBLE || !P1_REVIEW.has(t)).map((t) => TAB_LABEL[t]);
+// T-05-T68: a track holds at most seven options (C-05). The four P1 sections (T-06's) are drawn
+// disabled only while they fit; with the five built sections they would make nine, so they stay
+// out of the track until T-06 lands them (docs/screens/TXP-00.md, Deviations).
+export function reviewOptions(plannedVisible: boolean = PLANNED_VISIBLE): string[] {
+  const all = GROUP_B.filter((t) => plannedVisible || !P1_REVIEW.has(t));
+  const fits =
+    all.length <= MAX_OPTIONS_PER_TRACK ? all : GROUP_B.filter((t) => !P1_REVIEW.has(t));
+  return fits.map((t) => TAB_LABEL[t]);
 }
 
 export function EntityReturnLayout(props: EntityReturnLayoutProps): JSX.Element {

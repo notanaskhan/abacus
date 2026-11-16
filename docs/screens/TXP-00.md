@@ -70,6 +70,8 @@ DF-34: Schedule L follows pack 08 (1200 → L5, mortgage → L18, 2000 split fro
 - Import-mode steps (`depreciation_register`, `bonus_eligibility`, `apportionment_ptet`, `state_k1s_k3s`) read the firm's report or keyed cells until T-06 (SPEC-651 §2.2).
 - Schedule K and capital are read models over workbook cells; no `schedule_k_lines` or `capital_account_lines` tables (T-05 OQ-8).
 - TXP-12 (K-1 package) is T-02's screen; T-05 only links to it.
+- T-05-T68 (DEC-5300): the Review track draws the five built sections (Summary, Financials, Schedule M-2, Schedule K, Capital Accounts). The four P1 sections (T-06) would make nine options, over C-05's seven per track, so they stay out of the track in every build until T-06 lands them.
+- T-05-T68 (DEC-5300): the composer's label and Run's "Started …" time are ink-3, not ink-4, so they meet text contrast (axe `color-contrast`, serious).
 
 ### Designed states the handoff lacks (T-05-T03)
 

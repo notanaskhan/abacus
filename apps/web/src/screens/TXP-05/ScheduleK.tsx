@@ -54,7 +54,7 @@ export function ScheduleK({
           onClose={() => {
             setAllocationOpen(false);
           }}
-          onItemL={() => void navigate(to.TXP07({ returnId, section: "capital-accounts" }))}
+          onItemL={() => void navigate(to.TXP07({ returnId, section: "capital" }))}
         />
       ) : null}
       <TXP05
@@ -79,7 +79,7 @@ export function ScheduleK({
         }}
         onItemL={setItemLOpen}
         // TXP-07 is routed (T-05-T55): a typed link (link contract rule 1).
-        onOpenCapital={() => void navigate(to.TXP07({ returnId, section: "capital-accounts" }))}
+        onOpenCapital={() => void navigate(to.TXP07({ returnId, section: "capital" }))}
         onOpenIssues={() => onOpen?.("/issues")}
         // A5: a partner header opens the K-1 package (TXP-12; TAX-11 is planned).
         onPartner={() => void navigate(to.TXP12({ returnId }))}

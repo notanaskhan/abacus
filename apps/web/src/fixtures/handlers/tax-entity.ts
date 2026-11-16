@@ -2,12 +2,14 @@
 // Reads answer the snapshot's shapes; writes answer 501 as the contract stubs do until the live
 // rows land (the gallery never persists).
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
+import { seededReturnRecord } from "./tax-returns";
 import {
   cellProvenance,
   formLines,
   journalEntries,
   mappingAnswer,
   partners,
+  RIDGELINE_RETURN_ID,
   runs,
   type Snapshot,
   type Statement,
@@ -38,11 +40,43 @@ import {
 const notYet = () => json({ detail: "not_implemented" }, 501);
 const R = "/v1/tax-returns/{return_id}";
 
+/** The capabilities the entity screens ask for (domain/tax ENTITY_CAPABILITIES; equal by test). */
+export const ENTITY_CAPABILITY_NAMES = [
+  "tax.memo_drafter",
+  "tax.account_mapper",
+  "tax.agreement_reader",
+  "issues.fix_runner",
+] as const;
+
 export function taxEntityHandlers(
   snapshot: Snapshot,
-  options: { proposed?: boolean; memo?: MemoState; issues?: IssuesState } = {},
+  options: {
+    proposed?: boolean;
+    memo?: MemoState;
+    issues?: IssuesState;
+    /** T-05-T68: the engagement's agent capabilities ("off": `tax.entity_agents` off). */
+    agents?: "on" | "off";
+  } = {},
 ): Record<string, FixtureHandler> {
   return {
+    // T-05-T68: the entity capabilities for the Ridgeline engagement (T-05-T66's gate); off, each
+    // answers the server's `agent` reason and every model-backed control draws disabled.
+    "GET /v1/agents/capabilities": () =>
+      json({
+        items: ENTITY_CAPABILITY_NAMES.map((capability) =>
+          options.agents === "off"
+            ? { capability, available: false, reason: "agent" }
+            : { capability, available: true, reason: null },
+        ),
+      }),
+    // T-05-T68: the return record the entity dispatch reads (TXP-00), the seeded Ridgeline 1065
+    // under the entity fixtures' id.
+    [`GET ${R}`]: (req) => {
+      const record = seededReturnRecord("Ridgeline Property Partners, LP");
+      return req.params.return_id !== RIDGELINE_RETURN_ID || record === undefined
+        ? json({ detail: "not_found" }, 404)
+        : json({ ...record, row: { ...record.row, id: RIDGELINE_RETURN_ID } });
+    },
     // T-05-T58: TXP-10's queue, the issue detail and the picker (the artboard's state).
     [`GET ${R}/issues`]: (req) =>
       json(ridgelineIssues(options.issues ?? "a", req.query.get("show_resolved") === "true")),
@@ -52,7 +86,7 @@ export function taxEntityHandlers(
     // T-05-T59: TXP-01's memo (the artboard's state), the rail and the opportunities.
     [`GET ${R}/memo`]: () => json(ridgelineMemo(options.memo ?? "adopted")),
     [`GET ${R}/general-information`]: () => json(RIDGELINE_GENERAL),
-    [`GET ${R}/memo/opportunities`]: () => json(RIDGELINE_OPPORTUNITIES),
+    [`GET ${R}/opportunities`]: () => json(RIDGELINE_OPPORTUNITIES), // the API's path (T-05-T68)
     [`GET ${R}/workbook/sheets/{sheet}`]: (req) =>
       json(sheetCells(snapshot, req.params.sheet ?? "05", options.proposed === true)),
     // T-05-T38 rest (DEC-4630): the workbook's versions (Run 1 and Run 2 finished) and the
@@ -100,6 +134,21 @@ export function taxEntityHandlers(
     [`GET ${R}/schedules/k/lines/{line}/breakdown`]: (req) =>
       json(breakdown(req.params.line ?? "")),
     [`GET ${R}/capital-accounts`]: () => json(capitalAccounts(snapshot)),
+    // T-05-T68: TXP-07's sign-off reads the section's hash; the write lands with the live stack.
+    [`GET ${R}/sections`]: () =>
+      json({
+        items: [
+          {
+            key: "capital-accounts",
+            title: "Capital Accounts",
+            seen_hash: "0".repeat(64),
+            signed_levels: [],
+            stale_levels: [],
+            tallies: [],
+          },
+        ],
+      }),
+    [`POST ${R}/sections/{key}/sign-off`]: notYet,
     // T-05-T44: TXP-06 (Harborview's snapshot draws its waterfall; Sep 8 is Pending approval).
     [`GET ${R}/allocation-structure`]: () =>
       json(

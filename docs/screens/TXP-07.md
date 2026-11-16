@@ -47,7 +47,7 @@ Matrix actions from `permission-matrix/tax.yaml` (T-05-T04): every human verb `a
 | From | To | Status |
 |---|---|---|
 | Amber cell | SHL-09 (expected value) | planned |
-| M-2 ties · off 6,200 | TXP-10 (the M-2 review point) | planned |
+| M-2 ties · off 6,200 | TXP-10 (the M-2 review point) | live (T-05-T68) |
 | Sign off… | SHL-12 (blocked state while the tie is off) | planned |
 | Allocation basis (tooltip) | TXP-06 (the Allocation Structure) | planned |
 
@@ -62,6 +62,7 @@ DF-34: Schedule L follows pack 08 (1200 → L5, mortgage → L18, 2000 split fro
 - Import-mode steps (`depreciation_register`, `bonus_eligibility`, `apportionment_ptet`, `state_k1s_k3s`) read the firm's report or keyed cells until T-06 (SPEC-651 §2.2).
 - Schedule K and capital are read models over workbook cells; no `schedule_k_lines` or `capital_account_lines` tables (T-05 OQ-8).
 - TXP-12 (K-1 package) is T-02's screen; T-05 only links to it.
+- T-05-T68 (DEC-5300): the screen is routed at `/tax-returns/$returnId/review/capital` (the section key is `capital`; Schedule K's and TXP-06's links sent `capital-accounts`, which no route accepts). Sign off posts `level: l2` with the section's `seen_hash` from `GET …/sections`; without the hash nothing is posted. The pane strip and the movement table are keyboard-reachable regions.
 
 ### Designed states the handoff lacks (T-05-T03)
 

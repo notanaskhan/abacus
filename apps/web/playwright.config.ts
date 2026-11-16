@@ -24,6 +24,7 @@ const JOURNEY_FILES = [
   "**/harness/**/*.spec.ts",
   "**/*.fullstack.spec.ts",
   "**/agents/**/*.spec.ts", // P-10-T50: the run stream on the harness projects
+  "**/entity/**/*.spec.ts", // T-05-T68: J08's agents-off walk on the harness projects
 ];
 const journeyUse = {
   ...devices["Desktop Chrome"],
