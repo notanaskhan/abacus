@@ -882,3 +882,8 @@ from abacus.modules.assurance import confirmations_lifecycle as _lifecycle  # no
 from abacus.modules.communications.api import register_respondent_link  # noqa: E402
 
 register_respondent_link("confirmation", _lifecycle.link_facts, _lifecycle.link_at_delivery)
+
+# A-09-T23 (DEC-5330): the EP's reserved group-materiality card.
+from abacus.modules.assurance import group_scoping as _group_scoping  # noqa: E402
+
+_group_scoping.register()

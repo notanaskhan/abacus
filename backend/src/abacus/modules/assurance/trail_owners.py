@@ -22,6 +22,8 @@ _READS: Final = {
     "related_party": text("SELECT id, engagement_id FROM related_parties WHERE id = ANY(:ids)"),
     # A-08-T16: a confirmation, owned by its engagement.
     "confirmation": text("SELECT id, engagement_id FROM confirmations WHERE id = ANY(:ids)"),
+    # A-09-T23 (DEC-5330): a component is its work item's engagement's.
+    "component": text("SELECT id, engagement_id FROM components WHERE id = ANY(:ids)"),
     # A-08-T18 (DEC-5324): a confirmation authorization is its work item's engagement's.
     "confirmation_authorization": text(
         "SELECT id, engagement_id FROM confirmation_authorizations WHERE id = ANY(:ids)"

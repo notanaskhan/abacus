@@ -808,6 +808,29 @@ async def group_export_consolidation(
 _E = "/consolidations/{consolidation_id}/eliminations"
 
 
+async def _engagement(ctx: AuthContext, work_item_id: UUID) -> UUID:
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    if engagement_id is None:
+        raise NotFound("work_item")
+    return engagement_id
+
+
+async def _may(ctx: AuthContext, action: str, resource: object) -> bool:
+    from abacus.modules.identity.api import Forbidden
+
+    try:
+        await authorise(ctx, action, resource)  # type: ignore[arg-type] -- a Resource
+    except Forbidden:
+        return False
+    return True
+
+
+async def _people(ctx: AuthContext, ids: list[UUID]) -> dict[UUID, str]:
+    from abacus.modules.identity.api import names_of
+
+    return dict(await names_of(ids)) if ids else {}
+
+
 def _lines_in(body: EliminationIn) -> list[EliminationLine]:
     from abacus.modules.adjustments.api import eliminations as adj
 
@@ -1009,36 +1032,132 @@ async def group_propose_eliminations(
     f"{_A}/group-scoping",
     action="group_scoping.read",
     response_model=GroupScopingOut,
-    errors=(501,),
+    errors=(),
 )
 async def group_scoping(work_item_id: UUID, ctx: Ctx) -> GroupScopingOut:
     await _gate(ctx, work_item_id, "group_scoping.read")
-    raise _todo("A-09-T23")
+    from abacus.modules.assurance import group_scoping as svc
+
+    engagement_id = await _engagement(ctx, work_item_id)
+    found = await svc.scoping(ctx, work_item_id, engagement_id)
+    group_pm = None if found.decided is None else found.decided.pm
+    resource = (await get_ref(ctx, engagement_id)).resource()
+    allowed: list[Literal["component.edit", "group_materiality.propose", "decision.decide"]] = [
+        a
+        for a in ("component.edit", "group_materiality.propose", "decision.decide")
+        if await _may(ctx, a, resource)
+    ]
+    names = await _people(ctx, [found.decided_by] if found.decided_by else [])
+    return GroupScopingOut(
+        decision_card_id=found.card_id,
+        decided=found.decided is not None,
+        group_materiality=None if found.decided is None else found.decided.materiality,
+        performance_materiality=group_pm,
+        clearly_trivial=None if found.decided is None else found.decided.ct,
+        decided_by_name=names.get(found.decided_by) if found.decided_by else None,
+        decided_at=found.decided_at,
+        options=[
+            GroupMaterialityOptionOut(
+                key=key,
+                benchmark=label,
+                base=base,
+                rate_pct=(t.materiality * 100 / base).quantize(Decimal("0.01"))
+                if base
+                else Decimal(0),
+                amount=t.materiality,
+                recommended=False,
+                citation_ids=[],
+            )
+            for key, label, base, t in found.options
+        ],
+        components=[
+            GroupComponentOut(
+                id=c.id,
+                entity_name=c.entity_name,
+                planned_work=c.planned_work,
+                scope_areas=list(c.scope_areas),
+                performed_by=c.performed_by,
+                component_pm=c.component_pm,
+                pm_pct_of_group=(c.component_pm * 100 / group_pm).quantize(Decimal(1))
+                if c.component_pm is not None and group_pm
+                else None,
+                suggestion_id=None,
+            )
+            for c in found.components
+        ],
+        component_pm_total=found.component_pm_total,
+        coverage=[]
+        if found.coverage is None
+        else [
+            GroupCoverageOut(
+                measure="total_assets",
+                total=found.coverage.total,
+                full_scope=found.full_scope,
+                specific_procedures=found.specific,
+                full_scope_pct=(found.full_scope * 100 / found.coverage.total).quantize(Decimal(1))
+                if found.coverage.total
+                else Decimal(0),
+                specific_procedures_pct=(found.specific * 100 / found.coverage.total).quantize(
+                    Decimal(1)
+                )
+                if found.coverage.total
+                else Decimal(0),
+            )
+        ],
+        allowed_actions=allowed,
+    )
 
 
 @router.get(
     f"{_A}/group-scoping/export.xlsx",
     action="group_scoping.read",
     response_model=bytes,
-    errors=(501,),
+    errors=(),
 )
 async def group_export_group_scoping(work_item_id: UUID, ctx: Ctx) -> Response:
     await _gate(ctx, work_item_id, "group_scoping.read")
-    raise _todo("A-09-T23")
+    from abacus.modules.assurance import group_scoping as svc
+
+    engagement_id = await _engagement(ctx, work_item_id)
+    return Response(
+        content=await svc.workbook(ctx, work_item_id, engagement_id),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 @router.put(
     "/components/{component_id}",
     action="component.edit",
     response_model=GroupComponentOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_edit_component(
     component_id: UUID, body: GroupComponentIn, ctx: Ctx, _if: IfMatch
 ) -> GroupComponentOut:
     """422 `component_pm_invalid` at or above group PM or on an Analytical-only component."""
     await _gate_record(ctx)
-    raise _todo("A-09-T23")
+    from abacus.modules.assurance import group_scoping as svc
+    from abacus.modules.assurance.group_consolidation import seen_version
+
+    c = await svc.edit_component(
+        ctx,
+        component_id,
+        planned_work=body.planned_work,
+        scope_areas=list(body.scope_areas),
+        performed_by=body.performed_by,
+        component_pm=body.component_pm,
+        seen_version=seen_version(_if),
+    )
+    return GroupComponentOut(
+        id=c.id,
+        entity_name=c.entity_name,
+        planned_work=c.planned_work,
+        scope_areas=list(c.scope_areas),
+        performed_by=c.performed_by,
+        component_pm=c.component_pm,
+        pm_pct_of_group=None,
+        suggestion_id=None,
+    )
 
 
 @router.post(
@@ -1046,14 +1165,20 @@ async def group_edit_component(
     action="group_materiality.propose",
     response_model=GroupDecisionCardOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_raise_group_materiality(
     work_item_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> GroupDecisionCardOut:
     """Raises the EP-reserved card; deciding is P-04's `decision.decide` (rationale, fresh MFA)."""
     await _gate(ctx, work_item_id, "group_materiality.propose")
-    raise _todo("A-09-T23")
+    from abacus.modules.assurance import group_scoping as svc
+
+    engagement_id = await _engagement(ctx, work_item_id)
+    return GroupDecisionCardOut(
+        decision_card_id=await svc.raise_card(ctx, work_item_id, engagement_id),
+        kind="group_materiality",
+    )
 
 
 @router.get(
