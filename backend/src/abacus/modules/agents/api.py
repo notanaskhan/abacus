@@ -525,7 +525,13 @@ from abacus.modules.agents.run_activities import (  # noqa: E402 -- the history 
     RunFacts,
     StepOutcome,
 )
+
+# W-01-T14 (DEC-5334): WB-11's "Agents using it" from the specs' required integrations.
+from abacus.modules.agents.run_start import dependents_of as _dependents_of  # noqa: E402
 from abacus.modules.agents.run_start import open_capability_run  # noqa: E402 -- T-04-T25
+from abacus.modules.integrations.api import register_dependents_provider  # noqa: E402
+
+register_dependents_provider(_dependents_of)
 from abacus.modules.agents.run_waits import WaitState  # noqa: E402 -- the history recorder's
 from abacus.modules.agents.service import load_run_v2_context  # noqa: E402 -- T-04-T25
 from abacus.modules.agents.spec_v2 import (  # noqa: E402

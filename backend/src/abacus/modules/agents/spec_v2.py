@@ -124,6 +124,13 @@ class AgentSpecV2(BaseModel):
     ]
     # Cleared only with a committed Bedrock evaluation and Bedrock tool parity (SPEC-036, T13).
     client_data: Annotated[Literal["none", "cleared"], classified("internal")] = "none"
+    # W-01-T14 (DEC-5320, DEC-5334): catalogue keys this capability needs connected for the firm;
+    # a run is admitted only when each is (`integrations.api.admit`).
+    requires_integrations: Annotated[
+        tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]{1,49}$")], ...],
+        Field(max_length=8),
+        classified("internal"),
+    ] = ()
 
 
 _ORDER: Final = {"small": 0, "medium": 1, "large": 2}
