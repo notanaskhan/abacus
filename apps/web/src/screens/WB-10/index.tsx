@@ -30,9 +30,9 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useId, useState } from "react";
+import { useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
-import { hrefOf, to } from "../../routes/to";
-import { RevealStepUp } from "../../domain/audits";
+import { hrefOf, ov, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // WB-10 · Workbench › Connect (W-01-T12; SPEC-659 AC-1 to AC-9, AC-31; docs/screens/WB-10.md).
@@ -42,7 +42,7 @@ import { COPY } from "./copy";
 // API's: its honest status (AC-4), who connected it, its blocked reason and its allowed actions. A
 // firm tile the viewer may not enable keeps its Enable focusable with `aria-disabled` and states the
 // reason through `aria-describedby` (AC-6); Notify me is idempotent (AC-31). Details… opens WB-11
-// (`?ov=connection:<key>`), planned until W-01-T15.
+// (`?ov=integration:<key>`); a personal Enable opens WB-11's consent first (W-01-T17).
 //
 //   a  Felix at E0: 53 = 9 + 38 + 6      d  Hannah: Enable disabled, "Felix Andersen manages…"
 //   b  ERP: 8                             e  Google Workspace connecting (staging)
@@ -131,6 +131,7 @@ function Tile({ tile }: { tile: ConnectTileOut }): JSX.Element {
     },
     onError: failed,
   });
+  const openOverlay = useOpenOverlay();
   const key = { "Idempotency-Key": `wb10-${tile.key}-${crypto.randomUUID()}` };
   const may = (a: ConnectTileOut["allowed_actions"][number]): boolean =>
     tile.allowed_actions.includes(a);
@@ -168,19 +169,32 @@ function Tile({ tile }: { tile: ConnectTileOut }): JSX.Element {
         {...(blocked && tile.blocked_reason !== null ? { "aria-describedby": reasonId } : {})}
         onClick={() => {
           if (blocked) return;
+          // W-01-T17 (WB-10 interactions): a personal Enable opens WB-11's consent first; a
+          // firm Enable or a Reconnect goes to the provider at once.
+          if (personal && tile.status === "available") {
+            openOverlay(ov.WB11(tile.key));
+            return;
+          }
           (personal ? mine : firm).mutate({ path: { key: tile.key }, headers: key });
         }}
       >
         {label}
       </Button>
     );
-  } else if (PLANNED_VISIBLE) {
-    action = (
-      <Button variant="secondary" size="sm" disabled title={COPY.notBuilt}>
+  }
+  // W-01-T17: Details… opens WB-11 over the catalogue (every listed tile but a coming-soon one).
+  const details =
+    tile.status === "coming_soon" ? null : (
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => {
+          openOverlay(ov.WB11(tile.key));
+        }}
+      >
         {COPY.details}
       </Button>
     );
-  }
   const by =
     tile.status === "connected" && personal
       ? COPY.connectedAsYou
@@ -232,8 +246,12 @@ function Tile({ tile }: { tile: ConnectTileOut }): JSX.Element {
           {tile.blocked_reason}
         </p>
       )}
-      {action !== null && <div className="mt-auto pt-[8px]">{action}</div>}
-      <RevealStepUp open={stepUp} onOpenChange={setStepUp} />
+      {(action !== null || details !== null) && (
+        <div className="mt-auto flex gap-[8px] pt-[8px]">
+          {action}
+          {details}
+        </div>
+      )}
     </CatalogCard>
   );
 }

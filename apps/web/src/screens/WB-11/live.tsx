@@ -2,6 +2,7 @@ import type { ConnectIntegrationDetailOut } from "@abacus/api-client";
 import {
   connectDetailOptions,
   connectFirmMutation,
+  connectPersonalMutation,
   disconnectFirmMutation,
 } from "@abacus/api-client/query";
 import {
@@ -44,6 +45,8 @@ const COPY = {
   confirm: "Disconnect",
   kept: "Data already in Accrued is kept.",
   failed: "That didn't work. Try again.",
+  cancel: "Cancel",
+  continueTo: (name: string): string => `Continue to ${name}`,
 } as const;
 
 export function IntegrationLayer({ ref, close }: OverlayRenderProps): JSX.Element | null {
@@ -103,6 +106,15 @@ function Loaded({
   };
   const reconnect = useMutation({
     ...connectFirmMutation(),
+    onSuccess: (r) => {
+      if (r.authorise_url) window.location.assign(r.authorise_url);
+      refresh();
+    },
+    onError: failed,
+  });
+  // W-01-T17 (WB-11 b): a personal app's consent, then the provider.
+  const personal = useMutation({
+    ...connectPersonalMutation(),
     onSuccess: (r) => {
       if (r.authorise_url) window.location.assign(r.authorise_url);
       refresh();
@@ -190,6 +202,38 @@ function Loaded({
               });
             }}
           />
+        ) : null}
+        {data.consent &&
+        data.status === "available" &&
+        actions.has("integration.connect_personal") ? (
+          <DrawerCard aria-label={data.consent.heading}>
+            <p>{data.consent.heading}</p>
+            <ul>
+              {data.consent.reads.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+            <p>{data.consent.never}</p>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onOpenChange(false);
+              }}
+            >
+              {COPY.cancel}
+            </Button>
+            <Button
+              disabled={personal.isPending}
+              onClick={() => {
+                personal.mutate({
+                  path: { key: data.key },
+                  headers: { "Idempotency-Key": crypto.randomUUID() },
+                });
+              }}
+            >
+              {data.consent.continue_label ?? COPY.continueTo(data.name)}
+            </Button>
+          </DrawerCard>
         ) : null}
         {data.status_line ? <p className="text-[11.5px] text-ink-3">{data.status_line}</p> : null}
         <DrawerCard aria-label={COPY.connection}>
