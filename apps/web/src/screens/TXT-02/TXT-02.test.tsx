@@ -99,4 +99,10 @@ describe("TXT-02 Trust Calculation", () => {
     fireEvent.click(fai as HTMLButtonElement);
     expect(fai?.getAttribute("aria-expanded")).toBe("false");
   });
+
+  it("T-07-T21: ?row= lights the row TXT-01's Cited by named", async () => {
+    show("a", { row: "dni" });
+    await tree();
+    expect(document.querySelector("[data-row='dni'] > div[data-highlighted='true']")).not.toBeNull();
+  });
 });
