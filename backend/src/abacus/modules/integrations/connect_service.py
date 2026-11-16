@@ -35,7 +35,7 @@ from datetime import timedelta
 from typing import Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import delete, func, insert, select, update
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
@@ -44,7 +44,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.kernel.uow.relay import OutboxEvent
-from abacus.modules.identity.api import AuthContext, is_synthetic_firm
+from abacus.modules.identity.api import AuthContext, Resource, authorise, is_synthetic_firm
 from abacus.modules.integrations.connect_catalog import (
     WorkbenchRow,
     firm_installs,
@@ -79,6 +79,7 @@ from abacus.modules.integrations.secrets import (
 )
 
 STATE_TTL: Final = timedelta(minutes=10)
+STATE_PURGE: Final = timedelta(hours=24)
 CALLBACK_PATH: Final = "/workbench/connect/callback"
 ScopeKind = Literal["firm", "user"]
 
@@ -156,6 +157,12 @@ async def _mint(
     tx: UnitOfWork, ctx: AuthContext, key: str, scope: ScopeKind, purpose: str
 ) -> tuple[str, str]:
     """A fresh state and challenge; only the state's hash and the sealed verifier are stored."""
+    # 0890: spent or expired states go after a day (the app's delete grant), when one is minted.
+    await tx.session.execute(
+        delete(IntegrationOAuthState).where(
+            IntegrationOAuthState.created_at < func.now() - STATE_PURGE
+        )
+    )
     state = secrets.token_urlsafe(32)
     digest = state_hash(state)
     verifier, challenge = pkce_pair()
@@ -342,6 +349,10 @@ async def complete(ctx: AuthContext, state: str, code: str) -> str:
     spent = await _spend(ctx, state)
     if spent is None:
         raise InvalidState
+    if spent.scope == "firm":
+        # Security review (S46): the person must still hold the firm action, with fresh MFA, when
+        # the provider calls back; a state minted before their role or session changed is spent.
+        await authorise(ctx, "integration.connect_firm", Resource.firm(ctx.tenant_id))
     row = await published_row(ctx, spent.key)
     mode: ConnectMode = "personal" if spent.scope == "user" else "token"
     port = await _port(ctx, row, mode)
@@ -434,11 +445,7 @@ async def disconnect_firm(
         raise NotFound("firm_integration")
     if install.version != seen_version:
         raise StaleVersion(facts={"version": install.version})
-    synthetic = await is_synthetic_firm(ctx.tenant)
-    mode = _mode(row, install.mode)
-    await _revoke_remote(
-        port_for(key, mode, synthetic=synthetic), await open_secret(ctx.tenant, install.id)
-    )
+    secret = await open_secret(ctx.tenant, install.id)
     async with uow(ctx.tenant) as tx:
         done = await tx.session.scalar(
             update(FirmIntegration)
@@ -456,6 +463,10 @@ async def disconnect_firm(
         await erase_secret(tx, install.id)
         await _event(tx, ctx.tenant_id, "disconnected", "firm", install.id, key, ctx.user_id)
         tx.record("integration.disconnected", target=Target(TARGET, install.id))
+    # Security review (S46): the remote revoke runs only after the local disconnect committed, with
+    # the copy opened before the erase; a refused or stale request never revokes a live grant.
+    synthetic = await is_synthetic_firm(ctx.tenant)
+    await _revoke_remote(port_for(key, _mode(row, install.mode), synthetic=synthetic), secret)
     return Disconnected(key, 0)
 
 
@@ -473,13 +484,11 @@ async def disconnect_personal(ctx: AuthContext, key: str) -> Disconnected:
         ).scalar_one_or_none()
     if mine is None:
         raise NotFound("integration")
-    synthetic = await is_synthetic_firm(ctx.tenant)
-    await _revoke_remote(
-        port_for(key, "personal", synthetic=synthetic),
-        await open_user_secret(ctx.tenant, mine.id),
-    )
+    secret = await open_user_secret(ctx.tenant, mine.id)
     async with uow(ctx.tenant) as tx:
         await _end_personal(tx, ctx.tenant_id, mine.id, key, ctx.user_id, "disconnected_by_person")
+    synthetic = await is_synthetic_firm(ctx.tenant)
+    await _revoke_remote(port_for(key, "personal", synthetic=synthetic), secret)
     return Disconnected(key, 0)
 
 

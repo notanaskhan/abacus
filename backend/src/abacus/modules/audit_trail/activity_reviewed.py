@@ -757,11 +757,13 @@ REVIEWED_FALLBACK: Final = frozenset(
         "integration.connect_started",
         "integration.connected",
         "integration.disconnected",
+        "integration.event_seeded",  # W-01-T11: the synthetic scenario only
         "integration.interest_recorded",
         "integration.interest_repeated",
         "integration.oauth_state_refused",
         "integration.oauth_state_spent",
         "integration.reconnected",
+        "integration.seeded",  # W-01-T11: the synthetic scenario only
         "letter.amended",  # S19 batch 4
         "letter.approval_requested",  # S19 batch 4
         "letter.approved",  # S19 batch 4

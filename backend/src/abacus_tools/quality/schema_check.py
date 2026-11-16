@@ -411,6 +411,10 @@ DEFINER_FUNCTIONS = frozenset(
     | {"agent_stage_set"}
     # 0194 (A-02-T12): the catalogue's read (app and operators) and the operator's load.
     | {"integration_catalog_rows", "integration_catalog_load"}
+    # 0901 (W-01-T07): the workbench read (app and operators), the v2 import and its log
+    # (operators only). Reviewed in the S46 end pass.
+    | {"integration_catalog_workbench", "integration_catalog_import"}
+    | {"integration_catalog_import_log"}
     # 0242 (G-02-T20): staff-imported, two-person-published Pub 4557 controls; the firm's read.
     | {"safeguards_controls_import", "safeguards_controls_publish"}
     | {"safeguards_controls_published"}
@@ -454,6 +458,7 @@ OPS_ONLY_FUNCTIONS = frozenset(
     {"set_platform_control", "provision_firm", "set_plan_module"}
     | {"retention_defaults_backfill"}  # 0112 (Q-02-T23): the one-off back-fill
     | {"integration_catalog_load"}  # 0194 (A-02-T12): the reviewed catalogue document
+    | {"integration_catalog_import", "integration_catalog_import_log"}  # 0901 (W-01-T07)
     | {"set_client_mail"}  # 0340 (R-01-T27): the M10 flip, two people named
 )
 _DEFINER_SEARCH_PATH = "search_path=pg_catalog, public, pg_temp"
