@@ -225,6 +225,60 @@ async def tie_out(caller: ToolCaller, args: TieOutIn) -> TieOutOut:
     )
 
 
+class TxnIn(BaseModel):
+    """C-01-T18: one account's register for a close month (C9 v2.1), a page at a time."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    client_entity_id: Annotated[UUID, Int]
+    account_external_id: Annotated[str, Field(min_length=1, max_length=64), Int]
+    period: Annotated[str, Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$"), Int]
+    cursor: Annotated[str | None, Field(max_length=12), Int] = None
+
+
+class TxnLineOut(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: Annotated[str, Int]  # `<snapshot>:<line>`: cite as `ledger_line` with `register_line`
+    txn_date: Annotated[date, Int]
+    txn_type: Annotated[str | None, Conf] = None
+    payee: Annotated[str | None, Conf] = None  # client content: untrusted
+    memo: Annotated[str | None, Conf] = None  # client content: untrusted
+    offset_account_ref: Annotated[str | None, Int] = None
+    amount: Annotated[Decimal, Conf]
+
+
+class TxnOut(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    period: Annotated[str, Int]
+    account_external_id: Annotated[str, Int]
+    lines: Annotated[list[TxnLineOut], Int]
+    next_cursor: Annotated[str | None, Int] = None
+
+
+async def read_transactions(caller: ToolCaller, args: TxnIn) -> TxnOut:
+    """`ledger.read_transactions`: the register page as C9 v2.1 serves it (200 rows at most)."""
+    from abacus.modules.ledger.cas_reads import register_lines  # noqa: PLC0415 -- one read
+
+    rows, following = await register_lines(
+        caller.tenant, args.client_entity_id, args.account_external_id, args.period,
+        cursor=args.cursor, limit=min(MAX_ROWS, 200),
+    )  # fmt: skip
+    return TxnOut(
+        period=args.period,
+        account_external_id=args.account_external_id,
+        lines=[
+            TxnLineOut(
+                id=r.line_ref, txn_date=r.txn_date, txn_type=r.txn_type, payee=r.payee,
+                memo=r.memo, offset_account_ref=r.offset_account_ref, amount=r.amount,
+            )
+            for r in rows
+        ],  # fmt: skip
+        next_cursor=following,
+    )
+
+
 AGENT_TOOLS: Final = (
     ToolDecl(
         "ledger.read_tb", "read", READ, "confidential", TbIn, TbOut, read_tb,
@@ -237,5 +291,10 @@ AGENT_TOOLS: Final = (
     ToolDecl(
         "ledger.tie_out", "compute", READ, "confidential", TieOutIn, TieOutOut, tie_out,
         records_read="trial_balance_line",
+    ),
+    # C-01-T18: the close month's register (C9 v2.1); payees and memos are client content.
+    ToolDecl(
+        "ledger.read_transactions", "read", READ, "confidential", TxnIn, TxnOut,
+        read_transactions, untrusted=("lines",), records_read="gl_entry",
     ),
 )  # fmt: skip

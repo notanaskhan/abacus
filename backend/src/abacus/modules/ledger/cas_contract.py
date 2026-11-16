@@ -8,7 +8,7 @@ external id; each citable as a `ledger_line`) and a period comparison. Snapshots
 (ADR-004): a sync records a new one, never an update. Readers of C9 v1 and v2 are unaffected.
 There is no write method anywhere in C9 (CONN-001, ADR-040).
 
-Every function raises `NotImplementedYet` until C-01-T18 (S46) serves it. Classification
+C-01-T18 serves every function (`cas_reads.py`); this module keeps the shapes. Classification
 (ADR-031): client ledger content is `confidential`; nothing is TRI. Money is `Decimal`.
 """
 
@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import DomainConflict, NotImplementedYet
+from abacus.kernel.errors import DomainConflict
 
 Internal = classified("internal")
 Confidential = classified("confidential")
@@ -124,14 +124,18 @@ async def account_tree(
     tenant: TenantContext, client_entity_id: UUID, period: str
 ) -> AccountTreeOut:
     """The newest monthly snapshot's tree (C-01-T18)."""
-    raise NotImplementedYet
+    from abacus.modules.ledger import cas_reads  # noqa: PLC0415 -- the reads import these shapes
+
+    return await cas_reads.account_tree(tenant, client_entity_id, period)
 
 
 async def monthly_balances(
     tenant: TenantContext, client_entity_id: UUID, periods: list[str]
 ) -> list[MonthlyBalanceOut]:
     """Balances by account for each period (C-01-T18)."""
-    raise NotImplementedYet
+    from abacus.modules.ledger import cas_reads  # noqa: PLC0415 -- the reads import these shapes
+
+    return await cas_reads.monthly_balances(tenant, client_entity_id, periods)
 
 
 async def register_lines(
@@ -142,12 +146,16 @@ async def register_lines(
     *,
     cursor: str | None = None,
 ) -> tuple[list[RegisterLineOut], str | None]:
-    """One account's register for the month, paged (C-01-T18)."""
-    raise NotImplementedYet
+    """One account's register for the month, paged at 200 (C-01-T18)."""
+    from abacus.modules.ledger import cas_reads  # noqa: PLC0415 -- the reads import these shapes
+
+    return await cas_reads.register_lines(tenant, client_entity_id, external_id, period, cursor=cursor)
 
 
 async def compare_periods(
     tenant: TenantContext, client_entity_id: UUID, current: str, prior: str
 ) -> PeriodComparisonOut:
     """Two periods side by side for flux (C-01-T18; `ledger.compare_periods` on C17)."""
-    raise NotImplementedYet
+    from abacus.modules.ledger import cas_reads  # noqa: PLC0415 -- the reads import these shapes
+
+    return await cas_reads.compare_periods(tenant, client_entity_id, current, prior)
