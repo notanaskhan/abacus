@@ -9,6 +9,7 @@ import type { ViewerManifestOut } from "@abacus/api-client";
 import { prose } from "@abacus/ui";
 import type { EvidenceRow, EvidenceSummary } from "../../app-core/evidence-summary";
 import { BASIS_ROWS, CALC_CARD } from "./approvals";
+import { RIDGELINE_RETURN_ID } from "./tax-entity";
 import {
   CITED_RECTS,
   DECISION_754,
@@ -177,6 +178,7 @@ export const MEMO_SUMMARY: EvidenceSummary = {
   title: "Preparer memo · Ridgeline",
   segment: "Preparer memo",
   planned: "Open memo",
+  memoReturnId: RIDGELINE_RETURN_ID, // T-05-T69: TXP-01 is built
   paper: {
     title: "Ridgeline Property Partners, LP — 2025 Form 1065 preparer memo",
     byline: "Prepared by Olivia Brandt · Reviewed by Samuel Ito",

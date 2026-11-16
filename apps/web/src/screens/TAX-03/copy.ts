@@ -56,7 +56,6 @@ export const COPY = {
   banner: (label: string, short: string) =>
     `${label} K-1 is a draft — final pending ${short} partner approval. This return can be prepared and reviewed, but not finally approved.`,
   bannerLink: (label: string) => `Open ${label}`,
-  bannerLinkHint: "Opens TXP-01 · Ridgeline 2025 Form 1065",
   markedDone: (who: string, when: string) => `Marked done by ${who} · ${when}`,
   duplicate: "Duplicate · same hash",
   keepNewer: "Keep newer",

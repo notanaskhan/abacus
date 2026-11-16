@@ -79,23 +79,37 @@ export function railOf(
 }
 
 /** The memo as paper blocks: a heading per section, its body with its markers. */
-export function memoBlocks(memo: WorkbookMemoOut): DocBlock[] {
-  return memo.sections.flatMap((s): DocBlock[] => [
-    { kind: "h", level: 4, text: s.title, provenance: s.human_owned ? "human" : "agent" },
-    {
-      kind: "p",
-      provenance: s.human_owned ? "human" : "agent",
-      segments: [
-        { kind: "text", text: s.body },
-        ...(s.citations ?? []).map((c) => ({
-          kind: "cite" as const,
-          n: c.n,
-          citation: citeView(c),
-          verified: true,
-        })),
-      ],
-    },
-  ]);
+/** T-05-T69 (handoff TXP-01 INTERACTIONS): the screen a section's figures live on. */
+export interface MemoLink {
+  text: string;
+  hint: string;
+  onOpen: () => void;
+}
+
+export function memoBlocks(
+  memo: WorkbookMemoOut,
+  links: Readonly<Record<string, MemoLink>> = {},
+): DocBlock[] {
+  return memo.sections.flatMap((s): DocBlock[] => {
+    const link = links[s.key];
+    return [
+      { kind: "h", level: 4, text: s.title, provenance: s.human_owned ? "human" : "agent" },
+      {
+        kind: "p",
+        provenance: s.human_owned ? "human" : "agent",
+        segments: [
+          { kind: "text", text: s.body },
+          ...(s.citations ?? []).map((c) => ({
+            kind: "cite" as const,
+            n: c.n,
+            citation: citeView(c),
+            verified: true,
+          })),
+          ...(link === undefined ? [] : [{ kind: "link" as const, ...link }]),
+        ],
+      },
+    ];
+  });
 }
 
 export interface TXP01Props {
@@ -110,6 +124,8 @@ export interface TXP01Props {
   onRegenerate?: (affectedOnly: boolean) => void;
   onSaveSection?: (key: string, body: string) => void;
   onOpenLink?: (linkId: string) => void;
+  /** Section key → the screen its figures live on (the route wires it; T-05-T69). */
+  sectionLinks?: Readonly<Record<string, MemoLink>>;
   /** The signed-in person (who would approve: INV-1). */
   viewerName?: string;
   /** T-05-T66: whether the memo drafter may be offered (false while capabilities load). */
@@ -129,6 +145,7 @@ export function TXP01({
   onRegenerate,
   onSaveSection,
   onOpenLink,
+  sectionLinks,
   viewerName,
   agentOffered = true,
   agentReason = null,
@@ -287,7 +304,7 @@ export function TXP01({
                 ? COPY.memoTitle(general.entity_name, general.tax_year, general.form)
                 : COPY.pane}
             </h3>
-            <DocBlocks blocks={memoBlocks(memo)} variant="paper" />
+            <DocBlocks blocks={memoBlocks(memo, sectionLinks)} variant="paper" />
             {opportunities.length > 0 ? (
               <section data-opportunities className="mt-[12px]">
                 <h4 className="text-[13.5px] font-medium text-ink">{COPY.opportunities}</h4>

@@ -16,21 +16,16 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useOpenOverlay } from "../../app-core/open";
-import { ov } from "../../routes/to";
+import { useNavigate } from "@tanstack/react-router";
+import { ov, to } from "../../routes/to";
 import { ENTITY_CAPABILITIES, useEntityAgentGate } from "../../domain/tax";
 import { TXP10 } from "./index";
 
-export function Issues({
-  returnId,
-  onOpen,
-}: {
-  returnId: string;
-  /** The path after `/tax-returns/$returnId` (TXP-11 with a cell selected). */
-  onOpen: (suffix: string) => void;
-}): JSX.Element {
+export function Issues({ returnId }: { returnId: string }): JSX.Element {
   const path = { return_id: returnId };
   const client = useQueryClient();
   const open = useOpenOverlay();
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [showResolved, setShowResolved] = useState(false);
@@ -75,8 +70,9 @@ export function Issues({
       onQuery={setQuery}
       onShowResolved={setShowResolved}
       onSelect={setSelected}
+      // "Open in the workpaper (TXP-11)": the typed link (link contract rule 1), the cell selected.
       onOpenCell={(sheet, range) => {
-        onOpen(`/workpaper?cell=${encodeURIComponent(`${sheet}!${range}`)}`);
+        void navigate({ ...to.TXP11({ returnId }), search: { cell: `${sheet}!${range}` } });
       }}
       onReviewFix={(proposalId) => {
         open(ov.SHL10(proposalId));

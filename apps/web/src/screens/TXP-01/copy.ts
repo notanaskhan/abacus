@@ -25,6 +25,13 @@ export const COPY = {
   cancel: "Cancel",
   save: "Save",
   opportunities: "Opportunities",
+  // T-05-T69: the screens a section's figures live on (handoff TXP-01 INTERACTIONS), by the
+  // screens' own tab and title words.
+  sectionLink: {
+    financials: { text: "Financials", hint: "Review › Financials" },
+    issues: { text: "Issues", hint: "Return › Issues" },
+    k1: { text: "K-1 package", hint: "K-1 package" },
+  },
   raise: "Raise with client…",
   planned: "Planned",
   kv: {

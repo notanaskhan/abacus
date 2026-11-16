@@ -3,14 +3,16 @@
 // 1041, or any return with the flag off, keeps TAX-02 (the route's `overview`). The entity
 // sections live at `/issues`, `/workpaper`, `/activity` and `/review/$review`; a review slug that
 // is not the form's goes back to the Agent tab.
+import type { TaxReturnRecordOut } from "@abacus/api-client";
 import { entityRunsOptions, returnRecordOptions } from "@abacus/api-client/query";
 import { EmptyState, Spinner } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useEntitlement, useFlag } from "../../app-core/flags";
+import { useOpenHref } from "../../app-core/open";
 import { SCREEN_OF, type Section, isEntityForm, sectionOf, slugOf } from "../../domain/tax";
-import { to } from "../../routes/to";
+import { hrefOf, to } from "../../routes/to";
 import { EntityReturnLayout, NOT_BUILT } from "./EntityReturnLayout";
 import { Financials } from "../TXP-02/Financials";
 import { ScheduleK } from "../TXP-05/ScheduleK";
@@ -90,17 +92,17 @@ export function EntityReturn({
       }}
     >
       {section.tab === "agent" ? (
-        <AgentTab returnId={returnId} onComposer={onComposer} />
+        <AgentTab returnId={returnId} record={record.data} onComposer={onComposer} />
       ) : section.review === "financials" ? (
         <Financials returnId={returnId} form={form} taxYear={record.data.row.tax_year} />
       ) : section.review === "schedule-k" ? (
         <ScheduleK returnId={returnId} onOpen={onOpen} />
       ) : section.review === "capital" ? (
-        <CapitalAccounts returnId={returnId} onOpen={onOpen} />
+        <CapitalAccounts returnId={returnId} />
       ) : section.review === "summary" ? (
         <Summary returnId={returnId} />
       ) : section.tab === "issues" ? (
-        <Issues returnId={returnId} onOpen={onOpen} />
+        <Issues returnId={returnId} />
       ) : section.tab === "workpaper" ? (
         <Workpaper returnId={returnId} />
       ) : (
@@ -116,18 +118,66 @@ export function EntityReturn({
 // T-05-T29: TXP-00 on the return's workbook runs (the newest run sets the frame).
 function AgentTab({
   returnId,
+  record,
   onComposer,
 }: {
   returnId: string;
+  record: TaxReturnRecordOut;
   onComposer: () => void;
 }): JSX.Element {
+  const navigate = useNavigate();
+  const openHref = useOpenHref();
   const runs = useQuery(entityRunsOptions({ path: { return_id: returnId } }));
   if (runs.data === undefined) return <Spinner label="Loading the workbook runs" />;
+  const review =
+    (section: string, search: Record<string, string> = {}) =>
+    () => {
+      void navigate({ ...to.TXP02({ returnId, section }), search });
+    };
+  // T-05-T69 (handoff TXP-00 INTERACTIONS): a row's name opens its Review sub-tab. Fixed assets
+  // (TXP-03) and states (TXP-09) are T-06's screens, so those rows stay text.
+  const taskTargets: Record<string, () => void> = {
+    import_trial_balance: review("financials"),
+    map_lines: review("financials"),
+    contributions_distributions: () => void navigate(to.TXP07({ returnId, section: "capital" })),
+    capital_m2: () => void navigate(to.TXP07({ returnId, section: "capital" })),
+    interim_closing_706d: () =>
+      void navigate({
+        ...to.TXP06({ returnId, section: "schedule-k" }),
+        search: { ov: "allocation" },
+      }),
+    federal_k1s: () => void navigate(to.TXP12({ returnId })),
+    state_k1s_k3s: () => void navigate(to.TXP12({ returnId })),
+  };
+  const { row } = record;
+  const short = row.client_name.split(/[\s,]/u)[0] ?? row.client_name;
   return (
     <TXP00
       frame={frameOf(runs.data.items)}
       waitingOn={runs.data.items[0]?.waiting_on ?? []}
       onComposer={onComposer}
+      taskTargets={taskTargets}
+      // "n open" → TXP-10; "View work" → TXP-11 (the workbook opens on its sheet there).
+      onOpenItems={() => void navigate(to.TXP10({ returnId }))}
+      onViewWork={() => void navigate(to.TXP11({ returnId }))}
+      links={[
+        { key: "client", label: COPY.linkRows.client, value: row.client_name },
+        {
+          key: "engagement",
+          label: COPY.linkRows.engagement,
+          value: COPY.engagementLink(row.tax_year, row.form),
+        },
+        { key: "binder", label: COPY.linkRows.binder, value: COPY.binderLink(row.tax_year) },
+        {
+          key: "files",
+          label: COPY.linkRows.files,
+          value: COPY.filesLink(row.tax_year, short),
+          // FIL-01 is built: the client's folder (`/files/$clientId`, as TAX-02 links it).
+          onOpen: () => {
+            openHref(`${hrefOf(to.FIL01())}/${encodeURIComponent(row.client_id)}`);
+          },
+        },
+      ]}
     />
   );
 }

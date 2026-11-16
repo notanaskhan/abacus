@@ -75,6 +75,16 @@ DF-34: Schedule L follows pack 08 (1200 → L5, mortgage → L18, 2000 split fro
 | Entitlement refused (`tax.entity_returns`, CPA memos unsigned, non-synthetic firm) | The return opens the coordination view with the designed locked card: title "Entity return workspace", body "Opens once the firm's entity returns are set up." (undesigned, T-05-T03), no workbook route answers (F13). | yes |
 
 Every string above with no handoff source is undesigned (T-05-T03) and is replaced by the handoff's copy when one lands; the consent line is the spec's (SPEC-651 F13).
+- T-05-T69 (DEC-5301): negatives are brick and zero "—" ink-4 in the panes (design system §A6); the transfers cell opens TXP-06 and "Open the issue" TXP-10.
+
+## Parity
+
+T-05-T69 (DEC-5301): every artboard is a Tier C row in `parity.json` (report only); the host frame is Tier D and blocking.
+
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, a2, a3, b, b2, c, d, e | C report | — | Lock proposed at the end of T-05 (TXP-07a, a grammar exemplar, T-05 §5.4); report only until then; an overlay or interaction state renders its base frame in the gallery (no click is replayed); report only |
+| host | D | — | subbar 42, tabsbar 50, control bar 44, tally strip 52 (tier-d-entity.spec.ts) |
 
 ## Acceptance
 

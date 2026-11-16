@@ -77,7 +77,6 @@ export const COPY = {
     checkpoints: "Opens SHL-16 · checkpoint drawer",
     sync: "Opens TAX-09 · engine sync",
     assistant: "Opens TAX-08 · assistant panel",
-    source: "Opens TXP-01 · Ridgeline review summary (pack 9)",
     line: "Opens TAX-05 · Leadsheets with this line lit",
     issue: "Opens TAX-06 · Issues with this item selected",
     k1: "Opens TXI-02 · K-1 treatment resolver",

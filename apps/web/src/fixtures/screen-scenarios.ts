@@ -93,6 +93,7 @@ import { scenarios as txp07 } from "./scenarios/TXP-07";
 import { scenarios as txp10 } from "./scenarios/TXP-10";
 import { scenarios as txp11 } from "./scenarios/TXP-11";
 import { RIDGELINE_RETURN_ID } from "./seed/tax-entity";
+import { loadSheet } from "./seed/tax-entity-sheets";
 import { taxEntityHandlers } from "./handlers/tax-entity";
 import { FERRIS_CLIENT_ID, WHITLEY_CLIENT_ID } from "./seed/tax-profile";
 
@@ -153,6 +154,17 @@ function northwind(
   scenarios: Readonly<Record<string, unknown>>,
 ): Record<string, { auditId: string }> {
   return Object.fromEntries(Object.keys(scenarios).map((s) => [s, { auditId: NORTHWIND_AUDIT }]));
+}
+
+/** A state whose workbook sheet reads are `sheet` (T-05-T69's load trace). */
+function withSheet(base: Scenario, sheet: ReturnType<typeof loadSheet>): Scenario {
+  return {
+    ...base,
+    handlers: {
+      ...base.handlers,
+      "GET /v1/tax-returns/{return_id}/workbook/sheets/{sheet}": () => json(sheet),
+    },
+  };
 }
 
 /** The engagement's entity capabilities answered off (`tax.entity_agents` off; T-05-T66). */
@@ -373,7 +385,8 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     "TXP-06": txp06,
     "TXP-07": txp07,
     "TXP-10": txp10,
-    "TXP-11": txp11,
+    // T-05-T69: `load`, the INP trace's 2,000-cell sheet (not an artboard; e2e/entity/txp11-inp).
+    "TXP-11": { ...txp11, load: withSheet(txp11.a, loadSheet()) },
   }),
 };
 

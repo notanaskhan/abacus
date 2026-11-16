@@ -10,7 +10,9 @@ import {
   cn,
 } from "@abacus/ui";
 import { type JSX, useState } from "react";
+import { useOpenHref } from "../../app-core/open";
 import { useOpenSourceViewer } from "../../app-core/overlay-host";
+import { hrefOf, to } from "../../routes/to";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import type { EvidenceCell, EvidenceSummary, EvidenceSummaryOf } from "../../domain/home";
 import { ViewerPane } from "../SHL-08";
@@ -28,8 +30,8 @@ import { type GateSource, useGateSources } from "./sources";
 //   - a small segmented between the summary and the sources that carry a short label.
 //
 // Tax summaries are fixture-only until T-05 (DV-4): no owner serves one yet, so a live gate shows
-// its cited sources. "Open in workpaper ↗" and "Open memo ↗" are planned links (TXP-08, TXP-01),
-// shown in fixtures only. HOME-02 computes no figure: the owner's numbers are laid out as given.
+// its cited sources. "Open in workpaper ↗" is a planned link (TXP-08), shown in fixtures only;
+// "Open memo ↗" opens TXP-01 (T-05-T69). HOME-02 computes no figure: the owner's numbers are laid out as given.
 
 export interface EvidencePaneProps {
   gate: HumanGateOut | undefined;
@@ -74,6 +76,7 @@ function GateEvidence({
   const segments = segmentsOf(summary, sources);
   const [active, setActive] = useState<string | null>(null);
   const openViewer = useOpenSourceViewer();
+  const openHref = useOpenHref();
   const chosen = segments.find((s) => s.label === active) ?? segments[0];
   if (chosen === undefined) return <Frame title={COPY.evidence} />;
   const source = chosen.source;
@@ -93,6 +96,20 @@ function GateEvidence({
         }}
       >
         {COPY.evidencePane.openSource}
+      </Button>
+    ) : summary?.memoReturnId !== undefined && summary.planned !== undefined ? (
+      // T-05-T69: TXP-01 is built; "Open memo" opens the return's Summary (link contract rule 1).
+      <Button
+        variant="ghost"
+        size="sm"
+        iconAfter="arrow-up-right"
+        onClick={() => {
+          if (summary.memoReturnId !== undefined) {
+            openHref(hrefOf(to.TXP01({ returnId: summary.memoReturnId, section: "summary" })));
+          }
+        }}
+      >
+        {summary.planned}
       </Button>
     ) : summary?.planned !== undefined && PLANNED_VISIBLE ? (
       // TXP-08 / TXP-01 are later waves: the link is drawn, planned, and goes nowhere yet.

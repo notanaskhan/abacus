@@ -9,6 +9,16 @@ const STATE_K1S_K3S = "state_k1s_k3s";
 export const COPY = {
   rail: "General Information",
   links: "Links",
+  // The rail's Links band (handoff TXP-00 spec a, RAIL).
+  linkRows: {
+    client: "Client",
+    engagement: "Engagement",
+    binder: "Binder",
+    files: "Files",
+  },
+  engagementLink: (year: number, form: string) => `TY${String(year)} Form ${form}`,
+  binderLink: (year: number) => `${String(year)} Binder`,
+  filesLink: (year: number, short: string) => `${String(year)} · ${short}`,
   team: "Team",
   workbook: "Workbook",
   composer: "Ask the workbook agent…",

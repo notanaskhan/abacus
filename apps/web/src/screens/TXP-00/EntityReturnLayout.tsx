@@ -61,7 +61,8 @@ export function EntityReturnLayout(props: EntityReturnLayoutProps): JSX.Element 
         {...(props.onAssistant ? { onAssistant: props.onAssistant } : {})}
         {...(props.onSync ? { onSync: props.onSync } : {})}
       />
-      <div className="flex justify-center py-[7px]">
+      {/* The tabs bar is 50 (T-05 §5.4 Tier D; T6's two SegmentedGroups in one 50 px row). */}
+      <div data-entity="tabsbar" className="flex h-[50px] flex-none items-center justify-center">
         <SegmentedGroup
           size="small"
           label="Entity return"

@@ -301,7 +301,10 @@ export function TXP05({
   const rows = k === undefined ? [] : tableRows(k, partners, capital);
   return (
     <div data-screen="TXP-05" className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-[44px] flex-none items-center gap-[8px] px-[12px]">
+      <div
+        data-entity="control-bar"
+        className="flex h-[44px] flex-none items-center gap-[8px] px-[12px]"
+      >
         <Segmented
           size="small"
           label={COPY.views}

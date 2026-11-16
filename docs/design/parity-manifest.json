@@ -6344,6 +6344,462 @@
         "time"
       ],
       "deviation": "SHL-23b is the seven-frame state board; frame 1 is compared, report only (Tier C)"
+    },
+    "txp-00a.window": {
+      "page": "screens/TXP-00?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-00 Return - Agent - entity returns/screenshots/TXP-00a.png",
+      "sha256": "a11a8c3bf2bb24bc616060dea94bec2496a1cee2e7a4fce78609d40b9d7ec2c5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-00b.window": {
+      "page": "screens/TXP-00?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-00 Return - Agent - entity returns/screenshots/TXP-00b.png",
+      "sha256": "403f33b99d7fa9f442bbc95ca7873160a970e7c13539351da573a99dcd6872cf",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-00c.window": {
+      "page": "screens/TXP-00?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-00 Return - Agent - entity returns/screenshots/TXP-00c.png",
+      "sha256": "36fdf09396b22759fd6cf8b7e1e628d001edc23a756be6ec24ea0955f749c53c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-00d.window": {
+      "page": "screens/TXP-00?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-00 Return - Agent - entity returns/screenshots/TXP-00d.png",
+      "sha256": "18736e1cbd19e5dc38d5ab0fb680d62e75761ae0bf68434abf7060de76d72827",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-00e.window": {
+      "page": "screens/TXP-00?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-00 Return - Agent - entity returns/screenshots/TXP-00e.png",
+      "sha256": "e7471718e9760fc31984155f45e4aec422e3ed9afb05c731d382bd452569a064",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-01a.window": {
+      "page": "screens/TXP-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-01 Review - Summary - Ridgeline preparer memo/screenshots/TXP-01a.png",
+      "sha256": "78b0f1a0611651a2ce234a8a02098a59702a0d0f6cd20d6d2c4b2580c5af0f1e",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-01a2.window": {
+      "page": "screens/TXP-01?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-01 Review - Summary - Ridgeline preparer memo/screenshots/TXP-01a2.png",
+      "sha256": "d4f29817ff057b2d620922bb2c1bc54538dd0f8e8e65747b977d36827b3f60b3",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-01a3.window": {
+      "page": "screens/TXP-01?st=a3",
+      "selector": "[data-artboard=\"a3\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-01 Review - Summary - Ridgeline preparer memo/screenshots/TXP-01a3.png",
+      "sha256": "7774243c9c47c8aa5ec6deacea01608af9ba9c3298209236e2891d1603e3ffee",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-01b.window": {
+      "page": "screens/TXP-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-01 Review - Summary - Ridgeline preparer memo/screenshots/TXP-01b.png",
+      "sha256": "bdcbe6beecc87d422d712df12f35074081e178e1681c55c77d13235b91b180b0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-01c.window": {
+      "page": "screens/TXP-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-01 Review - Summary - Ridgeline preparer memo/screenshots/TXP-01c.png",
+      "sha256": "be1e0b8547ad026de45ffb86f28db90dc26160ac2d967fb7c013ad94d8de07c6",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-01d.window": {
+      "page": "screens/TXP-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-01 Review - Summary - Ridgeline preparer memo/screenshots/TXP-01d.png",
+      "sha256": "5f1088dd68038bff87385a8e65ac68c6fa4cd3e30609849af63371a9d54ba9a1",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02a.window": {
+      "page": "screens/TXP-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02a.png",
+      "sha256": "88cf0b1941647ec660c0d00d8d53548832b6408e33cad01a8fa2ff2e06d6e87a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02a2.window": {
+      "page": "screens/TXP-02?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02a2.png",
+      "sha256": "39a058bd1ef5c089d35a66556b7fea19562f0c87703ed0e42cdf2803282da8d3",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02a3.window": {
+      "page": "screens/TXP-02?st=a3",
+      "selector": "[data-artboard=\"a3\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02a3.png",
+      "sha256": "8c72aa39b5a78193760d4bb72b45d3fe067d57fb378a3f1086f8e9519e61fded",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02b.window": {
+      "page": "screens/TXP-02?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02b.png",
+      "sha256": "1d85c59f854c96a5e55b3e3a94555dcf001310dc768f5f922229d380d010adcb",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02c.window": {
+      "page": "screens/TXP-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02c.png",
+      "sha256": "174ce10a9e5dffeda960096cb4c5e899973329213f7fbc2aae992e6908e2a4ae",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02d.window": {
+      "page": "screens/TXP-02?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02d.png",
+      "sha256": "6ec4ef640d05f915f4903f5179f57e6ed836a73bda9f1107e30819a0774f1a0e",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02e.window": {
+      "page": "screens/TXP-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02e.png",
+      "sha256": "4afb0c161b98a6e3d699e46b0ea1864807a221f358b8466ae04577b6e13de318",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02e2.window": {
+      "page": "screens/TXP-02?st=e2",
+      "selector": "[data-artboard=\"e2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02e2.png",
+      "sha256": "d012c7b7c3f77675ccfcaade97ad93b9b440474a57f2df57be182f687211c8ed",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-02f.window": {
+      "page": "screens/TXP-02?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-02 Review - Financials -TB  TTB- - Ridgeline 2025 Form 1065/screenshots/TXP-02f.png",
+      "sha256": "f8d60eb88af701369f46bce8fba9d3e8acb0895300e04e6cdaeab7e6685978ea",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-05a.window": {
+      "page": "screens/TXP-05?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-05 Review - Schedule K - Ridgeline 2025 Form 1065/screenshots/TXP-05a.png",
+      "sha256": "7449ccfac617369e75d7e79731e65a2fdd56521311c89c35c48730c2bc515feb",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-05a2.window": {
+      "page": "screens/TXP-05?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-05 Review - Schedule K - Ridgeline 2025 Form 1065/screenshots/TXP-05a2.png",
+      "sha256": "749fe03d05d750fd8a3b40da7dddedd8567c28e25179411b10a3a029eb10afa7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-05a3.window": {
+      "page": "screens/TXP-05?st=a3",
+      "selector": "[data-artboard=\"a3\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-05 Review - Schedule K - Ridgeline 2025 Form 1065/screenshots/TXP-05a3.png",
+      "sha256": "2040c807292049fef93e583af8d9a2b6a984c511a5f6593bd7496410b4838c94",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-05a4.window": {
+      "page": "screens/TXP-05?st=a4",
+      "selector": "[data-artboard=\"a4\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-05 Review - Schedule K - Ridgeline 2025 Form 1065/screenshots/TXP-05a4.png",
+      "sha256": "93f337a2ae5f62129093ab2afa2e8fe04a6adbea0132d26dc538c95b33e207a9",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-05a5.window": {
+      "page": "screens/TXP-05?st=a5",
+      "selector": "[data-artboard=\"a5\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-05 Review - Schedule K - Ridgeline 2025 Form 1065/screenshots/TXP-05a5.png",
+      "sha256": "df02d4636e89396b0c11dff1c6856d6845c97887f74034f2d565b9f7ddcc9e96",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-05b.window": {
+      "page": "screens/TXP-05?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-05 Review - Schedule K - Ridgeline 2025 Form 1065/screenshots/TXP-05b.png",
+      "sha256": "0edb6d3f809072493580bb189d0e2bee404428fe4f8dd657c75db9bce6bf03aa",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-05c.window": {
+      "page": "screens/TXP-05?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-05 Review - Schedule K - Ridgeline 2025 Form 1065/screenshots/TXP-05c.png",
+      "sha256": "70f7f8d45f72e35ad3b853c023d5d3778785a55eea71be45e0f109d5fe8d5d2d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-05d.window": {
+      "page": "screens/TXP-05?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-05 Review - Schedule K - Ridgeline 2025 Form 1065/screenshots/TXP-05d.png",
+      "sha256": "b6e4fdfc610315e0fbfb83bc5c6f7f25f1aba0d6154483add849d98708dd9ca6",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-06a.window": {
+      "page": "screens/TXP-06?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-06 Allocation Structure -modal sheet- - Ridgeline and Harborview 20/screenshots/TXP-06a.png",
+      "sha256": "da402b47dba87a1b004009c0f829c22b4fb0140c4b86b2f1c24ebf12297226bd",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-06a2.window": {
+      "page": "screens/TXP-06?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-06 Allocation Structure -modal sheet- - Ridgeline and Harborview 20/screenshots/TXP-06a2.png",
+      "sha256": "eca4cf06651232153ead450a32629e80e55f8225d7f361a906b9fcc54b084ddc",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-06b.window": {
+      "page": "screens/TXP-06?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-06 Allocation Structure -modal sheet- - Ridgeline and Harborview 20/screenshots/TXP-06b.png",
+      "sha256": "4abe7b591bc00e789e7917d026a7fe64d27db310b3ac0bc1d310762fc480df7c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-06c.window": {
+      "page": "screens/TXP-06?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-06 Allocation Structure -modal sheet- - Ridgeline and Harborview 20/screenshots/TXP-06c.png",
+      "sha256": "39aad071f58943f5a14eb676d8dc8b62374d6cf6b8372325615bd97d0d4f65c5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-06c2.window": {
+      "page": "screens/TXP-06?st=c2",
+      "selector": "[data-artboard=\"c2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-06 Allocation Structure -modal sheet- - Ridgeline and Harborview 20/screenshots/TXP-06c2.png",
+      "sha256": "4c0db4ed9beb163c8d61694fd5bc5f80ac4bb90b8186807a475b9555f2e537f0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-06d.window": {
+      "page": "screens/TXP-06?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-06 Allocation Structure -modal sheet- - Ridgeline and Harborview 20/screenshots/TXP-06d.png",
+      "sha256": "f2cfa364453b53fb503b2a28db36fabef496179b48fd444ffaaa5360d5b76684",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-07a.window": {
+      "page": "screens/TXP-07?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-07 Review - Capital Accounts - Ridgeline 2025 Form 1065/screenshots/TXP-07a.png",
+      "sha256": "8f13d5519e2951765b25b24df7fb53ea99f0274ed1e9e1558bb88744f7b3693b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-07a2.window": {
+      "page": "screens/TXP-07?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-07 Review - Capital Accounts - Ridgeline 2025 Form 1065/screenshots/TXP-07a2.png",
+      "sha256": "f86577af58aeca8cfd56ecee210e0d5b70014a985dff688b3c598eb9c232a052",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-07a3.window": {
+      "page": "screens/TXP-07?st=a3",
+      "selector": "[data-artboard=\"a3\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-07 Review - Capital Accounts - Ridgeline 2025 Form 1065/screenshots/TXP-07a3.png",
+      "sha256": "db5c5224d9ccdccb5261e44b35f69b40294dde24985347690619e490d7b6118d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-07b.window": {
+      "page": "screens/TXP-07?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-07 Review - Capital Accounts - Ridgeline 2025 Form 1065/screenshots/TXP-07b.png",
+      "sha256": "d44f3d5389ae01f2b80c225c2ad0514fc4614ffa6dd3e45fbed8b24bdb637556",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-07b2.window": {
+      "page": "screens/TXP-07?st=b2",
+      "selector": "[data-artboard=\"b2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-07 Review - Capital Accounts - Ridgeline 2025 Form 1065/screenshots/TXP-07b2.png",
+      "sha256": "a631246a7b0512b5b462585a4842418539b5100383d03b9bfc65c27af0c76740",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-07c.window": {
+      "page": "screens/TXP-07?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-07 Review - Capital Accounts - Ridgeline 2025 Form 1065/screenshots/TXP-07c.png",
+      "sha256": "150cf6badb09e80d0cc80ddb65ac891579688bcf1c3d95ba73ce5c802a1be75e",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-07d.window": {
+      "page": "screens/TXP-07?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-07 Review - Capital Accounts - Ridgeline 2025 Form 1065/screenshots/TXP-07d.png",
+      "sha256": "1993f4eb6e3f94bd5bae22806dd499a85d77336eb4e005598a4eac1ee4d21ddd",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-07e.window": {
+      "page": "screens/TXP-07?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-07 Review - Capital Accounts - Ridgeline 2025 Form 1065/screenshots/TXP-07e.png",
+      "sha256": "172bde9c7dbb59b4286554d8b9506e00d92593c1f799c9d1ed9d257c0c91917a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-10a.window": {
+      "page": "screens/TXP-10?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-10 Return - Issues - Ridgeline 2025 Form 1065/screenshots/TXP-10a.png",
+      "sha256": "9a1a12fe832c5012e8a56988d474534798669d69fd0bb03f06847bc54de5737c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-10a2.window": {
+      "page": "screens/TXP-10?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-10 Return - Issues - Ridgeline 2025 Form 1065/screenshots/TXP-10a2.png",
+      "sha256": "b8055ef53fa2935c2cf9639676a5990cdd14255ce2e7f145a2056a3e7c084ec4",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-10b.window": {
+      "page": "screens/TXP-10?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-10 Return - Issues - Ridgeline 2025 Form 1065/screenshots/TXP-10b.png",
+      "sha256": "b131eff8a22398f8aefd2b4c6fafa739138d4fc6b4e630a74b800fb8eb7ac0f6",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-10c.window": {
+      "page": "screens/TXP-10?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-10 Return - Issues - Ridgeline 2025 Form 1065/screenshots/TXP-10c.png",
+      "sha256": "869d979278010138384a254d929656400c1097426d3a245f5f47326c47dd7a22",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-10d.window": {
+      "page": "screens/TXP-10?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-10 Return - Issues - Ridgeline 2025 Form 1065/screenshots/TXP-10d.png",
+      "sha256": "3f4ac326dcc47a9d02f7a68829feb1277d9260c72187d1b391015043ad84cd2f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-10e.window": {
+      "page": "screens/TXP-10?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-10 Return - Issues - Ridgeline 2025 Form 1065/screenshots/TXP-10e.png",
+      "sha256": "c9b09be7324ebc50bca9f7c2c7c611dbd7cc213c49c62f9716d2096d7103ea91",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-10f.window": {
+      "page": "screens/TXP-10?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-10 Return - Issues - Ridgeline 2025 Form 1065/screenshots/TXP-10f.png",
+      "sha256": "137e9726af0e07924654aeb07596dd170617cebb0bc2da4e6c9c8eb403e7fee7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-11a.window": {
+      "page": "screens/TXP-11?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-11 Workpaper - Ridgeline workbook- sheet 05 Capital/screenshots/TXP-11a.png",
+      "sha256": "e8aede2c9ffa852b935fb22a8e5b92435455b4f1503f697ef5aa59654d48da04",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-11a2.window": {
+      "page": "screens/TXP-11?st=a2",
+      "selector": "[data-artboard=\"a2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-11 Workpaper - Ridgeline workbook- sheet 05 Capital/screenshots/TXP-11a2.png",
+      "sha256": "2641ef796eab884f9b123861367f6ca66df165d071a094e66ec33161a6a5d81f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-11a3.window": {
+      "page": "screens/TXP-11?st=a3",
+      "selector": "[data-artboard=\"a3\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-11 Workpaper - Ridgeline workbook- sheet 05 Capital/screenshots/TXP-11a3.png",
+      "sha256": "7cccf910e1ab6f5de6c6f90ac39ce60431b28d4431431f6c4ce3b72b371c7965",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-11b.window": {
+      "page": "screens/TXP-11?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-11 Workpaper - Ridgeline workbook- sheet 05 Capital/screenshots/TXP-11b.png",
+      "sha256": "116e97b8465b13a9930b2e7b6981afbf80aa280eef814fb88b33b0918112b615",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-11b2.window": {
+      "page": "screens/TXP-11?st=b2",
+      "selector": "[data-artboard=\"b2\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-11 Workpaper - Ridgeline workbook- sheet 05 Capital/screenshots/TXP-11b2.png",
+      "sha256": "9d282c473514acae9cf02cc7969775f7b0d2b0538feb7c051f4f0f2d5ce6d995",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-11c.window": {
+      "page": "screens/TXP-11?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-11 Workpaper - Ridgeline workbook- sheet 05 Capital/screenshots/TXP-11c.png",
+      "sha256": "0d7cf55b65efb8f6b78399a80dc01cb7b69e1b36f3604a9a222ddd97d5a0b78a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-11d.window": {
+      "page": "screens/TXP-11?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-11 Workpaper - Ridgeline workbook- sheet 05 Capital/screenshots/TXP-11d.png",
+      "sha256": "6029dd7fcabd6e8d65765ebfa714c682ceae5cd7fe86f5e0c5613b66a3456866",
+      "crop": "window",
+      "tier": "C"
+    },
+    "txp-11e.window": {
+      "page": "screens/TXP-11?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/TXP-11 Workpaper - Ridgeline workbook- sheet 05 Capital/screenshots/TXP-11e.png",
+      "sha256": "c7a132e373d9a69b539f2a8e5fd67a573cec129c01b9e16b4bbd09476b1edee9",
+      "crop": "window",
+      "tier": "C"
     }
   }
 }

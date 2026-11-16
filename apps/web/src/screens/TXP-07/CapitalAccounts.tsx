@@ -11,7 +11,9 @@ import {
 } from "@abacus/api-client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useSession } from "../../app-core/session";
+import { to } from "../../routes/to";
 import { TXP07, type Txp07View } from "./index";
 
 const SECTION = "capital-accounts";
@@ -27,12 +29,9 @@ function initialsOf(name: string): string {
 
 export function CapitalAccounts({
   returnId,
-  onOpen,
   onOpenCell,
 }: {
   returnId: string;
-  /** Open an entity section by its path suffix ("/issues"). */
-  onOpen?: (suffix: string) => void;
   /** SHL-09 on an amber cell (the shell's overlay wiring). */
   onOpenCell?: (cell: string) => void;
 }): JSX.Element {
@@ -42,6 +41,7 @@ export function CapitalAccounts({
   const path = { return_id: returnId };
   const queryClient = useQueryClient();
   const session = useSession();
+  const navigate = useNavigate();
   const capital = useQuery(entityCapitalAccountsOptions({ path }));
   const partners = useQuery(entityPartnersOptions({ path }));
   const runs = useQuery(entityRunsOptions({ path }));
@@ -68,7 +68,14 @@ export function CapitalAccounts({
       onView={setView}
       onPage={setPage}
       {...(onOpenCell === undefined ? {} : { onOpenCell })}
-      onOpenIssue={() => onOpen?.("/issues")}
+      // T-05-T69: typed links (link contract rule 1): the M-2 review point and the transfers.
+      onOpenIssue={() => void navigate(to.TXP10({ returnId }))}
+      onTransfers={() =>
+        void navigate({
+          ...to.TXP06({ returnId, section: "schedule-k" }),
+          search: { ov: "allocation" },
+        })
+      }
       onSignOffOpen={setSignOffOpen}
       // Fail closed: without the section's hash nothing is posted.
       {...(section?.seen_hash === undefined

@@ -73,6 +73,15 @@ DF-34: Schedule L follows pack 08 (1200 → L5, mortgage → L18, 2000 split fro
 
 Every string above with no handoff source is undesigned (T-05-T03) and is replaced by the handoff's copy when one lands; the consent line is the spec's (SPEC-651 F13).
 
+## Parity
+
+T-05-T69 (DEC-5301): every artboard is a Tier C row in `parity.json` (report only); the host frame is Tier D and blocking.
+
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, a2, b, c, c2, d | C report | — | Report only until the 2029 season (T-05 §5.4); an overlay or interaction state renders its base frame in the gallery (no click is replayed); report only |
+| host | D | — | the O4 sheet over Schedule K: subbar 42, tabsbar 50 behind it (tier-d-entity.spec.ts) |
+
 ## Acceptance
 
 SPEC-651's criteria for this screen; each becomes a test named "TXP-06 acceptance: <criterion>".
