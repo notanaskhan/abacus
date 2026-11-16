@@ -72018,6 +72018,10 @@ export type GroupBulkUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupBulkUploadError = GroupBulkUploadErrors[keyof GroupBulkUploadErrors];
@@ -72146,6 +72150,10 @@ export type GroupExportConsolidationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupExportConsolidationError = GroupExportConsolidationErrors[keyof GroupExportConsolidationErrors];
@@ -72280,6 +72288,10 @@ export type GroupLockErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupLockError = GroupLockErrors[keyof GroupLockErrors];
@@ -72344,6 +72356,10 @@ export type GroupPullAllErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupPullAllError = GroupPullAllErrors[keyof GroupPullAllErrors];
@@ -72408,6 +72424,10 @@ export type GroupReopenErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupReopenError = GroupReopenErrors[keyof GroupReopenErrors];
@@ -72609,6 +72629,10 @@ export type GroupConsolidatedTbErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupConsolidatedTbError = GroupConsolidatedTbErrors[keyof GroupConsolidatedTbErrors];
@@ -72737,6 +72761,10 @@ export type GroupRaiseGroupMaterialityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupRaiseGroupMaterialityError = GroupRaiseGroupMaterialityErrors[keyof GroupRaiseGroupMaterialityErrors];
@@ -76630,6 +76658,10 @@ export type GroupScopingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupScopingError = GroupScopingErrors[keyof GroupScopingErrors];
@@ -76682,6 +76714,10 @@ export type GroupExportGroupScopingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupExportGroupScopingError = GroupExportGroupScopingErrors[keyof GroupExportGroupScopingErrors];
@@ -86109,6 +86145,10 @@ export type GroupEditComponentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupEditComponentError = GroupEditComponentErrors[keyof GroupEditComponentErrors];
@@ -86716,6 +86756,10 @@ export type ConfirmationExceptionPrefillErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ConfirmationExceptionPrefillError = ConfirmationExceptionPrefillErrors[keyof ConfirmationExceptionPrefillErrors];
@@ -86960,6 +87004,10 @@ export type RevokeLinkErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type RevokeLinkError = RevokeLinkErrors[keyof RevokeLinkErrors];
@@ -88229,6 +88277,10 @@ export type GroupListEliminationsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupListEliminationsError = GroupListEliminationsErrors[keyof GroupListEliminationsErrors];
@@ -88289,6 +88341,10 @@ export type GroupCreateEliminationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupCreateEliminationError = GroupCreateEliminationErrors[keyof GroupCreateEliminationErrors];
@@ -88349,6 +88405,10 @@ export type GroupApproveEliminationsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupApproveEliminationsError = GroupApproveEliminationsErrors[keyof GroupApproveEliminationsErrors];
@@ -123045,6 +123105,10 @@ export type ConnectClientCompaniesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ConnectClientCompaniesError = ConnectClientCompaniesErrors[keyof ConnectClientCompaniesErrors];
@@ -138941,6 +139005,10 @@ export type GroupEditEliminationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupEditEliminationError = GroupEditEliminationErrors[keyof GroupEditEliminationErrors];
@@ -139001,6 +139069,10 @@ export type GroupApplyEliminationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupApplyEliminationError = GroupApplyEliminationErrors[keyof GroupApplyEliminationErrors];
@@ -139061,6 +139133,10 @@ export type GroupApproveEliminationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupApproveEliminationError = GroupApproveEliminationErrors[keyof GroupApproveEliminationErrors];
@@ -139121,6 +139197,10 @@ export type GroupRejectEliminationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type GroupRejectEliminationError = GroupRejectEliminationErrors[keyof GroupRejectEliminationErrors];
@@ -153064,6 +153144,10 @@ export type FieldworkTestAdoptErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type FieldworkTestAdoptError = FieldworkTestAdoptErrors[keyof FieldworkTestAdoptErrors];
@@ -153124,6 +153208,10 @@ export type LogDeviationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type LogDeviationError = LogDeviationErrors[keyof LogDeviationErrors];
@@ -153176,6 +153264,10 @@ export type ExportTestErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ExportTestError = ExportTestErrors[keyof ExportTestErrors];
@@ -153234,6 +153326,10 @@ export type FieldworkTestExceptionPrefillErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type FieldworkTestExceptionPrefillError = FieldworkTestExceptionPrefillErrors[keyof FieldworkTestExceptionPrefillErrors];
@@ -155031,6 +155127,10 @@ export type ConfirmationRequestAuthorizationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type ConfirmationRequestAuthorizationError = ConfirmationRequestAuthorizationErrors[keyof ConfirmationRequestAuthorizationErrors];

@@ -219,7 +219,17 @@ def _same(column: str, old: object, new: object) -> bool:
         return _instant(old) == _instant(new)
     if column in ("surfaces", "categories"):
         return _texts(old) == _texts(new)
+    if column == "detail_copy":
+        return _detail(old) == _detail(new)
     return normalised(old) == normalised(new)
+
+
+def _detail(value: object) -> object:
+    """0933: a row with no detail copy and one with empty detail copy are the same content."""
+    if not isinstance(value, dict):
+        return normalised(value)
+    fields = cast(dict[str, object], value)
+    return None if not any(fields.values()) else normalised(fields)
 
 
 def plan_import(

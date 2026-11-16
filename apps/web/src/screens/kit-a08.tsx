@@ -18,7 +18,7 @@ import {
   SsarsRail,
   TestGrid,
   TestingFooter,
-} from "../domain/audits";
+} from "../domain/fieldwork";
 import {
   GRANITE_PEAK_CRITERIA,
   GRANITE_PEAK_LINES,

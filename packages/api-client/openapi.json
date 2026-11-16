@@ -153747,6 +153747,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Bulk Upload",
@@ -154032,6 +154042,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Export Consolidation",
@@ -154327,6 +154347,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Lock",
@@ -154465,6 +154495,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Pull All",
@@ -154613,6 +154653,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Reopen",
@@ -155059,6 +155109,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Consolidated Tb",
@@ -155343,6 +155403,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Raise Group Materiality",
@@ -163759,6 +163829,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Scoping",
@@ -163867,6 +163947,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Export Group Scoping",
@@ -184951,6 +185041,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Edit Component",
@@ -186285,6 +186385,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Confirmation Exception Prefill",
@@ -186826,6 +186936,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Revoke Link",
@@ -189680,6 +189800,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group List Eliminations",
@@ -189815,6 +189945,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Create Elimination",
@@ -189953,6 +190093,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Approve Eliminations",
@@ -266125,6 +266275,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connect Client Companies",
@@ -300983,6 +301143,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Edit Elimination",
@@ -301111,6 +301281,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Apply Elimination",
@@ -301239,6 +301419,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Approve Elimination",
@@ -301376,6 +301566,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Reject Elimination",
@@ -332247,6 +332447,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fieldwork Test Adopt",
@@ -332385,6 +332595,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Log Deviation",
@@ -332494,6 +332714,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Export Test",
@@ -332610,6 +332840,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Fieldwork Test Exception Prefill",
@@ -336649,6 +336889,16 @@
               }
             },
             "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Confirmation Request Authorization",

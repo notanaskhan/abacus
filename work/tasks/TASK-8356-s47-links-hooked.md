@@ -1,8 +1,8 @@
 ---
 id: TASK-8356
 title: "S47 end pass follow-up: S47 links helpers on their controls: TXT-04 header actions and ADM-08's integration name"
-spec: SPEC-none
-acceptance_criteria: [AC-1]
+spec: SPEC-655
+acceptance_criteria: [AC-50, AC-51]
 risk_zone: green
 status: in-review
 branch: s47-links-hooked

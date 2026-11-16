@@ -602,6 +602,11 @@ import { TXT01 } from "./TXT-01";
 import { CALLOWAY_RETURN, type Txt01State, scenarios as txt01Scenarios } from "./TXT-01/scenarios";
 import { TXT02 } from "./TXT-02";
 import { type CalcScenario, scenarios as txt02Scenarios } from "./TXT-02/scenarios";
+import { EntityReturn } from "./TXP-00/EntityReturn";
+import { Allocation } from "./TXP-06/Allocation";
+import { RIDGELINE_RETURN_ID } from "../fixtures/seed/tax-entity";
+import { screenScenario } from "../fixtures/screen-scenarios";
+import type { EntitySlug } from "../routes/firm/tax-returns";
 import {
   OPENING as TXP12_OPENING,
   OPENS as TXP12_OPENS,

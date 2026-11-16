@@ -1,5 +1,5 @@
 ---
-id: TASK-8301
+id: TASK-8364
 title: "C-01-T24: Close issues and transaction questions"
 spec: SPEC-655
 acceptance_criteria: [AC-44, AC-45, AC-46, AC-47]
@@ -25,5 +25,5 @@ Close issues and transaction questions.
 6. Tests: `tests/integration/test_c01t24_close_issues.py`.
 
 ## Progress log
-- `2026-11-16` — Built in the S47 sequential stack (DEC-5301). Lint and pyright clean on the touched files; the app imports. Gates and
+- `2026-11-16` — Built in the S47 sequential stack (DEC-5339). Lint and pyright clean on the touched files; the app imports. Gates and
   tests run once at the S47 end pass (build first, test last).

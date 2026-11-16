@@ -309,10 +309,15 @@ codes:
     raised_by:
     - abacus.modules.identity.service_lines.AuditLocked
     summary: Audit content is visible to the engagement team only; it can never be widened.
+  authorization_letter_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.confirmations_authorization.LetterNotOnEngagement
   authorization_missing:
     status: 409
     raised_by:
     - abacus.modules.assurance.confirmations_contract.AuthorizationMissing
+    - abacus.modules.assurance.confirmations_lifecycle.AuthorizationMissing
     summary: 'Send refused: the client''s authorization envelope is not on file (AC-6.3).'
   authorization_not_on_file:
     status: 409
@@ -526,6 +531,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.group_contract.ComponentPmInvalid
+    - abacus.modules.assurance.group_scoping.ComponentPmInvalid
     summary: A component PM at or above group PM, or on an Analytical-only component.
   computed_variable:
     status: 422
@@ -540,6 +546,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.integrations.connect_errors.ConfirmNameMismatch
+  confirmation_not_authorizable:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.confirmations_authorization.NotAuthorizable
   confirmed_out_of_order:
     status: 422
     raised_by:
@@ -640,10 +650,18 @@ codes:
     raised_by:
     - abacus.modules.ledger.consolidation.VersionStale
     summary: The consolidation changed since it was read (If-Match).
+  consolidation_lock_state:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.consolidation.ConsolidationLockState
   consolidation_locked:
     status: 409
     raised_by:
     - abacus.modules.adjustments.eliminations.ConsolidationLocked
+  consolidation_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.group_scoping.NoConsolidation
   consolidation_not_draft:
     status: 409
     raised_by:
@@ -669,6 +687,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.LetterContentChanged
+    - abacus.modules.assurance.confirmations_lifecycle.ContentChanged
     - abacus.modules.assurance.mapping_live.ContentChanged
     - abacus.modules.assurance.release.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
@@ -676,6 +695,7 @@ codes:
     - abacus.modules.sampling.fieldwork_contract.ContentChanged
     - abacus.modules.sampling.sample_sets.ContentChanged
     - abacus.modules.tax.approval.ContentChanged
+    - abacus.modules.workpapers.fieldwork_tests.ContentChanged
     summary: 'The target changed since the signer saw it: nothing is written.'
   control_set_exists:
     status: 409
@@ -1162,6 +1182,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.sampling.expansions.ExpansionTooLarge
+  expansion_key_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.expansions.ExpansionKeyInvalid
   expansion_not_pending:
     status: 409
     raised_by:
@@ -1638,6 +1662,18 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.integrations.connect_errors.IntegrationNotAvailable
+  integration_not_connected:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.run_start.IntegrationNotConnected
+  integration_reauth_required:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.run_start.IntegrationReauthRequired
+  integration_unhealthy:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.run_start.IntegrationUnhealthy
   integrity_failed:
     status: 409
     raised_by:
@@ -2212,6 +2248,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.governance_comms.NotApprovable
+  not_closable:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.confirmations_lifecycle.NotClosable
   not_concludable:
     status: 409
     raised_by:
@@ -2795,6 +2835,10 @@ codes:
     raised_by:
     - abacus.modules.assurance.materiality.ProposalPending
     summary: A materiality card already waits on the engagement partner.
+  pull_all_unavailable:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.group_pull.PullNotAvailable
   q_invalid:
     status: 422
     raised_by:
@@ -2861,6 +2905,10 @@ codes:
     raised_by:
     - abacus.modules.review.decisions.RecommendationChanged
     summary: The card moved past the version the decider saw (reassessed or superseded).
+  reconciler_cannot_accept:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.confirmations_lifecycle.ReconcilerCannotAccept
   reconciling_items_do_not_foot:
     status: 409
     raised_by:
@@ -3202,6 +3250,10 @@ codes:
     - abacus.modules.platform.incident_register.SecondDeciderInvalid
     summary: The first decision names nobody, or someone who cannot fill the other seat (a partner if
       the QI decides first, the QI if a partner does).
+  second_request_already_sent:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.confirmations_lifecycle.SecondRequestSent
   segmentation_final:
     status: 409
     raised_by:
@@ -3569,6 +3621,10 @@ codes:
     raised_by:
     - abacus.modules.tax.allocation_structure.StructureVersionConflict
     summary: 'The structure moved since the person read it: reload and re-apply.'
+  subsidiary_unknown:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.group_pull.SubsidiaryUnknown
   suggestion_changed:
     status: 409
     raised_by:
@@ -3644,6 +3700,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.trial_balances.SameSnapshot
+  tb_split_refused:
+    status: 422
+    raised_by:
+    - abacus.kernel.connection_coverage.TbSplitRefused
   tb_version_stale:
     status: 409
     raised_by:
@@ -3794,6 +3854,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.adjustments.eliminations.NotProposed
+    - abacus.modules.assurance.confirmations_lifecycle.NotInStatus
     - abacus.modules.closes.contract.TransitionNotAvailable
     summary: Approved, Delivered and Locked until C-02 registers their guards (fail closed, AC-11).
   transition_refused:
@@ -3974,6 +4035,7 @@ codes:
   upload_too_large:
     status: 422
     raised_by:
+    - abacus.modules.assurance.group_contract.BulkTooLarge
     - abacus.modules.evidence.uploads.UploadTooLarge
   upload_type_not_allowed:
     status: 422
@@ -4042,6 +4104,11 @@ codes:
     - abacus.modules.requests.questionnaire_editor.VersionPublished
     - abacus.modules.requests.questionnaires.AlreadyPublished
     summary: 'A published version never changes: import the next one.'
+  version_stale:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.eliminations.EliminationStale
+    - abacus.modules.assurance.group_scoping.ComponentStale
   wall_exists:
     status: 409
     raised_by:

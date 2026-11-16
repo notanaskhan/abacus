@@ -105,7 +105,7 @@ async def start_run(test_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> TestRunOut
     raise NotImplementedYet("A-08-T24")
 
 
-@router.post(f"{_T}/adopt", action="test.adopt", response_model=AdoptOut, errors=(409,))
+@router.post(f"{_T}/adopt", action="test.adopt", response_model=AdoptOut, errors=(409, 501))
 async def fieldwork_test_adopt(
     test_id: UUID, body: AdoptIn, ctx: Ctx, _key: IdempotencyKey
 ) -> AdoptOut:
@@ -123,7 +123,7 @@ async def fieldwork_test_adopt(
     f"{_T}/items/{{item_id}}/exception",
     action="finding.create",
     response_model=ExceptionPrefillOut,
-    errors=(),
+    errors=(501,),
 )
 async def fieldwork_test_exception_prefill(
     test_id: UUID, item_id: UUID, ctx: Ctx
@@ -146,7 +146,7 @@ async def fieldwork_test_exception_prefill(
     action="test.mark",
     response_model=DeviationLogOut,
     status_code=201,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def log_deviation(
     test_id: UUID, body: DeviationIn, ctx: Ctx, _key: IdempotencyKey
@@ -169,7 +169,7 @@ async def log_deviation(
     )
 
 
-@router.get(f"{_T}/export.xlsx", action="test.export", response_model=bytes, errors=())
+@router.get(f"{_T}/export.xlsx", action="test.export", response_model=bytes, errors=(501,))
 async def export_test(test_id: UUID, ctx: Ctx) -> Response:
     """'JE Testing.xlsx': byte-identical per version, accounts masked to the last four."""
     await _gate(ctx)

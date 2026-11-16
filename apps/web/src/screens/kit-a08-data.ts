@@ -3,7 +3,7 @@
 // kit renders what it is given, and the screens (A-08-T27 on) take the same shapes from the API.
 import type { ConfirmationDetailOut, ScoredEntryOut, TestGridOut } from "@abacus/api-client";
 import type { MatchId } from "@abacus/ui";
-import type { AttributeRow, SelectedEntry, SsarsStep } from "../domain/audits";
+import type { AttributeRow, SelectedEntry, SsarsStep } from "../domain/fieldwork";
 
 type Reason = ScoredEntryOut["reason_codes"][number];
 const entry = (

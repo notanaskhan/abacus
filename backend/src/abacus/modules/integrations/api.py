@@ -189,6 +189,8 @@ register_if_configured(qbo_app() is not None)
 # W-01-T08 (AC-13): a deactivated person's personal installs are disconnected and their secrets
 # deleted. The worker reads these three (no workflow or activity of the module's own yet).
 SUBSCRIPTIONS: Mapping[str, Handler] = {"membership.deactivated": membership_ended}
+from abacus.kernel.dispatch import register_work_classes  # noqa: E402
+
 # W-01-T13 (DEC-5333): the health monitor's Schedule, its workflow and its activity.
 from abacus.modules.integrations.health_workflow import (  # noqa: E402
     ACTIVITIES as _HEALTH_ACTIVITIES,
@@ -202,6 +204,7 @@ from abacus.modules.integrations.health_workflow import (  # noqa: E402
 
 WORKFLOWS: dict[type, WorkClass] = dict(_HEALTH_WORKFLOWS)  # type: ignore[arg-type] -- the work class literal
 ACTIVITIES: tuple[object, ...] = (*_HEALTH_ACTIVITIES,)
+register_work_classes(WORKFLOWS)  # ADR-071: the sweep's batch class
 
 # W-01-T14 (DEC-5320, DEC-5334): run admission and the dependents slot the agents module fills.
 from abacus.modules.integrations.dependents import admit as admit  # noqa: E402

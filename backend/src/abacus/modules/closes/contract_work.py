@@ -461,7 +461,7 @@ class TransactionQuestionIn(BaseModel):
 
     model_config = _cfg()
 
-    # C-01-T24 (DEC-5301): the firm template's key, as `transaction_questions` holds it.
+    # C-01-T24 (DEC-5339): the firm template's key, as `transaction_questions` holds it.
     template_id: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{1,79}$"), Internal]
     template_version: Annotated[int, Field(ge=1), Internal]
     client_wording: Annotated[str, Field(min_length=1, max_length=2000), Confidential]

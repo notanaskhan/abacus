@@ -5,7 +5,7 @@ import {
   ExpandTestingSheet,
   TestGrid,
   TestingFooter,
-} from "../../domain/audits";
+} from "../../domain/fieldwork";
 import { JeBoard } from "../kit-a08";
 import { NORTHWIND_GRID, NORTHWIND_HEADERS } from "../kit-a08-data";
 import { AUD12_SCENARIOS, type Aud12Scenario, KIT_STATE_OF } from "./scenarios";

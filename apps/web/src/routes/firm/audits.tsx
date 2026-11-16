@@ -16,7 +16,9 @@ const AuditsIndex = lazyScreen(
   async () => (await import("../../screens/AUD-01")).AuditsSearchPage,
 );
 const Cockpit = lazyScreen(async () => (await import("../../screens/AUD-02")).AUD02);
-const JeTesting = lazyScreen(async () => (await import("../../screens/AUD-12/route")).JeTestingPage);
+const JeTesting = lazyScreen(
+  async () => (await import("../../screens/AUD-12/route")).JeTestingPage,
+);
 const SourceDocuments = lazyScreen(async () => (await import("../../screens/AUD-03")).AUD03);
 const RiskRegister = lazyScreen(
   async () => (await import("../../screens/AUD-08")).RiskRegisterPage,

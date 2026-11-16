@@ -11,7 +11,7 @@ import {
   SelectedEntriesCard,
   type SelectedEntry,
   TestingFooter,
-} from "../../domain/audits";
+} from "../../domain/fieldwork";
 
 // AUD-12 live, JE artboards (S47 partials, TASK-8354): GET /v1/je-tests/{id} and its selected
 // entries (`?selected=true`, cursor pages), on the A-08 kit's JE cards. Every figure is the API's
@@ -137,4 +137,3 @@ export function AUD12Live({ jeTestId, onRaise, onExpand, onAdopt }: Aud12LivePro
     </MatchScope>
   );
 }
-
