@@ -20,6 +20,7 @@ export const txtScreens = {
     path: null,
     entry: true,
   },
-  "TXT-04": { name: "Gift & estate workpapers (706 / 709)", status: "planned", path: null },
+  // T-07-T26: A to E on fixtures (the gallery), behind tax.estate_workpapers when live.
+  "TXT-04": { name: "Gift & estate workpapers (706 / 709)", status: "fixture", path: null },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;
