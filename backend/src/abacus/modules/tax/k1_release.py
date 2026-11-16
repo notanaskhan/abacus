@@ -180,10 +180,36 @@ async def _contacts(tenant: TenantContext, package_ids: Sequence[UUID]) -> dict[
     return {r.id: r.contact for r in rows if r.contact is not None}
 
 
+def gate_1041(final_approved: bool, envelopes: Sequence[tuple[str, str, bool]]) -> list[str]:
+    """T-07-T24 (DEC-5318): a 1041's K-1s release only after final approval under BH-TAX-02 AND
+    the trustee's Form 8879-F envelope Completed (not superseded): the unmet steps, in order."""
+    unmet: list[str] = []
+    if not final_approved:
+        unmet.append("final_approval")
+    if not any(p == "form_8879_f" and s == "completed" and not sup for p, s, sup in envelopes):
+        unmet.append("form_8879_f")
+    return unmet
+
+
 async def eligibility(ctx: AuthContext, return_id: UUID) -> k1.ReleaseCheck:
     """T-02-T20's codes plus BH-TAX-02's release condition and a contact for every package
-    (`no_release_policy`, `recipient_contact_missing`)."""
+    (`no_release_policy`, `recipient_contact_missing`); a 1041 also needs its 8879-F completed
+    (T-07-T24, `form_8879_f`)."""
     found = await k1.release_check(ctx, return_id)
+    async with tenant_session(ctx.tenant) as session:
+        form = await session.scalar(
+            text("SELECT form FROM tax_returns WHERE work_item_id = :w"), {"w": return_id}
+        )
+    if form == "1041":
+        from abacus.modules.signatures.api import envelope_summaries_for
+
+        envelopes = (await envelope_summaries_for(ctx, [return_id])).get(return_id, [])
+        unmet = gate_1041(
+            "not_final_approved" not in found.failing,
+            [(e.purpose, e.status, e.superseded) for e in envelopes],
+        )
+        if "form_8879_f" in unmet:
+            found = k1.ReleaseCheck(False, (*found.failing, "form_8879_f"), found.package_ids)
     issuer = await k1.issuer_for(ctx, return_id, k1.READ)
     failing = list(found.failing)
     if await signer_for(ctx.tenant_id, issuer.client_id) is None:
