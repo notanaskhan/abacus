@@ -13,6 +13,8 @@ from abacus.modules.review.api import (
     register_reviewable,
     register_reviewable_facts,
 )
+from abacus.modules.workpapers.compute.flux import FluxLine, FluxRow, FluxSet, Thresholds
+from abacus.modules.workpapers.compute.flux import evaluate as evaluate_flux
 from abacus.modules.workpapers.anchors import KIND as WORKPAPER_KIND
 from abacus.modules.workpapers.anchors import WORKPAPER_ANCHORS
 from abacus.modules.workpapers.attribute_grid import TARGET as ATTRIBUTE_TEST
@@ -141,6 +143,11 @@ from abacus.modules.workpapers.export_xlsx import (  # noqa: E402
 from abacus.modules.workpapers.service import CellEdit, set_cells  # noqa: E402 -- A-06-T28
 
 __all__ = [
+    "FluxLine",
+    "FluxRow",
+    "FluxSet",
+    "Thresholds",
+    "evaluate_flux",
     "CELL_TARGET",
     "ROUTERS",
     "WORKPAPER_KINDS",
