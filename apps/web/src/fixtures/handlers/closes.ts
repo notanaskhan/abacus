@@ -14,6 +14,12 @@ import {
   copperleafRuns,
   runningCloses,
 } from "../seed/close-book";
+import {
+  SQUARE_VERSION,
+  augustQuestionnaire,
+  copperleafRequestTree,
+  squareSummary,
+} from "../seed/close-intake";
 import { copperleafAugust } from "../seed/closes";
 
 const notYet = () => json({ detail: "not_implemented" }, 501);
@@ -46,7 +52,10 @@ export function closeHandlers(): Record<string, FixtureHandler> {
       (query.get("basis") ?? "mom") === "mom" ? json(copperleafFlux()) : notYet(),
     "GET /v1/clients/{client_id}/close-plan": () => json(copperleafPlanV3()),
     "GET /v1/portal/closes/{close_id}/questions": () => json(copperleafPortalQuestions()),
-    "GET /v1/closes/{close_id}/requests": notYet,
+    "GET /v1/closes/{close_id}/requests": () => json(copperleafRequestTree()),
+    "GET /v1/closes/{close_id}/questionnaire": () => json(augustQuestionnaire()),
+    "GET /v1/evidence-versions/{evidence_version_id}/close-summary": ({ params }) =>
+      params.evidence_version_id === SQUARE_VERSION ? json(squareSummary()) : notYet(),
     "GET /v1/closes/{close_id}/accounts": notYet,
   };
 }

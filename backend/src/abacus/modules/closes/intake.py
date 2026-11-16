@@ -61,6 +61,7 @@ from abacus.modules.requests.api import (
     close_intake_binder,
     generate_close_intake,
     intake_items,
+    latest_version_of,
     questionnaires_of_list,
 )
 
@@ -279,6 +280,12 @@ async def request_tree(
                 client_visible=item.client_visible,
                 overdue=item.overdue,
                 rerun_plan_row_ids=rerun,
+                evidence_version_id=(
+                    await latest_version_of(ctx.tenant, item.request_item_id)
+                    if word != "requested"
+                    else None
+                ),
+                due_on=item.due_on,
             )
         )
     nodes: list[RequestNodeOut] = []

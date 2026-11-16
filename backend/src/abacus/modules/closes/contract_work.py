@@ -109,6 +109,9 @@ class RequestNodeOut(BaseModel):
     overdue: Annotated[bool, Internal] = False
     # C-01-T19: an incorporated request's "Re-run affected tasks": the plan rows that read it.
     rerun_plan_row_ids: Annotated[list[UUID], Internal] = []
+    # C-01-T35: the document that last fulfilled the request (CLS-03's viewer reads it).
+    evidence_version_id: Annotated[UUID | None, Internal] = None
+    due_on: Annotated[date | None, Internal] = None
     children: Annotated[list[RequestNodeOut], Internal] = []
 
 
