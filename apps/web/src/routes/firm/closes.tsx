@@ -14,6 +14,8 @@ import { appRoute, lazyScreen } from "../root";
 // validated in beforeLoad and lands on Overview. `/closes` is CLS-01 (C-01-T33). Deliverables (CLS-08) is C-02's: its tab renders disabled (DV-6).
 
 const Shell = lazyScreen(async () => (await import("../../screens/CLS-02")).CloseShell);
+// C-01-T34: CLS-02's Overview body inside the shell.
+const Overview = lazyScreen(async () => (await import("../../screens/CLS-02")).CloseOverview);
 const Index = lazyScreen(async () => (await import("../../screens/CLS-01")).CLS01);
 
 // CLS-01 (C-01-T33): `/closes` behind `closes.engine`. The filters are the search params
@@ -138,7 +140,18 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
         onBack={() => {
           void router.navigate({ to: "/closes" });
         }}
-      />
+      >
+        {screen === "CLS-02" ? (
+          <Overview
+            closeId={closeId}
+            onOpen={(target) => {
+              if (target === "CLS-03") go(closeId, "intake");
+              else if (target === "CLS-04") go(closeId, "accounts");
+              else if (target === "CLS-06") go(closeId, "review");
+            }}
+          />
+        ) : undefined}
+      </Shell>
     </div>
   );
 }
