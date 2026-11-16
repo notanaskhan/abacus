@@ -17,6 +17,7 @@ from abacus.modules.integrations.adapters import (
     registered_keys,
     unregister_adapter,
 )
+from abacus.modules.integrations.availability import notify_available
 from abacus.modules.integrations.capabilities import (
     UndeclaredEgress,
     assert_egress_declared,
@@ -36,6 +37,12 @@ from abacus.modules.integrations.catalog import (
     is_available,
     listed,
     listing_of,
+)
+from abacus.modules.integrations.catalog_import import (
+    CatalogDocumentV2,
+    ImportPlan,
+    document_sha256,
+    plan_import,
 )
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
 from abacus.modules.integrations.connect_contract import router as connect_router
@@ -101,12 +108,14 @@ __all__ = [
     "ROUTERS",
     "AdapterRefused",
     "CatalogDocument",
+    "CatalogDocumentV2",
     "CatalogEntry",
     "CatalogRow",
     "EngineFieldProfile",
     "EsignInstallExists",
     "ExportSettings",
     "FormatCheck",
+    "ImportPlan",
     "IntegrationAdapter",
     "IntegrationCategory",
     "LoadPlan",
@@ -126,6 +135,7 @@ __all__ = [
     "connect_esign_install",
     "connected_integration",
     "disconnect_esign_install",
+    "document_sha256",
     "egress_allowlist",
     "egress_hosts_by_connector",
     "egress_read_posts",
@@ -141,7 +151,9 @@ __all__ = [
     "last_engine_sync",
     "listed",
     "listing_of",
+    "notify_available",
     "open_secret",
+    "plan_import",
     "plan_load",
     "policy_refusal",
     "register_adapter",

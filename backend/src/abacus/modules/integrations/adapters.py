@@ -111,3 +111,22 @@ def registered_adapter(key: str | None) -> IntegrationAdapter | None:
 
 def registered_keys() -> frozenset[str]:
     return frozenset(_ADAPTERS)
+
+
+def adapter_for(key: str | None, *, synthetic: bool) -> IntegrationAdapter | None:
+    """The adapter a firm may use under `key` (W-01-T07, AC-4): a registered one, or, for a
+    synthetic firm where fake adapters are allowed, its fake (W-01-T09). Fail-closed: None."""
+    found = registered_adapter(key)
+    if found is not None or not synthetic or key is None:
+        return found
+    fake = _FAKES.get(key)
+    return fake if fake is not None and fakes_allowed() else None
+
+
+# W-01-T09: the fakes, registered only where `fakes_allowed()` (never production); empty until
+# `abacus.modules.integrations.fakes` registers them.
+_FAKES: dict[str, IntegrationAdapter] = {}
+
+
+def fakes_allowed() -> bool:
+    return False

@@ -140,6 +140,9 @@ def _norm(value: object) -> object:
     return value
 
 
+normalised = _norm  # W-01-T07: the v2 import compares JSON the same way
+
+
 def plan_load(current: Sequence[Mapping[str, object]], document: CatalogDocument) -> LoadPlan:
     """What a load of `document` adds and changes against `current` (the rows as
     `integration_catalog_rows()` returns them). Pure; writes nothing."""
