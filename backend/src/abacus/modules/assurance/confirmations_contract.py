@@ -31,6 +31,12 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.safe_xlsx import XLSX
+from abacus.modules.identity.api import (
+    LINK_COOKIE_NAME,
+    request_link_code,
+    resolve_link,
+    verify_link_code,
+)
 from abacus.modules.assurance import confirmations_fixtures as fx
 from abacus.modules.assurance.confirmations_contract_models import (
     AcceptedOut,
@@ -71,6 +77,7 @@ IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, ma
 Token = Annotated[str, Path(min_length=16, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")]
 # Every public answer takes at least this long from receipt (the amendment's padded floor).
 CONFIRM_PAD_SECONDS: Final = 0.4
+LINK_PURPOSE: Final = "confirmation"
 _FIXTURE_ENVIRONMENTS: Final = frozenset({"local", "test"})
 
 
@@ -358,11 +365,24 @@ def _fixture_view(token: str) -> RespondentViewOut:
     return found or fx.EXPIRED
 
 
+async def _resolved_view(token: str) -> RespondentViewOut:
+    """A fixture link (local, test) or a live link principal's view; anything else, the one
+    uniform expired view (A-08-T15: unknown, expired, revoked and locked are the same)."""
+    if _fixture_mode() and fx.view(token) is not None:
+        return _fixture_view(token)
+    found = await resolve_link(token)
+    if found is None or found.purpose != LINK_PURPOSE:
+        return fx.EXPIRED
+    from abacus.modules.assurance import confirmations_service  # noqa: PLC0415 -- the service imports this contract
+
+    return await confirmations_service.respondent_view_of(found)
+
+
 @router.get(_T, action=LINK_PRINCIPAL, response_model=RespondentViewOut)
 async def respondent_view(token: Token) -> RespondentViewOut:
     """`confirmation.respond_view` (link_scope_only): open, answered or the uniform expired."""
     started = time.monotonic()
-    view = _fixture_view(token)
+    view = await _resolved_view(token)
     await _pad(started)
     return view
 
@@ -370,22 +390,34 @@ async def respondent_view(token: Token) -> RespondentViewOut:
 @router.post(f"{_T}/code", action=LINK_PRINCIPAL, response_model=AcceptedOut, status_code=202)
 async def request_code(token: Token, body: CodeRequestIn) -> AcceptedOut:
     """`confirmation.respond_verify`: 202 after the padded floor for any token and any address.
-    The stub sends nothing (A-08-T15 sends a 10-minute code to the typed address)."""
+    A-08-T15: a live link whose address is the typed one gets a 10-minute code by email."""
     started = time.monotonic()
+    if not _fixture_mode() or fx.view(token) is None:
+        await request_link_code(token, body.email)
     await _pad(started)
     return AcceptedOut()
 
 
 @router.post(f"{_T}/code/verify", action=LINK_PRINCIPAL, response_model=VerifiedOut)
-async def verify_code(token: Token, body: CodeVerifyIn) -> VerifiedOut:
-    """`confirmation.respond_verify`: a verified code upgrades the page credential (A-08-T15).
-    The stub verifies only the fixture code on an open fixture link; anything else is `false`
-    after the same floor (lockout after five failures lands with A-08-T15)."""
+async def verify_code(token: Token, body: CodeVerifyIn, response: Response) -> VerifiedOut:
+    """`confirmation.respond_verify` (A-08-T15): a right code sets the `__Host-` page credential
+    and returns its CSRF value in a header; five wrong codes lock the link for 15 minutes. Every
+    failure is `false` after the same floor. Fixture links (local, test) keep the fixture code."""
     started = time.monotonic()
-    view = _fixture_view(token)
-    ok = view.state == "open" and body.code == fx.FIXTURE_CODE
+    if _fixture_mode() and fx.view(token) is not None:
+        view = _fixture_view(token)
+        ok = view.state == "open" and body.code == fx.FIXTURE_CODE
+        await _pad(started)
+        return VerifiedOut(verified=ok)
+    verified = await verify_link_code(token, body.code)
+    if verified is not None:
+        response.set_cookie(
+            LINK_COOKIE_NAME, verified.credential, max_age=30 * 60, secure=True, httponly=True,
+            samesite="strict", path="/",
+        )  # fmt: skip
+        response.headers["X-Abacus-CSRF"] = verified.csrf
     await _pad(started)
-    return VerifiedOut(verified=ok)
+    return VerifiedOut(verified=verified is not None)
 
 
 @router.post(

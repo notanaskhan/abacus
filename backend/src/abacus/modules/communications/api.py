@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from abacus.kernel.audit_owners import register_client_owners, register_engagement_owners
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
+from abacus.modules.communications.link_codes import deliver_link_code
 from abacus.modules.communications import portal_intake
 from abacus.modules.communications.audit_targets import (
     AUDIT_KINDS,
@@ -229,6 +230,7 @@ SUBSCRIPTIONS = {
     ClientInvitationIssued.event_type: deliver_invitation,
     StaffInvitationIssued.event_type: deliver_staff_invitation,  # SPEC-024 (TASK-041)
     PortalSignInCodeRequested.event_type: deliver_sign_in_code,  # P-08-T10
+    "link_principal.code_requested": deliver_link_code,  # A-08-T15
     PortalLinkRenewRequested.event_type: deliver_renewed_link,  # P-08-T21
     PortalMfaResetNoticeRequested.event_type: deliver_mfa_reset_notice,  # P-08-T21
     ClientAccessRevoked.event_type: revoke_links_on_access_revoked,  # P-08-T21: links die too
