@@ -37,6 +37,12 @@ EXTRA_MODES: dict[str, dict[str, str]] = {
     },
     # T-05-T50 rest (DEC-4927): the fix runner's free-text workbook mode.
     "issues.fix_runner": {"issues.fix_runner.workbook@v1": "evals/workbook_fix"},
+    # C-01-T29 (DEC-5304): close.agent's other modes, on its one frozen suite (C-01-T31).
+    "close.agent": {
+        "close.agent.intake@v1": "evals/close_agent",
+        "close.agent.bank_rec@v1": "evals/close_agent",
+        "close.agent.aje@v1": "evals/close_agent",
+    },
 }
 
 

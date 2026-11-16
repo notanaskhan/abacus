@@ -5,6 +5,7 @@ Regenerate: python -m abacus_tools.codegen.eval_suites
 
 # fmt: off
 EVAL_SUITES: dict[str, tuple[str, int]] = {   'briefing.today': ('briefing.today@v1', 1),
+    'close.agent': ('close.agent.run@v1', 1),
     'decisions.recommender': ('decisions.recommend@v1', 1),
     'evidence.matcher': ('evidence.inbox_match@v3', 1),
     'evidence.screener': ('evidence.screen@v0', 2),
@@ -24,7 +25,10 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'briefing.today': ('briefing.today
     'tax.return_drafter': ('tax.return_drafter@v1', 1),
     'workbench.assistant': ('workbench.assistant@v2', 1),
     'workpapers.section_drafter': ('workpapers.section_draft.gap@v1', 1)}
-EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'decisions.recommender': {   'decisions.recommend.convention_706d@v1': 1,
+EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'close.agent': {   'close.agent.aje@v1': 1,
+                       'close.agent.bank_rec@v1': 1,
+                       'close.agent.intake@v1': 1},
+    'decisions.recommender': {   'decisions.recommend.convention_706d@v1': 1,
                                  'decisions.recommend.section_754@v1': 1},
     'evidence.matcher': {'evidence.inbox_match@v2': 1},
     'issues.fix_runner': {'issues.fix_runner.workbook@v1': 1},
