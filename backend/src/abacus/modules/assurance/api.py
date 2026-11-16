@@ -790,14 +790,14 @@ _register_reviewable_facts(EQR_REVIEW_TARGET, _eqr_review_facts)
 from abacus.modules.assurance import (  # noqa: E402
     agent_tools as _workbench_tools,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )
+
+# A-08-T16 (DEC-5066): confirmations carry `confirmation` link principals (A-08-T15).
+from abacus.modules.assurance import confirmations_service as _confirmations_service  # noqa: E402
 from abacus.modules.assurance.governance_comms import (  # noqa: E402  # A-07-T41
     set_recipients as set_governance_recipients,
 )
 
 # W-02-T10 gaps (DEC-4734): the engagement's materiality record, for the Workbench context card.
 from abacus.modules.assurance.materiality import record as materiality_record  # noqa: E402
-
-# A-08-T16 (DEC-5066): confirmations carry `confirmation` link principals (A-08-T15).
-from abacus.modules.assurance import confirmations_service as _confirmations_service  # noqa: E402
 
 _confirmations_service.register()

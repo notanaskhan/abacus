@@ -39,4 +39,4 @@ async def run_step_rows(tenant: TenantContext, run_id: UUID) -> list[RunStepRow]
     """A run's steps in order, retries as their own rows (LIST_EXEMPT: as above)."""
     async with tenant_session(tenant) as session:
         rows = (await session.execute(_STEPS, {"r": run_id})).all()
-    return [RunStepRow(*r) for r in rows]  # pyright: ignore[reportArgumentType] -- column order
+    return [RunStepRow(*r) for r in rows]

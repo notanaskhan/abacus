@@ -31,3 +31,7 @@ registerOverlay("signoffs", { layer: "modal", render });
 registerOverlay("issue", { layer: "modal", render });
 // T-01-T15 follow-up (DEC-1288): TAX-09 `?ov=engine-sync:<returnId>`, the return's engine sync.
 registerOverlay("engine-sync", { layer: "modal", render });
+// A-09-T15: AUD-33 `?ov=consolidated-tb:<workItemId>:<consolidationId>`, the consolidated TB sheet.
+registerOverlay("consolidated-tb", { layer: "modal", render });
+// SHL-09 `?ov=provenance:<type>:<id>:<fieldKey>`: a field's provenance tray as a drawer.
+registerOverlay("provenance", { layer: "drawer", render });

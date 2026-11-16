@@ -2,7 +2,7 @@
 id: TASK-8081
 title: "T-07-T20: ADR-078 independent AC tests for T-07-T12, T14 and T16"
 spec: SPEC-656
-acceptance_criteria: [ADR-078]
+acceptance_criteria: [AC-0]
 risk_zone: amber
 status: in-review
 branch: t07-t20-fiduciary-ac

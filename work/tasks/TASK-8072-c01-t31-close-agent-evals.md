@@ -2,7 +2,7 @@
 id: TASK-8072
 title: "C-01-T31: Eval suite evals/close_agent, thresholds frozen before T29's prompts (protected)"
 spec: SPEC-655
-acceptance_criteria: [§6]
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-review
 branch: c01-t31-close-agent-evals

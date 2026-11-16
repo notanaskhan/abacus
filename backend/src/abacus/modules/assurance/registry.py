@@ -86,7 +86,7 @@ A07_ARCHIVE_INSERT_ONLY: frozenset[str] = frozenset(
 R02_GOVERNANCE_TABLES: frozenset[str] = frozenset(
     {"governance_bodies", "governance_body_members", "uncorrected_misstatement_acknowledgements"}
 )
-TABLES: frozenset[str] = (
+_TABLES: frozenset[str] = (
     A07_ARCHIVE_INSERT_ONLY
     | R02_GOVERNANCE_TABLES
     | {  # A-05-T48
@@ -109,7 +109,7 @@ TABLES: frozenset[str] = (
     | COMPLETION_TABLES
     | CONTROL_TABLES
 )
-INSERT_ONLY: frozenset[str] = (
+_INSERT_ONLY: frozenset[str] = (
     _HUMAN_RECORDS
     | {"ebp_provider_checks", "ebp_provision_conflicts"}
     | {"materiality_versions", "fraud_minutes_approvals"}
@@ -1168,5 +1168,249 @@ UPDATE_COLUMNS.update(
     {
         "governance_bodies": frozenset({"name", "kind", "status", "version", "updated_at"}),
         "governance_body_members": frozenset({"member_role", "ended_on"}),
+    }
+)
+
+# S46: A-08-T16 (0894) confirmations and A-09-T12 (0898) the group audit's records;
+# 0898 adds materiality_versions scope and consolidation_id.
+TABLES: frozenset[str] = _TABLES | frozenset(
+    {
+        "address_verifications",
+        "alternative_procedures",
+        "component_auditors",
+        "component_deliverables",
+        "component_instruction_versions",
+        "component_instructions",
+        "component_milestones",
+        "components",
+        "confirmation_decisions",
+        "confirmation_events",
+        "confirmation_lines",
+        "confirmation_links",
+        "confirmation_responses",
+        "confirmations",
+        "reconciliation_items",
+    }
+)
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
+    {
+        "address_verifications",
+        "alternative_procedures",
+        "component_instruction_versions",
+        "confirmation_decisions",
+        "confirmation_events",
+        "confirmation_lines",
+        "confirmation_links",
+        "confirmation_responses",
+        "reconciliation_items",
+    }
+)
+INSERT_COLUMNS["address_verifications"] = frozenset(
+    {
+        "actor_kind",
+        "address_sha256",
+        "citation_ids",
+        "confirmation_id",
+        "independent",
+        "method",
+        "sources",
+        "tenant_id",
+        "verified_by",
+    }
+)
+INSERT_COLUMNS["alternative_procedures"] = frozenset(
+    {"citation_ids", "confirmation_id", "performed_by", "procedure_sealed", "tenant_id"}
+)
+INSERT_COLUMNS["component_auditors"] = frozenset(
+    {
+        "city",
+        "component_id",
+        "created_by",
+        "engagement_id",
+        "ep_contact_id",
+        "organisation_name",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["component_auditors"] = frozenset(
+    {
+        "city",
+        "competence_evaluated_at",
+        "competence_evaluated_by",
+        "component_id",
+        "ep_contact_id",
+        "independence_confirmed_at",
+        "make_reference",
+        "organisation_name",
+        "peer_review_obtained_on",
+        "questionnaire_received_on",
+        "row_version",
+    }
+)
+INSERT_COLUMNS["component_deliverables"] = frozenset(
+    {"component_auditor_id", "due_on", "engagement_id", "tenant_id", "title", "work_item_id"}
+)
+UPDATE_COLUMNS["component_deliverables"] = frozenset(
+    {
+        "evidence_item_id",
+        "received_at",
+        "return_reason",
+        "returned_at",
+        "reviewed_actor_kind",
+        "reviewed_at",
+        "reviewed_by",
+        "row_version",
+        "status",
+    }
+)
+INSERT_COLUMNS["component_instruction_versions"] = frozenset(
+    {
+        "content_hash",
+        "created_by",
+        "drafted_by_run_id",
+        "engagement_id",
+        "generated_document_id",
+        "instructions_id",
+        "sections",
+        "tenant_id",
+        "version_no",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["component_instructions"] = frozenset(
+    {"component_auditor_id", "engagement_id", "tenant_id", "work_item_id"}
+)
+UPDATE_COLUMNS["component_instructions"] = frozenset(
+    {
+        "acknowledged_at",
+        "acknowledged_contact_id",
+        "current_version_id",
+        "row_version",
+        "sent_actor_kind",
+        "sent_at",
+        "sent_by",
+        "status",
+    }
+)
+INSERT_COLUMNS["component_milestones"] = frozenset(
+    {
+        "component_auditor_id",
+        "deliverable_id",
+        "due_on",
+        "engagement_id",
+        "kind",
+        "label",
+        "position",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["component_milestones"] = frozenset({"deliverable_id", "due_on", "position"})
+INSERT_COLUMNS["components"] = frozenset(
+    {
+        "component_auditor_id",
+        "component_pm",
+        "consolidation_entity_id",
+        "created_by",
+        "engagement_id",
+        "performed_by",
+        "planned_work",
+        "scope_areas",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["components"] = frozenset(
+    {
+        "component_auditor_id",
+        "component_pm",
+        "performed_by",
+        "planned_work",
+        "row_version",
+        "scope_areas",
+    }
+)
+INSERT_COLUMNS["confirmation_decisions"] = frozenset(
+    {"actor_kind", "confirmation_id", "content_hash", "decided_by", "decision", "tenant_id"}
+)
+INSERT_COLUMNS["confirmation_events"] = frozenset(
+    {"actor_id", "actor_kind", "confirmation_id", "kind", "tenant_id"}
+)
+INSERT_COLUMNS["confirmation_lines"] = frozenset(
+    {"account_last4", "book_amount", "confirmation_id", "description", "position", "tenant_id"}
+)
+INSERT_COLUMNS["confirmation_links"] = frozenset({"confirmation_id", "principal_id", "tenant_id"})
+INSERT_COLUMNS["confirmation_responses"] = frozenset(
+    {
+        "agrees",
+        "attachment_version_ids",
+        "attested",
+        "confirmation_id",
+        "confirmed_total",
+        "explanation_sealed",
+        "respondent_name_sealed",
+        "tenant_id",
+        "via",
+    }
+)
+INSERT_COLUMNS["confirmations"] = frozenset(
+    {
+        "address_sealed",
+        "address_sha256",
+        "channel",
+        "created_by",
+        "engagement_id",
+        "number",
+        "respondent_name_sealed",
+        "respondent_org",
+        "sample_item_ref",
+        "tb_account_refs",
+        "tenant_id",
+        "type",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["confirmations"] = frozenset({"row_version", "status"})
+INSERT_COLUMNS["reconciliation_items"] = frozenset(
+    {"amount", "citation_ids", "confirmation_id", "created_by", "kind", "tenant_id"}
+)
+INSERT_COLUMNS["materiality_versions"] = INSERT_COLUMNS.get(
+    "materiality_versions", frozenset()
+) | frozenset(
+    {
+        "basis",
+        "benchmark_key",
+        "benchmarks",
+        "computed_at",
+        "consolidation_id",
+        "created_by_kind",
+        "created_by_user_id",
+        "ct",
+        "ct_pct",
+        "decision_card_id",
+        "decision_id",
+        "engagement_id",
+        "engine_name",
+        "engine_version",
+        "impact",
+        "inputs_hash",
+        "on_behalf_of_user_id",
+        "overall",
+        "pm",
+        "pm_pct",
+        "policy_version_id",
+        "prior_year_overall",
+        "qualitative_factors",
+        "rate_pct",
+        "reassessment",
+        "scope",
+        "specific",
+        "status",
+        "tb_layer",
+        "tb_snapshot_id",
+        "tenant_id",
+        "version_no",
+        "work_item_id",
     }
 )

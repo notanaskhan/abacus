@@ -10,19 +10,29 @@ from abacus.modules.workpapers.compute.flux import FluxLine, Thresholds, change_
 
 D = Decimal
 GRANITE = [
-    ("revenue", "Revenue", "48600000", "44900000"), ("cogs", "Cost of goods sold", "29160000", "26490000"),
-    ("opex", "Operating expenses", "15820000", "14960000"), ("interest", "Interest expense", "520000", "410000"),
-    ("cash", "Cash", "2140000", "2610000"), ("ar", "Accounts receivable, net", "5860000", "4720000"),
-    ("inventory", "Inventory, net", "11420000", "9180000"), ("ppe", "PP&E, net", "6380000", "6050000"),
-    ("other", "Other assets", "610000", "640000"), ("ap", "Accounts payable", "4180000", "3310000"),
-    ("accrued", "Accrued liabilities", "1630000", "1540000"), ("revolver", "Revolver — Front Range Bank", "6500000", "4900000"),
-    ("term", "Term loan", "3200000", "3800000"), ("equity", "Stockholders' equity", "10900000", "9650000"),
-]  # fmt: skip
+    ("revenue", "Revenue", "48600000", "44900000"),
+    ("cogs", "Cost of goods sold", "29160000", "26490000"),
+    ("opex", "Operating expenses", "15820000", "14960000"),
+    ("interest", "Interest expense", "520000", "410000"),
+    ("cash", "Cash", "2140000", "2610000"),
+    ("ar", "Accounts receivable, net", "5860000", "4720000"),
+    ("inventory", "Inventory, net", "11420000", "9180000"),
+    ("ppe", "PP&E, net", "6380000", "6050000"),
+    ("other", "Other assets", "610000", "640000"),
+    ("ap", "Accounts payable", "4180000", "3310000"),
+    ("accrued", "Accrued liabilities", "1630000", "1540000"),
+    ("revolver", "Revolver — Front Range Bank", "6500000", "4900000"),
+    ("term", "Term loan", "3200000", "3800000"),
+    ("equity", "Stockholders' equity", "10900000", "9650000"),
+]
 LAKESHORE = [
-    ("contributions", "Contributions", "2840000", "2610000"), ("grants", "Grants", "1120000", "1480000"),
-    ("other", "Other revenue", "214000", "198000"), ("program", "Program services", "3210000", "3050000"),
-    ("mg", "Management and general", "486000", "471000"), ("fundraising", "Fundraising", "318000", "342000"),
-]  # fmt: skip
+    ("contributions", "Contributions", "2840000", "2610000"),
+    ("grants", "Grants", "1120000", "1480000"),
+    ("other", "Other revenue", "214000", "198000"),
+    ("program", "Program services", "3210000", "3050000"),
+    ("mg", "Management and general", "486000", "471000"),
+    ("fundraising", "Fundraising", "318000", "342000"),
+]
 
 
 def _lines(rows: list[tuple[str, str, str, str]]) -> list[FluxLine]:
@@ -47,26 +57,37 @@ def test_ac_lakeshore_flags_only_grants() -> None:
 
 def test_copperleaf_through_the_same_engine() -> None:
     lines = [
-        FluxLine("payroll", "Payroll", D("69030"), D("61360")), FluxLine("repairs", "Repairs", D("3200"), D("640")),
-        FluxLine("marketing", "Marketing", D("5515"), D("3985")), FluxLine("cogs", "COGS", D("85690"), D("82000")),
-    ]  # fmt: skip
+        FluxLine("payroll", "Payroll", D("69030"), D("61360")),
+        FluxLine("repairs", "Repairs", D("3200"), D("640")),
+        FluxLine("marketing", "Marketing", D("5515"), D("3985")),
+        FluxLine("cogs", "COGS", D("85690"), D("82000")),
+    ]
     result = evaluate(lines, Thresholds(D("10"), D("2500")))
     assert {r.key for r in result.rows if r.result == "over"} == {"payroll", "repairs"}
 
 
 def test_derived_lines_are_not_evaluated_and_must_foot() -> None:
     lines = [
-        FluxLine("revenue", "Revenue", D("100"), D("50")), FluxLine("cogs", "COGS", D("-60"), D("-30")),
+        FluxLine("revenue", "Revenue", D("100"), D("50")),
+        FluxLine("cogs", "COGS", D("-60"), D("-30")),
         FluxLine("gp", "Gross profit", D("40"), D("20"), derived_from=("revenue", "cogs")),
-    ]  # fmt: skip
+    ]
     result = evaluate(lines, Thresholds(D("10"), D("1")))
     gp = next(r for r in result.rows if r.key == "gp")
     assert gp.result is None and gp.derived and result.foots and result.evaluated == 2
-    broken = evaluate([*lines[:2], FluxLine("gp", "Gross profit", D("41"), D("20"), derived_from=("revenue", "cogs"))], Thresholds(D("10"), D("1")))
+    broken = evaluate(
+        [
+            *lines[:2],
+            FluxLine("gp", "Gross profit", D("41"), D("20"), derived_from=("revenue", "cogs")),
+        ],
+        Thresholds(D("10"), D("1")),
+    )
     assert not broken.foots
 
 
 def test_zero_prior_uses_the_amount_leg_alone_and_the_hash_is_stable() -> None:
     assert change_pct(D("10"), D("0")) is None
     a = evaluate(_lines(LAKESHORE), Thresholds(D("10"), D("50000")))
-    assert a.inputs_hash == evaluate(_lines(LAKESHORE), Thresholds(D("10"), D("50000"))).inputs_hash
+    assert (
+        a.inputs_hash == evaluate(_lines(LAKESHORE), Thresholds(D("10"), D("50000"))).inputs_hash
+    )

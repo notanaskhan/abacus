@@ -187,7 +187,9 @@ class ConfirmationLineIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     description: Name
-    account_last4: Annotated[str | None, Field(pattern=r"^\d{4}$"), classified("confidential")] = None
+    account_last4: Annotated[str | None, Field(pattern=r"^\d{4}$"), classified("confidential")] = (
+        None
+    )
     book_amount: Money
 
 

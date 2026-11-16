@@ -106,33 +106,57 @@ async def seeded(
     seed = Seeder(migrated_db.superuser_dsn)
     tenant = uuid.uuid4()
     await seed.run("INSERT INTO firms (tenant_id, name) VALUES ($1, 'Probe')", tenant)
-    partner = uuid.UUID(str(await seed.value(
-        "INSERT INTO users (idp_issuer, idp_subject, email, display_name) VALUES "
-        "('https://probe.test', $1, $2, 'Priya Raman') RETURNING id",
-        uuid.uuid4().hex, f"{uuid.uuid4().hex}@example.test",
-    )))  # fmt: skip
+    partner = uuid.UUID(
+        str(
+            await seed.value(
+                "INSERT INTO users (idp_issuer, idp_subject, email, display_name) VALUES "
+                "('https://probe.test', $1, $2, 'Priya Raman') RETURNING id",
+                uuid.uuid4().hex,
+                f"{uuid.uuid4().hex}@example.test",
+            )
+        )
+    )
     await seed.run(
         "INSERT INTO memberships (tenant_id, user_id, status) VALUES ($1, $2, 'active')",
-        tenant, partner,
-    )  # fmt: skip
+        tenant,
+        partner,
+    )
     client = await seed.value(
         "INSERT INTO clients (tenant_id, name) VALUES ($1, 'Copperleaf') RETURNING id", tenant
     )
-    entity = uuid.UUID(str(await seed.value(
-        "INSERT INTO client_entities (tenant_id, client_id, name) VALUES ($1, $2, 'Copperleaf') "
-        "RETURNING id", tenant, client,
-    )))  # fmt: skip
-    engagement = uuid.UUID(str(await seed.value(
-        "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
-        "fiscal_period_start, fiscal_period_end, created_by, type, status) VALUES ($1, $2, $3, "
-        "'2026 Close', '2026-01-01', '2026-12-31', $4, 'cas_monthly_close', 'active') RETURNING id",
-        tenant, client, entity, partner,
-    )))  # fmt: skip
+    entity = uuid.UUID(
+        str(
+            await seed.value(
+                "INSERT INTO client_entities (tenant_id, client_id, name) VALUES ($1, $2, "
+                "'Copperleaf') "
+                "RETURNING id",
+                tenant,
+                client,
+            )
+        )
+    )
+    engagement = uuid.UUID(
+        str(
+            await seed.value(
+                "INSERT INTO engagements (tenant_id, client_id, client_entity_id, name, "
+                "fiscal_period_start, fiscal_period_end, created_by, type, status) VALUES ($1, "
+                "$2, $3, "
+                "'2026 Close', '2026-01-01', '2026-12-31', $4, 'cas_monthly_close', 'active') "
+                "RETURNING id",
+                tenant,
+                client,
+                entity,
+                partner,
+            )
+        )
+    )
     await seed.run(
         "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
         "VALUES ($1, $2, $3, 'engagement_partner')",
-        tenant, engagement, partner,
-    )  # fmt: skip
+        tenant,
+        engagement,
+        partner,
+    )
     yield seed, tenant, entity, engagement, partner
     await dispose_engine()
 
@@ -148,10 +172,15 @@ async def _record(
     system = TenantContext(tenant, "system", "connections:ledger_sync")
     async with uow(system) as tx:
         ref = await record_month_snapshot(
-            tx, client_entity_id=entity, period=period, tb=tb, accounts=ACCOUNTS,
-            register=_register(period, rows, amount), pulled_at=datetime(2026, 9, 8, 15, tzinfo=UTC),
+            tx,
+            client_entity_id=entity,
+            period=period,
+            tb=tb,
+            accounts=ACCOUNTS,
+            register=_register(period, rows, amount),
+            pulled_at=datetime(2026, 9, 8, 15, tzinfo=UTC),
             source=f"quickbooks_online:{period}",
-        )  # fmt: skip
+        )
     return ref.id
 
 
@@ -159,7 +188,7 @@ async def test_ac_the_tree_foots_for_july_and_august(
     seeded: tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID],
 ) -> None:
     _, tenant, entity, _, _ = seeded
-    # July: cash 50,000 = card 4,000 + equity 40,000 + (sales 9,000 − repairs 3,000).
+    # July: cash 50,000 = card 4,000 + equity 40,000 + (sales 9,000 - repairs 3,000).
     await _record(
         tenant,
         entity,

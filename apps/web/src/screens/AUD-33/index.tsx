@@ -9,7 +9,9 @@ import {
   ConsolidationWorksheet,
   EliminationCard,
   EmptyState,
+  FullSheet,
   Icon,
+  IconButton,
   MatchScope,
   type MatchId,
   Pill,
@@ -22,6 +24,9 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
+import { useOpenOverlay } from "../../app-core/open";
+import type { OverlayRenderProps } from "../../app-core/overlays";
+import { ov } from "../../routes/to";
 import { COPY } from "./copy";
 
 // AUD-33 Consolidated trial balance (A-09-T15; SPEC-658; handoff AUD-33): T6 in the Focus layout.
@@ -102,6 +107,7 @@ function Drawer({
   onSegment,
   selected,
   onSelect,
+  onProvenance,
 }: {
   items: readonly EliminationOut[];
   proposed: boolean;
@@ -111,6 +117,8 @@ function Drawer({
   onSegment: (s: "eliminations" | "adjustments") => void;
   selected: string | null;
   onSelect: (code: string) => void;
+  /** SHL-09 for the selected elimination's figure (the handoff's ⓘ). */
+  onProvenance?: (() => void) | undefined;
 }): JSX.Element {
   const D = COPY.drawer;
   const count = (s: string) => items.filter((e) => e.status === s).length;
@@ -209,6 +217,9 @@ function Drawer({
               {D.total} <Amount value={totalDebit} style="whole" /> {D.dr} ={" "}
               <Amount value={totalCredit} style="whole" /> {D.cr}
             </span>
+            {onProvenance !== undefined && (
+              <IconButton icon="info" label={COPY.provenance} onClick={onProvenance} />
+            )}
             {totalDebit === totalCredit && (
               <Pill variant="green-tint" check>
                 {COPY.tallies.tie}
@@ -239,6 +250,7 @@ export function AUD33({
     mode === "adjustments" ? "adjustments" : "eliminations",
   );
   const [selected, setSelected] = useState<string | null>("E3");
+  const openOverlay = useOpenOverlay();
   const [tab, setTab] = useState(mode === "entity" ? "manufacturing" : "consolidated");
   const tb = useQuery(
     groupConsolidatedTbOptions({
@@ -364,9 +376,36 @@ export function AUD33({
             onSelect={(code) => {
               setSelected((s) => (s === code ? null : code));
             }}
+            onProvenance={
+              selected === null
+                ? undefined
+                : () => {
+                    openOverlay(
+                      ov.SHL09("consolidation", consolidationId, `elimination:${selected}`),
+                    );
+                  }
+            }
           />
         </div>
       </div>
     </MatchScope>
+  );
+}
+
+/** AUD-33 over its host (`?ov=consolidated-tb:<workItemId>:<consolidationId>`): the consolidated
+ * TB in a full sheet, opened from AUD-31's and AUD-32's success toasts (A-09-T15). */
+export function ConsolidatedTbLayer({ ref, close }: OverlayRenderProps): JSX.Element | null {
+  const [workItemId, consolidationId] = ref.args;
+  if (workItemId === undefined || consolidationId === undefined) return null;
+  return (
+    <FullSheet
+      open
+      onOpenChange={(next) => {
+        if (!next) close();
+      }}
+      title={COPY.title}
+    >
+      <AUD33 workItemId={workItemId} consolidationId={consolidationId} />
+    </FullSheet>
   );
 }

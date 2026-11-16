@@ -31,12 +31,6 @@ from abacus.kernel.config import settings
 from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.safe_xlsx import XLSX
-from abacus.modules.identity.api import (
-    LINK_COOKIE_NAME,
-    request_link_code,
-    resolve_link,
-    verify_link_code,
-)
 from abacus.modules.assurance import confirmations_fixtures as fx
 from abacus.modules.assurance.confirmations_contract_models import (
     AcceptedOut,
@@ -63,11 +57,15 @@ from abacus.modules.assurance.confirmations_contract_models import (
 )
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import (
+    LINK_COOKIE_NAME,
     LINK_PRINCIPAL,
     AbacusRouter,
     AuthContext,
     authorise,
     current_context,
+    request_link_code,
+    resolve_link,
+    verify_link_code,
 )
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -144,9 +142,11 @@ def _todo(task: str) -> NotImplementedYet:
 async def list_confirmations(work_item_id: UUID, ctx: Ctx) -> ConfirmationLogOut:
     """AUD-14's log (filters type, respondent, status, channel, q) with `allowed_actions`."""
     await _gate(ctx, work_item_id, "confirmation.read")
-    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.assurance import (
+        confirmations_service as cs,
+    )
 
-    return await cs.log(ctx, work_item_id)
+    return await cs.confirmation_list(ctx, work_item_id)
 
 
 @router.get(
@@ -158,7 +158,9 @@ async def list_confirmations(work_item_id: UUID, ctx: Ctx) -> ConfirmationLogOut
 async def confirmation_summary(work_item_id: UUID, ctx: Ctx) -> ConfirmationSummaryOut:
     """Tiles (sum to the log) and the coverage line, both code's."""
     await _gate(ctx, work_item_id, "confirmation.read")
-    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.assurance import (
+        confirmations_service as cs,
+    )
 
     return await cs.summary(ctx, work_item_id)
 
@@ -175,9 +177,11 @@ async def create_confirmation(
 ) -> ConfirmationIdOut:
     """A Draft, positive form only, with lines from the TB and an optional sample item."""
     await _gate(ctx, work_item_id, "confirmation.create")
-    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.assurance import (
+        confirmations_service as cs,
+    )
 
-    return await cs.create(ctx, work_item_id, body)
+    return ConfirmationIdOut(id=(await cs.create(ctx, work_item_id, body)).id)
 
 
 @router.post(
@@ -202,16 +206,20 @@ async def export_confirmations(work_item_id: UUID, ctx: Ctx) -> Response:
     """The control log workbook (deterministic, text cells guarded, ADR-042)."""
     await _gate(ctx, work_item_id, "confirmation.export")
     _ = XLSX
-    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.assurance import (
+        confirmations_service as cs,
+    )
 
-    return Response(content=await cs.export(ctx, work_item_id), media_type=XLSX)
+    return Response(content=await cs.workbook_of(ctx, work_item_id), media_type=XLSX)
 
 
 @router.get(_C, action="confirmation.read", response_model=ConfirmationDetailOut, errors=(501,))
 async def get_confirmation(confirmation_id: UUID, ctx: Ctx) -> ConfirmationDetailOut:
     """The drawer: Response, Reconciliation, Classification and Why this was surfaced."""
     await _gate_record(ctx)
-    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.assurance import (
+        confirmations_service as cs,
+    )
 
     return await cs.detail(ctx, confirmation_id)
 
@@ -228,13 +236,17 @@ async def verify_address(
 ) -> AddressVerificationOut:
     """Method, sources and citations; insert-only; independent with a non-client source."""
     await _gate_record(ctx)
-    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.assurance import (
+        confirmations_service as cs,
+    )
 
     return await cs.verify_address(ctx, confirmation_id, body)
 
 
 async def _send_like(confirmation_id: UUID, ctx: AuthContext) -> ConfirmationIdOut:
-    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.assurance import (
+        confirmations_service as cs,
+    )
 
     await _gate_record(ctx)
     await cs.check_sendable(ctx, confirmation_id)  # A-08-T16: 409 address_not_verified first
@@ -388,7 +400,9 @@ async def _resolved_view(token: str) -> RespondentViewOut:
     found = await resolve_link(token)
     if found is None or found.purpose != LINK_PURPOSE:
         return fx.EXPIRED
-    from abacus.modules.assurance import confirmations_service  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.assurance import (
+        confirmations_service,
+    )
 
     return await confirmations_service.respondent_view_of(found)
 
@@ -427,9 +441,14 @@ async def verify_code(token: Token, body: CodeVerifyIn, response: Response) -> V
     verified = await verify_link_code(token, body.code)
     if verified is not None:
         response.set_cookie(
-            LINK_COOKIE_NAME, verified.credential, max_age=30 * 60, secure=True, httponly=True,
-            samesite="strict", path="/",
-        )  # fmt: skip
+            LINK_COOKIE_NAME,
+            verified.credential,
+            max_age=30 * 60,
+            secure=True,
+            httponly=True,
+            samesite="strict",
+            path="/",
+        )
         response.headers["X-Abacus-CSRF"] = verified.csrf
     await _pad(started)
     return VerifiedOut(verified=verified is not None)

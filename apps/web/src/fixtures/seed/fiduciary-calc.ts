@@ -12,7 +12,14 @@ import { stableId } from "./prng";
 
 export type CalcState = "base" | "changed" | "signed";
 
-type Row = [key: string, parent: string | null, label: string, value: string | null, clause?: string | undefined, box?: string];
+type Row = [
+  key: string,
+  parent: string | null,
+  label: string,
+  value: string | null,
+  clause?: string | undefined,
+  box?: string,
+];
 
 const NORA = "nora";
 const THEO = "theo";
@@ -26,12 +33,35 @@ function rows(state: CalcState): Row[] {
     ["interest", "income", "Interest — Harborline custodial account", "107500.00"],
     ["dividends", "income", "Ordinary dividends (qualified 258,000)", "322500.00"],
     ["adjustments", "fai", "Adjustments", null],
-    ["trustee_fees", "adjustments", "Trustee fees charged to principal — deductible", "-30000.00", "V(c)"],
-    ["gains", "adjustments", "Capital gains allocated to principal — no sales in 2025", null, "II"],
+    [
+      "trustee_fees",
+      "adjustments",
+      "Trustee fees charged to principal — deductible",
+      "-30000.00",
+      "V(c)",
+    ],
+    [
+      "gains",
+      "adjustments",
+      "Capital gains allocated to principal — no sales in 2025",
+      null,
+      "II",
+    ],
     ["dni", "fai", "Distributable net income", "400000.00"],
     ["distributions", null, "Distributions and deduction", null],
-    ["paid", "distributions", "Distributions paid in 2025 (discretionary, Art. III(a))", changed ? "260000.00" : "240000.00", "III(a)"],
-    ["idd", "distributions", "Income distribution deduction (§661) — lesser of distributions and DNI", changed ? "260000.00" : "240000.00"],
+    [
+      "paid",
+      "distributions",
+      "Distributions paid in 2025 (discretionary, Art. III(a))",
+      changed ? "260000.00" : "240000.00",
+      "III(a)",
+    ],
+    [
+      "idd",
+      "distributions",
+      "Income distribution deduction (§661) — lesser of distributions and DNI",
+      changed ? "260000.00" : "240000.00",
+    ],
     ["allocation", null, "Beneficiary Allocation", null],
     [NORA, "allocation", "Nora Calloway", null],
     ["nora_paid", NORA, "Distributions (Jun 30 80,000 · Dec 15 80,000)", "160000.00"],
@@ -46,17 +76,46 @@ function rows(state: CalcState): Row[] {
     ["theo_share", THEO, `Beneficiary share ${changed ? "38.5%" : "33.3%"}`, null],
     ["theo_dni", THEO, "DNI allocated", changed ? "100000.00" : "80000.00"],
     ["theo_k1", THEO, "Schedule K-1 / Form 1041", null],
-    ["theo_box1", "theo_k1", "Interest income", changed ? "25000.00" : "20000.00", undefined, "Box 1"],
-    ["theo_box2a", "theo_k1", "Ordinary dividends", changed ? "75000.00" : "60000.00", undefined, "Box 2a"],
-    ["theo_box2b", "theo_k1", "Qualified dividends", changed ? "60000.00" : "48000.00", undefined, "Box 2b"],
+    [
+      "theo_box1",
+      "theo_k1",
+      "Interest income",
+      changed ? "25000.00" : "20000.00",
+      undefined,
+      "Box 1",
+    ],
+    [
+      "theo_box2a",
+      "theo_k1",
+      "Ordinary dividends",
+      changed ? "75000.00" : "60000.00",
+      undefined,
+      "Box 2a",
+    ],
+    [
+      "theo_box2b",
+      "theo_k1",
+      "Qualified dividends",
+      changed ? "60000.00" : "48000.00",
+      undefined,
+      "Box 2b",
+    ],
     ["retained", null, "Retained by the trust", null],
-    ["undistributed", "retained", "Undistributed DNI (accumulated under Art. IV(a))", changed ? "140000.00" : "160000.00", "IV(a)"],
+    [
+      "undistributed",
+      "retained",
+      "Undistributed DNI (accumulated under Art. IV(a))",
+      changed ? "140000.00" : "160000.00",
+      "IV(a)",
+    ],
     ["exemption", "retained", "Personal exemption (§642(b))", "-100.00"],
     ["taxable", "retained", "Trust taxable income", changed ? "139900.00" : "159900.00"],
   ];
 }
 
-const BASE: Record<string, string | null> = Object.fromEntries(rows("base").map((r) => [r[0], r[3]]));
+const BASE: Record<string, string | null> = Object.fromEntries(
+  rows("base").map((r) => [r[0], r[3]]),
+);
 
 function levelOf(all: Row[], key: string): number {
   const parent = all.find((r) => r[0] === key)?.[1] ?? null;
@@ -86,7 +145,13 @@ function nodes(state: CalcState): FiduciaryTreeNodeOut[] {
 
 function byCharacter(state: CalcState): FiduciaryCharacterRowOut[] {
   const c = state === "changed";
-  const row = (kind: FiduciaryCharacterRowOut["kind"], total: string, n: string, t: string, trust: string) => ({
+  const row = (
+    kind: FiduciaryCharacterRowOut["kind"],
+    total: string,
+    n: string,
+    t: string,
+    trust: string,
+  ) => ({
     kind,
     total,
     by_party: [
@@ -110,7 +175,10 @@ function byCharacter(state: CalcState): FiduciaryCharacterRowOut[] {
       ];
 }
 
-export function callowayComputation(returnId: string, state: CalcState = "base"): FiduciaryComputationOut {
+export function callowayComputation(
+  returnId: string,
+  state: CalcState = "base",
+): FiduciaryComputationOut {
   const changed = state === "changed";
   return {
     return_id: returnId,
@@ -127,11 +195,31 @@ export function callowayComputation(returnId: string, state: CalcState = "base")
     tallies: [
       { key: "fai", label: "FAI", value: "430000.00", state: null },
       { key: "dni", label: "DNI", value: "400000.00", state: null },
-      { key: "distributions", label: "Distributions", value: changed ? "260000.00" : "240000.00", state: null },
-      { key: "idd", label: "Distribution deduction", value: changed ? "260000.00" : "240000.00", state: null },
-      { key: "retained", label: "Retained DNI", value: changed ? "140000.00" : "160000.00", state: null },
+      {
+        key: "distributions",
+        label: "Distributions",
+        value: changed ? "260000.00" : "240000.00",
+        state: null,
+      },
+      {
+        key: "idd",
+        label: "Distribution deduction",
+        value: changed ? "260000.00" : "240000.00",
+        state: null,
+      },
+      {
+        key: "retained",
+        label: "Retained DNI",
+        value: changed ? "140000.00" : "160000.00",
+        state: null,
+      },
       { key: "k1_tie", label: "Σ K-1s = deduction", value: null, state: "tie" },
-      { key: "taxable", label: "Taxable income", value: changed ? "139900.00" : "159900.00", state: null },
+      {
+        key: "taxable",
+        label: "Taxable income",
+        value: changed ? "139900.00" : "159900.00",
+        state: null,
+      },
     ],
     notes: [
       changed
@@ -141,6 +229,11 @@ export function callowayComputation(returnId: string, state: CalcState = "base")
     banner: changed ? "Theo's Dec 15 distribution edited · re-approval needed" : null,
     signed_by_initials: state === "signed" || changed ? "SI" : null,
     sign_off_stale: changed,
-    allowed_actions: ["fai_line.edit", "trust_distribution.edit", "fiduciary_computation.export", "sign_off.l2"],
+    allowed_actions: [
+      "fai_line.edit",
+      "trust_distribution.edit",
+      "fiduciary_computation.export",
+      "sign_off.l2",
+    ],
   };
 }

@@ -40,9 +40,13 @@ describe("CLS-03 Intake", () => {
   it("a: nine requests, 7 received and 2 requested; Square pending incorporation", async () => {
     expect(receivedCount(tree.nodes)).toEqual({ received: 7, total: 9 });
     show("a");
-    await waitFor(() => expect(screen.getByText("Pending incorporation")).toBeTruthy());
+    await waitFor(() => {
+      expect(screen.getByText("Pending incorporation")).toBeTruthy();
+    });
     expect(document.querySelectorAll("[data-request]").length).toBe(9);
-    await waitFor(() => expect(document.querySelector("[data-cell='F23']")?.textContent).toBe("71,482.36"));
+    await waitFor(() => {
+      expect(document.querySelector("[data-cell='F23']")?.textContent).toBe("71,482.36");
+    });
   });
 
   it("a2: hovering the net total lights the 71,482.36 cell (360 ms fade)", async () => {
@@ -52,7 +56,9 @@ describe("CLS-03 Intake", () => {
       expect(el).not.toBeNull();
       return el as HTMLElement;
     });
-    await waitFor(() => expect(document.querySelector("[data-cell='F23']")).not.toBeNull());
+    await waitFor(() => {
+      expect(document.querySelector("[data-cell='F23']")).not.toBeNull();
+    });
     fireEvent.mouseEnter(net);
     const cell = document.querySelector<HTMLElement>("[data-cell='F23']");
     expect(cell?.dataset.lit).toBe("true");
@@ -79,7 +85,9 @@ describe("CLS-03 Intake", () => {
   });
 
   it("c: a requested row offers Send reminder and Upload on behalf", async () => {
-    show("c", { initial: { selected: { kind: "request", id: byTitle("Front Range Bank statement") } } });
+    show("c", {
+      initial: { selected: { kind: "request", id: byTitle("Front Range Bank statement") } },
+    });
     expect(await screen.findByText("Nothing uploaded yet")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Send reminder…" })).toBeTruthy();
   });
@@ -92,20 +100,28 @@ describe("CLS-03 Intake", () => {
 
   it("e: the tree is a drop target", async () => {
     show("e", { initial: { dropTarget: true } });
-    await waitFor(() => expect(document.querySelector("[data-drop-target='on']")).not.toBeNull());
+    await waitFor(() => {
+      expect(document.querySelector("[data-drop-target='on']")).not.toBeNull();
+    });
   });
 
   it("f: before BD1 nothing is published", async () => {
     show("f");
-    expect(await screen.findByText("Requests publish Oct 1 (BD1) from close plan v3.")).toBeTruthy();
+    expect(
+      await screen.findByText("Requests publish Oct 1 (BD1) from close plan v3."),
+    ).toBeTruthy();
   });
 
   it("g and h: the Amex row is flagged; rescreening shows the spinner", async () => {
     show("g");
-    await waitFor(() => expect(document.querySelectorAll("[data-request]").length).toBe(9));
+    await waitFor(() => {
+      expect(document.querySelectorAll("[data-request]").length).toBe(9);
+    });
     cleanup();
     restore?.();
     show("h", { initial: { rescreening: true } });
-    await waitFor(() => expect(document.querySelector("[data-rescreening]")).not.toBeNull());
+    await waitFor(() => {
+      expect(document.querySelector("[data-rescreening]")).not.toBeNull();
+    });
   });
 });

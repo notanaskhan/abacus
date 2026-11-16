@@ -10,12 +10,14 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from abacus.modules.connections.ledger_sync import in_business_hours, next_opening
-from abacus.modules.connections.ledger_sync_contract import _meter_state
+from abacus.modules.connections.ledger_sync_contract import (
+    _meter_state,  # pyright: ignore[reportPrivateUsage] -- the rule under test
+)
 from abacus.modules.ledger.month_ledger import (
     MonthAccount,
     MonthRegisterLine,
-    _check_register,
-    _sides,
+    _check_register,  # pyright: ignore[reportPrivateUsage] -- the rule under test
+    _sides,  # pyright: ignore[reportPrivateUsage] -- the rule under test
     content_fingerprint,
     month_bounds,
 )
@@ -79,11 +81,16 @@ def test_ac_the_register_must_foot_in_natural_signs() -> None:
 
 def test_ac_an_unchanged_month_digests_the_same() -> None:
     tb = NormalisedTrialBalance(
-        date(2026, 8, 1), date(2026, 8, 31), "USD",
-        (LedgerLine("35", "Operating", Decimal(10), Decimal(0), "35"),
-         LedgerLine("80", "Card", Decimal(0), Decimal(10), "80")),
-        Decimal(10), Decimal(10),
-    )  # fmt: skip
+        date(2026, 8, 1),
+        date(2026, 8, 31),
+        "USD",
+        (
+            LedgerLine("35", "Operating", Decimal(10), Decimal(0), "35"),
+            LedgerLine("80", "Card", Decimal(0), Decimal(10), "80"),
+        ),
+        Decimal(10),
+        Decimal(10),
+    )
     register = [_line("a", "60", "2560.00"), _line("b", "80", "2560.00")]
     first = content_fingerprint(tb, _accounts(), register)
     assert first == content_fingerprint(tb, list(reversed(_accounts())), register)

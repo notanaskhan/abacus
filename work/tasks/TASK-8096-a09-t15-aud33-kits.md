@@ -2,7 +2,7 @@
 id: TASK-8096
 title: "A-09-T15: ConsolidationWorksheet and EliminationCard kits; AUD-33 a-g in fixture mode"
 spec: SPEC-658
-acceptance_criteria: [AUD-33 a-g]
+acceptance_criteria: [AC-4]
 risk_zone: green
 status: in-review
 branch: a09-t15-aud33

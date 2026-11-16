@@ -46,17 +46,23 @@ async function frameOf(): Promise<HTMLElement> {
 describe("CLS-02 Overview", () => {
   it("a: Run 2 running, 6 of 9 complete and 3 at once, 2 + 3 + 2 + 1 + 1", async () => {
     show("overview-a");
-    await waitFor(() => expect(screen.getByText("6 of 9 complete")).toBeTruthy());
+    await waitFor(() => {
+      expect(screen.getByText("6 of 9 complete")).toBeTruthy();
+    });
     expect(screen.getByText("3 tasks running at once.")).toBeTruthy();
     expect(screen.getByText("Started 18 minutes ago")).toBeTruthy();
-    const groups = [...document.querySelectorAll("[data-group]")].map((g) => g.querySelectorAll("li").length);
+    const groups = [...document.querySelectorAll("[data-group]")].map(
+      (g) => g.querySelectorAll("li").length,
+    );
     expect(groups).toEqual([2, 3, 2, 1, 1]);
     expect(document.querySelectorAll("li[data-state='run']").length).toBe(3);
   });
 
   it("b: complete with exceptions at 9:40 AM, 9 of 9 and 7 open", async () => {
     show("overview-b");
-    await waitFor(() => expect(screen.getByText("Close agent completed")).toBeTruthy());
+    await waitFor(() => {
+      expect(screen.getByText("Close agent completed")).toBeTruthy();
+    });
     expect(screen.getByText("9 of 9 tasks · 7 open issues · finished 9:40 AM")).toBeTruthy();
   });
 
@@ -70,19 +76,27 @@ describe("CLS-02 Overview", () => {
   it("d: the treatment card answers only through a person's click", async () => {
     const onAnswer = vi.fn();
     show("overview-d", onAnswer);
-    await waitFor(() => expect(screen.getByText("How should the Aug 31 Square transfer of $6,412.40 be treated?")).toBeTruthy());
+    await waitFor(() => {
+      expect(
+        screen.getByText("How should the Aug 31 Square transfer of $6,412.40 be treated?"),
+      ).toBeTruthy();
+    });
     expect(onAnswer).not.toHaveBeenCalled();
-    const submit = [...document.querySelectorAll<HTMLButtonElement>("[data-decision] button")].find((b) =>
-      (b.textContent ?? "").trim() === "Next",
-    );
+    const submit = [
+      ...document.querySelectorAll<HTMLButtonElement>("[data-decision] button"),
+    ].find((b) => b.textContent.trim() === "Next");
     expect(submit).toBeDefined();
     fireEvent.click(submit as HTMLButtonElement);
-    await waitFor(() => expect(onAnswer).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      expect(onAnswer).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("e: Stopped at Shopify with Retry and View run", async () => {
     show("overview-e");
-    await waitFor(() => expect(screen.getByText("Stopped at Shopify")).toBeTruthy());
+    await waitFor(() => {
+      expect(screen.getByText("Stopped at Shopify")).toBeTruthy();
+    });
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "View run" })).toBeTruthy();
   });

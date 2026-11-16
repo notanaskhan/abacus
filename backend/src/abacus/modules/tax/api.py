@@ -188,7 +188,11 @@ async def _on_sign_off_recorded(event: OutboxEvent) -> None:
     # T-07-T16: the interpretation's approval recomputes the fiduciary workpaper at once.
     p = event.payload
     target = p.get("target_id")
-    if p.get("target_type") == "instrument_interpretation" and p.get("level") == 3 and isinstance(target, str):
+    if (
+        p.get("target_type") == "instrument_interpretation"
+        and p.get("level") == 3
+        and isinstance(target, str)
+    ):
         from abacus.modules.tax import fiduciary_service
 
         await fiduciary_service.recompute_after_approval(event.tenant_id, UUID(target))

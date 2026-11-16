@@ -11808,6 +11808,10 @@ export type ConfirmationCreateIn = {
      */
     channel: 'accrued_link' | 'network_recorded' | 'mail_recorded';
     /**
+     * Lines
+     */
+    lines?: Array<ConfirmationLineIn>;
+    /**
      * Respondent Name
      */
     respondent_name: string;
@@ -11868,6 +11872,26 @@ export type ConfirmationIdOut = {
      * Id
      */
     id: string;
+};
+
+/**
+ * ConfirmationLineIn
+ *
+ * A-08-T16: one book amount the respondent is asked to confirm (from the sample or the TB).
+ */
+export type ConfirmationLineIn = {
+    /**
+     * Account Last4
+     */
+    account_last4?: string | null;
+    /**
+     * Book Amount
+     */
+    book_amount: number | string;
+    /**
+     * Description
+     */
+    description: string;
 };
 
 /**
@@ -31548,6 +31572,47 @@ export type ItemVersionOut = {
 export type JeCriterionStatus = 'available' | 'not_available';
 
 /**
+ * JeRiskCriteriaPayload
+ *
+ * A-08-T12 (SPEC-657 F1; OQ-7): the firm's JE risk criteria ("BH JE criteria v1"). Firm
+ * content, loaded through the import; a JE test copies a version's rows when a person
+ * configures it, and code scores (ADR-050).
+ */
+export type JeRiskCriteriaPayload = {
+    /**
+     * Criteria
+     */
+    criteria: Array<JeRiskCriterionRow>;
+    /**
+     * Kind
+     */
+    kind: 'je_risk_criteria';
+};
+
+/**
+ * JeRiskCriterionRow
+ *
+ * One JE risk criterion: its key, weight (0 to 100) and parameters, as text the scoring
+ * engine (`sampling.compute.je_scoring`) validates.
+ */
+export type JeRiskCriterionRow = {
+    /**
+     * Key
+     */
+    key: 'weekend_holiday' | 'round_amount' | 'post_close' | 'manual_by_role' | 'keywords';
+    /**
+     * Params
+     */
+    params?: {
+        [key: string]: string;
+    };
+    /**
+     * Weight
+     */
+    weight: number;
+};
+
+/**
  * JeTestCreateIn
  */
 export type JeTestCreateIn = {
@@ -37516,6 +37581,74 @@ export type MisstatementIn = {
 };
 
 /**
+ * MusConfidenceFactorRow
+ */
+export type MusConfidenceFactorRowInput = {
+    /**
+     * Confidence Pct
+     */
+    confidence_pct: number | string;
+    /**
+     * Errors
+     */
+    errors: number;
+    /**
+     * Factor
+     */
+    factor: number | string;
+};
+
+/**
+ * MusConfidenceFactorRow
+ */
+export type MusConfidenceFactorRowOutput = {
+    /**
+     * Confidence Pct
+     */
+    confidence_pct: string;
+    /**
+     * Errors
+     */
+    errors: number;
+    /**
+     * Factor
+     */
+    factor: string;
+};
+
+/**
+ * MusConfidenceFactorsPayload
+ *
+ * ADR P-57: the firm's MUS confidence factors (A-08-T13 sizes with them).
+ */
+export type MusConfidenceFactorsPayloadInput = {
+    /**
+     * Kind
+     */
+    kind: 'mus_confidence_factors';
+    /**
+     * Rows
+     */
+    rows: Array<MusConfidenceFactorRowInput>;
+};
+
+/**
+ * MusConfidenceFactorsPayload
+ *
+ * ADR P-57: the firm's MUS confidence factors (A-08-T13 sizes with them).
+ */
+export type MusConfidenceFactorsPayloadOutput = {
+    /**
+     * Kind
+     */
+    kind: 'mus_confidence_factors';
+    /**
+     * Rows
+     */
+    rows: Array<MusConfidenceFactorRowOutput>;
+};
+
+/**
  * MyAnnualIndependenceOut
  *
  * SHL-03's profile drawer (AC6.1): one's own status for the year and the statement to
@@ -38921,7 +39054,7 @@ export type ParametersOut = {
     /**
      * Method
      */
-    method: 'attribute_nonstatistical' | 'attribute_statistical' | 'threshold_random_stratified';
+    method: 'attribute_nonstatistical' | 'attribute_statistical' | 'threshold_random_stratified' | 'je_score_selection' | 'monetary_unit';
     /**
      * Override Rationale
      */
@@ -50002,7 +50135,7 @@ export type SampleItemOut = {
     /**
      * Selection Reason
      */
-    selection_reason: 'random' | 'threshold';
+    selection_reason: 'random' | 'threshold' | 'risk_score' | 'unpredictable';
     /**
      * Stratum Position
      */
@@ -54416,7 +54549,7 @@ export type StandardCreateIn = {
     /**
      * Kind
      */
-    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix';
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors';
     /**
      * Name
      */
@@ -54471,6 +54604,10 @@ export type StandardDraftPatchIn = {
     } & AttributeSampleSizesPayloadInput) | ({
         kind: 'rmm_matrix';
     } & RmmMatrixPayload) | ({
+        kind: 'je_risk_criteria';
+    } & JeRiskCriteriaPayload) | ({
+        kind: 'mus_confidence_factors';
+    } & MusConfidenceFactorsPayloadInput) | ({
         kind: 'review_checklist';
     } & ReviewChecklistPayload) | ({
         kind: 'review_levels';
@@ -54624,7 +54761,7 @@ export type StandardOut = {
     /**
      * Kind
      */
-    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix';
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors';
     /**
      * Name
      */
@@ -54761,6 +54898,10 @@ export type StandardVersionOut = {
     } & AttributeSampleSizesPayloadOutput) | ({
         kind: 'rmm_matrix';
     } & RmmMatrixPayload) | ({
+        kind: 'je_risk_criteria';
+    } & JeRiskCriteriaPayload) | ({
+        kind: 'mus_confidence_factors';
+    } & MusConfidenceFactorsPayloadOutput) | ({
         kind: 'review_checklist';
     } & ReviewChecklistPayload) | ({
         kind: 'review_levels';
@@ -139454,7 +139595,7 @@ export type ListStandardsData = {
         /**
          * Kind
          */
-        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | null;
+        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | 'rmm_matrix' | 'je_risk_criteria' | 'mus_confidence_factors' | null;
     };
     url: '/v1/standards';
 };
@@ -145197,10 +145338,6 @@ export type GiftHistoryAddErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GiftHistoryAddError = GiftHistoryAddErrors[keyof GiftHistoryAddErrors];
@@ -145381,10 +145518,6 @@ export type EstateAssetEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateAssetEditError = EstateAssetEditErrors[keyof EstateAssetEditErrors];
@@ -145441,10 +145574,6 @@ export type EstateDeductionEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateDeductionEditError = EstateDeductionEditErrors[keyof EstateDeductionEditErrors];
@@ -146402,10 +146531,6 @@ export type FaiLineEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FaiLineEditError = FaiLineEditErrors[keyof FaiLineEditErrors];
@@ -146462,10 +146587,6 @@ export type GiftHistoryEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GiftHistoryEditError = GiftHistoryEditErrors[keyof GiftHistoryEditErrors];
@@ -147150,10 +147271,6 @@ export type EstateAssetAddErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateAssetAddError = EstateAssetAddErrors[keyof EstateAssetAddErrors];
@@ -147206,10 +147323,6 @@ export type EstateComputationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateComputationError = EstateComputationErrors[keyof EstateComputationErrors];
@@ -147262,10 +147375,6 @@ export type EstateDeductionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateDeductionsError = EstateDeductionsErrors[keyof EstateDeductionsErrors];
@@ -147318,10 +147427,6 @@ export type EstateDeductionAddErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateDeductionAddError = EstateDeductionAddErrors[keyof EstateDeductionAddErrors];
@@ -147378,10 +147483,6 @@ export type EstateDerivationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateDerivationError = EstateDerivationErrors[keyof EstateDerivationErrors];
@@ -147434,10 +147535,6 @@ export type EstateGiftsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateGiftsError = EstateGiftsErrors[keyof EstateGiftsErrors];
@@ -147490,10 +147587,6 @@ export type EstateInventoryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EstateInventoryError = EstateInventoryErrors[keyof EstateInventoryErrors];
@@ -147546,10 +147639,6 @@ export type FaiLinesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FaiLinesError = FaiLinesErrors[keyof FaiLinesErrors];
@@ -147602,10 +147691,6 @@ export type FaiLineAddErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FaiLineAddError = FaiLineAddErrors[keyof FaiLineAddErrors];
@@ -147662,10 +147747,6 @@ export type FaiLinesImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FaiLinesImportError = FaiLinesImportErrors[keyof FaiLinesImportErrors];
@@ -147731,10 +147812,6 @@ export type FiduciaryComputationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FiduciaryComputationError = FiduciaryComputationErrors[keyof FiduciaryComputationErrors];
@@ -147792,10 +147869,6 @@ export type FiduciaryExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FiduciaryExportError = FiduciaryExportErrors[keyof FiduciaryExportErrors];
@@ -147858,10 +147931,6 @@ export type FiduciaryRecomputeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FiduciaryRecomputeError = FiduciaryRecomputeErrors[keyof FiduciaryRecomputeErrors];
@@ -148847,10 +148916,6 @@ export type TrustDistributionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TrustDistributionsError = TrustDistributionsErrors[keyof TrustDistributionsErrors];
@@ -148903,10 +148968,6 @@ export type TrustDistributionAddErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TrustDistributionAddError = TrustDistributionAddErrors[keyof TrustDistributionAddErrors];
@@ -148959,10 +149020,6 @@ export type TrustExpensesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TrustExpensesError = TrustExpensesErrors[keyof TrustExpensesErrors];
@@ -149015,10 +149072,6 @@ export type TrustExpenseAddErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TrustExpenseAddError = TrustExpenseAddErrors[keyof TrustExpenseAddErrors];
@@ -149247,10 +149300,6 @@ export type TrustDistributionEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TrustDistributionEditError = TrustDistributionEditErrors[keyof TrustDistributionEditErrors];
@@ -149307,10 +149356,6 @@ export type TrustExpenseEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type TrustExpenseEditError = TrustExpenseEditErrors[keyof TrustExpenseEditErrors];

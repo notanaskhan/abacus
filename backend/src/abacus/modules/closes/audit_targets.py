@@ -15,6 +15,11 @@ from abacus.kernel.db import TenantContext, tenant_session
 
 _ENGAGEMENT: Final[dict[str, TextClause]] = {
     "close": text("SELECT work_item_id, engagement_id FROM closes WHERE work_item_id = ANY(:ids)"),
+    # C-01-T20: a reconciliation the close run computed, owned by its close's engagement.
+    "reconciliation": text(
+        "SELECT r.id, c.engagement_id FROM reconciliations r "
+        "JOIN closes c ON c.work_item_id = r.close_id WHERE r.id = ANY(:ids)"
+    ),
 }
 _ENTITY: Final[dict[str, TextClause]] = {
     "close_plan": text("SELECT id, client_entity_id FROM close_plans WHERE id = ANY(:ids)"),

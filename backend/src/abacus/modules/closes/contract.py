@@ -679,9 +679,14 @@ async def list_closes_route(
 
     await _engine_on(ctx)
     return await service.list_closes(
-        ctx, period=period, status=status, preparer=preparer, reviewer=reviewer, attest=attest,
+        ctx,
+        period=period,
+        status=status,
+        preparer=preparer,
+        reviewer=reviewer,
+        attest=attest,
         q=q,
-    )  # fmt: skip
+    )
 
 
 @closes_router.get(
@@ -765,7 +770,7 @@ async def start_close_run_route(
 ) -> StartRunOut:
     """A live person starts a run; code plans it (AC-28; C-01-T20)."""
     await _human_route(ctx, "close_run.start")
-    from abacus.modules.closes import runs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.closes import runs
 
     return await runs.start_run(ctx, close_id, body)
 
@@ -774,20 +779,18 @@ async def start_close_run_route(
 async def close_runs_route(close_id: UUID, ctx: Ctx) -> CloseRunsOut:
     """Run history ("Run 2 ⌄"; AC-31; C-01-T20)."""
     await _engine_on(ctx)
-    from abacus.modules.closes import runs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.closes import runs
 
     return await runs.run_history(ctx, close_id)
 
 
-@closes_router.get(
-    f"{_C}/runs/{{run_no}}", action="close.read", response_model=CloseRunOut
-)
+@closes_router.get(f"{_C}/runs/{{run_no}}", action="close.read", response_model=CloseRunOut)
 async def close_run_route(
     close_id: UUID, run_no: Annotated[int, Path(ge=1)], ctx: Ctx
 ) -> CloseRunOut:
     """The run view over C6 v2 with task groups (C-01-T20)."""
     await _engine_on(ctx)
-    from abacus.modules.closes import runs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.closes import runs
 
     return await runs.run_card(ctx, close_id, run_no)
 
@@ -808,7 +811,7 @@ async def retry_close_procedure_route(
 ) -> CloseProcedureOut:
     """Retry a failed procedure as a new step row (AC-30; C-01-T20)."""
     await _human_route(ctx, "close_run.retry")
-    from abacus.modules.closes import runs  # noqa: PLC0415 -- the service imports this contract
+    from abacus.modules.closes import runs
 
     return await runs.retry_step(ctx, close_id, run_no, step_id)
 

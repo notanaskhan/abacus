@@ -2,7 +2,7 @@
 id: TASK-8079
 title: "T-07-T22: Estate workpapers backend (migration 0892, estate engine, routes)"
 spec: SPEC-656
-acceptance_criteria: [AC-12.1, AC-12.4, AC-13.1, AC-13.2, AC-13.3, AC-13.4, AC-13.5, AC-14.1]
+acceptance_criteria: [AC-12, AC-13, AC-14]
 risk_zone: amber
 status: in-review
 branch: t07-t22-estate-workpapers

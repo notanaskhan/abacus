@@ -31,11 +31,34 @@ const IssueSheet = lazy(async () => ({
 const EnvelopeBuilder = lazy(async () => ({
   default: (await import("../../screens/SIG-02")).EnvelopeBuilder,
 }));
+const ConsolidatedTbLayer = lazy(async () => ({
+  default: (await import("../../screens/AUD-33")).ConsolidatedTbLayer,
+}));
+const ProvenanceLayer = lazy(async () => ({
+  default: (await import("../../screens/SHL-09")).ProvenanceLayer,
+}));
 
 export default function SheetsHost(props: OverlayRenderProps): JSX.Element | null {
   const { ref, close } = props;
   const id = ref.args[0];
   if (id === undefined) return null;
+  if (ref.key === "consolidated-tb") {
+    // A-09-T15: AUD-33 stands behind the group audit entitlement, as its screen does.
+    return (
+      <FeatureGate entitlement="group_audit">
+        <Suspense fallback={null}>
+          <ConsolidatedTbLayer {...props} />
+        </Suspense>
+      </FeatureGate>
+    );
+  }
+  if (ref.key === "provenance") {
+    return (
+      <Suspense fallback={null}>
+        <ProvenanceLayer {...props} />
+      </Suspense>
+    );
+  }
   if (ref.key === "engine-sync") {
     return (
       <FeatureGate entitlement="tax_returns">

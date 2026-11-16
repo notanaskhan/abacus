@@ -315,9 +315,19 @@ GLOBAL_TABLES = frozenset(
     # 0400 (K-02-T03, ADR-300): the platform reference sets.
     | {"reference_sets", "reference_set_versions", "reference_set_publications"}
 )
+# Tenant tables whose SECURITY DEFINER readers run before any tenant is known (a public link's
+# token): RLS is enabled with the tenant policy but not FORCED, so the owner's definers can read
+# them; the app role is not the owner, so the policy still binds every app query. Founder-reviewed.
+UNFORCED_TENANT_TABLES = frozenset(
+    {"link_principals", "link_principal_challenges", "link_page_credentials"}  # 0893 (A-08-T15)
+)
 # SECURITY DEFINER functions: each runs as the owner, bypassing grants, so each is reviewed here.
 DEFINER_FUNCTIONS = frozenset(
     {"work_slot_acquire", "work_slot_release", "work_slot_renew"}
+    # 0893 (A-08-T15): a public link's token, code and page credential, before any tenant.
+    | {"link_principal_resolve", "link_principal_challenge", "link_principal_issue"}
+    | {"link_principal_attempt", "link_principal_missed", "link_principal_credential"}
+    | {"link_principal_credential_resolve"}
     | {"capacity_admit", "capacity_block"}
     | {"review_decision_reason_check", "review_reason_codes_list"}
     # 0134 (A-01-T05; DEC-262): an assurance phase event's insert checks its actor and its move and
@@ -942,7 +952,7 @@ async def _inspect(owner_dsn: str) -> list[str]:
                 problems.append(f"{name}: missing tenant_id uuid NOT NULL")
             if not table["relrowsecurity"]:
                 problems.append(f"{name}: row-level security not enabled")
-            if not table["relforcerowsecurity"]:
+            if not table["relforcerowsecurity"] and name not in UNFORCED_TENANT_TABLES:
                 problems.append(f"{name}: row-level security not forced")
             problems += _policy_problems(name, list(await conn.fetch(_POLICIES, name)), canonical)
             for privilege in ("TRUNCATE", "TRIGGER"):  # row-level security doesn't cover TRUNCATE

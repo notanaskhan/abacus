@@ -2,7 +2,7 @@
 id: TASK-8076
 title: "T-07-T16: Fiduciary computation service"
 spec: SPEC-656
-acceptance_criteria: [AC-6.1, AC-6.4, AC-7.1, AC-7.2, AC-8.1, AC-9.2]
+acceptance_criteria: [AC-6, AC-7, AC-8, AC-9]
 risk_zone: amber
 status: in-review
 branch: t07-t16-fiduciary-service

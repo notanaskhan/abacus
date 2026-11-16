@@ -14,6 +14,7 @@ from uuid import UUID
 
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 from abacus.kernel.dispatch import WorkClass, register_work_classes
+from abacus.kernel.sync_scope import register_sync_scope
 from abacus.kernel.uow.relay import Handler, OutboxEvent
 from abacus.modules.closes.audit_targets import (
     AUDIT_KINDS,
@@ -35,12 +36,24 @@ from abacus.modules.closes.gate_sources import register_close_gates
 from abacus.modules.closes.intake import ACTIVITIES as INTAKE_ACTIVITIES
 from abacus.modules.closes.intake import schedule_publish
 from abacus.modules.closes.kind import CloseKind
+from abacus.modules.closes.request_publish_types import (
+    PUBLISH as PUBLISH_REQUESTS,
+)
+from abacus.modules.closes.request_publish_types import (
+    RECOMPUTE as RECOMPUTE_REQUESTS,
+)
+from abacus.modules.closes.request_publish_types import (
+    SECONDS_UNTIL as REQUESTS_SECONDS_UNTIL,
+)
+from abacus.modules.closes.request_publish_types import (
+    PublishInput,
+    PublishResult,
+)
 from abacus.modules.closes.request_publish_workflow import RequestPublishWorkflow
 from abacus.modules.closes.run_plan import register_treatment_kind
 from abacus.modules.closes.run_steps import register_close_run_steps
 from abacus.modules.closes.service import start_close
 from abacus.modules.closes.sync_scope import sync_scope
-from abacus.modules.connections.api import register_sync_scope
 from abacus.modules.engagements.api import register_work_item_kind
 
 # F-03-T22: the `close` work-item kind.
@@ -75,10 +88,15 @@ ACTIVITIES: tuple[Callable[..., Any], ...] = INTAKE_ACTIVITIES  # Any: Temporal 
 
 __all__ = [
     "ACTIVITIES",
+    "PUBLISH_REQUESTS",
+    "RECOMPUTE_REQUESTS",
+    "REQUESTS_SECONDS_UNTIL",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "CloseFacts",
+    "PublishInput",
+    "PublishResult",
     "RequestPublishWorkflow",
     "StatusGuard",
     "TransitionNotAvailable",

@@ -1,3 +1,4 @@
+import { date } from "@abacus/ui";
 // CLS-03's words (C-01-T35), verbatim from the handoff (CLS-03 A–F, R2 G–H). Request titles,
 // file names and figures come from the read model, never from here.
 import type { RequestNodeOut } from "@abacus/api-client";
@@ -29,13 +30,7 @@ export const COPY = {
   linked: "Linked",
   notPublished: (on: string | null, version: number | null): string => {
     const when =
-      on === null
-        ? "on the first business day"
-        : new Date(`${on}T12:00:00Z`).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            timeZone: "UTC",
-          });
+      on === null ? "on the first business day" : date(on, { now: Date.parse(`${on}T12:00:00Z`) });
     return `Requests publish ${when} (BD1) from close plan v${String(version ?? 1)}.`;
   },
 } as const;

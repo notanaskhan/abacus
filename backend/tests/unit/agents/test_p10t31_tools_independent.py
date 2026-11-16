@@ -62,6 +62,12 @@ ELSEWHERE: dict[str, dict[str, object]] = {
     # W-02-T11 (DEC-4716): the Workbench's materiality read names its engagement.
     "assurance.read_materiality": {"engagement_id": GRANITE_AUDIT},
     "ledger.read_tb": {"client_entity_id": GRANITE_ENTITY},
+    # C-01-T18: the close month's register, scoped by its entity like the TB.
+    "ledger.read_transactions": {
+        "client_entity_id": GRANITE_ENTITY,
+        "account_external_id": "1010",
+        "period": "2026-06",
+    },
     "ledger.compare_periods": {
         "client_entity_id": GRANITE_ENTITY,
         "current_period_end": "2025-12-31",

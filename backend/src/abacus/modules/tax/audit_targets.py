@@ -30,6 +30,18 @@ _ROWS = {
     # T-05-T22 / T-04-T39 (S38): an entity return's partner (its TIN seal and reveals) and a
     # return's residency determination, each owned by its engagement.
     "partner": text("SELECT id, engagement_id FROM partners WHERE id = ANY(:ids)"),
+    # S46: T-07-T16 fiduciary lines and T-07-T22 estate workpapers, each its return's.
+    "fai_line": text("SELECT id, engagement_id FROM fai_lines WHERE id = ANY(:ids)"),
+    "trust_expense": text("SELECT id, engagement_id FROM trust_expenses WHERE id = ANY(:ids)"),
+    "trust_distribution": text(
+        "SELECT id, engagement_id FROM trust_distributions WHERE id = ANY(:ids)"
+    ),
+    "estate_asset": text(
+        "SELECT id, engagement_id FROM estate_inventory_items WHERE id = ANY(:ids)"
+    ),
+    "estate_deduction": text(
+        "SELECT id, engagement_id FROM estate_deductions WHERE id = ANY(:ids)"
+    ),
     "residency_determination": text(
         "SELECT id, engagement_id FROM residency_determinations WHERE id = ANY(:ids)"
     ),

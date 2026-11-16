@@ -29,7 +29,11 @@ function intake(state: string, tree: () => object = () => copperleafRequestTree(
           return json({ ...base, flags: { ...base.flags, "closes.engine": true } });
         },
         "GET /v1/closes/{close_id}/requests": () => json(tree()),
-        "GET /v1/evidence-versions/{version_id}/text": ({ params }: { params: Record<string, string> }) =>
+        "GET /v1/evidence-versions/{version_id}/text": ({
+          params,
+        }: {
+          params: Record<string, string>;
+        }) =>
           params.version_id === SQUARE_VERSION
             ? json(squarePayoutText())
             : json({ items: [], sheets: [], truncated: false }),

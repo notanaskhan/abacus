@@ -28,7 +28,7 @@ from decimal import Decimal
 from typing import Final
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, text
+from sqlalchemy import insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import transaction_context
@@ -169,7 +169,7 @@ _INSERT_ACCOUNT = text(
 
 async def accounts_of(session: AsyncSession, snapshot_id: UUID) -> tuple[MonthAccount, ...]:
     rows = (await session.execute(_ACCOUNTS_OF, {"s": snapshot_id})).all()
-    return tuple(MonthAccount(*r) for r in rows)  # pyright: ignore[reportArgumentType] -- column order
+    return tuple(MonthAccount(*r) for r in rows)
 
 
 async def _tb_of(session: AsyncSession, snapshot: LedgerSnapshot) -> NormalisedTrialBalance:
@@ -251,11 +251,18 @@ def _resign(
         natural = line.amount if kind in _DEBIT_NATURAL else -line.amount
         out.append(
             MonthRegisterLine(
-                line.source_ref, line.account_external_id, line.external_txn_id, line.txn_date,
-                line.txn_type, line.doc_number, line.payee, line.memo, line.offset_account_ref,
+                line.source_ref,
+                line.account_external_id,
+                line.external_txn_id,
+                line.txn_date,
+                line.txn_type,
+                line.doc_number,
+                line.payee,
+                line.memo,
+                line.offset_account_ref,
                 natural,
             )
-        )  # fmt: skip
+        )
     return tuple(out)
 
 
@@ -330,8 +337,8 @@ async def record_month_snapshot(
 
     tenant = await transaction_context(session)
     snapshot_id = uuid4()
-    session.add(
-        LedgerSnapshot(
+    await session.execute(
+        insert(LedgerSnapshot).values(
             id=snapshot_id,
             tenant_id=tenant.tenant_id,
             client_entity_id=client_entity_id,
@@ -347,7 +354,6 @@ async def record_month_snapshot(
             period=period,
         )
     )
-    await session.flush()
     await insert_lines(session, tenant.tenant_id, snapshot_id, tb.lines)
     for account in accounts:
         await session.execute(
@@ -396,8 +402,8 @@ async def record_month_snapshot(
                     "external_txn_id": line.external_txn_id,
                 }
             )
-        session.add(
-            GlSnapshot(
+        await session.execute(
+            insert(GlSnapshot).values(
                 id=gl_snapshot_id,
                 tenant_id=tenant.tenant_id,
                 client_entity_id=client_entity_id,
@@ -412,7 +418,6 @@ async def record_month_snapshot(
                 total_credit=total,
             )
         )
-        await session.flush()
         await insert_gl_rows(session, GlEntryRow, rows)
     tx.record(
         "ledger_snapshot.created",

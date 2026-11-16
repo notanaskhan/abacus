@@ -90,10 +90,18 @@ def test_each_format_maps_each_je_field_at_most_once_and_never_onto_a_base_colum
     assert set(headers) <= set(JE_FIELDS)
     assert len(set(headers.values())) == len(headers)  # one column, one field
     base = {
-        fmt.date_header, fmt.kind_header, fmt.reference_header, fmt.counterparty_header,
-        fmt.description_header, fmt.amount_header, fmt.debit_header, fmt.credit_header,
-        fmt.balance_header, fmt.account_header, fmt.code_header,
-    } - {None}  # fmt: skip
+        fmt.date_header,
+        fmt.kind_header,
+        fmt.reference_header,
+        fmt.counterparty_header,
+        fmt.description_header,
+        fmt.amount_header,
+        fmt.debit_header,
+        fmt.credit_header,
+        fmt.balance_header,
+        fmt.account_header,
+        fmt.code_header,
+    } - {None}
     assert not {h.casefold() for h in headers.values()} & {str(b).casefold() for b in base}
 
 
@@ -133,14 +141,42 @@ def _export() -> bytes:
     w = csv.writer(out, lineterminator="\n")
     for line in (["Probe Co"], ["General Ledger"], ["Jul 2025 - Jun 2026"], []):
         w.writerow(line)
-    w.writerow(["Account", "Date", "Type", "Document Number", "Name", "Memo", "Debit", "Credit",
-                "Created By", "Date Created", "Source", "Approved By"])  # fmt: skip
+    w.writerow(
+        [
+            "Account",
+            "Date",
+            "Type",
+            "Document Number",
+            "Name",
+            "Memo",
+            "Debit",
+            "Credit",
+            "Created By",
+            "Date Created",
+            "Source",
+            "Approved By",
+        ]
+    )
     for account, debit, credit in (
         ("2100 - Accrued", "", "250.00"),
         ("7100 - Interest", "250.00", ""),
     ):
-        w.writerow([account, "06/27/2026", "Journal", "JE-9", "", "Probe", debit, credit,
-                    _POSTER, "06/27/2026 10:00 AM", "Manual", _APPROVER])  # fmt: skip
+        w.writerow(
+            [
+                account,
+                "06/27/2026",
+                "Journal",
+                "JE-9",
+                "",
+                "Probe",
+                debit,
+                credit,
+                _POSTER,
+                "06/27/2026 10:00 AM",
+                "Manual",
+                _APPROVER,
+            ]
+        )
     return out.getvalue().encode("utf-8")
 
 
@@ -155,13 +191,15 @@ def test_no_posting_user_or_approver_value_reaches_a_log_or_an_error(
         entries = list(read_entries(str(out)))
         assert {e.posted_by for e in entries} == {_POSTER}
         inputs = js.Inputs(
-            criteria=(js.Criterion("manual_by_role", 40, {"role_class": "senior_management"}),
-                      js.Criterion("round_amount", 10, {"unit": "not-a-number"})),
+            criteria=(
+                js.Criterion("manual_by_role", 40, {"role_class": "senior_management"}),
+                js.Criterion("round_amount", 10, {"unit": "not-a-number"}),
+            ),
             holidays=js.HolidaySet("none", frozenset()),
             period_end=date(2026, 6, 30),
             roles={_POSTER: "senior_management"},
             fields_available=summary.je_fields_available,
-        )  # fmt: skip
+        )
         engine = [
             js.JeEntry(
                 "JE-9", date(2026, 6, 27), Decimal("250"), posted_by=_POSTER, source="manual"

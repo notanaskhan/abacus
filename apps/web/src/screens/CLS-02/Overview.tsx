@@ -28,6 +28,10 @@ import {
   Skeleton,
   Spinner,
   StatusDisc,
+  date,
+  monthYear,
+  time,
+  useNow,
 } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -54,7 +58,11 @@ export function rowStateOf(p: CloseProcedureOut): RowState {
 }
 
 /** A group's pill: done (done or with an open item) of all, and whether a row still runs. */
-export function groupProgress(g: CloseTaskGroupOut): { done: number; total: number; running: boolean } {
+export function groupProgress(g: CloseTaskGroupOut): {
+  done: number;
+  total: number;
+  running: boolean;
+} {
   const states = g.procedures.map(rowStateOf);
   return {
     done: states.filter((s) => s === "done" || s === "warn").length,
@@ -75,9 +83,16 @@ export function statusItems(
       label: OVERVIEW.statusMenu.inReview,
       disabled: !allReconciled,
       ...(allReconciled ? {} : { hint: OVERVIEW.statusMenu.inReviewBlocked }),
-      onSelect: () => onMove("in_review"),
+      onSelect: () => {
+        onMove("in_review");
+      },
     },
-    { label: OVERVIEW.statusMenu.onHold, onSelect: () => onMove("on_hold") },
+    {
+      label: OVERVIEW.statusMenu.onHold,
+      onSelect: () => {
+        onMove("on_hold");
+      },
+    },
     {
       label: OVERVIEW.handoffToTax,
       disabled: true,
@@ -93,11 +108,7 @@ function minutesAgo(started: string, now: Date): string {
 }
 
 function timeOf(at: string): string {
-  return new Date(at).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/Chicago",
-  });
+  return time(at);
 }
 
 function Disc({ state }: { state: RowState }): JSX.Element {
@@ -124,7 +135,9 @@ function StatRow({
       className="flex w-full items-center gap-[8px] px-[12px] pt-[9px] pb-[10px] text-left hairline-t hover:bg-nested"
     >
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className={`text-[15px] tabular-nums ${bad === true ? "text-red-ink" : ""}`}>{value}</span>
+        <span className={`text-[15px] tabular-nums ${bad === true ? "text-red-ink" : ""}`}>
+          {value}
+        </span>
         <span className="text-[12px] text-ink-3">{label}</span>
       </span>
       <Icon name="chevron-right" size={12} className="text-ink-3" />
@@ -151,23 +164,12 @@ function KV({ k, v, link }: { k: string; v: string; link?: boolean }): JSX.Eleme
 }
 
 function monthName(period: string): string {
-  const [y, m] = period.split("-").map(Number) as [number, number];
-  return new Date(Date.UTC(y, m - 1, 15)).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return monthYear(period);
 }
 
 function dateWords(iso: string | null | undefined): string {
   if (iso === null || iso === undefined) return "—";
-  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return date(iso, { now: 0, withYear: true });
 }
 
 export interface CloseOverviewProps {
@@ -181,9 +183,18 @@ export interface CloseOverviewProps {
   onAnswer?: (answer: unknown) => void;
 }
 
-function Rail({ summary, props }: { summary: CloseSummaryOut; props: CloseOverviewProps }): JSX.Element {
+function Rail({
+  summary,
+  props,
+}: {
+  summary: CloseSummaryOut;
+  props: CloseOverviewProps;
+}): JSX.Element {
   const open = (t: string): void => props.onOpen?.(t);
-  const pct = summary.accounts_total === 0 ? 0 : Math.round((summary.accounts_reconciled * 100) / summary.accounts_total);
+  const pct =
+    summary.accounts_total === 0
+      ? 0
+      : Math.round((summary.accounts_reconciled * 100) / summary.accounts_total);
   const pastDue = summary.days_past_due ?? null;
   return (
     <aside
@@ -210,19 +221,35 @@ function Rail({ summary, props }: { summary: CloseSummaryOut; props: CloseOvervi
           sections={[statusItems(summary, (to) => props.onStatus?.(to))]}
         />
       </div>
-      <StatRow value={String(summary.open_issues)} label={OVERVIEW.stats.openIssues} onOpen={() => open("CLS-06")} />
-      <StatRow value={String(summary.documents_in_binder)} label={OVERVIEW.stats.documents} onOpen={() => open("CLS-03")} />
+      <StatRow
+        value={String(summary.open_issues)}
+        label={OVERVIEW.stats.openIssues}
+        onOpen={() => {
+          open("CLS-06");
+        }}
+      />
+      <StatRow
+        value={String(summary.documents_in_binder)}
+        label={OVERVIEW.stats.documents}
+        onOpen={() => {
+          open("CLS-03");
+        }}
+      />
       <StatRow
         value={`${String(pct)}% (${String(summary.accounts_reconciled)} / ${String(summary.accounts_total)})`}
         label={OVERVIEW.stats.reconciled}
-        onOpen={() => open("CLS-04")}
+        onOpen={() => {
+          open("CLS-04");
+        }}
       />
       {pastDue !== null && pastDue > 0 ? (
         <StatRow
           value={`${String(pastDue)} days`}
           label={`${OVERVIEW.stats.pastDue} (${dateWords(summary.due_on).replace(/, \d{4}$/, "")})`}
           bad
-          onOpen={() => open("HOME-03")}
+          onOpen={() => {
+            open("HOME-03");
+          }}
         />
       ) : (
         <StatRow value={dateWords(summary.due_on)} label={OVERVIEW.stats.due} />
@@ -239,9 +266,17 @@ function Rail({ summary, props }: { summary: CloseSummaryOut; props: CloseOvervi
       <KV k={OVERVIEW.reviewRows.reviewers} v={summary.reviewer?.name ?? "—"} />
       <Band title={OVERVIEW.portal} />
       <KV k={OVERVIEW.portalRows.contact} v={summary.portal.contact_name ?? "—"} />
-      <KV k={OVERVIEW.portalRows.status} v={summary.portal.portal_status === "active" ? "Active" : "Not invited"} link />
+      <KV
+        k={OVERVIEW.portalRows.status}
+        v={summary.portal.portal_status === "active" ? "Active" : "Not invited"}
+        link
+      />
       <KV k={OVERVIEW.portalRows.portal} v={OVERVIEW.portalRows.portalLink} link />
-      <KV k={OVERVIEW.portalRows.requests} v={`${String(summary.portal.requests_pending ?? 0)} pending`} link />
+      <KV
+        k={OVERVIEW.portalRows.requests}
+        v={`${String(summary.portal.requests_pending ?? 0)} pending`}
+        link
+      />
       <KV k={OVERVIEW.portalRows.reminder} v={OVERVIEW.portalRows.reminderLink} link />
     </aside>
   );
@@ -264,21 +299,40 @@ function RunCard({
 }): JSX.Element {
   const pct = run === undefined || run.total === 0 ? 0 : (run.done * 100) / run.total;
   const title =
-    frame === "a" ? OVERVIEW.runningTitle : frame === "b" ? OVERVIEW.completeTitle : OVERVIEW.idleTitle;
+    frame === "a"
+      ? OVERVIEW.runningTitle
+      : frame === "b"
+        ? OVERVIEW.completeTitle
+        : OVERVIEW.idleTitle;
   return (
-    <div data-kit="RunCard" data-frame={frame} className="px-[16px] pt-[14px] pb-[13px] hairline-b">
+    <div
+      data-kit="RunCard"
+      data-frame={frame}
+      className="px-[16px] pt-[14px] pb-[13px] hairline-b"
+    >
       <div className="flex items-start gap-[12px]">
         <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
           <h3 className="text-[15px] font-medium">{title}</h3>
-          {frame === "a" ? <p className="text-[12.5px] text-ink-3">{OVERVIEW.runningSub}</p> : null}
+          {frame === "a" ? (
+            <p className="text-[12.5px] text-ink-3">{OVERVIEW.runningSub}</p>
+          ) : null}
           {frame === "b" && run !== undefined ? (
             <p className="text-[12.5px] text-ink-3">
-              {completeWords(run.total, run.open_issues, run.finished_at ? timeOf(run.finished_at) : "")}
+              {completeWords(
+                run.total,
+                run.open_issues,
+                run.finished_at ? timeOf(run.finished_at) : "",
+              )}
             </p>
           ) : null}
           {frame === "c" ? (
             <p className="text-[12.5px] text-ink-3">
-              {idleWords(ready, 0, summary.portal.requests_pending ?? 0, dateWords(summary.requests_publish_on).replace(/, \d{4}$/, ""))}
+              {idleWords(
+                ready,
+                0,
+                summary.portal.requests_pending ?? 0,
+                dateWords(summary.requests_publish_on).replace(/, \d{4}$/, ""),
+              )}
             </p>
           ) : null}
           {frame === "d" ? (
@@ -314,9 +368,14 @@ function RunCard({
             aria-label={progressWords(run.done, run.total)}
             className="h-[3px] flex-1 rounded-pill bg-chip"
           >
-            <span className="block h-full rounded-pill bg-espresso" style={{ width: `${pct.toFixed(1)}%` }} />
+            <span
+              className="block h-full rounded-pill bg-espresso"
+              style={{ width: `${String(Math.round(pct * 10) / 10)}%` }}
+            />
           </span>
-          {frame === "a" ? <span className="text-ink-4">{minutesAgo(run.started_at, now)}</span> : null}
+          {frame === "a" ? (
+            <span className="text-ink-4">{minutesAgo(run.started_at, now)}</span>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -356,9 +415,20 @@ function Group({
           }`}
         >
           {`${String(done)} of ${String(total)}`}
-          {running ? <Spinner size={10} label="Running" showLabel={false} /> : <Icon name="check" size={12} />}
+          {running ? (
+            <Spinner size={10} label="Running" showLabel={false} />
+          ) : (
+            <Icon name="check" size={12} />
+          )}
         </span>
-        <Button variant="ghost" size="sm" disabled={readOnly || running} onClick={() => onRun("group", group.key)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={readOnly || running}
+          onClick={() => {
+            onRun("group", group.key);
+          }}
+        >
           {OVERVIEW.run}
         </Button>
       </header>
@@ -381,16 +451,29 @@ function Group({
                 <span className="text-[13.5px]">{p.label}</span>
                 {state === "fail" ? (
                   <>
-                    <span className="text-[12.5px] font-medium text-red-ink">{OVERVIEW.failedTitle}</span>
-                    <span className="text-[12.5px] text-ink-2">{p.failure ?? OVERVIEW.failedBody}</span>
+                    <span className="text-[12.5px] font-medium text-red-ink">
+                      {OVERVIEW.failedTitle}
+                    </span>
+                    <span className="text-[12.5px] text-ink-2">
+                      {p.failure ?? OVERVIEW.failedBody}
+                    </span>
                   </>
                 ) : (
-                  <span className="text-[11.5px] text-ink-3">{p.meta ?? (state === "todo" ? OVERVIEW.notStarted : "")}</span>
+                  <span className="text-[11.5px] text-ink-3">
+                    {p.meta ?? (state === "todo" ? OVERVIEW.notStarted : "")}
+                  </span>
                 )}
               </div>
               {state === "fail" ? (
                 <span className="flex gap-[6px]">
-                  <Button variant="secondary" size="sm" disabled={readOnly} onClick={() => onRetry(p)}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={readOnly}
+                    onClick={() => {
+                      onRetry(p);
+                    }}
+                  >
                     {OVERVIEW.retry}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={onViewRun}>
@@ -400,7 +483,13 @@ function Group({
               ) : (
                 <span className="flex gap-[6px]">
                   {(p.open_count ?? 0) > 0 ? (
-                    <Button variant="ghost" size="sm" onClick={() => onViewWork(p)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        onViewWork(p);
+                      }}
+                    >
                       {OVERVIEW.viewWork}
                     </Button>
                   ) : null}
@@ -419,7 +508,8 @@ function idempotencyKey(): string {
 }
 
 export function CloseOverview(props: CloseOverviewProps): JSX.Element {
-  const now = props.now ?? new Date();
+  const clock = useNow();
+  const now = props.now ?? new Date(clock);
   const summary = useQuery(closeSummaryOptions({ path: { close_id: props.closeId } }));
   const runs = useQuery(closeRunsOptions({ path: { close_id: props.closeId } }));
   const newest = runs.data?.items[0]?.run_no;
@@ -450,7 +540,11 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
     });
   };
   return (
-    <div data-screen="CLS-02" data-frame={frame} className="flex min-h-0 flex-1 gap-[10px] p-[10px]">
+    <div
+      data-screen="CLS-02"
+      data-frame={frame}
+      className="flex min-h-0 flex-1 gap-[10px] p-[10px]"
+    >
       <Rail summary={data} props={props} />
       <section
         aria-label={OVERVIEW.canvas}
@@ -469,16 +563,28 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
                   </span>
                 }
                 sections={[
-                  runs.data.items.map(
-                    (r): MenuItem => ({
-                      label: OVERVIEW.historyRun(r.run_no),
-                      checked: r.run_no === runNo,
-                      onSelect: () => setPicked(r.run_no),
-                    }),
-                  ),
+                  runs.data.items.map((r): MenuItem => ({
+                    label: OVERVIEW.historyRun(r.run_no),
+                    checked: r.run_no === runNo,
+                    onSelect: () => {
+                      setPicked(r.run_no);
+                    },
+                  })),
                   [
-                    { label: OVERVIEW.runMenu.all, disabled: frame === "a", onSelect: () => startRun("all") },
-                    { label: OVERVIEW.runMenu.failed, disabled: frame !== "e", onSelect: () => startRun("failed_only") },
+                    {
+                      label: OVERVIEW.runMenu.all,
+                      disabled: frame === "a",
+                      onSelect: () => {
+                        startRun("all");
+                      },
+                    },
+                    {
+                      label: OVERVIEW.runMenu.failed,
+                      disabled: frame !== "e",
+                      onSelect: () => {
+                        startRun("failed_only");
+                      },
+                    },
                   ],
                 ]}
               />
@@ -491,7 +597,9 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
           summary={data}
           ready={runs.data.ready_to_run ?? 0}
           now={now}
-          onRun={() => startRun("all")}
+          onRun={() => {
+            startRun("all");
+          }}
         />
         <div className="min-h-0 flex-1 overflow-y-auto">
           {(current?.groups ?? []).map((g) => (
@@ -499,13 +607,19 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
               key={g.key}
               group={g}
               readOnly={readOnly}
-              onRun={(_, key) => startRun("group", key)}
-              onRetry={(p) =>
+              onRun={(_, key) => {
+                startRun("group", key);
+              }}
+              onRetry={(p) => {
                 retry.mutate({
-                  path: { close_id: props.closeId, run_no: current?.run_no ?? 1, step_id: p.run_step_id },
+                  path: {
+                    close_id: props.closeId,
+                    run_no: current?.run_no ?? 1,
+                    step_id: p.run_step_id,
+                  },
                   headers: { "Idempotency-Key": idempotencyKey() },
-                })
-              }
+                });
+              }}
               onViewRun={() => props.onViewRun?.(current?.run_no ?? 1)}
               onViewWork={() => props.onOpen?.("CLS-06")}
             />
@@ -514,7 +628,7 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
         {frame === "d" ? (
           <div className="mx-[16px] mb-[9px]" data-decision>
             <QuestionCard
-              question={OVERVIEW.decision as unknown as Parameters<typeof QuestionCard>[0]["question"]}
+              question={OVERVIEW.decision}
               onAnswer={(a) => props.onAnswer?.(a)}
               {...(props.onComposer ? { onEscape: props.onComposer } : {})}
             />

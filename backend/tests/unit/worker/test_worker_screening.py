@@ -46,6 +46,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "agents",
         "assurance",  # A-01-T05: a computed gate's `gate.met` derives the phase it opens
         "audit_trail",  # G-02 (S12 lanes): audit exports and the label index
+        "closes",  # C-01-T19, T20: the request publish timer and the close run steps
         "communications",  # SPEC-015: invitation emails
         "connections",
         "engagements",  # P-07-T52: the bulk import's workflow and daily erase (no subscriptions)
@@ -100,6 +101,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "knowledge_document.added",
         "client_invitation.issued",  # SPEC-015
         "portal.sign_in_code_requested",  # P-08-T10: the code is issued at delivery
+        "link_principal.code_requested",  # A-08-T15: a link's code is issued at delivery
+        "close.created",  # C-01-T19: the close's request publish is scheduled
         "staff_invitation.issued",  # SPEC-024 (TASK-041)
         "request_item.classified",  # SPEC-022: automatic retrieval
         "inbox_file.added",  # SPEC-027 (TASK-050): the engagement agent

@@ -8,7 +8,7 @@ flux (CLS-10), so a threshold means the same thing everywhere:
   interest moves 26.8% but only $110,000 against $116,250: within).
 - **Derived lines** (subtotals such as gross profit) are computed from their parts and never
   evaluated on their own; the engine checks each derived line foots to its parts.
-- The change is current − prior; the percentage is change over |prior| to one decimal place,
+- The change is current - prior; the percentage is change over |prior| to one decimal place,
   half-up (none when the prior is zero: the amount leg alone decides).
 
 Money is `Decimal`; no I/O, no clock; `ENGINE_VERSION` and `inputs_hash` make a set reproducible.
@@ -100,12 +100,25 @@ def evaluate(lines: Sequence[FluxLine], thresholds: Thresholds) -> FluxSet:
                 sum((p.current for p in parts), Decimal(0)) == line.current
                 and sum((p.prior for p in parts), Decimal(0)) == line.prior
             )
-            rows.append(FluxRow(line.key, line.label, line.current, line.prior, change, pct, None, True, foots))
+            rows.append(
+                FluxRow(
+                    line.key, line.label, line.current, line.prior, change, pct, None, True, foots
+                )
+            )
             continue
         rows.append(
-            FluxRow(line.key, line.label, line.current, line.prior, change, pct,
-                    classify(change, pct, thresholds), False, True)
-        )  # fmt: skip
+            FluxRow(
+                line.key,
+                line.label,
+                line.current,
+                line.prior,
+                change,
+                pct,
+                classify(change, pct, thresholds),
+                False,
+                True,
+            )
+        )
     evaluated = [r for r in rows if not r.derived]
     over = sum(1 for r in evaluated if r.result == "over")
     return FluxSet(

@@ -2,7 +2,7 @@
 id: TASK-8090
 title: "A-09-T09: S46 protected bundle #2 (group-audit flags, capability, C16 kinds, baselines)"
 spec: SPEC-658
-acceptance_criteria: [A-09 §0, §4.8]
+acceptance_criteria: [AC-0]
 risk_zone: red
 status: in-review
 branch: a09-t09-protected-bundle-2

@@ -2,7 +2,7 @@
 id: TASK-8093
 title: "A-09-T12: Migration 0898_assurance_group"
 spec: SPEC-658
-acceptance_criteria: [AUD-34, AUD-35, POR-23]
+acceptance_criteria: [AC-0]
 risk_zone: amber
 status: in-review
 branch: a09-t12-assurance-group

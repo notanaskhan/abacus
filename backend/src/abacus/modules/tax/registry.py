@@ -755,8 +755,8 @@ _FIDUCIARY_0883: frozenset[str] = frozenset(
         "sixty_five_day_elections",
     }
 )
-TABLES: frozenset[str] = _TABLES_0870 | _FIDUCIARY_0883
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0870 | frozenset(
+_TABLES: frozenset[str] = _TABLES_0870 | _FIDUCIARY_0883
+_INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0870 | frozenset(
     {
         "governing_instruments",
         "instrument_segmentations",
@@ -981,4 +981,120 @@ UPDATE_COLUMNS["instrument_interpretations"] = frozenset(
         "superseded_at",
         "row_version",
     }
+)
+
+# S46: T-07-T22 (0892) estate workpapers.
+TABLES: frozenset[str] = _TABLES | frozenset(
+    {
+        "estate_computations",
+        "estate_deduction_versions",
+        "estate_deductions",
+        "estate_inventory_item_versions",
+        "estate_inventory_items",
+        "estate_profiles",
+        "gift_history_item_versions",
+        "gift_history_items",
+    }
+)
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
+    {
+        "estate_computations",
+        "estate_deduction_versions",
+        "estate_deductions",
+        "estate_inventory_item_versions",
+        "estate_inventory_items",
+        "gift_history_item_versions",
+        "gift_history_items",
+    }
+)
+INSERT_COLUMNS["estate_computations"] = frozenset(
+    {
+        "content_hash",
+        "engagement_id",
+        "engine_name",
+        "engine_version",
+        "inputs_hash",
+        "label",
+        "outputs",
+        "parameter_set",
+        "prior_computation_id",
+        "tenant_id",
+        "version_no",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["estate_deduction_versions"] = frozenset(
+    {
+        "amount",
+        "citation_ids",
+        "deduction_id",
+        "election",
+        "estimated",
+        "reason_sealed",
+        "seq",
+        "set_by_id",
+        "set_by_kind",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["estate_deductions"] = frozenset(
+    {"created_by", "description", "engagement_id", "schedule", "tenant_id", "work_item_id"}
+)
+INSERT_COLUMNS["estate_inventory_item_versions"] = frozenset(
+    {
+        "avd_value",
+        "citation_ids",
+        "dod_value",
+        "item_id",
+        "reason_sealed",
+        "request_item_id",
+        "seq",
+        "set_by_id",
+        "set_by_kind",
+        "status",
+        "support_text",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["estate_inventory_items"] = frozenset(
+    {
+        "basis_rule",
+        "created_by",
+        "description",
+        "engagement_id",
+        "schedule",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["estate_profiles"] = frozenset(
+    {
+        "client_entity_id",
+        "created_by",
+        "date_of_death",
+        "dsue_amount",
+        "dsue_citation_ids",
+        "residence_state",
+        "tenant_id",
+    }
+)
+UPDATE_COLUMNS["estate_profiles"] = frozenset(
+    {"dsue_amount", "dsue_citation_ids", "residence_state", "row_version"}
+)
+INSERT_COLUMNS["gift_history_item_versions"] = frozenset(
+    {
+        "evidence_version_id",
+        "filed_on",
+        "form_709_status",
+        "gift_amount",
+        "gift_id",
+        "reason_sealed",
+        "seq",
+        "set_by_id",
+        "set_by_kind",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["gift_history_items"] = frozenset(
+    {"asset", "client_entity_id", "created_by", "donee_name_sealed", "tenant_id", "year"}
 )

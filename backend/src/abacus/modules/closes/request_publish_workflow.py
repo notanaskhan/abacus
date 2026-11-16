@@ -1,4 +1,5 @@
-"""`RequestPublishWorkflow` (C-01-T19; C-01 §4.5; ADR-090; amber): `close_requests:<tenant>:<close>`.
+"""`RequestPublishWorkflow` (C-01-T19; C-01 §4.5; ADR-090; amber):
+`close_requests:<tenant>:<close>`.
 
 Started when a close is generated. It asks `closes.requests_seconds_until` how long to sleep (the
 BD1 09:00 firm-time instant is computed in the activity, from the practice calendar and the firm's

@@ -2,7 +2,7 @@
 id: TASK-8075
 title: "C-01-T35: CLS-03 Intake states a, a2, a3, b, c, d, e, f, g and h on T9 close-review"
 spec: SPEC-655
-acceptance_criteria: [F2]
+acceptance_criteria: [AC-2]
 risk_zone: green
 status: in-review
 branch: c01-t35-cls03-intake

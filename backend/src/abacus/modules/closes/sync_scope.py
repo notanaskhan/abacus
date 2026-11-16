@@ -1,6 +1,6 @@
 """The closes' ledger sync scope (C-01-T17; C-01 §4.5 `entities_due`).
 
-Registered into `connections.api.register_sync_scope`, so connections never imports closes. An
+Registered into `kernel.sync_scope.register_sync_scope`, so connections never imports closes. An
 entity is in scope while it has an unlocked close for a month that has ended (by the firm's
 business clock); the sync keeps the latest two such months fresh (the close month and the one
 before it, which flux compares against). A Locked close is never re-synced: its snapshot is the
@@ -17,7 +17,7 @@ from sqlalchemy import text
 
 from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.connections.api import SyncScope
+from abacus.kernel.sync_scope import SyncScope
 
 MONTHS_KEPT: Final = 2
 

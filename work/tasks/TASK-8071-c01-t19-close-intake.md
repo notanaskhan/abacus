@@ -2,7 +2,7 @@
 id: TASK-8071
 title: "C-01-T19: Close intake: BD1 RequestPublishWorkflow, incorporation re-run offer, summary VM"
 spec: SPEC-655
-acceptance_criteria: [F2]
+acceptance_criteria: [AC-2]
 risk_zone: amber
 status: in-review
 branch: c01-t19-close-intake

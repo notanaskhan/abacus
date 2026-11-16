@@ -1233,9 +1233,12 @@ async def aje_classification_for(
         await policy_payload(tenant_id, policy, "aje_thresholds")
     )
     return classify_entry(
-        payload, policy, account_class=account_class, amount_usd=amount_usd,
+        payload,
+        policy,
+        account_class=account_class,
+        amount_usd=amount_usd,
         attest_client=attest_client,
-    )  # fmt: skip
+    )
 
 
 async def attribute_sample_size(

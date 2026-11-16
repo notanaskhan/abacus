@@ -2,7 +2,7 @@
 id: TASK-8094
 title: "A-09-T13: Consolidation service in ledger, routes in assurance"
 spec: SPEC-658
-acceptance_criteria: [AC-1.1, AC-1.2, AC-1.3]
+acceptance_criteria: [AC-1, AC-2]
 risk_zone: red
 status: in-review
 branch: a09-t13-consolidation-service

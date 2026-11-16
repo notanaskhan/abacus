@@ -2,7 +2,7 @@
 id: TASK-8070
 title: "C-01-T18: Ledger read API for closes: tree, balances, register, compare, citations (red)"
 spec: SPEC-655
-acceptance_criteria: [F5, F6, F9]
+acceptance_criteria: [AC-5, AC-6, AC-9]
 risk_zone: red
 status: in-review
 branch: c01-t18-ledger-reads

@@ -252,7 +252,7 @@ def item_of(projection: SearchProjection, row: dict[str, object], q: str) -> Sea
             params={
                 str(k): str(v)
                 for k, v in cast(dict[str, object], row["target_params"] or {}).items()
-            },  # type: ignore[call-overload] -- the row's target params are a JSON object
+            },
         ),
         match_ranges=match_ranges(str(row["title"]), q) if q else [],
     )

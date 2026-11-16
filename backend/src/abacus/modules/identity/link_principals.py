@@ -112,10 +112,17 @@ async def mint_link(
             "email_sha256, email_sealed, expires_at, created_by) VALUES (:t, :p, :s, :tok, :e, "
             ":sealed, :x, :u) RETURNING id"
         ),
-        {"t": tenant_id, "p": purpose, "s": subject_id, "tok": sha256(token),
-         "e": _email_key(email), "sealed": await seal(tenant_id, email.strip().encode(), EMAIL_AAD),
-         "x": expires, "u": created_by},
-    )  # fmt: skip
+        {
+            "t": tenant_id,
+            "p": purpose,
+            "s": subject_id,
+            "tok": sha256(token),
+            "e": _email_key(email),
+            "sealed": await seal(tenant_id, email.strip().encode(), EMAIL_AAD),
+            "x": expires,
+            "u": created_by,
+        },
+    )
     tx.record(
         "link_principal.minted",
         target=Target("link_principal", cast(UUID, principal)),
@@ -126,7 +133,10 @@ async def mint_link(
 
 async def revoke_link(tx: UnitOfWork, principal_id: UUID) -> None:
     await tx.session.execute(
-        text("UPDATE link_principals SET revoked_at = clock_timestamp() WHERE id = :i AND revoked_at IS NULL"),
+        text(
+            "UPDATE link_principals SET revoked_at = clock_timestamp() WHERE id = :i AND "
+            "revoked_at IS NULL"
+        ),
         {"i": principal_id},
     )
     tx.record("link_principal.revoked", target=Target("link_principal", principal_id))
@@ -141,14 +151,22 @@ async def resolve_link(token: str) -> LinkPrincipal | None:
     if not token or len(token) > 128:
         return None
     async with platform_transaction(_ACTOR) as conn:
-        row = (await conn.execute(text("SELECT * FROM link_principal_resolve(:t)"), {"t": sha256(token)})).first()
+        row = (
+            await conn.execute(
+                text("SELECT * FROM link_principal_resolve(:t)"), {"t": sha256(token)}
+            )
+        ).first()
     if row is None:
         return None
-    found = LinkPrincipal(row.tenant_id, row.principal_id, row.purpose, row.subject_id, bool(row.verified))
+    found = LinkPrincipal(
+        row.tenant_id, row.principal_id, row.purpose, row.subject_id, bool(row.verified)
+    )
     if await control_active(CONTROL, found.tenant_id):
         return None
     live = _PURPOSES.get(found.purpose)
-    if live is None or not await live(TenantContext(found.tenant_id, "system", _ACTOR), found.subject_id):
+    if live is None or not await live(
+        TenantContext(found.tenant_id, "system", _ACTOR), found.subject_id
+    ):
         return None
     return found
 
@@ -166,7 +184,12 @@ async def request_code(token: str, email: str) -> None:
         row = (
             await conn.execute(
                 text("SELECT * FROM link_principal_challenge(:t, :e, :c, :r)"),
-                {"t": sha256(token), "e": _email_key(email), "c": CODE_SECONDS, "r": RESEND_SECONDS},
+                {
+                    "t": sha256(token),
+                    "e": _email_key(email),
+                    "c": CODE_SECONDS,
+                    "r": RESEND_SECONDS,
+                },
             )
         ).first()
     if row is None:
@@ -174,7 +197,9 @@ async def request_code(token: str, email: str) -> None:
     tenant = TenantContext(found.tenant_id, "system", _ACTOR)
     async with uow(tenant) as tx:
         tx.emit(LinkCodeRequested(challenge_id=row.challenge_id, principal_id=found.principal_id))
-        tx.record("link_principal.code_requested", target=Target("link_principal", found.principal_id))
+        tx.record(
+            "link_principal.code_requested", target=Target("link_principal", found.principal_id)
+        )
 
 
 @dataclass(frozen=True)
@@ -198,7 +223,9 @@ async def issue_link_code(challenge_id: UUID) -> IssuedLinkCode | None:
         ).first()
     if row is None:
         return None
-    return IssuedLinkCode(row.tenant_id, row.principal_id, code.code, row.code_expires_at, bytes(row.email_sealed))
+    return IssuedLinkCode(
+        row.tenant_id, row.principal_id, code.code, row.code_expires_at, bytes(row.email_sealed)
+    )
 
 
 @dataclass(frozen=True)
@@ -232,10 +259,15 @@ async def verify_code(token: str, code: str) -> Verified | None:
         minted = (
             await conn.execute(
                 text("SELECT * FROM link_principal_credential(:p, :c, :cred, :csrf, :s)"),
-                {"p": row.principal_id, "c": row.challenge_id, "cred": sha256(credential),
-                 "csrf": sha256(csrf), "s": CREDENTIAL_SECONDS},
+                {
+                    "p": row.principal_id,
+                    "c": row.challenge_id,
+                    "cred": sha256(credential),
+                    "csrf": sha256(csrf),
+                    "s": CREDENTIAL_SECONDS,
+                },
             )
-        ).first()  # fmt: skip
+        ).first()
     if minted is None:
         return None
     tenant = TenantContext(row.tenant_id, "system", _ACTOR)

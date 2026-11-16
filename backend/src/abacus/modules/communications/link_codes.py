@@ -1,7 +1,8 @@
 """The link principal's email code (A-08-T15; ADR-146; the ADR-152 amendment).
 
 Identity's `link_principal.code_requested` names a challenge only. Here the code is issued at
-delivery (`issue_link_code`, so it is never stored) and sent to the address the link was minted for,
+delivery (`issue_link_code`, so it is never stored) and sent to the address the link was minted
+for,
 in the firm's name, from the published C16 template `confirmation.respond_code` (imported per
 environment, never in code), filled only with the code, the firm's name and the minutes it lasts.
 Without the template nothing is sent and the miss is logged by challenge id.
@@ -39,7 +40,11 @@ async def deliver_link_code(event: OutboxEvent) -> None:
     rendered = render(version, {k: values.get(k, "") for k in version.variables})
     message_id = uuid4()
     sent = await send_email(
-        tenant_id=issued.tenant_id, message_id=message_id, to=address,
-        subject=rendered.subject, body=rendered.body_text, sender_name=firm,
-    )  # fmt: skip
+        tenant_id=issued.tenant_id,
+        message_id=message_id,
+        to=address,
+        subject=rendered.subject,
+        body=rendered.body_text,
+        sender_name=firm,
+    )
     _log.info("link_code.sent", challenge_id=challenge_id, message_id=message_id, sent=sent)

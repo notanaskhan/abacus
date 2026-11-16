@@ -74,6 +74,8 @@ export interface AUD31Props {
   onOpenTb?: () => void;
   /** The cockpit's Source Docs (AUD-03). */
   onSourceDocs?: () => void;
+  /** A group audit's mapping (A-09): the consolidation its confirmed toast opens (AUD-33). */
+  consolidation?: { workItemId: string; consolidationId: string } | undefined;
   height?: number;
 }
 
@@ -221,6 +223,7 @@ export function AUD31({
   onCockpit,
   onOpenTb,
   onSourceDocs,
+  consolidation,
   height,
 }: AUD31Props): JSX.Element {
   const on = useFlag("ledger.tb_mapping") === true;
@@ -615,7 +618,20 @@ export function AUD31({
               {
                 onSuccess: () => {
                   setJustConfirmed(true);
-                  toast.show({ kind: "success", text: COPY.toasts.confirmed });
+                  toast.show({
+                    kind: "success",
+                    text: COPY.toasts.confirmed,
+                    ...(consolidation === undefined
+                      ? {}
+                      : {
+                          action: COPY.toasts.view,
+                          onAction: () => {
+                            openOverlay(
+                              ov.AUD33(consolidation.workItemId, consolidation.consolidationId),
+                            );
+                          },
+                        }),
+                  });
                 },
                 onError: () => toast.show({ kind: "error", text: COPY.toasts.failed }),
               },

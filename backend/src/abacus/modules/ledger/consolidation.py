@@ -325,10 +325,19 @@ async def create_consolidation(
             "source_connection_id, created_by) VALUES (:id, :t, :e, :w, :n, :y, 'USD', :ip, "
             ":pp, :sc, :u)"
         ),
-        {"id": consolidation_id, "t": tenant_id, "e": engagement_id, "w": work_item_id,
-         "n": name.strip(), "y": year_end, "ip": interim_period_end, "pp": prior_period_end,
-         "sc": source_connection_id, "u": user_id},
-    )  # fmt: skip
+        {
+            "id": consolidation_id,
+            "t": tenant_id,
+            "e": engagement_id,
+            "w": work_item_id,
+            "n": name.strip(),
+            "y": year_end,
+            "ip": interim_period_end,
+            "pp": prior_period_end,
+            "sc": source_connection_id,
+            "u": user_id,
+        },
+    )
     tx.record(
         "consolidation.created",
         target=Target(TARGET, consolidation_id),
@@ -337,16 +346,27 @@ async def create_consolidation(
     return consolidation_id
 
 
+_BUMPS: Final = {
+    "edit": text(
+        "UPDATE consolidations SET name = :n, year_end = :y, interim_period_end = :ip, "
+        "prior_period_end = :pp, source_connection_id = :sc, row_version = row_version + 1 "
+        "WHERE id = :i AND row_version = :v AND status = 'draft' RETURNING id"
+    ),
+    "discard": text(
+        "UPDATE consolidations SET status = 'discarded', row_version = row_version + 1 "
+        "WHERE id = :i AND row_version = :v AND status = 'draft' RETURNING id"
+    ),
+    "touch": text(
+        "UPDATE consolidations SET row_version = row_version + 1 "
+        "WHERE id = :i AND row_version = :v AND status = 'draft' RETURNING id"
+    ),
+}
+
+
 async def _bump(
-    tx: UnitOfWork, consolidation_id: UUID, seen: int, sets: str, values: dict[str, object]
+    tx: UnitOfWork, consolidation_id: UUID, seen: int, kind: str, values: dict[str, object]
 ) -> None:
-    done = await tx.session.execute(
-        text(
-            f"UPDATE consolidations SET {sets}, row_version = row_version + 1 "  # noqa: S608 - fixed
-            "WHERE id = :i AND row_version = :v AND status = 'draft' RETURNING id"
-        ),
-        {"i": consolidation_id, "v": seen, **values},
-    )
+    done = await tx.session.execute(_BUMPS[kind], {"i": consolidation_id, "v": seen, **values})
     if done.first() is None:
         current = (await tx.session.execute(_GET, {"i": consolidation_id})).first()
         if current is None:
@@ -368,12 +388,18 @@ async def edit_consolidation(
     source_connection_id: UUID | None,
 ) -> None:
     await _bump(
-        tx, consolidation_id, seen,
-        "name = :n, year_end = :y, interim_period_end = :ip, prior_period_end = :pp, "
-        "source_connection_id = :sc",
-        {"n": name.strip(), "y": year_end, "ip": interim_period_end, "pp": prior_period_end,
-         "sc": source_connection_id},
-    )  # fmt: skip
+        tx,
+        consolidation_id,
+        seen,
+        "edit",
+        {
+            "n": name.strip(),
+            "y": year_end,
+            "ip": interim_period_end,
+            "pp": prior_period_end,
+            "sc": source_connection_id,
+        },
+    )
     tx.record("consolidation.edited", target=Target(TARGET, consolidation_id))
 
 
@@ -381,7 +407,7 @@ async def discard_consolidation(tx: UnitOfWork, consolidation_id: UUID) -> None:
     current = (await tx.session.execute(_GET, {"i": consolidation_id})).first()
     if current is None:
         raise NotFound("consolidation")
-    await _bump(tx, consolidation_id, int(current.row_version), "status = 'discarded'", {})
+    await _bump(tx, consolidation_id, int(current.row_version), "discard", {})
     tx.record("consolidation.discarded", target=Target(TARGET, consolidation_id))
 
 
@@ -396,7 +422,7 @@ async def save_structure(
     """Replace the draft structure: entities kept are updated in place (their TB slots stay),
     new ones inserted, dropped ones deleted (refused once a TB is attached to one)."""
     check_structure(entities)
-    await _bump(tx, consolidation_id, seen, "name = name", {})
+    await _bump(tx, consolidation_id, seen, "touch", {})
     existing = {
         r.client_entity_id: r.id
         for r in await tx.session.execute(
@@ -430,8 +456,13 @@ async def save_structure(
     for e in sorted(entities, key=lambda x: x.level):
         position = order[e.client_entity_id]
         parent = None if e.parent_client_entity_id is None else ids[e.parent_client_entity_id]
-        values = {"p": parent, "l": e.level, "c": e.city, "a": e.component_auditor_id,
-                  "pos": position}  # fmt: skip
+        values = {
+            "p": parent,
+            "l": e.level,
+            "c": e.city,
+            "a": e.component_auditor_id,
+            "pos": position,
+        }
         if e.client_entity_id in existing:
             await tx.session.execute(
                 text(
@@ -448,9 +479,14 @@ async def save_structure(
                     "client_entity_id, parent_id, level, city, component_auditor_id, position) "
                     "VALUES (:id, :t, :cid, :e, :p, :l, :c, :a, :pos)"
                 ),
-                {**values, "id": new_id, "t": tenant_id, "cid": consolidation_id,
-                 "e": e.client_entity_id},
-            )  # fmt: skip
+                {
+                    **values,
+                    "id": new_id,
+                    "t": tenant_id,
+                    "cid": consolidation_id,
+                    "e": e.client_entity_id,
+                },
+            )
             ids[e.client_entity_id] = new_id
     tx.record(
         "consolidation.structure_saved",
@@ -488,10 +524,22 @@ async def _replace_slot(
             "evidence_version_id, not_needed_reason, attached_by) VALUES (:id, :t, :e, :l, :k, "
             ":ps, :pe, :s, :st, :src, :ev, :r, :u)"
         ),
-        {"id": new_id, "t": tenant_id, "e": key.consolidation_entity_id, "l": key.label,
-         "k": key.period_kind, "ps": key.period_start, "pe": key.period_end, "s": snapshot_id,
-         "st": state, "src": source, "ev": evidence_version_id, "r": reason, "u": user_id},
-    )  # fmt: skip
+        {
+            "id": new_id,
+            "t": tenant_id,
+            "e": key.consolidation_entity_id,
+            "l": key.label,
+            "k": key.period_kind,
+            "ps": key.period_start,
+            "pe": key.period_end,
+            "s": snapshot_id,
+            "st": state,
+            "src": source,
+            "ev": evidence_version_id,
+            "r": reason,
+            "u": user_id,
+        },
+    )
     return new_id
 
 
@@ -516,13 +564,20 @@ async def attach_trial_balance(
 ) -> UUID:
     await _require_draft(tx, consolidation_id)
     slot_id = await _replace_slot(
-        tx, tenant_id=tenant_id, key=key, state="attached", snapshot_id=snapshot_id,
-        source=source, evidence_version_id=evidence_version_id, reason=None, user_id=user_id,
-    )  # fmt: skip
+        tx,
+        tenant_id=tenant_id,
+        key=key,
+        state="attached",
+        snapshot_id=snapshot_id,
+        source=source,
+        evidence_version_id=evidence_version_id,
+        reason=None,
+        user_id=user_id,
+    )
     tx.record(
         "consolidation.trial_balance_attached",
         target=Target(TARGET, consolidation_id),
-        after=Ref(slot=slot_id, snapshot=snapshot_id, source=source),
+        after=Ref(slot=slot_id, snapshot=snapshot_id),  # the source is on the slot row
     )
     return slot_id
 
@@ -538,9 +593,16 @@ async def mark_not_needed(
 ) -> UUID:
     await _require_draft(tx, consolidation_id)
     slot_id = await _replace_slot(
-        tx, tenant_id=tenant_id, key=key, state="not_needed", snapshot_id=None, source=None,
-        evidence_version_id=None, reason=reason.strip(), user_id=user_id,
-    )  # fmt: skip
+        tx,
+        tenant_id=tenant_id,
+        key=key,
+        state="not_needed",
+        snapshot_id=None,
+        source=None,
+        evidence_version_id=None,
+        reason=reason.strip(),
+        user_id=user_id,
+    )
     tx.record(
         "consolidation.trial_balance_not_needed",
         target=Target(TARGET, consolidation_id),
@@ -598,9 +660,10 @@ async def finalize(
     )
     by_entity = {e.id: e.client_entity_id for e in facts.entities}
     current = [
-        s for s in facts.slots
+        s
+        for s in facts.slots
         if s.key.period_kind == "current" and s.state == "attached" and s.ledger_snapshot_id
-    ]  # fmt: skip
+    ]
     return Finalized(
         tuple(
             (

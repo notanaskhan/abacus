@@ -45,7 +45,9 @@ class JeDrawn:
 
 def parameters_of(version: Mapping[str, Any]) -> dict[str, Any]:  # Any: stored JSON
     raw = version["parameters"]
-    return cast(dict[str, Any], raw if isinstance(raw, dict) else json.loads(str(raw)))
+    if isinstance(raw, dict):
+        return cast(dict[str, Any], raw)  # Any: stored JSON
+    return cast(dict[str, Any], json.loads(str(raw)))  # Any: stored JSON
 
 
 async def je_items(

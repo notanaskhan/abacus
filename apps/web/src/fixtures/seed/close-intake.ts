@@ -17,9 +17,18 @@ export const SQUARE_VERSION = stableId("evidence-version:copperleaf:square-2026-
 export const AMEX_VERSION = stableId("evidence-version:copperleaf:amex-2026-08");
 export const SQUARE_FILE = "square-2026-08-01_2026-08-31-payouts.xlsx";
 
-type Req = [key: string, title: string, sub: string, status: NonNullable<RequestNodeOut["status"]>, due?: string];
+type Req = [
+  key: string,
+  title: string,
+  sub: string,
+  status: NonNullable<RequestNodeOut["status"]>,
+  due?: string,
+];
 
-function req([key, title, , status, due]: Req, extra: Partial<RequestNodeOut> = {}): RequestNodeOut {
+function req(
+  [key, title, , status, due]: Req,
+  extra: Partial<RequestNodeOut> = {},
+): RequestNodeOut {
   const received = status !== "requested";
   const node: RequestNodeOut = {
     node_id: `r:${key}`,
@@ -38,7 +47,7 @@ function req([key, title, , status, due]: Req, extra: Partial<RequestNodeOut> = 
     due_on: due ?? null,
     children: [],
   };
-  return { ...node, ...extra } as RequestNodeOut;
+  return { ...node, ...extra };
 }
 
 /** The sub-line each row shows (handoff A's tree). */
@@ -103,7 +112,9 @@ export function copperleafRequestTree(state: "a" | "b" | "g" = "a"): RequestTree
           req(ROWS.shopify as Req),
           req(ROWS.savings as Req),
         ]),
-        category("bank/cards", "Credit card statements", [state === "g" ? amex : req(ROWS.amex as Req)]),
+        category("bank/cards", "Credit card statements", [
+          state === "g" ? amex : req(ROWS.amex as Req),
+        ]),
       ]),
       category("revenue", "Revenue", [req(ROWS.subscriptions as Req)]),
       category("payroll", "Payroll", [req(ROWS.payroll as Req)]),
@@ -152,7 +163,14 @@ const SQUARE_ROWS: readonly (readonly string[])[] = [
   ["2026-08-31", "08-28 → 08-30", "462", "6,563.51", "151.11", "6,412.40"],
   ["Total", "", "5,143", "73,166.90", "1,684.54", "71,482.36"],
 ];
-export const SQUARE_HEADER = ["Transfer date", "Sales period", "Transactions", "Gross", "Fees", "Net"];
+export const SQUARE_HEADER = [
+  "Transfer date",
+  "Sales period",
+  "Transactions",
+  "Gross",
+  "Fees",
+  "Net",
+];
 
 export function squarePayoutText(): ViewerTextOut {
   return {
@@ -175,10 +193,30 @@ export function squareSummary(agentOn = true): IntakeSummaryOut {
     evidence_version_id: SQUARE_VERSION,
     label: agentOn ? "summarized_by_agent" : "totals_from_file",
     figures: [
-      { key: "transactions", label: "Transactions", count: 5143, citation_id: stableId("cite:square:C23") },
-      { key: "gross", label: "Gross sales", amount: "73166.90", citation_id: stableId("cite:square:D23") },
-      { key: "fees", label: "Processing fees", amount: "1684.54", citation_id: stableId("cite:square:E23") },
-      { key: "net", label: "Net to bank", amount: "71482.36", citation_id: stableId("cite:square:F23") },
+      {
+        key: "transactions",
+        label: "Transactions",
+        count: 5143,
+        citation_id: stableId("cite:square:C23"),
+      },
+      {
+        key: "gross",
+        label: "Gross sales",
+        amount: "73166.90",
+        citation_id: stableId("cite:square:D23"),
+      },
+      {
+        key: "fees",
+        label: "Processing fees",
+        amount: "1684.54",
+        citation_id: stableId("cite:square:E23"),
+      },
+      {
+        key: "net",
+        label: "Net to bank",
+        amount: "71482.36",
+        citation_id: stableId("cite:square:F23"),
+      },
     ],
     paragraph: agentOn
       ? "The spreadsheet lists 21 Square transfers to Front Range Bank ••4410 dated Aug 3 to Aug 31, 2026, covering card sales from Jul 31 to Aug 30. For each transfer it shows the sales period, transaction count, gross sales, processing fees and the net amount sent to the bank: 5,143 transactions, gross $73,166.90 and fees $1,684.54, with total net $71,482.36."
@@ -193,11 +231,31 @@ export function augustQuestionnaire(): CloseQuestionnaireOut {
     answered: 4,
     total: 5,
     items: [
-      { question: "Did Copperleaf open or close any bank, card or loan accounts in August?", answer: "No", answered_by: ben },
-      { question: "Did you buy equipment or make improvements over $2,500?", answer: null, answered_by: null },
-      { question: "Any owner distributions outside payroll?", answer: "Yes — $12,000 to Tess Moreno on Aug 31", answered_by: ben },
-      { question: "Any customer refunds or disputes open at month end?", answer: "No", answered_by: ben },
-      { question: "New vendors paid $2,000 or more without a W-9?", answer: "Mile High Window Cleaning (W-9 requested)", answered_by: ben },
+      {
+        question: "Did Copperleaf open or close any bank, card or loan accounts in August?",
+        answer: "No",
+        answered_by: ben,
+      },
+      {
+        question: "Did you buy equipment or make improvements over $2,500?",
+        answer: null,
+        answered_by: null,
+      },
+      {
+        question: "Any owner distributions outside payroll?",
+        answer: "Yes — $12,000 to Tess Moreno on Aug 31",
+        answered_by: ben,
+      },
+      {
+        question: "Any customer refunds or disputes open at month end?",
+        answer: "No",
+        answered_by: ben,
+      },
+      {
+        question: "New vendors paid $2,000 or more without a W-9?",
+        answer: "Mile High Window Cleaning (W-9 requested)",
+        answered_by: ben,
+      },
     ],
   };
 }

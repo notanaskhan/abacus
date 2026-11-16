@@ -12,13 +12,10 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
+from abacus.kernel.connection_coverage import EntityAlreadyCovered
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, uow
-
-
-class EntityAlreadyCovered(DomainConflict):
-    code = "entity_already_covered"
 
 
 async def covers(tenant: TenantContext, connection_id: UUID, client_entity_id: UUID) -> bool:

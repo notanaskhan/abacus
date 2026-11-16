@@ -19,7 +19,7 @@ export function useInstrument(returnId: string) {
     retry: false,
     // T-07-T21: while the reader runs, the read model is invalidated over C6 v2 SSE; this poll is
     // the fallback when the stream is down (every 3 s, only while a progress line shows).
-    refetchInterval: (q) => (q.state.data?.reader?.progress_label ? 3000 : false),
+    refetchInterval: (q) => (q.state.data?.reader.progress_label ? 3000 : false),
   });
 }
 

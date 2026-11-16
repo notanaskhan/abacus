@@ -807,3 +807,8 @@ __all__ = [
     "register",
     "reopen",
 ]
+
+
+# Public names for the trust and estate services (T-07-T16, T22).
+return_of = _return
+authorised_on = _authorised

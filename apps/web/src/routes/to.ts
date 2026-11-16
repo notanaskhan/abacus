@@ -105,4 +105,16 @@ export const ov = {
   /** SIG-02, the envelope builder over its host (`?ov=envelope:<envelopeId>`; N-02-T37: ENG-04's
    * Send opens the C7 draft it created, prefilled). */
   SIG02: (envelopeId: string): OverlayRef => ({ key: "envelope", args: [envelopeId] }),
+  /** AUD-33, the consolidated TB over its host (`?ov=consolidated-tb:<workItemId>:<consolidationId>`;
+   * A-09-T15: AUD-31's and AUD-32's success toasts open it). */
+  AUD33: (workItemId: string, consolidationId: string): OverlayRef => ({
+    key: "consolidated-tb",
+    args: [workItemId, consolidationId],
+  }),
+  /** SHL-09, one field's provenance tray as a drawer (`?ov=provenance:<type>:<id>:<fieldKey>`;
+   * AUD-33's ⓘ on a consolidated line). */
+  SHL09: (type: string, id: string, fieldKey: string): OverlayRef => ({
+    key: "provenance",
+    args: [type, id, fieldKey],
+  }),
 } as const;

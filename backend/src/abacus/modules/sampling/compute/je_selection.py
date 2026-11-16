@@ -42,7 +42,7 @@ class Pick:
 
 
 @dataclass(frozen=True)
-class Selection:
+class ScoreDraw:
     picks: tuple[Pick, ...]
     by_score: int
     unpredictable: int
@@ -92,7 +92,7 @@ def select(
     top_n: int | None,
     unpredictable_n: int,
     seed: int,
-) -> Selection:
+) -> ScoreDraw:
     """The by-score part, then the seeded unpredictable picks from what it left out."""
     if score_min is None and top_n is None:
         raise SelectionInvalid("score_min_or_top_n")
@@ -115,7 +115,7 @@ def select(
         Pick(len(first) + i + 1, rest[j].entry_ref, "unpredictable", rest[j].score)
         for i, j in enumerate(drawn)
     ]
-    return Selection(
+    return ScoreDraw(
         picks=tuple(picks),
         by_score=len(first),
         unpredictable=len(drawn),

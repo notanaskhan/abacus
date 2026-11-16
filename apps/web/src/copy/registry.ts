@@ -42,6 +42,8 @@ export function surfaceOf(id: string): CopySurface {
 const CLOSE_TASK_KEYS: Readonly<Record<string, readonly string[]>> = {
   // ADM-04 gate row 2: "Draft a return, workpaper or close task" (handoff spec.md, gates table).
   "ADM-04": ["COPY.rows.2"],
+  // CLS-03 b: "Re-run affected tasks" after an incorporation (SPEC-655, C-01 T19 acceptance).
+  "CLS-03": ["COPY.rerunAffected"],
 };
 
 function rulesFor(id: string, rules: Partial<CopyRules> | undefined): CopyRules {

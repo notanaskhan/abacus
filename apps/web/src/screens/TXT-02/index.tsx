@@ -30,7 +30,10 @@ export function instrumentLink(returnId: string): ReturnType<typeof to.TXT01> {
   return to.TXT01({ returnId });
 }
 
-function childrenOf(nodes: readonly FiduciaryTreeNodeOut[], parent: string | null): FiduciaryTreeNodeOut[] {
+function childrenOf(
+  nodes: readonly FiduciaryTreeNodeOut[],
+  parent: string | null,
+): FiduciaryTreeNodeOut[] {
   return nodes.filter((n) => (n.parent_key ?? null) === parent);
 }
 
@@ -55,13 +58,16 @@ function Row({
   const kids = childrenOf(nodes, node.key);
   const isOpen = open.has(node.key);
   const muted = node.key === "dni";
-  const deep = props.row !== undefined && (props.row === node.key || props.row === node.key.replace(/^dni\./, "dni"));
+  const deep =
+    props.row !== undefined &&
+    (props.row === node.key || props.row === node.key.replace(/^dni\./, "dni"));
   return (
     <li data-row={node.key} data-level={node.level}>
       <div
         data-highlighted={node.highlighted || deep ? "true" : undefined}
         ref={(el) => {
-          if (deep && el) el.scrollIntoView?.({ block: "center" });
+          // Partial: jsdom has no scrollIntoView (the ADM-03 pattern).
+          if (deep && el) (el as Partial<HTMLElement>).scrollIntoView?.({ block: "center" });
         }}
         style={{ paddingLeft: 21 + node.level * 31 }}
         className={`flex min-h-[34px] items-center gap-[8px] pr-[16px] text-[13.5px] ${
@@ -73,7 +79,9 @@ function Row({
             type="button"
             aria-expanded={isOpen}
             aria-label={node.label}
-            onClick={() => toggle(node.key)}
+            onClick={() => {
+              toggle(node.key);
+            }}
             className="flex size-[16px] items-center justify-center"
           >
             <Icon
@@ -85,17 +93,26 @@ function Row({
         ) : (
           <span className="size-[16px]" />
         )}
-        <button type="button" onClick={() => props.onRow?.(node.key)} className="min-w-0 flex-1 text-left">
+        <button
+          type="button"
+          onClick={() => props.onRow?.(node.key)}
+          className="min-w-0 flex-1 text-left"
+        >
           {node.label}
         </button>
         {node.changed ? (
-          <span data-changed className="rounded-pill bg-amber-tint px-[6px] text-[10.5px] text-amber-ink">
+          <span
+            data-changed
+            className="rounded-pill bg-amber-tint px-[6px] text-[10.5px] text-amber-ink"
+          >
             {COPY.changed}
           </span>
         ) : null}
-        {node.box_label ? <span className="w-[63px] text-right text-[12px] text-ink-3">{node.box_label}</span> : null}
+        {node.box_label ? (
+          <span className="w-[63px] text-right text-[12px] text-ink-3">{node.box_label}</span>
+        ) : null}
         <span className="w-[140px] text-right tabular-nums">
-          {node.changed && node.prior_value !== null && node.prior_value !== undefined ? (
+          {node.changed && node.prior_value !== null ? (
             <s data-prior className="mr-[8px] text-ink-4">
               {amountWords(node.prior_value)}
             </s>
@@ -103,13 +120,13 @@ function Row({
           {amountWords(node.value)}
         </span>
         <span className="flex w-[60px] gap-[4px]">
-          {(node.clause_labels ?? []).map((c) => (
+          {node.clause_labels.map((c) => (
             <button
               key={c}
               type="button"
               data-clause={c}
               onClick={() => props.onClause?.(c)}
-              className="h-[19px] rounded-pill bg-chip px-[6px] text-[10.5px] font-medium hover:text-purple"
+              className="h-[19px] rounded-pill bg-chip px-[6px] text-[10.5px] font-medium hover:text-match-ink"
             >
               {c}
             </button>
@@ -134,12 +151,19 @@ function Row({
 
 function Tally({ data }: { data: FiduciaryComputationOut }): JSX.Element {
   return (
-    <div data-kit="TallyStrip" className="flex h-[52px] items-center gap-[20px] px-[16px] hairline-b">
+    <div
+      data-kit="TallyStrip"
+      className="flex h-[52px] items-center gap-[20px] px-[16px] hairline-b"
+    >
       {data.tallies.map((t) => (
         <span key={t.key} data-tally={t.key} className="flex flex-col">
           <span className="text-[10.5px] uppercase tracking-wide text-ink-3">{t.label}</span>
           <span className="text-[14px] tabular-nums">
-            {t.state === "tie" ? <span className="rounded-pill bg-green-tint px-[6px] text-[11.5px]">tie</span> : amountWords(t.value)}
+            {t.state === "tie" ? (
+              <span className="rounded-pill bg-green-tint px-[6px] text-[11.5px]">tie</span>
+            ) : (
+              amountWords(t.value)
+            )}
           </span>
         </span>
       ))}
@@ -161,7 +185,12 @@ export function TXT02(props: TXT02Props): JSX.Element {
   const nodes = query.data?.nodes ?? [];
   const [open, setOpen] = useState<Set<string> | null>(null);
   const opened =
-    open ?? new Set(props.initial?.collapsed === true ? [] : nodes.filter((n) => n.key !== "theo_k1").map((n) => n.key));
+    open ??
+    new Set(
+      props.initial?.collapsed === true
+        ? []
+        : nodes.filter((n) => n.key !== "theo_k1").map((n) => n.key),
+    );
   const toggle = (key: string): void => {
     const next = new Set(opened);
     if (next.has(key)) next.delete(key);
@@ -170,41 +199,61 @@ export function TXT02(props: TXT02Props): JSX.Element {
   };
   if (query.isPending) {
     return (
-      <div data-screen="TXT-02" data-state="loading" className="flex flex-1 items-center justify-center">
+      <div
+        data-screen="TXT-02"
+        data-state="loading"
+        className="flex flex-1 items-center justify-center"
+      >
         <Skeleton className="h-[9px] w-[320px]" />
       </div>
     );
   }
   if (query.isError) {
     const status = (query.error as { status?: number } | null)?.status;
-    const code = (query.error as { code?: string; detail?: { code?: string } } | null);
+    const code = query.error as { code?: string; detail?: { code?: string } } | null;
     const waiting = status === 409 || code?.code === "interpretation_not_approved";
     return waiting ? (
       <div data-screen="TXT-02" data-state="f1" className="flex flex-1 flex-col">
-        <div className="flex h-[52px] items-center gap-[20px] px-[16px] text-ink-4 hairline-b">— · — · —</div>
+        <div className="flex h-[52px] items-center gap-[20px] px-[16px] text-ink-4 hairline-b">
+          — · — · —
+        </div>
         <EmptyState icon="scale" title={COPY.waiting} />
       </div>
     ) : (
-      <div data-screen="TXT-02" data-state="error" className="flex flex-1 items-center justify-center">
+      <div
+        data-screen="TXT-02"
+        data-state="error"
+        className="flex flex-1 items-center justify-center"
+      >
         <ErrorState title={COPY.error} />
       </div>
     );
   }
   const data = query.data;
   return (
-    <div data-screen="TXT-02" data-version={data.version_no} className="flex min-h-0 flex-1 flex-col">
+    <div
+      data-screen="TXT-02"
+      data-version={data.version_no}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <Tally data={data} />
       <section className="m-[10px] flex min-h-0 flex-1 flex-col rounded-pane bg-card shadow-e2">
         <header className="flex h-[46px] items-center gap-[10px] px-[14px] hairline-b">
           <span className="flex-1 text-[14px] font-medium">{COPY.header}</span>
-          <span role="radiogroup" aria-label={COPY.calculation} className="flex rounded-pill bg-nested p-[2px] text-[12.5px]">
+          <span
+            role="radiogroup"
+            aria-label={COPY.calculation}
+            className="flex rounded-pill bg-nested p-[2px] text-[12.5px]"
+          >
             {(["tree", "character"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
                 role="radio"
                 aria-checked={view === v}
-                onClick={() => setView(v)}
+                onClick={() => {
+                  setView(v);
+                }}
                 className={`rounded-pill px-[10px] py-[2px] ${view === v ? "bg-card font-medium shadow-e1" : ""}`}
               >
                 {v === "tree" ? COPY.calculation : COPY.byCharacter}
@@ -227,11 +276,21 @@ export function TXT02(props: TXT02Props): JSX.Element {
           {view === "tree" ? (
             <ul aria-label={COPY.header}>
               {topRows(nodes).map((n) => (
-                <Row key={n.key} node={n} nodes={nodes} open={opened} toggle={toggle} props={props} />
+                <Row
+                  key={n.key}
+                  node={n}
+                  nodes={nodes}
+                  open={opened}
+                  toggle={toggle}
+                  props={props}
+                />
               ))}
             </ul>
           ) : (
-            <table data-by-character className="mx-[16px] w-[calc(100%-32px)] text-[13px] tabular-nums">
+            <table
+              data-by-character
+              className="mx-[16px] w-[calc(100%-32px)] text-[13px] tabular-nums"
+            >
               <thead>
                 <tr className="text-ink-3">
                   <th className="py-[6px] text-left font-normal">{COPY.columns.character}</th>
@@ -245,7 +304,11 @@ export function TXT02(props: TXT02Props): JSX.Element {
               </thead>
               <tbody>
                 {data.by_character.map((r) => (
-                  <tr key={r.kind} data-character={r.kind} className={`hairline-t ${r.kind === "total" ? "font-medium" : ""}`}>
+                  <tr
+                    key={r.kind}
+                    data-character={r.kind}
+                    className={`hairline-t ${r.kind === "total" ? "font-medium" : ""}`}
+                  >
                     <td className="py-[6px]">{COPY.character[r.kind]}</td>
                     <td className="text-right">{amountWords(r.total)}</td>
                     {r.by_party.map((p) => (

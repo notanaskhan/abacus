@@ -199,7 +199,11 @@ def stub(monkeypatch: pytest.MonkeyPatch) -> _Stub:
         return None
 
     monkeypatch.setattr(ledger_sync, "flag_enabled", _on)
-    monkeypatch.setattr(ledger_sync, "connector_for", lambda *_: connector)
+
+    def _connector(*_: object) -> object:
+        return connector
+
+    monkeypatch.setattr(ledger_sync, "connector_for", _connector)
     monkeypatch.setattr(ledger_sync, "credentials_of", _no_credentials)
     monkeypatch.setattr(ledger_sync, "stage_content", _stored)
     monkeypatch.setattr(ledger_sync, "_tb", _tb)
@@ -221,7 +225,8 @@ async def test_ac_first_sync_records_both_open_months(firm: _Firm, stub: _Stub) 
     assert outcome.snapshots == 2  # July and August: the latest two ended, unlocked months
     months = await _count(
         firm,
-        "SELECT count(*) FROM ledger_snapshots WHERE client_entity_id = $1 AND period_kind = 'month'",
+        "SELECT count(*) FROM ledger_snapshots WHERE client_entity_id = $1 AND period_kind = "
+        "'month'",
         entity,
     )
     assert months == 2
@@ -241,7 +246,8 @@ async def test_ac_a_changed_august_register_records_exactly_one_new_set(
         await ledger_sync.sync_entity(firm.tenant, connection)
     events_before = await _count(
         firm,
-        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND event_type = 'change_event.detected'",
+        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND event_type = "
+        "'change_event.detected'",
         firm.tenant,
     )
     REGISTER_AMOUNT["2026-08"] = Decimal("2570.00")
@@ -259,7 +265,8 @@ async def test_ac_a_changed_august_register_records_exactly_one_new_set(
     assert august == 2
     events_after = await _count(
         firm,
-        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND event_type = 'change_event.detected'",
+        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND event_type = "
+        "'change_event.detected'",
         firm.tenant,
     )
     assert events_after == events_before + 1
@@ -323,10 +330,18 @@ async def test_ac_freshness_is_one_hour_between_ticks(firm: _Firm, stub: _Stub) 
     await closes_service.generate_closes(firm.ctx(), engagement, 2026)
     with clock.frozen(AT):
         await ledger_sync.sync_entity(firm.tenant, connection)
-        facts = await ledger_sync.sync_facts(TenantContext(firm.tenant, "system", "t"), _entity := (
-            uuid.UUID(str(await firm.seed.value(
-                "SELECT client_entity_id FROM connections WHERE id = $1", connection)))
-        ))  # fmt: skip
+        facts = await ledger_sync.sync_facts(
+            TenantContext(firm.tenant, "system", "t"),
+            _entity := (
+                uuid.UUID(
+                    str(
+                        await firm.seed.value(
+                            "SELECT client_entity_id FROM connections WHERE id = $1", connection
+                        )
+                    )
+                )
+            ),
+        )
     assert facts.state == "synced"
     assert facts.last_synced_at == AT
     assert facts.next_sync_at is not None

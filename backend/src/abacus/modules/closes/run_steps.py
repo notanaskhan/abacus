@@ -30,7 +30,13 @@ from abacus.modules.agents.api import RunStepFacts, RunStepResult, register_run_
 from abacus.modules.closes import procedures as p
 from abacus.modules.closes import repository as repo
 from abacus.modules.identity.api import AgentContext
-from abacus.modules.ledger.api import PeriodNotAvailable, account_tree, month_bounds, register_lines
+from abacus.modules.ledger.api import (
+    PeriodNotAvailable,
+    RegisterLineOut,
+    account_tree,
+    month_bounds,
+    register_lines,
+)
 
 ZERO: Final = Decimal("0.00")
 
@@ -50,7 +56,8 @@ _INSERT_REC = text(
 )
 _ARRANGEMENTS = text(
     "SELECT DISTINCT ON (a.id) a.id, a.kind, v.scheduled_total, v.start_on, v.finish_on, "
-    "v.expense_account_ref FROM arrangements a JOIN arrangement_versions v ON v.arrangement_id = a.id "
+    "v.expense_account_ref FROM arrangements a JOIN arrangement_versions v ON v.arrangement_id = "
+    "a.id "
     "WHERE a.client_entity_id = :e AND a.kind = :k ORDER BY a.id, v.version DESC"
 )
 _LAST_SCHEDULE = text(
@@ -58,7 +65,8 @@ _LAST_SCHEDULE = text(
     "AND arrangement_id = :a AND period = :p ORDER BY computed_at DESC LIMIT 1"
 )
 _INSERT_SCHEDULE = text(
-    "INSERT INTO close_schedule_results (tenant_id, close_id, arrangement_id, period, inflows, aje, "
+    "INSERT INTO close_schedule_results (tenant_id, close_id, arrangement_id, period, inflows, "
+    "aje, "
     "ending_balance, gl_balance, tie) VALUES (:t, :c, :a, :p, :in, :aje, :end, :gl, :tie)"
 )
 
@@ -88,7 +96,8 @@ def _account(facts: RunStepFacts) -> str | None:
 
 
 async def _balance(tenant: TenantContext, close: repo.CloseRow, account: str) -> Decimal:
-    assert close.client_entity_id is not None
+    if close.client_entity_id is None:
+        raise NotFound("client_entity")
     tree = await account_tree(tenant, close.client_entity_id, close.period)
     found = next((b.balance for b in tree.balances if b.external_id == account), None)
     if found is None:
@@ -116,7 +125,9 @@ async def reconcile_statement(ctx: AgentContext, facts: RunStepFacts) -> RunStep
         return _failed("account_missing")
     _, period_end = month_bounds(close.period)
     async with tenant_session(tenant) as session:
-        latest = (await session.execute(_LATEST_REC, {"c": close.work_item_id, "a": account})).first()
+        latest = (
+            await session.execute(_LATEST_REC, {"c": close.work_item_id, "a": account})
+        ).first()
         items = (
             []
             if latest is None
@@ -138,18 +149,29 @@ async def reconcile_statement(ctx: AgentContext, facts: RunStepFacts) -> RunStep
     else:
         rec = p.reconcile_statement(bank, book, items, period_end)
         values = {
-            "bank": rec.balance_per_bank, "abank": rec.adjusted_bank, "abook": rec.adjusted_book,
-            "diff": rec.difference, "tally": rec.tally,
-        }  # fmt: skip
+            "bank": rec.balance_per_bank,
+            "abank": rec.adjusted_bank,
+            "abook": rec.adjusted_book,
+            "diff": rec.difference,
+            "tally": rec.tally,
+        }
     async with uow(tenant) as tx:
         rec_id = await tx.session.scalar(
             _INSERT_REC,
             {
-                "t": tenant.tenant_id, "c": close.work_item_id, "a": account,
-                "period": close.period, "version": version, "stmt": statement, "book": book,
-                "engine": p.ENGINE_VERSION, "ih": ih, "ch": _sha(ih, values["tally"]), **values,
+                "t": tenant.tenant_id,
+                "c": close.work_item_id,
+                "a": account,
+                "period": close.period,
+                "version": version,
+                "stmt": statement,
+                "book": book,
+                "engine": p.ENGINE_VERSION,
+                "ih": ih,
+                "ch": _sha(ih, values["tally"]),
+                **values,
             },
-        )  # fmt: skip
+        )
         tx.record(
             "reconciliation.computed",
             target=Target("reconciliation", rec_id),
@@ -167,9 +189,10 @@ async def clear_third_party_sales(ctx: AgentContext, facts: RunStepFacts) -> Run
         return _failed("account_missing")
     try:
         close = await _close(tenant, facts)
-        assert close.client_entity_id is not None
+        if close.client_entity_id is None:
+            raise NotFound("client_entity")
         balance = await _balance(tenant, close, account)
-        rows = []
+        rows: list[RegisterLineOut] = []
         cursor: str | None = None
         while True:
             page, cursor = await register_lines(
@@ -205,7 +228,8 @@ async def _schedules(ctx: AgentContext, facts: RunStepFacts, kind: str) -> RunSt
     account = _account(facts)
     try:
         close = await _close(tenant, facts)
-        assert close.client_entity_id is not None
+        if close.client_entity_id is None:
+            raise NotFound("client_entity")
         gl = ZERO if account is None else await _balance(tenant, close, account)
     except PeriodNotAvailable:
         return _failed("ledger_period_missing")
@@ -213,7 +237,9 @@ async def _schedules(ctx: AgentContext, facts: RunStepFacts, kind: str) -> RunSt
         return _failed("account_missing")
     _, period_end = month_bounds(close.period)
     async with tenant_session(tenant) as session:
-        arrangements = (await session.execute(_ARRANGEMENTS, {"e": close.client_entity_id, "k": kind})).all()
+        arrangements = (
+            await session.execute(_ARRANGEMENTS, {"e": close.client_entity_id, "k": kind})
+        ).all()
     written = 0
     async with uow(tenant) as tx:
         for arrangement_id, _, total, start, finish, _expense in arrangements:
@@ -230,14 +256,28 @@ async def _schedules(ctx: AgentContext, facts: RunStepFacts, kind: str) -> RunSt
                     [p.Addition(str(arrangement_id), Decimal(total), months, start)], period_end
                 )
                 ending, aje, tie = d.month_charge, ZERO, "tie"
-            last = (await tx.session.execute(_LAST_SCHEDULE, {"c": close.work_item_id, "a": arrangement_id, "p": close.period})).first()
+            last = (
+                await tx.session.execute(
+                    _LAST_SCHEDULE,
+                    {"c": close.work_item_id, "a": arrangement_id, "p": close.period},
+                )
+            ).first()
             if last is not None and (Decimal(last[0]), Decimal(last[1])) == (ending, gl):
                 continue
             await tx.session.execute(
                 _INSERT_SCHEDULE,
-                {"t": tenant.tenant_id, "c": close.work_item_id, "a": arrangement_id, "p": close.period,
-                 "in": ZERO, "aje": aje, "end": ending, "gl": gl, "tie": tie},
-            )  # fmt: skip
+                {
+                    "t": tenant.tenant_id,
+                    "c": close.work_item_id,
+                    "a": arrangement_id,
+                    "p": close.period,
+                    "in": ZERO,
+                    "aje": aje,
+                    "end": ending,
+                    "gl": gl,
+                    "tie": tie,
+                },
+            )
             written += 1
         tx.record(
             "close_procedure.computed",
@@ -272,7 +312,10 @@ async def _ledger_check(ctx: AgentContext, facts: RunStepFacts) -> RunStepResult
         tx.record(
             "close_procedure.computed",
             target=Target("close", close.work_item_id),
-            after=Ref(step=facts.step_key[:60], inputs_hash=p.inputs_hash([account, balance, close.period])),
+            after=Ref(
+                step=facts.step_key[:60],
+                inputs_hash=p.inputs_hash([account, balance, close.period]),
+            ),
         )
     return RunStepResult("succeeded", records_read=1)
 

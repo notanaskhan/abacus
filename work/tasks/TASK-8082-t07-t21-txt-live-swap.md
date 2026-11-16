@@ -2,7 +2,7 @@
 id: TASK-8082
 title: "T-07-T21: Fixture-to-live swap for TXT-01 and TXT-02 (staging run excluded)"
 spec: SPEC-656
-acceptance_criteria: [AC-1.1, AC-6.2]
+acceptance_criteria: [AC-1, AC-6]
 risk_zone: green
 status: in-review
 branch: t07-t21-txt-live-swap

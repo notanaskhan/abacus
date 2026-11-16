@@ -2733,6 +2733,9 @@ RULES: list[Rule | TreeRule] = [
             # K-02-T04, T-01-T08: the schema tests of 0401 and 0402 act as the app.
             "tests/integration/backfill/test_k02t04_firm_standards.py",
             "tests/integration/backfill/test_t01t08_consents.py",
+            # A-08-T12: the fixture publishes a criteria version effective from the audit year's
+            # start, which the publish route refuses as backdated, so it acts as a person (0401).
+            "tests/integration/test_a08t12_je_testing.py",
             # A-03-T05/T06: the schema tests of 0520 and 0521 act as the app.
             "tests/integration/backfill/test_a03t05_sampling_tables.py",
             "tests/integration/backfill/test_a03t06_taxonomy_db.py",

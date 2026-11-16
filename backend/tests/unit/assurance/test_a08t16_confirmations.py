@@ -6,16 +6,28 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from abacus.modules.assurance.confirmations_service import _INDEPENDENT, AddressNotVerified, coverage_of
+from abacus.modules.assurance.confirmations_service import (
+    _INDEPENDENT,  # pyright: ignore[reportPrivateUsage] -- the rule under test
+    AddressNotVerified,
+    coverage_of,
+)
 
 
 def test_ac_coverage_is_15_3_percent() -> None:
-    c = coverage_of(Decimal("5860000.00"), Decimal("897950.00"), Decimal("695200.00"), Decimal("4300.00"), Decimal("7750"))
+    c = coverage_of(
+        Decimal("5860000.00"),
+        Decimal("897950.00"),
+        Decimal("695200.00"),
+        Decimal("4300.00"),
+        Decimal("7750"),
+    )
     assert c.sent_pct == Decimal("15.3")
     assert (c.confirmed_total, c.differences_total) == (Decimal("695200.00"), Decimal("4300.00"))
 
 
 def test_a_client_supplied_address_is_never_independent() -> None:
     assert "client_supplied" not in _INDEPENDENT
-    assert {"prior_year", "website", "phone", "public_register", "bank_published"} == set(_INDEPENDENT)
+    assert {"prior_year", "website", "phone", "public_register", "bank_published"} == set(
+        _INDEPENDENT
+    )
     assert AddressNotVerified.code == "address_not_verified"

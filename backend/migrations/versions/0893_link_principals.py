@@ -77,9 +77,17 @@ def upgrade() -> None:
     insert_columns(
         op,
         "link_principals",
-        ("tenant_id", "purpose", "subject_id", "token_sha256", "email_sha256", "email_sealed",
-         "expires_at", "created_by"),
-    )  # fmt: skip
+        (
+            "tenant_id",
+            "purpose",
+            "subject_id",
+            "token_sha256",
+            "email_sha256",
+            "email_sealed",
+            "expires_at",
+            "created_by",
+        ),
+    )
     op.execute("GRANT UPDATE (revoked_at) ON link_principals TO abacus_app")
     op.execute(
         """
@@ -157,7 +165,8 @@ def upgrade() -> None:
             END IF;
             IF EXISTS (SELECT 1 FROM public.link_principal_challenges c
                         WHERE c.principal_id = v_link.id AND c.consumed_at IS NULL
-                          AND c.created_at > clock_timestamp() - make_interval(secs => p_resend_seconds)) THEN
+                          AND c.created_at > clock_timestamp() - make_interval(secs =>
+                          p_resend_seconds)) THEN
                 RETURN;
             END IF;
             RETURN QUERY
@@ -177,7 +186,8 @@ def upgrade() -> None:
         #variable_conflict use_column
         BEGIN
             RETURN QUERY
-            UPDATE public.link_principal_challenges c SET code_salt = p_salt, code_digest = p_digest
+            UPDATE public.link_principal_challenges c SET code_salt = p_salt, code_digest =
+            p_digest
               FROM public.link_principals l
              WHERE c.id = p_id AND l.id = c.principal_id AND c.code_digest IS NULL
                AND c.consumed_at IS NULL AND c.code_expires_at > clock_timestamp()
@@ -189,7 +199,8 @@ def upgrade() -> None:
     # locked); 'ok' hands back the digest for the caller's constant-time comparison.
     op.execute(
         """
-        CREATE FUNCTION link_principal_attempt(p_token bytea, p_max integer, p_lock_seconds integer)
+        CREATE FUNCTION link_principal_attempt(p_token bytea, p_max integer, p_lock_seconds
+        integer)
         RETURNS TABLE (outcome text, tenant_id uuid, principal_id uuid, challenge_id uuid,
                        code_salt bytea, code_digest bytea)
         LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
@@ -200,22 +211,27 @@ def upgrade() -> None:
              WHERE l.token_sha256 = p_token AND l.revoked_at IS NULL
                AND l.expires_at > clock_timestamp() FOR UPDATE;
             IF NOT FOUND THEN
-                RETURN QUERY SELECT 'unknown'::text, NULL::uuid, NULL::uuid, NULL::uuid, NULL::bytea, NULL::bytea;
+                RETURN QUERY SELECT 'unknown'::text, NULL::uuid, NULL::uuid, NULL::uuid,
+                NULL::bytea, NULL::bytea;
                 RETURN;
             END IF;
             IF v_link.locked_until IS NOT NULL AND v_link.locked_until > clock_timestamp() THEN
-                RETURN QUERY SELECT 'locked'::text, v_link.tenant_id, v_link.id, NULL::uuid, NULL::bytea, NULL::bytea;
+                RETURN QUERY SELECT 'locked'::text, v_link.tenant_id, v_link.id, NULL::uuid,
+                NULL::bytea, NULL::bytea;
                 RETURN;
             END IF;
             SELECT c.* INTO v_challenge FROM public.link_principal_challenges c
-             WHERE c.principal_id = v_link.id AND c.consumed_at IS NULL AND c.code_digest IS NOT NULL
+             WHERE c.principal_id = v_link.id AND c.consumed_at IS NULL AND c.code_digest IS NOT
+             NULL
                AND c.code_expires_at > clock_timestamp()
              ORDER BY c.created_at DESC LIMIT 1 FOR UPDATE;
             IF NOT FOUND THEN
-                RETURN QUERY SELECT 'no_code'::text, v_link.tenant_id, v_link.id, NULL::uuid, NULL::bytea, NULL::bytea;
+                RETURN QUERY SELECT 'no_code'::text, v_link.tenant_id, v_link.id, NULL::uuid,
+                NULL::bytea, NULL::bytea;
                 RETURN;
             END IF;
-            UPDATE public.link_principal_challenges SET tries = tries + 1 WHERE id = v_challenge.id;
+            UPDATE public.link_principal_challenges SET tries = tries + 1 WHERE id =
+            v_challenge.id;
             RETURN QUERY SELECT 'ok'::text, v_link.tenant_id, v_link.id, v_challenge.id,
                                 v_challenge.code_salt, v_challenge.code_digest;
         END $$
@@ -231,13 +247,16 @@ def upgrade() -> None:
         BEGIN
             RETURN QUERY
             UPDATE public.link_principals l
-               SET failed_codes = CASE WHEN l.failed_codes + 1 >= p_max THEN 0 ELSE l.failed_codes + 1 END,
+               SET failed_codes = CASE WHEN l.failed_codes + 1 >= p_max THEN 0 ELSE l.failed_codes
+               + 1 END,
                    locked_until = CASE WHEN l.failed_codes + 1 >= p_max
-                                       THEN clock_timestamp() + make_interval(secs => p_lock_seconds)
+                                       THEN clock_timestamp() + make_interval(secs =>
+                                       p_lock_seconds)
                                        ELSE l.locked_until END
              WHERE l.id = p_principal
             RETURNING l.failed_codes, l.locked_until;
-            IF (SELECT locked_until FROM public.link_principals WHERE id = p_principal) > clock_timestamp() THEN
+            IF (SELECT locked_until FROM public.link_principals WHERE id = p_principal) >
+            clock_timestamp() THEN
                 UPDATE public.link_principal_challenges SET consumed_at = clock_timestamp()
                  WHERE principal_id = p_principal AND consumed_at IS NULL;
             END IF;
@@ -254,7 +273,8 @@ def upgrade() -> None:
         BEGIN
             UPDATE public.link_principal_challenges SET consumed_at = clock_timestamp()
              WHERE id = p_challenge AND consumed_at IS NULL;
-            UPDATE public.link_principals SET verified_at = coalesce(verified_at, clock_timestamp()),
+            UPDATE public.link_principals SET verified_at = coalesce(verified_at,
+            clock_timestamp()),
                    failed_codes = 0 WHERE id = p_principal;
             RETURN QUERY
             INSERT INTO public.link_page_credentials (tenant_id, principal_id, credential_sha256,
@@ -272,7 +292,8 @@ def upgrade() -> None:
         RETURNS TABLE (tenant_id uuid, principal_id uuid, purpose text, subject_id uuid)
         LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
             SELECT l.tenant_id, l.id, l.purpose, l.subject_id
-              FROM public.link_page_credentials c JOIN public.link_principals l ON l.id = c.principal_id
+              FROM public.link_page_credentials c JOIN public.link_principals l ON l.id =
+              c.principal_id
              WHERE c.credential_sha256 = p_credential AND c.csrf_sha256 = p_csrf
                AND c.expires_at > clock_timestamp() AND l.revoked_at IS NULL
                AND l.expires_at > clock_timestamp()

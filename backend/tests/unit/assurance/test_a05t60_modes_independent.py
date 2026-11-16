@@ -101,7 +101,15 @@ def test_a_mode_module_only_reads(name: str) -> None:
 
 # Reads of a sealed name that is not a related party's, each reviewed. T-07-T12 (DEC-5055): the
 # trust's settlor on TXT-01's profile, opened only under `instrument.read`.
-NOT_A_RELATED_PARTY = frozenset({"modules/tax/instruments/repository.py"})  # T-07-T07: moved
+NOT_A_RELATED_PARTY = frozenset(
+    {
+        "modules/tax/instruments/repository.py",  # T-07-T07: moved
+        # S46: a confirmation's respondent (A-08-T16) and a gift's donee (T-07-T22), sealed and
+        # opened for their own pages; neither is a related party's name.
+        "modules/assurance/confirmations_service.py",
+        "modules/tax/estate_service.py",
+    }
+)
 
 
 @pytest.mark.source_scan  # reads source text: left out under mutmut (DEC-599)

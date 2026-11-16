@@ -7,27 +7,6 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.clock import register_tenant_clock
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.uow.relay import register_grant_consumer
-from abacus.modules.identity.link_principals import EMAIL_AAD as LINK_EMAIL_AAD
-from abacus.modules.identity.link_principals import (
-    COOKIE_NAME as LINK_COOKIE_NAME,
-)
-from abacus.modules.identity.link_principals import (
-    PAD_SECONDS as LINK_PAD_SECONDS,
-)
-from abacus.modules.identity.link_principals import (
-    IssuedLinkCode,
-    LinkPrincipal,
-    Verified,
-    credential_principal,
-    issue_link_code,
-    link_purposes,
-    mint_link,
-    register_link_purpose,
-    resolve_link,
-    revoke_link,
-)
-from abacus.modules.identity.link_principals import request_code as request_link_code
-from abacus.modules.identity.link_principals import verify_code as verify_link_code
 from abacus.modules.identity.access_end import sweep_access_ends_activity
 from abacus.modules.identity.agent_tools import AGENT_TOOLS  # W-02-T19: identity.list_offices
 from abacus.modules.identity.annual_independence import has_current_annual_confirmation
@@ -211,6 +190,27 @@ from abacus.modules.identity.invitations import (
     revoke_invitation,
 )
 from abacus.modules.identity.labels import ROLE_LABELS
+from abacus.modules.identity.link_principals import (
+    COOKIE_NAME as LINK_COOKIE_NAME,
+)
+from abacus.modules.identity.link_principals import EMAIL_AAD as LINK_EMAIL_AAD
+from abacus.modules.identity.link_principals import (
+    PAD_SECONDS as LINK_PAD_SECONDS,
+)
+from abacus.modules.identity.link_principals import (
+    IssuedLinkCode,
+    LinkPrincipal,
+    Verified,
+    credential_principal,
+    issue_link_code,
+    link_purposes,
+    mint_link,
+    register_link_purpose,
+    resolve_link,
+    revoke_link,
+)
+from abacus.modules.identity.link_principals import request_code as request_link_code
+from abacus.modules.identity.link_principals import verify_code as verify_link_code
 from abacus.modules.identity.member_hooks import register_member_added
 from abacus.modules.identity.mfa_floor import (
     MfaRequirement,
@@ -529,21 +529,6 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
 )
 
 __all__ = [
-    "LINK_COOKIE_NAME",
-    "LINK_EMAIL_AAD",
-    "LINK_PAD_SECONDS",
-    "IssuedLinkCode",
-    "LinkPrincipal",
-    "Verified",
-    "credential_principal",
-    "issue_link_code",
-    "link_purposes",
-    "mint_link",
-    "register_link_purpose",
-    "request_link_code",
-    "resolve_link",
-    "revoke_link",
-    "verify_link_code",
     "ACCESS_END_ID",
     "ACTION_KEY",
     "ACTIVITIES",
@@ -557,6 +542,9 @@ __all__ = [
     "EQR_ROLES",
     "FULL_ROLES",
     "IDENTITY",
+    "LINK_COOKIE_NAME",
+    "LINK_EMAIL_AAD",
+    "LINK_PAD_SECONDS",
     "LINK_PRINCIPAL",
     "MFA_RECENT",
     "OFFSHORE_DISCLOSURE",
@@ -620,12 +608,14 @@ __all__ = [
     "InvitationParties",
     "IssuedCode",
     "IssuedInvitation",
+    "IssuedLinkCode",
     "ItemFacts",
     "JwtVerifier",
     "K1Access",
     "LastPartner",
     "LevelNotAvailable",
     "LinkOutcome",
+    "LinkPrincipal",
     "MemberDetail",
     "MemberFacts",
     "MemberProfile",
@@ -671,6 +661,7 @@ __all__ = [
     "TokenVerifier",
     "TotpEnrolment",
     "UnknownAction",
+    "Verified",
     "VerifiedIdentity",
     "VisibleScopeKind",
     "WallAwaitingApproval",
@@ -724,6 +715,7 @@ __all__ = [
     "contacts",
     "could",
     "create_invitation",
+    "credential_principal",
     "current_context",
     "current_identity",
     "current_member",
@@ -778,10 +770,12 @@ __all__ = [
     "is_synthetic_firm",
     "issue_grant",
     "issue_invitation_token",
+    "issue_link_code",
     "issue_sign_in_code",
     "issue_staff_invitation_token",
     "latest_grant",
     "letter_policy",
+    "link_purposes",
     "locked_addresses",
     "mask_tins",
     "mask_tins_for",
@@ -794,6 +788,7 @@ __all__ = [
     "membership_audit_facts",
     "metadata_only",
     "mfa_required",
+    "mint_link",
     "my_engagement_roles",
     "my_engagements",
     "names_of",
@@ -835,6 +830,7 @@ __all__ = [
     "register_intake_scope",
     "register_invitation_parties",
     "register_link_claim",
+    "register_link_purpose",
     "register_member_added",
     "register_member_removed",
     "register_member_teams",
@@ -852,16 +848,19 @@ __all__ = [
     "renew_invitation",
     "renew_invitation_by_id",
     "replace_eqr",
+    "request_link_code",
     "resend_contact_invitation",
     "resend_invitation",
     "reset_portal_mfa",
     "reset_verifier",
+    "resolve_link",
     "resolve_request_session",
     "resolve_scope",
     "revoke_client_access",
     "revoke_contact",
     "revoke_contact_links",
     "revoke_invitation",
+    "revoke_link",
     "role_codes",
     "router",
     "save_settings_section",  # A-07-T41
@@ -893,6 +892,7 @@ __all__ = [
     "token_verifier",
     "totp_at",
     "unlock_contact_sign_in",
+    "verify_link_code",
     "visible",
     "visible_clients",
     "visible_items",

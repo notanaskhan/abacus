@@ -32,7 +32,9 @@ depends_on = None
 _DORMANT_BEFORE = "CHECK (status NOT IN ('posted', 'failed_post', 'reversed'))"
 _DORMANT_AFTER = (
     "CHECK (status NOT IN ('posted', 'failed_post', 'reversed') "
-    "OR (kind = 'elimination' AND posting_target = 'consolidation_layer'))"
+    # IS NOT NULL, not `= 'consolidation_layer'`: a NULL target would pass a CHECK
+    # (pe_posting_target already allows only that value).
+    "OR (kind = 'elimination' AND posting_target IS NOT NULL))"
 )
 
 _LINE_ENTITY = """

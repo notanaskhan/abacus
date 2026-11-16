@@ -7,6 +7,7 @@ export const COPY = {
   locked: "Locked · Omar Haddad · 2:20 PM",
   reopen: "Reopen…",
   pane: "Consolidated",
+  provenance: "Where this figure comes from", // the handoff's SHL-09 link ("Opens SHL-09 · where this figure comes from")
   levelOneSub: "Level 1 · all five entities",
   levelTwoSub: "Level 2 · Operating Co., Manufacturing, Distribution",
   tabs: "Sheets",

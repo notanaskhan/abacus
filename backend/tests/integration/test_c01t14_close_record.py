@@ -110,8 +110,11 @@ class _Firm:
         tenant = TenantContext(self.tenant, actor_kind, str(who), on_behalf)  # type: ignore[arg-type] -- the test's actor kind literal
         return AuthContext(tenant, who, uuid.uuid4(), None, datetime.now(UTC))
 
-    async def plan(self, entity: uuid.UUID, accounts: list[str]) -> uuid.UUID:
-        """A published plan whose rows are bank reconciliations, one per account."""
+    async def plan(
+        self, entity: uuid.UUID, accounts: list[str], *, publish: bool = True
+    ) -> uuid.UUID:
+        """A published plan whose rows are bank reconciliations, one per account (a draft when
+        `publish` is False: a published version never changes, so its templates go in first)."""
         plan = await self.seed.value(
             "INSERT INTO close_plans (tenant_id, client_entity_id, created_by) "
             "VALUES ($1, $2, $3) RETURNING id",
@@ -142,6 +145,11 @@ class _Firm:
                 account,
                 f"Account {account}",
             )
+        if publish:
+            await self.publish(version)
+        return version
+
+    async def publish(self, version: uuid.UUID) -> None:
         await self.seed.run(
             "UPDATE close_plan_versions SET status = 'published', effective_from = '2026-01', "
             "published_by = $2, published_actor_kind = 'human', published_at = now() "
@@ -149,7 +157,6 @@ class _Firm:
             version,
             self.partner,
         )
-        return version
 
     async def reconcile(self, close_id: uuid.UUID, account: str, tally: str = "tie") -> None:
         """A tied reconciliation with a current L1 sign-off on its content hash."""

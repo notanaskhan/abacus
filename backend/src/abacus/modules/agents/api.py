@@ -6,7 +6,6 @@ from abacus.ai_gateway import (
     register_client_data_facts,
 )
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.modules.agents.run_reads import RunStepRow, run_step_rows
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.ai_policy_contract import ai_policy_router
 from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
@@ -202,6 +201,7 @@ from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, 
 )
 from abacus.modules.agents.run_plan import PlanStep as PlanStep
 from abacus.modules.agents.run_plan import reserved as reserved_plan_tools
+from abacus.modules.agents.run_reads import RunStepRow, run_step_rows
 
 # P-10-T22 (C17 v1, frozen): the runtime the harness calls, and the shapes a tool declares.
 from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scenario's runs
@@ -531,8 +531,6 @@ from abacus.modules.agents.trace_pdf import (  # noqa: E402 -- TASK-7825: the co
 )
 
 __all__ = [
-    "RunStepRow",
-    "run_step_rows",
     "ACTIVITIES",
     "AGENTS",
     "ASSESSOR",
@@ -653,6 +651,7 @@ __all__ = [
     "RunFacts",
     "RunInput",
     "RunOutcome",
+    "RunStepRow",
     "RunV2Facts",
     "RunV2PlanState",
     "RunV2StepOutcome",
@@ -791,6 +790,7 @@ __all__ = [
     "run_record_hashes",
     "run_session_turn",
     "run_step_answers",
+    "run_step_rows",
     "run_v2_status",
     "run_workflow_id",
     "screen",

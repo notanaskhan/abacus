@@ -2,7 +2,7 @@
 id: TASK-8087
 title: "A-08-T33: ADR-078 independent AC tests for the T09 GL JE fields"
 spec: SPEC-657
-acceptance_criteria: [AC-0.7, AC-1.3]
+acceptance_criteria: [AC-0, AC-1]
 risk_zone: red
 status: in-review
 branch: a08-t33-je-fields-independent

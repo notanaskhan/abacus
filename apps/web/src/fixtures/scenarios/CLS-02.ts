@@ -52,7 +52,12 @@ export function completeRun(): CloseRunOut {
     procedures: g.procedures.map((p) => {
       if (p.status !== "running") return p;
       const [meta, open] = settle[p.label] ?? ["No issues", 0];
-      return { ...p, status: open > 0 ? ("needs_attention" as const) : ("done" as const), meta, open_count: open };
+      return {
+        ...p,
+        status: open > 0 ? ("needs_attention" as const) : ("done" as const),
+        meta,
+        open_count: open,
+      };
     }),
   }));
   return {
@@ -78,7 +83,12 @@ export function waitingRun(): CloseRunOut {
             ...g,
             procedures: g.procedures.map((p) =>
               p.label === "Square"
-                ? { ...p, status: "needs_attention" as const, meta: "Waiting on 1 answer", decision_card_id: "00000000-0000-4000-8000-00000000d0c1" }
+                ? {
+                    ...p,
+                    status: "needs_attention" as const,
+                    meta: "Waiting on 1 answer",
+                    decision_card_id: "00000000-0000-4000-8000-00000000d0c1",
+                  }
                 : { ...p, status: "queued" as const, meta: null },
             ),
           }
@@ -98,7 +108,11 @@ export function failedRun(): CloseRunOut {
       ...g,
       procedures: g.procedures.map((p) =>
         p.label === "Shopify"
-          ? { ...p, status: "failed" as const, failure: "The payout report covers Aug 1–29; Aug 30–31 payouts are missing" }
+          ? {
+              ...p,
+              status: "failed" as const,
+              failure: "The payout report covers Aug 1–29; Aug 30–31 payouts are missing",
+            }
           : p.status === "running"
             ? { ...p, status: "done" as const, meta: "No issues" }
             : p,
@@ -130,16 +144,28 @@ export const scenarios = defineScenarios({
   "overview-a": frame("overview-a", true),
   "overview-b": frame("overview-b", true, completeRun, () => ({
     ...copperleafRuns(),
-    items: copperleafRuns().items.map((i) => (i.run_no === 2 ? { ...i, status: "complete_with_exceptions" as const } : i)),
+    items: copperleafRuns().items.map((i) =>
+      i.run_no === 2 ? { ...i, status: "complete_with_exceptions" as const } : i,
+    ),
   })),
-  "overview-c": frame("overview-c", true, () => null, () => ({ items: [], ready_to_run: 22 }), september),
+  "overview-c": frame(
+    "overview-c",
+    true,
+    () => null,
+    () => ({ items: [], ready_to_run: 22 }),
+    september,
+  ),
   "overview-d": frame("overview-d", true, waitingRun, () => ({
     ...copperleafRuns(),
-    items: copperleafRuns().items.map((i) => (i.run_no === 2 ? { ...i, status: "needs_input" as const } : i)),
+    items: copperleafRuns().items.map((i) =>
+      i.run_no === 2 ? { ...i, status: "needs_input" as const } : i,
+    ),
   })),
   "overview-e": frame("overview-e", true, failedRun, () => ({
     ...copperleafRuns(),
-    items: copperleafRuns().items.map((i) => (i.run_no === 2 ? { ...i, status: "failed" as const } : i)),
+    items: copperleafRuns().items.map((i) =>
+      i.run_no === 2 ? { ...i, status: "failed" as const } : i,
+    ),
   })),
 });
 
