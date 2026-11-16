@@ -423,7 +423,16 @@ async def connect_events(
     key: Key, ctx: Ctx, cursor: str | None = None
 ) -> ConnectIntegrationEventsOut:
     await _gate(ctx, "integration_catalog.read")
-    raise NotImplementedYet("W-01-T15")
+    from abacus.modules.integrations import connect_detail
+
+    page, following = await connect_detail.events(ctx.tenant, key, cursor)
+    return ConnectIntegrationEventsOut(
+        items=[
+            ConnectIntegrationEventOut(id=str(e.id), kind=e.kind, at=e.at, label=e.label, ok=e.ok)
+            for e in page
+        ],
+        next_cursor=following,
+    )
 
 
 @router.get(
