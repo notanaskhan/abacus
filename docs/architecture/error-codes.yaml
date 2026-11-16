@@ -265,6 +265,7 @@ codes:
   approver_required:
     status: 422
     raised_by:
+    - abacus.modules.sampling.expansions.ApproverRequired
     - abacus.modules.sampling.fieldwork_contract.ApproverRequired
   archive_locked:
     status: 409
@@ -487,6 +488,11 @@ codes:
     - abacus.modules.organisations.service.ClientRecordInvalid
     summary: A value the client record's constraints refuse (an office or partner of another firm, a
       malformed fiscal year end).
+  close_requests_not_published:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.issues.NoCloseRequests
+    summary: 'The close''s requests are not published yet: a question has no binder to sit on.'
   column_map_invalid:
     status: 422
     raised_by:
@@ -634,6 +640,10 @@ codes:
     raised_by:
     - abacus.modules.ledger.consolidation.VersionStale
     summary: The consolidation changed since it was read (If-Match).
+  consolidation_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.adjustments.eliminations.ConsolidationLocked
   consolidation_not_draft:
     status: 409
     raised_by:
@@ -662,6 +672,7 @@ codes:
     - abacus.modules.assurance.mapping_live.ContentChanged
     - abacus.modules.assurance.release.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
+    - abacus.modules.sampling.expansions.ContentChanged
     - abacus.modules.sampling.fieldwork_contract.ContentChanged
     - abacus.modules.sampling.sample_sets.ContentChanged
     - abacus.modules.tax.approval.ContentChanged
@@ -820,6 +831,10 @@ codes:
     raised_by:
     - abacus.modules.tax.k1_portal.DetailsChangeInvalid
     summary: A W-9 or W-8 names the uploaded file; an address its structured fields (`facts.field`).
+  deviation_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.fieldwork_tests.DeviationInvalid
   disclosure_invalid:
     status: 422
     raised_by:
@@ -1143,9 +1158,18 @@ codes:
     raised_by:
     - abacus.modules.assurance.soc_reports.ExceptionNotHigh
     summary: 'AC7.5: only a High-impact exception routes to Findings.'
+  expansion_exceeds_population:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.expansions.ExpansionTooLarge
+  expansion_not_pending:
+    status: 409
+    raised_by:
+    - abacus.modules.sampling.expansions.ExpansionClosed
   expansion_rationale_required:
     status: 422
     raised_by:
+    - abacus.modules.sampling.expansions.RationaleRequired
     - abacus.modules.sampling.fieldwork_contract.ExpansionRationaleRequired
   explain_unavailable:
     status: 409
@@ -2450,6 +2474,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpOutOfScope
+    - abacus.modules.closes.issues.OutOfScope
     - abacus.modules.collaboration.threads.CommentOutOfScope
     - abacus.modules.communications.service.OutOfScope
     - abacus.modules.requests.comments.CommentOutOfScope
@@ -2775,6 +2800,10 @@ codes:
     raised_by:
     - abacus.modules.platform.search.errors.SearchQueryInvalid
     summary: '422: the search text is empty or over 100 characters after cleaning, outside agent mode.'
+  question_already_answered:
+    status: 409
+    raised_by:
+    - abacus.modules.requests.transaction_questions.QuestionAlreadyAnswered
   question_answered:
     status: 409
     raised_by:
@@ -3101,6 +3130,10 @@ codes:
     raised_by:
     - abacus.modules.platform.safeguards.SafeguardsPersonInvalid
     summary: A person the record names is not one of the firm's active staff.
+  same_variant:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.fieldwork_tests.SameVariant
   sample_already_approved:
     status: 409
     raised_by:
@@ -3760,6 +3793,7 @@ codes:
   transition_not_available:
     status: 409
     raised_by:
+    - abacus.modules.adjustments.eliminations.NotProposed
     - abacus.modules.closes.contract.TransitionNotAvailable
     summary: Approved, Delivered and Locked until C-02 registers their guards (fail closed, AC-11).
   transition_refused:
@@ -3793,6 +3827,7 @@ codes:
   unbalanced_entry:
     status: 409 or 422
     raised_by:
+    - abacus.modules.adjustments.eliminations.UnbalancedEntry
     - abacus.modules.adjustments.entries.UnbalancedEntry
     - abacus.modules.assurance.group_contract.UnbalancedEntry
     summary: An entry's debits and credits differ (or a line has both or neither side).

@@ -1,8 +1,8 @@
 ---
 id: TASK-8317
 title: "A-09-T20: Eliminations service on C8"
-spec: docs/specs/SPEC-658 F4
-acceptance_criteria: [A-09-T20]
+spec: SPEC-658
+acceptance_criteria: [AC-4]
 risk_zone: red
 status: in-review
 branch: a09-t20-eliminations
@@ -13,6 +13,7 @@ plan_key: A-09-T20
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-658 F4.
 Eliminations service on C8.
 
 ## Plan (red)

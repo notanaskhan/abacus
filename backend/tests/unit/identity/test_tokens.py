@@ -284,6 +284,9 @@ def test_ac1_verified_identity_carries_only_issuer_subject_mfa_at_and_verified_e
         "mfa_at",
         "email",
         "expires_at",
+        # G-04-T05 (DEC-5201): the staff issuer's roles and location, never compared.
+        "platform_roles",
+        "us_located",
     }
 
 

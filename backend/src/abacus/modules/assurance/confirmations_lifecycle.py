@@ -27,13 +27,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel.clock import now as clock_now
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
@@ -42,7 +43,7 @@ from abacus.modules.assurance.compute.reconciliation import reconcile as compute
 from abacus.modules.assurance.confirmations_service import (
     LINK_PURPOSE,
     _of,  # pyright: ignore[reportPrivateUsage] -- the module's own scope check
-    _person,  # pyright: ignore[reportPrivateUsage]
+    _person,  # pyright: ignore[reportPrivateUsage] -- the module's own person check
     check_sendable,
 )
 from abacus.modules.identity.api import AuthContext
@@ -91,9 +92,7 @@ _EVENTS: Final = text(
     "SELECT kind, at FROM confirmation_events WHERE confirmation_id = :c ORDER BY at"
 )
 _LINK: Final = text(
-    "INSERT INTO confirmation_links (confirmation_id, tenant_id, principal_id) VALUES (:c, :t, "
-    "(SELECT id FROM link_principals WHERE purpose = :p AND subject_id = :c AND revoked_at IS "
-    "NULL ORDER BY created_at DESC LIMIT 1))"
+    "INSERT INTO confirmation_links (confirmation_id, tenant_id, principal_id) VALUES (:c, :t, :p)"
 )
 _BOOKS: Final = text(
     "SELECT coalesce(sum(book_amount), 0) FROM confirmation_lines WHERE confirmation_id = :c"
@@ -171,7 +170,7 @@ async def send(ctx: AuthContext, confirmation_id: UUID) -> UUID:
     _person(ctx, "confirmation.send")
     await _of(ctx, confirmation_id, "confirmation.send")
     await check_sendable(ctx, confirmation_id)
-    from abacus.modules.identity.api import mint_link
+    from abacus.modules.identity.api import live_principal, mint_link
 
     async with uow(ctx.tenant) as tx:
         row = await _locked(tx, confirmation_id)
@@ -189,8 +188,9 @@ async def send(ctx: AuthContext, confirmation_id: UUID) -> UUID:
                 created_by=ctx.user_id,
                 valid_for=timedelta(days=LINK_DAYS),
             )
+            principal = await live_principal(tx, LINK_PURPOSE, confirmation_id)
             await tx.session.execute(
-                _LINK, {"c": confirmation_id, "t": ctx.tenant_id, "p": LINK_PURPOSE}
+                _LINK, {"c": confirmation_id, "t": ctx.tenant_id, "p": principal}
             )
         await _event(tx, ctx, confirmation_id, "sent")
         await _move(tx, confirmation_id, "sent")
@@ -231,7 +231,7 @@ async def follow_up(
     ctx: AuthContext, confirmation_id: UUID, now: datetime | None = None
 ) -> str | None:
     """Apply the follow-up's due step (the person's act or the follow-up workflow's tick)."""
-    at = now or datetime.now(UTC)
+    at = now or await clock_now(ctx.tenant)
     async with tenant_session(ctx.tenant) as session:
         status = await session.scalar(
             text("SELECT status FROM confirmations WHERE id = :c"), {"c": confirmation_id}

@@ -1,8 +1,8 @@
 ---
 id: TASK-8311
 title: "A-08-T18: Confirmations lifecycle"
-spec: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md F5
-acceptance_criteria: [A-08-T18]
+spec: SPEC-657
+acceptance_criteria: [AC-6]
 risk_zone: amber
 status: in-review
 branch: a08-t18-confirmations-lifecycle
@@ -13,6 +13,7 @@ plan_key: A-08-T18
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md F5.
 Confirmations lifecycle.
 
 ## Plan (amber)

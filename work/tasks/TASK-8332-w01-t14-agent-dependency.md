@@ -1,8 +1,8 @@
 ---
 id: TASK-8332
 title: "W-01-T14: Agent dependency on integrations"
-spec: docs/plan/epics/W-01.md F5
-acceptance_criteria: [W-01-T14]
+spec: SPEC-659
+acceptance_criteria: [AC-29, AC-30]
 risk_zone: red
 status: in-review
 branch: w01-t14-agent-dependency
@@ -13,6 +13,7 @@ plan_key: W-01-T14
 ---
 
 ## Objective
+Spec section: docs/plan/epics/W-01.md F5.
 Agent dependency on integrations.
 
 ## Plan (red)

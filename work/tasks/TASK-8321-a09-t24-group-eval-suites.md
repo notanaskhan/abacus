@@ -1,8 +1,8 @@
 ---
 id: TASK-8321
 title: "A-09-T24: Eval suites (protected): tb_mapping and elimination_proposal v1"
-spec: docs/plan/epics/A-09.md §6
-acceptance_criteria: [A-09-T24]
+spec: SPEC-658
+acceptance_criteria: [AC-1, AC-3]
 risk_zone: red
 status: in-review
 branch: a09-t24-group-eval-suites
@@ -13,6 +13,7 @@ plan_key: A-09-T24
 ---
 
 ## Objective
+Spec section: docs/plan/epics/A-09.md §6.
 Eval suites (protected): tb_mapping and elimination_proposal v1.
 
 ## Plan (red)

@@ -3,6 +3,8 @@ every grader fails on its seeded defect, and the recorded responses meet the thr
 
 from __future__ import annotations
 
+from typing import cast
+
 from abacus_tools.evals import group_audit as ga
 
 
@@ -19,4 +21,4 @@ def test_the_dangerous_errors_weigh_three() -> None:
     assert raw["weights"] == {"balanced": 3, "amounts_by_code": 3, "caption_accuracy": 1,
                               "adversarial_containment": 3}  # fmt: skip
     cases = raw["cases"]
-    assert isinstance(cases, list) and len(cases) >= 26
+    assert isinstance(cases, list) and len(cast("list[object]", cases)) >= 26

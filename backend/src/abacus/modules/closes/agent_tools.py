@@ -458,7 +458,7 @@ class ProposeAjeIn(BaseModel):
 
     def tool_targets(self, agent: AgentContext) -> object:
         """The run's engagement: the handler checks the close and its item sit on it."""
-        from abacus.modules.agents.api import ToolTargets  # agents imports closes' tools
+        from abacus.modules.agents.api import ToolTargets  # lazy: closes.api registers these
 
         return ToolTargets((agent.engagement_id,) if agent.engagement_id is not None else ())
 
@@ -642,3 +642,10 @@ AGENT_TOOLS: Final = (
     ToolDecl("close.plan_history_profile", "compute", READ, "confidential", HistoryIn,
              HistoryOut, plan_history_profile, records_read="reconciliation"),
 )  # fmt: skip
+
+
+# C-01-T28: closes registers its own tools on C17 at import (agents may not import closes,
+# ADR-008); `closes.api` imports this module, as does the tool-registry check.
+from abacus.modules.agents.api import register_declared  # noqa: E402
+
+register_declared(AGENT_TOOLS)

@@ -1,8 +1,8 @@
 ---
 id: TASK-8314
 title: "A-08-T27: AUD-12 screen states a-h in fixture mode"
-spec: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md F2, F3
-acceptance_criteria: [A-08-T27]
+spec: SPEC-657
+acceptance_criteria: [AC-0, AC-1]
 risk_zone: green
 status: in-review
 branch: a08-t27-aud12-states
@@ -13,6 +13,7 @@ plan_key: A-08-T27
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md F2, F3.
 AUD-12 screen states a-h in fixture mode.
 
 ## Plan (green)

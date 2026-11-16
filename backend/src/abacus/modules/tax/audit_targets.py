@@ -92,6 +92,10 @@ _ENTITIES = {
         "JOIN instrument_segmentations s ON s.id = c.segmentation_id "
         "JOIN governing_instruments g ON g.id = s.instrument_id WHERE c.id = ANY(:ids)"
     ),
+    # T-07-T24 (S47): a trust's 65-day election belongs to the client entity.
+    "sixty_five_day_election": text(
+        "SELECT id, client_entity_id FROM sixty_five_day_elections WHERE id = ANY(:ids)"
+    ),
 }
 ENTITY_KINDS = frozenset(_ENTITIES)
 

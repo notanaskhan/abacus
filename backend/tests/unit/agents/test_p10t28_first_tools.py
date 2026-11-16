@@ -34,7 +34,16 @@ def test_the_fifteen_first_tools_are_registered() -> None:
     workbench |= {"identity.list_offices", "files.list_folders"}
     # C-01-T18 (DEC-5077): the close month's register beside the TB reads.
     closes = {"ledger.read_transactions"}
+    # A-08-T23 (DEC-5310): the counterparty compute.
+    closes |= {"ledger.counterparty_activity"}
     assert {d.name for d in DECLARED} == FIRST | files | workbench | closes
+    # C-01-T28 (DEC-5303): the six close tools, which closes registers from its own api (agents
+    # may not import closes, ADR-008), so they are registered but not in the catalogue.
+    import abacus.modules.closes.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
+
+    six = {"close.read_checklist", "close.reconcile", "close.read_upload_table"}
+    six |= {"close.read_register", "close.propose_aje", "close.plan_history_profile"}
+    assert set(registered_tools()) >= six
 
 
 @pytest.mark.parametrize("name", sorted(FIRST))

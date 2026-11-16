@@ -11,14 +11,15 @@ from collections.abc import AsyncIterator
 
 import asyncpg
 import pytest
+from sqlalchemy import text
 
-from abacus.kernel.db import configure_engine, dispose_engine
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, tenant_session
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 from .test_c01t18_ledger_reads import (
     _record,  # pyright: ignore[reportPrivateUsage] -- C-01-T18's month writer
-    _tb,  # pyright: ignore[reportPrivateUsage]
+    _tb,  # pyright: ignore[reportPrivateUsage] -- C-01-T18's trial balance builder
 )
 from .test_c01t18_ledger_reads import seeded as seeded
 
@@ -66,16 +67,11 @@ async def test_another_tenant_never_sees_the_snapshot(
     )  # fmt: skip
     other = uuid.uuid4()
     await seed.run("INSERT INTO firms (tenant_id, name) VALUES ($1, 'Other')", other)
-    conn = await asyncpg.connect(app._dsn)  # pyright: ignore[reportPrivateUsage] -- the app role
-    try:
-        async with conn.transaction():
-            await conn.execute("SELECT set_config('app.tenant_id', $1, true)", str(other))
-            seen = await conn.fetchval(
-                "SELECT count(*) FROM ledger_snapshots WHERE id = $1", snapshot
-            )
-            rows = await conn.fetchval(
-                "SELECT count(*) FROM gl_entries WHERE snapshot_id = $1", snapshot
-            )
-    finally:
-        await conn.close()
+    async with tenant_session(TenantContext(other, "system", "probe")) as session:
+        seen = await session.scalar(
+            text("SELECT count(*) FROM ledger_snapshots WHERE id = :s"), {"s": snapshot}
+        )
+        rows = await session.scalar(
+            text("SELECT count(*) FROM gl_entries WHERE snapshot_id = :s"), {"s": snapshot}
+        )
     assert (seen, rows) == (0, 0)

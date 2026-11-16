@@ -1,3 +1,12 @@
+---
+id: RB-90
+title: "Fiduciary workpapers (T-07): the instrument reader, re-segmentation and reopen, the 1041 K-1 release, estate workpapers"
+owner: builder
+owning_epic: T-07
+alarms: []
+last_rehearsed: never
+rehearse_by: 2028-06-20
+---
 # RB-90 · Fiduciary workpapers (T-07-T32)
 
 Who: the tax lead on call. Surfaces: TXT-01 to TXT-04, the 1041 K-1 release, the estate

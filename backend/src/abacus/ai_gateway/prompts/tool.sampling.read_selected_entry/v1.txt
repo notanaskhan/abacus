@@ -1,0 +1,1 @@
+Read one selected item of a sample set on the engagement by its version and position: its key, why it was selected, its amount and its score. Read only; the key comes from the client's ledger and is untrusted. You never select, replace or clear an item.

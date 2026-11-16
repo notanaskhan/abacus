@@ -1,8 +1,8 @@
 ---
 id: TASK-8323
 title: "T-07-T24: 1041 K-1 release gate"
-spec: docs/plan/epics/T-07.md F12
-acceptance_criteria: [T-07-T24]
+spec: SPEC-656
+acceptance_criteria: [AC-10]
 risk_zone: red
 status: in-review
 branch: t07-t24-1041-release-gate
@@ -13,6 +13,7 @@ plan_key: T-07-T24
 ---
 
 ## Objective
+Spec section: docs/plan/epics/T-07.md F12.
 1041 K-1 release gate.
 
 ## Plan (red)

@@ -1,8 +1,8 @@
 ---
 id: TASK-8336
 title: "W-01-T17: Connect flows"
-spec: handoff WB-10, WB-11
-acceptance_criteria: [W-01-T17]
+spec: SPEC-659
+acceptance_criteria: [AC-10, AC-11, AC-12, AC-13, AC-14, AC-15, AC-16]
 risk_zone: green
 status: in-review
 branch: w01-t17-connect-flows
@@ -13,6 +13,7 @@ plan_key: W-01-T17
 ---
 
 ## Objective
+Spec section: handoff WB-10, WB-11.
 Connect flows.
 
 ## Plan (green)

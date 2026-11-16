@@ -2471,6 +2471,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/client-imports/{import_id}/rows/{row_id}/decision", "client_import.run"),
     ("PUT", "/v1/closes/{close_id}/assignees", "close.assign"),
     ("PUT", "/v1/components/{component_id}", "component.edit"),
+    ("PUT", "/v1/connections/{connection_id}/coverage", "connection.manage_coverage"),
     ("PUT", "/v1/contacts/{contact_id}/access", "client_access.grant"),
     (
         "PUT",

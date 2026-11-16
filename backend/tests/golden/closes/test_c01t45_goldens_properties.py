@@ -119,7 +119,7 @@ def test_golden_flux_both_legs() -> None:
 def test_golden_tree_foots() -> None:
     g = FIG["tree"]
     leaves = [(a, b, _d(c)) for a, b, c in cast("list[list[str]]", g["leaves"])]
-    sums = calc.rollup(leaves)
+    sums = calc.subtotals(leaves)
     assert sums["asset"][""] == _d(g["asset_total"])
     assert sums["asset"]["Bank"] == _d(g["bank_total"])
 
@@ -274,7 +274,7 @@ def test_property_a_schedule_foots_to_its_total(total: Decimal, months: int) -> 
     )
 )
 def test_property_rollups_foot(leaves: list[tuple[str, str, Decimal]]) -> None:
-    sums = calc.rollup(leaves)
+    sums = calc.subtotals(leaves)
     for classification, types in sums.items():
         assert types[""] == sum((v for k, v in types.items() if k), D("0.00"))
         assert types[""] == sum((a for c, _, a in leaves if c == classification), D("0.00"))

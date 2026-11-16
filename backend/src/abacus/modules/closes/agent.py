@@ -56,10 +56,9 @@ TOOLS: Final = frozenset(
 TASK_SCOPE: Final = frozenset(
     {"close.read", "suggestion.create", "issue.create", "decision_card.raise"}
 )
-# The reserved acts no close.agent output may take or ask for (INV-1, DE-5).
-NEVER: Final = frozenset(
-    {"approve", "sign_off", "release", "send", "post", "decide", "resolve", "propose_entry"}
-)
+# The reserved acts no close.agent output may take or ask for (INV-1, DE-5) are C17's
+# never-verbs, refused at tool registration (`agents.tools.registry.NEVER_TOOL_VERBS`) and by the
+# matrix (`agent: deny`); the task scope above writes only a suggestion, an issue and a card.
 Int = classified("internal")
 Conf = classified("confidential")
 

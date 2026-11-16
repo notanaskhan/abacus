@@ -1,8 +1,8 @@
 ---
 id: TASK-8333
 title: "W-01-T18: ADR-078 AC suite 2 for the red Connect work"
-spec: docs/plan/epics/W-01.md F4, F5
-acceptance_criteria: [W-01-T18]
+spec: SPEC-659
+acceptance_criteria: [AC-13, AC-14, AC-15, AC-16, AC-27, AC-28, AC-29, AC-30]
 risk_zone: red
 status: in-review
 branch: w01-t18-ac-suite-2
@@ -13,6 +13,7 @@ plan_key: W-01-T18
 ---
 
 ## Objective
+Spec section: docs/plan/epics/W-01.md F4, F5.
 ADR-078 AC suite 2 for the red Connect work.
 
 ## Plan (red)

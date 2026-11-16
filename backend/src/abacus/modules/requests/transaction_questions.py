@@ -119,7 +119,7 @@ def _fingerprint(question_id: UUID) -> str:
     return f"{SUBJECT}:{question_id}:answer"
 
 
-async def ask(
+async def raise_question(
     tx: UnitOfWork,
     ctx: AuthContext,
     *,
@@ -208,7 +208,9 @@ async def answer(
         row = _row(found)
         if row.assignee_contact_id not in mine:
             raise NotFound(SUBJECT)
-        if row.status != "open":
+        # A question's own codes (C-01-T24), not a request item's: only an unanswered one takes
+        # an answer.
+        if row.status in ("answered", "withdrawn"):
             raise QuestionAlreadyAnswered(facts={"status": row.status})
         sealed = await seal(ctx.tenant_id, text_in.encode(), _fingerprint(question_id))
         version = await tx.session.scalar(

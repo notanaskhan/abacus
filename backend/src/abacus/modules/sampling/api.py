@@ -100,6 +100,7 @@ from abacus.modules.sampling.sample_sets import (
     sample_set_view,
     section_state,
 )
+from abacus.modules.sampling.selected_entries import SelectedEntry, selected_entry
 from abacus.modules.sampling.selection import (
     CRITERIA_VERSION,
     DEFAULT_KEYWORDS,
@@ -167,6 +168,7 @@ __all__ = [
     "SampleNotApproved",
     "SampleSetIn",
     "Selected",
+    "SelectedEntry",
     "StratumIn",
     "StratumRule",
     "TieComparisonIn",
@@ -194,6 +196,7 @@ __all__ = [
     "seeded_v1",
     "select",
     "select_payments",
+    "selected_entry",
     "tie_out",
     "ties",
     "udl",

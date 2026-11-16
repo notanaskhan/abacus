@@ -89,7 +89,9 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // instrument_interpretation, instrument_segmentation, sixty_five_day_election,
     // estate_inventory_item, estate_deduction_election, estate_computation_label.
     // +3 (S44 end pass, DEC-5018): close_run, connection_meter, gift_form_709.
-    expect(Object.keys(REGISTRY)).toHaveLength(215); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan; S45: A-08 (8), A-09 (3), W-01 (1)
+    // +6 (S47 G-04-T02/T04): plan_request, tenant_health, status_component, platform_region,
+    // support_availability, agent_run_state_reason.
+    expect(Object.keys(REGISTRY)).toHaveLength(221); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan; S45: A-08 (8), A-09 (3), W-01 (1)
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -122,7 +124,9 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +13 (S40): workbench_session_filter 5 (W-02-T04), daily_briefing 5, attention_item 3 (I-02-T03).
     // +50 (S44): C-01-T03's eight objects (32 codes) and T-07-T04's six (18 codes).
     // +11 (DEC-5018): close_run 5, connection_meter 3, gift_form_709 3.
-    expect(ROWS).toHaveLength(919); // DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows; S45: A-08, A-09, W-01 rows (50)
+    // +19 (S47 G-04): support_session ended and expired 2, plan_request 5, tenant_health 3,
+    // status_component 4, platform_region 2, support_availability 2, agent_run_state_reason 1.
+    expect(ROWS).toHaveLength(938); // DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows; S45: A-08, A-09, W-01 rows (50)
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

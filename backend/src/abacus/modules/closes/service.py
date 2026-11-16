@@ -546,7 +546,7 @@ def _version(if_match: str) -> int:
         raise StaleClose(facts={"if_match": "not a version"}) from None
 
 
-async def _refuse_non_human(ctx: AuthContext, close_id: UUID, action: str) -> None:
+async def refuse_non_human(ctx: AuthContext, close_id: UUID, action: str) -> None:
     """INV-1: an agent, the system or a support session is refused, and the refusal kept."""
     if ctx.tenant.actor_kind == "human" and not ctx.is_support and not ctx.client:
         return
@@ -559,7 +559,7 @@ async def _refuse_non_human(ctx: AuthContext, close_id: UUID, action: str) -> No
 async def move_status(
     ctx: AuthContext, close_id: UUID, body: StatusMoveIn, if_match: str
 ) -> CloseSummaryOut:
-    await _refuse_non_human(ctx, close_id, MOVE)
+    await refuse_non_human(ctx, close_id, MOVE)
     close, _ = await _visible_close(ctx, close_id)
     ref = await get_ref(ctx, close.engagement_id)
     await authorise(ctx, MOVE, ref.resource())
@@ -630,7 +630,7 @@ async def set_assignees(
 ) -> CloseSummaryOut:
     """Managers and Partners set the preparer and reviewer (`close_preparer`, `close_reviewer`);
     each change is one unit of work with `close.assignee_changed` (AC-8)."""
-    await _refuse_non_human(ctx, close_id, ASSIGN)
+    await refuse_non_human(ctx, close_id, ASSIGN)
     close, _ = await _visible_close(ctx, close_id)
     if _version(if_match) != close.row_version:
         raise StaleClose(facts={"close_id": str(close_id)})

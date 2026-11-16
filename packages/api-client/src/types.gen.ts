@@ -19918,7 +19918,7 @@ export type EntitlementsPatchIn = {
     /**
      * Modules
      */
-    modules?: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'> | null;
+    modules?: Array<'tax_services' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'> | null;
     /**
      * Plan Request Id
      */
@@ -24775,7 +24775,7 @@ export type FirmPlanOut = {
     /**
      * Modules
      */
-    modules: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    modules: Array<'tax_services' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
     /**
      * Plan Code
      */
@@ -33428,6 +33428,30 @@ export type LeadsheetsOut = {
 };
 
 /**
+ * LedgerCoverageIn
+ */
+export type LedgerCoverageIn = {
+    /**
+     * Client Entity Ids
+     */
+    client_entity_ids: Array<string>;
+};
+
+/**
+ * LedgerCoverageOut
+ */
+export type LedgerCoverageOut = {
+    /**
+     * Added
+     */
+    added: number;
+    /**
+     * Connection Id
+     */
+    connection_id: string;
+};
+
+/**
  * LedgerPullIn
  */
 export type LedgerPullIn = {
@@ -40462,7 +40486,7 @@ export type PlanRequestIn = {
     /**
      * Modules Add
      */
-    modules_add?: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    modules_add?: Array<'tax_services' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
     /**
      * Reason
      */
@@ -40510,7 +40534,7 @@ export type PlanRequestOut = {
     /**
      * Modules Add
      */
-    modules_add: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    modules_add: Array<'tax_services' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
     /**
      * Reason
      */
@@ -40978,7 +41002,7 @@ export type PlatformPlanRequestOut = {
     /**
      * Modules Add
      */
-    modules_add: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    modules_add: Array<'tax_services' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
     /**
      * Sent At
      */
@@ -44338,7 +44362,7 @@ export type ProvisionTenantIn = {
     /**
      * Modules
      */
-    modules: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    modules: Array<'tax_services' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
     /**
      * Region
      */
@@ -60153,7 +60177,7 @@ export type TenantRowOut = {
     /**
      * Modules
      */
-    modules: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    modules: Array<'tax_services' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
     /**
      * Plan Requests Open
      */
@@ -86292,6 +86316,12 @@ export type VerifyCodeResponse = VerifyCodeResponses[keyof VerifyCodeResponses];
 
 export type SubmitResponseData = {
     body: RespondentResponseIn;
+    headers?: {
+        /**
+         * X-Abacus-Csrf
+         */
+        'X-Abacus-CSRF'?: string | null;
+    };
     path: {
         /**
          * Token
@@ -87322,6 +87352,62 @@ export type HandoffResponses = {
 };
 
 export type HandoffResponse = HandoffResponses[keyof HandoffResponses];
+
+export type ChooseCoverageData = {
+    body: LedgerCoverageIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Connection Id
+         */
+        connection_id: string;
+    };
+    query?: never;
+    url: '/v1/connections/{connection_id}/coverage';
+};
+
+export type ChooseCoverageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ChooseCoverageError = ChooseCoverageErrors[keyof ChooseCoverageErrors];
+
+export type ChooseCoverageResponses = {
+    /**
+     * Successful Response
+     */
+    200: LedgerCoverageOut;
+};
+
+export type ChooseCoverageResponse = ChooseCoverageResponses[keyof ChooseCoverageResponses];
 
 export type ReconnectRequestData = {
     body?: never;

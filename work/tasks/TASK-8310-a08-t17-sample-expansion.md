@@ -1,8 +1,8 @@
 ---
 id: TASK-8310
 title: "A-08-T17: Sample expansion (AUD-12 R2)"
-spec: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md F3
-acceptance_criteria: [A-08-T17]
+spec: SPEC-657
+acceptance_criteria: [AC-3]
 risk_zone: amber
 status: in-review
 branch: a08-t17-sample-expansion
@@ -13,6 +13,7 @@ plan_key: A-08-T17
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md F3.
 Sample expansion (AUD-12 R2).
 
 ## Plan (amber)

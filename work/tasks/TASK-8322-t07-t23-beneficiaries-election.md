@@ -1,8 +1,8 @@
 ---
 id: TASK-8322
 title: "T-07-T23: Beneficiaries, K-1 (1041) packages and the 65-day election"
-spec: docs/plan/epics/T-07.md F9 to F11
-acceptance_criteria: [T-07-T23]
+spec: SPEC-656
+acceptance_criteria: [AC-9, AC-11]
 risk_zone: amber
 status: in-review
 branch: t07-t23-beneficiaries-election
@@ -13,6 +13,7 @@ plan_key: T-07-T23
 ---
 
 ## Objective
+Spec section: docs/plan/epics/T-07.md F9 to F11.
 Beneficiaries, K-1 (1041) packages and the 65-day election.
 
 ## Plan (amber)

@@ -33,10 +33,6 @@ from abacus.modules.engagements.api import work_item_engagement
 from abacus.modules.identity.api import AgentContext
 
 MODES: Final = ("fieldwork_attribute", "flux_explain", "confirmation_reconcile")
-_DEVIATIONS: Final = text(
-    "SELECT count(DISTINCT sample_item_id) FILTER (WHERE kind <> 'difference'), count(*) "
-    "FROM control_deviations WHERE work_item_id = :w"
-)
 _CONFIRMATIONS: Final = text(
     "SELECT status, count(*) FROM confirmations WHERE work_item_id = :w GROUP BY status"
 )
@@ -57,9 +53,9 @@ def _fact(kind: str, value: object, basis: str) -> dict[str, object]:
 
 async def fieldwork_attribute_inputs(agent: AgentContext, paper: object) -> ModeInputs:
     await _on(agent)
-    async with tenant_session(agent.tenant) as session:
-        row = (await session.execute(_DEVIATIONS, {"w": paper.work_item_id})).first()  # type: ignore[attr-defined] -- a SourcePaper
-    deviations, logged = (int(row[0] or 0), int(row[1] or 0)) if row else (0, 0)
+    from abacus.modules.workpapers.api import deviation_counts
+
+    deviations, logged = await deviation_counts(agent.tenant, paper.work_item_id)  # type: ignore[attr-defined] -- a SourcePaper
     return ModeInputs(
         facts=(
             ("deviations", _fact("count", deviations, "control_deviations, one per item")),

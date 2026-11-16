@@ -25,7 +25,7 @@ Ctx = Annotated[AuthContext, Depends(current_context)]
 router = AbacusRouter(prefix="/v1", tags=["connections"])
 
 
-class CoverageIn(BaseModel):
+class LedgerCoverageIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     client_entity_ids: Annotated[
@@ -33,7 +33,7 @@ class CoverageIn(BaseModel):
     ]
 
 
-class CoverageOut(BaseModel):
+class LedgerCoverageOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     connection_id: Annotated[UUID, classified("internal")]
@@ -43,10 +43,12 @@ class CoverageOut(BaseModel):
 @router.put(
     "/connections/{connection_id}/coverage",
     action=ACTION,
-    response_model=CoverageOut,
+    response_model=LedgerCoverageOut,
     errors=(409,),
 )
-async def put_coverage(connection_id: UUID, body: CoverageIn, ctx: Ctx) -> CoverageOut:
+async def choose_coverage(
+    connection_id: UUID, body: LedgerCoverageIn, ctx: Ctx
+) -> LedgerCoverageOut:
     if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(ACTION, "role")
     async with tenant_session(ctx.tenant) as session:
@@ -58,4 +60,4 @@ async def put_coverage(connection_id: UUID, body: CoverageIn, ctx: Ctx) -> Cover
     for target in {entity, *body.client_entity_ids}:
         await authorised_engagement(ctx, target, ACTION)
     added = await cover_entities(ctx.tenant, connection_id, body.client_entity_ids)
-    return CoverageOut(connection_id=connection_id, added=added)
+    return LedgerCoverageOut(connection_id=connection_id, added=added)

@@ -14,7 +14,6 @@ from abacus.kernel.agent_tools import ToolDecl
 from abacus.modules.agents.agent_tools import AGENT_TOOLS as AGENTS
 from abacus.modules.agents.file_tools import FILE_TOOLS  # P-10-T38
 from abacus.modules.agents.tools.registry import AgentTool, register_tool
-from abacus.modules.closes.api import AGENT_TOOLS as CLOSES  # C-01-T28
 from abacus.modules.engagements.api import AGENT_TOOLS as ENGAGEMENTS
 from abacus.modules.evidence.api import AGENT_TOOLS as EVIDENCE
 from abacus.modules.identity.api import AGENT_TOOLS as IDENTITY  # W-02-T19
@@ -26,7 +25,6 @@ DECLARED: Final[tuple[ToolDecl, ...]] = (
     *REQUESTS,
     *EVIDENCE,
     *LEDGER,
-    *CLOSES,
     *IDENTITY,
     *AGENTS,
     *FILE_TOOLS,
@@ -52,6 +50,8 @@ def as_tool(decl: ToolDecl) -> AgentTool:
 
 
 def register_all(declared: Iterable[ToolDecl] = DECLARED) -> None:
+    """Register declared tools. A module `agents` may not import (closes, C-01-T28; ADR-008)
+    calls this with its own `AGENT_TOOLS` from its api (`agents.api.register_declared`)."""
     for decl in declared:
         register_tool(as_tool(decl))
 

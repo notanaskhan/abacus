@@ -1,8 +1,8 @@
 ---
 id: TASK-8328
 title: "T-07-T30: Journey E2E j07 steps on the fixture project"
-spec: docs/plan/epics/T-07.md §2
-acceptance_criteria: [T-07-T30]
+spec: SPEC-656
+acceptance_criteria: [AC-0]
 risk_zone: green
 status: in-review
 branch: t07-t30-j07-journey
@@ -13,6 +13,7 @@ plan_key: T-07-T30
 ---
 
 ## Objective
+Spec section: docs/plan/epics/T-07.md §2.
 Journey E2E j07 steps on the fixture project.
 
 ## Plan (green)

@@ -52,6 +52,7 @@ from abacus.modules.workpapers.drafting import (
     paper_id_of_kind,
     paper_of_kind,
 )
+from abacus.modules.workpapers.fieldwork_tests import deviation_counts, register_finding_raiser
 from abacus.modules.workpapers.fieldwork_tests_contract import router as fieldwork_tests_router
 from abacus.modules.workpapers.guards import register_sign_off_guard
 from abacus.modules.workpapers.layouts import (
@@ -179,6 +180,7 @@ __all__ = [
     "create_test",
     "create_workpaper",  # A-04-T28: the planning slice opens EBP-140 through the service
     "designed_layout",
+    "deviation_counts",
     "dirty_cells",
     "draft_paper",
     "evaluate_flux",
@@ -198,6 +200,7 @@ __all__ = [
     "recompute_workbook",
     "record_agent_result",
     "register_designed_layout",
+    "register_finding_raiser",
     "register_sign_off_guard",  # A-05-T16 (DEC-2069)
     "render_formula",
     "render_workbook",

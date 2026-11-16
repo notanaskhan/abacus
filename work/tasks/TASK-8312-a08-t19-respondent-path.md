@@ -1,8 +1,8 @@
 ---
 id: TASK-8312
 title: "A-08-T19: Respondent path (red)"
-spec: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md F5 (AC-7)
-acceptance_criteria: [A-08-T19]
+spec: SPEC-657
+acceptance_criteria: [AC-7]
 risk_zone: red
 status: in-review
 branch: a08-t19-respondent-path
@@ -13,6 +13,7 @@ plan_key: A-08-T19
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md F5 (AC-7).
 Respondent path (red).
 
 ## Plan (red)

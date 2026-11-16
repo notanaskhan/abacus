@@ -65,11 +65,16 @@ def label_of(kind: str) -> str:
     return _LABELS.get(kind, kind.replace("_", " ").capitalize())
 
 
-def _cursor(value: str | None) -> tuple[str | None, str | None]:
+def _cursor(value: str | None) -> tuple[datetime | None, UUID | None]:
+    """The page's `<at>|<id>` cursor, parsed here: a malformed one starts from the newest (as
+    before), never a database error."""
     if not value or "|" not in value:
         return None, None
     at, _, ident = value.partition("|")
-    return at, ident
+    try:
+        return datetime.fromisoformat(at), UUID(ident)
+    except ValueError:
+        return None, None
 
 
 async def events(

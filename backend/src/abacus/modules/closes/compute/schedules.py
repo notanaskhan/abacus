@@ -158,7 +158,7 @@ def tie(
     return TieResult("off", gl, sched, difference, None)
 
 
-def rollup(
+def subtotals(
     leaves: Iterable[tuple[str, str, Decimal]],
 ) -> dict[str, dict[str, Decimal]]:
     """(classification, account type, balance) leaves rolled up: {classification: {type: sum}},

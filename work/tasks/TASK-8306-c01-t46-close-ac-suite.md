@@ -1,8 +1,8 @@
 ---
 id: TASK-8306
 title: "C-01-T46: Independent AC tests (ADR-078) for the close record, plan, intake and run services"
-spec: docs/specs/SPEC-655-c01-close-engine-v1.md §4 F1 to F4
-acceptance_criteria: [C-01-T46]
+spec: SPEC-655
+acceptance_criteria: [AC-9, AC-13, AC-18, AC-24]
 risk_zone: amber
 status: in-review
 branch: c01-t46-close-ac-suite
@@ -13,6 +13,7 @@ plan_key: C-01-T46
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-655-c01-close-engine-v1.md §4 F1 to F4.
 Independent AC tests (ADR-078) for the close record, plan, intake and run services.
 
 ## Plan (amber)

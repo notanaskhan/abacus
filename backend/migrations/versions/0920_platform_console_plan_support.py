@@ -6,8 +6,8 @@ Tenant tables (forced RLS):
 - `plan_entitlements`: insert-only versions of the plan term, seats, included agent-minutes, the
   usage-month anchor day and the library channel; the current row is the latest `valid_from`
   not after now. `tenant_entitlements` stays the per-module switch (F-03-T28); its `module` CHECK
-  gains the four service lines (`tax`, `audit_assurance`, `client_accounting`, `advisory`),
-  recorded and shown, not enforced (OQ-6).
+  gains the four service lines (`tax_services`, `audit_assurance`, `client_accounting`,
+  `advisory`), recorded and shown, not enforced (OQ-6).
 - `usage_alert_policies` (one row, `version`), `usage_alert_rules` (firm thresholds and
   recipients), `usage_alert_events` (insert-only; once per threshold per scope per usage month).
 - `plan_change_requests` ("Request more"): the decider is never the requester (a CHECK).
@@ -54,9 +54,9 @@ _MODULES_OLD = (
 _MODULES_NEW = (
     "('attest', 'internal_audit', 'group_audit', 'statements_studio', 'office_addins', "
     "'insights', 'tax_returns', 'ebp_audits', 'assurance_completion', 'tax_entity_returns', "
-    "'cas_closes', 'tax', 'audit_assurance', 'client_accounting', 'advisory')"
+    "'cas_closes', 'tax_services', 'audit_assurance', 'client_accounting', 'advisory')"
 )
-_SERVICE_LINES = "('tax', 'audit_assurance', 'client_accounting', 'advisory')"
+_SERVICE_LINES = "('tax_services', 'audit_assurance', 'client_accounting', 'advisory')"
 
 TENANT_INSERTS: dict[str, tuple[str, ...]] = {
     "plan_entitlements": (

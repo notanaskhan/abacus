@@ -1,8 +1,8 @@
 ---
 id: TASK-8324
 title: "T-07-T25: TXT-03 states in fixture mode"
-spec: handoff TXT-03
-acceptance_criteria: [T-07-T25]
+spec: SPEC-656
+acceptance_criteria: [AC-0, AC-9, AC-10, AC-11]
 risk_zone: green
 status: in-review
 branch: t07-t25-txt03-states
@@ -13,6 +13,7 @@ plan_key: T-07-T25
 ---
 
 ## Objective
+Spec section: handoff TXT-03.
 TXT-03 states in fixture mode.
 
 ## Plan (green)

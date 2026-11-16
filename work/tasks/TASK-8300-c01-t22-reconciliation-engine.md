@@ -1,8 +1,8 @@
 ---
 id: TASK-8300
 title: "C-01-T22: Reconciliation engine closes/compute/reconciliation.py (pure, Decimal)"
-spec: docs/plan/epics/C-01.md §3 F7
-acceptance_criteria: [C-01-T22]
+spec: SPEC-655
+acceptance_criteria: [AC-39, AC-40]
 risk_zone: amber
 status: in-review
 branch: c01-t22-reconciliation-engine
@@ -13,6 +13,7 @@ plan_key: C-01-T22
 ---
 
 ## Objective
+Spec section: docs/plan/epics/C-01.md §3 F7.
 Reconciliation engine closes/compute/reconciliation.py (pure, Decimal).
 
 ## Plan (amber)

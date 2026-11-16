@@ -393,7 +393,7 @@ async def decide_expansion(
     from abacus.modules.sampling import expansions
 
     return _expansion_out(
-        await expansions.decide(ctx, expansion_id, body.decision, body.seen_hash)
+        await expansions.record_decision(ctx, expansion_id, body.decision, body.seen_hash)
     )
 
 

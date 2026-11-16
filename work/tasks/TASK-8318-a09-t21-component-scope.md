@@ -1,8 +1,8 @@
 ---
 id: TASK-8318
 title: "A-09-T21: Component scope in identity and the portal shell"
-spec: docs/specs/SPEC-658 F6
-acceptance_criteria: [A-09-T21]
+spec: SPEC-658
+acceptance_criteria: [AC-7]
 risk_zone: red
 status: in-review
 branch: a09-t21-component-scope
@@ -13,6 +13,7 @@ plan_key: A-09-T21
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-658 F6.
 Component scope in identity and the portal shell.
 
 ## Plan (red)

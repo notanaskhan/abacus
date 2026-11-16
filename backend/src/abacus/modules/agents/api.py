@@ -326,6 +326,9 @@ from abacus.modules.agents.today_context import today_context as today_context
 
 # P-10-T28: importing the catalogue registers every module's declared tools.
 from abacus.modules.agents.tools.catalogue import DECLARED as DECLARED
+
+# C-01-T28: a module agents may not import registers its own declared tools (closes).
+from abacus.modules.agents.tools.catalogue import register_all as register_declared
 from abacus.modules.agents.tools.registry import AgentTool as AgentTool
 from abacus.modules.agents.tools.registry import ToolNotRegistered as ToolNotRegistered
 from abacus.modules.agents.tools.registry import ToolPageIn as ToolPageIn
@@ -769,6 +772,7 @@ __all__ = [
     "record_synthetic_run",
     "register_change_set_applier",
     "register_decision_source",
+    "register_declared",
     "register_drill_source",
     "register_drill_writer",
     "register_engagement_run_agent",
