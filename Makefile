@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check-fast-frontend check-docs check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-close-fast evals-close-full evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check dark-merge-audit release-pr golden-render form-fixtures
+.PHONY: a07-shadow refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check-fast-frontend check-docs check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-conformance-fast evals-tax-fast evals-entity-fast evals-close-fast evals-close-full evals-fiduciary-fast evals-completion-fast generate migrate db-reset loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check dark-merge-audit release-pr golden-render form-fixtures
 
 setup:
 	cd backend && uv sync --locked
@@ -172,6 +172,7 @@ check: check-fast
 	$(MAKE) evals-review-fast
 	$(MAKE) evals-match-fast
 	$(MAKE) evals-recommend-fast
+	$(MAKE) evals-fiduciary-fast
 	$(MAKE) ci-contracts ci-frontend
 
 # CI stage 2 runs `check` as parallel jobs (TASK-017). Each suite is split into SHARDS by recorded
@@ -304,6 +305,10 @@ evals-workbench-fast:
 # W-02-T25: the nightly full suite on the fake model.
 evals-workbench-full:
 	cd backend && uv run python -m abacus_tools.evals --agent workbench_assistant --subset full
+
+# T-07-T18: tax.instrument_reader's suite on the fake model (thresholds frozen; part of check).
+evals-fiduciary-fast:
+	cd backend && uv run python -m abacus_tools.evals --agent tax_instrument_reader --subset fast
 
 # C-01-T31: close.agent's suite on the fake model (thresholds frozen before T29's prompts).
 evals-close-fast:

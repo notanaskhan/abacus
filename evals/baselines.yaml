@@ -41,3 +41,8 @@ decisions.recommender:
 # the medium tier (inferred, W-02 T25). The real run's median must stay within 10 % of it.
 workbench.assistant:
   medium: "0.60"
+# tax.instrument_reader v1 (T-07-T18; T-07 §6; DEC-5062): the spec's budget, $0.60 an instrument
+# (up to 40 pages) on the medium tier, inferred until the first Bedrock run sets it (T-07 §6). A
+# clearance run's median must stay within 10 % of it.
+tax.instrument_reader:
+  medium: "0.60"
