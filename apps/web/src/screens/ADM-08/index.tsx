@@ -571,7 +571,10 @@ export function ADM08({
               ))}
             </ul>
             <p className="border-t border-hair px-[14px] py-[8px] text-[12px]">
-              {COPY.connected.footer}
+              {/* W-01-T12: the footer opens WB-10, live (the handoff's ADM-08 → WB-10). */}
+              <a href={hrefOf(to.WB10())} className="text-ink hover:underline">
+                {COPY.connected.footer}
+              </a>
             </p>
           </aside>
         </div>

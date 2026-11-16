@@ -52,6 +52,9 @@ export interface WB01Props {
   onFilter?: (filter: SessionFilter) => void;
   /** W-02-T14: Create Agent… (WB-07, W-03): a planned link, hidden in production. */
   onCreateAgent?: () => void;
+  /** W-01-T12: the Connect tab opens WB-10 (`/workbench/connect`); without it the tab says
+   * Connect is planned. */
+  onConnect?: () => void;
 }
 
 /** A server row as the kit's row: the attribution is `formatActor`'s (INV-5). */
@@ -127,6 +130,7 @@ export function WB01({
   onNew,
   onFilter,
   onCreateAgent,
+  onConnect,
 }: WB01Props): JSX.Element {
   const me = useSession().user?.id ?? null;
   useRealtimeStream(workbenchTopics(me, sessionId));
@@ -142,12 +146,16 @@ export function WB01({
   const manage = snapshot.data?.allowed_actions.includes("manage") === true;
   // W-02-T22: Agents and Connect are planned (W-03, W-01): their words, never a blank pane.
   const [tab, setTab] = useState<WorkbenchTab>("sessions");
+  const tabTo = (next: WorkbenchTab): void => {
+    if (next === "connect" && onConnect !== undefined) onConnect();
+    else setTab(next);
+  };
   if (tab !== "sessions") {
     const words = tab === "agents" ? COPY.agentsPlanned : COPY.connectPlanned;
     return (
       <WorkbenchLayout
         tab={tab}
-        onTab={setTab}
+        onTab={tabTo}
         list={<EmptyState title={words} icon="clock" />}
         chat={<EmptyState title={words} icon="clock" />}
       />
@@ -157,7 +165,7 @@ export function WB01({
     <>
       <WorkbenchLayout
         tab="sessions"
-        onTab={setTab}
+        onTab={tabTo}
         list={
           list.isError ? (
             <ErrorState noun="sessions" onRetry={() => void list.refetch()} />

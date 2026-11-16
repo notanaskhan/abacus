@@ -384,7 +384,7 @@ rows:
     read:
     - code: people.read
       label: People and payroll registers
-  icon: id-card
+  icon: user-round
   tone: espresso
   sort_order: 16
   description: Payroll and workforce records.
@@ -1091,7 +1091,7 @@ rows:
     read:
     - code: people.read
       label: People and payroll registers
-  icon: id-card
+  icon: user-round
   tone: espresso
   sort_order: 51
   description: Read payroll registers and census files a client shares.
@@ -1110,7 +1110,7 @@ rows:
     read:
     - code: people.read
       label: People and payroll registers
-  icon: id-card
+  icon: user-round
   tone: espresso
   sort_order: 52
   description: Read payroll registers and contribution files a client shares.
@@ -1248,7 +1248,7 @@ rows:
     read:
     - code: payouts.read
       label: Read payouts and fees
-  icon: shopping-bag
+  icon: store
   tone: ochre
   sort_order: 102
 - key: shopify
@@ -1274,7 +1274,7 @@ rows:
     read:
     - code: orders.read
       label: Read orders and payouts
-  icon: shopping-bag
+  icon: store
   tone: ochre
   sort_order: 103
 - key: payroll_provider
@@ -1326,7 +1326,7 @@ rows:
     read:
     - code: people.read
       label: Read people and job history
-  icon: id-card
+  icon: user-round
   tone: espresso
   sort_order: 105
 - key: jira
