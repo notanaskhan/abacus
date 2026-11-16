@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { JSX, ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FIELDWORK_COPY, postedOn } from "../domain/audits";
+import { FIELDWORK_COPY, postedOn } from "../domain/fieldwork";
 import type { FixtureParams } from "../gallery/fixture-mode";
 import { screenById } from "../gallery/fixture-mode";
 import { KIT_A08_STATES, KitA08Board } from "./kit-a08";

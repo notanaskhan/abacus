@@ -14,6 +14,7 @@ from typing import cast
 
 import pytest
 from pydantic import BaseModel
+from starlette.requests import Request
 
 from abacus.api.export_openapi import document
 from abacus.kernel.classification import unclassified_fields
@@ -143,6 +144,11 @@ async def test_the_bank_variant_lists_the_clients_accounts(fixture_env: None) ->
     ]
 
 
+def _request() -> Request:
+    """The submit route reads the caller's address and agent only on the live path."""
+    return Request({"type": "http", "headers": [], "client": ("203.0.113.1", 443)})
+
+
 def _answer(agrees: bool, balance: str | None = None) -> cm.RespondentResponseIn:
     return cm.RespondentResponseIn(
         agrees=agrees,
@@ -154,15 +160,15 @@ def _answer(agrees: bool, balance: str | None = None) -> cm.RespondentResponseIn
 
 
 async def test_the_server_computes_the_difference(fixture_env: None) -> None:
-    agree = await cc.submit_response(fx.TOKENS["a"], _answer(True))
+    agree = await cc.submit_response(fx.TOKENS["a"], _answer(True), _request())
     assert agree.difference == Decimal("0.00") and agree.reference == "C2"
-    disagree = await cc.submit_response(fx.TOKENS["c"], _answer(False, "282600.00"))
+    disagree = await cc.submit_response(fx.TOKENS["c"], _answer(False, "282600.00"), _request())
     assert disagree.difference == Decimal("4300.00")  # 286,900 - 282,600
 
 
 async def test_ac7_5_a_replayed_response_is_already_answered(fixture_env: None) -> None:
     with pytest.raises(cc.AlreadyAnswered):
-        await cc.submit_response(fx.TOKENS["e"], _answer(True))
+        await cc.submit_response(fx.TOKENS["e"], _answer(True), _request())
 
 
 async def test_a_code_request_is_accepted_for_any_token(

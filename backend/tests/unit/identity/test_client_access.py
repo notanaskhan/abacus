@@ -114,8 +114,9 @@ async def test_an_engagement_grant_covers_its_engagement_and_a_client_grant_its_
 
 async def test_an_unregistered_scope_kind_covers_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
     async def grants(*_: object) -> list[GrantRow]:
-        # R-02-T12 registered governance_room (S32); component still has no resolver.
-        return [_grant("tcwg", "component", uuid.uuid4())]
+        # R-02-T12 registered governance_room (S32) and A-09-T21 component (S47); this kind has
+        # no resolver (the test once used `component`, and passed or failed by import order).
+        return [_grant("tcwg", "no_such_scope_kind", uuid.uuid4())]
 
     async def client_of(*_: object) -> uuid.UUID:
         return SHAH

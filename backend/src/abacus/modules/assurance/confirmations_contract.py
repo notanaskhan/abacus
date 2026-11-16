@@ -189,7 +189,7 @@ async def create_confirmation(
     action="confirmation.request_authorization",
     response_model=ConfirmationAuthorizationOut,
     status_code=201,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def confirmation_request_authorization(
     work_item_id: UUID, body: AuthorizationIn, ctx: Ctx, _key: IdempotencyKey
@@ -297,7 +297,7 @@ async def second_request(
     f"{_C}/revoke-link",
     action="confirmation.send",
     response_model=ConfirmationIdOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def revoke_link(confirmation_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> ConfirmationIdOut:
     """A-08-T18 (DEC-5324): end the sent confirmation's link; the status stays Sent."""
@@ -387,7 +387,10 @@ async def record_alternative(
 
 
 @router.post(
-    f"{_C}/exception", action="finding.create", response_model=ExceptionPrefillOut, errors=(409,)
+    f"{_C}/exception",
+    action="finding.create",
+    response_model=ExceptionPrefillOut,
+    errors=(409, 501),
 )
 async def confirmation_exception_prefill(confirmation_id: UUID, ctx: Ctx) -> ExceptionPrefillOut:
     """SHL-15's prefill; Below CT routes to `record_misstatement` (A-08-T18, DEC-5324)."""

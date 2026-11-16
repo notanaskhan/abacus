@@ -80,5 +80,6 @@ export {
   isNarrowedAudits,
   useAuditIndex,
 } from "./list";
-// A-08-T26: the fieldwork L3 kit (AUD-12, AUD-13, AUD-14, AUD-26).
-export * from "./fieldwork";
+// A-08-T26: the fieldwork L3 kit (AUD-12, AUD-13, AUD-14, AUD-26) is imported from
+// `domain/audits/fieldwork`, not re-exported here: AUD-12 live uses it, and a re-export would put
+// its code in the audits chunk every audit screen loads (the 140 KB route budget; TASK-8362).

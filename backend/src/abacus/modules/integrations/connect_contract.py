@@ -518,7 +518,7 @@ async def connect_events(
     "/integrations/{key}/client-companies",
     action="integration.read_client_companies",
     response_model=ConnectClientCompaniesOut,
-    errors=(),
+    errors=(501,),
 )
 async def connect_client_companies(
     key: Key,

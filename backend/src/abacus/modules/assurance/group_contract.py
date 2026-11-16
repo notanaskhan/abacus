@@ -649,7 +649,7 @@ class BulkTooLarge(DomainInvalid):
     f"{_C}/bulk-upload",
     action="consolidation.edit",
     response_model=ConsolidationOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_bulk_upload(
     work_item_id: UUID, consolidation_id: UUID, request: Request, ctx: Ctx, _key: IdempotencyKey
@@ -674,7 +674,7 @@ async def group_bulk_upload(
     action="consolidation.edit",
     response_model=GroupRunRefOut,
     status_code=202,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_pull_all(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
@@ -709,7 +709,7 @@ async def group_finalize(
 
 
 @router.post(
-    f"{_C}/lock", action="consolidation.lock", response_model=ConsolidationOut, errors=(409,)
+    f"{_C}/lock", action="consolidation.lock", response_model=ConsolidationOut, errors=(409, 501)
 )
 async def group_lock(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
@@ -723,7 +723,7 @@ async def group_lock(
 
 
 @router.post(
-    f"{_C}/reopen", action="consolidation.lock", response_model=ConsolidationOut, errors=(409,)
+    f"{_C}/reopen", action="consolidation.lock", response_model=ConsolidationOut, errors=(409, 501)
 )
 async def group_reopen(
     work_item_id: UUID, consolidation_id: UUID, body: GroupReasonIn, ctx: Ctx, _key: IdempotencyKey
@@ -737,7 +737,9 @@ async def group_reopen(
     return await svc.get(ctx, work_item_id, consolidation_id)
 
 
-@router.get(f"{_C}/tb", action="consolidation.read", response_model=ConsolidatedTbOut, errors=())
+@router.get(
+    f"{_C}/tb", action="consolidation.read", response_model=ConsolidatedTbOut, errors=(501,)
+)
 async def group_consolidated_tb(
     work_item_id: UUID,
     consolidation_id: UUID,
@@ -792,7 +794,9 @@ async def group_consolidated_tb(
     )
 
 
-@router.get(f"{_C}/export.xlsx", action="consolidation.export", response_model=bytes, errors=())
+@router.get(
+    f"{_C}/export.xlsx", action="consolidation.export", response_model=bytes, errors=(501,)
+)
 async def group_export_consolidation(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx
 ) -> Response:
@@ -890,7 +894,7 @@ async def _elimination_views(
     return list(await adj.eliminations_of(ctx.tenant, consolidation_id))
 
 
-@router.get(_E, action="elimination.read", response_model=EliminationsOut, errors=())
+@router.get(_E, action="elimination.read", response_model=EliminationsOut, errors=(501,))
 async def group_list_eliminations(consolidation_id: UUID, ctx: Ctx) -> EliminationsOut:
     await _gate_record(ctx)
     views = await _elimination_views(ctx, consolidation_id, "elimination.read")
@@ -902,7 +906,7 @@ async def group_list_eliminations(consolidation_id: UUID, ctx: Ctx) -> Eliminati
     action="elimination.edit",
     response_model=EliminationOut,
     status_code=201,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_create_elimination(
     consolidation_id: UUID, body: EliminationIn, ctx: Ctx, _key: IdempotencyKey
@@ -927,7 +931,7 @@ async def group_create_elimination(
     "/proposed-entries/{entry_id}/elimination",
     action="elimination.edit",
     response_model=EliminationOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_edit_elimination(
     entry_id: UUID, body: EliminationIn, ctx: Ctx, _if: IfMatch
@@ -953,7 +957,7 @@ async def group_edit_elimination(
     "/proposed-entries/{entry_id}/elimination/approve",
     action="elimination.approve",
     response_model=EliminationOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_approve_elimination(
     entry_id: UUID, ctx: Ctx, _key: IdempotencyKey
@@ -969,7 +973,7 @@ async def group_approve_elimination(
     f"{_E}/approve",
     action="elimination.approve",
     response_model=EliminationsOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_approve_eliminations(
     consolidation_id: UUID, body: EliminationApproveItemsIn, ctx: Ctx, _key: IdempotencyKey
@@ -986,7 +990,7 @@ async def group_approve_eliminations(
     "/proposed-entries/{entry_id}/elimination/apply",
     action="elimination.apply",
     response_model=EliminationOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_apply_elimination(
     entry_id: UUID, ctx: Ctx, _key: IdempotencyKey
@@ -1002,7 +1006,7 @@ async def group_apply_elimination(
     "/proposed-entries/{entry_id}/elimination/reject",
     action="elimination.approve",
     response_model=EliminationOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_reject_elimination(
     entry_id: UUID, body: GroupReasonIn, ctx: Ctx, _key: IdempotencyKey
@@ -1032,7 +1036,7 @@ async def group_propose_eliminations(
     f"{_A}/group-scoping",
     action="group_scoping.read",
     response_model=GroupScopingOut,
-    errors=(),
+    errors=(501,),
 )
 async def group_scoping(work_item_id: UUID, ctx: Ctx) -> GroupScopingOut:
     await _gate(ctx, work_item_id, "group_scoping.read")
@@ -1112,7 +1116,7 @@ async def group_scoping(work_item_id: UUID, ctx: Ctx) -> GroupScopingOut:
     f"{_A}/group-scoping/export.xlsx",
     action="group_scoping.read",
     response_model=bytes,
-    errors=(),
+    errors=(501,),
 )
 async def group_export_group_scoping(work_item_id: UUID, ctx: Ctx) -> Response:
     await _gate(ctx, work_item_id, "group_scoping.read")
@@ -1129,7 +1133,7 @@ async def group_export_group_scoping(work_item_id: UUID, ctx: Ctx) -> Response:
     "/components/{component_id}",
     action="component.edit",
     response_model=GroupComponentOut,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_edit_component(
     component_id: UUID, body: GroupComponentIn, ctx: Ctx, _if: IfMatch
@@ -1165,7 +1169,7 @@ async def group_edit_component(
     action="group_materiality.propose",
     response_model=GroupDecisionCardOut,
     status_code=201,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def group_raise_group_materiality(
     work_item_id: UUID, ctx: Ctx, _key: IdempotencyKey

@@ -2845,6 +2845,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"status", "last_firm_message_at", "last_staff_message_at", "assigned_staff_subject"}
         ),
         "support_conversation_reads": frozenset({"last_read_at"}),
+        # A-08-T18 (0932, DEC-5324): a confirmation authorization gains its envelope, then its
+        # completion; nothing else on the row ever changes.
+        "confirmation_authorizations": frozenset({"envelope_id", "completed_at"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

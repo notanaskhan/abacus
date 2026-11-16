@@ -98,6 +98,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "sample_expansion.requested",  # A-08-T17 (DEC-5307): the expansion's C13 gate opens
         "sample_expansion.decided",  # A-08-T17: and closes
         "residency_determination.confirmed",  # T-04-T39: the option's worksheets activate
+        "confirmation.link_requested",  # A-08-T18 (DEC-5324): communications emails the link
         "session.items_changed",  # TASK-7325: a session's items reach its topic
         "daily_briefing.built",  # I-02-T13 (S42): the Today panel's user topic
         EVIDENCE_VERSION_CREATED,

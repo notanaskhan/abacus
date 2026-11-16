@@ -2,7 +2,7 @@
 id: TASK-8360
 title: "T-07-T28: Independent tests: the clause verifier, the instrument reader's consent and reach, the CCH 1041 reconciliation"
 spec: SPEC-656
-acceptance_criteria: [AC-1.4, AC-1.5, AC-6.2]
+acceptance_criteria: [AC-12, AC-13]
 risk_zone: red
 status: in-review
 branch: t07t28-independent

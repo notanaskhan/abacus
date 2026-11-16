@@ -1,8 +1,8 @@
 ---
 id: TASK-8355
 title: "A-08-T30: POR-17 respondent page at /confirm/$token on the live respondent routes"
-spec: SPEC-none
-acceptance_criteria: [AC-1]
+spec: SPEC-657
+acceptance_criteria: [AC-7]
 risk_zone: amber
 status: in-review
 branch: por17-respondent-page

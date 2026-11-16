@@ -38,10 +38,20 @@ def test_the_same_seed_gives_the_same_expansion() -> None:
     assert len({p.entry_ref for p in a.picks}) == 50
 
 
-def test_named_keys_and_oversized_draws_are_refused() -> None:
+def test_named_keys_are_added_last_and_bad_ones_and_oversized_draws_are_refused() -> None:
+    # A-08-T17 rest (DEC-5327, TASK-8342): named keys became a feature; they were refused while
+    # the engine lacked them. A named key joins last as `named`; an unknown key or one already
+    # chosen is refused, never silently dropped.
     base = _base()
-    with pytest.raises(expansions.ExpansionTooLarge):
-        expansions.expand(base.picks, SCORES, add_by_score=0, add_unpredictable=0,
-                          add_keys=["JE-26-17950"], seed=1)  # fmt: skip
+    chosen = {p.entry_ref for p in base.picks}
+    free = next(s.entry_ref for s in SCORES if s.entry_ref not in chosen)
+    out = expansions.expand(base.picks, SCORES, add_by_score=0, add_unpredictable=0,
+                            add_keys=[free], seed=1)  # fmt: skip
+    assert out.picks[: len(base.picks)] == base.picks
+    assert (out.picks[-1].entry_ref, out.picks[-1].reason) == (free, "named")
+    for bad in ("JE-NOT-THERE", base.picks[0].entry_ref):
+        with pytest.raises(expansions.ExpansionKeyInvalid):
+            expansions.expand(base.picks, SCORES, add_by_score=0, add_unpredictable=0,
+                              add_keys=[bad], seed=1)  # fmt: skip
     with pytest.raises(expansions.ExpansionTooLarge):
         expansions.expand(base.picks, SCORES, add_by_score=0, add_unpredictable=500, seed=1)

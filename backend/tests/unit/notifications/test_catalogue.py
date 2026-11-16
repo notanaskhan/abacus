@@ -49,6 +49,14 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        # S47 partials: A-08-T17 the expansion's approver (DEC-5327); A-08-T18 the confirmation
+        # kinds (DEC-5324); W-01-T13 a firm install needing reauth (DEC-5333).
+        "sample_expansion.requested",
+        "confirmation.authorization_signed",
+        "confirmation.second_request_due",
+        "confirmation.expired_no_response",
+        "confirmation.responded",
+        "integration.health_changed",
         # S46: C-01-T17 `ledger_sync_paused`; A-09-T09 the six group-audit kinds (DEC-5069).
         "ledger_sync.paused",
         "integration.available",  # W-01-T07: Notify me (AC-33)

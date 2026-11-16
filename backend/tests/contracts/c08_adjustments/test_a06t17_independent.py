@@ -52,14 +52,32 @@ def _string_constants(source: str) -> list[str]:
     ]
 
 
+# A-09-T20 (DEC-5313; migration 0896): an approved elimination posts to Accrued's own
+# consolidation layer, never a client ledger. That file alone may name `posted`, never
+# `failed_post` or `reversed`, and the database admits it only for that kind and target (below).
+CONSOLIDATION_LAYER = {"eliminations.py": ("posted",)}
+MIGRATION_0896 = (BACKEND / "migrations/versions/0896_adjustments_eliminations.py").read_text()
+
+
 @pytest.mark.parametrize("path", sorted(MODULE.glob("*.py")), ids=lambda p: p.name)
 def test_no_service_sets_a_posting_status(path: Path) -> None:
     """No string the module writes is a posting status, alone or in SQL ("status = 'posted'")."""
+    allowed = CONSOLIDATION_LAYER.get(path.name, ())
     for text in _string_constants(path.read_text()):
         lowered = text.lower()
         for status in POSTING:
+            if status in allowed:
+                continue
             assert f"'{status}'" not in lowered or "check" in lowered, (path.name, status)
             assert lowered.strip() != status, (path.name, status)
+
+
+def test_only_an_elimination_on_the_consolidation_layer_may_be_posted() -> None:
+    """The one exception is held by the database: 0896's CHECK keeps every other entry dormant."""
+    assert "CHECK (status NOT IN ('posted', 'failed_post', 'reversed') " in MIGRATION_0896
+    assert "OR (kind = 'elimination' AND posting_target IS NOT NULL))" in MIGRATION_0896
+    source = (MODULE / "eliminations.py").read_text()
+    assert "'failed_post'" not in source and "'reversed'" not in source
 
 
 def test_the_migration_keeps_posting_dormant() -> None:

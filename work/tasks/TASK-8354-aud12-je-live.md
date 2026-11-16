@@ -1,8 +1,8 @@
 ---
 id: TASK-8354
 title: "A-08-T32: AUD-12 live (JE artboards): the JE test and its selected entries on the API"
-spec: SPEC-none
-acceptance_criteria: [AC-1]
+spec: SPEC-657
+acceptance_criteria: [AC-7]
 risk_zone: green
 status: in-review
 branch: aud12-je-live

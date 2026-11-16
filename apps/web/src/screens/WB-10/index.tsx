@@ -33,6 +33,7 @@ import { type JSX, useId, useState } from "react";
 import { useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { hrefOf, ov, to } from "../../routes/to";
+import { RevealStepUp } from "../../domain/audits";
 import { COPY } from "./copy";
 
 // WB-10 · Workbench › Connect (W-01-T12; SPEC-659 AC-1 to AC-9, AC-31; docs/screens/WB-10.md).
@@ -252,6 +253,7 @@ function Tile({ tile }: { tile: ConnectTileOut }): JSX.Element {
           {details}
         </div>
       )}
+      <RevealStepUp open={stepUp} onOpenChange={setStepUp} />
     </CatalogCard>
   );
 }
