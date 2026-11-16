@@ -6,9 +6,14 @@ from typing import Final
 from uuid import UUID
 
 from abacus.kernel.controls import ControlName, control_active
+from abacus.kernel.db import TenantContext
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.uow import Handler, OutboxEvent
-from abacus.modules.identity.api import AbacusRouter, register_posture_source
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    register_posture_source,
+    register_tri_holder,
+)
 from abacus.modules.platform.audit_resolvers import register as register_audit_resolvers
 from abacus.modules.platform.audit_slots import (
     AuditEventRef,
@@ -281,6 +286,19 @@ from abacus.modules.platform.workflows import (
 # G-02-T09 (DEC-435): labelers and value resolvers for identity-owned audit targets.
 register_audit_resolvers()
 # G-02-T14 (AC-30): the posture's open incidents are the register's.
+# G-04-T05 (SPEC-681 AC-23): a tenant holding a tax module counts as holding TRI, the
+# conservative proxy; a content support session on it needs a US-located staff member.
+_TRI_MODULES: tuple[Module, ...] = ("tax", "tax_returns", "tax_entity_returns")
+
+
+async def _holds_tri(tenant: TenantContext) -> bool:
+    for module in _TRI_MODULES:
+        if await entitlement(tenant, module) is not None:
+            return True
+    return False
+
+
+register_tri_holder(_holds_tri)
 register_posture_source("open_incidents", open_incidents)
 # G-02-T20 (AC-30): the posture's open Pub 4557 items are the safeguards record's.
 register_posture_source("pub4557_open", open_pub4557_controls)

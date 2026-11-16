@@ -418,7 +418,12 @@ from abacus.modules.identity.slots import (
     target_events,
 )
 from abacus.modules.identity.staff import invite_first_admins, issue_staff_invitation_token
-from abacus.modules.identity.support import Staff, staff_from_token
+from abacus.modules.identity.support import (
+    Staff,
+    register_scope_labeler,
+    register_tri_holder,
+    staff_from_token,
+)
 from abacus.modules.identity.team import (
     EQR_ROLE,
     Candidate,
@@ -841,10 +846,12 @@ __all__ = [
     "register_mfa_requirement",
     "register_office_list",
     "register_posture_source",
+    "register_scope_labeler",
     "register_scope_resolver",
     "register_scopes_resolver",
     "register_settings_area",
     "register_target_events",
+    "register_tri_holder",
     "register_wall_assignments",
     "register_work_item_functions",
     "remove_client",

@@ -36,6 +36,9 @@ class AuthContext:
     # A portal session that passed the second step also carries its time in `mfa_at` (DEC-3960);
     # a trusted-device session carries None, so `mfa_recent` refuses it.
     portal_second_step: bool = False
+    # G-04-T05 (SPEC-681 AC-21; ADR-145): a content support session's one object, as (kind, id)
+    # with kind `work_item` or `engagement`. `authorise` and `visible()` admit nothing else.
+    support_scope: tuple[str, UUID] | None = None
 
     @property
     def is_support(self) -> bool:

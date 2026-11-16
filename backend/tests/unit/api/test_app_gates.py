@@ -275,11 +275,11 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/client-invitations/{invitation_id}/revoke",
     "/v1/engagements/{engagement_id}/client-invitations/{invitation_id}/resend",
     # SPEC-012: lifecycle changes return the session, so 200.
-    "/v1/support/sessions/{session_id}/approve",
     "/v1/support/sessions/{session_id}/end",
     "/v1/support-sessions/{session_id}/approve",
     "/v1/support-sessions/{session_id}/revoke",
     "/v1/support-sessions/{session_id}/acknowledge",
+    "/v1/support-sessions/{session_id}/decline",  # SPEC-681 AC-19
     # SPEC-020 (TASK-036): starting returns the provider's URL; check and revoke return state.
     "/v1/engagements/{engagement_id}/connection/start",
     "/v1/engagements/{engagement_id}/connection/check",

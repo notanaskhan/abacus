@@ -88,6 +88,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "support_sessions": frozenset(
         {"id", "tenant_id", "staff_id", "staff_subject", "reason", "scope", "duration_minutes"}
         | {"emergency"}
+        # G-04-T05 (0921, SPEC-681): one-object scope, the thread link, the US attestation.
+        | {"scope_ref_kind", "scope_ref_id", "conversation_id", "staff_us_located"}
     ),
     # Client invitations (SPEC-015): never the token (only its hash, elsewhere).
     "client_invitations": frozenset(
@@ -154,6 +156,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"agents_paused_at", "agents_paused_by"}  # SPEC-027 (TASK-050): the firm switch
         | {"time_zone"}  # SPEC-027 (TASK-051): the agent's daily tick
         | {"kms_key_arn", "kms_key_status", "kms_replica_verified_at"}  # Q-01-T19: key workflow
+        | {"onboarding_state"}  # G-04-T05 (0921): a first admin's first sign-in
     ),
     "ethical_walls": frozenset(
         {"status", "removed_by", "removed_at"}
@@ -171,6 +174,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "support_sessions": frozenset(  # SPEC-012: lifecycle only
         {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
         | {"acknowledged_at"}
+        | {"declined_by", "declined_at"}  # G-04-T05 (0921, SPEC-681 AC-19)
     ),
     "client_invitations": frozenset(
         {"status", "accepted_by", "accepted_at", "expires_at", "terms_accepted_at"}  # 0140

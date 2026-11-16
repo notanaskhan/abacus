@@ -51174,6 +51174,20 @@ export type ScopeRef = {
 };
 
 /**
+ * ScopeRefIn
+ */
+export type ScopeRefIn = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'work_item' | 'engagement';
+};
+
+/**
  * ScoreRunOut
  */
 export type ScoreRunOut = {
@@ -57407,13 +57421,13 @@ export type SupportPrefillOut = {
  */
 export type SupportSessionIn = {
     /**
+     * Conversation Id
+     */
+    conversation_id?: string | null;
+    /**
      * Duration Minutes
      */
     duration_minutes: number;
-    /**
-     * Emergency
-     */
-    emergency?: boolean;
     /**
      * Firm Id
      */
@@ -57425,7 +57439,8 @@ export type SupportSessionIn = {
     /**
      * Scope
      */
-    scope: 'metadata' | 'content';
+    scope: 'metadata' | 'content' | 'integration_settings';
+    scope_ref?: ScopeRefIn | null;
 };
 
 /**
@@ -57441,9 +57456,21 @@ export type SupportSessionOut = {
      */
     approved_by_kind: string | null;
     /**
+     * Conversation Id
+     */
+    conversation_id: string | null;
+    /**
      * Created At
      */
     created_at: string;
+    /**
+     * Declined At
+     */
+    declined_at: string | null;
+    /**
+     * Declined By
+     */
+    declined_by: string | null;
     /**
      * Duration Minutes
      */
@@ -57475,7 +57502,19 @@ export type SupportSessionOut = {
     /**
      * Scope
      */
-    scope: 'metadata' | 'content';
+    scope: 'metadata' | 'content' | 'integration_settings';
+    /**
+     * Scope Label
+     */
+    scope_label: string;
+    /**
+     * Scope Ref Id
+     */
+    scope_ref_id: string | null;
+    /**
+     * Scope Ref Kind
+     */
+    scope_ref_kind: 'work_item' | 'engagement' | null;
     /**
      * Staff Id
      */
@@ -57485,13 +57524,17 @@ export type SupportSessionOut = {
      */
     staff_subject: string;
     /**
+     * Staff Us Located
+     */
+    staff_us_located: boolean;
+    /**
      * Starts At
      */
     starts_at: string | null;
     /**
      * Status
      */
-    status: 'requested' | 'active' | 'ended' | 'revoked' | 'expired';
+    status: 'requested' | 'active' | 'declined' | 'ended' | 'revoked' | 'expired';
 };
 
 /**
@@ -144737,6 +144780,62 @@ export type ApproveSupportSessionResponses = {
 
 export type ApproveSupportSessionResponse = ApproveSupportSessionResponses[keyof ApproveSupportSessionResponses];
 
+export type DeclineSupportSessionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Session Id
+         */
+        session_id: string;
+    };
+    query?: never;
+    url: '/v1/support-sessions/{session_id}/decline';
+};
+
+export type DeclineSupportSessionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type DeclineSupportSessionError = DeclineSupportSessionErrors[keyof DeclineSupportSessionErrors];
+
+export type DeclineSupportSessionResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportSessionOut;
+};
+
+export type DeclineSupportSessionResponse = DeclineSupportSessionResponses[keyof DeclineSupportSessionResponses];
+
 export type RevokeSupportSessionData = {
     body?: never;
     headers?: {
@@ -144949,58 +145048,6 @@ export type RequestSupportSessionResponses = {
 };
 
 export type RequestSupportSessionResponse = RequestSupportSessionResponses[keyof RequestSupportSessionResponses];
-
-export type EmergencyApproveData = {
-    body: FirmRefIn;
-    headers?: {
-        /**
-         * Authorization
-         */
-        authorization?: string | null;
-    };
-    path: {
-        /**
-         * Session Id
-         */
-        session_id: string;
-    };
-    query?: never;
-    url: '/v1/support/sessions/{session_id}/approve';
-};
-
-export type EmergencyApproveErrors = {
-    /**
-     * Not authenticated
-     */
-    401: ErrorOut;
-    /**
-     * Forbidden
-     */
-    403: ErrorOut;
-    /**
-     * Not found
-     */
-    404: ErrorOut;
-    /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
-     * Invalid request
-     */
-    422: ValidationErrorOut;
-};
-
-export type EmergencyApproveError = EmergencyApproveErrors[keyof EmergencyApproveErrors];
-
-export type EmergencyApproveResponses = {
-    /**
-     * Successful Response
-     */
-    200: SupportSessionOut;
-};
-
-export type EmergencyApproveResponse = EmergencyApproveResponses[keyof EmergencyApproveResponses];
 
 export type EndSupportSessionData = {
     body: FirmRefIn;

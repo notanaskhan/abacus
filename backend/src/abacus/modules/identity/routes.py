@@ -114,11 +114,12 @@ from abacus.modules.identity.staff_session import (
 )
 from abacus.modules.identity.staff_session import end_session as end_staff_session
 from abacus.modules.identity.support import (
+    ScopeRef,
     Staff,
     SupportSessionView,
     acknowledge_session,
     approve_session,
-    emergency_approve,
+    decline_session,
     end_session,
     firm_sessions,
     request_session,
@@ -417,19 +418,39 @@ class SupportSessionOut(BaseModel):
     staff_id: Annotated[UUID, classified("internal")]
     staff_subject: Annotated[str, classified("internal")]
     reason: Annotated[str, classified("confidential")]
-    scope: Annotated[Literal["metadata", "content"], classified("internal")]
-    duration_minutes: Annotated[int, classified("internal")]
-    emergency: Annotated[bool, classified("internal")]
-    status: Annotated[
-        Literal["requested", "active", "ended", "revoked", "expired"], classified("internal")
+    scope: Annotated[
+        Literal["metadata", "content", "integration_settings"], classified("internal")
     ]
-    approved_by_kind: Annotated[str | None, classified("internal")]
+    duration_minutes: Annotated[int, classified("internal")]
+    emergency: Annotated[bool, classified("internal")]  # historic rows only (SPEC-681 OQ-1)
+    status: Annotated[
+        Literal["requested", "active", "declined", "ended", "revoked", "expired"],
+        classified("internal"),
+    ]
+    approved_by_kind: Annotated[str | None, classified("internal")]  # the approver's role
     starts_at: Annotated[datetime | None, classified("internal")]
     expires_at: Annotated[datetime | None, classified("internal")]
     ended_at: Annotated[datetime | None, classified("internal")]
     acknowledged: Annotated[bool, classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
     requests: Annotated[int, classified("internal")]
+    # G-04-T05 (SPEC-681): the one object, the thread link and the decline. `scope_label` is
+    # the firm's own name for the object on firm routes (AC-18) and the scope kind on staff
+    # routes (AC-17); never a record's name to staff.
+    scope_ref_kind: Annotated[Literal["work_item", "engagement"] | None, classified("internal")]
+    scope_ref_id: Annotated[UUID | None, classified("internal")]
+    scope_label: Annotated[str, classified("confidential")]
+    conversation_id: Annotated[UUID | None, classified("internal")]
+    declined_by: Annotated[UUID | None, classified("internal")]
+    declined_at: Annotated[datetime | None, classified("internal")]
+    staff_us_located: Annotated[bool, classified("internal")]
+
+
+class ScopeRefIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Annotated[Literal["work_item", "engagement"], classified("internal")]
+    id: Annotated[UUID, classified("internal")]
 
 
 class SupportSessionIn(BaseModel):
@@ -437,9 +458,13 @@ class SupportSessionIn(BaseModel):
 
     firm_id: Annotated[UUID, classified("internal")]
     reason: Annotated[str, Field(min_length=20, max_length=1000), classified("confidential")]
-    scope: Annotated[Literal["metadata", "content"], classified("internal")]
-    duration_minutes: Annotated[int, Field(ge=1, le=240), classified("internal")]
-    emergency: Annotated[bool, classified("internal")] = False
+    scope: Annotated[
+        Literal["metadata", "content", "integration_settings"], classified("internal")
+    ]
+    # SPEC-681 AC-22: at most 120 minutes; no emergency field (OQ-1, the staff approval is gone).
+    duration_minutes: Annotated[int, Field(ge=1, le=120), classified("internal")]
+    scope_ref: ScopeRefIn | None = None
+    conversation_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class FirmRefIn(BaseModel):
@@ -452,6 +477,15 @@ def _session_out(view: SupportSessionView) -> SupportSessionOut:
     return SupportSessionOut.model_validate(asdict(view))
 
 
+def _staff_session_out(view: SupportSessionView) -> SupportSessionOut:
+    """Staff see the scope kind only (SPEC-681 AC-17)."""
+    kind = view.scope_ref_kind or view.scope
+    generic = {"work_item": "Content · 1 work item", "engagement": "Content · 1 engagement"}
+    labels = {"metadata": "Metadata only", "integration_settings": "Integration settings only"}
+    label = generic.get(kind) or labels.get(kind, "")
+    return SupportSessionOut.model_validate({**asdict(view), "scope_label": label})
+
+
 staff_router = AbacusRouter(prefix="/v1/support/sessions", tags=["support"])
 
 
@@ -461,19 +495,21 @@ staff_router = AbacusRouter(prefix="/v1/support/sessions", tags=["support"])
 async def request_support_session_route(
     body: SupportSessionIn, staff: StaffDep
 ) -> SupportSessionOut:
+    ref = ScopeRef(body.scope_ref.kind, body.scope_ref.id) if body.scope_ref else None
     view = await request_session(
-        staff, body.firm_id, body.reason, body.scope, body.duration_minutes, body.emergency
+        staff,
+        body.firm_id,
+        body.reason,
+        body.scope,
+        body.duration_minutes,
+        ref,
+        body.conversation_id,
     )
-    return _session_out(view)
+    return _staff_session_out(view)
 
 
-@staff_router.post(
-    "/{session_id}/approve", action=STAFF, response_model=SupportSessionOut, errors=(409,)
-)
-async def emergency_approve_route(
-    session_id: UUID, body: FirmRefIn, staff: StaffDep
-) -> SupportSessionOut:
-    return _session_out(await emergency_approve(staff, body.firm_id, session_id))
+# G-04-T05 (SPEC-681 AC-15, AC-25; OQ-1): the staff emergency-approve route is removed. No HTTP
+# route lets staff approve, grant or activate a session; the firm alone decides.
 
 
 @staff_router.post(
@@ -482,7 +518,7 @@ async def emergency_approve_route(
 async def end_support_session_route(
     session_id: UUID, body: FirmRefIn, staff: StaffDep
 ) -> SupportSessionOut:
-    return _session_out(await end_session(staff, body.firm_id, session_id))
+    return _staff_session_out(await end_session(staff, body.firm_id, session_id))
 
 
 firm_support_router = AbacusRouter(prefix="/v1/support-sessions", tags=["support"])
@@ -523,6 +559,17 @@ async def acknowledge_support_session_route(
     session_id: UUID, ctx: SupportCtx
 ) -> SupportSessionOut:
     return _session_out(await acknowledge_session(ctx, session_id))
+
+
+@firm_support_router.post(
+    "/{session_id}/decline",
+    action="support_session.decline",
+    response_model=SupportSessionOut,
+    errors=(409,),
+)
+async def decline_support_session_route(session_id: UUID, ctx: SupportCtx) -> SupportSessionOut:
+    """SPEC-681 AC-19: a firm admin or IT/Security declines a staff request."""
+    return _session_out(await decline_session(ctx, session_id))
 
 
 # --- Accepting a client invitation (SPEC-015 §8) -------------------------------------------------

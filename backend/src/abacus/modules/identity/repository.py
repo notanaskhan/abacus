@@ -839,8 +839,10 @@ async def insert_support_session(session: AsyncSession, values: dict[str, object
     await session.execute(
         text(
             "INSERT INTO support_sessions (id, tenant_id, staff_id, staff_subject, reason, scope, "
-            "duration_minutes, emergency) VALUES (:id, :tenant_id, :staff_id, :staff_subject, "
-            ":reason, :scope, :duration_minutes, :emergency)"
+            "duration_minutes, emergency, scope_ref_kind, scope_ref_id, conversation_id, "
+            "staff_us_located) VALUES (:id, :tenant_id, :staff_id, :staff_subject, :reason, "
+            ":scope, :duration_minutes, :emergency, :scope_ref_kind, :scope_ref_id, "
+            ":conversation_id, :staff_us_located)"
         ),
         values,
     )
@@ -852,13 +854,15 @@ async def get_support_session(
     select_one = text(
         "SELECT id, staff_id, staff_subject, reason, scope, duration_minutes, emergency, status, "
         "approved_by_kind, approved_by, starts_at, expires_at, ended_at, acknowledged_at, "
-        "created_at, (status = 'active' AND expires_at > clock_timestamp()) AS live "
+        "created_at, scope_ref_kind, scope_ref_id, conversation_id, declined_by, declined_at, "
+        "staff_us_located, (status = 'active' AND expires_at > clock_timestamp()) AS live "
         "FROM support_sessions WHERE id = :id"
     )
     locked = text(
         "SELECT id, staff_id, staff_subject, reason, scope, duration_minutes, emergency, status, "
         "approved_by_kind, approved_by, starts_at, expires_at, ended_at, acknowledged_at, "
-        "created_at, (status = 'active' AND expires_at > clock_timestamp()) AS live "
+        "created_at, scope_ref_kind, scope_ref_id, conversation_id, declined_by, declined_at, "
+        "staff_us_located, (status = 'active' AND expires_at > clock_timestamp()) AS live "
         "FROM support_sessions WHERE id = :id FOR UPDATE"
     )
     result = await session.execute(locked if lock else select_one, {"id": session_id})
@@ -869,7 +873,8 @@ async def list_support_sessions(session: AsyncSession) -> Sequence[RowMapping]:
     listed = text(
         "SELECT id, staff_id, staff_subject, reason, scope, duration_minutes, emergency, status, "
         "approved_by_kind, approved_by, starts_at, expires_at, ended_at, acknowledged_at, "
-        "created_at, (status = 'active' AND expires_at > clock_timestamp()) AS live "
+        "created_at, scope_ref_kind, scope_ref_id, conversation_id, declined_by, declined_at, "
+        "staff_us_located, (status = 'active' AND expires_at > clock_timestamp()) AS live "
         "FROM support_sessions ORDER BY created_at DESC, id"
     )
     return (await session.execute(listed)).mappings().all()
@@ -886,6 +891,17 @@ async def activate_support_session(
             "WHERE id = :id AND status = 'requested'"
         ),
         {"id": session_id, "kind": by_kind, "by": by},
+    )
+
+
+async def decline_support_session(session: AsyncSession, session_id: UUID, by: UUID) -> None:
+    """SPEC-681 AC-19: a request the firm declines; never started, never approved."""
+    await session.execute(
+        text(
+            "UPDATE support_sessions SET status = 'declined', declined_by = :by, "
+            "declined_at = clock_timestamp() WHERE id = :id AND status = 'requested'"
+        ),
+        {"id": session_id, "by": by},
     )
 
 
