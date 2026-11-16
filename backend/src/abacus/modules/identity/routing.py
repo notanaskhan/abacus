@@ -355,6 +355,21 @@ async def current_staff(authorization: Annotated[str | None, Header()] = None) -
         ) from None
 
 
+# G-04-T03 (SPEC-680 §4.4; DEC-5201, DEC-5203): a matrix action held only by the console's staff
+# roles is a staff action. Its routes authenticate with the staff token (`current_staff`), never a
+# firm context, so no firm, portal, agent or break-glass principal can reach one; the staff role
+# check on the token's claims lands with the console API (G-04-T09).
+CONSOLE_STAFF_ROLES: Final = frozenset({"platform_admin", "platform_support_desk"})
+
+
+def staff_action(action: str) -> bool:
+    rule = RULES.get(action)
+    if rule is None:
+        return False
+    holders = {role for role, decision in rule.decisions.items() if decision != "deny"}
+    return bool(holders) and holders <= CONSOLE_STAFF_ROLES
+
+
 def declared_action(route: APIRoute) -> str | None:
     extra = route.openapi_extra or {}
     action = extra.get(ACTION_KEY)
@@ -430,7 +445,7 @@ class AbacusRouter(APIRouter):
             PORTAL_PUBLIC: portal_public,
             PROVIDER_WEBHOOK: provider_webhook,
             LINK_PRINCIPAL: link_principal,
-        }.get(action, current_context)
+        }.get(action, current_staff if staff_action(action) else current_context)
         dependencies = [Depends(auth)]
         writes = any(m not in _READS for m in methods)
         firm_scoped = auth in (current_context, current_member)
