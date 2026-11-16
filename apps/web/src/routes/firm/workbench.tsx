@@ -40,6 +40,8 @@ function validateWorkbenchSearch(search: Record<string, unknown>): WorkbenchSear
 const Sessions = lazyScreen(async () => (await import("../../screens/WB-01")).WB01);
 const NewSession = lazyScreen(async () => (await import("../../screens/WB-02")).WB02);
 const Thread = lazyScreen(async () => (await import("../../screens/WB-03")).WB03);
+const Connect = lazyScreen(async () => (await import("../../screens/WB-10")).WB10);
+const CONNECT_FLAG = "integrations.connect_v1";
 
 function Gate({ children }: { children: JSX.Element }): JSX.Element {
   const on = useFlag(FLAG) === true;
@@ -66,6 +68,7 @@ export const workbenchRoute = createRoute({
           onQuery={(q) => void navigate({ search: { ...search, q }, replace: true })}
           onSelect={(session) => void navigate({ search: { ...search, session } })}
           onNew={(href) => void navigate({ href })}
+          onConnect={() => void navigate({ to: "/workbench/connect" })}
           onFilter={(f) => {
             const rest = Object.fromEntries(
               Object.entries(search).filter(([k]) => k !== "filter"),
@@ -160,4 +163,71 @@ registerOverlay(ARTIFACT_KEY, {
   },
 });
 
-export const workbenchRoutes = [workbenchRoute, newSessionRoute, sessionRoute] as const;
+// W-01-T12: WB-10 Workbench › Connect, `/workbench/connect?category=&status=&q=`, behind
+// `integrations.connect_v1` (off: F-05's flag-off state, never blank; the API answers 404).
+const CATEGORIES = [
+  "tax",
+  "practice",
+  "erp",
+  "grc",
+  "docs",
+  "comms",
+  "prod",
+  "crm",
+  "hris",
+  "spend",
+];
+const CONNECT_STATUSES = ["connected", "available", "coming_soon"] as const;
+
+interface ConnectSearch {
+  category?: string;
+  status?: (typeof CONNECT_STATUSES)[number];
+  q?: string;
+}
+
+function validateConnectSearch(search: Record<string, unknown>): ConnectSearch {
+  const status = CONNECT_STATUSES.find((s) => s === search.status);
+  return {
+    ...(typeof search.category === "string" && CATEGORIES.includes(search.category)
+      ? { category: search.category }
+      : {}),
+    ...(status === undefined ? {} : { status }),
+    ...(typeof search.q === "string" && search.q !== "" ? { q: search.q } : {}),
+  };
+}
+
+export const connectRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/workbench/connect",
+  validateSearch: validateConnectSearch,
+  component: function ConnectPage(): JSX.Element {
+    const search = connectRoute.useSearch();
+    const navigate = useNavigate();
+    const on = useFlag(CONNECT_FLAG) === true;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        {on ? (
+          <Connect
+            initial={{
+              category: search.category ?? null,
+              status: search.status ?? null,
+              q: search.q ?? "",
+            }}
+            onTab={(tab) => {
+              if (tab === "sessions") void navigate({ to: "/workbench" });
+            }}
+          />
+        ) : (
+          <FlagOffState flag={CONNECT_FLAG} label="Connect" />
+        )}
+      </div>
+    );
+  },
+});
+
+export const workbenchRoutes = [
+  workbenchRoute,
+  newSessionRoute,
+  sessionRoute,
+  connectRoute,
+] as const;

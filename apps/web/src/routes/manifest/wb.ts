@@ -41,7 +41,12 @@ export const wbScreens = {
     status: "planned",
     path: "/engagements/$engagementId/activity", // legacy TraceDrawer on Activity (SPEC-318)
   },
-  "WB-10": { name: "Connect · integrations catalogue", status: "planned", path: null },
+  // W-01-T12: a–i on fixtures; live with W-01-T07/T08 behind `integrations.connect_v1`.
+  "WB-10": {
+    name: "Connect · integrations catalogue",
+    status: "fixture",
+    path: "/workbench/connect",
+  },
   "WB-11": {
     name: "Integration detail & connect drawer · CCH Axcess Tax",
     status: "planned",
