@@ -41,6 +41,7 @@ from abacus.modules.review.api import (
 )
 from abacus.modules.tax.compute import estate as engine
 from abacus.modules.tax.estate_contract import (
+    EstateAction,
     EstateAssetEditIn,
     EstateAssetIn,
     EstateAssetOut,
@@ -252,6 +253,28 @@ async def _computed(
     return result, outputs, meta, assets, deductions, gifts
 
 
+# The header's actions as TXT-04 names them, and the matrix action each one needs: Approve values
+# (L4) is the engagement partner's `sign_off.partner` (T-07-T27, TASK-8359).
+_OFFERED: Final[tuple[tuple[EstateAction, str], ...]] = (
+    ("estate_workpaper.edit", EDIT),
+    ("sign_off.l4", "sign_off.partner"),
+    ("request_item.send", "request_item.send"),
+)
+
+
+async def _may(ctx: AuthContext, engagement_id: UUID, action: str) -> bool:
+    try:
+        await _authorised(ctx, engagement_id, action)
+    except (Forbidden, NotFound):
+        return False
+    return True
+
+
+async def offered(ctx: AuthContext, engagement_id: UUID) -> list[EstateAction]:
+    """The header's actions this viewer may take, per viewer and never a constant."""
+    return [label for label, action in _OFFERED if await _may(ctx, engagement_id, action)]
+
+
 async def _header(
     ctx: AuthContext, return_id: UUID, result: engine.EstateResult, content_hash: str
 ) -> EstateHeaderOut:
@@ -299,7 +322,7 @@ async def _header(
         if signer is None
         else "".join(w[0] for w in signer.split()[:2]).upper(),
         values_sign_off_stale=l4 is not None and l4.stale,
-        allowed_actions=["estate_workpaper.edit", "sign_off.l4", "request_item.send"],
+        allowed_actions=await offered(ctx, r.engagement_id),
     )
 
 
