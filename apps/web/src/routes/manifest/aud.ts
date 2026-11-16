@@ -66,9 +66,13 @@ export const audScreens = {
   // A-03-T11: a, b, d, the picker and the C-20 states on fixtures, the AUD-02 cockpit's Sample
   // Selection canvas (no path of its own); c, e and f are A-03-T15's.
   "AUD-11": { name: "Sampling", status: "fixture", path: null },
-  // A-08-T27: a to h on fixtures (the A-08 kit's boards); no path of its own until A-08's live
-  // wiring (the links rule).
-  "AUD-12": { name: "Testing workspace · details · controls · JE", status: "fixture", path: null },
+  // A-08-T27: a to h on fixtures (the A-08 kit's boards); S47 (TASK-8354): the JE artboards live
+  // on the JE test API; b, c and h (the shared grid) stay on fixtures.
+  "AUD-12": {
+    name: "Testing workspace · details · controls · JE",
+    status: "live",
+    path: "/audits/$auditId/je-tests/$jeTestId",
+  },
   "AUD-13": {
     name: "Analytics · preliminary · substantive · final",
     status: "planned",

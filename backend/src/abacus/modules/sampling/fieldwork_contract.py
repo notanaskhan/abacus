@@ -124,6 +124,11 @@ class JeTestOut(BaseModel):
         list[Literal["je_test.configure", "je_test.score", "sample_set.create"]],
         classified("public"),
     ]
+    # S47 partials (AUD-12 live, TASK-8354): the population card's facts, additive.
+    population_source: Annotated[str | None, classified("internal")] = None
+    period_start: Annotated[date | None, classified("internal")] = None
+    period_end: Annotated[date | None, classified("internal")] = None
+    post_close_through: Annotated[date | None, classified("internal")] = None
 
 
 class CriteriaIn(BaseModel):

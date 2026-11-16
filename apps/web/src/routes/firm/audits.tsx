@@ -16,6 +16,7 @@ const AuditsIndex = lazyScreen(
   async () => (await import("../../screens/AUD-01")).AuditsSearchPage,
 );
 const Cockpit = lazyScreen(async () => (await import("../../screens/AUD-02")).AUD02);
+const JeTesting = lazyScreen(async () => (await import("../../screens/AUD-12/route")).JeTestingPage);
 const SourceDocuments = lazyScreen(async () => (await import("../../screens/AUD-03")).AUD03);
 const RiskRegister = lazyScreen(
   async () => (await import("../../screens/AUD-08")).RiskRegisterPage,
@@ -434,6 +435,17 @@ export const controlsRoute = createRoute({
   },
 });
 
+// S47 partials (TASK-8354): AUD-12 `/audits/$auditId/je-tests/$jeTestId`, the JE test live.
+export const jeTestRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/je-tests/$jeTestId",
+  component: function JeTestPage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const jeTestId = useParam("jeTestId");
+    return gated(<JeTesting auditId={auditId} jeTestId={jeTestId} />);
+  },
+});
+
 export const findingsRoute = evaluationRoute("findings");
 export const misstatementsRoute = evaluationRoute("misstatements");
 export const reviewNotesRoute = evaluationRoute("review-notes");
@@ -446,6 +458,7 @@ export const auditRoutes = [
   sourceDocumentsRoute,
   risksRoute,
   controlsRoute,
+  jeTestRoute,
   narrativeRoute,
   programRoute,
   findingsRoute,

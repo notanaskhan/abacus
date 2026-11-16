@@ -32260,6 +32260,22 @@ export type JeTestOut = {
      */
     lines_count: number;
     /**
+     * Period End
+     */
+    period_end?: string | null;
+    /**
+     * Period Start
+     */
+    period_start?: string | null;
+    /**
+     * Population Source
+     */
+    population_source?: string | null;
+    /**
+     * Post Close Through
+     */
+    post_close_through?: string | null;
+    /**
      * Score Version
      */
     score_version: number;

@@ -966,4 +966,8 @@ async def je_test_view(ctx: AuthContext, je_test_id: UUID) -> JeTestOut:
         engine_version=str(run["engine_version"]) if run else None,
         selection=await _selection(ctx.tenant, cast(UUID | None, row["sample_set_id"])),
         allowed_actions=allowed,
+        population_source=snapshot.source,
+        period_start=cast(date, row["period_start"]),
+        period_end=cast(date, row["period_end"]),
+        post_close_through=cast(date, row["post_close_through"]),
     )
