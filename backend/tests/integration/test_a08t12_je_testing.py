@@ -39,7 +39,7 @@ from .conftest import MigratedDatabase
 pytestmark = pytest.mark.asyncio
 
 ENTRIES = 60
-CRITERIA = {
+CRITERIA: dict[str, object] = {
     "kind": "je_risk_criteria",
     "criteria": [
         {"key": "weekend_holiday", "weight": 20, "params": {}},

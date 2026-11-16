@@ -14,6 +14,7 @@ from hypothesis import strategies as st
 from abacus.kernel.errors import DomainInvalid
 from abacus.modules.ledger.api import Balance, GlEntry, GlSnapshotView, JournalEntry
 from abacus.modules.sampling import je_tests as svc
+from abacus.modules.sampling.fieldwork_contract import CriterionKey
 from abacus.modules.sampling.compute import je_selection as sel
 
 
@@ -65,7 +66,10 @@ def test_the_account_and_description_come_from_the_largest_debit_line() -> None:
 
 
 def test_post_close_takes_the_tests_date_and_overrides_win() -> None:
-    policy = [("post_close", 20, {}), ("round_amount", 25, {"at_least": "10000", "unit": "5000"})]
+    policy: list[tuple[CriterionKey, int, dict[str, str]]] = [
+        ("post_close", 20, {}),
+        ("round_amount", 25, {"at_least": "10000", "unit": "5000"}),
+    ]
     merged = svc.merged_criteria(policy, {"round_amount": {"unit": "1000"}}, date(2026, 8, 15))
     assert merged[0].params == {"through": "2026-08-15"}
     assert merged[1].params == {"at_least": "10000", "unit": "1000"}
