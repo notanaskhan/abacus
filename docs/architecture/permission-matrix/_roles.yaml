@@ -31,4 +31,5 @@ roles: [firm_admin, practice_leader, quality_partner, security_admin,
         third_party,   # R-01-T13 (DEC-387): a request_item grant's holder, `delegated_only` cells only
         link_principal,   # A-08-T03 (ADR-146; ADR-152 amendment): one object through a signed link, `link_scope_only` cells only
         agent, system,
-        platform_support, platform_support_content]   # SPEC-012: break-glass, read-only
+        platform_support, platform_support_content,   # SPEC-012: break-glass, read-only
+        platform_admin, platform_support_desk]   # G-04-T02 (SPEC-680, DEC-5201): Accrued console staff, staff-token claims, staff actions only

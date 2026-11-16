@@ -714,3 +714,22 @@ Banned phrases (copy lint): "significant component" (SAS 149 dropped it) and "Po
 | OAuth state | The hashed, single-use, 10-minute state a connect flow carries, bound to the person, scope and catalogue key. | `integration_oauth_states` | — |
 
 Alias line: chapter 03's `integration_catalogue` and `integration_installs` are this repository's `integration_catalog` and `firm_integrations`.
+
+## New terms: platform console, plan & usage, support (G-04-T02)
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Plan entitlement | A firm's plan term, seats, included agent-minutes, usage-month anchor and library channel, as insert-only versions; `tenant_entitlements` stays the per-module switch `require_entitlement()` reads. | `plan_entitlements` | `subscription` |
+| Usage month | The window agent-minutes are counted in, from the plan's anchor day to the day before it next month; P-10's `usage_month` label names the month the window starts in. | `usage_month`, `plan_entitlements.usage_month_anchor_day` | `billing cycle` |
+| Overage | Agent-minutes used past the included minutes in a usage month. Never shown with an amount (P-27). | `over_included` | `overage charge` |
+| Budget alert | A firm rule that tells named people when the usage month passes a threshold; with the At 100% policy and the default engagement budget. "Budget" keeps its USD safety-layer meaning in code (`ai_gateway/budgets.py`). | `usage_alert_rules`, `usage_alert_policies`, `usage_alert_events` | `spend alert` |
+| Request more | A firm's request for more seats, agent-minutes or modules, approved by a partner, then applied by Accrued as an entitlement change. | `plan_change_requests` (glossary `plan_request`) | `upgrade`, `purchase` |
+| Support conversation | A firm user's one thread with Accrued Support ("Chat" in the UI). Distinct from a Workbench session and from a support session. | `support_conversations`, `support_messages` | `ticket`, `chatbot` |
+| Support session | Break-glass access a firm grants Accrued Support: requested by staff, approved only by the firm, scoped, time-boxed (SPEC-012, SPEC-681). Never a Workbench session or a sign-in session. | `support_sessions` | `impersonation`, `view as firm` |
+| Help article | Global platform content: structured blocks drafted by one staff member and published by another. | `help_articles` | `FAQ` |
+| Status incident | A staff-posted note on a component's degradation, outage or maintenance; the firm's status is the worst of open incidents and its own integration health. | `status_incidents`, `status_components` | — |
+| Platform admin · Accrued Support (console) | The console's staff roles, from the staff token's claims, never a firm membership role (DEC-5201). | `platform_admin`, `platform_support_desk` | `superuser` |
+| Tenant code | A tenant's stable console handle (`tnt_` + initials + sequence); never a client name. | `firms.tenant_code` | — |
+| Training sandbox | A synthetic copy-tenant of a firm for training; seats not counted. | `firms.sandbox_of_firm_id`, `synthetic` | `demo firm` |
+
+Banned in UI copy (SPEC-680 AC-31): "credits", "tokens", "subscription price"; agent-minutes never read as hours or billable time.

@@ -5172,6 +5172,144 @@ export const STATUS_REGISTRY = {
       "variant": null,
       "terminal": true,
       "derived": false
+    },
+    "ended": {
+      "label": "Closed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "plan_request": {
+    "awaiting_partner": {
+      "label": "Awaiting partner approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "sent_to_accrued": {
+      "label": `Sent to ${PRODUCT}`,
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "applied": {
+      "label": "Applied",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "withdrawn": {
+      "label": "Withdrawn",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "tenant_health": {
+    "healthy": {
+      "label": "Healthy",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "degraded": {
+      "label": "Degraded",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "with_reason": "Degraded · {reason}"
+      }
+    },
+    "onboarding": {
+      "label": "Onboarding",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "invited": "Onboarding · first admin invited"
+      }
+    }
+  },
+  "status_component": {
+    "operational": {
+      "label": "Operational",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "needs_attention": {
+      "label": "Needs attention",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "outage": {
+      "label": "Outage",
+      "variant": "red",
+      "terminal": false,
+      "derived": true
+    },
+    "maintenance": {
+      "label": "Maintenance",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "platform_region": {
+    "live": {
+      "label": "Live",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "planned": {
+      "label": "Planned",
+      "variant": "soon",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "support_availability": {
+    "online": {
+      "label": "Online",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "replies_in": "Online · replies in ~{n} min"
+      }
+    },
+    "offline": {
+      "label": "Offline",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "reply_by": "Offline · we reply by {time} CT"
+      }
+    }
+  },
+  "agent_run_state_reason": {
+    "budget_100pct": {
+      "label": "Paused · plan limit",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
     }
   },
   "client_invitation": {

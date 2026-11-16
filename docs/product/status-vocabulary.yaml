@@ -1470,6 +1470,49 @@ objects:
       active:    {label: "Granted until {time}", variant: null, terminal: false, derived: false}
       declined:  {label: "Declined", variant: null, terminal: true, derived: false}   # stored from G-02-T14 (DEC-72)
       revoked:   {label: "Revoked", variant: null, terminal: true, derived: false}
+      ended:     {label: "Closed", variant: green-tint, terminal: true, derived: false}   # G-04-T02 (DF-31; PLT-01b "Closed")
+      expired:   {label: "Expired", variant: null, terminal: true, derived: false}   # G-04-T02 (DF-31)
+
+  plan_request:   # plan_change_requests.status (G-04-T04; SPEC-680 AC-40 to AC-43); UI "Request more"
+    source: "DF-31; G-04 §4.10; ADM-14 f; PLT-01 Plan requests"
+    codes:
+      awaiting_partner: {label: "Awaiting partner approval", variant: amber, terminal: false, derived: false}
+      sent_to_accrued:  {label: "Sent to Accrued", variant: neutral, terminal: false, derived: false}
+      applied:          {label: "Applied", variant: green-tint, terminal: true, derived: false}
+      declined:         {label: "Declined", variant: null, terminal: true, derived: false}
+      withdrawn:        {label: "Withdrawn", variant: muted, terminal: true, derived: false}
+
+  tenant_health:   # platform_tenant_directory.health (G-04-T04; SPEC-680 AC-4); PLT-01 a
+    source: "DF-31; G-04 §4.10; PLT-01 a"
+    codes:
+      healthy:    {label: "Healthy", variant: green-tint, terminal: false, derived: false}
+      degraded:   {label: "Degraded", variant: amber, terminal: false, derived: false, context_labels: {with_reason: "Degraded · {reason}"}}
+      onboarding: {label: "Onboarding", variant: neutral, terminal: false, derived: false, context_labels: {invited: "Onboarding · first admin invited"}}
+
+  status_component:   # the firm-facing status of a component (SPEC-680 AC-53, AC-54); SHL-05 e
+    source: "DF-31; G-04 §4.10; SHL-05 e"
+    codes:
+      operational:     {label: "Operational", variant: green-tint, terminal: false, derived: true}
+      needs_attention: {label: "Needs attention", variant: amber, terminal: false, derived: true}
+      outage:          {label: "Outage", variant: red, terminal: false, derived: true}
+      maintenance:     {label: "Maintenance", variant: neutral, terminal: false, derived: true}
+
+  platform_region:   # platform_regions.status (G-04-T04; SPEC-680 AC-5); PLT-01 f
+    source: "DF-31; G-04 §4.10; PLT-01 f"
+    codes:
+      live:    {label: "Live", variant: green-tint, terminal: false, derived: false}
+      planned: {label: "Planned", variant: soon, terminal: false, derived: false}   # the planned label is content (platform_regions.planned_label)
+
+  support_availability:   # computed from support hours content (SPEC-680 AC-45); SHL-05 a, b
+    source: "DF-31; G-04 §4.10; SHL-05 a, b"
+    codes:
+      online:  {label: "Online", variant: green-tint, terminal: false, derived: true, context_labels: {replies_in: "Online · replies in ~{n} min"}}
+      offline: {label: "Offline", variant: muted, terminal: false, derived: true, context_labels: {reply_by: "Offline · we reply by {time} CT"}}
+
+  agent_run_state_reason:   # agent_runs.state_reason values G-04 adds (SPEC-680 AC-37); the run row's reason line
+    source: "DF-31; G-04 §4.10; chapter 05 §5.6.5"
+    codes:
+      budget_100pct: {label: "Paused · plan limit", variant: muted, terminal: true, derived: false}   # a schedule-triggered run refused at admission under "Pause scheduled agents only"
 
   client_invitation:   # client_invitations.status (0025); the invite response (SPEC-015 AC-1, ED-007)
     source: "SPEC-015 AC-1; client_invitations (TASK-030)"
