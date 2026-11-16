@@ -598,11 +598,10 @@ import {
   scenarios as tax03Scenarios,
 } from "./TAX-03/scenarios";
 import { K1PackagePage } from "./TXP-12";
-import { EntityReturn } from "./TXP-00/EntityReturn";
-import { Allocation } from "./TXP-06/Allocation";
-import { RIDGELINE_RETURN_ID } from "../fixtures/seed/tax-entity";
-import { screenScenario } from "../fixtures/screen-scenarios";
-import type { EntitySlug } from "../routes/firm/tax-returns";
+import { TXT01 } from "./TXT-01";
+import { CALLOWAY_RETURN, type Txt01State, scenarios as txt01Scenarios } from "./TXT-01/scenarios";
+import { TXT02 } from "./TXT-02";
+import { type CalcScenario, scenarios as txt02Scenarios } from "./TXT-02/scenarios";
 import {
   OPENING as TXP12_OPENING,
   OPENS as TXP12_OPENS,
@@ -2622,6 +2621,57 @@ registerScreen("WB-11", {
 registerScreen("TXT-04", {
   title: "Gift & estate workpapers (706 / 709)",
   Component: ({ params }: { params: FixtureParams }) => <EstateWorkpapers st={params.st} />,
+});
+// TXT-01 a–d (T-07-T15) and TXT-02 a–e (T-07-T17) on their fixture scenarios, the TXP-12 way:
+// J07's fixture steps open `/components/screens/TXT-0x?st=` (S47 partials, TASK-8361).
+function Txt01Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state = (Object.keys(txt01Scenarios) as Txt01State[]).find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      txt01Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? (
+    <div data-artboard={state}>
+      <TXT01 key={state} returnId={CALLOWAY_RETURN} />
+    </div>
+  ) : null;
+}
+function Txt02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state =
+    (Object.keys(txt02Scenarios) as CalcScenario[]).find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      txt02Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? (
+    <div data-artboard={state}>
+      <TXT02 key={state} returnId={CALLOWAY_RETURN} />
+    </div>
+  ) : null;
+}
+registerScreen("TXT-01", {
+  title: "Review › Instrument · Calloway Family Trust 2025 Form 1041",
+  Component: Txt01Artboard,
+});
+registerScreen("TXT-02", {
+  title: "Review › Trust Calculation · Calloway Family Trust",
+  Component: Txt02Artboard,
 });
 registerScreen("TXT-03", {
   title: "Beneficiaries, K-1s & 65-day election · Calloway Family Trust",
