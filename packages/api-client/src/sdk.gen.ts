@@ -792,7 +792,8 @@ export const groupEditConsolidation = <ThrowOnError extends boolean = false>(opt
 /**
  * Group Bulk Upload
  *
- * A NetSuite "TB by subsidiary" CSV split into one snapshot per covered entity.
+ * A NetSuite "TB by subsidiary" CSV split into one snapshot per covered entity (the raw
+ * body; 422 `subsidiary_unknown` naming the position of an unknown one, nothing stored).
  */
 export const groupBulkUpload = <ThrowOnError extends boolean = false>(options: Options<GroupBulkUploadData, ThrowOnError>): RequestResult<GroupBulkUploadResponses, GroupBulkUploadErrors, ThrowOnError> => (options.client ?? client).post<GroupBulkUploadResponses, GroupBulkUploadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

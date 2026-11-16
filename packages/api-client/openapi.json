@@ -153545,7 +153545,7 @@
     },
     "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/bulk-upload": {
       "post": {
-        "description": "A NetSuite \"TB by subsidiary\" CSV split into one snapshot per covered entity.",
+        "description": "A NetSuite \"TB by subsidiary\" CSV split into one snapshot per covered entity (the raw\nbody; 422 `subsidiary_unknown` naming the position of an unknown one, nothing stored).",
         "operationId": "group_bulk_upload",
         "parameters": [
           {
@@ -153672,16 +153672,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Bulk Upload",
@@ -154400,16 +154390,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Group Pull All",

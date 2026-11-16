@@ -18,7 +18,9 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID]]] = 
     "gl_snapshot": (GlSnapshot.id, GlSnapshot.client_entity_id),
 }
 ENTITY_KINDS = frozenset(_OWNERS)
-ENGAGEMENT_KINDS = frozenset({"trial_balance", "mapping_set", "consolidation"})
+ENGAGEMENT_KINDS = frozenset(
+    {"trial_balance", "mapping_set", "consolidation", "consolidation_trial_balance"}
+)
 # A mapping set (SPEC-316) maps one engagement's trial balance.
 _ENGAGEMENT_OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID]]] = {
     "trial_balance": (TrialBalance.id, TrialBalance.engagement_id),
@@ -41,6 +43,17 @@ async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) ->
     their id -> the owning engagement. Unknown ids are left out."""
     if kind not in ENGAGEMENT_KINDS:
         return {}
+    if kind == "consolidation_trial_balance":  # A-09-T18 (DEC-5329): its consolidation's
+        async with tenant_session(tenant) as session:
+            found = await session.execute(
+                text(
+                    "SELECT t.id, c.engagement_id FROM consolidation_trial_balances t "
+                    "JOIN consolidation_entities e ON e.id = t.consolidation_entity_id "
+                    "JOIN consolidations c ON c.id = e.consolidation_id WHERE t.id = ANY(:i)"
+                ),
+                {"i": list(ids)},
+            )
+            return {row[0]: row[1] for row in found}
     if kind == "consolidation":  # A-09-T13: a consolidation is one engagement's
         async with tenant_session(tenant) as session:
             found = await session.execute(

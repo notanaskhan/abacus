@@ -127,7 +127,13 @@ class ConsolidationFacts:
         )
 
     def missing(self) -> tuple[SlotKey, ...]:
-        return tuple(k for k in self.required if self.slot_of(k) is None)
+        """Every required slot without a TB: absent, or one that cannot be read (Needs reauth,
+        A-09-T18) blocks finalize as an absent one does."""
+        return tuple(
+            k
+            for k in self.required
+            if (found := self.slot_of(k)) is None or found.state not in ("attached", "not_needed")
+        )
 
 
 @dataclass(frozen=True)
@@ -541,6 +547,29 @@ async def _replace_slot(
         },
     )
     return new_id
+
+
+async def mark_slot_needs_reauth(
+    tx: UnitOfWork, *, tenant_id: UUID, key: SlotKey, user_id: UUID
+) -> UUID:
+    """A-09-T18 (DEC-5329): a pull whose token was refused leaves its slot Needs reauth (a new
+    slot row; the old one points at it). Never retried here."""
+    slot = await _replace_slot(
+        tx,
+        tenant_id=tenant_id,
+        key=key,
+        state="needs_reauth",
+        snapshot_id=None,
+        source="connection",
+        evidence_version_id=None,
+        reason=None,
+        user_id=user_id,
+    )
+    tx.record(
+        "consolidation.slot_needs_reauth",
+        target=Target("consolidation_trial_balance", slot),
+    )
+    return slot
 
 
 async def _require_draft(tx: UnitOfWork, consolidation_id: UUID) -> None:

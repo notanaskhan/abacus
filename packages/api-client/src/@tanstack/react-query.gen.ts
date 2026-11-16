@@ -1334,7 +1334,8 @@ export const groupEditConsolidationMutation = (options?: Partial<Options<GroupEd
 /**
  * Group Bulk Upload
  *
- * A NetSuite "TB by subsidiary" CSV split into one snapshot per covered entity.
+ * A NetSuite "TB by subsidiary" CSV split into one snapshot per covered entity (the raw
+ * body; 422 `subsidiary_unknown` naming the position of an unknown one, nothing stored).
  */
 export const groupBulkUploadMutation = (options?: Partial<Options<GroupBulkUploadData>>): UseMutationOptions<GroupBulkUploadResponse, GroupBulkUploadError, Options<GroupBulkUploadData>> => {
     const mutationOptions: UseMutationOptions<GroupBulkUploadResponse, GroupBulkUploadError, Options<GroupBulkUploadData>> = {

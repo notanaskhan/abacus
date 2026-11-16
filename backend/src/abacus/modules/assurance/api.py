@@ -149,6 +149,8 @@ from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, 
 from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
 from abacus.modules.assurance.gates import register as register_gates
 from abacus.modules.assurance.group_contract import router as group_router
+from abacus.modules.assurance.group_pull import ACTIVITIES as PULL_ALL_ACTIVITIES
+from abacus.modules.assurance.group_pull import WORKFLOWS as PULL_ALL_WORKFLOWS
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.ic_redraft import SUBSCRIPTIONS as IC_REDRAFT_SUBSCRIPTIONS
 from abacus.modules.assurance.internal_control import AUDIT_KINDS as CONTROL_KINDS
@@ -392,6 +394,7 @@ WORKFLOWS: dict[type, str] = (
     | dict(ARCHIVE_LOCK_WORKFLOWS)  # A-07-T37: the seal, on the batch class
     | dict(ARCHIVE_VERIFY_WORKFLOWS)  # A-07-T42: seal verification, one and the monthly sweep
     | dict(FOLLOW_UP_WORKFLOWS)  # A-08-T18 (DEC-5324): the daily confirmation follow-up
+    | dict(PULL_ALL_WORKFLOWS)  # A-09-T18 (DEC-5329): ConsolidationPullAll
 )
 ACTIVITIES: tuple[object, ...] = (
     *FORM5500_ACTIVITIES,
@@ -402,6 +405,7 @@ ACTIVITIES: tuple[object, ...] = (
     *ARCHIVE_LOCK_ACTIVITIES,  # A-07-T37
     *ARCHIVE_VERIFY_ACTIVITIES,  # A-07-T42
     *FOLLOW_UP_ACTIVITIES,  # A-08-T18
+    *PULL_ALL_ACTIVITIES,  # A-09-T18
 )
 # A-07-T42: the monthly seal verification sweep (a mismatch raises RB-29).
 # A-08-T18 (DEC-5324): the daily confirmation follow-up prompts.

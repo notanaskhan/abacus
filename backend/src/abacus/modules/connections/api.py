@@ -2,12 +2,16 @@
 
 from collections.abc import Callable
 from datetime import timedelta
+from decimal import Decimal
 from typing import Any
 
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 
 # A-09-T11, T13: which entities a connection covers (OneWorld).
-from abacus.kernel.connection_coverage import register_connection_coverage
+from abacus.kernel.connection_coverage import (
+    register_connection_coverage,
+    register_group_tb_sources,
+)
 from abacus.kernel.dispatch import PlatformSchedule, register_work_classes
 from abacus.kernel.uow import Handler
 from abacus.modules.connections.activities import ACTIVITIES as RUN_ACTIVITIES
@@ -310,3 +314,31 @@ __all__ = [
 
 # A-09-T11, T13: the coverage slot the consolidation routes call (kernel.connection_coverage).
 register_connection_coverage(covers, cover_entities)
+
+
+# A-09-T18 rest (DEC-5329): the group's trial balances by subsidiary for AUD-32, read only.
+def _split_rows(data: bytes) -> dict[str, list[tuple[str, str, Decimal, Decimal]]]:
+    from abacus.modules.connections.netsuite_split import split
+
+    return {
+        sub: [(ln.account, ln.name, ln.debit, ln.credit) for ln in lines]
+        for sub, lines in split(data).items()
+    }
+
+
+def _pull_rows() -> list[tuple[str, list[tuple[str, str, Decimal, Decimal]] | None]]:
+    from abacus.modules.connections.fake_oneworld import FakeOneWorld, NeedsReauth
+
+    connector = FakeOneWorld()
+    out: list[tuple[str, list[tuple[str, str, Decimal, Decimal]] | None]] = []
+    for sub in connector.subsidiaries():
+        try:
+            lines = connector.trial_balance(sub, "current")
+        except NeedsReauth:
+            out.append((sub, None))
+            continue
+        out.append((sub, [(ln.account, ln.account, ln.debit, ln.credit) for ln in lines]))
+    return out
+
+
+register_group_tb_sources(_split_rows, _pull_rows)
