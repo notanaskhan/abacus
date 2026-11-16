@@ -15,6 +15,8 @@ import { COPY, amountWords } from "./copy";
 
 export interface TXT02Props {
   returnId: string;
+  /** `?row=` (T-07-T21): the row TXT-01's Cited by opened, lit and scrolled to. */
+  row?: string;
   /** Start collapsed to the four top rows (b) or on the character table (c). */
   initial?: { collapsed?: boolean; view?: "tree" | "character" };
   onClause?: (clause: string) => void;
@@ -53,13 +55,17 @@ function Row({
   const kids = childrenOf(nodes, node.key);
   const isOpen = open.has(node.key);
   const muted = node.key === "dni";
+  const deep = props.row !== undefined && (props.row === node.key || props.row === node.key.replace(/^dni\./, "dni"));
   return (
     <li data-row={node.key} data-level={node.level}>
       <div
-        data-highlighted={node.highlighted ? "true" : undefined}
+        data-highlighted={node.highlighted || deep ? "true" : undefined}
+        ref={(el) => {
+          if (deep && el) el.scrollIntoView?.({ block: "center" });
+        }}
         style={{ paddingLeft: 21 + node.level * 31 }}
         className={`flex min-h-[34px] items-center gap-[8px] pr-[16px] text-[13.5px] ${
-          node.highlighted ? "-ml-[12px] bg-match-soft pl-[33px]" : ""
+          node.highlighted || deep ? "-ml-[12px] bg-match-soft pl-[33px]" : ""
         } ${muted ? "text-ink-2" : ""}`}
       >
         {kids.length > 0 ? (

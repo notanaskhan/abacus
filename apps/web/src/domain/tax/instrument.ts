@@ -14,7 +14,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useInstrument(returnId: string) {
-  return useQuery({ ...instrumentOptions({ path: { return_id: returnId } }), retry: false });
+  return useQuery({
+    ...instrumentOptions({ path: { return_id: returnId } }),
+    retry: false,
+    // T-07-T21: while the reader runs, the read model is invalidated over C6 v2 SSE; this poll is
+    // the fallback when the stream is down (every 3 s, only while a progress line shows).
+    refetchInterval: (q) => (q.state.data?.reader?.progress_label ? 3000 : false),
+  });
 }
 
 /** The return's record (TAX-02): the trust's name, the tax year and its due date. */

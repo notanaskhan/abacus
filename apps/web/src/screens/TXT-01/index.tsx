@@ -35,6 +35,8 @@ import { LegalReader } from "./LegalReader";
 
 export interface TXT01Props {
   returnId: string;
+  /** `?clause=` (T-07-T21): the clause a TXT-02 chip opened, lit and scrolled to on arrival. */
+  clause?: string;
   /** SHL-12 at L3 on the interpretation (`?ov=signoff`). */
   onApprove?: () => void;
   /** A Cited by row: TXT-02 `?row=` or a TAX-05 worksheet field. */
@@ -104,6 +106,7 @@ function Chip({
 
 export function TXT01({
   returnId,
+  clause,
   onApprove,
   onCitedBy,
   onRecord,
@@ -118,7 +121,7 @@ export function TXT01({
   const clauses = useInstrumentClauses(model?.instrument?.id);
   const text = useInstrumentText(model?.instrument?.evidence_version_id);
   const start = useReadInstrument(returnId);
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(clause ?? null);
   const [selected, setSelected] = useState<InstrumentDeterminationOut["key"] | null>("trust_type");
 
   const citing = useMemo(() => {

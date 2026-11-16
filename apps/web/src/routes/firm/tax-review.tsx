@@ -35,7 +35,11 @@ const FIXTURES = import.meta.env.MODE === "test" || import.meta.env.VITE_FIXTURE
 const Prepare = FIXTURES
   ? lazy(async () => ({ default: (await import("../../screens/TAX-04")).TAX04 }))
   : null;
-type WorkspaceSearch = { ov?: string; ws?: string };
+type WorkspaceSearch = { ov?: string; ws?: string; clause?: string; row?: string };
+// T-07-T21: TXT-01 `?clause=` lights a clause (a TXT-02 chip's link); TXT-02 `?row=` lights a row
+// (TXT-01's Cited by). Both are labels, never paths: a short pattern, never the raw text.
+const CLAUSE = /^[A-Za-z0-9 .()]{1,24}$/;
+const ROW = /^[a-z0-9_.-]{1,60}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // `?ov=` keeps every overlay the host knows (SHL-10, SHL-12, SHL-15 from the live sections, and
@@ -45,6 +49,8 @@ function validateSearch(search: Record<string, unknown>): WorkspaceSearch {
     ...(typeof search.ov === "string" && search.ov !== "" ? { ov: search.ov } : {}),
     // A worksheet id goes into an API path: a UUID only, never the URL's raw text.
     ...(typeof search.ws === "string" && UUID.test(search.ws) ? { ws: search.ws } : {}),
+    ...(typeof search.clause === "string" && CLAUSE.test(search.clause) ? { clause: search.clause } : {}),
+    ...(typeof search.row === "string" && ROW.test(search.row) ? { row: search.row } : {}),
   };
 }
 
@@ -172,6 +178,7 @@ export const taxInstrumentRoute = createRoute({
   component: function TaxInstrumentPage(): JSX.Element {
     const returnId = useParam("returnId");
     const navigate = useNavigate();
+    const search: WorkspaceSearch = useSearch({ strict: false });
     return (
       <Workspace tab="review" title="Instrument">
         <FeatureGate
@@ -180,8 +187,18 @@ export const taxInstrumentRoute = createRoute({
         >
           <InstrumentScreen
             returnId={returnId}
+            {...(search.clause ? { clause: search.clause } : {})}
             onApprove={() => {
               void navigate({ to: ".", search: { ov: "signoff" } });
+            }}
+            onCitedBy={(target, ref) => {
+              if (target === "trust_calculation") {
+                void navigate({
+                  to: "/tax-returns/$returnId/review/trust-calculation",
+                  params: { returnId },
+                  search: { row: ref },
+                });
+              }
             }}
           />
         </FeatureGate>
@@ -201,6 +218,7 @@ export const taxTrustCalculationRoute = createRoute({
   component: function TaxTrustCalculationPage(): JSX.Element {
     const returnId = useParam("returnId");
     const navigate = useNavigate();
+    const search: WorkspaceSearch = useSearch({ strict: false });
     return (
       <Workspace tab="review" title="Trust Calculation">
         <FeatureGate
@@ -209,11 +227,16 @@ export const taxTrustCalculationRoute = createRoute({
         >
           <TrustCalculationScreen
             returnId={returnId}
+            {...(search.row ? { row: search.row } : {})}
             onSignOff={() => {
               void navigate({ to: ".", search: { ov: "signoff" } });
             }}
-            onClause={() => {
-              void navigate({ to: "/tax-returns/$returnId/review/instrument", params: { returnId } });
+            onClause={(clause) => {
+              void navigate({
+                to: "/tax-returns/$returnId/review/instrument",
+                params: { returnId },
+                search: { clause },
+              });
             }}
           />
         </FeatureGate>
