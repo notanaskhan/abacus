@@ -181,6 +181,16 @@ class ConfirmationDetailOut(BaseModel):
     misstatement_id: Annotated[UUID | None, classified("internal")]
 
 
+class ConfirmationLineIn(BaseModel):
+    """A-08-T16: one book amount the respondent is asked to confirm (from the sample or the TB)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    description: Name
+    account_last4: Annotated[str | None, Field(pattern=r"^\d{4}$"), classified("confidential")] = None
+    book_amount: Money
+
+
 class ConfirmationCreateIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -191,6 +201,7 @@ class ConfirmationCreateIn(BaseModel):
     address_value: Annotated[str, Field(min_length=3, max_length=320), classified("confidential")]
     sample_item_ref: Annotated[str | None, Field(max_length=100), classified("internal")] = None
     tb_account_refs: Annotated[list[str], Field(max_length=50), classified("internal")] = []
+    lines: Annotated[list[ConfirmationLineIn], Field(max_length=50), classified("internal")] = []
 
 
 class AddressVerificationIn(BaseModel):
