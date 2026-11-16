@@ -230,6 +230,21 @@ def test_dec1004_production_refuses_an_in_vpc_temporal(monkeypatch: pytest.Monke
         Settings()
 
 
+def test_w01t09_production_refuses_the_integration_fakes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """W-01-T09: the API and the worker load these settings at boot, so neither starts."""
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", "production")
+    _explicit_connection_env(monkeypatch)
+    monkeypatch.setenv("ABACUS_INTEGRATIONS_FAKE_ADAPTERS", "true")
+    with pytest.raises(ValueError, match="integrations_fake_adapters"):
+        Settings()
+
+
+def test_w01t09_staging_may_set_the_integration_fakes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ABACUS_ENVIRONMENT", "test")
+    monkeypatch.setenv("ABACUS_INTEGRATIONS_FAKE_ADAPTERS", "true")
+    assert Settings().integrations_fake_adapters
+
+
 @pytest.mark.parametrize("environment", ["staging", "production"])
 def test_ac20_non_local_environment_requires_the_evidence_bucket(
     monkeypatch: pytest.MonkeyPatch, environment: str
