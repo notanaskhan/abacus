@@ -249,6 +249,35 @@ export const taxTrustCalculationRoute = createRoute({
   },
 });
 
+// TXT-03 (S47, TASK-8352): beneficiaries, K-1s and the 65-day election under the 1041's Review;
+// a package opens TXP-12, Release K-1s… goes to TXP-12's release.
+const BeneficiariesScreen = lazyScreen(
+  async () => (await import("../../screens/TXT-03/live")).TXT03,
+);
+
+export const taxBeneficiariesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/review/beneficiaries",
+  validateSearch,
+  component: function TaxBeneficiariesPage(): JSX.Element {
+    const returnId = useParam("returnId");
+    const navigate = useNavigate();
+    const toPackages = (): void => {
+      void navigate(to.TXP12({ returnId }));
+    };
+    return (
+      <Workspace tab="review" title="Beneficiaries">
+        <FeatureGate
+          flag="tax.fiduciary_k1_release"
+          fallback={<FlagOffState flag="tax.fiduciary_k1_release" label="Beneficiaries" />}
+        >
+          <BeneficiariesScreen returnId={returnId} onRelease={toPackages} onPackage={toPackages} />
+        </FeatureGate>
+      </Workspace>
+    );
+  },
+});
+
 export const taxReviewRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/tax-returns/$returnId/review/$section",
@@ -369,6 +398,7 @@ export const taxResidencyRoute = createRoute({
 });
 
 export const taxReviewRoutes = [
+  taxBeneficiariesRoute,
   taxInstrumentRoute,
   taxTrustCalculationRoute,
   taxReviewRoute,
