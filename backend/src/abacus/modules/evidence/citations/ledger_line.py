@@ -16,6 +16,11 @@ dependency-free. Locator `{ledger_snapshot_id, account_code}`; the match id is
   space- and case-folded. A claim with neither still verifies that the line exists.
 - Display renders "Trial balance" and `<code> · <name>` by code (INV-2), and only for a snapshot
   of the citation's engagement's entity.
+- **Register rows** (C-01-T18, C9 v2.1): a locator with `register_line` names a row of a monthly
+  snapshot's register (`ledger.api.register_row`); its account must be `account_code`. A claimed
+  value must equal the row's net or its side; a claimed quote must be in its payee or memo. The
+  match id is `led:<snapshot>:<account>:<line>`; display reads "Ledger register" and
+  `<code> · line <n>`. A locator without `register_line` is read exactly as before.
 - **Moved** (`on_trial_balance_version_created`, a consumer of `trial_balance.version_created`): a
   re-version that adopts another snapshot supersedes its predecessor's, so every citation to the
   older snapshot made on that trial balance's engagement gets a `moved` event naming the new one
@@ -51,7 +56,13 @@ from abacus.modules.evidence.citations.registry import (
     unverifiable,
 )
 from abacus.modules.identity.api import Actor, Forbidden, authorise
-from abacus.modules.ledger.api import CitedLine, snapshot_line, superseded_snapshot
+from abacus.modules.ledger.api import (
+    CitedLine,
+    CitedRegisterRow,
+    register_row,
+    snapshot_line,
+    superseded_snapshot,
+)
 
 VERIFIER_VERSION: Final = "v1"
 SOURCE: Final = "ledger_snapshot"
@@ -64,6 +75,8 @@ class LedgerLineLocator(BaseModel):
 
     ledger_snapshot_id: Annotated[UUID, classified("internal")]
     account_code: Annotated[str, Field(min_length=1, max_length=100), classified("confidential")]
+    # C-01-T18: a row of the monthly snapshot's register (C9 v2.1); absent for a TB line.
+    register_line: Annotated[int | None, Field(ge=1), classified("internal")] = None
 
 
 def ledger_match_id(snapshot_id: UUID, account_code: str) -> str:
@@ -91,6 +104,50 @@ def line_reason(line: CitedLine, quote: str | None, value: str | None) -> Reason
     return None
 
 
+def row_reason(row: CitedRegisterRow, quote: str | None, value: str | None) -> Reason | None:
+    """A register-row claim checked against the row (pure): the value against its net or its
+    side, the quote against its payee or memo."""
+    if value is not None:
+        found = amount(value)
+        net = row.debit - row.credit
+        shown = {net, -net} | {side for side in (row.debit, row.credit) if side != _ZERO}
+        if found is None or found not in shown:
+            return "value_mismatch"
+    if quote is not None:
+        wanted = _folded(quote)
+        texts = " ".join(t for t in (row.payee, row.memo) if t)
+        if not wanted or wanted not in _folded(texts):
+            return "quote_not_found"
+    return None
+
+
+async def _verify_row(
+    tx: UnitOfWork, claim: CitationClaim, locator: LedgerLineLocator, entity: UUID, kept: dict[str, object]
+) -> Verdict:
+    source = (SOURCE, locator.ledger_snapshot_id)
+    line_no = locator.register_line or 0
+    found = await register_row(tx.session, locator.ledger_snapshot_id, line_no)
+    if found is None or found[0] != entity:
+        return Verdict("source_not_found", *source, kept)
+    version = str(locator.ledger_snapshot_id)
+    row = found[1]
+    if row is None or row.account_code != locator.account_code:
+        return Verdict("cell_not_found", *source, kept, version)
+    reason = row_reason(row, claim.quote, claim.value)
+    if reason is not None:
+        return Verdict(reason, *source, kept, version)
+    quoted = _folded(claim.quote) if claim.quote is not None else None
+    return Verdict(
+        None,
+        *source,
+        kept,
+        version,
+        f"{ledger_match_id(row.snapshot_id, row.account_code)}:{row.line_no}",
+        hashlib.sha256(quoted.encode()).digest() if quoted else None,
+        f"{amount(claim.value)}" if claim.value is not None else None,
+    )
+
+
 async def _visible(actor: Actor, anchor: Anchor) -> UUID | None:
     """The anchor's engagement's entity when the actor may read its trial balance, else None
     (checked before any snapshot is read)."""
@@ -111,11 +168,13 @@ async def verify_ledger_line(
         locator = LedgerLineLocator.model_validate(dict(claim.locator))
     except ValidationError:
         return unverifiable(claim)
-    kept = locator.model_dump(mode="json")
+    kept = locator.model_dump(mode="json", exclude_none=True)  # no register_line: as before
     source = (SOURCE, locator.ledger_snapshot_id)
     entity = await _visible(actor, anchor)
     if entity is None:
         return Verdict("source_not_visible", *source, kept)
+    if locator.register_line is not None:
+        return await _verify_row(tx, claim, locator, entity, kept)
     found = await snapshot_line(tx.session, locator.ledger_snapshot_id, locator.account_code)
     if found is None or found[0] != entity:
         return Verdict("source_not_found", *source, kept)
@@ -153,6 +212,12 @@ async def display_ledger_line(
         return hidden
     tenant = await transaction_context(session)
     entity = await entity_of(tenant, engagement_id)
+    line = locator.get("register_line")
+    if isinstance(line, int) and not isinstance(line, bool):
+        row = await register_row(session, snapshot_id, line)
+        if entity is None or row is None or row[0] != entity or row[1] is None:
+            return Display("Ledger register", "")
+        return Display("Ledger register", f"{code} · line {line}")
     found = await snapshot_line(session, snapshot_id, code)
     if entity is None or found is None or found[0] != entity or found[1] is None:
         return hidden
