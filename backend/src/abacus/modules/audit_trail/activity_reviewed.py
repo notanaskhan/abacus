@@ -65,6 +65,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "je_test.scoring_failed",
         "je_test.scoring_started",
         "je_test.selection_requested",
+        # reviewed 2026-11-16 (S47): C-01-T24 transaction questions, identifiers only
+        "transaction_question.answered",
+        "transaction_question.sent",
         # reviewed 2026-11-15 (S45): C-01-T14/T15 the close record and plan, identifiers only
         "close.on_hold_cleared",
         "close.on_hold_set",

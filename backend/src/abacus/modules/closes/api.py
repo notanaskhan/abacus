@@ -35,6 +35,7 @@ from abacus.modules.closes.contract_work import close_work_router, portal_close_
 from abacus.modules.closes.gate_sources import register_close_gates
 from abacus.modules.closes.intake import ACTIVITIES as INTAKE_ACTIVITIES
 from abacus.modules.closes.intake import schedule_publish
+from abacus.modules.closes.issues import CLOSE_TARGET, add_note, open_exceptions, raise_exception
 from abacus.modules.closes.kind import CloseKind
 from abacus.modules.closes.request_publish_types import (
     PUBLISH as PUBLISH_REQUESTS,
@@ -88,6 +89,7 @@ ACTIVITIES: tuple[Callable[..., Any], ...] = INTAKE_ACTIVITIES  # Any: Temporal 
 
 __all__ = [
     "ACTIVITIES",
+    "CLOSE_TARGET",
     "PUBLISH_REQUESTS",
     "RECOMPUTE_REQUESTS",
     "REQUESTS_SECONDS_UNTIL",
@@ -100,7 +102,10 @@ __all__ = [
     "RequestPublishWorkflow",
     "StatusGuard",
     "TransitionNotAvailable",
+    "add_note",
     "close_for",
+    "open_exceptions",
+    "raise_exception",
     "register_status_guard",
     "schedule_publish",
     "start_close",

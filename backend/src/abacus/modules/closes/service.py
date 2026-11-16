@@ -268,6 +268,11 @@ def _account_ties(
 # --- reads (AC-1, AC-3, AC-4, AC-7) -------------------------------------------------------------
 
 
+async def people(ids: set[UUID]) -> dict[UUID, ClosePersonOut]:
+    """C-01-T24: the people named on a close's records, as CLS screens show them."""
+    return await _people(ids)
+
+
 async def _people(ids: set[UUID]) -> dict[UUID, ClosePersonOut]:
     names = await names_of(sorted(ids, key=str)) if ids else {}
     return {

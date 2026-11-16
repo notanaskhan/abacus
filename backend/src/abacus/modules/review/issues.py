@@ -90,6 +90,8 @@ class IssueRow:
     source_kind: str | None = None
     category_path: str | None = None
     system_resolved_only: bool = False
+    # C-01-T24: an engine issue's dedupe key, which names its source (a close's account and line).
+    source_ref: str | None = None
 
 
 @dataclass(frozen=True)
@@ -104,7 +106,7 @@ _SELECT_ONE: Final = text(
     "SELECT i.id, i.engagement_id, i.work_item_id, i.record_ref, i.kind, i.priority, i.status, "
     "i.instructions_required, i.assignee_user_id, i.assignee_agent, i.blocks, i.version, "
     "i.created_at, i.title_sealed, i.internal_note_sealed, i.client_wording_sealed, "
-    "i.source_kind, i.category_path, i.system_resolved_only, "
+    "i.source_kind, i.category_path, i.system_resolved_only, i.source_ref, "
     "(SELECT count(*) FROM issue_links l WHERE l.issue_id = i.id) AS link_count "
     "FROM issues i WHERE i.id = :id"
 )
@@ -112,7 +114,7 @@ _SELECT_LIST: Final = text(
     "SELECT i.id, i.engagement_id, i.work_item_id, i.record_ref, i.kind, i.priority, i.status, "
     "i.instructions_required, i.assignee_user_id, i.assignee_agent, i.blocks, i.version, "
     "i.created_at, i.title_sealed, i.internal_note_sealed, i.client_wording_sealed, "
-    "i.source_kind, i.category_path, i.system_resolved_only, "
+    "i.source_kind, i.category_path, i.system_resolved_only, i.source_ref, "
     "(SELECT count(*) FROM issue_links l WHERE l.issue_id = i.id) AS link_count "
     "FROM issues i WHERE i.engagement_id = :e "
     "AND (CAST(:r AS text) IS NULL OR i.record_ref ->> 'id' = CAST(:r AS text)) "
@@ -153,6 +155,7 @@ def _row(r: object) -> IssueRow:
         cast(str | None, m.get("source_kind")),
         cast(str | None, m.get("category_path")),
         bool(m.get("system_resolved_only") or False),
+        cast(str | None, m.get("source_ref")),
     )
 
 
