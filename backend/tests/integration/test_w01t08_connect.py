@@ -23,7 +23,7 @@ from abacus.kernel import config
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow.relay import OutboxEvent
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.integrations import connect_service as svc
 from abacus.modules.integrations.api import CatalogDocumentV2
 from abacus.modules.integrations.connect_errors import (
@@ -328,3 +328,18 @@ async def test_ac4_a_real_firm_has_no_fakes(db: MigratedDatabase) -> None:
     felix = await _person(db, tenant, "security_admin")
     with pytest.raises(IntegrationNotAvailable):
         await svc.start_firm(felix, "karbon")
+
+
+async def test_review_a_firm_state_needs_the_firm_action_still_held_at_complete(
+    db: MigratedDatabase,
+) -> None:
+    """Security review (S46): a firm connect started by an admin is refused at the callback once
+    the person no longer holds `connect_firm` (their state is spent either way)."""
+    tenant = await _firm(db)
+    felix = await _person(db, tenant, "security_admin")
+    state = _state((await svc.start_firm(felix, "karbon")).authorise_url)
+    demoted = AuthContext(felix.tenant, felix.user_id, felix.membership_id, None, felix.mfa_at)
+    with pytest.raises(Forbidden):
+        await svc.complete(demoted, state, "c")
+    with pytest.raises(InvalidState):  # spent, so the admin cannot replay it either
+        await svc.complete(felix, state, "c")

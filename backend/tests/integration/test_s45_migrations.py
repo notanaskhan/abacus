@@ -8,8 +8,11 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 
 from abacus_tools.quality import schema_check as sc
 from abacus_tools.quality.schema_check import migrate, provisioned_database
@@ -71,4 +74,11 @@ def test_0885_to_0890_go_down_and_up_with_forced_rls(private_db: sc.Database) ->
 
 
 def test_the_head_is_0890(private_db: sc.Database) -> None:
-    assert _value(private_db, "SELECT version_num FROM alembic_version") == "0890"
+    """The chain reaches 0890 and the database sits at the script head (S46 chains 0891 to 0901
+    on it; a later sprint's head is still past 0890)."""
+    scripts = ScriptDirectory.from_config(
+        Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+    )
+    head = str(_value(private_db, "SELECT version_num FROM alembic_version"))
+    assert head == scripts.get_current_head()
+    assert "0890" in {r.revision for r in scripts.walk_revisions("base", head)}

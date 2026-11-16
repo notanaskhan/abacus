@@ -1901,6 +1901,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         "proposed_entry_lines": frozenset(
             {"account_code", "account_name", "credit", "debit", "fs_line_key"}
+            | {"client_entity_id", "consolidation_level"}  # A-09-T10 (0896): elimination lines
         ),
         # A-06-T04 (0644): completion's findings, misstatements, deficiencies, consultations.
         "audit_findings": frozenset(
@@ -2649,6 +2650,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # C-01-T10 (0882): the hourly read's schedules and meter.
         "sync_schedules": frozenset(
             {"business_hours", "cadence", "cdc_cursor", "next_run_at", "paused_reason"}
+            | {"last_failure_code", "retry_at"}  # C-01-T17 (0891): the ledger sync's retries
         ),
         "connection_meter_usage": frozenset({"budget", "calls", "updated_at"}),
         # T-07-T07 (0883, DEC-5010): trust profiles update their facts, interpretations their
@@ -2738,6 +2740,89 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "version",
             }
         ),
+        # S46: the new tables' update grants (schema_check matches them against the database).
+        # A-09-T12 (0898)
+        "component_auditors": frozenset(
+            {
+                "city",
+                "competence_evaluated_at",
+                "competence_evaluated_by",
+                "component_id",
+                "ep_contact_id",
+                "independence_confirmed_at",
+                "make_reference",
+                "organisation_name",
+                "peer_review_obtained_on",
+                "questionnaire_received_on",
+                "row_version",
+            }
+        ),
+        # A-09-T12 (0898)
+        "component_deliverables": frozenset(
+            {
+                "evidence_item_id",
+                "received_at",
+                "return_reason",
+                "returned_at",
+                "reviewed_actor_kind",
+                "reviewed_at",
+                "reviewed_by",
+                "row_version",
+                "status",
+            }
+        ),
+        # A-09-T12 (0898)
+        "component_instructions": frozenset(
+            {
+                "acknowledged_at",
+                "acknowledged_contact_id",
+                "current_version_id",
+                "row_version",
+                "sent_actor_kind",
+                "sent_at",
+                "sent_by",
+                "status",
+            }
+        ),
+        # A-09-T12 (0898)
+        "component_milestones": frozenset({"deliverable_id", "due_on", "position"}),
+        # A-09-T12 (0898)
+        "components": frozenset(
+            {
+                "component_auditor_id",
+                "component_pm",
+                "performed_by",
+                "planned_work",
+                "row_version",
+                "scope_areas",
+            }
+        ),
+        # A-08-T16 (0894)
+        "confirmations": frozenset({"row_version", "status"}),
+        # A-09-T11 (0897)
+        "connection_entity_coverage": frozenset({"live"}),
+        # T-07-T22 (0892)
+        "estate_profiles": frozenset(
+            {
+                "dsue_amount",
+                "dsue_citation_ids",
+                "residence_state",
+                "row_version",
+            }
+        ),
+        # A-08-T12 (0895)
+        "je_tests": frozenset(
+            {
+                "failure_code",
+                "policy_version_id",
+                "row_version",
+                "sample_set_id",
+                "score_version",
+                "status",
+            }
+        ),
+        # A-08-T15 (0893)
+        "link_principals": frozenset({"revoked_at"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -3427,6 +3512,13 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"archived_guard"}  # 0686 (A-07-T13): an archived engagement's rows refuse a change
         # 0790 (A-02-T33): the connect host's hand-off: the hash-to-firm note and the lookup.
         | {"connection_state_origin", "connection_state_firm_note"}
+        # 0893 (A-08-T15): a public link's token, code and page credential, before any tenant.
+        | {"link_principal_resolve", "link_principal_challenge", "link_principal_issue"}
+        | {"link_principal_attempt", "link_principal_missed", "link_principal_credential"}
+        | {"link_principal_credential_resolve"}
+        # 0901 (W-01-T07): the workbench catalogue read, the v2 import and its log.
+        | {"integration_catalog_workbench", "integration_catalog_import"}
+        | {"integration_catalog_import_log"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 
