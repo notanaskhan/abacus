@@ -27,8 +27,9 @@ from __future__ import annotations
 from typing import cast
 from uuid import UUID
 
-from abacus.kernel._flags import CONNECTIONS_PORTAL_V2
+from abacus.kernel._flags import CONNECTIONS_PORTAL_V2, INTEGRATIONS_CONNECT_V1
 from abacus.kernel._statuses import IntegrationStatus
+from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.idempotency import idempotent
@@ -52,6 +53,8 @@ from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import AuthContext, allowed_actions, firm_name
 from abacus.modules.integrations.catalog import CatalogEntry, CatalogRow, client_catalog
 from abacus.modules.integrations.catalog_load import ConsentCopyIn
+from abacus.modules.integrations.connect_catalog import firm_installs
+from abacus.modules.integrations.connect_errors import FirmAppDisabled
 from abacus.modules.integrations.contract import (
     CardAction,
     ConnectionActivityOut,
@@ -74,7 +77,7 @@ from abacus.modules.integrations.contract import (
 )
 from abacus.modules.organisations.api import entity_display_name
 
-REAUTH = frozenset({"token_expired", "invalid_grant"})
+REAUTH = frozenset({"token_expired", "invalid_grant", "firm_app_disabled"})  # 0902: AC-25
 
 
 async def _flag(ctx: AuthContext) -> None:
@@ -227,6 +230,19 @@ async def _entry(
     return None
 
 
+async def firm_app_off(ctx: AuthContext, row: CatalogRow) -> bool:
+    """AC-25 (W-01-T08 rest; DEC-5083): with `integrations.connect_v1` on, a provider that is
+    also a WB-10 firm app starts only while the firm's app is connected. A portal-only feed
+    (OQ-2: no firm app) is never refused here."""
+    if "workbench" not in row.surfaces:
+        return False
+    if not await flag_enabled(ctx.tenant, INTEGRATIONS_CONNECT_V1):
+        return False
+    async with tenant_session(ctx.tenant) as session:
+        install = (await firm_installs(session)).get(row.key)
+    return install is None or install.status != "connected"
+
+
 async def start_card(
     ctx: AuthContext,
     entity_id: UUID,
@@ -249,6 +265,8 @@ async def start_card(
         raise ConnectorNotAvailable(catalog_key)
     if body.consent_version != consent.version:
         raise ConsentVersionStale(catalog_key)
+    if await firm_app_off(ctx, row):
+        raise FirmAppDisabled(facts={"catalog_key": catalog_key})
     started = await start_entity(
         ctx,
         entity_id,

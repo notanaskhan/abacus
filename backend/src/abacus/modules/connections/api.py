@@ -63,6 +63,7 @@ from abacus.modules.connections.events import (
 )
 from abacus.modules.connections.fake import FakeConnector, fixture_path
 from abacus.modules.connections.fake_format import parse_trial_balance
+from abacus.modules.connections.firm_app import FIRM_APP_DISABLED, suspend_for_firm_app
 from abacus.modules.connections.gl_import import WORKFLOWS as GL_WORKFLOWS
 from abacus.modules.connections.gl_import import on_ledger_snapshot_recorded
 from abacus.modules.connections.grants import GrantRevocationRequested, revoke_retired
@@ -198,6 +199,7 @@ register_entity_owners({"connection"}, audit_entities)
 __all__ = [
     "ACTIVITIES",
     "CONNECTORS",
+    "FIRM_APP_DISABLED",
     "NETWORKLESS_PROVIDERS",
     "PLAN_TICK",
     "ROUTERS",
@@ -294,6 +296,7 @@ __all__ = [
     "snapshot",
     "start_entity",
     "start_retrieval",
+    "suspend_for_firm_app",
     "sync_facts",
     "trigger_retrieval",
     "validate_run",

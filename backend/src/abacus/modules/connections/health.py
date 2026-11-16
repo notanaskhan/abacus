@@ -85,6 +85,8 @@ async def check_connection(tenant: TenantContext, connection: Connection) -> str
     """One connection's check; returns its outcome (`ok`, `needs_reauth`, `needs_attention`,
     `skipped`). Re-read under a row lock, so a connection revoked or replaced meanwhile is left
     alone."""
+    if connection.status_reason_code == "firm_app_disabled":
+        return "skipped"  # W-01-T08 rest: no secret until the client reconnects (DEC-5083)
     code = await _probe(tenant, connection)
     engagement_id = await _engagement_of(tenant, connection)
     now = system_now()

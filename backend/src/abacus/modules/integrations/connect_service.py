@@ -18,9 +18,10 @@ AC-26; red).
 - **Disconnect** (firm: the typed name, 422 `confirm_name_mismatch`; `seen_version`, 409
   `stale_version`; fresh MFA. Personal: the caller's own only, else 404): a best-effort remote
   revoke, then the secret erased and the install disconnected, with its event and audit (AC-24 to
-  AC-26). A firm app's disable reports the client connections it suspends (OQ-5: 0 until
-  `connections` carries a suspended status; new POR-16 starts already stop, since the firm app is
-  no longer connected).
+  AC-26). A firm app's disable (a client-authorised row) suspends every live client connection
+  of its provider in the same unit of work (`connections.api.suspend_for_firm_app`: "Needs
+  reauth", secret retired, one audit row each; AC-25, OQ-5, DEC-5083) and reports the count; new
+  POR-16 starts refuse 409 `firm_app_disabled` until it is enabled again.
 - **Membership end** (`membership.deactivated`): every personal install of the person is
   disconnected and its secret deleted (AC-13).
 """
@@ -44,6 +45,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.connections.api import suspend_for_firm_app
 from abacus.modules.identity.api import AuthContext, Resource, authorise, is_synthetic_firm
 from abacus.modules.integrations.connect_catalog import (
     WorkbenchRow,
@@ -446,6 +448,8 @@ async def disconnect_firm(
     if install.version != seen_version:
         raise StaleVersion(facts={"version": install.version})
     secret = await open_secret(ctx.tenant, install.id)
+    mode = _mode(row, install.mode)
+    suspended = 0
     async with uow(ctx.tenant) as tx:
         done = await tx.session.scalar(
             update(FirmIntegration)
@@ -461,13 +465,20 @@ async def disconnect_firm(
         if done is None:
             raise StaleVersion
         await erase_secret(tx, install.id)
+        if mode == "firm_app" and row.connector_provider is not None:
+            # AC-25: the firm's client connections of the provider stop syncing (Needs reauth).
+            suspended = await suspend_for_firm_app(tx, ctx.tenant_id, row.connector_provider)
         await _event(tx, ctx.tenant_id, "disconnected", "firm", install.id, key, ctx.user_id)
-        tx.record("integration.disconnected", target=Target(TARGET, install.id))
+        tx.record(
+            "integration.disconnected",
+            target=Target(TARGET, install.id),
+            after=Ref(n=suspended),
+        )
     # Security review (S46): the remote revoke runs only after the local disconnect committed, with
     # the copy opened before the erase; a refused or stale request never revokes a live grant.
     synthetic = await is_synthetic_firm(ctx.tenant)
-    await _revoke_remote(port_for(key, _mode(row, install.mode), synthetic=synthetic), secret)
-    return Disconnected(key, 0)
+    await _revoke_remote(port_for(key, mode, synthetic=synthetic), secret)
+    return Disconnected(key, suspended)
 
 
 async def disconnect_personal(ctx: AuthContext, key: str) -> Disconnected:

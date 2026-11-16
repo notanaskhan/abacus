@@ -41,7 +41,7 @@ from abacus.modules.connections.service import connector_for
 from abacus.modules.identity.api import AuthContext, Forbidden
 
 _log = get_logger(__name__)
-Reason = Literal["disconnected", "replaced"]
+Reason = Literal["disconnected", "replaced", "firm_app_disabled"]  # 0902: a firm app's disable
 # Audited as an index: keep the order, append only.
 RESULTS: Final = ("revoked", "not_supported", "refused", "no_connection", "unreachable")
 # The relay retries a failed event with back-off 2, 4, … seconds and parks it at MAX_ATTEMPTS.

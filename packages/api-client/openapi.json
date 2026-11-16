@@ -86637,7 +86637,8 @@
                   "token_expired",
                   "invalid_grant",
                   "sync_failed",
-                  "provider_unavailable"
+                  "provider_unavailable",
+                  "firm_app_disabled"
                 ],
                 "type": "string"
               },
@@ -286182,7 +286183,7 @@
     },
     "/v1/portal/entities/{entity_id}/connections/{catalog_key}/start": {
       "post": {
-        "description": "POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.\nA-02-T33: the state keeps the request's viewer host (DEC-3990), never the query's.",
+        "description": "POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422\n`authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,\n`connector_not_available`, `firm_app_disabled` (the firm app is off, AC-25). Audited\n`connection.consent_recorded`, `connection.started`.\nA-02-T33: the state keeps the request's viewer host (DEC-3990), never the query's.",
         "operationId": "start_connection",
         "parameters": [
           {
