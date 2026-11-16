@@ -407,6 +407,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "connection.reauth_due": Kind(
         "connection_reauth_due", _admins_and_leads, "connection", "connection_id"
     ),
+    # C-01-T17: an entity's scheduled ledger sync paused (needs reauth, monthly call budget).
+    "ledger_sync.paused": Kind(
+        "ledger_sync_paused", _admins_and_leads, "connection", "connection_id"
+    ),
     # SPEC-025 (TASK-044): the person who joined is asked to confirm their independence.
     "independence.requested": Kind(
         "independence.requested", _added_member, "engagement", "engagement_id"
@@ -671,6 +675,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "connection.revoked": "The accounting system connection on {engagement} was ended.",
     "connection.needs_reauth": "The client needs to sign in to their accounting system again.",
     "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
+    "ledger_sync.paused": "The hourly QuickBooks sync for a client is paused.",
     "independence.requested": "Confirm your independence for {engagement}.",
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
     "follow_up.drafted": "Follow-ups on {engagement} are waiting for you to send.",
@@ -814,6 +819,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # only, INV-4), so no catalogue event fans it out, as `follow_up_sent`.
     NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
     NotificationKind("connection_reauth_due", "client_activity", "Plug"),  # A-02-T25
+    NotificationKind("ledger_sync_paused", "client_activity", "Plug"),  # C-01-T17
     NotificationKind("connection_reconnect_requested", "client_activity", "Plug"),
     NotificationKind("independence.requested", "approval", "ShieldCheck"),
     NotificationKind("reminders.drafted", "approval", "Send"),

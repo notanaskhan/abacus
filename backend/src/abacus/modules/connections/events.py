@@ -70,3 +70,29 @@ class ConnectionReauthDue(DomainEvent):
 
     connection_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID | None, classified("internal")]
+
+
+class LedgerSyncPaused(DomainEvent):
+    """C-01-T17: an entity's scheduled ledger sync paused (`needs_reauth`,
+    `meter_budget_exhausted`); the firm admin and the engagement's leads are told once per pause
+    (C16 `ledger_sync_paused`)."""
+
+    event_type: ClassVar[str] = "ledger_sync.paused"
+
+    connection_id: Annotated[UUID, classified("internal")]
+    client_entity_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
+    reason: Annotated[str, classified("internal")]
+
+
+class ChangeEventDetected(DomainEvent):
+    """C-01-T17 (ADR-041): the hourly sync found a changed close month and recorded a new
+    immutable set; `datasets` names what was pulled again (enums only)."""
+
+    event_type: ClassVar[str] = "change_event.detected"
+
+    client_entity_id: Annotated[UUID, classified("internal")]
+    connection_id: Annotated[UUID, classified("internal")]
+    snapshot_id: Annotated[UUID, classified("internal")]
+    period: Annotated[str, classified("internal")]
+    datasets: Annotated[list[str], classified("internal")]

@@ -28,12 +28,16 @@ from abacus.modules.closes.contract_work import close_work_router, portal_close_
 from abacus.modules.closes.gate_sources import register_close_gates
 from abacus.modules.closes.kind import CloseKind
 from abacus.modules.closes.service import start_close
+from abacus.modules.closes.sync_scope import sync_scope
+from abacus.modules.connections.api import register_sync_scope
 from abacus.modules.engagements.api import register_work_item_kind
 
 # F-03-T22: the `close` work-item kind.
 register_work_item_kind("close", CloseKind())
 # C-01-T15 (QC-8): a requested publication waits on the engagement's Managers and Partners.
 register_close_gates()
+# C-01-T17: the entities with an unlocked close keep their ledger fresh (LedgerSyncWorkflow).
+register_sync_scope(sync_scope)
 # The explorer's owners for a close and its plan (SPEC-304).
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 register_entity_owners(ENTITY_KINDS, audit_entities)

@@ -7,14 +7,16 @@
   `ledger.sync_now` (Senior and above; a live person's, INV-1).
 
 Every route answers, in order: a client principal 404; `connections.ledger_sync` off 404; the
-human-only POST refuses non-persons 403; then 501 until C-01-T17 (`LedgerSyncWorkflow`). Read
-only: nothing here writes to QuickBooks (CONN-001, ADR-040).
+human-only POST refuses non-persons 403; then the service (`ledger_sync.py`, C-01-T17): an
+entity without an unlocked close 404, the matrix check, and for Sync now 409
+`ledger_not_connected` without a live ledger. Read only: nothing here writes to QuickBooks
+(CONN-001, ADR-040).
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -23,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import CONNECTIONS_LEDGER_SYNC
 from abacus.kernel._statuses import ConnectionMeterStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -86,20 +88,34 @@ async def _sync_on(ctx: AuthContext) -> None:
         raise NotFound(CONNECTIONS_LEDGER_SYNC.name)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
-
-
 @ledger_sync_router.get(
     "/{client_entity_id}/ledger-pull",
     action="ledger.read",
     response_model=LedgerSyncStatusOut,
-    errors=(501,),
+    errors=(),
 )
 async def ledger_sync_status_route(client_entity_id: UUID, ctx: Ctx) -> LedgerSyncStatusOut:
     """The entity's sync facts (C-01-T17)."""
     await _sync_on(ctx)
-    _not_yet()
+    from abacus.modules.connections import ledger_sync  # noqa: PLC0415 -- the service imports this
+
+    facts = await ledger_sync.status_for(ctx, client_entity_id)
+    return LedgerSyncStatusOut(
+        client_entity_id=client_entity_id,
+        connection_id=facts.connection_id,
+        provider="quickbooks_online" if facts.provider == "quickbooks_online" else None,
+        state=cast(SyncState, facts.state),
+        last_synced_at=facts.last_synced_at,
+        next_sync_at=facts.next_sync_at,
+        retry_at=facts.retry_at,
+        failure_code=facts.failure_code,
+        meter=MeterOut(
+            month=facts.meter_month,
+            calls=facts.meter_calls,
+            budget=facts.meter_budget,
+            state=_meter_state(facts.meter_calls, facts.meter_budget),
+        ),
+    )
 
 
 @ledger_sync_router.post(
@@ -107,7 +123,7 @@ async def ledger_sync_status_route(client_entity_id: UUID, ctx: Ctx) -> LedgerSy
     action="ledger.sync_now",
     response_model=SyncNowOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def ledger_sync_now_route(
     client_entity_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
@@ -116,4 +132,14 @@ async def ledger_sync_now_route(
     await _sync_on(ctx)
     if ctx.tenant.actor_kind != "human" or ctx.is_support:
         raise Forbidden("ledger.sync_now", "role")
-    _not_yet()
+    from abacus.modules.connections import ledger_sync  # noqa: PLC0415 -- the service imports this
+
+    accepted = await ledger_sync.request_sync_now(ctx, client_entity_id)
+    return SyncNowOut(sync_run_id=accepted.request_id, state="syncing")
+
+
+def _meter_state(calls: int, budget: int | None) -> ConnectionMeterStatus:
+    """QC-5: warn at 80% of the firm's monthly budget, stop scheduled syncs at 100%."""
+    if budget is None or calls * 5 < budget * 4:
+        return ConnectionMeterStatus.OK
+    return ConnectionMeterStatus.EXHAUSTED if calls >= budget else ConnectionMeterStatus.WARNING
