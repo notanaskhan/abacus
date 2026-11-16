@@ -2,7 +2,7 @@
 id: TASK-8200
 title: "G-04-T01: gate check; SPEC-680 platform console, plan & usage and support; SPEC-681 amending SPEC-012 per DEC-72; three contract issues"
 spec: SPEC-680
-acceptance_criteria: [AC-15, AC-25]
+acceptance_criteria: [AC-1, AC-26]
 risk_zone: green
 status: in-review
 branch: g04-t01-gate-specs
