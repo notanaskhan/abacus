@@ -8,8 +8,8 @@ moves from the connection to the entities it covers:
   connection covers. Backfilled with each connection's own entity (live while the connection is
   not revoked); a covering connection adds its other entities when a consolidation attaches them
   (A-09-T13).
-- A partial unique index: at most one live coverage row per (tenant, entity, category), so a
-  second live ledger for a covered subsidiary is refused.
+- A partial unique index: at most one live ledger coverage row per (tenant, entity), so a second
+  live ledger for a covered subsidiary is refused (a bank feed may sit beside others, as today).
 - Triggers keep it in step with `connections`: an insert covers the connection's own entity, a
   status change sets `live` (`status <> 'revoked'`) on every row of the connection.
 - `connections_one_live_ledger` stays until the post-window contract step drops it.
@@ -80,7 +80,7 @@ def upgrade() -> None:
     tenant_table(op, "connection_entity_coverage")
     op.execute(
         "CREATE UNIQUE INDEX connection_coverage_one_live ON connection_entity_coverage "
-        "(tenant_id, client_entity_id, category) WHERE live"
+        "(tenant_id, client_entity_id, category) WHERE live AND category = 'ledger'"
     )
     op.execute(_SYNC)
     op.execute("REVOKE ALL ON FUNCTION connection_coverage_sync() FROM PUBLIC")
