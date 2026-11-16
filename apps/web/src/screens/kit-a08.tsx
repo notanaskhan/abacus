@@ -79,7 +79,7 @@ export const KIT_A08_STATES = [
   "new-confirmation",
   "ssars",
 ] as const; // fmt: skip
-type KitState = (typeof KIT_A08_STATES)[number];
+export type KitState = (typeof KIT_A08_STATES)[number];
 
 function rowsFor(state: KitState): SelectedEntry[] {
   if (state === "agent") return SELECTED_PAGE.map((r) => ({ ...r, result: "running" as const }));
@@ -91,7 +91,8 @@ function rowsFor(state: KitState): SelectedEntry[] {
   return SELECTED_PAGE;
 }
 
-function JeBoard({ state }: { state: KitState }): JSX.Element {
+/** A-08-T27: AUD-12's JE artboards compose this board (a, d to g). */
+export function JeBoard({ state }: { state: KitState }): JSX.Element {
   const [filter, setFilter] = useState<(typeof GRANITE_PEAK_CRITERIA)[number]["key"] | null>(null);
   const [selected, setSelected] = useState("JE-26-17994");
   const [expand, setExpand] = useState(state === "expand");
