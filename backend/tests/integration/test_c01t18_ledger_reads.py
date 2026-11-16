@@ -1,4 +1,4 @@
-"""C-01-T18 (TASK-8070; SPEC-655 F5, F6, F9) against Postgres: C9 v2.1 served.
+"""C-01-T18 (TASK-8106; SPEC-655 F5, F6, F9) against Postgres: C9 v2.1 served.
 
 Row acceptance: "The account tree foots for July and August, a register page never exceeds 200
 rows, and a ledger_line citation verifies against the snapshot it names." Months are recorded

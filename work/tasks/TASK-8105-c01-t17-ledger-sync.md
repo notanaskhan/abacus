@@ -1,5 +1,5 @@
 ---
-id: TASK-8069
+id: TASK-8105
 title: "C-01-T17: LedgerSyncWorkflow: hourly CDC sync, Sync now, meter budget (red)"
 spec: SPEC-655
 acceptance_criteria: [AC-5]
@@ -39,7 +39,7 @@ Rollback: revert; migration 0891 downgrades while no month register exists. Dark
 
 ## Progress log
 - `2026-11-15` — Planned at the S46 kickoff (#2053); plan written above before building.
-- `2026-11-15` — Built as planned (DEC-5056). API import check clean. Not run: unit, integration
+- `2026-11-15` — Built as planned (DEC-5076). API import check clean. Not run: unit, integration
   and workflow tests, the history recording, pyright and the red-diff security review (end pass).
 - **Open:** a live Intuit sandbox run needs F-09-T05's sandbox company. The workflow is started by
   Sync now (`signal_with_start`) and `ensure_sync_workflow`; wiring the latter into close
@@ -48,4 +48,4 @@ Rollback: revert; migration 0891 downgrades while no month register exists. Dark
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| DEC-5056 | Month set = TB + accounts + register in one immutable set with carry-forward; scope slot; budget pause; Sync now id | no |
+| DEC-5076 | Month set = TB + accounts + register in one immutable set with carry-forward; scope slot; budget pause; Sync now id | no |

@@ -1,4 +1,4 @@
-"""C-01-T17 (TASK-8069): the ledger sync's pure rules: business hours in the firm's zone, the next
+"""C-01-T17 (TASK-8105): the ledger sync's pure rules: business hours in the firm's zone, the next
 opening, month bounds, the content digest and the register's footing."""
 
 from __future__ import annotations

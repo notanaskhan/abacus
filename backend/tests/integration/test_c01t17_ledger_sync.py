@@ -1,4 +1,4 @@
-"""C-01-T17 (TASK-8069; SPEC-655 US-5.1, US-5.2) against Postgres: one entity's hourly sync.
+"""C-01-T17 (TASK-8105; SPEC-655 US-5.1, US-5.2) against Postgres: one entity's hourly sync.
 
 Row acceptance: "A recorded history replays (tests/workflows), a changed August register produces
 exactly one new snapshot and event, a token_expired failure pauses the entity's sync without a

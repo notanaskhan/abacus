@@ -1,5 +1,5 @@
 ---
-id: TASK-8071
+id: TASK-8107
 title: "C-01-T19: Close intake: BD1 RequestPublishWorkflow, incorporation re-run offer, summary VM"
 spec: SPEC-655
 acceptance_criteria: [AC-2]
@@ -34,7 +34,7 @@ Rollback: revert; behind `closes.engine` (default off).
 
 ## Progress log
 - `2026-11-15` — Planned at the S46 kickoff (#2053); plan written above before building.
-- `2026-11-15` — Built (DEC-5058). App and worker import cleanly. Tests run at the end pass.
+- `2026-11-15` — Built (DEC-5078). App and worker import cleanly. Tests run at the end pass.
 - **Partial within the row:** the intake summary VM (`/evidence-versions/{id}/close-summary`)
   stays 501: its `sheet_cell` totals read P-11's extracted tables of an uploaded file and its
   paragraph is `close.agent` mode `intake` (C-01-T29, S47). Client email for new close requests
@@ -45,4 +45,4 @@ Rollback: revert; behind `closes.engine` (default off).
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| DEC-5058 | BD1 generation acts on the plan publisher's authority; idempotence key; read-time re-run offer | no |
+| DEC-5078 | BD1 generation acts on the plan publisher's authority; idempotence key; read-time re-run offer | no |

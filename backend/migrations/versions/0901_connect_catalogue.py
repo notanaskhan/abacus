@@ -200,9 +200,14 @@ def upgrade() -> None:
         "integration_catalog_import_log()",
     ):
         op.execute(f"GRANT EXECUTE ON FUNCTION {function} TO abacus_ops")
+    # The import and its log now run through the definers above, so the operator role keeps no
+    # direct privilege on the log (Q-01-T52: `abacus_ops` holds no table privilege; 0890 granted
+    # SELECT, INSERT for the v1 path these definers replace).
+    op.execute("REVOKE ALL ON integration_catalog_imports FROM abacus_ops")
 
 
 def downgrade() -> None:
+    op.execute("GRANT SELECT, INSERT ON integration_catalog_imports TO abacus_ops")
     op.execute("DROP FUNCTION integration_catalog_import_log()")
     op.execute("DROP FUNCTION integration_catalog_import(jsonb, text, text, text, text)")
     op.execute("DROP FUNCTION integration_catalog_workbench()")

@@ -1,4 +1,4 @@
-"""C-01-T31 (TASK-8072; DEC-5059): close.agent's suite is frozen, covered and green on the fake
+"""C-01-T31 (TASK-8108; DEC-5079): close.agent's suite is frozen, covered and green on the fake
 model. Row acceptance: "The cases and frozen thresholds merge in the protected file before T29
 opens, the suite runs on the fake model in CI, and each dangerous error in chapter 05 has at
 least five cases."""

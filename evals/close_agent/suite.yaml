@@ -1,4 +1,4 @@
-# close.agent's suite (C-01-T31; TASK-8072; C-01 §6; chapter 05 §5.5.3; DEC-5059). PROTECTED
+# close.agent's suite (C-01-T31; TASK-8108; C-01 §6; chapter 05 §5.5.3; DEC-5079). PROTECTED
 # (thresholds, ADR-079): frozen before any of C-01-T29's prompt work; `abacus_tools.evals.close_agent.FROZEN`
 # must match. Deterministic on the fake model: each case is the capability's recorded output for one
 # Copperleaf-like input (figure book C-01-T13: Payroll +7,670 at 12.5%, Repairs & maintenance +2,560

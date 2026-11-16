@@ -32,7 +32,7 @@ def test_the_fifteen_first_tools_are_registered() -> None:
     workbench = {"binders.read"}
     # W-02-T19 (DEC-4930): the offices read the season plan groups by.
     workbench |= {"identity.list_offices", "files.list_folders"}
-    # C-01-T18 (DEC-5057): the close month's register beside the TB reads.
+    # C-01-T18 (DEC-5077): the close month's register beside the TB reads.
     closes = {"ledger.read_transactions"}
     assert {d.name for d in DECLARED} == FIRST | files | workbench | closes
 
