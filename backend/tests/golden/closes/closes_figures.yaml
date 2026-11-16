@@ -1,0 +1,39 @@
+# C-01-T45 (TASK-8305; ADR-078: written in N's session, implementer AY): the close engine's goldens.
+# Amounts are quoted text read as Decimal (a float is refused). Sources: Brightwater Hale's
+# August close (`close_slice`, the figure book C-01-T13).
+reconciliation_4410:
+  period_end: "2026-08-31"
+  balance_per_bank: "184236.18"
+  deposits_in_transit: "6412.40"
+  outstanding_checks: "5658.08"
+  adjusted_bank: "184990.50"
+  book_balance: "184610.50"
+  unrecorded_deposits: "380.00"
+  adjusted_book: "184990.50"
+  difference: "0.00"
+  stale:
+    - {ref: "#2281", days: 193}
+  aging:
+    "0-30": "11210.48"
+    "31-60": "0.00"
+    "61-90": "0.00"
+    over_90: "1240.00"
+prepaid:
+  total: "8400.00"
+  months: 12
+  monthly: "700.00"
+  balance_at_2026_08: "2800.00"
+  gl_before_aje_02: "3500.00"
+flux:
+  threshold_pct: "10"
+  threshold_usd: "2500"
+  over: [payroll, repairs_maintenance]
+  within: [revenue, cogs, rent, merchant_fees, legal_professional, utilities_facilities, marketing, depreciation, software, insurance, interest]
+tree:
+  leaves:
+    - [asset, Bank, "184610.50"]
+    - [asset, Bank, "71482.36"]
+    - [asset, Other Current Asset, "3500.00"]
+    - [liability, Credit Card, "1209.44"]
+  asset_total: "259592.86"
+  bank_total: "256092.86"
