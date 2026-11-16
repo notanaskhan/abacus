@@ -106,6 +106,10 @@ def main(argv: list[str]) -> int:
         from abacus_tools.evals.tax_return import main as tax_main
 
         return tax_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
+    if args.agent == "close_agent":  # C-01-T31 (DEC-5059): frozen before T29's prompts
+        from abacus_tools.evals.close_agent import main as close_main
+
+        return close_main(cast(Path, args.out), "fast" if args.subset == "fast" else "full")
     if args.agent == "workbook_fix":  # T-05-T50 rest (DEC-4927), frozen
         from abacus_tools.evals.workbook_fix import main as workbook_fix_main
 
