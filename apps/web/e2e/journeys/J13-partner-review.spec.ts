@@ -138,9 +138,37 @@ test.describe("J13 · P-02 search", () => {
     });
   });
 
-  test("j13 4: the 1065 lands on TXP-01", async ({ journey }) => {
-    test.fixme(true, "T-05: TXP-01");
-    await journey.as("daniel-reyes", "/", { clock: DEMO_INSTANT });
+  // T-05-T68: Daniel opens the Ridgeline memo (TXP-01, its own scenario through the route) and
+  // decides the §754 card reserved to him (SHL-11 g). The palette still opens CLI-02 for the
+  // return until P-02 points it at the entity dispatch; the landing is the route TXP-01 owns.
+  test("j13 4: Daniel opens the Ridgeline memo from ⌘K and decides the §754 card", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "T-05-T68: TXP-01 on the full stack and staging");
+    await journey.as("daniel-reyes", "/tax-returns/_returnId_/review/summary", {
+      scenario: "TXP-01:a",
+      flags: ["tax.entity_workspace", "tax.review_workspace"],
+    });
+    await journey.step("J13 step 4: the Ridgeline memo (TXP-01 a)", async (page) => {
+      await expect(
+        page.getByText("Ridgeline Property Partners, LP — 2025 Form 1065 preparer memo").first(),
+      ).toBeVisible();
+    });
+    await journey.as("daniel-reyes", "/components/screens/SHL-11?st=g");
+    await journey.step(
+      "J13 step 4: the §754 card is reserved to Daniel (SHL-11 g)",
+      async (page) => {
+        await expect(
+          page
+            .getByText("Should we recommend that Ridgeline make a §754 election for TY2025?")
+            .first(),
+        ).toBeVisible();
+        await expect(
+          page.getByText(/Reserved to Tax Partner · Daniel Reyes/).first(),
+        ).toBeVisible();
+        await expect(page.getByText(/The election is Ridgeline's to make/).first()).toBeVisible();
+      },
+    );
   });
 });
 

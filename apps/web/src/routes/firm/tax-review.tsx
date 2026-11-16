@@ -256,8 +256,11 @@ export const taxReviewRoute = createRoute({
   component: function TaxReviewPage(): JSX.Element {
     const returnId = useParam("returnId");
     const navigate = useNavigate();
+    const section = useParam("section");
     if (Prepare !== null) {
-      return (
+      // T-05-T68: a fixture build dispatches a 1065 to its entity screen too (J08's fixture walk);
+      // a 1040 or 1041, or the entity workspace off, keeps TAX-04's artboard.
+      const prepare = (
         <div className="flex min-h-0 flex-1 flex-col">
           <FeatureGate
             entitlement="tax_returns"
@@ -278,8 +281,10 @@ export const taxReviewRoute = createRoute({
           </FeatureGate>
         </div>
       );
+      return (
+        <EntitySection returnId={returnId} slug="review" review={section} fallback={prepare} />
+      );
     }
-    const section = useParam("section");
     return (
       <EntitySection
         returnId={returnId}

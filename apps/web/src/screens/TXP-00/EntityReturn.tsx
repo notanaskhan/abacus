@@ -17,6 +17,7 @@ import { ScheduleK } from "../TXP-05/ScheduleK";
 import { Workpaper } from "../TXP-11/Workpaper";
 import { Summary } from "../TXP-01/Summary";
 import { Issues } from "../TXP-10/Issues";
+import { CapitalAccounts } from "../TXP-07/CapitalAccounts";
 import { COPY } from "./copy";
 import { TXP00, frameOf } from "./index";
 
@@ -94,6 +95,8 @@ export function EntityReturn({
         <Financials returnId={returnId} form={form} taxYear={record.data.row.tax_year} />
       ) : section.review === "schedule-k" ? (
         <ScheduleK returnId={returnId} onOpen={onOpen} />
+      ) : section.review === "capital" ? (
+        <CapitalAccounts returnId={returnId} onOpen={onOpen} />
       ) : section.review === "summary" ? (
         <Summary returnId={returnId} />
       ) : section.tab === "issues" ? (
@@ -101,7 +104,7 @@ export function EntityReturn({
       ) : section.tab === "workpaper" ? (
         <Workpaper returnId={returnId} />
       ) : (
-        // TXP-10/01/05/07 land with their rows; until then the planned state, never blank.
+        // A section whose screen is not built yet: the planned state, never blank.
         <EmptyState title={NOT_BUILT} icon="clock">
           {screen ?? ""}
         </EmptyState>

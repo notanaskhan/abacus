@@ -556,7 +556,14 @@ export function TXP07({
         {capital === undefined ? (
           <SkeletonRows type="table" immediate label={COPY.computing} />
         ) : view === "by_partner" ? (
-          <div className="flex gap-[10px] overflow-x-auto pb-[6px]" data-pager-first={page}>
+          // T-05 §5.5: horizontal scroll is keyboard reachable (axe scrollable-region-focusable).
+          <div
+            role="region"
+            aria-label={COPY.title}
+            tabIndex={0}
+            className="flex gap-[10px] overflow-x-auto pb-[6px]"
+            data-pager-first={page}
+          >
             {rows.slice(page, page + PANES_VISIBLE).map((r, i) => (
               <PartnerPane
                 key={r.partner_id}
@@ -570,7 +577,7 @@ export function TXP07({
             ))}
           </div>
         ) : (
-          <div className="overflow-auto">
+          <div role="region" aria-label={COPY.title} tabIndex={0} className="overflow-auto">
             <DataGrid
               label={COPY.title}
               grammar="statement"

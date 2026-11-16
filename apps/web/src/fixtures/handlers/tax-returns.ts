@@ -161,6 +161,13 @@ function frameOf(
 }
 
 /** The board's reads and writes; `variant` picks TAX-02's artboard for the return it names. */
+/** The seeded return record for a client's first return (T-05-T68: the entity fixtures open the
+ * Ridgeline 1065 under their own id). */
+export function seededReturnRecord(client: string): TaxReturnRecordOut | undefined {
+  const seed = TAX_RETURNS.find((r) => r.client === client && !r.label.endsWith(":2"));
+  return seed === undefined ? undefined : frameOf(seed.id, undefined)?.record;
+}
+
 export function taxReturnHandlers(variant?: OverviewVariant): Record<string, FixtureHandler> {
   return {
     "GET /v1/tax-returns/{return_id}": ({ params }) => {

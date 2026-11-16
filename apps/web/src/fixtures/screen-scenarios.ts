@@ -84,6 +84,16 @@ import { scenarios as shl04 } from "./scenarios/SHL-04";
 import { OPENS as SHL14_OPENS, scenarios as shl14 } from "./scenarios/SHL-14";
 import { scenarios as tax09 } from "./scenarios/TAX-09";
 import { FELD_RETURN_ID } from "./seed/tax-compliance";
+import { scenarios as txp00 } from "./scenarios/TXP-00";
+import { scenarios as txp01 } from "./scenarios/TXP-01";
+import { scenarios as txp02 } from "./scenarios/TXP-02";
+import { scenarios as txp05 } from "./scenarios/TXP-05";
+import { scenarios as txp06 } from "./scenarios/TXP-06";
+import { scenarios as txp07 } from "./scenarios/TXP-07";
+import { scenarios as txp10 } from "./scenarios/TXP-10";
+import { scenarios as txp11 } from "./scenarios/TXP-11";
+import { RIDGELINE_RETURN_ID } from "./seed/tax-entity";
+import { taxEntityHandlers } from "./handlers/tax-entity";
 import { FERRIS_CLIENT_ID, WHITLEY_CLIENT_ID } from "./seed/tax-profile";
 
 type Ids = Readonly<Record<string, string>>;
@@ -143,6 +153,41 @@ function northwind(
   scenarios: Readonly<Record<string, unknown>>,
 ): Record<string, { auditId: string }> {
   return Object.fromEntries(Object.keys(scenarios).map((s) => [s, { auditId: NORTHWIND_AUDIT }]));
+}
+
+/** The engagement's entity capabilities answered off (`tax.entity_agents` off; T-05-T66). */
+const CAPABILITIES = "GET /v1/agents/capabilities";
+const AGENTS_OFF: Scenario["handlers"] = Object.fromEntries(
+  Object.entries(taxEntityHandlers("run2", { agents: "off" })).filter(([k]) => k === CAPABILITIES),
+);
+
+/** Each entity-return screen's states, every one opening the Ridgeline return (T-05-T68), and
+ * each again as `<state>_agents_off` for the agents-off walk (e2e/entity/agents-off.spec.ts). */
+function ridgeline(
+  screens: Readonly<Record<string, Record<string, Scenario>>>,
+): Record<string, ScreenScenarios> {
+  return Object.fromEntries(
+    Object.entries(screens).map(([id, states]) => [id, withAgentsOff(states)]),
+  );
+}
+
+function withAgentsOff(states: Readonly<Record<string, Scenario>>): ScreenScenarios {
+  const off = Object.fromEntries(
+    Object.entries(states).map(([st, scenario]) => [
+      `${st}_agents_off`,
+      { ...scenario, handlers: { ...scenario.handlers, ...AGENTS_OFF } } satisfies Scenario,
+    ]),
+  );
+  const scenarios = { ...states, ...off };
+  return {
+    // The E0 shell under each state, with the entity and review workspaces on (T-05-T28's
+    // dispatch; T-04's review routes).
+    scenarios: onE0(scenarios, ["tax.entity_workspace", "tax.review_workspace"]),
+    opens: {},
+    ids: Object.fromEntries(
+      Object.keys(scenarios).map((st) => [st, { returnId: RIDGELINE_RETURN_ID }]),
+    ),
+  };
 }
 
 export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
@@ -318,6 +363,18 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     opens: {},
     ids: Object.fromEntries(Object.keys(tax09).map((s) => [s, { returnId: FELD_RETURN_ID }])),
   },
+  // T-05-T68 (J08 P0 core): the eight entity-return screens over the Ridgeline 2025 Form 1065
+  // (`/tax-returns/_returnId_…`); each state's handlers hold its workbook snapshot.
+  ...ridgeline({
+    "TXP-00": txp00,
+    "TXP-01": txp01,
+    "TXP-02": txp02,
+    "TXP-05": txp05,
+    "TXP-06": txp06,
+    "TXP-07": txp07,
+    "TXP-10": txp10,
+    "TXP-11": txp11,
+  }),
 };
 
 /** The fixture params the screen choice itself uses; anything else is the screen's own search. */

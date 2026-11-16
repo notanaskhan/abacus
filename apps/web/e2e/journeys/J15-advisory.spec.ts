@@ -24,6 +24,28 @@ test.describe("J15-advisory (R-01's portal step)", () => {
   );
 });
 
+// T-05-T68 (T-05 §10 item 1): j15 1, the advisory opportunities on the approved Ridgeline memo
+// (TXP-01 c, its own scenario through the route; they are read once the memo is approved): cost
+// segregation on Elm Street and the §754 election.
+test.describe("J15 · opportunities (T-05-T68)", () => {
+  test("j15 1: the Ridgeline memo lists cost segregation and the §754 election", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "T-05-T68: TXP-01 on the full stack and staging");
+    await journey.as("samuel-ito", "/tax-returns/_returnId_/review/summary", {
+      scenario: "TXP-01:c",
+      flags: ["tax.entity_workspace", "tax.review_workspace"],
+    });
+    await journey.step(
+      "J15 step 1: the approved memo's opportunities (TXP-01 c)",
+      async (page) => {
+        await expect(page.getByText("Cost segregation study — Elm Street").first()).toBeVisible();
+        await expect(page.getByText("§754 election", { exact: true }).first()).toBeVisible();
+      },
+    );
+  });
+});
+
 // N-02-T40 (N-02 §10.1): j15 4 on the harness: Daniel's Ridgeline letter (ENG-04 a, its
 // artboard), the builder's countersigner (SIG-02 e) and Owen's Sign area (POR-06). The hosted
 // projects walk it with N-02-T42's M13 journeys.

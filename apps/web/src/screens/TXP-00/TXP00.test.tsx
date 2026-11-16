@@ -4,6 +4,9 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { COPY, GROUPS } from "./copy";
 import { TXP00, type Txp00Frame, frameOf, openItems, rowState } from ".";
+import { reviewOptions } from "./EntityReturnLayout";
+import { ENTITY_CAPABILITIES } from "../../domain/tax";
+import { ENTITY_CAPABILITY_NAMES } from "../../fixtures/handlers/tax-entity";
 
 afterEach(cleanup);
 
@@ -80,10 +83,25 @@ describe("TXP-00 Agent tab", () => {
     }
   });
 
+  it("the fixture answers every capability the entity screens ask for (T-05-T68)", () => {
+    expect([...ENTITY_CAPABILITY_NAMES].sort()).toEqual(Object.values(ENTITY_CAPABILITIES).sort());
+  });
+
+  it("keeps the Review track within seven options (C-05) in every build", () => {
+    // T-05-T68: the four planned P1 sections would make nine; the built five draw either way.
+    const built = ["Summary", "Financials", "Schedule M-2", "Schedule K", "Capital Accounts"];
+    expect(reviewOptions(true)).toEqual(built);
+    expect(reviewOptions(false)).toEqual(built);
+  });
+
   it("maps a return's runs to its frame", () => {
     expect(frameOf([])).toBe("c");
     expect(frameOf([{ state: "running" }])).toBe("b");
     expect(frameOf([{ state: "waiting_on_inputs" }])).toBe("d");
+    // T-05-T68: the C2 words the API sends.
+    expect(frameOf([{ state: "needs_input" }])).toBe("d");
+    expect(frameOf([{ state: "planning" }])).toBe("b");
+    expect(frameOf([{ state: "dispatched" }])).toBe("b");
     expect(frameOf([{ state: "failed" }])).toBe("e");
     expect(frameOf([{ state: "succeeded" }, { state: "failed" }])).toBe("a");
     const first = GROUPS[0]?.tasks[0];

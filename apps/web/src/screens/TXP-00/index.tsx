@@ -142,7 +142,7 @@ function RunCard({
               style={{ width: `${String(pct)}%` }}
             />
           </span>
-          <span className="text-ink-4">{started}</span>
+          <span className="text-ink-3">{started}</span>
         </div>
       ) : null}
     </div>
@@ -319,7 +319,7 @@ export function TXP00(props: TXP00Props): JSX.Element {
           type="button"
           data-composer
           onClick={props.onComposer}
-          className="m-[10px] flex h-[38px] items-center gap-[8px] rounded-pill bg-card px-[12px] text-left text-[13px] text-ink-4 shadow-e1"
+          className="m-[10px] flex h-[38px] items-center gap-[8px] rounded-pill bg-card px-[12px] text-left text-[13px] text-ink-3 shadow-e1"
         >
           <Icon name="paperclip" size={14} className="text-ink-3" />
           {COPY.composer}
@@ -331,11 +331,17 @@ export function TXP00(props: TXP00Props): JSX.Element {
 
 /** The frame a return's runs put the Agent tab in: no run is idle (C); the newest run running is
  * B, waiting on an answer D, failed E, otherwise complete A. */
+// The run's C2 `agent_run` words (status-vocabulary.yaml); the list is newest first (the API's
+// ORDER BY started_at DESC). T-05-T68: `needs_input` (the §706(d) question) is d, and planning
+// or dispatched draw as running.
+const RUNNING: ReadonlySet<string> = new Set(["queued", "planning", "dispatched", "running"]);
+const WAITING: ReadonlySet<string> = new Set(["needs_input", "waiting_on_inputs"]);
+
 export function frameOf(runs: readonly { state: string }[]): Txp00Frame {
   const newest = runs[0];
   if (newest === undefined) return "c";
-  if (newest.state === "running" || newest.state === "queued") return "b";
-  if (newest.state === "waiting_on_inputs" || newest.state === "awaiting_answer") return "d";
+  if (RUNNING.has(newest.state)) return "b";
+  if (WAITING.has(newest.state)) return "d";
   if (newest.state === "failed") return "e";
   return "a";
 }

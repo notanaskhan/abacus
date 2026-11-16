@@ -538,10 +538,11 @@ export function runs(snapshot: Snapshot): WorkbookRunRowOut[] {
       state: snapshot === "run3" ? "running" : "succeeded",
     },
   ];
+  // Newest first, as the API orders them (T-05-T68).
   if (snapshot === "idle") return [];
   if (snapshot === "run1") return all.slice(0, 1);
-  if (snapshot === "run2") return all.slice(0, 2);
-  return all;
+  if (snapshot === "run2") return all.slice(0, 2).reverse();
+  return [...all].reverse();
 }
 
 /** TXP-00's ten task rows (six groups: 1 + 1 + 2 + 3 + 1 + 2). */

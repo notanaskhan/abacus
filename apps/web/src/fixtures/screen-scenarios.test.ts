@@ -78,6 +78,15 @@ describe("screen scenarios on the firm entry", () => {
       "SHL-02", // P-02-T12: the palette spec and J13 4, J16 5 and 9
       "TAX-02", // P-04-T47: j06 coordination
       "TAX-09", // T-01-T29: j06 D1 and D2
+      // T-05-T68: J08's entity-return screens over the Ridgeline 1065.
+      "TXP-00",
+      "TXP-01",
+      "TXP-02",
+      "TXP-05",
+      "TXP-06",
+      "TXP-07",
+      "TXP-10",
+      "TXP-11",
     ]);
   });
 
@@ -86,6 +95,10 @@ describe("screen scenarios on the firm entry", () => {
     expect(ferris?.ids.clientId).toMatch(/^[0-9a-f-]{36}$/u);
     expect(ferris?.opens).toMatch(/^\?entity=[0-9a-f-]{36}$/u);
     expect(screenScenario("?screen=TAX-09&st=b")?.ids.returnId).toMatch(/^[0-9a-f-]{36}$/u);
+    // T-05-T68: every entity state opens the Ridgeline 1065 with the entity workspace on.
+    const txp = screenScenario("?screen=TXP-07&st=c");
+    expect(txp?.ids.returnId).toMatch(/^[0-9a-f-]{36}$/u);
+    expect(screenScenario("?screen=TXP-00&st=e")?.ids.returnId).toBe(txp?.ids.returnId);
     expect(screenScenario("?screen=ADM-08&st=g")?.opens).toBe(
       "?segment=tax-engine&ov=integration-mapping:users",
     );
