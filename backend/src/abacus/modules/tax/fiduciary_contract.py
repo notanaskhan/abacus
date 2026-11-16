@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query, Response
@@ -1069,12 +1069,14 @@ async def trust_distribution_edit_route(
     f"{_R}/beneficiaries",
     action="beneficiary_allocation.read",
     response_model=BeneficiariesOut,
-    errors=(501,),
+    errors=(),
 )
 async def beneficiaries_route(return_id: UUID, ctx: Ctx) -> BeneficiariesOut:
     """TXT-03: allocation, tie-out, delivery, election card, release steps (T-07-T23)."""
     await _flag_on(ctx, TAX_FIDUCIARY_K1_RELEASE)
-    raise _stub("beneficiaries")
+    from abacus.modules.tax import fiduciary_beneficiaries as fb
+
+    return cast(BeneficiariesOut, await fb.beneficiaries(ctx, return_id))
 
 
 @fiduciary_router.put(

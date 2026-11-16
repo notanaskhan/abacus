@@ -840,7 +840,26 @@ async def recompute(ctx: AuthContext, return_id: UUID) -> FiduciaryRecomputeOut:
         out = await recompute_in(tx, return_id, engagement)
         if not out.created:
             tx.record("fiduciary_computation.unchanged", target=Target(TARGET, out.computation_id))
+    if out.created:
+        await void_8879f_on_drift(ctx, return_id, out.computation_id)
     return out
+
+
+async def void_8879f_on_drift(ctx: AuthContext, return_id: UUID, computation_id: UUID) -> int:
+    """T-07-T24 (DEC-85, DEC-5332): a new computation version supersedes every live Form 8879-F
+    envelope on the return (the signed amounts no longer bind), so the 1041 release gate reads
+    it unmet (TXT-03 a3) until the trustee signs again. Returns how many it superseded."""
+    from abacus.modules.signatures.api import envelope_summaries_for, supersede_for_amount_change
+
+    envelopes = (await envelope_summaries_for(ctx, [return_id])).get(return_id, [])
+    system = TenantContext(ctx.tenant_id, "system", "tax:8879f_drift")
+    voided = 0
+    for e in envelopes:
+        live = e.purpose == "form_8879_f" and not e.superseded
+        binding = f"fiduciary_computation:{computation_id}"
+        if live and await supersede_for_amount_change(system, e.envelope_id, binding):
+            voided += 1
+    return voided
 
 
 async def recompute_after_approval(tenant_id: UUID, interpretation_id: UUID) -> None:
