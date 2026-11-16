@@ -80,3 +80,5 @@ export {
   isNarrowedAudits,
   useAuditIndex,
 } from "./list";
+// A-08-T26: the fieldwork L3 kit (AUD-12, AUD-13, AUD-14, AUD-26).
+export * from "./fieldwork";
