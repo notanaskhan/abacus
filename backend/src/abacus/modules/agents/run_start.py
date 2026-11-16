@@ -16,7 +16,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.agents.spec_v2 import TEST_ONLY, spec_v2
 from abacus.modules.engagements.api import get_ref
@@ -36,6 +36,33 @@ _RUN = text(
 )
 
 
+class IntegrationReauthRequired(DomainConflict):
+    code = "integration_reauth_required"
+
+
+class IntegrationUnhealthy(DomainConflict):
+    code = "integration_unhealthy"
+
+
+class IntegrationNotConnected(DomainConflict):
+    code = "integration_not_connected"
+
+
+_ADMISSION: Final[dict[str, type[DomainConflict]]] = {
+    "integration_reauth_required": IntegrationReauthRequired,
+    "integration_unhealthy": IntegrationUnhealthy,
+    "integration_not_connected": IntegrationNotConnected,
+}
+
+
+async def dependents_of(catalog_key: str) -> list[str]:
+    """W-01-T14 (DEC-5334): the capabilities whose spec requires `catalog_key` (WB-11's
+    "Agents using it"); registered with integrations at agents' import."""
+    from abacus.modules.agents.spec_v2 import AGENTS_V2
+
+    return sorted(i for i, spec in AGENTS_V2.items() if catalog_key in spec.requires_integrations)
+
+
 async def open_capability_run(
     ctx: AuthContext,
     *,
@@ -52,6 +79,14 @@ async def open_capability_run(
         raise NotFound("agent_capability")  # P-10-T40: never installable for a real firm
     ref = await get_ref(ctx, engagement_id)  # a wall answers 404
     await authorise(ctx, "agent_run.start", ref.resource())
+    # W-01-T14 (DEC-5334): a capability that needs integrations runs only when each is connected.
+    if spec.requires_integrations:
+        from abacus.modules.integrations.api import admit
+
+        refused = await admit(ctx.tenant, spec.requires_integrations)
+        if refused is not None:
+            key, code = refused
+            raise _ADMISSION[code](facts={"integration": key})
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(_SEED, {"t": ctx.tenant_id, "name": COUNTER})
         number = cast(int, await tx.session.scalar(_NEXT, {"name": COUNTER}))

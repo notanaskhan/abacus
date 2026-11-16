@@ -202,3 +202,9 @@ from abacus.modules.integrations.health_workflow import (  # noqa: E402
 
 WORKFLOWS: dict[type, WorkClass] = dict(_HEALTH_WORKFLOWS)  # type: ignore[arg-type] -- the work class literal
 ACTIVITIES: tuple[object, ...] = (*_HEALTH_ACTIVITIES,)
+
+# W-01-T14 (DEC-5320, DEC-5334): run admission and the dependents slot the agents module fills.
+from abacus.modules.integrations.dependents import admit as admit  # noqa: E402
+from abacus.modules.integrations.dependents import (  # noqa: E402
+    register_dependents_provider as register_dependents_provider,
+)
