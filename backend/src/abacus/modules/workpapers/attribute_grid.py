@@ -37,7 +37,12 @@ from abacus.modules.sampling.api import approved_items
 
 TARGET: Final = "attribute_test"
 Variant = Literal[
-    "ebp_eligibility", "ebp_contribution_recalc", "ebp_distribution", "aud12_tod", "aud12_toc"
+    "ebp_eligibility",
+    "ebp_contribution_recalc",
+    "ebp_distribution",
+    "aud12_tod",
+    "aud12_toc",
+    "aud12_je",  # A-08-T14 (0930): JE Testing on the shared grid
 ]
 HumanResult = Literal["pass", "exception", "no_effect"]
 AgentResult = Literal["agent_tested", "needs_human"]
@@ -56,6 +61,7 @@ _ANCHOR: Final[dict[str, str]] = {
     "ebp_distribution": "EBP-05",
     "aud12_tod": "AUD-12",
     "aud12_toc": "AUD-12",
+    "aud12_je": "AUD-12",
 }
 
 
