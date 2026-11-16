@@ -55,6 +55,7 @@ from abacus.modules.platform.canary import boundary as canary_boundary
 
 # A-09-T09: the group_audit capability (entitlement and both rollout flags).
 from abacus.modules.platform.capabilities import GROUP_AUDIT, group_audit_on
+from abacus.modules.platform.console_contract import router as console_router
 from abacus.modules.platform.entitlements import (
     MODULES,
     Entitlement,
@@ -139,6 +140,7 @@ from abacus.modules.platform.pilots import Mode as PilotMode
 from abacus.modules.platform.pilots import PilotModeRefused
 from abacus.modules.platform.pilots import enrol as enrol_pilot
 from abacus.modules.platform.pilots import set_mode as set_pilot_mode
+from abacus.modules.platform.plan_usage_contract import router as plan_usage_router
 from abacus.modules.platform.provisioning import (
     OPERATOR_HANDLE,
     apply_retention_defaults_activity,
@@ -232,6 +234,7 @@ from abacus.modules.platform.slots import (
     register_home_count,
     search_document,
 )
+from abacus.modules.platform.support_contract import router as support_router
 from abacus.modules.platform.tenant_keys import (
     TENANT_KEY_ACTIVITIES,
     InMemoryTenantKeyOps,
@@ -294,6 +297,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     controls_platform_router,  # G-02-T20: staff import and publish the Pub 4557 definitions
     reference_sets_router,  # C21 part A (K-02-T05)
     search_router,  # C15 v1 (P-02-T01 stub; P-02-T08 implements it)
+    plan_usage_router,  # G-04-T03 stub (ADM-14; G-04-T11 implements it)
+    support_router,  # G-04-T03 stub (SHL-05; G-04-T10 implements it)
+    console_router,  # G-04-T03 stub on the staff issuer (PLT-01; G-04-T09, T10 implement it)
 )
 
 # Q-01-T45: the worker loads this module for tenant provisioning (ADR-156); Q-02-T33 adds the

@@ -2079,6 +2079,58 @@ export type AjeThresholdsPayload = {
 };
 
 /**
+ * AlertRuleIn
+ */
+export type AlertRuleIn = {
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+    /**
+     * Recipient Groups
+     */
+    recipient_groups: Array<'partners' | 'firm_admins'>;
+    /**
+     * Recipient User Ids
+     */
+    recipient_user_ids: Array<string>;
+    /**
+     * Threshold Pct
+     */
+    threshold_pct: number;
+};
+
+/**
+ * AlertRuleOut
+ */
+export type AlertRuleOut = {
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Recipient Groups
+     */
+    recipient_groups: Array<'partners' | 'firm_admins'>;
+    /**
+     * Recipients
+     */
+    recipients: Array<PersonRef>;
+    /**
+     * Threshold Minutes
+     */
+    threshold_minutes: number;
+    /**
+     * Threshold Pct
+     */
+    threshold_pct: number;
+};
+
+/**
  * AllocationRowOut
  */
 export type AllocationRowOut = {
@@ -5849,6 +5901,31 @@ export type Availability = {
 };
 
 /**
+ * AvailabilityOut
+ *
+ * Computed from support hours content (AC-45): online with the 7-day median first response
+ * when at least 5 samples exist, else offline with the next opening.
+ */
+export type AvailabilityOut = {
+    /**
+     * Next Open At
+     */
+    next_open_at: string | null;
+    /**
+     * Online
+     */
+    online: boolean;
+    /**
+     * Replies In Minutes
+     */
+    replies_in_minutes: number | null;
+    /**
+     * Reply Email
+     */
+    reply_email: string | null;
+};
+
+/**
  * BadgePart
  */
 export type BadgePart = {
@@ -6120,6 +6197,62 @@ export type BeneficiaryTotalsOut = {
      */
     share: string;
     tie: TieOutTallyStatus;
+};
+
+/**
+ * BillingContactIn
+ */
+export type BillingContactIn = {
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * BillingRateBandOut
+ */
+export type BillingRateBandOut = {
+    /**
+     * Hourly Rate
+     */
+    hourly_rate: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * People
+     */
+    people: number;
+};
+
+/**
+ * BillingRatesOut
+ *
+ * GET /v1/firm/billing-rates (AC-28): the registered provider's rates or not connected.
+ */
+export type BillingRatesOut = {
+    /**
+     * Bands
+     */
+    bands: Array<BillingRateBandOut>;
+    /**
+     * Connected
+     */
+    connected: boolean;
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Provider Key
+     */
+    provider_key: string | null;
+    /**
+     * Synced At
+     */
+    synced_at: string | null;
 };
 
 /**
@@ -6905,6 +7038,64 @@ export type BringDownOut = {
      * Status
      */
     status: 'not_scheduled' | 'queued' | 'completed';
+};
+
+/**
+ * BudgetAlertsIn
+ *
+ * PUT /v1/firm/budget-alerts with `version` (AC-34; 409 `stale_version`, fresh MFA).
+ */
+export type BudgetAlertsIn = {
+    /**
+     * At 100 Behaviour
+     */
+    at_100_behaviour: 'keep_running' | 'pause_scheduled';
+    /**
+     * Engagement Default Minutes
+     */
+    engagement_default_minutes: number;
+    /**
+     * Rules
+     */
+    rules: Array<AlertRuleIn>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * BudgetAlertsOut
+ *
+ * GET /v1/firm/budget-alerts (AC-33, AC-39).
+ */
+export type BudgetAlertsOut = {
+    /**
+     * At 100 Behaviour
+     */
+    at_100_behaviour: 'keep_running' | 'pause_scheduled';
+    /**
+     * Engagement Alert Pct
+     */
+    engagement_alert_pct: number;
+    /**
+     * Engagement Default Minutes
+     */
+    engagement_default_minutes: number;
+    partner_approver: PersonRef | null;
+    /**
+     * Rules
+     */
+    rules: Array<AlertRuleOut>;
+    /**
+     * Updated At
+     */
+    updated_at: string | null;
+    updated_by: PersonRef | null;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -14274,6 +14465,31 @@ export type ControlExceptionOut = {
 };
 
 /**
+ * ConversationOut
+ *
+ * GET /v1/support/conversation: the caller's one thread (OWN).
+ */
+export type ConversationOut = {
+    availability: AvailabilityOut;
+    /**
+     * Id
+     */
+    id: string | null;
+    /**
+     * Messages
+     */
+    messages: Array<SupportMessageOut>;
+    /**
+     * Session Cards
+     */
+    session_cards: Array<SessionCardOut>;
+    /**
+     * Suggestions
+     */
+    suggestions: Array<string>;
+};
+
+/**
  * ConvertToMisstatementIn
  */
 export type ConvertToMisstatementIn = {
@@ -18086,6 +18302,62 @@ export type EngagementActivityQueryIn = {
 };
 
 /**
+ * EngagementBudgetOut
+ */
+export type EngagementBudgetOut = {
+    /**
+     * Alert Sent At
+     */
+    alert_sent_at: string | null;
+    /**
+     * Alert Sent To Initials
+     */
+    alert_sent_to_initials: string | null;
+    /**
+     * Budget Minutes
+     */
+    budget_minutes: number;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Engagement Name
+     */
+    engagement_name: string;
+    /**
+     * Used Minutes
+     */
+    used_minutes: number;
+    /**
+     * Used Pct
+     */
+    used_pct: string;
+};
+
+/**
+ * EngagementBudgetsOut
+ *
+ * GET /v1/firm/engagement-budgets?alerting=true (AC-32): visible() rows, no hidden counts.
+ */
+export type EngagementBudgetsOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<EngagementBudgetOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
  * EngagementCountOut
  */
 export type EngagementCountOut = {
@@ -19555,6 +19827,42 @@ export type EngineSyncOut = {
      * Synced At
      */
     synced_at?: string | null;
+};
+
+/**
+ * EntitlementsPatchIn
+ *
+ * PATCH …/entitlements (AC-7, AC-8): staff MFA within 15 minutes and a reason.
+ */
+export type EntitlementsPatchIn = {
+    /**
+     * Included Agent Minutes
+     */
+    included_agent_minutes?: number | null;
+    /**
+     * Modules
+     */
+    modules?: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'> | null;
+    /**
+     * Plan Request Id
+     */
+    plan_request_id?: string | null;
+    /**
+     * Policy Principal Available
+     */
+    policy_principal_available?: boolean | null;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Renewal On
+     */
+    renewal_on?: string | null;
+    /**
+     * Seats Total
+     */
+    seats_total?: number | null;
 };
 
 /**
@@ -24410,6 +24718,27 @@ export type FirmRoleIn = {
 export type FirmStandardVersionStatus = 'draft' | 'published' | 'discarded';
 
 /**
+ * FirmStatusOut
+ *
+ * GET /v1/status: core components plus this firm's installed integrations, the worst of open
+ * global incidents and the firm's own W-01 health, and the firm's data region.
+ */
+export type FirmStatusOut = {
+    /**
+     * Components
+     */
+    components: Array<StatusComponentOut>;
+    /**
+     * History Url
+     */
+    history_url: string;
+    /**
+     * Region Label
+     */
+    region_label: string;
+};
+
+/**
  * FirmTeamIn
  *
  * A `service_line` team names its line, and only it does (422 `org_structure_invalid`);
@@ -24534,6 +24863,20 @@ export type FirmUsageOut = {
      * Used Minutes
      */
     used_minutes: number;
+};
+
+/**
+ * FirstAdminIn
+ */
+export type FirstAdminIn = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Role
+     */
+    role: 'firm_admin' | 'security_admin';
 };
 
 /**
@@ -27804,6 +28147,118 @@ export type HeadingBlock = {
 };
 
 /**
+ * HelpArticleOut
+ */
+export type HelpArticleOut = {
+    /**
+     * Blocks
+     */
+    blocks: Array<HelpBlockOut>;
+    /**
+     * Published At
+     */
+    published_at: string;
+    /**
+     * Read Minutes
+     */
+    read_minutes: number;
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * HelpArticleSummaryOut
+ */
+export type HelpArticleSummaryOut = {
+    /**
+     * Group Key
+     */
+    group_key: string;
+    /**
+     * Read Minutes
+     */
+    read_minutes: number;
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * HelpArticlesOut
+ */
+export type HelpArticlesOut = {
+    /**
+     * Groups
+     */
+    groups: Array<HelpGroupOut>;
+    /**
+     * Query
+     */
+    query: string | null;
+};
+
+/**
+ * HelpBlockOut
+ *
+ * One structured block (schema v1); never HTML from content.
+ */
+export type HelpBlockOut = {
+    /**
+     * Items
+     */
+    items?: Array<string>;
+    /**
+     * Kind
+     */
+    kind: 'heading' | 'paragraph' | 'list' | 'note' | 'screen_link';
+    /**
+     * Screen Id
+     */
+    screen_id?: string | null;
+    /**
+     * Text
+     */
+    text?: string | null;
+};
+
+/**
+ * HelpGroupOut
+ */
+export type HelpGroupOut = {
+    /**
+     * Articles
+     */
+    articles: Array<HelpArticleSummaryOut>;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
  * HistoryEntryOut
  */
 export type HistoryEntryOut = {
@@ -28831,107 +29286,6 @@ export type IncidentDecisionOut = {
 };
 
 /**
- * IncidentIn
- *
- * What the QI knows when recording; counts and encryption may be unknown yet.
- */
-export type IncidentIn = {
-    /**
-     * Consumers Affected
-     */
-    consumers_affected?: number | null;
-    /**
-     * Discovered At
-     */
-    discovered_at: string;
-    /**
-     * Event Kind
-     */
-    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Unencrypted
-     */
-    unencrypted?: boolean | null;
-};
-
-/**
- * IncidentOut
- *
- * One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;
- * `clock_day` of `clock_days` have passed in the firm's time zone.
- */
-export type IncidentOut = {
-    /**
-     * Accrued Confirmed At
-     */
-    accrued_confirmed_at?: string | null;
-    /**
-     * Accrued Ref
-     */
-    accrued_ref?: string | null;
-    /**
-     * Clock Day
-     */
-    clock_day: number;
-    /**
-     * Clock Days
-     */
-    clock_days: number;
-    /**
-     * Consumers Affected
-     */
-    consumers_affected?: number | null;
-    /**
-     * Created At
-     */
-    created_at: string;
-    /**
-     * Discovered At
-     */
-    discovered_at: string;
-    /**
-     * Dpa Notice At
-     */
-    dpa_notice_at?: string | null;
-    /**
-     * Event Kind
-     */
-    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
-    /**
-     * Ftc Notify By
-     */
-    ftc_notify_by: string;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Notification Event
-     */
-    notification_event: boolean;
-    /**
-     * Ref
-     */
-    ref: string;
-    /**
-     * Source
-     */
-    source: 'firm' | 'accrued';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Unencrypted
-     */
-    unencrypted?: boolean | null;
-};
-
-/**
  * IncidentPendingDecisionOut
  *
  * One of two decisions recorded: "Waiting for Margaret Okonkwo" (AC-22).
@@ -29099,6 +29453,50 @@ export type IncidentTimelineEntryOut = {
      * Source
      */
     source: 'firm' | 'accrued' | 'system';
+};
+
+/**
+ * IncidentUpdateIn
+ */
+export type IncidentUpdateIn = {
+    /**
+     * Note
+     */
+    note: string;
+};
+
+/**
+ * IncidentUpdateOut
+ */
+export type IncidentUpdateOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Note
+     */
+    note: string;
+    /**
+     * Posted By
+     */
+    posted_by: string;
+};
+
+/**
+ * IncidentsOut
+ */
+export type IncidentsOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<AbacusModulesPlatformConsoleContractIncidentOut>;
 };
 
 /**
@@ -30018,7 +30416,7 @@ export type IntakeFieldOut = {
      * Origin
      */
     origin: 'code_map' | 'agent' | 'human';
-    region?: RegionOut | null;
+    region?: AbacusModulesNoticesContractRegionOut | null;
     tin?: MaskedTinOut | null;
     /**
      * Value Text
@@ -36450,6 +36848,16 @@ export type MappingTalliesOut = {
 };
 
 /**
+ * MarkAppliedIn
+ */
+export type MarkAppliedIn = {
+    /**
+     * Entitlement Version
+     */
+    entitlement_version: number;
+};
+
+/**
  * MarkDoneUndoneOut
  *
  * `binder.mark_done_undone`: the binder is `published` again and BND-02's "Marked done by
@@ -39497,6 +39905,20 @@ export type PersonPatchIn = {
 };
 
 /**
+ * PersonRef
+ */
+export type PersonRef = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * PersonRefOut
  *
  * A person as the UI names them; `initials` for the avatar. Never the agent.
@@ -39742,71 +40164,6 @@ export type PlanHistoryOut = {
 };
 
 /**
- * PlanOut
- *
- * EBP-01's plan facts; the PN lives on `client_entities.plan_number` (A-05 §2.1).
- */
-export type PlanOut = {
-    /**
-     * Allowed Actions
-     */
-    allowed_actions: Array<'ebp_plan.edit' | 'ebp_provider.manage' | 'ebp_provider.invite' | 'ebp_provider.request' | 'ebp_import.create' | 'ebp_correction.record' | 'ebp_schedule.draft' | 'ebp_certification.evaluate' | 'ebp_form5500.key' | 'ebp_schedule.render' | 'ebp_form5500.send_note' | 'ebp_form5500.remind' | 'test.create' | 'test.mark' | 'field.sign_off' | 'estimate.evaluate' | 'estimate.request_conclusion' | 'related_party.manage' | 'related_party.screen_out' | 'party_in_interest.manage' | 'pii.reveal'>;
-    /**
-     * Audit Kind
-     */
-    audit_kind: '103a3c' | 'full_scope';
-    /**
-     * Filer Status
-     */
-    filer_status: 'large_plan' | 'small_plan';
-    /**
-     * Form5500 Due On
-     */
-    form5500_due_on: string;
-    /**
-     * Participants Boy
-     */
-    participants_boy: number;
-    /**
-     * Participants Eoy
-     */
-    participants_eoy: number;
-    /**
-     * Plan Name
-     */
-    plan_name: string;
-    /**
-     * Plan Number
-     */
-    plan_number: string | null;
-    /**
-     * Plan Type
-     */
-    plan_type: '401k';
-    /**
-     * Plan Year End
-     */
-    plan_year_end: string;
-    /**
-     * Plan Year Start
-     */
-    plan_year_start: string;
-    /**
-     * Recordkeeper Id
-     */
-    recordkeeper_id: string | null;
-    /**
-     * Safe Harbor
-     */
-    safe_harbor: 'none' | 'qaca' | 'basic' | 'nonelective';
-    sponsor_ein?: MaskedTinOut | null;
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
  * PlanReadOut
  *
  * WB-03a "Data it will read": Tax returns 224 · Tax engagements 214 · Binders 241.
@@ -39824,6 +40181,121 @@ export type PlanReadOut = {
      * Source
      */
     source: string;
+};
+
+/**
+ * PlanRequestDeclineIn
+ */
+export type PlanRequestDeclineIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * PlanRequestIn
+ *
+ * POST /v1/firm/plan-requests (AC-40, AC-43).
+ */
+export type PlanRequestIn = {
+    /**
+     * Effective From
+     */
+    effective_from?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'seats' | 'agent_minutes' | 'modules';
+    /**
+     * Modules Add
+     */
+    modules_add?: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * To Value
+     */
+    to_value?: number | null;
+};
+
+/**
+ * PlanRequestOut
+ */
+export type PlanRequestOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'approve' | 'decline' | 'withdraw'>;
+    /**
+     * Applied At
+     */
+    applied_at: string | null;
+    approver: PersonRef | null;
+    /**
+     * Decided At
+     */
+    decided_at: string | null;
+    decided_by: PersonRef | null;
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * From Value
+     */
+    from_value: number | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'seats' | 'agent_minutes' | 'modules';
+    /**
+     * Modules Add
+     */
+    modules_add: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    /**
+     * Reason
+     */
+    reason: string;
+    requested_by: PersonRef;
+    /**
+     * Status
+     */
+    status: 'awaiting_partner' | 'sent_to_accrued' | 'applied' | 'declined' | 'withdrawn';
+    /**
+     * To Value
+     */
+    to_value: number | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * PlanRequestsOut
+ */
+export type PlanRequestsOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<PlanRequestOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
 };
 
 /**
@@ -40221,6 +40693,111 @@ export type PlanningMaterialityVersionOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * PlatformPlanRequestOut
+ */
+export type PlatformPlanRequestOut = {
+    /**
+     * Approved By Display Name
+     */
+    approved_by_display_name: string;
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Firm Display Name
+     */
+    firm_display_name: string;
+    /**
+     * From Value
+     */
+    from_value: number | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'seats' | 'agent_minutes' | 'modules';
+    /**
+     * Modules Add
+     */
+    modules_add: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    /**
+     * Sent At
+     */
+    sent_at: string;
+    /**
+     * Status
+     */
+    status: 'sent_to_accrued' | 'applied';
+    /**
+     * Tenant Code
+     */
+    tenant_code: string;
+    /**
+     * To Value
+     */
+    to_value: number | null;
+};
+
+/**
+ * PlatformPlanRequestsOut
+ */
+export type PlatformPlanRequestsOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<PlatformPlanRequestOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
+ * PlatformSessionOut
+ */
+export type PlatformSessionOut = {
+    /**
+     * Firm Display Name
+     */
+    firm_display_name: string;
+    history: SessionHistoryOut;
+    /**
+     * Tenant Code
+     */
+    tenant_code: string;
+};
+
+/**
+ * PlatformSessionsOut
+ */
+export type PlatformSessionsOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<PlatformSessionOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
 };
 
 /**
@@ -43452,6 +44029,61 @@ export type ProvisionOut = {
 };
 
 /**
+ * ProvisionTenantIn
+ */
+export type ProvisionTenantIn = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * First Admins
+     */
+    first_admins: [
+        FirstAdminIn,
+        FirstAdminIn
+    ];
+    /**
+     * Legal Name
+     */
+    legal_name: string;
+    /**
+     * Modules
+     */
+    modules: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    /**
+     * Region
+     */
+    region: 'us' | 'eu' | 'uk';
+    /**
+     * Seats Total
+     */
+    seats_total: number;
+};
+
+/**
+ * ProvisioningOut
+ */
+export type ProvisioningOut = {
+    /**
+     * Invites Sent
+     */
+    invites_sent: number;
+    /**
+     * Status
+     */
+    status: 'running' | 'completed' | 'failed';
+    /**
+     * Tenant Code
+     */
+    tenant_code: string | null;
+    /**
+     * Workflow Id
+     */
+    workflow_id: string;
+};
+
+/**
  * Pub1345Tolerances
  *
  * DEC-85: the amounts past which a signed 8879 must be relocked (verified each season,
@@ -43469,21 +44101,19 @@ export type Pub1345Tolerances = {
 };
 
 /**
- * PublicationOut
+ * PublicationsOut
  */
-export type PublicationOut = {
+export type PublicationsOut = {
     /**
-     * Action
+     * Counts
      */
-    action: 'published' | 'deprecated';
+    counts: {
+        [key: string]: number;
+    };
     /**
-     * At
+     * Items
      */
-    at: string;
-    /**
-     * By
-     */
-    by: string;
+    items: Array<AbacusModulesPlatformConsoleContractPublicationOut>;
 };
 
 /**
@@ -43494,18 +44124,6 @@ export type PublishBody = {
      * Effective From
      */
     effective_from?: string | null;
-};
-
-/**
- * PublishIn
- *
- * "applies from the September 2026 close; August stays on v3" (CLS-09 b2).
- */
-export type PublishIn = {
-    /**
-     * Effective From
-     */
-    effective_from: string;
 };
 
 /**
@@ -43960,6 +44578,75 @@ export type QuestionnaireTemplateOut = {
 };
 
 /**
+ * QueueConversationDetailOut
+ */
+export type QueueConversationDetailOut = {
+    conversation: QueueConversationOut;
+    /**
+     * Messages
+     */
+    messages: Array<QueueMessageOut>;
+};
+
+/**
+ * QueueConversationOut
+ */
+export type QueueConversationOut = {
+    /**
+     * Assigned To
+     */
+    assigned_to: string | null;
+    /**
+     * Firm Display Name
+     */
+    firm_display_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Last Firm Message At
+     */
+    last_firm_message_at: string | null;
+    /**
+     * Last Staff Message At
+     */
+    last_staff_message_at: string | null;
+    /**
+     * Owner Display Name
+     */
+    owner_display_name: string;
+    /**
+     * Tenant Code
+     */
+    tenant_code: string;
+    /**
+     * Unanswered
+     */
+    unanswered: boolean;
+};
+
+/**
+ * QueueConversationsOut
+ */
+export type QueueConversationsOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<QueueConversationOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+};
+
+/**
  * QueueEntryOut
  */
 export type QueueEntryOut = {
@@ -43981,6 +44668,36 @@ export type QueueEntryOut = {
      * Request Item Id
      */
     request_item_id: string;
+};
+
+/**
+ * QueueMessageOut
+ */
+export type QueueMessageOut = {
+    /**
+     * Author Display Name
+     */
+    author_display_name: string;
+    /**
+     * Author Kind
+     */
+    author_kind: 'firm_user' | 'staff';
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Related Article Slug
+     */
+    related_article_slug: string | null;
 };
 
 /**
@@ -44859,22 +45576,13 @@ export type ReferenceSourceCitationOut = {
 };
 
 /**
- * RegionOut
+ * RegionsOut
  */
-export type RegionOut = {
+export type RegionsOut = {
     /**
-     * Bbox
+     * Items
      */
-    bbox: [
-        number,
-        number,
-        number,
-        number
-    ];
-    /**
-     * Page
-     */
-    page: number;
+    items: Array<AbacusModulesPlatformConsoleContractRegionOut>;
 };
 
 /**
@@ -45598,7 +46306,7 @@ export type ReportTemplateVersionOut = {
     /**
      * Publications
      */
-    publications: Array<PublicationOut>;
+    publications: Array<AbacusModulesReportingContractPublicationOut>;
     /**
      * Template Id
      */
@@ -50342,6 +51050,16 @@ export type SampleSetVersionOut = {
 export type SampleSetVersionStatus = 'drawing' | 'draft' | 'approved' | 'superseded' | 'failed';
 
 /**
+ * SandboxIn
+ */
+export type SandboxIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
  * Schedule4iOut
  *
  * A-05-T58 close (DEC-2820): the 4i schedule by code (`compute.ebp.form5500.schedule_4i`)
@@ -51144,6 +51862,42 @@ export type SeasonalAccessEndsOut = {
      * Members
      */
     members: number;
+};
+
+/**
+ * SeatCountOut
+ */
+export type SeatCountOut = {
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Used
+     */
+    used: number;
+};
+
+/**
+ * SeatsOut
+ */
+export type SeatsOut = {
+    /**
+     * Full
+     */
+    full: boolean;
+    /**
+     * Pending
+     */
+    pending: number;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Used
+     */
+    used: number;
 };
 
 /**
@@ -52061,6 +52815,42 @@ export type ServiceOrganizationPatchIn = {
 export type ServiceOrganizationStatus = 'pending' | 'gap_found' | 'bridge_letter_received' | 'reliance_concluded' | 'certification_accepted' | 'no_reliance' | 'not_relevant';
 
 /**
+ * SessionCardOut
+ *
+ * A support-session request linked to this conversation (SHL-05 a, c; SPEC-681 AC-18).
+ */
+export type SessionCardOut = {
+    /**
+     * Can Decide
+     */
+    can_decide: boolean;
+    /**
+     * Decided By Display Name
+     */
+    decided_by_display_name: string | null;
+    /**
+     * Duration Minutes
+     */
+    duration_minutes: number;
+    /**
+     * Expires At
+     */
+    expires_at: string | null;
+    /**
+     * Scope Label
+     */
+    scope_label: string;
+    /**
+     * Session Id
+     */
+    session_id: string;
+    /**
+     * Status
+     */
+    status: 'requested' | 'active' | 'declined' | 'revoked' | 'ended' | 'expired';
+};
+
+/**
  * SessionCreateIn
  *
  * T-04-T37 (DEC-4316): a session bound to one record (`tax_return` for TAX-08); the
@@ -52090,6 +52880,52 @@ export type SessionDeletedOut = {
      * Id
      */
     id: string;
+};
+
+/**
+ * SessionHistoryOut
+ */
+export type SessionHistoryOut = {
+    /**
+     * Approver Display Name
+     */
+    approver_display_name: string | null;
+    /**
+     * Approver Role
+     */
+    approver_role: 'firm_admin' | 'security_admin' | null;
+    /**
+     * Closed At
+     */
+    closed_at: string | null;
+    /**
+     * Duration Minutes
+     */
+    duration_minutes: number;
+    /**
+     * Reason Fingerprint
+     */
+    reason_fingerprint: string;
+    /**
+     * Requested By
+     */
+    requested_by: string;
+    /**
+     * Scope Kind
+     */
+    scope_kind: 'metadata' | 'integration_settings' | 'content';
+    /**
+     * Session Id
+     */
+    session_id: string;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Status
+     */
+    status: 'requested' | 'active' | 'declined' | 'revoked' | 'ended' | 'expired';
 };
 
 /**
@@ -54386,6 +55222,20 @@ export type StaffMemberOut = {
 };
 
 /**
+ * StaffReplyIn
+ */
+export type StaffReplyIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Related Article Slug
+     */
+    related_article_slug?: string | null;
+};
+
+/**
  * StaffRowV2Out
  *
  * ADM-02a's row: the v2 shape `GET /v1/firm/staff` grew into (G-01-T05). A pending
@@ -55449,6 +56299,32 @@ export type StatementsOut = {
 };
 
 /**
+ * StatusComponentOut
+ */
+export type StatusComponentOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'core' | 'integration';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * State
+     */
+    state: 'operational' | 'needs_attention' | 'outage' | 'maintenance';
+};
+
+/**
  * StatusMoveIn
  *
  * In review or back to In progress, or the On hold flag set or cleared (DF-23). Approved,
@@ -56452,6 +57328,48 @@ export type SupportAccessOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * SupportMessageIn
+ *
+ * POST /v1/support/conversation/messages (AC-46): 1 to 4,000 characters, 30 per 10 minutes.
+ */
+export type SupportMessageIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * SupportMessageOut
+ */
+export type SupportMessageOut = {
+    /**
+     * Author Display Name
+     */
+    author_display_name: string;
+    /**
+     * Author Kind
+     */
+    author_kind: 'firm_user' | 'staff';
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Related Article Slug
+     */
+    related_article_slug: string | null;
 };
 
 /**
@@ -58707,6 +59625,151 @@ export type TemplateVersionRefOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * TenantDetailOut
+ */
+export type TenantDetailOut = {
+    /**
+     * Entitlement Version
+     */
+    entitlement_version: number;
+    /**
+     * Firm Allows Session Requests
+     */
+    firm_allows_session_requests: boolean;
+    /**
+     * Included Agent Minutes
+     */
+    included_agent_minutes: number;
+    /**
+     * Policy Principal Available
+     */
+    policy_principal_available: boolean;
+    /**
+     * Region Storage Label
+     */
+    region_storage_label: string;
+    /**
+     * Renewal On
+     */
+    renewal_on: string;
+    row: TenantRowOut;
+    /**
+     * Seats Total
+     */
+    seats_total: number;
+    /**
+     * Support History
+     */
+    support_history: Array<SessionHistoryOut>;
+};
+
+/**
+ * TenantRowOut
+ */
+export type TenantRowOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Health
+     */
+    health: 'healthy' | 'degraded' | 'onboarding';
+    /**
+     * Health Reason Code
+     */
+    health_reason_code: string | null;
+    /**
+     * Library Channel Label
+     */
+    library_channel_label: string;
+    /**
+     * Modules
+     */
+    modules: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    /**
+     * Plan Requests Open
+     */
+    plan_requests_open: number;
+    /**
+     * Region
+     */
+    region: 'us' | 'eu' | 'uk';
+    /**
+     * Sandbox Of
+     */
+    sandbox_of: string | null;
+    seats: SeatCountOut;
+    /**
+     * Since
+     */
+    since: string;
+    /**
+     * Support State
+     */
+    support_state: 'requested' | 'active' | 'declined' | 'revoked' | 'ended' | 'expired' | null;
+    /**
+     * Support State At
+     */
+    support_state_at: string | null;
+    /**
+     * Synthetic
+     */
+    synthetic: boolean;
+    /**
+     * Tenant Code
+     */
+    tenant_code: string;
+};
+
+/**
+ * TenantTilesOut
+ *
+ * Tile counts ignore the tile filter (P-36 list envelope; AC-3).
+ */
+export type TenantTilesOut = {
+    /**
+     * Degraded
+     */
+    degraded: number;
+    /**
+     * Healthy
+     */
+    healthy: number;
+    /**
+     * Onboarding
+     */
+    onboarding: number;
+    /**
+     * Seats Provisioned
+     */
+    seats_provisioned: number;
+    /**
+     * Seats Used
+     */
+    seats_used: number;
+    /**
+     * Tenants
+     */
+    tenants: number;
+};
+
+/**
+ * TenantsOut
+ */
+export type TenantsOut = {
+    counts: TenantTilesOut;
+    /**
+     * Items
+     */
+    items: Array<TenantRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
 };
 
 /**
@@ -65599,6 +66662,71 @@ export type AbacusModulesAssuranceEbpContractAcceptedOut = {
 };
 
 /**
+ * PlanOut
+ *
+ * EBP-01's plan facts; the PN lives on `client_entities.plan_number` (A-05 §2.1).
+ */
+export type AbacusModulesAssuranceEbpContractPlanOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'ebp_plan.edit' | 'ebp_provider.manage' | 'ebp_provider.invite' | 'ebp_provider.request' | 'ebp_import.create' | 'ebp_correction.record' | 'ebp_schedule.draft' | 'ebp_certification.evaluate' | 'ebp_form5500.key' | 'ebp_schedule.render' | 'ebp_form5500.send_note' | 'ebp_form5500.remind' | 'test.create' | 'test.mark' | 'field.sign_off' | 'estimate.evaluate' | 'estimate.request_conclusion' | 'related_party.manage' | 'related_party.screen_out' | 'party_in_interest.manage' | 'pii.reveal'>;
+    /**
+     * Audit Kind
+     */
+    audit_kind: '103a3c' | 'full_scope';
+    /**
+     * Filer Status
+     */
+    filer_status: 'large_plan' | 'small_plan';
+    /**
+     * Form5500 Due On
+     */
+    form5500_due_on: string;
+    /**
+     * Participants Boy
+     */
+    participants_boy: number;
+    /**
+     * Participants Eoy
+     */
+    participants_eoy: number;
+    /**
+     * Plan Name
+     */
+    plan_name: string;
+    /**
+     * Plan Number
+     */
+    plan_number: string | null;
+    /**
+     * Plan Type
+     */
+    plan_type: '401k';
+    /**
+     * Plan Year End
+     */
+    plan_year_end: string;
+    /**
+     * Plan Year Start
+     */
+    plan_year_start: string;
+    /**
+     * Recordkeeper Id
+     */
+    recordkeeper_id: string | null;
+    /**
+     * Safe Harbor
+     */
+    safe_harbor: 'none' | 'qaca' | 'basic' | 'nonelective';
+    sponsor_ein?: MaskedTinOut | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * ProviderOut
  */
 export type AbacusModulesAssuranceEbpContractProviderOut = {
@@ -65753,6 +66881,18 @@ export type AbacusModulesClosesContractAdoptOut = {
      * Row Version
      */
     row_version: number;
+};
+
+/**
+ * PublishIn
+ *
+ * "applies from the September 2026 close; August stays on v3" (CLS-09 b2).
+ */
+export type AbacusModulesClosesContractPublishIn = {
+    /**
+     * Effective From
+     */
+    effective_from: string;
 };
 
 /**
@@ -66235,9 +67375,353 @@ export type AbacusModulesMethodologyContractStepOut = {
 };
 
 /**
+ * RegionOut
+ */
+export type AbacusModulesNoticesContractRegionOut = {
+    /**
+     * Bbox
+     */
+    bbox: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Page
+     */
+    page: number;
+};
+
+/**
+ * IncidentIn
+ *
+ * A note never names a firm or client (lint plus runbook templates).
+ */
+export type AbacusModulesPlatformConsoleContractIncidentIn = {
+    /**
+     * Component Key
+     */
+    component_key: string;
+    /**
+     * Public Note
+     */
+    public_note: string;
+    /**
+     * Severity
+     */
+    severity: 'degraded' | 'outage' | 'maintenance';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * IncidentOut
+ */
+export type AbacusModulesPlatformConsoleContractIncidentOut = {
+    /**
+     * Component Key
+     */
+    component_key: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Posted By
+     */
+    posted_by: string;
+    /**
+     * Public Note
+     */
+    public_note: string;
+    /**
+     * Resolved At
+     */
+    resolved_at: string | null;
+    /**
+     * Severity
+     */
+    severity: 'degraded' | 'outage' | 'maintenance';
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Updates
+     */
+    updates: Array<IncidentUpdateOut>;
+};
+
+/**
+ * PublicationOut
+ */
+export type AbacusModulesPlatformConsoleContractPublicationOut = {
+    /**
+     * Can Publish
+     */
+    can_publish: boolean;
+    /**
+     * Drafted By
+     */
+    drafted_by: string;
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'help_article' | 'reference_set';
+    /**
+     * Rows Added
+     */
+    rows_added: number;
+    /**
+     * Rows Changed
+     */
+    rows_changed: number;
+    /**
+     * Rows Removed
+     */
+    rows_removed: number;
+    /**
+     * Status
+     */
+    status: 'draft' | 'published' | 'withdrawn';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * PublishIn
+ */
+export type AbacusModulesPlatformConsoleContractPublishIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * RegionOut
+ */
+export type AbacusModulesPlatformConsoleContractRegionOut = {
+    /**
+     * Code
+     */
+    code: 'us' | 'eu' | 'uk';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Planned Label
+     */
+    planned_label: string | null;
+    /**
+     * Status
+     */
+    status: 'live' | 'planned';
+    /**
+     * Storage Label
+     */
+    storage_label: string | null;
+};
+
+/**
+ * IncidentIn
+ *
+ * What the QI knows when recording; counts and encryption may be unknown yet.
+ */
+export type AbacusModulesPlatformIncidentRoutesIncidentIn = {
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * IncidentOut
+ *
+ * One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;
+ * `clock_day` of `clock_days` have passed in the firm's time zone.
+ */
+export type AbacusModulesPlatformIncidentRoutesIncidentOut = {
+    /**
+     * Accrued Confirmed At
+     */
+    accrued_confirmed_at?: string | null;
+    /**
+     * Accrued Ref
+     */
+    accrued_ref?: string | null;
+    /**
+     * Clock Day
+     */
+    clock_day: number;
+    /**
+     * Clock Days
+     */
+    clock_days: number;
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Dpa Notice At
+     */
+    dpa_notice_at?: string | null;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Ftc Notify By
+     */
+    ftc_notify_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Notification Event
+     */
+    notification_event: boolean;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Source
+     */
+    source: 'firm' | 'accrued';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * PlanOut
+ *
+ * GET /v1/firm/plan (AC-27, AC-29): term, renewal, seats, modules and the library label.
+ */
+export type AbacusModulesPlatformPlanUsageContractPlanOut = {
+    billing_contact: PersonRef | null;
+    /**
+     * Included Agent Minutes
+     */
+    included_agent_minutes: number;
+    /**
+     * Library Channel
+     */
+    library_channel: 'stable' | 'early_access';
+    /**
+     * Modules
+     */
+    modules: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    /**
+     * Plan Code
+     */
+    plan_code: string;
+    /**
+     * Renewal In Days
+     */
+    renewal_in_days: number;
+    /**
+     * Renewal On
+     */
+    renewal_on: string;
+    seats: SeatsOut;
+    /**
+     * Term End
+     */
+    term_end: string;
+    /**
+     * Term Start
+     */
+    term_start: string;
+    /**
+     * Usage Month Anchor Day
+     */
+    usage_month_anchor_day: number;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Workbench Active 30D
+     */
+    workbench_active_30d: number;
+};
+
+/**
  * ApprovalOut
  */
 export type AbacusModulesReportingContractApprovalOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By
+     */
+    by: string;
+};
+
+/**
+ * PublicationOut
+ */
+export type AbacusModulesReportingContractPublicationOut = {
+    /**
+     * Action
+     */
+    action: 'published' | 'deprecated';
     /**
      * At
      */
@@ -72988,7 +74472,7 @@ export type EbpPlanResponses = {
     /**
      * Successful Response
      */
-    200: PlanOut;
+    200: AbacusModulesAssuranceEbpContractPlanOut;
 };
 
 export type EbpPlanResponse = EbpPlanResponses[keyof EbpPlanResponses];
@@ -73048,7 +74532,7 @@ export type EbpPlanEditResponses = {
     /**
      * Successful Response
      */
-    200: PlanOut;
+    200: AbacusModulesAssuranceEbpContractPlanOut;
 };
 
 export type EbpPlanEditResponse = EbpPlanEditResponses[keyof EbpPlanEditResponses];
@@ -81197,7 +82681,7 @@ export type CreatePlanDraftResponses = {
 export type CreatePlanDraftResponse = CreatePlanDraftResponses[keyof CreatePlanDraftResponses];
 
 export type PublishPlanData = {
-    body: PublishIn;
+    body: AbacusModulesClosesContractPublishIn;
     headers: {
         /**
          * If-Match
@@ -112832,6 +114316,163 @@ export type SetAutonomyResponses = {
 
 export type SetAutonomyResponse = SetAutonomyResponses[keyof SetAutonomyResponses];
 
+export type BillingRatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/billing-rates';
+};
+
+export type BillingRatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BillingRatesError = BillingRatesErrors[keyof BillingRatesErrors];
+
+export type BillingRatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: BillingRatesOut;
+};
+
+export type BillingRatesResponse = BillingRatesResponses[keyof BillingRatesResponses];
+
+export type BudgetAlertsGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/budget-alerts';
+};
+
+export type BudgetAlertsGetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BudgetAlertsGetError = BudgetAlertsGetErrors[keyof BudgetAlertsGetErrors];
+
+export type BudgetAlertsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: BudgetAlertsOut;
+};
+
+export type BudgetAlertsGetResponse = BudgetAlertsGetResponses[keyof BudgetAlertsGetResponses];
+
+export type BudgetAlertsPutData = {
+    body: BudgetAlertsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/budget-alerts';
+};
+
+export type BudgetAlertsPutErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BudgetAlertsPutError = BudgetAlertsPutErrors[keyof BudgetAlertsPutErrors];
+
+export type BudgetAlertsPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: BudgetAlertsOut;
+};
+
+export type BudgetAlertsPutResponse = BudgetAlertsPutResponses[keyof BudgetAlertsPutResponses];
+
 export type FirmClientsData = {
     body?: never;
     headers?: {
@@ -113963,6 +115604,66 @@ export type TestSendEmailTemplateResponses = {
 };
 
 export type TestSendEmailTemplateResponse = TestSendEmailTemplateResponses[keyof TestSendEmailTemplateResponses];
+
+export type EngagementBudgetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Alerting
+         */
+        alerting?: boolean;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/firm/engagement-budgets';
+};
+
+export type EngagementBudgetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EngagementBudgetsError = EngagementBudgetsErrors[keyof EngagementBudgetsErrors];
+
+export type EngagementBudgetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: EngagementBudgetsOut;
+};
+
+export type EngagementBudgetsResponse = EngagementBudgetsResponses[keyof EngagementBudgetsResponses];
 
 export type FieldworkSettingsData = {
     body?: never;
@@ -115177,6 +116878,407 @@ export type AcknowledgeStepResponses = {
 
 export type AcknowledgeStepResponse = AcknowledgeStepResponses[keyof AcknowledgeStepResponses];
 
+export type PlanGetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/plan';
+};
+
+export type PlanGetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanGetError = PlanGetErrors[keyof PlanGetErrors];
+
+export type PlanGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesPlatformPlanUsageContractPlanOut;
+};
+
+export type PlanGetResponse = PlanGetResponses[keyof PlanGetResponses];
+
+export type PlanRequestsListData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'awaiting_partner' | 'sent_to_accrued' | 'applied' | 'declined' | 'withdrawn' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/firm/plan-requests';
+};
+
+export type PlanRequestsListErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanRequestsListError = PlanRequestsListErrors[keyof PlanRequestsListErrors];
+
+export type PlanRequestsListResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlanRequestsOut;
+};
+
+export type PlanRequestsListResponse = PlanRequestsListResponses[keyof PlanRequestsListResponses];
+
+export type PlanRequestsCreateData = {
+    body: PlanRequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/plan-requests';
+};
+
+export type PlanRequestsCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanRequestsCreateError = PlanRequestsCreateErrors[keyof PlanRequestsCreateErrors];
+
+export type PlanRequestsCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: PlanRequestOut;
+};
+
+export type PlanRequestsCreateResponse = PlanRequestsCreateResponses[keyof PlanRequestsCreateResponses];
+
+export type PlanRequestsApproveData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/plan-requests/{request_id}/approve';
+};
+
+export type PlanRequestsApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanRequestsApproveError = PlanRequestsApproveErrors[keyof PlanRequestsApproveErrors];
+
+export type PlanRequestsApproveResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlanRequestOut;
+};
+
+export type PlanRequestsApproveResponse = PlanRequestsApproveResponses[keyof PlanRequestsApproveResponses];
+
+export type PlanRequestsDeclineData = {
+    body: PlanRequestDeclineIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/plan-requests/{request_id}/decline';
+};
+
+export type PlanRequestsDeclineErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanRequestsDeclineError = PlanRequestsDeclineErrors[keyof PlanRequestsDeclineErrors];
+
+export type PlanRequestsDeclineResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlanRequestOut;
+};
+
+export type PlanRequestsDeclineResponse = PlanRequestsDeclineResponses[keyof PlanRequestsDeclineResponses];
+
+export type PlanRequestsWithdrawData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: string;
+    };
+    query?: never;
+    url: '/v1/firm/plan-requests/{request_id}/withdraw';
+};
+
+export type PlanRequestsWithdrawErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanRequestsWithdrawError = PlanRequestsWithdrawErrors[keyof PlanRequestsWithdrawErrors];
+
+export type PlanRequestsWithdrawResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlanRequestOut;
+};
+
+export type PlanRequestsWithdrawResponse = PlanRequestsWithdrawResponses[keyof PlanRequestsWithdrawResponses];
+
+export type PlanSetBillingContactData = {
+    body: BillingContactIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/firm/plan/billing-contact';
+};
+
+export type PlanSetBillingContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PlanSetBillingContactError = PlanSetBillingContactErrors[keyof PlanSetBillingContactErrors];
+
+export type PlanSetBillingContactResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesPlatformPlanUsageContractPlanOut;
+};
+
+export type PlanSetBillingContactResponse = PlanSetBillingContactResponses[keyof PlanSetBillingContactResponses];
+
 export type GetPortalSettingsData = {
     body?: never;
     headers?: {
@@ -116066,7 +118168,7 @@ export type ListSecurityIncidentsResponses = {
 export type ListSecurityIncidentsResponse = ListSecurityIncidentsResponses[keyof ListSecurityIncidentsResponses];
 
 export type RecordIncidentData = {
-    body: IncidentIn;
+    body: AbacusModulesPlatformIncidentRoutesIncidentIn;
     headers?: {
         /**
          * Authorization
@@ -116107,7 +118209,7 @@ export type RecordIncidentResponses = {
     /**
      * Successful Response
      */
-    201: IncidentOut;
+    201: AbacusModulesPlatformIncidentRoutesIncidentOut;
 };
 
 export type RecordIncidentResponse = RecordIncidentResponses[keyof RecordIncidentResponses];
@@ -119329,6 +121431,122 @@ export type GroupingLinesResponses = {
 };
 
 export type GroupingLinesResponse = GroupingLinesResponses[keyof GroupingLinesResponses];
+
+export type HelpArticlesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Context
+         */
+        context?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/v1/help/articles';
+};
+
+export type HelpArticlesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HelpArticlesError = HelpArticlesErrors[keyof HelpArticlesErrors];
+
+export type HelpArticlesResponses = {
+    /**
+     * Successful Response
+     */
+    200: HelpArticlesOut;
+};
+
+export type HelpArticlesResponse = HelpArticlesResponses[keyof HelpArticlesResponses];
+
+export type HelpArticleData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/v1/help/articles/{slug}';
+};
+
+export type HelpArticleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HelpArticleError = HelpArticleErrors[keyof HelpArticleErrors];
+
+export type HelpArticleResponses = {
+    /**
+     * Successful Response
+     */
+    200: HelpArticleOut;
+};
+
+export type HelpArticleResponse = HelpArticleResponses[keyof HelpArticleResponses];
 
 export type HomeData = {
     body?: never;
@@ -129109,6 +131327,389 @@ export type ConnectImportResponses = {
 
 export type ConnectImportResponse = ConnectImportResponses[keyof ConnectImportResponses];
 
+export type ConsolePlanRequestsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'sent_to_accrued' | 'applied' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/platform/plan-requests';
+};
+
+export type ConsolePlanRequestsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsolePlanRequestsError = ConsolePlanRequestsErrors[keyof ConsolePlanRequestsErrors];
+
+export type ConsolePlanRequestsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlatformPlanRequestsOut;
+};
+
+export type ConsolePlanRequestsResponse = ConsolePlanRequestsResponses[keyof ConsolePlanRequestsResponses];
+
+export type ConsoleMarkAppliedData = {
+    body: MarkAppliedIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/plan-requests/{request_id}/mark-applied';
+};
+
+export type ConsoleMarkAppliedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleMarkAppliedError = ConsoleMarkAppliedErrors[keyof ConsoleMarkAppliedErrors];
+
+export type ConsoleMarkAppliedResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlatformPlanRequestOut;
+};
+
+export type ConsoleMarkAppliedResponse = ConsoleMarkAppliedResponses[keyof ConsoleMarkAppliedResponses];
+
+export type ConsoleProvisioningData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Workflow Id
+         */
+        workflow_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/provisioning/{workflow_id}';
+};
+
+export type ConsoleProvisioningErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleProvisioningError = ConsoleProvisioningErrors[keyof ConsoleProvisioningErrors];
+
+export type ConsoleProvisioningResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProvisioningOut;
+};
+
+export type ConsoleProvisioningResponse = ConsoleProvisioningResponses[keyof ConsoleProvisioningResponses];
+
+export type ConsolePublicationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'draft' | 'published' | 'withdrawn';
+    };
+    url: '/v1/platform/publications';
+};
+
+export type ConsolePublicationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsolePublicationsError = ConsolePublicationsErrors[keyof ConsolePublicationsErrors];
+
+export type ConsolePublicationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PublicationsOut;
+};
+
+export type ConsolePublicationsResponse = ConsolePublicationsResponses[keyof ConsolePublicationsResponses];
+
+export type ConsolePublishData = {
+    body: AbacusModulesPlatformConsoleContractPublishIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Kind
+         */
+        kind: 'help_article' | 'reference_set';
+        /**
+         * Publication Id
+         */
+        publication_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/publications/{kind}/{publication_id}/publish';
+};
+
+export type ConsolePublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsolePublishError = ConsolePublishErrors[keyof ConsolePublishErrors];
+
+export type ConsolePublishResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesPlatformConsoleContractPublicationOut;
+};
+
+export type ConsolePublishResponse = ConsolePublishResponses[keyof ConsolePublishResponses];
+
+export type ConsoleWithdrawData = {
+    body: AbacusModulesPlatformConsoleContractPublishIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Kind
+         */
+        kind: 'help_article' | 'reference_set';
+        /**
+         * Publication Id
+         */
+        publication_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/publications/{kind}/{publication_id}/withdraw';
+};
+
+export type ConsoleWithdrawErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleWithdrawError = ConsoleWithdrawErrors[keyof ConsoleWithdrawErrors];
+
+export type ConsoleWithdrawResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesPlatformConsoleContractPublicationOut;
+};
+
+export type ConsoleWithdrawResponse = ConsoleWithdrawResponses[keyof ConsoleWithdrawResponses];
+
+export type ConsoleRegionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/regions';
+};
+
+export type ConsoleRegionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleRegionsError = ConsoleRegionsErrors[keyof ConsoleRegionsErrors];
+
+export type ConsoleRegionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RegionsOut;
+};
+
+export type ConsoleRegionsResponse = ConsoleRegionsResponses[keyof ConsoleRegionsResponses];
+
 export type ImportRetentionDefaultsData = {
     body: RetentionDefaultSetIn;
     headers?: {
@@ -129405,6 +132006,732 @@ export type PublishSafeguardsControlsResponses = {
 };
 
 export type PublishSafeguardsControlsResponse = PublishSafeguardsControlsResponses[keyof PublishSafeguardsControlsResponses];
+
+export type ConsoleIncidentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Open
+         */
+        open?: boolean;
+    };
+    url: '/v1/platform/status/incidents';
+};
+
+export type ConsoleIncidentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleIncidentsError = ConsoleIncidentsErrors[keyof ConsoleIncidentsErrors];
+
+export type ConsoleIncidentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: IncidentsOut;
+};
+
+export type ConsoleIncidentsResponse = ConsoleIncidentsResponses[keyof ConsoleIncidentsResponses];
+
+export type ConsolePostIncidentData = {
+    body: AbacusModulesPlatformConsoleContractIncidentIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/status/incidents';
+};
+
+export type ConsolePostIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsolePostIncidentError = ConsolePostIncidentErrors[keyof ConsolePostIncidentErrors];
+
+export type ConsolePostIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    201: AbacusModulesPlatformConsoleContractIncidentOut;
+};
+
+export type ConsolePostIncidentResponse = ConsolePostIncidentResponses[keyof ConsolePostIncidentResponses];
+
+export type ConsoleResolveIncidentData = {
+    body: IncidentUpdateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Incident Id
+         */
+        incident_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/status/incidents/{incident_id}/resolve';
+};
+
+export type ConsoleResolveIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleResolveIncidentError = ConsoleResolveIncidentErrors[keyof ConsoleResolveIncidentErrors];
+
+export type ConsoleResolveIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesPlatformConsoleContractIncidentOut;
+};
+
+export type ConsoleResolveIncidentResponse = ConsoleResolveIncidentResponses[keyof ConsoleResolveIncidentResponses];
+
+export type ConsoleUpdateIncidentData = {
+    body: IncidentUpdateIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Incident Id
+         */
+        incident_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/status/incidents/{incident_id}/updates';
+};
+
+export type ConsoleUpdateIncidentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleUpdateIncidentError = ConsoleUpdateIncidentErrors[keyof ConsoleUpdateIncidentErrors];
+
+export type ConsoleUpdateIncidentResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesPlatformConsoleContractIncidentOut;
+};
+
+export type ConsoleUpdateIncidentResponse = ConsoleUpdateIncidentResponses[keyof ConsoleUpdateIncidentResponses];
+
+export type ConsoleSupportSessionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Status
+         */
+        status?: 'requested' | 'active' | 'declined' | 'revoked' | 'ended' | 'expired' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/platform/support-sessions';
+};
+
+export type ConsoleSupportSessionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleSupportSessionsError = ConsoleSupportSessionsErrors[keyof ConsoleSupportSessionsErrors];
+
+export type ConsoleSupportSessionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PlatformSessionsOut;
+};
+
+export type ConsoleSupportSessionsResponse = ConsoleSupportSessionsResponses[keyof ConsoleSupportSessionsResponses];
+
+export type ConsoleQueueData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Unanswered
+         */
+        unanswered?: boolean | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/platform/support/conversations';
+};
+
+export type ConsoleQueueErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleQueueError = ConsoleQueueErrors[keyof ConsoleQueueErrors];
+
+export type ConsoleQueueResponses = {
+    /**
+     * Successful Response
+     */
+    200: QueueConversationsOut;
+};
+
+export type ConsoleQueueResponse = ConsoleQueueResponses[keyof ConsoleQueueResponses];
+
+export type ConsoleQueueConversationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/support/conversations/{conversation_id}';
+};
+
+export type ConsoleQueueConversationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleQueueConversationError = ConsoleQueueConversationErrors[keyof ConsoleQueueConversationErrors];
+
+export type ConsoleQueueConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: QueueConversationDetailOut;
+};
+
+export type ConsoleQueueConversationResponse = ConsoleQueueConversationResponses[keyof ConsoleQueueConversationResponses];
+
+export type ConsoleQueueReplyData = {
+    body: StaffReplyIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/v1/platform/support/conversations/{conversation_id}/messages';
+};
+
+export type ConsoleQueueReplyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleQueueReplyError = ConsoleQueueReplyErrors[keyof ConsoleQueueReplyErrors];
+
+export type ConsoleQueueReplyResponses = {
+    /**
+     * Successful Response
+     */
+    201: QueueMessageOut;
+};
+
+export type ConsoleQueueReplyResponse = ConsoleQueueReplyResponses[keyof ConsoleQueueReplyResponses];
+
+export type ConsoleTenantsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Region
+         */
+        region?: 'us' | 'eu' | 'uk' | null;
+        /**
+         * Health
+         */
+        health?: 'healthy' | 'degraded' | 'onboarding' | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Tile
+         */
+        tile?: 'healthy' | 'degraded' | 'onboarding' | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/platform/tenants';
+};
+
+export type ConsoleTenantsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleTenantsError = ConsoleTenantsErrors[keyof ConsoleTenantsErrors];
+
+export type ConsoleTenantsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantsOut;
+};
+
+export type ConsoleTenantsResponse = ConsoleTenantsResponses[keyof ConsoleTenantsResponses];
+
+export type ConsoleProvisionData = {
+    body: ProvisionTenantIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/platform/tenants';
+};
+
+export type ConsoleProvisionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleProvisionError = ConsoleProvisionErrors[keyof ConsoleProvisionErrors];
+
+export type ConsoleProvisionResponses = {
+    /**
+     * Successful Response
+     */
+    202: ProvisioningOut;
+};
+
+export type ConsoleProvisionResponse = ConsoleProvisionResponses[keyof ConsoleProvisionResponses];
+
+export type ConsoleTenantData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Tenant Code
+         */
+        tenant_code: string;
+    };
+    query?: never;
+    url: '/v1/platform/tenants/{tenant_code}';
+};
+
+export type ConsoleTenantErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleTenantError = ConsoleTenantErrors[keyof ConsoleTenantErrors];
+
+export type ConsoleTenantResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantDetailOut;
+};
+
+export type ConsoleTenantResponse = ConsoleTenantResponses[keyof ConsoleTenantResponses];
+
+export type ConsolePatchEntitlementsData = {
+    body: EntitlementsPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Tenant Code
+         */
+        tenant_code: string;
+    };
+    query?: never;
+    url: '/v1/platform/tenants/{tenant_code}/entitlements';
+};
+
+export type ConsolePatchEntitlementsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsolePatchEntitlementsError = ConsolePatchEntitlementsErrors[keyof ConsolePatchEntitlementsErrors];
+
+export type ConsolePatchEntitlementsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantDetailOut;
+};
+
+export type ConsolePatchEntitlementsResponse = ConsolePatchEntitlementsResponses[keyof ConsolePatchEntitlementsResponses];
+
+export type ConsoleSandboxData = {
+    body: SandboxIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Tenant Code
+         */
+        tenant_code: string;
+    };
+    query?: never;
+    url: '/v1/platform/tenants/{tenant_code}/sandbox';
+};
+
+export type ConsoleSandboxErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsoleSandboxError = ConsoleSandboxErrors[keyof ConsoleSandboxErrors];
+
+export type ConsoleSandboxResponses = {
+    /**
+     * Successful Response
+     */
+    202: ProvisioningOut;
+};
+
+export type ConsoleSandboxResponse = ConsoleSandboxResponses[keyof ConsoleSandboxResponses];
 
 export type PopulationData = {
     body?: never;
@@ -141074,6 +144401,57 @@ export type TieOutResponses = {
 
 export type TieOutResponse = TieOutResponses[keyof TieOutResponses];
 
+export type FirmStatusData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/status';
+};
+
+export type FirmStatusErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FirmStatusError = FirmStatusErrors[keyof FirmStatusErrors];
+
+export type FirmStatusResponses = {
+    /**
+     * Successful Response
+     */
+    200: FirmStatusOut;
+};
+
+export type FirmStatusResponse = FirmStatusResponses[keyof FirmStatusResponses];
+
 export type SuggestionAdoptData = {
     body: AdoptSuggestionIn;
     headers?: {
@@ -141414,6 +144792,116 @@ export type RevokeSupportSessionResponses = {
 };
 
 export type RevokeSupportSessionResponse = RevokeSupportSessionResponses[keyof RevokeSupportSessionResponses];
+
+export type SupportConversationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/support/conversation';
+};
+
+export type SupportConversationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SupportConversationError = SupportConversationErrors[keyof SupportConversationErrors];
+
+export type SupportConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConversationOut;
+};
+
+export type SupportConversationResponse = SupportConversationResponses[keyof SupportConversationResponses];
+
+export type SupportSendMessageData = {
+    body: SupportMessageIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/support/conversation/messages';
+};
+
+export type SupportSendMessageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Too soon or too many: retry after Retry-After
+     */
+    429: ErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SupportSendMessageError = SupportSendMessageErrors[keyof SupportSendMessageErrors];
+
+export type SupportSendMessageResponses = {
+    /**
+     * Successful Response
+     */
+    201: SupportMessageOut;
+};
+
+export type SupportSendMessageResponse = SupportSendMessageResponses[keyof SupportSendMessageResponses];
 
 export type RequestSupportSessionData = {
     body: SupportSessionIn;
