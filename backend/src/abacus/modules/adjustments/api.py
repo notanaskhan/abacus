@@ -42,6 +42,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (router,)
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
+# A-09-T20 (DEC-5313): consolidation eliminations on C8.
+from abacus.modules.adjustments import eliminations  # noqa: E402
 from abacus.modules.adjustments.decisions import (  # noqa: E402 -- A-06-T28
     record_client_decision as record_entry_decision,
 )
@@ -62,6 +64,7 @@ __all__ = [
     "Entry",
     "NewEntry",
     "NewLine",
+    "eliminations",
     "entries_of",
     "propose_entry",
     "record_entry_decision",
