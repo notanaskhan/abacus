@@ -13,3 +13,8 @@ export function exceptionOverlay(testId: string, engagementId: string): OverlayR
 export function issueOverlay(issueId: string): OverlayRef {
   return ov.SHL15(issueId);
 }
+
+/** "Sampling": AUD-11 over the testing workspace, on the test's work item. */
+export function samplingOverlay(workItemId: string): OverlayRef {
+  return ov.AUD11(workItemId);
+}

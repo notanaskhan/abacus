@@ -271,6 +271,11 @@ async def _manager(tenant_id: UUID) -> str | None:
     return None
 
 
+async def connections_manager(tenant_id: UUID) -> str | None:
+    """Who manages firm connections (WB-10 d, WB-11 f): read-time, never stored."""
+    return await _manager(tenant_id)
+
+
 def _matches(tile: Tile, category: str | None, status: Bucket | None, q: str | None) -> bool:
     if category is not None and category not in tile.row.categories:
         return False

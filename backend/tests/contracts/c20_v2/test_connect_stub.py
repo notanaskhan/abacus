@@ -40,12 +40,11 @@ ROUTES: dict[tuple[str, str], str] = {
 PORTAL = ("client_admin", "client_contributor", "third_party", "client_service", "link_principal")
 
 
-# W-01-T07, T08 implemented the catalogue, Notify me, connect, complete and disconnect; these are
-# still the stub's (W-01-T15 detail, events and client companies; the operator's import routes,
-# which no principal can reach: AC-32 is the ops command).
+# W-01-T07, T08 implemented the catalogue, Notify me, connect, complete and disconnect, and S47
+# (TASK-8338) WB-11's detail; these are still the stub's (W-01-T15 events and client companies;
+# the operator's import routes, which no principal can reach: AC-32 is the ops command).
 STILL_STUBBED: frozenset[tuple[str, str]] = frozenset(
     {
-        ("get", K),
         ("get", f"{K}/events"),
         ("get", f"{K}/client-companies"),
         ("post", "/v1/platform/integration-catalog/imports"),

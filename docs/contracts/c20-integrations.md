@@ -196,6 +196,13 @@ Never with "Off for this firm", health events labelled at read time, dependents 
 `ConnectCompleteIn` (state and code classified restricted), `ConnectDisconnectIn/Out`,
 `ConnectInterestOut`, `ConnectCatalogImportOut(s)`. No route starts a client connection (R1).
 
+**S47 (TASK-8338, 2026-11-16):** `GET /v1/integrations/{key}` is implemented (no 501): WB-10's tile
+for the viewer plus the install it reads. Read rows come from the catalogue's read scopes, off for
+the firm only against a recorded grant; never rows are a personal app's consent `wont` lines;
+`write`, `who_can_use`, `linked_count`, `linked_label_code` and `mapping_ref` are empty until the
+catalogue carries that content; a dependent's `name` is its capability key until the agents
+module registers names. The front end opens it as `?ov=integration:<key>` (`ov.WB11`).
+
 **Fixtures:** the scenario's catalogue content `abacus_tools/synthetic/scenarios/brightwater_hale/files/connect_catalog.json`
 (the canvas `CX.items` list, DF-35/DF-36) read by `connect_catalog.py`, and the front end's copy
 `apps/web/src/fixtures/seed/connect-catalog.json` (a test keeps them identical); E0 53 = 9 + 38 + 6,

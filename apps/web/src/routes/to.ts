@@ -100,6 +100,12 @@ export const ov = {
     key: "issue",
     args: ["bulk", type, id, issueIds.join(",")],
   }),
+  /** AUD-11, the sampling canvas over a host that is not its cockpit (`?ov=sampling:<workItemId>`;
+   * S47: AUD-12's "Opens AUD-11 · sampling"). */
+  AUD11: (workItemId: string): OverlayRef => ({ key: "sampling", args: [workItemId] }),
+  /** WB-11, one integration's detail drawer over its host (`?ov=integration:<key>`; S47:
+   * ADM-08's "Opens WB-11 · CCH Axcess Tax"). */
+  WB11: (key: string): OverlayRef => ({ key: "integration", args: [key] }),
   /** TAX-09, a return's tax-engine sync over TAX-01 or TAX-02 (`?ov=engine-sync:<returnId>`). */
   TAX09: (returnId: string): OverlayRef => ({ key: "engine-sync", args: [returnId] }),
   /** SIG-02, the envelope builder over its host (`?ov=envelope:<envelopeId>`; N-02-T37: ENG-04's

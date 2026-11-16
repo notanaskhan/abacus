@@ -144,6 +144,7 @@ async def test_ac32_a_dropped_workbench_row_is_unpublished_not_deleted(
 
 
 async def test_the_app_reads_the_workbench_but_cannot_import(db: MigratedDatabase) -> None:
+    await _apply(db, _doc(_row("karbon")))  # its own row: not another test's (alone, xdist)
     app = Seeder(db.app_url.replace("postgresql+asyncpg://", "postgresql://"))
     rows = await app.rows("SELECT key FROM integration_catalog_workbench()")
     assert "karbon" in {r["key"] for r in rows}

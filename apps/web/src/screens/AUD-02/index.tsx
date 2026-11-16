@@ -64,6 +64,10 @@ import {
   useReleaseArchiveLive,
 } from "./completionLetters";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
+// S47 (TASK-8338): AUD-11's layer (`?ov=sampling:`) reads the canvas and its pane through here, so
+// both stay in this chunk instead of splitting into shared ones every route would load.
+export { useSampleSelectionCanvas };
+export { CockpitCanvasView } from "@abacus/ui";
 import { ViewerPane } from "../SHL-08";
 import { useOpenOverlay } from "../../app-core/open";
 import { ov } from "../../routes/to";

@@ -19528,7 +19528,7 @@ export const connectDetailQueryKey = (options: Options<ConnectDetailData>) => cr
 /**
  * Connect Detail
  *
- * WB-11: the mode-aware projection.
+ * WB-11: the mode-aware projection (S47, TASK-8338; `connect_detail.drawer`).
  */
 export const connectDetailOptions = (options: Options<ConnectDetailData>) => queryOptions<ConnectDetailResponse, ConnectDetailError, ConnectDetailResponse, ReturnType<typeof connectDetailQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
