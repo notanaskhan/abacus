@@ -7,6 +7,15 @@ import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { ADM01 } from "./ADM-01";
+import { AUD32 } from "./AUD-32";
+import {
+  AUD32_CONSOLIDATION,
+  AUD32_WORK_ITEM,
+  type Aud32State,
+  STATES as AUD32_STATES,
+  STEP_OF as AUD32_STEP_OF,
+  scenarios as aud32Scenarios,
+} from "./AUD-32/scenarios";
 // A-08-T26: the fieldwork L3 kit board registers itself as KIT-A08.
 import "./kit-a08";
 import { FilesPage } from "./FIL-01";
@@ -2485,6 +2494,35 @@ function Aud31Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-31", { title: "Trial balance mapping", Component: Aud31Artboard });
+
+// AUD-32 (A-09-T14): the consolidation setup wizard, a to f, Omar Haddad on Harlow & Pike FY2026.
+function Aud32Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud32State = AUD32_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud32Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="flex h-[786px] w-[1372px] flex-col">
+      <AUD32
+        workItemId={AUD32_WORK_ITEM}
+        consolidationId={AUD32_CONSOLIDATION}
+        step={AUD32_STEP_OF[state]}
+      />
+    </div>
+  );
+}
+
+registerScreen("AUD-32", { title: "Consolidation setup", Component: Aud32Artboard });
 
 // SHL-12 (P-04-T48): the sign-off sheet a, b, c, d, e, g, h over an empty frame; a′ is the frame
 // after signing: the sheet closed, the header's "✓ MD ✓ HL" and the toast; f (P-04-T49) is the
