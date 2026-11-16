@@ -154832,7 +154832,7 @@
     },
     "/v1/audits/{work_item_id}/consolidations/{consolidation_id}/structure/proposal": {
       "post": {
-        "description": "A deterministic P-35 suggestion (DV-2); adopt through `POST /v1/suggestions/{id}/adopt`.",
+        "description": "A deterministic P-35 suggestion (DV-2; DEC-5340); adopt through\n`POST /v1/suggestions/{id}/adopt` (Use structure), or PUT the structure (Edit). 409\n`structure_source_missing` without a OneWorld source or a single matched top entity.",
         "operationId": "group_propose_structure",
         "parameters": [
           {

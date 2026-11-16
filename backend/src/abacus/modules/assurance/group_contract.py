@@ -68,6 +68,13 @@ class StructureInvalid(DomainInvalid):
     code = "structure_invalid"
 
 
+class StructureSourceMissing(DomainConflict):
+    """No OneWorld source on the consolidation, or none of its subsidiaries matches one of the
+    client's entities under a single top entity: there is nothing to propose (DEC-5340)."""
+
+    code = "structure_source_missing"
+
+
 class ComponentPmInvalid(DomainInvalid):
     """A component PM at or above group PM, or on an Analytical-only component."""
 
@@ -595,11 +602,15 @@ async def group_save_structure(
 async def group_propose_structure(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> GroupSuggestionRefOut:
-    """A deterministic P-35 suggestion (DV-2); adopt through `POST /v1/suggestions/{id}/adopt`."""
+    """A deterministic P-35 suggestion (DV-2; DEC-5340); adopt through
+    `POST /v1/suggestions/{id}/adopt` (Use structure), or PUT the structure (Edit). 409
+    `structure_source_missing` without a OneWorld source or a single matched top entity."""
     await _gate(ctx, work_item_id, "consolidation.edit")
-    # DV-2's sources: OneWorld parent-subsidiary data arrives with A-09-T18 (client entities hold
-    # no hierarchy), so the deterministic proposal lands there (S46 records, DEC-5083).
-    raise _todo("A-09-T18")
+    from abacus.modules.assurance import group_structure as svc
+
+    return GroupSuggestionRefOut(
+        suggestion_id=await svc.propose(ctx, work_item_id, consolidation_id)
+    )
 
 
 @router.post(

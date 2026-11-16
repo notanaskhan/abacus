@@ -21,7 +21,7 @@ Every route answers, in order: a client principal 404; the action on the work it
 | Operation | Method and path | Matrix action | Task |
 |---|---|---|---|
 | Create · read · edit · discard | POST `/v1/audits/{wid}/consolidations` · GET/PATCH/DELETE `…/consolidations/{cid}` | `consolidation.edit` / `.read` | T13 |
-| Structure · proposal | PUT `…/structure` (422 `structure_invalid`) · POST `…/structure/proposal` | `consolidation.edit` | T13, T14 |
+| Structure · proposal | PUT `…/structure` (422 `structure_invalid`) · POST `…/structure/proposal` (201 a P-35 suggestion, the `audit.group_structure` code run; 409 `structure_source_missing`; DEC-5340) | `consolidation.edit` | T13, T14 |
 | Attach · not needed | POST `…/entities/{ceid}/trial-balances` · POST `…/trial-balances/{tbid}/not-needed` | `consolidation.edit` | T13 |
 | Bulk upload · pull all | POST `…/bulk-upload` · POST `…/pull-all` (202) | `consolidation.edit` | T18 |
 | Finalize | POST `…/finalize` (409 `trial_balance_missing`) | `consolidation.finalize` | T13 |

@@ -127,6 +127,10 @@ _PENDING_ACTIONS: Final = (APPROVE, REJECT, ROUTE, FOLLOW_UP)
 _CODE: Final = re.compile(r"[a-z][a-z_]{0,39}")
 _FIELD: Final = re.compile(r"[A-Za-z0-9_.!:-]{1,80}")
 _REF: Final = re.compile(r"[A-Za-z0-9_.:-]{1,200}")
+# A-09-T13 rest (DEC-5340): the rationale of a suggestion a code-only run made. `#` is outside
+# `_REF`, so only `create_code_suggestion` writes it; such a suggestion is code's (ADR-050), has
+# no evidence to cite, and adopts as proposed without citations.
+CODE_RATIONALE: Final = "code#computed"
 _NOTE_LIMIT: Final = 2000
 _MAX_ROWS: Final = 100
 REASONS: Final = frozenset({"wrong_treatment", "unsupported_value", "needs_client_input", "other"})
@@ -789,6 +793,86 @@ async def create_suggestion(
             )
         )
     return suggestion_id
+
+
+async def create_code_suggestion(
+    tx: UnitOfWork,
+    tenant: TenantContext,
+    *,
+    run_id: UUID,
+    engagement_id: UUID,
+    target_type: str,
+    target_id: UUID,
+    field_key: str,
+    proposed_value: Mapping[str, object],
+) -> UUID:
+    """A-09-T13 rest (DEC-5340): one suggestion a code-only run made (`begin_code_run`), in the
+    caller's unit of work. The person who started the run was authorised by the caller's route;
+    the suggestion is the run's (ADR-161 clause 2: "<person> via Agent"). The field and value
+    rules are `create_suggestion`'s; a value the threshold policy would send for review refuses.
+    Its rationale is `CODE_RATIONALE` and it carries no citations: it adopts as proposed."""
+    if not _CODE.fullmatch(target_type) or not _FIELD.fullmatch(field_key):
+        raise ProposalInvalid(facts={"field": "field_key"})
+    check_suggestion_target(target_type)
+    value = typed_value(proposed_value)
+    found = threshold_policy(FIELD_CHANGE_SET)
+    if found is not None:
+        evaluation = await found.evaluate(
+            tenant,
+            engagement_id,
+            FIELD_CHANGE_SET,
+            await _weighed(tenant, [(target_type, target_id, field_key, value)]),
+        )
+        if evaluation is not None and evaluation.result == "review_required":
+            raise ProposalInvalid(facts={"field": "threshold"})
+    run = await run_of(tx.session, run_id)
+    if run is None or run.engagement_id != engagement_id:
+        raise NotFound("agent_run")
+    await lock_ref(tx, engagement_id)
+    suggestion_id = await insert_suggestion(
+        tx.session,
+        {
+            "tenant_id": tenant.tenant_id,
+            "engagement_id": engagement_id,
+            "target_type": target_type,
+            "target_id": target_id,
+            "field_key": field_key,
+            "proposed_value": value,
+            "rationale_ref": CODE_RATIONALE,
+            "citation_ids": [],
+            "confidence": None,
+            "agent_run_id": run_id,
+            "proposal_id": None,
+        },
+    )
+    tx.record(
+        "suggestion.created",
+        target=Target(SUGGESTION, suggestion_id),
+        scope=Scope(engagement_id=engagement_id),
+    )
+    tx.emit(
+        SuggestionCreated(
+            suggestion_id=suggestion_id,
+            engagement_id=engagement_id,
+            target_type=target_type,
+            target_id=target_id,
+        )
+    )
+    return suggestion_id
+
+
+async def code_suggestion_output(
+    tx: UnitOfWork, suggestion_id: UUID
+) -> tuple[UUID, Mapping[str, object]] | None:
+    """The run that made `suggestion_id` and that run's identifier-only output, for the target's
+    applier to check what it adopts (DEC-5340); None without a run or an output."""
+    found = await get_suggestion(tx.session, suggestion_id)
+    if found is None:
+        return None
+    run = await run_of(tx.session, found.agent_run_id)
+    if run is None or run.output is None:
+        return None
+    return found.agent_run_id, run.output
 
 
 # --- Read --------------------------------------------------------------------------------------
@@ -1549,8 +1633,11 @@ async def adopt_suggestion(
         supported = await supported_citations(
             person.tenant, engagement_id, list(locked.citation_ids)
         )
-        if edited_value is None and (
-            not locked.citation_ids or not set(locked.citation_ids) <= supported
+        computed = locked.rationale_ref == CODE_RATIONALE and not locked.citation_ids
+        if (
+            edited_value is None
+            and not computed
+            and (not locked.citation_ids or not set(locked.citation_ids) <= supported)
         ):
             raise UncitedChange(facts={"count": 1})
         decision: Literal["adopted", "edited"] = (

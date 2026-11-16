@@ -1482,7 +1482,9 @@ export const groupSaveStructureMutation = (options?: Partial<Options<GroupSaveSt
 /**
  * Group Propose Structure
  *
- * A deterministic P-35 suggestion (DV-2); adopt through `POST /v1/suggestions/{id}/adopt`.
+ * A deterministic P-35 suggestion (DV-2; DEC-5340); adopt through
+ * `POST /v1/suggestions/{id}/adopt` (Use structure), or PUT the structure (Edit). 409
+ * `structure_source_missing` without a OneWorld source or a single matched top entity.
  */
 export const groupProposeStructureMutation = (options?: Partial<Options<GroupProposeStructureData>>): UseMutationOptions<GroupProposeStructureResponse, GroupProposeStructureError, Options<GroupProposeStructureData>> => {
     const mutationOptions: UseMutationOptions<GroupProposeStructureResponse, GroupProposeStructureError, Options<GroupProposeStructureData>> = {

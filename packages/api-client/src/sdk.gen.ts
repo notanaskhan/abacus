@@ -891,7 +891,9 @@ export const groupSaveStructure = <ThrowOnError extends boolean = false>(options
 /**
  * Group Propose Structure
  *
- * A deterministic P-35 suggestion (DV-2); adopt through `POST /v1/suggestions/{id}/adopt`.
+ * A deterministic P-35 suggestion (DV-2; DEC-5340); adopt through
+ * `POST /v1/suggestions/{id}/adopt` (Use structure), or PUT the structure (Edit). 409
+ * `structure_source_missing` without a OneWorld source or a single matched top entity.
  */
 export const groupProposeStructure = <ThrowOnError extends boolean = false>(options: Options<GroupProposeStructureData, ThrowOnError>): RequestResult<GroupProposeStructureResponses, GroupProposeStructureErrors, ThrowOnError> => (options.client ?? client).post<GroupProposeStructureResponses, GroupProposeStructureErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -151,6 +151,12 @@ from abacus.modules.assurance.gates import register as register_gates
 from abacus.modules.assurance.group_contract import router as group_router
 from abacus.modules.assurance.group_pull import ACTIVITIES as PULL_ALL_ACTIVITIES
 from abacus.modules.assurance.group_pull import WORKFLOWS as PULL_ALL_WORKFLOWS
+from abacus.modules.assurance.group_structure import SUBSCRIPTIONS as GROUP_STRUCTURE_SUBSCRIPTIONS
+from abacus.modules.assurance.group_structure import TARGET as GROUP_STRUCTURE_TARGET
+from abacus.modules.assurance.group_structure import (
+    apply_structure_suggestion,
+    consolidation_engagement,
+)
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.ic_redraft import SUBSCRIPTIONS as IC_REDRAFT_SUBSCRIPTIONS
 from abacus.modules.assurance.internal_control import AUDIT_KINDS as CONTROL_KINDS
@@ -347,6 +353,7 @@ async def _on_envelope_completed(event: OutboxEvent) -> None:
 # A-06-T16 seam (TASK-3395): an agent's suggested checklist answer is mirrored on its item.
 _BASE_SUBSCRIPTIONS = (
     dict(PHASE_SUBSCRIPTIONS)
+    | dict(GROUP_STRUCTURE_SUBSCRIPTIONS)
     | dict(MAPPING_SUBSCRIPTIONS)
     | dict(IC_REDRAFT_SUBSCRIPTIONS)
     | dict(A07_SUBSCRIPTIONS)
@@ -475,6 +482,10 @@ register_gate_kind(FRAUD_GATE, minutes_gate)
 register_suggestion_applier("risk", apply_risk_suggestion, engagement_of=risk_engagement)
 # A-04-T15 (DEC-1953): the recommender's suggestion names the work item's materiality.
 register_suggestion_target("materiality", engagement_of=work_item_engagement)
+# A-09-T13 rest (DEC-5340): Use structure adopts the proposal; its owner writes the structure.
+register_suggestion_applier(
+    GROUP_STRUCTURE_TARGET, apply_structure_suggestion, engagement_of=consolidation_engagement
+)
 
 
 # A-08-T23 (DEC-5310): the fieldwork modes' suggestion targets and input mappings.

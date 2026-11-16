@@ -3616,6 +3616,12 @@ codes:
     raised_by:
     - abacus.modules.tax.allocation_structure.StructureNotPending
     summary: Only a version Pending approval is approved; the newest version is not one.
+  structure_source_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.group_contract.StructureSourceMissing
+    summary: 'No OneWorld source on the consolidation, or none of its subsidiaries matches one of the
+      client''s entities under a single top entity: there is nothing to propose (DEC-5340).'
   structure_version_conflict:
     status: 409
     raised_by:
