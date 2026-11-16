@@ -812,3 +812,41 @@ from abacus.modules.assurance.governance_comms import (  # noqa: E402  # A-07-T4
 from abacus.modules.assurance.materiality import record as materiality_record  # noqa: E402
 
 _confirmations_service.register()
+
+
+from decimal import Decimal  # noqa: E402
+from typing import Literal  # noqa: E402
+from uuid import UUID  # noqa: E402
+
+from abacus.modules.identity.api import AuthContext  # noqa: E402
+from abacus.modules.workpapers.api import (  # noqa: E402
+    register_finding_raiser as _register_finding_raiser,
+)
+
+
+# A-08-T12 (S47 end pass): a deviation logged with "raise a finding" records it here; workpapers
+# never imports assurance (ADR-008), so this registers the recorder at import.
+async def _raise_from_deviation(
+    ctx: AuthContext,
+    work_item_id: UUID,
+    workpaper_id: UUID,
+    title: str,
+    kind: Literal["control_deficiency", "misstatement"],
+    difference: Decimal | None,
+) -> UUID:
+    made = await record_finding(
+        ctx,
+        work_item_id,
+        NewFinding(
+            workpaper_id=workpaper_id,
+            title=title,
+            kind=kind,
+            coso_component=None,
+            citation_ids=(),
+            figures=() if difference is None else (difference,),
+        ),
+    )
+    return made.id
+
+
+_register_finding_raiser(_raise_from_deviation)

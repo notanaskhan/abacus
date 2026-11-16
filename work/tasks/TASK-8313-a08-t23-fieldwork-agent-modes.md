@@ -1,8 +1,8 @@
 ---
 id: TASK-8313
 title: "A-08-T23: Agent modes fieldwork_attribute, flux_explain and confirmation_reconcile on workpapers.section_drafter (red)"
-spec: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md §6
-acceptance_criteria: [A-08-T23]
+spec: SPEC-657
+acceptance_criteria: [AC-5, AC-6, AC-9]
 risk_zone: red
 status: in-review
 branch: a08-t23-fieldwork-agent-modes
@@ -13,6 +13,7 @@ plan_key: A-08-T23
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-657-a08-audit-fieldwork-depth.md §6.
 Agent modes fieldwork_attribute, flux_explain and confirmation_reconcile on workpapers.section_drafter (red).
 
 ## Plan (red)

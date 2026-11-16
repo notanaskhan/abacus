@@ -180,14 +180,20 @@ async def _contacts(tenant: TenantContext, package_ids: Sequence[UUID]) -> dict[
     return {r.id: r.contact for r in rows if r.contact is not None}
 
 
+# T-07-T24: the release gate's unmet-step codes (a step name, not a sign-off: approval.py owns
+# the `final_approval` sign-off itself).
+STEP_FINAL_APPROVAL: Final = "final_approval"
+STEP_FORM_8879_F: Final = "form_8879_f"
+
+
 def gate_1041(final_approved: bool, envelopes: Sequence[tuple[str, str, bool]]) -> list[str]:
     """T-07-T24 (DEC-5318): a 1041's K-1s release only after final approval under BH-TAX-02 AND
     the trustee's Form 8879-F envelope Completed (not superseded): the unmet steps, in order."""
     unmet: list[str] = []
     if not final_approved:
-        unmet.append("final_approval")
-    if not any(p == "form_8879_f" and s == "completed" and not sup for p, s, sup in envelopes):
-        unmet.append("form_8879_f")
+        unmet.append(STEP_FINAL_APPROVAL)
+    if not any(p == STEP_FORM_8879_F and s == "completed" and not sup for p, s, sup in envelopes):
+        unmet.append(STEP_FORM_8879_F)
     return unmet
 
 

@@ -121,7 +121,7 @@ async def _contact(firm: _Firm, close: uuid.UUID, user: uuid.UUID) -> uuid.UUID:
         str(
             await firm.seed.value(
                 "INSERT INTO contacts (tenant_id, client_id, display_name, contact_kind, user_id) "
-                "VALUES ($1, $2, 'Ben Ashby', 'person', $3) RETURNING id",
+                "VALUES ($1, $2, 'Ben Ashby', 'client_person', $3) RETURNING id",
                 firm.tenant,
                 client,
                 user,

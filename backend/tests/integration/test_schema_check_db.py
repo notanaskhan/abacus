@@ -1677,6 +1677,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         # A-03-T05 (0520): a sample set's title and purpose, and a version's status moves; the
         # drawn seed, parameters and items never change (a guard trigger freezes a version).
         "sample_sets": frozenset({"title", "purpose", "program_step_key", "row_version"}),
+        # A-08-T17 (0931, DEC-5307): a pending expansion's one decision, by a person.
+        "sample_expansions": frozenset(
+            {"status", "decided_by", "decided_actor_kind", "decided_at", "resulting_version_id"}
+        ),
         "sample_set_versions": frozenset(
             {"status", "items_hash", "content_hash", "failure_code", "approved_by"}
             | {"approved_at", "approved_actor_kind", "superseded_by", "row_version"}

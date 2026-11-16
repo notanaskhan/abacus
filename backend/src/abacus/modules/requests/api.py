@@ -212,7 +212,9 @@ from abacus.modules.requests.transaction_questions import (
     questions_for,
 )
 from abacus.modules.requests.transaction_questions import answer as answer_transaction_question
-from abacus.modules.requests.transaction_questions import ask as ask_transaction_question
+from abacus.modules.requests.transaction_questions import (
+    raise_question as ask_transaction_question,
+)
 
 # P-07-T25 (C5): CLI-04 records, ends and counts a contact's delegated requests through this.
 register_contact_delegations(

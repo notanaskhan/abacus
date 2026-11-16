@@ -1,8 +1,8 @@
 ---
 id: TASK-8301
 title: "C-01-T24: Close issues and transaction questions"
-spec: docs/plan/epics/C-01.md §3 F8
-acceptance_criteria: [C-01-T24]
+spec: SPEC-655
+acceptance_criteria: [AC-44, AC-45, AC-46, AC-47]
 risk_zone: amber
 status: in-review
 branch: c01-t24-close-issues
@@ -13,6 +13,7 @@ plan_key: C-01-T24
 ---
 
 ## Objective
+Spec section: docs/plan/epics/C-01.md §3 F8.
 Close issues and transaction questions.
 
 ## Plan (amber)

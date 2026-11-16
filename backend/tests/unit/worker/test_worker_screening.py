@@ -95,6 +95,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "request_item.status_changed",
         "agent_run.plan_decided",  # P-10-T49 (DEC-4401): the plan's C13 gate closes
         "proposal.created",  # P-10-T49: a v2 run's proposal opens its C13 gate
+        "sample_expansion.requested",  # A-08-T17 (DEC-5307): the expansion's C13 gate opens
+        "sample_expansion.decided",  # A-08-T17: and closes
         "residency_determination.confirmed",  # T-04-T39: the option's worksheets activate
         "session.items_changed",  # TASK-7325: a session's items reach its topic
         "daily_briefing.built",  # I-02-T13 (S42): the Today panel's user topic

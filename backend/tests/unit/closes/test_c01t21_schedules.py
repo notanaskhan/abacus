@@ -54,7 +54,7 @@ def test_ties_once_posted_while_aje_02_is_pending_then_recorded() -> None:
 
 
 def test_rollups_foot_in_code() -> None:
-    sums = calc.rollup(
+    sums = calc.subtotals(
         [
             ("asset", "Bank", D("184610.50")),
             ("asset", "Other Current Asset", D("3500.00")),

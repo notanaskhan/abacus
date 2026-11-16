@@ -15,9 +15,11 @@ from __future__ import annotations
 import ast
 import re
 from pathlib import Path
+from typing import cast
 
 import pytest
 
+from abacus.modules.agents.api import registered_tools
 from abacus.modules.agents.specs._specs import SPECS
 from abacus.modules.identity.authz import matrix
 
@@ -46,8 +48,17 @@ def test_the_agent_is_denied_every_recording_act(action: str) -> None:
 
 
 def test_the_drafter_has_no_tools_so_a_mode_only_suggests() -> None:
+    # A-08-T23 (S47) gave the drafter its first tools. The guarantee is unchanged: every tool
+    # only reads or computes, or proposes through `suggestion.create`; none writes anything else.
     spec = SPECS["workpapers.section_drafter"]
-    assert spec.get("tools", []) == []
+    tools = registered_tools()
+    listed = spec.get("tools", [])
+    assert isinstance(listed, list)
+    for name in [str(t) for t in cast("list[object]", listed)]:
+        found = tools[name]
+        assert found.kind in {"read", "compute", "propose"}, name
+        if found.kind == "propose":
+            assert found.action == "suggestion.create", name
     modes = spec["modes"]
     assert isinstance(modes, dict)
     names: set[str] = {str(k) for k in modes}  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]  # a test double or a private name the test pins
@@ -108,6 +119,10 @@ NOT_A_RELATED_PARTY = frozenset(
         # opened for their own pages; neither is a related party's name.
         "modules/assurance/confirmations_service.py",
         "modules/tax/estate_service.py",
+        # S47 (A-08-T16/T17): the confirmation lifecycle and the respondent page open the same
+        # respondent's name; neither is a related party's.
+        "modules/assurance/confirmations_lifecycle.py",
+        "modules/assurance/confirmations_respondent.py",
     }
 )
 

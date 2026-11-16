@@ -1,8 +1,8 @@
 ---
 id: TASK-8302
 title: "C-01-T21: Accounts and schedules service"
-spec: docs/plan/epics/C-01.md §3 F6
-acceptance_criteria: [C-01-T21]
+spec: SPEC-655
+acceptance_criteria: [AC-35, AC-36, AC-37, AC-38]
 risk_zone: amber
 status: in-review
 branch: c01-t21-accounts-schedules
@@ -13,6 +13,7 @@ plan_key: C-01-T21
 ---
 
 ## Objective
+Spec section: docs/plan/epics/C-01.md §3 F6.
 Accounts and schedules service.
 
 ## Plan (amber)

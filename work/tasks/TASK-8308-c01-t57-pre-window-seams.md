@@ -1,8 +1,8 @@
 ---
 id: TASK-8308
 title: "C-01-T57: Pre-window live-path seams behind default-off flags"
-spec: docs/plan/epics/C-01.md §4.7
-acceptance_criteria: [C-01-T57]
+spec: SPEC-655
+acceptance_criteria: [AC-52]
 risk_zone: green
 status: in-review
 branch: c01-t57-pre-window-seams
@@ -13,6 +13,7 @@ plan_key: C-01-T57
 ---
 
 ## Objective
+Spec section: docs/plan/epics/C-01.md §4.7.
 Pre-window live-path seams behind default-off flags.
 
 ## Plan (green)

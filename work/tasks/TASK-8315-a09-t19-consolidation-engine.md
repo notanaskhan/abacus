@@ -1,8 +1,8 @@
 ---
 id: TASK-8315
 title: "A-09-T19: Consolidation compute engine ledger/compute/consolidation.py (pure)"
-spec: docs/specs/SPEC-658 F3
-acceptance_criteria: [A-09-T19]
+spec: SPEC-658
+acceptance_criteria: [AC-4]
 risk_zone: red
 status: in-review
 branch: a09-t19-consolidation-engine
@@ -13,6 +13,7 @@ plan_key: A-09-T19
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-658 F3.
 Consolidation compute engine ledger/compute/consolidation.py (pure).
 
 ## Plan (red)

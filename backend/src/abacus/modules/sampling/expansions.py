@@ -271,7 +271,7 @@ async def request_expansion(
     return await _view(ctx.tenant, made)
 
 
-async def decide(
+async def record_decision(
     ctx: AuthContext, expansion_id: UUID, decision: str, seen_hash: str
 ) -> ExpansionView:
     """The named approver approves (a new version appended) or rejects."""

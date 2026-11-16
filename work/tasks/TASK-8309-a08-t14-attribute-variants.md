@@ -1,8 +1,8 @@
 ---
 id: TASK-8309
 title: "A-08-T14: Attribute testing variants je_testing, test_of_details and test_of_controls on A-05's shared grid"
-spec: docs/plan/epics/A-08.md §3 F2
-acceptance_criteria: [A-08-T14]
+spec: SPEC-657
+acceptance_criteria: [AC-2]
 risk_zone: amber
 status: in-review
 branch: a08-t14-attribute-variants
@@ -13,6 +13,7 @@ plan_key: A-08-T14
 ---
 
 ## Objective
+Spec section: docs/plan/epics/A-08.md §3 F2.
 Attribute testing variants je_testing, test_of_details and test_of_controls on A-05's shared grid.
 
 ## Plan (amber)

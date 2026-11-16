@@ -1,8 +1,8 @@
 ---
 id: TASK-8327
 title: "T-07-T28: ADR-078 independent AC tests for N's T11, T13, T19 and T24 plus K-1 recipient isolation"
-spec: docs/plan/epics/T-07.md §9
-acceptance_criteria: [T-07-T28]
+spec: SPEC-656
+acceptance_criteria: [AC-9]
 risk_zone: red
 status: in-review
 branch: t07-t28-k1-isolation-ac
@@ -13,6 +13,7 @@ plan_key: T-07-T28
 ---
 
 ## Objective
+Spec section: docs/plan/epics/T-07.md §9.
 ADR-078 independent AC tests for N's T11, T13, T19 and T24 plus K-1 recipient isolation.
 
 ## Plan (red)

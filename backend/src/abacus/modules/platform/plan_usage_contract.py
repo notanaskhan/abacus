@@ -38,7 +38,7 @@ Confidential = classified("confidential")
 Minutes = Annotated[int, Field(ge=0), Internal]
 ModuleKey = Literal[
     # G-04-T04 (OQ-6): the four service lines, recorded and shown, not enforced in 2028.
-    "tax",
+    "tax_services",
     "audit_assurance",
     "client_accounting",
     "advisory",

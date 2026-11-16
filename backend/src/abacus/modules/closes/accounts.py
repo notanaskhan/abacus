@@ -2,7 +2,7 @@
 
 - **The tree** (`account_tree`): the close month's ledger (C9 v2.1, `ledger.account_tree`) as
   classification, then account type, then account; balances roll up in code (`compute.schedules
-  .rollup`) and contra balances render in parentheses on the screen. Each account carries its
+  .subtotals`) and contra balances render in parentheses on the screen. Each account carries its
   reconciliation word: a bank account its newest reconciliation's tally, a scheduled account its
   schedule's tie. Zero balances hide unless asked.
 - **The register** (`register`): the month's rows, 200 a page, each citable as a `ledger_line`.
@@ -275,7 +275,7 @@ async def account_tree(
                 off_by=off if word in ("off", "ties_once_posted") else None,
             )
         )
-    sums = calc.rollup(leaves)
+    sums = calc.subtotals(leaves)
     nodes: list[AccountNodeOut] = []
     for classification in _ORDER:
         types = by_class.get(classification)
@@ -592,18 +592,23 @@ async def _keep(
 ) -> None:
     """One result row per arrangement when its inputs or tie changed (a recompute that changes
     nothing writes nothing)."""
-    async with uow(ctx.tenant) as tx:
+    changed: list[tuple[_Version, str]] = []
+    async with tenant_session(ctx.tenant) as session:
         for v in versions:
-            arrangement = _arrangement(v)
-            digest = calc.inputs_hash(arrangement, close.period, gl)
+            digest = calc.inputs_hash(_arrangement(v), close.period, gl)
             last = (
-                await tx.session.execute(
+                await session.execute(
                     _LAST_RESULT,
                     {"c": close.work_item_id, "a": v.arrangement_id, "p": close.period},
                 )
             ).first()
-            if last is not None and last[0] == result.tie and last[3] == digest:
-                continue
+            if last is None or last[0] != result.tie or last[3] != digest:
+                changed.append((v, digest))
+    if not changed:
+        return
+    async with uow(ctx.tenant) as tx:
+        for v, digest in changed:
+            arrangement = _arrangement(v)
             line = calc.schedule(arrangement, close.period)[-1]
             # A multi-arrangement account ties as one; each row keeps its own ending balance, so a
             # row reads `tie` only when its own balance is the GL's (the table's CHECK).
@@ -626,6 +631,11 @@ async def _keep(
                     "h": digest,
                 },
             )
+        tx.record(
+            "arrangement.result_recorded",
+            target=Target("close", close.work_item_id),
+            after=Ref(n=len(changed)),
+        )
 
 
 async def workpaper_xlsx(ctx: AuthContext, close_id: UUID, account_ref: str) -> bytes:

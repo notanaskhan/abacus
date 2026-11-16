@@ -1,8 +1,8 @@
 ---
 id: TASK-8316
 title: "A-09-T18: Connection coverage and OneWorld paths"
-spec: docs/specs/SPEC-658 F2
-acceptance_criteria: [A-09-T18]
+spec: SPEC-658
+acceptance_criteria: [AC-2]
 risk_zone: red
 status: in-review
 branch: a09-t18-coverage-oneworld
@@ -13,6 +13,7 @@ plan_key: A-09-T18
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-658 F2.
 Connection coverage and OneWorld paths.
 
 ## Plan (red)

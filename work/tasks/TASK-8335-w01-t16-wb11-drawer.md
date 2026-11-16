@@ -1,8 +1,8 @@
 ---
 id: TASK-8335
 title: "W-01-T16: WB-11 drawer in fixture mode"
-spec: handoff WB-11
-acceptance_criteria: [W-01-T16]
+spec: SPEC-659
+acceptance_criteria: [AC-20, AC-23, AC-24, AC-25, AC-26]
 risk_zone: green
 status: in-review
 branch: w01-t16-wb11-drawer
@@ -13,6 +13,7 @@ plan_key: W-01-T16
 ---
 
 ## Objective
+Spec section: handoff WB-11.
 WB-11 drawer in fixture mode.
 
 ## Plan (green)

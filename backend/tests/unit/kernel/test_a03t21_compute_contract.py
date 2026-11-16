@@ -36,6 +36,7 @@ def test_ac6_the_contract_covers_both_compute_packages_and_forbids_everything_el
         "abacus.modules.notices.compute",  # N-04-T04: the notice engines (DEC-2053)
         "abacus.modules.tax.compute",  # T-03-T04: the payments engine (DEC-2203)
         "abacus.modules.workpapers.compute",  # T-05-T07: the E13 formula engine (ADR-237)
+        "abacus.modules.closes.compute",  # C-01-T22: the bank reconciliation engine (S47)
     }
     forbidden = set(contract["forbidden_modules"])
     assert {"abacus.kernel", "abacus.modules", "abacus_tools", "abacus.ai_gateway"} <= forbidden

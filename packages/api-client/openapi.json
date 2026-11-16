@@ -42692,7 +42692,7 @@
               {
                 "items": {
                   "enum": [
-                    "tax",
+                    "tax_services",
                     "audit_assurance",
                     "client_accounting",
                     "advisory",
@@ -53345,7 +53345,7 @@
             "cls": "internal",
             "items": {
               "enum": [
-                "tax",
+                "tax_services",
                 "audit_assurance",
                 "client_accounting",
                 "advisory",
@@ -71515,6 +71515,49 @@
         "title": "LeadsheetsOut",
         "type": "object"
       },
+      "LedgerCoverageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "client_entity_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Client Entity Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "client_entity_ids"
+        ],
+        "title": "LedgerCoverageIn",
+        "type": "object"
+      },
+      "LedgerCoverageOut": {
+        "properties": {
+          "added": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Added",
+            "type": "integer"
+          },
+          "connection_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connection_id",
+          "added"
+        ],
+        "title": "LedgerCoverageOut",
+        "type": "object"
+      },
       "LedgerPullIn": {
         "additionalProperties": false,
         "properties": {
@@ -85914,7 +85957,7 @@
             "default": [],
             "items": {
               "enum": [
-                "tax",
+                "tax_services",
                 "audit_assurance",
                 "client_accounting",
                 "advisory",
@@ -86070,7 +86113,7 @@
             "cls": "internal",
             "items": {
               "enum": [
-                "tax",
+                "tax_services",
                 "audit_assurance",
                 "client_accounting",
                 "advisory",
@@ -87192,7 +87235,7 @@
             "cls": "internal",
             "items": {
               "enum": [
-                "tax",
+                "tax_services",
                 "audit_assurance",
                 "client_accounting",
                 "advisory",
@@ -94125,7 +94168,7 @@
             "cls": "internal",
             "items": {
               "enum": [
-                "tax",
+                "tax_services",
                 "audit_assurance",
                 "client_accounting",
                 "advisory",
@@ -128224,7 +128267,7 @@
             "cls": "internal",
             "items": {
               "enum": [
-                "tax",
+                "tax_services",
                 "audit_assurance",
                 "client_accounting",
                 "advisory",
@@ -185308,6 +185351,38 @@
               "title": "Token",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-CSRF",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Csrf"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "__Host-abacus-link",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Host-Abacus-Link"
+            }
           }
         ],
         "requestBody": {
@@ -186745,7 +186820,7 @@
     },
     "/v1/confirmations/{confirmation_id}/second-request": {
       "post": {
-        "description": "A new link (the first revoked) and the second-request email.",
+        "description": "The second request (once, while unanswered).",
         "operationId": "second_request",
         "parameters": [
           {
@@ -187558,6 +187633,132 @@
           "connection"
         ],
         "x-abacus-action": "pre_session"
+      }
+    },
+    "/v1/connections/{connection_id}/coverage": {
+      "put": {
+        "operationId": "choose_coverage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Connection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LedgerCoverageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerCoverageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Choose Coverage",
+        "tags": [
+          "connections"
+        ],
+        "x-abacus-action": "connection.manage_coverage"
       }
     },
     "/v1/connections/{connection_id}/reconnect-requests": {

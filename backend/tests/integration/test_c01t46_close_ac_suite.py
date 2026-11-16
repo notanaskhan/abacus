@@ -23,7 +23,7 @@ import pytest
 
 from abacus.kernel.db import configure_engine, dispose_engine
 from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.kernel.uow import uow
+from abacus.kernel.uow import Target, uow
 from abacus.modules.closes import plans, runs
 from abacus.modules.closes import service as closes_service
 from abacus.modules.closes.contract import PublishIn, StartRunIn, StatusMoveIn
@@ -107,20 +107,46 @@ async def test_ac18_a_pinned_close_never_changes_plan_version(firm: _Firm) -> No
     august, client, entity = await _close(firm, ["10", "11"])
     async with uow(firm.ctx().tenant) as tx:
         pinned = await plans.pin_plan(tx.session, august)
+        tx.record("close.plan_pinned", target=Target("close", august))
     assert pinned is not None
-    v2 = await firm.plan(entity, ["10", "11", "12"], publish=False)
-    await firm.seed.run(  # the fixture numbers every draft 1
-        "UPDATE close_plan_versions SET version = 2 WHERE id = $1", v2
+    # Version 2 of the entity's one plan, with a third row, published for the close's own month.
+    v2 = await firm.seed.value(
+        "INSERT INTO close_plan_versions (tenant_id, plan_id, version, drafted_by) "
+        "SELECT tenant_id, plan_id, 2, $2 FROM close_plan_versions WHERE id = $1 RETURNING id",
+        pinned,
+        firm.partner,
     )
-    await firm.publish(v2)
+    for position, account in enumerate(["10", "11", "12"]):
+        await firm.seed.run(
+            "INSERT INTO close_plan_rows (tenant_id, version_id, position, "
+            "account_external_id, account_name, account_class, procedure, method, source, "
+            "review_level) VALUES ($1, $2, $3, $4, $5, 'Bank', 'reconciliation', "
+            "'Bank statement → GL', 'bank_feed', 'senior_signoff')",
+            firm.tenant,
+            v2,
+            position,
+            account,
+            f"Account {account}",
+        )
+    await firm.seed.run(
+        "UPDATE close_plan_versions SET status = 'published', effective_from = '2026-08', "
+        "published_by = $2, published_actor_kind = 'human', published_at = now() WHERE id = $1",
+        v2,
+        firm.partner,
+    )
     after = await firm.seed.value(
         "SELECT close_plan_version_id FROM closes WHERE work_item_id = $1", august
     )
     assert after == pinned
     async with uow(firm.ctx().tenant) as tx:
         again = await plans.pin_plan(tx.session, august)
-    assert again == pinned
-    del client
+        tx.record("close.plan_pinned", target=Target("close", august))
+    assert again is None  # already pinned: the pin is once (C-01-T19)
+    still = await firm.seed.value(
+        "SELECT close_plan_version_id FROM closes WHERE work_item_id = $1", august
+    )
+    assert still == pinned
+    del client, entity
 
 
 async def test_ac13_twelve_closes_and_a_thirteenth_is_refused(firm: _Firm) -> None:
@@ -133,11 +159,18 @@ async def test_ac13_twelve_closes_and_a_thirteenth_is_refused(firm: _Firm) -> No
 
 async def test_ac9_in_review_below_n_of_n_names_the_account(firm: _Firm) -> None:
     august, _, _ = await _close(firm, ["10", "11"])
+    async with uow(firm.ctx().tenant) as tx:  # a run started the close (In progress)
+        assert await closes_service.start_close(tx, august)
     await firm.reconcile(august, "10")
     with pytest.raises(DomainConflict) as refused:
         await closes_service.move_status(firm.ctx(), august, StatusMoveIn(to="in_review"), "1")
     assert refused.value.code == "accounts_not_reconciled"
-    assert "11" in str(refused.value.facts)
+    # Facts carry identifiers only: the plan row of the account not tied (CLS-02 names it).
+    named = await firm.seed.value(
+        "SELECT account_external_id FROM close_plan_rows WHERE id = $1",
+        uuid.UUID(str(refused.value.facts["plan_row_id"])),
+    )
+    assert named == "11"
 
 
 async def test_inv3_a_close_outside_the_team_is_404_and_never_counted(firm: _Firm) -> None:
@@ -152,7 +185,9 @@ async def test_inv3_a_close_outside_the_team_is_404_and_never_counted(firm: _Fir
     assert total == len(portfolio.items) == 0
 
 
-@pytest.mark.xfail(strict=True, reason="C-01-T19: the intake summary VM still answers 501")
+@pytest.mark.xfail(
+    strict=True, reason="TASK-8107 (C-01-T19): the intake summary VM still answers 501"
+)
 async def test_ac24_the_intake_summary_is_code_totals_with_sheet_cell_citations() -> None:
     from abacus.modules.closes import intake
 

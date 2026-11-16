@@ -167,6 +167,7 @@ AUDIT_SECTION: dict[str, str | int] = {
 # S46: A-08-T12 (0895) JE testing.
 TABLES: frozenset[str] = _TABLES | frozenset(
     {"je_posting_user_roles", "je_score_runs", "je_scores", "je_test_criteria", "je_tests"}
+    | {"sample_expansions"}  # 0931 (A-08-T17, DEC-5307)
 )
 INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
     {"je_posting_user_roles", "je_score_runs", "je_scores", "je_test_criteria"}
@@ -245,7 +246,6 @@ UPDATE_COLUMNS["je_tests"] = frozenset(
 
 # 0931 (A-08-T17, DEC-5307): sample expansions; a request's terms are fixed, its decision columns
 # are the only updates.
-TABLES = TABLES | frozenset({"sample_expansions"})
 INSERT_COLUMNS["sample_expansions"] = frozenset(
     {"tenant_id", "engagement_id", "work_item_id", "sample_set_id", "base_version_id"}
     | {"base_count", "add_by_score", "add_unpredictable", "add_item_keys", "rationale"}

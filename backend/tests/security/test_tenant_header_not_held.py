@@ -29,6 +29,7 @@ from abacus.modules.identity.api import (
     SELF,
     STAFF,
 )
+from abacus.modules.identity.routing import staff_action
 from abacus_tools.codegen.security_tests import served
 
 from .support import Net, Seeder
@@ -53,7 +54,15 @@ _PER_REQUEST: Final = frozenset({"date", "x-request-id", "traceparent", "server-
 
 
 def _firm_routes() -> list[tuple[str, str]]:
-    return sorted({(m, p) for m, p, action in _ROUTES if action not in _NO_TENANT})
+    # G-04-T02: a console action only platform staff hold is a staff route (the staff issuer,
+    # no firm header), as `STAFF` is.
+    return sorted(
+        {
+            (m, p)
+            for m, p, action in _ROUTES
+            if action not in _NO_TENANT and not staff_action(action)
+        }
+    )
 
 
 def _fill(path: str) -> str:

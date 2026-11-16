@@ -288,7 +288,7 @@ register_audit_resolvers()
 # G-02-T14 (AC-30): the posture's open incidents are the register's.
 # G-04-T05 (SPEC-681 AC-23): a tenant holding a tax module counts as holding TRI, the
 # conservative proxy; a content support session on it needs a US-located staff member.
-_TRI_MODULES: tuple[Module, ...] = ("tax", "tax_returns", "tax_entity_returns")
+_TRI_MODULES: tuple[Module, ...] = ("tax_services", "tax_returns", "tax_entity_returns")
 
 
 async def _holds_tri(tenant: TenantContext) -> bool:

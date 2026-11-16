@@ -63,7 +63,7 @@ def _tb(prepaid: str, insurance: str) -> NormalisedTrialBalance:
 
 def _je() -> list[MonthRegisterLine]:
     """JE 48214: Dr Insurance 700 / Cr Prepaid Insurance 700, as QuickBooks lists it."""
-    on, memo, je = date(2026, 9, 3), "August amortization", "Journal Entry"
+    on, memo, je = date(2026, 8, 31), "August amortization", "Journal Entry"  # dated in month
     return [
         MonthRegisterLine("je1", "66", "48214", on, je, "AJE-02", None, memo, "41", D(700)),
         MonthRegisterLine("je2", "41", "48214", on, je, "AJE-02", None, memo, "66", D(-700)),

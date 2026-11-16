@@ -1,8 +1,8 @@
 ---
 id: TASK-8334
 title: "W-01-T15: WB-11 detail projection"
-spec: docs/plan/epics/W-01.md F6
-acceptance_criteria: [W-01-T15]
+spec: SPEC-659
+acceptance_criteria: [AC-20, AC-21, AC-22]
 risk_zone: red
 status: in-review
 branch: w01-t15-wb11-projection
@@ -13,6 +13,7 @@ plan_key: W-01-T15
 ---
 
 ## Objective
+Spec section: docs/plan/epics/W-01.md F6.
 WB-11 detail projection.
 
 ## Plan (red)

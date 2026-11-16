@@ -22,7 +22,7 @@ from decimal import Decimal
 from typing import Annotated, Final
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Request, Response
+from fastapi import Cookie, Depends, Header, Path, Response
 from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel._flags import AUDITS_CONFIRMATIONS
@@ -526,7 +526,10 @@ def _receipt(view: RespondentViewOut, body: RespondentResponseIn) -> RespondentR
     errors=(409, 501),
 )
 async def submit_response(
-    token: Token, body: RespondentResponseIn, request: Request
+    token: Token,
+    body: RespondentResponseIn,
+    credential: Annotated[str | None, Cookie(alias=LINK_COOKIE_NAME)] = None,
+    csrf: Annotated[str | None, Header(alias="X-Abacus-CSRF")] = None,
 ) -> RespondentReceiptOut:
     """`confirmation.respond` (email verified): the one answer; 409 `already_answered` on a
     replay. The stub computes the fixture receipt and writes nothing; any other token answers
@@ -544,10 +547,16 @@ async def submit_response(
     from abacus.modules.assurance import confirmations_respondent as respondent
     from abacus.modules.identity.api import credential_principal
 
-    principal = await credential_principal(
-        request.cookies.get(LINK_COOKIE_NAME), request.headers.get("X-Abacus-CSRF")
-    )
-    if principal is None or principal.purpose != LINK_PURPOSE:
+    principal = await credential_principal(credential, csrf)
+    # S47 end-pass security review: the page's link and its credential name one principal; a
+    # credential from another confirmation's page never answers through this link.
+    linked = await resolve_link(token) if principal is not None else None
+    if (
+        principal is None
+        or principal.purpose != LINK_PURPOSE
+        or linked is None
+        or linked.principal_id != principal.principal_id
+    ):
         await _pad(started)
         raise NotFound("confirmation")
     try:

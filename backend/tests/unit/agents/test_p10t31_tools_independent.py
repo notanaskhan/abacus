@@ -76,6 +76,10 @@ ELSEWHERE: dict[str, dict[str, object]] = {
     "ledger.tie_out": {
         "client_entity_id": GRANITE_ENTITY, "account_codes": ["1000"], "expected": "10.00",
     },
+    # A-08-T23 (DEC-5310): one account's month by counterparty, scoped by its entity.
+    "ledger.counterparty_activity": {
+        "client_entity_id": GRANITE_ENTITY, "period": "2026-06", "account_external_id": "1010",
+    },
 }  # fmt: skip
 
 
@@ -161,6 +165,20 @@ INDIRECT: dict[str, str] = {
     "workpapers.read_section": "the paper's own engagement, refused outside the run's (404)",
     # W-02-T19 (DEC-4930): firm structure, no client data; `org_structure.list` gates it.
     "identity.list_offices": "the firm's office names only, no client scope to leave",
+    # C-01-T28 (DEC-5303): each close tool names a close and reads 404 unless the close sits on
+    # the run's engagement; the AJE draft is a suggestion on that engagement.
+    "close.read_checklist": "the close on the run's engagement, else 404",
+    "close.reconcile": "the close on the run's engagement, else 404",
+    "close.read_upload_table": "the close on the run's engagement, else 404",
+    "close.read_register": "the close on the run's engagement, else 404",
+    "close.propose_aje": "a suggestion on the close's item, on the run's engagement",
+    "close.plan_history_profile": "the close on the run's engagement, else 404",
+    # A-08-T23 (DEC-5310): records checked against the run's engagement before anything is read.
+    "sampling.read_selected_entry": "the sample set's engagement must be the run's, else 404",
+    "assurance.propose_explanation": "the work item's engagement must be the run's, else 404",
+    "assurance.propose_reconciliation": (
+        "the confirmation's engagement must be the run's, else 404"
+    ),
 }
 
 

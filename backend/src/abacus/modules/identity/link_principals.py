@@ -131,6 +131,19 @@ async def mint_link(
     return token
 
 
+async def live_principal(tx: UnitOfWork, purpose: str, subject_id: UUID) -> UUID | None:
+    """The subject's newest unrevoked link principal for the purpose, in the caller's unit of
+    work (A-08-T16: a confirmation's link row names the principal it minted)."""
+    found = await tx.session.scalar(
+        text(
+            "SELECT id FROM link_principals WHERE purpose = :p AND subject_id = :s "
+            "AND revoked_at IS NULL ORDER BY created_at DESC LIMIT 1"
+        ),
+        {"p": purpose, "s": subject_id},
+    )
+    return cast(UUID | None, found)
+
+
 async def revoke_link(tx: UnitOfWork, principal_id: UUID) -> None:
     await tx.session.execute(
         text(

@@ -1,8 +1,8 @@
 ---
 id: TASK-8331
 title: "W-01-T13: Integration health monitor"
-spec: docs/plan/epics/W-01.md F4
-acceptance_criteria: [W-01-T13]
+spec: SPEC-659
+acceptance_criteria: [AC-27, AC-28]
 risk_zone: red
 status: in-review
 branch: w01-t13-health-monitor
@@ -13,6 +13,7 @@ plan_key: W-01-T13
 ---
 
 ## Objective
+Spec section: docs/plan/epics/W-01.md F4.
 Integration health monitor.
 
 ## Plan (red)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 from decimal import Decimal as D
 from pathlib import Path
 
@@ -23,7 +24,7 @@ NAMES = {
 
 
 def test_ac_the_registry_check_passes_and_every_tool_is_registered() -> None:
-    import abacus.modules.agents.api  # noqa: F401 -- registers the catalogue
+    importlib.import_module("abacus.modules.agents.api")  # registers the catalogue
 
     assert {d.name for d in tools.AGENT_TOOLS} == set(NAMES)
     for decl in tools.AGENT_TOOLS:

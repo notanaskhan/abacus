@@ -34,7 +34,7 @@ Module = Literal[
     # `cas_closes`, not `closes`, so the `closes.*` rollout flags stay legal (DEC-5015).
     "cas_closes",
     # G-04-T04 (0920, OQ-6): the four service lines, recorded and shown, not enforced in 2028.
-    "tax",
+    "tax_services",  # not `tax`, so the `tax.*` rollout flags stay legal (as `cas_closes`)
     "audit_assurance",
     "client_accounting",
     "advisory",

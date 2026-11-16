@@ -1,8 +1,8 @@
 ---
 id: TASK-8320
 title: "A-09-T22: AUD-35 Component auditors a-g in fixture mode"
-spec: handoff AUD-35 spec.md
-acceptance_criteria: [A-09-T22]
+spec: SPEC-658
+acceptance_criteria: [AC-0]
 risk_zone: green
 status: in-review
 branch: a09-t22-aud35-fixtures
@@ -13,6 +13,7 @@ plan_key: A-09-T22
 ---
 
 ## Objective
+Spec section: handoff AUD-35 spec.md.
 AUD-35 Component auditors a-g in fixture mode.
 
 ## Plan (green)

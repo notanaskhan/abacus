@@ -1,8 +1,8 @@
 ---
 id: TASK-8329
 title: "T-07-T31: Parity and accessibility report for TXT-01 to TXT-04"
-spec: docs/plan/epics/T-07.md §5.5, §5.6
-acceptance_criteria: [T-07-T31]
+spec: SPEC-656
+acceptance_criteria: [AC-0]
 risk_zone: green
 status: in-review
 branch: t07-t31-parity-report
@@ -13,6 +13,7 @@ plan_key: T-07-T31
 ---
 
 ## Objective
+Spec section: docs/plan/epics/T-07.md §5.5, §5.6.
 Parity and accessibility report for TXT-01 to TXT-04.
 
 ## Plan (green)

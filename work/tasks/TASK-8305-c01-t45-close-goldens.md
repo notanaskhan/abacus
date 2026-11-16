@@ -1,8 +1,8 @@
 ---
 id: TASK-8305
 title: "C-01-T45: Golden fixtures and Hypothesis properties for the reconciliation engine, schedules and rollups"
-spec: docs/plan/epics/C-01.md §6
-acceptance_criteria: [C-01-T45]
+spec: SPEC-655
+acceptance_criteria: [AC-35, AC-37, AC-39, AC-48]
 risk_zone: amber
 status: in-review
 branch: c01-t45-close-goldens
@@ -13,6 +13,7 @@ plan_key: C-01-T45
 ---
 
 ## Objective
+Spec section: docs/plan/epics/C-01.md §6.
 Golden fixtures and Hypothesis properties for the reconciliation engine, schedules and rollups.
 
 ## Plan (amber)

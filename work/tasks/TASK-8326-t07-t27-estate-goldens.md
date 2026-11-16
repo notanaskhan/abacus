@@ -1,8 +1,8 @@
 ---
 id: TASK-8326
 title: "T-07-T27: ADR-078 independent AC tests and estate goldens for T22 and T23"
-spec: docs/plan/epics/T-07.md F12, F13
-acceptance_criteria: [T-07-T27]
+spec: SPEC-656
+acceptance_criteria: [AC-12, AC-13]
 risk_zone: amber
 status: in-review
 branch: t07-t27-estate-goldens
@@ -13,6 +13,7 @@ plan_key: T-07-T27
 ---
 
 ## Objective
+Spec section: docs/plan/epics/T-07.md F12, F13.
 ADR-078 independent AC tests and estate goldens for T22 and T23.
 
 ## Plan (amber)

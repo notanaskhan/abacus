@@ -35,19 +35,21 @@ ROLE: Final = "component_auditor"
 KIND: Final = "component"
 SMALL_CENTS: Final = 100 * 100
 _AMOUNT: Final = re.compile(r"(?<![\w.])\$?\s?(\d{1,3}(?:,\d{3})+|\d+)(\.\d{1,2})?\b")
-_FACTS: Final = text(
-    "SELECT c.engagement_id, e.client_id FROM components c JOIN engagements e "
-    "ON e.id = c.engagement_id WHERE c.id = :c"
-)
+_FACTS: Final = text("SELECT engagement_id FROM components WHERE id = :c")
 
 
 async def component_scope(tenant: TenantContext, component_id: UUID) -> ScopeFacts | None:
     async with tenant_session(tenant) as session:
-        row = (await session.execute(_FACTS, {"c": component_id})).first()
-    if row is None:
+        engagement = await session.scalar(_FACTS, {"c": component_id})
+    if engagement is None:
+        return None
+    from abacus.modules.engagements.api import client_of
+
+    client = await client_of(tenant, engagement)
+    if client is None:
         return None
     # The component's own id as the work item: nothing but the room's own routes matches it.
-    return ScopeFacts(client_id=row[1], engagement_id=None, work_item_id=component_id)
+    return ScopeFacts(client_id=client, engagement_id=None, work_item_id=component_id)
 
 
 async def component_ids(ctx: AuthContext) -> frozenset[UUID]:

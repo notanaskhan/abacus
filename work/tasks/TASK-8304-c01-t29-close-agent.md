@@ -1,8 +1,8 @@
 ---
 id: TASK-8304
 title: "C-01-T29: Capability close.agent v1 (red)"
-spec: docs/plan/epics/C-01.md §5
-acceptance_criteria: [C-01-T29]
+spec: SPEC-655
+acceptance_criteria: [AC-21, AC-49, AC-50]
 risk_zone: red
 status: in-review
 branch: c01-t29-close-agent
@@ -13,6 +13,7 @@ plan_key: C-01-T29
 ---
 
 ## Objective
+Spec section: docs/plan/epics/C-01.md §5.
 Capability close.agent v1 (red).
 
 ## Plan (red)

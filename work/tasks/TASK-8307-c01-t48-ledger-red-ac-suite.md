@@ -1,8 +1,8 @@
 ---
 id: TASK-8307
 title: "C-01-T48: Independent AC tests (ADR-078) for the red CAS ledger work"
-spec: docs/specs/SPEC-655-c01-close-engine-v1.md §4 F5
-acceptance_criteria: [C-01-T48]
+spec: SPEC-655
+acceptance_criteria: [AC-32, AC-33, AC-34]
 risk_zone: red
 status: in-review
 branch: c01-t48-ledger-red-ac-suite
@@ -13,6 +13,7 @@ plan_key: C-01-T48
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-655-c01-close-engine-v1.md §4 F5.
 Independent AC tests (ADR-078) for the red CAS ledger work.
 
 ## Plan (red)

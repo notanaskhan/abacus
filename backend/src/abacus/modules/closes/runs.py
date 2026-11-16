@@ -46,9 +46,11 @@ from abacus.modules.closes.run_plan import (
     step_key,
     work_item_ref,
 )
-from abacus.modules.closes.service import start_close, visible_close
-from abacus.modules.identity.api import AuthContext, names_of
+from abacus.modules.closes.service import refuse_non_human, start_close, visible_close
+from abacus.modules.engagements.api import get_ref
+from abacus.modules.identity.api import AuthContext, authorise, names_of
 
+START: Final = "close_run.start"
 _STEP_STATUS: Final = {
     "queued": "queued",
     "running": "running",
@@ -82,7 +84,11 @@ def _keys(body: StartRunIn) -> tuple[str, ...]:
 
 
 async def start_run(ctx: AuthContext, close_id: UUID, body: StartRunIn) -> StartRunOut:
+    # AC-28, INV-1 (S47 end pass): only a live human with `close_run.start` starts a run, checked
+    # before the pin or the status change is written.
+    await refuse_non_human(ctx, close_id, START)
     close = await visible_close(ctx, close_id)
+    await authorise(ctx, START, (await get_ref(ctx, close.engagement_id)).resource())
     ref = work_item_ref(close_id)
     if any(r.active for r in await work_item_runs(ctx.tenant, ref, 5)):
         raise CloseRunInProgress(facts={"close": "run_open"})

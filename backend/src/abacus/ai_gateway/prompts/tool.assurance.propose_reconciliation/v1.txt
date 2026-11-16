@@ -1,0 +1,1 @@
+Propose the reconciling items between a confirmation's reply and the ledger, each with its amount and citations. Creates a suggestion for a person to accept or reject; you never reconcile or conclude on the confirmation.

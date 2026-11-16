@@ -92,6 +92,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "control_deviation.logged",
         # reviewed 2026-11-16 (S47): C-01-T21 arrangements, reclasses, recordings, identifiers only
         "arrangement.created",
+        "arrangement.result_recorded",  # S47 end pass: a schedule tie recomputed (TASK-8337)
         "arrangement.updated",
         "close_entry.recorded_matched",
         "recategorization.proposed",

@@ -17,6 +17,7 @@ DEC-5306; amber).
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -25,7 +26,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
@@ -43,6 +44,31 @@ VARIANT_OF: Final[dict[TestKind, grid.Variant]] = {
 }
 DEFAULT_CONFIDENCE: Final = Decimal("0.90")
 DEVIATION: Final = "control_deviation"
+# A finding raised from a deviation is recorded by assurance, which registers this at its api
+# import (workpapers never imports assurance, ADR-008): (ctx, work item, workpaper, title,
+# control deficiency or misstatement, the difference) -> the finding's id.
+FindingRaiser = Callable[
+    [AuthContext, UUID, UUID, str, Literal["control_deficiency", "misstatement"], Decimal | None],
+    Awaitable[UUID],
+]
+_raisers: list[FindingRaiser] = []
+_COUNTS: Final = text(
+    "SELECT count(DISTINCT sample_item_id) FILTER (WHERE kind <> 'difference'), count(*) "
+    "FROM control_deviations WHERE work_item_id = :w"
+)
+
+
+def register_finding_raiser(raiser: FindingRaiser) -> None:
+    _raisers[:] = [raiser]
+
+
+async def deviation_counts(tenant: TenantContext, work_item_id: UUID) -> tuple[int, int]:
+    """(items with a deviation or exception, every logged row) on the work item's tests."""
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_COUNTS, {"w": work_item_id})).first()
+    return (int(row[0] or 0), int(row[1] or 0)) if row else (0, 0)
+
+
 MARK: Final = "attribute_test.mark"
 
 
@@ -196,21 +222,16 @@ async def log_deviation(
     if raise_finding:
         if kind == "difference":
             raise DeviationInvalid(facts={"field": "below_clearly_trivial"})
-        from abacus.modules.assurance.api import NewFinding, record_finding
-
-        finding = await record_finding(
+        if not _raisers:
+            raise RuntimeError("no finding raiser registered (assurance.api)")
+        finding_id = await _raisers[0](
             ctx,
             cast(UUID, row["work_item_id"]),
-            NewFinding(
-                workpaper_id=cast(UUID, row["workpaper_id"]),
-                title=(finding_title or description)[:200],
-                kind="control_deficiency" if kind == "deviation" else "misstatement",
-                coso_component=None,
-                citation_ids=(),
-                figures=() if difference is None else (Decimal(difference),),
-            ),
+            cast(UUID, row["workpaper_id"]),
+            (finding_title or description)[:200],
+            "control_deficiency" if kind == "deviation" else "misstatement",
+            None if difference is None else Decimal(difference),
         )
-        finding_id = finding.id
     async with uow(ctx.tenant) as tx:
         made = cast(
             UUID,

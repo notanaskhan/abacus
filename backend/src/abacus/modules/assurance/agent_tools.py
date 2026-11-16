@@ -184,3 +184,45 @@ class ReconcilingItemIn(BaseModel):
 
 
 ReconciliationProposalIn.model_rebuild()
+
+
+# --- A-08-T23: sampling.read_selected_entry (je_testing's selected entry) ----------------------
+# Declared here, over sampling's read (`sampling.api.selected_entry`): sampling never imports
+# agents (ADR-008). The key and the display come from the client's ledger: untrusted.
+class SelectedEntryIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    sample_set_version_id: Annotated[UUID, Int]
+    position: Annotated[int, Field(ge=1, le=10_000), Int]
+
+
+class SelectedEntryOut(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: Annotated[str, Int]  # `<version>:<position>`
+    position: Annotated[int, Int]
+    record_key: Annotated[str, Conf]
+    selection_reason: Annotated[str, Int]
+    amount: Annotated[Decimal | None, Conf] = None
+    score: Annotated[str | None, Int] = None
+
+
+@agent_tool(
+    name="sampling.read_selected_entry", kind="read", action="sample_set.read",
+    data_class="confidential", input_model=SelectedEntryIn, output_model=SelectedEntryOut,
+    untrusted=("record_key",), records_read="sample_item",
+)  # fmt: skip
+async def read_selected_entry(agent: AgentContext, args: SelectedEntryIn) -> SelectedEntryOut:
+    from abacus.modules.sampling.api import selected_entry
+
+    found = await selected_entry(agent.tenant, args.sample_set_version_id, args.position)
+    if found is None or found.engagement_id != agent.engagement_id:
+        raise NotFound("sample_item")
+    return SelectedEntryOut(
+        id=f"{args.sample_set_version_id}:{found.position}",
+        position=found.position,
+        record_key=found.record_key,
+        selection_reason=found.selection_reason,
+        amount=found.amount,
+        score=found.score,
+    )

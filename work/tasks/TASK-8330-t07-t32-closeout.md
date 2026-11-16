@@ -1,8 +1,8 @@
 ---
 id: TASK-8330
 title: "T-07-T32: T-07 close-out: README sections and the fiduciary workpapers runbook"
-spec: docs/plan/epics/T-07.md §10
-acceptance_criteria: [T-07-T32]
+spec: SPEC-656
+acceptance_criteria: [AC-15]
 risk_zone: green
 status: in-review
 branch: t07-t32-closeout
@@ -13,6 +13,7 @@ plan_key: T-07-T32
 ---
 
 ## Objective
+Spec section: docs/plan/epics/T-07.md §10.
 T-07 close-out: README sections and the fiduciary workpapers runbook.
 
 ## Plan (green)

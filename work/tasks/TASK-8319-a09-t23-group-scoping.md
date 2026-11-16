@@ -1,8 +1,8 @@
 ---
 id: TASK-8319
 title: "A-09-T23: Group scoping compute and service in assurance"
-spec: docs/specs/SPEC-658 F5
-acceptance_criteria: [A-09-T23]
+spec: SPEC-658
+acceptance_criteria: [AC-5]
 risk_zone: amber
 status: in-review
 branch: a09-t23-group-scoping
@@ -13,6 +13,7 @@ plan_key: A-09-T23
 ---
 
 ## Objective
+Spec section: docs/specs/SPEC-658 F5.
 Group scoping compute and service in assurance.
 
 ## Plan (amber)
