@@ -12,6 +12,7 @@ import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { hrefOf, ov, to } from "../../routes/to";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY } from "./copy";
+import { integrationOverlay } from "./links";
 
 // ADM-08 · Integration settings (T-01-T40; docs/screens/ADM-08.md; handoff spec "ADM-08") at
 // /settings/integrations on the T12 frame: the Segmented Tax engine, Ledgers and Mailboxes
@@ -61,11 +62,29 @@ export function mirrorConflict(rows: readonly MappingRowOut[]): boolean {
   return new Set(targets).size !== targets.length;
 }
 
-function Band({ title, right, icon }: { title: string; right?: ReactNode; icon?: ReactNode }) {
+function Band({
+  title,
+  right,
+  icon,
+  onTitle,
+}: {
+  title: string;
+  right?: ReactNode;
+  icon?: ReactNode;
+  onTitle?: () => void;
+}) {
   return (
     <div className="flex h-[40px] items-center gap-[10px] bg-band-hd px-[14px]">
       {icon}
-      <h3 className="flex-1 text-[13.5px] font-medium">{title}</h3>
+      <h3 className="flex-1 text-[13.5px] font-medium">
+        {onTitle === undefined ? (
+          title
+        ) : (
+          <button type="button" className="text-left hover:underline" onClick={onTitle}>
+            {title}
+          </button>
+        )}
+      </h3>
       {right}
     </div>
   );
@@ -170,6 +189,10 @@ function TaxEngine({
       <section aria-label={COPY.engine.title} className="rounded-[12px] bg-card shadow-e1">
         <Band
           title={COPY.engine.title}
+          onTitle={() => {
+            // ADM-08 → WB-11: the integration's name opens its detail drawer (links.ts).
+            openOverlay(integrationOverlay(settings.key));
+          }}
           icon={
             <span className="flex size-[24px] items-center justify-center rounded-[8px] bg-green text-on-ink">
               <Icon name="table" size={14} />

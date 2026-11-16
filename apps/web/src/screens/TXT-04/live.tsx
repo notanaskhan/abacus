@@ -4,9 +4,13 @@ import {
   estateGiftsOptions,
   estateInventoryOptions,
 } from "@abacus/api-client/query";
-import { ErrorState, Segmented, Skeleton, count, useFormat } from "@abacus/ui";
+import { Button, ErrorState, Segmented, Skeleton, count, useFormat } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
+import { useOverlays } from "../../app-core/overlay-host";
+import type { OverlayRef } from "../../app-core/overlays";
+import { checkpointsOverlay, engineSyncOverlay, intakeLink } from "./links";
 
 // TXT-04 live (S47, TASK-8353): the estate workpapers on GET /v1/tax/returns/{id}/estate/*,
 // every figure the API's (code's engine; tables carry no dollar sign; the state card never shows
@@ -29,8 +33,43 @@ export interface Txt04LiveProps {
 
 export function TXT04({ returnId, initial = "inventory" }: Txt04LiveProps): JSX.Element {
   const [section, setSection] = useState<Section>(initial);
+  // The handoff's header actions (links.ts): SHL-16 and TAX-09 over the return, TAX-03 its intake.
+  const overlays = useOverlays();
+  const navigate = useNavigate();
+  const open = (ref: OverlayRef): void => {
+    overlays.open(ref.key, ...ref.args);
+  };
   return (
     <div data-screen="TXT-04" data-live data-section={section} className="flex flex-col bg-shell">
+      <div className="flex items-center justify-end gap-[8px] px-[12px] py-[8px]">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            void navigate(intakeLink(returnId));
+          }}
+        >
+          Intake
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            open(checkpointsOverlay(returnId));
+          }}
+        >
+          Checkpoints
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            open(engineSyncOverlay(returnId));
+          }}
+        >
+          Export to CCH Axcess
+        </Button>
+      </div>
       <Segmented
         label="Estate workpapers"
         options={SECTIONS.map((s) => s.label)}
