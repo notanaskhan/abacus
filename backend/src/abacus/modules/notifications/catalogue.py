@@ -62,6 +62,15 @@ async def _admins(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return await firm_admins(tenant_id)
 
 
+async def _reauth_admins(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """W-01-T13 (DEC-5333): the firm's security and firm admins, only when a firm install's
+    health moved it to Needs reauth (a recovery or an attention change tells nobody)."""
+    if payload.get("to_status") != "needs_reauth":
+        return []
+    people = set(await security_admins(tenant_id)) | set(await firm_admins(tenant_id))
+    return sorted(people, key=str)
+
+
 async def _approvers(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """G-04-T05 (SPEC-681 AC-14): the firm's support-session approvers, firm admins and
     IT/Security (DEC-72)."""
@@ -433,6 +442,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "connection.created": Kind("connection.created", _leads, "connection", "connection_id"),
     "connection.revoked": Kind("connection.revoked", _leads, "connection", "connection_id"),
     # A-02-T25: the daily health pass found a grant problem, or a grant ends within 7 days.
+    # W-01-T13 (DEC-5333): a firm install the health monitor moved to Needs reauth.
+    "integration.health_changed": Kind(
+        "connection_needs_reauth", _reauth_admins, "firm_integration", "install_id", None
+    ),
     "connection.needs_reauth": Kind(
         "connection_needs_reauth", _admins_and_leads, "connection", "connection_id"
     ),
@@ -749,6 +762,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "connection.created": "The client connected their accounting system on {engagement}.",
     "connection.revoked": "The accounting system connection on {engagement} was ended.",
     "connection.needs_reauth": "The client needs to sign in to their accounting system again.",
+    "integration.health_changed": "A firm integration needs to be reconnected.",
     "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
     "ledger_sync.paused": "The hourly QuickBooks sync for a client is paused.",
     # W-01-T07 (AC-33): the person who chose Notify me (WB-10's coming-soon tile).
