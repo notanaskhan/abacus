@@ -588,6 +588,9 @@ jobs:
       # W-02-T25: workbench.assistant's fast subset on the fake model (code only, seconds).
       - if: needs.changes.outputs.agents == 'true'
         run: make evals-workbench-fast
+      # T-07-T18: tax.instrument_reader's fast subset on the fake model (code only, seconds).
+      - if: needs.changes.outputs.agents == 'true'
+        run: make evals-fiduciary-fast
       # C-01-T31: close.agent's fast subset on the fake model (code only, seconds).
       - if: needs.changes.outputs.agents == 'true'
         run: make evals-close-fast
