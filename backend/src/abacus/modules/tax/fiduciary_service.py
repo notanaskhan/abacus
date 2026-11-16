@@ -228,14 +228,14 @@ async def _sealed(ctx: AuthContext, reason: str | None, row_id: UUID) -> bytes |
 async def add_fai_line(ctx: AuthContext, return_id: UUID, body: FaiLineIn) -> FaiLineOut:
     _person(ctx, "fai_line.edit")
     engagement, _, _ = await _scope(ctx, return_id, "fai_line.edit")
-    line_id = uuid4()
     async with uow(ctx.tenant) as tx:
-        await tx.session.execute(
+        line_id = await tx.session.scalar(
             text(
-                "INSERT INTO fai_lines (id, tenant_id, engagement_id, work_item_id, kind, "
-                "parent_line_id, description, created_by) VALUES (:id, :t, :e, :w, :k, :p, :d, :u)"
+                "INSERT INTO fai_lines (tenant_id, engagement_id, work_item_id, kind, "
+                "parent_line_id, description, created_by) VALUES (:t, :e, :w, :k, :p, :d, :u) "
+                "RETURNING id"
             ),
-            {"id": line_id, "t": ctx.tenant_id, "e": engagement, "w": return_id, "k": body.kind,
+            {"t": ctx.tenant_id, "e": engagement, "w": return_id, "k": body.kind,
              "p": body.parent_line_id, "d": body.description, "u": ctx.user_id},
         )  # fmt: skip
         await _line_version(tx, ctx, line_id, 1, body.amount, body.citation_ids, None)
@@ -258,11 +258,10 @@ async def _line_version(
     vid = uuid4()
     await tx.session.execute(
         text(
-            "INSERT INTO fai_line_versions (id, tenant_id, line_id, seq, amount, citation_ids, "
-            "set_by_kind, set_by_id, reason_sealed) VALUES (:id, :t, :l, :s, :a, :c, 'human', :u, "
-            ":r)"
+            "INSERT INTO fai_line_versions (tenant_id, line_id, seq, amount, citation_ids, "
+            "set_by_kind, set_by_id, reason_sealed) VALUES (:t, :l, :s, :a, :c, 'human', :u, :r)"
         ),
-        {"id": vid, "t": ctx.tenant_id, "l": line_id, "s": seq, "a": amount,
+        {"t": ctx.tenant_id, "l": line_id, "s": seq, "a": amount,
          "c": list(citations), "u": ctx.user_id, "r": await _sealed(ctx, reason, vid)},
     )  # fmt: skip
 
@@ -300,14 +299,13 @@ async def edit_fai_line(ctx: AuthContext, line_id: UUID, body: FaiLineEditIn) ->
 async def add_trust_expense(ctx: AuthContext, return_id: UUID, body: TrustExpenseIn) -> TrustExpenseOut:
     _person(ctx, "fai_line.edit")
     engagement, _, _ = await _scope(ctx, return_id, "fai_line.edit")
-    expense_id = uuid4()
     async with uow(ctx.tenant) as tx:
-        await tx.session.execute(
+        expense_id = await tx.session.scalar(
             text(
-                "INSERT INTO trust_expenses (id, tenant_id, engagement_id, work_item_id, kind, "
-                "created_by) VALUES (:id, :t, :e, :w, :k, :u)"
+                "INSERT INTO trust_expenses (tenant_id, engagement_id, work_item_id, kind, "
+                "created_by) VALUES (:t, :e, :w, :k, :u) RETURNING id"
             ),
-            {"id": expense_id, "t": ctx.tenant_id, "e": engagement, "w": return_id, "k": body.kind, "u": ctx.user_id},
+            {"t": ctx.tenant_id, "e": engagement, "w": return_id, "k": body.kind, "u": ctx.user_id},
         )  # fmt: skip
         await _expense_version(tx, ctx, expense_id, 1, body.charged_to, body.amount, body.deductible, body.clause_id, body.citation_ids, None)
         tx.record(
@@ -330,11 +328,11 @@ async def _expense_version(
     vid = uuid4()
     await tx.session.execute(
         text(
-            "INSERT INTO trust_expense_versions (id, tenant_id, expense_id, seq, charged_to, amount, "
+            "INSERT INTO trust_expense_versions (tenant_id, expense_id, seq, charged_to, amount, "
             "deductible, clause_id, citation_ids, set_by_kind, set_by_id, reason_sealed) VALUES "
-            "(:id, :t, :x, :s, :c, :a, :d, :cl, :ci, 'human', :u, :r)"
+            "(:t, :x, :s, :c, :a, :d, :cl, :ci, 'human', :u, :r)"
         ),
-        {"id": vid, "t": ctx.tenant_id, "x": expense_id, "s": seq, "c": charged_to, "a": amount,
+        {"t": ctx.tenant_id, "x": expense_id, "s": seq, "c": charged_to, "a": amount,
          "d": deductible, "cl": clause_id, "ci": list(citations), "u": ctx.user_id,
          "r": await _sealed(ctx, reason, vid)},
     )  # fmt: skip
@@ -367,11 +365,11 @@ async def _distribution_version(
     vid = uuid4()
     await tx.session.execute(
         text(
-            "INSERT INTO trust_distribution_versions (id, tenant_id, distribution_id, seq, paid_on, "
-            "amount, form, source, clause_id, set_by_kind, set_by_id, reason_sealed) VALUES (:id, "
-            ":t, :d, :s, :p, :a, :f, :src, :c, 'human', :u, :r)"
+            "INSERT INTO trust_distribution_versions (tenant_id, distribution_id, seq, paid_on, "
+            "amount, form, source, clause_id, set_by_kind, set_by_id, reason_sealed) VALUES (:t, "
+            ":d, :s, :p, :a, :f, :src, :c, 'human', :u, :r)"
         ),
-        {"id": vid, "t": ctx.tenant_id, "d": distribution_id, "s": seq, "p": paid_on, "a": amount,
+        {"t": ctx.tenant_id, "d": distribution_id, "s": seq, "p": paid_on, "a": amount,
          "f": form, "src": source, "c": clause_id, "u": ctx.user_id,
          "r": await _sealed(ctx, reason, vid)},
     )  # fmt: skip
@@ -380,14 +378,13 @@ async def _distribution_version(
 async def add_trust_distribution(ctx: AuthContext, return_id: UUID, body: TrustDistributionIn) -> TrustDistributionOut:
     _person(ctx, "trust_distribution.edit")
     engagement, _, _ = await _scope(ctx, return_id, "trust_distribution.edit")
-    distribution_id = uuid4()
     async with uow(ctx.tenant) as tx:
-        await tx.session.execute(
+        distribution_id = await tx.session.scalar(
             text(
-                "INSERT INTO trust_distributions (id, tenant_id, engagement_id, work_item_id, "
-                "beneficiary_contact_id, created_by) VALUES (:id, :t, :e, :w, :b, :u)"
+                "INSERT INTO trust_distributions (tenant_id, engagement_id, work_item_id, "
+                "beneficiary_contact_id, created_by) VALUES (:t, :e, :w, :b, :u) RETURNING id"
             ),
-            {"id": distribution_id, "t": ctx.tenant_id, "e": engagement, "w": return_id, "b": body.beneficiary_contact_id, "u": ctx.user_id},
+            {"t": ctx.tenant_id, "e": engagement, "w": return_id, "b": body.beneficiary_contact_id, "u": ctx.user_id},
         )  # fmt: skip
         await _distribution_version(tx, ctx, distribution_id, 1, body.paid_on, body.amount, body.form, body.source, body.clause_id, None)
         tx.record(
@@ -530,19 +527,18 @@ async def recompute_in(tx: UnitOfWork, return_id: UUID, engagement_id: UUID) -> 
         return FiduciaryRecomputeOut(computation_id=current[0], version_no=int(current[1]), created=False)
     outputs = _outputs(result, built.distribution_amounts)
     content = _hash(outputs)
-    computation_id = uuid4()
     version_no = 1 if current is None else int(current[1]) + 1
     params = engine.parameters(result.tax_year)
     tenant_id = (await transaction_context(tx.session)).tenant_id
-    await tx.session.execute(
+    computation_id = await tx.session.scalar(
         text(
-            "INSERT INTO fai_dni_computations (id, tenant_id, engagement_id, work_item_id, "
+            "INSERT INTO fai_dni_computations (tenant_id, engagement_id, work_item_id, "
             "version_no, interpretation_hash, inputs_hash, engine_name, engine_version, "
             "parameter_set, income_distribution_deduction, outputs, prior_computation_id, "
-            "content_hash) VALUES (:id, :t, :e, :w, :v, :ih, :inp, :en, :ev, :ps, :idd, "
-            "CAST(:o AS jsonb), :prior, :ch)"
+            "content_hash) VALUES (:t, :e, :w, :v, :ih, :inp, :en, :ev, :ps, :idd, "
+            "CAST(:o AS jsonb), :prior, :ch) RETURNING id"
         ),
-        {"id": computation_id, "t": tenant_id, "e": engagement_id, "w": return_id, "v": version_no,
+        {"t": tenant_id, "e": engagement_id, "w": return_id, "v": version_no,
          "ih": built.interpretation_hash, "inp": result.inputs_hash, "en": result.engine_name,
          "ev": result.engine_version, "ps": f"ty{params.tax_year}.v{params.version}",
          "idd": result.idd, "o": json.dumps(outputs, sort_keys=True),
@@ -551,11 +547,11 @@ async def recompute_in(tx: UnitOfWork, return_id: UUID, engagement_id: UUID) -> 
     for a in result.allocations:
         await tx.session.execute(
             text(
-                "INSERT INTO beneficiary_allocations (id, tenant_id, computation_id, "
+                "INSERT INTO beneficiary_allocations (tenant_id, computation_id, "
                 "beneficiary_contact_id, distributions, share, dni_allocated, box_1, box_2a, box_2b, "
-                "box_other) VALUES (:id, :t, :c, :b, :d, :s, :dni, :b1, :b2a, :b2b, CAST(:o AS jsonb))"
+                "box_other) VALUES (:t, :c, :b, :d, :s, :dni, :b1, :b2a, :b2b, CAST(:o AS jsonb))"
             ),
-            {"id": uuid4(), "t": tenant_id, "c": computation_id, "b": UUID(a.beneficiary),
+            {"t": tenant_id, "c": computation_id, "b": UUID(a.beneficiary),
              "d": a.distributions, "s": a.share, "dni": a.dni_allocated, "b1": a.box_1,
              "b2a": a.box_2a, "b2b": a.box_2b,
              "o": json.dumps({k: f"{v:.2f}" for k, v in a.box_other.items()}, sort_keys=True)},

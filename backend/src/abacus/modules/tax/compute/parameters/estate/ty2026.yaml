@@ -1,0 +1,33 @@
+# The estate and gift parameters for 2026 decedents (T-07-T22; DEC-5063). PROTECTED. Sources: the
+# IRC §2001(c) rate schedule (unchanged since 2013), the §2010(c) basic exclusion amount for 2026
+# (15,000,000 under P.L. 119-21), the §2503(b) annual exclusions by year of gift, and the Illinois
+# estate tax exclusion amount (4,000,000; 35 ILCS 405). Read by `tax/compute/estate.py` only.
+tax_year: 2026
+version: 1
+basic_exclusion_amount: "15000000"
+# §2001(c): [over, base tax, rate percent] on the amount over `over`.
+rate_schedule:
+  - ["0", "0", "18"]
+  - ["10000", "1800", "20"]
+  - ["20000", "3800", "22"]
+  - ["40000", "8200", "24"]
+  - ["60000", "13000", "26"]
+  - ["80000", "18200", "28"]
+  - ["100000", "23800", "30"]
+  - ["150000", "38800", "32"]
+  - ["250000", "70800", "34"]
+  - ["500000", "155800", "37"]
+  - ["750000", "248300", "39"]
+  - ["1000000", "345800", "40"]
+annual_exclusion:
+  "2020": "15000"
+  "2021": "15000"
+  "2022": "16000"
+  "2023": "17000"
+  "2024": "18000"
+  "2025": "19000"
+  "2026": "19000"
+state_exclusions:
+  IL: "4000000"
+filing_months: 9
+extension_months: 6

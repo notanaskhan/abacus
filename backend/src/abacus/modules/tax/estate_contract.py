@@ -328,109 +328,131 @@ def _stub(route: str) -> NotImplementedYet:
 
 @estate_router.get(
     f"{_R}/inventory", action="estate_workpaper.read", response_model=EstateInventoryOut,
-    errors=(501,),
+    errors=(),
 )  # fmt: skip
 async def estate_inventory_route(return_id: UUID, ctx: Ctx) -> EstateInventoryOut:
     await _flag_on(ctx)
-    raise _stub("estate_inventory")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.inventory(ctx, return_id)
 
 
 @estate_router.get(
     f"{_R}/deductions", action="estate_workpaper.read", response_model=EstateDeductionsOut,
-    errors=(501,),
+    errors=(),
 )  # fmt: skip
 async def estate_deductions_route(return_id: UUID, ctx: Ctx) -> EstateDeductionsOut:
     await _flag_on(ctx)
-    raise _stub("estate_deductions")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.deductions(ctx, return_id)
 
 
 @estate_router.get(
     f"{_R}/computation", action="estate_workpaper.read", response_model=EstateComputationOut,
-    errors=(501,),
+    errors=(),
 )  # fmt: skip
 async def estate_computation_route(return_id: UUID, ctx: Ctx) -> EstateComputationOut:
     await _flag_on(ctx)
-    raise _stub("estate_computation")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.computation(ctx, return_id)
 
 
 @estate_router.get(
-    f"{_R}/gifts", action="estate_workpaper.read", response_model=EstateGiftsOut, errors=(501,)
+    f"{_R}/gifts", action="estate_workpaper.read", response_model=EstateGiftsOut, errors=()
 )
 async def estate_gifts_route(return_id: UUID, ctx: Ctx) -> EstateGiftsOut:
     await _flag_on(ctx)
-    raise _stub("estate_gifts")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.gifts(ctx, return_id)
 
 
 @estate_router.get(
     f"{_R}/derivations/{{tile}}", action="estate_workpaper.read",
-    response_model=EstateDerivationOut, errors=(501,),
+    response_model=EstateDerivationOut, errors=(),
 )  # fmt: skip
 async def estate_derivation_route(
     return_id: UUID, tile: Annotated[str, Path(pattern=r"^[a-z_]{1,40}$")], ctx: Ctx
 ) -> EstateDerivationOut:
     await _flag_on(ctx)
-    raise _stub("estate_derivation")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.derivation(ctx, return_id, tile)
 
 
 @estate_router.post(
     f"{_R}/assets", action="estate_workpaper.edit", response_model=EstateAssetOut,
-    status_code=201, errors=(501,),
+    status_code=201, errors=(),
 )  # fmt: skip
 async def estate_asset_add_route(return_id: UUID, body: EstateAssetIn, ctx: Ctx) -> EstateAssetOut:
     await _flag_on(ctx)
-    raise _stub("estate_asset_add")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.add_asset(ctx, return_id, body)
 
 
 @estate_router.patch(
     "/estate-assets/{asset_id}", action="estate_workpaper.edit", response_model=EstateAssetOut,
-    errors=(409, 501),
+    errors=(409,),
 )  # fmt: skip
 async def estate_asset_edit_route(
     asset_id: UUID, body: EstateAssetEditIn, ctx: Ctx
 ) -> EstateAssetOut:
     await _flag_on(ctx)
-    raise _stub("estate_asset_edit")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.edit_asset(ctx, asset_id, body)
 
 
 @estate_router.post(
     f"{_R}/deductions", action="estate_workpaper.edit", response_model=EstateDeductionOut,
-    status_code=201, errors=(501,),
+    status_code=201, errors=(),
 )  # fmt: skip
 async def estate_deduction_add_route(
     return_id: UUID, body: EstateDeductionIn, ctx: Ctx
 ) -> EstateDeductionOut:
     await _flag_on(ctx)
-    raise _stub("estate_deduction_add")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.add_deduction(ctx, return_id, body)
 
 
 @estate_router.patch(
     "/estate-deductions/{deduction_id}", action="estate_workpaper.edit",
-    response_model=EstateDeductionOut, errors=(409, 501),
+    response_model=EstateDeductionOut, errors=(409,),
 )  # fmt: skip
 async def estate_deduction_edit_route(
     deduction_id: UUID, body: EstateDeductionEditIn, ctx: Ctx
 ) -> EstateDeductionOut:
     await _flag_on(ctx)
-    raise _stub("estate_deduction_edit")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.edit_deduction(ctx, deduction_id, body)
 
 
 @estate_router.post(
     "/client-entities/{client_entity_id}/gift-history", action="estate_workpaper.edit",
-    response_model=GiftHistoryRowOut, status_code=201, errors=(501,),
+    response_model=GiftHistoryRowOut, status_code=201, errors=(),
 )  # fmt: skip
 async def gift_history_add_route(
     client_entity_id: UUID, body: GiftHistoryIn, ctx: Ctx
 ) -> GiftHistoryRowOut:
     await _flag_on(ctx)
-    raise _stub("gift_history_add")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.add_gift(ctx, client_entity_id, body)
 
 
 @estate_router.patch(
     "/gift-history-items/{gift_id}", action="estate_workpaper.edit",
-    response_model=GiftHistoryRowOut, errors=(409, 501),
+    response_model=GiftHistoryRowOut, errors=(409,),
 )  # fmt: skip
 async def gift_history_edit_route(
     gift_id: UUID, body: GiftHistoryEditIn, ctx: Ctx
 ) -> GiftHistoryRowOut:
     await _flag_on(ctx)
-    raise _stub("gift_history_edit")
+    from abacus.modules.tax import estate_service as es  # noqa: PLC0415 -- the service imports this contract
+
+    return await es.edit_gift(ctx, gift_id, body)
