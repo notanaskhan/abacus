@@ -65,7 +65,7 @@ ShownMethod = Literal[
 ]
 Rmm = Literal["low", "moderate", "high"]
 TestRule = Literal["all", "random", "none"]
-SelectionReason = Literal["random", "threshold", "risk_score", "unpredictable"]
+SelectionReason = Literal["random", "threshold", "risk_score", "unpredictable", "named"]
 SeedSource = Literal["server", "scenario"]
 Surface = Literal["POR-03", "POR-14"]
 Wave = Literal["sample"]

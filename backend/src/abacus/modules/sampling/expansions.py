@@ -5,8 +5,8 @@ amber).
   unpredictably, or by key, a required rationale (422 `expansion_rationale_required`) and a named
   approver who is not the requester (422 `approver_required`). Nothing in the sample changes; one
   HOME-02 gate `sample_expansion_approval` waits on the approver (`assigned_only`).
-- Named keys (Northwind's "Add participants", AC-3.4) are refused on a JE sample: its items are
-  chosen by score or by seed only (`sample_items.selection_reason`).
+- Named keys (Northwind's "Add participants", AC-3.4; DEC-5327) append last with reason `named`,
+  each in the population and not yet selected (422 `expansion_key_invalid`).
 - **Decide** (the named approver only, never the requester or an agent; `seen_hash` must be the
   request's content hash, else 409 `content_changed`). Approval appends a new sample-set version:
   the base version's items keep their positions (1 to n) and the additions follow: the next
@@ -52,6 +52,9 @@ class SampleExpansionRequested(DomainEvent):
 
     expansion_id: Annotated[UUID, _I]
     engagement_id: Annotated[UUID, _I]
+    # A-08 §4.7 (DEC-5327): the named approver, told by `sample_expansion_approval_requested`.
+    approver_user_id: Annotated[UUID | None, _I] = None
+    requested_by: Annotated[UUID | None, _I] = None
 
 
 class SampleExpansionDecided(DomainEvent):
@@ -78,6 +81,10 @@ class ContentChanged(DomainConflict):
 
 class ExpansionClosed(DomainConflict):
     code = "expansion_not_pending"
+
+
+class ExpansionKeyInvalid(DomainInvalid):
+    code = "expansion_key_invalid"
 
 
 class ExpansionTooLarge(DomainInvalid):
@@ -112,11 +119,19 @@ def expand(
     if add_unpredictable > len(rest):
         raise ExpansionTooLarge(facts={"field": "add_unpredictable"})
     drawn = [rest[j] for j in partial_fisher_yates(Stream(seed), len(rest), add_unpredictable)]
-    if add_keys:  # a JE sample's items are chosen by score or seed; named keys are AC-3.4's
-        raise ExpansionTooLarge(facts={"field": "add_item_keys"})
+    taken |= {s.entry_ref for s in drawn}
+    # AC-3.4 (DEC-5327): named keys last, each one in the population and not yet selected.
+    known = {s.entry_ref: s for s in scores}
+    named: list[je_selection.Scored] = []
+    for key in dict.fromkeys(add_keys):
+        found = known.get(key)
+        if found is None or key in taken:
+            raise ExpansionKeyInvalid(facts={"field": "add_item_keys"})
+        named.append(found)
+        taken.add(key)
     picks = list(base)
     n = len(picks)
-    for reason, group in (("risk_score", by_score), ("unpredictable", drawn)):
+    for reason, group in (("risk_score", by_score), ("unpredictable", drawn), ("named", named)):
         for s in group:
             n += 1
             picks.append(
@@ -267,7 +282,14 @@ async def request_expansion(
             ),
         )
         tx.record("sample_expansion.requested", target=Target(TARGET, made))
-        tx.emit(SampleExpansionRequested(expansion_id=made, engagement_id=base["engagement_id"]))
+        tx.emit(
+            SampleExpansionRequested(
+                expansion_id=made,
+                engagement_id=base["engagement_id"],
+                approver_user_id=approver_user_id,
+                requested_by=ctx.user_id,
+            )
+        )
     return await _view(ctx.tenant, made)
 
 

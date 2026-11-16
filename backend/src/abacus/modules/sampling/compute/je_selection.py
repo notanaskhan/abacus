@@ -22,7 +22,7 @@ from abacus.modules.sampling.compute.draw import SEED_MAX, Stream, partial_fishe
 
 VERSION: Final = "je_select/1.0"
 METHOD: Final = "je_score_selection"
-Reason = Literal["risk_score", "unpredictable"]
+Reason = Literal["risk_score", "unpredictable", "named"]  # named: AC-3.4 (DEC-5327)
 
 
 @dataclass(frozen=True)

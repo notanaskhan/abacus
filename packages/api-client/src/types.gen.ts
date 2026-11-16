@@ -51182,7 +51182,7 @@ export type SampleItemOut = {
     /**
      * Selection Reason
      */
-    selection_reason: 'random' | 'threshold' | 'risk_score' | 'unpredictable';
+    selection_reason: 'random' | 'threshold' | 'risk_score' | 'unpredictable' | 'named';
     /**
      * Stratum Position
      */
