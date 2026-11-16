@@ -262,7 +262,7 @@ async def request_session(
             tx.record(
                 "support_session.requested",
                 target=Target("support_session", session_id),
-                after=Ref(staff_id=staff.id, minutes=minutes, scope=scope),
+                after=Ref(staff_id=staff.id, minutes=minutes),
             )
             tx.emit(SupportSessionRequested(session_id=session_id))
     except IntegrityError:
@@ -344,7 +344,6 @@ async def _firm_change(ctx: AuthContext, session_id: UUID, change: str) -> Suppo
         tx.record(
             action,
             target=Target("support_session", session_id),
-            after=Ref(role=str(ctx.firm_role)) if change == "approve" else None,
         )
     return await _read(ctx.tenant, session_id)
 
@@ -361,11 +360,7 @@ async def decline_session(ctx: AuthContext, session_id: UUID) -> SupportSessionV
         if row["status"] != "requested":
             raise SupportSessionConflict("not awaiting approval")
         await decline_support_session(tx.session, session_id, ctx.user_id)
-        tx.record(
-            "support_session.declined",
-            target=Target("support_session", session_id),
-            after=Ref(role=str(ctx.firm_role)),
-        )
+        tx.record("support_session.declined", target=Target("support_session", session_id))
         tx.emit(SupportSessionDeclined(session_id=session_id, declined_by=ctx.user_id))
     return await _read(ctx.tenant, session_id)
 

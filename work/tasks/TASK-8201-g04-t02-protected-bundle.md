@@ -28,3 +28,10 @@ Rollback: revert (no route uses the new actions until T03).
 - `2026-11-15` — Built (DEC-5202). Codegen clean. The epic's `platform.x.y` actions renamed to
   `platform_x.y` (the matrix's `entity.verb` rule). Generated matrix tests and the new denial
   test run at the lane's end pass. **Needs:** both founders' approval (the plan); Ayush approves.
+- `2026-11-15` — Lane end pass green on the stack tip (#2080): `schema_check` (migrations up,
+  down to base, up; RLS everywhere), the targeted suites (permission matrix, route
+  introspection, app gates, tenant isolation, catalogues, status vocabulary, schema_check_db,
+  G-02 support tests, the T07 AC suite) and `make check-fast`. Fixes in 5c0ad032d and
+  819cffc82: audit refs carry identifiers only; staff routes in the route checker; reviewed
+  lists extended; unique schema names (FirmPlanOut, StatusIncident*, ConsolePublication*,
+  PlatformRegion*); web fixtures carry the v2 session fields.

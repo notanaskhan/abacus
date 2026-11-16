@@ -94,7 +94,7 @@ class SeatsOut(BaseModel):
     full: Annotated[bool, Internal]
 
 
-class PlanOut(BaseModel):
+class FirmPlanOut(BaseModel):
     """GET /v1/firm/plan (AC-27, AC-29): term, renewal, seats, modules and the library label."""
 
     model_config = ConfigDict(frozen=True)
@@ -268,8 +268,8 @@ async def _gate(ctx: AuthContext, action: str) -> None:
         raise NotFound(PLATFORM_PLAN_USAGE.name)
 
 
-@router.get("/plan", action="plan.read", response_model=PlanOut, errors=(501,))
-async def plan_get(ctx: Ctx) -> PlanOut:
+@router.get("/plan", action="plan.read", response_model=FirmPlanOut, errors=(501,))
+async def plan_get(ctx: Ctx) -> FirmPlanOut:
     await _gate(ctx, "plan.read")
     raise NotImplementedYet(_TASK)
 
@@ -277,10 +277,10 @@ async def plan_get(ctx: Ctx) -> PlanOut:
 @router.put(
     "/plan/billing-contact",
     action="billing_contact.manage",
-    response_model=PlanOut,
+    response_model=FirmPlanOut,
     errors=(501,),
 )
-async def plan_set_billing_contact(body: BillingContactIn, ctx: Ctx) -> PlanOut:
+async def plan_set_billing_contact(body: BillingContactIn, ctx: Ctx) -> FirmPlanOut:
     await _gate(ctx, "billing_contact.manage")
     raise NotImplementedYet(_TASK)
 

@@ -336,6 +336,9 @@ def test_ac20_the_yaml_has_the_expected_role_partition() -> None:
         "firm_manager",
         # A-08-T03 (DEC-5030): a confirmation respondent, `link_scope_only` cells only.
         "link_principal",
+        # G-04-T02 (DEC-5201): Accrued console staff, staff-token claims, staff actions only.
+        "platform_admin",
+        "platform_support_desk",
     }
 
 

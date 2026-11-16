@@ -45,6 +45,7 @@ const STATUS: Record<SupportSessionOut["status"], { text: string; tone: Tone }> 
   ended: { text: "Ended", tone: "neutral" },
   revoked: { text: "Revoked", tone: "neutral" },
   expired: { text: "Expired", tone: "neutral" },
+  declined: { text: "Declined", tone: "neutral" }, // G-04-T05 (SPEC-681 AC-19)
 };
 
 function useWhen(): (value: string | null) => string {

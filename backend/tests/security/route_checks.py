@@ -48,6 +48,7 @@ from abacus.modules.identity.routing import (
     portal_public,
     pre_session,
     provider_webhook,
+    staff_action,
 )
 from abacus_tools.quality.banned_patterns import PUBLIC_ROUTE_EXCEPTIONS
 
@@ -114,7 +115,13 @@ def route_problems(application: FastAPI, method: str, path: str, action: str) ->
         and path not in PUBLIC_ROUTE_EXCEPTIONS
     ):
         problems.append(f"{method} {path} is public but not on the ROUTE-001 exception list")
-    want = MARKER_AUTH.get(declared, current_context) if isinstance(declared, str) else None
+    # G-04-T03 (DEC-5203): a staff-section action authenticates with the staff token.
+    default = (
+        current_staff
+        if isinstance(declared, str) and staff_action(declared)
+        else (current_context)
+    )
+    want = MARKER_AUTH.get(declared, default) if isinstance(declared, str) else None
     auth = _authentication(route)
     if want is None or auth != [want]:
         names = [getattr(a, "__name__", "?") for a in auth]

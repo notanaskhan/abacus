@@ -21,7 +21,7 @@ task: G-04-T01 (TASK-8200)
 >   (`docs/plan/epics/G-04.md` §3.4 and §3.5), adopted verbatim; this file states the changes and
 >   each criterion's testable core.
 > - Red zone and protected paths (`identity/support.py`, the matrix, migrations). DEC-72 never
->   defaults on silence; OQ-1 is decided below and accepted by Ayush (DEC-5200).
+>   defaults on silence; OQ-1 is decided below and was accepted by Ayush on 2026-11-15 (DEC-5200).
 
 ## 1. What changes from SPEC-012
 | SPEC-012 | SPEC-681 |

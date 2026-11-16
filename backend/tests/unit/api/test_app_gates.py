@@ -280,6 +280,15 @@ NOT_CREATING = {
     "/v1/support-sessions/{session_id}/revoke",
     "/v1/support-sessions/{session_id}/acknowledge",
     "/v1/support-sessions/{session_id}/decline",  # SPEC-681 AC-19
+    # G-04-T03 (stubs): decisions and state changes return the record, so 200.
+    "/v1/firm/plan-requests/{request_id}/approve",
+    "/v1/firm/plan-requests/{request_id}/decline",
+    "/v1/firm/plan-requests/{request_id}/withdraw",
+    "/v1/platform/plan-requests/{request_id}/mark-applied",
+    "/v1/platform/status/incidents/{incident_id}/updates",
+    "/v1/platform/status/incidents/{incident_id}/resolve",
+    "/v1/platform/publications/{kind}/{publication_id}/publish",
+    "/v1/platform/publications/{kind}/{publication_id}/withdraw",
     # SPEC-020 (TASK-036): starting returns the provider's URL; check and revoke return state.
     "/v1/engagements/{engagement_id}/connection/start",
     "/v1/engagements/{engagement_id}/connection/check",
@@ -621,6 +630,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/je-tests/{je_test_id}/score",
         "/v1/tests/{test_id}/runs",
         "/v1/work-items/{work_item_id}/analytics-sets",
+        # G-04-T03 (console stubs): provisioning a tenant or a sandbox starts a workflow, so 202.
+        "/v1/platform/tenants",
+        "/v1/platform/tenants/{tenant_code}/sandbox",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -1026,6 +1038,12 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/work-items/{work_item_id}/confirmations/authorization",
         "/v1/work-items/{work_item_id}/je-tests",
         "/v1/work-items/{work_item_id}/ssars/inquiries",
+        # G-04-T03 (stubs): a plan request, a chat message, a staff reply and an incident
+        # each insert a row, so 201.
+        "/v1/firm/plan-requests",
+        "/v1/support/conversation/messages",
+        "/v1/platform/support/conversations/{conversation_id}/messages",
+        "/v1/platform/status/incidents",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

@@ -640,6 +640,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "staff_invitation.token_issued",
         "statement.approved",
         "support.request",
+        "support_session.declined",  # G-04-T05 (SPEC-681 AC-19): the firm declined a request
         "support_session.emergency_approved",
         "support_session.ended",
         "support_session.expired",
