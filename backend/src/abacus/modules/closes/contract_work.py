@@ -107,6 +107,8 @@ class RequestNodeOut(BaseModel):
     linked: Annotated[int, Field(ge=0), Internal] = 0  # "Linked (n)", the C5 fulfilment count
     screening: Annotated[Literal["clear", "partly", "flagged", "running"] | None, Internal] = None
     overdue: Annotated[bool, Internal] = False
+    # C-01-T19: an incorporated request's "Re-run affected tasks": the plan rows that read it.
+    rerun_plan_row_ids: Annotated[list[UUID], Internal] = []
     children: Annotated[list[RequestNodeOut], Internal] = []
 
 
@@ -590,9 +592,7 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
-@close_work_router.get(
-    f"{_C}/requests", action="close.read", response_model=RequestTreeOut, errors=(501,)
-)
+@close_work_router.get(f"{_C}/requests", action="close.read", response_model=RequestTreeOut)
 async def close_requests_route(
     close_id: UUID,
     ctx: Ctx,
@@ -602,16 +602,19 @@ async def close_requests_route(
 ) -> RequestTreeOut:
     """CLS-03's tree with counts, screening glyph and Linked (n) (C-01-T19)."""
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import intake
+
+    return await intake.request_tree(ctx, close_id, q=q, status=status)
 
 
 @close_work_router.get(
-    f"{_C}/questionnaire", action="close.read", response_model=CloseQuestionnaireOut,
-    errors=(501,),
-)  # fmt: skip
+    f"{_C}/questionnaire", action="close.read", response_model=CloseQuestionnaireOut
+)
 async def close_questionnaire_route(close_id: UUID, ctx: Ctx) -> CloseQuestionnaireOut:
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import intake
+
+    return await intake.close_questionnaire(ctx, close_id)
 
 
 @close_work_router.get(

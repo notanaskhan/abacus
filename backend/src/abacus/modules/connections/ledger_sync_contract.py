@@ -97,7 +97,7 @@ async def _sync_on(ctx: AuthContext) -> None:
 async def ledger_sync_status_route(client_entity_id: UUID, ctx: Ctx) -> LedgerSyncStatusOut:
     """The entity's sync facts (C-01-T17)."""
     await _sync_on(ctx)
-    from abacus.modules.connections import ledger_sync  # noqa: PLC0415 -- the service imports this
+    from abacus.modules.connections import ledger_sync
 
     facts = await ledger_sync.status_for(ctx, client_entity_id)
     return LedgerSyncStatusOut(
@@ -132,7 +132,7 @@ async def ledger_sync_now_route(
     await _sync_on(ctx)
     if ctx.tenant.actor_kind != "human" or ctx.is_support:
         raise Forbidden("ledger.sync_now", "role")
-    from abacus.modules.connections import ledger_sync  # noqa: PLC0415 -- the service imports this
+    from abacus.modules.connections import ledger_sync
 
     accepted = await ledger_sync.request_sync_now(ctx, client_entity_id)
     return SyncNowOut(sync_run_id=accepted.request_id, state="syncing")

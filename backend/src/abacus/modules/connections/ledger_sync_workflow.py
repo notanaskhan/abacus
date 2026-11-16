@@ -102,7 +102,9 @@ class LedgerSyncWorkflow:
                 await self._drain_now(given)  # a Sync now never waits behind the hour's queue
                 await self._sync(
                     given,
-                    SyncEntityInput(given.tenant_id, connection_id, "schedule", "connections:ledger_sync"),
+                    SyncEntityInput(
+                        given.tenant_id, connection_id, "schedule", "connections:ledger_sync"
+                    ),
                 )
             ticks += 1
             if ticks >= TICKS_PER_RUN or workflow.info().is_continue_as_new_suggested():

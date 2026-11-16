@@ -40,3 +40,26 @@ class ClosePlanPublished(DomainEvent):
     plan_id: Annotated[UUID, _I]
     version_id: Annotated[UUID, _I]
     engagement_id: Annotated[UUID, _I]
+
+
+class CloseRequestsPublished(DomainEvent):
+    """C-01-T19: a close's requests were generated and published at BD1 from its pinned plan
+    version (the preparer's digest, C16 `close_requests_published`; POR-11's close home)."""
+
+    event_type: ClassVar[str] = "close_requests.published"
+
+    close_id: Annotated[UUID, _I]
+    engagement_id: Annotated[UUID, _I]
+    binder_id: Annotated[UUID, _I]
+    plan_version: Annotated[int, _I]
+    count: Annotated[int, _I]
+
+
+class CloseCreated(DomainEvent):
+    """C-01-T19: a close was generated; its BD1 publish workflow starts after commit (the worker's
+    relay), so a request path never needs Temporal."""
+
+    event_type: ClassVar[str] = "close.created"
+
+    close_id: Annotated[UUID, _I]
+    period: Annotated[str, _I]

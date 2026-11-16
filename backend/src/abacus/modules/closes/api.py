@@ -8,7 +8,13 @@ API: `close_for`, the fail-closed `register_status_guard` slot C-02 fills (C-01 
 `start_close`, the system's Not started → In progress on the first run or incorporation.
 """
 
+from collections.abc import Callable
+from typing import Any
+from uuid import UUID
+
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
+from abacus.kernel.dispatch import WorkClass, register_work_classes
+from abacus.kernel.uow.relay import Handler, OutboxEvent
 from abacus.modules.closes.audit_targets import (
     AUDIT_KINDS,
     ENTITY_KINDS,
@@ -26,7 +32,10 @@ from abacus.modules.closes.contract import (
 )
 from abacus.modules.closes.contract_work import close_work_router, portal_close_router
 from abacus.modules.closes.gate_sources import register_close_gates
+from abacus.modules.closes.intake import ACTIVITIES as INTAKE_ACTIVITIES
+from abacus.modules.closes.intake import schedule_publish
 from abacus.modules.closes.kind import CloseKind
+from abacus.modules.closes.request_publish_workflow import RequestPublishWorkflow
 from abacus.modules.closes.service import start_close
 from abacus.modules.closes.sync_scope import sync_scope
 from abacus.modules.connections.api import register_sync_scope
@@ -45,13 +54,31 @@ register_entity_owners(ENTITY_KINDS, audit_entities)
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS = (closes_router, close_work_router, portal_close_router)
 
+
+# C-01-T19: the BD1 publish workflow; the worker reads these (no outbox subscriptions yet).
+async def _on_close_created(event: OutboxEvent) -> None:
+    close_id = event.payload.get("close_id")
+    if isinstance(close_id, str):
+        await schedule_publish(event.tenant_id, UUID(close_id))
+
+
+SUBSCRIPTIONS: dict[str, Handler] = {"close.created": _on_close_created}
+WORKFLOWS: dict[type, WorkClass] = {RequestPublishWorkflow: "background"}
+register_work_classes(WORKFLOWS)
+ACTIVITIES: tuple[Callable[..., Any], ...] = INTAKE_ACTIVITIES  # Any: Temporal activities
+
 __all__ = [
+    "ACTIVITIES",
     "ROUTERS",
+    "SUBSCRIPTIONS",
+    "WORKFLOWS",
     "CloseFacts",
+    "RequestPublishWorkflow",
     "StatusGuard",
     "TransitionNotAvailable",
     "close_for",
     "register_status_guard",
+    "schedule_publish",
     "start_close",
     "status_guard",
 ]

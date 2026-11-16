@@ -5,11 +5,11 @@ Every read takes the tenant only: the caller (closes, an agent tool) authorised 
 close's engagement first and holds the entity. Each read picks the entity's newest monthly set
 for the period (`period_kind = 'month'`, C-01-T17), so a newer sync is always what is shown.
 
-- **Balances** are in the account's natural sign: debit − credit for assets and expenses, credit −
+- **Balances** are in the account's natural sign: debit - credit for assets and expenses, credit -
   debit for liabilities, equity and income. `activity` is the month's movement: the balance less
   the prior month's (when the prior month's set exists and is in the same year; otherwise the
   balance itself, as a year-to-date income statement account opens the year at zero).
-- **The tree foots in code** (`foots`): Asset = Liability + Equity + (Income − Expense), the
+- **The tree foots in code** (`foots`): Asset = Liability + Equity + (Income - Expense), the
   undistributed result standing in for the unclosed year (AC-35). Never asked of a model.
 - **Register** pages are at most 200 rows (`REGISTER_PAGE`), in line order; the cursor is the
   last line number. Each row's `line_ref` is `<monthly snapshot>:<line>`: a `ledger_line`
@@ -69,7 +69,7 @@ def prior_period(period: str) -> str:
 
 
 def foots(totals: dict[Classification, Decimal]) -> bool:
-    """Asset = Liability + Equity + (Income − Expense) (AC-35)."""
+    """Asset = Liability + Equity + (Income - Expense) (AC-35)."""
     left = totals.get("asset", ZERO)
     right = (
         totals.get("liability", ZERO)
@@ -130,7 +130,9 @@ def _account_out(a: MonthAccount) -> LedgerAccountOut:
     )
 
 
-async def account_tree(tenant: TenantContext, client_entity_id: UUID, period: str) -> AccountTreeOut:
+async def account_tree(
+    tenant: TenantContext, client_entity_id: UUID, period: str
+) -> AccountTreeOut:
     """The month's tree with balances (`PeriodNotAvailable` when the month was never synced)."""
     async with tenant_session(tenant) as session:
         month = await _month(session, client_entity_id, period)
@@ -302,7 +304,9 @@ async def month_tie(
             for r in (
                 await session.execute(select(GlEntryRow).where(GlEntryRow.snapshot_id == gl.id))
             ).scalars():
-                moved[r.account_code] += natural(kinds.get(r.account_code, "asset"), r.debit, r.credit)
+                moved[r.account_code] += natural(
+                    kinds.get(r.account_code, "asset"), r.debit, r.credit
+                )
     return [
         AccountTie(
             a.external_id,
@@ -344,7 +348,9 @@ async def register_row(
         return snapshot.client_entity_id, None
     row = (
         await session.execute(
-            select(GlEntryRow).where(GlEntryRow.snapshot_id == gl.id, GlEntryRow.line_no == line_no)
+            select(GlEntryRow).where(
+                GlEntryRow.snapshot_id == gl.id, GlEntryRow.line_no == line_no
+            )
         )
     ).scalar_one_or_none()
     if row is None:

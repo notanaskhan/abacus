@@ -408,6 +408,12 @@ async def _visible_close(ctx: AuthContext, close_id: UUID) -> tuple[repo.CloseRo
     return close, found
 
 
+async def visible_close(ctx: AuthContext, close_id: UUID) -> repo.CloseRow:
+    """The close when the person may read it (`close.read`); walled or unknown: 404 (INV-3)."""
+    close, _ = await _visible_close(ctx, close_id)
+    return close
+
+
 async def close_summary(ctx: AuthContext, close_id: UUID) -> CloseSummaryOut:
     """CLS-02's record bar and Summary rail (AC-7)."""
     close, f = await _visible_close(ctx, close_id)
