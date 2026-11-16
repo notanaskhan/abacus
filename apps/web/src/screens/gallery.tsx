@@ -28,6 +28,7 @@ import {
 import "./kit-a08";
 import { TestingWorkspace } from "./AUD-12"; // A-08-T27: the artboards on the A-08 kit
 import { ComponentAuditors } from "./AUD-35"; // A-09-T22: the component auditors artboards
+import { Beneficiaries } from "./TXT-03"; // T-07-T25: beneficiaries, K-1s and the election
 import { FilesPage } from "./FIL-01";
 import {
   FIL01_STATES,
@@ -2612,6 +2613,10 @@ function Aud32Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-32", { title: "Consolidation setup", Component: Aud32Artboard });
+registerScreen("TXT-03", {
+  title: "Beneficiaries, K-1s & 65-day election · Calloway Family Trust",
+  Component: ({ params }: { params: FixtureParams }) => <Beneficiaries st={params.st} />,
+});
 registerScreen("AUD-35", {
   title: "Component auditors — Harlow & Pike",
   Component: ({ params }: { params: FixtureParams }) => <ComponentAuditors st={params.st} />,

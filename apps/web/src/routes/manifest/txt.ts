@@ -16,7 +16,7 @@ export const txtScreens = {
   },
   "TXT-03": {
     name: "Beneficiaries, K-1s & 65-day election · Calloway Family Trust",
-    status: "planned",
+    status: "fixture", // T-07-T25: A to E on fixtures (the gallery)
     path: null,
     entry: true,
   },
