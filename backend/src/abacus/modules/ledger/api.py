@@ -42,6 +42,7 @@ from abacus.modules.ledger.compute.mapping import (
 # A-09-T13: group consolidations, the ledger's half (assurance hosts the routes).
 from abacus.modules.ledger.consolidation import (
     ConsolidationFacts,
+    ConsolidationLockState,
     ConsolidationNotDraft,
     EntityRow,
     Finalized,
@@ -247,6 +248,9 @@ from abacus.modules.ledger.agent_tools import AGENT_TOOLS  # noqa: E402
 __all__ = [
     "AGENT_TOOLS",
     "CONFIDENCE",
+    "CONSOLIDATED_COLUMN",
+    "CONSOLIDATION_ENGINE_VERSION",
+    "ELIMINATIONS_COLUMN",
     "REGISTER_PAGE",
     "ROUTERS",
     "AccountEdits",
@@ -263,12 +267,18 @@ __all__ = [
     "CitedLine",
     "CitedRegisterRow",
     "ConsolidationChanged",
+    "ConsolidationEliminationLine",
     "ConsolidationFacts",
+    "ConsolidationInvalid",
+    "ConsolidationLevel",
+    "ConsolidationLockState",
     "ConsolidationNotDraft",
     "ConsolidationStructureInvalid",
+    "ConsolidationTbLine",
     "ConsolidationTbMissing",
     "DescriptionRule",
     "DocumentUnbalanced",
+    "Elimination",
     "EntityRow",
     "EntryLine",
     "EntrySet",
@@ -360,6 +370,7 @@ __all__ = [
     "build_statements",
     "candidates",
     "compare_periods",
+    "consolidate",
     "consolidation_facts",
     "consolidations_of",
     "create_consolidation",
@@ -392,6 +403,7 @@ __all__ = [
     "layer_available",
     "layer_totals",
     "leadsheets",
+    "lock_consolidation",
     "mapped_trial_balance",
     "mapping_set_authors",
     "mapping_set_by_id",
@@ -419,6 +431,8 @@ __all__ = [
     "register_adjustment_source",
     "register_lines",
     "register_row",
+    "render_consolidation_levels",
+    "reopen_consolidation",
     "require_balanced",
     "review_digests",
     "rule_line",
@@ -442,3 +456,32 @@ __all__ = [
     "version_adopter",
     "year_end_trial_balance",
 ]
+
+# A-09-T19 rest (DEC-5328): lock and reopen a finalized consolidation.
+# A-09-T19 (DEC-5311, DEC-5328): the consolidation engine and its workbook, for assurance's AUD-33.
+from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
+    CONSOLIDATED as CONSOLIDATED_COLUMN,
+)
+from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
+    ELIMINATIONS as ELIMINATIONS_COLUMN,
+)
+from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
+    ENGINE_VERSION as CONSOLIDATION_ENGINE_VERSION,
+)
+from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
+    ConsolidationInvalid as ConsolidationInvalid,
+)
+from abacus.modules.ledger.compute.consolidation import Elimination as Elimination  # noqa: E402
+from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
+    EliminationLine as ConsolidationEliminationLine,
+)
+from abacus.modules.ledger.compute.consolidation import Level as ConsolidationLevel  # noqa: E402
+from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
+    TbLine as ConsolidationTbLine,
+)
+from abacus.modules.ledger.compute.consolidation import consolidate as consolidate  # noqa: E402
+from abacus.modules.ledger.consolidation import lock as lock_consolidation  # noqa: E402
+from abacus.modules.ledger.consolidation import reopen as reopen_consolidation  # noqa: E402
+from abacus.modules.ledger.consolidation_xlsx import (  # noqa: E402
+    render_levels as render_consolidation_levels,
+)

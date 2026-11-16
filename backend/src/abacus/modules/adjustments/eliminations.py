@@ -45,6 +45,10 @@ class ConsolidationLocked(DomainConflict):
     code = "consolidation_locked"
 
 
+class EliminationStale(DomainConflict):
+    code = "version_stale"
+
+
 class NotProposed(DomainConflict):
     code = "transition_not_available"
 
@@ -117,11 +121,13 @@ async def view(tenant: TenantContext, entry_id: UUID) -> EliminationView:
         if head is None:
             raise NotFound(TARGET)
         rows = (await session.execute(_LINES, {"id": entry_id})).all()
-    lines = tuple(EliminationLine(str(r[0]), r[1], Decimal(r[2]), Decimal(r[3])) for r in rows)
+    # An edit zeroes the replaced lines (lines are never deleted; A-09-T20 rest, DEC-5328).
+    live = [r for r in rows if Decimal(r[2]) or Decimal(r[3])] or list(rows)
+    lines = tuple(EliminationLine(str(r[0]), r[1], Decimal(r[2]), Decimal(r[3])) for r in live)
     return EliminationView(
         id=head["id"],
         display_code=str(head["display_code"]),
-        level=int(rows[0][4]) if rows else 1,
+        level=int(live[-1][4]) if live else 1,
         description=str(head["description"] or ""),
         status=str(head["status"]),
         lines=lines,
@@ -269,4 +275,124 @@ async def post(ctx: AuthContext, entry_id: UUID) -> EliminationView:
             target=Target(TARGET, entry_id),
             after=Ref(consolidation=head["consolidation_id"]),
         )
+    return await view(ctx.tenant, entry_id)
+
+
+# --- the AUD-33 routes' rest (A-09-T20; DEC-5328) ----------------------------------------------
+
+_OF: Final = text(
+    "SELECT id FROM proposed_entries WHERE consolidation_id = :c AND kind = 'elimination' "
+    "ORDER BY created_at, id"
+)
+_EDITABLE: Final = frozenset({"proposed", "review_required", "within_threshold"})
+
+
+async def eliminations_of(tenant: TenantContext, consolidation_id: UUID) -> list[EliminationView]:
+    """A consolidation's eliminations in the order proposed (the caller authorised the read)."""
+    async with tenant_session(tenant) as session:
+        ids = [cast(UUID, r[0]) for r in await session.execute(_OF, {"c": consolidation_id})]
+    return [await view(tenant, i) for i in ids]
+
+
+async def edit_elimination(
+    ctx: AuthContext,
+    entry_id: UUID,
+    *,
+    level: int,
+    description: str,
+    lines: Sequence[EliminationLine],
+    seen_version: int,
+) -> EliminationView:
+    """A person's edit while Proposed: the old lines are zeroed and the new ones appended (lines
+    are never deleted); 409 `version_stale` on a stale If-Match, `consolidation_locked` once
+    locked."""
+    _human(ctx, EDIT)
+    async with tenant_session(ctx.tenant) as session:
+        head = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT engagement_id, work_item_id, consolidation_id, status, version "
+                        "FROM proposed_entries WHERE id = :id AND kind = 'elimination'"
+                    ),
+                    {"id": entry_id},
+                )
+            )
+            .mappings()
+            .first()
+        )
+    if head is None:
+        raise NotFound(TARGET)
+    await authorise(ctx, EDIT, await _resource(ctx, head["engagement_id"]))  # type: ignore[arg-type] -- a Resource
+    if await _locked(ctx.tenant, head["consolidation_id"]):
+        raise ConsolidationLocked(facts={"consolidation": str(head["consolidation_id"])})
+    if head["status"] not in _EDITABLE:
+        raise NotProposed(facts={"status": str(head["status"])})
+    if int(head["version"]) != seen_version:
+        raise EliminationStale(facts={"entry": str(entry_id)})
+    amount = max(sum((ln.debit for ln in lines), ZERO), sum((ln.credit for ln in lines), ZERO))
+    async with uow(ctx.tenant) as tx:
+        bumped = await tx.session.scalar(
+            text(
+                "UPDATE proposed_entries SET description = :d, amount = :a, version = version + 1 "
+                "WHERE id = :id AND version = :v RETURNING version"
+            ),
+            {"d": description[:300], "a": amount, "id": entry_id, "v": seen_version},
+        )
+        if bumped is None:
+            raise EliminationStale(facts={"entry": str(entry_id)})
+        await tx.session.execute(
+            text("UPDATE proposed_entry_lines SET debit = 0, credit = 0 WHERE entry_id = :id"),
+            {"id": entry_id},
+        )
+        last = int(
+            await tx.session.scalar(
+                text(
+                    "SELECT coalesce(max(line_no), 0) FROM proposed_entry_lines "
+                    "WHERE entry_id = :id"
+                ),
+                {"id": entry_id},
+            )
+            or 0
+        )
+        for line_no, ln in enumerate(lines, start=last + 1):
+            await tx.session.execute(
+                text(
+                    "INSERT INTO proposed_entry_lines (tenant_id, engagement_id, work_item_id, "
+                    "entry_id, line_no, account_code, account_name, debit, credit, "
+                    "client_entity_id, consolidation_level) VALUES (:t, :e, :w, :id, :n, :code, "
+                    ":name, :dr, :cr, :ent, :lvl)"
+                ),
+                {
+                    "t": ctx.tenant_id,
+                    "e": head["engagement_id"],
+                    "w": head["work_item_id"],
+                    "id": entry_id,
+                    "n": line_no,
+                    "code": _code(ln.caption),
+                    "name": ln.caption[:200],
+                    "dr": ln.debit,
+                    "cr": ln.credit,
+                    "ent": ln.client_entity_id,
+                    "lvl": level,
+                },
+            )
+        tx.record("elimination.edited", target=Target(TARGET, entry_id), after=Ref(version=bumped))
+    return await view(ctx.tenant, entry_id)
+
+
+async def reject_elimination(ctx: AuthContext, entry_id: UUID, reason: str) -> EliminationView:
+    """A person rejects with a reason (sealed on the decision row, A-06's reject)."""
+    _human(ctx, APPROVE)
+    found = await view(ctx.tenant, entry_id)
+    async with tenant_session(ctx.tenant) as session:
+        engagement = await session.scalar(
+            text("SELECT engagement_id FROM proposed_entries WHERE id = :id"), {"id": entry_id}
+        )
+    await authorise(ctx, APPROVE, await _resource(ctx, cast(UUID, engagement)))  # type: ignore[arg-type] -- a Resource
+    if found.status == "posted":
+        raise NotProposed(facts={"status": found.status})
+    from abacus.modules.adjustments.decisions import reject_with_note
+
+    await reject_with_note(ctx, entry_id, "elimination_rejected", reason)
     return await view(ctx.tenant, entry_id)

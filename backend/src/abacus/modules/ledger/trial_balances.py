@@ -219,6 +219,7 @@ class TrialBalanceSummary:
     period_end: date
     display_unit: str
     current_version_no: int
+    client_entity_id: UUID | None = None  # S47 (A-09-T19, additive): whose TB of record
 
 
 @dataclass(frozen=True)
@@ -485,7 +486,13 @@ def _summary(s: LedgerSnapshot) -> SnapshotSummary:
 
 def _tb_summary(tb: TrialBalance) -> TrialBalanceSummary:
     return TrialBalanceSummary(
-        tb.id, tb.label, tb.period_start, tb.period_end, tb.display_unit, tb.current_version_no
+        tb.id,
+        tb.label,
+        tb.period_start,
+        tb.period_end,
+        tb.display_unit,
+        tb.current_version_no,
+        tb.client_entity_id,
     )
 
 

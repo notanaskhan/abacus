@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -33,8 +33,10 @@ from abacus.kernel._statuses import (
 )
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.modules.adjustments.api import EliminationLine
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
+from abacus.modules.ledger.api import CONSOLIDATION_ENGINE_VERSION, consolidation_facts
 from abacus.modules.platform.api import group_audit_on
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -686,29 +688,35 @@ async def group_finalize(
 
 
 @router.post(
-    f"{_C}/lock", action="consolidation.lock", response_model=ConsolidationOut, errors=(409, 501)
+    f"{_C}/lock", action="consolidation.lock", response_model=ConsolidationOut, errors=(409,)
 )
 async def group_lock(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> ConsolidationOut:
     await _gate(ctx, work_item_id, "consolidation.lock")
-    raise _todo("A-09-T19")  # lock, reopen, level TBs and the xlsx (A-09 §9)
+    from abacus.modules.assurance import group_consolidation as svc
+    from abacus.modules.assurance import group_tb
+
+    await group_tb.lock(ctx, work_item_id, consolidation_id)
+    return await svc.get(ctx, work_item_id, consolidation_id)
 
 
 @router.post(
-    f"{_C}/reopen", action="consolidation.lock", response_model=ConsolidationOut, errors=(409, 501)
+    f"{_C}/reopen", action="consolidation.lock", response_model=ConsolidationOut, errors=(409,)
 )
 async def group_reopen(
     work_item_id: UUID, consolidation_id: UUID, body: GroupReasonIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ConsolidationOut:
     """With a reason; stales consolidation sign-offs and AUD-34's coverage facts (OQ-2)."""
     await _gate(ctx, work_item_id, "consolidation.lock")
-    raise _todo("A-09-T19")  # lock, reopen, level TBs and the xlsx (A-09 §9)
+    from abacus.modules.assurance import group_consolidation as svc
+    from abacus.modules.assurance import group_tb
+
+    await group_tb.reopen(ctx, work_item_id, consolidation_id, body.reason)
+    return await svc.get(ctx, work_item_id, consolidation_id)
 
 
-@router.get(
-    f"{_C}/tb", action="consolidation.read", response_model=ConsolidatedTbOut, errors=(501,)
-)
+@router.get(f"{_C}/tb", action="consolidation.read", response_model=ConsolidatedTbOut, errors=())
 async def group_consolidated_tb(
     work_item_id: UUID,
     consolidation_id: UUID,
@@ -718,26 +726,131 @@ async def group_consolidated_tb(
 ) -> ConsolidatedTbOut:
     """Code's columns, ties, tallies and attribution; no browser arithmetic."""
     await _gate(ctx, work_item_id, "consolidation.read")
-    raise _todo("A-09-T19")  # lock, reopen, level TBs and the xlsx (A-09 §9)
+    from abacus.modules.assurance import group_tb
+
+    found, mapped, accounts = await group_tb.levels(ctx, work_item_id, consolidation_id)
+    lv = group_tb.level_of(found, level)
+    columns = list(lv.columns)
+    if view != "consolidated":  # one entity's column beside the consolidated
+        entity = view.removeprefix("entity:")
+        columns = [c for c in columns if c in (entity, "consolidated")]
+    return ConsolidatedTbOut(
+        level=level,
+        view=view,
+        columns=columns,
+        rows=[
+            TbRowOut(
+                caption=r.caption,
+                section=r.section,
+                cells=[
+                    TbCellOut(
+                        column=c.column,
+                        amount=group_tb.cell_amount(c.amount),
+                        elimination_codes=list(c.elimination_codes),
+                    )
+                    for c in r.cells
+                    if c.column in columns
+                ],
+            )
+            for r in lv.rows
+        ],
+        tallies=GroupTalliesOut(
+            total_assets=group_tb.cell_amount(lv.total_assets),
+            net_income=group_tb.cell_amount(lv.net_income),
+            balanced="tie" if lv.ties else "off",
+            off_by=None
+            if lv.ties
+            else group_tb.cell_amount(sum(lv.column_totals.values(), Decimal(0))),
+            intercompany="pending",
+            intercompany_off_by=None,
+            eliminations_posted=lv.eliminations_posted,
+            mapped=mapped,
+            accounts=accounts,
+        ),
+        engine_version=f"consolidation-{CONSOLIDATION_ENGINE_VERSION}",
+    )
 
 
-@router.get(
-    f"{_C}/export.xlsx", action="consolidation.export", response_model=bytes, errors=(501,)
-)
+@router.get(f"{_C}/export.xlsx", action="consolidation.export", response_model=bytes, errors=())
 async def group_export_consolidation(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx
 ) -> Response:
     await _gate(ctx, work_item_id, "consolidation.export")
-    raise _todo("A-09-T19")  # lock, reopen, level TBs and the xlsx (A-09 §9)
+    from abacus.modules.assurance import group_tb
+
+    return Response(
+        content=await group_tb.workbook(ctx, work_item_id, consolidation_id),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 _E = "/consolidations/{consolidation_id}/eliminations"
 
 
-@router.get(_E, action="elimination.read", response_model=EliminationsOut, errors=(501,))
+def _lines_in(body: EliminationIn) -> list[EliminationLine]:
+    from abacus.modules.adjustments.api import eliminations as adj
+
+    return [
+        adj.EliminationLine(ln.caption, ln.client_entity_id, ln.debit, ln.credit)
+        for ln in body.lines
+    ]
+
+
+def _elimination_out(v: object) -> EliminationOut:
+    view = cast("Any", v)
+    return EliminationOut(
+        id=view.id,
+        display_code=view.display_code,
+        consolidation_level=view.level,
+        description=view.description,
+        status=view.status,
+        posting_target="consolidation_layer",
+        lines=[
+            EliminationLineOut(
+                caption=ln.caption,
+                client_entity_id=ln.client_entity_id,
+                debit=ln.debit,
+                credit=ln.credit,
+            )
+            for ln in view.lines
+        ],
+        total_debit=view.total_debit,
+        total_credit=view.total_credit,
+        off_by=view.off_by,
+        computation=None,
+        citation_ids=[],
+        proposed_by_run_id=None,
+        approved_by_name=None,
+        posted_at=None,
+    )
+
+
+def _eliminations_out(views: list[object]) -> EliminationsOut:
+    items = [_elimination_out(v) for v in views]
+    return EliminationsOut(
+        items=items,
+        total_debit=sum((i.total_debit for i in items), Decimal(0)),
+        total_credit=sum((i.total_credit for i in items), Decimal(0)),
+    )
+
+
+async def _elimination_views(
+    ctx: AuthContext, consolidation_id: UUID, action: str
+) -> list[object]:
+    """The consolidation's eliminations for someone allowed `action` on its engagement."""
+    from abacus.modules.adjustments.api import eliminations as adj
+    from abacus.modules.engagements.api import engagement_resource_of
+
+    facts = await consolidation_facts(ctx.tenant, consolidation_id)
+    await authorise(ctx, action, await engagement_resource_of(ctx.tenant, facts.engagement_id))
+    return list(await adj.eliminations_of(ctx.tenant, consolidation_id))
+
+
+@router.get(_E, action="elimination.read", response_model=EliminationsOut, errors=())
 async def group_list_eliminations(consolidation_id: UUID, ctx: Ctx) -> EliminationsOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T20")
+    views = await _elimination_views(ctx, consolidation_id, "elimination.read")
+    return _eliminations_out(views)
 
 
 @router.post(
@@ -745,82 +858,115 @@ async def group_list_eliminations(consolidation_id: UUID, ctx: Ctx) -> Eliminati
     action="elimination.edit",
     response_model=EliminationOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_create_elimination(
     consolidation_id: UUID, body: EliminationIn, ctx: Ctx, _key: IdempotencyKey
 ) -> EliminationOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T20")
+    from abacus.modules.adjustments.api import eliminations as adj
+
+    facts = await consolidation_facts(ctx.tenant, consolidation_id)
+    made = await adj.propose_elimination(
+        ctx,
+        engagement_id=facts.engagement_id,
+        work_item_id=facts.work_item_id,
+        consolidation_id=consolidation_id,
+        level=body.consolidation_level,
+        description=body.description,
+        lines=_lines_in(body),
+    )
+    return _elimination_out(made)
 
 
 @router.patch(
     "/proposed-entries/{entry_id}/elimination",
     action="elimination.edit",
     response_model=EliminationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_edit_elimination(
     entry_id: UUID, body: EliminationIn, ctx: Ctx, _if: IfMatch
 ) -> EliminationOut:
     """Lines while Proposed; the server's "off n"."""
     await _gate_record(ctx)
-    raise _todo("A-09-T20")
+    from abacus.modules.adjustments.api import eliminations as adj
+    from abacus.modules.assurance.group_consolidation import seen_version
+
+    return _elimination_out(
+        await adj.edit_elimination(
+            ctx,
+            entry_id,
+            level=body.consolidation_level,
+            description=body.description,
+            lines=_lines_in(body),
+            seen_version=seen_version(_if),
+        )
+    )
 
 
 @router.post(
     "/proposed-entries/{entry_id}/elimination/approve",
     action="elimination.approve",
     response_model=EliminationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_approve_elimination(
     entry_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> EliminationOut:
     """409 `unbalanced_entry`; one human decision, never a policy actor (P-08)."""
     await _gate_record(ctx)
-    raise _todo("A-09-T20")
+    from abacus.modules.adjustments.api import eliminations as adj
+
+    return _elimination_out((await adj.approve(ctx, [entry_id]))[0])
 
 
 @router.post(
     f"{_E}/approve",
     action="elimination.approve",
     response_model=EliminationsOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_approve_eliminations(
     consolidation_id: UUID, body: EliminationApproveItemsIn, ctx: Ctx, _key: IdempotencyKey
 ) -> EliminationsOut:
     """The per-item confirm list: one human decision per entry."""
     await _gate_record(ctx)
-    raise _todo("A-09-T20")
+    from abacus.modules.adjustments.api import eliminations as adj
+
+    await adj.approve(ctx, body.items)
+    return _eliminations_out(await _elimination_views(ctx, consolidation_id, "elimination.read"))
 
 
 @router.post(
     "/proposed-entries/{entry_id}/elimination/apply",
     action="elimination.apply",
     response_model=EliminationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_apply_elimination(
     entry_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> EliminationOut:
     """`posting_target = consolidation_layer`; no entity snapshot or client ledger changes."""
     await _gate_record(ctx)
-    raise _todo("A-09-T20")
+    from abacus.modules.adjustments.api import eliminations as adj
+
+    return _elimination_out(await adj.post(ctx, entry_id))
 
 
 @router.post(
     "/proposed-entries/{entry_id}/elimination/reject",
     action="elimination.approve",
     response_model=EliminationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_reject_elimination(
     entry_id: UUID, body: GroupReasonIn, ctx: Ctx, _key: IdempotencyKey
 ) -> EliminationOut:
     await _gate_record(ctx)
-    raise _todo("A-09-T20")
+    from abacus.modules.adjustments.api import eliminations as adj
+
+    return _elimination_out(await adj.reject_elimination(ctx, entry_id, body.reason))
 
 
 @router.post(

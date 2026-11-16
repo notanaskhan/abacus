@@ -54,6 +54,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "consolidation.discarded",
         "consolidation.edited",
         "consolidation.finalized",
+        "consolidation.locked",  # A-09-T19 (DEC-5328): AC-4.5's lock and reopen
+        "consolidation.reopened",
         "consolidation.structure_saved",
         "consolidation.trial_balance_attached",
         "consolidation.trial_balance_not_needed",
@@ -72,6 +74,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "fiduciary_election.recorded",
         # reviewed 2026-11-16 (S47): A-09-T20 consolidation eliminations, identifiers only
         "elimination.approved",
+        "elimination.edited",  # A-09-T20 (DEC-5328): lines while Proposed
         "elimination.posted",
         "elimination.proposed",
         # reviewed 2026-11-16 (S47): A-08-T18 the confirmations lifecycle, identifiers only
