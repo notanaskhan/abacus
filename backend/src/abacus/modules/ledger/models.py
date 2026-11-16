@@ -36,6 +36,9 @@ class LedgerSnapshot(Base):
     # Migration 0659 (A-05-T28): a document-extracted TB names its document and extraction run.
     source_evidence_version_id: Mapped[UUID | None] = mapped_column(default=None)
     extraction_run_id: Mapped[UUID | None] = mapped_column(default=None)
+    # Migration 0882 (C-01-T10): a close month's snapshot (`period_kind = 'month'`, `YYYY-MM`).
+    period_kind: Mapped[str] = mapped_column(server_default=FetchedValue())
+    period: Mapped[str | None] = mapped_column(default=None)
 
 
 class TrialBalanceLineRow(Base):
@@ -111,6 +114,11 @@ class GlEntryRow(Base):
     entered_at: Mapped[datetime | None]
     source: Mapped[str | None]
     approver: Mapped[str | None]
+    # C-01-T10 (0882): the register fields a close reads (C9 v2.1).
+    offset_account_ref: Mapped[str | None] = mapped_column(default=None)
+    payee: Mapped[str | None] = mapped_column(default=None)
+    txn_type: Mapped[str | None] = mapped_column(default=None)
+    external_txn_id: Mapped[str | None] = mapped_column(default=None)
 
 
 # --- The trial balance of record (SPEC-309; TASK-320; A-02) -------------------------------------

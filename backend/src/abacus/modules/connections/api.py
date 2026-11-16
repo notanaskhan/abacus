@@ -116,6 +116,14 @@ from abacus.modules.connections.workflow_types import (
     RetrievalInput,
     RetrievalOutcome,
 )
+from abacus.modules.connections.ledger_sync import ACTIVITIES as LEDGER_SYNC_ACTIVITIES
+from abacus.modules.connections.ledger_sync import (
+    SyncScope,
+    ensure_sync_workflow,
+    register_sync_scope,
+    sync_facts,
+)
+from abacus.modules.connections.ledger_sync_workflow import LedgerSyncWorkflow
 from abacus.modules.connections.workflows import (
     CONNECTION_HEALTH_ID,
     ConnectionHealthWorkflow,
@@ -140,9 +148,13 @@ WORKFLOWS.update(GL_WORKFLOWS)
 # A-02-T25 (DEC-708): the daily health pass, a platform job.
 WORKFLOWS[ConnectionHealthWorkflow] = "background"
 register_work_classes({ConnectionHealthWorkflow: "background"})
+# C-01-T17: the firm's hourly ledger sync for closes (`ledger_sync:<tenant>`).
+WORKFLOWS[LedgerSyncWorkflow] = "background"
+register_work_classes({LedgerSyncWorkflow: "background"})
 ACTIVITIES: tuple[Callable[..., Any], ...] = (  # Any: Temporal activities of any shape
     *RUN_ACTIVITIES,
     check_connection_health_activity,  # A-02-T25: the daily health pass
+    *LEDGER_SYNC_ACTIVITIES,  # C-01-T17
 )
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
@@ -163,7 +175,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     connection_router,
     complete_router,
-    ledger_sync_router,  # C-01-T07: C9 v2.1 sync status and Sync now (stub)
+    ledger_sync_router,  # C-01-T07/T17: C9 v2.1 sync status and Sync now
 )
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
@@ -172,6 +184,11 @@ register_entity_owners({"connection"}, audit_entities)
 
 __all__ = [
     "ACTIVITIES",
+    "LedgerSyncWorkflow",
+    "SyncScope",
+    "ensure_sync_workflow",
+    "register_sync_scope",
+    "sync_facts",
     "CONNECTORS",
     "NETWORKLESS_PROVIDERS",
     "ROUTERS",
