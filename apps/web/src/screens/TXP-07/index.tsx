@@ -45,6 +45,12 @@ function money(value: string | null | undefined, negate = false): string {
   return amount(shown, "whole").text;
 }
 
+/** A pane figure's colour: zero "—" ink-4, a negative "(…)" brick, else ink (T-05 §5.4). */
+export function toneOf(text: string): string {
+  if (text === "—") return "text-ink-4";
+  return /^\(.*\)$/.test(text) ? "text-negative" : "text-ink";
+}
+
 function tieCard(label: string, state: string | undefined, difference?: string): TallyItem {
   if (state === "tie") return { label, tally: "tie" };
   if (state === "off") {
@@ -286,7 +292,7 @@ function PartnerPane({
                   return (
                     <td
                       key={col}
-                      className={`px-[12px] text-right ${amber ? "bg-amber-tint text-amber-ink" : "text-ink"}`}
+                      className={`px-[12px] text-right ${amber ? "bg-amber-tint text-amber-ink" : toneOf(text)}`}
                     >
                       {amber ? (
                         <button
@@ -455,7 +461,10 @@ export function TXP07({
   };
   return (
     <div data-screen="TXP-07" className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-[44px] flex-none items-center gap-[8px] px-[12px]">
+      <div
+        data-entity="control-bar"
+        className="flex h-[44px] flex-none items-center gap-[8px] px-[12px]"
+      >
         <Segmented
           size="small"
           label={COPY.views}

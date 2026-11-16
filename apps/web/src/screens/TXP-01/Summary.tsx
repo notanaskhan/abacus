@@ -20,12 +20,16 @@ import { useSession } from "../../app-core/session";
 import type { SignOffWriter } from "../../domain/review";
 import { ENTITY_CAPABILITIES, entityAgentGate } from "../../domain/tax";
 import { SignOffSheet } from "../SHL-12";
+import { useNavigate } from "@tanstack/react-router";
+import { to } from "../../routes/to";
+import { COPY } from "./copy";
 import { TXP01 } from "./index";
 
 export function Summary({ returnId }: { returnId: string }): JSX.Element {
   const path = { return_id: returnId };
   const client = useQueryClient();
   const session = useSession();
+  const navigate = useNavigate();
   const memo = useQuery(entityMemoOptions({ path }));
   const general = useQuery(entityGeneralInformationOptions({ path }));
   // T-05-T66: the memo drafter's availability for this firm (agents off, stage, §7216).
@@ -77,6 +81,21 @@ export function Summary({ returnId }: { returnId: string }): JSX.Element {
       ) : null}
       <TXP01
         memo={m}
+        // T-05-T69: book-to-tax → TXP-02, open items → TXP-10, distributions and K-1s → TXP-12.
+        sectionLinks={{
+          book_to_tax: {
+            ...COPY.sectionLink.financials,
+            onOpen: () => void navigate(to.TXP02({ returnId, section: "financials" })),
+          },
+          open_items: {
+            ...COPY.sectionLink.issues,
+            onOpen: () => void navigate(to.TXP10({ returnId })),
+          },
+          distributions: {
+            ...COPY.sectionLink.k1,
+            onOpen: () => void navigate(to.TXP12({ returnId })),
+          },
+        }}
         agentOffered={gate.offered}
         agentReason={gate.reason}
         general={general.data}

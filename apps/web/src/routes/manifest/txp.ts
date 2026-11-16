@@ -6,11 +6,15 @@ import type { Manifest } from "./types";
 export const txpScreens = {
   "TXP-00": {
     name: "Return › Agent · entity returns",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/tax-returns/$returnId", // the form-family dispatch (T-05-T28; T-05-T69)
     entry: true,
   },
-  "TXP-01": { name: "Review › Summary · Ridgeline preparer memo", status: "planned", path: null },
+  "TXP-01": {
+    name: "Review › Summary · Ridgeline preparer memo",
+    status: "fixture",
+    path: "/tax-returns/$returnId/review/$section", // `section: "summary"` (T-05-T69)
+  },
   "TXP-02": {
     name: "Review › Financials (TB → TTB) · Ridgeline 2025 Form 1065",
     status: "fixture",
@@ -33,8 +37,8 @@ export const txpScreens = {
   },
   "TXP-06": {
     name: "Allocation Structure (modal sheet) · Ridgeline and Harborview 2025 Form 1065",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/tax-returns/$returnId/review/$section", // `section: "schedule-k"`, `?ov=allocation`
   },
   "TXP-07": {
     name: "Review › Capital Accounts · Ridgeline 2025 Form 1065",
@@ -47,7 +51,11 @@ export const txpScreens = {
     path: null,
   },
   "TXP-09": { name: "Review › States & PTET · Ridgeline", status: "planned", path: null },
-  "TXP-10": { name: "Return › Issues · Ridgeline 2025 Form 1065", status: "planned", path: null },
+  "TXP-10": {
+    name: "Return › Issues · Ridgeline 2025 Form 1065",
+    status: "fixture",
+    path: "/tax-returns/$returnId/issues", // T-05-T69
+  },
   "TXP-11": {
     name: "Workpaper · Ridgeline workbook, sheet 05 Capital",
     status: "fixture",

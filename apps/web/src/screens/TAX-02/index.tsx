@@ -290,9 +290,11 @@ function Banner({
   overview: TaxReturnOverviewOut;
   now: Date;
 }): JSX.Element | null {
+  const open = useOpenHref();
   const dep = overview.k1_dependencies.find((k) => k.blocking === true);
   if (dep === undefined) return null;
   const label = dep.source_label ?? dep.issuer_name;
+  const source = dep.source_return_id;
   return (
     <div
       role="status"
@@ -307,11 +309,18 @@ function Banner({
           dep.source_due_on == null ? "" : formatDate(dep.source_due_on, { now }),
         )}
       </span>
-      <Planned hint={COPY.hints.source}>
-        <span className="text-ink">
+      {source === null ? null : (
+        // T-05-T69: TXP-01 is built; the issuing return's review summary (link contract rule 1).
+        <button
+          type="button"
+          className="text-ink underline-offset-2 hover:underline"
+          onClick={() => {
+            open(hrefOf(to.TXP01({ returnId: source, section: "summary" })));
+          }}
+        >
           {COPY.openSource(label)} <span className="text-ink-3">→</span>
-        </span>
-      </Planned>
+        </button>
+      )}
     </div>
   );
 }

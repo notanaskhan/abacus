@@ -57,6 +57,11 @@ export interface TXP00Props {
   onViewRun?: () => void;
   onViewWork?: (taskKey: string) => void;
   onOpenItems?: (taskKey: string) => void;
+  /** T-05-T69 (handoff INTERACTIONS): a row's name opens its Review sub-tab; only the tasks
+   * whose screen is built are listed, so the rest stay plain text. */
+  taskTargets?: Readonly<Record<string, () => void>>;
+  /** The rail's Links band, in the handoff's order; a link with no `onOpen` is drawn as text. */
+  links?: readonly { key: string; label: string; value: string; onOpen?: () => void }[];
   onAnswer?: (answer: unknown) => void;
   onComposer?: () => void;
   /** T-05-T66 (AC-13.1): what the newest run waits on (`consent_7216`), from its `blocked_on`. */
@@ -167,10 +172,15 @@ function TaskGroup({
       <header className="flex items-center gap-[10px] bg-shell py-[10px] pr-[10px] pl-[13px]">
         <span className="flex min-w-0 flex-1 items-baseline gap-[8px]">
           <span className="text-[14px] font-medium">{group.title}</span>
-          {frame === "a" || frame === "b" ? (
-            <span className="text-[12px] text-ink-3">
-              {open > 0 ? `${String(open)} open` : ""}
-            </span>
+          {(frame === "a" || frame === "b") && open > 0 ? (
+            // "n open" → TXP-10 filtered to that task (handoff INTERACTIONS).
+            <button
+              type="button"
+              className="text-[12px] text-ink-3 underline-offset-2 hover:underline"
+              onClick={() => props.onOpenItems?.(group.tasks.find((t) => t.open > 0)?.key ?? "")}
+            >
+              {`${String(open)} open`}
+            </button>
           ) : null}
         </span>
         {frame === "a" || frame === "b" ? (
@@ -204,7 +214,17 @@ function TaskGroup({
             >
               <Disc state={state} />
               <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
-                <span className="text-[13.5px]">{task.name}</span>
+                {props.taskTargets?.[task.key] !== undefined ? (
+                  <button
+                    type="button"
+                    className="self-start text-left text-[13.5px] underline-offset-2 hover:underline"
+                    onClick={props.taskTargets[task.key]}
+                  >
+                    {task.name}
+                  </button>
+                ) : (
+                  <span className="text-[13.5px]">{task.name}</span>
+                )}
                 {state === "fail" ? (
                   <>
                     <span className="text-[12.5px] font-medium text-red-ink">
@@ -273,6 +293,27 @@ export function TXP00(props: TXP00Props): JSX.Element {
         <h3 className="flex h-[31px] items-center bg-band-hd px-[14px] text-body font-medium">
           {COPY.links}
         </h3>
+        {(props.links ?? []).map((l) => (
+          <div
+            key={l.key}
+            data-link={l.key}
+            className="flex h-[33px] items-center justify-between px-[14px] text-[13px]"
+          >
+            <span className="text-ink-2">{l.label}</span>
+            {l.onOpen === undefined ? (
+              <span className="text-ink">{l.value}</span>
+            ) : (
+              <button
+                type="button"
+                className="flex items-center gap-[4px] text-ink underline-offset-2 hover:underline"
+                onClick={l.onOpen}
+              >
+                {l.value}
+                <Icon name="arrow-right" size={12} className="text-ink-3" />
+              </button>
+            )}
+          </div>
+        ))}
         <h3 className="flex h-[31px] items-center bg-band-hd px-[14px] text-body font-medium">
           {COPY.team}
         </h3>

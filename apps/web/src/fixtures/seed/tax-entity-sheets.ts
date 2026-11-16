@@ -241,3 +241,20 @@ export function sheetCells(
   const cells = sheet === "05" ? sheet05(snapshot, proposed) : sheet === "01" ? sheet01() : [];
   return { sheet, version: 2, cells, next_range: null };
 }
+
+/** T-05-T69 (INP ≤ 200 ms on TXP-11 with 2,000 cells): sheet 01's own cells repeated down the
+ * sheet, each copy's rows shifted below the last, until there are at least `min` cells. A load
+ * fixture for the trace only, never an artboard; no value is new. */
+export function loadSheet(min = 2000): WorkbookSheetCellsOut {
+  const base = sheet01();
+  const rowOf = (address: string) => Number(address.replace(/^[A-Z]+/u, ""));
+  const depth = Math.max(...base.map((c) => rowOf(c.address)));
+  const cells: WorkbookCellOut[] = [];
+  for (let copy = 0; cells.length < min; copy += 1) {
+    for (const c of base) {
+      const column = c.address.replace(/\d+$/u, "");
+      cells.push({ ...c, address: `${column}${String(rowOf(c.address) + copy * depth)}` });
+    }
+  }
+  return { sheet: "01", version: 2, cells, next_range: null };
+}

@@ -419,7 +419,15 @@ export function DataGrid({
                       </>
                     ) : type === "num" ? (
                       cell?.text !== undefined ? (
-                        <span className="whitespace-nowrap text-ink-3">{cell.text}</span>
+                        // A bare "—" is a statement zero: ink-4 (design system §A6, T-05-T69).
+                        <span
+                          className={cn(
+                            "whitespace-nowrap",
+                            cell.text === "—" ? "text-ink-4" : "text-ink-3",
+                          )}
+                        >
+                          {cell.text}
+                        </span>
                       ) : (
                         <MoneyCell value={cell?.value ?? null} format={c.format ?? g.format} />
                       )

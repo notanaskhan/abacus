@@ -99,6 +99,21 @@ describe("screen scenarios on the firm entry", () => {
     const txp = screenScenario("?screen=TXP-07&st=c");
     expect(txp?.ids.returnId).toMatch(/^[0-9a-f-]{36}$/u);
     expect(screenScenario("?screen=TXP-00&st=e")?.ids.returnId).toBe(txp?.ids.returnId);
+  });
+
+  it("TXP-11 load serves the INP trace's 2,000 cells (T-05-T69)", async () => {
+    const load = screenScenario("?screen=TXP-11&st=load");
+    const handler =
+      load?.scenario.handlers["GET /v1/tax-returns/{return_id}/workbook/sheets/{sheet}"];
+    expect(handler).toBeDefined();
+    const res = await handler?.({
+      params: { return_id: load?.ids.returnId ?? "", sheet: "05" },
+      query: new URLSearchParams(),
+      persona: "olivia-brandt",
+      body: undefined,
+    } as never);
+    const body = (await (res as Response).json()) as { cells: unknown[] };
+    expect(body.cells.length).toBeGreaterThanOrEqual(2000);
     expect(screenScenario("?screen=ADM-08&st=g")?.opens).toBe(
       "?segment=tax-engine&ov=integration-mapping:users",
     );

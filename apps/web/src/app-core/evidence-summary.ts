@@ -50,6 +50,8 @@ export interface EvidenceSummary {
   segment: string;
   /** "Open in workpaper" / "Open memo": a planned link (TXP-08, TXP-01). */
   planned?: string;
+  /** T-05-T69: the memo's return once TXP-01 is built; "Open memo" then opens its Summary. */
+  memoReturnId?: string;
   tally?: readonly TallyItem[];
   /** A pill after the strip ("off 28,595"). */
   aside?: { text: string; variant: PillVariant };

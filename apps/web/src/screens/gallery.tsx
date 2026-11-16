@@ -1,7 +1,7 @@
 import { publishPortalSettings } from "@abacus/api-client";
 import { AppShell, time, toast } from "@abacus/ui";
 import { KNW03_TAILORING } from "../fixtures/seed/knw03";
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, useEffect, useMemo, useState } from "react";
 import { installFixtureMode, type Scenario } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
@@ -593,6 +593,11 @@ import {
   scenarios as tax03Scenarios,
 } from "./TAX-03/scenarios";
 import { K1PackagePage } from "./TXP-12";
+import { EntityReturn } from "./TXP-00/EntityReturn";
+import { Allocation } from "./TXP-06/Allocation";
+import { RIDGELINE_RETURN_ID } from "../fixtures/seed/tax-entity";
+import { screenScenario } from "../fixtures/screen-scenarios";
+import type { EntitySlug } from "../routes/firm/tax-returns";
 import {
   OPENING as TXP12_OPENING,
   OPENS as TXP12_OPENS,
@@ -1546,6 +1551,80 @@ function Txp12Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("TXP-12", { title: "K-1 package", Component: Txp12Artboard });
+
+// T-05-T69: the eight entity-return screens (57 artboards) on their own scenarios, through the
+// route's entity dispatch (TXP-00's EntityReturn) over the Ridgeline 1065, so parity, axe, the
+// grammar and Tier D read the screens the routes draw. TXP-06 is O4 over Schedule K.
+const ENTITY_SCREENS: Readonly<
+  Record<string, { title: string; slug: EntitySlug; review?: string; sheet?: boolean }>
+> = {
+  "TXP-00": { title: "Return › Agent · entity returns", slug: "agent" },
+  "TXP-01": { title: "Review › Summary", slug: "review", review: "summary" },
+  "TXP-02": { title: "Review › Financials (TB → TTB)", slug: "review", review: "financials" },
+  "TXP-05": { title: "Review › Schedule K", slug: "review", review: "schedule-k" },
+  "TXP-06": {
+    title: "Allocation Structure",
+    slug: "review",
+    review: "schedule-k",
+    sheet: true,
+  },
+  "TXP-07": { title: "Review › Capital Accounts", slug: "review", review: "capital" },
+  "TXP-10": { title: "Return › Issues", slug: "issues" },
+  "TXP-11": { title: "Workpaper", slug: "workpaper" },
+};
+
+function EntityFrame({ id, state }: { id: string; state: string }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/tax-returns" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const screen = ENTITY_SCREENS[id];
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <EntityReturn
+          returnId={RIDGELINE_RETURN_ID}
+          slug={screen?.slug ?? "agent"}
+          {...(screen?.review === undefined ? {} : { review: screen.review })}
+          overview={<></>}
+          onOpen={() => undefined}
+          onComposer={() => undefined}
+        />
+        {screen?.sheet === true ? (
+          <Allocation returnId={RIDGELINE_RETURN_ID} onClose={() => undefined} />
+        ) : null}
+      </AppShell>
+    </div>
+  );
+}
+
+function entityArtboard(id: string) {
+  return function EntityArtboard({ params }: { params: FixtureParams }): JSX.Element | null {
+    const state = params.st ?? "a";
+    const choice = useMemo(() => screenScenario(`?screen=${id}&st=${state}`), [state]);
+    const [ready, setReady] = useState<string | null>(null);
+    useEffect(() => {
+      if (choice === null) return undefined;
+      const restore = installFixtureMode(
+        choice.scenario,
+        params.as === undefined ? {} : { persona: params.as },
+      );
+      setReady(state);
+      return () => {
+        setReady(null);
+        restore();
+      };
+    }, [choice, state, params.as]);
+    return ready === state ? <EntityFrame key={state} id={id} state={state} /> : null;
+  };
+}
+
+for (const [id, { title }] of Object.entries(ENTITY_SCREENS)) {
+  registerScreen(id, { title, Component: entityArtboard(id) });
+}
 
 function Eng01Frame({ state }: { state: Eng01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";

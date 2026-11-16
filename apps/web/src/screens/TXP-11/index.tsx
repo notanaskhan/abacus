@@ -26,8 +26,8 @@ export const keyOf = (title: string): string => title.slice(0, 2);
 
 const PERCENT_COLUMNS = new Set(["B", "C"]);
 
-/** A server cell as the grid shows it: numbers whole with credits in parentheses, the 05 sheet's
- * two percentage columns as percentages, text as it is. Formatting only. */
+/** A server cell as the grid shows it: numbers whole with credits in parentheses and zero as "—",
+ * the 05 sheet's two percentage columns as percentages, text as it is. Formatting only. */
 export function display(sheet: string, c: WorkbookCellOut): string {
   const raw = c.value ?? "";
   if (raw === "") return "";
@@ -37,7 +37,8 @@ export function display(sheet: string, c: WorkbookCellOut): string {
   if (sheet === "05" && PERCENT_COLUMNS.has(column) && row >= 8) {
     return raw === "0" ? "—" : pct(raw);
   }
-  return amount(raw, "whole", { zero: "explicit" }).text;
+  // T-05-T69: a zero is "—" as the handoff draws it (row 8: "80,000 · — · 25,000 · —").
+  return amount(raw, "whole").text;
 }
 
 export function gridCells(

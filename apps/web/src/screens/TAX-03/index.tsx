@@ -55,7 +55,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useFlag } from "../../app-core/flags";
-import { useOpenOverlay } from "../../app-core/open";
+import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { hrefOf, ov, to } from "../../routes/to";
 import { ViewerPane } from "../SHL-08";
@@ -323,6 +323,7 @@ function Banner({ intake, now }: { intake: TaxReturnIntakeOut; now: Date }): JSX
       </p>
     );
   }
+  const open = useOpenHref();
   const draft = intake.k1_handoffs.find((h) => h.blocking && h.status === "awaiting");
   if (draft === undefined) return null;
   const label = draft.source_label ?? draft.issuer_name;
@@ -335,13 +336,19 @@ function Banner({ intake, now }: { intake: TaxReturnIntakeOut; now: Date }): JSX
       <Icon name="triangle-alert" size={14} className="flex-none" />
       <span className="flex-1">{COPY.banner(label, short)}</span>
       {draft.source_return_id !== null && (
-        // TXP-01 is planned: the link names it and waits for its build.
-        <Tooltip content={COPY.bannerLinkHint}>
-          <span className="flex flex-none items-center gap-[4px] text-ink-3">
-            {COPY.bannerLink(label)}
-            <Icon name="arrow-right" size={12} />
-          </span>
-        </Tooltip>
+        // T-05-T69: TXP-01 is built; the issuing return's review summary (link contract rule 1).
+        <button
+          type="button"
+          className="flex flex-none items-center gap-[4px] text-ink-3 underline-offset-2 hover:underline"
+          onClick={() => {
+            if (draft.source_return_id !== null) {
+              open(hrefOf(to.TXP01({ returnId: draft.source_return_id, section: "summary" })));
+            }
+          }}
+        >
+          {COPY.bannerLink(label)}
+          <Icon name="arrow-right" size={12} />
+        </button>
       )}
     </div>
   );

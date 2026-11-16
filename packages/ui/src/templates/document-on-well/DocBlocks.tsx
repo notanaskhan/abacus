@@ -1,6 +1,7 @@
 import type { JSX, ReactNode } from "react";
 import { AgentText } from "../../agent-text";
 import { cn } from "../../cn";
+import { Icon } from "../../icons/icon";
 import { CiteMarker } from "../../tracing/cite";
 import type { CitationView } from "../../tracing/types";
 import type { DocumentVariant } from "./types";
@@ -20,7 +21,10 @@ import type { DocumentVariant } from "./types";
 export type DocSegment =
   | { kind: "text"; text: string }
   | { kind: "fact"; text: string }
-  | { kind: "cite"; n: number; citation?: CitationView; verified?: boolean };
+  | { kind: "cite"; n: number; citation?: CitationView; verified?: boolean }
+  // T-05-T69: a person's link out of the document to the screen that holds the figure (TXP-01's
+  // sections → TXP-02, TXP-10, TXP-12). Drawn as an ink link with "→", never saturated blue.
+  | { kind: "link"; text: string; hint?: string; onOpen: () => void };
 
 export type Provenance = "agent" | "human" | "template";
 
@@ -85,6 +89,21 @@ function Segments({
           return citeShown(s) && s.citation !== undefined ? (
             <CiteMarker key={key} cite={s.citation} list={cites} />
           ) : null;
+        }
+        if (s.kind === "link") {
+          return (
+            <button
+              key={key}
+              type="button"
+              data-doc="link"
+              title={s.hint}
+              onClick={s.onOpen}
+              className="ml-[6px] inline-flex items-center gap-[3px] text-ink underline-offset-2 hover:underline"
+            >
+              {s.text}
+              <Icon name="arrow-right" size={12} className="text-ink-3" />
+            </button>
+          );
         }
         if (s.kind === "fact") {
           return (

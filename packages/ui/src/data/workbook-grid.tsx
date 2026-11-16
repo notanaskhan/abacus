@@ -14,6 +14,9 @@ import { VIRTUAL_HEIGHT, useRowWindow } from "./row-window";
 // (the host saves; nothing here writes), Esc cancels, and Enter in the editor commits. Above 200
 // rows it virtualises and the letter row stays sticky.
 
+/** A credit as the workbook shows it: "(94,000)", "($810.00)" (T-05-T69 grammar). */
+const NEGATIVE = /^\(\$?[\d,]+(\.\d+)?\)$/;
+
 export interface WorkbookCell {
   /** The value as the workbook shows it ("1,550", "(94,000)", "" when empty). */
   display: string;
@@ -56,7 +59,8 @@ export interface WorkbookGridProps {
 }
 
 const ROW_H = 27;
-const HEAD_H = 26;
+// The column-letter row is 20 (AUD-09 and TXP-11 handoff specs: "column-letter row 20h"; T-05-T69).
+const HEAD_H = 20;
 const NUMBER_W = 34;
 const DEFAULT_W = 96;
 const HAIR = "border-r-[0.5px] border-b-[0.5px] border-hair";
@@ -267,7 +271,14 @@ export function WorkbookGrid({
                       />
                     ) : (
                       <>
-                        {cell?.display}
+                        {/* Negatives "(…)" in --color-negative, zero "—" in ink-4 (design system §A6). */}
+                        {cell !== undefined && NEGATIVE.test(cell.display) ? (
+                          <span className="text-negative">{cell.display}</span>
+                        ) : cell?.display === "—" ? (
+                          <span className="text-ink-4">{cell.display}</span>
+                        ) : (
+                          cell?.display
+                        )}
                         {cell?.proposed ? (
                           <span className="rounded-[4px] bg-amber-tint px-[3px] text-[10.5px] text-amber-ink">
                             Proposed

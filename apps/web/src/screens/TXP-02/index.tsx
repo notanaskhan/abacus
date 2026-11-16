@@ -290,7 +290,10 @@ export function TXP02({
           <AgentsOffNote capability={ENTITY_CAPABILITIES.mapper} reason={agentReason} />
         </div>
       ) : null}
-      <div className="flex h-[44px] flex-none items-center gap-[8px] px-[12px]">
+      <div
+        data-entity="control-bar"
+        className="flex h-[44px] flex-none items-center gap-[8px] px-[12px]"
+      >
         <Segmented
           size="small"
           label={COPY.views}
