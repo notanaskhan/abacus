@@ -713,6 +713,11 @@ from abacus.modules.assurance.governance_room import rooms as governance_rooms  
 
 register_scope_resolver("governance_room", room_scope)
 
+# A-09-T21 (DEC-5314): a component auditor's grant reaches its component's room only.
+from abacus.modules.assurance.component_scope import component_scope  # noqa: E402
+
+register_scope_resolver("component", component_scope)
+
 # A-07-T41 (DEC-3302): the services the Brightwater Hale `archive` slice calls as the people the
 # design names, completion to the locked archive (each as its route calls it).
 from abacus.modules.assurance.agent_capabilities import (  # noqa: E402
