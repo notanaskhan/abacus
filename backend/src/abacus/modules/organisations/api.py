@@ -118,6 +118,9 @@ from abacus.modules.organisations.repository import (
     entity_name_column,
     office_name_column,
 )
+
+# A-09-T13 rest (DEC-5340): a client's entities by id and name, for the structure proposal.
+from abacus.modules.organisations.repository import entities_of as client_entity_names
 from abacus.modules.organisations.rosters import member_teams, service_line_teams, set_member_teams
 from abacus.modules.organisations.service import (
     ClientChoice,
@@ -327,6 +330,7 @@ __all__ = [
     "check_scope",
     "clear_conflict_result",
     "clear_tin",
+    "client_entity_names",
     "client_exists",
     "client_name_column",
     "client_names",

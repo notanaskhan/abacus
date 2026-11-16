@@ -89,6 +89,7 @@ AGENT_LABEL: Final = {
     "audit.bring_down": "Bring-down",
     "audit.letter_compose": "Letter compose",
     "audit.archive_readiness": "Archive readiness",
+    "audit.group_structure": "Group structure",  # A-09-T13 rest (DEC-5340)
 }
 State = Literal["queued", "running", "succeeded", "needs_input", "failed"]
 # DEC-87 (TASK-5002): content for the engagement's people and oversight in scope; metadata for

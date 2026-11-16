@@ -1,7 +1,9 @@
 """The fake NetSuite OneWorld connector for synthetic tenants (A-09-T18; DV-1: no live OneWorld
 connector yet). Five subsidiaries, each with a balanced trial balance for the current and prior
-period; a token marked expired answers `needs_reauth` and is never retried. Read only: it has no
-method that writes (CONN-001)."""
+period; a token marked expired answers `needs_reauth` and is never retried. Each subsidiary names
+its parent, as OneWorld does (A-09-T13 rest, DEC-5340: the Harlow & Pike slice's investment lines,
+Holdings over Operating and Real Estate, Operating over Manufacturing and Distribution). Read only:
+it has no method that writes (CONN-001)."""
 
 from __future__ import annotations
 
@@ -18,6 +20,13 @@ SUBSIDIARIES: Final = (
     "HP Real Estate",
 )
 PERIODS: Final = ("prior", "current")
+PARENTS: Final[Mapping[str, str | None]] = {
+    "HP Holdings": None,
+    "HP Operating": "HP Holdings",
+    "HP Manufacturing": "HP Operating",
+    "HP Distribution": "HP Operating",
+    "HP Real Estate": "HP Holdings",
+}
 
 
 class NeedsReauth(Exception):
@@ -37,6 +46,10 @@ class FakeOneWorld:
 
     def subsidiaries(self) -> tuple[str, ...]:
         return SUBSIDIARIES
+
+    def hierarchy(self) -> tuple[tuple[str, str | None], ...]:
+        """Each subsidiary with its parent (None at the top)."""
+        return tuple((sub, PARENTS[sub]) for sub in SUBSIDIARIES)
 
     def trial_balance(self, subsidiary: str, period: str) -> tuple[FakeTbLine, ...]:
         if subsidiary not in SUBSIDIARIES or period not in PERIODS:

@@ -79,3 +79,21 @@ def pull_group_tbs() -> Sequence[tuple[str, TbRows | None]]:
     if not _PULL:
         raise NotFound("group_connector")
     return _PULL[0]()
+
+
+# --- A-09-T13 rest (DEC-5340): the group's subsidiary tree, for the structure proposal -----------
+# (subsidiary, parent or None), as the source names them; client content.
+GroupHierarchy = Callable[[], Sequence[tuple[str, str | None]]]
+_HIERARCHY: Final[list[GroupHierarchy]] = []
+
+
+def register_group_hierarchy(hierarchy: GroupHierarchy) -> None:
+    """connections registers the OneWorld subsidiary tree (the fake's on synthetic tenants until
+    a live connector exists, DV-1)."""
+    _HIERARCHY[:] = [hierarchy]
+
+
+def group_hierarchy() -> Sequence[tuple[str, str | None]]:
+    if not _HIERARCHY:
+        raise NotFound("group_connector")
+    return _HIERARCHY[0]()

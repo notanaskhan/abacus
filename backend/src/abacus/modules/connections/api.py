@@ -10,6 +10,7 @@ from abacus.kernel.audit_owners import register_engagement_owners, register_enti
 # A-09-T11, T13: which entities a connection covers (OneWorld).
 from abacus.kernel.connection_coverage import (
     register_connection_coverage,
+    register_group_hierarchy,
     register_group_tb_sources,
 )
 from abacus.kernel.dispatch import PlatformSchedule, register_work_classes
@@ -344,6 +345,16 @@ def _pull_rows() -> list[tuple[str, list[tuple[str, str, Decimal, Decimal]] | No
 
 
 register_group_tb_sources(_split_rows, _pull_rows)
+
+
+# A-09-T13 rest (DEC-5340): the subsidiary tree the structure proposal reads.
+def _hierarchy() -> tuple[tuple[str, str | None], ...]:
+    from abacus.modules.connections.fake_oneworld import FakeOneWorld
+
+    return FakeOneWorld().hierarchy()
+
+
+register_group_hierarchy(_hierarchy)
 
 # W-01-T15 rest (DEC-5335): WB-11 d's client companies, walls applied.
 from abacus.modules.connections.provider_companies import (  # noqa: E402
