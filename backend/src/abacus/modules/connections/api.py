@@ -221,6 +221,7 @@ __all__ = [
     "ActivityLine",
     "AuthorizationRequired",
     "Capabilities",
+    "ClientCompany",
     "Completed",
     "ConnectTarget",
     "Connection",
@@ -289,6 +290,7 @@ __all__ = [
     "load_system_context",
     "normalise_raw",
     "parse_trial_balance",
+    "provider_client_companies",
     "pull_ledger",
     "pull_raw",
     "qbo_app",
@@ -342,3 +344,11 @@ def _pull_rows() -> list[tuple[str, list[tuple[str, str, Decimal, Decimal]] | No
 
 
 register_group_tb_sources(_split_rows, _pull_rows)
+
+# W-01-T15 rest (DEC-5335): WB-11 d's client companies, walls applied.
+from abacus.modules.connections.provider_companies import (  # noqa: E402
+    ClientCompany as ClientCompany,
+)
+from abacus.modules.connections.provider_companies import (  # noqa: E402
+    client_companies as provider_client_companies,
+)

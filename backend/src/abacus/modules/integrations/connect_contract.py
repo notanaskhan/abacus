@@ -503,7 +503,7 @@ async def connect_events(
     "/integrations/{key}/client-companies",
     action="integration.read_client_companies",
     response_model=ConnectClientCompaniesOut,
-    errors=(501,),
+    errors=(),
 )
 async def connect_client_companies(
     key: Key,
@@ -513,7 +513,26 @@ async def connect_client_companies(
 ) -> ConnectClientCompaniesOut:
     """WB-11 d through `connections.api`, `visible()` and walls; no hidden counts."""
     await _gate(ctx, "integration.read_client_companies")
-    raise NotImplementedYet("W-01-T15")
+    from abacus.modules.connections.api import provider_client_companies
+    from abacus.modules.integrations.connect_catalog import published_row
+
+    row = await published_row(ctx, key)
+    if row.connector_provider is None:
+        return ConnectClientCompaniesOut(items=[], next_cursor=None)
+    found, following = await provider_client_companies(ctx, row.connector_provider, q, cursor)
+    return ConnectClientCompaniesOut(
+        items=[
+            ConnectClientCompanyOut(
+                client_name=c.client_name,
+                connected_by_label=c.connected_by_label,
+                connected_on=c.connected_on,
+                last_sync_at=c.last_sync_at,
+                ok=c.ok,
+            )
+            for c in found
+        ],
+        next_cursor=following,
+    )
 
 
 @router.post(
