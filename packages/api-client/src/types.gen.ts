@@ -46117,6 +46117,10 @@ export type RequestNodeOut = {
      */
     request_item_id?: string | null;
     /**
+     * Rerun Plan Row Ids
+     */
+    rerun_plan_row_ids?: Array<string>;
+    /**
      * Screening
      */
     screening?: 'clear' | 'partly' | 'flagged' | 'running' | null;
@@ -79582,10 +79586,6 @@ export type LedgerSyncStatusErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LedgerSyncStatusError = LedgerSyncStatusErrors[keyof LedgerSyncStatusErrors];
@@ -79646,10 +79646,6 @@ export type LedgerSyncNowErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LedgerSyncNowError = LedgerSyncNowErrors[keyof LedgerSyncNowErrors];
@@ -82850,10 +82846,6 @@ export type CloseQuestionnaireErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseQuestionnaireError = CloseQuestionnaireErrors[keyof CloseQuestionnaireErrors];
@@ -82983,10 +82975,6 @@ export type CloseRequestsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseRequestsError = CloseRequestsErrors[keyof CloseRequestsErrors];
@@ -83039,10 +83027,6 @@ export type CloseRunsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseRunsError = CloseRunsErrors[keyof CloseRunsErrors];
@@ -83103,10 +83087,6 @@ export type StartCloseRunErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type StartCloseRunError = StartCloseRunErrors[keyof StartCloseRunErrors];
@@ -83163,10 +83143,6 @@ export type CloseRunErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseRunError = CloseRunErrors[keyof CloseRunErrors];
@@ -83235,10 +83211,6 @@ export type RetryCloseProcedureErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RetryCloseProcedureError = RetryCloseProcedureErrors[keyof RetryCloseProcedureErrors];
