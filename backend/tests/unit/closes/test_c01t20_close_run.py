@@ -1,4 +1,4 @@
-"""C-01-T20 (TASK-8073; SPEC-655 F3, AC-28 to AC-31): the close run's code plan and executors.
+"""C-01-T20 (TASK-8109; SPEC-655 F3, AC-28 to AC-31): the close run's code plan and executors.
 
 Row acceptance: "Run 2 on the Copperleaf fixture plans 9 procedures in 5 groups (2 + 3 + 2 + 1 +
 1), never runs more than 3 at once, holds the Square group on the decision card, and an agent

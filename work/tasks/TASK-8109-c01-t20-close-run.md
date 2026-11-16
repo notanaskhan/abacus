@@ -1,5 +1,5 @@
 ---
-id: TASK-8073
+id: TASK-8109
 title: "C-01-T20: Close run plan provider and code procedures on the P-10 runtime"
 spec: SPEC-655
 acceptance_criteria: [AC-28, AC-29, AC-30, AC-31]
@@ -32,7 +32,7 @@ Rollback: revert; behind `closes.engine`.
 
 ## Progress log
 - `2026-11-15` — Planned at the S46 kickoff (#2053).
-- `2026-11-15` — Built (DEC-5060). App and worker import cleanly; unit tests pass.
+- `2026-11-15` — Built (DEC-5080). App and worker import cleanly; unit tests pass.
 - **Partial within the row:** issues raised automatically with source run and step need an
   `issue.create` record type for closes and the run's task scope (C-01-T23/T29); recategorisation
   rules and accrual estimates are firm content that arrive with C-01-T21/K-02, so those steps
@@ -42,4 +42,4 @@ Rollback: revert; behind `closes.engine`.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| DEC-5060 | Group table; retry as a task-scoped run; treatment card options; run reads via agents.api | no |
+| DEC-5080 | Group table; retry as a task-scoped run; treatment card options; run reads via agents.api | no |

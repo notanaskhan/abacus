@@ -1,4 +1,4 @@
-"""The ledger sync's scope slot (C-01-T17; C-01 §4.5 `entities_due`; DEC-5056).
+"""The ledger sync's scope slot (C-01-T17; C-01 §4.5 `entities_due`; DEC-5076).
 
 The closes module registers which entities have an unlocked close and the months to keep fresh;
 the connections module's `LedgerSyncWorkflow` reads it. Neither imports the other: nothing depends

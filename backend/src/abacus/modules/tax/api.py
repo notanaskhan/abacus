@@ -551,7 +551,7 @@ register_session_subject("tax_return", _assistant_subject, "tax.assistant")
 _return_events.register()
 # T-05-T27 (DEC-4519): the workbook's cells are review fields; SHL-09 reads their provenance.
 _workbook_service.register()
-# T-07-T16 (DEC-5061): the fiduciary computation is a reviewable for L2 (DEC-84).
+# T-07-T16 (DEC-5081): the fiduciary computation is a reviewable for L2 (DEC-84).
 from abacus.modules.tax import fiduciary_service as _fiduciary_service  # noqa: E402
 
 _fiduciary_service.register()

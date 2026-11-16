@@ -92,7 +92,7 @@ def _paths() -> dict[str, dict[str, dict[str, object]]]:
 
 
 def test_sync_routes_are_published_with_one_action_and_served() -> None:
-    """C-01-T17 (TASK-8069) serves both: they answer, no longer 501."""
+    """C-01-T17 (TASK-8105) serves both: they answer, no longer 501."""
     paths = _paths()
     routes = [
         (route.path, m.lower())

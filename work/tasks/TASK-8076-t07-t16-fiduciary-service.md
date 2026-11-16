@@ -30,7 +30,7 @@ with Changed rows and struck priors, K-1 box provenance and the deterministic ex
 Rollback: revert; behind `tax.fiduciary_workpapers` (default off).
 
 ## Progress log
-- `2026-11-15` — Planned at the S46 kickoff (#2053); built (DEC-5061). Import check clean.
+- `2026-11-15` — Planned at the S46 kickoff (#2053); built (DEC-5081). Import check clean.
 - **Partial within the row:** "Import from statement" refuses with 409 `statement_tables_missing`
   until the custodial-statement layout map exists (T-07 cut 4: manual entry with citations); the
   1041 "Type of entity" field link rides with T-07-T19's CCH map.
@@ -38,4 +38,4 @@ Rollback: revert; behind `tax.fiduciary_workpapers` (default off).
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| DEC-5061 | Reviewable keyed by the return; struck priors from the stale L2's signed hash; boxes as formula values | no |
+| DEC-5081 | Reviewable keyed by the return; struck priors from the stale L2's signed hash; boxes as formula values | no |

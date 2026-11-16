@@ -1,4 +1,4 @@
-"""C-01-T17 (S46; TASK-8069; C-01 §4.5; SPEC-655 F5): `ledger_month_register`, expand-only, red.
+"""C-01-T17 (S46; TASK-8105; C-01 §4.5; SPEC-655 F5): `ledger_month_register`, expand-only, red.
 
 The hourly ledger sync records a close month as one immutable set: a monthly `ledger_snapshots`
 row (`period_kind = 'month'`, C-01-T10), its trial balance lines and `ledger_accounts`, and the

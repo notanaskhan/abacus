@@ -1,4 +1,4 @@
-"""C-01-T19 (TASK-8071; SPEC-655 F2; CLS-03, POR-11) against Postgres: BD1 publish and the tree.
+"""C-01-T19 (TASK-8107; SPEC-655 F2; CLS-03, POR-11) against Postgres: BD1 publish and the tree.
 
 Row acceptance: "The September close pins the version effective for 2026-09 and publishes its
 requests (8 under v3, 7 under v4) at 09:00 CT on Thu Oct 1, 2026 on the demo clock,

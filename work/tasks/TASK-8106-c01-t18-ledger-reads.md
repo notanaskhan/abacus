@@ -1,5 +1,5 @@
 ---
-id: TASK-8070
+id: TASK-8106
 title: "C-01-T18: Ledger read API for closes: tree, balances, register, compare, citations (red)"
 spec: SPEC-655
 acceptance_criteria: [AC-5, AC-6, AC-9]
@@ -24,7 +24,7 @@ register against the trial balance movement, register-row `ledger_line` citation
    `cas_contract.py` keeps the shapes and delegates (lazy import).
 2. **Protected** `evidence/citations/ledger_line.py`: optional `register_line` in the locator; a
    register row verifies value (net or side) and quote (payee or memo); old locators unchanged
-   (`exclude_none`). Needs Ayush's approval (DEC-5057).
+   (`exclude_none`). Needs Ayush's approval (DEC-5077).
 3. `ledger/agent_tools.py`: `ledger.read_transactions` (rows carry `id` = `<snapshot>:<line>`;
    payees and memos untrusted). `ledger.compare_periods` already exists (P-10-T28).
 4. Tests: `tests/integration/test_c01t18_ledger_reads.py`.
@@ -32,7 +32,7 @@ Rollback: revert; nothing outside closes reads the monthly sets yet.
 
 ## Progress log
 - `2026-11-15` — Planned at the S46 kickoff (#2053); plan written above before building.
-- `2026-11-15` — Built (DEC-5057). Import check clean (the C17 registry refused a paginated
+- `2026-11-15` — Built (DEC-5077). Import check clean (the C17 registry refused a paginated
   shape and an id-less row: fixed by an own cursor and `id`). Tests run at the end pass.
 - "Month-scoped validation in general_ledger.validate_gl" is `cas_reads.month_tie` plus the
   register footing in `month_ledger` (C-01-T17): `general_ledger.py` (protected) is unchanged.
@@ -40,4 +40,4 @@ Rollback: revert; nothing outside closes reads the monthly sets yet.
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| DEC-5057 | Natural signs; foot rule with the unclosed result; register-row citations by monthly snapshot and line | no |
+| DEC-5077 | Natural signs; foot rule with the unclosed result; register-row citations by monthly snapshot and line | no |

@@ -1,4 +1,4 @@
-// C-01-T34 (TASK-8074): CLS-02 Overview A–E in fixture mode. Row acceptance: "State a shows 6 of 9
+// C-01-T34 (TASK-8110): CLS-02 Overview A–E in fixture mode. Row acceptance: "State a shows 6 of 9
 // and 3 running, d answers only through the named person's click, and the status menu offers In
 // review only at 21 of 21."
 import { client } from "@abacus/api-client/client";

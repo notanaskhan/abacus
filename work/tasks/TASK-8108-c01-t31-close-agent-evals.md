@@ -1,5 +1,5 @@
 ---
-id: TASK-8072
+id: TASK-8108
 title: "C-01-T31: Eval suite evals/close_agent, thresholds frozen before T29's prompts (protected)"
 spec: SPEC-655
 acceptance_criteria: [AC-1]
@@ -27,11 +27,11 @@ Rollback: revert; nothing consumes the suite until C-01-T29.
 
 ## Progress log
 - `2026-11-15` — Planned at the S46 kickoff (#2053).
-- `2026-11-15` — Built (DEC-5059). The suite and its unit tests pass locally (8 passed).
+- `2026-11-15` — Built (DEC-5079). The suite and its unit tests pass locally (8 passed).
 - Open: `evals/baselines.yaml` rows for `close.agent` arrive with the capability's budgets (T29,
   real runs T32); labels stay `pending_cpa` until the CAS CPA signs.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
 |---|---|---|
-| DEC-5059 | Ten graders over recorded outputs; fact tokens; dual-threshold rule in the grader | no |
+| DEC-5079 | Ten graders over recorded outputs; fact tokens; dual-threshold rule in the grader | no |

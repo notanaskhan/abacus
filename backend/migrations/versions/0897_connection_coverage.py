@@ -63,7 +63,10 @@ def upgrade() -> None:
             live boolean NOT NULL,
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             UNIQUE (tenant_id, connection_id, client_entity_id),
-            FOREIGN KEY (tenant_id, connection_id) REFERENCES connections (tenant_id, id),
+            -- A mirror row follows its connection; only the owner deletes a connection (the
+            -- app holds no DELETE on `connections`), so the cascade is never an app path.
+            FOREIGN KEY (tenant_id, connection_id) REFERENCES connections (tenant_id, id)
+                ON DELETE CASCADE,
             FOREIGN KEY (tenant_id, client_entity_id) REFERENCES client_entities (tenant_id, id)
         )
         """

@@ -21,11 +21,14 @@ from abacus.modules.assurance.confirmations_contract_models import (
     RespondentViewOut,
 )
 
-FIRM: Final = "Brightwater Hale LLP"
+# The firm's display name is database content (P-08-T22 T14: no firm name in a product
+# constant). The stub carries a neutral placeholder; the real page renders the requesting
+# firm's name from its row (A-08-T19). The web fixtures keep the handoff's copy.
+FIRM: Final = "Example Audit LLP"
 CLIENT: Final = "Granite Peak Outdoor Supply, Inc."
 AS_OF: Final = date(2026, 6, 30)
 AUTHORIZATION: Final = (
-    "Our auditors, Brightwater Hale LLP, are auditing our financial statements for the year ended "
+    f"Our auditors, {FIRM}, are auditing our financial statements for the year ended "
     "June 30, 2026. Please confirm directly to them the balance you owed us at that date. This is "
     "not a request for payment."
 )

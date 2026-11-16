@@ -878,10 +878,12 @@ async def _call[T](function: Callable[[T], Awaitable[object]], argument: T) -> o
 
 def test_ac20_there_are_eight_activities_the_six_plus_the_two_slot_ones() -> None:
     # TASK-018b: acquire_slot and release_slot join the six; SPEC-034 adds the GL import steps.
-    # TASK-070 adds the GL render, A-02-T25 the health pass, A-02-T30 the finish at the snapshot
-    assert len(ACTIVITIES) == 12
+    # TASK-070 adds the GL render, A-02-T25 the health pass, A-02-T30 the finish at the snapshot;
+    # C-01-T17 the ledger sync's tick planner and per-entity sync.
+    assert len(ACTIVITIES) == 14
     names = {a.__name__ for a in ACTIVITIES}
     assert {"acquire_slot_activity", "release_slot_activity"} <= names
+    assert {"plan_tick_activity", "sync_entity_activity"} <= names
 
 
 @pytest.mark.parametrize("name", STAGE_NAMES)
