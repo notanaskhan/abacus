@@ -330,6 +330,9 @@ class CitedRegisterRow:
     credit: Decimal
     payee: str | None
     memo: str | None
+    # C-01-T21: the row's category (QuickBooks' offset account), for a recategorisation proposal.
+    offset_account_ref: str | None = None
+    period: str | None = None  # the monthly snapshot's YYYY-MM
 
 
 async def register_row(
@@ -364,4 +367,6 @@ async def register_row(
         row.credit,
         row.payee,
         row.description,
+        row.offset_account_ref,
+        snapshot.period,
     )

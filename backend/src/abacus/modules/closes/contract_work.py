@@ -644,7 +644,9 @@ async def close_accounts_route(
 ) -> AccountTreeOut:
     """CLS-04's tree (C-01-T21)."""
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import accounts
+
+    return await accounts.account_tree(ctx, close_id, show_zero=show_zero)
 
 
 @close_work_router.get(
@@ -660,7 +662,9 @@ async def close_register_route(
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> CloseRegisterOut:
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import accounts
+
+    return await accounts.register(ctx, close_id, account_ref, cursor=cursor)
 
 
 @close_work_router.get(
@@ -673,7 +677,9 @@ async def close_workpaper_route(
     close_id: UUID, account_ref: AccountRef, ctx: Ctx
 ) -> CloseWorkpaperOut:
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import accounts
+
+    return await accounts.workpaper(ctx, close_id, account_ref)
 
 
 @close_work_router.get(
@@ -687,7 +693,11 @@ async def close_workpaper_xlsx_route(
 ) -> Response:
     """The workpaper as Excel, formula-escaped (C-01-T21)."""
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import accounts
+    from abacus.modules.evidence.api import XLSX_MEDIA_TYPE
+
+    body = await accounts.workpaper_xlsx(ctx, close_id, account_ref)
+    return Response(content=body, media_type=XLSX_MEDIA_TYPE)
 
 
 @close_work_router.post(
@@ -702,7 +712,10 @@ async def create_arrangement_route(
 ) -> ArrangementOut:
     """A new arrangement and its first version (AC-37; C-01-T21)."""
     await _human_route(ctx, "arrangement.edit")
-    _not_yet()
+    await _engine_on(ctx)
+    from abacus.modules.closes import accounts
+
+    return await accounts.create_arrangement(ctx, close_id, account_ref, body)
 
 
 @close_work_router.patch(
@@ -716,7 +729,10 @@ async def update_arrangement_route(
 ) -> ArrangementOut:
     """A new version per edit (C-01-T21)."""
     await _human_route(ctx, "arrangement.edit")
-    _not_yet()
+    await _engine_on(ctx)
+    from abacus.modules.closes import accounts
+
+    return await accounts.update_arrangement(ctx, arrangement_id, body, if_match)
 
 
 @close_work_router.post(
@@ -734,7 +750,10 @@ async def recategorize_route(
 ) -> ProposalRefOut:
     """A person's reclass proposal to SHL-10 (AC-36; C-01-T21)."""
     await _human_route(ctx, "proposed_entry.create")
-    _not_yet()
+    await _engine_on(ctx)
+    from abacus.modules.closes import accounts
+
+    return await accounts.recategorize(ctx, line_ref, body)
 
 
 @close_work_router.get(

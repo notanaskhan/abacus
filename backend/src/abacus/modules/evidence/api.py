@@ -261,17 +261,19 @@ from abacus.modules.evidence.region_sources import (  # T-07-T11 (ADR-343 §4)
     register_region_source,
 )
 from abacus.modules.evidence.region_text import masked_region_text  # T-07-T14
-from abacus.modules.evidence.render import (
+from abacus.modules.evidence.render import (  # C-01-T21: CLS-04's workpaper.xlsx
     CODE_COLUMN,
     CREDIT_COLUMN,
     DEBIT_COLUMN,
     FIRST_LINE_ROW,
     NAME_COLUMN,
     TOTAL_LABEL,
+    CloseWorkpaperSheet,
     LayerExport,
     LayerLine,
     TrialBalance,
     TrialBalanceLine,
+    render_close_workpaper,
     render_trial_balance,
     render_trial_balance_layers,
 )
@@ -591,6 +593,7 @@ __all__ = [
     "CitationLabel",
     "CitationVerdict",
     "ClassifiedIntake",
+    "CloseWorkpaperSheet",
     "ContentTooLarge",
     "DocumentDownload",  # G-02-T20: the WISP pack's documents",
     "EffectivePolicy",
@@ -793,6 +796,7 @@ __all__ = [
     "register_match_picks",
     "register_proposal_source",
     "register_region_source",
+    "render_close_workpaper",
     "render_general_ledger",
     "render_journal_listing",
     "render_preview",

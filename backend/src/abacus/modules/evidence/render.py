@@ -292,3 +292,54 @@ def render_trial_balance_layers(tb: LayerExport) -> bytes:
     buffer = io.BytesIO()
     _layer_workbook(tb).save(buffer)
     return _normalised(buffer.getvalue(), tb.pulled_at)
+
+
+# --- C-01-T21: the close schedule workpaper (CLS-04's workpaper.xlsx) ----------------------------
+
+
+@dataclass(frozen=True)
+class CloseWorkpaperSheet:
+    """One account's schedule against the GL, every figure the caller's (code computes)."""
+
+    title: str
+    gl_balance: Decimal
+    schedule_balance: Decimal
+    tally: str
+    rows: tuple[tuple[str, Decimal, Decimal, Decimal], ...]  # period, inflows, AJE, ending
+    stamp: datetime = datetime(2000, 1, 1, tzinfo=UTC)
+
+
+def render_close_workpaper(paper: CloseWorkpaperSheet) -> bytes:
+    """The workpaper as Excel: hostile names stay strings, amounts are numbers, never formulas."""
+    workbook = Workbook()
+    sheet = cast(Worksheet, workbook.active)
+    sheet.title = "Schedule"
+    _text(sheet, 1, 1, paper.title)
+    sheet.cell(row=1, column=1).font = _BOLD
+    for column, label in enumerate(("Period", "Inflows", "AJE", "Ending balance"), start=1):
+        _text(sheet, 3, column, label)
+        sheet.cell(row=3, column=column).font = _BOLD
+    row = 4
+    for period, inflows, aje, ending in paper.rows:
+        _text(sheet, row, 1, period)
+        _amount(sheet, row, 2, inflows)
+        _amount(sheet, row, 3, aje)
+        _amount(sheet, row, 4, ending)
+        row += 1
+    row += 1
+    for label, value in (
+        ("Schedule balance", paper.schedule_balance),
+        ("GL balance", paper.gl_balance),
+    ):
+        _text(sheet, row, 1, label)
+        _amount(sheet, row, 4, value)
+        row += 1
+    _text(sheet, row, 1, "Tie")
+    _text(sheet, row, 4, paper.tally)
+    stamp = _utc(paper.stamp)
+    workbook.properties.creator = "platform"
+    workbook.properties.created = stamp.replace(tzinfo=None)
+    workbook.properties.modified = stamp.replace(tzinfo=None)
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return _normalised(buffer.getvalue(), stamp)
