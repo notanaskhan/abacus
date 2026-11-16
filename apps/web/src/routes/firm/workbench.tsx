@@ -225,9 +225,44 @@ export const connectRoute = createRoute({
   },
 });
 
+// W-01-T17: where a provider sends the browser back (`connect_service.CALLBACK_PATH`). It posts
+// the provider's state and code once, then returns to WB-10 with the outcome; a refused or
+// replayed state reads as expired and the person starts again (never a provider's own message).
+const CALLBACK_REASONS: Record<string, string> = {
+  invalid_state: "This link has expired or was already used. Start connecting again.",
+  connect_declined: "The connection wasn't approved. Start connecting again.",
+};
+const CallbackLayer = lazy(async () => ({
+  default: (await import("../../screens/WB-11/callback")).ConnectCallback,
+}));
+
+export const connectCallbackRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/workbench/connect/callback",
+  validateSearch: (search: Record<string, unknown>): { state?: string; code?: string } => ({
+    ...(typeof search.state === "string" ? { state: search.state } : {}),
+    ...(typeof search.code === "string" ? { code: search.code } : {}),
+  }),
+  component: function ConnectCallbackPage(): JSX.Element {
+    const search = connectCallbackRoute.useSearch();
+    const navigate = useNavigate();
+    return (
+      <Suspense fallback={null}>
+        <CallbackLayer
+          state={search.state ?? ""}
+          code={search.code ?? ""}
+          reasons={CALLBACK_REASONS}
+          onDone={() => void navigate({ to: "/workbench/connect", replace: true })}
+        />
+      </Suspense>
+    );
+  },
+});
+
 export const workbenchRoutes = [
   workbenchRoute,
   newSessionRoute,
   sessionRoute,
   connectRoute,
+  connectCallbackRoute,
 ] as const;

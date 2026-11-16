@@ -12601,6 +12601,10 @@ export type ConnectCompleteOut = {
  */
 export type ConnectConsentOut = {
     /**
+     * Continue Label
+     */
+    continue_label?: string | null;
+    /**
      * Heading
      */
     heading: string;

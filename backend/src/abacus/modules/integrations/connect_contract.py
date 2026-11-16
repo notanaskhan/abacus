@@ -197,6 +197,8 @@ class ConnectConsentOut(BaseModel):
     reads: Annotated[list[str], Public]
     never: Annotated[str, Public]
     version: Annotated[int, Field(ge=1), Public]
+    # W-01-T17 (additive): the catalogue's own button words ("Continue to Google").
+    continue_label: Annotated[str | None, Public] = None
 
 
 class ConnectIntegrationDetailOut(BaseModel):
@@ -470,6 +472,9 @@ async def connect_detail(key: Key, ctx: Ctx) -> ConnectIntegrationDetailOut:
                 reads=[str(x) for x in consent.get("will", [])],
                 never=", ".join(str(x) for x in consent.get("wont", [])),
                 version=tile.row.consent_version,
+                continue_label=str(consent["continue_label"])
+                if consent.get("continue_label")
+                else None,
             )
         ),
         allowed_actions=cast(list[ConnectAction], list(tile.allowed_actions)),

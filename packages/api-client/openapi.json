@@ -27212,6 +27212,18 @@
       },
       "ConnectConsentOut": {
         "properties": {
+          "continue_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Continue Label"
+          },
           "heading": {
             "cls": "public",
             "title": "Heading",
