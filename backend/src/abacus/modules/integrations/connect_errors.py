@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from abacus.kernel.errors import DomainConflict, DomainInvalid
+from abacus.kernel.errors import DomainConflict, DomainForbidden, DomainInvalid
 
 
 class InvalidState(DomainConflict):
@@ -31,3 +31,11 @@ class IntegrationNotAvailable(DomainConflict):
 
 class StaleVersion(DomainConflict):
     code = "stale_version"
+
+
+class ConnectNeedsMfa(DomainForbidden):
+    """AC-7: the role allows it, but the last second factor is older than 15 minutes: verify
+    again, then retry (the shell's step-up). Answers `facts.reason = mfa_required`, so WB-10
+    opens the step-up only for this and never for a role refusal."""
+
+    code = "forbidden"

@@ -9,7 +9,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { newQueryClient } from "../../testing/support";
-import { WB10 } from ".";
+import { WB10, isStepUp } from ".";
 import { OPENS, STATES, type Wb10State, scenarios } from "./scenarios";
 
 beforeAll(() => {
@@ -161,5 +161,12 @@ describe("WB-10 Workbench › Connect", () => {
     show("a");
     await loaded();
     expect(within(tile("adp")).getByRole("button", { name: "Notify me" })).toBeTruthy();
+  });
+
+  it("AC-7: only a stale second factor's refusal steps up", () => {
+    expect(isStepUp({ detail: "forbidden", facts: { reason: "mfa_required" } })).toBe(true);
+    expect(isStepUp({ detail: "forbidden" })).toBe(false);
+    expect(isStepUp({ detail: "invalid_state" })).toBe(false);
+    expect(isStepUp(null)).toBe(false);
   });
 });
