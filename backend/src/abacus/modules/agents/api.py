@@ -6,6 +6,7 @@ from abacus.ai_gateway import (
     register_client_data_facts,
 )
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.modules.agents.run_reads import RunStepRow, run_step_rows
 from abacus.modules.agents.activities import ACTIVITIES
 from abacus.modules.agents.ai_policy_contract import ai_policy_router
 from abacus.modules.agents.ai_policy_errors import AiPolicyLoosened, ApproverMustDiffer
@@ -530,6 +531,8 @@ from abacus.modules.agents.trace_pdf import (  # noqa: E402 -- TASK-7825: the co
 )
 
 __all__ = [
+    "RunStepRow",
+    "run_step_rows",
     "ACTIVITIES",
     "AGENTS",
     "ASSESSOR",

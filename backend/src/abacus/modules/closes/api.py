@@ -36,6 +36,8 @@ from abacus.modules.closes.intake import ACTIVITIES as INTAKE_ACTIVITIES
 from abacus.modules.closes.intake import schedule_publish
 from abacus.modules.closes.kind import CloseKind
 from abacus.modules.closes.request_publish_workflow import RequestPublishWorkflow
+from abacus.modules.closes.run_plan import register_treatment_kind
+from abacus.modules.closes.run_steps import register_close_run_steps
 from abacus.modules.closes.service import start_close
 from abacus.modules.closes.sync_scope import sync_scope
 from abacus.modules.connections.api import register_sync_scope
@@ -45,6 +47,10 @@ from abacus.modules.engagements.api import register_work_item_kind
 register_work_item_kind("close", CloseKind())
 # C-01-T15 (QC-8): a requested publication waits on the engagement's Managers and Partners.
 register_close_gates()
+# C-01-T20: the close run's code plan (`closes.close_run`), its run-step kinds and the
+# `close_treatment` decision card.
+register_close_run_steps()
+register_treatment_kind()
 # C-01-T17: the entities with an unlocked close keep their ledger fresh (LedgerSyncWorkflow).
 register_sync_scope(sync_scope)
 # The explorer's owners for a close and its plan (SPEC-304).
