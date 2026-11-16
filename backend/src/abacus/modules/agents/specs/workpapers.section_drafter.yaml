@@ -18,10 +18,13 @@
 # never classified by the model). Version 13 (A-05-T56; DEC-2711): related_parties' own prompt
 # and mapping (masters, minutes and roster; candidates only, never a person's name, never a
 # conclusion). Version 14 (A-04-T24; DEC-2480): risk's prompt v2, whose cells
-# add column F, a risk's response. Source of truth: compiled into _specs.py by
+# add column F, a risk's response. Version 15 (A-08-T23; DEC-5310): the three fieldwork modes,
+# fieldwork_attribute, flux_explain and confirmation_reconcile, each with its own prompt and
+# mapping behind audits.fieldwork_agents; their tools are C17's (a read, a compute and two propose
+# tools that write suggestions only); respondent text is untrusted. Source of truth: compiled into _specs.py by
 # `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
 id: workpapers.section_drafter
-version: 14
+version: 15
 purpose: Draft a workpaper section's values, each cited to the firm's methodology or a source page, as suggestions for a person to adopt.
 shape: single_call
 # The default mode (`gap`) and every mode below share the base prompt until each mode's own prompt
@@ -33,8 +36,8 @@ escalation_tier: medium
 input_schema: SectionDraftInput
 output_schema: SectionDraft
 # Reads the paper and its procedures, cites methodology steps and evidence, writes suggestions only.
-task_scope: [workpaper.read, procedure.read, methodology.read, evidence.read, request_item.read, ebp.read, suggestion.create, section_draft.run]
-tools: []
+task_scope: [workpaper.read, procedure.read, methodology.read, evidence.read, request_item.read, ebp.read, suggestion.create, section_draft.run, sample_set.read, trial_balance.read, confirmation.read, analytics.read]
+tools: [sampling.read_selected_entry, ledger.counterparty_activity, assurance.propose_explanation, assurance.propose_reconciliation]
 limits:
   max_output_tokens: 4000
   # Provisional per section until the S24 evaluation run sets it (A-04 §6; T14).
@@ -47,7 +50,7 @@ autonomy: propose
 confidence_routing:
   below: "0"
   route: hidden
-untrusted_inputs: [cells, documents]
+untrusted_inputs: [cells, documents, respondent_text]
 evaluation_suite: evals/workpapers_section_drafter
 # A-04 §4.5: section drafts are background work, deferrable under pressure.
 work_class: background
@@ -111,3 +114,19 @@ modes:
     input_schema: SectionDraftInput
     output_schema: SectionDraft
     max_cost_usd: "0.25"
+  # A-08-T23 (DEC-5310): the fieldwork modes, behind audits.fieldwork_agents.
+  fieldwork_attribute:
+    prompt: workpapers.section_draft.fieldwork_attribute@v1
+    input_schema: SectionDraftInput
+    output_schema: SectionDraft
+    max_cost_usd: "0.15"
+  flux_explain:
+    prompt: workpapers.section_draft.flux_explain@v1
+    input_schema: SectionDraftInput
+    output_schema: SectionDraft
+    max_cost_usd: "0.15"
+  confirmation_reconcile:
+    prompt: workpapers.section_draft.confirmation_reconcile@v1
+    input_schema: SectionDraftInput
+    output_schema: SectionDraft
+    max_cost_usd: "0.15"

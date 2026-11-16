@@ -78,3 +78,109 @@ async def read_materiality(agent: AgentContext, args: MaterialityIn) -> Material
 
 
 __all__ = ["read_materiality"]
+
+
+# --- A-08-T23: the fieldwork modes' two propose tools (suggestions only) ------------------------
+
+
+class ExplanationIn(BaseModel):
+    """A flux line's explanation as a suggestion: drivers name code's facts, never a figure."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    work_item_id: Annotated[UUID, Int]
+    line_key: Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"), Int]
+    explanation_fact_ids: Annotated[list[str], Field(min_length=1, max_length=20), Int]
+    citation_ids: Annotated[list[UUID], Field(max_length=20), Int] = []
+
+    def tool_targets(self, agent: AgentContext) -> object:
+        from abacus.modules.agents.api import ToolTargets
+
+        return ToolTargets((agent.engagement_id,) if agent.engagement_id is not None else ())
+
+
+class ReconciliationProposalIn(BaseModel):
+    """A confirmation's reconciling items as a suggestion; code computes what is unreconciled."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    confirmation_id: Annotated[UUID, Int]
+    items: Annotated[list[ReconcilingItemIn], Field(min_length=1, max_length=20), Int]
+
+    def tool_targets(self, agent: AgentContext) -> object:
+        from abacus.modules.agents.api import ToolTargets
+
+        return ToolTargets((agent.engagement_id,) if agent.engagement_id is not None else ())
+
+
+class ProposedOut(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    suggestion_id: Annotated[UUID, Int]
+
+
+@agent_tool(
+    name="assurance.propose_explanation", kind="propose", action="suggestion.create",
+    data_class="confidential", input_model=ExplanationIn, output_model=ProposedOut,
+)  # fmt: skip
+async def propose_explanation(agent: AgentContext, args: ExplanationIn) -> ProposedOut:
+    from abacus.modules.agents.api import create_suggestion
+    from abacus.modules.engagements.api import work_item_engagement
+
+    if await work_item_engagement(agent.tenant, args.work_item_id) != agent.engagement_id:
+        raise NotFound("work_item")
+    made = await create_suggestion(
+        agent,
+        engagement_id=agent.engagement_id,  # type: ignore[arg-type] -- checked above
+        target_type="analytics_line",
+        target_id=args.work_item_id,
+        field_key=f"explanation:{args.line_key}"[:120],
+        proposed_value={"t": "json", "v": {"facts": list(args.explanation_fact_ids)}},
+        citation_ids=list(args.citation_ids),
+    )
+    return ProposedOut(suggestion_id=made)
+
+
+@agent_tool(
+    name="assurance.propose_reconciliation", kind="propose", action="suggestion.create",
+    data_class="confidential", input_model=ReconciliationProposalIn, output_model=ProposedOut,
+)  # fmt: skip
+async def propose_reconciliation(
+    agent: AgentContext, args: ReconciliationProposalIn
+) -> ProposedOut:
+    from sqlalchemy import text
+
+    from abacus.kernel.db import tenant_session
+    from abacus.modules.agents.api import create_suggestion
+
+    async with tenant_session(agent.tenant) as session:
+        engagement = await session.scalar(
+            text("SELECT engagement_id FROM confirmations WHERE id = :c"),
+            {"c": args.confirmation_id},
+        )
+    if engagement != agent.engagement_id:
+        raise NotFound("confirmation")
+    made = await create_suggestion(
+        agent,
+        engagement_id=agent.engagement_id,  # type: ignore[arg-type] -- checked above
+        target_type="confirmation",
+        target_id=args.confirmation_id,
+        field_key="reconciling_items",
+        proposed_value={
+            "t": "json",
+            "v": {"items": [{"kind": i.kind, "amount": str(i.amount)} for i in args.items]},
+        },
+        citation_ids=[c for i in args.items for c in i.citation_ids][:20],
+    )
+    return ProposedOut(suggestion_id=made)
+
+
+class ReconcilingItemIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    kind: Annotated[str, Field(min_length=1, max_length=60), Conf]
+    amount: Annotated[Decimal, Conf]  # a figure from the respondent's reply or the ledger, cited
+    citation_ids: Annotated[list[UUID], Field(min_length=1, max_length=5), Int]
+
+
+ReconciliationProposalIn.model_rebuild()
