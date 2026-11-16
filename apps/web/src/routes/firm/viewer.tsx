@@ -1,6 +1,7 @@
 import { type JSX, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import { VIEWER_OVERLAY, registerOverlay, sourceViewerTarget } from "../../app-core/overlays";
+import { CloseSourceSeam } from "../../app-core/close-seams";
 
 // SHL-08 (P-03-T14; P-03 §5.1): the source viewer drawer on any firm route,
 // `?ov=viewer:<evidenceVersionId>[:<matchId>[:<anchor type>:<anchor id>:<anchor ref>[:<figure>
@@ -22,23 +23,29 @@ function ViewerOverlay({
   const target = sourceViewerTarget(args);
   if (target === undefined) return null;
   return (
-    <FeatureGate flag="evidence.viewer_v1">
-      <Suspense fallback={null}>
-        <ViewerDrawer
-          target={{
-            versionId: target.evidenceVersionId,
-            matchId: target.matchId ?? null,
-            anchor: target.anchor ?? null,
-            figure: target.figure ?? null,
-            engagementId: target.engagementId ?? null,
-          }}
-          open
-          onOpenChange={(open) => {
-            if (!open) close();
-          }}
-        />
-      </Suspense>
-    </FeatureGate>
+    <CloseSourceSeam
+      overlay="viewer"
+      targetType={target.anchor?.type}
+      targetId={target.evidenceVersionId}
+    >
+      <FeatureGate flag="evidence.viewer_v1">
+        <Suspense fallback={null}>
+          <ViewerDrawer
+            target={{
+              versionId: target.evidenceVersionId,
+              matchId: target.matchId ?? null,
+              anchor: target.anchor ?? null,
+              figure: target.figure ?? null,
+              engagementId: target.engagementId ?? null,
+            }}
+            open
+            onOpenChange={(open) => {
+              if (!open) close();
+            }}
+          />
+        </Suspense>
+      </FeatureGate>
+    </CloseSourceSeam>
   );
 }
 

@@ -16,6 +16,7 @@ import {
 } from "../../app-core/auth/bff";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { LANDING_PATH } from "../../app-core/portal-session";
+import { PortalCloseIntakeSeam, QuestionVariantSeam } from "../../app-core/close-seams";
 
 // The client portal's route tree (P-08-T07; P-08 §5.1; DEC-59): its own entry (portal.html), its
 // own origin root, no `/client` prefix. Sign-in and invitation acceptance are public; home,
@@ -511,8 +512,21 @@ export const portalTree = rootRoute.addChildren([
   page("/sign-in", SignInPage),
   page("/accept", AcceptPage), // POR-01 d (P-08-T19)
   page("/", () => <Area area="Home" />),
-  page("/documents", () => <Area area="Documents" />),
-  page("/documents/requests/$requestId", () => <Area area="Request" />), // POR-04
+  page("/documents", () => (
+    // C-01-T57: the close-intake branch (`?period=`), nothing new while `closes.portal_requests`
+    // is off.
+    <PortalCloseIntakeSeam search={window.location.search}>
+      <Area area="Documents" />
+    </PortalCloseIntakeSeam>
+  )),
+  page("/documents/requests/$requestId", () => (
+    // POR-04; C-01-T57: the close question variant e slot (`?question=`).
+    <QuestionVariantSeam
+      questionId={new URLSearchParams(window.location.search).get("question") ?? undefined}
+    >
+      <Area area="Request" />
+    </QuestionVariantSeam>
+  )),
   page("/requests", () => <Area area="Requests" />), // POR-14
   page("/requests/$requestId", () => <Area area="Requests" />),
   page("/connections", () => <Area area="Connections" />), // POR-16 (A-02-T28)
