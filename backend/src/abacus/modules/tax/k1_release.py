@@ -264,7 +264,11 @@ async def request_release(
     async def run() -> tuple[int, dict[str, object]]:
         check = await eligibility(ctx, return_id)
         if not check.eligible:
-            raise K1ReleaseIneligible(facts={"failing": ",".join(check.failing)})
+            # T-07-T24 (DEC-5332): the unmet 1041 steps, in order, beside the failing codes.
+            unmet = [c for c in check.failing if c in (STEP_FINAL_APPROVAL, STEP_FORM_8879_F)]
+            raise K1ReleaseIneligible(
+                facts={"failing": ",".join(check.failing), "gate_unmet": ",".join(unmet) or "none"}
+            )
         if not asked or any(p not in check.package_ids for p in asked):
             raise K1ReleaseIneligible(facts={"failing": "packages_not_ready"})
         async with tenant_session(ctx.tenant) as session:

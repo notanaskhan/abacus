@@ -150619,10 +150619,6 @@ export type BeneficiariesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BeneficiariesError = BeneficiariesErrors[keyof BeneficiariesErrors];
