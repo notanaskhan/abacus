@@ -7,6 +7,8 @@ import { useSession } from "../app-core/session";
 import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { ADM01 } from "./ADM-01";
+// A-08-T26: the fieldwork L3 kit board registers itself as KIT-A08.
+import "./kit-a08";
 import { FilesPage } from "./FIL-01";
 import {
   FIL01_STATES,
