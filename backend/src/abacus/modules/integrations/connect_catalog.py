@@ -111,6 +111,7 @@ class WorkbenchRow:
     published_at: datetime | None
     prerequisite: dict[str, str] | None
     revision: int
+    detail_copy: dict[str, Any] | None = None  # Any: catalogue JSON content (0933)
 
 
 @dataclass(frozen=True)
@@ -175,6 +176,7 @@ async def workbench_rows(session: AsyncSession) -> list[WorkbenchRow]:
             published_at=r["published_at"],
             prerequisite=r["prerequisite"],
             revision=r["revision"],
+            detail_copy=r.get("detail_copy"),
         )
         for r in rows
     ]

@@ -11,8 +11,8 @@
   tile (status, kind, blocked reason, allowed actions) and the install the tile reads (the firm's,
   or the viewer's own for a personal app). The connection card, the read rows (a scope a recorded
   grant leaves out reads off for the firm), the recent events and the dependents are live.
-  Partial: the catalogue carries no write, never or who-can-use copy for a firm app, so those are
-  empty until the content does (the personal consent's `wont` lines are its never rows).
+  The write, never and who-can-use words are the catalogue's (0933's `detail_copy`); a personal
+  app's never rows are its consent `wont` lines.
 """
 
 from __future__ import annotations
@@ -136,11 +136,21 @@ class MayDo:
 
 
 @dataclass(frozen=True)
+class WriteRow:
+    label: str
+    gate_label: str | None
+    state: str  # allowed · off_for_firm
+
+
+@dataclass(frozen=True)
 class Drawer:
     tile: Tile
     card: Card
     reads: tuple[MayDo, ...]
     never: tuple[MayDo, ...]
+    writes: tuple[WriteRow, ...]
+    who_can_use: str
+    who_can_use_note: str | None
     events: tuple[Event, ...]
     dependents: Dependents
     managed_by: str | None
@@ -204,8 +214,23 @@ async def drawer(ctx: AuthContext, catalog_key: str) -> Drawer:
         for code, label in row.read_scopes
     )
     copy = row.consent_copy or {}
-    wont = cast("list[object]", copy.get("wont", [])) if personal else []
+    detail = row.detail_copy or {}
+    wont = cast("list[object]", copy.get("wont", []) if personal else detail.get("never", []))
     never = tuple(MayDo(str(line), "never") for line in wont)
+    # 0933 (DEC-5337): the catalogue's words for each declared write, on only when the
+    # write-capability registry enables it.
+    from abacus.modules.integrations.capabilities import write_capability
+
+    writes = tuple(
+        WriteRow(
+            str(w.get("label", "")),
+            None if w.get("gate_label") is None else str(w["gate_label"]),
+            "allowed"
+            if (found := write_capability(str(w.get("key", "")))) is not None and found.enabled
+            else "off_for_firm",
+        )
+        for w in cast("list[dict[str, object]]", detail.get("writes", []))
+    )
     page, _ = await events(ctx.tenant, catalog_key) if not personal else ([], None)
     return Drawer(
         tile=tile,
@@ -219,6 +244,11 @@ async def drawer(ctx: AuthContext, catalog_key: str) -> Drawer:
         ),
         reads=reads,
         never=never,
+        writes=writes,
+        who_can_use=str(detail.get("who_can_use") or ""),
+        who_can_use_note=None
+        if detail.get("who_can_use_note") is None
+        else str(detail["who_can_use_note"]),
         events=tuple(page[:RECENT]),
         dependents=await dependents(ctx.tenant, catalog_key),
         managed_by=None if personal else await connections_manager(ctx.tenant_id),

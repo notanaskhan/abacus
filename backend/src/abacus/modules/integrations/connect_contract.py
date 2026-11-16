@@ -213,6 +213,8 @@ class ConnectIntegrationDetailOut(BaseModel):
     health: Annotated[ConnectHealthOut, Internal]
     dependents: Annotated[ConnectDependentsOut, Internal]
     who_can_use: Annotated[str, Public]
+    # 0933 (DEC-5337, additive): the catalogue's small line under it.
+    who_can_use_note: Annotated[str | None, Public] = None
     managed_by: Annotated[str | None, classified("confidential")]
     consent: Annotated[ConnectConsentOut | None, Public]
     allowed_actions: Annotated[list[ConnectAction], Public]
@@ -442,7 +444,14 @@ async def connect_detail(key: Key, ctx: Ctx) -> ConnectIntegrationDetailOut:
                 )
                 for r in found.reads
             ],
-            write=[],
+            write=[
+                ConnectMayDoRowOut(
+                    label=w.label,
+                    gate_label=w.gate_label,
+                    state=cast(Literal["allowed", "off_for_firm", "never"], w.state),
+                )
+                for w in found.writes
+            ],
             never=[
                 ConnectMayDoRowOut(label=r.label, gate_label=None, state="never")
                 for r in found.never
@@ -462,7 +471,8 @@ async def connect_detail(key: Key, ctx: Ctx) -> ConnectIntegrationDetailOut:
             paused=found.dependents.paused,
             items=[ConnectDependentAgentOut(key=k, name=k) for k in found.dependents.keys],
         ),
-        who_can_use="",
+        who_can_use=found.who_can_use,
+        who_can_use_note=found.who_can_use_note,
         managed_by=found.managed_by,
         consent=(
             None

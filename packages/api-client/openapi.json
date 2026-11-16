@@ -27522,6 +27522,18 @@
             "cls": "public",
             "title": "Who Can Use",
             "type": "string"
+          },
+          "who_can_use_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "public",
+            "title": "Who Can Use Note"
           }
         },
         "required": [

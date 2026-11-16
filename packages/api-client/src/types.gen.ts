@@ -12763,6 +12763,10 @@ export type ConnectIntegrationDetailOut = {
      * Who Can Use
      */
     who_can_use: string;
+    /**
+     * Who Can Use Note
+     */
+    who_can_use_note?: string | null;
 };
 
 /**
