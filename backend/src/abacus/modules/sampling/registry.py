@@ -242,3 +242,15 @@ UPDATE_COLUMNS["je_tests"] = frozenset(
         "status",
     }
 )
+
+# 0931 (A-08-T17, DEC-5307): sample expansions; a request's terms are fixed, its decision columns
+# are the only updates.
+TABLES = TABLES | frozenset({"sample_expansions"})
+INSERT_COLUMNS["sample_expansions"] = frozenset(
+    {"tenant_id", "engagement_id", "work_item_id", "sample_set_id", "base_version_id"}
+    | {"base_count", "add_by_score", "add_unpredictable", "add_item_keys", "rationale"}
+    | {"rationale_suggestion_id", "requested_by", "approver_user_id", "content_hash"}
+)
+UPDATE_COLUMNS["sample_expansions"] = frozenset(
+    {"status", "decided_by", "decided_actor_kind", "decided_at", "resulting_version_id"}
+)

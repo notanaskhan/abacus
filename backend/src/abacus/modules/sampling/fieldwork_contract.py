@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import AUDITS_FIELDWORK_TESTING
 from abacus.kernel._statuses import JeCriterionStatus, JeTestStatus, SampleExpansionStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
@@ -364,7 +364,19 @@ async def request_expansion(
 ) -> ExpansionOut:
     """422 `expansion_rationale_required`, `approver_required`; nothing changes until approved."""
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T17")
+    from abacus.modules.sampling import expansions
+
+    view = await expansions.request_expansion(
+        ctx,
+        sample_set_id,
+        add_by_score=body.add_by_score,
+        add_unpredictable=body.add_unpredictable,
+        add_item_keys=body.add_item_keys,
+        rationale=body.rationale,
+        approver_user_id=body.approver_user_id,
+        rationale_suggestion_id=body.rationale_suggestion_id,
+    )
+    return _expansion_out(view)
 
 
 @router.post(
@@ -378,7 +390,11 @@ async def decide_expansion(
 ) -> ExpansionOut:
     """The named approver only, never the requester; 409 `content_changed`."""
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T17")
+    from abacus.modules.sampling import expansions
+
+    return _expansion_out(
+        await expansions.decide(ctx, expansion_id, body.decision, body.seen_hash)
+    )
 
 
 @router.post(
@@ -389,4 +405,23 @@ async def decide_expansion(
 )
 async def withdraw_expansion(expansion_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> ExpansionOut:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T17")
+    from abacus.modules.sampling import expansions
+
+    return _expansion_out(await expansions.withdraw(ctx, expansion_id))
+
+
+def _expansion_out(view: object) -> ExpansionOut:
+    from abacus.modules.sampling.expansions import ExpansionView
+
+    v = cast(ExpansionView, view)
+    initials = "".join(part[0] for part in v.approver_name.split() if part)[:3].upper()
+    return ExpansionOut(
+        id=v.id,
+        status=SampleExpansionStatus(v.status),
+        base_count=v.base_count,
+        add_count=v.add_count,
+        resulting_count=v.resulting_count,
+        approver_name=v.approver_name,
+        approver_initials=initials or "-",
+        requested_at=v.requested_at,  # type: ignore[arg-type] -- a timestamptz
+    )
