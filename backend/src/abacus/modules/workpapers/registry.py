@@ -24,12 +24,19 @@ TABLES: frozenset[str] = frozenset(
         # 0642 (A-05-T15, DEC-1959): the shared attribute grid and its insert-only results.
         "attribute_tests",
         "test_attribute_results",
+        # 0930 (A-08-T14, DEC-5306): the AUD-12 deviation log, insert-only.
+        "control_deviations",
     }
 )
 INSERT_ONLY: frozenset[str] = TABLES - {
     "tie_out_checks", "attention_flags", "program_procedures", "attribute_tests"
 }  # fmt: skip
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "control_deviations": frozenset(
+        {"tenant_id", "engagement_id", "work_item_id", "test_id", "sample_item_id"}
+        | {"attribute_key", "kind", "description", "difference", "below_ct", "finding_id"}
+        | {"recorded_by", "actor_kind"}
+    ),
     "workpapers": frozenset(
         {"tenant_id", "engagement_id", "work_item_id", "code", "title", "audit_area"}
         | {"created_by"}
