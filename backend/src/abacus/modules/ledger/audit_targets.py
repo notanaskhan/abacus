@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -18,7 +18,7 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID]]] = 
     "gl_snapshot": (GlSnapshot.id, GlSnapshot.client_entity_id),
 }
 ENTITY_KINDS = frozenset(_OWNERS)
-ENGAGEMENT_KINDS = frozenset({"trial_balance", "mapping_set"})
+ENGAGEMENT_KINDS = frozenset({"trial_balance", "mapping_set", "consolidation"})
 # A mapping set (SPEC-316) maps one engagement's trial balance.
 _ENGAGEMENT_OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID]]] = {
     "trial_balance": (TrialBalance.id, TrialBalance.engagement_id),
@@ -41,6 +41,13 @@ async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) ->
     their id -> the owning engagement. Unknown ids are left out."""
     if kind not in ENGAGEMENT_KINDS:
         return {}
+    if kind == "consolidation":  # A-09-T13: a consolidation is one engagement's
+        async with tenant_session(tenant) as session:
+            found = await session.execute(
+                text("SELECT id, engagement_id FROM consolidations WHERE id = ANY(:i)"),
+                {"i": list(ids)},
+            )
+            return {row[0]: row[1] for row in found}
     key, owner = _ENGAGEMENT_OWNERS[kind]
     async with tenant_session(tenant) as session:
         rows = await session.execute(select(key, owner).where(key.in_(list(ids))))

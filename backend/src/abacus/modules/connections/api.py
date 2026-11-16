@@ -26,6 +26,9 @@ from abacus.modules.connections.connector import (
     Unavailable,
 )
 from abacus.modules.connections.connectors import quickbooks_online
+
+# A-09-T11, T13: which entities a connection covers (OneWorld).
+from abacus.modules.connections.coverage import EntityAlreadyCovered, cover_entities, covers
 from abacus.modules.connections.entity import (
     ActivityLine,
     AuthorizationRequired,
@@ -63,10 +66,18 @@ from abacus.modules.connections.gl_import import WORKFLOWS as GL_WORKFLOWS
 from abacus.modules.connections.gl_import import on_ledger_snapshot_recorded
 from abacus.modules.connections.grants import GrantRevocationRequested, revoke_retired
 from abacus.modules.connections.health import check_connection_health_activity
+from abacus.modules.connections.ledger_sync import ACTIVITIES as LEDGER_SYNC_ACTIVITIES
+from abacus.modules.connections.ledger_sync import (
+    SyncScope,
+    ensure_sync_workflow,
+    register_sync_scope,
+    sync_facts,
+)
 from abacus.modules.connections.ledger_sync_contract import (
     LedgerSyncStatusOut,
     ledger_sync_router,
 )
+from abacus.modules.connections.ledger_sync_workflow import LedgerSyncWorkflow
 from abacus.modules.connections.models import Connection
 from abacus.modules.connections.pipeline import (
     RunFailed,
@@ -116,14 +127,6 @@ from abacus.modules.connections.workflow_types import (
     RetrievalInput,
     RetrievalOutcome,
 )
-from abacus.modules.connections.ledger_sync import ACTIVITIES as LEDGER_SYNC_ACTIVITIES
-from abacus.modules.connections.ledger_sync import (
-    SyncScope,
-    ensure_sync_workflow,
-    register_sync_scope,
-    sync_facts,
-)
-from abacus.modules.connections.ledger_sync_workflow import LedgerSyncWorkflow
 from abacus.modules.connections.workflows import (
     CONNECTION_HEALTH_ID,
     ConnectionHealthWorkflow,
@@ -184,11 +187,6 @@ register_entity_owners({"connection"}, audit_entities)
 
 __all__ = [
     "ACTIVITIES",
-    "LedgerSyncWorkflow",
-    "SyncScope",
-    "ensure_sync_workflow",
-    "register_sync_scope",
-    "sync_facts",
     "CONNECTORS",
     "NETWORKLESS_PROVIDERS",
     "ROUTERS",
@@ -213,6 +211,7 @@ __all__ = [
     "ConsentShown",
     "ConsentVersionStale",
     "Dataset",
+    "EntityAlreadyCovered",
     "EntityConnectionView",
     "EntityConnections",
     "FailInput",
@@ -222,6 +221,7 @@ __all__ = [
     "LedgerAlreadyConnected",
     "LedgerSnapshotRecorded",
     "LedgerSyncStatusOut",  # C-01-T07: C9 v2.1 sync facts
+    "LedgerSyncWorkflow",
     "NoConnection",
     "NotSupported",
     "Period",
@@ -238,6 +238,7 @@ __all__ = [
     "RunSummary",
     "Started",
     "StartedRun",
+    "SyncScope",
     "SyntheticSeedRefused",
     "Unavailable",
     "WorkflowUnavailable",
@@ -249,7 +250,10 @@ __all__ = [
     "connection_detail",
     "connection_router",
     "connector_for",
+    "cover_entities",
+    "covers",
     "disconnect",
+    "ensure_sync_workflow",
     "entity_connections",
     "entity_of_connection",
     "fail_run",
@@ -264,6 +268,7 @@ __all__ = [
     "qbo_app",
     "quickbooks_online",
     "reconnect_todo_count",
+    "register_sync_scope",
     "render",
     "request_reconnect",
     "retrieval_status",
@@ -275,6 +280,7 @@ __all__ = [
     "snapshot",
     "start_entity",
     "start_retrieval",
+    "sync_facts",
     "trigger_retrieval",
     "validate_run",
     "workflow_id",

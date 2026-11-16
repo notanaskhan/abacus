@@ -12,6 +12,15 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-15 (S46): A-09-T13 consolidations, identifiers and counts only
+        "connection.coverage_extended",
+        "consolidation.created",
+        "consolidation.discarded",
+        "consolidation.edited",
+        "consolidation.finalized",
+        "consolidation.structure_saved",
+        "consolidation.trial_balance_attached",
+        "consolidation.trial_balance_not_needed",
         # reviewed 2026-11-15 (S46): A-08-T12 JE testing, identifiers and counts only
         "je_test.configured",
         "je_test.created",
