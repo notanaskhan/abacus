@@ -84,6 +84,10 @@ NON_TENANT_TABLES = frozenset(
     | {"safeguards_controls", "safeguards_control_set_log"}
     # 0400 (K-02-T03, ADR-300): reference sets are public law, two-person published; definers.
     | {"reference_sets", "reference_set_versions", "reference_set_publications"}
+    # 0920 (G-04-T04, DEC-5204): platform console, help, status and the platform log; definers.
+    | {"help_articles", "status_components", "status_incidents", "status_incident_updates"}
+    | {"platform_regions", "platform_settings", "platform_tenant_directory"}
+    | {"platform_audit_events"}
 )
 # Insert-only tables outside the modules (ADR-004); each module lists its own in registry.py.
 _PLATFORM_INSERT_ONLY: frozenset[str] = frozenset(
@@ -229,6 +233,11 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "tie_out_runs": "statement_rows_immutable",  # 0660 (A-06-T19)
     "statement_approvals": "statement_rows_immutable",  # 0660 (A-06-T19)
     "statement_notes": "statement_rows_immutable",  # 0674 (A-06-T25)
+    "plan_entitlements": "plan_entitlements_immutable",  # 0920 (G-04-T04)
+    "usage_alert_events": "usage_alert_events_immutable",  # 0920 (G-04-T04)
+    "support_messages": "support_messages_immutable",  # 0920 (G-04-T04)
+    "status_incident_updates": "status_incident_updates_immutable",  # 0920 (G-04-T04)
+    "platform_audit_events": "platform_audit_events_immutable",  # 0920 (G-04-T04)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -314,6 +323,10 @@ GLOBAL_TABLES = frozenset(
     | {"safeguards_controls", "safeguards_control_set_log"}  # 0242 (G-02-T20)
     # 0400 (K-02-T03, ADR-300): the platform reference sets.
     | {"reference_sets", "reference_set_versions", "reference_set_publications"}
+    # 0920 (G-04-T04, DEC-5204): platform console, help, status and the platform log; definers.
+    | {"help_articles", "status_components", "status_incidents", "status_incident_updates"}
+    | {"platform_regions", "platform_settings", "platform_tenant_directory"}
+    | {"platform_audit_events"}
 )
 # Tenant tables whose SECURITY DEFINER readers run before any tenant is known (a public link's
 # token): RLS is enabled with the tenant policy but not FORCED, so the owner's definers can read
@@ -440,6 +453,16 @@ DEFINER_FUNCTIONS = frozenset(
     # tenant scope, only when it is the app host or an active portal host of that firm, and never
     # spends the state. Search path pinned, revoked from PUBLIC, executable by the app role.
     | {"connection_state_origin", "connection_state_firm_note"}
+    # 0920 (G-04-T04, DEC-5204): the app's metadata-only readers (directory, published help,
+    # status, regions, settings) and the append-only platform log; the worker's and operator's
+    # owner-only writers (directory upsert, two-person help publish, incidents). Search path
+    # pinned, revoked from PUBLIC.
+    | {"platform_directory_list", "platform_directory_get", "platform_regions_list"}
+    | {"help_article_list", "help_article_get", "help_article_search"}
+    | {"status_snapshot", "platform_setting_get", "platform_audit_record"}
+    | {"platform_directory_upsert", "help_article_draft", "help_article_publish"}
+    | {"help_article_withdraw", "status_incident_post", "status_incident_update"}
+    | {"status_incident_resolve"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
@@ -450,6 +473,10 @@ OWNER_ONLY_FUNCTIONS = frozenset(
     | {"active_tenant_ids", "standards_sets_apply"}
     | {"archived_guard"}  # 0686: fires as a trigger; nobody calls it
     | {"connection_state_firm_note"}  # 0790 (A-02-T33): fires as a trigger; nobody calls it
+    # 0920 (G-04-T04): PlatformOpsWorkflow and the operator CLI only.
+    | {"platform_directory_upsert", "help_article_draft", "help_article_publish"}
+    | {"help_article_withdraw", "status_incident_post", "status_incident_update"}
+    | {"status_incident_resolve"}
 )
 # Definer functions for the operator role only (Q-01-T19): `abacus_ops` executes them, the
 # application role must not.

@@ -30,6 +30,14 @@ TABLES: frozenset[str] = frozenset(
     | {"agent_minute_ledger", "engagement_agent_budgets", "usage_month_rollups"}
     # P-02-T05 (0840, ADR-241): the firm search index and the people's recents (C15 v1).
     | {"search_documents", "search_recents"}
+    # G-04-T04 (0920, DEC-5204): plan & usage and support (tenant), and the console's global
+    # content, status, directory and platform log (definers only).
+    | {"plan_entitlements", "usage_alert_policies", "usage_alert_rules", "usage_alert_events"}
+    | {"plan_change_requests", "support_conversations", "support_messages"}
+    | {"support_conversation_reads"}
+    | {"help_articles", "status_components", "status_incidents", "status_incident_updates"}
+    | {"platform_regions", "platform_settings", "platform_tenant_directory"}
+    | {"platform_audit_events"}
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 # G-02-T18 (0240): an incident's status changes only with its decisions (column grants and the
@@ -41,6 +49,9 @@ INSERT_ONLY: frozenset[str] = frozenset(
     | {"security_incident_reminders"}
     | {"safeguards_control_set_log"}
     | {"agent_minute_ledger"}  # P-10-T06 (0684): one row per run, by trigger
+    # G-04-T04 (0920): versions, once-per-month crossings, messages, incident updates, the log.
+    | {"plan_entitlements", "usage_alert_events", "support_messages"}
+    | {"status_incident_updates", "platform_audit_events"}
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -112,3 +123,50 @@ INSERT_COLUMNS["pilot_metric_snapshots"] = frozenset(
 UPDATE_COLUMNS["pilot_enrolments"] = frozenset(
     {"mode", "confirmed_by", "confirmed_at", "updated_at"}
 )
+
+# G-04-T04 (0920, DEC-5204): plan & usage and support; the migration's column grants.
+_G04_INSERTS = {
+    "plan_entitlements": (
+        "tenant_id plan_code term_start term_end renewal_on usage_month_anchor_day"
+        " included_agent_minutes seats_total library_channel policy_principal_available"
+        " valid_from changed_by_staff change_reason plan_request_id"
+    ),
+    "usage_alert_policies": (
+        "tenant_id at_100_behaviour engagement_default_minutes engagement_alert_pct"
+        " billing_contact_user_id partner_approver_user_id updated_by"
+    ),
+    "usage_alert_rules": (
+        "tenant_id level threshold_pct enabled recipient_user_ids recipient_groups"
+    ),
+    "usage_alert_events": (
+        "tenant_id scope rule_id engagement_id usage_month threshold_pct crossed_at"
+        " minutes_at_crossing sent_to"
+    ),
+    "plan_change_requests": (
+        "id tenant_id kind from_value to_value modules_add effective_from reason requested_by"
+        " approver_user_id"
+    ),
+    "support_conversations": "id tenant_id user_id",
+    "support_messages": (
+        "tenant_id conversation_id author_kind author_user_id staff_subject body"
+        " related_article_slug"
+    ),
+    "support_conversation_reads": "tenant_id conversation_id reader_kind last_read_at",
+}
+_G04_UPDATES = {
+    "usage_alert_policies": (
+        "version at_100_behaviour engagement_default_minutes engagement_alert_pct"
+        " billing_contact_user_id partner_approver_user_id updated_by updated_at"
+    ),
+    "usage_alert_rules": "enabled recipient_user_ids recipient_groups updated_at",
+    "plan_change_requests": (
+        "status decided_by decided_at decline_reason applied_by_staff applied_at"
+        " plan_entitlement_version_id version"
+    ),
+    "support_conversations": (
+        "status last_firm_message_at last_staff_message_at assigned_staff_subject"
+    ),
+    "support_conversation_reads": "last_read_at",
+}
+INSERT_COLUMNS.update({table: frozenset(cols.split()) for table, cols in _G04_INSERTS.items()})
+UPDATE_COLUMNS.update({table: frozenset(cols.split()) for table, cols in _G04_UPDATES.items()})
