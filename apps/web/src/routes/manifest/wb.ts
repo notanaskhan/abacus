@@ -49,7 +49,7 @@ export const wbScreens = {
   },
   "WB-11": {
     name: "Integration detail & connect drawer · CCH Axcess Tax",
-    status: "planned",
+    status: "fixture", // W-01-T16/T17: a to f on fixtures (the gallery)
     path: null,
   },
   "WB-12": {
