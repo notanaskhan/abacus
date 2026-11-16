@@ -51,6 +51,8 @@ ThresholdPolicyKind = Literal[
     "document_confidence",
     "attribute_sample_sizes",  # A-03-T10 (ADR-340 §6): the firm's attribute sample size table
     "rmm_matrix",  # A-04-T13 (A-04 §4.2 M3): RMM for each inherent and control risk
+    "je_risk_criteria",  # A-08-T12 (SPEC-657 F1, OQ-7): the firm's JE risk criteria
+    "mus_confidence_factors",  # A-08-T12 (ADR P-57): MUS confidence factors (A-08-T13 reads)
 ]
 StandardKind = Literal[
     "review_checklist",
@@ -63,6 +65,8 @@ StandardKind = Literal[
     "document_confidence",
     "attribute_sample_sizes",
     "rmm_matrix",
+    "je_risk_criteria",
+    "mus_confidence_factors",
 ]
 # KNW-04's sections (`?section=`), in the section list's order; `deadline_rules` is section j,
 # composed over the platform reference sets (DF-10).
@@ -328,6 +332,54 @@ class RmmMatrixPayload(BaseModel):
     rows: Annotated[list[RmmMatrixRow], Field(min_length=1, max_length=12), classified("internal")]
 
 
+JeCriterionKey = Literal[
+    "weekend_holiday", "round_amount", "post_close", "manual_by_role", "keywords"
+]
+
+
+class JeRiskCriterionRow(BaseModel):
+    """One JE risk criterion: its key, weight (0 to 100) and parameters, as text the scoring
+    engine (`sampling.compute.je_scoring`) validates."""
+
+    model_config = _frozen()
+
+    key: Annotated[JeCriterionKey, classified("internal")]
+    weight: Annotated[int, Field(ge=0, le=100), classified("internal")]
+    params: Annotated[dict[str, str], Field(max_length=10), classified("internal")] = {}
+
+
+class JeRiskCriteriaPayload(BaseModel):
+    """A-08-T12 (SPEC-657 F1; OQ-7): the firm's JE risk criteria ("BH JE criteria v1"). Firm
+    content, loaded through the import; a JE test copies a version's rows when a person
+    configures it, and code scores (ADR-050)."""
+
+    model_config = _frozen()
+
+    kind: Annotated[Literal["je_risk_criteria"], classified("internal")]
+    criteria: Annotated[
+        list[JeRiskCriterionRow], Field(min_length=1, max_length=5), classified("internal")
+    ]
+
+
+class MusConfidenceFactorRow(BaseModel):
+    model_config = _frozen()
+
+    confidence_pct: Annotated[Pct, classified("internal")]
+    errors: Annotated[int, Field(ge=0, le=20), classified("internal")]
+    factor: Annotated[Decimal, Field(gt=0, max_digits=8, decimal_places=4), classified("internal")]
+
+
+class MusConfidenceFactorsPayload(BaseModel):
+    """ADR P-57: the firm's MUS confidence factors (A-08-T13 sizes with them)."""
+
+    model_config = _frozen()
+
+    kind: Annotated[Literal["mus_confidence_factors"], classified("internal")]
+    rows: Annotated[
+        list[MusConfidenceFactorRow], Field(min_length=1, max_length=200), classified("internal")
+    ]
+
+
 StandardPayload = Annotated[
     AjeThresholdsPayload
     | VarianceThresholdsPayload
@@ -335,6 +387,8 @@ StandardPayload = Annotated[
     | DocumentConfidencePayload
     | AttributeSampleSizesPayload
     | RmmMatrixPayload
+    | JeRiskCriteriaPayload
+    | MusConfidenceFactorsPayload
     | ReviewChecklistPayload
     | ReviewLevelsPayload
     | ReturnApprovalPolicyPayload

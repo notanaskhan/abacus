@@ -54,9 +54,18 @@ SourceKind = Literal["upload", "general_ledger"]
 Method = Literal[
     "attribute_nonstatistical", "attribute_statistical", "threshold_random_stratified"
 ]
+# A-08-T12 (ADR P-57): what a version may read; `je_score_selection` is drawn only through a JE
+# test's selection, never a direct version request, and `monetary_unit` arrives with A-08-T13.
+ShownMethod = Literal[
+    "attribute_nonstatistical",
+    "attribute_statistical",
+    "threshold_random_stratified",
+    "je_score_selection",
+    "monetary_unit",
+]
 Rmm = Literal["low", "moderate", "high"]
 TestRule = Literal["all", "random", "none"]
-SelectionReason = Literal["random", "threshold"]
+SelectionReason = Literal["random", "threshold", "risk_score", "unpredictable"]
 SeedSource = Literal["server", "scenario"]
 Surface = Literal["POR-03", "POR-14"]
 Wave = Literal["sample"]
@@ -186,7 +195,7 @@ class ParametersOut(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    method: Annotated[Method, classified("internal")]
+    method: Annotated[ShownMethod, classified("internal")]
     rmm: Annotated[Rmm | None, classified("internal")]
     tolerable_rate: Annotated[Decimal | None, Field(ge=0, le=1), classified("internal")]
     expected_rate: Annotated[Decimal | None, Field(ge=0, le=1), classified("internal")]

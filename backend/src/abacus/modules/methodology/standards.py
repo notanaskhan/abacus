@@ -79,6 +79,7 @@ from abacus.modules.methodology.standards_contract import (
     ExampleRow,
     ExamplesProvider,
     FirmStandardKind,
+    JeRiskCriteriaPayload,
     PolicyRef,
     RmmFor,
     RmmMatrixPayload,
@@ -1163,6 +1164,34 @@ async def policy_payload(
             )
         ).scalar_one()
     return dict(payload)
+
+
+async def je_risk_criteria_version(
+    tenant_id: UUID, version_id: UUID
+) -> tuple[PolicyRef, JeRiskCriteriaPayload] | None:
+    """A-08-T12 (SPEC-657 F1): a published `je_risk_criteria` version by id, for a JE test a
+    person configures (the caller authorised on the engagement). None for an unknown, draft or
+    other-kind version."""
+    tenant = TenantContext(tenant_id, "system", "standards:je_risk_criteria_version")
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                select(_THRESHOLD.parent, _THRESHOLD.version)
+                .join(_THRESHOLD.version, _THRESHOLD.version.parent_id == _THRESHOLD.parent.id)
+                .where(
+                    _THRESHOLD.version.id == version_id,
+                    _THRESHOLD.parent.kind == "je_risk_criteria",
+                    _THRESHOLD.version.status == "published",
+                )
+            )
+        ).first()
+    if row is None:
+        return None
+    parent, version = row
+    ref = PolicyRef(
+        standard_key=parent.key, version_id=version.id, version=version.version, name=parent.name
+    )
+    return ref, JeRiskCriteriaPayload.model_validate(dict(version.payload))
 
 
 _HUNDRED: Final = Decimal(100)

@@ -12,6 +12,14 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-15 (S46): A-08-T12 JE testing, identifiers and counts only
+        "je_test.configured",
+        "je_test.created",
+        "je_test.roles_set",
+        "je_test.scored",
+        "je_test.scoring_failed",
+        "je_test.scoring_started",
+        "je_test.selection_requested",
         # reviewed 2026-11-15 (S45): C-01-T14/T15 the close record and plan, identifiers only
         "close.on_hold_cleared",
         "close.on_hold_set",

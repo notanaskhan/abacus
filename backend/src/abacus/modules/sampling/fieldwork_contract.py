@@ -5,7 +5,8 @@ JE tests over a GL population proved complete by code (A-03's `general_ledger` p
 risk criteria, code's scores with reason codes, the selection as a sample-set version, and sample
 expansions a named approver alone decides. Every route has one matrix action and answers, in
 order: a client principal 404; the action on the work item's engagement (walls 404,
-independence 403); 404 with `audits.fieldwork_testing` off; then 501 until its task (T12, T17).
+independence 403); 404 with `audits.fieldwork_testing` off; then 501 until its task (T17; the
+T12 routes are served, TASK-8086).
 """
 
 from __future__ import annotations
@@ -257,7 +258,9 @@ async def create_je_test(
 ) -> JeTestOut:
     """The population, its completeness tie and a draft test."""
     await _gate(ctx, work_item_id, "je_test.create")
-    raise NotImplementedYet("A-08-T12")
+    from abacus.modules.sampling.je_tests import create_je_test as create
+
+    return await create(ctx, work_item_id, body)
 
 
 @router.get(
@@ -265,7 +268,9 @@ async def create_je_test(
 )
 async def get_je_test(je_test_id: UUID, ctx: Ctx) -> JeTestOut:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T12")
+    from abacus.modules.sampling.je_tests import je_test_view
+
+    return await je_test_view(ctx, je_test_id)
 
 
 @router.put(
@@ -276,7 +281,9 @@ async def get_je_test(je_test_id: UUID, ctx: Ctx) -> JeTestOut:
 )
 async def put_criteria(je_test_id: UUID, body: CriteriaIn, ctx: Ctx) -> JeTestOut:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T12")
+    from abacus.modules.sampling.je_tests import put_criteria as configure
+
+    return await configure(ctx, je_test_id, body)
 
 
 @router.put(
@@ -289,7 +296,9 @@ async def put_posting_user_roles(
     je_test_id: UUID, body: PostingUserRolesIn, ctx: Ctx
 ) -> JeTestOut:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T12")
+    from abacus.modules.sampling.je_tests import put_posting_user_roles as roles
+
+    return await roles(ctx, je_test_id, body)
 
 
 @router.post(
@@ -302,7 +311,9 @@ async def put_posting_user_roles(
 async def score(je_test_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> ScoreRunOut:
     """202: `JeScoringWorkflow` (409 `population_not_tied`)."""
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T12")
+    from abacus.modules.sampling.je_tests import start_scoring
+
+    return await start_scoring(ctx, je_test_id, _key)
 
 
 @router.get(
@@ -319,7 +330,9 @@ async def list_entries(
     cursor: str | None = None,
 ) -> ScoredEntriesOut:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T12")
+    from abacus.modules.sampling.je_tests import list_entries as entries
+
+    return await entries(ctx, je_test_id, criterion=criterion, selected=selected, cursor=cursor)
 
 
 @router.post(
@@ -334,7 +347,9 @@ async def draw_selection(
 ) -> SelectionOut:
     """A sample-set version, method `je_score_selection`, through `SampleDrawWorkflow`."""
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T12")
+    from abacus.modules.sampling.je_tests import draw_selection as select
+
+    return await select(ctx, je_test_id, body, _key)
 
 
 @router.post(

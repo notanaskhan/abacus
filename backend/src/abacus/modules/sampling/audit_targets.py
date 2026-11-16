@@ -14,6 +14,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 _OWNERS: Final = {
     "population": text("SELECT id, engagement_id FROM sample_populations WHERE id = ANY(:ids)"),
     "sample_set": text("SELECT id, engagement_id FROM sample_sets WHERE id = ANY(:ids)"),
+    "je_test": text("SELECT id, engagement_id FROM je_tests WHERE id = ANY(:ids)"),
     "sample_set_version": text(
         "SELECT v.id, s.engagement_id FROM sample_set_versions v JOIN sample_sets s "
         "ON s.tenant_id = v.tenant_id AND s.id = v.sample_set_id WHERE v.id = ANY(:ids)"

@@ -13,18 +13,20 @@ no-op.
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from decimal import Decimal
-from typing import Annotated, Any, ClassVar, Final, cast
+from typing import Annotated, Any, ClassVar, Final, Protocol, cast
 from uuid import UUID
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
+from abacus.modules.sampling import je_draw
 from abacus.modules.sampling import sample_set_repository as repo
 from abacus.modules.sampling.compute import (
     Record,
     SampleDraw,
+    StratumResult,
     StratumRule,
     canonical,
     sampler,
@@ -33,6 +35,21 @@ from abacus.modules.sampling.sample_sets import TARGET, version_content_hash
 
 ACTOR: Final = "sample_draw"
 Row = Mapping[str, Any]  # Any: database rows and stored JSON of mixed column types
+
+
+class _Item(Protocol):
+    """An item either draw yields (`compute.Item`, `je_draw.JeItem`)."""
+
+    @property
+    def position(self) -> int: ...
+    @property
+    def ordinal(self) -> int: ...
+    @property
+    def record_key(self) -> str: ...
+    @property
+    def stratum_position(self) -> int | None: ...
+    @property
+    def reason(self) -> str: ...
 
 
 class SampleSetApprovalRequested(DomainEvent):
@@ -96,10 +113,22 @@ async def run_draw(tenant_id: UUID, version_id: UUID) -> str:
         return await fail_draw(tenant_id, version_id, "population_missing")
     if not ties:
         return await fail_draw(tenant_id, version_id, "completeness_tie_required")
-    try:
-        drawn = _select(version, str(population["sha256"]), records)
-    except DrawRefused as refused:
-        return await fail_draw(tenant_id, version_id, refused.code)
+    if version["method"] == je_draw.METHOD:
+        # A-08-T12 (ADR P-57): a JE test's selection, by score plus the seeded unpredictable picks.
+        try:
+            async with tenant_session(tenant) as session:
+                je = await je_draw.je_items(session, version, records)
+        except je_draw.JeDrawRefused as refused:
+            return await fail_draw(tenant_id, version_id, refused.code)
+        drawn_items: Sequence[_Item] = je.items
+        drawn_strata: Sequence[StratumResult] = ()
+        items_hash = je.items_hash
+    else:
+        try:
+            drawn = _select(version, str(population["sha256"]), records)
+        except DrawRefused as refused:
+            return await fail_draw(tenant_id, version_id, refused.code)
+        drawn_items, drawn_strata, items_hash = drawn.items, drawn.strata, drawn.items_hash
     by_ordinal = {int(r["ordinal"]): r for r in records}
     rules = _strata(_parameters(version))
     async with uow(tenant) as tx:
@@ -118,7 +147,7 @@ async def run_draw(tenant_id: UUID, version_id: UUID) -> str:
                     "random_count": rules[s.position - 1].random_count,
                     "selected_count": s.selected_count,
                 }
-                for s in drawn.strata
+                for s in drawn_strata
             ],
         )
         await repo.insert_items(
@@ -134,18 +163,18 @@ async def run_draw(tenant_id: UUID, version_id: UUID) -> str:
                     "selection_reason": item.reason,
                     "display": _display(by_ordinal[item.ordinal]),
                 }
-                for item in drawn.items
+                for item in drawn_items
             ],
         )
-        hashed = version_content_hash(version, str(population["sha256"]), drawn.items_hash)
+        hashed = version_content_hash(version, str(population["sha256"]), items_hash)
         if not await repo.mark_draft(
-            tx.session, {"id": version_id, "items_hash": drawn.items_hash, "content_hash": hashed}
+            tx.session, {"id": version_id, "items_hash": items_hash, "content_hash": hashed}
         ):
             return "superseded"
         tx.record(
             "sample_set.draw_completed",
             target=Target(TARGET, version_id),
-            after=Ref(items=len(drawn.items), items_hash=drawn.items_hash),
+            after=Ref(items=len(drawn_items), items_hash=items_hash),
         )
         tx.emit(
             SampleSetApprovalRequested(
