@@ -185063,7 +185063,7 @@
     },
     "/v1/confirm/{token}/attachments": {
       "post": {
-        "description": "`confirmation.respond` (email verified): scanned, write-once evidence with channel\n`confirmation_response` (A-08-T19). The stub accepts nothing.",
+        "description": "`confirmation.respond` (email verified): scanned, write-once evidence with channel\n`confirmation_response` (A-08-T19, DEC-5325); the raw body is the file, refused past the\nupload limit before it is all read. Any other link answers 404 after the floor.",
         "operationId": "upload_attachment",
         "parameters": [
           {
@@ -185076,6 +185076,49 @@
               "pattern": "^[A-Za-z0-9_-]+$",
               "title": "Token",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-CSRF",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Csrf"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "__Host-abacus-link",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "  Host-Abacus-Link"
             }
           }
         ],
@@ -185149,16 +185192,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Upload Attachment",

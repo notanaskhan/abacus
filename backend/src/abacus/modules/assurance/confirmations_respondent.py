@@ -15,6 +15,7 @@ A live link principal (A-08-T15) that verified its email submits one answer:
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -25,8 +26,8 @@ from sqlalchemy import text
 
 from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.kernel.uow import Target, uow
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.assurance.events import ConfirmationResponded
 from abacus.modules.identity.api import LinkPrincipal
 
@@ -38,6 +39,69 @@ CENT: Final = Decimal("0.01")
 
 class AlreadyAnswered(DomainConflict):
     code = "already_answered"
+
+
+class AttachmentNotYours(DomainInvalid):
+    code = "attachment_invalid"
+
+
+_OPEN: Final = text(
+    "SELECT c.status, c.engagement_id, c.work_item_id, "
+    "EXISTS (SELECT 1 FROM confirmation_responses r WHERE r.confirmation_id = c.id) AS answered "
+    "FROM confirmations c WHERE c.id = :c"
+)
+_ATTACH: Final = text(
+    "INSERT INTO confirmation_attachments (tenant_id, confirmation_id, evidence_version_id, "
+    "principal_id) VALUES (:t, :c, :v, :p)"
+)
+_MINE: Final = text(
+    "SELECT evidence_version_id FROM confirmation_attachments WHERE confirmation_id = :c "
+    "AND principal_id = :p AND evidence_version_id = ANY(:ids)"
+)
+
+
+async def attach(principal: LinkPrincipal, file_name: str, content: bytes) -> tuple[UUID, int]:
+    """A-08-T19 (DEC-5325): one file for the open request, scanned before it is stored (a
+    refused file is `file_refused`, nothing kept); 404 once answered or not Sent."""
+    if not principal.verified:
+        raise NotFound("confirmation")
+    from abacus.modules.engagements.api import client_of
+    from abacus.modules.evidence.api import file_respondent_copy
+
+    tenant = _tenant(principal)
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_OPEN, {"c": principal.subject_id})).mappings().first()
+    if row is None or row["status"] != "sent" or row["answered"]:
+        raise NotFound("confirmation")
+    engagement = cast(UUID, row["engagement_id"])
+    client = await client_of(tenant, engagement)
+    if client is None:
+        raise NotFound("confirmation")
+    version = await file_respondent_copy(
+        tenant_id=principal.tenant_id,
+        client_id=client,
+        engagement_id=engagement,
+        work_item_id=cast(UUID, row["work_item_id"]),
+        file_name=file_name,
+        content=content,
+        principal_id=principal.principal_id,
+    )
+    async with uow(tenant) as tx:
+        await tx.session.execute(
+            _ATTACH,
+            {
+                "t": principal.tenant_id,
+                "c": principal.subject_id,
+                "v": version,
+                "p": principal.principal_id,
+            },
+        )
+        tx.record(
+            "confirmation.attachment_added",
+            target=Target("confirmation", principal.subject_id),
+            after=Ref(evidence_version_id=version),
+        )
+    return version, len(content)
 
 
 @dataclass(frozen=True)
@@ -62,9 +126,11 @@ _BOOKS: Final = text(
 _INSERT: Final = text(
     "INSERT INTO confirmation_responses (tenant_id, confirmation_id, via, agrees, "
     "respondent_name_sealed, confirmed_total, explanation_sealed, attested, "
-    "attachment_version_ids) VALUES (:t, :c, 'respondent_page', :agrees, :name, :total, :why, "
-    "true, :files) ON CONFLICT (confirmation_id) DO NOTHING RETURNING submitted_at"
+    "attachment_version_ids, ip_sealed, user_agent, accounts) VALUES (:t, :c, 'respondent_page', "
+    ":agrees, :name, :total, :why, true, :files, :ip, :ua, CAST(:accounts AS jsonb)) "
+    "ON CONFLICT (confirmation_id) DO NOTHING RETURNING submitted_at"
 )
+_AAD_IP: Final = "assurance.confirmation.respondent_ip"
 _EXISTING: Final = text(
     "SELECT agrees, confirmed_total, submitted_at FROM confirmation_responses "
     "WHERE confirmation_id = :c"
@@ -99,12 +165,26 @@ async def submit(
     respondent_name: str,
     explanation: str | None,
     attachment_ids: list[UUID],
+    accounts: list[tuple[str, str | None, Decimal]] | None = None,
+    ip: str | None = None,
+    user_agent: str | None = None,
 ) -> Receipt:
     """The one answer of a verified link principal; 409 `already_answered` on any replay."""
     if not principal.verified:
         raise NotFound("confirmation")
     tenant = _tenant(principal)
     confirmation_id = principal.subject_id
+    if attachment_ids:  # only the files this link uploaded for this confirmation
+        async with tenant_session(tenant) as session:
+            mine = {
+                cast(UUID, r[0])
+                for r in await session.execute(
+                    _MINE,
+                    {"c": confirmation_id, "p": principal.principal_id, "ids": attachment_ids},
+                )
+            }
+        if set(attachment_ids) - mine:
+            raise AttachmentNotYours(facts={"field": "attachment_ids"})
     async with uow(tenant) as tx:
         row = (await tx.session.execute(_CONFIRMATION, {"c": confirmation_id})).mappings().first()
         if row is None:
@@ -131,6 +211,14 @@ async def submit(
                     else None
                 ),
                 "files": list(attachment_ids),
+                "ip": None if not ip else await seal(principal.tenant_id, ip.encode(), _AAD_IP),
+                "ua": (user_agent or "")[:400] or None,
+                "accounts": json.dumps(
+                    [
+                        {"description": d, "account_last4": last4, "balance": str(b)}
+                        for d, last4, b in (accounts or [])
+                    ]
+                ),
             },
         )
         if submitted is None:  # a concurrent answer won the unique row

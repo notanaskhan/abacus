@@ -76,6 +76,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "elimination.proposed",
         # reviewed 2026-11-16 (S47): A-08-T18 the confirmations lifecycle, identifiers only
         "confirmation.alternative_recorded",
+        "confirmation.attachment_added",  # A-08-T19 (DEC-5325): a respondent's scanned file
         "confirmation.authorization_completed",  # A-08-T18 (DEC-5324): the C7 authorization
         "confirmation.authorization_drafted",
         "confirmation.authorization_requested",

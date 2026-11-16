@@ -22,7 +22,7 @@ from decimal import Decimal
 from typing import Annotated, Final, Literal, cast
 from uuid import UUID
 
-from fastapi import Cookie, Depends, Header, Path, Response
+from fastapi import Cookie, Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel._flags import AUDITS_CONFIRMATIONS
@@ -513,14 +513,41 @@ async def verify_code(token: Token, body: CodeVerifyIn, response: Response) -> V
     action=LINK_PRINCIPAL,
     response_model=AttachmentOut,
     status_code=201,
-    errors=(413, 415, 501),
+    errors=(413, 415),
 )
-async def upload_attachment(token: Token) -> AttachmentOut:
+async def upload_attachment(
+    token: Token,
+    request: Request,
+    filename: Annotated[str, Query(min_length=1, max_length=255)],
+    credential: Annotated[str | None, Cookie(alias=LINK_COOKIE_NAME)] = None,
+    csrf: Annotated[str | None, Header(alias="X-Abacus-CSRF")] = None,
+) -> AttachmentOut:
     """`confirmation.respond` (email verified): scanned, write-once evidence with channel
-    `confirmation_response` (A-08-T19). The stub accepts nothing."""
+    `confirmation_response` (A-08-T19, DEC-5325); the raw body is the file, refused past the
+    upload limit before it is all read. Any other link answers 404 after the floor."""
     started = time.monotonic()
+    from abacus.modules.assurance import confirmations_respondent as respondent
+    from abacus.modules.evidence.api import MAX_UPLOAD_BYTES, UploadTooLarge
+    from abacus.modules.identity.api import credential_principal
+
+    principal = await credential_principal(credential, csrf)
+    linked = await resolve_link(token) if principal is not None else None
+    if (
+        principal is None
+        or principal.purpose != LINK_PURPOSE
+        or linked is None
+        or linked.principal_id != principal.principal_id
+    ):
+        await _pad(started)
+        raise NotFound("confirmation")
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise UploadTooLarge
+    version, size = await respondent.attach(principal, filename, bytes(data))
     await _pad(started)
-    raise _todo("A-08-T19")
+    return AttachmentOut(attachment_id=version, file_name=filename[:255], size_bytes=size)
 
 
 def _receipt(view: RespondentViewOut, body: RespondentResponseIn) -> RespondentReceiptOut:
@@ -551,6 +578,7 @@ def _receipt(view: RespondentViewOut, body: RespondentResponseIn) -> RespondentR
 async def submit_response(
     token: Token,
     body: RespondentResponseIn,
+    request: Request,
     credential: Annotated[str | None, Cookie(alias=LINK_COOKIE_NAME)] = None,
     csrf: Annotated[str | None, Header(alias="X-Abacus-CSRF")] = None,
 ) -> RespondentReceiptOut:
@@ -590,6 +618,9 @@ async def submit_response(
             respondent_name=body.respondent_name,
             explanation=body.explanation,
             attachment_ids=list(body.attachment_ids),
+            accounts=[(a.description, a.account_last4, a.balance) for a in body.accounts],
+            ip=None if request.client is None else request.client.host,
+            user_agent=request.headers.get("user-agent"),
         )
     except respondent.AlreadyAnswered as answered:
         await _pad(started)

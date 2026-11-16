@@ -86182,13 +86182,24 @@ export type RespondentViewResponse = RespondentViewResponses[keyof RespondentVie
 
 export type UploadAttachmentData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Abacus-Csrf
+         */
+        'X-Abacus-CSRF'?: string | null;
+    };
     path: {
         /**
          * Token
          */
         token: string;
     };
-    query?: never;
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
     url: '/v1/confirm/{token}/attachments';
 };
 
@@ -86217,10 +86228,6 @@ export type UploadAttachmentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UploadAttachmentError = UploadAttachmentErrors[keyof UploadAttachmentErrors];

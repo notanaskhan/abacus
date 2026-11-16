@@ -1183,6 +1183,7 @@ TABLES: frozenset[str] = _TABLES | frozenset(
         "component_instructions",
         "component_milestones",
         "components",
+        "confirmation_attachments",
         "confirmation_authorization_items",
         "confirmation_authorizations",
         "confirmation_decisions",
@@ -1199,6 +1200,7 @@ INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
         "address_verifications",
         "alternative_procedures",
         "component_instruction_versions",
+        "confirmation_attachments",
         "confirmation_authorization_items",
         "confirmation_decisions",
         "confirmation_events",
@@ -1359,16 +1361,23 @@ INSERT_COLUMNS["confirmation_authorization_items"] = frozenset(
     {"authorization_id", "confirmation_id", "tenant_id"}
 )
 UPDATE_COLUMNS["confirmation_authorizations"] = frozenset({"completed_at", "envelope_id"})
+# A-08-T19 (0932, DEC-5325): the files a respondent's link uploaded for its confirmation.
+INSERT_COLUMNS["confirmation_attachments"] = frozenset(
+    {"confirmation_id", "evidence_version_id", "principal_id", "tenant_id"}
+)
 INSERT_COLUMNS["confirmation_responses"] = frozenset(
     {
+        "accounts",  # A-08-T19 (0932): the respondent's own account list (bank)
         "agrees",
         "attachment_version_ids",
         "attested",
         "confirmation_id",
         "confirmed_total",
         "explanation_sealed",
+        "ip_sealed",  # A-08-T19 (0932): the P-14 access record, sealed
         "respondent_name_sealed",
         "tenant_id",
+        "user_agent",
         "via",
     }
 )

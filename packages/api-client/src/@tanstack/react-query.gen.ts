@@ -6351,7 +6351,8 @@ export const respondentViewOptions = (options: Options<RespondentViewData>) => q
  * Upload Attachment
  *
  * `confirmation.respond` (email verified): scanned, write-once evidence with channel
- * `confirmation_response` (A-08-T19). The stub accepts nothing.
+ * `confirmation_response` (A-08-T19, DEC-5325); the raw body is the file, refused past the
+ * upload limit before it is all read. Any other link answers 404 after the floor.
  */
 export const uploadAttachmentMutation = (options?: Partial<Options<UploadAttachmentData>>): UseMutationOptions<UploadAttachmentResponse, UploadAttachmentError, Options<UploadAttachmentData>> => {
     const mutationOptions: UseMutationOptions<UploadAttachmentResponse, UploadAttachmentError, Options<UploadAttachmentData>> = {
