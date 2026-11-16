@@ -124,6 +124,11 @@ SUBSCRIPTIONS: dict[str, object] = {}
 register_reviewable(TARGET, reviewables)
 register_reviewable_facts(TARGET, reviewable_facts)
 register_gate_kind(GATE_KIND, approval_gate)
+
+# A-08-T17 (DEC-5307): the named approver's HOME-02 gate on a pending sample expansion.
+from abacus.modules.sampling.expansions import register_expansion_gate  # noqa: E402
+
+register_expansion_gate()
 # The audit explorer hides events about walled engagements (SPEC-304; DEC-1387).
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 

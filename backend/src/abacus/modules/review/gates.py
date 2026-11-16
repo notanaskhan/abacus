@@ -164,6 +164,9 @@ C13_EVENTS: Final = frozenset(
         # N-02-T33 (engagements): the letter waits on the engagement partners' approval.
         "letter.approval_requested",
         "letter.approved",
+        # A-08-T17 (sampling): a sample expansion waits on its named approver.
+        "sample_expansion.requested",
+        "sample_expansion.decided",
         # C-01-T15 (closes, QC-8): a close plan waits on its Managers' and Partners' publication.
         "close_plan.publish_requested",
         "close_plan.published",

@@ -65,6 +65,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "je_test.scoring_failed",
         "je_test.scoring_started",
         "je_test.selection_requested",
+        # reviewed 2026-11-16 (S47): A-08-T17 sample expansions, identifiers only
+        "sample_expansion.approved",
+        "sample_expansion.rejected",
+        "sample_expansion.requested",
+        "sample_expansion.withdrawn",
         # reviewed 2026-11-16 (S47): A-08-T14 the AUD-12 deviation log, identifiers only
         "control_deviation.logged",
         # reviewed 2026-11-16 (S47): C-01-T21 arrangements, reclasses, recordings, identifiers only

@@ -854,6 +854,14 @@ async def _draw(ctx: AuthContext, found: _Found, body: SelectionIn) -> UUID:
             target=Target("je_test", je_test_id),
             after=Ref(sample_set=sample_set_id, version=version_no),
         )
+    await dispatch_draw(ctx, sample_set_id, version_id, version_no)
+    return version_id
+
+
+async def dispatch_draw(
+    ctx: AuthContext, sample_set_id: UUID, version_id: UUID, version_no: int
+) -> None:
+    """Start `SampleDrawWorkflow` for a version (a JE selection, or A-08-T17's expansion)."""
     given = SampleDrawInput(str(ctx.tenant_id), str(version_id), str(ctx.user_id))
     try:
         await dispatch(
@@ -868,7 +876,6 @@ async def _draw(ctx: AuthContext, found: _Found, body: SelectionIn) -> UUID:
 
         await fail_draw(ctx.tenant_id, version_id, "dispatch_failed")
         raise
-    return version_id
 
 
 # --- the view ------------------------------------------------------------------------------------
