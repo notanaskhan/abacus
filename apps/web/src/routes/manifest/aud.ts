@@ -134,7 +134,8 @@ export const audScreens = {
     status: "fixture",
     path: null,
   },
-  "AUD-32": { name: "Consolidation setup — Harlow & Pike FY2026", status: "planned", path: null },
+  // A-09-T14: a to f on fixtures (the O6 wizard over AUD-02; live with A-09-T13's service).
+  "AUD-32": { name: "Consolidation setup — Harlow & Pike FY2026", status: "fixture", path: null },
   "AUD-33": {
     name: "Consolidated trial balance — Harlow & Pike interim 8/31/2026",
     status: "planned",
