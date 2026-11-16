@@ -67,6 +67,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "je_test.selection_requested",
         # reviewed 2026-11-16 (S47): W-01-T13 the integration health monitor, identifiers only
         "integration.health_changed",
+        "integration.run_failed",  # W-01-T14: a run refused at admission by an integration
         # reviewed 2026-11-16 (S47): T-07-T23 the 65-day election, identifiers only
         "fiduciary_election.recorded",
         # reviewed 2026-11-16 (S47): A-09-T20 consolidation eliminations, identifiers only
