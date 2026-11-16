@@ -294,3 +294,114 @@ async def deviation_log(
         confidence=confidence,
         udl_pct=upper_deviation_limit(min(deviations, size), size, confidence),
     )
+
+
+# --- the AUD-12 routes' services (A-08-T14 rest; DEC-5326) ---------------------------------------
+
+ADOPT: Final = "test.adopt"
+EXPORT: Final = "test.export"
+_EXPORT_HEAD: Final = ("Position", "Record", "Attribute", "Result")
+
+
+class ContentChanged(DomainConflict):
+    code = "content_changed"
+
+
+async def _item_at(ctx: AuthContext, test: dict[str, object], position: int) -> UUID:
+    found = await grid.grid(ctx, cast(UUID, test["engagement_id"]), cast(UUID, test["id"]))
+    row = next((r for r in found.rows if r.position == position), None)
+    if row is None:
+        raise DeviationInvalid(facts={"field": "item_position"})
+    return row.item_id
+
+
+async def log_at_position(
+    ctx: AuthContext, test_id: UUID, position: int, attribute_key: str, description: str
+) -> DeviationLog:
+    """The route's form: the row's position on AUD-12, logged as `log_deviation` logs it."""
+    test = await _aud12(ctx, test_id)
+    item = await _item_at(ctx, test, position)
+    await log_deviation(
+        ctx, test_id, sample_item_id=item, attribute_key=attribute_key, description=description
+    )
+    return await deviation_log(ctx, test_id)
+
+
+async def tolerable_rate(ctx: AuthContext, test_id: UUID) -> Decimal | None:
+    """The sample set's tolerable deviation rate, as its version recorded it (A-03)."""
+    from abacus.modules.sampling.api import version_row
+
+    test = await _aud12(ctx, test_id)
+    version = await version_row(
+        ctx, cast(UUID, test["sample_set_id"]), cast(int, test["sample_set_version"])
+    )
+    raw = cast("dict[str, object]", version["parameters"] or {}).get("tolerable_rate")
+    return None if raw is None else Decimal(str(raw))
+
+
+async def adopt(ctx: AuthContext, test_id: UUID, seen_hash: str) -> tuple[UUID, str]:
+    """L1 on the test's current content hash through C3 (`review.api.record_sign_off`); 409
+    `content_changed` when the grid moved on since the person read it. Only a person adopts."""
+    _human(ctx, ADOPT)
+    from abacus.modules.engagements.api import engagement_resource_of
+    from abacus.modules.review.api import record_sign_off
+
+    test = await _aud12(ctx, test_id)
+    engagement = cast(UUID, test["engagement_id"])
+    found = await grid.grid(ctx, engagement, test_id)
+    if found.content_hash != seen_hash:
+        raise ContentChanged(facts={"test_id": str(test_id)})
+    resource = await engagement_resource_of(ctx.tenant, engagement)
+    await authorise(ctx, ADOPT, resource)
+    async with uow(ctx.tenant) as tx:
+        signed = await record_sign_off(
+            tx, ctx, resource, engagement, grid.TARGET, test_id, 1, found.content_hash
+        )
+    return signed, found.content_hash
+
+
+async def exception_prefill(
+    ctx: AuthContext, test_id: UUID, item_id: UUID
+) -> grid.ExceptionPrefill:
+    test = await _aud12(ctx, test_id)
+    return grid.exception_prefill(
+        await grid.grid(ctx, cast(UUID, test["engagement_id"]), test_id), item_id
+    )
+
+
+def _masked(record_key: str) -> str:
+    """A record's key with every digit but the last four masked (an account, a participant id)."""
+    seen = sum(ch.isdigit() for ch in record_key)
+    out: list[str] = []
+    for ch in record_key:
+        if ch.isdigit():
+            seen -= 1
+            out.append(ch if seen < 4 else "•")
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+async def export_xlsx(ctx: AuthContext, test_id: UUID) -> bytes:
+    """AUD-12's workbook: the grid's rows by position, one line per attribute, accounts masked
+    to the last four; byte-identical for one test version (the kernel's deterministic writer)."""
+    from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
+    from abacus.modules.engagements.api import engagement_resource_of
+
+    test = await _aud12(ctx, test_id)
+    engagement = cast(UUID, test["engagement_id"])
+    await authorise(ctx, EXPORT, await engagement_resource_of(ctx.tenant, engagement))
+    found = await grid.grid(ctx, engagement, test_id)
+    labels = {a.key: a.label for a in found.attributes}
+    rows: list[list[Cell]] = [
+        [r.position, _masked(r.record_key), labels.get(c.attribute_key, c.attribute_key), c.result]
+        for r in found.rows
+        for c in r.cells
+    ]
+    async with uow(ctx.tenant) as tx:
+        tx.record(
+            "attribute_test.exported",
+            target=Target(grid.TARGET, test_id),
+            after=Ref(version=found.version_no, content_hash=found.content_hash),
+        )
+    return workbook([Sheet("Testing", [list(_EXPORT_HEAD), *rows])])

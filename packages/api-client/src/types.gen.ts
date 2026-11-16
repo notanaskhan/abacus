@@ -153116,10 +153116,6 @@ export type FieldworkTestAdoptErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FieldworkTestAdoptError = FieldworkTestAdoptErrors[keyof FieldworkTestAdoptErrors];
@@ -153180,10 +153176,6 @@ export type LogDeviationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type LogDeviationError = LogDeviationErrors[keyof LogDeviationErrors];
@@ -153236,10 +153228,6 @@ export type ExportTestErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ExportTestError = ExportTestErrors[keyof ExportTestErrors];
@@ -153298,10 +153286,6 @@ export type FieldworkTestExceptionPrefillErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FieldworkTestExceptionPrefillError = FieldworkTestExceptionPrefillErrors[keyof FieldworkTestExceptionPrefillErrors];
