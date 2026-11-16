@@ -1310,6 +1310,19 @@ def holds_engagement_role(
     return or_(team, firm)
 
 
+def own_role_allows(ctx: Actor, action: str) -> bool:
+    """Whether `authorise_own` would allow `action` on the person's firm role, or without one
+    the `staff` cell (W-01-T07: which person-scoped actions a tile offers; the partner level is
+    not resolved here, so a partner reads as staff). No overrides, no MFA: the route's
+    `authorise_own` decides when the person acts. Records the check."""
+    rule = _rule(action)
+    _record(action)
+    if not isinstance(ctx, AuthContext) or ctx.is_support or ctx.client:
+        return False
+    role = ctx.firm_role if ctx.firm_role is not None else _LINE_READER_CELL
+    return rule.decisions.get(role) == "allow" and not has_conditions(rule)
+
+
 async def authorise_own(ctx: Actor, action: str) -> None:
     """A firm action a person takes on their own row only (G-01-T13: `independence.annual_confirm`,
     DEC-91), so the relationship is their active staff membership here, not a role on a
@@ -1429,6 +1442,7 @@ __all__ = [
     "authorise_on_condition",
     "authorise_own",
     "holds_engagement_role",
+    "own_role_allows",
     "policy_agent_may_hold",
     "recording_checks",
     "register_active_engagements",

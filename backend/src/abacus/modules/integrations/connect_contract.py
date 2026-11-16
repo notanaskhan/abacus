@@ -12,7 +12,7 @@ synthetic tenant's (`abacus_tools…brightwater_hale/connect_catalog.py`).
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Final, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -27,8 +27,10 @@ from abacus.modules.identity.api import (
     AuthContext,
     Resource,
     authorise,
+    authorise_own,
     current_context,
 )
+from abacus.modules.integrations.connect_catalog import catalogue, interest
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -321,15 +323,45 @@ class ConnectCatalogImportsOut(BaseModel):
     items: Annotated[list[ConnectCatalogImportOut], Internal]
 
 
+# WB-10's "Build on Accrued" rows (its screen contract's Links): ADM-08 live, ADM-09 planned.
+BUILD_ON_ACCRUED: Final = [
+    ConnectBuildOnAccruedRowOut(
+        key="workflow_sync", label="Workflow status sync", target="ADM-08", planned=False
+    ),
+    ConnectBuildOnAccruedRowOut(
+        key="api_keys", label="API keys & webhooks", target="ADM-09", planned=True
+    ),
+    ConnectBuildOnAccruedRowOut(
+        key="mcp", label="MCP for AI assistants", target="ADM-09", planned=True
+    ),
+]
+
 # --- routes --------------------------------------------------------------------------------------
 
 router = AbacusRouter(prefix="/v1", tags=["connect"])
 
 
+# W-01-T07: the actions a person takes for themself (the catalogue, their own installs, the OAuth
+# callback, Notify me): every staff member holds them, firm role or not (`authorise_own`). Firm
+# connect and disconnect, and the client-companies list, are the firm's (`authorise`).
+_OWN: Final = frozenset(
+    {
+        "integration_catalog.read",
+        "integration.connect_personal",
+        "integration.disconnect_personal",
+        "integration.complete_connect",
+        "integration.interest",
+    }
+)
+
+
 async def _gate(ctx: AuthContext, action: str) -> None:
     if ctx.client:
         raise NotFound("integration")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if action in _OWN:
+        await authorise_own(ctx, action)
+    else:
+        await authorise(ctx, action, Resource.firm(ctx.tenant_id))
     if not await flag_enabled(ctx.tenant, INTEGRATIONS_CONNECT_V1):
         raise NotFound(INTEGRATIONS_CONNECT_V1.name)
 
@@ -346,9 +378,38 @@ async def connect_catalog(
     status: Annotated[Literal["connected", "available", "coming_soon"] | None, Query()] = None,
     q: Annotated[str | None, Query(max_length=80)] = None,
 ) -> ConnectCatalogOut:
-    """WB-10: honest tiles, counts and catalogue-total category counts."""
+    """WB-10: honest tiles, counts and catalogue-total category counts (W-01-T07)."""
     await _gate(ctx, "integration_catalog.read")
-    raise NotImplementedYet("W-01-T07")
+    found = await catalogue(ctx, category=category, status=status, q=q)
+    return ConnectCatalogOut(
+        items=[
+            ConnectTileOut(
+                key=t.row.key,
+                name=t.row.name,
+                categories=cast(list[CategoryCode], list(t.row.categories)),
+                icon=t.row.icon,
+                tone=t.row.tone,
+                description=t.row.description,
+                auth_line=t.row.auth_line,
+                kind=t.kind,
+                status=t.status,
+                viewer_status=t.viewer_status,
+                connected_by_label=t.connected_by_label,
+                blocked_reason=t.blocked_reason,
+                allowed_actions=cast(list[ConnectAction], list(t.allowed_actions)),
+            )
+            for t in found.tiles
+        ],
+        counts=ConnectCountsOut(**found.counts),
+        categories=[
+            ConnectCategoryOut(
+                code=cast(CategoryCode, code), label=label, description=about, count=count
+            )
+            for code, label, about, count in found.categories
+        ],
+        total=found.total,
+        build_on_accrued=BUILD_ON_ACCRUED,
+    )
 
 
 @router.get(
@@ -462,8 +523,10 @@ async def disconnect_personal(key: Key, ctx: Ctx, _key: IdempotencyKey) -> Conne
     errors=(409, 501),
 )
 async def connect_interest(key: Key, ctx: Ctx, _key: IdempotencyKey) -> ConnectInterestOut:
+    """Notify me (AC-31): idempotent; `recorded` is true on every answer (W-01-T07)."""
     await _gate(ctx, "integration.interest")
-    raise NotImplementedYet("W-01-T09")
+    await interest(ctx, key)
+    return ConnectInterestOut(key=key, recorded=True)
 
 
 @router.post(

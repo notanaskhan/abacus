@@ -51,6 +51,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
         # S46: C-01-T17 `ledger_sync_paused`; A-09-T09 the six group-audit kinds (DEC-5069).
         "ledger_sync.paused",
+        "integration.available",  # W-01-T07: Notify me (AC-33)
         "consolidation.finalized",
         "eliminations.proposed",
         "component_instructions.acknowledged",

@@ -411,6 +411,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "ledger_sync.paused": Kind(
         "ledger_sync_paused", _admins_and_leads, "connection", "connection_id"
     ),
+    # W-01-T07 (AC-33): an integration a person asked about can be enabled; the person only.
+    "integration.available": Kind("integration_available", _member, "firm", None, None),
     # A-09-T09 (A-09 §4.8, DEC-5069): group audit. Identifiers only; the services that emit them
     # land with A-09-T13 (finalize), T20 (eliminations) and T27/T28 (component auditors).
     "consolidation.finalized": Kind(
@@ -696,6 +698,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "connection.needs_reauth": "The client needs to sign in to their accounting system again.",
     "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
     "ledger_sync.paused": "The hourly QuickBooks sync for a client is paused.",
+    # W-01-T07 (AC-33): the person who chose Notify me (WB-10's coming-soon tile).
+    "integration.available": "An integration you asked about can now be enabled.",
     # A-09-T09: group audit (no amounts, no names: DEC-61).
     "consolidation.finalized": "The consolidation structure on {engagement} was finalized.",
     "eliminations.proposed": "Eliminations on {engagement} are waiting for your approval.",
@@ -849,6 +853,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
     NotificationKind("connection_reauth_due", "client_activity", "Plug"),  # A-02-T25
     NotificationKind("ledger_sync_paused", "client_activity", "Plug"),  # C-01-T17
+    NotificationKind("integration_available", "other", "Plug"),  # W-01-T07
     # A-09-T09 (A-09 §4.8): group audit.
     NotificationKind("consolidation_finalized", "other", "ListChecks"),
     NotificationKind("eliminations_proposed", "approval", "Scale"),
