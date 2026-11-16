@@ -31,6 +31,11 @@ ASSURANCE_ESTIMATES_RP = Flag(
     kind="boolean",
     default="false",
 )
+ASSURANCE_GROUP_AUDIT = Flag(
+    name="assurance.group_audit",
+    kind="boolean",
+    default="false",
+)
 ASSURANCE_INTERNAL_CONTROL = Flag(
     name="assurance.internal_control",
     kind="boolean",
@@ -322,6 +327,11 @@ KNOWLEDGE_FIRM_STANDARDS = Flag(
     kind="boolean",
     default="false",
 )
+LEDGER_CONSOLIDATION = Flag(
+    name="ledger.consolidation",
+    kind="boolean",
+    default="false",
+)
 LEDGER_GL_IMPORT = Flag(
     name="ledger.gl_import",
     kind="boolean",
@@ -427,12 +437,30 @@ PORTAL_THIRD_PARTY_ROOM = Flag(
     kind="boolean",
     default="false",
 )
+PROMPT_CONSOLIDATION_ELIMINATION_PROPOSER = Flag(
+    name="prompt.consolidation.elimination_proposer",
+    kind="variant",
+    default="off",
+    values=(
+        "off",
+        "consolidation.elimination_proposer@v1",
+    ),
+)
 PROMPT_EVIDENCE_SCREENER = Flag(
     name="prompt.evidence.screener",
     kind="variant",
     default="evidence.screen@v0",
     values=(
         "evidence.screen@v0",
+    ),
+)
+PROMPT_LEDGER_TB_MAPPER = Flag(
+    name="prompt.ledger.tb_mapper",
+    kind="variant",
+    default="off",
+    values=(
+        "off",
+        "ledger.tb_mapper@v1",
     ),
 )
 PROMPT_TAX_ACCOUNT_MAPPER = Flag(
@@ -644,6 +672,7 @@ FLAGS: dict[str, Flag] = {
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
     "ai_policy.v1": AI_POLICY_V1,
     "assurance.estimates_rp": ASSURANCE_ESTIMATES_RP,
+    "assurance.group_audit": ASSURANCE_GROUP_AUDIT,
     "assurance.internal_control": ASSURANCE_INTERNAL_CONTROL,
     "assurance.materiality": ASSURANCE_MATERIALITY,
     "assurance.risk_register": ASSURANCE_RISK_REGISTER,
@@ -701,6 +730,7 @@ FLAGS: dict[str, Flag] = {
     "integrations.health_monitor": INTEGRATIONS_HEALTH_MONITOR,
     "knowledge.catalog": KNOWLEDGE_CATALOG,
     "knowledge.firm_standards": KNOWLEDGE_FIRM_STANDARDS,
+    "ledger.consolidation": LEDGER_CONSOLIDATION,
     "ledger.gl_import": LEDGER_GL_IMPORT,
     "ledger.import": LEDGER_IMPORT,
     "ledger.tb_mapping": LEDGER_TB_MAPPING,
@@ -722,7 +752,9 @@ FLAGS: dict[str, Flag] = {
     "portal.settings_editor": PORTAL_SETTINGS_EDITOR,
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
+    "prompt.consolidation.elimination_proposer": PROMPT_CONSOLIDATION_ELIMINATION_PROPOSER,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "prompt.ledger.tb_mapper": PROMPT_LEDGER_TB_MAPPER,
     "prompt.tax.account_mapper": PROMPT_TAX_ACCOUNT_MAPPER,
     "prompt.tax.agreement_reader": PROMPT_TAX_AGREEMENT_READER,
     "prompt.tax.instrument_reader": PROMPT_TAX_INSTRUMENT_READER,

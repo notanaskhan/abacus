@@ -52,6 +52,9 @@ from abacus.modules.platform.canary import (
 )
 from abacus.modules.platform.canary import WORKFLOWS as CANARY_WORKFLOWS
 from abacus.modules.platform.canary import boundary as canary_boundary
+
+# A-09-T09: the group_audit capability (entitlement and both rollout flags).
+from abacus.modules.platform.capabilities import GROUP_AUDIT, group_audit_on
 from abacus.modules.platform.entitlements import (
     MODULES,
     Entitlement,
@@ -389,6 +392,7 @@ __all__ = [
     "CLOCK_DAYS",
     "DPA_NOTICE",
     "G04_PLAN_PATCH",
+    "GROUP_AUDIT",
     "INCIDENT_REMINDERS_ID",
     "MODULES",
     "NOTIFY_THRESHOLD",
@@ -512,6 +516,7 @@ __all__ = [
     "finish_propagation",
     "firm_usage",
     "form_8879_for",
+    "group_audit_on",
     "home_count",
     "home_count_keys",
     "incident_clock",

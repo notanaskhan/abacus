@@ -38,7 +38,8 @@ MODULES: Final = frozenset(get_args(Module))
 # A-05-T49 (ADR P-28; chapter 10 §10.9.4): modules whose engines a CPA signs off. For a firm that
 # isn't synthetic the module holds only while its owner's registered check says the review is
 # signed; no registered check refuses (fail closed). Synthetic firms are the review's own test bed.
-REVIEWED_MODULES: Final = frozenset({"ebp_audits", "tax_entity_returns"})
+# A-09-T09 (A-09 §0): `group_audit` too, until the consolidation golden-review memo is signed.
+REVIEWED_MODULES: Final = frozenset({"ebp_audits", "tax_entity_returns", "group_audit"})
 ReviewCheck = Callable[[], bool]
 _reviews: dict[str, ReviewCheck] = {}
 

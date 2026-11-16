@@ -162,3 +162,17 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: ledger.consolidation
+    description: 'A-09 consolidation (ADR-089; A-09 §0): the consolidation, eliminations and connection-coverage routes and AUD-31 group, AUD-32 and AUD-33. Off: those routes answer 404 and the screens show the flag-off state. With assurance.group_audit and the group_audit entitlement it makes the /v1/me capability group_audit. Default off; on for Dev and the synthetic firm first. A-09-T09 (TASK-8090), DEC-5069. Plan dates Thu Jul 27 to Wed Oct 25, 2028; renewed or retired in the train after its last row.'
+    owner: notanaskhan
+    created: 2026-11-15
+    expires: 2027-02-12
+    kind: boolean
+    default: false
+  - name: assurance.group_audit
+    description: 'A-09 group audit (SAS 149; A-09 §0): group scoping, component auditors, the component room (POR-23), the Group band and ENG-03 g. Off: those routes answer 404 and AUD-34 f, AUD-35 g show the flag-off state. With ledger.consolidation and the group_audit entitlement it makes the /v1/me capability group_audit. Default off. A-09-T09 (TASK-8090), DEC-5069.'
+    owner: notanaskhan
+    created: 2026-11-15
+    expires: 2027-02-12
+    kind: boolean
+    default: false
