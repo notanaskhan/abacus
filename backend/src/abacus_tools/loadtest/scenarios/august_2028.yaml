@@ -1,0 +1,87 @@
+# Q-03-T309 (S46; Q-03 §9 August 2028 load content; amber): the August 2028 peak on the perf
+# stack, after M18 (Tue Aug 1, 2028: the 1065 entity workspace live, J08) and with P-10's cut item
+# 5 applied (P-10-T51, DEC-4412: the full 1,500 concurrent SSE streams). Four loads at once:
+#   - entity returns: preparers and reviewers on 1065 returns (the return, its sections, Schedule
+#     K and its line breakdown, capital accounts, K-1 packages and the release check);
+#   - Workbench sessions: staff listing and reading sessions and asking a question in one (a
+#     message starts a read-only turn; the model route on the perf stack is the fake, DEC-1391);
+#   - CAS closes: July 2028 month-end closes (the closes list, one close's accounts, reconciliation,
+#     flux, requests and runs);
+#   - 1,500 SSE streams on `GET /v1/events` held for the whole run (P-10-T51's shape).
+# Targets: reads p95 under 500 ms; a Workbench message accepted p95 under 1 s; the streams' first
+# event p95 under 500 ms; errors under 0.1%. Writes: Workbench messages on the synthetic firm only
+# (PF-X1, DEC-1530). Loaded through the service APIs, never the database.
+# Vars (the perf seed's ids): return_id (a TY2027 1065 entity return), line (a Schedule K line on
+# it), session_id (a Workbench session the persona owns), close_id (a July 2028 close),
+# account_ref (one of its accounts), topic (engagement:<the close's engagement id>). Not run in
+# S46: the perf stack is not up in this build (the row's acceptance is the perf stack's run).
+name: august_2028
+description: August 2028 peak - 1065 entity returns, Workbench sessions, CAS closes and 1,500 SSE streams (Q-03-T309).
+duration_seconds: 1800
+users: 120
+think_ms: 1500
+ramp_seconds: 300
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-ana-cruz, weight: 4, groups: [entity_return, entity_schedules, workbench_read, workbench_ask]}
+  - {subject: scenario-hannah-leclerc, weight: 2, groups: [entity_return, entity_k1, workbench_read]}
+  - {subject: scenario-priya-raman, weight: 3, groups: [close_list, close_detail, close_flux, workbench_read]}
+  - {subject: scenario-marcus-delaney, weight: 1, groups: [entity_k1, close_detail, workbench_ask]}
+groups:
+  - name: entity_return
+    weight: 4
+    p95_ms: 500
+    steps:
+      - {path: "/v1/tax-returns/{return_id}"}
+      - {path: "/v1/tax-returns/{return_id}/sections"}
+  - name: entity_schedules
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/tax-returns/{return_id}/schedules/k"}
+      - {path: "/v1/tax-returns/{return_id}/schedules/k/lines/{line}/breakdown"}
+      - {path: "/v1/tax-returns/{return_id}/capital-accounts"}
+  - name: entity_k1
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/tax-returns/{return_id}/k1-packages"}
+      - {path: "/v1/tax-returns/{return_id}/k1-packages/release-check"}
+  - name: workbench_read
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/workbench/sessions"}
+      - {path: "/v1/workbench/sessions/{session_id}"}
+  - name: workbench_ask
+    weight: 1
+    p95_ms: 1000
+    steps:
+      - {method: POST, path: "/v1/workbench/sessions/{session_id}/messages", json_body: {body: "Which K-1s are still waiting on a partner's address?"}, expect: [202], idempotency: true}
+  - name: close_list
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/closes?period=2028-07"}
+      - {path: "/v1/closes/running"}
+  - name: close_detail
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/closes/{close_id}"}
+      - {path: "/v1/closes/{close_id}/accounts"}
+      - {path: "/v1/closes/{close_id}/reconciliations/{account_ref}"}
+      - {path: "/v1/closes/{close_id}/requests"}
+  - name: close_flux
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/closes/{close_id}/flux"}
+      - {path: "/v1/closes/{close_id}/runs"}
+streams:
+  - name: stream_first_byte
+    path: "/v1/events?topics={topic}"
+    count: 1500
+    hold_seconds: 1800
+    p95_first_event_ms: 500
+    subject_prefix: loadtest-stream
