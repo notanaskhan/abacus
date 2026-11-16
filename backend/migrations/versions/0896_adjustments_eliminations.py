@@ -103,10 +103,12 @@ def upgrade() -> None:
         "TO abacus_app"
     )
     op.execute(
-        "GRANT INSERT (client_entity_id, consolidation_level) ON proposed_entry_lines TO abacus_app"
+        "GRANT INSERT (client_entity_id, consolidation_level) ON proposed_entry_lines "
+        "TO abacus_app"
     )
     op.execute(
-        "GRANT UPDATE (client_entity_id, consolidation_level) ON proposed_entry_lines TO abacus_app"
+        "GRANT UPDATE (client_entity_id, consolidation_level) ON proposed_entry_lines "
+        "TO abacus_app"
     )
 
 
