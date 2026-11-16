@@ -41,7 +41,7 @@ from abacus.modules.sampling.contract import (
     UploadSourceIn,
     VersionIn,
 )
-from abacus.modules.sampling.draw_activities import ACTIVITIES
+from abacus.modules.sampling.draw_activities import ACTIVITIES as DRAW_ACTIVITIES
 from abacus.modules.sampling.draw_types import SampleDrawInput
 from abacus.modules.sampling.draw_workflow import SampleDrawWorkflow
 
@@ -53,6 +53,11 @@ from abacus.modules.sampling.item_requests import (
     SampleNotApproved,
     approved_items,
 )
+
+# A-08-T12: JE testing's scoring run (batch queue: nobody waits on a 400,000-line population).
+from abacus.modules.sampling.je_scoring_activities import ACTIVITIES as JE_ACTIVITIES
+from abacus.modules.sampling.je_scoring_types import JeScoringInput
+from abacus.modules.sampling.je_scoring_workflow import JeScoringWorkflow
 from abacus.modules.sampling.payments import (
     PAYMENTS_RULE_VERSION,
     Band,
@@ -107,8 +112,12 @@ from abacus.modules.sampling.selection import (
     select,
 )
 
+ACTIVITIES = (*DRAW_ACTIVITIES, *JE_ACTIVITIES)
 # A-03-T10: the draw runs on the interactive queue (a person waits on it, AUD-11e).
-WORKFLOWS: dict[type, WorkClass] = {SampleDrawWorkflow: "interactive"}
+WORKFLOWS: dict[type, WorkClass] = {
+    SampleDrawWorkflow: "interactive",
+    JeScoringWorkflow: "batch",
+}
 register_work_classes(WORKFLOWS)
 SUBSCRIPTIONS: dict[str, object] = {}
 # A version is signed like a working paper: L1 the preparer, L2 the approval (ADR-160).
@@ -139,6 +148,8 @@ __all__ = [
     "Bill",
     "Entry",
     "GeneralLedgerSourceIn",
+    "JeScoringInput",
+    "JeScoringWorkflow",
     "Parameters",
     "ParametersIn",
     "Population",

@@ -106,8 +106,9 @@ def test_ac4_seven_reference_kinds_and_ten_standard_kinds() -> None:
     assert len(get_args(reference_sets_contract.ReferenceSetKind)) == 8
     assert "standards_sets" in get_args(reference_sets_contract.ReferenceSetKind)
     # A-03-T16 (DEC-1767) adds `attribute_sample_sizes`, BH-EBP-210 Table 2; A-04-T13 (DEC-1951,
-    # migration 0640) adds `rmm_matrix`, the firm's RMM matrix.
-    assert len(get_args(standards_contract.StandardKind)) == 10
+    # migration 0640) adds `rmm_matrix`, the firm's RMM matrix; A-08-T12 (DEC-5068, migration
+    # 0895) adds `je_risk_criteria` and `mus_confidence_factors`.
+    assert len(get_args(standards_contract.StandardKind)) == 12
     assert set(get_args(standards_contract.StandardKind)) == set(
         get_args(standards_contract.FirmStandardKind)
     ) | set(get_args(standards_contract.ThresholdPolicyKind))

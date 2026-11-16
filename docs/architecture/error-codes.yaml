@@ -68,6 +68,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.confirmations_contract.AddressNotVerified
+    - abacus.modules.assurance.confirmations_service.AddressNotVerified
     summary: 'Send refused: no address verification cites a non-client source (AC-6.1).'
   adjustment_state:
     status: 409
@@ -678,6 +679,16 @@ codes:
     raised_by:
     - abacus.modules.notices.intake.CreateAnywayReasonRequired
     summary: 'US-2.3: "Create anyway" past a possible duplicate names its reason.'
+  criteria_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.je_tests.CriteriaInvalid
+    summary: The policy's criteria, with the overrides, cannot be evaluated.
+  criteria_required:
+    status: 409
+    raised_by:
+    - abacus.modules.sampling.je_tests.CriteriaRequired
+    summary: Scoring waits for a person to configure the criteria.
   cuec_evidence_missing:
     status: 409
     raised_by:
@@ -830,6 +841,7 @@ codes:
   draft_exists:
     status: 409
     raised_by:
+    - abacus.modules.closes.plans.DraftExists
     - abacus.modules.methodology.drafts.DraftExists
     - abacus.modules.methodology.standards.DraftExists
     - abacus.modules.requests.organizer_lifecycle.DraftExists
@@ -1086,6 +1098,10 @@ codes:
     raised_by:
     - abacus.modules.integrations.esign_install.EsignInstallExists
     summary: 'The firm already has a live DocuSeal install: rotate or disconnect it instead.'
+  estate_profile_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.estate_service.EstateProfileMissing
   estimate_not_evaluated:
     status: 409
     raised_by:
@@ -1179,6 +1195,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.letters.FeesDoNotFoot
     summary: The installments' shares do not add to 100% of the fee.
+  fiduciary_not_signed:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.export_fiduciary.FiduciaryNotSigned
+    summary: 'The fiduciary computation has no current L2 sign-off: nothing leaves (T-07-T19).'
   field_changed:
     status: 409
     raised_by:
@@ -1681,6 +1702,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.delivery.ItemNotToggleable
+  je_test_busy:
+    status: 409
+    raised_by:
+    - abacus.modules.sampling.je_tests.JeTestBusy
+    summary: 'A scoring run is in progress: configure or score again when it finishes.'
+  je_test_not_scored:
+    status: 409
+    raised_by:
+    - abacus.modules.sampling.je_tests.JeTestNotScored
+    summary: A selection needs a finished scoring run.
   k1_document_missing:
     status: 422
     raised_by:
@@ -2000,6 +2031,11 @@ codes:
     raised_by:
     - abacus.modules.requests.lifecycle.ModelTextNotPermitted
     summary: Unchanged model-drafted client wording can't be sent while the firm's P-25 is off.
+  month_incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.month_ledger.MonthIncomplete
+    summary: 'The first set of a month needs every dataset: nothing to carry forward from.'
   no_amount:
     status: 409
     raised_by:
@@ -2499,6 +2535,11 @@ codes:
     raised_by:
     - abacus.modules.ledger.cas_contract.PeriodNotAvailable
     summary: 'No monthly snapshot for the period (August 2025 is not in the seed: CLS-10 d).'
+  period_outside_ledger:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.je_tests.PeriodOutsideLedger
+    summary: The test's period and post-close window must lie within the GL snapshot's period.
   person_invalid:
     status: 422
     raised_by:
@@ -2544,6 +2585,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.commands.PlanNotDecidable
+  plan_not_pinned:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.run_plan.PlanNotPinned
+    summary: The close has no published plan version for its month (CLS-09 first).
   plan_number_invalid:
     status: 422
     raised_by:
@@ -2564,6 +2610,11 @@ codes:
     raised_by:
     - abacus.modules.agents.commands.PlanVersionConflict
     summary: '`expected_version` is not the plan''s newest version: someone decided first.'
+  plan_version_frozen:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.plans.VersionNotDraft
+    summary: Only a draft is edited or published; a published version is immutable (AC-17).
   plan_version_pinned:
     status: 409
     raised_by:
@@ -3092,6 +3143,11 @@ codes:
     raised_by:
     - abacus.modules.review.sign_offs.Segregation
     summary: 'R-SO-3: the target''s preparer never signs L2 or L3 on it.'
+  selection_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.je_tests.SelectionInvalid
+    summary: Neither a score floor nor a count, or more unpredictable picks than entries left.
   sending_domain_exists:
     status: 409
     raised_by:
@@ -3403,11 +3459,20 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.evidence.statement_review.ReviewInvalid
+  statement_tables_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.fiduciary_service.StatementTablesMissing
+    summary: Import from statement needs P-11's extracted tables for the document (T-07 cut 4).
   step_has_requests:
     status: 409
     raised_by:
     - abacus.modules.methodology.drafts.StepHasRequests
     summary: A step a PBC request links to stays in the program.
+  step_input_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.run_steps.StepInputMissing
   step_not_failed:
     status: 409
     raised_by:
@@ -3517,6 +3582,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.organisations.org_structure.TeamNameTaken
+  template_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.plans.TemplateExists
   template_invalid:
     status: 422
     raised_by:
@@ -3682,6 +3751,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.sign_offs.UncitedChange
+    - abacus.modules.tax.estate_service.ValuedNeedsCitation
     - abacus.modules.tax.instruments.service.UncitedChange
     summary: 'R-SO-6: an agent value carries no citation (INV-2).'
   uncited_finding:
@@ -3848,8 +3918,10 @@ codes:
     - abacus.modules.notices.intake.IntakeMoved
     - abacus.modules.notices.service.VersionConflict
     - abacus.modules.reporting.statements.StaleAnswer
+    - abacus.modules.tax.estate_service.VersionConflict
     - abacus.modules.tax.estimates.EstimateMoved
     - abacus.modules.tax.extensions.ExtensionMoved
+    - abacus.modules.tax.fiduciary_service.VersionConflict
     - abacus.modules.tax.instruments.service.VersionConflict
     - abacus.modules.workpapers.attribute_grid.TestMoved
     - abacus.modules.workpapers.core.VersionConflict
