@@ -112,3 +112,20 @@ CPA review for a firm that isn't synthetic).
   seeded (TASK-7942 partial).
 - Operating runbook: `docs/runbooks/entity-return-workbook.md`.
 
+
+## Trusts and estates (T-07; S45 to S47; DEC-5317, DEC-5318)
+
+- **The instrument and the reader** (T-07-T12 to T-07-T15): the governing instrument's clauses,
+  verified before display; `tax.instrument_reader` proposes, never decides, and refuses without
+  the trust's consent.
+- **The fiduciary computation** (`compute/fiduciary.py`, `fiduciary_service.py`; T-07-T16): FAI,
+  expenses and distributions in, DNI and the distribution deduction out, signed before K-1s.
+- **Beneficiaries** (`fiduciary_beneficiaries.py`; T-07-T23): allocation by code (the last
+  beneficiary takes the rounding; every class foots); the 65-day election recorded by a person
+  only, a new row each time, inside the §663(b) window.
+- **The 1041 release gate** (`k1_release.gate_1041`; T-07-T24): final approval under BH-TAX-02
+  and the trustee's Form 8879-F envelope completed and current; else 409 naming `form_8879_f`.
+- **Estates** (`compute/estate.py`, `estate_service.py`; T-07-T22): the 706 computation with
+  DSUE, the without-DSUE side figure, AVD availability and state filing; Illinois never shows a
+  figure until the interrelated calculation exists.
+- Operating and rolling back: `docs/runbooks/RB-90-fiduciary-workpapers.md`.
