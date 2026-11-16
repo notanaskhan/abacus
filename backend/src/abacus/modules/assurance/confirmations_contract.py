@@ -144,7 +144,9 @@ def _todo(task: str) -> NotImplementedYet:
 async def list_confirmations(work_item_id: UUID, ctx: Ctx) -> ConfirmationLogOut:
     """AUD-14's log (filters type, respondent, status, channel, q) with `allowed_actions`."""
     await _gate(ctx, work_item_id, "confirmation.read")
-    raise _todo("A-08-T16")
+    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+
+    return await cs.log(ctx, work_item_id)
 
 
 @router.get(
@@ -156,7 +158,9 @@ async def list_confirmations(work_item_id: UUID, ctx: Ctx) -> ConfirmationLogOut
 async def confirmation_summary(work_item_id: UUID, ctx: Ctx) -> ConfirmationSummaryOut:
     """Tiles (sum to the log) and the coverage line, both code's."""
     await _gate(ctx, work_item_id, "confirmation.read")
-    raise _todo("A-08-T16")
+    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+
+    return await cs.summary(ctx, work_item_id)
 
 
 @router.post(
@@ -171,7 +175,9 @@ async def create_confirmation(
 ) -> ConfirmationIdOut:
     """A Draft, positive form only, with lines from the TB and an optional sample item."""
     await _gate(ctx, work_item_id, "confirmation.create")
-    raise _todo("A-08-T16")
+    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+
+    return await cs.create(ctx, work_item_id, body)
 
 
 @router.post(
@@ -196,14 +202,18 @@ async def export_confirmations(work_item_id: UUID, ctx: Ctx) -> Response:
     """The control log workbook (deterministic, text cells guarded, ADR-042)."""
     await _gate(ctx, work_item_id, "confirmation.export")
     _ = XLSX
-    raise _todo("A-08-T16")
+    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+
+    return Response(content=await cs.export(ctx, work_item_id), media_type=XLSX)
 
 
 @router.get(_C, action="confirmation.read", response_model=ConfirmationDetailOut, errors=(501,))
 async def get_confirmation(confirmation_id: UUID, ctx: Ctx) -> ConfirmationDetailOut:
     """The drawer: Response, Reconciliation, Classification and Why this was surfaced."""
     await _gate_record(ctx)
-    raise _todo("A-08-T16")
+    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+
+    return await cs.detail(ctx, confirmation_id)
 
 
 @router.post(
@@ -218,11 +228,16 @@ async def verify_address(
 ) -> AddressVerificationOut:
     """Method, sources and citations; insert-only; independent with a non-client source."""
     await _gate_record(ctx)
-    raise _todo("A-08-T16")
+    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+
+    return await cs.verify_address(ctx, confirmation_id, body)
 
 
 async def _send_like(confirmation_id: UUID, ctx: AuthContext) -> ConfirmationIdOut:
+    from abacus.modules.assurance import confirmations_service as cs  # noqa: PLC0415 -- the service imports this contract
+
     await _gate_record(ctx)
+    await cs.check_sendable(ctx, confirmation_id)  # A-08-T16: 409 address_not_verified first
     raise _todo("A-08-T18")
 
 
@@ -343,7 +358,7 @@ async def close_confirmation(
 async def respondent_preview(confirmation_id: UUID, ctx: Ctx) -> RespondentViewOut:
     """The firm's preview of POR-17's render data for this confirmation."""
     await _gate_record(ctx)
-    raise _todo("A-08-T16")
+    raise _todo("A-08-T19")  # POR-17's render data lands with the respondent service
 
 
 # --- the public family ---------------------------------------------------------------------------
