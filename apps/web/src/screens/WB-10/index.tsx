@@ -32,6 +32,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useId, useState } from "react";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { hrefOf, to } from "../../routes/to";
+import { RevealStepUp } from "../../domain/audits";
 import { COPY } from "./copy";
 
 // WB-10 · Workbench › Connect (W-01-T12; SPEC-659 AC-1 to AC-9, AC-31; docs/screens/WB-10.md).
@@ -103,8 +104,11 @@ function Tile({ tile }: { tile: ConnectTileOut }): JSX.Element {
     if (url) window.location.assign(url);
     refresh();
   };
-  const failed = (): void => {
-    toast.show({ kind: "error", text: COPY.connectFailed });
+  const [stepUp, setStepUp] = useState(false);
+  const failed = (error: unknown): void => {
+    // AC-7: Enable and Reconnect ask a fresh second factor; only that refusal steps up.
+    if (isStepUp(error)) setStepUp(true);
+    else toast.show({ kind: "error", text: COPY.connectFailed });
   };
   const firm = useMutation({
     ...connectFirmMutation(),
@@ -229,8 +233,16 @@ function Tile({ tile }: { tile: ConnectTileOut }): JSX.Element {
         </p>
       )}
       {action !== null && <div className="mt-auto pt-[8px]">{action}</div>}
+      <RevealStepUp open={stepUp} onOpenChange={setStepUp} />
     </CatalogCard>
   );
+}
+
+/** A refusal for a stale second factor: 403 with `facts.reason` `mfa_required`. */
+export function isStepUp(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const facts = (error as { facts?: { reason?: unknown } }).facts;
+  return facts?.reason === "mfa_required";
 }
 
 function Grid({

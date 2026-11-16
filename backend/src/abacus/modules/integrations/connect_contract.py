@@ -20,11 +20,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import INTEGRATIONS_CONNECT_V1
 from abacus.kernel.classification import classified
+from abacus.kernel.clock import system_now
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
+    MFA_RECENT,
     AbacusRouter,
     AuthContext,
+    Forbidden,
     Resource,
     authorise,
     authorise_own,
@@ -32,6 +35,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.integrations import connect_service as connect
 from abacus.modules.integrations.connect_catalog import catalogue, interest
+from abacus.modules.integrations.connect_errors import ConnectNeedsMfa
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -335,10 +339,18 @@ _OWN: Final = frozenset(
 async def _gate(ctx: AuthContext, action: str) -> None:
     if ctx.client:
         raise NotFound("integration")
-    if action in _OWN:
-        await authorise_own(ctx, action)
-    else:
-        await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    try:
+        if action in _OWN:
+            await authorise_own(ctx, action)
+        else:
+            await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    except Forbidden as refused:
+        # AC-7: a stale second factor is told apart from every other refusal (the step-up).
+        if refused.layer == "attribute" and (
+            ctx.mfa_at is None or system_now() - ctx.mfa_at > MFA_RECENT
+        ):
+            raise ConnectNeedsMfa(facts={"reason": "mfa_required"}) from None
+        raise
     if not await flag_enabled(ctx.tenant, INTEGRATIONS_CONNECT_V1):
         raise NotFound(INTEGRATIONS_CONNECT_V1.name)
 

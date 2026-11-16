@@ -108,9 +108,6 @@ async def test_ac7_a_stale_session_is_refused(net: Net) -> None:
     assert response.status_code == 403
 
 
-@pytest.mark.xfail(
-    strict=True, reason="the facts reason lands with the W-01-T07 service (TASK-8064)"
-)
 async def test_ac7_a_stale_session_gets_mfa_required(net: Net) -> None:
     firm = await _firm(net)
     headers = {**net.headers(firm.felix, mfa=False), **_key()}
