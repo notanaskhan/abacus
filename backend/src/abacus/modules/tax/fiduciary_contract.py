@@ -1091,7 +1091,31 @@ async def sixty_five_day_election_route(
 ) -> SixtyFiveDayElectionOut:
     """Inserts a new row (latest wins); human-only by DB CHECK too (AC-11.2; T-07-T23)."""
     await _flag_on(ctx, TAX_FIDUCIARY_K1_RELEASE)
-    raise _stub("sixty_five_day_election")
+    from abacus.modules.identity.api import names_of
+    from abacus.modules.tax import fiduciary_beneficiaries as fb
+
+    made = await fb.record_election(
+        ctx,
+        client_entity_id,
+        tax_year,
+        status=body.status,
+        amount=body.amount,
+        paid_on=body.paid_on,
+        decision_owner_contact_id=body.decision_owner_contact_id,
+        evidence_version_id=body.evidence_version_id,
+    )
+    names = await names_of([ctx.user_id])
+    return SixtyFiveDayElectionOut(
+        id=made.id,
+        client_entity_id=client_entity_id,
+        tax_year=tax_year,
+        status=body.status,
+        amount=made.amount,
+        paid_on=made.paid_on,
+        window_end=made.window_end,
+        recorded_by_name=names.get(ctx.user_id, ""),
+        seq=made.seq,
+    )
 
 
 @fiduciary_router.post(
