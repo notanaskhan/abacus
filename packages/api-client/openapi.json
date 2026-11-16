@@ -131991,7 +131991,7 @@
           },
           "template_id": {
             "cls": "internal",
-            "format": "uuid",
+            "pattern": "^[a-z][a-z0-9_.-]{1,79}$",
             "title": "Template Id",
             "type": "string"
           },

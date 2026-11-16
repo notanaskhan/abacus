@@ -490,7 +490,14 @@ from abacus.modules.agents.approved_write_workflow import (  # noqa: E402
 )
 
 # The C6 v1.1 blocks schema and the spec v2 checks, for their generators (S31 end pass; BOUND-001).
-from abacus.modules.agents.blocks import AgentBlocks, BlocksTurn, Fact  # noqa: E402
+# C-01-T29: a capability settles its own AgentBlocks against its run's facts (number provenance).
+from abacus.modules.agents.blocks import (  # noqa: E402  # noqa: E402
+    AgentBlocks,
+    BlocksRejected,
+    BlocksTurn,
+    Fact,
+    validate_blocks,
+)
 from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
     close_deterministic_run,
     deterministic_run_facts,
@@ -568,6 +575,7 @@ __all__ = [
     "BackfillBatch",
     "BackfillInput",
     "BatchOutcome",
+    "BlocksRejected",
     "BlocksTurn",
     "BriefingCandidate",
     "BriefingContribution",
@@ -814,6 +822,7 @@ __all__ = [
     "turn_capability_ready",
     "txt",
     "upload_review_available",
+    "validate_blocks",
     "verify_citations",
     "workflow_id",
     "write_briefing_snapshot",
