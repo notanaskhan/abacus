@@ -17,7 +17,7 @@ export const txtScreens = {
   "TXT-03": {
     name: "Beneficiaries, K-1s & 65-day election · Calloway Family Trust",
     status: "fixture", // T-07-T25: A to E on fixtures (the gallery)
-    path: null,
+    path: "/tax-returns/$returnId/review/beneficiaries", // S47: live (TASK-8352)
     entry: true,
   },
   // T-07-T26: A to E on fixtures (the gallery), behind tax.estate_workpapers when live.
