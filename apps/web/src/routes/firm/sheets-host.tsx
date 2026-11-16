@@ -1,6 +1,7 @@
 import { type JSX, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import type { OverlayRenderProps } from "../../app-core/overlays";
+import { CloseSourceSeam } from "../../app-core/close-seams";
 
 // The sheets `sheets.tsx` registers, loaded when one opens, each in its own screen chunk. SHL-10,
 // SHL-11, SHL-12 and SHL-15 need no flag (`review.grammar_api` retired, P-04-T62); the rest stand
@@ -87,14 +88,16 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
     if (targetId === undefined) return null;
     const level = ref.args[2];
     return (
-      <Suspense fallback={null}>
-        <SignOffSheet
-          target={{ type: id, id: targetId }}
-          {...(level === undefined ? {} : { level })}
-          open
-          onOpenChange={onOpenChange}
-        />
-      </Suspense>
+      <CloseSourceSeam overlay="signoff" targetType={id} targetId={targetId}>
+        <Suspense fallback={null}>
+          <SignOffSheet
+            target={{ type: id, id: targetId }}
+            {...(level === undefined ? {} : { level })}
+            open
+            onOpenChange={onOpenChange}
+          />
+        </Suspense>
+      </CloseSourceSeam>
     );
   }
   if (ref.key === "signoffs") {
@@ -128,9 +131,11 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
   }
   if (ref.key === "approve") {
     return (
-      <Suspense fallback={null}>
-        <ApproveSheet proposalRef={id} open onOpenChange={onOpenChange} />
-      </Suspense>
+      <CloseSourceSeam overlay="approve" targetType={ref.args[1]} targetId={id}>
+        <Suspense fallback={null}>
+          <ApproveSheet proposalRef={id} open onOpenChange={onOpenChange} />
+        </Suspense>
+      </CloseSourceSeam>
     );
   }
   return (
