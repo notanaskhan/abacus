@@ -82,6 +82,54 @@ async def erase_secret(tx: UnitOfWork, firm_integration_id: UUID) -> bool:
     return gone is not None
 
 
+# --- W-01-T08: a personal install's secret (`user_integrations`, 0890) ------------------------
+
+USER_TARGET = "user_integration"
+
+
+def user_binding(user_integration_id: UUID) -> str:
+    return f"user_integration:{user_integration_id}"
+
+
+async def store_user_secret(
+    tx: UnitOfWork, tenant_id: UUID, user_integration_id: UUID, plaintext: bytes
+) -> None:
+    """Seal and store a personal install's secret (one per install; the owner check is 0890's)."""
+    sealed = await seal(tenant_id, plaintext, user_binding(user_integration_id))
+    await tx.session.execute(
+        insert(IntegrationSecret).values(
+            tenant_id=tenant_id,
+            user_integration_id=user_integration_id,
+            sealed=sealed,
+            key_id=key_service().key_id(tenant_id),
+        )
+    )
+    tx.record("integration_secret.stored", target=Target(USER_TARGET, user_integration_id))
+
+
+async def open_user_secret(tenant: TenantContext, user_integration_id: UUID) -> bytes | None:
+    async with tenant_session(tenant) as session:
+        sealed = await session.scalar(
+            select(IntegrationSecret.sealed).where(
+                IntegrationSecret.user_integration_id == user_integration_id
+            )
+        )
+    if sealed is None:
+        return None
+    return await open_sealed(tenant.tenant_id, sealed, user_binding(user_integration_id))
+
+
+async def erase_user_secret(tx: UnitOfWork, user_integration_id: UUID) -> bool:
+    gone = await tx.session.scalar(
+        delete(IntegrationSecret)
+        .where(IntegrationSecret.user_integration_id == user_integration_id)
+        .returning(IntegrationSecret.id)
+    )
+    if gone is not None:
+        tx.record("integration_secret.erased", target=Target(USER_TARGET, user_integration_id))
+    return gone is not None
+
+
 async def connected_integration(tenant: TenantContext, catalog_key: str) -> UUID | None:
     """N-02-T18: the firm's connected install of `catalog_key` (DocuSeal's per-firm enablement),
     or None when it has none or it needs attention or was disconnected."""

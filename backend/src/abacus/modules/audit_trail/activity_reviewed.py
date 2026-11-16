@@ -752,6 +752,16 @@ REVIEWED_FALLBACK: Final = frozenset(
         "generated_document.locked",  # reviewed 2026-10-31 (S17-S19)
         "generated_document.marked_out_of_date",  # reviewed 2026-10-31 (S17-S19)
         "integration.settings_updated",  # reviewed 2026-10-31 (S17-S19)
+        # W-01-T07, T08 (S46): Connect.
+        "integration.availability_notified",
+        "integration.connect_started",
+        "integration.connected",
+        "integration.disconnected",
+        "integration.interest_recorded",
+        "integration.interest_repeated",
+        "integration.oauth_state_refused",
+        "integration.oauth_state_spent",
+        "integration.reconnected",
         "letter.amended",  # S19 batch 4
         "letter.approval_requested",  # S19 batch 4
         "letter.approved",  # S19 batch 4

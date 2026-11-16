@@ -5,9 +5,14 @@ fail-closed adapter registry, the catalogue read with its honest listing, the ca
 document and plan (the operator's command is `abacus_tools.integration_catalog`), and sealed
 integration secrets. A-02-T15: the compiled write-capability registry, the egress allowlist
 export, the `Writer` port and the write gate (`authorise_write`, `execute_write`), which refuses
-every write in v1. A-02-T16: the POR-16 routes, composed in `client_connect`.
+every write in v1. A-02-T16: the POR-16 routes, composed in `client_connect`. W-01-T07 to T09
+(C20 v2): the Connect catalogue, its v2 import, Connect and disconnect, and the fakes.
 """
 
+from collections.abc import Mapping
+
+from abacus.kernel.uow.relay import Handler
+from abacus.kernel.work_class import WorkClass
 from abacus.modules.connections.api import qbo_app
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.integrations.adapters import (
@@ -46,6 +51,7 @@ from abacus.modules.integrations.catalog_import import (
 )
 from abacus.modules.integrations.catalog_load import CatalogDocument, LoadPlan, plan_load
 from abacus.modules.integrations.connect_contract import router as connect_router
+from abacus.modules.integrations.connect_service import membership_ended
 from abacus.modules.integrations.engine_profile import EngineFieldProfile, engine_field_profile
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -171,3 +177,9 @@ __all__ = [
 
 # A-02-T26 (DEC-709): the QuickBooks Online adapter, only where the app registration exists.
 register_if_configured(qbo_app() is not None)
+
+# W-01-T08 (AC-13): a deactivated person's personal installs are disconnected and their secrets
+# deleted. The worker reads these three (no workflow or activity of the module's own yet).
+SUBSCRIPTIONS: Mapping[str, Handler] = {"membership.deactivated": membership_ended}
+WORKFLOWS: dict[type, WorkClass] = {}
+ACTIVITIES: tuple[object, ...] = ()

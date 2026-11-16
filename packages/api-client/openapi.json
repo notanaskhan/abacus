@@ -260522,7 +260522,7 @@
     },
     "/v1/integrations/catalog": {
       "get": {
-        "description": "WB-10: honest tiles, counts and catalogue-total category counts.",
+        "description": "WB-10: honest tiles, counts and catalogue-total category counts (W-01-T07).",
         "operationId": "connect_catalog",
         "parameters": [
           {
@@ -260674,16 +260674,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connect Catalog",
@@ -260812,16 +260802,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connect Complete",
@@ -261100,7 +261080,7 @@
     },
     "/v1/integrations/{key}/connect": {
       "post": {
-        "description": "Enable or Reconnect (fresh MFA); a firm app is connected at once.",
+        "description": "Enable or Reconnect (fresh MFA); a firm app is connected at once (W-01-T08).",
         "operationId": "connect_firm",
         "parameters": [
           {
@@ -261217,16 +261197,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connect Firm",
@@ -261238,7 +261208,7 @@
     },
     "/v1/integrations/{key}/disconnect": {
       "post": {
-        "description": "Typed name (422 `confirm_name_mismatch`), `seen_version`, fresh MFA.",
+        "description": "Typed name (422 `confirm_name_mismatch`), `seen_version`, fresh MFA (W-01-T08).",
         "operationId": "disconnect_firm",
         "parameters": [
           {
@@ -261365,16 +261335,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Disconnect Firm",
@@ -261518,6 +261478,7 @@
     },
     "/v1/integrations/{key}/interest": {
       "post": {
+        "description": "Notify me (AC-31): idempotent; `recorded` is true on every answer (W-01-T07).",
         "operationId": "connect_interest",
         "parameters": [
           {
@@ -261615,16 +261576,6 @@
             },
             "description": "Not found"
           },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -261634,16 +261585,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connect Interest",
@@ -268020,6 +267961,7 @@
     },
     "/v1/me/integrations/{key}/connect": {
       "post": {
+        "description": "Connect \"acting as you\" (W-01-T08).",
         "operationId": "connect_personal",
         "parameters": [
           {
@@ -268136,16 +268078,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Connect Personal",
@@ -268157,6 +268089,7 @@
     },
     "/v1/me/integrations/{key}/disconnect": {
       "post": {
+        "description": "The caller's own personal install only (W-01-T08).",
         "operationId": "disconnect_personal",
         "parameters": [
           {
@@ -268254,16 +268187,6 @@
             },
             "description": "Not found"
           },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -268273,16 +268196,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Disconnect Personal",

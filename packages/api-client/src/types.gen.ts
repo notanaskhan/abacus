@@ -120547,10 +120547,6 @@ export type ConnectCatalogErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConnectCatalogError = ConnectCatalogErrors[keyof ConnectCatalogErrors];
@@ -120606,10 +120602,6 @@ export type ConnectCompleteErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConnectCompleteError = ConnectCompleteErrors[keyof ConnectCompleteErrors];
@@ -120791,10 +120783,6 @@ export type ConnectFirmErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConnectFirmError = ConnectFirmErrors[keyof ConnectFirmErrors];
@@ -120855,10 +120843,6 @@ export type DisconnectFirmErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DisconnectFirmError = DisconnectFirmErrors[keyof DisconnectFirmErrors];
@@ -120973,17 +120957,9 @@ export type ConnectInterestErrors = {
      */
     404: ErrorOut;
     /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConnectInterestError = ConnectInterestErrors[keyof ConnectInterestErrors];
@@ -123897,10 +123873,6 @@ export type ConnectPersonalErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConnectPersonalError = ConnectPersonalErrors[keyof ConnectPersonalErrors];
@@ -123954,17 +123926,9 @@ export type DisconnectPersonalErrors = {
      */
     404: ErrorOut;
     /**
-     * Conflict with the resource's state
-     */
-    409: ErrorOut;
-    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DisconnectPersonalError = DisconnectPersonalErrors[keyof DisconnectPersonalErrors];
