@@ -27,6 +27,7 @@ from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Target, uow
+from abacus.modules.assurance.events import ConfirmationResponded
 from abacus.modules.identity.api import LinkPrincipal
 
 _AAD_NAME: Final = "assurance.confirmation.respondent"
@@ -50,7 +51,10 @@ class Receipt:
 
 
 _CONFIRMATION: Final = text(
-    "SELECT id, number, status FROM confirmations WHERE id = :c FOR UPDATE"
+    "SELECT c.id, c.number, c.status, c.engagement_id, (SELECT e.actor_id FROM "
+    "confirmation_events e WHERE e.confirmation_id = c.id AND e.kind = 'sent' AND "
+    "e.actor_kind = 'human' ORDER BY e.at DESC LIMIT 1) AS sent_by "
+    "FROM confirmations c WHERE c.id = :c FOR UPDATE OF c"
 )
 _BOOKS: Final = text(
     "SELECT coalesce(sum(book_amount), 0) FROM confirmation_lines WHERE confirmation_id = :c"
@@ -137,6 +141,14 @@ async def submit(
         )
         await tx.session.execute(_STATUS, {"c": confirmation_id})
         tx.record("confirmation.responded", target=Target("confirmation", confirmation_id))
+        if row["sent_by"] is not None:  # A-08 §4.7: the sender hears it was answered
+            tx.emit(
+                ConfirmationResponded(
+                    confirmation_id=confirmation_id,
+                    engagement_id=cast(UUID, row["engagement_id"]),
+                    user_id=UUID(str(row["sent_by"])),
+                )
+            )
     return Receipt(
         receipt_id=f"{reference}-R1",
         reference=reference,

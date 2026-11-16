@@ -22,6 +22,10 @@ _READS: Final = {
     "related_party": text("SELECT id, engagement_id FROM related_parties WHERE id = ANY(:ids)"),
     # A-08-T16: a confirmation, owned by its engagement.
     "confirmation": text("SELECT id, engagement_id FROM confirmations WHERE id = ANY(:ids)"),
+    # A-08-T18 (DEC-5324): a confirmation authorization is its work item's engagement's.
+    "confirmation_authorization": text(
+        "SELECT id, engagement_id FROM confirmation_authorizations WHERE id = ANY(:ids)"
+    ),
     # A-05-T57 close (S31 close end pass): a party in interest a person added on AUD-27.
     "party_in_interest": text(
         "SELECT id, engagement_id FROM parties_in_interest WHERE id = ANY(:ids)"

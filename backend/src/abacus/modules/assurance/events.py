@@ -166,3 +166,45 @@ class ArchiveLocked(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     work_item_id: Annotated[UUID, classified("internal")]
     seal_sha256: Annotated[str, classified("internal")]
+
+
+class ConfirmationLinkRequested(DomainEvent):
+    """A-08-T18 (DEC-5324): a sent confirmation's respondent link, minted and emailed at delivery
+    by communications (identifiers only; the token is never in an event)."""
+
+    event_type: ClassVar[str] = "confirmation.link_requested"
+
+    confirmation_id: Annotated[UUID, classified("internal")]
+
+
+# A-08 §4.7's team notifications (DEC-5324), identifiers only.
+class ConfirmationSecondRequestDue(DomainEvent):
+    event_type: ClassVar[str] = "confirmation.second_request_due"
+
+    confirmation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]  # the person told
+
+
+class ConfirmationNoResponse(DomainEvent):
+    event_type: ClassVar[str] = "confirmation.expired_no_response"
+
+    confirmation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]  # the person told
+
+
+class ConfirmationAuthorizationSigned(DomainEvent):
+    event_type: ClassVar[str] = "confirmation.authorization_signed"
+
+    confirmation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]  # the person told
+
+
+class ConfirmationResponded(DomainEvent):
+    event_type: ClassVar[str] = "confirmation.responded"
+
+    confirmation_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    user_id: Annotated[UUID, classified("internal")]  # the person told

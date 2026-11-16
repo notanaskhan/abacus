@@ -101,6 +101,9 @@ from abacus.modules.assurance.completion_targets import (
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
 from abacus.modules.assurance.confirmations_contract import router as confirmations_router
+from abacus.modules.assurance.confirmations_follow_up import ACTIVITIES as FOLLOW_UP_ACTIVITIES
+from abacus.modules.assurance.confirmations_follow_up import SCHEDULES as FOLLOW_UP_SCHEDULES
+from abacus.modules.assurance.confirmations_follow_up import WORKFLOWS as FOLLOW_UP_WORKFLOWS
 from abacus.modules.assurance.draft_mappings import gap_inputs, risk_inputs, risk_narrative_inputs
 from abacus.modules.assurance.ebp_contract import ResultIn as EbpResultIn  # TASK-7815: the seed
 from abacus.modules.assurance.ebp_contract import TestIn as EbpTestIn  # TASK-7815: the seed
@@ -329,6 +332,15 @@ async def _on_suggestion_created(event: OutboxEvent) -> None:
     await on_severity_suggestion(event)
 
 
+async def _on_envelope_completed(event: OutboxEvent) -> None:
+    """`envelope.completed`: A-07's letters, then A-08-T18's confirmation authorization; each
+    ignores another source's envelope."""
+    from abacus.modules.assurance import confirmations_authorization
+
+    await A07_SUBSCRIPTIONS["envelope.completed"](event)
+    await confirmations_authorization.on_envelope_completed(event)
+
+
 # A-03-T14: a new trial balance version leaves a signed mapping stale (`mapping_set.went_stale`).
 # A-06-T16 seam (TASK-3395): an agent's suggested checklist answer is mirrored on its item.
 _BASE_SUBSCRIPTIONS = (
@@ -336,6 +348,8 @@ _BASE_SUBSCRIPTIONS = (
     | dict(MAPPING_SUBSCRIPTIONS)
     | dict(IC_REDRAFT_SUBSCRIPTIONS)
     | dict(A07_SUBSCRIPTIONS)
+    # A-08-T18 (DEC-5324): a completed confirmation authorization, after A-07's letters.
+    | {"envelope.completed": _on_envelope_completed}
     | dict(EQR_SUBSCRIPTIONS)
     | dict(FORM5500_SUBSCRIPTIONS)
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
@@ -377,6 +391,7 @@ WORKFLOWS: dict[type, str] = (
     | dict(POST_RELEASE_WORKFLOWS)  # A-07-T36
     | dict(ARCHIVE_LOCK_WORKFLOWS)  # A-07-T37: the seal, on the batch class
     | dict(ARCHIVE_VERIFY_WORKFLOWS)  # A-07-T42: seal verification, one and the monthly sweep
+    | dict(FOLLOW_UP_WORKFLOWS)  # A-08-T18 (DEC-5324): the daily confirmation follow-up
 )
 ACTIVITIES: tuple[object, ...] = (
     *FORM5500_ACTIVITIES,
@@ -386,9 +401,11 @@ ACTIVITIES: tuple[object, ...] = (
     *POST_RELEASE_ACTIVITIES,  # A-07-T36
     *ARCHIVE_LOCK_ACTIVITIES,  # A-07-T37
     *ARCHIVE_VERIFY_ACTIVITIES,  # A-07-T42
+    *FOLLOW_UP_ACTIVITIES,  # A-08-T18
 )
 # A-07-T42: the monthly seal verification sweep (a mismatch raises RB-29).
-SCHEDULES = ARCHIVE_VERIFY_SCHEDULES
+# A-08-T18 (DEC-5324): the daily confirmation follow-up prompts.
+SCHEDULES = (*ARCHIVE_VERIFY_SCHEDULES, *FOLLOW_UP_SCHEDULES)
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
@@ -850,3 +867,14 @@ async def _raise_from_deviation(
 
 
 _register_finding_raiser(_raise_from_deviation)
+
+# A-08-T18 (DEC-5324): the confirmation authorization's C7 source.
+from abacus.modules.assurance import confirmations_authorization as _authorization  # noqa: E402
+
+_authorization.register()
+
+# A-08-T18 (DEC-5324): communications mints and emails a sent confirmation's link at delivery.
+from abacus.modules.assurance import confirmations_lifecycle as _lifecycle  # noqa: E402
+from abacus.modules.communications.api import register_respondent_link  # noqa: E402
+
+register_respondent_link("confirmation", _lifecycle.link_facts, _lifecycle.link_at_delivery)

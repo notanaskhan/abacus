@@ -104,6 +104,11 @@ from abacus.modules.communications.portal_intake import on_withdrawn
 from abacus.modules.communications.preview_scope import PreviewSelection, viewer_scoped
 from abacus.modules.communications.render import Block as TemplateBlockContent
 from abacus.modules.communications.render import TemplateContent
+from abacus.modules.communications.respondent_links import (
+    RespondentFacts,
+    deliver_respondent_link,
+    register_respondent_link,
+)
 from abacus.modules.communications.routes import router
 from abacus.modules.communications.scheduled_reminders import (
     ScheduledReminder,
@@ -231,6 +236,7 @@ SUBSCRIPTIONS = {
     StaffInvitationIssued.event_type: deliver_staff_invitation,  # SPEC-024 (TASK-041)
     PortalSignInCodeRequested.event_type: deliver_sign_in_code,  # P-08-T10
     "link_principal.code_requested": deliver_link_code,  # A-08-T15
+    "confirmation.link_requested": deliver_respondent_link,  # A-08-T18 (DEC-5324)
     PortalLinkRenewRequested.event_type: deliver_renewed_link,  # P-08-T21
     PortalMfaResetNoticeRequested.event_type: deliver_mfa_reset_notice,  # P-08-T21
     ClientAccessRevoked.event_type: revoke_links_on_access_revoked,  # P-08-T21: links die too
@@ -342,6 +348,7 @@ __all__ = [
     "RecipientRef",
     "Recorded",
     "ReminderHistory",
+    "RespondentFacts",
     "ScheduledReminder",
     "SecureLinkView",
     "SendOutcome",
@@ -405,6 +412,7 @@ __all__ = [
     "register_intake_candidates",
     "register_intake_destination",
     "register_reminder_history",
+    "register_respondent_link",
     "registered_templates",
     "resolve_secure_link",
     "save_email_template_draft",

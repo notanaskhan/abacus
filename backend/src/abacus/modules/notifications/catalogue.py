@@ -151,6 +151,16 @@ async def _mentioned(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return sorted({UUID(str(u)) for u in cast(list[object], raw)})
 
 
+async def _named_user(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-08 §4.7 (DEC-5324): the person a confirmation's event names, while still on the
+    engagement's team (the feed re-checks access at read, DEC-61)."""
+    engagement_id, user = _uuid(payload, "engagement_id"), _uuid(payload, "user_id")
+    if engagement_id is None or user is None:
+        return []
+    team = {member for member, _ in await team_of(tenant_id, engagement_id)}
+    return [user] if user in team else []
+
+
 async def _mentioned_member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """P-05-T05 (SPEC-650 AC-8): the person a v2 comment mentions, only while they are still on
     the engagement's team (a removed member or one walled since, whose assignment the wall ends,
@@ -443,6 +453,19 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "component_question.asked": Kind(
         "component_question_asked", _leads, "component", "component_id"
     ),
+    # A-08 §4.7 (A-08-T18, DEC-5324): the person a confirmation's event names.
+    "confirmation.second_request_due": Kind(
+        "confirmation_second_request_due", _named_user, "confirmation", "confirmation_id"
+    ),
+    "confirmation.expired_no_response": Kind(
+        "confirmation_expired_no_response", _named_user, "confirmation", "confirmation_id"
+    ),
+    "confirmation.authorization_signed": Kind(
+        "confirmation_authorization_signed", _named_user, "confirmation", "confirmation_id"
+    ),
+    "confirmation.responded": Kind(
+        "confirmation_responded", _named_user, "confirmation", "confirmation_id"
+    ),
     "component_deliverable.uploaded": Kind(
         "component_deliverable_uploaded", _leads, "component", "component_id"
     ),
@@ -724,6 +747,14 @@ TEMPLATES: Final[dict[str, str]] = {
         "A component auditor on {engagement} acknowledged the group instructions."
     ),
     "component_question.asked": "A component auditor on {engagement} asked a question.",
+    "confirmation.second_request_due": "A confirmation on {engagement} is due a second request.",
+    "confirmation.expired_no_response": (
+        "A confirmation on {engagement} has no response. Record alternative procedures."
+    ),
+    "confirmation.authorization_signed": (
+        "The client signed the confirmation authorization on {engagement}."
+    ),
+    "confirmation.responded": "A confirmation on {engagement} was answered.",
     "component_deliverable.uploaded": "A component deliverable on {engagement} was uploaded.",
     "component_deliverable.late": "A component deliverable on {engagement} is late.",
     "independence.requested": "Confirm your independence for {engagement}.",
@@ -877,6 +908,10 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("eliminations_proposed", "approval", "Scale"),
     NotificationKind("component_instructions_acknowledged", "client_activity", "UserCheck"),
     NotificationKind("component_question_asked", "mention", "MessageSquare"),
+    NotificationKind("confirmation_second_request_due", "deadline", "CalendarClock"),
+    NotificationKind("confirmation_expired_no_response", "deadline", "CalendarClock"),
+    NotificationKind("confirmation_authorization_signed", "client_activity", "Signature"),
+    NotificationKind("confirmation_responded", "client_activity", "Mail"),
     NotificationKind("component_deliverable_uploaded", "client_activity", "Upload"),
     NotificationKind("component_deliverable_late", "deadline", "CalendarClock"),
     NotificationKind("connection_reconnect_requested", "client_activity", "Plug"),

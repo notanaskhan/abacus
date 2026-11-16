@@ -221,6 +221,8 @@ class AuthorizationIn(BaseModel):
         list[UUID], Field(min_length=1, max_length=200), classified("internal")
     ]
     signer_contact_id: Annotated[UUID, classified("internal")]
+    # A-08-T18 (DEC-5324): the firm's authorization letter, an evidence version on the engagement.
+    letter_evidence_version_id: Annotated[UUID, classified("internal")]
 
 
 class ConfirmationAuthorizationOut(BaseModel):

@@ -36,7 +36,7 @@ from sqlalchemy import text
 
 from abacus.kernel.clock import now as clock_now
 from abacus.kernel.crypto import open_sealed, seal
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.assurance.compute.reconciliation import reconcile as compute_reconcile
@@ -46,6 +46,8 @@ from abacus.modules.assurance.confirmations_service import (
     _person,  # pyright: ignore[reportPrivateUsage] -- the module's own person check
     check_sendable,
 )
+from abacus.modules.assurance.events import ConfirmationLinkRequested
+from abacus.modules.communications.api import RespondentFacts
 from abacus.modules.identity.api import AuthContext
 
 LINK_DAYS: Final = 30
@@ -170,28 +172,14 @@ async def send(ctx: AuthContext, confirmation_id: UUID) -> UUID:
     _person(ctx, "confirmation.send")
     await _of(ctx, confirmation_id, "confirmation.send")
     await check_sendable(ctx, confirmation_id)
-    from abacus.modules.identity.api import live_principal, mint_link
-
     async with uow(ctx.tenant) as tx:
         row = await _locked(tx, confirmation_id)
-        _need(row, "draft", "authorization_requested")
+        # A-08-T18 (DEC-5324): one awaiting its client's authorization sends once it completes.
+        _need(row, "draft")
         if row["channel"] == "accrued_link":
-            address = (
-                await open_sealed(ctx.tenant_id, cast(bytes, row["address_sealed"]), _AAD_ADDRESS)
-            ).decode()
-            await mint_link(
-                tx,
-                tenant_id=ctx.tenant_id,
-                purpose=LINK_PURPOSE,
-                subject_id=confirmation_id,
-                email=address,
-                created_by=ctx.user_id,
-                valid_for=timedelta(days=LINK_DAYS),
-            )
-            principal = await live_principal(tx, LINK_PURPOSE, confirmation_id)
-            await tx.session.execute(
-                _LINK, {"c": confirmation_id, "t": ctx.tenant_id, "p": principal}
-            )
+            # The link is minted and emailed at delivery (communications), its token never
+            # stored: `link_at_delivery` below.
+            tx.emit(ConfirmationLinkRequested(confirmation_id=confirmation_id))
         await _event(tx, ctx, confirmation_id, "sent")
         await _move(tx, confirmation_id, "sent")
         tx.record("confirmation.sent", target=Target("confirmation", confirmation_id))
@@ -444,3 +432,124 @@ async def close(ctx: AuthContext, confirmation_id: UUID) -> UUID:
         await _move(tx, confirmation_id, "closed")
         tx.record("confirmation.closed", target=Target("confirmation", confirmation_id))
     return confirmation_id
+
+
+# --- the respondent's link at delivery (A-08-T18; DEC-5324) --------------------------------------
+
+_LINK_FACTS: Final = text(
+    "SELECT c.status, c.channel, c.respondent_org, c.address_sealed, c.engagement_id, "
+    "(SELECT e.actor_id FROM confirmation_events e WHERE e.confirmation_id = c.id "
+    "AND e.kind = 'sent' AND e.actor_kind = 'human' ORDER BY e.at DESC LIMIT 1) AS sent_by "
+    "FROM confirmations c WHERE c.id = :c"
+)
+
+
+async def _link_row(tenant: TenantContext, confirmation_id: UUID) -> dict[str, object] | None:
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_LINK_FACTS, {"c": confirmation_id})).mappings().first()
+    if row is None or row["status"] != "sent" or row["channel"] != "accrued_link":
+        return None
+    return dict(row)
+
+
+async def link_facts(tenant: TenantContext, confirmation_id: UUID) -> RespondentFacts | None:
+    """What the request email needs: the address (opened here, for communications only), the
+    respondent's organisation, the client and the link's last day."""
+    from abacus.modules.engagements.api import engagement_label
+
+    row = await _link_row(tenant, confirmation_id)
+    if row is None:
+        return None
+    address = (
+        await open_sealed(tenant.tenant_id, cast(bytes, row["address_sealed"]), _AAD_ADDRESS)
+    ).decode()
+    label = await engagement_label(tenant, cast(UUID, row["engagement_id"]))
+    last_day = (await clock_now(tenant) + timedelta(days=LINK_DAYS)).date()
+    return RespondentFacts(
+        address=address,
+        respondent_org=str(row["respondent_org"]),
+        organisation_name="" if label is None else label.client_name,
+        due_date=f"{last_day:%B} {last_day.day}, {last_day.year}",
+    )
+
+
+async def link_at_delivery(tenant: TenantContext, confirmation_id: UUID) -> str | None:
+    """The link principal for a sent confirmation, minted now (its hash stored, the raw token
+    returned to the deliverer only) and named on `confirmation_links`."""
+    from abacus.modules.identity.api import live_principal, mint_link
+
+    row = await _link_row(tenant, confirmation_id)
+    if row is None or row["sent_by"] is None:
+        return None
+    address = (
+        await open_sealed(tenant.tenant_id, cast(bytes, row["address_sealed"]), _AAD_ADDRESS)
+    ).decode()
+    async with uow(tenant) as tx:
+        token = await mint_link(
+            tx,
+            tenant_id=tenant.tenant_id,
+            purpose=LINK_PURPOSE,
+            subject_id=confirmation_id,
+            email=address,
+            created_by=UUID(str(row["sent_by"])),
+            valid_for=timedelta(days=LINK_DAYS),
+        )
+        principal = await live_principal(tx, LINK_PURPOSE, confirmation_id)
+        await tx.session.execute(
+            _LINK, {"c": confirmation_id, "t": tenant.tenant_id, "p": principal}
+        )
+    return token
+
+
+# --- revoke the link and the exception prefill (A-08-T18; DEC-5324) ------------------------------
+
+_LIVE_LINKS: Final = text(
+    "SELECT l.principal_id FROM confirmation_links l WHERE l.confirmation_id = :c "
+    "AND l.principal_id IS NOT NULL"
+)
+
+
+async def revoke(ctx: AuthContext, confirmation_id: UUID) -> UUID:
+    """A person ends a sent confirmation's link (a wrong address, a replaced respondent): every
+    link principal it issued is revoked and the page reads expired; the status is unchanged and
+    a new send issues a new link. 409 `not_in_status` unless Sent."""
+    _person(ctx, "confirmation.send")
+    await _of(ctx, confirmation_id, "confirmation.send")
+    from abacus.modules.identity.api import revoke_link
+
+    async with uow(ctx.tenant) as tx:
+        row = await _locked(tx, confirmation_id)
+        _need(row, "sent")
+        principals = [
+            cast(UUID, r[0])
+            for r in (await tx.session.execute(_LIVE_LINKS, {"c": confirmation_id}))
+        ]
+        for principal in principals:
+            await revoke_link(tx, principal)
+        await _event(tx, ctx, confirmation_id, "revoked")
+        tx.record(
+            "confirmation.link_revoked",
+            target=Target("confirmation", confirmation_id),
+            after=Ref(n=len(principals)),
+        )
+    return confirmation_id
+
+
+async def exception_prefill(ctx: AuthContext, confirmation_id: UUID) -> dict[str, object]:
+    """SHL-15's prefill from the reconciliation as recorded (read only): the unreconciled amount
+    by code and where it goes, a finding at or above clearly trivial, else a misstatement."""
+    _, engagement_id = await _of(ctx, confirmation_id, "finding.create")
+    ct = await _ct(ctx, engagement_id)
+    async with tenant_session(ctx.tenant) as session:
+        response = (await session.execute(_RESPONSE, {"c": confirmation_id})).first()
+        if response is None:
+            raise NotInStatus(facts={"status": "no_response"})
+        books = Decimal(await session.scalar(_BOOKS, {"c": confirmation_id}) or 0)
+        items = [Decimal(a) for _, a, _ in (await session.execute(_ITEMS, {"c": confirmation_id}))]
+    result = compute_reconcile(books, Decimal(response[0]), items, ct or None)
+    below = bool(result.below_clearly_trivial)
+    return {
+        "difference": result.unreconciled,
+        "below_clearly_trivial": below,
+        "route": "misstatement" if below else "finding",
+    }
