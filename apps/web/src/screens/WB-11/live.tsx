@@ -18,6 +18,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import type { OverlayRenderProps } from "../../app-core/overlays";
+import { hrefOf, to } from "../../routes/to";
 
 // WB-11 live (S47, TASK-8338): the O2 480 drawer over its host (`?ov=integration:<key>`), every
 // word and figure the API's `GET /v1/integrations/{key}`. Connection card, what Accrued may read,
@@ -33,7 +34,10 @@ const COPY = {
   lastSync: "Last sync",
   mayDo: "What Accrued may do",
   read: "Read",
+  write: "Write",
   never: "Never",
+  whoCanUse: "Who can use it",
+  configure: "Configure mappings…",
   health: "Health",
   recent: "Recent events",
   agents: (n: number): string => `Agents using it · ${String(n)}`,
@@ -151,7 +155,12 @@ function Loaded({
   const footer = firmManaged ? (
     <p className="text-[11.5px] text-ink-3">{COPY.manages(data.managed_by ?? "")}</p>
   ) : canReconnect || canDisconnect ? (
-    <div className="flex w-full items-center justify-between">
+    <div className="flex w-full items-center justify-between gap-[8px]">
+      {canDisconnect && card.mode !== "personal" ? (
+        <a className="text-[12.5px] underline" href={hrefOf(to.ADM08())}>
+          {COPY.configure}
+        </a>
+      ) : null}
       {canReconnect ? (
         <Button
           disabled={reconnect.isPending}
@@ -246,7 +255,7 @@ function Loaded({
             ))}
           </dl>
         </DrawerCard>
-        {data.may_do.read.length + data.may_do.never.length > 0 && (
+        {data.may_do.read.length + data.may_do.write.length + data.may_do.never.length > 0 && (
           <DrawerCard aria-label={COPY.mayDo}>
             {data.may_do.read.length > 0 && (
               <>
@@ -255,6 +264,19 @@ function Loaded({
                   {data.may_do.read.map((r) => (
                     <li key={r.label} data-state={r.state}>
                       {r.label}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {data.may_do.write.length > 0 && (
+              <>
+                <h3>{COPY.write}</h3>
+                <ul>
+                  {data.may_do.write.map((r) => (
+                    <li key={r.label} data-state={r.state}>
+                      {r.label}
+                      {r.gate_label ? ` (${r.gate_label})` : null}
                     </li>
                   ))}
                 </ul>
@@ -284,6 +306,14 @@ function Loaded({
                 </li>
               ))}
             </ol>
+          </DrawerCard>
+        )}
+        {data.who_can_use !== "" && (
+          <DrawerCard aria-label={COPY.whoCanUse}>
+            <p>{data.who_can_use}</p>
+            {data.who_can_use_note ? (
+              <p className="text-[11.5px] text-ink-3">{data.who_can_use_note}</p>
+            ) : null}
           </DrawerCard>
         )}
         {data.dependents.count > 0 && (

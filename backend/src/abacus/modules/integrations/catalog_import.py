@@ -51,6 +51,29 @@ class PrerequisiteIn(BaseModel):
     reason: Annotated[str, Field(min_length=1, max_length=240), Public]
 
 
+class DetailWriteIn(BaseModel):
+    """One declared write as WB-11 names it (the key is a write-capability registry key)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    key: Annotated[Key, Public]
+    label: Annotated[str, Field(min_length=1, max_length=200), Public]
+    gate_label: Annotated[str | None, Field(max_length=200), Public] = None
+
+
+class DetailCopyIn(BaseModel):
+    """WB-11's detail copy (0933; DEC-5337): catalogue content, never typed in code."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    writes: Annotated[list[DetailWriteIn], Field(max_length=8), Public] = []
+    never: Annotated[
+        list[Annotated[str, Field(min_length=1, max_length=200)]], Field(max_length=8), Public
+    ] = []
+    who_can_use: Annotated[str | None, Field(max_length=200), Public] = None
+    who_can_use_note: Annotated[str | None, Field(max_length=300), Public] = None
+
+
 class CatalogRowV2In(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -77,11 +100,15 @@ class CatalogRowV2In(BaseModel):
     # registry key, or the document does not validate. Checked, never stored: WB-11 joins writes
     # from the registry itself.
     writes: Annotated[list[Key], Field(max_length=8), Public] = []
+    # 0933 (DEC-5337): WB-11's words for the declared writes, the never lines and who can use it.
+    detail_copy: Annotated[DetailCopyIn, Public] = DetailCopyIn()
 
     @model_validator(mode="after")
     def _rules(self) -> Self:
         if (self.consent_copy is None) != (self.consent_version is None):
             raise ValueError("consent copy and its version come together")
+        if any(w.key not in self.writes for w in self.detail_copy.writes):
+            raise ValueError("a detail write names one of the row's declared writes")
         if self.ownership_mode == "client_authorised" and self.connector_provider is None:
             raise ValueError("a client-authorised app names its connection provider")
         if "portal" in self.surfaces and self.category is None:
@@ -148,6 +175,7 @@ COMPARED: Final = (
     "auth_line",
     "published_at",
     "prerequisite",
+    "detail_copy",  # 0933
 )
 
 
