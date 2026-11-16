@@ -823,7 +823,7 @@ async def instrument_cited_by_route(return_id: UUID, ctx: Ctx) -> list[Instrumen
 
 @fiduciary_router.get(
     f"{_R}/fiduciary-computation", action="fiduciary_computation.read",
-    response_model=FiduciaryComputationOut, errors=(409, 501),
+    response_model=FiduciaryComputationOut, errors=(409,),
 )  # fmt: skip
 async def fiduciary_computation_route(
     return_id: UUID,
@@ -833,132 +833,159 @@ async def fiduciary_computation_route(
 ) -> FiduciaryComputationOut:
     """TXT-02's read model; 409 `interpretation_not_approved` before an approved reading (f1)."""
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("fiduciary_computation")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.computation(ctx, return_id, view)
 
 
 @fiduciary_router.post(
     f"{_R}/fiduciary-computation/recompute", action="fiduciary_computation.recompute",
-    response_model=FiduciaryRecomputeOut, errors=(409, 501),
+    response_model=FiduciaryRecomputeOut, errors=(409,),
 )  # fmt: skip
 async def fiduciary_recompute_route(
     return_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FiduciaryRecomputeOut:
     """Idempotent by `inputs_hash` (AC-6.4); 409 `interpretation_not_approved` (T-07-T16)."""
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("fiduciary_recompute")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.recompute(ctx, return_id)
 
 
 @fiduciary_router.get(
     f"{_R}/fiduciary-computation.xlsx", action="fiduciary_computation.export",
-    response_model=bytes, errors=(501,),
+    response_model=bytes, errors=(),
 )  # fmt: skip
 async def fiduciary_export_route(
     return_id: UUID, ctx: Ctx, version: Annotated[int | None, Query(ge=1)] = None
 ) -> Response:
     """The deterministic XLSX of a version, byte-identical per version (AC-8.1; T-07-T16)."""
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("fiduciary_export")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    data = await fs.export_xlsx(ctx, return_id, version)
+    return Response(content=data, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @fiduciary_router.get(
     f"{_R}/fai-lines", action="fiduciary_computation.read", response_model=FaiLinesOut,
-    errors=(501,),
+    errors=(),
 )  # fmt: skip
 async def fai_lines_route(return_id: UUID, ctx: Ctx) -> FaiLinesOut:
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("fai_lines")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.fai_lines(ctx, return_id)
 
 
 @fiduciary_router.post(
     f"{_R}/fai-lines", action="fai_line.edit", response_model=FaiLineOut, status_code=201,
-    errors=(501,),
+    errors=(),
 )  # fmt: skip
 async def fai_line_add_route(return_id: UUID, body: FaiLineIn, ctx: Ctx) -> FaiLineOut:
     """A cited FAI line; a qualified line never exceeds its ordinary parent (service-enforced)."""
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("fai_line_add")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.add_fai_line(ctx, return_id, body)
 
 
 @fiduciary_router.post(
     f"{_R}/fai-lines/import-from-statement", action="fai_line.edit", response_model=FaiLinesOut,
-    errors=(409, 501),
+    errors=(409,),
 )  # fmt: skip
 async def fai_lines_import_route(return_id: UUID, body: FaiImportIn, ctx: Ctx) -> FaiLinesOut:
     """Lines from P-11's extracted tables on the custodial statement (code, no model)."""
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("fai_lines_import")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.import_from_statement(ctx, return_id, body.evidence_version_id)
 
 
 @fiduciary_router.patch(
     "/fai-lines/{line_id}", action="fai_line.edit", response_model=FaiLineOut,
-    errors=(409, 501),
+    errors=(409,),
 )  # fmt: skip
 async def fai_line_edit_route(line_id: UUID, body: FaiLineEditIn, ctx: Ctx) -> FaiLineOut:
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("fai_line_edit")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.edit_fai_line(ctx, line_id, body)
 
 
 @fiduciary_router.get(
     f"{_R}/trust-expenses", action="fiduciary_computation.read", response_model=TrustExpensesOut,
-    errors=(501,),
+    errors=(),
 )  # fmt: skip
 async def trust_expenses_route(return_id: UUID, ctx: Ctx) -> TrustExpensesOut:
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("trust_expenses")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.trust_expenses(ctx, return_id)
 
 
 @fiduciary_router.post(
     f"{_R}/trust-expenses", action="fai_line.edit", response_model=TrustExpenseOut,
-    status_code=201, errors=(501,),
+    status_code=201, errors=(),
 )  # fmt: skip
 async def trust_expense_add_route(
     return_id: UUID, body: TrustExpenseIn, ctx: Ctx
 ) -> TrustExpenseOut:
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("trust_expense_add")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.add_trust_expense(ctx, return_id, body)
 
 
 @fiduciary_router.patch(
     "/trust-expenses/{expense_id}", action="fai_line.edit", response_model=TrustExpenseOut,
-    errors=(409, 501),
+    errors=(409,),
 )  # fmt: skip
 async def trust_expense_edit_route(
     expense_id: UUID, body: TrustExpenseEditIn, ctx: Ctx
 ) -> TrustExpenseOut:
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("trust_expense_edit")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.edit_trust_expense(ctx, expense_id, body)
 
 
 @fiduciary_router.get(
     f"{_R}/trust-distributions", action="fiduciary_computation.read",
-    response_model=TrustDistributionsOut, errors=(501,),
+    response_model=TrustDistributionsOut, errors=(),
 )  # fmt: skip
 async def trust_distributions_route(return_id: UUID, ctx: Ctx) -> TrustDistributionsOut:
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("trust_distributions")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.trust_distributions(ctx, return_id)
 
 
 @fiduciary_router.post(
     f"{_R}/trust-distributions", action="trust_distribution.edit",
-    response_model=TrustDistributionOut, status_code=201, errors=(501,),
+    response_model=TrustDistributionOut, status_code=201, errors=(),
 )  # fmt: skip
 async def trust_distribution_add_route(
     return_id: UUID, body: TrustDistributionIn, ctx: Ctx
 ) -> TrustDistributionOut:
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("trust_distribution_add")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.add_trust_distribution(ctx, return_id, body)
 
 
 @fiduciary_router.patch(
     "/trust-distributions/{distribution_id}", action="trust_distribution.edit",
-    response_model=TrustDistributionOut, errors=(409, 501),
+    response_model=TrustDistributionOut, errors=(409,),
 )  # fmt: skip
 async def trust_distribution_edit_route(
     distribution_id: UUID, body: TrustDistributionEditIn, ctx: Ctx
 ) -> TrustDistributionOut:
     """A new version with a reason; the L2 sign-off goes stale (AC-7.1; T-07-T16)."""
     await _flag_on(ctx, TAX_FIDUCIARY_WORKPAPERS)
-    raise _stub("trust_distribution_edit")
+    from abacus.modules.tax import fiduciary_service as fs  # noqa: PLC0415 -- the service imports this contract
+
+    return await fs.edit_trust_distribution(ctx, distribution_id, body)
 
 
 @fiduciary_router.get(

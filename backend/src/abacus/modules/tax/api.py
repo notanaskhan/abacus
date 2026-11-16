@@ -185,6 +185,13 @@ async def _on_sign_off_recorded(event: OutboxEvent) -> None:
     from abacus.modules.tax.instruments.service import on_sign_off_recorded as lock_on_l3
 
     await lock_on_l3(event)
+    # T-07-T16: the interpretation's approval recomputes the fiduciary workpaper at once.
+    p = event.payload
+    target = p.get("target_id")
+    if p.get("target_type") == "instrument_interpretation" and p.get("level") == 3 and isinstance(target, str):
+        from abacus.modules.tax import fiduciary_service
+
+        await fiduciary_service.recompute_after_approval(event.tenant_id, UUID(target))
 
 
 SUBSCRIPTIONS = {
@@ -540,6 +547,10 @@ register_session_subject("tax_return", _assistant_subject, "tax.assistant")
 _return_events.register()
 # T-05-T27 (DEC-4519): the workbook's cells are review fields; SHL-09 reads their provenance.
 _workbook_service.register()
+# T-07-T16 (DEC-5061): the fiduciary computation is a reviewable for L2 (DEC-84).
+from abacus.modules.tax import fiduciary_service as _fiduciary_service  # noqa: E402
+
+_fiduciary_service.register()
 
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
 # T-05-T31 (DEC-4616): the entity workbook run plan provider, registered at import.
