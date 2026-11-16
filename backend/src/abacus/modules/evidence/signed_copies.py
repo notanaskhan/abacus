@@ -19,9 +19,12 @@ from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.clock import system_now
-from abacus.kernel.uow import Ref, Target, UnitOfWork
+from abacus.kernel.db import TenantContext
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.engagements.api import service_line_of
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion
+from abacus.modules.evidence.retention import retain_until_for
 from abacus.modules.evidence.uploads import checked, clean_name
 from abacus.modules.platform.api import StoredFile
 
@@ -299,3 +302,68 @@ async def version_titles(session: AsyncSession, version_ids: list[UUID]) -> dict
         .where(EvidenceVersion.id.in_(version_ids))
     )
     return {version: title for version, title in rows.tuples()}
+
+
+async def file_respondent_copy(
+    *,
+    tenant_id: UUID,
+    client_id: UUID,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    file_name: str,
+    content: bytes,
+    principal_id: UUID,
+) -> UUID:
+    """A-08-T19 (DEC-5325): a confirmation respondent's attachment: scanned and typed before
+    anything is stored (a refused file raises `UploadRefused`), stored under Object Lock as
+    correspondence on the engagement, channel `confirmation_response`, its creator the link
+    principal. Returns the version id; write-once like every version."""
+    tenant = TenantContext(tenant_id, "system", f"confirmation-respondent:{principal_id}")
+    line = await service_line_of(tenant, engagement_id) or "any"
+    keep = await retain_until_for(tenant, "client_document", line, system_now())
+    screened = await screen_and_stage(tenant_id, content, file_name, keep)
+    item_id, version_id = uuid4(), uuid4()
+    async with uow(tenant) as tx:
+        await tx.session.execute(
+            insert(EvidenceItem).values(
+                id=item_id,
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                client_id=client_id,
+                work_item_id=work_item_id,
+                scope="engagement",
+                folder_kind="correspondence",
+                title=screened.file_name,
+                created_by_kind="system",
+                created_by_id=f"link_principal:{principal_id}",
+            )
+        )
+        tx.record(
+            "evidence_item.created",
+            target=Target("evidence_item", item_id),
+            after=Ref(client_id=client_id),
+        )
+        await tx.session.execute(
+            insert(EvidenceVersion).values(
+                id=version_id,
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                evidence_item_id=item_id,
+                version_no=1,
+                fingerprint=screened.stored.fingerprint,
+                storage_key=screened.stored.key,
+                storage_version_id=screened.stored.version_id,
+                size_bytes=screened.stored.size,
+                media_type=screened.media_type,
+                source="confirmation_respondent",
+                method="uploaded",
+                channel="confirmation_response",
+                display_name=screened.file_name,
+            )
+        )
+        tx.record(
+            "evidence_version.created",
+            target=Target("evidence_version", version_id),
+            after=Ref(evidence_item_id=item_id, fingerprint=screened.stored.fingerprint),
+        )
+    return version_id

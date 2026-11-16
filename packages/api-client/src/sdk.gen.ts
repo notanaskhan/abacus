@@ -3772,7 +3772,8 @@ export const respondentView = <ThrowOnError extends boolean = false>(options: Op
  * Upload Attachment
  *
  * `confirmation.respond` (email verified): scanned, write-once evidence with channel
- * `confirmation_response` (A-08-T19). The stub accepts nothing.
+ * `confirmation_response` (A-08-T19, DEC-5325); the raw body is the file, refused past the
+ * upload limit before it is all read. Any other link answers 404 after the floor.
  */
 export const uploadAttachment = <ThrowOnError extends boolean = false>(options: Options<UploadAttachmentData, ThrowOnError>): RequestResult<UploadAttachmentResponses, UploadAttachmentErrors, ThrowOnError> => (options.client ?? client).post<UploadAttachmentResponses, UploadAttachmentErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

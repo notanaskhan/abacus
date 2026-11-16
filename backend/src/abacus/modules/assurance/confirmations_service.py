@@ -45,6 +45,8 @@ from abacus.modules.assurance.confirmations_contract_models import (
     ConfirmationRowOut,
     ConfirmationSummaryOut,
     ConfirmationType,
+    RespondentAccountOut,
+    RespondentRequestOut,
     RespondentViewOut,
     StatusTileOut,
 )
@@ -475,10 +477,90 @@ async def _live(tenant: TenantContext, confirmation_id: UUID) -> bool:
     return status == "sent"
 
 
+# The respondent's statement of the client's authorization: the handoff's POR-17 words, with
+# the firm, the client's fiscal year end and nothing else (AC-7.1, INV-4).
+_AUTHORIZATION_TEXT: Final = (
+    "Our auditors, {firm}, are auditing our financial statements for the year ended {year_end}. "
+    "Please confirm directly to them the balance you owed us at that date. This is not a "
+    "request for payment."
+)
+_VIEW: Final = text(
+    "SELECT c.id, c.number, c.type, c.status, c.respondent_org, c.engagement_id, "
+    "a.signer_contact_id, a.completed_at FROM confirmations c "
+    "JOIN confirmation_authorization_items i ON i.confirmation_id = c.id "
+    "JOIN confirmation_authorizations a ON a.id = i.authorization_id "
+    "AND a.completed_at IS NOT NULL "
+    "WHERE c.id = :c ORDER BY a.completed_at DESC LIMIT 1"
+)
+_VIEW_LINES: Final = text(
+    "SELECT description, book_amount FROM confirmation_lines WHERE confirmation_id = :c "
+    "ORDER BY position"
+)
+
+
 async def respondent_view_of(principal: LinkPrincipal) -> RespondentViewOut:
-    """POR-17's view of an open live link (A-08-T19 renders the request from its lines)."""
-    del principal
-    return fx.EXPIRED  # the open-request render lands with A-08-T19's respondent service
+    """POR-17's view of a live link (A-08-T19; DEC-5325): `answered` once the one answer is in,
+    `open` with this confirmation's render data while it is Sent under a completed client
+    authorization, otherwise the uniform expired view. Nothing about the engagement, another
+    customer or the firm's people leaves (AC-7.1, INV-4)."""
+    from abacus.modules.assurance import confirmations_respondent as respondent
+    from abacus.modules.engagements.api import engagement_label
+    from abacus.modules.identity.api import firm_name
+    from abacus.modules.organisations.api import contact_facts
+
+    tenant = TenantContext(principal.tenant_id, "system", "confirmation.respondent")
+    answered = await respondent.original_receipt(principal)
+    if answered is not None:
+        return RespondentViewOut(state="answered", answered_on=answered.submitted_at.date())
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_VIEW, {"c": principal.subject_id})).mappings().first()
+        lines: list[tuple[str, Decimal]] = (
+            []
+            if row is None
+            else [
+                (str(d), Decimal(a))
+                for d, a in (await session.execute(_VIEW_LINES, {"c": row["id"]})).all()
+            ]
+        )
+        signer = (
+            {}
+            if row is None
+            else await contact_facts(session, [cast(UUID, row["signer_contact_id"])])
+        )
+    if row is None or row["status"] != "sent":
+        return fx.EXPIRED
+    label = await engagement_label(tenant, cast(UUID, row["engagement_id"]))
+    if label is None or label.fiscal_period_end is None:
+        return fx.EXPIRED
+    firm = await firm_name(principal.tenant_id)
+    end = label.fiscal_period_end
+    person = signer.get(cast(UUID, row["signer_contact_id"]))
+    bank = row["type"] == "bank"
+    total = sum((a for _, a in lines), Decimal("0.00"))
+    return RespondentViewOut(
+        state="open",
+        request=RespondentRequestOut(
+            reference=f"C{row['number']}",
+            type=row["type"],
+            firm_name=firm,
+            client_name=label.client_name,
+            respondent_org=str(row["respondent_org"]),
+            as_of=end,
+            authorization_text=_AUTHORIZATION_TEXT.format(
+                firm=firm, year_end=f"{end:%B} {end.day}, {end.year}"
+            ),
+            authorized_by=label.client_name if person is None else person.display_name,
+            authorized_on=cast(datetime, row["completed_at"]).date(),
+            balance_per_client=None if bank else total,
+            invoices=[],
+            client_accounts=[
+                RespondentAccountOut(description=d, balance_per_client=a) for d, a in lines
+            ]
+            if bank
+            else [],
+            list_every_account=bank,
+        ),
+    )
 
 
 def register() -> None:

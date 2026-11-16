@@ -63,6 +63,17 @@ class NotInStatus(DomainConflict):
     code = "transition_not_available"
 
 
+class AuthorizationMissing(DomainConflict):
+    code = "authorization_missing"
+
+
+_AUTHORIZED: Final = text(
+    "SELECT EXISTS (SELECT 1 FROM confirmation_authorization_items i JOIN "
+    "confirmation_authorizations a ON a.id = i.authorization_id "
+    "WHERE i.confirmation_id = :c AND a.completed_at IS NOT NULL)"
+)
+
+
 class ReconcilerCannotAccept(DomainConflict):
     code = "reconciler_cannot_accept"
 
@@ -176,6 +187,11 @@ async def send(ctx: AuthContext, confirmation_id: UUID) -> UUID:
         row = await _locked(tx, confirmation_id)
         # A-08-T18 (DEC-5324): one awaiting its client's authorization sends once it completes.
         _need(row, "draft")
+        if row["channel"] == "accrued_link" and not await tx.session.scalar(
+            _AUTHORIZED, {"c": confirmation_id}
+        ):
+            # The respondent's page shows the client's signed authorization (POR-17, AC-6.3).
+            raise AuthorizationMissing(facts={"confirmation_id": str(confirmation_id)})
         if row["channel"] == "accrued_link":
             # The link is minted and emailed at delivery (communications), its token never
             # stored: `link_at_delivery` below.
