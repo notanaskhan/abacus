@@ -89,14 +89,30 @@ async def apply_probe(
     at: datetime,
     http_status: int | None = None,
 ) -> Step:
-    """One tick's probe for one firm install (the system's act)."""
+    """One tick's probe for one firm install (the system's act). A probe that changes nothing
+    opens no unit of work (S47 end pass: a unit of work must record, so it writes nothing)."""
+    from abacus.kernel.db import tenant_session
+
+    async with tenant_session(tenant) as session:
+        seen = (
+            await session.execute(
+                text("SELECT status FROM firm_integrations WHERE id = :i"), {"i": install_id}
+            )
+        ).first()
+    if seen is None:
+        return Step("disconnected", None, None, failures)
+    if transition(seen[0], probe, failures).event is None:
+        return transition(seen[0], probe, failures)
     async with uow(tenant) as tx:
         row = (await tx.session.execute(_ROW, {"i": install_id})).first()
         if row is None:
             return Step("disconnected", None, None, failures)
         current: Status = row[0]
         step = transition(current, probe, failures)
-        if step.event is None:
+        if step.event is None:  # moved meanwhile: record that nothing changed
+            tx.record(
+                "integration.health_unchanged", target=Target("firm_integration", install_id)
+            )
             return step
         await tx.session.execute(_MOVE, {"s": step.status, "r": step.reason, "i": install_id})
         await tx.session.execute(
