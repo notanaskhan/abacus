@@ -76,11 +76,17 @@ REVIEWED_FALLBACK: Final = frozenset(
         "elimination.proposed",
         # reviewed 2026-11-16 (S47): A-08-T18 the confirmations lifecycle, identifiers only
         "confirmation.alternative_recorded",
+        "confirmation.authorization_completed",  # A-08-T18 (DEC-5324): the C7 authorization
+        "confirmation.authorization_drafted",
+        "confirmation.authorization_requested",
         "confirmation.closed",
+        "confirmation.link_revoked",  # A-08-T18: a sent link ended
+        "confirmation.no_response_due",  # A-08-T18: the follow-up sweep's prompts
         "confirmation.reconciled",
         "confirmation.reconciliation_accepted",
         "confirmation.responded",  # A-08-T19: the respondent's one answer
         "confirmation.second_request",
+        "confirmation.second_request_due",
         "confirmation.sent",
         "confirmation.status_changed",
         # reviewed 2026-11-16 (S47): A-08-T17 sample expansions, identifiers only

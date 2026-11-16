@@ -12361,6 +12361,12 @@
             "title": "Confirmation Ids",
             "type": "array"
           },
+          "letter_evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Letter Evidence Version Id",
+            "type": "string"
+          },
           "signer_contact_id": {
             "cls": "internal",
             "format": "uuid",
@@ -12370,7 +12376,8 @@
         },
         "required": [
           "confirmation_ids",
-          "signer_contact_id"
+          "signer_contact_id",
+          "letter_evidence_version_id"
         ],
         "title": "AuthorizationIn",
         "type": "object"
@@ -186163,7 +186170,7 @@
     },
     "/v1/confirmations/{confirmation_id}/exception": {
       "post": {
-        "description": "SHL-15's prefill; Below CT routes to `record_misstatement`.",
+        "description": "SHL-15's prefill; Below CT routes to `record_misstatement` (A-08-T18, DEC-5324).",
         "operationId": "confirmation_exception_prefill",
         "parameters": [
           {
@@ -186250,6 +186257,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -186259,16 +186276,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Confirmation Exception Prefill",
@@ -186693,6 +186700,7 @@
     },
     "/v1/confirmations/{confirmation_id}/revoke-link": {
       "post": {
+        "description": "A-08-T18 (DEC-5324): end the sent confirmation's link; the status stays Sent.",
         "operationId": "revoke_link",
         "parameters": [
           {
@@ -186790,6 +186798,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -186799,16 +186817,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Revoke Link",
@@ -336762,16 +336770,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Confirmation Request Authorization",

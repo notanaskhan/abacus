@@ -3896,7 +3896,7 @@ export const closeConfirmation = <ThrowOnError extends boolean = false>(options:
 /**
  * Confirmation Exception Prefill
  *
- * SHL-15's prefill; Below CT routes to `record_misstatement`.
+ * SHL-15's prefill; Below CT routes to `record_misstatement` (A-08-T18, DEC-5324).
  */
 export const confirmationExceptionPrefill = <ThrowOnError extends boolean = false>(options: Options<ConfirmationExceptionPrefillData, ThrowOnError>): RequestResult<ConfirmationExceptionPrefillResponses, ConfirmationExceptionPrefillErrors, ThrowOnError> => (options.client ?? client).post<ConfirmationExceptionPrefillResponses, ConfirmationExceptionPrefillErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3947,6 +3947,8 @@ export const respondentPreview = <ThrowOnError extends boolean = false>(options:
 
 /**
  * Revoke Link
+ *
+ * A-08-T18 (DEC-5324): end the sent confirmation's link; the status stays Sent.
  */
 export const revokeLink = <ThrowOnError extends boolean = false>(options: Options<RevokeLinkData, ThrowOnError>): RequestResult<RevokeLinkResponses, RevokeLinkErrors, ThrowOnError> => (options.client ?? client).post<RevokeLinkResponses, RevokeLinkErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

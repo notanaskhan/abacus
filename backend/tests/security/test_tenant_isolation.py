@@ -124,6 +124,8 @@ TABLES: tuple[str, ...] = (
     "component_instructions",
     "component_milestones",
     "components",
+    "confirmation_authorization_items",
+    "confirmation_authorizations",
     "confirmation_decisions",
     "confirmation_events",
     "confirmation_lines",

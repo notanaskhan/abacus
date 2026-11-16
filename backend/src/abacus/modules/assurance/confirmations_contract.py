@@ -19,7 +19,7 @@ from __future__ import annotations
 import asyncio
 import time
 from decimal import Decimal
-from typing import Annotated, Final
+from typing import Annotated, Final, Literal, cast
 from uuid import UUID
 
 from fastapi import Cookie, Depends, Header, Path, Response
@@ -189,14 +189,25 @@ async def create_confirmation(
     action="confirmation.request_authorization",
     response_model=ConfirmationAuthorizationOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def confirmation_request_authorization(
     work_item_id: UUID, body: AuthorizationIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ConfirmationAuthorizationOut:
     """One C7 envelope (purpose `confirmation_authorization`) for the confirmations named."""
     await _gate(ctx, work_item_id, "confirmation.request_authorization")
-    raise _todo("A-08-T18")
+    from abacus.modules.assurance import confirmations_authorization as ca
+
+    envelope_id = await ca.request(
+        ctx,
+        work_item_id,
+        body.confirmation_ids,
+        body.signer_contact_id,
+        body.letter_evidence_version_id,
+    )
+    return ConfirmationAuthorizationOut(
+        envelope_id=envelope_id, confirmation_ids=sorted(set(body.confirmation_ids), key=str)
+    )
 
 
 @router.get(
@@ -286,10 +297,14 @@ async def second_request(
     f"{_C}/revoke-link",
     action="confirmation.send",
     response_model=ConfirmationIdOut,
-    errors=(501,),
+    errors=(409,),
 )
 async def revoke_link(confirmation_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> ConfirmationIdOut:
-    return await _send_like(confirmation_id, ctx)
+    """A-08-T18 (DEC-5324): end the sent confirmation's link; the status stays Sent."""
+    await _gate_record(ctx)
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    return ConfirmationIdOut(id=await life.revoke(ctx, confirmation_id))
 
 
 @router.post(
@@ -372,12 +387,20 @@ async def record_alternative(
 
 
 @router.post(
-    f"{_C}/exception", action="finding.create", response_model=ExceptionPrefillOut, errors=(501,)
+    f"{_C}/exception", action="finding.create", response_model=ExceptionPrefillOut, errors=(409,)
 )
 async def confirmation_exception_prefill(confirmation_id: UUID, ctx: Ctx) -> ExceptionPrefillOut:
-    """SHL-15's prefill; Below CT routes to `record_misstatement`."""
+    """SHL-15's prefill; Below CT routes to `record_misstatement` (A-08-T18, DEC-5324)."""
     await _gate_record(ctx)
-    raise _todo("A-08-T18")
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    found = await life.exception_prefill(ctx, confirmation_id)
+    return ExceptionPrefillOut(
+        confirmation_id=confirmation_id,
+        difference=cast(Decimal, found["difference"]),
+        below_clearly_trivial=bool(found["below_clearly_trivial"]),
+        route=cast(Literal["finding", "misstatement"], found["route"]),
+    )
 
 
 @router.post(

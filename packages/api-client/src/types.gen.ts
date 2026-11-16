@@ -5733,6 +5733,10 @@ export type AuthorizationIn = {
      */
     confirmation_ids: Array<string>;
     /**
+     * Letter Evidence Version Id
+     */
+    letter_evidence_version_id: string;
+    /**
      * Signer Contact Id
      */
     signer_contact_id: string;
@@ -86714,13 +86718,13 @@ export type ConfirmationExceptionPrefillErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConfirmationExceptionPrefillError = ConfirmationExceptionPrefillErrors[keyof ConfirmationExceptionPrefillErrors];
@@ -86958,13 +86962,13 @@ export type RevokeLinkErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RevokeLinkError = RevokeLinkErrors[keyof RevokeLinkErrors];
@@ -155088,10 +155092,6 @@ export type ConfirmationRequestAuthorizationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConfirmationRequestAuthorizationError = ConfirmationRequestAuthorizationErrors[keyof ConfirmationRequestAuthorizationErrors];

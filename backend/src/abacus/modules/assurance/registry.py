@@ -1183,6 +1183,8 @@ TABLES: frozenset[str] = _TABLES | frozenset(
         "component_instructions",
         "component_milestones",
         "components",
+        "confirmation_authorization_items",
+        "confirmation_authorizations",
         "confirmation_decisions",
         "confirmation_events",
         "confirmation_lines",
@@ -1197,6 +1199,7 @@ INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
         "address_verifications",
         "alternative_procedures",
         "component_instruction_versions",
+        "confirmation_authorization_items",
         "confirmation_decisions",
         "confirmation_events",
         "confirmation_lines",
@@ -1341,6 +1344,21 @@ INSERT_COLUMNS["confirmation_lines"] = frozenset(
     {"account_last4", "book_amount", "confirmation_id", "description", "position", "tenant_id"}
 )
 INSERT_COLUMNS["confirmation_links"] = frozenset({"confirmation_id", "principal_id", "tenant_id"})
+# A-08-T18 (0932, DEC-5324): one C7 authorization per request and the confirmations it covers.
+INSERT_COLUMNS["confirmation_authorizations"] = frozenset(
+    {
+        "engagement_id",
+        "letter_evidence_version_id",
+        "requested_by",
+        "signer_contact_id",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["confirmation_authorization_items"] = frozenset(
+    {"authorization_id", "confirmation_id", "tenant_id"}
+)
+UPDATE_COLUMNS["confirmation_authorizations"] = frozenset({"completed_at", "envelope_id"})
 INSERT_COLUMNS["confirmation_responses"] = frozenset(
     {
         "agrees",

@@ -6524,7 +6524,7 @@ export const closeConfirmationMutation = (options?: Partial<Options<CloseConfirm
 /**
  * Confirmation Exception Prefill
  *
- * SHL-15's prefill; Below CT routes to `record_misstatement`.
+ * SHL-15's prefill; Below CT routes to `record_misstatement` (A-08-T18, DEC-5324).
  */
 export const confirmationExceptionPrefillMutation = (options?: Partial<Options<ConfirmationExceptionPrefillData>>): UseMutationOptions<ConfirmationExceptionPrefillResponse, ConfirmationExceptionPrefillError, Options<ConfirmationExceptionPrefillData>> => {
     const mutationOptions: UseMutationOptions<ConfirmationExceptionPrefillResponse, ConfirmationExceptionPrefillError, Options<ConfirmationExceptionPrefillData>> = {
@@ -6600,6 +6600,8 @@ export const respondentPreviewOptions = (options: Options<RespondentPreviewData>
 
 /**
  * Revoke Link
+ *
+ * A-08-T18 (DEC-5324): end the sent confirmation's link; the status stays Sent.
  */
 export const revokeLinkMutation = (options?: Partial<Options<RevokeLinkData>>): UseMutationOptions<RevokeLinkResponse, RevokeLinkError, Options<RevokeLinkData>> => {
     const mutationOptions: UseMutationOptions<RevokeLinkResponse, RevokeLinkError, Options<RevokeLinkData>> = {
