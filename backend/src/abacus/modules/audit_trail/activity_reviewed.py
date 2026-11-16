@@ -65,6 +65,14 @@ REVIEWED_FALLBACK: Final = frozenset(
         "je_test.scoring_failed",
         "je_test.scoring_started",
         "je_test.selection_requested",
+        # reviewed 2026-11-16 (S47): A-08-T18 the confirmations lifecycle, identifiers only
+        "confirmation.alternative_recorded",
+        "confirmation.closed",
+        "confirmation.reconciled",
+        "confirmation.reconciliation_accepted",
+        "confirmation.second_request",
+        "confirmation.sent",
+        "confirmation.status_changed",
         # reviewed 2026-11-16 (S47): A-08-T17 sample expansions, identifiers only
         "sample_expansion.approved",
         "sample_expansion.rejected",

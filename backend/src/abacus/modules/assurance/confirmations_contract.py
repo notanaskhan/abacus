@@ -250,7 +250,9 @@ async def _send_like(confirmation_id: UUID, ctx: AuthContext) -> ConfirmationIdO
 
     await _gate_record(ctx)
     await cs.check_sendable(ctx, confirmation_id)  # A-08-T16: 409 address_not_verified first
-    raise _todo("A-08-T18")
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    return ConfirmationIdOut(id=await life.send(ctx, confirmation_id))
 
 
 @router.post(
@@ -273,8 +275,11 @@ async def send_confirmation(
 async def second_request(
     confirmation_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> ConfirmationIdOut:
-    """A new link (the first revoked) and the second-request email."""
-    return await _send_like(confirmation_id, ctx)
+    """The second request (once, while unanswered)."""
+    await _gate_record(ctx)
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    return ConfirmationIdOut(id=await life.second_request(ctx, confirmation_id))
 
 
 @router.post(
@@ -298,7 +303,16 @@ async def record_response(
 ) -> ConfirmationIdOut:
     """A recorded channel's response (DV-6): uploaded evidence and amounts."""
     await _gate_record(ctx)
-    raise _todo("A-08-T18")
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    done = await life.record_response(
+        ctx,
+        confirmation_id,
+        agrees=body.agrees,
+        confirmed_amounts=body.confirmed_amounts,
+        evidence_version_ids=body.evidence_version_ids,
+    )
+    return ConfirmationIdOut(id=done)
 
 
 @router.post(
@@ -312,7 +326,14 @@ async def reconcile(
 ) -> ConfirmationIdOut:
     """Reconciling items; code computes unreconciled."""
     await _gate_record(ctx)
-    raise _todo("A-08-T18")
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    await life.reconcile(
+        ctx,
+        confirmation_id,
+        [(i.description, i.amount, list(i.citation_ids)) for i in body.items],
+    )
+    return ConfirmationIdOut(id=confirmation_id)
 
 
 @router.post(
@@ -326,7 +347,10 @@ async def accept_reconciliation(
 ) -> ConfirmationIdOut:
     """A manager or EP who did not enter the reconciliation (403 otherwise; 409 on change)."""
     await _gate_record(ctx)
-    raise _todo("A-08-T18")
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    done = await life.accept_reconciliation(ctx, confirmation_id, body.seen_hash)
+    return ConfirmationIdOut(id=done)
 
 
 @router.post(
@@ -339,7 +363,12 @@ async def record_alternative(
     confirmation_id: UUID, body: AlternativeProcedureIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ConfirmationIdOut:
     await _gate_record(ctx)
-    raise _todo("A-08-T18")
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    done = await life.record_alternative(
+        ctx, confirmation_id, body.description, list(body.citation_ids)
+    )
+    return ConfirmationIdOut(id=done)
 
 
 @router.post(
@@ -358,7 +387,9 @@ async def close_confirmation(
     confirmation_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> ConfirmationIdOut:
     await _gate_record(ctx)
-    raise _todo("A-08-T18")
+    from abacus.modules.assurance import confirmations_lifecycle as life
+
+    return ConfirmationIdOut(id=await life.close(ctx, confirmation_id))
 
 
 @router.get(
