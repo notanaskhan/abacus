@@ -10,6 +10,11 @@ created: 2026-10-07
 updated: 2026-10-07
 ---
 
+> **Superseded in part by SPEC-681** (G-04-T01, DEC-5200, 2026-11-15): firm-only approval by
+> `firm_admin` or `security_admin`, one-object content scope, Decline, at most 120 minutes, US-located
+> staff for content sessions on `tax`-entitled tenants, and no emergency second-staff approval.
+> Where the two differ, SPEC-681 wins.
+
 > **Instructions for coding agents**
 > - Implement only what this spec describes. Anything not listed here is out of scope.
 > - If anything is ambiguous or contradicts an ADR, **stop** and add it to *Open questions*. Do not guess.
