@@ -22,7 +22,7 @@ from decimal import Decimal
 from typing import Annotated, Final
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Response
+from fastapi import Depends, Header, Path, Request, Response
 from pydantic import BaseModel, ConfigDict
 
 from abacus.kernel._flags import AUDITS_CONFIRMATIONS
@@ -525,15 +525,50 @@ def _receipt(view: RespondentViewOut, body: RespondentResponseIn) -> RespondentR
     status_code=201,
     errors=(409, 501),
 )
-async def submit_response(token: Token, body: RespondentResponseIn) -> RespondentReceiptOut:
+async def submit_response(
+    token: Token, body: RespondentResponseIn, request: Request
+) -> RespondentReceiptOut:
     """`confirmation.respond` (email verified): the one answer; 409 `already_answered` on a
     replay. The stub computes the fixture receipt and writes nothing; any other token answers
     404 after the floor (the expired page)."""
     started = time.monotonic()
-    view = _fixture_view(token)
-    await _pad(started)
-    if view.state == "answered":
-        raise AlreadyAnswered()
-    if view.state != "open":
+    if _fixture_mode() and fx.view(token) is not None:
+        view = _fixture_view(token)
+        await _pad(started)
+        if view.state == "answered":
+            raise AlreadyAnswered()
+        if view.state != "open":
+            raise NotFound("confirmation")
+        return _receipt(view, body)
+    # A-08-T19: a live link principal whose page credential (cookie and CSRF header) proves it.
+    from abacus.modules.assurance import confirmations_respondent as respondent
+    from abacus.modules.identity.api import credential_principal
+
+    principal = await credential_principal(
+        request.cookies.get(LINK_COOKIE_NAME), request.headers.get("X-Abacus-CSRF")
+    )
+    if principal is None or principal.purpose != LINK_PURPOSE:
+        await _pad(started)
         raise NotFound("confirmation")
-    return _receipt(view, body)
+    try:
+        receipt = await respondent.submit(
+            principal,
+            agrees=body.agrees,
+            balance=body.balances[0].amount if body.balances else None,
+            respondent_name=body.respondent_name,
+            explanation=body.explanation,
+            attachment_ids=list(body.attachment_ids),
+        )
+    except respondent.AlreadyAnswered as answered:
+        await _pad(started)
+        raise AlreadyAnswered(facts=answered.facts) from None
+    await _pad(started)
+    return RespondentReceiptOut(
+        receipt_id=receipt.receipt_id,
+        reference=receipt.reference,
+        agrees=receipt.agrees,
+        respondent_balance=receipt.respondent_balance,
+        difference=receipt.difference,
+        submitted_at=receipt.submitted_at,
+        verified_email="",
+    )

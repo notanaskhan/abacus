@@ -70,6 +70,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "confirmation.closed",
         "confirmation.reconciled",
         "confirmation.reconciliation_accepted",
+        "confirmation.responded",  # A-08-T19: the respondent's one answer
         "confirmation.second_request",
         "confirmation.sent",
         "confirmation.status_changed",
