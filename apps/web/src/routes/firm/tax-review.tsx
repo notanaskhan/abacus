@@ -278,6 +278,28 @@ export const taxBeneficiariesRoute = createRoute({
   },
 });
 
+// TXT-04 (S47, TASK-8353): the estate workpapers (706 / 709) under the return's Review.
+const EstateScreen = lazyScreen(async () => (await import("../../screens/TXT-04/live")).TXT04);
+
+export const taxEstateRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/review/estate",
+  validateSearch,
+  component: function TaxEstatePage(): JSX.Element {
+    const returnId = useParam("returnId");
+    return (
+      <Workspace tab="review" title="Estate workpapers">
+        <FeatureGate
+          flag="tax.estate_workpapers"
+          fallback={<FlagOffState flag="tax.estate_workpapers" label="Estate workpapers" />}
+        >
+          <EstateScreen returnId={returnId} />
+        </FeatureGate>
+      </Workspace>
+    );
+  },
+});
+
 export const taxReviewRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/tax-returns/$returnId/review/$section",
@@ -398,6 +420,7 @@ export const taxResidencyRoute = createRoute({
 });
 
 export const taxReviewRoutes = [
+  taxEstateRoute,
   taxBeneficiariesRoute,
   taxInstrumentRoute,
   taxTrustCalculationRoute,

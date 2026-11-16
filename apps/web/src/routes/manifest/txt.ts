@@ -21,6 +21,10 @@ export const txtScreens = {
     entry: true,
   },
   // T-07-T26: A to E on fixtures (the gallery), behind tax.estate_workpapers when live.
-  "TXT-04": { name: "Gift & estate workpapers (706 / 709)", status: "fixture", path: null },
+  "TXT-04": {
+    name: "Gift & estate workpapers (706 / 709)",
+    status: "fixture",
+    path: "/tax-returns/$returnId/review/estate", // S47: live (TASK-8353)
+  },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;
