@@ -72713,10 +72713,6 @@ export type GroupRaiseGroupMaterialityErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GroupRaiseGroupMaterialityError = GroupRaiseGroupMaterialityErrors[keyof GroupRaiseGroupMaterialityErrors];
@@ -76610,10 +76606,6 @@ export type GroupScopingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GroupScopingError = GroupScopingErrors[keyof GroupScopingErrors];
@@ -76666,10 +76658,6 @@ export type GroupExportGroupScopingErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GroupExportGroupScopingError = GroupExportGroupScopingErrors[keyof GroupExportGroupScopingErrors];
@@ -86097,10 +86085,6 @@ export type GroupEditComponentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GroupEditComponentError = GroupEditComponentErrors[keyof GroupEditComponentErrors];

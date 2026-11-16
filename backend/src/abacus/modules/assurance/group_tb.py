@@ -50,13 +50,13 @@ def _person(ctx: AuthContext, action: str) -> None:
 
 
 async def _tbs(
-    ctx: AuthContext, facts: ledger.ConsolidationFacts
+    tenant: TenantContext, facts: ledger.ConsolidationFacts
 ) -> tuple[dict[str, list[ledger.ConsolidationTbLine]], int, int]:
     """Each mapped entity's lines by its key (the consolidation entity's id), and the counts of
     entities mapped and entities in the structure."""
     by_entity = {
         tb.client_entity_id: tb.id
-        for tb in await ledger.engagement_trial_balances(ctx.tenant, facts.engagement_id)
+        for tb in await ledger.engagement_trial_balances(tenant, facts.engagement_id)
         if tb.client_entity_id is not None
     }
     found: dict[str, list[ledger.ConsolidationTbLine]] = {}
@@ -64,7 +64,7 @@ async def _tbs(
         tb_id = by_entity.get(entity.client_entity_id)
         if tb_id is None:
             continue
-        mapped = await ledger.mapped_trial_balance(ctx.tenant, facts.engagement_id, tb_id)
+        mapped = await ledger.mapped_trial_balance(tenant, facts.engagement_id, tb_id)
         if mapped is None or mapped.unmapped:
             continue
         found[str(entity.id)] = [
@@ -110,9 +110,15 @@ async def levels(
     ctx: AuthContext, work_item_id: UUID, consolidation_id: UUID
 ) -> tuple[list[ledger.ConsolidationLevel], int, int]:
     """Every level the structure has, computed by the engine (the route authorised the read)."""
-    facts = await _facts(ctx, work_item_id, consolidation_id)
-    tbs, mapped, accounts = await _tbs(ctx, facts)
-    posted = await _posted(ctx.tenant, consolidation_id)
+    return await levels_for(ctx.tenant, await _facts(ctx, work_item_id, consolidation_id))
+
+
+async def levels_for(
+    tenant: TenantContext, facts: ledger.ConsolidationFacts
+) -> tuple[list[ledger.ConsolidationLevel], int, int]:
+    """`levels` for an owner already scoped to the consolidation (AUD-34's card provider)."""
+    tbs, mapped, accounts = await _tbs(tenant, facts)
+    posted = await _posted(tenant, facts.id)
     out: list[ledger.ConsolidationLevel] = []
     for level in (1, 2):
         members = [m for m in _members(facts, level) if m in tbs]

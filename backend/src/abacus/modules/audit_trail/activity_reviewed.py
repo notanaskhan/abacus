@@ -50,6 +50,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "trust_expense.created",
         # reviewed 2026-11-15 (S46): A-09-T13 consolidations, identifiers and counts only
         "connection.coverage_extended",
+        "component.edited",  # A-09-T23 (DEC-5330): AUD-34's planned work and component PM
         "consolidation.created",
         "consolidation.discarded",
         "consolidation.edited",
