@@ -21,8 +21,9 @@ The Connect write path behind WB-10's Enable and WB-11's Reconnect and Disconnec
 - Rollback: the routes return to the 501 stub; no migration.
 
 ## Partly built
-- OQ-5's suspension of a disabled firm app's client connections needs a `connections` suspended status (red migration, follow-up); the disable reports 0.
+- OQ-5's suspension: built in TASK-8112 (0902, DEC-5083) with `needs_attention` + `firm_app_disabled`, no new status.
 - AC-14's Aug 17 replay and AC-27 to AC-30 (health monitor, admission) are W-01-T13 and later.
 
 ## Progress log
 - 2026-11-15: built; `tests/integration/test_w01t08_connect.py` (9) green; the W-01 AC suite's AC-4, AC-12, AC-26 strict xfails removed (they pass). AC-7's "both admins reach connect" needs the catalogue content in the security database: W-01-T10.
+- 2026-11-16: AC-25 suspension and the POR-16 firm-app refusal built in TASK-8112 (#2115).

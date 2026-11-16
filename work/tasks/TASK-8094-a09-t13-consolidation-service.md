@@ -40,3 +40,4 @@ Tests: `tests/unit/ledger/test_a09t13_consolidation_rules.py` (10 pass);
 
 ## Progress log
 - `2026-11-15` — Built (DEC-5070).
+- `2026-11-16` — Rechecked: the deterministic structure proposal (DV-2) reads OneWorld parent-subsidiary data, which arrives with A-09-T18 (client entities hold no hierarchy); lock, reopen, level TBs and the export are A-09-T19's. The 501s now name those rows (#2116).
