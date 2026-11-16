@@ -71994,10 +71994,6 @@ export type GroupBulkUploadErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GroupBulkUploadError = GroupBulkUploadErrors[keyof GroupBulkUploadErrors];
@@ -72324,10 +72320,6 @@ export type GroupPullAllErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GroupPullAllError = GroupPullAllErrors[keyof GroupPullAllErrors];

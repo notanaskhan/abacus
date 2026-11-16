@@ -8,12 +8,13 @@ connections but integrations and the portal (BOUND-002). Unregistered, nothing i
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from decimal import Decimal
 from typing import Final
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 
 Covers = Callable[[TenantContext, UUID, UUID], Awaitable[bool]]
 Extend = Callable[[TenantContext, UUID, Sequence[UUID]], Awaitable[int]]
@@ -42,3 +43,39 @@ async def cover_entities(
     if not _EXTEND:
         raise NotFound("connection")
     return await _EXTEND[0](tenant, connection_id, client_entity_ids)
+
+
+# --- A-09-T18 rest (DEC-5329): a group's trial balances by subsidiary ----------------------------
+# (account code, account name, debit, credit), as the source gives them; client content.
+TbRows = Sequence[tuple[str, str, Decimal, Decimal]]
+TbSplit = Callable[[bytes], Mapping[str, TbRows]]
+# Each subsidiary's current trial balance, or None when its token is refused (never retried).
+GroupPull = Callable[[], Sequence[tuple[str, TbRows | None]]]
+_SPLIT: Final[list[TbSplit]] = []
+_PULL: Final[list[GroupPull]] = []
+
+
+class TbSplitRefused(DomainInvalid):
+    code = "tb_split_refused"
+
+
+def register_group_tb_sources(split: TbSplit, pull: GroupPull) -> None:
+    """connections registers NetSuite's CSV splitter and the OneWorld pull (a fake on synthetic
+    tenants until a live connector exists, DV-1)."""
+    _SPLIT[:] = [split]
+    _PULL[:] = [pull]
+
+
+def split_tb_by_subsidiary(data: bytes) -> Mapping[str, TbRows]:
+    if not _SPLIT:
+        raise NotFound("tb_splitter")
+    try:
+        return _SPLIT[0](data)
+    except ValueError as refused:  # the splitter's own refusal: a header, an amount, a balance
+        raise TbSplitRefused(facts={"reason": str(refused)[:40]}) from None
+
+
+def pull_group_tbs() -> Sequence[tuple[str, TbRows | None]]:
+    if not _PULL:
+        raise NotFound("group_connector")
+    return _PULL[0]()

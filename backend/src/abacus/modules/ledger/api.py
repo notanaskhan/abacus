@@ -410,6 +410,7 @@ __all__ = [
     "mapping_set_of",
     "mapping_view",
     "mark_not_needed",
+    "mark_slot_needs_reauth",
     "month_bounds",
     "month_register_snapshot",
     "month_tie",
@@ -481,6 +482,7 @@ from abacus.modules.ledger.compute.consolidation import (  # noqa: E402
 )
 from abacus.modules.ledger.compute.consolidation import consolidate as consolidate  # noqa: E402
 from abacus.modules.ledger.consolidation import lock as lock_consolidation  # noqa: E402
+from abacus.modules.ledger.consolidation import mark_slot_needs_reauth  # noqa: E402
 from abacus.modules.ledger.consolidation import reopen as reopen_consolidation  # noqa: E402
 from abacus.modules.ledger.consolidation_xlsx import (  # noqa: E402
     render_levels as render_consolidation_levels,

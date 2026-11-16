@@ -17,10 +17,10 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Any, Literal, cast
+from typing import Annotated, Any, Final, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Response
+from fastapi import Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._statuses import (
@@ -638,18 +638,35 @@ async def group_mark_not_needed(
     return await svc.not_needed(ctx, work_item_id, consolidation_id, tb_id, body)
 
 
+_BULK_MAX: Final = 20 * 1024 * 1024  # a NetSuite TB by subsidiary export
+
+
+class BulkTooLarge(DomainInvalid):
+    code = "upload_too_large"
+
+
 @router.post(
     f"{_C}/bulk-upload",
     action="consolidation.edit",
     response_model=ConsolidationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_bulk_upload(
-    work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
+    work_item_id: UUID, consolidation_id: UUID, request: Request, ctx: Ctx, _key: IdempotencyKey
 ) -> ConsolidationOut:
-    """A NetSuite "TB by subsidiary" CSV split into one snapshot per covered entity."""
+    """A NetSuite "TB by subsidiary" CSV split into one snapshot per covered entity (the raw
+    body; 422 `subsidiary_unknown` naming the position of an unknown one, nothing stored)."""
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T18")
+    from abacus.modules.assurance import group_consolidation as svc
+    from abacus.modules.assurance import group_pull
+
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > _BULK_MAX:
+            raise BulkTooLarge
+    await group_pull.bulk_upload(ctx, work_item_id, consolidation_id, bytes(data))
+    return await svc.get(ctx, work_item_id, consolidation_id)
 
 
 @router.post(
@@ -657,14 +674,18 @@ async def group_bulk_upload(
     action="consolidation.edit",
     response_model=GroupRunRefOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def group_pull_all(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
 ) -> GroupRunRefOut:
     """`ConsolidationPullAll` (synthetic tenants until a live OneWorld connector exists, DV-1)."""
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T18")
+    from abacus.modules.assurance import group_pull
+
+    return GroupRunRefOut(
+        workflow_id=await group_pull.start_pull_all(ctx, work_item_id, consolidation_id)
+    )
 
 
 @router.post(

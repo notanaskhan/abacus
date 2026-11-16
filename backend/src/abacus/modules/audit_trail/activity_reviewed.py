@@ -56,6 +56,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "consolidation.finalized",
         "consolidation.locked",  # A-09-T19 (DEC-5328): AC-4.5's lock and reopen
         "consolidation.reopened",
+        "consolidation.slot_needs_reauth",  # A-09-T18 (DEC-5329): a pull's refused token
         "consolidation.structure_saved",
         "consolidation.trial_balance_attached",
         "consolidation.trial_balance_not_needed",
