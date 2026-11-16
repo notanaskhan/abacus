@@ -597,7 +597,7 @@ async def test_m2_switching_off_closes_pending_requests_and_nothing_pending_is_g
     ctx = _security_admin(firm, felix, membership)
     reason = "Investigating an integration settings question for the firm"
     staff = Staff(uuid.uuid4(), "staff-probe", datetime.now(UTC))
-    pending = await support.request_session(staff, firm, reason, "metadata", 60, False)
+    pending = await support.request_session(staff, firm, reason, "metadata", 60)
     await security_policies.put_support_access(ctx, allow=False, version=0)
     closed = await seed.value("SELECT status FROM support_sessions WHERE id = $1", pending.id)
     assert closed == "revoked"
@@ -611,7 +611,7 @@ async def test_m2_switching_off_closes_pending_requests_and_nothing_pending_is_g
             "SELECT id FROM memberships WHERE tenant_id = $1 AND user_id = $2", other, grace
         ),
     )
-    waiting = await support.request_session(staff, other, reason, "metadata", 60, True)
+    waiting = await support.request_session(staff, other, reason, "metadata", 60)
     await seed.as_actor(
         other,
         ("human", str(grace)),
@@ -622,6 +622,5 @@ async def test_m2_switching_off_closes_pending_requests_and_nothing_pending_is_g
     )
     with pytest.raises(SupportRequestsDisabled):
         await support.approve_session(_security_admin(other, grace, grace_membership), waiting.id)
-    second = Staff(uuid.uuid4(), "staff-second", datetime.now(UTC))
-    with pytest.raises(SupportRequestsDisabled):
-        await support.emergency_approve(second, other, waiting.id)
+    # G-04-T05 (SPEC-681 OQ-1, DEC-5200): no staff member can approve any request at all.
+    assert not hasattr(support, "emergency_approve")

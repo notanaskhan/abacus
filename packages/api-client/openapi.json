@@ -109008,6 +109008,32 @@
         "title": "ScopeRef",
         "type": "object"
       },
+      "ScopeRefIn": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "work_item",
+              "engagement"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "ScopeRefIn",
+        "type": "object"
+      },
       "ScoreRunOut": {
         "properties": {
           "je_test_id": {
@@ -122205,18 +122231,25 @@
       "SupportSessionIn": {
         "additionalProperties": false,
         "properties": {
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Conversation Id"
+          },
           "duration_minutes": {
             "cls": "internal",
-            "maximum": 240.0,
+            "maximum": 120.0,
             "minimum": 1.0,
             "title": "Duration Minutes",
             "type": "integer"
-          },
-          "emergency": {
-            "cls": "internal",
-            "default": false,
-            "title": "Emergency",
-            "type": "boolean"
           },
           "firm_id": {
             "cls": "internal",
@@ -122235,10 +122268,21 @@
             "cls": "internal",
             "enum": [
               "metadata",
-              "content"
+              "content",
+              "integration_settings"
             ],
             "title": "Scope",
             "type": "string"
+          },
+          "scope_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScopeRefIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -122269,11 +122313,50 @@
             "cls": "internal",
             "title": "Approved By Kind"
           },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Conversation Id"
+          },
           "created_at": {
             "cls": "internal",
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "declined_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Declined At"
+          },
+          "declined_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Declined By"
           },
           "duration_minutes": {
             "cls": "internal",
@@ -122331,10 +122414,45 @@
             "cls": "internal",
             "enum": [
               "metadata",
-              "content"
+              "content",
+              "integration_settings"
             ],
             "title": "Scope",
             "type": "string"
+          },
+          "scope_label": {
+            "cls": "confidential",
+            "title": "Scope Label",
+            "type": "string"
+          },
+          "scope_ref_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Scope Ref Id"
+          },
+          "scope_ref_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "work_item",
+                  "engagement"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Scope Ref Kind"
           },
           "staff_id": {
             "cls": "internal",
@@ -122346,6 +122464,11 @@
             "cls": "internal",
             "title": "Staff Subject",
             "type": "string"
+          },
+          "staff_us_located": {
+            "cls": "internal",
+            "title": "Staff Us Located",
+            "type": "boolean"
           },
           "starts_at": {
             "anyOf": [
@@ -122365,6 +122488,7 @@
             "enum": [
               "requested",
               "active",
+              "declined",
               "ended",
               "revoked",
               "expired"
@@ -122388,7 +122512,14 @@
           "ended_at",
           "acknowledged",
           "created_at",
-          "requests"
+          "requests",
+          "scope_ref_kind",
+          "scope_ref_id",
+          "scope_label",
+          "conversation_id",
+          "declined_by",
+          "declined_at",
+          "staff_us_located"
         ],
         "title": "SupportSessionOut",
         "type": "object"
@@ -313670,6 +313801,123 @@
         "x-abacus-action": "support_session.manage"
       }
     },
+    "/v1/support-sessions/{session_id}/decline": {
+      "post": {
+        "description": "SPEC-681 AC-19: a firm admin or IT/Security declines a staff request.",
+        "operationId": "decline_support_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Decline Support Session Route",
+        "tags": [
+          "support"
+        ],
+        "x-abacus-action": "support_session.decline"
+      }
+    },
     "/v1/support-sessions/{session_id}/revoke": {
       "post": {
         "operationId": "revoke_support_session",
@@ -314123,116 +314371,6 @@
           }
         },
         "summary": "Request Support Session Route",
-        "tags": [
-          "support"
-        ],
-        "x-abacus-action": "staff"
-      }
-    },
-    "/v1/support/sessions/{session_id}/approve": {
-      "post": {
-        "operationId": "emergency_approve",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "session_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Session Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FirmRefIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupportSessionOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not authenticated"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict with the resource's state"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorOut"
-                }
-              }
-            },
-            "description": "Invalid request"
-          }
-        },
-        "summary": "Emergency Approve Route",
         "tags": [
           "support"
         ],

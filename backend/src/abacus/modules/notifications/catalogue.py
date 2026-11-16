@@ -62,6 +62,18 @@ async def _admins(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return await firm_admins(tenant_id)
 
 
+async def _approvers(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """G-04-T05 (SPEC-681 AC-14): the firm's support-session approvers, firm admins and
+    IT/Security (DEC-72)."""
+    return sorted(set(await firm_admins(tenant_id)) | set(await security_admins(tenant_id)))
+
+
+async def _other_approvers(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """G-04-T05 (SPEC-681 AC-19): the approvers other than the one who declined."""
+    declined_by = _uuid(payload, "declined_by")
+    return [user for user in await _approvers(tenant_id, payload) if user != declined_by]
+
+
 async def _consent_requester(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     """T-01-T16: the person who requested the consent and the firm admins (client service)."""
     recipients = set(await firm_admins(tenant_id))
@@ -377,7 +389,11 @@ CATALOGUE: Final[dict[str, Kind]] = {
         "rules_table_updated", _admins, "reference_set_version", "version_id", None
     ),
     "support_session.requested": Kind(
-        "support_session.requested", _admins, "support_session", "session_id", None
+        "support_session.requested", _approvers, "support_session", "session_id", None
+    ),
+    # G-04-T05 (SPEC-681 AC-19): in-app to the firm's other approvers.
+    "support_session.declined": Kind(
+        "support_session_declined", _other_approvers, "support_session", "session_id", None
     ),
     "support_session.emergency_approved": Kind(
         "support_session.emergency_approved", _admins, "support_session", "session_id", None
@@ -684,6 +700,7 @@ TEMPLATES: Final[dict[str, str]] = {
     ),
     "reference_set.published": "A rules table Accrued maintains was updated. Due dates follow it.",
     "support_session.requested": "Platform support asked for access to your firm.",
+    "support_session.declined": "A support session request to your firm was declined.",
     "support_session.emergency_approved": (
         "Platform support opened emergency access to your firm. Please review it."
     ),
@@ -822,6 +839,7 @@ TEMPLATES: Final[dict[str, str]] = {
 # owners add facts and pending resolvers through `notifications.api` as their screens need them.
 _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("support_session.requested", "system", "LifeBuoy"),
+    NotificationKind("support_session_declined", "system", "LifeBuoy"),  # G-04-T05
     # T-01-T16: a signed §7216 consent 30 days from expiry; K-02-T12: a platform rules table.
     NotificationKind("consent_expiring", "deadline", "CalendarClock"),
     NotificationKind("rules_table_updated", "system", "BookOpen"),

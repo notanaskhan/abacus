@@ -33,6 +33,11 @@ Module = Literal[
     # C-01-T02: CLS-01 to CLS-10 and POR-11, the CAS close engine (ADR P-28; DEC-55). Named
     # `cas_closes`, not `closes`, so the `closes.*` rollout flags stay legal (DEC-5015).
     "cas_closes",
+    # G-04-T04 (0920, OQ-6): the four service lines, recorded and shown, not enforced in 2028.
+    "tax",
+    "audit_assurance",
+    "client_accounting",
+    "advisory",
 ]
 MODULES: Final = frozenset(get_args(Module))
 # A-05-T49 (ADR P-28; chapter 10 §10.9.4): modules whose engines a CPA signs off. For a firm that

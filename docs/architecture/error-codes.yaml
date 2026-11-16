@@ -3573,13 +3573,13 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.identity.support.SupportSessionConflict
-    summary: Not in a state that allows this (already approved, ended, or one already open), or a staff
-      member approving their own request.
+    summary: Not in a state that allows this (already approved, declined, ended, or one already open).
   support_session_invalid:
     status: 422
     raised_by:
     - abacus.modules.identity.support.SupportSessionInvalid
-    summary: A reason of 20 to 1,000 characters, a scope, and 1 to 240 minutes (60 in an emergency).
+    summary: A reason of 20 to 1,000 characters, a scope, 1 to 120 minutes, and one object for a content
+      session (none for any other scope).
   system_resolved_only:
     status: 409
     raised_by:

@@ -116,6 +116,9 @@ Layer = Literal[
     "condition",
     "attribute",
     "delegation",
+    # G-04-T05 (SPEC-681 AC-21): a content support session outside its one object; answered as
+    # if it did not exist, like a wall.
+    "support_scope",
 ]
 
 EngagementColumn = ColumnElement[UUID] | QueryableAttribute[UUID]
@@ -543,6 +546,9 @@ async def authorise(
     # 1. Tenancy.
     if resource.tenant_id != ctx.tenant_id:
         raise _deny(ctx, action, "tenancy")
+    # 1b. A content support session's one object (SPEC-681 AC-21): fail closed.
+    if isinstance(ctx, AuthContext) and not in_support_scope(ctx, resource):
+        raise _deny(ctx, action, "support_scope")
     # 2a. Ethical walls, before any role (ADR-026): the person acting (a user, the person a
     # system run or agent acts for) must not be walled off from the engagement's client.
     if await _walled(ctx, resource):
@@ -1002,11 +1008,33 @@ def _not_walled(ctx: Actor, engagement_id: EngagementColumn) -> ColumnElement[bo
     return ~walls.correlate_except(ethical_walls).exists()
 
 
+def in_support_scope(ctx: AuthContext, resource: Resource) -> bool:
+    """Whether a content support session's one object covers `resource` (SPEC-681 AC-21). A
+    session without one (metadata, integration settings, or a pre-v2 content session) is not
+    narrowed here. Firm-level resources stay the matrix's (metadata); a client-level resource,
+    another engagement, or any engagement-level resource but the scoped work item is outside."""
+    if ctx.support_scope is None:
+        return True
+    kind, scoped = ctx.support_scope
+    if resource.engagement_id is None:
+        return resource.client_id is None
+    if kind == "engagement":
+        return resource.engagement_id == scoped
+    return resource.work_item_id == scoped
+
+
 def visible(ctx: Actor, action: str, engagement_id: EngagementColumn) -> ColumnElement[bool]:
     """A filter for list queries: rows whose engagement the actor may `action` (a read action),
     minus walled clients. Agrees with `authorise` for every role. Apply it: building it counts as
     the route's check."""
     by_role = _visible_by_role(ctx, action, engagement_id)
+    if isinstance(ctx, AuthContext) and ctx.support_scope is not None:
+        # SPEC-681 AC-21: an engagement session lists that engagement's rows only; a work-item
+        # session lists nothing (it opens its one item by id; siblings would leak).
+        kind, scoped = ctx.support_scope
+        if kind != "engagement":
+            return false()
+        by_role = and_(by_role, engagement_id == scoped)
     if isinstance(ctx, AgentContext):
         return by_role  # the initiator's filter, inside, already excludes their walls
     return and_(by_role, _not_walled(ctx, engagement_id))
@@ -1083,6 +1111,10 @@ def visible_scope(
     if scope in ("engagement", "work_item"):
         return visible(ctx, action, column)
     if scope in ("client", "client_entity"):
+        if isinstance(ctx, AuthContext) and ctx.support_scope is not None:
+            _rule(action)
+            _record(action)
+            return false()  # SPEC-681 AC-21: no client lists in a one-object session
         rule = _rule(action)
         if not rule.reads:
             raise ValueError(f"visible() filters reads; {action!r} is not a read action")

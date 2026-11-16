@@ -25,6 +25,15 @@ class SupportSessionRequested(DomainEvent):
     session_id: Annotated[UUID, classified("internal")]
 
 
+class SupportSessionDeclined(DomainEvent):
+    """The firm declined a staff request (SPEC-681 AC-19): the firm's other approvers know."""
+
+    event_type: ClassVar[str] = "support_session.declined"
+
+    session_id: Annotated[UUID, classified("internal")]
+    declined_by: Annotated[UUID, classified("internal")]
+
+
 class SupportSessionEmergencyApproved(DomainEvent):
     """A second staff member approved an emergency session: the firm must know now."""
 

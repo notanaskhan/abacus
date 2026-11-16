@@ -46,6 +46,11 @@ class VerifiedIdentity:
     # P-10-T26 (DEC-3141): when the token expires (`exp`), so a stream closes before it does.
     # Not part of who the identity is: two verifications of one person compare equal.
     expires_at: datetime | None = field(default=None, compare=False)
+    # G-04-T05 (SPEC-681 AC-23; DEC-5201): staff issuer only, from the staff directory. The
+    # console roles (`platform_admin`, `platform_support_desk`) and the US-location attestation
+    # a content session on a TRI tenant needs (D-OPS-21). Firm tokens never carry them.
+    platform_roles: frozenset[str] = field(default=frozenset(), compare=False)
+    us_located: bool = field(default=False, compare=False)
 
 
 class TokenVerifier(Protocol):
@@ -111,7 +116,20 @@ class JwtVerifier:
             _mfa_at(claims),
             _verified_email(claims),
             expires_at=datetime.fromtimestamp(expires, UTC),
+            platform_roles=_platform_roles(claims),
+            us_located=claims.get("us_located") is True,
         )
+
+
+PLATFORM_ROLES: frozenset[str] = frozenset({"platform_admin", "platform_support_desk"})
+
+
+def _platform_roles(claims: dict[str, object]) -> frozenset[str]:
+    """The console roles a staff token names; anything unknown or malformed names none."""
+    roles = claims.get("platform_roles")
+    if not isinstance(roles, list):
+        return frozenset()
+    return frozenset(r for r in cast(list[object], roles) if isinstance(r, str)) & PLATFORM_ROLES
 
 
 def _verified_email(claims: dict[str, object]) -> str | None:
