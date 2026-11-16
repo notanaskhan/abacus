@@ -30,6 +30,7 @@ import { TestingWorkspace } from "./AUD-12"; // A-08-T27: the artboards on the A
 import { ComponentAuditors } from "./AUD-35"; // A-09-T22: the component auditors artboards
 import { Beneficiaries } from "./TXT-03"; // T-07-T25: beneficiaries, K-1s and the election
 import { EstateWorkpapers } from "./TXT-04"; // T-07-T26: gift and estate workpapers
+import { IntegrationDrawer } from "./WB-11"; // W-01-T16/T17: the integration detail drawer
 import { FilesPage } from "./FIL-01";
 import {
   FIL01_STATES,
@@ -2614,6 +2615,10 @@ function Aud32Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-32", { title: "Consolidation setup", Component: Aud32Artboard });
+registerScreen("WB-11", {
+  title: "Integration detail drawer — CCH Axcess Tax",
+  Component: ({ params }: { params: FixtureParams }) => <IntegrationDrawer st={params.st} />,
+});
 registerScreen("TXT-04", {
   title: "Gift & estate workpapers (706 / 709)",
   Component: ({ params }: { params: FixtureParams }) => <EstateWorkpapers st={params.st} />,
