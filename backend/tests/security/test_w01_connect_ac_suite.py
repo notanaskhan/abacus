@@ -14,13 +14,37 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
-from tests.security.support import Net, Person
+from tests.security.support import Migrated, Net, Person
 
+from abacus.kernel.config import settings
 from abacus.modules.integrations.adapters import registered_keys  # W-01-T07
+from abacus_tools import integration_catalog as ops
 
-pytestmark = pytest.mark.usefixtures("engines")
+pytestmark = pytest.mark.usefixtures("engines", "catalogue")
+
+DOCUMENT = Path(ops.__file__).resolve().parent / "catalogue" / "connect_v2.yaml"
+
+
+@pytest.fixture
+async def catalogue(migrated_db: Migrated, monkeypatch: pytest.MonkeyPatch) -> None:
+    """W-01-T10: the reviewed catalogue content, imported as the operator would (idempotent),
+    with the Connect fakes on for the suite's synthetic firms (W-01-T09)."""
+    monkeypatch.setenv("ABACUS_INTEGRATIONS_FAKE_ADAPTERS", "true")
+    settings.cache_clear()
+    document, sha = ops.read_document_v2(DOCUMENT)
+    result = await ops.import_v2(
+        migrated_db.app_url.replace("abacus_app:abacusapp", "abacus_ops:abacusops", 1),
+        document,
+        sha,
+        "w01-ac-suite",
+        "W-01 AC suite: catalogue content v1",
+        environment="test",
+        dry_run=False,
+    )
+    assert result.matches_plan
 
 
 @dataclass(frozen=True)
@@ -110,7 +134,6 @@ async def test_ac1_the_catalogue_reads_53_9_38_6(net: Net) -> None:
     }
 
 
-@pytest.mark.xfail(strict=True, reason="501 stub until W-01-T07/T08 (TASK-8064)")
 async def test_ac2_filters_keep_catalogue_total_category_counts(net: Net) -> None:
     firm = await _firm(net)
     response = await net.call("GET", "/v1/integrations/catalog?q=Karbon", firm.felix)
@@ -136,7 +159,6 @@ async def test_ac12_a_replayed_or_foreign_state_is_invalid_state(net: Net) -> No
     assert status == 409
 
 
-@pytest.mark.xfail(strict=True, reason="501 stub until W-01-T07/T08 (TASK-8064)")
 async def test_ac24_a_mismatched_name_is_422_confirm_name_mismatch(net: Net) -> None:
     firm = await _firm(net)
     status = await _post(
@@ -153,7 +175,6 @@ async def test_ac26_personal_disconnect_of_anyone_elses_row_is_404(net: Net) -> 
     assert await _post(firm, "/v1/me/integrations/box/disconnect", firm.hannah) == 404
 
 
-@pytest.mark.xfail(strict=True, reason="501 stub until W-01-T07/T08 (TASK-8064)")
 async def test_ac31_notify_me_is_idempotent(net: Net) -> None:
     firm = await _firm(net)
     first = await _post(firm, "/v1/integrations/adp/interest", firm.hannah)

@@ -26,6 +26,7 @@ from typing import Annotated, Any, Final, Literal, Self, cast
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel.classification import classified
+from abacus.modules.integrations.capabilities import write_capability
 from abacus.modules.integrations.catalog_load import ConsentCopyIn, ScopesIn, normalised
 from abacus.modules.integrations.ports import CatalogCategory, Key
 
@@ -72,6 +73,10 @@ class CatalogRowV2In(BaseModel):
     auth_line: Annotated[str | None, Field(max_length=120), Public] = None
     published_at: Annotated[datetime | None, Public] = None
     prerequisite: Annotated[PrerequisiteIn | None, Public] = None
+    # W-01-T10 (OQ-4, AC-21): the declared writes a tile names; each is a write-capability
+    # registry key, or the document does not validate. Checked, never stored: WB-11 joins writes
+    # from the registry itself.
+    writes: Annotated[list[Key], Field(max_length=8), Public] = []
 
     @model_validator(mode="after")
     def _rules(self) -> Self:
@@ -93,10 +98,15 @@ class CatalogRowV2In(BaseModel):
         for text in (self.name, self.description or "", self.auth_line or ""):
             if _BANNED.search(text):
                 raise ValueError("no payment copy or vendor branding on a tile (AC-5)")
+        unknown = [w for w in self.writes if write_capability(w) is None]
+        if unknown:
+            raise ValueError("a declared write names a write-capability registry entry (OQ-4)")
+        if "declared write" in (self.auth_line or "") and not self.writes:
+            raise ValueError("an auth line that names a declared write names its capability")
         return self
 
     def as_row(self) -> dict[str, Any]:  # Any: JSON for the definer
-        return self.model_dump(mode="json")
+        return self.model_dump(mode="json", exclude={"writes"})
 
 
 class CatalogDocumentV2(BaseModel):
