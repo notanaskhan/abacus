@@ -624,6 +624,16 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.ConsentVersionStale
     summary: 'The consent copy shown is older than the catalogue''s: read the cards again.'
+  consolidation_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.consolidation.VersionStale
+    summary: The consolidation changed since it was read (If-Match).
+  consolidation_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.consolidation.ConsolidationNotDraft
+    summary: Only a draft consolidation changes.
   contact_bound:
     status: 409
     raised_by:
@@ -1008,6 +1018,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.group_contract.EntityAlreadyCovered
+    - abacus.modules.connections.coverage.EntityAlreadyCovered
   entity_exists:
     status: 409
     raised_by:
@@ -3294,6 +3305,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.SnapshotEntityMismatch
+  snapshot_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.ledger.consolidation.SnapshotMismatch
+    summary: The snapshot is not the entity's, or not for the slot's period.
   snooze_in_past:
     status: 422
     raised_by:
@@ -3481,8 +3497,9 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.group_contract.StructureInvalid
+    - abacus.modules.ledger.consolidation.StructureInvalid
     - abacus.modules.tax.allocation_structure.StructureInvalid
-    summary: A fourth tier, ownership other than 100%, or a currency other than USD (X-06).
+    summary: A fourth tier, a second root, a parent missing or not one level up (X-06).
   structure_not_pending:
     status: 409
     raised_by:
@@ -3731,6 +3748,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.group_contract.TrialBalanceMissing
+    - abacus.modules.ledger.consolidation.TrialBalanceMissing
   trust_report_missing:
     status: 409
     raised_by:

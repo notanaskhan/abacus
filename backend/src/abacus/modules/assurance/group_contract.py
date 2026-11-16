@@ -8,7 +8,8 @@ scoping, decision kinds, component auditors, instructions, deliverables).
 and adjustments services when they land (A-09-T13, T10). Every route has one matrix action and
 answers, in order: a client principal 404; the action on the work item's engagement (walls 404,
 independence 403); 404 without the firm's `group_audit` entitlement; then 501 naming its task.
-The rollout flags `ledger.consolidation` and `assurance.group_audit` join the gate in A-09-T09.
+The rollout flags `ledger.consolidation` and `assurance.group_audit` join the gate (A-09-T09,
+T13): the capability `group_audit_on` is the entitlement and both flags.
 Every figure is code's (ADR-050); nothing is ever posted to a client system (ADR-040).
 """
 
@@ -34,7 +35,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
-from abacus.modules.platform.api import entitlement
+from abacus.modules.platform.api import group_audit_on
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -500,15 +501,15 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
         raise NotFound("work_item")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, ref.resource())
-    if await entitlement(ctx.tenant, ENTITLEMENT) is None:
+    if not await group_audit_on(ctx.tenant):
         raise NotFound(ENTITLEMENT)
 
 
 async def _gate_record(ctx: AuthContext) -> None:
-    """A record's own path: client 404 and the entitlement; the service authorises."""
+    """A record's own path: client 404 and the capability; the service authorises."""
     if ctx.client:
         raise NotFound("group_audit")
-    if await entitlement(ctx.tenant, ENTITLEMENT) is None:
+    if not await group_audit_on(ctx.tenant):
         raise NotFound(ENTITLEMENT)
 
 
@@ -527,7 +528,12 @@ async def group_create_consolidation(
     work_item_id: UUID, body: ConsolidationIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ConsolidationOut:
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T13")
+    from abacus.modules.assurance import group_consolidation as svc
+
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    if engagement_id is None:
+        raise NotFound("work_item")
+    return await svc.create(ctx, work_item_id, engagement_id, body, _key)
 
 
 @router.get(_C, action="consolidation.read", response_model=ConsolidationOut, errors=(501,))
@@ -535,7 +541,9 @@ async def group_get_consolidation(
     work_item_id: UUID, consolidation_id: UUID, ctx: Ctx
 ) -> ConsolidationOut:
     await _gate(ctx, work_item_id, "consolidation.read")
-    raise _todo("A-09-T13")
+    from abacus.modules.assurance import group_consolidation as svc
+
+    return await svc.get(ctx, work_item_id, consolidation_id)
 
 
 @router.patch(_C, action="consolidation.edit", response_model=ConsolidationOut, errors=(409, 501))
@@ -543,7 +551,9 @@ async def group_edit_consolidation(
     work_item_id: UUID, consolidation_id: UUID, body: ConsolidationIn, ctx: Ctx, _if: IfMatch
 ) -> ConsolidationOut:
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T13")
+    from abacus.modules.assurance import group_consolidation as svc
+
+    return await svc.edit(ctx, work_item_id, consolidation_id, body, _if)
 
 
 @router.delete(_C, action="consolidation.edit", response_model=ConsolidationOut, errors=(409, 501))
@@ -552,7 +562,9 @@ async def group_discard_consolidation(
 ) -> ConsolidationOut:
     """Discard a Draft: status `discarded`, audited, never a hard delete."""
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T13")
+    from abacus.modules.assurance import group_consolidation as svc
+
+    return await svc.discard(ctx, work_item_id, consolidation_id)
 
 
 @router.put(
@@ -566,7 +578,9 @@ async def group_save_structure(
 ) -> ConsolidationOut:
     """422 `structure_invalid` for a fourth tier or ownership other than 100 (X-06)."""
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T13")
+    from abacus.modules.assurance import group_consolidation as svc
+
+    return await svc.save_structure(ctx, work_item_id, consolidation_id, body, _if)
 
 
 @router.post(
@@ -600,7 +614,9 @@ async def group_attach_trial_balance(
     _key: IdempotencyKey,
 ) -> TrialBalanceSlotOut:
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T13")
+    from abacus.modules.assurance import group_consolidation as svc
+
+    return await svc.attach(ctx, work_item_id, consolidation_id, entity_id, body)
 
 
 @router.post(
@@ -613,7 +629,9 @@ async def group_mark_not_needed(
     work_item_id: UUID, consolidation_id: UUID, tb_id: UUID, body: TbNotNeededIn, ctx: Ctx
 ) -> TrialBalanceSlotOut:
     await _gate(ctx, work_item_id, "consolidation.edit")
-    raise _todo("A-09-T13")
+    from abacus.modules.assurance import group_consolidation as svc
+
+    return await svc.not_needed(ctx, work_item_id, consolidation_id, tb_id, body)
 
 
 @router.post(
@@ -660,7 +678,9 @@ async def group_finalize(
 ) -> ConsolidationOut:
     """A manager's or EP's human act; 409 `trial_balance_missing` naming the slot."""
     await _gate(ctx, work_item_id, "consolidation.finalize")
-    raise _todo("A-09-T13")
+    from abacus.modules.assurance import group_consolidation as svc
+
+    return await svc.finalize(ctx, work_item_id, consolidation_id, body, _key)
 
 
 @router.post(
