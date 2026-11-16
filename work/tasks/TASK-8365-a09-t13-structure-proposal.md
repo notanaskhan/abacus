@@ -69,6 +69,7 @@ suggestion). Decided as DEC-5340.
   Local-only failures: WeasyPrint's `libgobject` (as S46/S47); `test_q03t235_audit_labels` fails
   on `confirmation_follow_up:platform` from S47's A-08 rows (main, not this change).
 - Security review (red: agents): inline, as listed in the PR. No finding left open.
+- 2026-11-17: Ayush kept the citation exemption for code-run suggestions (`code#computed`) as built.
 - Not built: AUD-32's live screen wiring (fixture mode only, as before); a live OneWorld
   connector (DV-1).
 
