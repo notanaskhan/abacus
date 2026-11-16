@@ -28,6 +28,8 @@ _ENTITY: Final[dict[str, TextClause]] = {
         "JOIN close_plan_versions v ON v.id = r.version_id "
         "JOIN close_plans p ON p.id = v.plan_id WHERE r.id = ANY(:ids)"
     ),
+    # C-01-T21: an arrangement belongs to the client entity it schedules.
+    "arrangement": text("SELECT id, client_entity_id FROM arrangements WHERE id = ANY(:ids)"),
 }
 AUDIT_KINDS: Final = frozenset(_ENGAGEMENT)
 ENTITY_KINDS: Final = frozenset(_ENTITY)
