@@ -506,7 +506,20 @@ async def resolve_import(
         from abacus.modules.tax.entity_reconciliation import raise_differences
 
         await raise_differences(ctx, cast(UUID, row.return_id))
+    if not rejecting and await _is_fiduciary(ctx, cast(UUID, row.return_id)):
+        # T-07-T19: a CCH 1041 import reconciled to the fiduciary computation, by code.
+        from abacus.modules.tax.export_fiduciary import raise_differences as fiduciary_differences
+
+        await fiduciary_differences(ctx, cast(UUID, row.return_id))
     return await import_view(ctx, import_id)
+
+
+async def _is_fiduciary(ctx: AuthContext, return_id: UUID) -> bool:
+    async with tenant_session(ctx.tenant) as session:
+        form = await session.scalar(
+            text("SELECT form FROM tax_returns WHERE work_item_id = :r"), {"r": return_id}
+        )
+    return form == "1041"
 
 
 async def _is_entity(ctx: AuthContext, return_id: UUID) -> bool:

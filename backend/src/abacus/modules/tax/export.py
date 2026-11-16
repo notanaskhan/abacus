@@ -66,6 +66,13 @@ from abacus.modules.integrations.api import engine_return_id, export_settings, w
 from abacus.modules.review.api import current_checkpoint
 from abacus.modules.tax import engine_repository as repo
 from abacus.modules.tax.engine_sync import ReadyToTransmit
+from abacus.modules.tax.export_fiduciary import (
+    FIDUCIARY_FORMS,
+    FIELDS_HEADER,
+    K1_HEADER,
+    FiduciarySection,
+    fiduciary_section,
+)
 from abacus.modules.tax.export_entity import (
     ALLOCATION_HEADER,
     ENTITY_FORMS,
@@ -187,6 +194,7 @@ def workbook(
     values: dict[str, dict[str, object]],
     at: datetime,
     entity: EntitySection | None = None,
+    fiduciary: FiduciarySection | None = None,
 ) -> bytes:
     """Sheet `Return` (a key, value header, then `return_id` without its version, `tax_year`,
     `form`) and sheet `Fields` (contract §6), the same bytes for the same input; the fake engine's
@@ -220,6 +228,15 @@ def workbook(
                     _text(share.amount),
                 ]
             )
+    if fiduciary is not None:  # T-07-T19: the 1041 section, from the signed computation
+        sheet = book.create_sheet("Fiduciary")
+        sheet.append(list(FIELDS_HEADER))
+        for f in fiduciary.fields:
+            sheet.append([f.engine_field_key, _text(f.label), _text(f.value)])
+        k1 = book.create_sheet("K1_1041")
+        k1.append(list(K1_HEADER))
+        for row in fiduciary.k1:
+            k1.append([row.beneficiary_ref, _text(row.beneficiary), row.box, _text(row.amount)])
     book.properties.creator = ""
     book.properties.lastModifiedBy = ""
     raw = io.BytesIO()
@@ -344,6 +361,12 @@ async def export_return(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID) 
     is_entity = str(facts.form) in ENTITY_FORMS
     if is_entity:  # T-05-T60: blocked while Unmapped > 0, before the grant is spent
         await require_mapped(ctx.tenant, return_id)
+    # T-07-T19: a 1041 leaves only with its signed fiduciary computation, checked before the grant
+    fiduciary = (
+        await fiduciary_section(ctx.tenant, return_id)
+        if str(facts.form) in FIDUCIARY_FORMS
+        else None
+    )
     grant = await latest_grant(ctx.tenant, Target(TARGET, return_id), APPROVE)
     if grant is None:
         raise NotFinalApproved(facts={"work_item_id": str(return_id)})
@@ -380,6 +403,7 @@ async def export_return(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID) 
         values=values,
         at=at,
         entity=section,
+        fiduciary=fiduciary,
     )
     file_name = f"{engine_id.replace(':', '_')}_V{version}.xlsx"
     screened = await screen_and_stage(ctx.tenant_id, content_bytes, file_name, None)
