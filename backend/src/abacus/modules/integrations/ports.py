@@ -17,6 +17,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Annotated, Final, Literal, Protocol, Self, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -149,3 +151,61 @@ class WriteCapabilityRegistry(BaseModel):
     def read_posts(self) -> frozenset[tuple[str, str]]:
         """Every provider POST declared as a read, as (host, path) (`kernel.egress`)."""
         return frozenset((p.host, p.path) for r in self.read_connectors for p in r.read_posts)
+
+
+# --- W-01-T09: the Connect port (OAuth, health, revoke) ------------------------------------------
+# Kept apart from the read port above: connecting is not a read, so an `IntegrationAdapter`
+# never grows these methods and the read allowlist (ADR-040) stays as it is.
+
+ConnectMode = Literal["token", "personal", "firm_app", "file_bridge"]
+# OQ-7: a transient failure counts toward Needs attention (three in a row); the others mean the
+# grant is gone and the install reads Needs reauth at once.
+HealthOutcome = Literal["ok", "transient", "unauthorised", "invalid_grant", "token_expired"]
+HEALTH_OUTCOMES: Final[tuple[HealthOutcome, ...]] = (
+    "ok",
+    "transient",
+    "unauthorised",
+    "invalid_grant",
+    "token_expired",
+)
+
+
+class ConnectRefused(Exception):
+    """The provider declined the grant (the person cancelled, or a scope was refused)."""
+
+
+@dataclass(frozen=True)
+class TokenGrant:
+    """What an exchange returns: the secret to seal (Restricted, never logged), when it renews,
+    and the scopes granted."""
+
+    secret: bytes
+    renews_at: datetime | None
+    scopes: tuple[str, ...]
+
+
+@runtime_checkable
+class ConnectPort(Protocol):
+    """How one integration is connected, checked and revoked (W-01-T08, T09)."""
+
+    @property
+    def key(self) -> str: ...
+
+    @property
+    def mode(self) -> ConnectMode: ...
+
+    def egress_hosts(self) -> tuple[str, ...]: ...
+
+    def authorise_url(self, *, state: str, code_challenge: str, redirect_uri: str) -> str:
+        """The provider's consent page; PKCE S256 with `code_challenge`."""
+        ...
+
+    async def exchange_code(
+        self, *, code: str, code_verifier: str, redirect_uri: str
+    ) -> TokenGrant: ...
+
+    async def check_health(self, secret: bytes | None) -> HealthOutcome: ...
+
+    async def revoke(self, secret: bytes) -> bool:
+        """Best effort: True when the provider confirmed (AC-24)."""
+        ...

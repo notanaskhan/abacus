@@ -23,6 +23,7 @@ from typing import Final, cast, get_args
 
 from pydantic import ValidationError
 
+from abacus.modules.integrations.fakes import fake_read_adapter, fakes_allowed
 from abacus.modules.integrations.ports import (
     IntegrationAdapter,
     IntegrationCategory,
@@ -115,18 +116,9 @@ def registered_keys() -> frozenset[str]:
 
 def adapter_for(key: str | None, *, synthetic: bool) -> IntegrationAdapter | None:
     """The adapter a firm may use under `key` (W-01-T07, AC-4): a registered one, or, for a
-    synthetic firm where fake adapters are allowed, its fake (W-01-T09). Fail-closed: None."""
+    synthetic firm where the fakes are allowed (never production, W-01-T09), its fake.
+    Fail-closed: None."""
     found = registered_adapter(key)
-    if found is not None or not synthetic or key is None:
+    if found is not None or not synthetic or key is None or not KEY.fullmatch(key):
         return found
-    fake = _FAKES.get(key)
-    return fake if fake is not None and fakes_allowed() else None
-
-
-# W-01-T09: the fakes, registered only where `fakes_allowed()` (never production); empty until
-# `abacus.modules.integrations.fakes` registers them.
-_FAKES: dict[str, IntegrationAdapter] = {}
-
-
-def fakes_allowed() -> bool:
-    return False
+    return fake_read_adapter(key) if fakes_allowed() else None

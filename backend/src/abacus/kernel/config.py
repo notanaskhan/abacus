@@ -266,6 +266,10 @@ class Settings(BaseSettings):
     local_master_key: Annotated[SecretStr | None, classified("restricted")] = None
     # The fake connector serves provider-shaped JSON from here (TASK-010; local and test only).
     fake_connector_dir: Annotated[str | None, classified("internal")] = None
+    # W-01-T09 (SPEC-659 §4): the Connect fakes (firm token, personal OAuth, firm app, file
+    # bridge) bind to synthetic firms only; the API and the worker refuse to boot in production
+    # with this set, and staging sets it for the synthetic tenant's demo.
+    integrations_fake_adapters: Annotated[bool, classified("internal")] = False
     # A-02-T26 (DEC-70, DEC-709): the QuickBooks Online read connector's app credentials. Unset,
     # the connector and its adapter are not registered (the catalogue row reads Coming soon).
     # `sandbox` reads the Intuit sandbox company host; `production` the live one.
@@ -446,6 +450,13 @@ class Settings(BaseSettings):
     def _fake_connector_local_only(self) -> Self:
         if self.fake_connector_dir is not None and self.environment not in SYNTHETIC_ENVIRONMENTS:
             raise ValueError("fake_connector_dir is for local runs, tests and evaluations only")
+        return self
+
+    @model_validator(mode="after")
+    def _no_integration_fakes_in_production(self) -> Self:
+        """W-01-T09: never a fake Connect adapter in production, whatever the firm."""
+        if self.integrations_fake_adapters and self.environment == "production":
+            raise ValueError("production refuses integrations_fake_adapters (W-01-T09)")
         return self
 
     @model_validator(mode="after")
