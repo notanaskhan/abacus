@@ -19184,7 +19184,7 @@ export const connectCatalogQueryKey = (options?: Options<ConnectCatalogData>) =>
 /**
  * Connect Catalog
  *
- * WB-10: honest tiles, counts and catalogue-total category counts.
+ * WB-10: honest tiles, counts and catalogue-total category counts (W-01-T07).
  */
 export const connectCatalogOptions = (options?: Options<ConnectCatalogData>) => queryOptions<ConnectCatalogResponse, ConnectCatalogError, ConnectCatalogResponse, ReturnType<typeof connectCatalogQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -19293,7 +19293,7 @@ export const connectClientCompaniesInfiniteOptions = (options: Options<ConnectCl
 /**
  * Connect Firm
  *
- * Enable or Reconnect (fresh MFA); a firm app is connected at once.
+ * Enable or Reconnect (fresh MFA); a firm app is connected at once (W-01-T08).
  */
 export const connectFirmMutation = (options?: Partial<Options<ConnectFirmData>>): UseMutationOptions<ConnectFirmResponse, ConnectFirmError, Options<ConnectFirmData>> => {
     const mutationOptions: UseMutationOptions<ConnectFirmResponse, ConnectFirmError, Options<ConnectFirmData>> = {
@@ -19312,7 +19312,7 @@ export const connectFirmMutation = (options?: Partial<Options<ConnectFirmData>>)
 /**
  * Disconnect Firm
  *
- * Typed name (422 `confirm_name_mismatch`), `seen_version`, fresh MFA.
+ * Typed name (422 `confirm_name_mismatch`), `seen_version`, fresh MFA (W-01-T08).
  */
 export const disconnectFirmMutation = (options?: Partial<Options<DisconnectFirmData>>): UseMutationOptions<DisconnectFirmResponse, DisconnectFirmError, Options<DisconnectFirmData>> => {
     const mutationOptions: UseMutationOptions<DisconnectFirmResponse, DisconnectFirmError, Options<DisconnectFirmData>> = {
@@ -19378,6 +19378,8 @@ export const connectEventsInfiniteOptions = (options: Options<ConnectEventsData>
 
 /**
  * Connect Interest
+ *
+ * Notify me (AC-31): idempotent; `recorded` is true on every answer (W-01-T07).
  */
 export const connectInterestMutation = (options?: Partial<Options<ConnectInterestData>>): UseMutationOptions<ConnectInterestResponse, ConnectInterestError, Options<ConnectInterestData>> => {
     const mutationOptions: UseMutationOptions<ConnectInterestResponse, ConnectInterestError, Options<ConnectInterestData>> = {
@@ -20489,6 +20491,8 @@ export const confirmAnnualIndependenceMutation = (options?: Partial<Options<Conf
 
 /**
  * Connect Personal
+ *
+ * Connect "acting as you" (W-01-T08).
  */
 export const connectPersonalMutation = (options?: Partial<Options<ConnectPersonalData>>): UseMutationOptions<ConnectPersonalResponse, ConnectPersonalError, Options<ConnectPersonalData>> => {
     const mutationOptions: UseMutationOptions<ConnectPersonalResponse, ConnectPersonalError, Options<ConnectPersonalData>> = {
@@ -20506,6 +20510,8 @@ export const connectPersonalMutation = (options?: Partial<Options<ConnectPersona
 
 /**
  * Disconnect Personal
+ *
+ * The caller's own personal install only (W-01-T08).
  */
 export const disconnectPersonalMutation = (options?: Partial<Options<DisconnectPersonalData>>): UseMutationOptions<DisconnectPersonalResponse, DisconnectPersonalError, Options<DisconnectPersonalData>> => {
     const mutationOptions: UseMutationOptions<DisconnectPersonalResponse, DisconnectPersonalError, Options<DisconnectPersonalData>> = {

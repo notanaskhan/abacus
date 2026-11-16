@@ -18,6 +18,8 @@ from dataclasses import dataclass
 import pytest
 from tests.security.support import Net, Person
 
+from abacus.modules.integrations.adapters import registered_keys  # W-01-T07
+
 pytestmark = pytest.mark.usefixtures("engines")
 
 
@@ -117,18 +119,15 @@ async def test_ac2_filters_keep_catalogue_total_category_counts(net: Net) -> Non
     assert {c["code"]: c["count"] for c in body["categories"]}["tax"] == 8
 
 
-@pytest.mark.xfail(strict=True, reason="501 stub until W-01-T07/T08 (TASK-8064)")
 async def test_ac4_a_real_firm_sees_only_registered_adapters_as_available(net: Net) -> None:
     firm = await _firm(net)
     await net.seed.run("UPDATE firms SET synthetic = false WHERE tenant_id = $1", firm.tenant_id)
-    from abacus.modules.integrations.adapters import registered_keys  # W-01-T07
 
     response = await net.call("GET", "/v1/integrations/catalog", firm.felix)
     available = {t["key"] for t in response.json()["items"] if t["status"] == "available"}
     assert available <= set(registered_keys())
 
 
-@pytest.mark.xfail(strict=True, reason="501 stub until W-01-T07/T08 (TASK-8064)")
 async def test_ac12_a_replayed_or_foreign_state_is_invalid_state(net: Net) -> None:
     firm = await _firm(net)
     status = await _post(
@@ -149,7 +148,6 @@ async def test_ac24_a_mismatched_name_is_422_confirm_name_mismatch(net: Net) -> 
     assert status == 422
 
 
-@pytest.mark.xfail(strict=True, reason="501 stub until W-01-T07/T08 (TASK-8064)")
 async def test_ac26_personal_disconnect_of_anyone_elses_row_is_404(net: Net) -> None:
     firm = await _firm(net)
     assert await _post(firm, "/v1/me/integrations/box/disconnect", firm.hannah) == 404

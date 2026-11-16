@@ -40,11 +40,27 @@ ROUTES: dict[tuple[str, str], str] = {
 PORTAL = ("client_admin", "client_contributor", "third_party", "client_service", "link_principal")
 
 
+# W-01-T07, T08 implemented the catalogue, Notify me, connect, complete and disconnect; these are
+# still the stub's (W-01-T15 detail, events and client companies; the operator's import routes,
+# which no principal can reach: AC-32 is the ops command).
+STILL_STUBBED: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("get", K),
+        ("get", f"{K}/events"),
+        ("get", f"{K}/client-companies"),
+        ("post", "/v1/platform/integration-catalog/imports"),
+        ("get", "/v1/platform/integration-catalog/imports"),
+    }
+)
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_each_route_declares_its_action_and_404_and_501(method: str, path: str) -> None:
     operation = PATHS[path][method]
     assert operation["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, operation["responses"]))
+    responses = set(cast(Json, operation["responses"]))
+    assert "404" in responses
+    assert ("501" in responses) == ((method, path) in STILL_STUBBED)
 
 
 def test_every_field_is_classified() -> None:

@@ -53,6 +53,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "evidence",  # SPEC-029 (TASK-054): upload processing
         "fieldwork",  # SPEC-037 (TASK-083): procedure selection
         "identity",  # P-08-T17: access changes end portal sessions and trusted devices
+        "integrations",  # W-01-T08: personal installs end with the membership (AC-13)
         "notices",  # N-04-T16: the respond-by alerts and the follow-up timer
         "notifications",
         "platform",  # Q-01-T45: tenant provisioning

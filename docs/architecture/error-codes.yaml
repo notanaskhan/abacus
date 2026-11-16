@@ -528,7 +528,7 @@ codes:
   confirm_name_mismatch:
     status: 422
     raised_by:
-    - abacus.modules.integrations.connect_contract.ConfirmNameMismatch
+    - abacus.modules.integrations.connect_errors.ConfirmNameMismatch
   confirmed_out_of_order:
     status: 422
     raised_by:
@@ -541,7 +541,7 @@ codes:
   connect_declined:
     status: 409
     raised_by:
-    - abacus.modules.integrations.connect_contract.ConnectDeclined
+    - abacus.modules.integrations.connect_errors.ConnectDeclined
   connection_failed:
     status: 409
     raised_by:
@@ -1293,7 +1293,7 @@ codes:
   firm_app_disabled:
     status: 409
     raised_by:
-    - abacus.modules.integrations.connect_contract.FirmAppDisabled
+    - abacus.modules.integrations.connect_errors.FirmAppDisabled
   firm_role_held:
     status: 409
     raised_by:
@@ -1608,7 +1608,7 @@ codes:
   integration_not_available:
     status: 409
     raised_by:
-    - abacus.modules.integrations.connect_contract.IntegrationNotAvailable
+    - abacus.modules.integrations.connect_errors.IntegrationNotAvailable
   integrity_failed:
     status: 409
     raised_by:
@@ -1643,7 +1643,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.connections.connect.InvalidState
-    - abacus.modules.integrations.connect_contract.InvalidState
+    - abacus.modules.integrations.connect_errors.InvalidState
     summary: 'The state is unknown, someone else''s, already used or expired: nothing is created.'
   invitation_expired:
     status: 409
@@ -2695,7 +2695,7 @@ codes:
   prerequisite_scope_missing:
     status: 409
     raised_by:
-    - abacus.modules.integrations.connect_contract.PrerequisiteScopeMissing
+    - abacus.modules.integrations.connect_errors.PrerequisiteScopeMissing
   presumption_not_rebuttable:
     status: 422
     raised_by:
@@ -3408,6 +3408,7 @@ codes:
     - abacus.modules.identity.security_policies.StalePolicy
     - abacus.modules.identity.service_lines.StalePolicy
     - abacus.modules.identity.settings_registry.StaleSection
+    - abacus.modules.integrations.connect_errors.StaleVersion
     - abacus.modules.integrations.engine_settings.SettingsStale
     - abacus.modules.methodology.lifecycle.VersionStale
     - abacus.modules.methodology.standards.StaleVersion

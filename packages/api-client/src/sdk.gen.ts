@@ -11778,7 +11778,7 @@ export const matchClient = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Connect Catalog
  *
- * WB-10: honest tiles, counts and catalogue-total category counts.
+ * WB-10: honest tiles, counts and catalogue-total category counts (W-01-T07).
  */
 export const connectCatalog = <ThrowOnError extends boolean = false>(options?: Options<ConnectCatalogData, ThrowOnError>): RequestResult<ConnectCatalogResponses, ConnectCatalogErrors, ThrowOnError> => (options?.client ?? client).get<ConnectCatalogResponses, ConnectCatalogErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -11826,7 +11826,7 @@ export const connectClientCompanies = <ThrowOnError extends boolean = false>(opt
 /**
  * Connect Firm
  *
- * Enable or Reconnect (fresh MFA); a firm app is connected at once.
+ * Enable or Reconnect (fresh MFA); a firm app is connected at once (W-01-T08).
  */
 export const connectFirm = <ThrowOnError extends boolean = false>(options: Options<ConnectFirmData, ThrowOnError>): RequestResult<ConnectFirmResponses, ConnectFirmErrors, ThrowOnError> => (options.client ?? client).post<ConnectFirmResponses, ConnectFirmErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -11837,7 +11837,7 @@ export const connectFirm = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Disconnect Firm
  *
- * Typed name (422 `confirm_name_mismatch`), `seen_version`, fresh MFA.
+ * Typed name (422 `confirm_name_mismatch`), `seen_version`, fresh MFA (W-01-T08).
  */
 export const disconnectFirm = <ThrowOnError extends boolean = false>(options: Options<DisconnectFirmData, ThrowOnError>): RequestResult<DisconnectFirmResponses, DisconnectFirmErrors, ThrowOnError> => (options.client ?? client).post<DisconnectFirmResponses, DisconnectFirmErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -11860,6 +11860,8 @@ export const connectEvents = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Connect Interest
+ *
+ * Notify me (AC-31): idempotent; `recorded` is true on every answer (W-01-T07).
  */
 export const connectInterest = <ThrowOnError extends boolean = false>(options: Options<ConnectInterestData, ThrowOnError>): RequestResult<ConnectInterestResponses, ConnectInterestErrors, ThrowOnError> => (options.client ?? client).post<ConnectInterestResponses, ConnectInterestErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -12507,6 +12509,8 @@ export const confirmAnnualIndependence = <ThrowOnError extends boolean = false>(
 
 /**
  * Connect Personal
+ *
+ * Connect "acting as you" (W-01-T08).
  */
 export const connectPersonal = <ThrowOnError extends boolean = false>(options: Options<ConnectPersonalData, ThrowOnError>): RequestResult<ConnectPersonalResponses, ConnectPersonalErrors, ThrowOnError> => (options.client ?? client).post<ConnectPersonalResponses, ConnectPersonalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -12516,6 +12520,8 @@ export const connectPersonal = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Disconnect Personal
+ *
+ * The caller's own personal install only (W-01-T08).
  */
 export const disconnectPersonal = <ThrowOnError extends boolean = false>(options: Options<DisconnectPersonalData, ThrowOnError>): RequestResult<DisconnectPersonalResponses, DisconnectPersonalErrors, ThrowOnError> => (options.client ?? client).post<DisconnectPersonalResponses, DisconnectPersonalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

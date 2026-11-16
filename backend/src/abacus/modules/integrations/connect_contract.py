@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import INTEGRATIONS_CONNECT_V1
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -30,6 +30,7 @@ from abacus.modules.identity.api import (
     authorise_own,
     current_context,
 )
+from abacus.modules.integrations import connect_service as connect
 from abacus.modules.integrations.connect_catalog import catalogue, interest
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -58,30 +59,6 @@ ConnectAction = Literal[
     "integration.disconnect_personal",
     "integration.interest",
 ]
-
-
-class InvalidState(DomainConflict):
-    code = "invalid_state"
-
-
-class ConnectDeclined(DomainConflict):
-    code = "connect_declined"
-
-
-class PrerequisiteScopeMissing(DomainConflict):
-    code = "prerequisite_scope_missing"
-
-
-class ConfirmNameMismatch(DomainInvalid):
-    code = "confirm_name_mismatch"
-
-
-class FirmAppDisabled(DomainConflict):
-    code = "firm_app_disabled"
-
-
-class IntegrationNotAvailable(DomainConflict):
-    code = "integration_not_available"
 
 
 # --- WB-10 catalogue -----------------------------------------------------------------------------
@@ -370,7 +347,7 @@ async def _gate(ctx: AuthContext, action: str) -> None:
     "/integrations/catalog",
     action="integration_catalog.read",
     response_model=ConnectCatalogOut,
-    errors=(501,),
+    errors=(),
 )
 async def connect_catalog(
     ctx: Ctx,
@@ -458,69 +435,82 @@ async def connect_client_companies(
     "/integrations/{key}/connect",
     action="integration.connect_firm",
     response_model=ConnectStartOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def connect_firm(key: Key, ctx: Ctx, _key: IdempotencyKey) -> ConnectStartOut:
-    """Enable or Reconnect (fresh MFA); a firm app is connected at once."""
+    """Enable or Reconnect (fresh MFA); a firm app is connected at once (W-01-T08)."""
     await _gate(ctx, "integration.connect_firm")
-    raise NotImplementedYet("W-01-T08")
+    started = await connect.start_firm(ctx, key)
+    return ConnectStartOut(status=started.status, authorise_url=started.authorise_url)
 
 
 @router.post(
     "/me/integrations/{key}/connect",
     action="integration.connect_personal",
     response_model=ConnectStartOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def connect_personal(key: Key, ctx: Ctx, _key: IdempotencyKey) -> ConnectStartOut:
+    """Connect "acting as you" (W-01-T08)."""
     await _gate(ctx, "integration.connect_personal")
-    raise NotImplementedYet("W-01-T08")
+    started = await connect.start_personal(ctx, key)
+    return ConnectStartOut(status=started.status, authorise_url=started.authorise_url)
 
 
 @router.post(
     "/integrations/connect/complete",
     action="integration.complete_connect",
     response_model=ConnectCompleteOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def connect_complete(
     body: ConnectCompleteIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ConnectCompleteOut:
     """The state is spent in its own unit of work; neither code nor state is ever logged."""
     await _gate(ctx, "integration.complete_connect")
-    raise NotImplementedYet("W-01-T08")
+    key = await connect.complete(ctx, body.state, body.code)
+    return ConnectCompleteOut(key=key, status="connected")
 
 
 @router.post(
     "/integrations/{key}/disconnect",
     action="integration.disconnect_firm",
     response_model=ConnectDisconnectOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def disconnect_firm(
     key: Key, body: ConnectDisconnectIn, ctx: Ctx, _key: IdempotencyKey
 ) -> ConnectDisconnectOut:
-    """Typed name (422 `confirm_name_mismatch`), `seen_version`, fresh MFA."""
+    """Typed name (422 `confirm_name_mismatch`), `seen_version`, fresh MFA (W-01-T08)."""
     await _gate(ctx, "integration.disconnect_firm")
-    raise NotImplementedYet("W-01-T08")
+    done = await connect.disconnect_firm(ctx, key, body.confirm_name, body.seen_version)
+    return ConnectDisconnectOut(
+        key=done.key,
+        status="disconnected",
+        suspended_client_connections=done.suspended_client_connections,
+    )
 
 
 @router.post(
     "/me/integrations/{key}/disconnect",
     action="integration.disconnect_personal",
     response_model=ConnectDisconnectOut,
-    errors=(409, 501),
+    errors=(),
 )
 async def disconnect_personal(key: Key, ctx: Ctx, _key: IdempotencyKey) -> ConnectDisconnectOut:
+    """The caller's own personal install only (W-01-T08)."""
     await _gate(ctx, "integration.disconnect_personal")
-    raise NotImplementedYet("W-01-T08")
+    done = await connect.disconnect_personal(ctx, key)
+    return ConnectDisconnectOut(
+        key=done.key, status="disconnected", suspended_client_connections=0
+    )
 
 
 @router.post(
     "/integrations/{key}/interest",
     action="integration.interest",
     response_model=ConnectInterestOut,
-    errors=(409, 501),
+    errors=(),
 )
 async def connect_interest(key: Key, ctx: Ctx, _key: IdempotencyKey) -> ConnectInterestOut:
     """Notify me (AC-31): idempotent; `recorded` is true on every answer (W-01-T07)."""
