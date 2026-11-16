@@ -758,32 +758,38 @@ async def generate_closes_route(
     action="close_run.start",
     response_model=StartRunOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def start_close_run_route(
     close_id: UUID, body: StartRunIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> StartRunOut:
     """A live person starts a run; code plans it (AC-28; C-01-T20)."""
     await _human_route(ctx, "close_run.start")
-    _not_yet()
+    from abacus.modules.closes import runs  # noqa: PLC0415 -- the service imports this contract
+
+    return await runs.start_run(ctx, close_id, body)
 
 
-@closes_router.get(f"{_C}/runs", action="close.read", response_model=CloseRunsOut, errors=(501,))
+@closes_router.get(f"{_C}/runs", action="close.read", response_model=CloseRunsOut)
 async def close_runs_route(close_id: UUID, ctx: Ctx) -> CloseRunsOut:
     """Run history ("Run 2 ⌄"; AC-31; C-01-T20)."""
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import runs  # noqa: PLC0415 -- the service imports this contract
+
+    return await runs.run_history(ctx, close_id)
 
 
 @closes_router.get(
-    f"{_C}/runs/{{run_no}}", action="close.read", response_model=CloseRunOut, errors=(501,)
+    f"{_C}/runs/{{run_no}}", action="close.read", response_model=CloseRunOut
 )
 async def close_run_route(
     close_id: UUID, run_no: Annotated[int, Path(ge=1)], ctx: Ctx
 ) -> CloseRunOut:
     """The run view over C6 v2 with task groups (C-01-T20)."""
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import runs  # noqa: PLC0415 -- the service imports this contract
+
+    return await runs.run_card(ctx, close_id, run_no)
 
 
 @closes_router.post(
@@ -791,7 +797,7 @@ async def close_run_route(
     action="close_run.retry",
     response_model=CloseProcedureOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def retry_close_procedure_route(
     close_id: UUID,
@@ -802,7 +808,9 @@ async def retry_close_procedure_route(
 ) -> CloseProcedureOut:
     """Retry a failed procedure as a new step row (AC-30; C-01-T20)."""
     await _human_route(ctx, "close_run.retry")
-    _not_yet()
+    from abacus.modules.closes import runs  # noqa: PLC0415 -- the service imports this contract
+
+    return await runs.retry_step(ctx, close_id, run_no, step_id)
 
 
 @closes_router.get(_P, action="close_plan.read", response_model=PlanVersionOut, errors=())
