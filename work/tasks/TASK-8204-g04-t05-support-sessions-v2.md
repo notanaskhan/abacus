@@ -32,3 +32,10 @@ integration-settings sessions to metadata and security_admin approvals to firm_a
 ## Progress log
 - `2026-11-15` — Built (DEC-5205). Imports clean, client regenerated. Integration tests and the
   security review at the lane's end pass.
+- `2026-11-15` — Lane end pass green on the stack tip (#2080): `schema_check` (migrations up,
+  down to base, up; RLS everywhere), the targeted suites (permission matrix, route
+  introspection, app gates, tenant isolation, catalogues, status vocabulary, schema_check_db,
+  G-02 support tests, the T07 AC suite) and `make check-fast`. Fixes in 5c0ad032d and
+  819cffc82: audit refs carry identifiers only; staff routes in the route checker; reviewed
+  lists extended; unique schema names (FirmPlanOut, StatusIncident*, ConsolePublication*,
+  PlatformRegion*); web fixtures carry the v2 session fields.

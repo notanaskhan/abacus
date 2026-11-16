@@ -665,7 +665,6 @@ NO_YAML_ENTRY = {
     "LogEntryOut.status": "failed_validation",
     "MatrixRowOut.status": "needs_sign_off, open_notes",
     "RetrievalOut.status": "failed_validation",
-    "SupportSessionOut.status": "ended",
     "WallOut.status": "removed",
     # A-02-T06 (C20 v1 stub): a sync run's codes are RetrievalOut's (`sync_runs.status`), with the
     # same gap; registered with the details drawer's words (A-02-T18).

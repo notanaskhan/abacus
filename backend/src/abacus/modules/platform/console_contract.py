@@ -197,7 +197,7 @@ class ProvisioningOut(BaseModel):
     invites_sent: Annotated[int, Field(ge=0), Internal]
 
 
-class RegionOut(BaseModel):
+class PlatformRegionOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     code: Annotated[RegionCode, Internal]
@@ -207,10 +207,10 @@ class RegionOut(BaseModel):
     storage_label: Annotated[str | None, Internal]
 
 
-class RegionsOut(BaseModel):
+class PlatformRegionsOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    items: Annotated[list[RegionOut], Internal]
+    items: Annotated[list[PlatformRegionOut], Internal]
 
 
 # --- sessions and plan requests across tenants ---------------------------------------------------
@@ -314,7 +314,7 @@ class StaffReplyIn(BaseModel):
 # --- status incidents (AC-55) --------------------------------------------------------------------
 
 
-class IncidentUpdateOut(BaseModel):
+class StatusIncidentUpdateOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     at: Annotated[datetime, Internal]
@@ -322,7 +322,7 @@ class IncidentUpdateOut(BaseModel):
     posted_by: Annotated[str, Internal]
 
 
-class IncidentOut(BaseModel):
+class StatusIncidentOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: Annotated[UUID, Internal]
@@ -333,17 +333,17 @@ class IncidentOut(BaseModel):
     started_at: Annotated[datetime, Internal]
     resolved_at: Annotated[datetime | None, Internal]
     posted_by: Annotated[str, Internal]
-    updates: Annotated[list[IncidentUpdateOut], Internal]
+    updates: Annotated[list[StatusIncidentUpdateOut], Internal]
 
 
-class IncidentsOut(BaseModel):
+class StatusIncidentsOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    items: Annotated[list[IncidentOut], Internal]
+    items: Annotated[list[StatusIncidentOut], Internal]
     counts: Annotated[dict[str, int], Internal]
 
 
-class IncidentIn(BaseModel):
+class StatusIncidentIn(BaseModel):
     """A note never names a firm or client (lint plus runbook templates)."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
@@ -354,7 +354,7 @@ class IncidentIn(BaseModel):
     public_note: Annotated[str, Field(min_length=3, max_length=280), Internal]
 
 
-class IncidentUpdateIn(BaseModel):
+class StatusIncidentUpdateIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
 
     note: Annotated[str, Field(min_length=3, max_length=280), Internal]
@@ -363,7 +363,7 @@ class IncidentUpdateIn(BaseModel):
 # --- publications (AC-57, AC-58) -----------------------------------------------------------------
 
 
-class PublicationOut(BaseModel):
+class ConsolePublicationOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: Annotated[UUID, Internal]
@@ -379,14 +379,14 @@ class PublicationOut(BaseModel):
     can_publish: Annotated[bool, Internal]  # false for the drafter ("You drafted this version")
 
 
-class PublicationsOut(BaseModel):
+class ConsolePublicationsOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    items: Annotated[list[PublicationOut], Internal]
+    items: Annotated[list[ConsolePublicationOut], Internal]
     counts: Annotated[dict[str, int], Internal]
 
 
-class PublishIn(BaseModel):
+class ConsolePublishIn(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
 
     reason: Reason
@@ -466,8 +466,10 @@ async def console_provisioning(workflow_id: str) -> ProvisioningOut:
     raise NotImplementedYet(_CONSOLE)
 
 
-@router.get("/regions", action="platform_tenant.read", response_model=RegionsOut, errors=(501,))
-async def console_regions() -> RegionsOut:
+@router.get(
+    "/regions", action="platform_tenant.read", response_model=PlatformRegionsOut, errors=(501,)
+)
+async def console_regions() -> PlatformRegionsOut:
     raise NotImplementedYet(_CONSOLE)
 
 
@@ -546,77 +548,81 @@ async def console_queue_reply(
 @router.get(
     "/status/incidents",
     action="platform_status.manage",
-    response_model=IncidentsOut,
+    response_model=StatusIncidentsOut,
     errors=(501,),
 )
 async def console_incidents(
     open_only: Annotated[bool, Query(alias="open")] = True,
-) -> IncidentsOut:
+) -> StatusIncidentsOut:
     raise NotImplementedYet(_SUPPORT)
 
 
 @router.post(
     "/status/incidents",
     action="platform_status.manage",
-    response_model=IncidentOut,
+    response_model=StatusIncidentOut,
     status_code=201,
     errors=(501,),
 )
-async def console_post_incident(body: IncidentIn, _key: IdempotencyKey) -> IncidentOut:
+async def console_post_incident(body: StatusIncidentIn, _key: IdempotencyKey) -> StatusIncidentOut:
     raise NotImplementedYet(_SUPPORT)
 
 
 @router.post(
     "/status/incidents/{incident_id}/updates",
     action="platform_status.manage",
-    response_model=IncidentOut,
+    response_model=StatusIncidentOut,
     errors=(409, 501),
 )
-async def console_update_incident(incident_id: UUID, body: IncidentUpdateIn) -> IncidentOut:
+async def console_update_incident(
+    incident_id: UUID, body: StatusIncidentUpdateIn
+) -> StatusIncidentOut:
     raise NotImplementedYet(_SUPPORT)
 
 
 @router.post(
     "/status/incidents/{incident_id}/resolve",
     action="platform_status.manage",
-    response_model=IncidentOut,
+    response_model=StatusIncidentOut,
     errors=(409, 501),
 )
-async def console_resolve_incident(incident_id: UUID, body: IncidentUpdateIn) -> IncidentOut:
+async def console_resolve_incident(
+    incident_id: UUID, body: StatusIncidentUpdateIn
+) -> StatusIncidentOut:
     raise NotImplementedYet(_SUPPORT)
 
 
 @router.get(
     "/publications",
     action="platform_content.read",
-    response_model=PublicationsOut,
+    response_model=ConsolePublicationsOut,
     errors=(501,),
 )
 async def console_publications(
     status: Annotated[Literal["draft", "published", "withdrawn"], Query()] = "draft",
-) -> PublicationsOut:
+) -> ConsolePublicationsOut:
     raise NotImplementedYet(_SUPPORT)
 
 
 @router.post(
     "/publications/{kind}/{publication_id}/publish",
     action="platform_content.publish",
-    response_model=PublicationOut,
+    response_model=ConsolePublicationOut,
     errors=(409, 501),
 )
 async def console_publish(
-    kind: PublicationKind, publication_id: UUID, body: PublishIn
-) -> PublicationOut:
+    kind: PublicationKind, publication_id: UUID, body: ConsolePublishIn
+) -> ConsolePublicationOut:
     raise NotImplementedYet(_SUPPORT)
 
 
 @router.post(
     "/publications/{kind}/{publication_id}/withdraw",
     action="platform_content.publish",
-    response_model=PublicationOut,
+    response_model=ConsolePublicationOut,
     errors=(409, 501),
 )
 async def console_withdraw(
-    kind: PublicationKind, publication_id: UUID, body: PublishIn
-) -> PublicationOut:
+    kind: PublicationKind, publication_id: UUID, body: ConsolePublishIn
+) -> ConsolePublicationOut:
     raise NotImplementedYet(_SUPPORT)

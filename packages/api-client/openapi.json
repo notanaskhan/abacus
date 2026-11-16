@@ -29364,6 +29364,145 @@
         "title": "ConsentTermsOut",
         "type": "object"
       },
+      "ConsolePublicationOut": {
+        "properties": {
+          "can_publish": {
+            "cls": "internal",
+            "title": "Can Publish",
+            "type": "boolean"
+          },
+          "drafted_by": {
+            "cls": "internal",
+            "title": "Drafted By",
+            "type": "string"
+          },
+          "effective_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective From"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "help_article",
+              "reference_set"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows_added": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Rows Added",
+            "type": "integer"
+          },
+          "rows_changed": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Rows Changed",
+            "type": "integer"
+          },
+          "rows_removed": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Rows Removed",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "draft",
+              "published",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "key",
+          "version",
+          "drafted_by",
+          "effective_from",
+          "rows_added",
+          "rows_changed",
+          "rows_removed",
+          "status",
+          "can_publish"
+        ],
+        "title": "ConsolePublicationOut",
+        "type": "object"
+      },
+      "ConsolePublicationsOut": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ConsolePublicationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "counts"
+        ],
+        "title": "ConsolePublicationsOut",
+        "type": "object"
+      },
+      "ConsolePublishIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "minLength": 20,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "ConsolePublishIn",
+        "type": "object"
+      },
       "ConsolidatedTbOut": {
         "properties": {
           "columns": {
@@ -53174,6 +53313,129 @@
         "title": "FirmPauseOut",
         "type": "object"
       },
+      "FirmPlanOut": {
+        "description": "GET /v1/firm/plan (AC-27, AC-29): term, renewal, seats, modules and the library label.",
+        "properties": {
+          "billing_contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "included_agent_minutes": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Included Agent Minutes",
+            "type": "integer"
+          },
+          "library_channel": {
+            "cls": "internal",
+            "enum": [
+              "stable",
+              "early_access"
+            ],
+            "title": "Library Channel",
+            "type": "string"
+          },
+          "modules": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "tax",
+                "audit_assurance",
+                "client_accounting",
+                "advisory",
+                "attest",
+                "internal_audit",
+                "group_audit",
+                "statements_studio",
+                "office_addins",
+                "insights",
+                "tax_returns",
+                "ebp_audits",
+                "assurance_completion",
+                "tax_entity_returns",
+                "cas_closes"
+              ],
+              "type": "string"
+            },
+            "title": "Modules",
+            "type": "array"
+          },
+          "plan_code": {
+            "cls": "internal",
+            "title": "Plan Code",
+            "type": "string"
+          },
+          "renewal_in_days": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Renewal In Days",
+            "type": "integer"
+          },
+          "renewal_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Renewal On",
+            "type": "string"
+          },
+          "seats": {
+            "$ref": "#/components/schemas/SeatsOut"
+          },
+          "term_end": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Term End",
+            "type": "string"
+          },
+          "term_start": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Term Start",
+            "type": "string"
+          },
+          "usage_month_anchor_day": {
+            "cls": "internal",
+            "maximum": 28.0,
+            "minimum": 1.0,
+            "title": "Usage Month Anchor Day",
+            "type": "integer"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "workbench_active_30d": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Workbench Active 30D",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "plan_code",
+          "term_start",
+          "term_end",
+          "renewal_on",
+          "renewal_in_days",
+          "seats",
+          "modules",
+          "library_channel",
+          "billing_contact",
+          "workbench_active_30d",
+          "included_agent_minutes",
+          "usage_month_anchor_day",
+          "version"
+        ],
+        "title": "FirmPlanOut",
+        "type": "object"
+      },
       "FirmRefIn": {
         "additionalProperties": false,
         "properties": {
@@ -62655,6 +62917,224 @@
         "title": "IncidentDecisionOut",
         "type": "object"
       },
+      "IncidentIn": {
+        "additionalProperties": false,
+        "description": "What the QI knows when recording; counts and encryption may be unknown yet.",
+        "properties": {
+          "consumers_affected": {
+            "anyOf": [
+              {
+                "maximum": 1000000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consumers Affected"
+          },
+          "discovered_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Discovered At",
+            "type": "string"
+          },
+          "event_kind": {
+            "cls": "internal",
+            "enum": [
+              "unauthorized_access",
+              "credential_attack",
+              "data_exposure",
+              "lost_device",
+              "vendor_incident",
+              "other"
+            ],
+            "title": "Event Kind",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "unencrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Unencrypted"
+          }
+        },
+        "required": [
+          "title",
+          "event_kind",
+          "discovered_at"
+        ],
+        "title": "IncidentIn",
+        "type": "object"
+      },
+      "IncidentOut": {
+        "description": "One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;\n`clock_day` of `clock_days` have passed in the firm's time zone.",
+        "properties": {
+          "accrued_confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Accrued Confirmed At"
+          },
+          "accrued_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Accrued Ref"
+          },
+          "clock_day": {
+            "cls": "internal",
+            "title": "Clock Day",
+            "type": "integer"
+          },
+          "clock_days": {
+            "cls": "internal",
+            "title": "Clock Days",
+            "type": "integer"
+          },
+          "consumers_affected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Consumers Affected"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "discovered_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Discovered At",
+            "type": "string"
+          },
+          "dpa_notice_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Dpa Notice At"
+          },
+          "event_kind": {
+            "cls": "internal",
+            "enum": [
+              "unauthorized_access",
+              "credential_attack",
+              "data_exposure",
+              "lost_device",
+              "vendor_incident",
+              "other"
+            ],
+            "title": "Event Kind",
+            "type": "string"
+          },
+          "ftc_notify_by": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Ftc Notify By",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "notification_event": {
+            "cls": "internal",
+            "title": "Notification Event",
+            "type": "boolean"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "firm",
+              "accrued"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "unencrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Unencrypted"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "title",
+          "event_kind",
+          "discovered_at",
+          "notification_event",
+          "ftc_notify_by",
+          "clock_day",
+          "clock_days",
+          "source",
+          "created_at"
+        ],
+        "title": "IncidentOut",
+        "type": "object"
+      },
       "IncidentPendingDecisionOut": {
         "description": "One of two decisions recorded: \"Waiting for Margaret Okonkwo\" (AC-22).",
         "properties": {
@@ -63010,77 +63490,6 @@
           "recorded_at"
         ],
         "title": "IncidentTimelineEntryOut",
-        "type": "object"
-      },
-      "IncidentUpdateIn": {
-        "additionalProperties": false,
-        "properties": {
-          "note": {
-            "cls": "internal",
-            "maxLength": 280,
-            "minLength": 3,
-            "title": "Note",
-            "type": "string"
-          }
-        },
-        "required": [
-          "note"
-        ],
-        "title": "IncidentUpdateIn",
-        "type": "object"
-      },
-      "IncidentUpdateOut": {
-        "properties": {
-          "at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "At",
-            "type": "string"
-          },
-          "note": {
-            "cls": "internal",
-            "maxLength": 280,
-            "title": "Note",
-            "type": "string"
-          },
-          "posted_by": {
-            "cls": "internal",
-            "title": "Posted By",
-            "type": "string"
-          }
-        },
-        "required": [
-          "at",
-          "note",
-          "posted_by"
-        ],
-        "title": "IncidentUpdateOut",
-        "type": "object"
-      },
-      "IncidentsOut": {
-        "properties": {
-          "counts": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "cls": "internal",
-            "title": "Counts",
-            "type": "object"
-          },
-          "items": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/abacus__modules__platform__console_contract__IncidentOut"
-            },
-            "title": "Items",
-            "type": "array"
-          }
-        },
-        "required": [
-          "items",
-          "counts"
-        ],
-        "title": "IncidentsOut",
         "type": "object"
       },
       "IndependenceBlockerOut": {
@@ -65006,7 +65415,7 @@
           "region": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/abacus__modules__notices__contract__RegionOut"
+                "$ref": "#/components/schemas/RegionOut"
               },
               {
                 "type": "null"
@@ -85235,6 +85644,200 @@
         "title": "PlanHistoryOut",
         "type": "object"
       },
+      "PlanOut": {
+        "description": "EBP-01's plan facts; the PN lives on `client_entities.plan_number` (A-05 \u00a72.1).",
+        "examples": [
+          {
+            "allowed_actions": [
+              "ebp_plan.edit"
+            ],
+            "audit_kind": "103a3c",
+            "filer_status": "large_plan",
+            "form5500_due_on": "2026-10-15",
+            "participants_boy": 286,
+            "participants_eoy": 301,
+            "plan_name": "Northwind Robotics 401(k) Plan",
+            "plan_number": "001",
+            "plan_type": "401k",
+            "plan_year_end": "2025-12-31",
+            "plan_year_start": "2025-01-01",
+            "recordkeeper_id": "58217",
+            "safe_harbor": "qaca",
+            "sponsor_ein": {
+              "kind": "ein",
+              "last4": "6620",
+              "presence": "on_file"
+            },
+            "version": 1
+          }
+        ],
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "ebp_plan.edit",
+                "ebp_provider.manage",
+                "ebp_provider.invite",
+                "ebp_provider.request",
+                "ebp_import.create",
+                "ebp_correction.record",
+                "ebp_schedule.draft",
+                "ebp_certification.evaluate",
+                "ebp_form5500.key",
+                "ebp_schedule.render",
+                "ebp_form5500.send_note",
+                "ebp_form5500.remind",
+                "test.create",
+                "test.mark",
+                "field.sign_off",
+                "estimate.evaluate",
+                "estimate.request_conclusion",
+                "related_party.manage",
+                "related_party.screen_out",
+                "party_in_interest.manage",
+                "pii.reveal"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "audit_kind": {
+            "cls": "internal",
+            "enum": [
+              "103a3c",
+              "full_scope"
+            ],
+            "title": "Audit Kind",
+            "type": "string"
+          },
+          "filer_status": {
+            "cls": "internal",
+            "enum": [
+              "large_plan",
+              "small_plan"
+            ],
+            "title": "Filer Status",
+            "type": "string"
+          },
+          "form5500_due_on": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Form5500 Due On",
+            "type": "string"
+          },
+          "participants_boy": {
+            "cls": "confidential",
+            "minimum": 0.0,
+            "title": "Participants Boy",
+            "type": "integer"
+          },
+          "participants_eoy": {
+            "cls": "confidential",
+            "minimum": 0.0,
+            "title": "Participants Eoy",
+            "type": "integer"
+          },
+          "plan_name": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Plan Name",
+            "type": "string"
+          },
+          "plan_number": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Plan Number"
+          },
+          "plan_type": {
+            "cls": "internal",
+            "const": "401k",
+            "title": "Plan Type",
+            "type": "string"
+          },
+          "plan_year_end": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Plan Year End",
+            "type": "string"
+          },
+          "plan_year_start": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Plan Year Start",
+            "type": "string"
+          },
+          "recordkeeper_id": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Recordkeeper Id"
+          },
+          "safe_harbor": {
+            "cls": "internal",
+            "enum": [
+              "none",
+              "qaca",
+              "basic",
+              "nonelective"
+            ],
+            "title": "Safe Harbor",
+            "type": "string"
+          },
+          "sponsor_ein": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "x-pii-kind": "tin"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "plan_name",
+          "plan_number",
+          "plan_year_start",
+          "plan_year_end",
+          "plan_type",
+          "safe_harbor",
+          "recordkeeper_id",
+          "participants_boy",
+          "participants_eoy",
+          "filer_status",
+          "form5500_due_on",
+          "audit_kind",
+          "version",
+          "allowed_actions"
+        ],
+        "title": "PlanOut",
+        "type": "object"
+      },
       "PlanReadOut": {
         "description": "WB-03a \"Data it will read\": Tax returns 224 \u00b7 Tax engagements 214 \u00b7 Binders 241.",
         "properties": {
@@ -86696,6 +87299,84 @@
           "counts"
         ],
         "title": "PlatformPlanRequestsOut",
+        "type": "object"
+      },
+      "PlatformRegionOut": {
+        "properties": {
+          "code": {
+            "cls": "internal",
+            "enum": [
+              "us",
+              "eu",
+              "uk"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "planned_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Planned Label"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "live",
+              "planned"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "storage_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Storage Label"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "status",
+          "planned_label",
+          "storage_label"
+        ],
+        "title": "PlatformRegionOut",
+        "type": "object"
+      },
+      "PlatformRegionsOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/PlatformRegionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PlatformRegionsOut",
         "type": "object"
       },
       "PlatformSessionOut": {
@@ -93565,30 +94246,35 @@
         "title": "Pub1345Tolerances",
         "type": "object"
       },
-      "PublicationsOut": {
+      "PublicationOut": {
         "properties": {
-          "counts": {
-            "additionalProperties": {
-              "type": "integer"
-            },
+          "action": {
             "cls": "internal",
-            "title": "Counts",
-            "type": "object"
+            "enum": [
+              "published",
+              "deprecated"
+            ],
+            "title": "Action",
+            "type": "string"
           },
-          "items": {
+          "at": {
             "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/abacus__modules__platform__console_contract__PublicationOut"
-            },
-            "title": "Items",
-            "type": "array"
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "cls": "confidential",
+            "title": "By",
+            "type": "string"
           }
         },
         "required": [
-          "items",
-          "counts"
+          "action",
+          "by",
+          "at"
         ],
-        "title": "PublicationsOut",
+        "title": "PublicationOut",
         "type": "object"
       },
       "PublishBody": {
@@ -93609,6 +94295,23 @@
           }
         },
         "title": "PublishBody",
+        "type": "object"
+      },
+      "PublishIn": {
+        "additionalProperties": false,
+        "description": "\"applies from the September 2026 close; August stays on v3\" (CLS-09 b2).",
+        "properties": {
+          "effective_from": {
+            "cls": "internal",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+            "title": "Effective From",
+            "type": "string"
+          }
+        },
+        "required": [
+          "effective_from"
+        ],
+        "title": "PublishIn",
         "type": "object"
       },
       "PublishedVersionOut": {
@@ -96696,21 +97399,30 @@
         "title": "ReferenceSourceCitationOut",
         "type": "object"
       },
-      "RegionsOut": {
+      "RegionOut": {
         "properties": {
-          "items": {
+          "bbox": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/abacus__modules__platform__console_contract__RegionOut"
+              "type": "number"
             },
-            "title": "Items",
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Bbox",
             "type": "array"
+          },
+          "page": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
           }
         },
         "required": [
-          "items"
+          "page",
+          "bbox"
         ],
-        "title": "RegionsOut",
+        "title": "RegionOut",
         "type": "object"
       },
       "RegisterLineOut": {
@@ -98252,7 +98964,7 @@
           "publications": {
             "cls": "confidential",
             "items": {
-              "$ref": "#/components/schemas/abacus__modules__reporting__contract__PublicationOut"
+              "$ref": "#/components/schemas/PublicationOut"
             },
             "title": "Publications",
             "type": "array"
@@ -119894,6 +120606,203 @@
           "note"
         ],
         "title": "StatusComponentOut",
+        "type": "object"
+      },
+      "StatusIncidentIn": {
+        "additionalProperties": false,
+        "description": "A note never names a firm or client (lint plus runbook templates).",
+        "properties": {
+          "component_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Component Key",
+            "type": "string"
+          },
+          "public_note": {
+            "cls": "internal",
+            "maxLength": 280,
+            "minLength": 3,
+            "title": "Public Note",
+            "type": "string"
+          },
+          "severity": {
+            "cls": "internal",
+            "enum": [
+              "degraded",
+              "outage",
+              "maintenance"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "component_key",
+          "severity",
+          "title",
+          "public_note"
+        ],
+        "title": "StatusIncidentIn",
+        "type": "object"
+      },
+      "StatusIncidentOut": {
+        "properties": {
+          "component_key": {
+            "cls": "internal",
+            "title": "Component Key",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "posted_by": {
+            "cls": "internal",
+            "title": "Posted By",
+            "type": "string"
+          },
+          "public_note": {
+            "cls": "internal",
+            "maxLength": 280,
+            "title": "Public Note",
+            "type": "string"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Resolved At"
+          },
+          "severity": {
+            "cls": "internal",
+            "enum": [
+              "degraded",
+              "outage",
+              "maintenance"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          },
+          "updates": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StatusIncidentUpdateOut"
+            },
+            "title": "Updates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "component_key",
+          "severity",
+          "title",
+          "public_note",
+          "started_at",
+          "resolved_at",
+          "posted_by",
+          "updates"
+        ],
+        "title": "StatusIncidentOut",
+        "type": "object"
+      },
+      "StatusIncidentUpdateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "cls": "internal",
+            "maxLength": 280,
+            "minLength": 3,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "StatusIncidentUpdateIn",
+        "type": "object"
+      },
+      "StatusIncidentUpdateOut": {
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "note": {
+            "cls": "internal",
+            "maxLength": 280,
+            "title": "Note",
+            "type": "string"
+          },
+          "posted_by": {
+            "cls": "internal",
+            "title": "Posted By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "note",
+          "posted_by"
+        ],
+        "title": "StatusIncidentUpdateOut",
+        "type": "object"
+      },
+      "StatusIncidentsOut": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StatusIncidentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "counts"
+        ],
+        "title": "StatusIncidentsOut",
         "type": "object"
       },
       "StatusMoveIn": {
@@ -142027,200 +142936,6 @@
         "title": "AcceptedOut",
         "type": "object"
       },
-      "abacus__modules__assurance__ebp_contract__PlanOut": {
-        "description": "EBP-01's plan facts; the PN lives on `client_entities.plan_number` (A-05 \u00a72.1).",
-        "examples": [
-          {
-            "allowed_actions": [
-              "ebp_plan.edit"
-            ],
-            "audit_kind": "103a3c",
-            "filer_status": "large_plan",
-            "form5500_due_on": "2026-10-15",
-            "participants_boy": 286,
-            "participants_eoy": 301,
-            "plan_name": "Northwind Robotics 401(k) Plan",
-            "plan_number": "001",
-            "plan_type": "401k",
-            "plan_year_end": "2025-12-31",
-            "plan_year_start": "2025-01-01",
-            "recordkeeper_id": "58217",
-            "safe_harbor": "qaca",
-            "sponsor_ein": {
-              "kind": "ein",
-              "last4": "6620",
-              "presence": "on_file"
-            },
-            "version": 1
-          }
-        ],
-        "properties": {
-          "allowed_actions": {
-            "cls": "internal",
-            "items": {
-              "enum": [
-                "ebp_plan.edit",
-                "ebp_provider.manage",
-                "ebp_provider.invite",
-                "ebp_provider.request",
-                "ebp_import.create",
-                "ebp_correction.record",
-                "ebp_schedule.draft",
-                "ebp_certification.evaluate",
-                "ebp_form5500.key",
-                "ebp_schedule.render",
-                "ebp_form5500.send_note",
-                "ebp_form5500.remind",
-                "test.create",
-                "test.mark",
-                "field.sign_off",
-                "estimate.evaluate",
-                "estimate.request_conclusion",
-                "related_party.manage",
-                "related_party.screen_out",
-                "party_in_interest.manage",
-                "pii.reveal"
-              ],
-              "type": "string"
-            },
-            "title": "Allowed Actions",
-            "type": "array"
-          },
-          "audit_kind": {
-            "cls": "internal",
-            "enum": [
-              "103a3c",
-              "full_scope"
-            ],
-            "title": "Audit Kind",
-            "type": "string"
-          },
-          "filer_status": {
-            "cls": "internal",
-            "enum": [
-              "large_plan",
-              "small_plan"
-            ],
-            "title": "Filer Status",
-            "type": "string"
-          },
-          "form5500_due_on": {
-            "cls": "internal",
-            "format": "date",
-            "title": "Form5500 Due On",
-            "type": "string"
-          },
-          "participants_boy": {
-            "cls": "confidential",
-            "minimum": 0.0,
-            "title": "Participants Boy",
-            "type": "integer"
-          },
-          "participants_eoy": {
-            "cls": "confidential",
-            "minimum": 0.0,
-            "title": "Participants Eoy",
-            "type": "integer"
-          },
-          "plan_name": {
-            "cls": "internal",
-            "maxLength": 300,
-            "title": "Plan Name",
-            "type": "string"
-          },
-          "plan_number": {
-            "anyOf": [
-              {
-                "pattern": "^[0-9]{3}$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Plan Number"
-          },
-          "plan_type": {
-            "cls": "internal",
-            "const": "401k",
-            "title": "Plan Type",
-            "type": "string"
-          },
-          "plan_year_end": {
-            "cls": "internal",
-            "format": "date",
-            "title": "Plan Year End",
-            "type": "string"
-          },
-          "plan_year_start": {
-            "cls": "internal",
-            "format": "date",
-            "title": "Plan Year Start",
-            "type": "string"
-          },
-          "recordkeeper_id": {
-            "anyOf": [
-              {
-                "maxLength": 20,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Recordkeeper Id"
-          },
-          "safe_harbor": {
-            "cls": "internal",
-            "enum": [
-              "none",
-              "qaca",
-              "basic",
-              "nonelective"
-            ],
-            "title": "Safe Harbor",
-            "type": "string"
-          },
-          "sponsor_ein": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/MaskedTinOut"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "restricted",
-            "x-pii-kind": "tin"
-          },
-          "version": {
-            "cls": "internal",
-            "minimum": 1.0,
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "plan_name",
-          "plan_number",
-          "plan_year_start",
-          "plan_year_end",
-          "plan_type",
-          "safe_harbor",
-          "recordkeeper_id",
-          "participants_boy",
-          "participants_eoy",
-          "filer_status",
-          "form5500_due_on",
-          "audit_kind",
-          "version",
-          "allowed_actions"
-        ],
-        "title": "PlanOut",
-        "type": "object"
-      },
       "abacus__modules__assurance__ebp_contract__ProviderOut": {
         "examples": [
           {
@@ -142634,23 +143349,6 @@
           "row_version"
         ],
         "title": "AdoptOut",
-        "type": "object"
-      },
-      "abacus__modules__closes__contract__PublishIn": {
-        "additionalProperties": false,
-        "description": "\"applies from the September 2026 close; August stays on v3\" (CLS-09 b2).",
-        "properties": {
-          "effective_from": {
-            "cls": "internal",
-            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
-            "title": "Effective From",
-            "type": "string"
-          }
-        },
-        "required": [
-          "effective_from"
-        ],
-        "title": "PublishIn",
         "type": "object"
       },
       "abacus__modules__connections__routes__ProviderOut": {
@@ -143631,673 +144329,6 @@
         "title": "StepOut",
         "type": "object"
       },
-      "abacus__modules__notices__contract__RegionOut": {
-        "properties": {
-          "bbox": {
-            "cls": "internal",
-            "items": {
-              "type": "number"
-            },
-            "maxItems": 4,
-            "minItems": 4,
-            "title": "Bbox",
-            "type": "array"
-          },
-          "page": {
-            "cls": "internal",
-            "minimum": 1.0,
-            "title": "Page",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "page",
-          "bbox"
-        ],
-        "title": "RegionOut",
-        "type": "object"
-      },
-      "abacus__modules__platform__console_contract__IncidentIn": {
-        "additionalProperties": false,
-        "description": "A note never names a firm or client (lint plus runbook templates).",
-        "properties": {
-          "component_key": {
-            "cls": "internal",
-            "maxLength": 80,
-            "minLength": 1,
-            "title": "Component Key",
-            "type": "string"
-          },
-          "public_note": {
-            "cls": "internal",
-            "maxLength": 280,
-            "minLength": 3,
-            "title": "Public Note",
-            "type": "string"
-          },
-          "severity": {
-            "cls": "internal",
-            "enum": [
-              "degraded",
-              "outage",
-              "maintenance"
-            ],
-            "title": "Severity",
-            "type": "string"
-          },
-          "title": {
-            "cls": "internal",
-            "maxLength": 120,
-            "minLength": 3,
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "component_key",
-          "severity",
-          "title",
-          "public_note"
-        ],
-        "title": "IncidentIn",
-        "type": "object"
-      },
-      "abacus__modules__platform__console_contract__IncidentOut": {
-        "properties": {
-          "component_key": {
-            "cls": "internal",
-            "title": "Component Key",
-            "type": "string"
-          },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "posted_by": {
-            "cls": "internal",
-            "title": "Posted By",
-            "type": "string"
-          },
-          "public_note": {
-            "cls": "internal",
-            "maxLength": 280,
-            "title": "Public Note",
-            "type": "string"
-          },
-          "resolved_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Resolved At"
-          },
-          "severity": {
-            "cls": "internal",
-            "enum": [
-              "degraded",
-              "outage",
-              "maintenance"
-            ],
-            "title": "Severity",
-            "type": "string"
-          },
-          "started_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Started At",
-            "type": "string"
-          },
-          "title": {
-            "cls": "internal",
-            "title": "Title",
-            "type": "string"
-          },
-          "updates": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/IncidentUpdateOut"
-            },
-            "title": "Updates",
-            "type": "array"
-          }
-        },
-        "required": [
-          "id",
-          "component_key",
-          "severity",
-          "title",
-          "public_note",
-          "started_at",
-          "resolved_at",
-          "posted_by",
-          "updates"
-        ],
-        "title": "IncidentOut",
-        "type": "object"
-      },
-      "abacus__modules__platform__console_contract__PublicationOut": {
-        "properties": {
-          "can_publish": {
-            "cls": "internal",
-            "title": "Can Publish",
-            "type": "boolean"
-          },
-          "drafted_by": {
-            "cls": "internal",
-            "title": "Drafted By",
-            "type": "string"
-          },
-          "effective_from": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Effective From"
-          },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "key": {
-            "cls": "internal",
-            "title": "Key",
-            "type": "string"
-          },
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "help_article",
-              "reference_set"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "rows_added": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Rows Added",
-            "type": "integer"
-          },
-          "rows_changed": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Rows Changed",
-            "type": "integer"
-          },
-          "rows_removed": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Rows Removed",
-            "type": "integer"
-          },
-          "status": {
-            "cls": "internal",
-            "enum": [
-              "draft",
-              "published",
-              "withdrawn"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "version": {
-            "cls": "internal",
-            "minimum": 1.0,
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "kind",
-          "key",
-          "version",
-          "drafted_by",
-          "effective_from",
-          "rows_added",
-          "rows_changed",
-          "rows_removed",
-          "status",
-          "can_publish"
-        ],
-        "title": "PublicationOut",
-        "type": "object"
-      },
-      "abacus__modules__platform__console_contract__PublishIn": {
-        "additionalProperties": false,
-        "properties": {
-          "reason": {
-            "cls": "confidential",
-            "maxLength": 500,
-            "minLength": 20,
-            "title": "Reason",
-            "type": "string"
-          }
-        },
-        "required": [
-          "reason"
-        ],
-        "title": "PublishIn",
-        "type": "object"
-      },
-      "abacus__modules__platform__console_contract__RegionOut": {
-        "properties": {
-          "code": {
-            "cls": "internal",
-            "enum": [
-              "us",
-              "eu",
-              "uk"
-            ],
-            "title": "Code",
-            "type": "string"
-          },
-          "label": {
-            "cls": "internal",
-            "title": "Label",
-            "type": "string"
-          },
-          "planned_label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Planned Label"
-          },
-          "status": {
-            "cls": "internal",
-            "enum": [
-              "live",
-              "planned"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "storage_label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Storage Label"
-          }
-        },
-        "required": [
-          "code",
-          "label",
-          "status",
-          "planned_label",
-          "storage_label"
-        ],
-        "title": "RegionOut",
-        "type": "object"
-      },
-      "abacus__modules__platform__incident_routes__IncidentIn": {
-        "additionalProperties": false,
-        "description": "What the QI knows when recording; counts and encryption may be unknown yet.",
-        "properties": {
-          "consumers_affected": {
-            "anyOf": [
-              {
-                "maximum": 1000000000.0,
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Consumers Affected"
-          },
-          "discovered_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Discovered At",
-            "type": "string"
-          },
-          "event_kind": {
-            "cls": "internal",
-            "enum": [
-              "unauthorized_access",
-              "credential_attack",
-              "data_exposure",
-              "lost_device",
-              "vendor_incident",
-              "other"
-            ],
-            "title": "Event Kind",
-            "type": "string"
-          },
-          "title": {
-            "cls": "confidential",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Title",
-            "type": "string"
-          },
-          "unencrypted": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Unencrypted"
-          }
-        },
-        "required": [
-          "title",
-          "event_kind",
-          "discovered_at"
-        ],
-        "title": "IncidentIn",
-        "type": "object"
-      },
-      "abacus__modules__platform__incident_routes__IncidentOut": {
-        "description": "One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;\n`clock_day` of `clock_days` have passed in the firm's time zone.",
-        "properties": {
-          "accrued_confirmed_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Accrued Confirmed At"
-          },
-          "accrued_ref": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Accrued Ref"
-          },
-          "clock_day": {
-            "cls": "internal",
-            "title": "Clock Day",
-            "type": "integer"
-          },
-          "clock_days": {
-            "cls": "internal",
-            "title": "Clock Days",
-            "type": "integer"
-          },
-          "consumers_affected": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Consumers Affected"
-          },
-          "created_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "discovered_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Discovered At",
-            "type": "string"
-          },
-          "dpa_notice_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Dpa Notice At"
-          },
-          "event_kind": {
-            "cls": "internal",
-            "enum": [
-              "unauthorized_access",
-              "credential_attack",
-              "data_exposure",
-              "lost_device",
-              "vendor_incident",
-              "other"
-            ],
-            "title": "Event Kind",
-            "type": "string"
-          },
-          "ftc_notify_by": {
-            "cls": "internal",
-            "format": "date",
-            "title": "Ftc Notify By",
-            "type": "string"
-          },
-          "id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "notification_event": {
-            "cls": "internal",
-            "title": "Notification Event",
-            "type": "boolean"
-          },
-          "ref": {
-            "cls": "internal",
-            "title": "Ref",
-            "type": "string"
-          },
-          "source": {
-            "cls": "internal",
-            "enum": [
-              "firm",
-              "accrued"
-            ],
-            "title": "Source",
-            "type": "string"
-          },
-          "title": {
-            "cls": "confidential",
-            "title": "Title",
-            "type": "string"
-          },
-          "unencrypted": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Unencrypted"
-          }
-        },
-        "required": [
-          "id",
-          "ref",
-          "title",
-          "event_kind",
-          "discovered_at",
-          "notification_event",
-          "ftc_notify_by",
-          "clock_day",
-          "clock_days",
-          "source",
-          "created_at"
-        ],
-        "title": "IncidentOut",
-        "type": "object"
-      },
-      "abacus__modules__platform__plan_usage_contract__PlanOut": {
-        "description": "GET /v1/firm/plan (AC-27, AC-29): term, renewal, seats, modules and the library label.",
-        "properties": {
-          "billing_contact": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PersonRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "included_agent_minutes": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Included Agent Minutes",
-            "type": "integer"
-          },
-          "library_channel": {
-            "cls": "internal",
-            "enum": [
-              "stable",
-              "early_access"
-            ],
-            "title": "Library Channel",
-            "type": "string"
-          },
-          "modules": {
-            "cls": "internal",
-            "items": {
-              "enum": [
-                "tax",
-                "audit_assurance",
-                "client_accounting",
-                "advisory",
-                "attest",
-                "internal_audit",
-                "group_audit",
-                "statements_studio",
-                "office_addins",
-                "insights",
-                "tax_returns",
-                "ebp_audits",
-                "assurance_completion",
-                "tax_entity_returns",
-                "cas_closes"
-              ],
-              "type": "string"
-            },
-            "title": "Modules",
-            "type": "array"
-          },
-          "plan_code": {
-            "cls": "internal",
-            "title": "Plan Code",
-            "type": "string"
-          },
-          "renewal_in_days": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Renewal In Days",
-            "type": "integer"
-          },
-          "renewal_on": {
-            "cls": "internal",
-            "format": "date",
-            "title": "Renewal On",
-            "type": "string"
-          },
-          "seats": {
-            "$ref": "#/components/schemas/SeatsOut"
-          },
-          "term_end": {
-            "cls": "internal",
-            "format": "date",
-            "title": "Term End",
-            "type": "string"
-          },
-          "term_start": {
-            "cls": "internal",
-            "format": "date",
-            "title": "Term Start",
-            "type": "string"
-          },
-          "usage_month_anchor_day": {
-            "cls": "internal",
-            "maximum": 28.0,
-            "minimum": 1.0,
-            "title": "Usage Month Anchor Day",
-            "type": "integer"
-          },
-          "version": {
-            "cls": "internal",
-            "minimum": 1.0,
-            "title": "Version",
-            "type": "integer"
-          },
-          "workbench_active_30d": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Workbench Active 30D",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "plan_code",
-          "term_start",
-          "term_end",
-          "renewal_on",
-          "renewal_in_days",
-          "seats",
-          "modules",
-          "library_channel",
-          "billing_contact",
-          "workbench_active_30d",
-          "included_agent_minutes",
-          "usage_month_anchor_day",
-          "version"
-        ],
-        "title": "PlanOut",
-        "type": "object"
-      },
       "abacus__modules__reporting__contract__ApprovalOut": {
         "properties": {
           "at": {
@@ -144317,37 +144348,6 @@
           "at"
         ],
         "title": "ApprovalOut",
-        "type": "object"
-      },
-      "abacus__modules__reporting__contract__PublicationOut": {
-        "properties": {
-          "action": {
-            "cls": "internal",
-            "enum": [
-              "published",
-              "deprecated"
-            ],
-            "title": "Action",
-            "type": "string"
-          },
-          "at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "At",
-            "type": "string"
-          },
-          "by": {
-            "cls": "confidential",
-            "title": "By",
-            "type": "string"
-          }
-        },
-        "required": [
-          "action",
-          "by",
-          "at"
-        ],
-        "title": "PublicationOut",
         "type": "object"
       },
       "abacus__modules__sampling__contract__ApproveIn": {
@@ -159057,7 +159057,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__assurance__ebp_contract__PlanOut"
+                  "$ref": "#/components/schemas/PlanOut"
                 }
               }
             },
@@ -159183,7 +159183,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__assurance__ebp_contract__PlanOut"
+                  "$ref": "#/components/schemas/PlanOut"
                 }
               }
             },
@@ -177443,7 +177443,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__closes__contract__PublishIn"
+                "$ref": "#/components/schemas/PublishIn"
               }
             }
           },
@@ -252579,7 +252579,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__platform__plan_usage_contract__PlanOut"
+                  "$ref": "#/components/schemas/FirmPlanOut"
                 }
               }
             },
@@ -253364,7 +253364,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__platform__plan_usage_contract__PlanOut"
+                  "$ref": "#/components/schemas/FirmPlanOut"
                 }
               }
             },
@@ -255376,7 +255376,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__platform__incident_routes__IncidentIn"
+                "$ref": "#/components/schemas/IncidentIn"
               }
             }
           },
@@ -255387,7 +255387,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__platform__incident_routes__IncidentOut"
+                  "$ref": "#/components/schemas/IncidentOut"
                 }
               }
             },
@@ -284866,7 +284866,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PublicationsOut"
+                  "$ref": "#/components/schemas/ConsolePublicationsOut"
                 }
               }
             },
@@ -284978,7 +284978,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__platform__console_contract__PublishIn"
+                "$ref": "#/components/schemas/ConsolePublishIn"
               }
             }
           },
@@ -284989,7 +284989,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__platform__console_contract__PublicationOut"
+                  "$ref": "#/components/schemas/ConsolePublicationOut"
                 }
               }
             },
@@ -285111,7 +285111,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__platform__console_contract__PublishIn"
+                "$ref": "#/components/schemas/ConsolePublishIn"
               }
             }
           },
@@ -285122,7 +285122,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__platform__console_contract__PublicationOut"
+                  "$ref": "#/components/schemas/ConsolePublicationOut"
                 }
               }
             },
@@ -285222,7 +285222,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegionsOut"
+                  "$ref": "#/components/schemas/PlatformRegionsOut"
                 }
               }
             },
@@ -285923,7 +285923,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IncidentsOut"
+                  "$ref": "#/components/schemas/StatusIncidentsOut"
                 }
               }
             },
@@ -286021,7 +286021,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__platform__console_contract__IncidentIn"
+                "$ref": "#/components/schemas/StatusIncidentIn"
               }
             }
           },
@@ -286032,7 +286032,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__platform__console_contract__IncidentOut"
+                  "$ref": "#/components/schemas/StatusIncidentOut"
                 }
               }
             },
@@ -286131,7 +286131,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IncidentUpdateIn"
+                "$ref": "#/components/schemas/StatusIncidentUpdateIn"
               }
             }
           },
@@ -286142,7 +286142,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__platform__console_contract__IncidentOut"
+                  "$ref": "#/components/schemas/StatusIncidentOut"
                 }
               }
             },
@@ -286251,7 +286251,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IncidentUpdateIn"
+                "$ref": "#/components/schemas/StatusIncidentUpdateIn"
               }
             }
           },
@@ -286262,7 +286262,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__platform__console_contract__IncidentOut"
+                  "$ref": "#/components/schemas/StatusIncidentOut"
                 }
               }
             },

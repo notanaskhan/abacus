@@ -13648,6 +13648,82 @@ export type ConsentTermsOut = {
 };
 
 /**
+ * ConsolePublicationOut
+ */
+export type ConsolePublicationOut = {
+    /**
+     * Can Publish
+     */
+    can_publish: boolean;
+    /**
+     * Drafted By
+     */
+    drafted_by: string;
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'help_article' | 'reference_set';
+    /**
+     * Rows Added
+     */
+    rows_added: number;
+    /**
+     * Rows Changed
+     */
+    rows_changed: number;
+    /**
+     * Rows Removed
+     */
+    rows_removed: number;
+    /**
+     * Status
+     */
+    status: 'draft' | 'published' | 'withdrawn';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ConsolePublicationsOut
+ */
+export type ConsolePublicationsOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<ConsolePublicationOut>;
+};
+
+/**
+ * ConsolePublishIn
+ */
+export type ConsolePublishIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
  * ConsolidatedTbOut
  */
 export type ConsolidatedTbOut = {
@@ -24682,6 +24758,60 @@ export type FirmPauseOut = {
 };
 
 /**
+ * FirmPlanOut
+ *
+ * GET /v1/firm/plan (AC-27, AC-29): term, renewal, seats, modules and the library label.
+ */
+export type FirmPlanOut = {
+    billing_contact: PersonRef | null;
+    /**
+     * Included Agent Minutes
+     */
+    included_agent_minutes: number;
+    /**
+     * Library Channel
+     */
+    library_channel: 'stable' | 'early_access';
+    /**
+     * Modules
+     */
+    modules: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
+    /**
+     * Plan Code
+     */
+    plan_code: string;
+    /**
+     * Renewal In Days
+     */
+    renewal_in_days: number;
+    /**
+     * Renewal On
+     */
+    renewal_on: string;
+    seats: SeatsOut;
+    /**
+     * Term End
+     */
+    term_end: string;
+    /**
+     * Term Start
+     */
+    term_start: string;
+    /**
+     * Usage Month Anchor Day
+     */
+    usage_month_anchor_day: number;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Workbench Active 30D
+     */
+    workbench_active_30d: number;
+};
+
+/**
  * FirmRefIn
  */
 export type FirmRefIn = {
@@ -29286,6 +29416,107 @@ export type IncidentDecisionOut = {
 };
 
 /**
+ * IncidentIn
+ *
+ * What the QI knows when recording; counts and encryption may be unknown yet.
+ */
+export type IncidentIn = {
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
+ * IncidentOut
+ *
+ * One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;
+ * `clock_day` of `clock_days` have passed in the firm's time zone.
+ */
+export type IncidentOut = {
+    /**
+     * Accrued Confirmed At
+     */
+    accrued_confirmed_at?: string | null;
+    /**
+     * Accrued Ref
+     */
+    accrued_ref?: string | null;
+    /**
+     * Clock Day
+     */
+    clock_day: number;
+    /**
+     * Clock Days
+     */
+    clock_days: number;
+    /**
+     * Consumers Affected
+     */
+    consumers_affected?: number | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Dpa Notice At
+     */
+    dpa_notice_at?: string | null;
+    /**
+     * Event Kind
+     */
+    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
+    /**
+     * Ftc Notify By
+     */
+    ftc_notify_by: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Notification Event
+     */
+    notification_event: boolean;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Source
+     */
+    source: 'firm' | 'accrued';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unencrypted
+     */
+    unencrypted?: boolean | null;
+};
+
+/**
  * IncidentPendingDecisionOut
  *
  * One of two decisions recorded: "Waiting for Margaret Okonkwo" (AC-22).
@@ -29453,50 +29684,6 @@ export type IncidentTimelineEntryOut = {
      * Source
      */
     source: 'firm' | 'accrued' | 'system';
-};
-
-/**
- * IncidentUpdateIn
- */
-export type IncidentUpdateIn = {
-    /**
-     * Note
-     */
-    note: string;
-};
-
-/**
- * IncidentUpdateOut
- */
-export type IncidentUpdateOut = {
-    /**
-     * At
-     */
-    at: string;
-    /**
-     * Note
-     */
-    note: string;
-    /**
-     * Posted By
-     */
-    posted_by: string;
-};
-
-/**
- * IncidentsOut
- */
-export type IncidentsOut = {
-    /**
-     * Counts
-     */
-    counts: {
-        [key: string]: number;
-    };
-    /**
-     * Items
-     */
-    items: Array<AbacusModulesPlatformConsoleContractIncidentOut>;
 };
 
 /**
@@ -30416,7 +30603,7 @@ export type IntakeFieldOut = {
      * Origin
      */
     origin: 'code_map' | 'agent' | 'human';
-    region?: AbacusModulesNoticesContractRegionOut | null;
+    region?: RegionOut | null;
     tin?: MaskedTinOut | null;
     /**
      * Value Text
@@ -40164,6 +40351,71 @@ export type PlanHistoryOut = {
 };
 
 /**
+ * PlanOut
+ *
+ * EBP-01's plan facts; the PN lives on `client_entities.plan_number` (A-05 §2.1).
+ */
+export type PlanOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'ebp_plan.edit' | 'ebp_provider.manage' | 'ebp_provider.invite' | 'ebp_provider.request' | 'ebp_import.create' | 'ebp_correction.record' | 'ebp_schedule.draft' | 'ebp_certification.evaluate' | 'ebp_form5500.key' | 'ebp_schedule.render' | 'ebp_form5500.send_note' | 'ebp_form5500.remind' | 'test.create' | 'test.mark' | 'field.sign_off' | 'estimate.evaluate' | 'estimate.request_conclusion' | 'related_party.manage' | 'related_party.screen_out' | 'party_in_interest.manage' | 'pii.reveal'>;
+    /**
+     * Audit Kind
+     */
+    audit_kind: '103a3c' | 'full_scope';
+    /**
+     * Filer Status
+     */
+    filer_status: 'large_plan' | 'small_plan';
+    /**
+     * Form5500 Due On
+     */
+    form5500_due_on: string;
+    /**
+     * Participants Boy
+     */
+    participants_boy: number;
+    /**
+     * Participants Eoy
+     */
+    participants_eoy: number;
+    /**
+     * Plan Name
+     */
+    plan_name: string;
+    /**
+     * Plan Number
+     */
+    plan_number: string | null;
+    /**
+     * Plan Type
+     */
+    plan_type: '401k';
+    /**
+     * Plan Year End
+     */
+    plan_year_end: string;
+    /**
+     * Plan Year Start
+     */
+    plan_year_start: string;
+    /**
+     * Recordkeeper Id
+     */
+    recordkeeper_id: string | null;
+    /**
+     * Safe Harbor
+     */
+    safe_harbor: 'none' | 'qaca' | 'basic' | 'nonelective';
+    sponsor_ein?: MaskedTinOut | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * PlanReadOut
  *
  * WB-03a "Data it will read": Tax returns 224 · Tax engagements 214 · Binders 241.
@@ -40763,6 +41015,42 @@ export type PlatformPlanRequestsOut = {
      * Next Cursor
      */
     next_cursor?: string | null;
+};
+
+/**
+ * PlatformRegionOut
+ */
+export type PlatformRegionOut = {
+    /**
+     * Code
+     */
+    code: 'us' | 'eu' | 'uk';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Planned Label
+     */
+    planned_label: string | null;
+    /**
+     * Status
+     */
+    status: 'live' | 'planned';
+    /**
+     * Storage Label
+     */
+    storage_label: string | null;
+};
+
+/**
+ * PlatformRegionsOut
+ */
+export type PlatformRegionsOut = {
+    /**
+     * Items
+     */
+    items: Array<PlatformRegionOut>;
 };
 
 /**
@@ -44101,19 +44389,21 @@ export type Pub1345Tolerances = {
 };
 
 /**
- * PublicationsOut
+ * PublicationOut
  */
-export type PublicationsOut = {
+export type PublicationOut = {
     /**
-     * Counts
+     * Action
      */
-    counts: {
-        [key: string]: number;
-    };
+    action: 'published' | 'deprecated';
     /**
-     * Items
+     * At
      */
-    items: Array<AbacusModulesPlatformConsoleContractPublicationOut>;
+    at: string;
+    /**
+     * By
+     */
+    by: string;
 };
 
 /**
@@ -44124,6 +44414,18 @@ export type PublishBody = {
      * Effective From
      */
     effective_from?: string | null;
+};
+
+/**
+ * PublishIn
+ *
+ * "applies from the September 2026 close; August stays on v3" (CLS-09 b2).
+ */
+export type PublishIn = {
+    /**
+     * Effective From
+     */
+    effective_from: string;
 };
 
 /**
@@ -45576,13 +45878,22 @@ export type ReferenceSourceCitationOut = {
 };
 
 /**
- * RegionsOut
+ * RegionOut
  */
-export type RegionsOut = {
+export type RegionOut = {
     /**
-     * Items
+     * Bbox
      */
-    items: Array<AbacusModulesPlatformConsoleContractRegionOut>;
+    bbox: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Page
+     */
+    page: number;
 };
 
 /**
@@ -46306,7 +46617,7 @@ export type ReportTemplateVersionOut = {
     /**
      * Publications
      */
-    publications: Array<AbacusModulesReportingContractPublicationOut>;
+    publications: Array<PublicationOut>;
     /**
      * Template Id
      */
@@ -56336,6 +56647,116 @@ export type StatusComponentOut = {
      * State
      */
     state: 'operational' | 'needs_attention' | 'outage' | 'maintenance';
+};
+
+/**
+ * StatusIncidentIn
+ *
+ * A note never names a firm or client (lint plus runbook templates).
+ */
+export type StatusIncidentIn = {
+    /**
+     * Component Key
+     */
+    component_key: string;
+    /**
+     * Public Note
+     */
+    public_note: string;
+    /**
+     * Severity
+     */
+    severity: 'degraded' | 'outage' | 'maintenance';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * StatusIncidentOut
+ */
+export type StatusIncidentOut = {
+    /**
+     * Component Key
+     */
+    component_key: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Posted By
+     */
+    posted_by: string;
+    /**
+     * Public Note
+     */
+    public_note: string;
+    /**
+     * Resolved At
+     */
+    resolved_at: string | null;
+    /**
+     * Severity
+     */
+    severity: 'degraded' | 'outage' | 'maintenance';
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Updates
+     */
+    updates: Array<StatusIncidentUpdateOut>;
+};
+
+/**
+ * StatusIncidentUpdateIn
+ */
+export type StatusIncidentUpdateIn = {
+    /**
+     * Note
+     */
+    note: string;
+};
+
+/**
+ * StatusIncidentUpdateOut
+ */
+export type StatusIncidentUpdateOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Note
+     */
+    note: string;
+    /**
+     * Posted By
+     */
+    posted_by: string;
+};
+
+/**
+ * StatusIncidentsOut
+ */
+export type StatusIncidentsOut = {
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Items
+     */
+    items: Array<StatusIncidentOut>;
 };
 
 /**
@@ -66705,71 +67126,6 @@ export type AbacusModulesAssuranceEbpContractAcceptedOut = {
 };
 
 /**
- * PlanOut
- *
- * EBP-01's plan facts; the PN lives on `client_entities.plan_number` (A-05 §2.1).
- */
-export type AbacusModulesAssuranceEbpContractPlanOut = {
-    /**
-     * Allowed Actions
-     */
-    allowed_actions: Array<'ebp_plan.edit' | 'ebp_provider.manage' | 'ebp_provider.invite' | 'ebp_provider.request' | 'ebp_import.create' | 'ebp_correction.record' | 'ebp_schedule.draft' | 'ebp_certification.evaluate' | 'ebp_form5500.key' | 'ebp_schedule.render' | 'ebp_form5500.send_note' | 'ebp_form5500.remind' | 'test.create' | 'test.mark' | 'field.sign_off' | 'estimate.evaluate' | 'estimate.request_conclusion' | 'related_party.manage' | 'related_party.screen_out' | 'party_in_interest.manage' | 'pii.reveal'>;
-    /**
-     * Audit Kind
-     */
-    audit_kind: '103a3c' | 'full_scope';
-    /**
-     * Filer Status
-     */
-    filer_status: 'large_plan' | 'small_plan';
-    /**
-     * Form5500 Due On
-     */
-    form5500_due_on: string;
-    /**
-     * Participants Boy
-     */
-    participants_boy: number;
-    /**
-     * Participants Eoy
-     */
-    participants_eoy: number;
-    /**
-     * Plan Name
-     */
-    plan_name: string;
-    /**
-     * Plan Number
-     */
-    plan_number: string | null;
-    /**
-     * Plan Type
-     */
-    plan_type: '401k';
-    /**
-     * Plan Year End
-     */
-    plan_year_end: string;
-    /**
-     * Plan Year Start
-     */
-    plan_year_start: string;
-    /**
-     * Recordkeeper Id
-     */
-    recordkeeper_id: string | null;
-    /**
-     * Safe Harbor
-     */
-    safe_harbor: 'none' | 'qaca' | 'basic' | 'nonelective';
-    sponsor_ein?: MaskedTinOut | null;
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
  * ProviderOut
  */
 export type AbacusModulesAssuranceEbpContractProviderOut = {
@@ -66924,18 +67280,6 @@ export type AbacusModulesClosesContractAdoptOut = {
      * Row Version
      */
     row_version: number;
-};
-
-/**
- * PublishIn
- *
- * "applies from the September 2026 close; August stays on v3" (CLS-09 b2).
- */
-export type AbacusModulesClosesContractPublishIn = {
-    /**
-     * Effective From
-     */
-    effective_from: string;
 };
 
 /**
@@ -67418,353 +67762,9 @@ export type AbacusModulesMethodologyContractStepOut = {
 };
 
 /**
- * RegionOut
- */
-export type AbacusModulesNoticesContractRegionOut = {
-    /**
-     * Bbox
-     */
-    bbox: [
-        number,
-        number,
-        number,
-        number
-    ];
-    /**
-     * Page
-     */
-    page: number;
-};
-
-/**
- * IncidentIn
- *
- * A note never names a firm or client (lint plus runbook templates).
- */
-export type AbacusModulesPlatformConsoleContractIncidentIn = {
-    /**
-     * Component Key
-     */
-    component_key: string;
-    /**
-     * Public Note
-     */
-    public_note: string;
-    /**
-     * Severity
-     */
-    severity: 'degraded' | 'outage' | 'maintenance';
-    /**
-     * Title
-     */
-    title: string;
-};
-
-/**
- * IncidentOut
- */
-export type AbacusModulesPlatformConsoleContractIncidentOut = {
-    /**
-     * Component Key
-     */
-    component_key: string;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Posted By
-     */
-    posted_by: string;
-    /**
-     * Public Note
-     */
-    public_note: string;
-    /**
-     * Resolved At
-     */
-    resolved_at: string | null;
-    /**
-     * Severity
-     */
-    severity: 'degraded' | 'outage' | 'maintenance';
-    /**
-     * Started At
-     */
-    started_at: string;
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Updates
-     */
-    updates: Array<IncidentUpdateOut>;
-};
-
-/**
- * PublicationOut
- */
-export type AbacusModulesPlatformConsoleContractPublicationOut = {
-    /**
-     * Can Publish
-     */
-    can_publish: boolean;
-    /**
-     * Drafted By
-     */
-    drafted_by: string;
-    /**
-     * Effective From
-     */
-    effective_from: string | null;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Key
-     */
-    key: string;
-    /**
-     * Kind
-     */
-    kind: 'help_article' | 'reference_set';
-    /**
-     * Rows Added
-     */
-    rows_added: number;
-    /**
-     * Rows Changed
-     */
-    rows_changed: number;
-    /**
-     * Rows Removed
-     */
-    rows_removed: number;
-    /**
-     * Status
-     */
-    status: 'draft' | 'published' | 'withdrawn';
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
- * PublishIn
- */
-export type AbacusModulesPlatformConsoleContractPublishIn = {
-    /**
-     * Reason
-     */
-    reason: string;
-};
-
-/**
- * RegionOut
- */
-export type AbacusModulesPlatformConsoleContractRegionOut = {
-    /**
-     * Code
-     */
-    code: 'us' | 'eu' | 'uk';
-    /**
-     * Label
-     */
-    label: string;
-    /**
-     * Planned Label
-     */
-    planned_label: string | null;
-    /**
-     * Status
-     */
-    status: 'live' | 'planned';
-    /**
-     * Storage Label
-     */
-    storage_label: string | null;
-};
-
-/**
- * IncidentIn
- *
- * What the QI knows when recording; counts and encryption may be unknown yet.
- */
-export type AbacusModulesPlatformIncidentRoutesIncidentIn = {
-    /**
-     * Consumers Affected
-     */
-    consumers_affected?: number | null;
-    /**
-     * Discovered At
-     */
-    discovered_at: string;
-    /**
-     * Event Kind
-     */
-    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Unencrypted
-     */
-    unencrypted?: boolean | null;
-};
-
-/**
- * IncidentOut
- *
- * One register entry with its clock: notify by `ftc_notify_by` when `notification_event`;
- * `clock_day` of `clock_days` have passed in the firm's time zone.
- */
-export type AbacusModulesPlatformIncidentRoutesIncidentOut = {
-    /**
-     * Accrued Confirmed At
-     */
-    accrued_confirmed_at?: string | null;
-    /**
-     * Accrued Ref
-     */
-    accrued_ref?: string | null;
-    /**
-     * Clock Day
-     */
-    clock_day: number;
-    /**
-     * Clock Days
-     */
-    clock_days: number;
-    /**
-     * Consumers Affected
-     */
-    consumers_affected?: number | null;
-    /**
-     * Created At
-     */
-    created_at: string;
-    /**
-     * Discovered At
-     */
-    discovered_at: string;
-    /**
-     * Dpa Notice At
-     */
-    dpa_notice_at?: string | null;
-    /**
-     * Event Kind
-     */
-    event_kind: 'unauthorized_access' | 'credential_attack' | 'data_exposure' | 'lost_device' | 'vendor_incident' | 'other';
-    /**
-     * Ftc Notify By
-     */
-    ftc_notify_by: string;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Notification Event
-     */
-    notification_event: boolean;
-    /**
-     * Ref
-     */
-    ref: string;
-    /**
-     * Source
-     */
-    source: 'firm' | 'accrued';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Unencrypted
-     */
-    unencrypted?: boolean | null;
-};
-
-/**
- * PlanOut
- *
- * GET /v1/firm/plan (AC-27, AC-29): term, renewal, seats, modules and the library label.
- */
-export type AbacusModulesPlatformPlanUsageContractPlanOut = {
-    billing_contact: PersonRef | null;
-    /**
-     * Included Agent Minutes
-     */
-    included_agent_minutes: number;
-    /**
-     * Library Channel
-     */
-    library_channel: 'stable' | 'early_access';
-    /**
-     * Modules
-     */
-    modules: Array<'tax' | 'audit_assurance' | 'client_accounting' | 'advisory' | 'attest' | 'internal_audit' | 'group_audit' | 'statements_studio' | 'office_addins' | 'insights' | 'tax_returns' | 'ebp_audits' | 'assurance_completion' | 'tax_entity_returns' | 'cas_closes'>;
-    /**
-     * Plan Code
-     */
-    plan_code: string;
-    /**
-     * Renewal In Days
-     */
-    renewal_in_days: number;
-    /**
-     * Renewal On
-     */
-    renewal_on: string;
-    seats: SeatsOut;
-    /**
-     * Term End
-     */
-    term_end: string;
-    /**
-     * Term Start
-     */
-    term_start: string;
-    /**
-     * Usage Month Anchor Day
-     */
-    usage_month_anchor_day: number;
-    /**
-     * Version
-     */
-    version: number;
-    /**
-     * Workbench Active 30D
-     */
-    workbench_active_30d: number;
-};
-
-/**
  * ApprovalOut
  */
 export type AbacusModulesReportingContractApprovalOut = {
-    /**
-     * At
-     */
-    at: string;
-    /**
-     * By
-     */
-    by: string;
-};
-
-/**
- * PublicationOut
- */
-export type AbacusModulesReportingContractPublicationOut = {
-    /**
-     * Action
-     */
-    action: 'published' | 'deprecated';
     /**
      * At
      */
@@ -74515,7 +74515,7 @@ export type EbpPlanResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAssuranceEbpContractPlanOut;
+    200: PlanOut;
 };
 
 export type EbpPlanResponse = EbpPlanResponses[keyof EbpPlanResponses];
@@ -74575,7 +74575,7 @@ export type EbpPlanEditResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAssuranceEbpContractPlanOut;
+    200: PlanOut;
 };
 
 export type EbpPlanEditResponse = EbpPlanEditResponses[keyof EbpPlanEditResponses];
@@ -82724,7 +82724,7 @@ export type CreatePlanDraftResponses = {
 export type CreatePlanDraftResponse = CreatePlanDraftResponses[keyof CreatePlanDraftResponses];
 
 export type PublishPlanData = {
-    body: AbacusModulesClosesContractPublishIn;
+    body: PublishIn;
     headers: {
         /**
          * If-Match
@@ -116967,7 +116967,7 @@ export type PlanGetResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesPlatformPlanUsageContractPlanOut;
+    200: FirmPlanOut;
 };
 
 export type PlanGetResponse = PlanGetResponses[keyof PlanGetResponses];
@@ -117317,7 +117317,7 @@ export type PlanSetBillingContactResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesPlatformPlanUsageContractPlanOut;
+    200: FirmPlanOut;
 };
 
 export type PlanSetBillingContactResponse = PlanSetBillingContactResponses[keyof PlanSetBillingContactResponses];
@@ -118211,7 +118211,7 @@ export type ListSecurityIncidentsResponses = {
 export type ListSecurityIncidentsResponse = ListSecurityIncidentsResponses[keyof ListSecurityIncidentsResponses];
 
 export type RecordIncidentData = {
-    body: AbacusModulesPlatformIncidentRoutesIncidentIn;
+    body: IncidentIn;
     headers?: {
         /**
          * Authorization
@@ -118252,7 +118252,7 @@ export type RecordIncidentResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesPlatformIncidentRoutesIncidentOut;
+    201: IncidentOut;
 };
 
 export type RecordIncidentResponse = RecordIncidentResponses[keyof RecordIncidentResponses];
@@ -131581,13 +131581,13 @@ export type ConsolePublicationsResponses = {
     /**
      * Successful Response
      */
-    200: PublicationsOut;
+    200: ConsolePublicationsOut;
 };
 
 export type ConsolePublicationsResponse = ConsolePublicationsResponses[keyof ConsolePublicationsResponses];
 
 export type ConsolePublishData = {
-    body: AbacusModulesPlatformConsoleContractPublishIn;
+    body: ConsolePublishIn;
     headers?: {
         /**
          * Authorization
@@ -131641,13 +131641,13 @@ export type ConsolePublishResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesPlatformConsoleContractPublicationOut;
+    200: ConsolePublicationOut;
 };
 
 export type ConsolePublishResponse = ConsolePublishResponses[keyof ConsolePublishResponses];
 
 export type ConsoleWithdrawData = {
-    body: AbacusModulesPlatformConsoleContractPublishIn;
+    body: ConsolePublishIn;
     headers?: {
         /**
          * Authorization
@@ -131701,7 +131701,7 @@ export type ConsoleWithdrawResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesPlatformConsoleContractPublicationOut;
+    200: ConsolePublicationOut;
 };
 
 export type ConsoleWithdrawResponse = ConsoleWithdrawResponses[keyof ConsoleWithdrawResponses];
@@ -131748,7 +131748,7 @@ export type ConsoleRegionsResponses = {
     /**
      * Successful Response
      */
-    200: RegionsOut;
+    200: PlatformRegionsOut;
 };
 
 export type ConsoleRegionsResponse = ConsoleRegionsResponses[keyof ConsoleRegionsResponses];
@@ -132097,13 +132097,13 @@ export type ConsoleIncidentsResponses = {
     /**
      * Successful Response
      */
-    200: IncidentsOut;
+    200: StatusIncidentsOut;
 };
 
 export type ConsoleIncidentsResponse = ConsoleIncidentsResponses[keyof ConsoleIncidentsResponses];
 
 export type ConsolePostIncidentData = {
-    body: AbacusModulesPlatformConsoleContractIncidentIn;
+    body: StatusIncidentIn;
     headers: {
         /**
          * Idempotency-Key
@@ -132148,13 +132148,13 @@ export type ConsolePostIncidentResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesPlatformConsoleContractIncidentOut;
+    201: StatusIncidentOut;
 };
 
 export type ConsolePostIncidentResponse = ConsolePostIncidentResponses[keyof ConsolePostIncidentResponses];
 
 export type ConsoleResolveIncidentData = {
-    body: IncidentUpdateIn;
+    body: StatusIncidentUpdateIn;
     headers?: {
         /**
          * Authorization
@@ -132204,13 +132204,13 @@ export type ConsoleResolveIncidentResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesPlatformConsoleContractIncidentOut;
+    200: StatusIncidentOut;
 };
 
 export type ConsoleResolveIncidentResponse = ConsoleResolveIncidentResponses[keyof ConsoleResolveIncidentResponses];
 
 export type ConsoleUpdateIncidentData = {
-    body: IncidentUpdateIn;
+    body: StatusIncidentUpdateIn;
     headers?: {
         /**
          * Authorization
@@ -132260,7 +132260,7 @@ export type ConsoleUpdateIncidentResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesPlatformConsoleContractIncidentOut;
+    200: StatusIncidentOut;
 };
 
 export type ConsoleUpdateIncidentResponse = ConsoleUpdateIncidentResponses[keyof ConsoleUpdateIncidentResponses];

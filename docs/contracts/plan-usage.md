@@ -32,7 +32,7 @@ Every route answers, in order: a client principal 404; the action on the firm; 4
 **In-process read:** `platform.api.over_limit_policy(tenant) -> (at_100_behaviour, over_included: bool)` for the admission hook (G-04-T08); schedule-triggered runs only (OQ-2).
 
 ## 3. Models
-`PlanOut`, `SeatsOut`, `BillingContactIn`, `BudgetAlertsOut` / `BudgetAlertsIn`, `AlertRuleOut` / `AlertRuleIn`, `EngagementBudgetsOut`, `BillingRatesOut` (`BillingRateBandOut`: firm rates, `confidential`; `None` reads "Non-chargeable"), `PlanRequestIn`, `PlanRequestDeclineIn`, `PlanRequestOut`, `PlanRequestsOut`. Fixture footings (`platform/g04_fixtures.py`): 14,920 = 8,640 + 4,610 + 1,420 + 120 + 130 of 20,000 (74.6%, next alert 75% in 80); 18,240 (91.2%, 1,760 left); 20,860 (104.3%, 860 over); Granite Peak 1,240 of 1,500 (83%); rate bands 7 + 7 + 11 + 19 + 2 = 46.
+`FirmPlanOut`, `SeatsOut`, `BillingContactIn`, `BudgetAlertsOut` / `BudgetAlertsIn`, `AlertRuleOut` / `AlertRuleIn`, `EngagementBudgetsOut`, `BillingRatesOut` (`BillingRateBandOut`: firm rates, `confidential`; `None` reads "Non-chargeable"), `PlanRequestIn`, `PlanRequestDeclineIn`, `PlanRequestOut`, `PlanRequestsOut`. Fixture footings (`platform/g04_fixtures.py`): 14,920 = 8,640 + 4,610 + 1,420 + 120 + 130 of 20,000 (74.6%, next alert 75% in 80); 18,240 (91.2%, 1,760 left); 20,860 (104.3%, 860 over); Granite Peak 1,240 of 1,500 (83%); rate bands 7 + 7 + 11 + 19 + 2 = 46.
 
 ## 4. Status words and gates
 `plan_request` (DF-31); C13 gate kind `plan_request` awaiting partner approval. No price, overage amount, payment or invoice (P-27); agent-minutes never read as hours.

@@ -448,6 +448,14 @@ export function supportSession(state: SupportState): SupportSessionOut {
     ended_at: state === "closed" ? end : null,
     acknowledged: false,
     created_at: start,
+    // G-04-T05 (SPEC-681): a pre-v2 metadata session names no object and no thread.
+    scope_ref_kind: null,
+    scope_ref_id: null,
+    scope_label: "Metadata only",
+    conversation_id: null,
+    declined_by: null,
+    declined_at: null,
+    staff_us_located: false,
     requests: 1,
   };
 }

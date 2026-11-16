@@ -71,6 +71,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "extension.ack_rejected",  # T-03-T07 (DEC-2350)
         "estimate.due_soon",  # T-03-T07 (DEC-2350)
         "support_session.requested",
+        "support_session.declined",  # G-04-T05 (C16 `support_session_declined`, other approvers)
         "support_session.emergency_approved",
         "budget.soft_crossed",
         "budget.anomaly",

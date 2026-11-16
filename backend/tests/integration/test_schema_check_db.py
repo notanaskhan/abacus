@@ -1297,6 +1297,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"time_zone"}  # SPEC-027 (TASK-051)
             | {"drafted_guidance_to_clients"}  # SPEC-035 (TASK-073)
             | {"ai_client_data_at", "ai_client_data_by", "ai_client_data_material"}  # TASK-076
+            | {"onboarding_state"}  # G-04-T05 (0921): a first admin's first sign-in
         ),
         "engagement_agents": frozenset(  # SPEC-027 (TASK-050, TASK-051)
             {"paused_at", "paused_by", "reason", "updated_at", "self_paused_reason"}
@@ -1359,6 +1360,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "support_sessions": frozenset(  # SPEC-012
             {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}
             | {"acknowledged_at"}
+            | {"declined_by", "declined_at"}  # G-04-T05 (0921, SPEC-681 AC-19)
         ),
         "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),  # SPEC-009
         # SPEC-037 (TASK-083): a procedure's parameters are set, then it runs to a status.
@@ -2823,6 +2825,22 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # A-08-T15 (0893)
         "link_principals": frozenset({"revoked_at"}),
+        # G-04-T04 (0920): plan & usage and support, the migration's column grants.
+        "usage_alert_policies": frozenset(
+            {"version", "at_100_behaviour", "engagement_default_minutes", "engagement_alert_pct"}
+            | {"billing_contact_user_id", "partner_approver_user_id", "updated_by", "updated_at"}
+        ),
+        "usage_alert_rules": frozenset(
+            {"enabled", "recipient_user_ids", "recipient_groups", "updated_at"}
+        ),
+        "plan_change_requests": frozenset(
+            {"status", "decided_by", "decided_at", "decline_reason", "applied_by_staff"}
+            | {"applied_at", "plan_entitlement_version_id", "version"}
+        ),
+        "support_conversations": frozenset(
+            {"status", "last_firm_message_at", "last_staff_message_at", "assigned_staff_subject"}
+        ),
+        "support_conversation_reads": frozenset({"last_read_at"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -3079,6 +3097,11 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "report_releases": "a07_rows_immutable",  # S28
         "representation_letter_approvals": "a07_rows_immutable",  # S28
         "representation_letter_versions": "a07_rows_immutable",  # S28
+        "plan_entitlements": "plan_entitlements_immutable",  # 0920 (G-04-T04)
+        "usage_alert_events": "usage_alert_events_immutable",  # 0920 (G-04-T04)
+        "support_messages": "support_messages_immutable",  # 0920 (G-04-T04)
+        "status_incident_updates": "status_incident_updates_immutable",  # 0920 (G-04-T04)
+        "platform_audit_events": "platform_audit_events_immutable",  # 0920 (G-04-T04)
     }
     assert _evidence_problems(evidence) == []
 
@@ -3519,6 +3542,14 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         # 0901 (W-01-T07): the workbench catalogue read, the v2 import and its log.
         | {"integration_catalog_workbench", "integration_catalog_import"}
         | {"integration_catalog_import_log"}
+        # 0920 (G-04-T04): the console, help and status readers, the platform log, and the
+        # owner-only directory, help and incident writers.
+        | {"platform_directory_list", "platform_directory_get", "platform_regions_list"}
+        | {"help_article_list", "help_article_get", "help_article_search"}
+        | {"status_snapshot", "platform_setting_get", "platform_audit_record"}
+        | {"platform_directory_upsert", "help_article_draft", "help_article_publish"}
+        | {"help_article_withdraw", "status_incident_post", "status_incident_update"}
+        | {"status_incident_resolve"}
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

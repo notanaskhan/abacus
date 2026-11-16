@@ -52,6 +52,14 @@ function session(over: Partial<SupportSessionOut> = {}): SupportSessionOut {
     starts_at: null,
     ended_at: null,
     expires_at: null,
+    // G-04-T05 (SPEC-681): the v2 fields, empty for a metadata request.
+    scope_ref_kind: null,
+    scope_ref_id: null,
+    scope_label: "Metadata only",
+    conversation_id: null,
+    declined_by: null,
+    declined_at: null,
+    staff_us_located: false,
     ...over,
   };
 }
