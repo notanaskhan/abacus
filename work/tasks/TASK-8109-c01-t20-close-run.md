@@ -38,6 +38,7 @@ Rollback: revert; behind `closes.engine`.
   rules and accrual estimates are firm content that arrive with C-01-T21/K-02, so those steps
   record the balance they read. Third-party clearing reads the clearing account's register; the
   processor file's gross-to-net lands with C-01-T23's upload path.
+- `2026-11-16` — Rechecked after the S46 merge: auto-raised issues still wait on C-01-T23/T29 (record type and task scope).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

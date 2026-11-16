@@ -27,3 +27,4 @@ WB-10's live read and the catalogue's v2 import (DEC-5072).
 
 ## Progress log
 - 2026-11-15: built; unit and integration tests green; stacked on #2097.
+- 2026-11-16: AC-7's `facts.reason = mfa_required` built in TASK-8112 (the Connect gate, not the router); the strict xfail is removed. The import routes stay 501 by design (AC-32: the operator's command).

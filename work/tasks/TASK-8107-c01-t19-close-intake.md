@@ -41,6 +41,7 @@ Rollback: revert; behind `closes.engine` (default off).
   is POR-20's DB template (C-01-T42). Reminders reuse P-06 follow-ups v2 unchanged (the close
   binder's requests are ordinary request items, so `FollowUpCadence` already covers them).
 - Replay history for `RequestPublishWorkflow`: recorded at the end pass with the ledger sync's.
+- `2026-11-16` — Rechecked after the S46 merge: the summary VM stays blocked. Its figures name file columns ("Gross sales", "Processing fees") that P-11's sheet classification supplies; building it now would invent the mapping.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
