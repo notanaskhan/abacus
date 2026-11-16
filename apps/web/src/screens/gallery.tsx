@@ -8,6 +8,14 @@ import { type FixtureParams, registerScreen } from "../gallery/fixture-mode";
 import { useFirmToolbar } from "../shell/firm/ToolbarData";
 import { ADM01 } from "./ADM-01";
 import { AUD32 } from "./AUD-32";
+import { AUD33, type Aud33Mode } from "./AUD-33";
+import {
+  AUD33_CONSOLIDATION,
+  AUD33_WORK_ITEM,
+  type Aud33State,
+  STATES as AUD33_STATES,
+  scenarios as aud33Scenarios,
+} from "./AUD-33/scenarios";
 import {
   AUD32_CONSOLIDATION,
   AUD32_WORK_ITEM,
@@ -2523,6 +2531,45 @@ function Aud32Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-32", { title: "Consolidation setup", Component: Aud32Artboard });
+
+// AUD-33 (A-09-T15): the consolidated trial balance, a to g, Omar Haddad at 2:05 PM.
+const AUD33_MODE: Record<Aud33State, Aud33Mode> = {
+  a: "posted",
+  b: "proposed",
+  c: "off",
+  d: "posted",
+  e: "adjustments",
+  f: "locked",
+  g: "entity",
+}; // fmt: skip
+function Aud33Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud33State = AUD33_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud33Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="flex h-[740px] w-[1400px] flex-col">
+      <AUD33
+        workItemId={AUD33_WORK_ITEM}
+        consolidationId={AUD33_CONSOLIDATION}
+        level={state === "d" ? 2 : 1}
+        mode={AUD33_MODE[state]}
+      />
+    </div>
+  );
+}
+
+registerScreen("AUD-33", { title: "Consolidated trial balance", Component: Aud33Artboard });
 
 // SHL-12 (P-04-T48): the sign-off sheet a, b, c, d, e, g, h over an empty frame; a′ is the frame
 // after signing: the sheet closed, the header's "✓ MD ✓ HL" and the toast; f (P-04-T49) is the
