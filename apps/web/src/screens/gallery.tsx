@@ -27,6 +27,7 @@ import {
 // A-08-T26: the fieldwork L3 kit board registers itself as KIT-A08.
 import "./kit-a08";
 import { TestingWorkspace } from "./AUD-12"; // A-08-T27: the artboards on the A-08 kit
+import { ComponentAuditors } from "./AUD-35"; // A-09-T22: the component auditors artboards
 import { FilesPage } from "./FIL-01";
 import {
   FIL01_STATES,
@@ -2611,6 +2612,10 @@ function Aud32Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-32", { title: "Consolidation setup", Component: Aud32Artboard });
+registerScreen("AUD-35", {
+  title: "Component auditors — Harlow & Pike",
+  Component: ({ params }: { params: FixtureParams }) => <ComponentAuditors st={params.st} />,
+});
 registerScreen("AUD-12", {
   title: "Testing workspace · details · controls · JE",
   Component: ({ params }: { params: FixtureParams }) => <TestingWorkspace st={params.st} />,

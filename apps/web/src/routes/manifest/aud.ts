@@ -149,7 +149,8 @@ export const audScreens = {
     status: "planned",
     path: null,
   },
-  "AUD-35": { name: "Component auditors — Harlow & Pike", status: "planned", path: null },
+  // A-09-T22: a to g on fixtures (the gallery); no path of its own until the live wiring.
+  "AUD-35": { name: "Component auditors — Harlow & Pike", status: "fixture", path: null },
   "AUD-36": {
     name: "Procedure session — BH-FS-430 Search for unrecorded liabilities",
     status: "planned",
