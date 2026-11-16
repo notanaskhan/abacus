@@ -509,6 +509,11 @@ SLICE ?=
 LOADER = abacus_tools.synthetic.scenarios.brightwater_hale.loader
 LOADER_ARGS = --snapshot $(SNAPSHOT) $(foreach h,$(HOLDOUT),--holdout $(h)) $(foreach s,$(SLICE),--slice $(s)) $(if $(NO_SETTLE),--no-settle)
 seed-demo: db-guard
+	# W-01-T11: the integration catalogue is platform content, imported as the operator would
+	# (idempotent) before the `connect` slice seeds installs of it.
+	cd backend && $(LOCAL_ENV) uv run python -m abacus_tools.integration_catalog import \
+		--document src/abacus_tools/catalogue/connect_v2.yaml --operator local-seed \
+		--note "local demo catalogue"
 	cd backend && $(LOCAL_ENV) uv run python -m $(LOADER) $(LOADER_ARGS)
 
 # Staging demo tenant (F-04.17), run as the ECS one-off task after taking the deploy lock:

@@ -250,6 +250,7 @@ from abacus.modules.identity.api import (
     set_demo_clock,
     set_member_profile,
 )
+from abacus.modules.integrations.api import seed_synthetic_event, seed_synthetic_install
 from abacus.modules.ledger.api import (
     LedgerLine,
     NormalisedTrialBalance,
@@ -411,6 +412,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import agent_runs_slice a
 from abacus_tools.synthetic.scenarios.brightwater_hale import archive_slice as _archive
 from abacus_tools.synthetic.scenarios.brightwater_hale import collaboration_slice as _collab
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
+from abacus_tools.synthetic.scenarios.brightwater_hale import (  # noqa: F401  # registers its slice
+    connect_slice as _connect,  # pyright: ignore[reportUnusedImport] -- imported to register the slice
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale import ebp_eligibility as _eligibility
 from abacus_tools.synthetic.scenarios.brightwater_hale import entity_slice as _ent
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
@@ -4036,6 +4040,60 @@ async def _connection_seeded(conn: asyncpg.Connection, _: Scenario, event: Event
         connected_by_user_id=UUID(stable_id(f"user:{slug_of(str(data['connected_by']))}")),
         connected_at=datetime.fromisoformat(str(data["connected_at"])),
         last_sync_at=None if last_sync is None else datetime.fromisoformat(str(last_sync)),
+    )
+
+
+_NO_CATALOGUE: Final = (
+    "the integration catalogue has no {key!r}: import it first "
+    "(python -m abacus_tools.integration_catalog import --document "
+    "src/abacus_tools/catalogue/connect_v2.yaml; `make seed-demo` does)"
+)
+
+
+def _person_id(name: object) -> UUID | None:
+    return None if name is None else UUID(stable_id(f"user:{slug_of(str(name))}"))
+
+
+async def _install_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """W-01-T11 (`--slice connect`): one Connect install at its E0 state."""
+    data = event.data
+    key = str(data["key"])
+    if not await conn.fetchval("SELECT 1 FROM integration_catalog WHERE key = $1", key):
+        raise RuntimeError(_NO_CATALOGUE.format(key=key))
+    last_sync = data["last_sync_at"]
+    consent = data["consent_version"]
+    await seed_synthetic_install(
+        TENANT,
+        catalog_key=key,
+        scope="firm" if data["scope"] == "firm" else "user",
+        user_id=_person_id(data["person"]),
+        mode=str(data["mode"]),
+        status=str(data["status"]),
+        connected_by=_person_id(data["connected_by"]),
+        connected_at=datetime.fromisoformat(str(data["connected_at"])),
+        last_sync_at=None if last_sync is None else datetime.fromisoformat(str(last_sync)),
+        granted_scopes=[str(s) for s in cast(list[object], data["granted_scopes"])],
+        consent_version=None if consent is None else int(cast(int, consent)),
+    )
+
+
+async def _integration_event_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """W-01-T11: one event on a seeded firm install's timeline (CCH Axcess Tax's)."""
+    data = event.data
+    install = await conn.fetchval(
+        "SELECT id FROM firm_integrations WHERE tenant_id = $1 AND catalog_key = $2 "
+        "AND status <> 'disconnected'",
+        TENANT,
+        str(data["key"]),
+    )
+    await seed_synthetic_event(
+        TENANT,
+        install_id=cast(UUID, install),
+        scope="firm",
+        catalog_key=str(data["key"]),
+        kind=str(data["kind"]),
+        at=datetime.fromisoformat(str(data["at"])),
+        actor=_person_id(data["actor"]),
     )
 
 
@@ -7938,6 +7996,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     "platform.incident_recorded": _incident_recorded,
     # A-02-T27 (`--slice connections`): Copperleaf's POR-16a connections.
     "connections.connection_seeded": _connection_seeded,
+    # W-01-T11 (`--slice connect`): the Connect installs and CCH's timeline.
+    "integrations.install_seeded": _install_seeded,
+    "integrations.event_seeded": _integration_event_seeded,
     "organisations.intake_team_created": _intake_team_created,  # N-01-T11
     "communications.inbound_email_recorded": _inbound_email_recorded,  # N-01-T11
     # P-07-T40 (`--slice acceptance`): templates, Calloway's custodian, the Northwind team's

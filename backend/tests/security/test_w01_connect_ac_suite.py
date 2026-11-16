@@ -19,9 +19,13 @@ from pathlib import Path
 import pytest
 from tests.security.support import Migrated, Net, Person
 
+from abacus.kernel import clock
 from abacus.kernel.config import settings
 from abacus.modules.integrations.adapters import registered_keys  # W-01-T07
+from abacus.modules.integrations.api import seed_synthetic_install
 from abacus_tools import integration_catalog as ops
+from abacus_tools.synthetic.scenarios.brightwater_hale import connect_catalog as seed_catalog
+from abacus_tools.synthetic.scenarios.brightwater_hale import connect_slice as seed
 
 pytestmark = pytest.mark.usefixtures("engines", "catalogue")
 
@@ -121,10 +125,31 @@ async def test_ac7_both_admin_roles_reach_the_firm_connect(net: Net) -> None:
         assert await _post(firm, "/v1/integrations/ultratax/connect", who) in (200, 501)
 
 
-@pytest.mark.xfail(strict=True, reason="501 stub until W-01-T07/T08 (TASK-8064)")
+async def _seed_installs(firm: Firm) -> None:
+    """W-01-T11: the Brightwater Hale `connect` slice's installs, Felix's personal ones his."""
+    for i in seed.INSTALLS:
+        if i.scope == "user" and i.person != seed.FELIX:
+            continue
+        await seed_synthetic_install(
+            firm.tenant_id,
+            catalog_key=i.key,
+            scope="firm" if i.scope == "firm" else "user",
+            user_id=firm.felix.user_id if i.scope == "user" else None,
+            mode=i.mode,
+            status="connected",
+            connected_by=firm.felix.user_id,
+            connected_at=i.connected_at,
+            last_sync_at=i.last_sync_at,
+            granted_scopes=i.granted_scopes,
+            consent_version=i.consent_version,
+        )
+
+
 async def test_ac1_the_catalogue_reads_53_9_38_6(net: Net) -> None:
     firm = await _firm(net)
-    response = await net.call("GET", "/v1/integrations/catalog", firm.felix)
+    await _seed_installs(firm)  # W-01-T11: the synthetic tenant's nine, read at E0
+    with clock.frozen(seed_catalog.E0):
+        response = await net.call("GET", "/v1/integrations/catalog", firm.felix)
     assert response.status_code == 200
     assert response.json()["counts"] == {
         "all": 53,

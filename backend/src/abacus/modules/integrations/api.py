@@ -95,6 +95,11 @@ from abacus.modules.integrations.secrets import (
     open_secret,
     store_secret,
 )
+from abacus.modules.integrations.synthetic import (
+    SyntheticInstallRefused,
+    seed_synthetic_event,
+    seed_synthetic_install,
+)
 from abacus.modules.integrations.writers import WritePreview, Writer, WriteReceipt, WriteRequest
 from abacus.modules.integrations.writes import (
     WriteCapabilityRefused,
@@ -126,6 +131,7 @@ __all__ = [
     "IntegrationCategory",
     "LoadPlan",
     "ReadConnectorEntry",
+    "SyntheticInstallRefused",
     "UndeclaredEgress",
     "WriteCapabilityEntry",
     "WriteCapabilityRefused",
@@ -169,6 +175,8 @@ __all__ = [
     "registered_keys",
     "registry",
     "rotate_esign_secret",
+    "seed_synthetic_event",
+    "seed_synthetic_install",
     "store_secret",
     "undeclared_egress",
     "unregister_adapter",
