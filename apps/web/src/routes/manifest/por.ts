@@ -69,10 +69,11 @@ export const porScreens = {
   // A-02-T28: the portal entry mounts the screen live at /connections. The entry stays planned
   // with a null path for the reason POR-03 gives (DEC-347).
   "POR-16": { name: "Connections · Copperleaf", status: "planned", path: null },
+  // S47 partials (TASK-8355): live on the respondent routes, public like sign-in.
   "POR-17": {
     name: "Confirmation response · Granite Peak receivables (C2)",
-    status: "planned",
-    path: null,
+    status: "live",
+    path: "/confirm/$token",
     entry: true,
   },
   "POR-18": { name: "Prospect intake", status: "planned", path: null, entry: true },
