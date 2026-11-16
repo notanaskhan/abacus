@@ -1,0 +1,1 @@
+Total an uploaded table by code: its row count and, for each numeric column, its header and total. Cell text is not returned.

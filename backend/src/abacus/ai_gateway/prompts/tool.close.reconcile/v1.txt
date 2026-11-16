@@ -1,0 +1,1 @@
+Reconcile one bank account for the close by code: balance per bank, deposits in transit, outstanding checks, book balance, unrecorded items, the difference and each item with its age; lines below the confidence floor are listed for a person to match. Never compute any figure yourself.

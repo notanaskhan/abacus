@@ -1,0 +1,1 @@
+Read the close's pinned plan rows: for each, the account, the procedure, its method, its source and its review level, in plan order, at most 200.

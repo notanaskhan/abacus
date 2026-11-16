@@ -1,0 +1,1 @@
+Profile the planned accounts over the entity's previous closes by code: closes seen, how many tied, how many were off, items carried and stale items.

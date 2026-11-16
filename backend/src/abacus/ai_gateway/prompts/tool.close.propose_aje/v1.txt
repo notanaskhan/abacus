@@ -1,0 +1,1 @@
+Suggest the adjusting entry that clears one unrecorded reconciling item. Code fills the amount and the bank side; you choose only the other account, from the categories the register shows. This creates a suggestion for a person; it never proposes or posts an entry.
