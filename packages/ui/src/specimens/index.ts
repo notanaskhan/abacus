@@ -1,5 +1,11 @@
 import { AgentBlocksSpecimen } from "./agent-blocks";
-import { CoverageBarSpecimen, EntityTreeSpecimen, MilestoneTimelineSpecimen } from "./group-audit";
+import {
+  ConsolidationWorksheetSpecimen,
+  CoverageBarSpecimen,
+  EliminationCardSpecimen,
+  EntityTreeSpecimen,
+  MilestoneTimelineSpecimen,
+} from "./group-audit";
 import type { ComponentType } from "react";
 import {
   ButtonSpecimen,
@@ -441,6 +447,18 @@ export const SPECIMENS: readonly Specimen[] = [
     Component: MilestoneTimelineSpecimen,
   },
   { id: "l2-coverage-bar", kit: "C-01", title: "CoverageBar", Component: CoverageBarSpecimen },
+  {
+    id: "c-38-worksheet",
+    kit: "C-38",
+    title: "ConsolidationWorksheet",
+    Component: ConsolidationWorksheetSpecimen,
+  },
+  {
+    id: "c-38-elimination",
+    kit: "C-38",
+    title: "EliminationCard",
+    Component: EliminationCardSpecimen,
+  },
   { id: "c-01-leadsheet", kit: "C-01", title: "Leadsheet grammar", Component: LeadsheetSpecimen },
   { id: "c-01-fields", kit: "C-01", title: "Field rows", Component: FieldRowsSpecimen },
   { id: "c-01-virtual", kit: "C-01", title: "Virtualisation", Component: VirtualGridSpecimen },

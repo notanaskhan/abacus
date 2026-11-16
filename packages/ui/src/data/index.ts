@@ -92,3 +92,16 @@ export {
   type WorkbookGridProps,
   type WorkbookSheetTab,
 } from "./workbook-grid"; // T-05-T12
+// A-09-T15: C-38 consolidation kits (AUD-33).
+export {
+  ConsolidationWorksheet,
+  type ConsolidationWorksheetProps,
+  type WorksheetCell,
+  type WorksheetRow,
+} from "./ConsolidationWorksheet";
+export {
+  EliminationCard,
+  type EliminationCardProps,
+  type EliminationLine,
+  type EliminationStatus,
+} from "./EliminationCard";
