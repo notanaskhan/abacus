@@ -20,6 +20,7 @@ import {
   useReadInstrument,
   useReturnRecord,
 } from "../../domain/tax";
+import { to } from "../../routes/to";
 import { COPY } from "./copy";
 import { LegalReader } from "./LegalReader";
 
@@ -42,6 +43,11 @@ export interface TXT01Props {
   onRecord?: (key: InstrumentDeterminationOut["key"]) => void;
   onDownload?: () => void;
   onOpenInFiles?: () => void;
+}
+
+/** "Distributable net income" in Cited by: TXT-02 with that row lit (TXT-01 → TXT-02). */
+export function trustCalculationLink(returnId: string): ReturnType<typeof to.TXT02> {
+  return to.TXT02({ returnId });
 }
 
 const KEYS = Object.keys(DETERMINATION_LABELS) as (keyof typeof DETERMINATION_LABELS)[];

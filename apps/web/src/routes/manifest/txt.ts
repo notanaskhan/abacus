@@ -11,8 +11,8 @@ export const txtScreens = {
   },
   "TXT-02": {
     name: "Review › Trust Calculation · Calloway Family Trust",
-    status: "planned",
-    path: null,
+    status: "fixture", // T-07-T17: a–e and f1 on fixtures; live with T-07-T16's service (T21)
+    path: "/tax-returns/$returnId/review/trust-calculation",
   },
   "TXT-03": {
     name: "Beneficiaries, K-1s & 65-day election · Calloway Family Trust",

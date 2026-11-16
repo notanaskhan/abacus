@@ -190,6 +190,38 @@ export const taxInstrumentRoute = createRoute({
   },
 });
 
+// TXT-02 (T-07-T17): the fiduciary calc tree under the 1041's Review; a clause chip opens TXT-01
+// with the clause lit (`?clause=`); Sign off… opens SHL-12 at L2.
+const TrustCalculationScreen = lazyScreen(async () => (await import("../../screens/TXT-02")).TXT02);
+
+export const taxTrustCalculationRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/review/trust-calculation",
+  validateSearch,
+  component: function TaxTrustCalculationPage(): JSX.Element {
+    const returnId = useParam("returnId");
+    const navigate = useNavigate();
+    return (
+      <Workspace tab="review" title="Trust Calculation">
+        <FeatureGate
+          flag="tax.fiduciary_workpapers"
+          fallback={<FlagOffState flag="tax.fiduciary_workpapers" label="Trust Calculation" />}
+        >
+          <TrustCalculationScreen
+            returnId={returnId}
+            onSignOff={() => {
+              void navigate({ to: ".", search: { ov: "signoff" } });
+            }}
+            onClause={() => {
+              void navigate({ to: "/tax-returns/$returnId/review/instrument", params: { returnId } });
+            }}
+          />
+        </FeatureGate>
+      </Workspace>
+    );
+  },
+});
+
 export const taxReviewRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/tax-returns/$returnId/review/$section",
@@ -306,6 +338,7 @@ export const taxResidencyRoute = createRoute({
 
 export const taxReviewRoutes = [
   taxInstrumentRoute,
+  taxTrustCalculationRoute,
   taxReviewRoute,
   taxIssuesRoute,
   taxActivityRoute,
