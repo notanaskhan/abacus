@@ -7,6 +7,27 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.clock import register_tenant_clock
 from abacus.kernel.dispatch import PlatformSchedule, WorkClass, register_work_classes
 from abacus.kernel.uow.relay import register_grant_consumer
+from abacus.modules.identity.link_principals import EMAIL_AAD as LINK_EMAIL_AAD
+from abacus.modules.identity.link_principals import (
+    COOKIE_NAME as LINK_COOKIE_NAME,
+)
+from abacus.modules.identity.link_principals import (
+    PAD_SECONDS as LINK_PAD_SECONDS,
+)
+from abacus.modules.identity.link_principals import (
+    IssuedLinkCode,
+    LinkPrincipal,
+    Verified,
+    credential_principal,
+    issue_link_code,
+    link_purposes,
+    mint_link,
+    register_link_purpose,
+    resolve_link,
+    revoke_link,
+)
+from abacus.modules.identity.link_principals import request_code as request_link_code
+from abacus.modules.identity.link_principals import verify_code as verify_link_code
 from abacus.modules.identity.access_end import sweep_access_ends_activity
 from abacus.modules.identity.agent_tools import AGENT_TOOLS  # W-02-T19: identity.list_offices
 from abacus.modules.identity.annual_independence import has_current_annual_confirmation
@@ -508,6 +529,21 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
 )
 
 __all__ = [
+    "LINK_COOKIE_NAME",
+    "LINK_EMAIL_AAD",
+    "LINK_PAD_SECONDS",
+    "IssuedLinkCode",
+    "LinkPrincipal",
+    "Verified",
+    "credential_principal",
+    "issue_link_code",
+    "link_purposes",
+    "mint_link",
+    "register_link_purpose",
+    "request_link_code",
+    "resolve_link",
+    "revoke_link",
+    "verify_link_code",
     "ACCESS_END_ID",
     "ACTION_KEY",
     "ACTIVITIES",

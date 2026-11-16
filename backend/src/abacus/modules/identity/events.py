@@ -206,3 +206,13 @@ class PortalMfaResetNoticeRequested(DomainEvent):
     event_type: ClassVar[str] = "portal_mfa.reset_notice_requested"
 
     user_id: Annotated[UUID, classified("internal")]
+
+
+class LinkCodeRequested(DomainEvent):
+    """A-08-T15: a link principal's page asked for its email code; communications issues it at
+    delivery (never stored) and sends it from the firm's template. Never an email or a code."""
+
+    event_type: ClassVar[str] = "link_principal.code_requested"
+
+    challenge_id: Annotated[UUID, classified("internal")]
+    principal_id: Annotated[UUID, classified("internal")]
