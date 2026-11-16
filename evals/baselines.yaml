@@ -46,3 +46,10 @@ workbench.assistant:
 # clearance run's median must stay within 10 % of it.
 tax.instrument_reader:
   medium: "0.60"
+# A-09-T09 (A-09 §6, DEC-5069): rows reserved for the two group-audit capabilities. Inferred from
+# the nearest shipped capabilities (tax.account_mapper $0.05 a batch on the small tier;
+# workpapers.section_drafter $0.25 on the medium tier) until A-09-T41's first Bedrock run sets them.
+ledger.tb_mapper:
+  small: "0.05"
+consolidation.elimination_proposer:
+  medium: "0.25"

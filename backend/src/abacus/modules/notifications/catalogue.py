@@ -411,6 +411,26 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "ledger_sync.paused": Kind(
         "ledger_sync_paused", _admins_and_leads, "connection", "connection_id"
     ),
+    # A-09-T09 (A-09 §4.8, DEC-5069): group audit. Identifiers only; the services that emit them
+    # land with A-09-T13 (finalize), T20 (eliminations) and T27/T28 (component auditors).
+    "consolidation.finalized": Kind(
+        "consolidation_finalized", _staff_team, "consolidation", "consolidation_id"
+    ),
+    "eliminations.proposed": Kind(
+        "eliminations_proposed", _leads, "consolidation", "consolidation_id"
+    ),
+    "component_instructions.acknowledged": Kind(
+        "component_instructions_acknowledged", _leads, "component", "component_id"
+    ),
+    "component_question.asked": Kind(
+        "component_question_asked", _leads, "component", "component_id"
+    ),
+    "component_deliverable.uploaded": Kind(
+        "component_deliverable_uploaded", _leads, "component", "component_id"
+    ),
+    "component_deliverable.late": Kind(
+        "component_deliverable_late", _leads, "component", "component_id"
+    ),
     # SPEC-025 (TASK-044): the person who joined is asked to confirm their independence.
     "independence.requested": Kind(
         "independence.requested", _added_member, "engagement", "engagement_id"
@@ -676,6 +696,15 @@ TEMPLATES: Final[dict[str, str]] = {
     "connection.needs_reauth": "The client needs to sign in to their accounting system again.",
     "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
     "ledger_sync.paused": "The hourly QuickBooks sync for a client is paused.",
+    # A-09-T09: group audit (no amounts, no names: DEC-61).
+    "consolidation.finalized": "The consolidation structure on {engagement} was finalized.",
+    "eliminations.proposed": "Eliminations on {engagement} are waiting for your approval.",
+    "component_instructions.acknowledged": (
+        "A component auditor on {engagement} acknowledged the group instructions."
+    ),
+    "component_question.asked": "A component auditor on {engagement} asked a question.",
+    "component_deliverable.uploaded": "A component deliverable on {engagement} was uploaded.",
+    "component_deliverable.late": "A component deliverable on {engagement} is late.",
     "independence.requested": "Confirm your independence for {engagement}.",
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
     "follow_up.drafted": "Follow-ups on {engagement} are waiting for you to send.",
@@ -820,6 +849,13 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
     NotificationKind("connection_reauth_due", "client_activity", "Plug"),  # A-02-T25
     NotificationKind("ledger_sync_paused", "client_activity", "Plug"),  # C-01-T17
+    # A-09-T09 (A-09 §4.8): group audit.
+    NotificationKind("consolidation_finalized", "other", "ListChecks"),
+    NotificationKind("eliminations_proposed", "approval", "Scale"),
+    NotificationKind("component_instructions_acknowledged", "client_activity", "UserCheck"),
+    NotificationKind("component_question_asked", "mention", "MessageSquare"),
+    NotificationKind("component_deliverable_uploaded", "client_activity", "Upload"),
+    NotificationKind("component_deliverable_late", "deadline", "CalendarClock"),
     NotificationKind("connection_reconnect_requested", "client_activity", "Plug"),
     NotificationKind("independence.requested", "approval", "ShieldCheck"),
     NotificationKind("reminders.drafted", "approval", "Send"),

@@ -15,8 +15,9 @@ from typing import Final, Literal, cast
 from uuid import UUID
 
 from abacus.kernel import _flags
+from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import Flag, flag
+from abacus.kernel.flags import Flag, flag, flag_enabled
 from abacus.modules.identity.api import (
     MFA_RECENT,
     ROLE_LABELS,
@@ -35,6 +36,18 @@ from abacus.modules.identity.api import (
 from abacus.modules.platform.entitlements import MODULES, Module, entitlement
 
 FLAGS: tuple[Flag, ...] = tuple(v for v in vars(_flags).values() if isinstance(v, Flag))
+# A-09-T09 (A-09 §0, §4.9; DEC-5069): the server capability `group_audit` is the entitlement and
+# both rollout flags together; the design's "ff.group_audit off" states read it. Not an action.
+GROUP_AUDIT: Final = "group_audit"
+GROUP_AUDIT_FLAGS: Final = (_flags.LEDGER_CONSOLIDATION, _flags.ASSURANCE_GROUP_AUDIT)
+
+
+async def group_audit_on(tenant: TenantContext) -> bool:
+    """The firm holds `group_audit` (entitlement, which a non-synthetic firm only holds after the
+    golden-review memo) and both rollout flags are on for it."""
+    if await entitlement(tenant, "group_audit") is None:
+        return False
+    return all([await flag_enabled(tenant, f) for f in GROUP_AUDIT_FLAGS])
 
 
 @dataclass(frozen=True)
@@ -112,9 +125,10 @@ async def capabilities(ctx: AuthContext, engagement_id: UUID | None) -> Capabili
     held_modules = [
         m for m in sorted(MODULES) if await entitlement(ctx.tenant, cast(Module, m)) is not None
     ]
+    derived = {GROUP_AUDIT} if await group_audit_on(ctx.tenant) else set[str]()
     return Capabilities(
         engagement_id=engagement_id,
-        capabilities=tuple(sorted(allowed)),
+        capabilities=tuple(sorted(allowed | derived)),
         roles=tuple(Role(c, ROLE_LABELS.get(c, c)) for c in codes),
         flags={f.name: await flag(ctx.tenant, f) for f in FLAGS},
         entitlements=tuple(held_modules),
