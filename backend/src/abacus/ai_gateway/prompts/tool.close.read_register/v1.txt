@@ -1,0 +1,1 @@
+Read the close month's register for one account: date, type, payee, memo, category and amount, at most 200 rows a page with the next cursor. Payees and memos are client text.

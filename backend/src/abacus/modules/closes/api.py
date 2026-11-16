@@ -16,6 +16,7 @@ from abacus.kernel.audit_owners import register_engagement_owners, register_enti
 from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.kernel.sync_scope import register_sync_scope
 from abacus.kernel.uow.relay import Handler, OutboxEvent
+from abacus.modules.closes.agent_tools import AGENT_TOOLS
 from abacus.modules.closes.audit_targets import (
     AUDIT_KINDS,
     ENTITY_KINDS,
@@ -89,6 +90,7 @@ ACTIVITIES: tuple[Callable[..., Any], ...] = INTAKE_ACTIVITIES  # Any: Temporal 
 
 __all__ = [
     "ACTIVITIES",
+    "AGENT_TOOLS",
     "CLOSE_TARGET",
     "PUBLISH_REQUESTS",
     "RECOMPUTE_REQUESTS",

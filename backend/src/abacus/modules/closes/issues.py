@@ -27,9 +27,12 @@ from collections.abc import Sequence
 from typing import Final, Literal, cast
 from uuid import UUID
 
+from sqlalchemy import text
+
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import uow
+from abacus.modules.agents.api import register_suggestion_target
 from abacus.modules.closes import repository as repo
 from abacus.modules.closes.contract_work import (
     CloseIssueOut,
@@ -113,6 +116,23 @@ async def close_facts(tenant: TenantContext, close_id: UUID) -> ReviewableFacts 
 
 
 register_reviewable_facts(CLOSE_TARGET, close_facts)
+
+
+_ITEM_CLOSE: Final = text(
+    "SELECT r.close_id FROM reconciling_items i JOIN reconciliations r "
+    "ON r.id = i.reconciliation_id WHERE i.id = :i"
+)
+
+
+async def reconciling_item_engagement(tenant: TenantContext, item_id: UUID) -> UUID | None:
+    """C-01-T28: a reconciling item's engagement (the AJE-draft suggestion's target)."""
+    async with tenant_session(tenant) as session:
+        close_id = await session.scalar(_ITEM_CLOSE, {"i": item_id})
+        close = None if close_id is None else await repo.close_row(session, close_id)
+    return None if close is None else close.engagement_id
+
+
+register_suggestion_target("reconciling_item", engagement_of=reconciling_item_engagement)
 
 
 # --- producers -----------------------------------------------------------------------------------
