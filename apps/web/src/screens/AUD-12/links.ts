@@ -5,7 +5,7 @@ import { ov } from "../../routes/to";
 // these to the screen's callbacks.
 
 /** "Raise exception…": SHL-15, a new issue on the test (the exception routes to AUD-15). */
-export function exceptionOverlay(testId: string, engagementId: string): OverlayRef {
+export function exceptionOverlay(testId: string, engagementId?: string): OverlayRef {
   return ov.SHL15New("je_test", testId, engagementId);
 }
 
