@@ -7,9 +7,9 @@ property test (`tests/unit/identity/test_policy_overrides.py`) drives these func
 
 Overrides apply in `authorise`, not in `visible()`, so the writer refuses them on reads: a list
 filtered without the override would show what `authorise` denies. Platform roles (`system`,
-`platform_support*`) are the platform's, not the firm's, and can't be overridden; nor can the
-setting that sets overrides (`firm.manage_settings`), which would lock the firm out of undoing
-one.
+`platform_support*`, `platform_admin`) are the platform's, not the firm's, and can't be
+overridden; nor can the setting that sets overrides (`firm.manage_settings`), which would lock
+the firm out of undoing one.
 """
 
 from __future__ import annotations
@@ -19,7 +19,16 @@ from typing import Final
 from abacus.modules.identity.authz.matrix import RULES, Decision
 
 OVERRIDE_DECISIONS: Final = frozenset({"deny"})
-PLATFORM_ROLES: Final = frozenset({"system", "platform_support", "platform_support_content"})
+# G-04-T02 (DEC-5201): the console's staff roles are the platform's too.
+PLATFORM_ROLES: Final = frozenset(
+    {
+        "system",
+        "platform_support",
+        "platform_support_content",
+        "platform_admin",
+        "platform_support_desk",
+    }
+)
 _SELF: Final = "firm.manage_settings"
 
 

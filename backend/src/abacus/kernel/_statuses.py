@@ -1207,6 +1207,41 @@ class SupportSessionStatus(StrEnum):
     ACTIVE = "active"
     DECLINED = "declined"
     REVOKED = "revoked"
+    ENDED = "ended"
+    EXPIRED = "expired"
+
+
+class PlanRequestStatus(StrEnum):
+    AWAITING_PARTNER = "awaiting_partner"
+    SENT_TO_ACCRUED = "sent_to_accrued"
+    APPLIED = "applied"
+    DECLINED = "declined"
+    WITHDRAWN = "withdrawn"
+
+
+class TenantHealthStatus(StrEnum):
+    HEALTHY = "healthy"
+    DEGRADED = "degraded"
+    ONBOARDING = "onboarding"
+
+
+class StatusComponentStatus(StrEnum):
+    pass
+    # derived, never stored: operational, needs_attention, outage, maintenance
+
+
+class PlatformRegionStatus(StrEnum):
+    LIVE = "live"
+    PLANNED = "planned"
+
+
+class SupportAvailabilityStatus(StrEnum):
+    pass
+    # derived, never stored: online, offline
+
+
+class AgentRunStateReasonStatus(StrEnum):
+    BUDGET_100PCT = "budget_100pct"
 
 
 class ClientInvitationStatus(StrEnum):
@@ -2513,6 +2548,31 @@ STORED: dict[str, tuple[str, ...]] = {
         "active",
         "declined",
         "revoked",
+        "ended",
+        "expired",
+    ),
+    "plan_request": (
+        "awaiting_partner",
+        "sent_to_accrued",
+        "applied",
+        "declined",
+        "withdrawn",
+    ),
+    "tenant_health": (
+        "healthy",
+        "degraded",
+        "onboarding",
+    ),
+    "status_component": (
+    ),
+    "platform_region": (
+        "live",
+        "planned",
+    ),
+    "support_availability": (
+    ),
+    "agent_run_state_reason": (
+        "budget_100pct",
     ),
     "client_invitation": (
         "pending",

@@ -34,3 +34,27 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: platform.console
+    description: 'G-04 platform console (SPEC-680; PLT-01): the staff routes under /v1/platform/* on the staff issuer and the console''s live data mode. Off: those routes answer 404 and the console runs on fixtures only. Global, default off; renewed before the busy-season window and retired once the console is the only provisioning path. G-04-T02, DEC-5202.'
+    owner: notanaskhan
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: platform.plan_usage
+    description: 'G-04 plan & usage (SPEC-680 AC-26 to AC-43; ADM-14): /v1/firm/plan, budget alerts, plan requests, the alert evaluator, ADM-14''s live mode and the admission over-limit hook. Off: those routes answer 404, the Plan & usage row is hidden, G-01''s Plan & seats fieldset stays, and admission refuses nothing for the plan limit. Per firm, default off. G-04-T02, DEC-5202.'
+    owner: notanaskhan
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: support.panel_v2
+    description: 'G-04 Support panel (SPEC-680 AC-44 to AC-56; SPEC-681; SHL-05): the chat, help and status routes and the firm-side support-session additions (one-object scope, Decline, security_admin approver). Off: those routes answer 404 and the Support pill opens P-01''s interim frame. The removal of the staff emergency-approve route is not behind this flag (a security change). Per firm, default off. G-04-T02, DEC-5202.'
+    owner: notanaskhan
+    created: 2026-11-15
+    expires: 2027-05-13
+    override: DEC-137
+    kind: boolean
+    default: false

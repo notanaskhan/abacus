@@ -392,6 +392,16 @@ NOTIFICATIONS_V2 = Flag(
     kind="boolean",
     default="false",
 )
+PLATFORM_CONSOLE = Flag(
+    name="platform.console",
+    kind="boolean",
+    default="false",
+)
+PLATFORM_PLAN_USAGE = Flag(
+    name="platform.plan_usage",
+    kind="boolean",
+    default="false",
+)
 PORTAL_APPROVALS = Flag(
     name="portal.approvals",
     kind="boolean",
@@ -575,6 +585,11 @@ SIGNATURES_ESIGN_PROVIDER = Flag(
     kind="boolean",
     default="false",
 )
+SUPPORT_PANEL_V2 = Flag(
+    name="support.panel_v2",
+    kind="boolean",
+    default="false",
+)
 TAX_DELIVERY_EFILE = Flag(
     name="tax.delivery_efile",
     kind="boolean",
@@ -743,6 +758,8 @@ FLAGS: dict[str, Flag] = {
     "methodology.programs": METHODOLOGY_PROGRAMS,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
+    "platform.console": PLATFORM_CONSOLE,
+    "platform.plan_usage": PLATFORM_PLAN_USAGE,
     "portal.approvals": PORTAL_APPROVALS,
     "portal.deliverables": PORTAL_DELIVERABLES,
     "portal.drop_sort": PORTAL_DROP_SORT,
@@ -775,6 +792,7 @@ FLAGS: dict[str, Flag] = {
     "security_center.v1": SECURITY_CENTER_V1,
     "signatures.envelopes": SIGNATURES_ENVELOPES,
     "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,
+    "support.panel_v2": SUPPORT_PANEL_V2,
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
     "tax.entity_agents": TAX_ENTITY_AGENTS,

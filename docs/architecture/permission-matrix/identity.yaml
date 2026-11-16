@@ -59,3 +59,5 @@ actions:
   # --- A-08-T03: link principals (ADR-146; ADR-152 amendment); issuance is the sender's, inside confirmation.send.
   link_principal.revoke:              {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny, agent: deny, system: deny, independence: required}   # revoke a respondent link (also on a second request)
   link_principal.expire:              {system: allow, agent: deny, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, link_principal: deny}   # ConfirmationFollowUpWorkflow expires a link at expires_at
+  # --- G-04-T02 (SPEC-681 AC-19; DEC-72): Decline a staff request; the firm's two approver roles only.
+  support_session.decline:    {firm_admin: allow, security_admin: allow, client_admin: deny, client_contributor: deny, third_party: deny, link_principal: deny, agent: deny, system: deny, platform_support: deny, platform_support_content: deny, platform_admin: deny, platform_support_desk: deny}   # POST /v1/support-sessions/{id}/decline
