@@ -288,6 +288,69 @@ async def read_transactions(caller: ToolCaller, args: TxnIn) -> TxnOut:
     )
 
 
+# --- A-08-T23: ledger.counterparty_activity (flux_explain's drivers) ----------------------------
+
+
+class CounterpartyIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    client_entity_id: Annotated[UUID, Int]
+    period: Annotated[str, Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$"), Int]
+    account_external_id: Annotated[str, Field(min_length=1, max_length=64), Int]
+
+
+class CounterpartyRow(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: Annotated[str, Int]  # the counterparty as the register names it
+    counterparty: Annotated[str, Conf]
+    lines: Annotated[int, Int]
+    net: Annotated[Decimal, Conf]
+
+
+class CounterpartyOut(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    period: Annotated[str, Int]
+    account_external_id: Annotated[str, Int]
+    counterparties: Annotated[list[CounterpartyRow], Field(max_length=MAX_ROWS), Int]
+    total: Annotated[Decimal, Conf]
+    truncated: Annotated[bool, Int]
+
+
+async def counterparty_activity(caller: ToolCaller, args: CounterpartyIn) -> CounterpartyOut:
+    """One account's month by counterparty, summed by code (payees are client content)."""
+    from abacus.modules.ledger.cas_reads import register_lines
+
+    totals: dict[str, tuple[int, Decimal]] = {}
+    cursor: str | None = None
+    for _ in range(20):
+        rows, cursor = await register_lines(
+            caller.tenant,
+            args.client_entity_id,
+            args.account_external_id,
+            args.period,
+            cursor=cursor,
+        )
+        for r in rows:
+            name = (r.payee or "(no payee)")[:120]
+            count, net = totals.get(name, (0, ZERO))
+            totals[name] = (count + 1, net + r.amount)
+        if cursor is None:
+            break
+    ranked = sorted(totals.items(), key=lambda kv: (-abs(kv[1][1]), kv[0]))
+    return CounterpartyOut(
+        period=args.period,
+        account_external_id=args.account_external_id,
+        counterparties=[
+            CounterpartyRow(id=name, counterparty=name, lines=c, net=n)
+            for name, (c, n) in ranked[:MAX_ROWS]
+        ],
+        total=sum((n for _, (_, n) in ranked), ZERO),
+        truncated=len(ranked) > MAX_ROWS,
+    )
+
+
 AGENT_TOOLS: Final = (
     ToolDecl(
         "ledger.read_tb",
@@ -331,6 +394,18 @@ AGENT_TOOLS: Final = (
         TxnOut,
         read_transactions,
         untrusted=("lines",),
+        records_read="gl_entry",
+    ),
+    # A-08-T23: one account's month by counterparty (flux_explain's drivers).
+    ToolDecl(
+        "ledger.counterparty_activity",
+        "compute",
+        READ,
+        "confidential",
+        CounterpartyIn,
+        CounterpartyOut,
+        counterparty_activity,
+        untrusted=("counterparties",),
         records_read="gl_entry",
     ),
 )

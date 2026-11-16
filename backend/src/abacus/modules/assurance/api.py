@@ -454,6 +454,12 @@ register_gate_kind(FRAUD_GATE, minutes_gate)
 register_suggestion_applier("risk", apply_risk_suggestion, engagement_of=risk_engagement)
 # A-04-T15 (DEC-1953): the recommender's suggestion names the work item's materiality.
 register_suggestion_target("materiality", engagement_of=work_item_engagement)
+
+
+# A-08-T23 (DEC-5310): the fieldwork modes' suggestion targets and input mappings.
+from abacus.modules.assurance import fieldwork_modes as _fieldwork_modes  # noqa: E402
+
+_fieldwork_modes.register()
 # A-06-T16 seam (TASK-3395): the agent suggests a disclosure answer; a person adopts it.
 register_suggestion_applier(
     CHECKLIST_SUGGESTION_TARGET,
