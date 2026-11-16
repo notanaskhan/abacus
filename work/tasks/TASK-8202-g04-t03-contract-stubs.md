@@ -2,7 +2,7 @@
 id: TASK-8202
 title: "G-04-T03: contract stubs for the platform console, plan & usage and support"
 spec: SPEC-680
-acceptance_criteria: [AC-2, AC-15]
+acceptance_criteria: [AC-1, AC-2]
 risk_zone: red
 status: in-review
 branch: g04-t03-contract-stubs

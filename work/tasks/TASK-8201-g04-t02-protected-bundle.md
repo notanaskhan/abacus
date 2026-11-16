@@ -2,7 +2,7 @@
 id: TASK-8201
 title: "G-04-T02: protected bundle — platform firm and staff matrix sections, three flags, DF-31 status rows, glossary"
 spec: SPEC-680
-acceptance_criteria: [INV-1, INV-4, AC-24]
+acceptance_criteria: [AC-30, AC-41]
 risk_zone: red
 status: in-review
 branch: g04-t02-protected-bundle
