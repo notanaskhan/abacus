@@ -23491,7 +23491,8 @@ export const listEntityConnectionsOptions = (options: Options<ListEntityConnecti
  *
  * POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422
  * `authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,
- * `connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.
+ * `connector_not_available`, `firm_app_disabled` (the firm app is off, AC-25). Audited
+ * `connection.consent_recorded`, `connection.started`.
  * A-02-T33: the state keeps the request's viewer host (DEC-3990), never the query's.
  */
 export const startConnectionMutation = (options?: Partial<Options<StartConnectionData>>): UseMutationOptions<StartConnectionResponse, StartConnectionError, Options<StartConnectionData>> => {

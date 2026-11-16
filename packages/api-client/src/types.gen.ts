@@ -40720,7 +40720,7 @@ export type PortalConnectionCardOut = {
     /**
      * Status Reason
      */
-    status_reason?: 'token_expired' | 'invalid_grant' | 'sync_failed' | 'provider_unavailable' | null;
+    status_reason?: 'token_expired' | 'invalid_grant' | 'sync_failed' | 'provider_unavailable' | 'firm_app_disabled' | null;
     /**
      * Tone
      */

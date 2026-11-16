@@ -57,7 +57,10 @@ CatalogKey = Annotated[str, Path(pattern=r"^[a-z][a-z0-9_]{1,49}$")]
 Tone = Literal["olive", "espresso", "clay", "ochre"]
 # Why a connection needs the client (A-02 §3.11): reauth on token_expired / invalid_grant; any
 # other failure is `needs_attention` with `sync_failed`.
-StatusReason = Literal["token_expired", "invalid_grant", "sync_failed", "provider_unavailable"]
+# 0902 (W-01-T08 rest): `firm_app_disabled`, the firm switched its app off (AC-25: Needs reauth).
+StatusReason = Literal[
+    "token_expired", "invalid_grant", "sync_failed", "provider_unavailable", "firm_app_disabled"
+]
 ConnectionActor = Literal["client", "firm"]
 SyncTrigger = Literal["request_item", "on_demand", "schedule", "export"]
 SyncStatus = Literal["queued", "running", "succeeded", "failed_validation", "failed"]

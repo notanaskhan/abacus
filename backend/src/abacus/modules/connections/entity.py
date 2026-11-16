@@ -110,7 +110,8 @@ from abacus.modules.requests.api import ItemNotFulfillable, item_ref
 
 # Reasons a connection needs its client to sign in again (A-02 §3.11); any other failure is
 # `needs_attention` that a retry may clear.
-REAUTH_REASONS: Final = frozenset({"token_expired", "invalid_grant"})
+# 0902 (W-01-T08 rest): a firm app's disable suspends with `firm_app_disabled`, read as reauth.
+REAUTH_REASONS: Final = frozenset({"token_expired", "invalid_grant", "firm_app_disabled"})
 RECENT_RUNS: Final = 5
 # Refusals that must not confirm the entity exists for this person (INV-3, INV-4).
 _HIDDEN: Final = frozenset({"tenancy", "wall", "client_scope", "relationship"})

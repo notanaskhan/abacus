@@ -315,6 +315,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "connection.started",
         "connection.state_refused",
         "connection.state_used",
+        "connection.suspended",  # W-01-T08 rest (DEC-5083): a firm app's disable; entity id only
         "contact.access_changed",
         "contact.created",
         "contact.invited",
