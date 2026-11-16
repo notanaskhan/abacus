@@ -551,6 +551,10 @@ _workbook_service.register()
 from abacus.modules.tax import fiduciary_service as _fiduciary_service  # noqa: E402
 
 _fiduciary_service.register()
+# T-07-T22 (DEC-5063): the estate's values are a reviewable for L4 (DF-08).
+from abacus.modules.tax import estate_service as _estate_service  # noqa: E402
+
+_estate_service.register()
 
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
 # T-05-T31 (DEC-4616): the entity workbook run plan provider, registered at import.
