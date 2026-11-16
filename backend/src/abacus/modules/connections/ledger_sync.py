@@ -69,14 +69,6 @@ from abacus.modules.connections.events import (
     LedgerSnapshotRecorded,
     LedgerSyncPaused,
 )
-from abacus.modules.connections.models import Connection, SyncRun
-from abacus.modules.connections.qbo_format import (
-    parse_qbo_accounts,
-    parse_qbo_general_ledger,
-    parse_qbo_trial_balance,
-)
-from abacus.modules.connections.repository import LIVE, live_connection_for, set_connection
-from abacus.modules.connections.service import connector_for
 from abacus.modules.connections.ledger_sync_contract import LedgerNotConnected
 from abacus.modules.connections.ledger_sync_types import (
     PLAN_TICK,
@@ -90,6 +82,14 @@ from abacus.modules.connections.ledger_sync_types import (
     SyncNowSignal,
 )
 from abacus.modules.connections.ledger_sync_workflow import LedgerSyncWorkflow
+from abacus.modules.connections.models import Connection, SyncRun
+from abacus.modules.connections.qbo_format import (
+    parse_qbo_accounts,
+    parse_qbo_general_ledger,
+    parse_qbo_trial_balance,
+)
+from abacus.modules.connections.repository import LIVE, live_connection_for, set_connection
+from abacus.modules.connections.service import connector_for
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import stage_content
 from abacus.modules.identity.api import AuthContext, authorise, firm_time_zone
@@ -200,15 +200,21 @@ def _schedule(row: Sequence[object]) -> Schedule:
     )  # fmt: skip
 
 
-async def schedule_of(session: AsyncSession, connection_id: UUID, *, lock: bool = False) -> Schedule | None:
-    found = (await session.execute(_SCHEDULE_LOCK if lock else _SCHEDULE, {"c": connection_id})).first()
+async def schedule_of(
+    session: AsyncSession, connection_id: UUID, *, lock: bool = False
+) -> Schedule | None:
+    found = (
+        await session.execute(_SCHEDULE_LOCK if lock else _SCHEDULE, {"c": connection_id})
+    ).first()
     return None if found is None else _schedule(found)
 
 
 async def ensure_schedule(session: AsyncSession, connection: Connection, at: datetime) -> Schedule:
     """The connection's schedule, created (due now) on first sight. A system write of its own
     row: the caller's unit of work records it."""
-    await session.execute(_INSERT_SCHEDULE, {"t": connection.tenant_id, "c": connection.id, "n": at})
+    await session.execute(
+        _INSERT_SCHEDULE, {"t": connection.tenant_id, "c": connection.id, "n": at}
+    )
     found = await schedule_of(session, connection.id)
     if found is None:  # inserted or present: RLS hides nothing in the tenant's own session
         raise NotFound("sync_schedule")
@@ -312,9 +318,7 @@ async def plan_tick(tenant_id: UUID) -> TickPlan:
             schedule = await ensure_schedule(tx.session, connection, at)
             if schedule.paused_reason is not None:
                 continue
-            ready = max(
-                filter(None, (schedule.next_run_at, schedule.retry_at)), default=at
-            )
+            ready = max(filter(None, (schedule.next_run_at, schedule.retry_at)), default=at)
             if ready <= at and in_business_hours(at, schedule.business_hours, zone):
                 due.append(str(connection.id))
             else:
@@ -398,9 +402,7 @@ def _tb(payload: RawPayload) -> NormalisedTrialBalance:
     return parse_qbo_trial_balance(payload.content)
 
 
-async def _pull(
-    connector: Connector, dataset: Dataset, period: Period
-) -> list[RawPayload]:
+async def _pull(connector: Connector, dataset: Dataset, period: Period) -> list[RawPayload]:
     """One dataset for one month; the chart of accounts a page at a time."""
     if dataset != "accounts":
         return [await connector.pull(dataset, period, None)]
@@ -502,7 +504,9 @@ async def _pause(
         )
 
 
-async def _fail(tenant: TenantContext, connection: Connection, code: str, retry_at: datetime | None) -> None:
+async def _fail(
+    tenant: TenantContext, connection: Connection, code: str, retry_at: datetime | None
+) -> None:
     async with uow(tenant) as tx:
         schedule = await schedule_of(tx.session, connection.id, lock=True)
         if schedule is None:
@@ -551,7 +555,9 @@ async def sync_entity(
     at = await business_now(tenant)
     async with uow(tenant) as tx:
         schedule = await ensure_schedule(tx.session, connection, at)
-        tx.record("ledger.sync_started", target=Target("connection", connection.id), after=Ref(n=1))
+        tx.record(
+            "ledger.sync_started", target=Target("connection", connection.id), after=Ref(n=1)
+        )
     if connection.status_reason_code in REAUTH_REASONS:
         await _pause(tenant, connection, scope, "needs_reauth")
         _synced.add(1, {"outcome": "needs_reauth"})
@@ -568,8 +574,13 @@ async def sync_entity(
             return SyncOutcome("paused", failure_code="meter_budget_exhausted")
     elif schedule.paused_reason == "meter_budget_exhausted":
         schedule = Schedule(
-            schedule.connection_id, schedule.business_hours, None, schedule.next_run_at,
-            schedule.cdc_cursor, schedule.retry_at, schedule.last_failure_code,
+            schedule.connection_id,
+            schedule.business_hours,
+            None,
+            schedule.next_run_at,
+            schedule.cdc_cursor,
+            schedule.retry_at,
+            schedule.last_failure_code,
         )  # fmt: skip  -- a new month (or a raised budget) lifts the budget pause
 
     connector = connector_for(connection, await credentials_of(tenant, connection))
@@ -610,7 +621,10 @@ async def sync_entity(
         if exc.code in REAUTH_REASONS:
             async with uow(tenant) as tx:
                 await set_connection(
-                    tx.session, connection.id, status="needs_attention", status_reason_code=exc.code
+                    tx.session,
+                    connection.id,
+                    status="needs_attention",
+                    status_reason_code=exc.code,
                 )
                 tx.record(
                     "connection.health_checked",
@@ -665,7 +679,9 @@ async def _meter_only(tenant: TenantContext, month: str, calls: int) -> None:
         return
     async with uow(tenant) as tx:
         await add_calls(tx.session, tenant.tenant_id, month, calls)
-        tx.record("ledger.sync_metered", target=Target("tenant", tenant.tenant_id), after=Ref(n=calls))
+        tx.record(
+            "ledger.sync_metered", target=Target("tenant", tenant.tenant_id), after=Ref(n=calls)
+        )
 
 
 async def _first_set(tenant: TenantContext, client_entity_id: UUID, period: str) -> bool:
@@ -705,7 +721,9 @@ async def _record_set(
         )
         for run_id in run_ids:
             await tx.session.execute(
-                text("UPDATE sync_runs SET snapshot_id = :s WHERE id = :r AND snapshot_id IS NULL"),
+                text(
+                    "UPDATE sync_runs SET snapshot_id = :s WHERE id = :r AND snapshot_id IS NULL"
+                ),
                 {"s": ref.id, "r": run_id},
             )
         if not ref.created:
@@ -715,7 +733,11 @@ async def _record_set(
                 after=Ref(created=0),
             )
             return None
-        tx.emit(LedgerSnapshotRecorded(client_entity_id=connection.client_entity_id, snapshot_id=ref.id))
+        tx.emit(
+            LedgerSnapshotRecorded(
+                client_entity_id=connection.client_entity_id, snapshot_id=ref.id
+            )
+        )
         tx.emit(
             ChangeEventDetected(
                 client_entity_id=connection.client_entity_id,

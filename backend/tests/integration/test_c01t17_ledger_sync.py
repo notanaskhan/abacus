@@ -68,14 +68,20 @@ def _tb(payload: RawPayload) -> NormalisedTrialBalance:
         LedgerLine("35", "Operating", Decimal("48210.55"), Decimal(0), "35"),
         LedgerLine("80", "Card", Decimal(0), Decimal("48210.55"), "80"),
     )
-    return NormalisedTrialBalance(start, end, "USD", lines, Decimal("48210.55"), Decimal("48210.55"))
+    return NormalisedTrialBalance(
+        start, end, "USD", lines, Decimal("48210.55"), Decimal("48210.55")
+    )
 
 
 def _accounts(payloads: Sequence[RawPayload]) -> tuple[MonthAccount, ...]:
     return (
-        MonthAccount("35", "1000", "Operating", "asset", "Bank", "Checking", None, None, False, True),
+        MonthAccount(
+            "35", "1000", "Operating", "asset", "Bank", "Checking", None, None, False, True
+        ),
         MonthAccount("60", "6100", "Repairs", "expense", "Expense", None, None, None, False, True),
-        MonthAccount("80", "2100", "Card", "liability", "Credit Card", None, None, None, False, True),
+        MonthAccount(
+            "80", "2100", "Card", "liability", "Credit Card", None, None, None, False, True
+        ),
     )
 
 
@@ -100,7 +106,9 @@ class _Firm:
         self.partner = uuid.uuid4()
 
     async def make(self) -> _Firm:
-        await self.seed.run("INSERT INTO firms (tenant_id, name) VALUES ($1, 'Probe')", self.tenant)
+        await self.seed.run(
+            "INSERT INTO firms (tenant_id, name) VALUES ($1, 'Probe')", self.tenant
+        )
         self.partner = uuid.UUID(
             str(
                 await self.seed.value(
@@ -270,9 +278,7 @@ async def test_ac_nothing_changed_records_nothing(firm: _Firm, stub: _Stub) -> N
     assert stub.calls == 1  # the change-data-capture question only
 
 
-async def test_ac_token_expired_pauses_the_entity_without_a_pull(
-    firm: _Firm, stub: _Stub
-) -> None:
+async def test_ac_token_expired_pauses_the_entity_without_a_pull(firm: _Firm, stub: _Stub) -> None:
     engagement, _, connection = await firm.copperleaf()
     await closes_service.generate_closes(firm.ctx(), engagement, 2026)
     with clock.frozen(AT):

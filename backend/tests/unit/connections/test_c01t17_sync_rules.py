@@ -47,9 +47,13 @@ def test_month_bounds() -> None:
 
 def _accounts() -> list[MonthAccount]:
     return [
-        MonthAccount("35", "1000", "Operating", "asset", "Bank", "Checking", None, None, False, True),
+        MonthAccount(
+            "35", "1000", "Operating", "asset", "Bank", "Checking", None, None, False, True
+        ),
         MonthAccount("60", "6000", "Repairs", "expense", "Expense", None, None, None, False, True),
-        MonthAccount("80", "2000", "Card", "liability", "Credit Card", None, None, None, False, True),
+        MonthAccount(
+            "80", "2000", "Card", "liability", "Credit Card", None, None, None, False, True
+        ),
     ]
 
 

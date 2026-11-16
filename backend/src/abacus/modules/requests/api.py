@@ -16,6 +16,15 @@ from abacus.modules.identity.api import (
     register_scopes_resolver,
 )
 from abacus.modules.platform.api import register_audit_value_resolver, register_pilot_metric_source
+from abacus.modules.requests.questionnaires import questionnaires_of_list
+from abacus.modules.requests.close_intake import (
+    CloseRequestSpec,
+    GeneratedIntake,
+    IntakeItem,
+    close_intake_binder,
+    generate_close_intake,
+    intake_items,
+)
 from abacus.modules.requests.answer_effects import SUBSCRIPTIONS as EFFECT_SUBSCRIPTIONS
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.audit_values import request_item_values
@@ -286,6 +295,13 @@ register_pilot_metric_source("w5", w5_pbc_via_portal)  # Q-04-T008 (DEC-825)
 from abacus.modules.requests.agent_tools import AGENT_TOOLS  # noqa: E402
 
 __all__ = [
+    "CloseRequestSpec",
+    "GeneratedIntake",
+    "IntakeItem",
+    "close_intake_binder",
+    "generate_close_intake",
+    "intake_items",
+    "questionnaires_of_list",
     "ACTIVITIES",
     "AGENT_TOOLS",
     "ROUTERS",

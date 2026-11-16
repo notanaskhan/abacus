@@ -122,7 +122,11 @@ def row_reason(row: CitedRegisterRow, quote: str | None, value: str | None) -> R
 
 
 async def _verify_row(
-    tx: UnitOfWork, claim: CitationClaim, locator: LedgerLineLocator, entity: UUID, kept: dict[str, object]
+    tx: UnitOfWork,
+    claim: CitationClaim,
+    locator: LedgerLineLocator,
+    entity: UUID,
+    kept: dict[str, object],
 ) -> Verdict:
     source = (SOURCE, locator.ledger_snapshot_id)
     line_no = locator.register_line or 0

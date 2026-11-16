@@ -9,6 +9,7 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import UnitOfWork
+from abacus.modules.closes.events import CloseCreated
 from abacus.modules.closes.repository import close_row, insert_closes
 from abacus.modules.engagements.api import NewWorkItem
 
@@ -32,3 +33,5 @@ class CloseKind:
                 "due_on": item.details.get("due_on"),
             },
         )
+        period = item.details.get("period")
+        tx.emit(CloseCreated(close_id=item.work_item_id, period=str(period)))

@@ -270,8 +270,13 @@ async def read_transactions(caller: ToolCaller, args: TxnIn) -> TxnOut:
         account_external_id=args.account_external_id,
         lines=[
             TxnLineOut(
-                id=r.line_ref, txn_date=r.txn_date, txn_type=r.txn_type, payee=r.payee,
-                memo=r.memo, offset_account_ref=r.offset_account_ref, amount=r.amount,
+                id=r.line_ref,
+                txn_date=r.txn_date,
+                txn_type=r.txn_type,
+                payee=r.payee,
+                memo=r.memo,
+                offset_account_ref=r.offset_account_ref,
+                amount=r.amount,
             )
             for r in rows
         ],  # fmt: skip

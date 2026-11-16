@@ -33,7 +33,9 @@ from .conftest import MigratedDatabase
 pytestmark = pytest.mark.asyncio
 
 ACCOUNTS = (
-    MonthAccount("35", "1000", "Operating", "asset", "Bank", "Checking", None, "••4417", False, True),
+    MonthAccount(
+        "35", "1000", "Operating", "asset", "Bank", "Checking", None, "••4417", False, True
+    ),
     MonthAccount("80", "2100", "Card", "liability", "Credit Card", None, None, None, False, True),
     MonthAccount("90", "3000", "Owner equity", "equity", "Equity", None, None, None, False, True),
     MonthAccount("40", "4000", "Sales", "income", "Income", None, None, None, False, True),
@@ -41,7 +43,9 @@ ACCOUNTS = (
 )
 
 
-def _tb(period: str, cash: str, card: str, equity: str, sales: str, repairs: str) -> NormalisedTrialBalance:
+def _tb(
+    period: str, cash: str, card: str, equity: str, sales: str, repairs: str
+) -> NormalisedTrialBalance:
     year, month = int(period[:4]), int(period[5:])
     start = date(year, month, 1)
     end = date(year, month, 31 if month in (1, 3, 5, 7, 8, 10, 12) else 30)
@@ -62,13 +66,41 @@ def _register(period: str, rows: int, amount: str) -> list[MonthRegisterLine]:
     out: list[MonthRegisterLine] = []
     for n in range(rows):
         day = date(year, month, 1 + n % 28)
-        out.append(MonthRegisterLine(f"e{n}", "60", f"t{n}", day, "Expense", None, "Valley Supply", "parts", "80", Decimal(amount)))
-        out.append(MonthRegisterLine(f"c{n}", "80", f"t{n}", day, "Expense", None, "Valley Supply", "parts", "60", Decimal(amount)))
+        out.append(
+            MonthRegisterLine(
+                f"e{n}",
+                "60",
+                f"t{n}",
+                day,
+                "Expense",
+                None,
+                "Valley Supply",
+                "parts",
+                "80",
+                Decimal(amount),
+            )
+        )
+        out.append(
+            MonthRegisterLine(
+                f"c{n}",
+                "80",
+                f"t{n}",
+                day,
+                "Expense",
+                None,
+                "Valley Supply",
+                "parts",
+                "60",
+                Decimal(amount),
+            )
+        )
     return out
 
 
 @pytest.fixture
-async def seeded(migrated_db: MigratedDatabase) -> AsyncIterator[tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID]]:
+async def seeded(
+    migrated_db: MigratedDatabase,
+) -> AsyncIterator[tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID]]:
     await dispose_engine()
     configure_engine(migrated_db.app_url)
     seed = Seeder(migrated_db.superuser_dsn)
@@ -105,7 +137,14 @@ async def seeded(migrated_db: MigratedDatabase) -> AsyncIterator[tuple[Seeder, u
     await dispose_engine()
 
 
-async def _record(tenant: uuid.UUID, entity: uuid.UUID, period: str, tb: NormalisedTrialBalance, rows: int, amount: str) -> uuid.UUID:
+async def _record(
+    tenant: uuid.UUID,
+    entity: uuid.UUID,
+    period: str,
+    tb: NormalisedTrialBalance,
+    rows: int,
+    amount: str,
+) -> uuid.UUID:
     system = TenantContext(tenant, "system", "connections:ledger_sync")
     async with uow(system) as tx:
         ref = await record_month_snapshot(
@@ -116,11 +155,27 @@ async def _record(tenant: uuid.UUID, entity: uuid.UUID, period: str, tb: Normali
     return ref.id
 
 
-async def test_ac_the_tree_foots_for_july_and_august(seeded: tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID]) -> None:
+async def test_ac_the_tree_foots_for_july_and_august(
+    seeded: tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID],
+) -> None:
     _, tenant, entity, _, _ = seeded
     # July: cash 50,000 = card 4,000 + equity 40,000 + (sales 9,000 − repairs 3,000).
-    await _record(tenant, entity, "2026-07", _tb("2026-07", "50000.00", "4000.00", "40000.00", "9000.00", "3000.00"), 3, "1000.00")
-    await _record(tenant, entity, "2026-08", _tb("2026-08", "53500.00", "6560.00", "40000.00", "12500.00", "5560.00"), 2, "1280.00")
+    await _record(
+        tenant,
+        entity,
+        "2026-07",
+        _tb("2026-07", "50000.00", "4000.00", "40000.00", "9000.00", "3000.00"),
+        3,
+        "1000.00",
+    )
+    await _record(
+        tenant,
+        entity,
+        "2026-08",
+        _tb("2026-08", "53500.00", "6560.00", "40000.00", "12500.00", "5560.00"),
+        2,
+        "1280.00",
+    )
     reader = TenantContext(tenant, "system", "probe")
     for period in ("2026-07", "2026-08"):
         tree = await cas_contract.account_tree(reader, entity, period)
@@ -136,15 +191,26 @@ async def test_ac_the_tree_foots_for_july_and_august(seeded: tuple[Seeder, uuid.
     assert ties["60"]  # 2 rows of 1,280 = the TB movement of 2,560
 
 
-async def test_ac_a_register_page_never_exceeds_200_rows(seeded: tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID]) -> None:
+async def test_ac_a_register_page_never_exceeds_200_rows(
+    seeded: tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID],
+) -> None:
     _, tenant, entity, _, _ = seeded
-    await _record(tenant, entity, "2026-08", _tb("2026-08", "1.00", "451.00", "0.00", "0.00", "450.00"), 450, "1.00")
+    await _record(
+        tenant,
+        entity,
+        "2026-08",
+        _tb("2026-08", "1.00", "451.00", "0.00", "0.00", "450.00"),
+        450,
+        "1.00",
+    )
     reader = TenantContext(tenant, "system", "probe")
     seen: list[str] = []
     cursor: str | None = None
     pages = 0
     while True:
-        rows, cursor = await cas_contract.register_lines(reader, entity, "60", "2026-08", cursor=cursor)
+        rows, cursor = await cas_contract.register_lines(
+            reader, entity, "60", "2026-08", cursor=cursor
+        )
         assert len(rows) <= cas_reads.REGISTER_PAGE
         seen += [r.line_ref for r in rows]
         pages += 1
@@ -153,19 +219,42 @@ async def test_ac_a_register_page_never_exceeds_200_rows(seeded: tuple[Seeder, u
     assert (len(seen), pages, len(set(seen))) == (450, 3, 450)
 
 
-async def test_ac_a_register_citation_verifies_against_its_snapshot(seeded: tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID]) -> None:
+async def test_ac_a_register_citation_verifies_against_its_snapshot(
+    seeded: tuple[Seeder, uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID],
+) -> None:
     _, tenant, entity, engagement, partner = seeded
-    snapshot = await _record(tenant, entity, "2026-08", _tb("2026-08", "1.00", "3.00", "0.00", "0.00", "2.00"), 2, "1.00")
+    snapshot = await _record(
+        tenant,
+        entity,
+        "2026-08",
+        _tb("2026-08", "1.00", "3.00", "0.00", "0.00", "2.00"),
+        2,
+        "1.00",
+    )
     reader = TenantContext(tenant, "system", "probe")
     rows, _ = await cas_contract.register_lines(reader, entity, "60", "2026-08")
     snap, line = rows[0].line_ref.split(":")
     assert uuid.UUID(snap) == snapshot
-    actor = AuthContext(TenantContext(tenant, "human", str(partner)), partner, uuid.uuid4(), None, datetime.now(UTC))
+    actor = AuthContext(
+        TenantContext(tenant, "human", str(partner)),
+        partner,
+        uuid.uuid4(),
+        None,
+        datetime.now(UTC),
+    )
     anchor = Anchor("close", uuid.uuid4(), engagement_id=engagement)
-    locator = {"ledger_snapshot_id": str(snapshot), "account_code": "60", "register_line": int(line)}
+    locator = {
+        "ledger_snapshot_id": str(snapshot),
+        "account_code": "60",
+        "register_line": int(line),
+    }
     async with uow(actor.tenant) as tx:
-        good = await verify_ledger_line(tx, actor, CitationClaim("ledger_line", locator, "valley supply", "1.00"), anchor)
-        wrong_value = await verify_ledger_line(tx, actor, CitationClaim("ledger_line", locator, None, "9.00"), anchor)
+        good = await verify_ledger_line(
+            tx, actor, CitationClaim("ledger_line", locator, "valley supply", "1.00"), anchor
+        )
+        wrong_value = await verify_ledger_line(
+            tx, actor, CitationClaim("ledger_line", locator, None, "9.00"), anchor
+        )
         other_account = await verify_ledger_line(
             tx, actor, CitationClaim("ledger_line", {**locator, "account_code": "80"}), anchor
         )

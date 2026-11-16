@@ -34,7 +34,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel.db import transaction_context
 from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import Ref, Target, UnitOfWork
-from abacus.modules.ledger.models import GlEntryRow, GlSnapshot, LedgerSnapshot, TrialBalanceLineRow
+from abacus.modules.ledger.models import (
+    GlEntryRow,
+    GlSnapshot,
+    LedgerSnapshot,
+    TrialBalanceLineRow,
+)
 from abacus.modules.ledger.normalise import LedgerLine, NormalisedTrialBalance, validate
 from abacus.modules.ledger.repository import insert_gl_rows, insert_lines
 from abacus.modules.ledger.service import Unvalidated
@@ -105,7 +110,9 @@ def _fingerprint(parts: Sequence[str]) -> str:
 
 
 def content_fingerprint(
-    tb: NormalisedTrialBalance, accounts: Sequence[MonthAccount], register: Sequence[MonthRegisterLine]
+    tb: NormalisedTrialBalance,
+    accounts: Sequence[MonthAccount],
+    register: Sequence[MonthRegisterLine],
 ) -> str:
     """A stable digest of the set's content, so an unchanged pull finds its snapshot again."""
     parts = [f"tb:{x.account_code}|{x.debit}|{x.credit}" for x in tb.lines]
@@ -190,7 +197,9 @@ async def _tb_of(session: AsyncSession, snapshot: LedgerSnapshot) -> NormalisedT
     )
 
 
-async def register_of(session: AsyncSession, gl_snapshot_id: UUID) -> tuple[MonthRegisterLine, ...]:
+async def register_of(
+    session: AsyncSession, gl_snapshot_id: UUID
+) -> tuple[MonthRegisterLine, ...]:
     rows = (
         (
             await session.execute(
@@ -220,7 +229,9 @@ async def register_of(session: AsyncSession, gl_snapshot_id: UUID) -> tuple[Mont
     )
 
 
-async def month_register_snapshot(session: AsyncSession, tb_snapshot_id: UUID) -> GlSnapshot | None:
+async def month_register_snapshot(
+    session: AsyncSession, tb_snapshot_id: UUID
+) -> GlSnapshot | None:
     return (
         await session.execute(
             select(GlSnapshot).where(
@@ -230,8 +241,10 @@ async def month_register_snapshot(session: AsyncSession, tb_snapshot_id: UUID) -
     ).scalar_one_or_none()
 
 
-def _resign(lines: Sequence[MonthRegisterLine], kinds: dict[str, str]) -> tuple[MonthRegisterLine, ...]:
-    """Carried-forward rows come back as debit − credit; turn them into natural signs again."""
+def _resign(
+    lines: Sequence[MonthRegisterLine], kinds: dict[str, str]
+) -> tuple[MonthRegisterLine, ...]:
+    """Carried-forward rows come back as debit - credit; turn them into natural signs again."""
     out: list[MonthRegisterLine] = []
     for line in lines:
         kind = kinds.get(line.account_external_id, "asset")
