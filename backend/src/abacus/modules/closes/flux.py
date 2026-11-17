@@ -36,8 +36,9 @@ from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
 from abacus.modules.closes import repository as repo
 from abacus.modules.closes.contract_work import FluxLineOut, FluxSetOut
+from abacus.modules.closes.events import AnalyticLineExplained, AnalyticSetComputed
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
-from abacus.modules.workpapers.compute import flux as engine
+from abacus.modules.workpapers import api as engine
 
 Basis = Literal["mom", "yoy"]
 TARGET: Final = "analytic_set"
@@ -59,6 +60,7 @@ class AnalyticLineAccepted(DomainEvent):
     event_type: ClassVar[str] = "analytic_line.accepted"
 
     close_id: Annotated[UUID, _I]
+    engagement_id: Annotated[UUID, _I]
     set_id: Annotated[UUID, _I]
     line_key: Annotated[str, _I]
 
@@ -73,6 +75,12 @@ class NothingToAccept(DomainConflict):
 
 class NothingToExplain(DomainConflict):
     code = "flux_line_within_threshold"
+
+
+class LineAccepted(DomainConflict):
+    """An accepted line's explanation is final for its set (a new set version reopens nothing)."""
+
+    code = "flux_line_accepted"
 
 
 def prior_period(period: str, basis: Basis) -> str:
@@ -150,8 +158,8 @@ def lines_of(source: list[Source], t: engine.Thresholds) -> list[Line]:
             )  # fmt: skip
             continue
         change = s.current - s.prior
-        pct = engine.change_pct(s.current, s.prior)
-        over = engine.classify(change, pct, t) == "over"
+        pct = engine.flux_change_pct(s.current, s.prior)
+        over = engine.classify_flux(change, pct, t) == "over"
         out.append(
             Line(n, s.key, s.caption, s.prior, s.current, change, pct,
                  "over_both" if over else "within",
@@ -163,7 +171,7 @@ def lines_of(source: list[Source], t: engine.Thresholds) -> list[Line]:
 def inputs_hash(basis: Basis, source: list[Source], t: engine.Thresholds) -> str:
     payload = {
         "basis": basis,
-        "engine": engine.ENGINE_VERSION,
+        "engine": engine.FLUX_ENGINE_VERSION,
         "t": [str(t.pct), str(t.amount)],
         "lines": [[s.key, s.caption, str(s.current), None if s.prior is None else str(s.prior)]
                   for s in source],
@@ -253,7 +261,7 @@ _NEWEST: Final = text(
     "FROM analytic_explanations WHERE close_id = :c ORDER BY line_key, version DESC"
 )
 _LINE_BY_ID: Final = text(
-    "SELECT l.set_id, l.line_key, l.test, s.close_id, s.basis FROM analytic_lines l "
+    "SELECT l.set_id, l.line_key, l.test, l.status, s.close_id, s.basis FROM analytic_lines l "
     "JOIN analytic_sets s ON s.id = l.set_id "
     "WHERE md5(l.set_id::text || ':' || l.line_key)::uuid = :id"
 )
@@ -296,7 +304,7 @@ async def compute(ctx: AuthContext, close_id: UUID, basis: Basis) -> UUID:
             await tx.session.scalar(
                 _INSERT_SET,
                 {"t": tenant.tenant_id, "c": close_id, "b": basis, "p": policy, "v": version,
-                 "e": engine.ENGINE_VERSION, "h": digest},
+                 "e": engine.FLUX_ENGINE_VERSION, "h": digest},
             ),
         )  # fmt: skip
         for ln in lines:
@@ -310,10 +318,15 @@ async def compute(ctx: AuthContext, close_id: UUID, basis: Basis) -> UUID:
         tx.record(
             "analytic_set.computed", target=Target(TARGET, set_id), after=Ref(version=version)
         )
+        tx.emit(
+            AnalyticSetComputed(
+                set_id=set_id, close_id=close_id, engagement_id=close.engagement_id
+            )
+        )
     return set_id
 
 
-async def _authorise_close(ctx: AuthContext, close_id: UUID, action: str) -> None:
+async def _authorise_close(ctx: AuthContext, close_id: UUID, action: str) -> UUID:
     from abacus.modules.engagements.api import get_ref
 
     async with tenant_session(ctx.tenant) as session:
@@ -321,6 +334,7 @@ async def _authorise_close(ctx: AuthContext, close_id: UUID, action: str) -> Non
     if close is None:
         raise NotFound("close")
     await authorise(ctx, action, (await get_ref(ctx, close.engagement_id)).resource())
+    return close.engagement_id
 
 
 def _pct(v: object) -> Decimal | None:
@@ -373,7 +387,7 @@ async def _view(ctx: AuthContext, close_id: UUID, set_id: UUID, basis: Basis) ->
         unexplained=sum(1 for x in over if x.status in ("unexplained", "explained_draft")),
         budget_available=False,
         lines=out,
-        engine_version=engine.ENGINE_VERSION,
+        engine_version=engine.FLUX_ENGINE_VERSION,
     )
 
 
@@ -391,6 +405,8 @@ class _Found:
     test: str
     close_id: UUID
     basis: Basis
+    engagement_id: UUID
+    status: str
 
 
 async def _line(ctx: AuthContext, the_line: UUID, action: str) -> _Found:
@@ -400,11 +416,11 @@ async def _line(ctx: AuthContext, the_line: UUID, action: str) -> _Found:
         r = (await session.execute(_LINE_BY_ID, {"id": the_line})).mappings().first()
     if r is None:
         raise NotFound("analytic_line")
+    engagement = await _authorise_close(ctx, cast(UUID, r["close_id"]), action)
     found = _Found(
         cast(UUID, r["set_id"]), str(r["line_key"]), str(r["test"]), cast(UUID, r["close_id"]),
-        cast(Basis, r["basis"]),
+        cast(Basis, r["basis"]), engagement, str(r["status"]),
     )  # fmt: skip
-    await _authorise_close(ctx, found.close_id, action)
     if found.test != "over_both":
         raise NothingToExplain(facts={"line": found.key})
     return found
@@ -425,6 +441,8 @@ async def _line_out(ctx: AuthContext, found: _Found) -> FluxLineOut:
 async def explain(ctx: AuthContext, the_line: UUID, *, body: str, if_match: str) -> FluxLineOut:
     """A person's explanation: a new sealed version; `If-Match` is the line's row version."""
     found = await _line(ctx, the_line, "flux.edit")
+    if found.status == "accepted":
+        raise LineAccepted(facts={"line": found.key})
     wanted = _version(if_match)
     sealed = await seal(ctx.tenant_id, body.strip().encode(), FINGERPRINT)
     async with uow(ctx.tenant) as tx:
@@ -450,6 +468,14 @@ async def explain(ctx: AuthContext, the_line: UUID, *, body: str, if_match: str)
             "analytic_explanation.edited",
             target=Target(TARGET, found.set_id),
             after=Ref(explanation=made, line=found.key),
+        )
+        tx.emit(
+            AnalyticLineExplained(
+                set_id=found.set_id,
+                close_id=found.close_id,
+                engagement_id=found.engagement_id,
+                line_key=found.key,
+            )
         )
     return await _line_out(ctx, found)
 
@@ -483,7 +509,12 @@ async def accept(ctx: AuthContext, the_line: UUID, *, if_match: str) -> FluxLine
             after=Ref(explanation=newest.id, line=found.key),
         )
         tx.emit(
-            AnalyticLineAccepted(close_id=found.close_id, set_id=found.set_id, line_key=found.key)
+            AnalyticLineAccepted(
+                close_id=found.close_id,
+                engagement_id=found.engagement_id,
+                set_id=found.set_id,
+                line_key=found.key,
+            )
         )
     return await _line_out(ctx, found)
 
@@ -492,7 +523,7 @@ def _dash(v: Decimal | None) -> Cell:
     return "—" if v is None else v
 
 
-async def export(ctx: AuthContext, close_id: UUID, basis: Basis) -> bytes:
+async def workbook_of(ctx: AuthContext, close_id: UUID, basis: Basis) -> bytes:
     view = await flux_set(ctx, close_id, basis)
     rows: list[list[Cell]] = [
         ["Account", "Prior", "Current", "Change", "Change %", "Test", "Status", "Explanation"]
@@ -517,10 +548,10 @@ __all__ = [
     "adjusted",
     "compute",
     "explain",
-    "export",
     "flux_set",
     "line_id",
     "line_key",
     "lines_of",
     "prior_period",
+    "workbook_of",
 ]

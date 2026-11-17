@@ -30,6 +30,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.closes import procedures as p
 from abacus.modules.closes import repository as repo
+from abacus.modules.closes.events import ReconciliationComputed, ReconcilingItemResolved
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
 
 TARGET: Final = "reconciliation"
@@ -183,6 +184,11 @@ async def recompute(tenant: TenantContext, close_id: UUID, account: str) -> UUID
             target=Target(TARGET, made),
             after=Ref(close_id=close_id, version=version, inputs_hash=ih),
         )
+        tx.emit(
+            ReconciliationComputed(
+                reconciliation_id=made, close_id=close_id, engagement_id=close.engagement_id
+            )
+        )
     return made
 
 
@@ -288,6 +294,13 @@ async def resolve_item(
             f"reconciling_item.{resolution}",
             target=Target(TARGET, reconciliation_id),
             after=Ref(item=item_id),
+        )
+        tx.emit(
+            ReconcilingItemResolved(
+                reconciliation_id=reconciliation_id,
+                close_id=cast(UUID, rec["close_id"]),
+                engagement_id=cast(UUID, rec["engagement_id"]),
+            )
         )
     out: dict[str, object] = {str(k): v for k, v in dict(found).items()}
     out["resolution"] = resolution

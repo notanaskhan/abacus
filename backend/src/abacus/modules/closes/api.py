@@ -40,6 +40,8 @@ from abacus.modules.closes.issues import CLOSE_TARGET, add_note, open_exceptions
 from abacus.modules.closes.kind import CloseKind
 from abacus.modules.closes.reconciliations import SUBSCRIPTIONS as RECONCILIATION_SUBSCRIPTIONS
 from abacus.modules.closes.reconciliations import register as reconciliations_register
+from abacus.modules.closes.registrations import SUBSCRIPTIONS as REGISTRATION_SUBSCRIPTIONS
+from abacus.modules.closes.registrations import register as registrations_register
 from abacus.modules.closes.request_publish_types import (
     PUBLISH as PUBLISH_REQUESTS,
 )
@@ -66,6 +68,8 @@ register_work_item_kind("close", CloseKind())
 register_close_gates()
 # C-01-T23 (DEC-5410): reconciliations are reviewables; a new ledger snapshot recomputes them.
 reconciliations_register()
+# C-01-T26 (DEC-5412): C13 flux and L1 gates, HOME-01's tile, C15 search, KNW-04a examples.
+registrations_register()
 # C-01-T20: the close run's code plan (`closes.close_run`), its run-step kinds and the
 # `close_treatment` decision card.
 register_close_run_steps()
@@ -90,6 +94,7 @@ async def _on_close_created(event: OutboxEvent) -> None:
 SUBSCRIPTIONS: dict[str, Handler] = {
     "close.created": _on_close_created,
     **RECONCILIATION_SUBSCRIPTIONS,  # C-01-T23
+    **REGISTRATION_SUBSCRIPTIONS,  # C-01-T26: close runs and answered questions (C16)
 }
 WORKFLOWS: dict[type, WorkClass] = {RequestPublishWorkflow: "background"}
 register_work_classes(WORKFLOWS)

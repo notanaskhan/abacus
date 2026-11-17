@@ -178,6 +178,15 @@ C13_EVENTS: Final = frozenset(
         # C-01-T15 (closes, QC-8): a close plan waits on its Managers' and Partners' publication.
         "close_plan.publish_requested",
         "close_plan.published",
+        # C-01-T26 (closes, DEC-5412): explained flux lines wait on a Manager or Partner, and a
+        # reconciliation with nothing open waits on its preparer's L1.
+        "analytic_set.computed",
+        "analytic_line.explained",
+        "analytic_line.accepted",
+        "reconciliation.computed",
+        "reconciling_item.resolved",
+        "sign_off.recorded",
+        "sign_off.went_stale",
         # T-07-T03 (tax, TASK-8069): an adopted instrument interpretation waits on the L3.
         "instrument_interpretation.adopted",
         "instrument_interpretation.approved",

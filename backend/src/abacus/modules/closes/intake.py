@@ -176,6 +176,9 @@ async def publish_requests(tenant_id: UUID, close_id: UUID) -> Published:
             at=at,
         )
         if generated.created:
+            from abacus.modules.engagements.api import function_holders
+
+            held = await function_holders(tenant, close_id)
             tx.emit(
                 CloseRequestsPublished(
                     close_id=close_id,
@@ -183,6 +186,7 @@ async def publish_requests(tenant_id: UUID, close_id: UUID) -> Published:
                     binder_id=generated.binder_id,
                     plan_version=number,
                     count=len(generated.created),
+                    recipient_user_ids=list(held.get("close_preparer", ())[:1]),
                 )
             )
         tx.record(
