@@ -48,6 +48,7 @@ with workflow.unsafe.imports_passed_through():
     from abacus.modules.review.api import ComputedCard
 
 FAMILY: Final = "component_instructions"
+REQUEST_TEMPLATE: Final = "component_deliverable_request"  # S48 rest (A-09-T27)
 UNDO_SECONDS: Final = 10
 MAKE_REFERENCE: Final = "make_reference"
 _PLACEHOLDER: Final = re.compile(r"\{\{\s*([a-z][a-z0-9_]*)\s*\}\}")
@@ -760,6 +761,20 @@ def register() -> None:
                 formats=("pdf",),
             )
         )
+    # S48 rest (A-09-T27): the deliverable request to the component auditor's engagement partner;
+    # the wording is the firm's (DB content, imported through ADM-10), the values are code's.
+    from abacus.modules.communications.api import register_email_template
+
+    register_email_template(
+        REQUEST_TEMPLATE,
+        ("third_party",),
+        ("organisation_name", "deliverable_title", "due_date", "firm_name", "portal_link"),
+        ("room",),
+        ("AUD-35", "POR-23"),
+        firm_editable=True,
+        name="Component deliverable request",
+        used_by_label="AUD-35 deliverables",
+    )
     register_decision_kind(
         DecisionKind(
             code=MAKE_REFERENCE,
@@ -1066,9 +1081,17 @@ async def deliverables(ctx: AuthContext, auditor_id: UUID) -> list[DeliverableVi
 
 
 async def request_deliverable(
-    ctx: AuthContext, auditor_id: UUID, *, title: str, due_on: date
+    ctx: AuthContext,
+    auditor_id: UUID,
+    *,
+    title: str,
+    due_on: date,
+    idempotency_key: str | None = None,
 ) -> DeliverableView:
-    """A deliverable the component auditor owes (also a milestone on the tracker)."""
+    """A deliverable the component auditor owes (also a milestone on the tracker). S48 rest:
+    the requesting person's send of the firm's `component_deliverable_request` email to the
+    auditor's engagement partner follows; with no published template it is recorded blocked,
+    never sent, and the request stands."""
     _person(ctx, "component_deliverable.manage")
     row = await _auditor(ctx.tenant, auditor_id)
     engagement_id = cast(UUID, row["engagement_id"])
@@ -1110,7 +1133,48 @@ async def request_deliverable(
                 change="requested",
             )
         )
+    contact = cast("UUID | None", row["ep_contact_id"])
+    if contact is not None:
+        await _send_request(
+            ctx, made, contact, engagement_id, str(row["organisation_name"]), title, due_on,
+            idempotency_key or str(made),
+        )  # fmt: skip
     return next(d for d in await deliverables(ctx, auditor_id) if d.id == made)
+
+
+async def _send_request(
+    ctx: AuthContext,
+    deliverable_id: UUID,
+    contact_id: UUID,
+    engagement_id: UUID,
+    organisation: str,
+    title: str,
+    due_on: date,
+    key: str,
+) -> None:
+    from abacus.modules.communications.api import RecipientRef, SendScope, send_templated
+
+    outcome = await send_templated(
+        ctx,
+        REQUEST_TEMPLATE,
+        RecipientRef("contact", contact_id),
+        {
+            "organisation_name": organisation,
+            "deliverable_title": title.strip(),
+            "due_date": f"{due_on:%a %b %-d, %Y}",
+        },
+        scope=SendScope(engagement_id=engagement_id),
+        idempotency_key=f"component_deliverable_request:{deliverable_id}:{key}",
+        authority="component_deliverable.manage",
+    )
+    async with uow(ctx.tenant) as tx:
+        tx.record(
+            "component_deliverable.request_sent"
+            if outcome.status == "queued"
+            else "component_deliverable.request_blocked",
+            target=Target("component_deliverable", deliverable_id),
+            after=Ref(message=outcome.message_id),
+        )
 
 
 async def _deliverable(tenant: TenantContext, deliverable_id: UUID) -> dict[str, object]:

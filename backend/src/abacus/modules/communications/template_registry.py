@@ -237,6 +237,8 @@ SEND_AUTHORITIES: Final[frozenset[tuple[str, str]]] = frozenset(
         ("deliverable_ready", "deliverable.publish"),
         ("deliverable_ready", "k1_package.resend"),
         ("governance_letter_sent", "governance_comm.approve_send"),
+        # S48 rest (A-09-T27): a deliverable request emails the component auditor's partner.
+        ("component_deliverable_request", "component_deliverable.manage"),
     }
 )
 
