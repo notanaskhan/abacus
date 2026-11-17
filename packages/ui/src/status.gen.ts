@@ -1668,6 +1668,226 @@ export const STATUS_REGISTRY = {
       "variant": "soon",
       "terminal": true,
       "derived": false
+    },
+    "recorded_externally": {
+      "label": "Recorded in ledger",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "clientLabel": "Recorded in your books",
+      "contextLabels": {
+        "attest": "Recorded by {client}"
+      }
+    }
+  },
+  "posting_batch": {
+    "proposed": {
+      "label": "Proposed",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "approved_count": "{n} of {m} approved"
+      }
+    },
+    "posting": {
+      "label": "Posting",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "posted": {
+      "label": "Posted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "resolved": "Posted · {n} failure resolved"
+      }
+    },
+    "failed_post": {
+      "label": "Failed post",
+      "variant": "red",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "closing_date_conflict": {
+    "open": {
+      "label": "Closing date locked",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "client_asked": {
+      "label": "Client asked",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "at": "Client asked · {time}"
+      }
+    },
+    "redated": {
+      "label": "Re-dated",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    },
+    "resolved": {
+      "label": "Resolved",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "ledger_write_grant": {
+    "granted": {
+      "label": "Posting allowed",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "clientLabel": "Your accountant can post approved entries"
+    },
+    "revoked": {
+      "label": "Posting paused",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "clientLabel": "Posting turned off",
+      "contextLabels": {
+        "by": "Posting paused · write access revoked by {name}"
+      }
+    }
+  },
+  "close_deliverable": {
+    "drafting": {
+      "label": "Drafting",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "draft": {
+      "label": "Draft",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "released": {
+      "label": "Released",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "true": "Released {date}"
+      }
+    },
+    "approved_by_client": {
+      "label": "Approved by client",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "by": "Approved by {name} · {date}"
+      }
+    }
+  },
+  "tax_handoff": {
+    "not_available": {
+      "label": "Not available",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
+    },
+    "ready": {
+      "label": "Ready",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "handed_off": {
+      "label": "Handed off",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "w9_status": {
+    "on_file": {
+      "label": "On file",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "requested": {
+      "label": "Requested",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "true": "Requested {date}"
+      }
+    },
+    "tin_mismatch": {
+      "label": "TIN mismatch",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "missing": {
+      "label": "Missing",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "information_return_batch": {
+    "not_started": {
+      "label": "Not started",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "exported": {
+      "label": "Exported",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "filed_iris": {
+      "label": "Filed · IRIS",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "true": "Accepted · {date}"
+      }
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red",
+      "terminal": false,
+      "derived": false
     }
   },
   "finding_route": {
