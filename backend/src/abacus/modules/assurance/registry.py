@@ -1441,3 +1441,129 @@ INSERT_COLUMNS["materiality_versions"] = INSERT_COLUMNS.get(
         "work_item_id",
     }
 )
+
+# A-08-T21 (0940, DEC-5400): audit analytics. Sets are recomputed as new versions (their status
+# and stamp move); lines, expectations, prior-year imports and sent questions are insert-only;
+# an explanation is insert-only but for its one acceptance stamp.
+TABLES = TABLES | frozenset(
+    {
+        "analytics_explanations",
+        "analytics_expectations",
+        "analytics_lines",
+        "analytics_questions",
+        "analytics_sets",
+        "prior_year_figures",
+    }
+)
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {"analytics_expectations", "analytics_lines", "analytics_questions", "prior_year_figures"}
+)
+INSERT_COLUMNS["analytics_sets"] = frozenset(
+    {
+        "basis_label",
+        "created_by",
+        "cy_layer",
+        "cy_trial_balance_id",
+        "engagement_id",
+        "engine_version",
+        "kind",
+        "materiality_version_id",
+        "provisional",
+        "py_source",
+        "run_parameters",
+        "stage",
+        "tenant_id",
+        "threshold_amount",
+        "threshold_pct",
+        "threshold_policy_version_id",
+        "version_no",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["analytics_sets"] = frozenset(
+    {
+        "computed_at",
+        "content_hash",
+        "failure_code",
+        "inputs_hash",
+        "status",
+        "superseded_by",
+        "tb_balanced",
+    }
+)
+INSERT_COLUMNS["analytics_lines"] = frozenset(
+    {
+        "caption",
+        "cell",
+        "change",
+        "change_pct",
+        "cy",
+        "derived",
+        "evaluated",
+        "fs_line_key",
+        "group_key",
+        "over",
+        "position",
+        "py",
+        "set_id",
+        "sources",
+        "status",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["analytics_explanations"] = frozenset(
+    {
+        "accepted_at",
+        "accepted_by",
+        "answered_by_contact_id",
+        "authored_by",
+        "carried_from_id",
+        "citation_ids",
+        "line_position",
+        "question_id",
+        "set_id",
+        "source",
+        "suggestion_id",
+        "tenant_id",
+        "text",
+    }
+)
+UPDATE_COLUMNS["analytics_explanations"] = frozenset({"accepted_at", "accepted_by"})
+INSERT_COLUMNS["analytics_expectations"] = frozenset(
+    {
+        "basis",
+        "citation_ids",
+        "high",
+        "line_position",
+        "low",
+        "pct_high",
+        "pct_low",
+        "set_by",
+        "set_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["prior_year_figures"] = frozenset(
+    {
+        "amount",
+        "citation_id",
+        "engagement_id",
+        "fs_line_key",
+        "import_no",
+        "imported_by",
+        "source",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["analytics_questions"] = frozenset(
+    {
+        "line_position",
+        "question_id",
+        "questionnaire_id",
+        "sent_by",
+        "set_id",
+        "template_key",
+        "tenant_id",
+    }
+)

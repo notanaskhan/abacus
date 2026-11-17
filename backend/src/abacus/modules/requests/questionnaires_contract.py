@@ -44,7 +44,8 @@ Member = Annotated[AuthContext, Depends(current_member)]
 QuestionnaireId = Annotated[UUID, Path()]
 QuestionId = Annotated[UUID, Path()]
 IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
-Kind = Literal["organizer", "team_questions", "inquiry"]
+# A-08-T21 (0940, DEC-5400): analytics client questions and SSARS inquiries are questionnaires.
+Kind = Literal["organizer", "team_questions", "inquiry", "analytics_question", "ssars_inquiry"]
 QuestionType = Literal["yes_no", "amount_group", "upload_if_yes", "long_text", "choice"]
 
 

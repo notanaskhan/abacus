@@ -117,7 +117,9 @@ from abacus.modules.requests.portal_room import (
     room_items,
 )
 from abacus.modules.requests.questionnaires import (
+    AnswerFact,
     QuestionnaireSummary,
+    answer_fact,
     attach_organizer,
     create_questionnaire,
     draft_question,
@@ -311,6 +313,7 @@ __all__ = [
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "AnswerFact",
     "BinderCard",
     "BinderClosed",
     "BinderProgress",
@@ -362,6 +365,7 @@ __all__ = [
     "VoidedRuleLink",
     "add_request_item",
     "answer_effect_handler",
+    "answer_fact",
     "answer_transaction_question",
     "apply_drafted_guidance",
     "ask_transaction_question",

@@ -34,6 +34,10 @@ from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBSCRIPTIONS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
 from abacus.modules.assurance.agent_capabilities import register as register_agent_capabilities
+from abacus.modules.assurance.analytics import ACTIVITIES as ANALYTICS_ACTIVITIES
+from abacus.modules.assurance.analytics import SUBSCRIPTIONS as ANALYTICS_SUBSCRIPTIONS
+from abacus.modules.assurance.analytics import WORKFLOWS as ANALYTICS_WORKFLOWS
+from abacus.modules.assurance.analytics import register_acceptance_gate
 from abacus.modules.assurance.analytics_contract import router as analytics_router
 from abacus.modules.assurance.archive_additions import ACTIVITIES as ARCHIVE_VERIFY_ACTIVITIES
 from abacus.modules.assurance.archive_additions import SCHEDULES as ARCHIVE_VERIFY_SCHEDULES
@@ -308,6 +312,8 @@ register_reviewable_facts("mapping_set", mapping_facts)
 # A-01-T23 (DEC-590): G8 and G9 are met by SPEC-314's in-app act or by the record-mode
 # external release and archive, whichever the firm's `assurance_release_mode` allowed.
 register_gates()  # A-04-T43, A-07-T15: G4 to G9 from assurance/gates.py
+# A-08-T21 (DEC-5400): explained analytics lines wait on a manager (HOME-02).
+register_acceptance_gate()
 # A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
 register_entry_decision_hook(on_entry_client_decision)
 # A-06-T17 (DEC-2956): record mode's evidence must be an email on the entry's own engagement.
@@ -367,6 +373,9 @@ _BASE_SUBSCRIPTIONS = (
     | dict(ARCHIVE_SUBSCRIPTIONS)
     | dict(POST_RELEASE_SUBSCRIPTIONS)
     | {"suggestion.created": _on_suggestion_created}
+    # A-08-T21 (DEC-5400): materiality.decided re-thresholds preliminary analytics; a client
+    # answer to an analytics question becomes the line's client-answer explanation.
+    | dict(ANALYTICS_SUBSCRIPTIONS)
 )
 
 
@@ -402,6 +411,7 @@ WORKFLOWS: dict[type, str] = (
     | dict(ARCHIVE_VERIFY_WORKFLOWS)  # A-07-T42: seal verification, one and the monthly sweep
     | dict(FOLLOW_UP_WORKFLOWS)  # A-08-T18 (DEC-5324): the daily confirmation follow-up
     | dict(PULL_ALL_WORKFLOWS)  # A-09-T18 (DEC-5329): ConsolidationPullAll
+    | dict(ANALYTICS_WORKFLOWS)  # A-08-T21 (DEC-5400): FluxAnalyticsWorkflow, interactive
 )
 ACTIVITIES: tuple[object, ...] = (
     *FORM5500_ACTIVITIES,
@@ -413,6 +423,7 @@ ACTIVITIES: tuple[object, ...] = (
     *ARCHIVE_VERIFY_ACTIVITIES,  # A-07-T42
     *FOLLOW_UP_ACTIVITIES,  # A-08-T18
     *PULL_ALL_ACTIVITIES,  # A-09-T18
+    *ANALYTICS_ACTIVITIES,  # A-08-T21
 )
 # A-07-T42: the monthly seal verification sweep (a mismatch raises RB-29).
 # A-08-T18 (DEC-5324): the daily confirmation follow-up prompts.

@@ -167,6 +167,10 @@ C13_EVENTS: Final = frozenset(
         # A-08-T17 (sampling): a sample expansion waits on its named approver.
         "sample_expansion.requested",
         "sample_expansion.decided",
+        # A-08-T21 (assurance): explained analytics lines wait on a manager's acceptance.
+        "analytics.computed",
+        "analytics.explanation_recorded",
+        "analytics.explanation_accepted",
         # C-01-T15 (closes, QC-8): a close plan waits on its Managers' and Partners' publication.
         "close_plan.publish_requested",
         "close_plan.published",

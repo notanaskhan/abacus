@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Response
@@ -25,6 +25,7 @@ from abacus.kernel._statuses import AnalyticsLineStatus, AnalyticsSetStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
+from abacus.modules.assurance import analytics as svc
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
 
@@ -35,6 +36,13 @@ Pct = Annotated[Decimal, classified("confidential")]
 Stage = Literal["preliminary", "substantive", "final", "review"]
 Kind = Literal["audit_flux", "ssars_review"]
 SsarsMode = Literal["review", "compilation", "preparation"]
+AllowedAction = Literal[
+    "analytics.explain",
+    "analytics.accept",
+    "analytics.configure",
+    "client_question.send",
+    "analytics.export",
+]
 
 
 class ExplanationUncited(DomainInvalid):
@@ -97,7 +105,8 @@ class ExplanationOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     text: Annotated[str, Field(max_length=1000), classified("confidential")]
-    citation_ids: Annotated[list[UUID], Field(min_length=1), classified("internal")]
+    # >= 1 for a firm explanation; a client answer is its own source (DEC-5400).
+    citation_ids: Annotated[list[UUID], classified("internal")]
     source: Annotated[Literal["agent", "staff", "client_answer"], classified("internal")]
     suggestion_id: Annotated[UUID | None, classified("internal")]
     authored_by_name: Annotated[str, classified("confidential")]
@@ -123,7 +132,7 @@ class AnalyticsLineOut(BaseModel):
     cy: Money
     py: Money
     change: Money
-    change_pct: Pct
+    change_pct: Annotated[Decimal | None, classified("confidential")]  # none when PY is 0
     evaluated: Annotated[bool, classified("internal")]  # subtotals are derived, not evaluated
     over: Annotated[bool, classified("internal")]
     derived: Annotated[bool, classified("internal")]
@@ -146,6 +155,9 @@ class AnalyticsSetOut(BaseModel):
     lines: Annotated[list[AnalyticsLineOut], classified("internal")]
     engine_version: Annotated[str, classified("internal")]
     inputs_hash: Annotated[str, classified("internal")]
+    # A-08-T21 (DEC-5400): what SHL-10 shows the acceptor; `seen_hash` on accept.
+    review_hash: Annotated[str, classified("internal")] = ""
+    failure_code: Annotated[str | None, classified("internal")] = None
     allowed_actions: Annotated[
         list[
             Literal[
@@ -308,6 +320,85 @@ class ReminderIn(BaseModel):
     text: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
 
 
+# --- A-08-T21: the service's views as the contract's models ----------------------------------
+
+
+def _explanation_out(e: svc.ExplanationView | None) -> ExplanationOut | None:
+    if e is None:
+        return None
+    return ExplanationOut(
+        id=e.id,
+        text=e.text,
+        citation_ids=list(e.citation_ids),
+        source=cast(Literal["agent", "staff", "client_answer"], e.source),
+        suggestion_id=e.suggestion_id,
+        authored_by_name=e.authored_by_name,
+        client_answered_on=e.client_answered_on,
+        accepted_by_initials=e.accepted_by_initials,
+    )
+
+
+def line_out(x: svc.LineView) -> AnalyticsLineOut:
+    expectation = (
+        ExpectationOut(
+            low_pct=x.expectation.low_pct,
+            high_pct=x.expectation.high_pct,
+            basis=x.expectation.basis,
+        )
+        if x.expectation
+        else None
+    )
+    return AnalyticsLineOut(
+        position=x.position,
+        fs_line_key=x.fs_line_key,
+        caption=x.caption,
+        group_key=x.group_key,
+        cy=x.cy,
+        py=x.py,
+        change=x.change,
+        change_pct=x.change_pct,
+        evaluated=x.evaluated,
+        over=x.over,
+        derived=x.derived,
+        status=AnalyticsLineStatus(x.status) if x.status else None,
+        explanation=_explanation_out(x.explanation),
+        expectation=expectation,
+    )
+
+
+def set_out(v: svc.SetView) -> AnalyticsSetOut:
+    t = v.threshold
+    return AnalyticsSetOut(
+        id=v.id,
+        kind=v.kind,
+        stage=v.stage,
+        version_no=v.version_no,
+        status=AnalyticsSetStatus(v.status),
+        basis_label=v.basis_label,
+        threshold=ThresholdOut(
+            pct=t.pct,
+            amount=t.amount,
+            materiality_version_id=t.materiality_version_id,
+            overall_materiality=t.overall,
+            provisional=t.provisional,
+            decider_name=t.decider_name,
+        ),
+        tallies=TalliesOut(
+            lines=v.tallies.lines,
+            over_threshold=v.tallies.over_threshold,
+            explained=v.tallies.explained,
+            unexplained=v.tallies.unexplained,
+            tb_balanced=v.tallies.tb_balanced,
+        ),
+        lines=[line_out(x) for x in v.lines],
+        engine_version=v.engine_version,
+        inputs_hash=v.inputs_hash,
+        review_hash=v.review_hash,
+        failure_code=v.failure_code,
+        allowed_actions=[cast(AllowedAction, a) for a in v.allowed_actions],
+    )
+
+
 # --- routes --------------------------------------------------------------------------------------
 
 router = AbacusRouter(prefix="/v1", tags=["audit-analytics"])
@@ -346,13 +437,22 @@ async def run_analytics(
 ) -> AnalyticsRunOut:
     """202: `FluxAnalyticsWorkflow`; a recompute is a new version, never an edit."""
     await _gate(ctx, work_item_id, "analytics.run", AUDITS_ANALYTICS)
-    raise NotImplementedYet("A-08-T21")
+    set_id, version_no = await svc.run(
+        ctx,
+        work_item_id,
+        kind=body.kind,
+        stage=body.stage,
+        trial_balance_id=body.trial_balance_id,
+        layer=body.layer,
+        py_source=body.py_source,
+    )
+    return AnalyticsRunOut(analytics_set_id=set_id, version_no=version_no)
 
 
 @router.get(_A, action="analytics.read", response_model=AnalyticsSetOut, errors=(501,))
 async def get_analytics_set(analytics_set_id: UUID, ctx: Ctx) -> AnalyticsSetOut:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T21")
+    return set_out(await svc.set_view(ctx, analytics_set_id))
 
 
 @router.get(
@@ -363,7 +463,8 @@ async def get_analytics_set(analytics_set_id: UUID, ctx: Ctx) -> AnalyticsSetOut
 )
 async def line_provenance(analytics_set_id: UUID, position: int, ctx: Ctx) -> ProvenanceOut:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T21")
+    found = await svc.provenance(ctx, analytics_set_id, position)
+    return ProvenanceOut(cell=found.cell, formula=found.formula, sources=list(found.sources))
 
 
 @router.put(
@@ -377,7 +478,16 @@ async def put_explanation(
 ) -> AnalyticsLineOut:
     """422 `explanation_uncited` without a verified citation (INV-2)."""
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T21")
+    return line_out(
+        await svc.explain(
+            ctx,
+            analytics_set_id,
+            position,
+            text_=body.text,
+            citation_ids=body.citation_ids,
+            suggestion_id=body.suggestion_id,
+        )
+    )
 
 
 @router.put(
@@ -404,7 +514,11 @@ async def accept_explanations(
 ) -> AnalyticsSetOut:
     """SHL-10; the acceptor is never the explanation's author (I-SEGREGATION)."""
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T21")
+    return set_out(
+        await svc.accept(
+            ctx, analytics_set_id, line_positions=body.line_positions, seen_hash=body.seen_hash
+        )
+    )
 
 
 @router.post(
@@ -419,13 +533,25 @@ async def send_client_questions(
 ) -> ClientQuestionsOut:
     """A T-02 questionnaire to POR-05 from firm templates a person edited; a person sends."""
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T21")
+    questionnaire_id, sent_at = await svc.send_client_questions(
+        ctx,
+        analytics_set_id,
+        line_positions=body.line_positions,
+        cards=[svc.QuestionCard(c.template_key, c.text) for c in body.cards],
+        recipient_contact_id=body.recipient_contact_id,
+    )
+    return ClientQuestionsOut(questionnaire_id=questionnaire_id, sent_at=sent_at)
 
 
 @router.get(f"{_A}/export.xlsx", action="analytics.export", response_model=bytes, errors=(501,))
 async def export_analytics(analytics_set_id: UUID, ctx: Ctx) -> Response:
     await _gate_record(ctx)
-    raise NotImplementedYet("A-08-T21")
+    data = await svc.export(ctx, analytics_set_id)
+    return Response(
+        content=data,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="analytics.xlsx"'},
+    )
 
 
 @router.put(
@@ -438,7 +564,15 @@ async def put_prior_year_figures(
     work_item_id: UUID, body: PriorYearFiguresIn, ctx: Ctx
 ) -> PriorYearFiguresOut:
     await _gate(ctx, work_item_id, "analytics.configure", AUDITS_ANALYTICS)
-    raise NotImplementedYet("A-08-T21")
+    count = await svc.put_prior_year_figures(
+        ctx,
+        work_item_id,
+        source=body.source,
+        figures=[
+            svc.PriorYearFigure(f.fs_line_key, f.amount, f.citation_id) for f in body.figures
+        ],
+    )
+    return PriorYearFiguresOut(count=count)
 
 
 @router.get(f"{_WI}/ssars", action="ssars.read", response_model=SsarsWorkspaceOut, errors=(501,))
