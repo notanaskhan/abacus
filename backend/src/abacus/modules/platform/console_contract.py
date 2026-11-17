@@ -23,14 +23,15 @@ from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Header, Query
+from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotImplementedYet
-from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.identity.api import AbacusRouter, Staff, current_staff
 from abacus.modules.platform.plan_usage_contract import ModuleKey, PlanRequestKind
 
+StaffDep = Annotated[Staff, Depends(current_staff)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 Internal = classified("internal")
 TenantCode = Annotated[str, Field(pattern=r"^tnt_[a-z0-9-]{2,40}$"), Internal]
@@ -399,37 +400,47 @@ _CONSOLE = "G-04-T09"
 _SUPPORT = "G-04-T10"
 
 
-@router.get("/tenants", action="platform_tenant.read", response_model=TenantsOut, errors=(501,))
+@router.get("/tenants", action="platform_tenant.read", response_model=TenantsOut)
 async def console_tenants(
+    staff: StaffDep,
     region: Annotated[RegionCode | None, Query()] = None,
     health: Annotated[Health | None, Query()] = None,
     q: Annotated[str | None, Query(min_length=1, max_length=120)] = None,
     tile: Annotated[Health | None, Query()] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> TenantsOut:
-    raise NotImplementedYet(_CONSOLE)
+    """PLT-01 a (AC-1 to AC-4): the directory, metadata only (G-04-T09)."""
+    from abacus.modules.platform import console
+
+    del cursor
+    return await console.tenants(staff, region=region, health=health, q=q, tile=tile)
 
 
 @router.get(
     "/tenants/{tenant_code}",
     action="platform_tenant.read",
     response_model=TenantDetailOut,
-    errors=(501,),
 )
-async def console_tenant(tenant_code: str) -> TenantDetailOut:
-    raise NotImplementedYet(_CONSOLE)
+async def console_tenant(tenant_code: str, staff: StaffDep) -> TenantDetailOut:
+    from abacus.modules.platform import console
+
+    return await console.tenant(staff, tenant_code)
 
 
 @router.patch(
     "/tenants/{tenant_code}/entitlements",
     action="platform_entitlements.update",
     response_model=TenantDetailOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def console_patch_entitlements(
-    tenant_code: str, body: EntitlementsPatchIn
+    tenant_code: str, body: EntitlementsPatchIn, staff: StaffDep
 ) -> TenantDetailOut:
-    raise NotImplementedYet(_CONSOLE)
+    """AC-7, AC-8: staff MFA within 15 minutes and a reason; the firm's trail names the staff
+    member (G-04-T09)."""
+    from abacus.modules.platform import console
+
+    return await console.patch_entitlements(staff, tenant_code, body)
 
 
 @router.post(
@@ -466,47 +477,57 @@ async def console_provisioning(workflow_id: str) -> ProvisioningOut:
     raise NotImplementedYet(_CONSOLE)
 
 
-@router.get(
-    "/regions", action="platform_tenant.read", response_model=PlatformRegionsOut, errors=(501,)
-)
-async def console_regions() -> PlatformRegionsOut:
-    raise NotImplementedYet(_CONSOLE)
+@router.get("/regions", action="platform_tenant.read", response_model=PlatformRegionsOut)
+async def console_regions(staff: StaffDep) -> PlatformRegionsOut:
+    from abacus.modules.platform import console
+
+    return await console.regions(staff)
 
 
 @router.get(
     "/support-sessions",
     action="platform_tenant.read",
     response_model=PlatformSessionsOut,
-    errors=(501,),
 )
 async def console_support_sessions(
+    staff: StaffDep,
     status: Annotated[SessionStatus | None, Query()] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> PlatformSessionsOut:
-    raise NotImplementedYet(_CONSOLE)
+    from abacus.modules.platform import console
+
+    del cursor
+    return await console.support_sessions(staff, status)
 
 
 @router.get(
     "/plan-requests",
     action="platform_tenant.read",
     response_model=PlatformPlanRequestsOut,
-    errors=(501,),
 )
 async def console_plan_requests(
+    staff: StaffDep,
     status: Annotated[PlanRequestStatus | None, Query()] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> PlatformPlanRequestsOut:
-    raise NotImplementedYet(_CONSOLE)
+    from abacus.modules.platform import console
+
+    del cursor
+    return await console.plan_requests(staff, status)
 
 
 @router.post(
     "/plan-requests/{request_id}/mark-applied",
     action="platform_entitlements.update",
     response_model=PlatformPlanRequestOut,
-    errors=(409, 501),
+    errors=(409,),
 )
-async def console_mark_applied(request_id: UUID, body: MarkAppliedIn) -> PlatformPlanRequestOut:
-    raise NotImplementedYet(_CONSOLE)
+async def console_mark_applied(
+    request_id: UUID, body: MarkAppliedIn, staff: StaffDep
+) -> PlatformPlanRequestOut:
+    from abacus.modules.platform import console
+
+    return await console.mark_applied(staff, request_id, body.entitlement_version)
 
 
 @router.get(
