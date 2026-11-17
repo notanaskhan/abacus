@@ -85,6 +85,10 @@ const DeliverablesScreen = lazy(async () => ({
 const GovernanceScreen = lazy(async () => ({
   default: (await import("../../screens/POR-15")).POR15,
 }));
+// A-09-T32 (DEC-5407): POR-23, the component auditor's room, its own chunk.
+const ComponentRoomScreen = lazy(async () => ({
+  default: (await import("../../screens/POR-23")).POR23,
+}));
 
 /** The portal's built areas by nav label; the others stay the shell's planned page. */
 export const AREA_PATHS: Readonly<Record<string, string>> = {
@@ -221,7 +225,18 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Deliverables") return <DeliverablesPage />;
   if (area === "Approvals") return <ApprovalsPage />;
   if (area === "Governance") return <GovernancePage />;
+  if (area === "ComponentRoom") return <ComponentRoomPage />;
   return <Shell area={area} />;
+}
+
+/** POR-23 (A-09-T32): `/component-room`, the reduced shell's one area. */
+function ComponentRoomPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  return (
+    <Suspense fallback={null}>
+      <ComponentRoomScreen mobile={mobile} />
+    </Suspense>
+  );
 }
 
 /** POR-09 (R-02-T17): `/deliverables[/$deliverableId][?section=k1s]`. */
@@ -547,7 +562,7 @@ export const portalTree = rootRoute.addChildren([
   page("/governance", () => <Area area="Governance" />), // POR-15 (R-02-T21)
   page("/governance/$communicationId", () => <Area area="Governance" />),
   page("/intake", NotBuilt),
-  page("/component-room", NotBuilt),
+  page("/component-room", () => <Area area="ComponentRoom" />), // POR-23 (A-09-T32)
 ]);
 
 export function createPortalRouter() {

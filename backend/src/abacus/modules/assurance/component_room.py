@@ -308,3 +308,22 @@ async def ask(ctx: AuthContext, room_id: UUID, body: str) -> object:
         locator=None,
         body=body,
     )
+
+
+async def my_rooms(ctx: AuthContext) -> list[UUID]:
+    """A-09-T32 (DEC-5407): the rooms the person's `component_auditor` grants open (sent only)."""
+    if ctx.tenant.actor_kind != "human" or not ctx.client:
+        return []
+    ids = [
+        g.scope_id
+        for g in await active_grants(ctx.tenant, ctx.user_id)
+        if g.role == ROLE and g.scope_kind == SCOPE
+    ]
+    out: list[UUID] = []
+    for room_id in ids:
+        try:
+            await _granted(ctx, room_id)
+        except NotFound:
+            continue
+        out.append(room_id)
+    return out

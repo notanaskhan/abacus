@@ -11620,6 +11620,30 @@ export type ComponentDeliverablesOut = {
 };
 
 /**
+ * ComponentEvaluationIn
+ *
+ * A-09-T27 (DEC-5405): the evaluation facts a person records on AUD-35.
+ */
+export type ComponentEvaluationIn = {
+    /**
+     * Competence Evaluated
+     */
+    competence_evaluated?: boolean;
+    /**
+     * Independence Confirmed
+     */
+    independence_confirmed?: boolean;
+    /**
+     * Peer Review Obtained On
+     */
+    peer_review_obtained_on?: string | null;
+    /**
+     * Questionnaire Received On
+     */
+    questionnaire_received_on?: string | null;
+};
+
+/**
  * ComponentInstructionSectionOut
  */
 export type ComponentInstructionSectionOut = {
@@ -11679,6 +11703,10 @@ export type ComponentInstructionsOut = {
      * Send Blocked Reason
      */
     send_blocked_reason: string | null;
+    /**
+     * Send Id
+     */
+    send_id?: string | null;
     status: ComponentInstructionsStatus;
     /**
      * Version Id
@@ -11741,6 +11769,19 @@ export type ComponentRoomOut = {
      * Uploaded
      */
     uploaded: number;
+};
+
+/**
+ * ComponentRoomsOut
+ *
+ * A-09-T32 (DEC-5407): the rooms the person's grants open, for the `/component-room`
+ * landing (one room in the J20 scenario).
+ */
+export type ComponentRoomsOut = {
+    /**
+     * Room Ids
+     */
+    room_ids: Array<string>;
 };
 
 /**
@@ -18614,6 +18655,10 @@ export type EngagementDraftPatchIn = {
  */
 export type EngagementDraftPayload = {
     /**
+     * Component Entity Ids
+     */
+    component_entity_ids?: Array<string>;
+    /**
      * Deadlines
      */
     deadlines?: Array<DraftDeadlineIn>;
@@ -19993,6 +20038,16 @@ export type EntityRefPart = {
      * Record Type
      */
     record_type: string;
+};
+
+/**
+ * EntityStripOut
+ */
+export type EntityStripOut = {
+    /**
+     * Items
+     */
+    items: Array<StripEntityOut>;
 };
 
 /**
@@ -25352,27 +25407,6 @@ export type FolderItemsOut = {
 };
 
 /**
- * FollowUpDraftOut
- *
- * A follow-up drafted from the approved Reminder template; a person sends it through the
- * existing `follow_up.send` (DEC-74).
- */
-export type FollowUpDraftOut = {
-    /**
-     * Follow Up Id
-     */
-    follow_up_id: string;
-    /**
-     * Request Item Id
-     */
-    request_item_id: string;
-    /**
-     * Template Key
-     */
-    template_key: string;
-};
-
-/**
  * FollowUpDraftsIn
  *
  * BND-01 b (binders) or BND-02 d (requests of one binder): one of the two lists.
@@ -25656,6 +25690,16 @@ export type FollowUpSendManyIn = {
      * Ids
      */
     ids: Array<string>;
+};
+
+/**
+ * FollowUpSentOut
+ */
+export type FollowUpSentOut = {
+    /**
+     * Message Id
+     */
+    message_id: string;
 };
 
 /**
@@ -26482,7 +26526,7 @@ export type GeneratedDocumentOut = {
     /**
      * Kind
      */
-    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal';
+    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions';
     /**
      * Out Of Date
      */
@@ -46668,7 +46712,7 @@ export type ReportTemplateOut = {
     /**
      * Family
      */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal';
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions';
     /**
      * Id
      */
@@ -53042,6 +53086,20 @@ export type SendToPartnerIn = {
 };
 
 /**
+ * SendUndoneOut
+ */
+export type SendUndoneOut = {
+    /**
+     * Send Id
+     */
+    send_id: string;
+    /**
+     * Undone
+     */
+    undone: boolean;
+};
+
+/**
  * SendingDomainIn
  */
 export type SendingDomainIn = {
@@ -57149,6 +57207,34 @@ export type StreamTopicsOut = {
 };
 
 /**
+ * StripEntityOut
+ *
+ * AUD-06 g: one entity of the group with its current-period TB state (no figures).
+ */
+export type StripEntityOut = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Consolidation Entity Id
+     */
+    consolidation_entity_id: string;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Tb State
+     */
+    tb_state: 'attached' | 'missing' | 'not_needed' | 'needs_reauth';
+};
+
+/**
  * StructureEntityIn
  */
 export type StructureEntityIn = {
@@ -59994,7 +60080,7 @@ export type TemplateImportIn = {
     /**
      * Family
      */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal';
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions';
     /**
      * Layout Key
      */
@@ -67423,6 +67509,28 @@ export type AbacusModulesAssuranceFindingsContractMisstatementOut = {
 };
 
 /**
+ * FollowUpDraftOut
+ *
+ * AUD-35 d's drafted follow-up: the firm's template key and code's values (P-25 off).
+ */
+export type AbacusModulesAssuranceGroupContractFollowUpDraftOut = {
+    /**
+     * Recipient Contact Id
+     */
+    recipient_contact_id: string;
+    /**
+     * Template Key
+     */
+    template_key: string;
+    /**
+     * Variables
+     */
+    variables: {
+        [key: string]: string;
+    };
+};
+
+/**
  * AdoptOut
  */
 export type AbacusModulesClosesContractAdoptOut = {
@@ -68108,6 +68216,27 @@ export type AbacusModulesTaxReturnsContractStatusTileOut = {
      */
     count: number;
     status: ReturnStatus;
+};
+
+/**
+ * FollowUpDraftOut
+ *
+ * A follow-up drafted from the approved Reminder template; a person sends it through the
+ * existing `follow_up.send` (DEC-74).
+ */
+export type AbacusModulesTaxSchedulesContractFollowUpDraftOut = {
+    /**
+     * Follow Up Id
+     */
+    follow_up_id: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Template Key
+     */
+    template_key: string;
 };
 
 /**
@@ -76946,6 +77075,58 @@ export type GroupExportGroupScopingResponses = {
 };
 
 export type GroupExportGroupScopingResponse = GroupExportGroupScopingResponses[keyof GroupExportGroupScopingResponses];
+
+export type GroupEntityStripData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/group/entities';
+};
+
+export type GroupEntityStripErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GroupEntityStripError = GroupEntityStripErrors[keyof GroupEntityStripErrors];
+
+export type GroupEntityStripResponses = {
+    /**
+     * Successful Response
+     */
+    200: EntityStripOut;
+};
+
+export type GroupEntityStripResponse = GroupEntityStripResponses[keyof GroupEntityStripResponses];
 
 export type LegalLettersData = {
     body?: never;
@@ -85928,6 +86109,62 @@ export type GroupAddDeliverableResponses = {
 
 export type GroupAddDeliverableResponse = GroupAddDeliverableResponses[keyof GroupAddDeliverableResponses];
 
+export type GroupEvaluateComponentAuditorData = {
+    body: ComponentEvaluationIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Auditor Id
+         */
+        auditor_id: string;
+    };
+    query?: never;
+    url: '/v1/component-auditors/{auditor_id}/evaluation';
+};
+
+export type GroupEvaluateComponentAuditorErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GroupEvaluateComponentAuditorError = GroupEvaluateComponentAuditorErrors[keyof GroupEvaluateComponentAuditorErrors];
+
+export type GroupEvaluateComponentAuditorResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentAuditorOut;
+};
+
+export type GroupEvaluateComponentAuditorResponse = GroupEvaluateComponentAuditorResponses[keyof GroupEvaluateComponentAuditorResponses];
+
 export type GroupDraftInstructionsData = {
     body?: never;
     headers: {
@@ -86056,6 +86293,118 @@ export type GroupRaiseMakeReferenceResponses = {
 
 export type GroupRaiseMakeReferenceResponse = GroupRaiseMakeReferenceResponses[keyof GroupRaiseMakeReferenceResponses];
 
+export type GroupDraftFollowUpData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Deliverable Id
+         */
+        deliverable_id: string;
+    };
+    query?: never;
+    url: '/v1/component-deliverables/{deliverable_id}/follow-up';
+};
+
+export type GroupDraftFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GroupDraftFollowUpError = GroupDraftFollowUpErrors[keyof GroupDraftFollowUpErrors];
+
+export type GroupDraftFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAssuranceGroupContractFollowUpDraftOut;
+};
+
+export type GroupDraftFollowUpResponse = GroupDraftFollowUpResponses[keyof GroupDraftFollowUpResponses];
+
+export type GroupSendFollowUpData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Deliverable Id
+         */
+        deliverable_id: string;
+    };
+    query?: never;
+    url: '/v1/component-deliverables/{deliverable_id}/follow-up';
+};
+
+export type GroupSendFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GroupSendFollowUpError = GroupSendFollowUpErrors[keyof GroupSendFollowUpErrors];
+
+export type GroupSendFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    201: FollowUpSentOut;
+};
+
+export type GroupSendFollowUpResponse = GroupSendFollowUpResponses[keyof GroupSendFollowUpResponses];
+
 export type GroupReturnDeliverableData = {
     body: DeliverableReturnIn;
     headers: {
@@ -86183,6 +86532,62 @@ export type GroupReviewDeliverableResponses = {
 };
 
 export type GroupReviewDeliverableResponse = GroupReviewDeliverableResponses[keyof GroupReviewDeliverableResponses];
+
+export type GroupUndoInstructionsSendData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Send Id
+         */
+        send_id: string;
+    };
+    query?: never;
+    url: '/v1/component-instruction-sends/{send_id}/undo';
+};
+
+export type GroupUndoInstructionsSendErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GroupUndoInstructionsSendError = GroupUndoInstructionsSendErrors[keyof GroupUndoInstructionsSendErrors];
+
+export type GroupUndoInstructionsSendResponses = {
+    /**
+     * Successful Response
+     */
+    200: SendUndoneOut;
+};
+
+export type GroupUndoInstructionsSendResponse = GroupUndoInstructionsSendResponses[keyof GroupUndoInstructionsSendResponses];
 
 export type GroupEditInstructionsData = {
     body: ComponentInstructionsEditIn;
@@ -134657,6 +135062,53 @@ export type PortalCloseQuestionsResponses = {
 
 export type PortalCloseQuestionsResponse = PortalCloseQuestionsResponses[keyof PortalCloseQuestionsResponses];
 
+export type ComponentRoomListRoomsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/component-rooms';
+};
+
+export type ComponentRoomListRoomsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ComponentRoomListRoomsError = ComponentRoomListRoomsErrors[keyof ComponentRoomListRoomsErrors];
+
+export type ComponentRoomListRoomsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentRoomsOut;
+};
+
+export type ComponentRoomListRoomsResponse = ComponentRoomListRoomsResponses[keyof ComponentRoomListRoomsResponses];
+
 export type ComponentRoomGetRoomData = {
     body?: never;
     headers?: {
@@ -134739,7 +135191,12 @@ export type ComponentRoomUploadData = {
          */
         deliverable_id: string;
     };
-    query?: never;
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
     url: '/v1/portal/component-rooms/{room_id}/deliverables/{deliverable_id}/uploads';
 };
 
@@ -134811,7 +135268,12 @@ export type ComponentRoomDropData = {
          */
         room_id: string;
     };
-    query?: never;
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
     url: '/v1/portal/component-rooms/{room_id}/drops';
 };
 
@@ -140924,7 +141386,7 @@ export type ListReportTemplatesData = {
         /**
          * Family
          */
-        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | null;
+        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | 'client_entries_journal' | 'component_instructions' | null;
     };
     url: '/v1/report-templates';
 };
@@ -149882,7 +150344,7 @@ export type InstallmentFollowUpResponses = {
     /**
      * Successful Response
      */
-    201: FollowUpDraftOut;
+    201: AbacusModulesTaxSchedulesContractFollowUpDraftOut;
 };
 
 export type InstallmentFollowUpResponse = InstallmentFollowUpResponses[keyof InstallmentFollowUpResponses];
