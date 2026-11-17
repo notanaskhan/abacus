@@ -2,7 +2,7 @@
 id: TASK-8529
 title: "A-08-T29: AUD-14 confirmations screen states a-e"
 spec: SPEC-657
-acceptance_criteria: []
+acceptance_criteria: [AC-6]
 risk_zone: green
 status: in-review
 branch: a08-t29-aud14

@@ -239,6 +239,9 @@ def without_conditions(rule: authz.Rule) -> authz.Rule:
         not_preparer_of_target=False,
         reserved_role=False,
         owner_of_target=False,
+        tb_handoff_source_released=False,
+        same_client=False,
+        decision_owner_contact=False,
     )
 
 

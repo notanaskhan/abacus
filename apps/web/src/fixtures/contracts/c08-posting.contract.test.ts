@@ -3,7 +3,11 @@
 // and checked against the OpenAPI document at run time. Copperleaf, August 2026: AJE-01..05 with
 // BH AJE thresholds v2, then batch 2026-08-A (QBO 48213-48218). The pytest half is
 // backend/tests/contracts/c08_adjustments/test_c02t08_posting_consumer.py.
-import type { PostingCloseEntriesOut, PostingCloseEntryRowOut, PostingBatchOut } from "@abacus/api-client";
+import type {
+  PostingCloseEntriesOut,
+  PostingCloseEntryRowOut,
+  PostingBatchOut,
+} from "@abacus/api-client";
 import { STATUS_REGISTRY } from "@abacus/ui";
 import { describe, expect, it } from "vitest";
 import { validateResponse } from "../schema-check";
@@ -93,7 +97,7 @@ describe("C8 v2 fixtures for CLS-07", () => {
       resolved_failure_count: 0,
       entries: Array.from({ length: 6 }, (_, i) => ({
         entry_id: id(i + 1),
-        ref: `AJE-0${i + 1}`,
+        ref: `AJE-0${String(i + 1)}`,
         status: "posted" as const,
         external_txn_ref: String(48213 + i),
       })),

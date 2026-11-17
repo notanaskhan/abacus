@@ -2,7 +2,7 @@
 id: TASK-8528
 title: "A-08-T28: AUD-13 analytics screen states a-e plus Substantive"
 spec: SPEC-657
-acceptance_criteria: []
+acceptance_criteria: [AC-5]
 risk_zone: green
 status: in-review
 branch: a08-t28-aud13

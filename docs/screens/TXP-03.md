@@ -24,3 +24,14 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TXP-
 ## Deviations
 - DV-3: PRJ-01 links fixture-only until T-09; live build hides them behind `allowed_actions`.
 - Never label the Elm Street roof "QIP" (T-06-T04 copy ban).
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens TXP-02 · rows 1600, 1650 and 5600 | TXP-02 | designed (handoff link graph) |
+| Opens TXP-10 with the bonus issue selected | TXP-10 | designed (handoff link graph) |
+| Opens SHL-09 · 02 Fixed Assets!E8 | SHL-09 | designed (handoff link graph) |
+| Opens SHL-08 · Larimer_Parking_Invoice_Feb2025.pdf | SHL-08 | designed (handoff link graph) |

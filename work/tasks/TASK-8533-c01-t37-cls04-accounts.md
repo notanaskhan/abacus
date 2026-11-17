@@ -2,7 +2,7 @@
 id: TASK-8533
 title: "C-01-T37: CLS-04 Accounts states a, a2, b, d, e, f and composed c-prime"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-35, AC-36, AC-37, AC-38]
 risk_zone: green
 status: in-review
 branch: c01-t37-cls04

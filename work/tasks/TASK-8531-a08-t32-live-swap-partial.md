@@ -2,7 +2,7 @@
 id: TASK-8531
 title: "A-08-T32: Live swap prerequisites: independence-import lint ban (partial)"
 spec: SPEC-657
-acceptance_criteria: []
+acceptance_criteria: [AC-6]
 risk_zone: green
 status: in-review
 branch: a08-t32-lint

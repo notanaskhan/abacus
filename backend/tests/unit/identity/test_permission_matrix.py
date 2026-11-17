@@ -212,9 +212,24 @@ def _arranged(
             reserved_role=role,
             reserved_user_id=ctx.user_id,
             approver_user_id=ctx.user_id,  # A-08-T03: `is_named_approver`
+            consent_subjects=frozenset({uuid.uuid4()}),  # T-01-T11 `consent`
+            source_released=True,  # T-06-T03 `tb_handoff_source_released`
+            same_client=True,  # T-06-T03 `same_client`
+            owner_contact=True,  # T-06-T03 `decision_owner_contact`
         ),
     )
     return ctx, resource
+
+
+@pytest.fixture(autouse=True)
+def _every_subject_consents(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-01-T11 (C19): `_arranged` meets the consent condition too; its own allow and deny cases
+    live in test_t01t11_consent_condition.py."""
+
+    async def consented(*_: object) -> bool:
+        return True
+
+    monkeypatch.setattr(authz, "consent_given", consented)
 
 
 async def _denied_layer(
@@ -1028,7 +1043,15 @@ async def test_ac1_ac2_firm_level_reads_follow_the_matrix_for_engagement_roles(
     # A `scope_only` read names its target and is never granted at firm level from roles on
     # other engagements (A-02 security review, DEC-316): it is refused here.
     if YAML_ACTIONS[action].get(role) == "allow" and not (
-        RULES[action].mfa_recent or RULES[action].requires_reason or RULES[action].scope_only
+        RULES[action].mfa_recent
+        or RULES[action].requires_reason
+        or RULES[action].scope_only
+        # T-01-T11 (C19): a consent-gated read names its data subjects; firm level has none.
+        or RULES[action].consent
+        # T-06-T03: the hand-off and decision-request conditions read their target's facts.
+        or RULES[action].tb_handoff_source_released
+        or RULES[action].same_client
+        or RULES[action].decision_owner_contact
     ):
         await authorise(ctx, action, resource)
     else:

@@ -2,7 +2,7 @@
 id: TASK-8535
 title: "C-01-T39: CLS-06 Review states a-g"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-44, AC-45, AC-46, AC-47]
 risk_zone: green
 status: in-review
 branch: c01-t39-cls06

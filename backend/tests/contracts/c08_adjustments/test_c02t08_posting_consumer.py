@@ -220,4 +220,6 @@ def test_every_operation_is_declared_with_its_action_and_501(
     assert operation["x-abacus-action"] == action
     assert "501" in cast(Json, operation["responses"])
     rule = RULES[action]
-    assert rule.decisions.get("agent", "deny") == "deny"
+    # The agent holds no write; a read stays in its task scope (proposed_entry.read on main).
+    agent = rule.decisions.get("agent", "deny")
+    assert agent == "deny" or (rule.reads and agent == "task_scope"), (action, agent)

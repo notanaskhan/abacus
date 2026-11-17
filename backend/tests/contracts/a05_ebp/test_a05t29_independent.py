@@ -41,9 +41,17 @@ PII = re.compile(r"\b(ssn|social security|date[_ ]of[_ ]birth|dob|birth_?date)\b
 SSN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
 
 
-def test_the_capability_has_no_tools() -> None:
-    """It writes suggestions only: no tool that adopts, signs or raises."""
-    assert SPEC["tools"] == []
+def test_the_capability_has_no_tool_that_adopts_signs_or_raises() -> None:
+    """It writes suggestions only. A-08-T23 (A-08 §6) gave the fieldwork modes read and propose
+    tools; none adopts, signs or raises (the propose tools answer identifiers, C17)."""
+    from abacus.modules.agents.tools.registry import registered_tools
+    from abacus_tools.quality.tool_registry import import_agent_tools
+
+    import_agent_tools()
+    tools = registered_tools()
+    for name in cast(list[str], SPEC["tools"]):
+        assert name in tools, f"{name} is not a registered tool"
+        assert tools[name].kind in ("read", "compute", "propose"), (name, tools[name].kind)
 
 
 def test_every_ebp_mode_is_on_the_one_spec() -> None:

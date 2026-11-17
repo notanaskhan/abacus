@@ -34,7 +34,9 @@ MIGRATION = (
 # ---- plan read model: seats exclude sandboxes -------------------------------------------------
 
 
-def _tenant(health: str, used: int, total: int, sandbox_of: object = None) -> dict[str, Any]:
+def _tenant(
+    health: str, used: int, total: int, sandbox_of: object = None
+) -> dict[str, Any]:  # Any: a RowMapping row
     return {"health": health, "seats_used": used, "seats_total": total, "sandbox_of": sandbox_of}
 
 
@@ -125,6 +127,6 @@ async def test_the_fake_rate_card_is_refused_outside_synthetic_firms(
 
     monkeypatch.setattr(plan_usage, "is_synthetic_firm", is_synthetic)
     monkeypatch.setattr(plan_usage, "_RATES", [])
-    out = await plan_usage.billing_rates(SimpleNamespace(tenant=object()))  # type: ignore[arg-type]
+    out = await plan_usage.billing_rates(SimpleNamespace(tenant=object()))  # type: ignore[arg-type] -- only .tenant is read
     assert out.connected is connected
     assert (out.provider_key == "fake_practice_management") is synthetic

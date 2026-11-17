@@ -134,6 +134,8 @@ def expected(rule: Rule, role: str) -> str:
         return "deny"  # T-01-T11: no data subjects in the harness (fail closed)
     if rule.is_named_approver or rule.link_scope_only or rule.email_verified:
         return "deny"  # A-08-T03: no approver or link facts in the harness (fail closed)
+    if rule.tb_handoff_source_released or rule.same_client or rule.decision_owner_contact:
+        return "deny"  # T-06-T03: no hand-off or contact facts in the harness (fail closed)
     return "allow"
 
 
@@ -307,7 +309,11 @@ def fresh_mfa_role(rule: Rule) -> str:
     for role in HUMAN_ROLES:
         if rule.decisions.get(role) == "allow" and not (rule.scope_only and role in CLIENT_ROLES):
             return role
-    return FIRM_PARTNER if rule.decisions.get(FIRM_PARTNER) == "allow" else ""
+    if rule.decisions.get(FIRM_PARTNER) == "allow":
+        return FIRM_PARTNER
+    # C-02-T02: a client-only row (POR-16's write grant, POR-08's package decision); the harness
+    # clears `scope_only`, so the MFA case still isolates the attribute.
+    return next((r for r in CLIENT_ROLES if rule.decisions.get(r) == "allow"), "")
 
 
 def render_fresh_mfa() -> str:

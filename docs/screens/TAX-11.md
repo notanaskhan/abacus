@@ -25,3 +25,12 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TAX-
 - DV-8: watermark "Draft — not for filing" on every page; K-1 faces add "· pre-release".
 - DV-9: non-1065 forms show "Preview available after export from the engine".
 - Download only in the ⋯ menu, fresh MFA, audited; no transmit control (R-04).
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens TXP-10 with this issue selected | TXP-10 | designed (handoff link graph) |
+| Opens SHL-12 · final approval (Daniel Reyes, BH-TAX-02) | SHL-12 | designed (handoff link graph) |

@@ -55,7 +55,7 @@ const k1: TaxDepthK1PreviewsOut = {
     ["Pell Street Ventures LLC", "400270"],
     ["Pell Street II LLC", "30790"],
     ["Jonah Feld", "307900"],
-  ].map(([name, box2], i) => ({ partner_id: id(i + 1), name: name!, box_2: box2! })),
+  ].map(([name, box2], i) => ({ partner_id: id(i + 1), name: name ?? "", box_2: box2 ?? "" })),
   box_2_total: "1231600",
   schedule_k_line_2: "1231600",
   tally: "tie",

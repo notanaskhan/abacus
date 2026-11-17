@@ -6,10 +6,12 @@ proposed entries and their lines, insert-only decisions and approval batches.
 
 from __future__ import annotations
 
-TABLES: frozenset[str] = frozenset(
+_TABLES_BEFORE_S49: frozenset[str] = frozenset(
     {"proposed_entries", "proposed_entry_lines", "proposed_entry_decisions", "approval_batches"}
 )
-INSERT_ONLY: frozenset[str] = frozenset({"proposed_entry_decisions", "approval_batches"})
+_INSERT_ONLY_BEFORE_S49: frozenset[str] = frozenset(
+    {"proposed_entry_decisions", "approval_batches"}
+)
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "proposed_entries": frozenset(
         {
@@ -170,8 +172,10 @@ UPDATE_COLUMNS["proposed_entry_lines"] = UPDATE_COLUMNS.get(
 C02T04_TABLES: frozenset[str] = frozenset(
     {"posting_batches", "posting_results", "closing_date_events", "closing_date_conflicts"}
 )
-TABLES = TABLES | C02T04_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset({"posting_results", "closing_date_events"})
+TABLES: frozenset[str] = _TABLES_BEFORE_S49 | C02T04_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_BEFORE_S49 | frozenset(
+    {"posting_results", "closing_date_events"}
+)
 INSERT_COLUMNS["posting_batches"] = frozenset(
     {
         "tenant_id",

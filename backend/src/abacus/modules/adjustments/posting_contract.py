@@ -127,7 +127,8 @@ class PostingCloseEntryRowOut(BaseModel):
     )
 
     entry_id: Annotated[UUID, Internal]
-    ref: Annotated[str, Field(pattern=r"^(AJE|RJE|PAJE)-[1-9][0-9]{0,3}$"), Internal]
+    # AJE-6 and AJE-06 alike (the handoff zero-pads, the seed may not).
+    ref: Annotated[str, Field(pattern=r"^(AJE|RJE|PAJE)-0?[1-9][0-9]{0,3}$"), Internal]
     description: Annotated[str | None, Field(max_length=500), Confidential] = None
     amount: Money
     status: Annotated[EntryStatus, Internal]

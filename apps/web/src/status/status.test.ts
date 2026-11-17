@@ -91,7 +91,10 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +3 (S44 end pass, DEC-5018): close_run, connection_meter, gift_form_709.
     // +6 (S47 G-04-T02/T04): plan_request, tenant_health, status_component, platform_region,
     // support_availability, agent_run_state_reason.
-    expect(Object.keys(REGISTRY)).toHaveLength(221); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan; S45: A-08 (8), A-09 (3), W-01 (1)
+    // +12 (S49 C-02-T03, T-06-T04): posting_batch, closing_date_conflict, ledger_write_grant,
+    // close_deliverable, tax_handoff, information_return_batch, w9_status; tb_handoff,
+    // form_diagnostic, ptet_election, section_754_decision, sourcing_position.
+    expect(Object.keys(REGISTRY)).toHaveLength(233); // R-02-T04, P-10-T07; A-05-T42: ebp_participant_loan; S45: A-08 (8), A-09 (3), W-01 (1)
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -126,7 +129,11 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +11 (DEC-5018): close_run 5, connection_meter 3, gift_form_709 3.
     // +19 (S47 G-04): support_session ended and expired 2, plan_request 5, tenant_health 3,
     // status_component 4, platform_region 2, support_availability 2, agent_run_state_reason 1.
-    expect(ROWS).toHaveLength(938); // DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows; S45: A-08, A-09, W-01 rows (50)
+    // +47 (S49): C-02-T03 29 (posting_batch 4, closing_date_conflict 4, ledger_write_grant 2,
+    // close_deliverable 4, tax_handoff 4, w9_status 4, information_return_batch 6, proposed_entry
+    // 1) and T-06-T04 18 (tb_handoff 5, sourcing_position 4, ptet_election 3,
+    // section_754_decision 3, form_diagnostic 3).
+    expect(ROWS).toHaveLength(985); // DEC-2264: ebp_test_result.agent_tested; A-05-T42: four loan rows; S45: A-08, A-09, W-01 rows (50)
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

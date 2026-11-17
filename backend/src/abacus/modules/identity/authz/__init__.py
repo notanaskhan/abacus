@@ -250,6 +250,12 @@ class TargetFacts:
     consent_subjects: frozenset[UUID] | None = None
     # A-08-T03: the person the target names as its approver, for `is_named_approver`.
     approver_user_id: UUID | None = None
+    # T-06-T03 (SPEC-702): the hand-off's source is released or locked; its source and target
+    # are the same client's; a decision request's contact holds the client-owner grant. The
+    # owning service (tax, ledger) reads them; unknown denies.
+    source_released: bool | None = None
+    same_client: bool | None = None
+    owner_contact: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -777,6 +783,11 @@ def has_conditions(rule: Rule) -> bool:
         or rule.link_scope_only
         or rule.email_verified
         or bool(rule.staff_function_in)
+        # T-06-T03 (SPEC-702): the hand-off and decision-request resource conditions; missing here
+        # an action whose only condition is one of them skipped the check (fail open, as DEC-5057).
+        or rule.tb_handoff_source_released
+        or rule.same_client
+        or rule.decision_owner_contact
     )
 
 
@@ -850,6 +861,7 @@ async def _condition_facts(
     consents: frozenset[str] | None = None
     if rule.consent:
         consents = await _consents_held(ctx, resource, rule.consent)
+    target = resource.target
     return ConditionFacts(
         level=level,
         offshore=offshore,
@@ -864,6 +876,9 @@ async def _condition_facts(
         consents=consents,
         named_approver=named_approver,
         granting_roles=granting,
+        source_released=None if target is None else target.source_released,
+        same_client=None if target is None else target.same_client,
+        owner_contact=None if target is None else target.owner_contact,
     )
 
 

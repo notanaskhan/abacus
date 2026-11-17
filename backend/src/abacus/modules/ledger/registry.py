@@ -7,7 +7,7 @@ every module's registry (schema_check), so adding a table edits only this file.
 from __future__ import annotations
 
 # The tables this module owns; no other module reads or writes them (ADR-008).
-TABLES: frozenset[str] = frozenset(
+_TABLES_BEFORE_S49: frozenset[str] = frozenset(
     {
         "gl_snapshots",  # SPEC-034 (TASK-069)
         "gl_account_balances",
@@ -34,7 +34,7 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY_BEFORE_S49: frozenset[str] = frozenset(
     {
         "gl_snapshots",  # SPEC-034 (TASK-069): ADR-004
         "gl_account_balances",  # SPEC-034 (TASK-069): ADR-004
@@ -178,8 +178,8 @@ T06T11_TABLES: frozenset[str] = frozenset(
         "tb_handoffs",
     }
 )
-TABLES = TABLES | T06T11_TABLES
-INSERT_ONLY = INSERT_ONLY | T06T11_TABLES
+TABLES: frozenset[str] = _TABLES_BEFORE_S49 | T06T11_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_BEFORE_S49 | T06T11_TABLES
 INSERT_COLUMNS["tb_handoffs"] = frozenset(
     {
         "book_income",

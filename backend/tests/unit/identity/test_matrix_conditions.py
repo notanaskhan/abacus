@@ -210,6 +210,31 @@ CASES: list[tuple[str, dict[str, str], ConditionFacts, ConditionFacts]] = [
         ),
         ConditionFacts(granting_roles=None, functions=frozenset({"close_preparer"})),
     ),
+    # T-06-T03 (SPEC-702): resource facts, failing closed while unknown.
+    (
+        "tb_handoff_source_released",
+        {**ALLOW, "tb_handoff_source_released": "required"},
+        ConditionFacts(source_released=True),
+        ConditionFacts(source_released=False),
+    ),
+    (
+        "tb_handoff_source_released",
+        {**ALLOW, "tb_handoff_source_released": "required"},
+        ConditionFacts(source_released=True),
+        ConditionFacts(source_released=None),
+    ),
+    (
+        "same_client",
+        {**ALLOW, "same_client": "required"},
+        ConditionFacts(same_client=True),
+        ConditionFacts(same_client=False),
+    ),
+    (
+        "decision_owner_contact",
+        {**ALLOW, "decision_owner_contact": "required"},
+        ConditionFacts(owner_contact=True),
+        ConditionFacts(owner_contact=None),
+    ),
 ]
 IDS = [f"{c[0]}-{i}" for i, c in enumerate(CASES)]
 

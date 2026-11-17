@@ -170,6 +170,21 @@ def test_a_reserved_write_validates_but_can_never_be_enabled() -> None:
         "adapter_key": "quickbooks_online",
         "shape": "W1",
         "owner_epic": "C-02",
+        # C-02-T02 (ADR-344): a W1 entry declares its whole policy even while disabled.
+        "decision": "ADR-344",
+        "operations": ["create_journal_entry"],
+        "attest_clients": "refused",
+        "policy_principal": "never",
+        "preflight": [
+            "balanced",
+            "open_period",
+            "mapped_accounts",
+            "active_accounts",
+            "closing_date_unlocked",
+        ],
+        "verify_after": "read_back",
+        "reversal": "new_write",
+        "kill_switch": "write.ledger.post_entries",
     }
     registry = WriteCapabilityRegistry.model_validate({"version": 2, "writes": [reserved]})
     assert registry.writes[0].enabled is False

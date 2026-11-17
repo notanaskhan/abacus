@@ -353,7 +353,7 @@ HAND_EDITS: Final = {
         )
         + ",\n",
     ),
-    "swap a write's decision": ('"decision": "P-16",', '"decision": "ADR-150",'),
+    "swap a write's decision": ('"decision": "ADR-344",', '"decision": "ADR-150",'),  # P-16
     "drop the attest-relevant shape": ('"shape": "W1",', '"shape": "W3",'),
     "a comment only": ("from typing import Final\n", "from typing import Final  # tidy\n"),
 }

@@ -984,7 +984,7 @@ UPDATE_COLUMNS["instrument_interpretations"] = frozenset(
 )
 
 # S46: T-07-T22 (0892) estate workpapers.
-TABLES: frozenset[str] = _TABLES | frozenset(
+_TABLES_BEFORE_S49: frozenset[str] = _TABLES | frozenset(
     {
         "estate_computations",
         "estate_deduction_versions",
@@ -996,7 +996,7 @@ TABLES: frozenset[str] = _TABLES | frozenset(
         "gift_history_items",
     }
 )
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
+_INSERT_ONLY_BEFORE_S49: frozenset[str] = _INSERT_ONLY | frozenset(
     {
         "estate_computations",
         "estate_deduction_versions",
@@ -1117,8 +1117,8 @@ T06T10_TABLES: frozenset[str] = frozenset(
         "tax_properties",
     }
 )
-TABLES = TABLES | T06T10_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset(
+TABLES: frozenset[str] = _TABLES_BEFORE_S49 | T06T10_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_BEFORE_S49 | frozenset(
     {
         "fixed_asset_dispositions",
         "fixed_asset_versions",

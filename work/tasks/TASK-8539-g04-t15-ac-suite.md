@@ -1,8 +1,8 @@
 ---
 id: TASK-8539
 title: "G-04-T15: ADR-078 AC suite for plan, usage and plan requests"
-spec: SPEC-000
-acceptance_criteria: []
+spec: SPEC-680
+acceptance_criteria: [AC-26, AC-28, AC-35, AC-38]
 risk_zone: amber
 status: in-review
 branch: g04-t15-t16-ac-suites

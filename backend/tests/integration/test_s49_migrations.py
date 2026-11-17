@@ -1,9 +1,9 @@
-"""S49: 0950 to 0954 go down to 0947 and back up. 0950 (C-02-T04, adjustments posting), 0951
+"""S49: 0950 to 0954 go down to 0948 and back up. 0950 (C-02-T04, adjustments posting), 0951
 (C-02-T05, W1 ledger write operations, grants and switches), 0952 (T-06-T10, tax entity depth),
 0953 (T-06-T11, TB hand-offs) and 0954 (T-06-T12, relationship depth). Every new table comes back
 with forced row-level security; the insert-only tables refuse the app role UPDATE and DELETE and
 carry their immutable triggers; the CHECKs the engines and the posting rules rely on exist; the
-head is single (0947 → 0954)."""
+head is single (0948 → 0954)."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from abacus_tools.quality.schema_check import migrate, provisioned_database
 
 from .agent_tests.support import Seeder
 
-BEFORE = "0947"
+BEFORE = "0948"
 NEW_TABLES = (
     "posting_batches", "posting_results", "closing_date_events", "closing_date_conflicts",
     "ledger_write_operations", "ledger_write_evidence", "connection_write_grants",

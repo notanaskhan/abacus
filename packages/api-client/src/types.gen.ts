@@ -16034,13 +16034,13 @@ export type DeliveryInformationReturnsOut = {
      */
     threshold_rule: string;
     /**
-     * Tin Mismatch
-     */
-    tin_mismatch: number;
-    /**
      * Vendors Paid
      */
     vendors_paid: number;
+    /**
+     * W9 Mismatches
+     */
+    w9_mismatches: number;
 };
 
 /**
@@ -16376,22 +16376,6 @@ export type DeliveryRevealIn = {
      * Reason
      */
     reason: string;
-};
-
-/**
- * DeliveryRevealOut
- *
- * A reveal is logged (P-03 `pii_reveals`) and returned once; never cached or logged.
- */
-export type DeliveryRevealOut = {
-    /**
-     * Expires At
-     */
-    expires_at: string;
-    /**
-     * Tin
-     */
-    tin: string;
 };
 
 /**
@@ -161083,7 +161067,7 @@ export type WorksheetFieldsResponses = {
 
 export type WorksheetFieldsResponse = WorksheetFieldsResponses[keyof WorksheetFieldsResponses];
 
-export type Handoff2Data = {
+export type TbHandoffData = {
     body?: never;
     headers?: {
         /**
@@ -161105,7 +161089,7 @@ export type Handoff2Data = {
     url: '/v1/tb-handoffs/{handoff_id}';
 };
 
-export type Handoff2Errors = {
+export type TbHandoffErrors = {
     /**
      * Not authenticated
      */
@@ -161128,16 +161112,16 @@ export type Handoff2Errors = {
     501: ErrorOut;
 };
 
-export type Handoff2Error = Handoff2Errors[keyof Handoff2Errors];
+export type TbHandoffError = TbHandoffErrors[keyof TbHandoffErrors];
 
-export type Handoff2Responses = {
+export type TbHandoffResponses = {
     /**
      * Successful Response
      */
     200: TbHandoffOut;
 };
 
-export type Handoff2Response = Handoff2Responses[keyof Handoff2Responses];
+export type TbHandoffResponse = TbHandoffResponses[keyof TbHandoffResponses];
 
 export type HandoffMappingsData = {
     body?: never;
@@ -162885,7 +162869,7 @@ export type TinRevealResponses = {
     /**
      * Successful Response
      */
-    200: DeliveryRevealOut;
+    200: TinRevealOut;
 };
 
 export type TinRevealResponse = TinRevealResponses[keyof TinRevealResponses];

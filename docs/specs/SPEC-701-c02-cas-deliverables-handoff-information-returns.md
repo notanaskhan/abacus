@@ -4,7 +4,7 @@ title: C-02 CAS deliverables, close-to-tax hand-off and information returns — 
 status: approved
 owner: ayushkbhatia
 risk_zone: amber
-related_adrs: [ADR-004, ADR-005, ADR-007, ADR-050, ADR-146, ADR-151, ADR-161, ADR-205, ADR-320, ADR-344]
+related_adrs: [ADR-004, ADR-005, ADR-007, ADR-050, ADR-146, ADR-151, ADR-161, ADR-300, ADR-320, ADR-344]
 related_specs: [SPEC-655, SPEC-700]
 created: 2026-11-17
 updated: 2026-11-17
@@ -32,7 +32,7 @@ records the filing a person makes in IRIS.
 
 ## 2. Gate check (main aceddcbbf, 2026-11-17)
 SPEC-700 §2 (ADR-344 accepted; W1 dark). P-19 (ADR-320, deterministic documents; C11), P-62
-(ADR-205, reference data: 1099 thresholds and due dates as DB rows), P-18 (ADR-151, never
+(ADR-300, reference data: 1099 thresholds and due dates as DB rows), P-18 (ADR-151, never
 transmit), P-12 (ADR-167, TIN sealing) accepted. C12 v1 is T-06-T05 (S49). C18 kind
 `close_package` is R-02's (consumer request filed in SPEC-700 §3).
 

@@ -19,7 +19,7 @@ DEC-5503). Expand-only.
 Nothing here writes to a client system: W1 stays `enabled: false` (ADR-344 §10).
 
 Revision ID: 0950
-Revises: 0947
+Revises: 0948
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0950"
-down_revision = "0947"
+down_revision = "0948"
 branch_labels = None
 depends_on = None
 
