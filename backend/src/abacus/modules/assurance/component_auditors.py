@@ -1278,6 +1278,7 @@ class ComponentThreadAnchors:
             archived=ref.archived,
             work_item_id=cast(UUID, row["work_item_id"]),
             client_visible=True,
+            shared_with=str(row["organisation_name"]),  # SHL-18 f (S48 rest)
         )
 
 

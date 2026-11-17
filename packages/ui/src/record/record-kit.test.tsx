@@ -51,6 +51,31 @@ function rowOf(title: string): HTMLElement {
 }
 
 describe("C-03 RecordRail", () => {
+  it("draws a phase's code-built chip after its line (AUD-02 h tie chip)", () => {
+    render(
+      <RecordRail
+        sections={[
+          {
+            id: "group",
+            title: "Group",
+            phases: [
+              {
+                id: "group_structure",
+                title: "Structure",
+                disc: "done",
+                live: { text: "5 entities · finalized" },
+                chip: "Balanced · 50,760,000",
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+    const row = rowOf("Structure");
+    expect(within(row).getByText("5 entities · finalized")).toBeTruthy();
+    expect(within(row).getByText("Balanced · 50,760,000").closest("[data-chip]")).not.toBeNull();
+  });
+
   it("names every phase's state in words beside a disc, never colour alone", () => {
     render(<RecordRail sections={SECTIONS} />);
     const words: Record<string, string> = {

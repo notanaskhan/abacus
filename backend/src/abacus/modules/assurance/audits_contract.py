@@ -240,6 +240,8 @@ class AuditSectionRowOut(BaseModel):
     section_state: Annotated[AuditSectionStatus | None, classified("internal")] = None
     grammar: Annotated[Grammar, classified("internal")]
     sub_line: Annotated[str | None, classified("confidential")] = None
+    # S48 rest (AUD-02 h): a code-built tie chip ("Balanced · 50,760,000"); null on most rows.
+    chip: Annotated[str | None, classified("confidential")] = None
     route: Annotated[str, classified("internal")]  # manifest screen ID
     link: Annotated[LinkStatus, classified("internal")]  # planned: text without a chevron (DV-1)
     blocked_on_user_id: Annotated[UUID | None, classified("internal")] = None

@@ -33,6 +33,7 @@ def anchor_out(
         label=facts.label,
         engagement_id=facts.engagement_id,
         client_visible=facts.client_visible,
+        shared_with=facts.shared_with,
     )
 
 

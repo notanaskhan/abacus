@@ -70,6 +70,7 @@ class SectionRow:
     blocked_on_name: str | None = None
     allowed_actions: list[str] = field(default_factory=list[str])
     versions: tuple[SectionVersion, ...] = ()
+    chip: str | None = None  # S48 rest: AUD-02 h's tie chip
 
 
 @dataclass(frozen=True)
@@ -195,6 +196,7 @@ async def audit_cockpit(ctx: AuthContext, work_item_id: UUID) -> Cockpit:
                     link=section.link,
                     blocked_on_user_id=state.blocked_on_user_id,
                     versions=state.versions,
+                    chip=state.chip,
                 )
             )
         for band in BANDS:

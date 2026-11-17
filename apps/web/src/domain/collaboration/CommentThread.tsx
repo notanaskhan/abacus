@@ -489,6 +489,8 @@ export function LiveCommentThread(props: LiveCommentThreadProps): JSX.Element {
     }
   };
   const id = thread?.id;
+  // SHL-18 f (S48 rest): a shared thread names its outside organisation from the anchor's facts.
+  const sharedWith = props.sharedWith ?? thread?.anchor.shared_with ?? undefined;
   return (
     <CommentThreadView
       variant={props.variant}
@@ -500,7 +502,7 @@ export function LiveCommentThread(props: LiveCommentThreadProps): JSX.Element {
       counts={counts}
       onPost={onPost}
       {...(props.context ? { context: props.context } : {})}
-      {...(props.sharedWith ? { sharedWith: props.sharedWith } : {})}
+      {...(sharedWith ? { sharedWith } : {})}
       {...(props.initialDraft === undefined ? {} : { initialDraft: props.initialDraft })}
       {...(props.expandResolved ? { expandResolved: true } : {})}
       {...(props.onClose ? { onClose: props.onClose } : {})}

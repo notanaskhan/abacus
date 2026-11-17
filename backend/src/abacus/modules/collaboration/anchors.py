@@ -59,6 +59,9 @@ class AnchorFacts:
     archived: bool = False
     work_item_id: UUID | None = None
     client_visible: bool = False
+    # S48 rest (SHL-18 f): the outside organisation a shared thread is visible to, by name
+    # ("Pruett & Lang LLP"); None when the thread stays inside the firm.
+    shared_with: str | None = None
     version_no: int | None = None
     version_policy: VersionPolicy = "follow"
     # The row's text when a to-do is made from it (Restricted; sealed by the caller), or None.

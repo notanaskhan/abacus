@@ -107,6 +107,7 @@ export function phaseOf(row: AuditSectionRowOut): Phase {
   return {
     ...base,
     disc: discOf(row.section_state),
+    ...(row.chip == null || row.chip === "" ? {} : { chip: row.chip }),
     ...(text === null
       ? {}
       : {

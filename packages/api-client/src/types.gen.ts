@@ -2573,6 +2573,10 @@ export type AnchorFactsOut = {
     locator?: {
         [key: string]: string | number;
     } | null;
+    /**
+     * Shared With
+     */
+    shared_with?: string | null;
 };
 
 /**
@@ -5565,6 +5569,10 @@ export type AuditSectionRowOut = {
      * Blocked On User Id
      */
     blocked_on_user_id?: string | null;
+    /**
+     * Chip
+     */
+    chip?: string | null;
     /**
      * Grammar
      */
@@ -49903,6 +49911,18 @@ export type RoomDeliverableOut = {
      * Word
      */
     word: 'due' | 'you_uploaded' | 'overdue' | 'returned';
+};
+
+/**
+ * RoomDropLinkIn
+ *
+ * The picker's answer: the deliverable this drop is for.
+ */
+export type RoomDropLinkIn = {
+    /**
+     * Deliverable Id
+     */
+    deliverable_id: string;
 };
 
 /**
@@ -135377,6 +135397,74 @@ export type ComponentRoomDropResponses = {
 };
 
 export type ComponentRoomDropResponse = ComponentRoomDropResponses[keyof ComponentRoomDropResponses];
+
+export type ComponentRoomLinkDropData = {
+    body: RoomDropLinkIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Room Id
+         */
+        room_id: string;
+        /**
+         * Evidence Version Id
+         */
+        evidence_version_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/component-rooms/{room_id}/drops/{evidence_version_id}/deliverable';
+};
+
+export type ComponentRoomLinkDropErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ComponentRoomLinkDropError = ComponentRoomLinkDropErrors[keyof ComponentRoomLinkDropErrors];
+
+export type ComponentRoomLinkDropResponses = {
+    /**
+     * Successful Response
+     */
+    200: RoomUploadOut;
+};
+
+export type ComponentRoomLinkDropResponse = ComponentRoomLinkDropResponses[keyof ComponentRoomLinkDropResponses];
 
 export type ComponentRoomGetInstructionsData = {
     body?: never;
