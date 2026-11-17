@@ -221,3 +221,122 @@ test.describe("J14 tax administration (T-01-T29)", () => {
     });
   });
 });
+
+// W-01-T19 (W-01 §7 item 1; SPEC-659): J14 step 3 and the integration-admin sub-steps 3b to 3d on
+// WB-10 and WB-11 (Felix Andersen, IT/Security; Hannah Leclerc for 3b). Fixture mode walks each on
+// the screen's own scenario; staging walks them with real auth once the canary flip lands
+// (W-01-T21, Tue Aug 29, 2028).
+const CONNECT = ["integrations.connect_v1"];
+const CONNECT_LIVE =
+  "W-01 · W-01-T19 fixture; staging with real auth after the W-01-T21 canary flip · Tue Aug 29, 2028";
+
+test.describe("J14 integration admin (W-01)", () => {
+  test.beforeEach(({ journey }) => {
+    const hosted = journey.project === "staging" || journey.project === "canary";
+    test.skip(
+      hosted && HOSTED_URL[journey.project] === undefined,
+      `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
+    );
+    test.fixme(journey.project !== "fixture", CONNECT_LIVE);
+  });
+
+  test(
+    "j14 3: Felix finds Sage Intacct in Connect, sees Bluestem's client-authorized company and no firm-side connect, and ADM-08 reports the failed test by code only",
+    owner(CONNECT_LIVE),
+    async ({ journey }) => {
+      await journey.as("felix-andersen", "/workbench/connect?category=erp", {
+        scenario: "WB-10:b",
+        flags: CONNECT,
+      });
+      await journey.step("J14 step 3: Sage Intacct under ERP (WB-10 b)", async (page) => {
+        await expect(page.getByText("Sage Intacct").first()).toBeVisible();
+        await expect(page.getByText("QuickBooks Online").first()).toBeVisible();
+      });
+      await journey.as("felix-andersen", "/workbench/connect?ov=integration:quickbooks_online", {
+        scenario: "WB-11:d",
+        flags: CONNECT,
+      });
+      await journey.step(
+        "J14 step 3: a client-ledger app has no firm-side connect (WB-11 d)",
+        async (page) => {
+          await expect(
+            page.getByText("Firm app · each client authorizes its own company"),
+          ).toBeVisible();
+          await expect(page.getByRole("button", { name: "Connect…" })).toHaveCount(0);
+        },
+      );
+    },
+  );
+
+  test(
+    "j14 3b: Hannah connects Google Workspace as herself and cannot enable or disconnect firm connections",
+    owner(CONNECT_LIVE),
+    async ({ journey }) => {
+      await journey.as("hannah-leclerc", "/workbench/connect", {
+        scenario: "WB-10:d",
+        flags: CONNECT,
+      });
+      await journey.step("J14 step 3b: firm Enable is not Hannah's (WB-10 d)", async (page) => {
+        await expect(
+          page.getByText("Felix Andersen manages firm connections.").first(),
+        ).toBeVisible();
+        await expect(page.getByText("Connected as you").first()).toBeVisible();
+      });
+      await journey.as("hannah-leclerc", "/workbench/connect?ov=integration:cch", {
+        scenario: "WB-11:f",
+        flags: CONNECT,
+      });
+      await journey.step("J14 step 3b: no firm footer for Hannah (WB-11 f)", async (page) => {
+        await expect(page.getByText("Felix Andersen manages this firm connection.")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Disconnect…" })).toHaveCount(0);
+      });
+    },
+  );
+
+  test(
+    "j14 3c: CCH Axcess Tax token expires, dependent agent runs fail at admission, Felix reconnects with fresh MFA",
+    owner(CONNECT_LIVE),
+    async ({ journey }) => {
+      await journey.as("felix-andersen", "/workbench/connect", {
+        scenario: "WB-10:f",
+        flags: CONNECT,
+      });
+      await journey.step("J14 step 3c: CCH Axcess Tax needs reauth (WB-10 f)", async (page) => {
+        await expect(page.getByText("Needs reauth").first()).toBeVisible();
+      });
+      await journey.as("felix-andersen", "/workbench/connect?ov=integration:cch", {
+        scenario: "WB-11:c",
+        flags: CONNECT,
+      });
+      await journey.step("J14 step 3c: the failed run and Reconnect… (WB-11 c)", async (page) => {
+        await expect(
+          page.getByText("Token expired at 9:00 AM · 1 run failed · 5 agents paused"),
+        ).toBeVisible();
+        await expect(page.getByRole("button", { name: "Reconnect…" })).toBeVisible();
+      });
+    },
+  );
+
+  test(
+    "j14 3d: Felix disconnects CCH Axcess Tax only after typing its name and imported return data is kept",
+    owner(CONNECT_LIVE),
+    async ({ journey }) => {
+      await journey.as("felix-andersen", "/workbench/connect?ov=integration:cch", {
+        scenario: "WB-11:e",
+        flags: CONNECT,
+      });
+      await journey.step(
+        "J14 step 3d: Disconnect waits for the typed name (WB-11 e)",
+        async (page) => {
+          await page.getByRole("button", { name: "Disconnect…" }).click();
+          const dialog = page.getByRole("dialog", { name: "Disconnect CCH Axcess Tax?" });
+          await expect(dialog).toBeVisible();
+          const confirm = dialog.getByRole("button", { name: "Disconnect", exact: true });
+          await expect(confirm).toHaveAttribute("aria-disabled", "true");
+          await dialog.getByLabel("Type CCH Axcess Tax").fill("CCH Axcess Tax");
+          await expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+        },
+      );
+    },
+  );
+});

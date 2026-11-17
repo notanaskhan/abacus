@@ -326,3 +326,36 @@ test.describe("J01-core firm onboarding", () => {
     },
   );
 });
+
+// W-01-T19 (W-01 §7 item 1): J01 step 4, Felix Andersen's connections on WB-10 c. Fixture mode walks
+// the screen's own scenario; the provisioned-tenant serial block walks it once the canary flip lands
+// (W-01-T21, Tue Aug 29, 2028).
+test.describe("J01 connections (W-01)", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "W-01 · W-01-T19 fixture; the provisioned serial block after the W-01-T21 canary flip",
+    );
+  });
+
+  test("j01 4: Felix connects CCH Axcess Tax, CCH Axcess Practice, QuickBooks Online, NetSuite, the docs@ mailbox and DocuSign and WB-10 shows each Connected", async ({
+    journey,
+  }) => {
+    await journey.as("felix-andersen", "/workbench/connect?status=connected", {
+      scenario: "WB-10:c",
+      flags: ["integrations.connect_v1"],
+    });
+    await journey.step("J01 step 4: the connected tiles (WB-10 c)", async (page) => {
+      for (const name of [
+        "CCH Axcess Tax",
+        "CCH Axcess Practice",
+        "QuickBooks Online",
+        "NetSuite",
+        "Microsoft 365",
+        "DocuSign",
+      ]) {
+        await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+      }
+    });
+  });
+});
