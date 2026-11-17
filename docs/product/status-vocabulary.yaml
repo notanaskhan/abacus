@@ -470,6 +470,64 @@ objects:
       posted:           {label: "Posted", variant: green-tint, terminal: true, derived: false, context_labels: {with_ref: "Posted · {system} {ref}"}}
       failed_post:      {label: "Failed post", variant: red, terminal: false, derived: false}
       reversed:         {label: "Reversed", variant: soon, terminal: true, derived: false}
+      recorded_externally: {label: "Recorded in ledger", variant: green-tint, terminal: true, derived: false, context_labels: {attest: "Recorded by {client}"}, client_label: "Recorded in your books"}   # C-02-T03 (DF-19, DF-23): the export path or an attest client's own entry, matched or evidenced
+
+  # ---- C-02 posting, CAS delivery, hand-off and information returns (C-02-T03; DF-19, DF-23, DF-31; SPEC-700, SPEC-701; DEC-5502) ----
+  posting_batch:   # posting_batches.status (CLS-07 d, e; CLS-11 posting log)
+    source: "C-02 §4.2, §4.7; CLS-07 d, e; CLS-11 a, b"
+    codes:
+      proposed:    {label: "Proposed", variant: state, terminal: false, derived: false, context_labels: {approved_count: "{n} of {m} approved"}}
+      posting:     {label: "Posting", variant: null, disc: spinner, terminal: false, derived: false}
+      posted:      {label: "Posted", variant: green-tint, terminal: true, derived: false, context_labels: {resolved: "Posted · {n} failure resolved"}}
+      failed_post: {label: "Failed post", variant: red, terminal: false, derived: false}
+
+  closing_date_conflict:   # closing_date_conflicts.status (CLS-11 e)
+    source: "C-02 §4.2; CLS-11 e"
+    codes:
+      open:         {label: "Closing date locked", variant: amber, terminal: false, derived: false}
+      client_asked: {label: "Client asked", variant: state, terminal: false, derived: false, context_labels: {at: "Client asked · {time}"}}
+      redated:      {label: "Re-dated", variant: neutral, terminal: true, derived: false}
+      resolved:     {label: "Resolved", variant: green-tint, terminal: true, derived: false}
+
+  ledger_write_grant:   # connection_write_grants, the latest event (POR-16; CLS-11 write scope)
+    source: "C-02 §4.2; POR-16; CLS-11 a"
+    codes:
+      granted: {label: "Posting allowed", variant: green-tint, terminal: false, derived: false, client_label: "Your accountant can post approved entries"}
+      revoked: {label: "Posting paused", variant: amber, terminal: false, derived: false, context_labels: {by: "Posting paused · write access revoked by {name}"}, client_label: "Posting turned off"}
+
+  close_deliverable:   # close_deliverables.status (CLS-08)
+    source: "C-02 §4.2, §4.7; CLS-08 a-g; DF-23"
+    codes:
+      drafting:           {label: "Drafting", variant: null, disc: spinner, terminal: false, derived: false}
+      draft:              {label: "Draft", variant: state, terminal: false, derived: false}
+      released:           {label: "Released", variant: green-tint, terminal: false, derived: false, context_labels: {on: "Released {date}"}}
+      approved_by_client: {label: "Approved by client", variant: green, terminal: true, derived: false, context_labels: {by: "Approved by {name} · {date}"}}
+
+  tax_handoff:   # tax_handoffs (CLS-12); not_available and ready are derived from the close
+    source: "C-02 §4.7; CLS-12 a-d"
+    codes:
+      not_available: {label: "Not available", variant: muted, terminal: false, derived: true}
+      ready:         {label: "Ready", variant: state, terminal: false, derived: true}
+      handed_off:    {label: "Handed off", variant: green, terminal: false, derived: false}
+      superseded:    {label: "Superseded", variant: soon, terminal: true, derived: false}
+
+  w9_status:   # vendors_1099.w9_status (CLS-13)
+    source: "C-02 §4.2, §4.7; CLS-13 a-c"
+    codes:
+      on_file:      {label: "On file", variant: green-tint, terminal: false, derived: false}
+      requested:    {label: "Requested", variant: amber, terminal: false, derived: false, context_labels: {on: "Requested {date}"}}
+      tin_mismatch: {label: "TIN mismatch", variant: red-tint, terminal: false, derived: false}
+      missing:      {label: "Missing", variant: muted, terminal: false, derived: false}
+
+  information_return_batch:   # information_return_batches.status: the e-file record (CLS-13 d, e); manual records only (R-04)
+    source: "C-02 §4.2, §4.7; CLS-13 d, d2, e"
+    codes:
+      not_started: {label: "Not started", variant: muted, terminal: false, derived: false}
+      approved:    {label: "Approved", variant: green-tint, terminal: false, derived: false}
+      exported:    {label: "Exported", variant: state, terminal: false, derived: false}
+      filed_iris:  {label: "Filed · IRIS", variant: state, terminal: false, derived: false}
+      accepted:    {label: "Accepted", variant: green, terminal: true, derived: false, context_labels: {on: "Accepted · {date}"}}
+      rejected:    {label: "Rejected", variant: red, terminal: false, derived: false}
 
   # ---- A-06 (A-06-T02; DF-31, DF-28; SPEC-642) ----
   finding_route:   # audit_findings: where a finding went (AUD-15); the issue holds its lifecycle

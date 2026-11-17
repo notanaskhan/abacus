@@ -382,6 +382,55 @@ class ProposedEntryStatus(StrEnum):
     POSTED = "posted"
     FAILED_POST = "failed_post"
     REVERSED = "reversed"
+    RECORDED_EXTERNALLY = "recorded_externally"
+
+
+class PostingBatchStatus(StrEnum):
+    PROPOSED = "proposed"
+    POSTING = "posting"
+    POSTED = "posted"
+    FAILED_POST = "failed_post"
+
+
+class ClosingDateConflictStatus(StrEnum):
+    OPEN = "open"
+    CLIENT_ASKED = "client_asked"
+    REDATED = "redated"
+    RESOLVED = "resolved"
+
+
+class LedgerWriteGrantStatus(StrEnum):
+    GRANTED = "granted"
+    REVOKED = "revoked"
+
+
+class CloseDeliverableStatus(StrEnum):
+    DRAFTING = "drafting"
+    DRAFT = "draft"
+    RELEASED = "released"
+    APPROVED_BY_CLIENT = "approved_by_client"
+
+
+class TaxHandoffStatus(StrEnum):
+    HANDED_OFF = "handed_off"
+    SUPERSEDED = "superseded"
+    # derived, never stored: not_available, ready
+
+
+class W9StatusStatus(StrEnum):
+    ON_FILE = "on_file"
+    REQUESTED = "requested"
+    TIN_MISMATCH = "tin_mismatch"
+    MISSING = "missing"
+
+
+class InformationReturnBatchStatus(StrEnum):
+    NOT_STARTED = "not_started"
+    APPROVED = "approved"
+    EXPORTED = "exported"
+    FILED_IRIS = "filed_iris"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
 
 
 class FindingRouteStatus(StrEnum):
@@ -1884,6 +1933,47 @@ STORED: dict[str, tuple[str, ...]] = {
         "posted",
         "failed_post",
         "reversed",
+        "recorded_externally",
+    ),
+    "posting_batch": (
+        "proposed",
+        "posting",
+        "posted",
+        "failed_post",
+    ),
+    "closing_date_conflict": (
+        "open",
+        "client_asked",
+        "redated",
+        "resolved",
+    ),
+    "ledger_write_grant": (
+        "granted",
+        "revoked",
+    ),
+    "close_deliverable": (
+        "drafting",
+        "draft",
+        "released",
+        "approved_by_client",
+    ),
+    "tax_handoff": (
+        "handed_off",
+        "superseded",
+    ),
+    "w9_status": (
+        "on_file",
+        "requested",
+        "tin_mismatch",
+        "missing",
+    ),
+    "information_return_batch": (
+        "not_started",
+        "approved",
+        "exported",
+        "filed_iris",
+        "accepted",
+        "rejected",
     ),
     "finding_route": (
         "under_evaluation",

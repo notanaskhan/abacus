@@ -715,6 +715,23 @@ Banned phrases (copy lint): "significant component" (SAS 149 dropped it) and "Po
 
 Alias line: chapter 03's `integration_catalogue` and `integration_installs` are this repository's `integration_catalog` and `firm_integrations`.
 
+## New terms: ledger posting and CAS delivery (C-02-T03)
+
+C-02-T03 (DF-19, DF-23, DF-31; SPEC-700, SPEC-701; DEC-5502). "Posting batch" is above.
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Posting result | One insert-only attempt to write one approved entry to the client's ledger, with the provider's id once read back. | `posting_results` | — |
+| Write operation | One W1 call to a client's system (create a journal entry, set the closing date), idempotent on its key. | `write_operations`, `write_evidence` | — |
+| Write grant | The client owner's consent, given in the portal, for the firm to post approved entries to their ledger; revocable. | `connection_write_grants` | — |
+| Firm write capability | The firm's own switch for a declared write (security admin, fresh MFA); history is insert-only. | `firm_write_capabilities` | — |
+| Closing date | The date in the client's ledger before which no transaction can be added; set once, after a batch's last entry posts. | `closing_date_events`, `closing_date_conflicts` | — |
+| Recorded externally | An approved entry the client's books already hold without Accrued posting it (export path, or an attest client's own entry), matched by a sync or evidenced. "Recorded in ledger" / "Recorded by ‹client›". | `recorded_externally` | — |
+| Close package | The month's financial statements built by code from the posted ledger, with locked figures and editable commentary. | `close_deliverables`, `close_deliverable_versions` | — |
+| Tax hand-off | A locked December close's trial balance published to a tax return as its starting TB (C12). | `tax_handoffs` | — |
+| Information return | A 1099-NEC or 1099-MISC line prepared from vendor payments; exported as an IRIS file a person uploads, never transmitted. | `information_returns`, `information_return_batches` | — |
+| W-9 request | A portal request to the client for a vendor's signed Form W-9, sent by a person. | `w9_requests` | — |
+
 ## New terms: platform console, plan & usage, support (G-04-T02)
 
 | Term | Meaning | Code name | Don't use |
