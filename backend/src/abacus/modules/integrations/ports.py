@@ -98,6 +98,21 @@ class ReadConnectorEntry(BaseModel):
 OPENABLE_SHAPES: Final = frozenset({"W7"})
 
 
+# ADR-344 (P-16): W1 writes journal entries and the closing date, nothing else; it never edits or
+# deletes an existing transaction, writes an attachment or changes the chart of accounts.
+W1Operation = Literal["create_journal_entry", "set_closing_date"]
+W1Preflight = Literal[
+    "balanced", "open_period", "mapped_accounts", "active_accounts", "closing_date_unlocked"
+]
+W1_PREFLIGHT: Final = (
+    "balanced",
+    "open_period",
+    "mapped_accounts",
+    "active_accounts",
+    "closing_date_unlocked",
+)
+
+
 class WriteCapabilityEntry(BaseModel):
     """A declared write (W1 posting under ADR-161, W2 the CCH file bridge, W7 DocuSeal …).
     Enabled only for a shape in `OPENABLE_SHAPES` whose decision is an ADR (the compiler checks
@@ -115,6 +130,39 @@ class WriteCapabilityEntry(BaseModel):
         str | None, Field(pattern=r"^(P-[0-9]{2}|ADR-[0-9]{3})$"), classified("internal")
     ] = None
     enabled: Annotated[bool, classified("internal")] = False
+    # C-02-T02 (ADR-344, DEC-5501): the W1 policy, declared on the entry and checked here so the
+    # protected file cannot widen it. Only W1 carries these; every field is required for W1.
+    operations: Annotated[list[W1Operation] | None, classified("internal")] = None
+    attest_clients: Annotated[Literal["refused"] | None, classified("internal")] = None
+    policy_principal: Annotated[Literal["never"] | None, classified("internal")] = None
+    preflight: Annotated[list[W1Preflight] | None, classified("internal")] = None
+    verify_after: Annotated[Literal["read_back"] | None, classified("internal")] = None
+    reversal: Annotated[Literal["new_write"] | None, classified("internal")] = None
+    kill_switch: Annotated[
+        str | None, Field(pattern=r"^write\.[a-z_]+\.[a-z_]+$"), classified("internal")
+    ] = None
+
+    @model_validator(mode="after")
+    def _w1_policy(self) -> Self:
+        policy = (
+            self.operations,
+            self.attest_clients,
+            self.policy_principal,
+            self.preflight,
+            self.verify_after,
+            self.reversal,
+            self.kill_switch,
+        )
+        if self.shape == "W1":
+            if any(p is None for p in policy) or not self.operations:
+                raise ValueError("a W1 write declares its whole policy (ADR-344)")
+            if len(set(self.operations or [])) != len(self.operations or []):
+                raise ValueError("a W1 operation is declared once")
+            if set(self.preflight or []) != set(W1_PREFLIGHT):
+                raise ValueError("a W1 write runs every preflight check (ADR-344)")
+        elif any(p is not None for p in policy):
+            raise ValueError("only a W1 write carries the posting policy")
+        return self
 
     @model_validator(mode="after")
     def _openable(self) -> Self:

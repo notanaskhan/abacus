@@ -479,6 +479,26 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "engagement_budget.threshold_crossed": Kind(
         "engagement_budget_threshold_crossed", _listed, "engagement", "engagement_id"
     ),
+    # C-02-T02 (C-02 §4.5, DEC-5501): posting, delivery and hand-off kinds. The services that emit
+    # them land with C-02-T12/T19 (posting), T29 (client approval), T39 (hand-off) and T46 (W-9);
+    # each names its recipients in the payload. Client emails stay POR-20 template rows.
+    "proposed_entry.approval_requested": Kind(
+        "entry_approval_requested", _listed, "proposed_entry", "proposed_entry_id"
+    ),
+    "posting_batch.failed": Kind("posting_failed", _listed, "posting_batch", "posting_batch_id"),
+    "posting_batch.posted": Kind(
+        "posting_batch_posted", _listed, "posting_batch", "posting_batch_id"
+    ),
+    "close_deliverable.client_approved": Kind(
+        "package_client_approved", _listed, "close", "close_id"
+    ),
+    "tax_handoff.published": Kind(
+        "tax_handoff_received", _listed, "tax_handoff", "tax_handoff_id"
+    ),
+    "tax_handoff.superseded": Kind(
+        "tax_handoff_superseded", _listed, "tax_handoff", "tax_handoff_id"
+    ),
+    "w9.uploaded": Kind("vendor_form_uploaded", _listed, "client_entity", "client_entity_id"),
     # G-04-T08 (AC-37, DEC-5420): scheduled agents paused at the plan limit, once a month.
     "usage.scheduled_paused": Kind("usage_scheduled_paused", _admins, "firm", None, None),
     # C-01-T17: an entity's scheduled ledger sync paused (needs reauth, monthly call budget).
@@ -803,6 +823,14 @@ TEMPLATES: Final[dict[str, str]] = {
     "plan_request.decided": "Your plan request was decided.",
     "plan_request.applied": "Your firm's plan change was applied.",
     "support.replied": "Accrued Support replied",
+    # C-02-T02 (DEC-5501): posting, delivery and hand-off. Values stay out (DEC-60).
+    "proposed_entry.approval_requested": "An adjusting entry on {subject} needs your approval.",
+    "posting_batch.failed": "An entry in a posting batch for {subject} failed to post.",
+    "posting_batch.posted": "A posting batch for {subject} posted to QuickBooks Online.",
+    "close_deliverable.client_approved": "The client approved the statements for {subject}.",
+    "tax_handoff.published": "A trial balance was handed off to a return you prepare or review.",
+    "tax_handoff.superseded": "A handed-off trial balance was replaced after its close reopened.",
+    "w9.uploaded": "The client uploaded a vendor's Form W-9.",
     "engagement_budget.threshold_crossed": "{subject} is near its agent-minute budget.",
     "usage.scheduled_paused": (
         "Scheduled agents are paused until the next usage month: the firm reached its included "
@@ -993,6 +1021,14 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("plan_request_decided", "system", "Gauge", email_default=True),
     NotificationKind("plan_request_applied", "system", "Gauge", email_default=True),
     NotificationKind("support_replied", "system", "MessageSquareText", email_default=True),
+    # C-02-T02 (DEC-5501): posting, delivery and hand-off; the approval request is actionable.
+    NotificationKind("entry_approval_requested", "approval", "ListChecks"),
+    NotificationKind("posting_failed", "run", "TriangleAlert", email_default=True),
+    NotificationKind("posting_batch_posted", "run", "ListChecks"),
+    NotificationKind("package_client_approved", "approval", "ShieldCheck"),
+    NotificationKind("tax_handoff_received", "approval", "ListChecks"),
+    NotificationKind("tax_handoff_superseded", "other", "TriangleAlert"),
+    NotificationKind("vendor_form_uploaded", "client_activity", "FileText"),
     # C-01-T26 (DEC-5412): the close engine's kinds.
     NotificationKind("close_run_finished", "run", "ListChecks"),
     NotificationKind("close_run_needs_input", "run", "MessageSquareText"),

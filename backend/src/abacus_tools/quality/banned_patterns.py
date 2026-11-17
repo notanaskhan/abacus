@@ -2409,6 +2409,59 @@ def _check_never_ero(src: SourceFile) -> Iterator[Finding]:
             )
 
 
+# C-02-T02 (ADR-344, DEC-5501): W1 posting. POST-001: only adjustments/posting.py names the W1
+# capability or calls `execute_write` from adjustments; integrations itself declares and runs it.
+_W1_CAPABILITY = "ledger_post_journal_entries"
+
+
+def _check_w1_caller(src: SourceFile) -> Iterator[Finding]:
+    in_adjustments = src.rel.startswith("src/abacus/modules/adjustments/")
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Constant) and node.value == _W1_CAPABILITY:
+            yield Finding(
+                node.lineno, "the W1 capability outside adjustments/posting.py (ADR-344)"
+            )
+    if in_adjustments:
+        for call in _calls(src.tree):
+            if _terminal_name(call.func) == "execute_write":
+                yield Finding(call.lineno, "execute_write outside adjustments/posting.py")
+
+
+# TJE-001: a tax-only entry never enters a posting batch. The posting files name no `tje` kind
+# (the CHECK `kind = 'tje' => posting_batch_id IS NULL` is the database's half).
+def _check_no_tje_posting(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Constant) and node.value == "tje":
+            yield Finding(node.lineno, "a tax-only entry (tje) in posting code (TJE-001)")
+
+
+# IRIS-001 (R-04; DEC-49): information returns are exported as a file a person uploads. No IRS
+# host, no Transmitter Control Code, no transmit route.
+_IRS_HOST = re.compile(r"(?:^|[/.@])irs\.gov\b", re.IGNORECASE)
+_TCC_IDENTIFIER = re.compile(r"(?:^|_)tcc(?:_|$)")
+
+
+def _check_iris_never_transmit(src: SourceFile) -> Iterator[Finding]:
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if _IRS_HOST.search(node.value):
+                yield Finding(node.lineno, "an IRS host: Accrued never transmits (IRIS-001)")
+            if node.value.startswith("/") and "transmit" in node.value.lower():
+                yield Finding(node.lineno, "a transmit route: Accrued never transmits (IRIS-001)")
+        name = (
+            node.id
+            if isinstance(node, ast.Name)
+            else node.attr
+            if isinstance(node, ast.Attribute)
+            else node.name
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef)
+            else None
+        )
+        snake = None if name is None else re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name).lower()
+        if name is not None and snake is not None and _TCC_IDENTIFIER.search(snake):
+            yield Finding(getattr(node, "lineno", 0), f"{name}: a TCC identifier (IRIS-001)")
+
+
 # T-01-T07 (T-01 §4.9): only tax/approval.py records a tax return's `final_approval` sign-off.
 def _check_tax_final_approval(src: SourceFile) -> Iterator[Finding]:
     for call in _calls(src.tree):
@@ -3295,6 +3348,34 @@ RULES: list[Rule | TreeRule] = [
         description="No IRS e-file channel or ERO/transmitter identifier: Accrued never transmits",
         adr="R-04, ADR-231",
         check=_check_never_ero,
+        include=("src/abacus/*",),
+    ),
+    Rule(
+        id="POST-001",
+        description="Only adjustments/posting.py posts to a client ledger (the W1 capability)",
+        adr="ADR-344",
+        check=_check_w1_caller,
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/modules/integrations/*",
+            "src/abacus/modules/adjustments/posting.py",
+        ),
+    ),
+    Rule(
+        id="TJE-001",
+        description="No tax-only entry (TJE) enters a posting batch",
+        adr="ADR-344",
+        check=_check_no_tje_posting,
+        include=(
+            "src/abacus/modules/adjustments/posting*.py",
+            "src/abacus/modules/integrations/writers/*",
+        ),
+    ),
+    Rule(
+        id="IRIS-001",
+        description="No IRS host, TCC or transmit route: information returns are exported only",
+        adr="R-04, ADR-344",
+        check=_check_iris_never_transmit,
         include=("src/abacus/*",),
     ),
     Rule(

@@ -6,6 +6,11 @@ Regenerate: python -m abacus_tools.codegen.feature_flags
 from abacus.kernel.flags import Flag
 
 # fmt: off
+ADJUSTMENTS_POSTING = Flag(
+    name="adjustments.posting",
+    kind="boolean",
+    default="false",
+)
 AGENT_DOCK_ENABLED = Flag(
     name="agent_dock.enabled",
     kind="boolean",
@@ -141,13 +146,38 @@ CLOSES_AGENT = Flag(
     kind="boolean",
     default="false",
 )
+CLOSES_DELIVERY = Flag(
+    name="closes.delivery",
+    kind="boolean",
+    default="false",
+)
 CLOSES_ENGINE = Flag(
     name="closes.engine",
     kind="boolean",
     default="false",
 )
+CLOSES_GL_CONSOLE = Flag(
+    name="closes.gl_console",
+    kind="boolean",
+    default="false",
+)
+CLOSES_INFORMATION_RETURNS = Flag(
+    name="closes.information_returns",
+    kind="boolean",
+    default="false",
+)
 CLOSES_PORTAL_REQUESTS = Flag(
     name="closes.portal_requests",
+    kind="boolean",
+    default="false",
+)
+CLOSES_TAX_HANDOFF = Flag(
+    name="closes.tax_handoff",
+    kind="boolean",
+    default="false",
+)
+CLOSES_VENDOR_SCREEN = Flag(
+    name="closes.vendor_screen",
     kind="boolean",
     default="false",
 )
@@ -682,6 +712,7 @@ WORKPAPERS_DRAFTING = Flag(
 )
 
 FLAGS: dict[str, Flag] = {
+    "adjustments.posting": ADJUSTMENTS_POSTING,
     "agent_dock.enabled": AGENT_DOCK_ENABLED,
     "agent_runtime.v2": AGENT_RUNTIME_V2,
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
@@ -709,8 +740,13 @@ FLAGS: dict[str, Flag] = {
     "binders.engine": BINDERS_ENGINE,
     "clients.tax_profile": CLIENTS_TAX_PROFILE,
     "closes.agent": CLOSES_AGENT,
+    "closes.delivery": CLOSES_DELIVERY,
     "closes.engine": CLOSES_ENGINE,
+    "closes.gl_console": CLOSES_GL_CONSOLE,
+    "closes.information_returns": CLOSES_INFORMATION_RETURNS,
     "closes.portal_requests": CLOSES_PORTAL_REQUESTS,
+    "closes.tax_handoff": CLOSES_TAX_HANDOFF,
+    "closes.vendor_screen": CLOSES_VENDOR_SCREEN,
     "collaboration.v2": COLLABORATION_V2,
     "communications.firm_sender_domain": COMMUNICATIONS_FIRM_SENDER_DOMAIN,
     "compliance.firm_export": COMPLIANCE_FIRM_EXPORT,

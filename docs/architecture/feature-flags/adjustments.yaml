@@ -1,0 +1,17 @@
+# The adjustments module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+#
+# C-02-T02, the S49 protected bundle (C-02 §0, §4.6; SPEC-700). The plan's dates (created Tue Sep 5,
+# 2028, expiring Fri Dec 1, 2028, retired into the `cas_delivery` entitlement in the Nov 28, 2028
+# bundle, T55) map onto the solo edition's calendar. W1 itself is not a flag: it is the protected
+# write-capabilities.yaml entry plus the firm, engagement and client switches (ADR-344).
+
+flags:
+  - name: adjustments.posting
+    description: 'C-02 posting (C8 v2; SPEC-700; CLS-07 c2, d, e): the approval, posting-batch, dry-run, retry, undo, withdraw, record-external and closing-date-conflict routes. Off: 404 feature_disabled after authorising; CLS-07 keeps the A-06 approval and send paths. On: 501 not_implemented until C-02-T12/T13/T18/T19 land. C-02-T02, DEC-5501.'
+    owner: notanaskhan
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false

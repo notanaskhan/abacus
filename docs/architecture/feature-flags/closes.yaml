@@ -30,3 +30,44 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  # --- C-02-T02 (SPEC-700, SPEC-701; DEC-5501): retired into the cas_delivery entitlement by C-02-T55.
+  - name: closes.gl_console
+    description: 'C-02 GL sync console (C20 v2.1; CLS-11): the client-entity ledger-console, posting-log, posting-log CSV and ledger-activity routes and the POR-16 write-grant routes. Off: 404; On: 501 until C-02-T20. C-02-T02, DEC-5501.'
+    owner: notanaskhan
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: closes.delivery
+    description: 'C-02 CAS deliverables (SPEC-701; CLS-08 and the POR-08/09 Copperleaf swap): package read, edit, generate, pages, export, release, lock and reopen. Off: 404; On: 501 until C-02-T21/T23. C-02-T02, DEC-5501.'
+    owner: notanaskhan
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: closes.tax_handoff
+    description: 'C-02 close-to-tax hand-off (SPEC-701; CLS-12): hand-off availability, preview and publish through C12. Off: 404; On: 501 until C-02-T39. C-02-T02, DEC-5501.'
+    owner: notanaskhan
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: closes.information_returns
+    description: 'C-02 1099 / W-9 tracker (SPEC-701; CLS-13): vendors, TIN reveal, W-9 requests, TIN Matching records, backup withholding, the information-return batch and its IRIS CSV export. Never a transmit route. Off: 404; On: 501 until C-02-T33/T38/T46. C-02-T02, DEC-5501.'
+    owner: notanaskhan
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: closes.vendor_screen
+    description: 'C-02 vendor-screen capability (close.agent mode vendor_screen): synthetic firms only; the kill switch. Off: the run is refused and no proposal is created. C-02-T02, DEC-5501.'
+    owner: notanaskhan
+    created: 2026-11-17
+    expires: 2027-05-16
+    override: DEC-137
+    kind: boolean
+    default: false

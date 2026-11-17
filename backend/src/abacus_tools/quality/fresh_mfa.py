@@ -32,6 +32,7 @@ GROUPS: Final = frozenset(
     | {"release"}  # A-01-T23 (DEC-83): the record-mode release and archive
     | {"standards"}  # K-02-T01 (DEC-1150): creating a firm standard and publishing a version
     | {"consent"}  # T-01-T01 (DEC-1155): §7216 consent records and templates
+    | {"posting"}  # C-02-T02 (ADR-344, DEC-5501): W1 posting and its firm switches
 )
 
 
