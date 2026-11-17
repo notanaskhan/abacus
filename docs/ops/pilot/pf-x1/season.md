@@ -60,3 +60,18 @@ F-09-T142 (counsel-approved FAQ), T146, T152 and T156 (season-2 agreements and t
 rounds), T154 (a reference: a synthetic firm's reference is no reference), T176 (no Type II
 report exists), Q-03-T151 (no agent at live stage, so no sample to label). F-09-T151's retro for
 PF-X1 records its season-2 intent: stay the rehearsal firm.
+
+## R4 · Aug 25, 2028 Sep-1 readiness (Q-04-T203, recorded at the S48 build 2026-11-17)
+
+**Synthetic (PF-X1).** The R4 review for the Sep 1 – Oct 20, 2028 autumn window, LEVEL=season.
+
+| Step | State | Command or evidence |
+|---|---|---|
+| Machine checks (`windows.entry`, `operations.*`, `season.runbooks_rehearsed`) | todo | `make dev && make seed-demo`, then `make go-live-check FIRM=PF-X1 LEVEL=season AT=2028-08-25T09:00:00-05:00`; paste the JSON into `docs/ops/go-live/PF-X1.md` §Operations (`abacus_tools.go_live_dossier fill`). Not run here: the local stack was not up at the S48 build |
+| Flag hygiene (Q-04-T202) | pass today | `docs/plan/status/S48-flag-hygiene.md`: 129 flags, none inside a window, none within 21 days |
+| New S48 runbooks in the R4 rehearsal set | listed | RB-91 (confirmation links), RB-92 (QuickBooks ledger sync and its kill-switch drill), RB-01's W-01 flip section |
+| Extended on-call published | todo (founders) | RB-16 §R4: the window's on-call rota, published to the firm's admins |
+| Both founders' sign-off | todo (founders) | `docs/ops/go-live/PF-X1.md` §Sign-off, dated before Sep 1 |
+
+Status: **partial (synthetic)**. The dossier is green only once the machine checks run and both
+founders sign; nothing in code is left for this row.
