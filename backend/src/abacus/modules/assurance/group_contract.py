@@ -1382,6 +1382,56 @@ async def group_return_deliverable(
     return _deliverable_out(await ca.return_deliverable(ctx, deliverable_id, reason=body.reason))
 
 
+class FollowUpDraftOut(BaseModel):
+    """AUD-35 d's drafted follow-up: the firm's template key and code's values (P-25 off)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    template_key: Annotated[str, Internal]
+    recipient_contact_id: Annotated[UUID, Internal]
+    variables: Annotated[dict[str, str], classified("confidential")]
+
+
+class FollowUpSentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    message_id: Annotated[UUID, Internal]
+
+
+@router.get(
+    "/component-deliverables/{deliverable_id}/follow-up",
+    action="component_deliverable.manage",
+    response_model=FollowUpDraftOut,
+)
+async def group_draft_follow_up(deliverable_id: UUID, ctx: Ctx) -> FollowUpDraftOut:
+    """A-09-T28 (DEC-5406): a template merge, never model text for a real firm (P-25)."""
+    await _gate_record(ctx)
+    from abacus.modules.assurance import component_late as cl
+
+    d = await cl.draft_follow_up(ctx, deliverable_id)
+    return FollowUpDraftOut(
+        template_key=d.template_key,
+        recipient_contact_id=d.recipient_contact_id,
+        variables=d.variables,
+    )
+
+
+@router.post(
+    "/component-deliverables/{deliverable_id}/follow-up",
+    action="component_deliverable.manage",
+    response_model=FollowUpSentOut,
+    status_code=201,
+    errors=(409,),
+)
+async def group_send_follow_up(
+    deliverable_id: UUID, ctx: Ctx, _key: IdempotencyKey
+) -> FollowUpSentOut:
+    await _gate_record(ctx)
+    from abacus.modules.assurance import component_late as cl
+
+    return FollowUpSentOut(message_id=await cl.send_follow_up(ctx, deliverable_id, _key))
+
+
 class ComponentEvaluationIn(BaseModel):
     """A-09-T27 (DEC-5405): the evaluation facts a person records on AUD-35."""
 

@@ -106,6 +106,10 @@ from abacus.modules.assurance.component_auditors import THREAD_ANCHORS as COMPON
 from abacus.modules.assurance.component_auditors import THREAD_KIND as COMPONENT_THREAD_KIND
 from abacus.modules.assurance.component_auditors import WORKFLOWS as COMPONENT_WORKFLOWS
 from abacus.modules.assurance.component_auditors import register as component_auditors_register
+from abacus.modules.assurance.component_late import ACTIVITIES as LATE_ACTIVITIES
+from abacus.modules.assurance.component_late import SCHEDULES as LATE_SCHEDULES
+from abacus.modules.assurance.component_late import WORKFLOWS as LATE_WORKFLOWS
+from abacus.modules.assurance.component_late import register as component_late_register
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
@@ -328,6 +332,8 @@ register_acceptance_gate()
 ssars_register()
 # A-09-T27 (DEC-5405): the instructions letter's C11 kind and the make-reference card.
 component_auditors_register()
+# A-09-T28 (DEC-5406): the late gate (Today) and the follow-up email template.
+component_late_register()
 register_anchor(COMPONENT_THREAD_KIND, COMPONENT_THREAD_ANCHORS)  # type: ignore[arg-type] -- an AnchorProvider
 # A-08-T24 (DEC-5403): AUD-12's Begin fans out through assurance's runner.
 fieldwork_runs_register()
@@ -430,6 +436,7 @@ WORKFLOWS: dict[type, str] = (
     | dict(PULL_ALL_WORKFLOWS)  # A-09-T18 (DEC-5329): ConsolidationPullAll
     | dict(ANALYTICS_WORKFLOWS)  # A-08-T21 (DEC-5400): FluxAnalyticsWorkflow, interactive
     | dict(COMPONENT_WORKFLOWS)  # A-09-T27 (DEC-5405): the instructions send after its Undo
+    | dict(LATE_WORKFLOWS)  # A-09-T28 (DEC-5406): the hourly late sweep, 06:00 firm time
 )
 ACTIVITIES: tuple[object, ...] = (
     *FORM5500_ACTIVITIES,
@@ -443,10 +450,11 @@ ACTIVITIES: tuple[object, ...] = (
     *PULL_ALL_ACTIVITIES,  # A-09-T18
     *ANALYTICS_ACTIVITIES,  # A-08-T21
     *COMPONENT_ACTIVITIES,  # A-09-T27
+    *LATE_ACTIVITIES,  # A-09-T28
 )
 # A-07-T42: the monthly seal verification sweep (a mismatch raises RB-29).
 # A-08-T18 (DEC-5324): the daily confirmation follow-up prompts.
-SCHEDULES = (*ARCHIVE_VERIFY_SCHEDULES, *FOLLOW_UP_SCHEDULES)
+SCHEDULES = (*ARCHIVE_VERIFY_SCHEDULES, *FOLLOW_UP_SCHEDULES, *LATE_SCHEDULES)
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
