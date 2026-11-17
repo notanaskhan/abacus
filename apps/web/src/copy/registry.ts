@@ -85,7 +85,17 @@ export interface CopyFinding {
   namespace: string;
   key: string;
   rule:
-    "emoji" | "agent-bang" | "three-dots" | "opener-ellipsis" | "portal-name" | "task" | "todo";
+    | "emoji"
+    | "agent-bang"
+    | "three-dots"
+    | "opener-ellipsis"
+    | "portal-name"
+    | "task"
+    | "todo"
+    | "export-for-tax"
+    | "qip-roof"
+    | "partnership-word"
+    | "statement-dollar";
   text: string;
 }
 
@@ -96,6 +106,25 @@ const TASK = /\btasks?\b/i;
 // status group, "Nothing to do", is a verb phrase and stays.)
 const TODO = /\btodos?\b/i;
 const ELLIPSIS = "…";
+// T-06-T04 (SPEC-702 AC-26; DEC-5512): the entity-depth bans. "Export for Tax" is never a label
+// (the hand-off is "Hand off to tax…"); TXP-03 never calls the Elm Street roof "QIP"; an 1120 or
+// 990 frame never speaks partnership words; statement grammar carries no "$".
+const EXPORT_FOR_TAX = /\bexport for tax\b/i;
+const QIP = /\bQIP\b/;
+const PARTNERSHIP = /\b(?:partners?|partnership|K-1s?|capital accounts?|§754|§752)\b/i;
+/** Key prefixes of the 1120 and 990 frames (TXP-13 b, b2, c, c2, c3, d). */
+const CORPORATE_FRAMES = ["form1120.", "form990.", "provision.", "functionalExpenses."];
+/** Key prefixes in statement grammar: figures without "$" (T-06 screens). */
+const STATEMENT_KEYS = ["statement.", "statements."];
+const ENTITY_DEPTH = new Set([
+  "TXP-03",
+  "TXP-04",
+  "TXP-08",
+  "TXP-09",
+  "TXP-13",
+  "TAX-11",
+  "AUD-38",
+]);
 
 /** The texts a copy value can produce. A function is called with placeholder data, so the words
  * around the data are checked; a function that needs real data is checked by its screen's tests. */
@@ -151,6 +180,14 @@ export function lintCopy(ns: CopyNamespace): CopyFinding[] {
       if (ns.rules.surface === "portal" && PRODUCT.test(text)) add(key, "portal-name", text);
       if (TASK.test(text) && !matches(key, ns.rules.task)) add(key, "task", text);
       if (TODO.test(text)) add(key, "todo", text);
+      if (EXPORT_FOR_TAX.test(text)) add(key, "export-for-tax", text);
+      if (ns.id === "TXP-03" && QIP.test(text)) add(key, "qip-roof", text);
+      if (ns.id === "TXP-13" && matches(key, CORPORATE_FRAMES) && PARTNERSHIP.test(text)) {
+        add(key, "partnership-word", text);
+      }
+      if (ENTITY_DEPTH.has(ns.id) && matches(key, STATEMENT_KEYS) && text.includes("$")) {
+        add(key, "statement-dollar", text);
+      }
     }
   });
   return found;

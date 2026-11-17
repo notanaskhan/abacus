@@ -111,6 +111,25 @@ describe("L2 rejects each deny case", () => {
     expect(rules("X-01", { add: "+ To-do" })).toEqual([]);
   });
 
+  // T-06-T04 (SPEC-702 AC-26; DEC-5512): the entity-depth bans, each failing on its fixture.
+  it('"Export for Tax" anywhere; "QIP" on TXP-03; partnership words on 1120/990 frames; "$" in statements', () => {
+    expect(rules("AUD-38", { menu: "Export for Tax" })).toEqual(["export-for-tax:menu"]);
+    expect(rules("AUD-38", { menu: "Hand off to tax…" })).toEqual([]);
+    expect(rules("TXP-03", { roof: "Elm Street roof · QIP" })).toEqual(["qip-roof:roof"]);
+    expect(rules("TXP-03", { roof: "Elm Street roof · 39-year" })).toEqual([]);
+    expect(rules("TXP-13", { form1120: { tab: "Partners' capital" } })).toEqual([
+      "partnership-word:form1120.tab",
+    ]);
+    expect(rules("TXP-13", { form990: { line: "K-1 allocation" } })).toEqual([
+      "partnership-word:form990.line",
+    ]);
+    expect(rules("TXP-13", { aaa: { tab: "Shareholder allocation" } })).toEqual([]);
+    expect(rules("TXP-04", { statement: { total: "$7,466,200" } })).toEqual([
+      "statement-dollar:statement.total",
+    ]);
+    expect(rules("TXP-04", { statement: { total: "7,466,200" } })).toEqual([]);
+  });
+
   it("defineCopy returns the copy unchanged and records its namespace", () => {
     const copy = { title: "Firm settings", save: "Save" } as const;
     expect(defineCopy("TEST-01", copy)).toBe(copy);
