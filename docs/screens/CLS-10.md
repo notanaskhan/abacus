@@ -22,6 +22,14 @@
 | d year over year | August 2025 not in the ledger: every line "Not comparable", dashes | `d` (`initial.basis`) |
 | e agent explaining | Repairs shows "Accrued Agent is tracing the change…" | `e` (`initial.explaining`) |
 
+## Links
+
+| From | To | Status |
+|---|---|---|
+| Both legs must be exceeded · opens KNW-04 | KNW-04 | designed (handoff link graph); KNW-04 not built |
+| Opens CLS-06 with the Sound Electric issue | CLS-06 | designed (handoff link graph); "Issue ›" calls `onOpen("CLS-06")` |
+| Opens SHL-08 · Payroll register — August 2026 | SHL-08 | designed (handoff link graph); not wired (DV-c) |
+
 ## Deviations and gaps
 
 - **DV-a.** Gross profit, Total operating expenses and Net income rows are not drawn: `FluxSetOut`

@@ -7,14 +7,14 @@ import type { Manifest } from "./types";
 export const clsScreens = {
   "CLS-01": {
     name: "Closes index — August 2026",
-    status: "fixture", // C-01-T33: a–f on the figure book's fixtures; live with C-01-T14's service
+    status: "live", // C-01-T33 fixtures; live from C-01-T42 (C-01-T14's service)
     path: "/closes",
     navArea: "Closes",
   },
-  "CLS-02": { name: "Close › Overview · run", status: "planned", path: "/closes/$closeId" },
+  "CLS-02": { name: "Close › Overview · run", status: "live", path: "/closes/$closeId" }, // C-01-T42
   "CLS-03": {
     name: "Close › Intake · Copperleaf August 2026",
-    status: "planned",
+    status: "live", // C-01-T42
     path: "/closes/$closeId/intake",
   },
   "CLS-04": {
@@ -45,7 +45,7 @@ export const clsScreens = {
   },
   "CLS-09": {
     name: "Close plan editor · Copperleaf close plan v3",
-    status: "fixture", // C-01-T36: a–f on the figure book's fixtures; live with C-01-T42
+    status: "live", // C-01-T36 fixtures; live from C-01-T42
     path: "/close-plans/$clientId",
   },
   "CLS-10": {

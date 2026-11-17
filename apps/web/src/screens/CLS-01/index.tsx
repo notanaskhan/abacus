@@ -21,6 +21,7 @@ import {
   date,
   time,
 } from "@abacus/ui";
+import { useNavigate } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useFlag } from "../../app-core/flags";
@@ -35,6 +36,7 @@ import {
   useCloses,
   useRunningCloses,
 } from "../../domain/closes";
+import { to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // CLS-01 · Closes index (C-01-T33; SPEC-655 AC-1 to AC-6; docs/screens/CLS-01.md). T1 over
@@ -147,12 +149,26 @@ export function ClosesIndex({
 export function CLS01({
   filters,
   onFilters,
-  onOpen,
-  onStartRun,
-  onViewPlan,
+  onOpen: openProp,
+  onStartRun: startProp,
+  onViewPlan: planProp,
   onNewClose,
   onTracker,
 }: CLS01Props): JSX.Element {
+  // C-01-T42: the designed links (CLS-02 and CLS-09) are the screen's own; a caller may still
+  // pass its own handler (tests, the board).
+  const navigate = useNavigate();
+  const onOpen =
+    openProp ??
+    ((closeId: string): void => {
+      void navigate(to.CLS02({ closeId }));
+    });
+  const onStartRun = startProp ?? onOpen;
+  const onViewPlan =
+    planProp ??
+    ((row: CloseRowOut): void => {
+      void navigate(to.CLS09({ clientId: row.client_id }));
+    });
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
   const board = useFlag("board.enabled") === true;
@@ -261,7 +277,7 @@ export function CLS01({
   const startRun = (row: CloseRowOut): void => {
     // AC-6: a close whose statements are not in yet asks first; no run starts without the click.
     if (row.status === "not_started") setConfirm(row);
-    else onStartRun?.(row.close_id);
+    else onStartRun(row.close_id);
   };
 
   const columns: IndexColumn<CloseRowOut>[] = [
@@ -356,7 +372,12 @@ export function CLS01({
             }
             sections={[
               [
-                { label: COPY.menu.open, onSelect: () => onOpen?.(r.close_id) },
+                {
+                  label: COPY.menu.open,
+                  onSelect: () => {
+                    onOpen(r.close_id);
+                  },
+                },
                 {
                   label: COPY.menu.startRun,
                   disabled: !r.allowed_actions?.includes("close_run.start"),
@@ -364,7 +385,12 @@ export function CLS01({
                     startRun(r);
                   },
                 },
-                { label: COPY.menu.viewPlan, onSelect: () => onViewPlan?.(r) },
+                {
+                  label: COPY.menu.viewPlan,
+                  onSelect: () => {
+                    onViewPlan(r);
+                  },
+                },
               ],
             ]}
           />
@@ -395,13 +421,9 @@ export function CLS01({
         envelope={envelope}
         columns={columns}
         rowKey={(r) => r.close_id}
-        {...(onOpen === undefined
-          ? {}
-          : {
-              onOpen: (r: CloseRowOut) => {
-                onOpen(r.close_id);
-              },
-            })}
+        onOpen={(r: CloseRowOut) => {
+          onOpen(r.close_id);
+        }}
         chips={chips}
         onChip={onChip}
         tiles={TILES}
@@ -466,7 +488,7 @@ export function CLS01({
           onConfirm={() => {
             const id = confirm.close_id;
             setConfirm(null);
-            onStartRun?.(id);
+            onStartRun(id);
           }}
         >
           {COPY.startConfirm.body}

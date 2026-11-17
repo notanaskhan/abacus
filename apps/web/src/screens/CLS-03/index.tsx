@@ -24,11 +24,13 @@ import {
   Spinner,
   StatusDisc,
   Toggle,
+  ViewStateBody,
   count,
   prose,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
+import { closeReadState } from "../../domain/closes";
 import { COPY, RETURN_REASONS, subLineOf } from "./copy";
 
 export type IntakeSelection = { kind: "request"; id: string } | { kind: "questionnaire" };
@@ -348,6 +350,21 @@ export function CLS03(props: CLS03Props): JSX.Element {
     ...closeQuestionnaireOptions({ path: { close_id: props.closeId } }),
     enabled: selection?.kind === "questionnaire",
   });
+  const read = closeReadState(tree);
+  if (read.kind === "restricted" || read.kind === "error") {
+    // C-01-T42: the C-20 frame for a refused or failed read; no request data.
+    return (
+      <div
+        data-screen-body="CLS-03"
+        data-state={read.kind}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <ViewStateBody state={read} empty={{ title: "" }}>
+          {null}
+        </ViewStateBody>
+      </div>
+    );
+  }
   if (tree.data === undefined) {
     return (
       <div className="flex flex-1 items-center justify-center p-[20px]">

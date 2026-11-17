@@ -1,6 +1,14 @@
 import type { CloseSummaryOut } from "@abacus/api-client";
 import { closeSummaryOptions } from "@abacus/api-client/query";
-import { EmptyState, FlagOffState, type Opt, RecordHeader, Skeleton } from "@abacus/ui";
+import {
+  EmptyState,
+  FlagOffState,
+  type Opt,
+  RecordHeader,
+  Skeleton,
+  ViewStateBody,
+} from "@abacus/ui";
+import { closeReadState } from "../../domain/closes";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX, ReactNode } from "react";
 import { useFlag } from "../../app-core/flags";
@@ -73,6 +81,22 @@ export function CloseShell(props: CloseShellProps): JSX.Element {
   });
   if (!enabled) {
     return <FlagOffState flag="closes.engine" label={COPY.flagLabel} />;
+  }
+  const read = closeReadState(summary);
+  if (read.kind === "restricted" || read.kind === "error") {
+    // C-01-T42: a close the person may not open (403), or one outside the tenant or behind a wall
+    // (404, never revealed), or a failed read: the C-20 frame, no record data.
+    return (
+      <div
+        data-screen={props.screen}
+        data-state={read.kind}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <ViewStateBody state={read} empty={{ title: COPY.record }} noun={COPY.record}>
+          {null}
+        </ViewStateBody>
+      </div>
+    );
   }
   const data = summary.data;
   const tabLabel = COPY.tabs[props.tab];

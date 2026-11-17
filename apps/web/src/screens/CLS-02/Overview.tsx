@@ -14,7 +14,9 @@ import type {
 } from "@abacus/api-client";
 import {
   closeRunOptions,
+  closeRunQueryKey,
   closeRunsOptions,
+  closeRunsQueryKey,
   closeSummaryOptions,
   retryCloseProcedureMutation,
   startCloseRunMutation,
@@ -33,8 +35,11 @@ import {
   time,
   useNow,
 } from "@abacus/ui";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { type JSX, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type JSX, useEffect, useState } from "react";
+import { useFlag } from "../../app-core/flags";
+import { useRunFeed } from "../../domain/agents";
+import { RUN_POLL_MS, runIsLive } from "../../domain/closes";
 import { OVERVIEW, completeWords, idleWords, progressWords } from "./overview-copy";
 
 export type OverviewFrame = "a" | "b" | "c" | "d" | "e";
@@ -507,6 +512,16 @@ function idempotencyKey(): string {
   return globalThis.crypto.randomUUID();
 }
 
+/** C-01-T42: the run's SSE feed (behind `realtime.sse`) wakes the close's run reads as soon as an
+ * item lands; without it the run read polls every 2 s while the run is live. */
+function RunWake({ runId, onItem }: { runId: string; onItem: () => void }): null {
+  const feed = useRunFeed(runId);
+  useEffect(() => {
+    if (feed.lastSeq > 0) onItem();
+  }, [feed.lastSeq, onItem]);
+  return null;
+}
+
 export function CloseOverview(props: CloseOverviewProps): JSX.Element {
   const clock = useNow();
   const now = props.now ?? new Date(clock);
@@ -515,12 +530,22 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
   const newest = runs.data?.items[0]?.run_no;
   const [picked, setPicked] = useState<number | null>(null);
   const runNo = picked ?? newest;
+  const queryClient = useQueryClient();
+  const sse = useFlag("realtime.sse") === true;
+  const runPath = { path: { close_id: props.closeId, run_no: runNo ?? 1 } };
   const run = useQuery({
-    ...closeRunOptions({ path: { close_id: props.closeId, run_no: runNo ?? 1 } }),
+    ...closeRunOptions(runPath),
     enabled: runNo !== undefined,
+    refetchInterval: (q) => (!sse && runIsLive(q.state.data?.status) ? RUN_POLL_MS : false),
   });
-  const start = useMutation(startCloseRunMutation());
-  const retry = useMutation(retryCloseProcedureMutation());
+  const wake = (): void => {
+    void queryClient.invalidateQueries({ queryKey: closeRunQueryKey(runPath) });
+    void queryClient.invalidateQueries({
+      queryKey: closeRunsQueryKey({ path: { close_id: props.closeId } }),
+    });
+  };
+  const start = useMutation({ ...startCloseRunMutation(), onSuccess: wake });
+  const retry = useMutation({ ...retryCloseProcedureMutation(), onSuccess: wake });
   if (summary.data === undefined || runs.data === undefined) {
     return (
       <div className="flex flex-1 items-center justify-center p-[20px]">
@@ -545,6 +570,9 @@ export function CloseOverview(props: CloseOverviewProps): JSX.Element {
       data-frame={frame}
       className="flex min-h-0 flex-1 gap-[10px] p-[10px]"
     >
+      {sse && current !== undefined && runIsLive(current.status) ? (
+        <RunWake runId={current.run_id} onItem={wake} />
+      ) : null}
       <Rail summary={data} props={props} />
       <section
         aria-label={OVERVIEW.canvas}

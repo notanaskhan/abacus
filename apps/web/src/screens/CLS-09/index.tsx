@@ -35,6 +35,7 @@ import {
   Skeleton,
   TallyStrip,
   Tag,
+  ViewStateBody,
   date,
   isoDate,
   monthYear,
@@ -43,6 +44,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { isNotFound } from "../../domain/audits";
+import { closeReadState } from "../../domain/closes";
 import { COPY, FREQUENCY, PROCEDURE, REVIEW, SOURCE, fill } from "./copy";
 
 export type PlanTab = "plan" | "requests" | "history";
@@ -329,10 +331,15 @@ export function CLS09({ clientId, clientName, initial = {}, onBack }: CLS09Props
     );
   }
   if (data === undefined) {
+    // C-01-T42: a refused read (403, the role's notice) or a failed one (Retry); a 404 is the
+    // empty plan above.
+    const read = closeReadState(plan);
     return (
-      <div data-screen-body="CLS-09" data-state="error" className="p-[12px]">
+      <div data-screen-body="CLS-09" data-state={read.kind} className="flex flex-col p-[12px]">
         {header}
-        <EmptyState icon="triangle-alert" title={COPY.closePlan} />
+        <ViewStateBody state={read} empty={{ title: COPY.closePlan }}>
+          {null}
+        </ViewStateBody>
       </div>
     );
   }
