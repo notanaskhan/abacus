@@ -31,7 +31,7 @@ from sqlalchemy import Row, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel._statuses import QuestionnaireStatus
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.uow import Ref, Target, uow
@@ -780,6 +780,7 @@ async def work_item_questionnaires(
 __all__ = [
     "AlreadyPublished",
     "AlreadySent",
+    "AnswerFact",
     "ImportRefused",
     "ImportResult",
     "NotPublished",
@@ -789,6 +790,7 @@ __all__ = [
     "QuestionnaireView",
     "TemplateView",
     "TextRow",
+    "answer_fact",
     "attach_organizer",
     "create_questionnaire",
     "draft_question",
@@ -802,3 +804,40 @@ __all__ = [
     "view_of",
     "work_item_questionnaires",
 ]
+
+
+@dataclass(frozen=True)
+class AnswerFact:
+    """One answer version as a consumer quotes it (A-08-T21: an analytics client answer)."""
+
+    question_id: UUID
+    text: str  # the answer as text; client content, untrusted (ADR-052)
+    answered_by: UUID
+    answered_at: datetime
+
+
+def _answer_text(value: object) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        found = value.get("text") or value.get("value")  # type: ignore[union-attr] -- JSON
+        return found if isinstance(found, str) else json.dumps(value, sort_keys=True)
+    return "" if value is None else json.dumps(value, sort_keys=True)
+
+
+async def answer_fact(tenant: TenantContext, answer_id: UUID) -> AnswerFact | None:
+    """A-08-T21 (DEC-5400): the answer version a `questionnaire.answered` event names, for a
+    system subscriber that already knows the question is its own. LIST_EXEMPT: by id."""
+    async with tenant_session(tenant) as session:
+        r = (
+            await session.execute(
+                text(
+                    "SELECT question_id, value, answered_by, answered_at FROM answer_versions "
+                    "WHERE id = :id"
+                ),
+                {"id": answer_id},
+            )
+        ).first()
+    if r is None:
+        return None
+    return AnswerFact(r.question_id, _answer_text(r.value), r.answered_by, r.answered_at)

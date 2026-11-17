@@ -479,6 +479,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
         "sample_expansion",
         "expansion_id",
     ),
+    # A-08 §4.7 (A-08-T21, DEC-5400): explained analytics lines wait on the engagement's leads.
+    "analytics.explanation_recorded": Kind(
+        "analytics_explanations_ready", _leads, "analytics_set", "analytics_set_id"
+    ),
     # A-08 §4.7 (A-08-T18, DEC-5324): the person a confirmation's event names.
     "confirmation.second_request_due": Kind(
         "confirmation_second_request_due", _named_user, "confirmation", "confirmation_id"
@@ -777,6 +781,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "sample_expansion.requested": (
         "A sample expansion on {engagement} is waiting for your approval."
     ),
+    "analytics.explanation_recorded": (
+        "Analytics explanations on {engagement} are ready for your acceptance."
+    ),
     "confirmation.second_request_due": "A confirmation on {engagement} is due a second request.",
     "confirmation.expired_no_response": (
         "A confirmation on {engagement} has no response. Record alternative procedures."
@@ -939,6 +946,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("component_instructions_acknowledged", "client_activity", "UserCheck"),
     NotificationKind("component_question_asked", "mention", "MessageSquare"),
     NotificationKind("sample_expansion_approval_requested", "approval", "ListChecks"),
+    NotificationKind("analytics_explanations_ready", "approval", "ListChecks"),  # A-08-T21
     NotificationKind("confirmation_second_request_due", "deadline", "CalendarClock"),
     NotificationKind("confirmation_expired_no_response", "deadline", "CalendarClock"),
     NotificationKind("confirmation_authorization_signed", "client_activity", "Signature"),

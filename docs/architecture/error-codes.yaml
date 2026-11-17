@@ -197,6 +197,25 @@ codes:
     - abacus.modules.assurance.governance_comms.AmountInLetter
     - abacus.modules.assurance.rep_letters.AmountInLetter
     summary: No amount (and so no materiality figure) in letter text (A-07 F3).
+  analytics_computing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.analytics.AnalyticsComputing
+  analytics_layer_stage_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.analytics.LayerStageMismatch
+    summary: Final analytics read the adjusted layer; preliminary and substantive the unadjusted.
+  analytics_line_not_over:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.analytics.LineNotOver
+    summary: Only an evaluated line over the threshold takes an explanation or a question.
+  analytics_set_not_current:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.analytics.SetNotCurrent
+    summary: Explanations, acceptance and questions act on the Current version only.
   anchor_kind_not_registered:
     status: 409
     raised_by:
@@ -686,6 +705,7 @@ codes:
   content_changed:
     status: 409
     raised_by:
+    - abacus.modules.assurance.analytics.ContentChanged
     - abacus.modules.assurance.completion_errors.LetterContentChanged
     - abacus.modules.assurance.confirmations_lifecycle.ContentChanged
     - abacus.modules.assurance.mapping_live.ContentChanged
@@ -1203,8 +1223,9 @@ codes:
   explanation_uncited:
     status: 422
     raised_by:
+    - abacus.modules.assurance.analytics.ExplanationUncited
     - abacus.modules.assurance.analytics_contract.ExplanationUncited
-    summary: An explanation without a verified citation cannot be saved as Explained (AC-5.3).
+    summary: 'AC-5.3: an explanation without a verified, still-valid citation.'
   export_disabled:
     status: 409
     raised_by:
@@ -2044,6 +2065,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.materiality.MaterialityRecordMoved
     summary: The card's version is no longer the record's newest (a later version was written).
+  materiality_required:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.analytics.MaterialityRequired
+    summary: The amount leg comes from a materiality version; none is recorded yet.
   materiality_undecided:
     status: 409
     raised_by:
@@ -2797,6 +2823,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.roll_forward.PriorMismatch
     summary: The prior engagement isn't this client entity's, or is another type.
+  prior_year_figures_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.analytics.PriorYearFiguresMissing
+    summary: An import run with no imported prior-year figures.
   prior_year_tax_source_required:
     status: 422
     raised_by:
@@ -2853,6 +2884,11 @@ codes:
     raised_by:
     - abacus.modules.requests.questionnaire_editor.QuestionAnswered
     summary: An answered question keeps its type (retire it and add a new one).
+  question_cards_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.analytics.QuestionCardsMismatch
+    summary: One card per line asked about, in the same order.
   question_not_open:
     status: 409
     raised_by:

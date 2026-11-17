@@ -4,7 +4,7 @@
 |---|---|
 | Register row | epic contract (A-08 §8.1), not a C-numbered contract |
 | Version | v1 |
-| Status | stub (A-08-T05) |
+| Status | implemented (A-08-T21, DEC-5400) except the expectation route (A-08-T22) |
 | Provider epic | A-08 (AY) |
 | Consumers | AUD-13, AUD-26 (analytics), C-01/C-02 (shared flux engine), A-10 |
 | Freeze sprint | S47 (A-08 §8.1) |
@@ -34,6 +34,13 @@ Every route answers, in order: a client principal 404; the action on the work it
 
 ## 4. Status words
 `analytics_set` (Pending · Current · Out of date · Superseded), `analytics_line` (Within · Unexplained · Explained · Accepted; amber, never red).
+
+## 4a. Implementation (A-08-T21, DEC-5400)
+- Service `assurance/analytics.py`, migration `0940_audit_analytics`; `FluxAnalyticsWorkflow` (interactive) computes a set with `workpapers.compute.flux` (dual threshold), supersedes the previous Current version and emits `analytics.computed`.
+- Threshold: the firm's 10% **and** PM from the materiality version in force, else the current version (provisional). `materiality.decided` re-thresholds each Current preliminary set as a new version (idempotent on the event); an explanation carries forward, with its acceptance, only where the line's over/within result is unchanged.
+- An explanation needs >= 1 citation that `evidence.supported_citations` returns (verified and still valid on the engagement), else 422 `explanation_uncited`; a client answer to an analytics question (`questionnaire.answered`) is a `client_answer` explanation that names its question.
+- Accept takes `seen_hash` = `AnalyticsSetOut.review_hash` (409 `content_changed`); the matrix's `not_preparer_of_target` gets the explanations' authors. HOME-02 gate `analytics_explanation_acceptance` (managers) and notification `analytics_explanations_ready` (engagement leads).
+- Not yet: `adjustment.approved` marking final-stage sets Out of date (C8 emits no such event on main), the SSE progress stream (A-08-T24).
 
 ## 5. Human-only actions
 Accepting explanations and sending client questions: the agent is denied; explanations it drafts are suggestions (`suggestion.create`). No model text reaches a client (DV-4).
