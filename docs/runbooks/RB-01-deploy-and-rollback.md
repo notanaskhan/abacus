@@ -85,6 +85,28 @@ A per-firm feature flag is not a deploy: flipping it back is the rollback, and a
 - **After.** File CL-1 (the consolidation of the legacy SPEC-032 comments into threads, P-05 §2.3)
   and the flag renewal for Apr 13, 2028 (`RB-26-flag-expiry-wave.md`'s calendar).
 
+### W-01 Connect: `integrations.connect_v1` and `integrations.health_monitor` (W-01-T21)
+- **What they turn on.** `integrations.connect_v1`: WB-10 Connect and WB-11's detail drawer, the
+  install, reauth and typed-name disconnect routes; off, they answer the P-36 flag-off error and the
+  screens show TPL-05e's designed flag-off state. `integrations.health_monitor`: the daily health
+  pass that moves installs to Needs reauth or Needs attention and blocks dependent agent runs at
+  admission; off, installs keep their last state and nothing is blocked by health.
+- **Order.** `integrations.connect_v1` first, then `integrations.health_monitor`, for the canary
+  tenant only, in the Tue Aug 29, 2028 7 pm CT slot (both founders' approval in the slot's
+  ticket), after the production catalogue import is logged with both approvals. Real firms from
+  Tue Oct 24, 2028 (after the Sep 1 – Oct 20 window), one Tuesday per firm; a firm that asks sooner
+  goes through the full P-29 checklist.
+- **Before the flip.** `j14 3` and `j14 3d` green against the canary's honest catalogue (CCH in
+  file-bridge mode, live DocuSign and the QuickBooks Online firm app); `j14 3b`, `3c` and `j01 4`
+  green on staging with real auth within 24 hours.
+- **Rollback.** Flip `integrations.health_monitor` off first, then `integrations.connect_v1`.
+  Nothing is deleted: installs, their events, grants and the imported return data stay; a
+  disconnect already made stays made (its tokens were revoked). Rehearse on staging: flip on,
+  connect a fake token install and disconnect it by typed name, flip off (routes answer flag-off,
+  rows stay), flip on, and log it below.
+- **After.** File the renewal ticket (both flags renewed in the Aug 24, 2028 train) and the Oct 24
+  real-firm flip tickets.
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|

@@ -55,6 +55,16 @@ New retrievals and pulls succeed; the connections read **Connected**; SLO-08's a
 ## 8. Review
 Typical actions: an alert on the count of `needs_attention` connections per provider and code, a lower retry budget, a provider-specific backoff, a quota request filed ahead of busy season.
 
+## Integration providers (W-01-T21)
+A Connect integration (WB-10, `firm_integrations`) is not a ledger connector, but its outage is
+handled the same way. Recognise: many installs of one provider move to **Needs attention** with the
+same non-reauth code after the health pass; dependent agent runs fail at admission with
+`integration_unhealthy`. Contain: turn the provider's per-integration kill switch on (the install
+reads **Paused**; nothing calls the provider), or silence the pass with `integrations.health_monitor`
+off while the provider's status page shows the incident. Recover: clear the kill switch; the next
+health pass returns the installs to **Connected**; failed runs are retried by people, never
+automatically. Status page component: **Integrations** (SEV3 unless a close or a filing is blocked).
+
 ## Rehearsal log
 | Date | Kind (drill, staging walk-through, tabletop) | Result | Changes made |
 |---|---|---|---|

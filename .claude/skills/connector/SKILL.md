@@ -49,3 +49,16 @@ Golden normalisation tests, property tests (balances), recordings from synthetic
    only; the kill-switch test pattern (`test_a02t33_kill_switch.py`).
 7. **Runbooks:** RB-04 (provider outage) and RB-05 (expiring-connections wave) name the provider's
    status page and its token lifetime.
+
+## Integration adapters vs connectors (W-01-T21; DEC-5423)
+- **A connector** (`modules/connections/`, ADR-037/038) pulls a client's records into an immutable
+  snapshot: a ledger, a bank feed. It is read-only, client-authorised, and its runs are `sync_runs`.
+- **An integration adapter** (`modules/integrations/<key>_adapter.py`, C20 v2) is a firm or personal
+  install on WB-10 (CCH Axcess Tax, DocuSign, Google Workspace). It holds the install's auth mode
+  (token, file bridge, firm app, personal OAuth), its scopes and its health; agents read through it
+  only via declared C17 tools, and a disconnect needs the typed name.
+- A provider can be both (QuickBooks Online: the client's ledger connector and the firm app on
+  WB-10's ERP row). Keep the two separate: the connector's pull never reads the install's token and
+  the install never writes a snapshot.
+- Only a registered production adapter makes a tile `available` for a real firm (the honesty rule);
+  fake adapters serve synthetic firms only and the production boot refuses them.
