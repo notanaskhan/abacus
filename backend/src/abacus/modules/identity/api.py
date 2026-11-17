@@ -391,6 +391,7 @@ from abacus.modules.identity.settings_registry import (  # A-07-T41: the scenari
 from abacus.modules.identity.settings_registry import (
     save_section as save_settings_section,
 )
+from abacus.modules.identity.settings_registry import seats_in_use as seats_in_use  # G-04-T11
 from abacus.modules.identity.slots import (
     OFFSHORE_DISCLOSURE,
     InvitationParties,

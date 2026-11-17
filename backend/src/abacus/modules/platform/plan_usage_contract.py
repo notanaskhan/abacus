@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import PLATFORM_PLAN_USAGE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -257,7 +257,6 @@ class PlanRequestsOut(BaseModel):
 # --- routes --------------------------------------------------------------------------------------
 
 router = AbacusRouter(prefix="/v1/firm", tags=["plan & usage"])
-_TASK = "G-04-T11"
 
 
 async def _gate(ctx: AuthContext, action: str) -> None:
@@ -268,45 +267,53 @@ async def _gate(ctx: AuthContext, action: str) -> None:
         raise NotFound(PLATFORM_PLAN_USAGE.name)
 
 
-@router.get("/plan", action="plan.read", response_model=FirmPlanOut, errors=(501,))
+@router.get("/plan", action="plan.read", response_model=FirmPlanOut, errors=())
 async def plan_get(ctx: Ctx) -> FirmPlanOut:
     await _gate(ctx, "plan.read")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.plan(ctx)
 
 
 @router.put(
     "/plan/billing-contact",
     action="billing_contact.manage",
     response_model=FirmPlanOut,
-    errors=(501,),
+    errors=(),
 )
 async def plan_set_billing_contact(body: BillingContactIn, ctx: Ctx) -> FirmPlanOut:
     await _gate(ctx, "billing_contact.manage")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.set_billing_contact(ctx, body.user_id)
 
 
-@router.get("/budget-alerts", action="plan.read", response_model=BudgetAlertsOut, errors=(501,))
+@router.get("/budget-alerts", action="plan.read", response_model=BudgetAlertsOut, errors=())
 async def budget_alerts_get(ctx: Ctx) -> BudgetAlertsOut:
     await _gate(ctx, "plan.read")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.budget_alerts(ctx)
 
 
 @router.put(
     "/budget-alerts",
     action="budget_alert.manage",
     response_model=BudgetAlertsOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def budget_alerts_put(body: BudgetAlertsIn, ctx: Ctx) -> BudgetAlertsOut:
     await _gate(ctx, "budget_alert.manage")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.set_budget_alerts(ctx, body)
 
 
 @router.get(
     "/engagement-budgets",
     action="usage.read",
     response_model=EngagementBudgetsOut,
-    errors=(501,),
+    errors=(),
 )
 async def engagement_budgets(
     ctx: Ctx,
@@ -314,23 +321,31 @@ async def engagement_budgets(
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> EngagementBudgetsOut:
     await _gate(ctx, "usage.read")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    del cursor
+    return await plan_usage.engagement_budgets(ctx, alerting)
 
 
-@router.get("/billing-rates", action="plan.read", response_model=BillingRatesOut, errors=(501,))
+@router.get("/billing-rates", action="plan.read", response_model=BillingRatesOut, errors=())
 async def billing_rates(ctx: Ctx) -> BillingRatesOut:
     await _gate(ctx, "plan.read")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.billing_rates(ctx)
 
 
-@router.get("/plan-requests", action="plan.read", response_model=PlanRequestsOut, errors=(501,))
+@router.get("/plan-requests", action="plan.read", response_model=PlanRequestsOut, errors=())
 async def plan_requests_list(
     ctx: Ctx,
     status: Annotated[PlanRequestStatus | None, Query()] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> PlanRequestsOut:
     await _gate(ctx, "plan.read")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    del cursor
+    return await plan_usage.plan_requests(ctx, status)
 
 
 @router.post(
@@ -338,45 +353,53 @@ async def plan_requests_list(
     action="plan_request.create",
     response_model=PlanRequestOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def plan_requests_create(
     body: PlanRequestIn, ctx: Ctx, _key: IdempotencyKey
 ) -> PlanRequestOut:
     await _gate(ctx, "plan_request.create")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.create_request(ctx, body)
 
 
 @router.post(
     "/plan-requests/{request_id}/approve",
     action="plan_request.approve",
     response_model=PlanRequestOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def plan_requests_approve(request_id: UUID, ctx: Ctx) -> PlanRequestOut:
     await _gate(ctx, "plan_request.approve")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.settle_request(ctx, request_id, "approve")
 
 
 @router.post(
     "/plan-requests/{request_id}/decline",
     action="plan_request.approve",
     response_model=PlanRequestOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def plan_requests_decline(
     request_id: UUID, body: PlanRequestDeclineIn, ctx: Ctx
 ) -> PlanRequestOut:
     await _gate(ctx, "plan_request.approve")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.settle_request(ctx, request_id, "decline", body.reason)
 
 
 @router.post(
     "/plan-requests/{request_id}/withdraw",
     action="plan_request.create",
     response_model=PlanRequestOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def plan_requests_withdraw(request_id: UUID, ctx: Ctx) -> PlanRequestOut:
     await _gate(ctx, "plan_request.create")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import plan_usage
+
+    return await plan_usage.settle_request(ctx, request_id, "withdraw")
