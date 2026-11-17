@@ -27,6 +27,7 @@ import {
 // A-08-T26: the fieldwork L3 kit board registers itself as KIT-A08.
 import "./kit-a08";
 import { TestingWorkspace } from "./AUD-12"; // A-08-T27: the artboards on the A-08 kit
+import { AnalyticsWorkspace } from "./AUD-13"; // A-08-T28: preliminary, substantive, final
 import { GroupScoping } from "./AUD-34"; // A-09-T31: the group scoping artboards
 import { ComponentAuditors } from "./AUD-35"; // A-09-T22: the component auditors artboards
 import { Beneficiaries } from "./TXT-03"; // T-07-T25: beneficiaries, K-1s and the election
@@ -2694,6 +2695,10 @@ registerScreen("AUD-35", {
 registerScreen("AUD-12", {
   title: "Testing workspace · details · controls · JE",
   Component: ({ params }: { params: FixtureParams }) => <TestingWorkspace st={params.st} />,
+});
+registerScreen("AUD-13", {
+  title: "Analytics · preliminary · substantive · final",
+  Component: ({ params }: { params: FixtureParams }) => <AnalyticsWorkspace st={params.st} />,
 });
 
 // AUD-33 (A-09-T15): the consolidated trial balance, a to g, Omar Haddad at 2:05 PM.

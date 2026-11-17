@@ -306,3 +306,18 @@ export const SSARS_STEPS: Record<"review" | "compilation" | "preparation", Ssars
     { key: "report", label: "No report — AR-C 70", state: "not_started" },
   ],
 }; // fmt: skip
+
+// A-08-T28: AUD-13's analytics figures, from the seed (screens reach the seed through this file).
+export {
+  type AnalyticsNote,
+  GRANITE_PEAK_ADJUSTMENTS,
+  GRANITE_PEAK_ANALYTICS_RUNS,
+  GRANITE_PEAK_CLIENT_ANSWER,
+  GRANITE_PEAK_EXPLANATIONS,
+  GRANITE_PEAK_FINAL_EXPLANATIONS,
+  GRANITE_PEAK_FINAL_LINES,
+  GRANITE_PEAK_LINES,
+  GRANITE_PEAK_QUESTIONS,
+  GRANITE_PEAK_SUBTOTALS,
+  GRANITE_PEAK_UNEXPLAINED,
+} from "../fixtures/seed/fieldwork";

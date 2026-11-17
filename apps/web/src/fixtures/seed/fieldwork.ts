@@ -199,3 +199,206 @@ export const POR17_SUMMIT_TRAIL: RespondentViewOut = {
   receipt: null,
   answered_on: null,
 };
+
+// ---- AUD-13 (A-08-T28): Granite Peak's analytics, verbatim from the handoff canvas (#aud13) ----
+
+/** An explanation as the line shows it: the text and its one source chip. */
+export interface AnalyticsNote {
+  text: string;
+  source: string;
+}
+
+/** a: the six over-threshold lines explained with evidence (the term loan already accepted). */
+export const GRANITE_PEAK_EXPLANATIONS: Record<string, AnalyticsNote> = {
+  cash: {
+    text: "Revolver draws of 1,600,000 and cash funded the inventory build",
+    source: "Front Range Bank statements Mar–Jun 2026",
+  },
+  accounts_receivable_net: {
+    text: "Two new wholesale accounts: Summit Trail Outfitters 412,600, Canyon Basecamp Co. 198,450",
+    source: "AR aging 6/30/2026",
+  },
+  accounts_payable: { text: "June receipts of fall inventory", source: "AP aging 6/30/2026" },
+  revolver_front_range_bank: { text: "Draws Mar–Jun 2026", source: "Front Range Bank statements" },
+  term_loan: { text: "Scheduled amortization 50,000 × 12", source: "Loan agreement §2.3" },
+  stockholders_equity: {
+    text: "Net income after tax 2,325,000 less dividends 1,075,000",
+    source: "Board minutes Mar 12, 2026",
+  },
+};
+
+/** a: the two over-threshold lines with no evidenced explanation (amber). */
+export const GRANITE_PEAK_UNEXPLAINED: Record<string, string> = {
+  cost_of_goods_sold:
+    "Gross margin fell from 41.0% to 40.0%. No support found for freight or mix changes.",
+  inventory_net: "No evidenced explanation",
+};
+
+/** c: the two plain questions for Luis Ferrante (firm template, editable; a person sends). */
+export const GRANITE_PEAK_QUESTIONS: { line: string; movement: string; text: string }[] = [
+  {
+    line: "inventory_net",
+    movement: "+2,240,000 · 24.4% over FY2025",
+    text: "Inventory rose $2,240,000 (24.4%) to $11,420,000 at June 30, 2026. What drove the increase, and how much relates to products discontinued during the year?",
+  },
+  {
+    line: "cost_of_goods_sold",
+    movement: "+2,670,000 · 10.1% · gross margin 41.0% → 40.0%",
+    text: "Gross margin fell from 41.0% to 40.0%. Which cost changes (freight, product mix, markdowns) explain it?",
+  },
+];
+
+/** d: Luis Ferrante's answer on the inventory question (Sep 16). */
+export const GRANITE_PEAK_CLIENT_ANSWER: AnalyticsNote = {
+  text: "Fall stock received early for new wholesale orders (1,880,000); discontinued paddle-sports line still on hand (360,000)",
+  source: "Client answer Sep 16 · Luis Ferrante",
+};
+
+/** b: the three runs (code tie-out, flux_explain, client questions drafted by code). */
+export const GRANITE_PEAK_ANALYTICS_RUNS: string[] = [
+  "Compare the trial balance to the ledger and source documents, and show what doesn’t tie",
+  "Figure out why inventory changed from last year and trace it back to the source",
+  "Draft client questions for unexplained movements",
+];
+
+/** e: the three recorded adjustments by line (C8 final layer); pre-tax income −114,480. */
+export const GRANITE_PEAK_ADJUSTMENTS: Record<string, { amount: string; detail: string }> = {
+  revenue: { amount: "-46200", detail: "AJE 2 (46,200) · Ridgeback Sports order shipped Jul 1" },
+  cost_of_goods_sold: { amount: "68280", detail: "AJE 1 96,000 · AJE 2 (27,720)" },
+  accounts_receivable_net: { amount: "-46200", detail: "AJE 2 (46,200)" },
+  inventory_net: { amount: "-68280", detail: "AJE 1 (96,000) · AJE 2 27,720" },
+  accrued_liabilities: { amount: "-28620", detail: "AJE 3 (28,620) · income tax payable" },
+  stockholders_equity: {
+    amount: "-85860",
+    detail: "Pre-tax effect of AJEs 1–2 (114,480) · AJE 3 tax 28,620",
+  },
+};
+
+/** e: adjusted FY2026 against audited FY2025, as the final layer answers it (all accepted). */
+export const GRANITE_PEAK_FINAL_LINES: AnalyticsLineOut[] = GRANITE_PEAK_LINES.map((l) => {
+  const FINAL: Record<string, [string, string, string]> = {
+    revenue: ["48553800", "3653800", "8.1"],
+    cost_of_goods_sold: ["29228280", "2738280", "10.3"],
+    accounts_receivable_net: ["5813800", "1093800", "23.2"],
+    inventory_net: ["11351720", "2171720", "23.7"],
+    accrued_liabilities: ["1601380", "61380", "4.0"],
+    stockholders_equity: ["10814140", "1164140", "12.1"],
+  };
+  const f = FINAL[l.fs_line_key];
+  const moved = f === undefined ? l : { ...l, cy: f[0], change: f[1], change_pct: f[2] };
+  return { ...moved, status: l.over ? "accepted" : "within" };
+});
+
+/** e: the final explanations (every over-threshold line accepted). */
+export const GRANITE_PEAK_FINAL_EXPLANATIONS: Record<string, AnalyticsNote> = {
+  cost_of_goods_sold: {
+    text: "Margin 41.0% → 39.8% after adjustments: freight surcharges and lower-margin wholesale sales",
+    source: "Client answer Sep 18 · Luis Ferrante",
+  },
+  cash: {
+    text: "Revolver draws funded the inventory build",
+    source: "Front Range Bank statements Mar–Jun 2026",
+  },
+  accounts_receivable_net: {
+    text: "Two new wholesale accounts, less the Ridgeback Sports cutoff",
+    source: "AR aging 6/30/2026",
+  },
+  inventory_net: {
+    text: "Fall stock received early; discontinued paddle-sports line written down to NRV",
+    source: "Client answer Sep 16 · Luis Ferrante",
+  },
+  accounts_payable: { text: "June receipts of fall inventory", source: "AP aging 6/30/2026" },
+  revolver_front_range_bank: { text: "Draws Mar–Jun 2026", source: "Front Range Bank statements" },
+  term_loan: { text: "Scheduled amortization 50,000 × 12", source: "Loan agreement §2.3" },
+  stockholders_equity: {
+    text: "Net income after tax 2,239,140 less dividends 1,075,000",
+    source: "Board minutes Mar 12, 2026",
+  },
+};
+
+/** The statement subtotals (derived, not evaluated): [after the line, caption, cy, py, change, %]. */
+export const GRANITE_PEAK_SUBTOTALS: Record<
+  "preliminary" | "final",
+  {
+    after: string;
+    caption: string;
+    cy: string;
+    py: string;
+    change: string;
+    pct: string;
+    total?: true;
+  }[]
+> = {
+  preliminary: [
+    {
+      after: "cost_of_goods_sold",
+      caption: "Gross profit",
+      cy: "19440000",
+      py: "18410000",
+      change: "1030000",
+      pct: "5.6",
+    },
+    {
+      after: "interest_expense",
+      caption: "Pre-tax income",
+      cy: "3100000",
+      py: "3040000",
+      change: "60000",
+      pct: "2.0",
+    },
+    {
+      after: "other_assets",
+      caption: "Total assets",
+      cy: "26410000",
+      py: "23200000",
+      change: "3210000",
+      pct: "13.8",
+      total: true,
+    },
+    {
+      after: "stockholders_equity",
+      caption: "Total liabilities & equity",
+      cy: "26410000",
+      py: "23200000",
+      change: "3210000",
+      pct: "13.8",
+      total: true,
+    },
+  ],
+  final: [
+    {
+      after: "cost_of_goods_sold",
+      caption: "Gross profit",
+      cy: "19325520",
+      py: "18410000",
+      change: "915520",
+      pct: "5.0",
+    },
+    {
+      after: "interest_expense",
+      caption: "Pre-tax income",
+      cy: "2985520",
+      py: "3040000",
+      change: "-54480",
+      pct: "-1.8",
+    },
+    {
+      after: "other_assets",
+      caption: "Total assets",
+      cy: "26295520",
+      py: "23200000",
+      change: "3095520",
+      pct: "13.3",
+      total: true,
+    },
+    {
+      after: "stockholders_equity",
+      caption: "Total liabilities & equity",
+      cy: "26295520",
+      py: "23200000",
+      change: "3095520",
+      pct: "13.3",
+      total: true,
+    },
+  ],
+}; // fmt: skip
