@@ -139,3 +139,26 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "entity_relationships": frozenset({"effective_to"}),  # P-07-T07: a relationship ends
 }
+
+# T-06-T12 (0954, DEC-5521): external parties, relationship depth and events, per-user layouts.
+T06T12_TABLES: frozenset[str] = frozenset(
+    {"external_parties", "entity_relationship_events", "relationship_graph_layouts"}
+)
+TABLES = TABLES | T06T12_TABLES
+INSERT_ONLY = INSERT_ONLY | frozenset({"entity_relationship_events"})
+INSERT_COLUMNS["external_parties"] = frozenset(
+    {"tenant_id", "client_id", "display_name", "kind", "note", "created_by"}
+)
+INSERT_COLUMNS["entity_relationship_events"] = frozenset(
+    {"tenant_id", "relationship_id", "event", "before", "after", "on_behalf_of"}
+)
+INSERT_COLUMNS["relationship_graph_layouts"] = frozenset(
+    {"tenant_id", "user_id", "client_id", "positions"}
+)
+INSERT_COLUMNS["entity_relationships"] = INSERT_COLUMNS["entity_relationships"] | frozenset(
+    {"from_external_party_id", "to_external_party_id", "source", "note"}
+)
+UPDATE_COLUMNS["relationship_graph_layouts"] = frozenset({"positions", "updated_at"})
+UPDATE_COLUMNS["entity_relationships"] = UPDATE_COLUMNS["entity_relationships"] | frozenset(
+    {"percent", "note", "ended_at", "ended_by", "end_reason", "version"}
+)

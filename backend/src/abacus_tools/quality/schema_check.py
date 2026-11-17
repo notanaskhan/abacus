@@ -251,6 +251,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "tb_handoff_account_choices": "tb_handoff_account_choices_immutable",  # 0953 (T-06-T11)
     "tb_handoff_schedules": "tb_handoff_schedules_immutable",  # 0953 (T-06-T11)
     "tb_handoff_tax_items": "tb_handoff_tax_items_immutable",  # 0953 (T-06-T11)
+    "entity_relationship_events": "entity_relationship_events_immutable",  # 0954 (T-06-T12)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
