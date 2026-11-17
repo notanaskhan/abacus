@@ -598,6 +598,14 @@ __all__ = [
 ]
 
 # G-04-T10 (DEC-5417): W-01 fills the firm's integration health for SHL-05's status.
+from abacus.modules.platform.g04_seed import SeedPlan as SeedPlan  # noqa: E402 -- G-04-T13
+from abacus.modules.platform.g04_seed import SeedRule as SeedRule  # noqa: E402
+from abacus.modules.platform.g04_seed import (  # noqa: E402
+    seed_synthetic_alert as seed_synthetic_alert,
+)
+from abacus.modules.platform.g04_seed import (  # noqa: E402
+    seed_synthetic_plan as seed_synthetic_plan,
+)
 from abacus.modules.platform.plan_usage import (  # noqa: E402 -- G-04-T08: run admission reads it
     OverLimit as OverLimit,
 )

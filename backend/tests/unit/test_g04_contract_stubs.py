@@ -28,13 +28,30 @@ def _deps(route: APIRoute) -> set[object]:
     return {d.call for d in route.dependant.dependencies}
 
 
+# G-04-T09 to T11 built the rest (DEC-5416 to DEC-5418): only these still answer 501, their writers
+# being ops-only (provisioning, incidents, publications; DEC-5416, DEC-5417).
+STILL_STUBBED = {
+    ("POST", "/v1/platform/tenants"),
+    ("POST", "/v1/platform/tenants/{tenant_code}/sandbox"),
+    ("GET", "/v1/platform/provisioning/{workflow_id}"),
+    ("GET", "/v1/platform/status/incidents"),
+    ("POST", "/v1/platform/status/incidents"),
+    ("POST", "/v1/platform/status/incidents/{incident_id}/updates"),
+    ("POST", "/v1/platform/status/incidents/{incident_id}/resolve"),
+    ("GET", "/v1/platform/publications"),
+    ("POST", "/v1/platform/publications/{kind}/{publication_id}/publish"),
+    ("POST", "/v1/platform/publications/{kind}/{publication_id}/withdraw"),
+}
+
+
 @pytest.mark.parametrize(
     "route", FIRM_ROUTES + STAFF_ROUTES, ids=lambda r: f"{r.methods} {r.path}"
 )
-def test_one_action_and_a_501(route: APIRoute) -> None:
+def test_one_action_and_a_501_only_while_stubbed(route: APIRoute) -> None:
     action = declared_action(route)
     assert action is not None and action in RULES
-    assert 501 in route.responses
+    stubbed = any((m, route.path) in STILL_STUBBED for m in route.methods)
+    assert (501 in route.responses) == stubbed
 
 
 @pytest.mark.parametrize("route", STAFF_ROUTES, ids=lambda r: f"{r.methods} {r.path}")

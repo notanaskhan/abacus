@@ -419,6 +419,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import ebp_eligibility as
 from abacus_tools.synthetic.scenarios.brightwater_hale import entity_slice as _ent
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import pbc_screening as _pbc_screening
+from abacus_tools.synthetic.scenarios.brightwater_hale import plan_usage_slice as _plan_usage
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_workspace_slice as _txw
@@ -2123,6 +2124,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     _archive.SLICE: _archive.NEEDS,  # A-07-T41: completion to the locked archive
     _collab.SLICE: _collab.NEEDS,  # P-05-T12: Northwind's comment and Marcus's four to-dos
     _usage.SLICE: _usage.NEEDS,  # P-10-T42: ADM-14a's 14,920 and ENG-06a's 412
+    _plan_usage.SLICE: _plan_usage.NEEDS,  # G-04-T13: the plan row, rules and alerts
     _txw.SLICE: _txw.NEEDS,  # T-04-T28: Feld's worksheets, issues and named checkpoints
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
@@ -4052,6 +4054,65 @@ _NO_CATALOGUE: Final = (
 
 def _person_id(name: object) -> UUID | None:
     return None if name is None else UUID(stable_id(f"user:{slug_of(str(name))}"))
+
+
+async def _plan_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """G-04-T13 (`--slice plan_usage`): the `plans` content row (as the owner, once), then the
+    firm's plan version, policy and rules through `platform.api`."""
+    from abacus.modules.platform.api import SeedPlan, SeedRule, seed_synthetic_plan
+
+    data = event.data
+    await conn.execute(
+        "INSERT INTO plans (code, name) VALUES ($1, $2) ON CONFLICT (code) DO NOTHING",
+        data["plan_code"],
+        data["plan_name"],
+    )
+    rules = cast(list[dict[str, object]], data["rules"])
+    await seed_synthetic_plan(
+        TENANT,
+        SeedPlan(
+            plan_code=str(data["plan_code"]),
+            term_start=date.fromisoformat(str(data["term_start"])),
+            term_end=date.fromisoformat(str(data["term_end"])),
+            renewal_on=date.fromisoformat(str(data["renewal_on"])),
+            included_agent_minutes=int(cast(int, data["included_agent_minutes"])),
+            seats_total=int(cast(int, data["seats_total"])),
+            usage_month_anchor_day=int(cast(int, data["anchor_day"])),
+            billing_contact=_person_id(data["billing_contact"]),
+            partner_approver=_person_id(data["partner_approver"]),
+            engagement_default_minutes=int(cast(int, data["engagement_default_minutes"])),
+            engagement_alert_pct=int(cast(int, data["engagement_alert_pct"])),
+        ),
+        [
+            SeedRule(
+                int(cast(int, r["pct"])),
+                tuple(
+                    u
+                    for u in (_person_id(p) for p in cast(list[str], r["people"]))
+                    if u is not None
+                ),
+            )
+            for r in rules
+        ],
+    )
+
+
+async def _usage_alert_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """G-04-T13: one firm alert the usage history crossed (ADM-14 a, b)."""
+    from abacus.modules.platform.api import seed_synthetic_alert
+
+    del conn
+    data = event.data
+    await seed_synthetic_alert(
+        TENANT,
+        usage_month=str(data["usage_month"]),
+        threshold_pct=int(cast(int, data["pct"])),
+        crossed_at=event.at,
+        minutes=int(cast(int, data["minutes"])),
+        sent_to=[
+            u for u in (_person_id(p) for p in cast(list[str], data["sent_to"])) if u is not None
+        ],
+    )
 
 
 async def _install_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -7998,6 +8059,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     "connections.connection_seeded": _connection_seeded,
     # W-01-T11 (`--slice connect`): the Connect installs and CCH's timeline.
     "integrations.install_seeded": _install_seeded,
+    # G-04-T13 (`--slice plan_usage`): the plan row, budget-alert rules and crossed alerts.
+    "platform.plan_seeded": _plan_seeded,
+    "platform.usage_alert_seeded": _usage_alert_seeded,
     "integrations.event_seeded": _integration_event_seeded,
     "organisations.intake_team_created": _intake_team_created,  # N-01-T11
     "communications.inbound_email_recorded": _inbound_email_recorded,  # N-01-T11
