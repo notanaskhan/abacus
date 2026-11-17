@@ -37,6 +37,7 @@ a provider).
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -185,6 +186,10 @@ def _money(value: str) -> Decimal:
         raise OutputRefused(facts={"reason": "fact_not_money"}) from None
 
 
+# A register line's money fact: this month's `c<n>` or last month's `p<n>`, never `change`.
+_LINE_FACT: Final = re.compile(r"[cp][1-9][0-9]{0,3}")
+
+
 def settle_drivers(given: CloseAgentInput, answer: CloseAgentOutput) -> tuple[Driver, ...]:
     """Flux: each driver's facts are the offered line facts (each used once), code sums them, and
     the drivers foot to the `change` fact exactly (else `drivers_do_not_foot`)."""
@@ -198,7 +203,12 @@ def settle_drivers(given: CloseAgentInput, answer: CloseAgentOutput) -> tuple[Dr
         total = Decimal(0)
         for fid in d.fact_ids:
             fact = facts.get(fid)
-            if fact is None or fact.kind != "money" or fid[:1] not in ("c", "p") or fid in used:
+            if (
+                fact is None
+                or fact.kind != "money"
+                or not _LINE_FACT.fullmatch(fid)
+                or fid in used
+            ):
                 raise OutputRefused(facts={"reason": "driver_fact_not_offered"})
             used.add(fid)
             total += _money(fact.value)

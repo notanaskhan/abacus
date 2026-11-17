@@ -1,5 +1,5 @@
 import type { AnalyticsLineOut } from "@abacus/api-client";
-import { Amount, Pill, Spinner, cn } from "@abacus/ui";
+import { Amount, DASH, Pill, Spinner, cn } from "@abacus/ui";
 import type { JSX } from "react";
 import { FIELDWORK_COPY } from "./copy";
 import { BlockCard } from "./je";
@@ -74,7 +74,9 @@ export function AnalyticsTable({
                 <td className={cn(TD, "text-right")}>
                   <Amount value={l.change} style="whole" />
                 </td>
-                <td className={cn(TD, "text-right tabular-nums")}>{`${l.change_pct}%`}</td>
+                <td className={cn(TD, "text-right tabular-nums")}>
+                  {l.change_pct === null ? DASH : `${l.change_pct}%`}
+                </td>
                 <td className={TD}>
                   {l.status !== null && (
                     <Pill variant={TONE[l.status] ?? "muted"}>

@@ -73,7 +73,6 @@ class StepInputMissing(DomainConflict):
     code = "step_input_missing"
 
 
-
 async def _close(tenant: TenantContext, facts: RunStepFacts) -> repo.CloseRow:
     raw = facts.arguments.get("close_id")
     if not isinstance(raw, str):

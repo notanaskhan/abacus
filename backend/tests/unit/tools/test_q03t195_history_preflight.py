@@ -28,6 +28,7 @@ ALIASES: Final[dict[str, str]] = {
     "IntakeWithdrawalPurge": "intake-purge",
     "evidence_withdrawal_purge": "withdrawal-purge",
     "Form5500TieOut": "form5500-tieout",  # A-05-T54 (TASK-6111): "TieOut" is one word in the stem
+    "UsageAlertReconcile": "usage-alerts",  # G-04-T12: recorded with the platform jobs
 }
 
 

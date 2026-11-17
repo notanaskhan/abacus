@@ -27706,6 +27706,39 @@ export type GroupComponentOut = {
 };
 
 /**
+ * GroupConfirmIn
+ *
+ * Every entity's mapping set of a group, confirmed by one person in one act (AUD-31 g).
+ */
+export type GroupConfirmIn = {
+    /**
+     * Sets
+     */
+    sets: Array<GroupConfirmItemIn>;
+};
+
+/**
+ * GroupConfirmItemIn
+ */
+export type GroupConfirmItemIn = {
+    body: MappingConfirmIn;
+    /**
+     * Mapping Set Id
+     */
+    mapping_set_id: string;
+};
+
+/**
+ * GroupConfirmOut
+ */
+export type GroupConfirmOut = {
+    /**
+     * Confirmed
+     */
+    confirmed: Array<MappingSetSummaryOut>;
+};
+
+/**
  * GroupCoverageOut
  */
 export type GroupCoverageOut = {
@@ -50750,7 +50783,7 @@ export type RunStateCountOut = {
     /**
      * State
      */
-    state: string;
+    state: 'queued' | 'planning' | 'awaiting_plan_approval' | 'dispatched' | 'running' | 'needs_input' | 'blocked_on_decision' | 'waiting_on_inputs' | 'succeeded' | 'approved' | 'partially_approved' | 'rejected' | 'failed' | 'cancelled';
 };
 
 /**
@@ -59648,6 +59681,24 @@ export type TbRowOut = {
      * Section
      */
     section: 'assets' | 'liabilities_equity' | 'income';
+};
+
+/**
+ * TbSuggestionsOut
+ */
+export type TbSuggestionsOut = {
+    /**
+     * Abstained
+     */
+    abstained: number;
+    /**
+     * Outcome
+     */
+    outcome: 'suggested' | 'nothing_to_suggest' | 'refused' | 'unavailable';
+    /**
+     * Suggestions
+     */
+    suggestions: number;
 };
 
 /**
@@ -69614,10 +69665,6 @@ export type AcceptFluxLineErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AcceptFluxLineError = AcceptFluxLineErrors[keyof AcceptFluxLineErrors];
@@ -69678,10 +69725,6 @@ export type ExplainFluxLineErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ExplainFluxLineError = ExplainFluxLineErrors[keyof ExplainFluxLineErrors];
@@ -69742,10 +69785,6 @@ export type EditFluxExplanationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EditFluxExplanationError = EditFluxExplanationErrors[keyof EditFluxExplanationErrors];
@@ -83097,10 +83136,6 @@ export type DraftPlanFromHistoryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DraftPlanFromHistoryError = DraftPlanFromHistoryErrors[keyof DraftPlanFromHistoryErrors];
@@ -84782,13 +84817,13 @@ export type CloseFluxErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseFluxError = CloseFluxErrors[keyof CloseFluxErrors];
@@ -84843,13 +84878,13 @@ export type CloseFluxXlsxErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CloseFluxXlsxError = CloseFluxXlsxErrors[keyof CloseFluxXlsxErrors];
@@ -115201,10 +115236,6 @@ export type BillingRatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BillingRatesError = BillingRatesErrors[keyof BillingRatesErrors];
@@ -115252,10 +115283,6 @@ export type BudgetAlertsGetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BudgetAlertsGetError = BudgetAlertsGetErrors[keyof BudgetAlertsGetErrors];
@@ -115307,10 +115334,6 @@ export type BudgetAlertsPutErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type BudgetAlertsPutError = BudgetAlertsPutErrors[keyof BudgetAlertsPutErrors];
@@ -116499,10 +116522,6 @@ export type EngagementBudgetsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EngagementBudgetsError = EngagementBudgetsErrors[keyof EngagementBudgetsErrors];
@@ -117763,10 +117782,6 @@ export type PlanGetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanGetError = PlanGetErrors[keyof PlanGetErrors];
@@ -117823,10 +117838,6 @@ export type PlanRequestsListErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanRequestsListError = PlanRequestsListErrors[keyof PlanRequestsListErrors];
@@ -117882,10 +117893,6 @@ export type PlanRequestsCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanRequestsCreateError = PlanRequestsCreateErrors[keyof PlanRequestsCreateErrors];
@@ -117942,10 +117949,6 @@ export type PlanRequestsApproveErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanRequestsApproveError = PlanRequestsApproveErrors[keyof PlanRequestsApproveErrors];
@@ -118002,10 +118005,6 @@ export type PlanRequestsDeclineErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanRequestsDeclineError = PlanRequestsDeclineErrors[keyof PlanRequestsDeclineErrors];
@@ -118062,10 +118061,6 @@ export type PlanRequestsWithdrawErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanRequestsWithdrawError = PlanRequestsWithdrawErrors[keyof PlanRequestsWithdrawErrors];
@@ -118113,10 +118108,6 @@ export type PlanSetBillingContactErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PlanSetBillingContactError = PlanSetBillingContactErrors[keyof PlanSetBillingContactErrors];
@@ -122326,10 +122317,6 @@ export type HelpArticlesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type HelpArticlesError = HelpArticlesErrors[keyof HelpArticlesErrors];
@@ -122382,10 +122369,6 @@ export type HelpArticleErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type HelpArticleError = HelpArticleErrors[keyof HelpArticleErrors];
@@ -126355,6 +126338,57 @@ export type ReleaseLegalHoldResponses = {
 
 export type ReleaseLegalHoldResponse = ReleaseLegalHoldResponses[keyof ReleaseLegalHoldResponses];
 
+export type MappingGroupConfirmData = {
+    body: GroupConfirmIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/mapping-sets/group-confirm';
+};
+
+export type MappingGroupConfirmErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MappingGroupConfirmError = MappingGroupConfirmErrors[keyof MappingGroupConfirmErrors];
+
+export type MappingGroupConfirmResponses = {
+    /**
+     * Successful Response
+     */
+    200: GroupConfirmOut;
+};
+
+export type MappingGroupConfirmResponse = MappingGroupConfirmResponses[keyof MappingGroupConfirmResponses];
+
 export type MappingSetData = {
     body?: never;
     headers?: {
@@ -126583,6 +126617,67 @@ export type MappingRunResponses = {
 };
 
 export type MappingRunResponse = MappingRunResponses[keyof MappingRunResponses];
+
+export type MappingSuggestionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Mapping Set Id
+         */
+        mapping_set_id: string;
+    };
+    query?: {
+        /**
+         * Rerun
+         */
+        rerun?: boolean;
+    };
+    url: '/v1/mapping-sets/{mapping_set_id}/suggestions';
+};
+
+export type MappingSuggestionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MappingSuggestionsError = MappingSuggestionsErrors[keyof MappingSuggestionsErrors];
+
+export type MappingSuggestionsResponses = {
+    /**
+     * Successful Response
+     */
+    202: TbSuggestionsOut;
+};
+
+export type MappingSuggestionsResponse = MappingSuggestionsResponses[keyof MappingSuggestionsResponses];
 
 export type MappedTrialBalanceData = {
     body?: never;
@@ -132213,10 +132308,6 @@ export type ConsolePlanRequestsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsolePlanRequestsError = ConsolePlanRequestsErrors[keyof ConsolePlanRequestsErrors];
@@ -132269,10 +132360,6 @@ export type ConsoleMarkAppliedErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsoleMarkAppliedError = ConsoleMarkAppliedErrors[keyof ConsoleMarkAppliedErrors];
@@ -132540,10 +132627,6 @@ export type ConsoleRegionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsoleRegionsError = ConsoleRegionsErrors[keyof ConsoleRegionsErrors];
@@ -133108,10 +133191,6 @@ export type ConsoleSupportSessionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsoleSupportSessionsError = ConsoleSupportSessionsErrors[keyof ConsoleSupportSessionsErrors];
@@ -133164,10 +133243,6 @@ export type ConsoleQueueErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsoleQueueError = ConsoleQueueErrors[keyof ConsoleQueueErrors];
@@ -133216,10 +133291,6 @@ export type ConsoleQueueConversationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsoleQueueConversationError = ConsoleQueueConversationErrors[keyof ConsoleQueueConversationErrors];
@@ -133272,10 +133343,6 @@ export type ConsoleQueueReplyErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsoleQueueReplyError = ConsoleQueueReplyErrors[keyof ConsoleQueueReplyErrors];
@@ -133340,10 +133407,6 @@ export type ConsoleTenantsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsoleTenantsError = ConsoleTenantsErrors[keyof ConsoleTenantsErrors];
@@ -133447,10 +133510,6 @@ export type ConsoleTenantErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsoleTenantError = ConsoleTenantErrors[keyof ConsoleTenantErrors];
@@ -133503,10 +133562,6 @@ export type ConsolePatchEntitlementsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ConsolePatchEntitlementsError = ConsolePatchEntitlementsErrors[keyof ConsolePatchEntitlementsErrors];
@@ -145339,10 +145394,6 @@ export type FirmStatusErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type FirmStatusError = FirmStatusErrors[keyof FirmStatusErrors];
@@ -145787,10 +145838,6 @@ export type SupportConversationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SupportConversationError = SupportConversationErrors[keyof SupportConversationErrors];
@@ -145846,10 +145893,6 @@ export type SupportSendMessageErrors = {
      * Too soon or too many: retry after Retry-After
      */
     429: ErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SupportSendMessageError = SupportSendMessageErrors[keyof SupportSendMessageErrors];

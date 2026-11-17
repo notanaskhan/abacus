@@ -555,7 +555,7 @@ async def send_client_questions(
 @router.get(f"{_A}/export.xlsx", action="analytics.export", response_model=bytes, errors=(501,))
 async def export_analytics(analytics_set_id: UUID, ctx: Ctx) -> Response:
     await _gate_record(ctx)
-    data = await svc.export(ctx, analytics_set_id)
+    data = await svc.workbook_of(ctx, analytics_set_id)
     return Response(
         content=data,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

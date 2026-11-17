@@ -20,7 +20,10 @@ describe("fieldwork run rows (A-08-T24)", () => {
   it("reads a code row as done and an agent row by its runs", () => {
     expect(rowState(row({ kind: "tie_out", attribution: "Code" }))).toBe("done");
     expect(rowState(row({ states: [{ state: "running", runs: 1 }] }))).toBe("running");
-    expect(rowState(row({ states: [{ state: "completed", runs: 2 }] }))).toBe("done");
+    expect(rowState(row({ states: [{ state: "succeeded", runs: 2 }] }))).toBe("done");
+    // A run whose proposals a person decided has ended too (C6 v2).
+    expect(rowState(row({ states: [{ state: "partially_approved", runs: 1 }] }))).toBe("done");
+    expect(rowState(row({ states: [{ state: "waiting_on_inputs", runs: 1 }] }))).toBe("running");
     expect(rowState(row({ states: [{ state: "failed", runs: 1 }] }))).toBe("failed");
   });
 

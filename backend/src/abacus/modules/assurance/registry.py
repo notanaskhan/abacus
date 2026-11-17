@@ -1173,7 +1173,7 @@ UPDATE_COLUMNS.update(
 
 # S46: A-08-T16 (0894) confirmations and A-09-T12 (0898) the group audit's records;
 # 0898 adds materiality_versions scope and consolidation_id.
-TABLES: frozenset[str] = _TABLES | frozenset(
+_S46_TABLES: frozenset[str] = _TABLES | frozenset(
     {
         "address_verifications",
         "alternative_procedures",
@@ -1195,7 +1195,7 @@ TABLES: frozenset[str] = _TABLES | frozenset(
         "reconciliation_items",
     }
 )
-INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
+_S46_INSERT_ONLY: frozenset[str] = _INSERT_ONLY | frozenset(
     {
         "address_verifications",
         "alternative_procedures",
@@ -1445,7 +1445,7 @@ INSERT_COLUMNS["materiality_versions"] = INSERT_COLUMNS.get(
 # A-08-T21 (0940, DEC-5400): audit analytics. Sets are recomputed as new versions (their status
 # and stamp move); lines, expectations, prior-year imports and sent questions are insert-only;
 # an explanation is insert-only but for its one acceptance stamp.
-TABLES = TABLES | frozenset(
+A08T21_TABLES: frozenset[str] = frozenset(
     {
         "analytics_explanations",
         "analytics_expectations",
@@ -1455,7 +1455,7 @@ TABLES = TABLES | frozenset(
         "prior_year_figures",
     }
 )
-INSERT_ONLY = INSERT_ONLY | frozenset(
+A08T21_INSERT_ONLY: frozenset[str] = frozenset(
     {"analytics_expectations", "analytics_lines", "analytics_questions", "prior_year_figures"}
 )
 INSERT_COLUMNS["analytics_sets"] = frozenset(
@@ -1569,7 +1569,7 @@ INSERT_COLUMNS["analytics_questions"] = frozenset(
 )
 
 # A-08-T22 (0941, DEC-5401): an SSARS inquiry program, published once by a person.
-TABLES = TABLES | frozenset({"ssars_inquiry_programs"})
+A08T22_TABLES: frozenset[str] = frozenset({"ssars_inquiry_programs"})
 INSERT_COLUMNS["ssars_inquiry_programs"] = frozenset(
     {
         "created_by",
@@ -1584,8 +1584,7 @@ INSERT_COLUMNS["ssars_inquiry_programs"] = frozenset(
 UPDATE_COLUMNS["ssars_inquiry_programs"] = frozenset({"published_at", "published_by"})
 
 # A-08-T24 (0943, DEC-5403): the run rows a person started on AUD-12, AUD-13, AUD-26, AUD-14.
-TABLES = TABLES | frozenset({"fieldwork_run_rows"})
-INSERT_ONLY = INSERT_ONLY | frozenset({"fieldwork_run_rows"})
+A08T24_TABLES: frozenset[str] = frozenset({"fieldwork_run_rows"})
 INSERT_COLUMNS["fieldwork_run_rows"] = frozenset(
     {
         "code_result",
@@ -1603,7 +1602,7 @@ INSERT_COLUMNS["fieldwork_run_rows"] = frozenset(
 )
 
 # A-09-T27 (0944, DEC-5405): a person's instructions send, completed or undone once.
-TABLES = TABLES | frozenset({"component_instruction_sends"})
+A09T27_TABLES: frozenset[str] = frozenset({"component_instruction_sends"})
 INSERT_COLUMNS["component_instruction_sends"] = frozenset(
     {
         "content_hash",
@@ -1620,3 +1619,9 @@ INSERT_COLUMNS["component_instruction_sends"] = frozenset(
 UPDATE_COLUMNS["component_instruction_sends"] = frozenset(
     {"completed_at", "grant_id", "undone_at"}
 )
+
+# Every table and insert-only table above, combined once.
+TABLES: frozenset[str] = (
+    _S46_TABLES | A08T21_TABLES | A08T22_TABLES | A08T24_TABLES | A09T27_TABLES
+)
+INSERT_ONLY: frozenset[str] = _S46_INSERT_ONLY | A08T21_INSERT_ONLY | A08T24_TABLES

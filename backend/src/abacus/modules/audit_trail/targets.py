@@ -47,6 +47,10 @@ FIRM_LEVEL: Final = frozenset(
         "realtime",  # P-10-T27: an outbox event's invalidation with no row of its own
         "staff_invitation",
         "support_session",
+        # G-04-T10, T11: a firm's support conversation with Accrued and its plan change requests;
+        # about the firm's account, never a client.
+        "support_conversation",
+        "plan_change_request",
         "methodology_version",
         "methodology_import",  # K-01-T18: a firm's methodology upload
         "methodology_source_file",  # K-01-T18: its stored files

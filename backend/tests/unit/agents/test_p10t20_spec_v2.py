@@ -179,5 +179,6 @@ def test_v1_specs_load_unchanged_and_v2_holds_only_the_drafter_until_t40() -> No
         "workbench.assistant",  # W-02-T12 (DEC-4718)
         "briefing.today",  # I-02-T08 (DEC-4721)
         "tax.instrument_reader",  # T-07-T13 (DEC-5027)
+        "ledger.tb_mapper",  # A-09-T29 (TASK-8412)
     }
     assert agent_specs_v2.main(["--check"]) == 0

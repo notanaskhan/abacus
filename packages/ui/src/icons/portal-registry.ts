@@ -59,6 +59,7 @@ import {
   Layers,
   LayoutGrid,
   Link,
+  Link2Off,
   List,
   ListFilter,
   Lock,
@@ -170,6 +171,7 @@ const PORTAL_ICONS = {
   layers: Layers,
   "layout-grid": LayoutGrid,
   link: Link,
+  "link-2-off": Link2Off, // A-09-T33: POR-23's expired-link empty state
   list: List,
   "list-filter": ListFilter,
   lock: Lock,

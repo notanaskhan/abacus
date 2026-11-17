@@ -20,7 +20,7 @@ from abacus.modules.communications.api import DrainSesEventsWorkflow
 from abacus.modules.evidence.api import AuditAnchorWorkflow, ExportExpirySweepWorkflow
 from abacus.modules.identity.api import AccessEndSweepWorkflow, AuthSessionPurgeWorkflow
 from abacus.modules.notifications.api import NotificationPurgeWorkflow
-from abacus.modules.platform.api import SpendAnomalyWorkflow
+from abacus.modules.platform.api import SpendAnomalyWorkflow, UsageAlertReconcileWorkflow
 from abacus.modules.practice.api import HomeActivityPruneWorkflow
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
@@ -42,6 +42,8 @@ AUDIT_JOBS: dict[str, tuple[str, type]] = {
     "export-expiry-v1-swept": ("export_expiry:platform", ExportExpirySweepWorkflow),
     # I-01-T12 (DEC-900): Home's client-activity prune.
     "home-activity-prune-v1-pruned": ("home_activity_prune:platform", HomeActivityPruneWorkflow),
+    # G-04-T12 (DEC-5419): the nightly usage-alert reconcile.
+    "usage-alerts-v1-reconciled": ("usage_alerts:platform", UsageAlertReconcileWorkflow),
 }
 
 

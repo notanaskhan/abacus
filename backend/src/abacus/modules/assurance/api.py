@@ -38,6 +38,10 @@ from abacus.modules.assurance.agent_capabilities import register as register_age
 from abacus.modules.assurance.analytics import ACTIVITIES as ANALYTICS_ACTIVITIES
 from abacus.modules.assurance.analytics import SUBSCRIPTIONS as ANALYTICS_SUBSCRIPTIONS
 from abacus.modules.assurance.analytics import WORKFLOWS as ANALYTICS_WORKFLOWS
+
+# S48 end pass: the replay recorder starts these three workflows (ADR-090).
+from abacus.modules.assurance.analytics import FluxAnalyticsWorkflow as FluxAnalyticsWorkflow
+from abacus.modules.assurance.analytics import RunInput as FluxRunInput
 from abacus.modules.assurance.analytics import register_acceptance_gate
 from abacus.modules.assurance.analytics_contract import router as analytics_router
 from abacus.modules.assurance.archive_additions import ACTIVITIES as ARCHIVE_VERIFY_ACTIVITIES
@@ -106,10 +110,15 @@ from abacus.modules.assurance.component_auditors import ACTIVITIES as COMPONENT_
 from abacus.modules.assurance.component_auditors import THREAD_ANCHORS as COMPONENT_THREAD_ANCHORS
 from abacus.modules.assurance.component_auditors import THREAD_KIND as COMPONENT_THREAD_KIND
 from abacus.modules.assurance.component_auditors import WORKFLOWS as COMPONENT_WORKFLOWS
+from abacus.modules.assurance.component_auditors import (
+    InstructionsSendWorkflow as InstructionsSendWorkflow,
+)
+from abacus.modules.assurance.component_auditors import SendInput as InstructionsSendInput
 from abacus.modules.assurance.component_auditors import register as component_auditors_register
 from abacus.modules.assurance.component_late import ACTIVITIES as LATE_ACTIVITIES
 from abacus.modules.assurance.component_late import SCHEDULES as LATE_SCHEDULES
 from abacus.modules.assurance.component_late import WORKFLOWS as LATE_WORKFLOWS
+from abacus.modules.assurance.component_late import ComponentLateSweep as ComponentLateSweep
 from abacus.modules.assurance.component_late import register as component_late_register
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
@@ -164,6 +173,10 @@ from abacus.modules.assurance.fraud_brainstorm import SUGGESTION_TARGET as FRAUD
 from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, minutes_gate
 from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
 from abacus.modules.assurance.gates import register as register_gates
+from abacus.modules.assurance.group_audit_targets import (
+    GROUP_AUDIT_TARGET_KINDS,
+    group_audit_owners,
+)
 from abacus.modules.assurance.group_contract import router as group_router
 from abacus.modules.assurance.group_hosts import register as group_hosts_register
 from abacus.modules.assurance.group_pull import ACTIVITIES as PULL_ALL_ACTIVITIES
@@ -504,6 +517,8 @@ register_engagement_owners(DECISION_KINDS, decision_owners)  # A-06-T13 (DEC-226
 register_engagement_owners(LATE_REMITTANCE_KINDS, late_remittance_owners)  # A-05-T30
 register_engagement_owners(TRAIL_KINDS, trail_owners)  # A-07-T18, A-05-T53 (S30 end pass)
 register_engagement_owners(CERTIFICATION_KINDS, certification_owners)  # A-05-T39
+# S48 end pass: the group audit's and SSARS rows placed for the trail.
+register_engagement_owners(GROUP_AUDIT_TARGET_KINDS, group_audit_owners)
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()
 register_approval_kind()  # A-04-T18 (DEC-2056): the `significant_risk` card
@@ -601,9 +616,11 @@ __all__ = [
     "EbpTestIn",  # TASK-7815
     "ExceptionRouter",
     "ExceptionRow",
+    "FluxRunInput",
     "Form5500TieOutWorkflow",
     "GovernanceKind",  # A-07-T41: the archive slice
     "IndexTag",
+    "InstructionsSendInput",
     "LetterRendering",
     "MappingConfirmIn",
     "MappingRunIn",

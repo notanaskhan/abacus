@@ -4,6 +4,7 @@ capability's scope is refused `out_of_scope`."""
 
 from __future__ import annotations
 
+import importlib
 import uuid
 from pathlib import Path
 
@@ -98,6 +99,7 @@ def test_ac_a_tool_outside_the_scope_is_refused_out_of_scope() -> None:
 
 
 def test_the_spec_binds_the_tools_scope_prompts_and_suite() -> None:
+    importlib.import_module("abacus.api.app")  # the modules' tools register at import
     spec = spec_v2(agent.CAPABILITY)
     assert set(spec.tools.names()) == set(agent.TOOLS)
     assert spec.task_scope == agent.TASK_SCOPE
@@ -106,7 +108,8 @@ def test_the_spec_binds_the_tools_scope_prompts_and_suite() -> None:
     assert "tri" not in spec.data_classes
     assert EVAL_SUITES[agent.CAPABILITY][0] == agent.PROMPTS["run"]
     assert set(EVAL_SUITE_MODES[agent.CAPABILITY]) == {
-        agent.PROMPTS[m] for m in ("intake", "bank_rec", "aje")
+        agent.PROMPTS[m]
+        for m in ("intake", "bank_rec", "aje", "flux", "planner")  # + C-01-T30
     }
     for prompt in agent.PROMPTS.values():
         name, _, version = prompt.partition("@")

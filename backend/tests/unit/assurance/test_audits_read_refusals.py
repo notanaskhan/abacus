@@ -79,7 +79,13 @@ def test_ac22_the_methodology_row_requires_methodology_read_on_the_firm() -> Non
         (found[k].required_action, found[k].action_scope) == ("workpaper.read", "engagement")
         for k in designed
     )
-    guarded = {"methodology", "sample_selection"} | designed
+    # A-09-T30: the group band's three rows ask `group_scoping.read` on the engagement.
+    group = {"group_structure", "group_scoping", "component_auditors"}
+    assert all(
+        (found[k].required_action, found[k].action_scope) == ("group_scoping.read", "engagement")
+        for k in group
+    )
+    guarded = {"methodology", "sample_selection"} | designed | group
     assert all(s.required_action is None for k, s in found.items() if k not in guarded)
 
 

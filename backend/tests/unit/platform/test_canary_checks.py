@@ -83,6 +83,7 @@ def test_no_canary_schedule_without_a_canary_firm() -> None:
         "spend_anomaly:platform",
         "incident_reminders:platform",  # G-02-T18: the incident register's FTC clock reminders
         "pilot_metrics:platform",  # Q-04-T008: the weekly pilot metrics
+        "usage_alerts:platform",  # G-04-T12: the nightly usage-alert reconcile
         "search_drift:platform",  # P-02-T06: the nightly search drift check
     ]
 
@@ -120,5 +121,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "ses_events:platform",
         "signatures-evidence-integrity",  # N-02-T38: nightly evidence re-hash
         "spend_anomaly:platform",
+        "usage_alerts:platform",  # G-04-T12: the nightly usage-alert reconcile (DEC-5419)
+        "component_late:platform",  # A-09-T28: component deliverables gone late, hourly
         f"canary:{canary_firm}",
     }

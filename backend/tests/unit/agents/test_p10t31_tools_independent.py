@@ -11,6 +11,7 @@ verb can be registered."
 
 from __future__ import annotations
 
+import importlib
 import json
 import uuid
 from dataclasses import dataclass, field
@@ -179,10 +180,15 @@ INDIRECT: dict[str, str] = {
     "assurance.propose_reconciliation": (
         "the confirmation's engagement must be the run's, else 404"
     ),
+    # A-09-T29 (TASK-8412): the mapping set is read first and must sit on the run's engagement.
+    "assurance.suggest_account_mappings": (
+        "the mapping set's engagement must be the run's, else 404"
+    ),
 }
 
 
 def test_every_first_tool_is_covered_here() -> None:
+    importlib.import_module("abacus.api.app")  # every module's tools register at import
     first = {n for n in registered_tools() if not n.startswith(("tax.", "files."))}
     assert set(ELSEWHERE) | {"knowledge.search"} | set(INDIRECT) == first
 

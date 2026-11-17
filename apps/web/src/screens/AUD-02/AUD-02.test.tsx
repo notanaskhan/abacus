@@ -134,8 +134,8 @@ const PHASES = [
 ];
 
 describe("AUD-02 artboards", () => {
-  it("has a scenario for a–g, all Hannah Leclerc at the state labels' times", () => {
-    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "g"]);
+  it("has a scenario for a–h, Hannah Leclerc on a–g and Omar Haddad on h, at the state labels' times", () => {
+    expect(STATES).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"]);
     const clocks = Object.fromEntries(STATES.map((s) => [s, scenarios[s].clock]));
     expect(clocks).toEqual({
       a: "2026-09-14T09:41:00-05:00",
@@ -145,8 +145,20 @@ describe("AUD-02 artboards", () => {
       e: "2026-09-14T09:58:00-05:00",
       f: "2026-09-14T09:41:00-05:00",
       g: "2026-09-14T09:41:00-05:00",
+      h: "2026-09-14T15:45:00-05:00", // A-09-T32: the group audit (revision h)
     });
-    for (const s of STATES) expect(scenarios[s].persona).toBe("hannah-leclerc");
+    for (const s of STATES.filter((x) => x !== "h")) {
+      expect(scenarios[s].persona).toBe("hannah-leclerc");
+    }
+    expect(scenarios.h.persona).toBe("omar-haddad");
+  });
+
+  it("AUD-02h group: the Group band shows Structure, Scoping and Component auditors", async () => {
+    show("h");
+    await screen.findByText("FY2026 Group Financial Statement Audit");
+    expect(await screen.findByText("Structure")).toBeTruthy();
+    expect(screen.getByText("Scoping")).toBeTruthy();
+    expect(screen.getByText("Component auditors")).toBeTruthy();
   });
 
   it("AUD-02a run: the sub-lines read exactly, the pill Processing, Started 9:24 AM, Begin… on Testing", async () => {

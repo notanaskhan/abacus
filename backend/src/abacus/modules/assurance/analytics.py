@@ -37,11 +37,12 @@ from decimal import Decimal
 from typing import Annotated, ClassVar, Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import text
 from temporalio import activity, workflow
 from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 with workflow.unsafe.imports_passed_through():
+    from sqlalchemy import text
+
     from abacus.kernel.classification import classified
     from abacus.kernel.db import TenantContext, tenant_session
     from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
@@ -55,10 +56,16 @@ with workflow.unsafe.imports_passed_through():
         TargetFacts,
         allowed_actions,
         authorise,
-        engagement_team,
+        engagement_partners,
         names_of,
     )
-    from abacus.modules.workpapers.compute import flux
+    from abacus.modules.workpapers.api import (
+        FLUX_ENGINE_VERSION,
+        FluxLine,
+        FluxSet,
+        Thresholds,
+        evaluate_flux,
+    )
 
 TARGET: Final = "analytics_set"
 SYSTEM_ACTOR: Final = "analytics"
@@ -304,23 +311,23 @@ def cell_of(position: int) -> str:
 
 
 def compute_lines(
-    source: Sequence[SourceLine], thresholds: flux.Thresholds
-) -> tuple[tuple[ComputedLine, ...], flux.FluxSet]:
+    source: Sequence[SourceLine], thresholds: Thresholds
+) -> tuple[tuple[ComputedLine, ...], FluxSet]:
     """Each group's FS lines, then the group's subtotal when it has more than one line (derived,
     never evaluated); the engine decides change, change % and over/within."""
-    lines: list[flux.FluxLine] = []
+    lines: list[FluxLine] = []
     groups: dict[str, list[SourceLine]] = {}
     for line in source:
         groups.setdefault(line.group_key, []).append(line)
     meta: list[tuple[str, str, tuple[str, ...]]] = []  # (key, group_key, sources)
     for group_key, members in groups.items():
         for m in members:
-            lines.append(flux.FluxLine(m.key, m.caption, m.cy, m.py))
+            lines.append(FluxLine(m.key, m.caption, m.cy, m.py))
             meta.append((m.key, group_key, m.sources))
         if len(members) > 1:
             total = f"{group_key}:total"
             lines.append(
-                flux.FluxLine(
+                FluxLine(
                     total,
                     members[0].group_label,
                     sum((m.cy for m in members), Decimal(0)),
@@ -329,7 +336,7 @@ def compute_lines(
                 )
             )
             meta.append((total, group_key, ()))
-    result = flux.evaluate(lines, thresholds)
+    result = evaluate_flux(lines, thresholds)
     computed = tuple(
         ComputedLine(
             position=n,
@@ -552,8 +559,11 @@ async def threshold_for(tenant: TenantContext, work_item_id: UUID) -> ThresholdF
 
 
 async def _decider(ctx: AuthContext, engagement_id: UUID) -> str | None:
-    team = await engagement_team(ctx, engagement_id)
-    return next((m.display_name for m in team if m.role == "engagement_partner"), None)
+    """The engagement partner who decides the set (identity names the role, ADR-020)."""
+    partners = await engagement_partners(ctx.tenant.tenant_id, engagement_id)
+    if not partners:
+        return None
+    return (await names_of(partners[:1])).get(partners[0])
 
 
 # --- run -----------------------------------------------------------------------------------------
@@ -613,7 +623,7 @@ async def _start(
                     "mv": threshold.materiality_version_id,
                     "policy": policy_version_id,
                     "prov": threshold.provisional,
-                    "engine": flux.ENGINE_VERSION,
+                    "engine": FLUX_ENGINE_VERSION,
                     "label": label,
                     "by": created_by,
                     "params": json.dumps(params, sort_keys=True),
@@ -750,7 +760,7 @@ async def compute_set(tenant: TenantContext, set_id: UUID) -> str:
             tx.record("analytics.compute_failed", target=Target(TARGET, set_id))
         return "out_of_date"
     source, balanced = found
-    thresholds = flux.Thresholds(
+    thresholds = Thresholds(
         Decimal(str(row["threshold_pct"])), Decimal(str(row["threshold_amount"]))
     )
     lines, result = compute_lines(source, thresholds)
@@ -1431,7 +1441,7 @@ async def put_prior_year_figures(
     return len(rows)
 
 
-async def export(ctx: AuthContext, set_id: UUID) -> bytes:
+async def workbook_of(ctx: AuthContext, set_id: UUID) -> bytes:
     """The deterministic workbook: header, then each line in position (D is the current year)."""
     row = await _set_row(ctx.tenant, set_id)
     await authorise(

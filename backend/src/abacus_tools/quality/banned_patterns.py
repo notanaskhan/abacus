@@ -2528,6 +2528,8 @@ RULES: list[Rule | TreeRule] = [
             # R-01-T19: seeds as the superuser and proves the app role's grants.
             "tests/integration/test_r01t19_email_template_versions.py",
             "tests/integration/test_staff_session.py",  # P-01-T09: seeds as the superuser
+            # A-09-T26: plants agent and system rows to prove the actor CHECKs (0889, 0897).
+            "tests/security/test_a09t26_group_independent.py",
             "tests/integration/test_telemetry_tunnel.py",  # Q-01-T48: seeds as the superuser
             "tests/integration/test_engagements.py",
             "tests/integration/test_engagements_schema.py",
@@ -2748,6 +2750,8 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/test_p10t18_runtime_tables_independent.py",
             "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
             "tests/integration/test_a07t20_immutable_independent.py",
+            # A-09-T26: acts as an agent and the system to prove the actor CHECKs refuse them.
+            "tests/security/test_a09t26_group_independent.py",
             "tests/integration/test_tenancy.py",
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",

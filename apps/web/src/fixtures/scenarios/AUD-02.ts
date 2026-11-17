@@ -108,7 +108,8 @@ function group(): Scenario {
     persona: "omar-haddad",
     handlers: {
       ...base.handlers,
-      "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, ["group_scoping.read"])),
+      "GET /v1/me/capabilities": ({ persona }) =>
+        json(capabilities(persona, ["group_scoping.read"])),
       "GET /v1/audits/{work_item_id}/cockpit": ({ params }) =>
         json(
           harlowCockpit({

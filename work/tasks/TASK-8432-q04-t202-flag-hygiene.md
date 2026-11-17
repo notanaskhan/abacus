@@ -1,8 +1,8 @@
 ---
 id: TASK-8432
 title: "Q-04-T202: Aug 2028 flag-hygiene bundle"
-spec: None
-acceptance_criteria: []
+spec: SPEC-000  # row (Q-04-T202)
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 branch: q04-t202-flag-hygiene

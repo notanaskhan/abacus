@@ -333,8 +333,10 @@ async def run_rows(ctx: AuthContext, target_id: UUID) -> list[RunRow]:
         run_ids = tuple(cast("list[UUID]", r["run_ids"] or []))
         states: dict[str, int] = {}
         for run_id in run_ids:
-            state = await run_v2_status(ctx.tenant, run_id) or "unknown"
-            states[state] = states.get(state, 0) + 1
+            # A run the reader cannot see (RLS) or that has no v2 state yet is not counted.
+            state = await run_v2_status(ctx.tenant, run_id)
+            if state is not None:
+                states[state] = states.get(state, 0) + 1
         kind = cast(RowKind, r["kind"])
         code = kind in ("tie_out", "client_questions")
         result = r["code_result"]

@@ -3,6 +3,7 @@ nothing with the capability off, so every live screen renders as before."""
 
 from __future__ import annotations
 
+import importlib
 import uuid
 
 import pytest
@@ -12,7 +13,7 @@ from abacus.modules.assurance.sections import registered_sections
 
 
 def test_the_group_band_rows_in_order() -> None:
-    import abacus.modules.assurance.api  # noqa: F401 -- registers at import
+    importlib.import_module("abacus.modules.assurance.api")  # registers at import
 
     group = [s for s in registered_sections() if s.band == "group"]
     assert [s.key for s in group] == [k for k, _, _ in gh.GROUP_SECTIONS]
@@ -28,7 +29,7 @@ async def test_capability_off_answers_nothing(monkeypatch: pytest.MonkeyPatch) -
 
     monkeypatch.setattr(platform, "group_audit_on", off)
     tenant = object()
-    for provider in gh._PROVIDERS.values():  # pyright: ignore[reportPrivateUsage]
+    for provider in gh._PROVIDERS.values():  # pyright: ignore[reportPrivateUsage] -- the private helper under test
         assert await provider(tenant, uuid.uuid4()) is None  # type: ignore[arg-type] -- unused
-    assert await gh.group_tags(tenant, [uuid.uuid4()]) == {}  # type: ignore[arg-type]
-    assert await gh.component_auditor_tags(tenant, [uuid.uuid4()]) == {}  # type: ignore[arg-type]
+    assert await gh.group_tags(tenant, [uuid.uuid4()]) == {}  # type: ignore[arg-type] -- a stand-in tenant, unused when off
+    assert await gh.component_auditor_tags(tenant, [uuid.uuid4()]) == {}  # type: ignore[arg-type] -- a stand-in tenant, unused when off

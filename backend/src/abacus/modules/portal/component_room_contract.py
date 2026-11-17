@@ -249,7 +249,7 @@ async def _upload(
         data += chunk
         if len(data) > MAX_UPLOAD_BYTES:
             raise UploadTooLarge
-    linked, version = await svc.upload(ctx, room_id, deliverable_id, filename, bytes(data))
+    linked, version = await svc.place_file(ctx, room_id, deliverable_id, filename, bytes(data))
     return RoomUploadOut(deliverable_id=linked, evidence_version_id=version)
 
 
@@ -307,4 +307,4 @@ async def component_room_ask(
     await _gate(ctx)
     from abacus.modules.assurance.api import component_room as svc
 
-    return _question(await svc.ask(ctx, room_id, body.body))
+    return _question(await svc.post_question(ctx, room_id, body.body))

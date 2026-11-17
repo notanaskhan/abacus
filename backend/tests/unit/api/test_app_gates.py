@@ -517,6 +517,10 @@ NOT_CREATING = {
     "/v1/tests/{test_id}/items/{item_id}/exception",
     "/v1/work-items/{work_item_id}/ssars/publish",
     "/v1/work-items/{work_item_id}/ssars/remind",
+    # S48 (A-09-T27, A-09-T29): undoing an instructions send and confirming a group's mappings
+    # act on existing rows, so 200.
+    "/v1/component-instruction-sends/{send_id}/undo",
+    "/v1/mapping-sets/group-confirm",
 }
 
 
@@ -631,6 +635,11 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/tests/{test_id}/runs",
         "/v1/work-items/{work_item_id}/analytics-sets",
         # G-04-T03 (console stubs): provisioning a tenant or a sandbox starts a workflow, so 202.
+        # S48 (A-08-T21, A-08-T24, A-09-T29): an analytics run, a confirmation's runs and the
+        # mapping suggestions start agent work, so 202.
+        "/v1/analytics-sets/{analytics_set_id}/runs",
+        "/v1/confirmations/{confirmation_id}/runs",
+        "/v1/mapping-sets/{mapping_set_id}/suggestions",
         "/v1/platform/tenants",
         "/v1/platform/tenants/{tenant_code}/sandbox",
     }
@@ -663,6 +672,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         # W-02-T02/T03 (SPEC-653): attaching context and a drill each insert a session item, 201.
         "/v1/workbench/sessions/{session_id}/context",
         "/v1/workbench/sessions/{session_id}/drill",
+        # S48 (A-09-T28, A-08-T22): a deliverable's follow-up and the SSARS read of the statements
+        # each insert a row, 201.
+        "/v1/component-deliverables/{deliverable_id}/follow-up",
+        "/v1/work-items/{work_item_id}/ssars/read-fs",
         # A-06-T25 (#1375): a firm's note templates come in as rows.
         "/v1/methodology/statement-note-templates:import",
         # A-07-T22 (DEC-2806): a firm's assurance checklist comes in as rows.

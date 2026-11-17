@@ -4,7 +4,7 @@
 // read is the polling fallback, every 2 s while any run is still going. A firm whose data
 // boundary is closed answers 409 `drafting_not_enabled` before any run exists: DF-04.
 
-import type { RunRowOut } from "@abacus/api-client";
+import type { RunRowOut, RunStateCountOut } from "@abacus/api-client";
 import {
   analyticsRunRowsOptions,
   startAnalyticsRunsMutation,
@@ -14,8 +14,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RunRow } from "./analytics";
 
 export const RUN_POLL_MS = 2000;
-const DONE = new Set(["completed", "succeeded", "done", "cancelled"]);
-const FAILED = new Set(["failed", "errored"]);
+type RunStateV2 = RunStateCountOut["state"];
+
+// C6 v2's ended states (ADR-169): a run that succeeded, whose proposals were decided, or that was
+// cancelled is done; `failed` is the one failure. Every other state is still going.
+const DONE: ReadonlySet<RunStateV2> = new Set<RunStateV2>([
+  "succeeded",
+  "approved",
+  "partially_approved",
+  "rejected",
+  "cancelled",
+]);
+const FAILED: ReadonlySet<RunStateV2> = new Set<RunStateV2>(["failed"]);
 
 /** The kit's state for one API row: a code row is done; an agent row while any run is open. */
 export function rowState(row: RunRowOut): RunRow["state"] {
