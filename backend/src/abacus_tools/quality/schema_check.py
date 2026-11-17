@@ -240,6 +240,9 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "platform_audit_events": "platform_audit_events_immutable",  # 0920 (G-04-T04)
     "posting_results": "posting_results_immutable",  # 0950 (C-02-T04)
     "closing_date_events": "closing_date_events_immutable",  # 0950 (C-02-T04)
+    "write_evidence": "write_evidence_immutable",  # 0951 (C-02-T05)
+    "connection_write_grants": "connection_write_grants_immutable",  # 0951 (C-02-T05)
+    "firm_write_capabilities": "firm_write_capabilities_immutable",  # 0951 (C-02-T05)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
@@ -372,6 +375,7 @@ DEFINER_FUNCTIONS = frozenset(
     | {"team_member_set_role", "team_member_remove"}
     # 0082 (F-03-T25, DEC-128): engagements keep the derived `clients.is_attest_client` current.
     | {"refresh_attest_client"}
+    | {"connection_write_grants_not_attest"}  # 0951 (C-02-T05): reads the attest flag
     # 0086 (Q-01-T19, ADR-157): the app reads controls; operators set them and provision firms.
     | {"platform_control_state", "set_platform_control", "provision_firm"}
     | {"email_template_import", "email_template_current"}  # 0092 (P-01-T05)
