@@ -19,6 +19,8 @@ const Intake = lazyScreen(async () => (await import("../../screens/CLS-03")).CLS
 const Overview = lazyScreen(async () => (await import("../../screens/CLS-02")).CloseOverview);
 const Index = lazyScreen(async () => (await import("../../screens/CLS-01")).CLS01);
 // C-01-T36: CLS-09's close plan editor, keyed by the client.
+// C-01-T40: CLS-10's flux inside the Review tab.
+const Flux = lazyScreen(async () => (await import("../../screens/CLS-10")).CLS10);
 const Plan = lazyScreen(async () => (await import("../../screens/CLS-09")).CLS09);
 
 // CLS-01 (C-01-T33): `/closes` behind `closes.engine`. The filters are the search params
@@ -155,6 +157,13 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
           />
         ) : screen === "CLS-03" ? (
           <Intake closeId={closeId} />
+        ) : screen === "CLS-10" ? (
+          <Flux
+            closeId={closeId}
+            onOpen={(target) => {
+              if (target === "CLS-06") go(closeId, "review");
+            }}
+          />
         ) : undefined}
       </Shell>
     </div>
@@ -229,7 +238,12 @@ export const closePlanRoute = createRoute({
     return (
       <div data-screen="CLS-09" className="flex min-h-0 flex-1 flex-col">
         {enabled ? (
-          <Plan clientId={clientId} onBack={() => { router.history.back(); }} />
+          <Plan
+            clientId={clientId}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
         ) : (
           <FlagOffState flag="closes.engine" label="Closes" />
         )}
