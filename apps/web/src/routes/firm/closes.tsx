@@ -17,6 +17,8 @@ const Shell = lazyScreen(async () => (await import("../../screens/CLS-02")).Clos
 const Intake = lazyScreen(async () => (await import("../../screens/CLS-03")).CLS03);
 // C-01-T37: CLS-04's Accounts body inside the shell.
 const Accounts = lazyScreen(async () => (await import("../../screens/CLS-04")).CLS04);
+// C-01-T39: CLS-06's Review body inside the shell.
+const Review = lazyScreen(async () => (await import("../../screens/CLS-06")).CLS06);
 // C-01-T38: CLS-05, an account's reconciliation, inside the shell's Accounts tab.
 const Reconciliation = lazyScreen(async () => (await import("../../screens/CLS-05")).CLS05);
 
@@ -169,6 +171,15 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
           />
         ) : screen === "CLS-03" ? (
           <Intake closeId={closeId} />
+        ) : screen === "CLS-06" ? (
+          <Review
+            closeId={closeId}
+            onOpen={(target) => {
+              if (target === "CLS-10") {
+                void navigate({ to: "/closes/$closeId/flux", params: { closeId } });
+              }
+            }}
+          />
         ) : screen === "CLS-05" ? (
           <ReconciliationBody
             closeId={closeId}

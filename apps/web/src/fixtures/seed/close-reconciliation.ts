@@ -3,7 +3,7 @@
 // Savings ••4436 with its statement still requested. Verbatim from the handoff spec: b is Run 1
 // (Sep 2) before the refund matched, "off 380.00"; c AJE-06 proposed 10:05; d reconciled and signed
 // 2:31 PM, AJE-06 recorded in QuickBooks (JE 48218, DV-2) and #2281 carried forward.
-import type { CloseRegisterOut, CloseReconciliationOut } from "@abacus/api-client";
+import type { CloseReconciliationOut } from "@abacus/api-client";
 import { closePerson, copperleafReconciliation4410 } from "./close-book";
 import { ACCOUNT_4436 } from "./close-accounts";
 import { stableId } from "./prng";
@@ -83,46 +83,5 @@ export function copperleafSavings4436(): CloseReconciliationOut {
   };
 }
 
-/** f: the August register beside the statement (the book side of page 2's lines and the two
- * outstanding checks, as the statement and the aging block carry them). */
-export function copperleafRegister4410(): CloseRegisterOut {
-  const line = (
-    ref: string,
-    date: string,
-    type: string,
-    payee: string | null,
-    memo: string,
-    amount: string,
-  ) => ({
-    line_ref: ref,
-    txn_date: date,
-    txn_type: type,
-    category: null,
-    payee,
-    memo,
-    amount,
-  });
-  return {
-    account_external_id: "35",
-    next_cursor: null,
-    items: [
-      line("dep-0824", "2026-08-24", "Deposit", null, "SQUARE INC TRANSFER", "2427.05"),
-      line("dep-0825", "2026-08-25", "Deposit", null, "SQUARE INC TRANSFER", "7637.03"),
-      line(
-        "ach-0825",
-        "2026-08-25",
-        "Bill Payment",
-        "Rocky Ridge Dairy Co.",
-        "ROCKY RIDGE DAIRY ACH PMT",
-        "-2860.00",
-      ),
-      line("dep-0826", "2026-08-26", "Deposit", null, "SQUARE INC TRANSFER", "2058.31"),
-      line("chk-2287", "2026-08-26", "Check", "Denver Paper Supply", "#2287", "-3615.75"),
-      line("dep-0827", "2026-08-27", "Deposit", null, "SQUARE INC TRANSFER", "2046.59"),
-      line("dep-0828", "2026-08-28", "Deposit", null, "SQUARE INC TRANSFER", "2131.10"),
-      line("chk-2290", "2026-08-28", "Check", "Mile High Window Cleaning", "#2290", "-802.33"),
-      line("dep-0831", "2026-08-31", "Deposit", null, "SQUARE INC TRANSFER", "2356.11"),
-      line("xfer-0831", "2026-08-31", "Transfer", null, "TRANSFER TO ••4428 PAYROLL", "-24600.00"),
-    ],
-  };
-}
+/** f: the August register beside the statement (the handoff's, shared with CLS-06). */
+export { copperleafRegister4410 } from "./close-review";
