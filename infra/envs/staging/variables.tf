@@ -220,3 +220,22 @@ variable "alarm_topic_arns" {
   type        = list(string)
   default     = []
 }
+
+# A-08-T38 (DEC-5404): the respondent links' and JE scoring's alarm thresholds.
+variable "confirm_code_failed_threshold" {
+  description = "Respondent code failures per 5 minutes above which RB-91 pages (two periods)."
+  type        = number
+  default     = 25
+}
+
+variable "confirm_expired_burst_threshold" {
+  description = "Expired-link views per 5 minutes above which RB-91 pages."
+  type        = number
+  default     = 100
+}
+
+variable "je_scoring_p95_ms" {
+  description = "JE scoring p95 in milliseconds above which RB-91's JE section applies."
+  type        = number
+  default     = 900000
+}

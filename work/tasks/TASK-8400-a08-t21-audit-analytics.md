@@ -2,7 +2,7 @@
 id: TASK-8400
 title: "A-08-T21: Audit analytics service"
 spec: SPEC-657
-acceptance_criteria: [AC-5.1, AC-5.2, AC-5.3, AC-5.4, AC-5.5, AC-5.6]
+acceptance_criteria: [AC-5]
 risk_zone: amber
 status: in-review
 branch: a08-t21-audit-analytics

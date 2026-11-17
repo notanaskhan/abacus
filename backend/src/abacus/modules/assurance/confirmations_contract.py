@@ -30,6 +30,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.config import settings
 from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.logging import get_logger
 from abacus.kernel.safe_xlsx import XLSX
 from abacus.modules.assurance import confirmations_fixtures as fx
 from abacus.modules.assurance.confirmations_contract_models import (
@@ -106,6 +107,7 @@ class ConfirmationIdOut(BaseModel):
 router = AbacusRouter(prefix="/v1", tags=["confirmations"])
 _WI = "/work-items/{work_item_id}/confirmations"
 _C = "/confirmations/{confirmation_id}"
+_log = get_logger(__name__)
 _T = "/confirm/{token}"
 
 
@@ -456,6 +458,8 @@ async def _resolved_view(token: str) -> RespondentViewOut:
         return _fixture_view(token)
     found = await resolve_link(token)
     if found is None or found.purpose != LINK_PURPOSE:
+        # A-08-T38 (DEC-5404): the expired-view burst alarm counts these (no token, no address).
+        _log.info("confirm.expired_view")
         return fx.EXPIRED
     from abacus.modules.assurance import (
         confirmations_service,
@@ -496,6 +500,9 @@ async def verify_code(token: Token, body: CodeVerifyIn, response: Response) -> V
         await _pad(started)
         return VerifiedOut(verified=ok)
     verified = await verify_link_code(token, body.code)
+    if verified is None:
+        # A-08-T38 (DEC-5404): the OTP failure spike alarm counts these (no token, no code).
+        _log.info("confirm.code_failed")
     if verified is not None:
         response.set_cookie(
             LINK_COOKIE_NAME,

@@ -2,7 +2,7 @@
 id: TASK-8401
 title: "A-08-T22: SSARS workspace service"
 spec: SPEC-657
-acceptance_criteria: [AC-8.1, AC-8.2, AC-8.3, AC-8.4, AC-8.5, AC-8.6]
+acceptance_criteria: [AC-8]
 risk_zone: amber
 status: in-review
 branch: a08-t22-ssars-workspace

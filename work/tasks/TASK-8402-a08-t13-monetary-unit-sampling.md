@@ -2,7 +2,7 @@
 id: TASK-8402
 title: "A-08-T13: Monetary-unit sampling as a new frozen sampler version"
 spec: SPEC-657
-acceptance_criteria: [AC-4.1]
+acceptance_criteria: [AC-4]
 risk_zone: amber
 status: in-review
 branch: a08-t13-monetary-unit-sampling
