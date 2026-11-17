@@ -5229,10 +5229,17 @@
             "type": "string"
           },
           "change_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Change Pct",
-            "type": "string"
+            "title": "Change Pct"
           },
           "cy": {
             "cls": "confidential",
@@ -5447,6 +5454,18 @@
             "title": "Engine Version",
             "type": "string"
           },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Failure Code"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -5474,6 +5493,12 @@
             },
             "title": "Lines",
             "type": "array"
+          },
+          "review_hash": {
+            "cls": "internal",
+            "default": "",
+            "title": "Review Hash",
+            "type": "string"
           },
           "stage": {
             "cls": "internal",
@@ -47975,7 +48000,6 @@
               "format": "uuid",
               "type": "string"
             },
-            "minItems": 1,
             "title": "Citation Ids",
             "type": "array"
           },
@@ -84176,6 +84200,23 @@
             "cls": "internal",
             "title": "Confidence"
           },
+          "expected_misstatement": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expected Misstatement"
+          },
           "expected_rate": {
             "anyOf": [
               {
@@ -84210,6 +84251,23 @@
             ],
             "cls": "internal",
             "title": "Rmm"
+          },
+          "tolerable_misstatement": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Tolerable Misstatement"
           },
           "tolerable_rate": {
             "anyOf": [
@@ -84262,6 +84320,19 @@
             ],
             "cls": "internal",
             "title": "Confidence"
+          },
+          "expected_misstatement": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Expected Misstatement"
           },
           "expected_rate": {
             "anyOf": [
@@ -84342,6 +84413,19 @@
             "title": "Sampler Version",
             "type": "string"
           },
+          "sampling_interval": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sampling Interval"
+          },
           "seed": {
             "cls": "internal",
             "maximum": 16777215.0,
@@ -84376,6 +84460,19 @@
             ],
             "cls": "internal",
             "title": "Statistical Crosscheck Size"
+          },
+          "tolerable_misstatement": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Tolerable Misstatement"
           },
           "tolerable_rate": {
             "anyOf": [
@@ -95266,7 +95363,9 @@
             "enum": [
               "organizer",
               "team_questions",
-              "inquiry"
+              "inquiry",
+              "analytics_question",
+              "ssars_inquiry"
             ],
             "title": "Kind",
             "type": "string"
@@ -95952,6 +96051,21 @@
           "marked"
         ],
         "title": "ReadAllOut",
+        "type": "object"
+      },
+      "ReadFsOut": {
+        "properties": {
+          "workpaper_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Workpaper Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workpaper_id"
+        ],
+        "title": "ReadFsOut",
         "type": "object"
       },
       "ReaderRunAcceptedOut": {
@@ -109153,7 +109267,9 @@
               "threshold",
               "risk_score",
               "unpredictable",
-              "named"
+              "named",
+              "certainty",
+              "pps"
             ],
             "title": "Selection Reason",
             "type": "string"
@@ -135179,7 +135295,8 @@
             "enum": [
               "attribute_nonstatistical",
               "attribute_statistical",
-              "threshold_random_stratified"
+              "threshold_random_stratified",
+              "monetary_unit"
             ],
             "title": "Method",
             "type": "string"
@@ -339875,6 +339992,134 @@
           "audit-analytics"
         ],
         "x-abacus-action": "ssars.inquiry_manage"
+      }
+    },
+    "/v1/work-items/{work_item_id}/ssars/read-fs": {
+      "post": {
+        "description": "A-08-T22 (AUD-26c): compilation's \"Read the FS\" procedure as its working paper (L1).",
+        "operationId": "open_read_fs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadFsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Open Read Fs",
+        "tags": [
+          "audit-analytics"
+        ],
+        "x-abacus-action": "workpaper.edit"
       }
     },
     "/v1/work-items/{work_item_id}/ssars/remind": {

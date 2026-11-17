@@ -418,6 +418,53 @@ async def create_sample_set(ctx: AuthContext, work_item_id: UUID, body: SampleSe
 # --- starting a draw ----------------------------------------------------------------------------
 
 
+async def _mus(
+    tenant: TenantContext, body: VersionIn, amounts: Sequence[Decimal | None]
+) -> tuple[_Size, dict[str, object]]:
+    """A-08-T13 (DEC-5402): the interval from the firm's factors; the expected size is what the
+    interval implies over the monetary population (the draw records the actual count)."""
+    from abacus.kernel._flags import SAMPLING_MONETARY_UNIT
+    from abacus.kernel.flags import flag_enabled
+    from abacus.modules.methodology.api import mus_factors
+    from abacus.modules.sampling.compute import mus
+
+    if not await flag_enabled(tenant, SAMPLING_MONETARY_UNIT):
+        raise NotFound(SAMPLING_MONETARY_UNIT.name)
+    p = body.parameters
+    if body.strata or body.override is not None:
+        raise ParametersInvalid(facts={"field": "strata"})
+    if p.tolerable_misstatement is None or p.confidence is None:
+        raise ParametersInvalid(facts={"field": "parameters"})
+    expected = p.expected_misstatement if p.expected_misstatement is not None else Decimal(0)
+    try:
+        found = await mus_factors(
+            tenant.tenant_id, confidence=p.confidence, as_of=await today(tenant)
+        )
+    except LookupError:
+        raise SizeTableMissing from None
+    factors = mus.Factors(found.confidence_pct, found.reliability, found.expansion)
+    try:
+        j = mus.interval(p.tolerable_misstatement, expected, factors)
+    except mus.MusInvalid:
+        raise ParametersInvalid(facts={"field": "expected_misstatement"}) from None
+    total = sum((a for a in amounts if a is not None and a > 0), Decimal(0))
+    policy = {
+        "standard_key": found.policy.standard_key,
+        "name": found.policy.name,
+        "version": found.policy.version,
+        "version_id": str(found.policy.version_id),
+    }
+    detail: dict[str, object] = {
+        "tolerable": str(p.tolerable_misstatement),
+        "expected": str(expected),
+        "confidence_pct": str(factors.confidence_pct),
+        "reliability": str(factors.reliability),
+        "expansion": str(factors.expansion),
+        "interval": str(j),
+    }
+    return _Size(mus.expected_size(total, j), None, policy), detail
+
+
 async def _size(
     tenant: TenantContext, body: VersionIn, amounts: Sequence[Decimal | None]
 ) -> _Size:
@@ -498,23 +545,51 @@ async def draw(
     if not ties:
         raise CompletenessTieRequired
     amounts = [r["amount"] if isinstance(r["amount"], Decimal) else None for r in records]
-    size = await _size(ctx.tenant, body, amounts)
+    monetary = body.method == "monetary_unit"
+    mus_detail: dict[str, object] | None = None
+    if monetary:
+        size, mus_detail = await _mus(ctx.tenant, body, amounts)
+    else:
+        size = await _size(ctx.tenant, body, amounts)
     override = body.override
     if override is not None and override.size >= size.computed:
         raise OverrideNotBelow(facts={"computed_size": size.computed})
     final = size.computed if override is None else override.size
-    if body.method != "threshold_random_stratified" and final > len(records):
+    if body.method != "threshold_random_stratified" and not monetary and final > len(records):
         raise SizeExceedsPopulation(facts={"records": len(records)})
     seed, seed_source = await _seed(ctx.tenant, scenario_seed)
     stratified = body.method == "threshold_random_stratified"
-    hashed = inputs_hash(
-        body.method, seed, str(population["sha256"]), None if stratified else final, body.strata
-    )
+    if monetary and mus_detail is not None:
+        from abacus.modules.sampling.compute import mus
+
+        hashed = mus.inputs_hash(
+            seed,
+            str(population["sha256"]),
+            Decimal(str(mus_detail["tolerable"])),
+            Decimal(str(mus_detail["expected"])),
+            mus.Factors(
+                Decimal(str(mus_detail["confidence_pct"])),
+                Decimal(str(mus_detail["reliability"])),
+                Decimal(str(mus_detail["expansion"])),
+            ),
+        )
+        engine_version = mus.VERSION
+    else:
+        hashed = inputs_hash(
+            body.method,
+            seed,
+            str(population["sha256"]),
+            None if stratified else final,
+            body.strata,
+        )
+        engine_version = CURRENT
     parameters: dict[str, object] = {
         **body.parameters.model_dump(mode="json"),
         "strata": [s.model_dump(mode="json") for s in body.strata],
         "size_policy": size.policy,
     }
+    if mus_detail is not None:
+        parameters["mus"] = mus_detail
     version_id = uuid4()
     async with uow(ctx.tenant) as tx:
         await repo.lock_set(tx.session, sample_set_id)
@@ -539,7 +614,7 @@ async def draw(
                 "final_size": final,
                 "seed": seed,
                 "seed_source": seed_source,
-                "sampler_version": CURRENT,
+                "sampler_version": engine_version,
                 "inputs_hash": hashed,
                 "created_by": ctx.user_id,
             },
@@ -840,6 +915,9 @@ async def sample_set_view(
             seed_source=chosen["seed_source"],
             sampler_version=str(chosen["sampler_version"]),
             citations=citations,
+            tolerable_misstatement=_mus_money(parameters, "tolerable"),
+            expected_misstatement=_mus_money(parameters, "expected"),
+            sampling_interval=_mus_money(parameters, "interval"),
         ),
         strata=[StratumOut.model_validate(s) for s in strata],
         items_total=len(items),
@@ -1174,3 +1252,12 @@ __all__ = (
     "section_state",
     "start_version",
 )
+
+
+def _mus_money(parameters: Mapping[str, object], key: str) -> Decimal | None:
+    """A-08-T13: a figure the monetary-unit draw recorded (`parameters.mus`)."""
+    detail = parameters.get("mus")
+    if not isinstance(detail, dict):
+        return None
+    value = cast("dict[str, object]", detail).get(key)
+    return None if value is None else Decimal(str(value))

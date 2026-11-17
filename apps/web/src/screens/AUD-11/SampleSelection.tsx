@@ -443,6 +443,15 @@ function Body({
         )}
         {p.expected_rate != null && <Kv label={COPY.method.expected}>{pct(p.expected_rate)}</Kv>}
         {p.confidence != null && <Kv label={COPY.method.confidence}>{pct(p.confidence)}</Kv>}
+        {p.tolerable_misstatement != null && (
+          <Kv label={COPY.method.tolerableMisstatement}>{prose(p.tolerable_misstatement)}</Kv>
+        )}
+        {p.expected_misstatement != null && (
+          <Kv label={COPY.method.expectedMisstatement}>{prose(p.expected_misstatement)}</Kv>
+        )}
+        {p.sampling_interval != null && (
+          <Kv label={COPY.method.interval}>{prose(p.sampling_interval)}</Kv>
+        )}
         <Kv label={COPY.method.size}>
           {p.statistical_crosscheck_size != null &&
             p.confidence != null &&

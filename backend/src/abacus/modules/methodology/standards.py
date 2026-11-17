@@ -80,6 +80,7 @@ from abacus.modules.methodology.standards_contract import (
     ExamplesProvider,
     FirmStandardKind,
     JeRiskCriteriaPayload,
+    MusConfidenceFactorsPayload,
     PolicyRef,
     RmmFor,
     RmmMatrixPayload,
@@ -94,6 +95,7 @@ from abacus.modules.methodology.standards_contract import (
     StandardPayload,
     StandardPersonOut,
     StandardPublishIn,
+    StandardRowMissing,
     StandardVersionDiffOut,
     StandardVersionOut,
     StandardVersionSummaryOut,
@@ -1239,6 +1241,34 @@ async def aje_classification_for(
         amount_usd=amount_usd,
         attest_client=attest_client,
     )
+
+
+@dataclass(frozen=True)
+class MusFactors:
+    """A-08-T13 (ADR P-57, DEC-5402): the firm's MUS factors at one confidence."""
+
+    policy: PolicyRef
+    confidence_pct: Decimal
+    reliability: Decimal  # zero errors
+    expansion: Decimal  # the one-error row minus the zero-error row; 0 without one
+
+
+async def mus_factors(tenant_id: UUID, *, confidence: Decimal, as_of: date) -> MusFactors:
+    """The `mus_confidence_factors` version in effect on `as_of`, at `confidence` (a fraction:
+    0.95 is 95%). No version in effect: `LookupError`; no zero-error row at the confidence:
+    `standard_row_missing`."""
+    policy = await current_version_of_kind(tenant_id, "mus_confidence_factors", as_of)
+    if policy is None:
+        raise LookupError("mus_confidence_factors")
+    payload = MusConfidenceFactorsPayload.model_validate(
+        await policy_payload(tenant_id, policy, "mus_confidence_factors")
+    )
+    pct = confidence * _HUNDRED
+    rows = {r.errors: r.factor for r in payload.rows if r.confidence_pct == pct}
+    if 0 not in rows:
+        raise StandardRowMissing(facts={"confidence_pct": str(pct)})
+    expansion = rows[1] - rows[0] if 1 in rows else Decimal(0)
+    return MusFactors(policy, pct, rows[0], max(expansion, Decimal(0)))
 
 
 async def attribute_sample_size(
