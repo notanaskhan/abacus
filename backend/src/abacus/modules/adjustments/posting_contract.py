@@ -77,7 +77,7 @@ def _cfg(example: dict[str, object] | None = None) -> ConfigDict:
 # --- CLS-07 list and detail ------------------------------------------------------------------
 
 
-class TallyOut(BaseModel):
+class PostingTallyOut(BaseModel):
     """One tile of the CLS-07 tally strip: a count and code's sum."""
 
     model_config = _cfg({"count": 4, "amount": "20020.00"})
@@ -86,28 +86,28 @@ class TallyOut(BaseModel):
     amount: Money
 
 
-class TalliesOut(BaseModel):
+class PostingTalliesOut(BaseModel):
     """CLS-07a: PROPOSED 5 · $34,920.00, WITHIN 4 · $20,020.00, REVIEW 1 · $14,900.00, APPROVED
     0 of 5, POSTED Pending."""
 
     model_config = _cfg()
 
-    proposed: Annotated[TallyOut, Internal]
-    within_threshold: Annotated[TallyOut, Internal]
-    review_required: Annotated[TallyOut, Internal]
+    proposed: Annotated[PostingTallyOut, Internal]
+    within_threshold: Annotated[PostingTallyOut, Internal]
+    review_required: Annotated[PostingTallyOut, Internal]
     approved: Annotated[int, Field(ge=0), Internal]
     of: Annotated[int, Field(ge=0), Internal]
     posted_batch_code: Annotated[str | None, Internal] = None
 
 
-class ClassLimitOut(BaseModel):
+class PostingClassLimitOut(BaseModel):
     model_config = _cfg({"account_class": "payroll_accruals", "limit": "15000.00"})
 
     account_class: Annotated[str, Field(max_length=60), Internal]
     limit: Money
 
 
-class CloseEntryRowOut(BaseModel):
+class PostingCloseEntryRowOut(BaseModel):
     """A CLS-07 row: AJE-05 · Review required · > $10,000 other accruals."""
 
     model_config = _cfg(
@@ -131,7 +131,7 @@ class CloseEntryRowOut(BaseModel):
     description: Annotated[str | None, Field(max_length=500), Confidential] = None
     amount: Money
     status: Annotated[EntryStatus, Internal]
-    class_limit: Annotated[ClassLimitOut | None, Internal] = None
+    class_limit: Annotated[PostingClassLimitOut | None, Internal] = None
     approval_label: Annotated[str | None, Field(max_length=200), Confidential] = None
     external_txn_ref: Annotated[str | None, Field(max_length=64), Internal] = None
     reverses_on: Annotated[date | None, Internal] = None
@@ -139,7 +139,7 @@ class CloseEntryRowOut(BaseModel):
     allowed_actions: Annotated[list[EntryAction], Internal] = []
 
 
-class ApproverContextOut(BaseModel):
+class PostingApproverContextOut(BaseModel):
     """The footer: "Approving as Raj Malhotra · CAS Senior · may approve within-threshold
     batches under BH AJE thresholds v2"."""
 
@@ -153,13 +153,13 @@ class ApproverContextOut(BaseModel):
     may_batch_within_threshold: Annotated[bool, Internal]
 
 
-class CloseEntriesOut(BaseModel):
+class PostingCloseEntriesOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[CloseEntryRowOut], Internal]
+    items: Annotated[list[PostingCloseEntryRowOut], Internal]
     total: Annotated[int, Field(ge=0), Internal]
-    tallies: Annotated[TalliesOut, Internal]
-    approver: Annotated[ApproverContextOut, Internal]
+    tallies: Annotated[PostingTalliesOut, Internal]
+    approver: Annotated[PostingApproverContextOut, Internal]
     posting_enabled: Annotated[bool, Internal]
     is_attest_client: Annotated[bool, Internal]
 
@@ -167,13 +167,13 @@ class CloseEntriesOut(BaseModel):
 # --- decisions ---------------------------------------------------------------------------------
 
 
-class ApproveIn(BaseModel):
+class PostingApproveIn(BaseModel):
     model_config = _cfg({"seen_version": 1})
 
     seen_version: Annotated[int, Field(ge=1), Internal]
 
 
-class DecisionOut(BaseModel):
+class PostingDecisionOut(BaseModel):
     """A written decision with its 10-second Undo window (DEC-24)."""
 
     model_config = _cfg()
@@ -185,20 +185,20 @@ class DecisionOut(BaseModel):
     undo_until: Annotated[datetime | None, Internal] = None
 
 
-class RequestApprovalIn(BaseModel):
+class PostingRequestApprovalIn(BaseModel):
     model_config = _cfg()
 
     user_id: Annotated[UUID, Internal]
 
 
-class ReasonIn(BaseModel):
+class PostingReasonIn(BaseModel):
     model_config = _cfg({"reason_code": "duplicate", "note": "Booked by the client on Aug 30."})
 
     reason_code: Annotated[str, Field(pattern=r"^[a-z][a-z_]{1,59}$"), Internal]
     note: Annotated[str | None, Field(max_length=2000), Confidential] = None
 
 
-class RecordExternalIn(BaseModel):
+class PostingRecordExternalIn(BaseModel):
     """Recorded in ledger (export path) or Recorded by <client> (attest): evidence or a sync
     match, at least one."""
 
@@ -211,13 +211,13 @@ class RecordExternalIn(BaseModel):
 # --- posting batches ---------------------------------------------------------------------------
 
 
-class EntryIdsIn(BaseModel):
+class PostingEntryIdsIn(BaseModel):
     model_config = _cfg()
 
     entry_ids: Annotated[list[UUID], Field(min_length=1, max_length=500), Internal]
 
 
-class PreflightResultOut(BaseModel):
+class PostingPreflightResultOut(BaseModel):
     model_config = _cfg()
 
     entry_id: Annotated[UUID, Internal]
@@ -227,7 +227,7 @@ class PreflightResultOut(BaseModel):
     account_ref: Annotated[str | None, Field(max_length=64), Internal] = None
 
 
-class DryRunOut(BaseModel):
+class PostingDryRunOut(BaseModel):
     """CLS-07c2: "Post 6 entries ($35,300.00) to QuickBooks Online · Copperleaf Coffee
     Roasters? The closing date will be set to Aug 31, 2026." No write happens."""
 
@@ -247,10 +247,10 @@ class DryRunOut(BaseModel):
     ledger_label: Annotated[str, Field(max_length=60), Internal]
     client_entity_name: Annotated[str, Field(max_length=200), Confidential]
     closing_date_target: Annotated[date | None, Internal] = None
-    results: Annotated[list[PreflightResultOut], Internal]
+    results: Annotated[list[PostingPreflightResultOut], Internal]
 
 
-class PostBatchIn(BaseModel):
+class PostingPostBatchIn(BaseModel):
     model_config = _cfg()
 
     entry_ids: Annotated[list[UUID], Field(min_length=1, max_length=500), Internal]
@@ -258,7 +258,7 @@ class PostBatchIn(BaseModel):
     set_closing_date: Annotated[bool, Internal] = True
 
 
-class BatchEntryOut(BaseModel):
+class PostingBatchEntryOut(BaseModel):
     """A batch drawer row: AJE-01 · Posted · QBO 48213."""
 
     model_config = _cfg()
@@ -306,18 +306,18 @@ class PostingBatchOut(BaseModel):
     failure_count: Annotated[int, Field(ge=0), Internal] = 0
     resolved_failure_count: Annotated[int, Field(ge=0), Internal] = 0
     undo_until: Annotated[datetime | None, Internal] = None
-    entries: Annotated[list[BatchEntryOut], Internal] = []
+    entries: Annotated[list[PostingBatchEntryOut], Internal] = []
     version: Annotated[int, Field(ge=1), Internal]
 
 
-class RedateIn(BaseModel):
+class PostingRedateIn(BaseModel):
     model_config = _cfg({"new_date": "2026-09-01", "reason": "Closing date stays Aug 31."})
 
     new_date: Annotated[date, Internal]
     reason: Annotated[str, Field(min_length=1, max_length=500), Confidential]
 
 
-class ConflictOut(BaseModel):
+class PostingConflictOut(BaseModel):
     """CLS-11e: "AJE dated Aug 31 cannot post — the QuickBooks closing date is Aug 31, 2026"."""
 
     model_config = _cfg()
@@ -352,10 +352,10 @@ async def _human(ctx: AuthContext, action: str) -> None:
 @posting_router.get(
     f"{_WI}/proposed-entries:close",
     action="proposed_entry.read",
-    response_model=CloseEntriesOut,
+    response_model=PostingCloseEntriesOut,
     errors=(501,),
 )
-async def close_entries_route(work_item_id: UUID, ctx: Ctx) -> CloseEntriesOut:
+async def close_entries_route(work_item_id: UUID, ctx: Ctx) -> PostingCloseEntriesOut:
     """CLS-07 list with tallies, class limits and the approver's context (C-02-T12)."""
     await _posting_on(ctx)
     raise NotImplementedYet
@@ -364,10 +364,12 @@ async def close_entries_route(work_item_id: UUID, ctx: Ctx) -> CloseEntriesOut:
 @posting_router.post(
     "/proposed-entries/{entry_id}/approve",
     action="proposed_entry.approve",
-    response_model=DecisionOut,
+    response_model=PostingDecisionOut,
     errors=(409, 501),
 )
-async def approve_entry_route(entry_id: UUID, body: ApproveIn, ctx: Ctx) -> DecisionOut:
+async def approve_entry_route(
+    entry_id: UUID, body: PostingApproveIn, ctx: Ctx
+) -> PostingDecisionOut:
     """A held or review-required entry; 409 `over_approval_limit` or `snapshot_changed`; the
     10-second Undo (C-02-T12)."""
     await _human(ctx, "proposed_entry.approve")
@@ -377,10 +379,12 @@ async def approve_entry_route(entry_id: UUID, body: ApproveIn, ctx: Ctx) -> Deci
 @posting_router.post(
     "/proposed-entries/{entry_id}/request-approval",
     action="proposed_entry.request_approval",
-    response_model=DecisionOut,
+    response_model=PostingDecisionOut,
     errors=(409, 501),
 )
-async def request_approval_route(entry_id: UUID, body: RequestApprovalIn, ctx: Ctx) -> DecisionOut:
+async def request_approval_route(
+    entry_id: UUID, body: PostingRequestApprovalIn, ctx: Ctx
+) -> PostingDecisionOut:
     """HOME-02 gate `proposed_entry_approval` and the bell `entry_approval_requested`."""
     await _human(ctx, "proposed_entry.request_approval")
     raise NotImplementedYet
@@ -389,10 +393,10 @@ async def request_approval_route(entry_id: UUID, body: RequestApprovalIn, ctx: C
 @posting_router.post(
     "/proposed-entry-decisions/{decision_id}/undo",
     action="proposed_entry.undo_approval",
-    response_model=DecisionOut,
+    response_model=PostingDecisionOut,
     errors=(409, 501),
 )
-async def undo_approval_route(decision_id: UUID, ctx: Ctx) -> DecisionOut:
+async def undo_approval_route(decision_id: UUID, ctx: Ctx) -> PostingDecisionOut:
     """`approval_undone`, inside 10 seconds and before any effect started."""
     await _human(ctx, "proposed_entry.undo_approval")
     raise NotImplementedYet
@@ -401,10 +405,12 @@ async def undo_approval_route(decision_id: UUID, ctx: Ctx) -> DecisionOut:
 @posting_router.post(
     "/proposed-entries/{entry_id}/withdraw-approval",
     action="proposed_entry.withdraw_approval",
-    response_model=DecisionOut,
+    response_model=PostingDecisionOut,
     errors=(409, 501),
 )
-async def withdraw_approval_route(entry_id: UUID, body: ReasonIn, ctx: Ctx) -> DecisionOut:
+async def withdraw_approval_route(
+    entry_id: UUID, body: PostingReasonIn, ctx: Ctx
+) -> PostingDecisionOut:
     """`approval_withdrawn` on an approved, unposted entry; it returns to its threshold result."""
     await _human(ctx, "proposed_entry.withdraw_approval")
     raise NotImplementedYet
@@ -413,10 +419,12 @@ async def withdraw_approval_route(entry_id: UUID, body: ReasonIn, ctx: Ctx) -> D
 @posting_router.post(
     "/proposed-entries/{entry_id}/reject-close",
     action="proposed_entry.reject_close",
-    response_model=DecisionOut,
+    response_model=PostingDecisionOut,
     errors=(409, 501),
 )
-async def reject_close_entry_route(entry_id: UUID, body: ReasonIn, ctx: Ctx) -> DecisionOut:
+async def reject_close_entry_route(
+    entry_id: UUID, body: PostingReasonIn, ctx: Ctx
+) -> PostingDecisionOut:
     """Rejected with a reason, and a CLS-06 issue on the close (DF-23)."""
     await _human(ctx, "proposed_entry.reject_close")
     raise NotImplementedYet
@@ -425,10 +433,12 @@ async def reject_close_entry_route(entry_id: UUID, body: ReasonIn, ctx: Ctx) -> 
 @posting_router.post(
     "/proposed-entries/{entry_id}/record-external",
     action="proposed_entry.record_external",
-    response_model=DecisionOut,
+    response_model=PostingDecisionOut,
     errors=(409, 501),
 )
-async def record_external_route(entry_id: UUID, body: RecordExternalIn, ctx: Ctx) -> DecisionOut:
+async def record_external_route(
+    entry_id: UUID, body: PostingRecordExternalIn, ctx: Ctx
+) -> PostingDecisionOut:
     """Recorded in ledger / Recorded by <client> (C-02-T22)."""
     await _human(ctx, "proposed_entry.record_external")
     raise NotImplementedYet
@@ -449,10 +459,10 @@ async def entries_export_route(work_item_id: UUID, ctx: Ctx) -> bytes:
 @posting_router.post(
     f"{_WI}/posting-batches:dry-run",
     action="posting_batch.dry_run",
-    response_model=DryRunOut,
+    response_model=PostingDryRunOut,
     errors=(409, 501),
 )
-async def dry_run_route(work_item_id: UUID, body: EntryIdsIn, ctx: Ctx) -> DryRunOut:
+async def dry_run_route(work_item_id: UUID, body: PostingEntryIdsIn, ctx: Ctx) -> PostingDryRunOut:
     """Preflight only; no write (C-02-T18)."""
     await _human(ctx, "posting_batch.dry_run")
     raise NotImplementedYet
@@ -466,7 +476,7 @@ async def dry_run_route(work_item_id: UUID, body: EntryIdsIn, ctx: Ctx) -> DryRu
     errors=(409, 501),
 )
 async def post_batch_route(
-    work_item_id: UUID, body: PostBatchIn, ctx: Ctx, idempotency_key: IdempotencyKey
+    work_item_id: UUID, body: PostingPostBatchIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> PostingBatchOut:
     """The batch, its approval grant (`not_before = +10 s`) and `PostingBatchWorkflow`; fresh
     MFA; refused for an attest client (C-02-T18)."""
@@ -504,10 +514,10 @@ async def retry_entry_route(
 @posting_router.post(
     "/closing-date-conflicts/{conflict_id}/ask-client",
     action="closing_date_conflict.resolve",
-    response_model=ConflictOut,
+    response_model=PostingConflictOut,
     errors=(409, 501),
 )
-async def ask_client_route(conflict_id: UUID, ctx: Ctx) -> ConflictOut:
+async def ask_client_route(conflict_id: UUID, ctx: Ctx) -> PostingConflictOut:
     """The firm's "Lift closing date request" template row, sent by a person (C-02-T19)."""
     await _human(ctx, "closing_date_conflict.resolve")
     raise NotImplementedYet
@@ -516,10 +526,10 @@ async def ask_client_route(conflict_id: UUID, ctx: Ctx) -> ConflictOut:
 @posting_router.post(
     "/closing-date-conflicts/{conflict_id}/redate",
     action="closing_date_conflict.resolve",
-    response_model=ConflictOut,
+    response_model=PostingConflictOut,
     errors=(409, 501),
 )
-async def redate_route(conflict_id: UUID, body: RedateIn, ctx: Ctx) -> ConflictOut:
+async def redate_route(conflict_id: UUID, body: PostingRedateIn, ctx: Ctx) -> PostingConflictOut:
     """Withdraws the approval and re-dates; the entry is re-approved before it posts."""
     await _human(ctx, "closing_date_conflict.resolve")
     raise NotImplementedYet

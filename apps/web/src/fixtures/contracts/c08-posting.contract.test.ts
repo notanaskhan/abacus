@@ -3,7 +3,7 @@
 // and checked against the OpenAPI document at run time. Copperleaf, August 2026: AJE-01..05 with
 // BH AJE thresholds v2, then batch 2026-08-A (QBO 48213-48218). The pytest half is
 // backend/tests/contracts/c08_adjustments/test_c02t08_posting_consumer.py.
-import type { CloseEntriesOut, CloseEntryRowOut, PostingBatchOut } from "@abacus/api-client";
+import type { PostingCloseEntriesOut, PostingCloseEntryRowOut, PostingBatchOut } from "@abacus/api-client";
 import { STATUS_REGISTRY } from "@abacus/ui";
 import { describe, expect, it } from "vitest";
 import { validateResponse } from "../schema-check";
@@ -15,7 +15,7 @@ type Entry = { label: string };
 const ENTRY = STATUS_REGISTRY.proposed_entry as Record<string, Entry>;
 const BATCH = STATUS_REGISTRY.posting_batch as Record<string, Entry>;
 
-const ROWS: readonly [string, string, string, string, CloseEntryRowOut["status"]][] = [
+const ROWS: readonly [string, string, string, string, PostingCloseEntryRowOut["status"]][] = [
   ["AJE-01", "11860.00", "payroll_accruals", "15000.00", "within_threshold"],
   ["AJE-02", "700.00", "prepaids", "10000.00", "within_threshold"],
   ["AJE-03", "2140.00", "depreciation", "10000.00", "within_threshold"],
@@ -27,8 +27,8 @@ function cents(amount: string): number {
   return Math.round(Number(amount) * 100);
 }
 
-function cls07a(): CloseEntriesOut {
-  const items: CloseEntryRowOut[] = ROWS.map(([ref, amount, cls, limit, status], i) => ({
+function cls07a(): PostingCloseEntriesOut {
+  const items: PostingCloseEntryRowOut[] = ROWS.map(([ref, amount, cls, limit, status], i) => ({
     entry_id: id(i + 1),
     ref,
     amount,
@@ -37,7 +37,7 @@ function cls07a(): CloseEntriesOut {
     version: 1,
     allowed_actions: [],
   }));
-  const sum = (rows: CloseEntryRowOut[]): string =>
+  const sum = (rows: PostingCloseEntryRowOut[]): string =>
     (rows.reduce((t, r) => t + cents(r.amount), 0) / 100).toFixed(2);
   const within = items.filter((r) => r.status === "within_threshold");
   const review = items.filter((r) => r.status === "review_required");
