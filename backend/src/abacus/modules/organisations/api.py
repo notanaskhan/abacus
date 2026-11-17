@@ -111,6 +111,7 @@ from abacus.modules.organisations.plan_numbers import (
     entity_plan_number,
     set_entity_plan_number,
 )
+from abacus.modules.organisations.relationships_contract import relationships_router
 
 # P-06-T11: correlated name columns for another module's list (BND-01's client and office).
 from abacus.modules.organisations.repository import (
@@ -218,6 +219,7 @@ SCHEDULES = CONSENT_SCHEDULES
 
 ROUTERS: tuple[AbacusRouter, ...] = (
     clients_router,  # the clients family contract, v1 stub (P-07-T04)
+    relationships_router,  # T-06-T08: relationships v1 stub (CLI-03; dark)
     client_entities_router,
     client_contacts_router,  # contacts and portal access, v1 stub (P-07-T17)
     contacts_router,
