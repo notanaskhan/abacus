@@ -87222,6 +87222,17 @@
       "PlanVersionOut": {
         "additionalProperties": false,
         "properties": {
+          "aje_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ThresholdRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "allowed_actions": {
             "cls": "internal",
             "default": [],
@@ -87341,6 +87352,18 @@
           "tally": {
             "$ref": "#/components/schemas/PlanTallyOut",
             "cls": "internal"
+          },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Template Name"
           },
           "version": {
             "cls": "internal",

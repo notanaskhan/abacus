@@ -28,6 +28,7 @@ import {
   Drawer,
   EmptyState,
   Icon,
+  Menu,
   Picker,
   ProgressBar,
   SearchField,
@@ -231,7 +232,17 @@ export function CLS09({ clientId, clientName, initial = {}, onBack }: CLS09Props
   const now = useNow();
   const queryClient = useQueryClient();
   const path = { client_id: clientId };
-  const plan = useQuery({ ...closePlanOptions({ path }), retry: false });
+  // S48 rest (DV-d): the version stepper (⇕) reads an earlier version; null is the newest.
+  const [viewVersion, setViewVersion] = useState<number | null>(null);
+  const plan = useQuery({
+    ...closePlanOptions({
+      path,
+      ...(viewVersion === null ? {} : { query: { version: viewVersion } }),
+    }),
+    retry: false,
+  });
+  const [stepperOpen, setStepperOpen] = useState(false);
+  const versions = useQuery({ ...closePlanHistoryOptions({ path }), enabled: stepperOpen });
   const client = useQuery({ ...getClientOptions({ path }), enabled: clientName === undefined });
   const name = clientName ?? client.data?.name ?? "";
   const [tab, setTab] = useState<PlanTab>(initial.tab ?? "plan");
@@ -277,6 +288,29 @@ export function CLS09({ clientId, clientName, initial = {}, onBack }: CLS09Props
             v{data.version}
             {data.status === "draft" ? " · draft" : ""}
           </span>
+          <Menu
+            label={COPY.versionStepper}
+            align="center"
+            width={176}
+            open={stepperOpen}
+            onOpenChange={setStepperOpen}
+            trigger={
+              <span data-version-stepper="" className="flex items-center text-ink-3">
+                <Icon name="chevrons-up-down" size={14} />
+              </span>
+            }
+            sections={[
+              [...new Set((versions.data?.items ?? []).map((v) => v.version))]
+                .sort((a, b) => b - a)
+                .map((v) => ({
+                  label: `v${String(v)}`,
+                  checked: v === data.version,
+                  onSelect: () => {
+                    setViewVersion(v);
+                  },
+                })),
+            ]}
+          />
         </>
       ) : null}
     </div>
@@ -442,6 +476,11 @@ export function CLS09({ clientId, clientName, initial = {}, onBack }: CLS09Props
               <span className="text-[12.5px] text-ink-3">{meta}</span>
             </div>
             <div className="ml-auto flex items-center gap-[8px]">
+              {data.template_name != null && (
+                <Tag data-plan-template="">
+                  {fill(COPY.template, { name: data.template_name })}
+                </Tag>
+              )}
               <Button
                 variant="secondary"
                 size="sm"
@@ -493,6 +532,9 @@ export function CLS09({ clientId, clientName, initial = {}, onBack }: CLS09Props
               },
               { label: COPY.tally.manager, value: String(data.tally.manager) },
               { label: COPY.tally.senior, value: String(data.tally.senior) },
+              ...(data.aje_policy == null
+                ? []
+                : [{ label: COPY.tally.ajePolicy, value: data.aje_policy.label }]),
             ]}
           />
           <section className="m-[12px] flex min-h-0 flex-1 flex-col rounded-pane bg-card shadow-e2">

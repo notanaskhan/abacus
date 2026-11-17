@@ -934,6 +934,9 @@ const AJE_POLICY = stableId("threshold-policy-version:bh-aje-v2");
 function withThresholds(plan: PlanVersionOut): PlanVersionOut {
   return {
     ...plan,
+    // S48 rest (CLS-09 DV-a): the control bar's template tag and the AJE POLICY tally card.
+    template_name: "Café with Square/Shopify",
+    aje_policy: { policy_version_id: AJE_POLICY, label: "BH AJE thresholds v2" },
     rows: plan.rows.map((r, i) => {
       const label = THRESHOLDS[i] ?? null;
       return { ...r, threshold: label === null ? null : { label, policy_version_id: AJE_POLICY } };

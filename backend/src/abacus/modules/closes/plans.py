@@ -229,6 +229,10 @@ async def _version_out(
     )
     out_rows = [_row_out(r, previous) for r in rows]
     manager = sum(r.review_level == "manager_approval" for r in out_rows)
+    template_name = await session.scalar(_TEMPLATE_NAME, {"p": plan_id})
+    policies = {
+        r.threshold.policy_version_id: r.threshold for r in out_rows if r.threshold is not None
+    }
     allowed: list[CloseAction] = []
     if v.status == "draft":
         allowed.append("close_plan.edit")
@@ -261,7 +265,30 @@ async def _version_out(
         ),
         allowed_actions=allowed,
         row_version=v.row_version,
+        template_name=None if template_name is None else str(template_name),
+        aje_policy=await _aje_policy(ctx, policies),
     )
+
+
+async def _aje_policy(
+    ctx: AuthContext, policies: dict[UUID, ThresholdRefOut]
+) -> ThresholdRefOut | None:
+    """The one threshold policy the rows cite, named as K-02 names it ("BH AJE thresholds v2");
+    none when the rows cite no policy or more than one."""
+    from abacus.modules.methodology.api import threshold_policy_labels
+
+    if len(policies) != 1:
+        return None
+    version_id = next(iter(policies))
+    label = (await threshold_policy_labels(ctx.tenant, [version_id])).get(version_id)
+    return None if label is None else ThresholdRefOut(policy_version_id=version_id, label=label)
+
+
+# S48 rest (CLS-09 DV-a): the newest imported version of the plan's template, by name.
+_TEMPLATE_NAME: Final = text(
+    "SELECT t.name FROM close_plans p JOIN close_templates t ON t.key = p.template_key "
+    "WHERE p.id = :p ORDER BY t.version DESC LIMIT 1"
+)
 
 
 def _initials(name: str) -> str:

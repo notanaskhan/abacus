@@ -901,6 +901,25 @@ async def examples(ctx: AuthContext, standard_id: UUID, period: str | None) -> S
 # --- the C21 part B module API -------------------------------------------------------------------
 
 
+async def threshold_policy_labels(
+    tenant: TenantContext, version_ids: Sequence[UUID]
+) -> dict[UUID, str]:
+    """S48 rest (CLS-09 DV-a): each threshold policy version as "BH AJE thresholds v2" (its
+    policy's name and its version number); unknown ids are left out (RLS-scoped)."""
+    if not version_ids:
+        return {}
+    family = _THRESHOLD
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(family.version.id, family.version.version, family.parent.name)
+                .join(family.parent, family.parent.id == family.version.parent_id)
+                .where(family.version.id.in_(list(version_ids)))
+            )
+        ).all()
+    return {r[0]: f"{r[2]} v{r[1]}" for r in rows}
+
+
 async def current_version(tenant_id: UUID, standard_key: str, as_of: date) -> PolicyRef:
     """The version of a standard in effect on `as_of` (its latest published `effective_from` on
     or before it). None published by then, or no such standard: `LookupError`."""

@@ -172,6 +172,7 @@ from abacus.modules.methodology.standards import (
     policy_payload,
     register_standard_examples,
     rmm_matrix_for,
+    threshold_policy_labels,  # S48 rest: CLS-09's AJE POLICY card
 )
 from abacus.modules.methodology.standards import (
     draft_version as draft_standard_version,  # TASK-3401: the scenario loader's assignments
@@ -427,6 +428,7 @@ __all__ = [
     "submit_version",
     "templates_held",
     "templates_in_firm",
+    "threshold_policy_labels",
     "validate_materiality",
     "variance_exceeded",
     "verify_quote",

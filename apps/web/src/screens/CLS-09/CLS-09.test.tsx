@@ -66,6 +66,10 @@ describe("CLS-09 Close plan editor", () => {
     const publish = screen.getByRole("button", { name: "Publish v4" });
     expect((publish as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getAllByText("Difference $0.00").length).toBeGreaterThan(0);
+    // S48 rest (DV-a): the template tag and the AJE POLICY card.
+    expect(screen.getByText("Template · Café with Square/Shopify")).toBeTruthy();
+    expect(screen.getByText("BH AJE thresholds v2")).toBeTruthy();
+    expect(document.querySelector("[data-version-stepper]")).not.toBeNull();
   });
 
   it("a2: hovering a row shows its label-over-value card", async () => {

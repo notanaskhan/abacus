@@ -525,6 +525,10 @@ class PlanVersionOut(BaseModel):
     tally: Annotated[PlanTallyOut, Internal]
     allowed_actions: Annotated[list[CloseAction], Internal] = []
     row_version: Annotated[int, Field(ge=1), Internal]
+    # S48 rest (CLS-09 DV-a): the plan's template ("Template · Café with Square/Shopify") and its
+    # AJE policy ("BH AJE thresholds v2": the one threshold policy its rows cite, else null).
+    template_name: Annotated[str | None, Confidential] = None
+    aje_policy: Annotated[ThresholdRefOut | None, Internal] = None
 
 
 class PlanHistoryItemOut(BaseModel):
