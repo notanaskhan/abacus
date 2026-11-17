@@ -356,6 +356,7 @@ from abacus.modules.evidence.service import (
 from abacus.modules.evidence.signed_copies import (
     SIGNED_AUTHORIZATIONS,
     ScreenedFile,
+    file_component_upload,
     file_engine_copy,
     file_handoff_copy,
     file_respondent_copy,
@@ -739,6 +740,7 @@ __all__ = [
     "extracted_fields_of",
     "extracted_tables",
     "file_approved_copy",
+    "file_component_upload",  # A-09-T33: POR-23 uploads
     "file_copy_onto_work_item",
     "file_engine_copy",
     "file_handoff_copy",

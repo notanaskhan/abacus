@@ -1705,6 +1705,10 @@ codes:
     raised_by:
     - abacus.modules.assurance.component_auditors.InstructionsIncomplete
     summary: 'A section still Needs input: Send instructions is disabled with this reason.'
+  instructions_not_sent:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.component_room.InstructionsNotSent
   instructions_template_missing:
     status: 409
     raised_by:
@@ -2003,6 +2007,7 @@ codes:
   letter_rendering:
     status: 409
     raised_by:
+    - abacus.modules.assurance.component_room.LetterRendering
     - abacus.modules.assurance.governance_room.LetterRendering
     - abacus.modules.notices.sending.LetterRendering
     summary: 'The letter''s final PDF is still being rendered (or its render failed): try again.'

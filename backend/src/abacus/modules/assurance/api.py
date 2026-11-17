@@ -30,6 +30,7 @@ from abacus.modules.assurance import (
     related_parties_mode,
     soc1_mode,
 )
+from abacus.modules.assurance import component_room as component_room  # A-09-T33: POR-23
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBSCRIPTIONS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path

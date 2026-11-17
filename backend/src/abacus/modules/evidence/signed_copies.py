@@ -367,3 +367,68 @@ async def file_respondent_copy(
             after=Ref(evidence_item_id=item_id, fingerprint=screened.stored.fingerprint),
         )
     return version_id
+
+
+async def file_component_upload(
+    *,
+    tenant_id: UUID,
+    client_id: UUID,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    file_name: str,
+    content: bytes,
+    user_id: UUID,
+) -> tuple[UUID, UUID]:
+    """A-09-T33 (DEC-5407): a component auditor's upload from POR-23: scanned and typed before
+    anything is stored (a refused file raises `UploadRefused`), stored under Object Lock as a
+    source document of the group engagement, channel `portal`, provenance
+    `component_auditor_upload`, its creator the portal person. Returns (item id, version id)."""
+    tenant = TenantContext(tenant_id, "system", f"component-auditor:{user_id}")
+    line = await service_line_of(tenant, engagement_id) or "any"
+    keep = await retain_until_for(tenant, "client_document", line, system_now())
+    screened = await screen_and_stage(tenant_id, content, file_name, keep)
+    item_id, version_id = uuid4(), uuid4()
+    async with uow(tenant) as tx:
+        await tx.session.execute(
+            insert(EvidenceItem).values(
+                id=item_id,
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                client_id=client_id,
+                work_item_id=work_item_id,
+                scope="engagement",
+                folder_kind="source_documents",
+                title=screened.file_name,
+                created_by_kind="system",
+                created_by_id=f"component_auditor:{user_id}",
+            )
+        )
+        tx.record(
+            "evidence_item.created",
+            target=Target("evidence_item", item_id),
+            after=Ref(client_id=client_id),
+        )
+        await tx.session.execute(
+            insert(EvidenceVersion).values(
+                id=version_id,
+                tenant_id=tenant_id,
+                engagement_id=engagement_id,
+                evidence_item_id=item_id,
+                version_no=1,
+                fingerprint=screened.stored.fingerprint,
+                storage_key=screened.stored.key,
+                storage_version_id=screened.stored.version_id,
+                size_bytes=screened.stored.size,
+                media_type=screened.media_type,
+                source="component_auditor_upload",
+                method="uploaded",
+                channel="portal",
+                display_name=screened.file_name,
+            )
+        )
+        tx.record(
+            "evidence_version.created",
+            target=Target("evidence_version", version_id),
+            after=Ref(evidence_item_id=item_id, fingerprint=screened.stored.fingerprint),
+        )
+    return item_id, version_id
