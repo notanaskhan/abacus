@@ -840,6 +840,24 @@ export type AccruedIncidentFactsIn = {
 };
 
 /**
+ * AckIn
+ */
+export type AckIn = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Status
+     */
+    status: 'accepted' | 'rejected';
+};
+
+/**
  * ActivityActorOut
  */
 export type ActivityActorOut = {
@@ -5945,6 +5963,24 @@ export type AvailabilityOut = {
 };
 
 /**
+ * BackupWithholdingIn
+ */
+export type BackupWithholdingIn = {
+    /**
+     * Event
+     */
+    event: 'watch_started' | 'b_notice_received' | 'started' | 'stopped';
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
  * BadgePart
  */
 export type BadgePart = {
@@ -10828,6 +10864,24 @@ export type CloseRunsOut = {
 };
 
 /**
+ * CloseStateOut
+ */
+export type CloseStateOut = {
+    /**
+     * Close Id
+     */
+    close_id: string;
+    /**
+     * Status
+     */
+    status: 'in_review' | 'approved' | 'delivered' | 'locked';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * CloseStatementLineOut
  */
 export type CloseStatementLineOut = {
@@ -11357,6 +11411,20 @@ export type CommentPostedOut = {
  * CommentThreadStatus
  */
 export type CommentThreadStatus = 'open' | 'resolved';
+
+/**
+ * CommentaryIn
+ */
+export type CommentaryIn = {
+    /**
+     * Doc
+     */
+    doc: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+};
 
 /**
  * CommitteeMemberOut
@@ -24436,6 +24504,24 @@ export type FiledDestinationOut = {
 };
 
 /**
+ * FiledIn
+ */
+export type FiledIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Filed On
+     */
+    filed_on: string;
+    /**
+     * Iris Receipt Id
+     */
+    iris_receipt_id: string;
+};
+
+/**
  * FilingIn
  *
  * Manual EFAST2 tracking; `filed` needs the date and the acknowledgement evidence.
@@ -26892,6 +26978,20 @@ export type GenerateClosesOut = {
 };
 
 /**
+ * GenerateOut
+ */
+export type GenerateOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * GeneratedDocumentOut
  *
  * One generated document: its computed status (DF-31) and its insert-only versions.
@@ -28767,25 +28867,23 @@ export type GuidanceIn = {
 };
 
 /**
- * HandoffIn
- */
-export type HandoffIn = {
-    /**
-     * State
-     */
-    state: string;
-};
-
-/**
- * HandoffOut
+ * HandoffPublishedOut
  *
- * A-02-T33: where the connect host sends the browser on; the host only, never a tenant.
+ * "Handed off to 2026 Form 1120-S · 3 tax issues created".
  */
-export type HandoffOut = {
+export type HandoffPublishedOut = {
     /**
-     * Origin Host
+     * Handoff Id
      */
-    origin_host: string;
+    handoff_id: string;
+    /**
+     * Tax Issues Created
+     */
+    tax_issues_created: number;
+    /**
+     * Tb Version
+     */
+    tb_version: string;
 };
 
 /**
@@ -30379,6 +30477,54 @@ export type InformationReturnThresholdsPayload = {
      * Rows
      */
     rows: Array<InformationReturnThreshold>;
+};
+
+/**
+ * InformationReturnsOut
+ *
+ * CLS-13a: 12 Vendors paid · 6 Reportable · 2 Requested · 1 TIN mismatch · 0 Filed.
+ */
+export type InformationReturnsOut = {
+    /**
+     * Batch Status
+     */
+    batch_status: 'not_started' | 'approved' | 'exported' | 'filed_iris' | 'accepted' | 'rejected';
+    /**
+     * Due Rule
+     */
+    due_rule: string;
+    /**
+     * Filed
+     */
+    filed: number;
+    /**
+     * Items
+     */
+    items: Array<VendorRowOut>;
+    /**
+     * Reportable
+     */
+    reportable: number;
+    /**
+     * Requested
+     */
+    requested: number;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Threshold Rule
+     */
+    threshold_rule: string;
+    /**
+     * Tin Mismatch
+     */
+    tin_mismatch: number;
+    /**
+     * Vendors Paid
+     */
+    vendors_paid: number;
 };
 
 /**
@@ -40021,6 +40167,101 @@ export type PackageDecideIn = {
 };
 
 /**
+ * PackageEditIn
+ */
+export type PackageEditIn = {
+    /**
+     * Cas Answer
+     */
+    cas_answer: boolean;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Sections
+     */
+    sections: Array<'balance_sheet' | 'income_statement' | 'cash_flows' | 'reconciliation_summary' | 'commentary'>;
+};
+
+/**
+ * PackageOut
+ *
+ * CLS-08a: total assets 549,195.45 = 184,983.05 + 364,212.40; net income 27,795 (July
+ * 31,455); route AR-C 70 preparation with "No assurance is provided." on every page.
+ */
+export type PackageOut = {
+    /**
+     * Balance Sheet
+     */
+    balance_sheet?: Array<AbacusModulesClosesDeliveryContractStatementLineOut>;
+    /**
+     * Cas Answer
+     */
+    cas_answer: boolean;
+    /**
+     * Client Approved At
+     */
+    client_approved_at?: string | null;
+    /**
+     * Client Approved By
+     */
+    client_approved_by?: string | null;
+    /**
+     * Close Id
+     */
+    close_id: string;
+    /**
+     * Commentary
+     */
+    commentary?: string | null;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Income Statement
+     */
+    income_statement?: Array<AbacusModulesClosesDeliveryContractStatementLineOut>;
+    /**
+     * Legend
+     */
+    legend?: string | null;
+    /**
+     * Preconditions
+     */
+    preconditions: Array<PreconditionOut>;
+    /**
+     * Released At
+     */
+    released_at?: string | null;
+    /**
+     * Released By
+     */
+    released_by?: string | null;
+    /**
+     * Route
+     */
+    route: 'ar_c_70_preparation' | 'cas_by_product' | 'standalone_letter';
+    /**
+     * Sections
+     */
+    sections: Array<'balance_sheet' | 'income_statement' | 'cash_flows' | 'reconciliation_summary' | 'commentary'>;
+    /**
+     * Status
+     */
+    status: 'drafting' | 'draft' | 'released' | 'approved_by_client';
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * PageBreakBlock
  */
 export type PageBreakBlock = {
@@ -40143,6 +40384,24 @@ export type PageOcrOut = {
      * Refused Reason
      */
     refused_reason?: 'kill_switch' | 'flag_off' | 'provider_terms' | 'boundary_basis' | 'consent_7216' | 'daily_page_cap' | 'size_limit' | 'provider_error' | null;
+};
+
+/**
+ * PageOut
+ */
+export type PageOut = {
+    /**
+     * Image Url
+     */
+    image_url: string;
+    /**
+     * Of
+     */
+    of: number;
+    /**
+     * Page No
+     */
+    page_no: number;
 };
 
 /**
@@ -43946,6 +44205,26 @@ export type PostureOut = {
 };
 
 /**
+ * PreconditionOut
+ *
+ * CLS-08c: "9 of 21 accounts reconciled" · "7 open issues" · "Entries not posted".
+ */
+export type PreconditionOut = {
+    /**
+     * Blocker
+     */
+    blocker: 'accounts_unreconciled' | 'issues_open' | 'entries_unposted';
+    /**
+     * Done
+     */
+    done?: number | null;
+    /**
+     * Of
+     */
+    of?: number | null;
+};
+
+/**
  * PreferencesIn
  */
 export type PreferencesIn = {
@@ -46416,6 +46695,16 @@ export type RecordLinkOut = {
 };
 
 /**
+ * RecordOut
+ */
+export type RecordOut = {
+    /**
+     * Record Id
+     */
+    record_id: string;
+};
+
+/**
  * RecordOutcomeOut
  */
 export type RecordOutcomeOut = {
@@ -46900,22 +47189,6 @@ export type RelatedPartyActivityIn = {
 };
 
 /**
- * ReleaseIn
- *
- * G8: "I am the engagement partner and I authorize release of this report".
- */
-export type ReleaseIn = {
-    /**
-     * Authorize
-     */
-    authorize: true;
-    /**
-     * Seen Gate Hash
-     */
-    seen_gate_hash: string;
-};
-
-/**
  * ReleaseOut
  */
 export type ReleaseOut = {
@@ -47134,6 +47407,16 @@ export type RenderTicketOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * ReopenIn
+ */
+export type ReopenIn = {
+    /**
+     * Reason
+     */
+    reason: string;
 };
 
 /**
@@ -49148,6 +49431,48 @@ export type ReturnAsFiledIn = {
 };
 
 /**
+ * ReturnBatchIn
+ */
+export type ReturnBatchIn = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Seen Versions
+     */
+    seen_versions: {
+        [key: string]: number;
+    };
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * ReturnBatchOut
+ */
+export type ReturnBatchOut = {
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Forms
+     */
+    forms: number;
+    /**
+     * Status
+     */
+    status: 'not_started' | 'approved' | 'exported' | 'filed_iris' | 'accepted' | 'rejected';
+};
+
+/**
  * ReturnFieldViewStatus
  */
 export type ReturnFieldViewStatus = 'imported' | 'edited' | 'proposed' | 'recomputed' | 'signed_off';
@@ -49247,22 +49572,6 @@ export type ReturnToClientIn = {
      * Note
      */
     note?: string | null;
-};
-
-/**
- * RevealOut
- *
- * The full IP for 10 seconds.
- */
-export type RevealOut = {
-    /**
-     * Expires At
-     */
-    expires_at: string;
-    /**
-     * Ip
-     */
-    ip: string;
 };
 
 /**
@@ -52366,6 +52675,33 @@ export type ScheduleLineOut = {
      * Period
      */
     period: string;
+};
+
+/**
+ * ScheduleOut
+ *
+ * Fixed asset register: cost 278,400.00 · accumulated depreciation 74,900.00 · 2026 book
+ * depreciation 25,680.00.
+ */
+export type ScheduleOut = {
+    /**
+     * Figures
+     */
+    figures?: {
+        [key: string]: string;
+    };
+    /**
+     * Included
+     */
+    included: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
 };
 
 /**
@@ -57269,49 +57605,6 @@ export type StatementDraftStartedOut = {
 };
 
 /**
- * StatementLineOut
- */
-export type StatementLineOut = {
-    /**
-     * Amount
-     */
-    amount: string;
-    /**
-     * Box
-     */
-    box?: [
-        number,
-        number,
-        number,
-        number
-    ] | null;
-    /**
-     * Description
-     */
-    description: string;
-    /**
-     * Excluded
-     */
-    excluded: boolean;
-    /**
-     * Exclusion Reason
-     */
-    exclusion_reason: string | null;
-    /**
-     * Page
-     */
-    page: number | null;
-    /**
-     * Position
-     */
-    position: number;
-    /**
-     * Posted On
-     */
-    posted_on: string | null;
-};
-
-/**
  * StatementNoteOut
  *
  * A note as this draft rendered it; `unresolved` names figures with no line (DEC-2389).
@@ -57374,7 +57667,7 @@ export type StatementOut = {
     /**
      * Lines
      */
-    lines: Array<StatementLineOut>;
+    lines: Array<AbacusModulesEvidenceRoutesStatementLineOut>;
     /**
      * Opening
      */
@@ -62184,6 +62477,24 @@ export type TimeZoneIo = {
 };
 
 /**
+ * TinMatchIn
+ */
+export type TinMatchIn = {
+    /**
+     * Checked On
+     */
+    checked_on: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Result
+     */
+    result: 'match' | 'mismatch' | 'not_issued' | 'invalid';
+};
+
+/**
  * TinRevealIn
  */
 export type TinRevealIn = {
@@ -64211,6 +64522,80 @@ export type VarianceThresholdsPayloadOutput = {
 };
 
 /**
+ * VendorPatchIn
+ */
+export type VendorPatchIn = {
+    /**
+     * Entity Type
+     */
+    entity_type?: 'individual' | 'single_member_llc' | 'partnership' | 'c_corporation' | 's_corporation' | 'trust_estate' | 'llc_c' | 'llc_s' | 'llc_p' | 'other' | 'unknown' | null;
+    /**
+     * Exempt Reason
+     */
+    exempt_reason?: string | null;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Is Attorney
+     */
+    is_attorney?: boolean | null;
+};
+
+/**
+ * VendorRowOut
+ *
+ * Larimer Street Properties · 1099-MISC box 1 rents · $78,400.00 · TIN ••-•••4471.
+ */
+export type VendorRowOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Box
+     */
+    box?: string | null;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Entity Type
+     */
+    entity_type: 'individual' | 'single_member_llc' | 'partnership' | 'c_corporation' | 's_corporation' | 'trust_estate' | 'llc_c' | 'llc_s' | 'llc_p' | 'other' | 'unknown';
+    /**
+     * Form
+     */
+    form?: 'nec' | 'misc' | null;
+    /**
+     * Is Attorney
+     */
+    is_attorney: boolean;
+    /**
+     * Reportability
+     */
+    reportability: 'reportable' | 'below_threshold' | 'exempt_corporation' | 'paid_by_card';
+    /**
+     * Tin Last4
+     */
+    tin_last4?: string | null;
+    /**
+     * Vendor Id
+     */
+    vendor_id: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * W9 Status
+     */
+    w9_status: 'on_file' | 'requested' | 'tin_mismatch' | 'missing';
+};
+
+/**
  * VerifiedOut
  */
 export type VerifiedOut = {
@@ -64775,6 +65160,38 @@ export type VoidIn = {
      * Reason
      */
     reason: 'wrong_document' | 'wrong_signer' | 'replaced' | 'client_request' | 'other';
+};
+
+/**
+ * W9RequestIn
+ */
+export type W9RequestIn = {
+    /**
+     * Channel
+     */
+    channel?: 'portal';
+    /**
+     * Vendor Ids
+     */
+    vendor_ids: Array<string>;
+    /**
+     * Wording Template Version Id
+     */
+    wording_template_version_id: string;
+};
+
+/**
+ * W9RequestOut
+ */
+export type W9RequestOut = {
+    /**
+     * Request Id
+     */
+    request_id: string;
+    /**
+     * Request Item Ids
+     */
+    request_item_ids: Array<string>;
 };
 
 /**
@@ -68445,6 +68862,22 @@ export type AbacusModulesAssurancePlanningContractTallyOut = {
 };
 
 /**
+ * ReleaseIn
+ *
+ * G8: "I am the engagement partner and I authorize release of this report".
+ */
+export type AbacusModulesAssuranceReleaseContractReleaseIn = {
+    /**
+     * Authorize
+     */
+    authorize: true;
+    /**
+     * Seen Gate Hash
+     */
+    seen_gate_hash: string;
+};
+
+/**
  * AdoptOut
  */
 export type AbacusModulesClosesContractAdoptOut = {
@@ -68456,6 +68889,142 @@ export type AbacusModulesClosesContractAdoptOut = {
      * Row Version
      */
     row_version: number;
+};
+
+/**
+ * HandoffIn
+ */
+export type AbacusModulesClosesDeliveryContractHandoffIn = {
+    /**
+     * Items
+     */
+    items?: Array<string>;
+    /**
+     * Schedules
+     */
+    schedules: Array<string>;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * HandoffOut
+ */
+export type AbacusModulesClosesDeliveryContractHandoffOut = {
+    /**
+     * Locked At
+     */
+    locked_at?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Schedules
+     */
+    schedules?: Array<ScheduleOut>;
+    /**
+     * Status
+     */
+    status: 'not_available' | 'ready' | 'handed_off' | 'superseded';
+    /**
+     * Superseded On Next
+     */
+    superseded_on_next?: boolean;
+    /**
+     * Target Return Id
+     */
+    target_return_id?: string | null;
+    /**
+     * Tb Version
+     */
+    tb_version?: string | null;
+    /**
+     * Version
+     */
+    version?: number;
+};
+
+/**
+ * ReleaseIn
+ */
+export type AbacusModulesClosesDeliveryContractReleaseIn = {
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * RevealIn
+ */
+export type AbacusModulesClosesDeliveryContractRevealIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * RevealOut
+ *
+ * A reveal is logged (P-03 `pii_reveals`) and returned once; never cached or logged.
+ */
+export type AbacusModulesClosesDeliveryContractRevealOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Tin
+     */
+    tin: string;
+};
+
+/**
+ * StatementLineOut
+ */
+export type AbacusModulesClosesDeliveryContractStatementLineOut = {
+    /**
+     * Account Refs
+     */
+    account_refs?: Array<string>;
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * HandoffIn
+ */
+export type AbacusModulesConnectionsRoutesHandoffIn = {
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
+ * HandoffOut
+ *
+ * A-02-T33: where the connect host sends the browser on; the host only, never a tenant.
+ */
+export type AbacusModulesConnectionsRoutesHandoffOut = {
+    /**
+     * Origin Host
+     */
+    origin_host: string;
 };
 
 /**
@@ -68653,6 +69222,49 @@ export type AbacusModulesEvidenceRoutesRejectIn = {
      * Seen Proposal
      */
     seen_proposal?: string | null;
+};
+
+/**
+ * StatementLineOut
+ */
+export type AbacusModulesEvidenceRoutesStatementLineOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Box
+     */
+    box?: [
+        number,
+        number,
+        number,
+        number
+    ] | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Excluded
+     */
+    excluded: boolean;
+    /**
+     * Exclusion Reason
+     */
+    exclusion_reason: string | null;
+    /**
+     * Page
+     */
+    page: number | null;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Posted On
+     */
+    posted_on: string | null;
 };
 
 /**
@@ -69182,6 +69794,22 @@ export type AbacusModulesSignaturesContractRevealIn = {
      * Reason
      */
     reason: string;
+};
+
+/**
+ * RevealOut
+ *
+ * The full IP for 10 seconds.
+ */
+export type AbacusModulesSignaturesContractRevealOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Ip
+     */
+    ip: string;
 };
 
 /**
@@ -78798,7 +79426,7 @@ export type AuditReleaseResponses = {
 export type AuditReleaseResponse = AuditReleaseResponses[keyof AuditReleaseResponses];
 
 export type AuditReleasePostData = {
-    body: ReleaseIn;
+    body: AbacusModulesAssuranceReleaseContractReleaseIn;
     headers: {
         /**
          * Idempotency-Key
@@ -82635,6 +83263,71 @@ export type PutElectionResponses = {
 
 export type PutElectionResponse = PutElectionResponses[keyof PutElectionResponses];
 
+export type InformationReturnsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * W9
+         */
+        w9?: 'on_file' | 'requested' | 'tin_mismatch' | 'missing' | null;
+    };
+    url: '/v1/client-entities/{client_entity_id}/information-returns';
+};
+
+export type InformationReturnsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InformationReturnsError = InformationReturnsErrors[keyof InformationReturnsErrors];
+
+export type InformationReturnsResponses = {
+    /**
+     * Successful Response
+     */
+    200: InformationReturnsOut;
+};
+
+export type InformationReturnsResponse = InformationReturnsResponses[keyof InformationReturnsResponses];
+
 export type LedgerActivityData = {
     body?: never;
     headers?: {
@@ -83225,6 +83918,70 @@ export type StageTranscriptFileResponses = {
 };
 
 export type StageTranscriptFileResponse = StageTranscriptFileResponses[keyof StageTranscriptFileResponses];
+
+export type W9RequestData = {
+    body: W9RequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id: string;
+    };
+    query?: never;
+    url: '/v1/client-entities/{client_entity_id}/w9-requests';
+};
+
+export type W9RequestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type W9RequestError = W9RequestErrors[keyof W9RequestErrors];
+
+export type W9RequestResponses = {
+    /**
+     * Successful Response
+     */
+    201: W9RequestOut;
+};
+
+export type W9RequestResponse = W9RequestResponses[keyof W9RequestResponses];
 
 export type RevealTinData = {
     body: TinRevealIn;
@@ -86131,6 +86888,542 @@ export type CloseIssuesResponses = {
 
 export type CloseIssuesResponse = CloseIssuesResponses[keyof CloseIssuesResponses];
 
+export type LockData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/lock';
+};
+
+export type LockErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LockError = LockErrors[keyof LockErrors];
+
+export type LockResponses = {
+    /**
+     * Successful Response
+     */
+    200: CloseStateOut;
+};
+
+export type LockResponse = LockResponses[keyof LockResponses];
+
+export type PackageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/package';
+};
+
+export type PackageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PackageError = PackageErrors[keyof PackageErrors];
+
+export type PackageResponses = {
+    /**
+     * Successful Response
+     */
+    200: PackageOut;
+};
+
+export type PackageResponse = PackageResponses[keyof PackageResponses];
+
+export type PackageEditData = {
+    body: PackageEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/package';
+};
+
+export type PackageEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PackageEditError = PackageEditErrors[keyof PackageEditErrors];
+
+export type PackageEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: PackageOut;
+};
+
+export type PackageEditResponse = PackageEditResponses[keyof PackageEditResponses];
+
+export type PackagePdfData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/package.pdf';
+};
+
+export type PackagePdfErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PackagePdfError = PackagePdfErrors[keyof PackagePdfErrors];
+
+export type PackagePdfResponses = {
+    /**
+     * Response Package Pdf
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type PackagePdfResponse = PackagePdfResponses[keyof PackagePdfResponses];
+
+export type PackageXlsxData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/package.xlsx';
+};
+
+export type PackageXlsxErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PackageXlsxError = PackageXlsxErrors[keyof PackageXlsxErrors];
+
+export type PackageXlsxResponses = {
+    /**
+     * Response Package Xlsx
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type PackageXlsxResponse = PackageXlsxResponses[keyof PackageXlsxResponses];
+
+export type CommentaryData = {
+    body: CommentaryIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/package/commentary';
+};
+
+export type CommentaryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CommentaryError = CommentaryErrors[keyof CommentaryErrors];
+
+export type CommentaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: PackageOut;
+};
+
+export type CommentaryResponse = CommentaryResponses[keyof CommentaryResponses];
+
+export type GenerateData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/package/generate';
+};
+
+export type GenerateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GenerateError = GenerateErrors[keyof GenerateErrors];
+
+export type GenerateResponses = {
+    /**
+     * Successful Response
+     */
+    202: GenerateOut;
+};
+
+export type GenerateResponse = GenerateResponses[keyof GenerateResponses];
+
+export type PageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/package/pages/{page_no}';
+};
+
+export type PageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PageError = PageErrors[keyof PageErrors];
+
+export type PageResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageOut;
+};
+
+export type PageResponse = PageResponses[keyof PageResponses];
+
+export type ReleaseData = {
+    body: AbacusModulesClosesDeliveryContractReleaseIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/package/release';
+};
+
+export type ReleaseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReleaseError = ReleaseErrors[keyof ReleaseErrors];
+
+export type ReleaseResponses = {
+    /**
+     * Successful Response
+     */
+    202: PackageOut;
+};
+
+export type ReleaseResponse = ReleaseResponses[keyof ReleaseResponses];
+
 export type CloseQuestionnaireData = {
     body?: never;
     headers?: {
@@ -86246,6 +87539,66 @@ export type CloseReconciliationResponses = {
 };
 
 export type CloseReconciliationResponse = CloseReconciliationResponses[keyof CloseReconciliationResponses];
+
+export type ReopenData = {
+    body: ReopenIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/reopen';
+};
+
+export type ReopenErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReopenError = ReopenErrors[keyof ReopenErrors];
+
+export type ReopenResponses = {
+    /**
+     * Successful Response
+     */
+    200: CloseStateOut;
+};
+
+export type ReopenResponse = ReopenResponses[keyof ReopenResponses];
 
 export type CloseRequestsData = {
     body?: never;
@@ -86607,6 +87960,126 @@ export type CloseStatusResponses = {
 };
 
 export type CloseStatusResponse = CloseStatusResponses[keyof CloseStatusResponses];
+
+export type HandoffData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/tax-handoff';
+};
+
+export type HandoffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HandoffError = HandoffErrors[keyof HandoffErrors];
+
+export type HandoffResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesClosesDeliveryContractHandoffOut;
+};
+
+export type HandoffResponse = HandoffResponses[keyof HandoffResponses];
+
+export type HandoffPublishData = {
+    body: AbacusModulesClosesDeliveryContractHandoffIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Close Id
+         */
+        close_id: string;
+    };
+    query?: never;
+    url: '/v1/closes/{close_id}/tax-handoff';
+};
+
+export type HandoffPublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HandoffPublishError = HandoffPublishErrors[keyof HandoffPublishErrors];
+
+export type HandoffPublishResponses = {
+    /**
+     * Successful Response
+     */
+    202: HandoffPublishedOut;
+};
+
+export type HandoffPublishResponse = HandoffPublishResponses[keyof HandoffPublishResponses];
 
 export type AskClientData = {
     body?: never;
@@ -89359,14 +90832,14 @@ export type CompleteResponses = {
 
 export type CompleteResponse = CompleteResponses[keyof CompleteResponses];
 
-export type HandoffData = {
-    body: HandoffIn;
+export type Handoff2Data = {
+    body: AbacusModulesConnectionsRoutesHandoffIn;
     path?: never;
     query?: never;
     url: '/v1/connections/handoff';
 };
 
-export type HandoffErrors = {
+export type Handoff2Errors = {
     /**
      * Not authenticated
      */
@@ -89385,16 +90858,16 @@ export type HandoffErrors = {
     422: ValidationErrorOut;
 };
 
-export type HandoffError = HandoffErrors[keyof HandoffErrors];
+export type Handoff2Error = Handoff2Errors[keyof Handoff2Errors];
 
-export type HandoffResponses = {
+export type Handoff2Responses = {
     /**
      * Successful Response
      */
-    200: HandoffOut;
+    200: AbacusModulesConnectionsRoutesHandoffOut;
 };
 
-export type HandoffResponse = HandoffResponses[keyof HandoffResponses];
+export type Handoff2Response = Handoff2Responses[keyof Handoff2Responses];
 
 export type ChooseCoverageData = {
     body: LedgerCoverageIn;
@@ -106636,7 +108109,7 @@ export type AssignResponses = {
 
 export type AssignResponse = AssignResponses[keyof AssignResponses];
 
-export type ReleaseData = {
+export type Release2Data = {
     body?: never;
     headers?: {
         /**
@@ -106662,7 +108135,7 @@ export type ReleaseData = {
     url: '/v1/engagements/{engagement_id}/review-queue/{version_id}/release';
 };
 
-export type ReleaseErrors = {
+export type Release2Errors = {
     /**
      * Not authenticated
      */
@@ -106685,16 +108158,16 @@ export type ReleaseErrors = {
     422: ValidationErrorOut;
 };
 
-export type ReleaseError = ReleaseErrors[keyof ReleaseErrors];
+export type Release2Error = Release2Errors[keyof Release2Errors];
 
-export type ReleaseResponses = {
+export type Release2Responses = {
     /**
      * Successful Response
      */
     200: TakenOut;
 };
 
-export type ReleaseResponse = ReleaseResponses[keyof ReleaseResponses];
+export type Release2Response = Release2Responses[keyof Release2Responses];
 
 export type TakeData = {
     body?: never;
@@ -113404,7 +114877,7 @@ export type RevealSignerIpResponses = {
     /**
      * Successful Response
      */
-    200: RevealOut;
+    200: AbacusModulesSignaturesContractRevealOut;
 };
 
 export type RevealSignerIpResponse = RevealSignerIpResponses[keyof RevealSignerIpResponses];
@@ -124897,6 +126370,243 @@ export type MatchClientResponses = {
 };
 
 export type MatchClientResponse = MatchClientResponses[keyof MatchClientResponses];
+
+export type ReturnBatchData = {
+    body: ReturnBatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/information-return-batches';
+};
+
+export type ReturnBatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReturnBatchError = ReturnBatchErrors[keyof ReturnBatchErrors];
+
+export type ReturnBatchResponses = {
+    /**
+     * Successful Response
+     */
+    201: ReturnBatchOut;
+};
+
+export type ReturnBatchResponse = ReturnBatchResponses[keyof ReturnBatchResponses];
+
+export type AckData = {
+    body: AckIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/v1/information-return-batches/{batch_id}/acknowledgement';
+};
+
+export type AckErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AckError = AckErrors[keyof AckErrors];
+
+export type AckResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReturnBatchOut;
+};
+
+export type AckResponse = AckResponses[keyof AckResponses];
+
+export type FiledData = {
+    body: FiledIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/v1/information-return-batches/{batch_id}/filed';
+};
+
+export type FiledErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FiledError = FiledErrors[keyof FiledErrors];
+
+export type FiledResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReturnBatchOut;
+};
+
+export type FiledResponse = FiledResponses[keyof FiledResponses];
+
+export type IrisCsvData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query?: never;
+    url: '/v1/information-return-batches/{batch_id}/iris.csv';
+};
+
+export type IrisCsvErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type IrisCsvError = IrisCsvErrors[keyof IrisCsvErrors];
+
+export type IrisCsvResponses = {
+    /**
+     * Response Iris Csv
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type IrisCsvResponse = IrisCsvResponses[keyof IrisCsvResponses];
 
 export type ConnectCatalogData = {
     body?: never;
@@ -157351,6 +159061,302 @@ export type CompareTranscriptResponses = {
 };
 
 export type CompareTranscriptResponse = CompareTranscriptResponses[keyof CompareTranscriptResponses];
+
+export type VendorData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Vendor Id
+         */
+        vendor_id: string;
+    };
+    query?: never;
+    url: '/v1/vendors/{vendor_id}';
+};
+
+export type VendorErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VendorError = VendorErrors[keyof VendorErrors];
+
+export type VendorResponses = {
+    /**
+     * Successful Response
+     */
+    200: VendorRowOut;
+};
+
+export type VendorResponse = VendorResponses[keyof VendorResponses];
+
+export type VendorPatchData = {
+    body: VendorPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Vendor Id
+         */
+        vendor_id: string;
+    };
+    query?: never;
+    url: '/v1/vendors/{vendor_id}';
+};
+
+export type VendorPatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type VendorPatchError = VendorPatchErrors[keyof VendorPatchErrors];
+
+export type VendorPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: VendorRowOut;
+};
+
+export type VendorPatchResponse = VendorPatchResponses[keyof VendorPatchResponses];
+
+export type BackupWithholdingData = {
+    body: BackupWithholdingIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Vendor Id
+         */
+        vendor_id: string;
+    };
+    query?: never;
+    url: '/v1/vendors/{vendor_id}/backup-withholding';
+};
+
+export type BackupWithholdingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BackupWithholdingError = BackupWithholdingErrors[keyof BackupWithholdingErrors];
+
+export type BackupWithholdingResponses = {
+    /**
+     * Successful Response
+     */
+    201: RecordOut;
+};
+
+export type BackupWithholdingResponse = BackupWithholdingResponses[keyof BackupWithholdingResponses];
+
+export type TinMatchData = {
+    body: TinMatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Vendor Id
+         */
+        vendor_id: string;
+    };
+    query?: never;
+    url: '/v1/vendors/{vendor_id}/tin-match-results';
+};
+
+export type TinMatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TinMatchError = TinMatchErrors[keyof TinMatchErrors];
+
+export type TinMatchResponses = {
+    /**
+     * Successful Response
+     */
+    201: RecordOut;
+};
+
+export type TinMatchResponse = TinMatchResponses[keyof TinMatchResponses];
+
+export type TinRevealData = {
+    body: AbacusModulesClosesDeliveryContractRevealIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Vendor Id
+         */
+        vendor_id: string;
+    };
+    query?: never;
+    url: '/v1/vendors/{vendor_id}/tin:reveal';
+};
+
+export type TinRevealErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TinRevealError = TinRevealErrors[keyof TinRevealErrors];
+
+export type TinRevealResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesClosesDeliveryContractRevealOut;
+};
+
+export type TinRevealResponse = TinRevealResponses[keyof TinRevealResponses];
 
 export type ListWallsData = {
     body?: never;
