@@ -2,6 +2,7 @@ import type { ConsolidatedTbOut, EliminationOut, GroupTalliesOut } from "@abacus
 import {
   groupConsolidatedTbOptions,
   groupListEliminationsOptions,
+  groupProposeEliminationsMutation,
 } from "@abacus/api-client/query";
 import {
   Amount,
@@ -21,8 +22,9 @@ import {
   type TallyItem,
   cn,
   prose,
+  toast,
 } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useOpenOverlay } from "../../app-core/open";
 import type { OverlayRenderProps } from "../../app-core/overlays";
@@ -98,6 +100,37 @@ function tallies(t: GroupTalliesOut): TallyItem[] {
   ];
 }
 
+/** A-09-T38: start the elimination proposer; a refusal reads in plain words (409
+ * capability_unavailable: the variant flag off or a firm that is not synthetic). */
+function ProposeButton({ id }: { id: string }): JSX.Element {
+  const queries = useQueryClient();
+  const propose = useMutation({
+    ...groupProposeEliminationsMutation(),
+    onSuccess: () => {
+      toast.show(COPY.drawer.proposeStarted);
+      void queries.invalidateQueries();
+    },
+    onError: () => {
+      toast.show(COPY.drawer.proposeOff);
+    },
+  });
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      disabled={propose.isPending}
+      onClick={() => {
+        propose.mutate({
+          path: { consolidation_id: id },
+          headers: { "Idempotency-Key": crypto.randomUUID() },
+        });
+      }}
+    >
+      {COPY.drawer.propose}
+    </Button>
+  );
+}
+
 function Drawer({
   items,
   proposed,
@@ -108,6 +141,7 @@ function Drawer({
   selected,
   onSelect,
   onProvenance,
+  consolidationId,
 }: {
   items: readonly EliminationOut[];
   proposed: boolean;
@@ -119,6 +153,8 @@ function Drawer({
   onSelect: (code: string) => void;
   /** SHL-09 for the selected elimination's figure (the handoff's ⓘ). */
   onProvenance?: (() => void) | undefined;
+  /** A-09-T38: the consolidation the agent proposes for; absent in fixture frames. */
+  consolidationId?: string | undefined;
 }): JSX.Element {
   const D = COPY.drawer;
   const count = (s: string) => items.filter((e) => e.status === s).length;
@@ -131,6 +167,7 @@ function Drawer({
       <header className="flex h-[46px] items-center gap-[8px] px-[14px] hairline-b">
         <h2 className="text-[14.5px] font-medium">{D.title}</h2>
         <span className="ml-auto" />
+        {consolidationId !== undefined && !proposed && <ProposeButton id={consolidationId} />}
         {proposed && (
           <Button variant="secondary" size="sm">
             {D.approveAll(items.length)}
@@ -368,6 +405,7 @@ export function AUD33({
           <Drawer
             items={elims.data.items}
             proposed={proposed && !locked}
+            {...(locked ? {} : { consolidationId })}
             totalDebit={elims.data.total_debit}
             totalCredit={elims.data.total_credit}
             segment={segment}

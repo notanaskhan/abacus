@@ -30,6 +30,9 @@ export const COPY = {
     posted: (n: number) => `${String(n)} posted`,
   },
   drawer: {
+    propose: "Propose with the agent",
+    proposeOff: "The agent's elimination proposals are not turned on for this firm.",
+    proposeStarted: "The agent is proposing eliminations. They appear here for you to approve.",
     title: "Eliminations",
     export: "Export",
     add: "New elimination…",

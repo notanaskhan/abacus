@@ -1,4 +1,7 @@
-import { Button, FlagOffState, RadioGroup, Segmented, Tag, Tooltip } from "@abacus/ui";
+import { Button, FlagOffState, RadioGroup, Segmented, Tag, Tooltip, amount } from "@abacus/ui";
+import type { GroupScopingOut } from "@abacus/api-client";
+import { groupScopingOptions } from "@abacus/api-client/query";
+import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { COMPONENTS, COPY, type ComponentRow } from "./copy";
 import { AUD34_SCENARIOS, AUD34_STATE, type Aud34Scenario } from "./scenarios";
@@ -126,7 +129,15 @@ function PlannedCell({ row, picking }: { row: ComponentRow; picking: boolean }):
   );
 }
 
-function Components({ decided, picking }: { decided: boolean; picking: boolean }): JSX.Element {
+function Components({
+  decided,
+  picking,
+  rows,
+}: {
+  decided: boolean;
+  picking: boolean;
+  rows: readonly ComponentRow[];
+}): JSX.Element {
   return (
     <section data-aud34="components" className="rounded-card bg-card shadow-e1">
       <header className="flex h-[32px] items-center justify-between px-[14px]">
@@ -144,7 +155,7 @@ function Components({ decided, picking }: { decided: boolean; picking: boolean }
           </tr>
         </thead>
         <tbody>
-          {COMPONENTS.map((r) => (
+          {rows.map((r) => (
             <tr key={r.name} className="h-[40px] border-t border-hair" data-component={r.name}>
               <td className="px-[8px]">
                 <span className="flex flex-col">
@@ -236,10 +247,45 @@ function Aggregation(): JSX.Element {
   );
 }
 
+/** The figures AUD-34 shows: the fixture's from the handoff, the live one's from C9/A-09's API. */
+export interface Aud34Data {
+  materiality: string;
+  pm: string;
+  ct: string;
+  recommended: string;
+  salesFull: string;
+  assetsFull: string;
+  specific: string;
+  auditors: string;
+  rows: readonly ComponentRow[];
+}
+
+export const FIXTURE_DATA: Aud34Data = {
+  materiality: "240,000",
+  pm: "180,000",
+  ct: "12,000",
+  recommended: "240,000",
+  salesFull: "100%",
+  assetsFull: "78%",
+  specific: "22%",
+  auditors: "1",
+  rows: COMPONENTS,
+};
+
 export function GroupScoping({ st }: { st?: string | undefined }): JSX.Element {
   const scenario: Aud34Scenario = (AUD34_SCENARIOS as readonly string[]).includes(st ?? "")
     ? (st as Aud34Scenario)
     : "a";
+  return <GroupScopingView scenario={scenario} data={FIXTURE_DATA} />;
+}
+
+function GroupScopingView({
+  scenario,
+  data,
+}: {
+  scenario: Aud34Scenario;
+  data: Aud34Data;
+}): JSX.Element {
   const [segment, setSegment] = useState<Segment>(
     scenario === "f" ? "Components" : AUD34_STATE[scenario].segment,
   );
@@ -281,27 +327,91 @@ export function GroupScoping({ st }: { st?: string | undefined }): JSX.Element {
       <div data-aud34="tallies" className="flex h-[52px] items-center">
         {s.decided ? (
           <>
-            <Tally label={COPY.tallies.groupMateriality} value="240,000" />
-            <Tally label={COPY.tallies.groupPm} value="180,000" />
-            <Tally label={COPY.tallies.ct} value="12,000" />
+            <Tally label={COPY.tallies.groupMateriality} value={data.materiality} />
+            <Tally label={COPY.tallies.groupPm} value={data.pm} />
+            <Tally label={COPY.tallies.ct} value={data.ct} />
           </>
         ) : (
           <>
             <Tally label={COPY.tallies.groupMateriality} value={COPY.tallies.pending} amber />
-            <Tally label={COPY.tallies.recommended} value="240,000" />
+            <Tally label={COPY.tallies.recommended} value={data.recommended} />
           </>
         )}
-        <Tally label={COPY.tallies.salesFull} value="100%" />
-        <Tally label={COPY.tallies.assetsFull} value="78%" />
-        <Tally label={COPY.tallies.specific} value="22%" />
-        <Tally label={COPY.tallies.auditors} value="1" />
+        <Tally label={COPY.tallies.salesFull} value={data.salesFull} />
+        <Tally label={COPY.tallies.assetsFull} value={data.assetsFull} />
+        <Tally label={COPY.tallies.specific} value={data.specific} />
+        <Tally label={COPY.tallies.auditors} value={data.auditors} />
       </div>
       <div className="flex flex-col gap-[12px] p-[12px]">
         <DecisionCard manager={s.manager} decided={s.decided} />
-        {segment === "Components" && <Components decided={s.decided} picking={s.picking} />}
+        {segment === "Components" && (
+          <Components decided={s.decided} picking={s.picking} rows={data.rows} />
+        )}
         {(segment === "Coverage" || segment === "Components") && <Coverage />}
         {(segment === "Aggregation" || segment === "Components") && <Aggregation />}
       </div>
     </div>
   );
+}
+
+const whole = (v: string | null | undefined): string =>
+  v === null || v === undefined ? "—" : amount(v, "whole").text;
+const pct = (v: string | null | undefined): string =>
+  v === null || v === undefined ? "—" : `${v.replace(/\.0+$/, "")}%`;
+
+/** C9/A-09's group scoping to AUD-34's figures: every number is the server's (no arithmetic). */
+export function liveData(found: GroupScopingOut): Aud34Data {
+  const sales = found.coverage.find((c) => c.measure === "third_party_sales");
+  const assets = found.coverage.find((c) => c.measure === "total_assets");
+  const recommended = found.options.find((o) => o.recommended);
+  return {
+    materiality: whole(found.group_materiality),
+    pm: whole(found.performance_materiality),
+    ct: whole(found.clearly_trivial),
+    recommended: whole(recommended?.amount),
+    salesFull: pct(sales?.full_scope_pct),
+    assetsFull: pct(assets?.full_scope_pct),
+    specific: pct(assets?.specific_procedures_pct),
+    auditors: String(
+      found.components.filter((c) => c.performed_by === "component_auditor").length,
+    ),
+    rows: found.components.map((c) => ({
+      name: c.entity_name,
+      where: "",
+      level: "",
+      planned:
+        c.planned_work === "full_scope"
+          ? "full"
+          : c.planned_work === "specific_procedures"
+            ? "specific"
+            : "analytical",
+      areas: c.scope_areas.length === 0 ? null : c.scope_areas.join(", "),
+      performedBy:
+        c.performed_by === "component_auditor" ? COPY.componentAuditorTag : "Group team",
+      componentAuditor: c.performed_by === "component_auditor",
+      sales: "—",
+      assets: "—",
+      pm: whole(c.component_pm),
+      ofGroup: pct(c.pm_pct_of_group),
+    })),
+  };
+}
+
+/** AUD-34 live (A-09-T38): the group scoping read through the generated client; a 404 (the
+ * capability off) falls back to the flag-off state. */
+export function GroupScopingLive({ workItemId }: { workItemId: string }): JSX.Element {
+  const found = useQuery({
+    ...groupScopingOptions({ path: { work_item_id: workItemId } }),
+    retry: false,
+  });
+  if (found.isError) {
+    return (
+      <div data-screen="AUD-34" data-scenario="f">
+        <FlagOffState flag="ff.group_audit" label={COPY.title} />
+      </div>
+    );
+  }
+  if (found.data === undefined) return <div data-screen="AUD-34" aria-busy="true" />;
+  const data = liveData(found.data);
+  return <GroupScopingView scenario={found.data.decided ? "c" : "a"} data={data} />;
 }
