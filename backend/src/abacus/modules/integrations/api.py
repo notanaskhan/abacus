@@ -100,6 +100,7 @@ from abacus.modules.integrations.synthetic import (
     seed_synthetic_event,
     seed_synthetic_install,
 )
+from abacus.modules.integrations.w1_contract import w1_portal_router, w1_router
 from abacus.modules.integrations.writers import WritePreview, Writer, WriteReceipt, WriteRequest
 from abacus.modules.integrations.writes import (
     WriteCapabilityRefused,
@@ -112,6 +113,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     portal_router,  # C20 v1: POR-16, live since A-02-T16
     firm_router,  # C20 v1: reconnect requests (live since A-02-T23); pulls a stub until T30
     connect_router,  # C20 v2: W-01-T03 Connect stub (WB-10, WB-11)
+    w1_router,  # C20 v2.1: C-02-T06 W1 console, switches and settings stub (CLS-11, ADM-08b)
+    w1_portal_router,  # C20 v2.1: C-02-T06 POR-16 write grant stub
 )
 
 __all__ = [

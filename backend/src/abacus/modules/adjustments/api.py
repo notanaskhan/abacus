@@ -25,6 +25,7 @@ from abacus.modules.adjustments.entries import (
     recorded_entries,
     register_entry_proposed_hook,
 )
+from abacus.modules.adjustments.posting_contract import posting_router
 from abacus.modules.engagements.api import deliver_proposed_entries, register_client_approval_kind
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.ledger.api import register_adjustment_source
@@ -37,7 +38,7 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 register_client_delivery(deliver_proposed_entries)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[AbacusRouter, ...] = (router,)
+ROUTERS: tuple[AbacusRouter, ...] = (router, posting_router)  # posting: C8 v2 (C-02-T06)
 # The worker serves a module with SUBSCRIPTIONS (A-06-T10's send): no workflows or activities.
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()

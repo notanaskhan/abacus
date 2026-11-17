@@ -54,3 +54,36 @@ per-item POST `/v1/consolidations/{cid}/eliminations/approve`, POST `…/elimina
 clause and never replaces it (an AC test fails if the elimination clause disappears).
 Fixture footing: E1a 20,000,000 · E1b 26,000,000 · E2 18,000,000 · E3 240,000 · E4 2,400,000 · E5
 1,200,000 = 67,840,000 Dr = Cr; the eliminations column on assets totals (48,640,000).
+
+## C8 v2 · Posting (C-02-T06, 2026-11-17; SPEC-700; ADR-344; DEC-5505)
+
+| Field | Value |
+|---|---|
+| Status | stub; **v2 frozen Fri Sep 15, 2028** per the register |
+| Code | `backend/src/abacus/modules/adjustments/posting_contract.py` (`posting_router`) |
+| Flag | `adjustments.posting` (default off; off: 404; on: 501 until C-02-T12, T13, T18, T19, T22) |
+| Consumer tests | `backend/tests/contracts/c08_adjustments/test_c02t08_posting_consumer.py`, `apps/web/src/screens/CLS-07/contract.test.ts` (C-02-T08) |
+| Callers | CLS-07 (AY), CLS-04 "Post AJE" (a batch of one through CLS-07), CLS-11 batch drawer, POR-08 card B (posted refs) |
+
+**Operations** (one action each; agent and system denied; client principals 404):
+
+| Method and path | Action | Notes |
+|---|---|---|
+| `GET /v1/work-items/{wi}/proposed-entries:close` | `proposed_entry.read` | rows, tallies, class limits, approver context, `posting_enabled`, `is_attest_client` |
+| `POST /v1/proposed-entries/{id}/approve` | `proposed_entry.approve` | `seen_version`; 409 `over_approval_limit`, `snapshot_changed`; `undo_until` +10 s |
+| `POST /v1/proposed-entries/{id}/request-approval` | `proposed_entry.request_approval` | gate `proposed_entry_approval`, kind `entry_approval_requested` |
+| `POST /v1/proposed-entry-decisions/{id}/undo` | `proposed_entry.undo_approval` | `approval_undone`, inside 10 s, before any effect |
+| `POST /v1/proposed-entries/{id}/withdraw-approval` | `proposed_entry.withdraw_approval` | `approval_withdrawn`, reason required |
+| `POST /v1/proposed-entries/{id}/reject-close` | `proposed_entry.reject_close` | Rejected + CLS-06 issue |
+| `POST /v1/proposed-entries/{id}/record-external` | `proposed_entry.record_external` | evidence or match ref |
+| `GET /v1/work-items/{wi}/proposed-entries.xlsx` | `proposed_entry.export` | Open in Excel; JE import file without W1 |
+| `POST /v1/work-items/{wi}/posting-batches:dry-run` | `posting_batch.dry_run` | preflight only, no write |
+| `POST /v1/work-items/{wi}/posting-batches` | `posting_batch.post` | `Idempotency-Key`, fresh MFA, 202; grant `not_before` +10 s |
+| `POST /v1/posting-batches/{id}/undo` | `posting_batch.post` | voids the grant inside the hold |
+| `POST /v1/posting-batches/{id}/entries/{entry_id}/retry` | `posting_batch.post` | `Idempotency-Key`; re-read then re-write |
+| `POST /v1/closing-date-conflicts/{id}/ask-client` · `…/redate` | `closing_date_conflict.resolve` | POR-20 template row; re-date withdraws the approval |
+
+**Status words** (`proposed_entry`, `posting_batch`, `closing_date_conflict`, C-02-T03): entries add `recorded_externally`; batches `proposed → posting → posted | failed_post`.
+**Human-only actions:** approve, undo, withdraw, reject, record external, dry run, post, undo, retry, resolve.
+**Audit events:** `entry.approved` (batch id, policy version), `entry.approval_requested|approval_undone|approval_withdrawn|rejected|posted|post_failed|reversed|recorded_externally`, `posting_batch.created|posted|failed|undone`, `closing_date.set`, `closing_date_conflict.opened|client_asked|redated|resolved`. Values stay out (DEC-60).
+**Example** (Copperleaf, batch 2026-08-A): six entries, $35,300.00 = 20,020.00 + 14,900.00 + 380.00; QBO 48213–48218; closing date Aug 31, 2026. AJE-03 fails alone on "Accumulated Depreciation" inactive (CLS-07e).
