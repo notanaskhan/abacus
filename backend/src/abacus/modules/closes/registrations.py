@@ -2,8 +2,8 @@
 
 - **C13 gates** (HOME-02): a flux set with explained lines waits on the engagement's Managers and
   Partners (`close_flux_acceptance`, kind `proposal`); a reconciliation with no open item and no
-  current L1 waits on the close's preparer (`close_reconciliation_sign_off`, kind `sign_off_request`).
-  The plan publication gate is C-01-T15's (`gate_sources.py`).
+  current L1 waits on the close's preparer (`close_reconciliation_sign_off`, kind
+  `sign_off_request`). The plan publication gate is C-01-T15's (`gate_sources.py`).
 - **HOME-01's Closes tile**: the visible closes of the month being closed (the month before the
   firm's today), by CLS-01's tile, narrowed to an office ("Closes 11 of 22 · August 2026").
 - **C15 search**: a close is found by its client and month and opens CLS-02.

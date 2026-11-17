@@ -68,6 +68,7 @@ type _Row = Row[Any]  # Any: a raw text() row of close_plan_versions or close_pl
 
 READ: Final = "close_plan.read"
 EDIT: Final = "close_plan.edit"
+DRAFT_FROM_HISTORY: Final = "close_plan.draft_from_history"
 PUBLISH: Final = "close_plan.publish"
 REQUEST: Final = "close_plan.request_publish"
 ADOPT: Final = "suggestion.resolve"
@@ -411,6 +412,51 @@ async def create_draft(ctx: AuthContext, client_id: UUID, body: PlanDraftIn) -> 
             after=Ref(version=number),
         )
     return await get_plan(ctx, client_id, number)
+
+
+_NEW_AGENT_VERSION = text(
+    "INSERT INTO close_plan_versions (tenant_id, plan_id, version, drafted_by, drafted_by_run_id) "
+    "VALUES (:t, :p, :n, :u, :r) RETURNING id"
+)
+
+
+async def new_agent_draft(ctx: AuthContext, client_id: UUID, run_id: UUID) -> tuple[UUID, int]:
+    """C-01-T30 (AC-21): an empty draft the planner run fills, drafted by the person who started
+    it with the run's id (History reads "<person> via Agent · Close Planner"). One draft at a
+    time (409 `draft_exists`)."""
+    _human(ctx, DRAFT_FROM_HISTORY)
+    ref = await _scope(ctx, client_id, DRAFT_FROM_HISTORY)
+    async with uow(ctx.tenant) as tx:
+        plan_id = await _plan_id(tx.session, ref.client_entity_id)
+        if plan_id is None:
+            plan_id = cast(
+                UUID,
+                await tx.session.scalar(
+                    _NEW_PLAN, {"t": ctx.tenant_id, "e": ref.client_entity_id, "u": ctx.user_id}
+                ),
+            )
+        versions = await _versions(tx.session, plan_id)
+        if any(v.status == "draft" for v in versions):
+            raise DraftExists(facts={"plan_id": str(plan_id)})
+        number = (versions[-1].version if versions else 0) + 1
+        try:
+            async with tx.session.begin_nested():
+                draft = cast(
+                    UUID,
+                    await tx.session.scalar(
+                        _NEW_AGENT_VERSION,
+                        {"t": ctx.tenant_id, "p": plan_id, "n": number, "u": ctx.user_id,
+                         "r": run_id},
+                    ),
+                )  # fmt: skip
+        except IntegrityError:
+            raise DraftExists(facts={"plan_id": str(plan_id)}) from None
+        tx.record(
+            "close_plan.drafted",
+            target=Target("close_plan", plan_id),
+            after=Ref(version=number, run_id=run_id),
+        )
+    return draft, number
 
 
 async def _draft(
@@ -800,6 +846,7 @@ __all__ = [
     "get_plan",
     "import_template",
     "list_templates",
+    "new_agent_draft",
     "pin_plan",
     "plan_history",
     "publish",

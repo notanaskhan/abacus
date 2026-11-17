@@ -961,14 +961,18 @@ async def close_flux_xlsx_route(
     action="flux.explain",
     response_model=StartedRunOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def explain_flux_line_route(
     line_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> StartedRunOut:
-    """A person starts `close.agent` mode `flux` (C-01-T30)."""
+    """A person starts `close.agent` mode `flux` (C-01-T30): drivers code foots to the change,
+    or the run waits on a person (escalated); the draft lands as a suggestion."""
     await _human_route(ctx, "flux.explain")
-    _not_yet()
+    from abacus.modules.closes import agent_runs
+
+    outcome = await agent_runs.explain_line(ctx, line_id)
+    return StartedRunOut(run_id=outcome.run_id)
 
 
 @close_work_router.put(
