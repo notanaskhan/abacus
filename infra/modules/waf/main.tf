@@ -1,8 +1,10 @@
 # WebACL for a CloudFront distribution (chapter 06 section 1.13; Q-01-T15, T56). CloudFront WebACLs
 # live in us-east-1, so every resource here sets its region to the edge region rather than taking
 # an aliased provider. Rules, in evaluation order:
-#   0  auth and code rate: 30 requests per 5 minutes per IP on the auth prefixes; the 31st is
-#      blocked with 429 (T56). Always block: it protects sign-in codes from guessing.
+#   0  auth and code rate: 30 requests per 5 minutes per IP on the auth prefixes and the public
+#      confirmation code routes (code_path_regex, A-08-T38: /v1/confirm/{token}/code and
+#      /code/verify); the 31st is blocked with 429 (T56). Always block: it protects sign-in and
+#      respondent codes from guessing (the API also locks a link after five wrong codes).
 #   1  general rate: 2,000 per 5 minutes per IP, block. Server-sent event streams
 #      (stream_path_regex) are not counted (P-10-T15): a stream is one long request, and a dock
 #      reconnecting with Last-Event-ID must not trip the limit; the API caps streams per person.
@@ -25,7 +27,7 @@
 locals {
   edge_region = "us-east-1"
   managed     = var.managed_rules_action
-  auth_paths  = "^(?:${join("|", var.auth_rate_limit_paths)})"
+  auth_paths  = "(?:^(?:${join("|", var.auth_rate_limit_paths)}))|(?:${var.code_path_regex})"
 
   managed_groups = [
     { name = "AWSManagedRulesAmazonIpReputationList", priority = 10, count_only = false },

@@ -2,7 +2,7 @@
 id: TASK-8403
 title: "A-08-T24: Run wiring for AUD-12, AUD-13, AUD-26 and AUD-14"
 spec: SPEC-657
-acceptance_criteria: [AC-9.1, AC-9.2, AC-9.3]
+acceptance_criteria: [AC-9]
 risk_zone: amber
 status: in-review
 branch: a08-t24-run-wiring

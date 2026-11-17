@@ -54,6 +54,17 @@ variable "auth_rate_limit_paths" {
   }
 }
 
+variable "code_path_regex" {
+  description = "Public code routes rule 0 (chapter 06 rule 6) also counts, as a lower-cased, URL-decoded path regex: the confirmation respondent's code request and verify (A-08-T38)."
+  type        = string
+  default     = "^/v1/confirm/[^/]+/code(?:/verify)?$"
+
+  validation {
+    condition     = can(regex(var.code_path_regex, "/v1/confirm/abc/code")) && startswith(var.code_path_regex, "^")
+    error_message = "code_path_regex is an anchored regex that matches /v1/confirm/<token>/code."
+  }
+}
+
 variable "stream_path_regex" {
   description = "Server-sent event streams (lower-cased path), not counted by rule 1's general rate (P-10-T15): run, session, badge and invalidation streams (SPEC-647 §3.8)."
   type        = string
