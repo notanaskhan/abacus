@@ -21,7 +21,7 @@ Status values: `planned` (no stub), `stub` (models, 501 routes, matrix actions, 
 | C9 | Ledger: TB layers, groupings and FS-line taxonomy, account mapping | `c09-ledger.md`; taxonomy half v2 `ledger-mapping.md` | A-02, A-03 | A-04, A-06, T-05, C-01, A-10 | layers S10, taxonomy S20 | 2027-03-08, 2027-07-26 | v1, v2 | stub (layers half: A-02-T03, 2026-10-25; the SPEC-309 to SPEC-311 operations live, DEC-314); taxonomy half v2 stub (A-03-T03, 2026-10-30) |
 | C10 | Deliverables and release registry with download audit | `deliverables.md` | R-02 | A-07, T-02 (K-1), C-02, X-01 | S29 | 2027-11-29 | v1 | frozen (R-02-T25, 2026-11-10) |
 | C11 | Deterministic PDF/DOCX renderer; templates in the database | `c11-renderer.md` | P-11 | ENG-04, AUD-20 to AUD-23, TAX-12, NOT-03, CLS-08, FSP-06 | S18 | 2027-06-28 | v1 | stub (P-11-T03, 2026-10-29) |
-| C12 | TB hand-off into tax | `tb-handoff.md` | T-06 | AUD-38, CLS-12 | S50 | 2028-09-18 | v1 | planned |
+| C12 | TB hand-off into tax (audit release, review release, close lock) | `c12-tb-handoff.md` | ledger (T-06) | AUD-38, CLS-12, TXP-13, TXP-02 | S49 | 2028-09-15 | v1 | stub (T-06-T05, 2026-11-17) |
 | C13 | Human-gate projection registration slot (Home) | `home-and-gates.md` | I-01 with P-04 | every module | S10 | 2027-03-08 | v1 | stub (home half: I-01-T02, 2026-10-26; gate-half AC suite I-01-T03); I-02 Today family **stub** (`today.md`, I-02-T03, 2026-11-12) |
 | C14 | Board and program-status read model | `board-status.md` | K-04 | AUD-01/02, TAX-01, CLS-01/02, ATT-04 | S59 | 2029-01-22 | v1 | planned |
 | C15 | Search registration | `search.md` | P-02 (slot reserved by F-03-T08) | all modules | slot S1, index S39 | 2026-11-02, 2028-04-17 | v1 | slot reserved (F-03-T08) |

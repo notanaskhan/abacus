@@ -1,6 +1,10 @@
 """Public interface of the ledger module; other modules import only this (ADR-008)."""
 
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
+
+# The routers the API mounts, in order (P-39; F-03-T07). T-06-T05: C12 v1, the TB hand-off stub
+# (ledger owns `tb_handoffs`, DEC-66).
+from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.ledger.audit_targets import (
     ENGAGEMENT_KINDS,
     ENTITY_KINDS,
@@ -191,6 +195,7 @@ from abacus.modules.ledger.tax_form_mapping import (
     unmapped_form_lines,
 )
 from abacus.modules.ledger.taxonomy_workbook import parse_grouping_workbook
+from abacus.modules.ledger.tb_handoff_contract import tb_handoff_router
 from abacus.modules.ledger.trial_balances import (
     AdjustmentEntry,
     AdjustmentSource,
@@ -236,8 +241,7 @@ from abacus.modules.ledger.trial_balances import (
     version_adopter,
 )
 
-# The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[()] = ()
+ROUTERS: tuple[AbacusRouter, ...] = (tb_handoff_router,)
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_entity_owners(ENTITY_KINDS, audit_entities)

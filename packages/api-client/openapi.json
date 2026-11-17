@@ -828,6 +828,72 @@
         "title": "AccessReviewOut",
         "type": "object"
       },
+      "AccountChoiceIn": {
+        "additionalProperties": false,
+        "properties": {
+          "account_ref": {
+            "cls": "internal",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Account Ref",
+            "type": "string"
+          },
+          "choice": {
+            "cls": "internal",
+            "enum": [
+              "map_suggested",
+              "send_blank",
+              "send_as_is"
+            ],
+            "title": "Choice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_ref",
+          "choice"
+        ],
+        "title": "AccountChoiceIn",
+        "type": "object"
+      },
+      "AccountCountsOut": {
+        "additionalProperties": false,
+        "description": "121 mapped + 5 suggested + 2 review = 128 accounts (AUD-38 b).",
+        "properties": {
+          "mapped": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Mapped",
+            "type": "integer"
+          },
+          "review": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Review",
+            "type": "integer"
+          },
+          "suggested": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Suggested",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mapped",
+          "suggested",
+          "review",
+          "total"
+        ],
+        "title": "AccountCountsOut",
+        "type": "object"
+      },
       "AccountGroupOut": {
         "description": "EBP-08's statement row; `crossfoots` by code.",
         "properties": {
@@ -15100,6 +15166,37 @@
           "retrievable_share"
         ],
         "title": "BoardSummaryOut",
+        "type": "object"
+      },
+      "BookIncomeOut": {
+        "additionalProperties": false,
+        "description": "Book income 3,100,000 - 750,000 = 2,350,000 (pretax, income-tax expense, net).",
+        "properties": {
+          "income_tax_expense": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Income Tax Expense",
+            "type": "string"
+          },
+          "net_income": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Net Income",
+            "type": "string"
+          },
+          "pretax": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Pretax",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pretax",
+          "income_tax_expense",
+          "net_income"
+        ],
+        "title": "BookIncomeOut",
         "type": "object"
       },
       "BoxOut": {
@@ -43263,7 +43360,7 @@
           "mappings": {
             "cls": "confidential",
             "items": {
-              "$ref": "#/components/schemas/MappingRowOut"
+              "$ref": "#/components/schemas/abacus__modules__integrations__engine_settings_contract__MappingRowOut"
             },
             "title": "Mappings",
             "type": "array"
@@ -72640,6 +72737,106 @@
         "title": "LadderStepOut",
         "type": "object"
       },
+      "LandingOut": {
+        "additionalProperties": false,
+        "description": "TXP-13 d and TXP-02's banner: \"From FY2026 audit \u00b7 Final TB \u00b7 handed off Nov 9\".",
+        "properties": {
+          "book_income": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookIncomeOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "handed_off_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Handed Off At"
+          },
+          "handed_off_by": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Handed Off By"
+          },
+          "handoff_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Handoff Id"
+          },
+          "source_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "audit_release",
+                  "review_release",
+                  "close_lock"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Kind"
+          },
+          "source_label": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source Label"
+          },
+          "source_link_allowed": {
+            "cls": "internal",
+            "default": false,
+            "title": "Source Link Allowed",
+            "type": "boolean"
+          },
+          "superseded": {
+            "cls": "internal",
+            "default": false,
+            "title": "Superseded",
+            "type": "boolean"
+          }
+        },
+        "title": "LandingOut",
+        "type": "object"
+      },
       "LateRemittanceOut": {
         "description": "The single late remittance with both day counts (DF-34): 9 business days from the pay date\nagainst the plan's established practice, 10 calendar days for lost earnings.",
         "examples": [
@@ -79628,58 +79825,6 @@
         "title": "MappingRowIn",
         "type": "object"
       },
-      "MappingRowOut": {
-        "properties": {
-          "direction": {
-            "anyOf": [
-              {
-                "enum": [
-                  "one_way",
-                  "two_way"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Direction"
-          },
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "return_id_template",
-              "client_code_rule",
-              "type_letters",
-              "user",
-              "office",
-              "export_rules",
-              "workflow_status"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "source_key": {
-            "cls": "internal",
-            "title": "Source Key",
-            "type": "string"
-          },
-          "target_value": {
-            "cls": "confidential",
-            "title": "Target Value",
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "source_key",
-          "target_value",
-          "direction"
-        ],
-        "title": "MappingRowOut",
-        "type": "object"
-      },
       "MappingRunIn": {
         "additionalProperties": false,
         "properties": {
@@ -80056,6 +80201,31 @@
           "tb_count"
         ],
         "title": "MappingTalliesOut",
+        "type": "object"
+      },
+      "MappingsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__ledger__tb_handoff_contract__MappingRowOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "MappingsOut",
         "type": "object"
       },
       "MarkAppliedIn": {
@@ -94205,73 +94375,6 @@
         "title": "PreviewCellOut",
         "type": "object"
       },
-      "PreviewOut": {
-        "properties": {
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "pages",
-              "image",
-              "table",
-              "none",
-              "pending"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "page_count": {
-            "cls": "internal",
-            "title": "Page Count",
-            "type": "integer"
-          },
-          "page_lines": {
-            "cls": "restricted",
-            "default": [],
-            "items": {
-              "items": {
-                "$ref": "#/components/schemas/PageLineOut"
-              },
-              "type": "array"
-            },
-            "title": "Page Lines",
-            "type": "array"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Reason"
-          },
-          "sheets": {
-            "cls": "restricted",
-            "items": {
-              "$ref": "#/components/schemas/SheetOut"
-            },
-            "title": "Sheets",
-            "type": "array"
-          },
-          "truncated": {
-            "cls": "internal",
-            "title": "Truncated",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "kind",
-          "reason",
-          "page_count",
-          "truncated",
-          "sheets"
-        ],
-        "title": "PreviewOut",
-        "type": "object"
-      },
       "PreviewPageOut": {
         "properties": {
           "height_pt": {
@@ -105711,6 +105814,71 @@
           }
         },
         "title": "ReturnToClientIn",
+        "type": "object"
+      },
+      "ReviewAccountOut": {
+        "additionalProperties": false,
+        "description": "A review account (amber) and its choice; none chosen blocks Hand off.",
+        "properties": {
+          "account_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Account Name",
+            "type": "string"
+          },
+          "account_ref": {
+            "cls": "internal",
+            "maxLength": 64,
+            "title": "Account Ref",
+            "type": "string"
+          },
+          "balance": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Balance",
+            "type": "string"
+          },
+          "choice": {
+            "anyOf": [
+              {
+                "enum": [
+                  "map_suggested",
+                  "send_blank",
+                  "send_as_is"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Choice"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tb_mapper",
+                  "firm_mapping",
+                  "person"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source"
+          }
+        },
+        "required": [
+          "account_ref",
+          "account_name",
+          "balance"
+        ],
+        "title": "ReviewAccountOut",
         "type": "object"
       },
       "ReviewChecklistPayload": {
@@ -126504,6 +126672,63 @@
         "title": "TakenOut",
         "type": "object"
       },
+      "TargetOut": {
+        "additionalProperties": false,
+        "description": "An eligible return of the same client: metadata only, wall-safe.",
+        "properties": {
+          "return_label": {
+            "cls": "internal",
+            "maxLength": 120,
+            "title": "Return Label",
+            "type": "string"
+          },
+          "target_work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Work Item Id",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "target_work_item_id",
+          "return_label",
+          "tax_year"
+        ],
+        "title": "TargetOut",
+        "type": "object"
+      },
+      "TargetsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TargetOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "TargetsOut",
+        "type": "object"
+      },
       "TaxAuthorizationDesigneeOut": {
         "properties": {
           "caf_last4": {
@@ -127087,6 +127312,43 @@
           "rows"
         ],
         "title": "TaxFormLinesPayload",
+        "type": "object"
+      },
+      "TaxItemOut": {
+        "additionalProperties": false,
+        "description": "A tax-relevant audit item (passed AJE-3 68,400 from the SUM).",
+        "properties": {
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "included": {
+            "cls": "internal",
+            "title": "Included",
+            "type": "boolean"
+          },
+          "key": {
+            "cls": "internal",
+            "maxLength": 60,
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "amount",
+          "included"
+        ],
+        "title": "TaxItemOut",
         "type": "object"
       },
       "TaxPlanRowOut": {
@@ -128313,6 +128575,14 @@
         ],
         "title": "TbGroupOut",
         "type": "object"
+      },
+      "TbHandoffStatus": {
+        "enum": [
+          "handed_off",
+          "superseded"
+        ],
+        "title": "TbHandoffStatus",
+        "type": "string"
       },
       "TbLayerBalanceOut": {
         "properties": {
@@ -147408,6 +147678,73 @@
         "title": "DecisionOut",
         "type": "object"
       },
+      "abacus__modules__evidence__routes__PreviewOut": {
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "pages",
+              "image",
+              "table",
+              "none",
+              "pending"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "page_count": {
+            "cls": "internal",
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "page_lines": {
+            "cls": "restricted",
+            "default": [],
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/PageLineOut"
+              },
+              "type": "array"
+            },
+            "title": "Page Lines",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "sheets": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/SheetOut"
+            },
+            "title": "Sheets",
+            "type": "array"
+          },
+          "truncated": {
+            "cls": "internal",
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "reason",
+          "page_count",
+          "truncated",
+          "sheets"
+        ],
+        "title": "PreviewOut",
+        "type": "object"
+      },
       "abacus__modules__evidence__routes__ReconciliationOut": {
         "properties": {
           "closing": {
@@ -148033,6 +148370,58 @@
         "title": "StartIn",
         "type": "object"
       },
+      "abacus__modules__integrations__engine_settings_contract__MappingRowOut": {
+        "properties": {
+          "direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "one_way",
+                  "two_way"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Direction"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "return_id_template",
+              "client_code_rule",
+              "type_letters",
+              "user",
+              "office",
+              "export_rules",
+              "workflow_status"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source_key": {
+            "cls": "internal",
+            "title": "Source Key",
+            "type": "string"
+          },
+          "target_value": {
+            "cls": "confidential",
+            "title": "Target Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "source_key",
+          "target_value",
+          "direction"
+        ],
+        "title": "MappingRowOut",
+        "type": "object"
+      },
       "abacus__modules__integrations__w1_contract__ActivityOut": {
         "additionalProperties": false,
         "description": "A Sync events row (CLS-11a2), its label resolved at read time.",
@@ -148113,6 +148502,296 @@
           "kind"
         ],
         "title": "ActivityOut",
+        "type": "object"
+      },
+      "abacus__modules__ledger__tb_handoff_contract__HandoffIn": {
+        "additionalProperties": false,
+        "properties": {
+          "account_choices": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AccountChoiceIn"
+            },
+            "maxItems": 500,
+            "title": "Account Choices",
+            "type": "array"
+          },
+          "schedules": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Schedules",
+            "type": "array"
+          },
+          "seen_preview_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Seen Preview Hash",
+            "type": "string"
+          },
+          "target_work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Work Item Id",
+            "type": "string"
+          },
+          "tax_items": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Tax Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "target_work_item_id",
+          "account_choices",
+          "seen_preview_hash"
+        ],
+        "title": "HandoffIn",
+        "type": "object"
+      },
+      "abacus__modules__ledger__tb_handoff_contract__HandoffOut": {
+        "additionalProperties": false,
+        "description": "\"Handed off to FY2026 Form 1120 \u00b7 1 tax issue created \u00b7 7 accounts for the tax team to\nmap\" (AUD-38 c).",
+        "properties": {
+          "accounts_to_map": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Accounts To Map",
+            "type": "integer"
+          },
+          "handed_off_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Handed Off At",
+            "type": "string"
+          },
+          "handoff_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Handoff Id",
+            "type": "string"
+          },
+          "source_kind": {
+            "cls": "internal",
+            "enum": [
+              "audit_release",
+              "review_release",
+              "close_lock"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TbHandoffStatus",
+            "cls": "internal"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Supersedes Id"
+          },
+          "tax_issues_created": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Tax Issues Created",
+            "type": "integer"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "handoff_id",
+          "version_no",
+          "source_kind",
+          "status",
+          "handed_off_at",
+          "tax_issues_created",
+          "accounts_to_map"
+        ],
+        "title": "HandoffOut",
+        "type": "object"
+      },
+      "abacus__modules__ledger__tb_handoff_contract__MappingRowOut": {
+        "additionalProperties": false,
+        "properties": {
+          "account_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Account Name",
+            "type": "string"
+          },
+          "account_ref": {
+            "cls": "internal",
+            "maxLength": 64,
+            "title": "Account Ref",
+            "type": "string"
+          },
+          "balance": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Balance",
+            "type": "string"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "tb_mapper",
+              "firm_mapping",
+              "person",
+              "blank"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "tax_line": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tax Line"
+          }
+        },
+        "required": [
+          "account_ref",
+          "account_name",
+          "balance",
+          "source"
+        ],
+        "title": "MappingRowOut",
+        "type": "object"
+      },
+      "abacus__modules__ledger__tb_handoff_contract__PreviewOut": {
+        "additionalProperties": false,
+        "properties": {
+          "book_income": {
+            "$ref": "#/components/schemas/BookIncomeOut",
+            "cls": "internal"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/AccountCountsOut",
+            "cls": "internal"
+          },
+          "current_version_no": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Current Version No"
+          },
+          "gate": {
+            "cls": "internal",
+            "enum": [
+              "released",
+              "not_released",
+              "superseded"
+            ],
+            "title": "Gate",
+            "type": "string"
+          },
+          "preview_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Preview Hash",
+            "type": "string"
+          },
+          "review_accounts": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ReviewAccountOut"
+            },
+            "title": "Review Accounts",
+            "type": "array"
+          },
+          "schedules": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Schedules",
+            "type": "array"
+          },
+          "source_kind": {
+            "cls": "internal",
+            "enum": [
+              "audit_release",
+              "review_release",
+              "close_lock"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "source_snapshot_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Source Snapshot Id",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "not_available",
+              "needs_review",
+              "ready",
+              "handed_off",
+              "superseded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tax_items": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TaxItemOut"
+            },
+            "title": "Tax Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source_kind",
+          "source_snapshot_id",
+          "gate",
+          "status",
+          "counts",
+          "review_accounts",
+          "book_income",
+          "preview_hash"
+        ],
+        "title": "PreviewOut",
         "type": "object"
       },
       "abacus__modules__methodology__contract__ChecklistItemOut": {
@@ -209697,7 +210376,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PreviewOut"
+                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__PreviewOut"
                 }
               }
             },
@@ -214720,7 +215399,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PreviewOut"
+                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__PreviewOut"
                 }
               }
             },
@@ -230172,7 +230851,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PreviewOut"
+                  "$ref": "#/components/schemas/abacus__modules__evidence__routes__PreviewOut"
                 }
               }
             },
@@ -238120,6 +238799,408 @@
           "assurance"
         ],
         "x-abacus-action": "request_item.create"
+      }
+    },
+    "/v1/engagements/{engagement_id}/tax-handoff/preview": {
+      "get": {
+        "description": "AUD-38 preview: counts, review rows, book income, tax items, gate and `preview_hash`.",
+        "operationId": "handoff_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Target Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__ledger__tb_handoff_contract__PreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Handoff Preview Route",
+        "tags": [
+          "ledger"
+        ],
+        "x-abacus-action": "tb_handoff.preview"
+      }
+    },
+    "/v1/engagements/{engagement_id}/tax-handoff/targets": {
+      "get": {
+        "description": "Eligible returns of the same client, metadata only (T-06-T20).",
+        "operationId": "handoff_targets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Handoff Targets Route",
+        "tags": [
+          "ledger"
+        ],
+        "x-abacus-action": "tb_handoff.preview"
+      }
+    },
+    "/v1/engagements/{engagement_id}/tax-handoffs": {
+      "post": {
+        "description": "One immutable version (C12); 409 `handoff_not_available`, `handoff_needs_review` or\n`preview_changed`. A live person's only.",
+        "operationId": "handoff_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/abacus__modules__ledger__tb_handoff_contract__HandoffIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__ledger__tb_handoff_contract__HandoffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Handoff Create Route",
+        "tags": [
+          "ledger"
+        ],
+        "x-abacus-action": "tb_handoff.create"
       }
     },
     "/v1/engagements/{engagement_id}/team": {
@@ -327891,6 +328972,123 @@
         "x-abacus-action": "tax_return.read"
       }
     },
+    "/v1/tax-returns/{return_id}/handoff": {
+      "get": {
+        "description": "The landing banner and M-1 starting point (TXP-13 d, TXP-02; T-06-T39).",
+        "operationId": "return_handoff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Return Handoff Route",
+        "tags": [
+          "ledger"
+        ],
+        "x-abacus-action": "tax_return.read"
+      }
+    },
     "/v1/tax-returns/{return_id}/intake": {
       "get": {
         "description": "TAX-03's intake (T-02-T18): binder, requests, waiting files, questions, hand-offs.",
@@ -342312,6 +343510,239 @@
           "tax workspace"
         ],
         "x-abacus-action": "return_worksheet.read"
+      }
+    },
+    "/v1/tb-handoffs/{handoff_id}": {
+      "get": {
+        "operationId": "handoff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handoff_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Handoff Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__ledger__tb_handoff_contract__HandoffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Handoff Route",
+        "tags": [
+          "ledger"
+        ],
+        "x-abacus-action": "tb_handoff.read"
+      }
+    },
+    "/v1/tb-handoffs/{handoff_id}/mappings": {
+      "get": {
+        "description": "The O4 128-row table.",
+        "operationId": "handoff_mappings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handoff_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Handoff Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Handoff Mappings Route",
+        "tags": [
+          "ledger"
+        ],
+        "x-abacus-action": "tb_handoff.read"
       }
     },
     "/v1/telemetry/errors": {

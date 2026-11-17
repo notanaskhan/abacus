@@ -400,6 +400,44 @@ export type AccessReviewOut = {
 };
 
 /**
+ * AccountChoiceIn
+ */
+export type AccountChoiceIn = {
+    /**
+     * Account Ref
+     */
+    account_ref: string;
+    /**
+     * Choice
+     */
+    choice: 'map_suggested' | 'send_blank' | 'send_as_is';
+};
+
+/**
+ * AccountCountsOut
+ *
+ * 121 mapped + 5 suggested + 2 review = 128 accounts (AUD-38 b).
+ */
+export type AccountCountsOut = {
+    /**
+     * Mapped
+     */
+    mapped: number;
+    /**
+     * Review
+     */
+    review: number;
+    /**
+     * Suggested
+     */
+    suggested: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * AccountGroupOut
  *
  * EBP-08's statement row; `crossfoots` by code.
@@ -6974,6 +7012,26 @@ export type BoardSummaryOut = {
      * Unclassified
      */
     unclassified: number;
+};
+
+/**
+ * BookIncomeOut
+ *
+ * Book income 3,100,000 - 750,000 = 2,350,000 (pretax, income-tax expense, net).
+ */
+export type BookIncomeOut = {
+    /**
+     * Income Tax Expense
+     */
+    income_tax_expense: string;
+    /**
+     * Net Income
+     */
+    net_income: string;
+    /**
+     * Pretax
+     */
+    pretax: string;
 };
 
 /**
@@ -20176,7 +20234,7 @@ export type EngineSettingsOut = {
     /**
      * Mappings
      */
-    mappings: Array<MappingRowOut>;
+    mappings: Array<AbacusModulesIntegrationsEngineSettingsContractMappingRowOut>;
     /**
      * Mode
      */
@@ -33948,6 +34006,43 @@ export type LadderStepOut = {
 };
 
 /**
+ * LandingOut
+ *
+ * TXP-13 d and TXP-02's banner: "From FY2026 audit · Final TB · handed off Nov 9".
+ */
+export type LandingOut = {
+    book_income?: BookIncomeOut | null;
+    /**
+     * Handed Off At
+     */
+    handed_off_at?: string | null;
+    /**
+     * Handed Off By
+     */
+    handed_off_by?: string | null;
+    /**
+     * Handoff Id
+     */
+    handoff_id?: string | null;
+    /**
+     * Source Kind
+     */
+    source_kind?: 'audit_release' | 'review_release' | 'close_lock' | null;
+    /**
+     * Source Label
+     */
+    source_label?: string | null;
+    /**
+     * Source Link Allowed
+     */
+    source_link_allowed?: boolean;
+    /**
+     * Superseded
+     */
+    superseded?: boolean;
+};
+
+/**
  * LateRemittanceOut
  *
  * The single late remittance with both day counts (DF-34): 9 business days from the pay date
@@ -37569,28 +37664,6 @@ export type MappingRowIn = {
 };
 
 /**
- * MappingRowOut
- */
-export type MappingRowOut = {
-    /**
-     * Direction
-     */
-    direction: 'one_way' | 'two_way' | null;
-    /**
-     * Kind
-     */
-    kind: 'return_id_template' | 'client_code_rule' | 'type_letters' | 'user' | 'office' | 'export_rules' | 'workflow_status';
-    /**
-     * Source Key
-     */
-    source_key: string;
-    /**
-     * Target Value
-     */
-    target_value: string;
-};
-
-/**
  * MappingRunIn
  */
 export type MappingRunIn = {
@@ -37768,6 +37841,20 @@ export type MappingTalliesOut = {
      * Tb Count
      */
     tb_count: number;
+};
+
+/**
+ * MappingsOut
+ */
+export type MappingsOut = {
+    /**
+     * Items
+     */
+    items: Array<AbacusModulesLedgerTbHandoffContractMappingRowOut>;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -44290,36 +44377,6 @@ export type PreviewCellOut = {
 };
 
 /**
- * PreviewOut
- */
-export type PreviewOut = {
-    /**
-     * Kind
-     */
-    kind: 'pages' | 'image' | 'table' | 'none' | 'pending';
-    /**
-     * Page Count
-     */
-    page_count: number;
-    /**
-     * Page Lines
-     */
-    page_lines?: Array<Array<PageLineOut>>;
-    /**
-     * Reason
-     */
-    reason: string | null;
-    /**
-     * Sheets
-     */
-    sheets: Array<SheetOut>;
-    /**
-     * Truncated
-     */
-    truncated: boolean;
-};
-
-/**
  * PreviewPageOut
  */
 export type PreviewPageOut = {
@@ -49575,6 +49632,34 @@ export type ReturnToClientIn = {
      * Note
      */
     note?: string | null;
+};
+
+/**
+ * ReviewAccountOut
+ *
+ * A review account (amber) and its choice; none chosen blocks Hand off.
+ */
+export type ReviewAccountOut = {
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Account Ref
+     */
+    account_ref: string;
+    /**
+     * Balance
+     */
+    balance: string;
+    /**
+     * Choice
+     */
+    choice?: 'map_suggested' | 'send_blank' | 'send_as_is' | null;
+    /**
+     * Source
+     */
+    source?: 'tb_mapper' | 'firm_mapping' | 'person' | null;
 };
 
 /**
@@ -59356,6 +59441,40 @@ export type TakenOut = {
 };
 
 /**
+ * TargetOut
+ *
+ * An eligible return of the same client: metadata only, wall-safe.
+ */
+export type TargetOut = {
+    /**
+     * Return Label
+     */
+    return_label: string;
+    /**
+     * Target Work Item Id
+     */
+    target_work_item_id: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * TargetsOut
+ */
+export type TargetsOut = {
+    /**
+     * Items
+     */
+    items: Array<TargetOut>;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * TaxAuthorizationDesigneeOut
  */
 export type TaxAuthorizationDesigneeOut = {
@@ -59604,6 +59723,30 @@ export type TaxFormLinesPayload = {
      * Tax Year
      */
     tax_year: number;
+};
+
+/**
+ * TaxItemOut
+ *
+ * A tax-relevant audit item (passed AJE-3 68,400 from the SUM).
+ */
+export type TaxItemOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Included
+     */
+    included: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
 };
 
 /**
@@ -60153,6 +60296,11 @@ export type TbGroupOut = {
      */
     lines: Array<TbLayerLineOut>;
 };
+
+/**
+ * TbHandoffStatus
+ */
+export type TbHandoffStatus = 'handed_off' | 'superseded';
 
 /**
  * TbLayerBalanceOut
@@ -69175,6 +69323,36 @@ export type AbacusModulesEvidenceRoutesDecisionOut = {
 };
 
 /**
+ * PreviewOut
+ */
+export type AbacusModulesEvidenceRoutesPreviewOut = {
+    /**
+     * Kind
+     */
+    kind: 'pages' | 'image' | 'table' | 'none' | 'pending';
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Page Lines
+     */
+    page_lines?: Array<Array<PageLineOut>>;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Sheets
+     */
+    sheets: Array<SheetOut>;
+    /**
+     * Truncated
+     */
+    truncated: boolean;
+};
+
+/**
  * ReconciliationOut
  */
 export type AbacusModulesEvidenceRoutesReconciliationOut = {
@@ -69474,6 +69652,28 @@ export type AbacusModulesFieldworkRoutesStartIn = {
 };
 
 /**
+ * MappingRowOut
+ */
+export type AbacusModulesIntegrationsEngineSettingsContractMappingRowOut = {
+    /**
+     * Direction
+     */
+    direction: 'one_way' | 'two_way' | null;
+    /**
+     * Kind
+     */
+    kind: 'return_id_template' | 'client_code_rule' | 'type_letters' | 'user' | 'office' | 'export_rules' | 'workflow_status';
+    /**
+     * Source Key
+     */
+    source_key: string;
+    /**
+     * Target Value
+     */
+    target_value: string;
+};
+
+/**
  * ActivityOut
  *
  * A Sync events row (CLS-11a2), its label resolved at read time.
@@ -69503,6 +69703,140 @@ export type AbacusModulesIntegrationsW1ContractActivityOut = {
      * Provider Code
      */
     provider_code?: string | null;
+};
+
+/**
+ * HandoffIn
+ */
+export type AbacusModulesLedgerTbHandoffContractHandoffIn = {
+    /**
+     * Account Choices
+     */
+    account_choices: Array<AccountChoiceIn>;
+    /**
+     * Schedules
+     */
+    schedules?: Array<string>;
+    /**
+     * Seen Preview Hash
+     */
+    seen_preview_hash: string;
+    /**
+     * Target Work Item Id
+     */
+    target_work_item_id: string;
+    /**
+     * Tax Items
+     */
+    tax_items?: Array<string>;
+};
+
+/**
+ * HandoffOut
+ *
+ * "Handed off to FY2026 Form 1120 · 1 tax issue created · 7 accounts for the tax team to
+ * map" (AUD-38 c).
+ */
+export type AbacusModulesLedgerTbHandoffContractHandoffOut = {
+    /**
+     * Accounts To Map
+     */
+    accounts_to_map: number;
+    /**
+     * Handed Off At
+     */
+    handed_off_at: string;
+    /**
+     * Handoff Id
+     */
+    handoff_id: string;
+    /**
+     * Source Kind
+     */
+    source_kind: 'audit_release' | 'review_release' | 'close_lock';
+    status: TbHandoffStatus;
+    /**
+     * Supersedes Id
+     */
+    supersedes_id?: string | null;
+    /**
+     * Tax Issues Created
+     */
+    tax_issues_created: number;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * MappingRowOut
+ */
+export type AbacusModulesLedgerTbHandoffContractMappingRowOut = {
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Account Ref
+     */
+    account_ref: string;
+    /**
+     * Balance
+     */
+    balance: string;
+    /**
+     * Source
+     */
+    source: 'tb_mapper' | 'firm_mapping' | 'person' | 'blank';
+    /**
+     * Tax Line
+     */
+    tax_line?: string | null;
+};
+
+/**
+ * PreviewOut
+ */
+export type AbacusModulesLedgerTbHandoffContractPreviewOut = {
+    book_income: BookIncomeOut;
+    counts: AccountCountsOut;
+    /**
+     * Current Version No
+     */
+    current_version_no?: number | null;
+    /**
+     * Gate
+     */
+    gate: 'released' | 'not_released' | 'superseded';
+    /**
+     * Preview Hash
+     */
+    preview_hash: string;
+    /**
+     * Review Accounts
+     */
+    review_accounts: Array<ReviewAccountOut>;
+    /**
+     * Schedules
+     */
+    schedules?: Array<string>;
+    /**
+     * Source Kind
+     */
+    source_kind: 'audit_release' | 'review_release' | 'close_lock';
+    /**
+     * Source Snapshot Id
+     */
+    source_snapshot_id: string;
+    /**
+     * Status
+     */
+    status: 'not_available' | 'needs_review' | 'ready' | 'handed_off' | 'superseded';
+    /**
+     * Tax Items
+     */
+    tax_items?: Array<TaxItemOut>;
 };
 
 /**
@@ -97396,7 +97730,7 @@ export type VersionPreviewResponses = {
     /**
      * Successful Response
      */
-    200: PreviewOut;
+    200: AbacusModulesEvidenceRoutesPreviewOut;
 };
 
 export type VersionPreviewResponse = VersionPreviewResponses[keyof VersionPreviewResponses];
@@ -99713,7 +100047,7 @@ export type InboxPreviewResponses = {
     /**
      * Successful Response
      */
-    200: PreviewOut;
+    200: AbacusModulesEvidenceRoutesPreviewOut;
 };
 
 export type InboxPreviewResponse = InboxPreviewResponses[keyof InboxPreviewResponses];
@@ -106787,7 +107121,7 @@ export type UploadPreviewResponses = {
     /**
      * Successful Response
      */
-    200: PreviewOut;
+    200: AbacusModulesEvidenceRoutesPreviewOut;
 };
 
 export type UploadPreviewResponse = UploadPreviewResponses[keyof UploadPreviewResponses];
@@ -110401,6 +110735,191 @@ export type SocReportRequestsResponses = {
 };
 
 export type SocReportRequestsResponse = SocReportRequestsResponses[keyof SocReportRequestsResponses];
+
+export type HandoffPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query: {
+        /**
+         * Target Work Item Id
+         */
+        target_work_item_id: string;
+    };
+    url: '/v1/engagements/{engagement_id}/tax-handoff/preview';
+};
+
+export type HandoffPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HandoffPreviewError = HandoffPreviewErrors[keyof HandoffPreviewErrors];
+
+export type HandoffPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesLedgerTbHandoffContractPreviewOut;
+};
+
+export type HandoffPreviewResponse = HandoffPreviewResponses[keyof HandoffPreviewResponses];
+
+export type HandoffTargetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/tax-handoff/targets';
+};
+
+export type HandoffTargetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HandoffTargetsError = HandoffTargetsErrors[keyof HandoffTargetsErrors];
+
+export type HandoffTargetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TargetsOut;
+};
+
+export type HandoffTargetsResponse = HandoffTargetsResponses[keyof HandoffTargetsResponses];
+
+export type HandoffCreateData = {
+    body: AbacusModulesLedgerTbHandoffContractHandoffIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/tax-handoffs';
+};
+
+export type HandoffCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HandoffCreateError = HandoffCreateErrors[keyof HandoffCreateErrors];
+
+export type HandoffCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: AbacusModulesLedgerTbHandoffContractHandoffOut;
+};
+
+export type HandoffCreateResponse = HandoffCreateResponses[keyof HandoffCreateResponses];
 
 export type TeamData = {
     body?: never;
@@ -151206,6 +151725,62 @@ export type EntityGeneralInformationResponses = {
 
 export type EntityGeneralInformationResponse = EntityGeneralInformationResponses[keyof EntityGeneralInformationResponses];
 
+export type ReturnHandoffData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/handoff';
+};
+
+export type ReturnHandoffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReturnHandoffError = ReturnHandoffErrors[keyof ReturnHandoffErrors];
+
+export type ReturnHandoffResponses = {
+    /**
+     * Successful Response
+     */
+    200: LandingOut;
+};
+
+export type ReturnHandoffResponse = ReturnHandoffResponses[keyof ReturnHandoffResponses];
+
 export type ReturnIntakeData = {
     body?: never;
     headers?: {
@@ -157718,6 +158293,118 @@ export type WorksheetFieldsResponses = {
 };
 
 export type WorksheetFieldsResponse = WorksheetFieldsResponses[keyof WorksheetFieldsResponses];
+
+export type Handoff3Data = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Handoff Id
+         */
+        handoff_id: string;
+    };
+    query?: never;
+    url: '/v1/tb-handoffs/{handoff_id}';
+};
+
+export type Handoff3Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type Handoff3Error = Handoff3Errors[keyof Handoff3Errors];
+
+export type Handoff3Responses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesLedgerTbHandoffContractHandoffOut;
+};
+
+export type Handoff3Response = Handoff3Responses[keyof Handoff3Responses];
+
+export type HandoffMappingsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Handoff Id
+         */
+        handoff_id: string;
+    };
+    query?: never;
+    url: '/v1/tb-handoffs/{handoff_id}/mappings';
+};
+
+export type HandoffMappingsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type HandoffMappingsError = HandoffMappingsErrors[keyof HandoffMappingsErrors];
+
+export type HandoffMappingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: MappingsOut;
+};
+
+export type HandoffMappingsResponse = HandoffMappingsResponses[keyof HandoffMappingsResponses];
 
 export type BrowserErrorData = {
     body?: never;
