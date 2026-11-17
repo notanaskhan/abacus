@@ -23193,6 +23193,13 @@
             "title": "Accounts Total",
             "type": "integer"
           },
+          "adjustments": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Adjustments",
+            "type": "integer"
+          },
           "allowed_actions": {
             "cls": "internal",
             "default": [],
@@ -54572,6 +54579,15 @@
             "title": "Set Id",
             "type": "string"
           },
+          "subtotals": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FluxSubtotalOut"
+            },
+            "title": "Subtotals",
+            "type": "array"
+          },
           "tested": {
             "cls": "internal",
             "minimum": 0.0,
@@ -54601,6 +54617,91 @@
           "engine_version"
         ],
         "title": "FluxSetOut",
+        "type": "object"
+      },
+      "FluxSubtotalOut": {
+        "additionalProperties": false,
+        "description": "S48 rest (CLS-10 DV-a): a code-computed subtotal row (\"Gross profit\", \"Total operating\nexpenses\", \"Net income\"), drawn after the line it follows.",
+        "properties": {
+          "after_line_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "After Line Key"
+          },
+          "caption": {
+            "cls": "internal",
+            "title": "Caption",
+            "type": "string"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,10}0*$)\\d{0,8}\\.\\d{0,1}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Change Pct"
+          },
+          "current": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Current",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "gross_profit",
+              "total_operating_expenses",
+              "net_income"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "prior": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Prior"
+          }
+        },
+        "required": [
+          "kind",
+          "caption",
+          "current"
+        ],
+        "title": "FluxSubtotalOut",
         "type": "object"
       },
       "FolderItemsOut": {

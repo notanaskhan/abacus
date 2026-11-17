@@ -32,10 +32,11 @@
 
 ## Deviations and gaps
 
-- **DV-a.** Gross profit, Total operating expenses and Net income rows are not drawn: `FluxSetOut`
-  carries no subtotal lines and the browser sums nothing (contract gap; additive for C-02).
-- **DV-b.** The Adjustments segment has no count (the close summary does not carry the proposed
-  entry count); Adjustments → CLS-07 waits on CLS-07.
+- **DV-a.** Closed (S48 rest, TASK-8443): Gross profit, Total operating expenses and Net income are
+  `FluxSetOut.subtotals`, computed by code over the set's lines (cost of goods sold and operating
+  expense by QuickBooks account type) and drawn after the line each follows.
+- **DV-b.** Closed (S48 rest): the Adjustments segment counts the close's live AJEs
+  (`CloseSummaryOut.adjustments`); Adjustments → CLS-07 still waits on CLS-07.
 - **DV-c.** Citation markers name each driver; opening SHL-08 and amounts → SHL-09 are not wired.
 - **DV-d.** The year-over-year narrative note is left out (client-specific content with no field).
 - **DV-e.** Accept is enabled only for a person's explanation (`explained`); an agent draft is

@@ -63,6 +63,16 @@ describe("CLS-10 Flux", () => {
     );
     expect(over).toEqual(["payroll", "repairs_maintenance"]);
     expect(document.querySelectorAll("[data-variance='unexplained']").length).toBe(1);
+    // S48 rest (DV-a, DV-b): code's subtotal rows in place, and the Adjustments count.
+    const rows = [...document.querySelectorAll("tbody tr")].map(
+      (r) => r.getAttribute("data-line") ?? `= ${r.getAttribute("data-subtotal") ?? ""}`,
+    );
+    expect(rows.indexOf("= gross_profit")).toBe(rows.indexOf("cogs") + 1);
+    expect(rows.indexOf("= total_operating_expenses")).toBe(rows.indexOf("insurance") + 1);
+    expect(rows.at(-1)).toBe("= net_income");
+    const net = document.querySelector("[data-subtotal='net_income']");
+    expect(net?.textContent).toContain("27,795");
+    expect(net?.textContent).toContain("(3,660)");
     expect(screen.getByText("Explained · draft")).toBeTruthy();
     expect(screen.getByText("Threshold 10% and $2,500")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Accept" }).length).toBe(2);

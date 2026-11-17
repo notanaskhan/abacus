@@ -617,8 +617,41 @@ export function copperleafFlux(): FluxSetOut {
     budget_available: false,
     lines,
     engine_version: "flux-1.0.0",
+    subtotals: FLUX_SUBTOTALS,
   };
 }
+
+/** S48 rest (DV-a): the spec's subtotal rows (Gross profit, Total operating expenses, Net
+ * income), July then August, footing from FLUX (interest is other expense). */
+const FLUX_SUBTOTALS: NonNullable<FluxSetOut["subtotals"]> = [
+  {
+    kind: "gross_profit",
+    caption: "Gross profit",
+    after_line_key: "cogs",
+    prior: "124130.00",
+    current: "129740.00",
+    change: "5610.00",
+    change_pct: "4.5",
+  },
+  {
+    kind: "total_operating_expenses",
+    caption: "Total operating expenses",
+    after_line_key: "insurance",
+    prior: "92150.00",
+    current: "101425.00",
+    change: "9275.00",
+    change_pct: "10.1",
+  },
+  {
+    kind: "net_income",
+    caption: "Net income",
+    after_line_key: null,
+    prior: "31455.00",
+    current: "27795.00",
+    change: "-3660.00",
+    change_pct: "-11.6",
+  },
+];
 
 // --- CLS-09 the close plan, v3 ----------------------------------------------------------------
 

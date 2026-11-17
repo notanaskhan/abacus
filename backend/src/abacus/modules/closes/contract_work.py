@@ -528,6 +528,21 @@ class FluxLineOut(BaseModel):
     row_version: Annotated[int, Field(ge=1), Internal] = 1
 
 
+class FluxSubtotalOut(BaseModel):
+    """S48 rest (CLS-10 DV-a): a code-computed subtotal row ("Gross profit", "Total operating
+    expenses", "Net income"), drawn after the line it follows."""
+
+    model_config = _cfg()
+
+    kind: Annotated[Literal["gross_profit", "total_operating_expenses", "net_income"], Internal]
+    caption: Annotated[str, Internal]
+    after_line_key: Annotated[str | None, Internal] = None  # None: after every line
+    prior: MaybeMoney = None
+    current: Money
+    change: MaybeMoney = None
+    change_pct: Annotated[Decimal | None, Field(max_digits=9, decimal_places=1), Internal] = None
+
+
 class FluxSetOut(BaseModel):
     model_config = _cfg()
 
@@ -540,6 +555,7 @@ class FluxSetOut(BaseModel):
     budget_available: Annotated[bool, Internal] = False  # "No budget on file"
     lines: Annotated[list[FluxLineOut], Internal]
     engine_version: Annotated[str, Internal]
+    subtotals: Annotated[list[FluxSubtotalOut], Internal] = []  # S48 rest (DV-a)
 
 
 class FluxExplanationIn(BaseModel):

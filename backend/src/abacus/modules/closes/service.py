@@ -490,6 +490,7 @@ async def close_summary(ctx: AuthContext, close_id: UUID) -> CloseSummaryOut:
         preparer=people.get(prep[0]) if prep else None,
         reviewer=people.get(rev[0]) if rev else None,
         open_issues=issues,
+        adjustments=await _adjustments(ctx, close_id),
         documents_in_binder=documents,
         accounts_reconciled=r.reconciled,
         accounts_total=r.total,
@@ -677,3 +678,14 @@ __all__ = [
     "set_assignees",
     "start_close",
 ]
+
+
+async def _adjustments(ctx: AuthContext, close_id: UUID) -> int:
+    """S48 rest (CLS-10 DV-b): the close's AJEs that still count (C-01-T25's live set: proposed
+    to client-approved, not rejected or withdrawn)."""
+    from abacus.modules.adjustments.api import entries_of
+    from abacus.modules.closes.flux import LIVE_ENTRY_STATUSES
+
+    return sum(
+        1 for e in await entries_of(ctx, close_id, "aje") if e.status in LIVE_ENTRY_STATUSES
+    )
