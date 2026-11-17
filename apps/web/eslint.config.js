@@ -137,9 +137,10 @@ const ROLE_SYNTAX = [
 
 // Imports (plan 04 §1.7, F-03-T32). `featureRoots` matches a relative import that reaches across
 // feature roots, two or more levels up, outside the roots the importing file may use.
-function importRestrictions(featureRoots) {
+function importRestrictions(featureRoots, extra = []) {
   return {
     patterns: [
+      ...extra,
       {
         group: ["**/packages/*/src/**", "@abacus/*/src/**"],
         message: "Import a package through its public entry point, not its src/.",
@@ -305,6 +306,23 @@ export default defineConfig(
       "no-restricted-imports": ["error", importRestrictions(FEATURE_ROOTS)],
       // ADR-011: the backend is reached only through the generated client.
       "no-restricted-globals": ["error", ...NETWORK_GLOBALS],
+    },
+  },
+  {
+    // A-08-T32 (A-08 §5.2): external confirmations never import the independence confirmation
+    // code (MyConfirmations, IndependenceConfirmation; SPEC-025), so the two never merge.
+    files: ["src/domain/audits/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        importRestrictions(FEATURE_ROOTS, [
+          {
+            group: ["**/MyConfirmations", "**/MyConfirmations.*", "**/*Independence*"],
+            message:
+              "External confirmations (AUD-14, POR-17) never import independence confirmation code (A-08 §5.2).",
+          },
+        ]),
+      ],
     },
   },
   {
