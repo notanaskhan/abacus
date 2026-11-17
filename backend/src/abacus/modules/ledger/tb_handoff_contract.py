@@ -19,11 +19,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from fastapi import Depends, Header
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel._flags import TAX_TB_HANDOFF
 from abacus.kernel._statuses import TbHandoffStatus
@@ -50,7 +50,7 @@ def _cfg() -> ConfigDict:
     return ConfigDict(frozen=True, extra="forbid")
 
 
-class TargetOut(BaseModel):
+class TbHandoffTargetOut(BaseModel):
     """An eligible return of the same client: metadata only, wall-safe."""
 
     model_config = _cfg()
@@ -60,14 +60,14 @@ class TargetOut(BaseModel):
     tax_year: Annotated[int, Field(ge=2000, le=2100), Internal]
 
 
-class TargetsOut(BaseModel):
+class TbHandoffTargetsOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[TargetOut], Internal]
+    items: Annotated[list[TbHandoffTargetOut], Internal]
     total: Annotated[int, Field(ge=0), Internal]
 
 
-class AccountCountsOut(BaseModel):
+class TbHandoffCountsOut(BaseModel):
     """121 mapped + 5 suggested + 2 review = 128 accounts (AUD-38 b)."""
 
     model_config = _cfg()
@@ -78,7 +78,7 @@ class AccountCountsOut(BaseModel):
     total: Annotated[int, Field(ge=0), Internal]
 
 
-class ReviewAccountOut(BaseModel):
+class TbHandoffReviewAccountOut(BaseModel):
     """A review account (amber) and its choice; none chosen blocks Hand off."""
 
     model_config = _cfg()
@@ -87,10 +87,11 @@ class ReviewAccountOut(BaseModel):
     account_name: Annotated[str, Field(max_length=200), Confidential]
     balance: Money
     choice: Annotated[AccountTravel | None, Internal] = None
-    source: Annotated[Literal["tb_mapper", "firm_mapping", "person"] | None, Internal] = None
+    # T-06-T06: every account names where its suggestion came from (never blank).
+    source: Annotated[Literal["tb_mapper", "firm_mapping", "person"], Internal]
 
 
-class BookIncomeOut(BaseModel):
+class TbHandoffBookIncomeOut(BaseModel):
     """Book income 3,100,000 - 750,000 = 2,350,000 (pretax, income-tax expense, net)."""
 
     model_config = _cfg()
@@ -100,7 +101,7 @@ class BookIncomeOut(BaseModel):
     net_income: Money
 
 
-class TaxItemOut(BaseModel):
+class TbHandoffTaxItemOut(BaseModel):
     """A tax-relevant audit item (passed AJE-3 68,400 from the SUM)."""
 
     model_config = _cfg()
@@ -111,40 +112,48 @@ class TaxItemOut(BaseModel):
     included: Annotated[bool, Internal]
 
 
-class PreviewOut(BaseModel):
+class TbHandoffPreviewOut(BaseModel):
     model_config = _cfg()
 
     source_kind: Annotated[SourceKind, Internal]
     source_snapshot_id: Annotated[UUID, Internal]
+    # T-06-T06: a close_lock hand-off names the locked close it comes from.
+    locked_close_id: Annotated[UUID | None, Internal] = None
     gate: Annotated[Gate, Internal]
     status: Annotated[HandoffState, Internal]
-    counts: Annotated[AccountCountsOut, Internal]
-    review_accounts: Annotated[list[ReviewAccountOut], Internal]
-    book_income: Annotated[BookIncomeOut, Internal]
+    counts: Annotated[TbHandoffCountsOut, Internal]
+    review_accounts: Annotated[list[TbHandoffReviewAccountOut], Internal]
+    book_income: Annotated[TbHandoffBookIncomeOut, Internal]
     schedules: Annotated[list[str], Internal] = []
-    tax_items: Annotated[list[TaxItemOut], Internal] = []
+    tax_items: Annotated[list[TbHandoffTaxItemOut], Internal] = []
     current_version_no: Annotated[int | None, Field(ge=1), Internal] = None
     preview_hash: Hash
 
+    @model_validator(mode="after")
+    def _close_reference(self) -> Self:
+        if (self.source_kind == "close_lock") != (self.locked_close_id is not None):
+            raise ValueError("a close_lock hand-off names its locked close, and only it does")
+        return self
 
-class AccountChoiceIn(BaseModel):
+
+class TbHandoffAccountChoiceIn(BaseModel):
     model_config = _cfg()
 
     account_ref: Annotated[str, Field(min_length=1, max_length=64), Internal]
     choice: Annotated[AccountTravel, Internal]
 
 
-class HandoffIn(BaseModel):
+class TbHandoffIn(BaseModel):
     model_config = _cfg()
 
     target_work_item_id: Annotated[UUID, Internal]
-    account_choices: Annotated[list[AccountChoiceIn], Field(max_length=500), Internal]
+    account_choices: Annotated[list[TbHandoffAccountChoiceIn], Field(max_length=500), Internal]
     schedules: Annotated[list[str], Field(max_length=20), Internal] = []
     tax_items: Annotated[list[str], Field(max_length=50), Internal] = []
     seen_preview_hash: Hash
 
 
-class HandoffOut(BaseModel):
+class TbHandoffOut(BaseModel):
     """ "Handed off to FY2026 Form 1120 · 1 tax issue created · 7 accounts for the tax team to
     map" (AUD-38 c)."""
 
@@ -160,7 +169,7 @@ class HandoffOut(BaseModel):
     supersedes_id: Annotated[UUID | None, Internal] = None
 
 
-class MappingRowOut(BaseModel):
+class TbHandoffMappingRowOut(BaseModel):
     model_config = _cfg()
 
     account_ref: Annotated[str, Field(max_length=64), Internal]
@@ -170,26 +179,33 @@ class MappingRowOut(BaseModel):
     source: Annotated[Literal["tb_mapper", "firm_mapping", "person", "blank"], Internal]
 
 
-class MappingsOut(BaseModel):
+class TbHandoffMappingsOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[MappingRowOut], Internal]
+    items: Annotated[list[TbHandoffMappingRowOut], Internal]
     total: Annotated[int, Field(ge=0), Internal]
 
 
-class LandingOut(BaseModel):
+class TbHandoffLandingOut(BaseModel):
     """TXP-13 d and TXP-02's banner: "From FY2026 audit · Final TB · handed off Nov 9"."""
 
     model_config = _cfg()
 
     handoff_id: Annotated[UUID | None, Internal] = None
     source_kind: Annotated[SourceKind | None, Internal] = None
+    locked_close_id: Annotated[UUID | None, Internal] = None
     source_label: Annotated[str | None, Field(max_length=200), Internal] = None
     handed_off_at: Annotated[datetime | None, Internal] = None
     handed_off_by: Annotated[str | None, Field(max_length=200), Confidential] = None
     source_link_allowed: Annotated[bool, Internal] = False  # absent, never disabled
     superseded: Annotated[bool, Internal] = False
-    book_income: Annotated[BookIncomeOut | None, Internal] = None
+    book_income: Annotated[TbHandoffBookIncomeOut | None, Internal] = None
+
+    @model_validator(mode="after")
+    def _close_reference(self) -> Self:
+        if self.source_kind == "close_lock" and self.locked_close_id is None:
+            raise ValueError("a close_lock landing names its locked close")
+        return self
 
 
 # --- routes (each 501, one action) ------------------------------------------------------------
@@ -204,34 +220,34 @@ async def _on(ctx: AuthContext) -> None:
 
 
 @tb_handoff_router.get(
-    f"{_E}/tax-handoff/targets", action="tb_handoff.preview", response_model=TargetsOut,
+    f"{_E}/tax-handoff/targets", action="tb_handoff.preview", response_model=TbHandoffTargetsOut,
     errors=(501,),
 )  # fmt: skip
-async def handoff_targets_route(engagement_id: UUID, ctx: Ctx) -> TargetsOut:
+async def handoff_targets_route(engagement_id: UUID, ctx: Ctx) -> TbHandoffTargetsOut:
     """Eligible returns of the same client, metadata only (T-06-T20)."""
     await _on(ctx)
     raise NotImplementedYet
 
 
 @tb_handoff_router.get(
-    f"{_E}/tax-handoff/preview", action="tb_handoff.preview", response_model=PreviewOut,
+    f"{_E}/tax-handoff/preview", action="tb_handoff.preview", response_model=TbHandoffPreviewOut,
     errors=(409, 501),
 )  # fmt: skip
 async def handoff_preview_route(
     engagement_id: UUID, target_work_item_id: UUID, ctx: Ctx
-) -> PreviewOut:
+) -> TbHandoffPreviewOut:
     """AUD-38 preview: counts, review rows, book income, tax items, gate and `preview_hash`."""
     await _on(ctx)
     raise NotImplementedYet
 
 
 @tb_handoff_router.post(
-    f"{_E}/tax-handoffs", action="tb_handoff.create", response_model=HandoffOut,
+    f"{_E}/tax-handoffs", action="tb_handoff.create", response_model=TbHandoffOut,
     status_code=201, errors=(409, 501),
 )  # fmt: skip
 async def handoff_create_route(
-    engagement_id: UUID, body: HandoffIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> HandoffOut:
+    engagement_id: UUID, body: TbHandoffIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> TbHandoffOut:
     """One immutable version (C12); 409 `handoff_not_available`, `handoff_needs_review` or
     `preview_changed`. A live person's only."""
     await _on(ctx)
@@ -241,29 +257,33 @@ async def handoff_create_route(
 
 
 @tb_handoff_router.get(
-    "/tb-handoffs/{handoff_id}", action="tb_handoff.read", response_model=HandoffOut,
+    "/tb-handoffs/{handoff_id}", action="tb_handoff.read", response_model=TbHandoffOut,
     errors=(501,),
 )  # fmt: skip
-async def handoff_route(handoff_id: UUID, ctx: Ctx) -> HandoffOut:
+async def handoff_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffOut:
     await _on(ctx)
     raise NotImplementedYet
 
 
 @tb_handoff_router.get(
-    "/tb-handoffs/{handoff_id}/mappings", action="tb_handoff.read", response_model=MappingsOut,
+    "/tb-handoffs/{handoff_id}/mappings",
+    action="tb_handoff.read",
+    response_model=TbHandoffMappingsOut,
     errors=(501,),
 )  # fmt: skip
-async def handoff_mappings_route(handoff_id: UUID, ctx: Ctx) -> MappingsOut:
+async def handoff_mappings_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffMappingsOut:
     """The O4 128-row table."""
     await _on(ctx)
     raise NotImplementedYet
 
 
 @tb_handoff_router.get(
-    "/tax-returns/{return_id}/handoff", action="tax_return.read", response_model=LandingOut,
+    "/tax-returns/{return_id}/handoff",
+    action="tax_return.read",
+    response_model=TbHandoffLandingOut,
     errors=(501,),
 )  # fmt: skip
-async def return_handoff_route(return_id: UUID, ctx: Ctx) -> LandingOut:
+async def return_handoff_route(return_id: UUID, ctx: Ctx) -> TbHandoffLandingOut:
     """The landing banner and M-1 starting point (TXP-13 d, TXP-02; T-06-T39)."""
     await _on(ctx)
     raise NotImplementedYet
