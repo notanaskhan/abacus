@@ -321,3 +321,10 @@ export {
   GRANITE_PEAK_SUBTOTALS,
   GRANITE_PEAK_UNEXPLAINED,
 } from "../fixtures/seed/fieldwork";
+
+// A-08-T29: AUD-14's confirmation log and coverage line.
+export {
+  type ConfirmationLogRow,
+  GRANITE_PEAK_CONFIRMATIONS,
+  GRANITE_PEAK_COVERAGE,
+} from "../fixtures/seed/fieldwork";
