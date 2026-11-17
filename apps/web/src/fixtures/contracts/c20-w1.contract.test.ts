@@ -52,8 +52,8 @@ describe("C20 v2.1 fixtures for CLS-11 and POR-16", () => {
       status: "posted",
       entry_count: 6,
       approved_count: 6,
-      first_external_ref: "47901",
-      last_external_ref: "47906",
+      first_external_ref: "47602",
+      last_external_ref: "47607",
       resolved_failures: 1,
     };
     expect(validateResponse("GET", BATCH, row)).toEqual([]);

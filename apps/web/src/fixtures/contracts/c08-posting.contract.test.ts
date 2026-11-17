@@ -16,10 +16,10 @@ const ENTRY = STATUS_REGISTRY.proposed_entry as Record<string, Entry>;
 const BATCH = STATUS_REGISTRY.posting_batch as Record<string, Entry>;
 
 const ROWS: readonly [string, string, string, string, CloseEntryRowOut["status"]][] = [
-  ["AJE-01", "6400.00", "payroll_accruals", "15000.00", "within_threshold"],
-  ["AJE-02", "4200.00", "prepaids", "10000.00", "within_threshold"],
-  ["AJE-03", "5320.00", "depreciation", "10000.00", "within_threshold"],
-  ["AJE-04", "4100.00", "deferred_revenue", "10000.00", "within_threshold"],
+  ["AJE-01", "11860.00", "payroll_accruals", "15000.00", "within_threshold"],
+  ["AJE-02", "700.00", "prepaids", "10000.00", "within_threshold"],
+  ["AJE-03", "2140.00", "depreciation", "10000.00", "within_threshold"],
+  ["AJE-04", "5320.00", "deferred_revenue", "10000.00", "within_threshold"],
   ["AJE-05", "14900.00", "other_accruals", "10000.00", "review_required"],
 ];
 
