@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import SUPPORT_PANEL_V2
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -189,11 +189,13 @@ async def _gate(ctx: AuthContext, action: str) -> None:
 
 
 @router.get(
-    "/support/conversation", action="support.chat", response_model=ConversationOut, errors=(501,)
+    "/support/conversation", action="support.chat", response_model=ConversationOut, errors=()
 )
 async def support_conversation(ctx: Ctx) -> ConversationOut:
     await _gate(ctx, "support.chat")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import support
+
+    return await support.conversation(ctx)
 
 
 @router.post(
@@ -201,34 +203,40 @@ async def support_conversation(ctx: Ctx) -> ConversationOut:
     action="support.chat",
     response_model=SupportMessageOut,
     status_code=201,
-    errors=(429, 501),
+    errors=(429,),
 )
 async def support_send_message(
     body: SupportMessageIn, ctx: Ctx, _key: IdempotencyKey
 ) -> SupportMessageOut:
     await _gate(ctx, "support.chat")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import support
+
+    return await support.send(ctx, body.body)
 
 
-@router.get("/help/articles", action="help.read", response_model=HelpArticlesOut, errors=(501,))
+@router.get("/help/articles", action="help.read", response_model=HelpArticlesOut, errors=())
 async def help_articles(
     ctx: Ctx,
     context: Annotated[str | None, Query(pattern=r"^[A-Z]{2,4}-[0-9]{2}$")] = None,
     q: Annotated[str | None, Query(min_length=1, max_length=200)] = None,
 ) -> HelpArticlesOut:
     await _gate(ctx, "help.read")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import support
+
+    return await support.help_articles(context, q)
 
 
-@router.get(
-    "/help/articles/{slug}", action="help.read", response_model=HelpArticleOut, errors=(501,)
-)
+@router.get("/help/articles/{slug}", action="help.read", response_model=HelpArticleOut, errors=())
 async def help_article(slug: str, ctx: Ctx) -> HelpArticleOut:
     await _gate(ctx, "help.read")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import support
+
+    return await support.help_article(slug)
 
 
-@router.get("/status", action="status.read", response_model=FirmStatusOut, errors=(501,))
+@router.get("/status", action="status.read", response_model=FirmStatusOut, errors=())
 async def firm_status(ctx: Ctx) -> FirmStatusOut:
     await _gate(ctx, "status.read")
-    raise NotImplementedYet(_TASK)
+    from abacus.modules.platform import support
+
+    return await support.firm_status(ctx)

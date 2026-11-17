@@ -211,3 +211,8 @@ from abacus.modules.integrations.dependents import admit as admit  # noqa: E402
 from abacus.modules.integrations.dependents import (  # noqa: E402
     register_dependents_provider as register_dependents_provider,
 )
+
+# G-04-T10 (DEC-5417): the firm's install health for SHL-05's status.
+from abacus.modules.integrations.firm_health import register as _register_firm_health  # noqa: E402
+
+_register_firm_health()
