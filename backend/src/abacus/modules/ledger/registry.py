@@ -167,3 +167,75 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"effective_from"}  # A-03-T06 (0521): the effective date a person publishes with
     ),
 }
+
+# T-06-T11 (0953, DEC-5520): TB hand-offs, insert-only; only ledger/tb_handoff.py writes them.
+T06T11_TABLES: frozenset[str] = frozenset(
+    {
+        "tb_handoff_account_choices",
+        "tb_handoff_schedules",
+        "tb_handoff_supersessions",
+        "tb_handoff_tax_items",
+        "tb_handoffs",
+    }
+)
+TABLES = TABLES | T06T11_TABLES
+INSERT_ONLY = INSERT_ONLY | T06T11_TABLES
+INSERT_COLUMNS["tb_handoffs"] = frozenset(
+    {
+        "book_income",
+        "client_id",
+        "counts",
+        "handed_off_by",
+        "preview_hash",
+        "source_engagement_id",
+        "source_kind",
+        "source_snapshot_id",
+        "source_work_item_id",
+        "target_work_item_id",
+        "tenant_id",
+        "version_no",
+    }
+)
+INSERT_COLUMNS["tb_handoff_supersessions"] = frozenset(
+    {
+        "detected_snapshot_id",
+        "handoff_id",
+        "reason",
+        "superseded_by_handoff_id",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["tb_handoff_account_choices"] = frozenset(
+    {
+        "account_name",
+        "account_no",
+        "balance",
+        "handoff_id",
+        "needs_review",
+        "source",
+        "suggestion_id",
+        "tax_line_code",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["tb_handoff_schedules"] = frozenset(
+    {
+        "carried",
+        "facts",
+        "handoff_id",
+        "kind",
+        "leadsheet_ref",
+        "tenant_id",
+    }
+)
+INSERT_COLUMNS["tb_handoff_tax_items"] = frozenset(
+    {
+        "amount",
+        "create_issue",
+        "handoff_id",
+        "issue_id",
+        "item_kind",
+        "source_ref",
+        "tenant_id",
+    }
+)
