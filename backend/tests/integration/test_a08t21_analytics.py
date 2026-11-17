@@ -100,9 +100,13 @@ def _source() -> list[svc.SourceLine]:
 
 
 async def _seed_set(
-    ctx: AuthContext, engagement: uuid.UUID, work_item: uuid.UUID, monkeypatch: pytest.MonkeyPatch
+    ctx: AuthContext,
+    engagement: uuid.UUID,
+    work_item: uuid.UUID,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str = "preliminary",
 ) -> uuid.UUID:
-    """A provisional preliminary set at PM 116,250 computed over `_source()`."""
+    """A provisional set (preliminary unless named) at PM 116,250 computed over `_source()`."""
 
     async def no_dispatch(*_: object) -> None:
         return None
@@ -127,9 +131,9 @@ async def _seed_set(
         engagement_id=engagement,
         work_item_id=work_item,
         kind="audit_flux",
-        stage="preliminary",
+        stage=stage,
         trial_balance_id=uuid.uuid4(),
-        layer="unadjusted",
+        layer="adjusted" if stage == "final" else "unadjusted",
         py_source="prior_engagement",
         threshold=svc.ThresholdFacts(D("10"), D("116250"), None, D("155000"), True),
         created_by=ctx.user_id,
@@ -210,3 +214,37 @@ async def test_ac52_decided_materiality_is_a_new_version(
     assert not fresh.threshold.provisional
     carried = next(x for x in fresh.lines if x.fs_line_key == "revenue")
     assert carried.status == "explained"  # still over at 120,000: the explanation carried
+
+
+async def test_an_accepted_entry_puts_the_final_set_out_of_date(
+    audit: tuple[AuthContext, uuid.UUID, uuid.UUID, Seeder], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """S48 rest (A-08-T21): an entry the client accepted lands on the adjusted layer, so the
+    Current final-stage set reads Out of date; a decline changes nothing, a preliminary set is
+    untouched and a replay writes nothing more."""
+    ctx, engagement, work_item, seed = audit
+    final = await _seed_set(ctx, engagement, work_item, monkeypatch, stage="final")
+
+    def event(decision: str) -> OutboxEvent:
+        return OutboxEvent(
+            uuid.uuid4(),
+            ctx.tenant_id,
+            "proposed_entry.client_decided",
+            {"work_item_id": str(work_item), "entry_id": str(uuid.uuid4()), "decision": decision},
+        )
+
+    status = "SELECT status || ':' || coalesce(failure_code, '') FROM analytics_sets WHERE id = $1"
+    await svc.on_entry_client_decided(event("client_declined"))
+    assert await seed.value(status, final) == "current:"
+    accepted = event("client_accepted")
+    await svc.on_entry_client_decided(accepted)
+    await svc.on_entry_client_decided(accepted)
+    assert await seed.value(status, final) == "out_of_date:adjustment_recorded"
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM audit_events WHERE action = 'analytics.went_out_of_date' "
+            "AND target_id = $1",
+            final,
+        )
+        == 1
+    )
