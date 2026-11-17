@@ -15,8 +15,6 @@ figure is code (ADR-050). Model work never runs here: `close.agent`'s modes are 
 
 from __future__ import annotations
 
-import hashlib
-from dataclasses import asdict
 from decimal import Decimal
 from typing import Final
 from uuid import UUID
@@ -75,9 +73,6 @@ class StepInputMissing(DomainConflict):
     code = "step_input_missing"
 
 
-def _sha(*parts: object) -> str:
-    return hashlib.sha256("|".join(str(x) for x in parts).encode()).hexdigest()
-
 
 async def _close(tenant: TenantContext, facts: RunStepFacts) -> repo.CloseRow:
     raw = facts.arguments.get("close_id")
@@ -110,74 +105,21 @@ def _failed(code: str) -> RunStepResult:
 
 
 async def reconcile_statement(ctx: AgentContext, facts: RunStepFacts) -> RunStepResult:
-    """A new reconciliation version: the statement's balance and items carried from the newest
-    version, the book balance from this month's ledger set; `pending` without a statement."""
-    tenant = ctx.tenant
+    """A new reconciliation version when its inputs changed (C-01-T23: `reconciliations.recompute`
+    carries the open items to it); `pending` without a statement."""
+    from abacus.modules.closes.reconciliations import recompute
+
     account = _account(facts)
     if account is None:
         return _failed("account_missing")
     try:
-        close = await _close(tenant, facts)
-        book = await _balance(tenant, close, account)
+        close = await _close(ctx.tenant, facts)
+        await recompute(ctx.tenant, close.work_item_id, account)
     except PeriodNotAvailable:
         return _failed("ledger_period_missing")
-    except StepInputMissing:
+    except (StepInputMissing, NotFound):
         return _failed("account_missing")
-    _, period_end = month_bounds(close.period)
-    async with tenant_session(tenant) as session:
-        latest = (
-            await session.execute(_LATEST_REC, {"c": close.work_item_id, "a": account})
-        ).first()
-        items = (
-            []
-            if latest is None
-            else [
-                p.OutstandingItem(r[0], r[1], r[2], Decimal(r[3]), r[4])
-                for r in (await session.execute(_ITEMS, {"r": latest[0]})).all()
-                if r[0] in ("bank", "book")
-            ]
-        )
-    statement = None if latest is None else latest[2]
-    bank = None if latest is None or latest[3] is None else Decimal(latest[3])
-    inputs = {"book": book, "bank": bank, "items": [asdict(i) for i in items], "end": period_end}
-    ih = p.inputs_hash(inputs)
-    if latest is not None and latest[4] == ih:
-        return RunStepResult("succeeded", records_read=len(items) + 1)  # unchanged: no new version
-    version = 1 if latest is None else int(latest[1]) + 1
-    if bank is None:
-        values = {"bank": None, "abank": None, "abook": None, "diff": None, "tally": "pending"}
-    else:
-        rec = p.reconcile_statement(bank, book, items, period_end)
-        values = {
-            "bank": rec.balance_per_bank,
-            "abank": rec.adjusted_bank,
-            "abook": rec.adjusted_book,
-            "diff": rec.difference,
-            "tally": rec.tally,
-        }
-    async with uow(tenant) as tx:
-        rec_id = await tx.session.scalar(
-            _INSERT_REC,
-            {
-                "t": tenant.tenant_id,
-                "c": close.work_item_id,
-                "a": account,
-                "period": close.period,
-                "version": version,
-                "stmt": statement,
-                "book": book,
-                "engine": p.ENGINE_VERSION,
-                "ih": ih,
-                "ch": _sha(ih, values["tally"]),
-                **values,
-            },
-        )
-        tx.record(
-            "reconciliation.computed",
-            target=Target("reconciliation", rec_id),
-            after=Ref(close_id=close.work_item_id, version=version, inputs_hash=ih),
-        )
-    return RunStepResult("succeeded", records_read=len(items) + 1)
+    return RunStepResult("succeeded", records_read=1)
 
 
 async def clear_third_party_sales(ctx: AgentContext, facts: RunStepFacts) -> RunStepResult:
