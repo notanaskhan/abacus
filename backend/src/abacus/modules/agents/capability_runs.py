@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
+from abacus.modules.agents.events import RunNeedsInput
 from abacus.modules.agents.repository import finish_run, insert_run
 from abacus.modules.agents.service import load_agent_context
 from abacus.modules.agents.spec_v2 import spec_v2
@@ -53,7 +54,17 @@ async def start_capability_run(
 async def end_capability_run(
     agent: AgentContext, *, status: str, output: dict[str, object] | None = None
 ) -> None:
-    """`succeeded`, `escalated` or `failed`, once; the output is identifiers and counts."""
+    """`succeeded`, `escalated` or `failed`, once; the output is identifiers and counts. S48 rest
+    (C-01-T30): an escalated run waits on its person (C6 v2 `needs_input`), so it also emits
+    `agent_run.needs_input` and C16 tells the initiator (`run_needs_input`)."""
     async with uow(agent.tenant) as tx:
         if await finish_run(tx.session, agent.agent_run_id, status=status, output=output):
             tx.record(f"agent_run.{status}", target=Target("agent_run", agent.agent_run_id))
+            if status == "escalated" and agent.engagement_id is not None:
+                tx.emit(
+                    RunNeedsInput(
+                        run_id=agent.agent_run_id,
+                        engagement_id=agent.engagement_id,
+                        user_id=agent.initiator.user_id,
+                    )
+                )
