@@ -243,6 +243,9 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "ledger_write_evidence": "ledger_write_evidence_immutable",  # 0951 (C-02-T05)
     "connection_write_grants": "connection_write_grants_immutable",  # 0951 (C-02-T05)
     "firm_write_capabilities": "firm_write_capabilities_immutable",  # 0951 (C-02-T05)
+    "fixed_asset_versions": "fixed_asset_versions_immutable",  # 0952 (T-06-T10)
+    "fixed_asset_dispositions": "fixed_asset_dispositions_immutable",  # 0952 (T-06-T10)
+    "ptet_payments": "ptet_payments_immutable",  # 0952 (T-06-T10)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {

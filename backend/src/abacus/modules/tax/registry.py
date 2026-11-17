@@ -1098,3 +1098,345 @@ INSERT_COLUMNS["gift_history_item_versions"] = frozenset(
 INSERT_COLUMNS["gift_history_items"] = frozenset(
     {"asset", "client_entity_id", "created_by", "donee_name_sealed", "tenant_id", "year"}
 )
+
+# T-06-T10 (0952, DEC-5519): entity depth, every table TRI on a return's work item.
+T06T10_TABLES: frozenset[str] = frozenset(
+    {
+        "basis_schedules",
+        "book_tax_items",
+        "fixed_asset_dispositions",
+        "fixed_asset_versions",
+        "fixed_assets",
+        "liability_shares",
+        "nexus_facts",
+        "ptet_elections",
+        "ptet_partner_credits",
+        "ptet_payments",
+        "sourcing_positions",
+        "state_apportionments",
+        "tax_properties",
+    }
+)
+TABLES = TABLES | T06T10_TABLES
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {
+        "fixed_asset_dispositions",
+        "fixed_asset_versions",
+        "ptet_payments",
+    }
+)
+INSERT_COLUMNS["tax_properties"] = frozenset(
+    {
+        "city",
+        "code",
+        "engagement_id",
+        "form8825_property_no",
+        "land_value",
+        "name",
+        "source_ref",
+        "state",
+        "tenant_id",
+        "use",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["fixed_assets"] = frozenset(
+    {
+        "accum_bop",
+        "accum_eop",
+        "acquired_on",
+        "asset_no",
+        "binding_contract_on",
+        "bonus_pct",
+        "book_equals_tax",
+        "convention",
+        "cost",
+        "current_year",
+        "date_citation_id",
+        "description",
+        "engagement_id",
+        "engine_name",
+        "engine_version",
+        "inputs_hash",
+        "method",
+        "placed_in_service_on",
+        "property_id",
+        "recovery_class",
+        "sec179",
+        "status",
+        "status_reason_code",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["fixed_asset_versions"] = frozenset(
+    {
+        "asset_id",
+        "changed_by",
+        "engagement_id",
+        "image",
+        "proposal_id",
+        "tenant_id",
+        "version",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["fixed_asset_dispositions"] = frozenset(
+    {
+        "asset_id",
+        "created_by",
+        "disposed_on",
+        "engagement_id",
+        "gain_loss",
+        "proceeds",
+        "recapture_1245",
+        "tenant_id",
+        "unrecaptured_1250",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["book_tax_items"] = frozenset(
+    {
+        "account_no",
+        "col_a",
+        "col_b",
+        "col_c",
+        "col_d",
+        "description",
+        "engagement_id",
+        "engine_name",
+        "engine_version",
+        "inputs_hash",
+        "kind",
+        "line_key",
+        "schedule",
+        "source_ref",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["basis_schedules"] = frozenset(
+    {
+        "difference",
+        "engagement_id",
+        "engine_name",
+        "engine_version",
+        "inputs_hash",
+        "inside_share",
+        "outside_basis",
+        "partner_id",
+        "s743b_placeholder",
+        "s752_share",
+        "status",
+        "tax_capital",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["liability_shares"] = frozenset(
+    {
+        "engagement_id",
+        "liability_kind",
+        "method",
+        "partner_id",
+        "share_bop",
+        "share_eop",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["state_apportionments"] = frozenset(
+    {
+        "denominator",
+        "engagement_id",
+        "nexus_basis",
+        "numerator",
+        "property_id",
+        "return_form",
+        "share",
+        "state",
+        "status",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["sourcing_positions"] = frozenset(
+    {
+        "decided_at",
+        "decided_by",
+        "engagement_id",
+        "method",
+        "proposal_id",
+        "status",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["ptet_elections"] = frozenset(
+    {
+        "amount",
+        "base",
+        "election",
+        "engagement_id",
+        "rate",
+        "rounding_rule",
+        "state",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["ptet_payments"] = frozenset(
+    {
+        "amount",
+        "engagement_id",
+        "evidence_version_id",
+        "paid_on",
+        "recorded_by",
+        "state",
+        "tenant_id",
+        "with_extension",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["ptet_partner_credits"] = frozenset(
+    {
+        "amount",
+        "engagement_id",
+        "override_reason",
+        "partner_id",
+        "rounding_rule",
+        "state",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+INSERT_COLUMNS["nexus_facts"] = frozenset(
+    {
+        "conclusion",
+        "engagement_id",
+        "evidence_version_id",
+        "fact",
+        "owner_user_id",
+        "state",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["tax_properties"] = frozenset(
+    {
+        "city",
+        "form8825_property_no",
+        "land_value",
+        "name",
+        "source_ref",
+        "state",
+        "use",
+        "version",
+    }
+)
+UPDATE_COLUMNS["fixed_assets"] = frozenset(
+    {
+        "accum_bop",
+        "accum_eop",
+        "acquired_on",
+        "binding_contract_on",
+        "bonus_pct",
+        "book_equals_tax",
+        "computed_at",
+        "convention",
+        "cost",
+        "current_year",
+        "date_citation_id",
+        "description",
+        "engine_name",
+        "engine_version",
+        "inputs_hash",
+        "method",
+        "placed_in_service_on",
+        "property_id",
+        "recovery_class",
+        "sec179",
+        "status",
+        "status_reason_code",
+        "version",
+    }
+)
+UPDATE_COLUMNS["book_tax_items"] = frozenset(
+    {
+        "col_a",
+        "col_b",
+        "col_c",
+        "col_d",
+        "computed_at",
+        "description",
+        "engine_name",
+        "engine_version",
+        "inputs_hash",
+        "kind",
+        "source_ref",
+    }
+)
+UPDATE_COLUMNS["basis_schedules"] = frozenset(
+    {
+        "computed_at",
+        "difference",
+        "engine_name",
+        "engine_version",
+        "inputs_hash",
+        "inside_share",
+        "outside_basis",
+        "s743b_placeholder",
+        "s752_share",
+        "status",
+        "tax_capital",
+    }
+)
+UPDATE_COLUMNS["liability_shares"] = frozenset(
+    {
+        "method",
+        "share_bop",
+        "share_eop",
+    }
+)
+UPDATE_COLUMNS["state_apportionments"] = frozenset(
+    {
+        "denominator",
+        "nexus_basis",
+        "numerator",
+        "return_form",
+        "share",
+        "status",
+    }
+)
+UPDATE_COLUMNS["sourcing_positions"] = frozenset(
+    {
+        "decided_at",
+        "decided_by",
+        "status",
+    }
+)
+UPDATE_COLUMNS["ptet_elections"] = frozenset(
+    {
+        "amount",
+        "base",
+        "election",
+        "rate",
+        "rounding_rule",
+        "version",
+    }
+)
+UPDATE_COLUMNS["ptet_partner_credits"] = frozenset(
+    {
+        "amount",
+        "override_reason",
+        "rounding_rule",
+    }
+)
+UPDATE_COLUMNS["nexus_facts"] = frozenset(
+    {
+        "conclusion",
+        "evidence_version_id",
+        "fact",
+        "owner_user_id",
+    }
+)
