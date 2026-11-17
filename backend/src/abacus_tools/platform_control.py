@@ -7,6 +7,8 @@ Run as an ECS one-off `abacus-ops` task, never from a laptop against a hosted da
         --tenant <tenant_id> --off --operator <handle> --reason "restore verified"
     python -m abacus_tools.platform_control set --control model_route_block --scope platform \
         --route bedrock --on --operator <handle> --reason "regional outage"
+    python -m abacus_tools.platform_control set --control integration_pause --scope platform \
+        --integration quickbooks_online --on --operator <handle> --reason "provider incident"
     python -m abacus_tools.platform_control list
 
 `set` calls `set_platform_control(...)` as `abacus_ops` (`ops_database_url`; EXECUTE only), which
@@ -14,12 +16,15 @@ upserts the row, appends to the insert-only `platform_control_changes` and, for 
 `platform_control.changed` into that firm's audit trail as `operator:<handle>`. Every process
 sees the change within the controls cache (10 seconds). `list` reads the active rows through
 `platform_control_state()` as the app role. `portal_sign_in` is the P-08 BFF's per-firm switch.
+`integration_pause` (W-01-T07 rest, 0948) pauses one integration by its catalogue key
+(`--integration`, kept in the row's `route` column), per firm or for everyone.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import re
 import sys
 from dataclasses import dataclass
 from typing import Final, cast
@@ -32,10 +37,12 @@ from abacus_tools.db_connect import connect as connect_db
 CONTROLS: Final = (
     *("ai_pause", "model_route_block", "email_pause", "read_only", "portal_sign_in"),
     "confirmation_links",  # A-08-T03 (0887): the public confirmation family and link issuance
+    "integration_pause",  # W-01-T07 rest (0948): one integration, by its catalogue key
 )
 _FIRM_ONLY: Final = frozenset({"portal_sign_in"})
 _PLATFORM_ONLY: Final = frozenset({"model_route_block"})
 ROUTES: Final = ("direct", "bedrock")
+_KEY: Final = re.compile(r"[a-z][a-z0-9_]{0,59}")  # a catalogue key
 
 
 class Refused(Exception):
@@ -68,10 +75,17 @@ class ControlChange:
             raise Refused(f"{self.control} is set per firm")
         if self.control in _PLATFORM_ONLY and self.scope != "platform":
             raise Refused(f"{self.control} is set for the platform")
-        if (self.control == "model_route_block") != (self.route is not None):
-            raise Refused("--route is given for model_route_block, and only for it")
-        if self.route is not None and self.route not in ROUTES:
+        if (self.control in ("model_route_block", "integration_pause")) != (
+            self.route is not None
+        ):
+            raise Refused(
+                "--route is given for model_route_block and --integration for integration_pause, "
+                "and only for them"
+            )
+        if self.control == "model_route_block" and self.route not in ROUTES:
             raise Refused(f"--route is one of {', '.join(ROUTES)}")
+        if self.control == "integration_pause" and not _KEY.fullmatch(self.route or ""):
+            raise Refused("--integration is a catalogue key (lower-case letters, digits and _)")
         if not OPERATOR_HANDLE.fullmatch(self.operator):
             raise Refused("--operator is a lower-case handle, never an email address")
         if not 1 <= len(self.reason.strip()) <= 200:
@@ -131,6 +145,7 @@ def _parser() -> argparse.ArgumentParser:
     setting.add_argument("--scope", required=True, choices=("platform", "firm"))
     setting.add_argument("--tenant", type=UUID, default=None)
     setting.add_argument("--route", choices=ROUTES, default=None)
+    setting.add_argument("--integration", default=None)
     turning = setting.add_mutually_exclusive_group(required=True)
     turning.add_argument("--on", dest="active", action="store_true")
     turning.add_argument("--off", dest="active", action="store_false")
@@ -152,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
                 control=args.control,
                 scope=args.scope,
                 tenant=args.tenant,
-                route=args.route,
+                route=args.route if args.integration is None else args.integration,
                 active=args.active,
                 operator=args.operator,
                 reason=args.reason,

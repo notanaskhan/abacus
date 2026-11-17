@@ -182,7 +182,8 @@ Steps (activities): child `TenantKeyWorkflow`, `set_plan_entitlements`, `invite_
 
 ```python
 ControlName = Literal[
-    "ai_pause", "model_route_block", "email_pause", "read_only", "portal_sign_in"
+    "ai_pause", "model_route_block", "email_pause", "read_only", "portal_sign_in",
+    "confirmation_links", "integration_pause"
 ]
 
 def control_active(
@@ -190,7 +191,7 @@ def control_active(
 ) -> bool: ...
 ```
 
-`control_active` is the one reader of the switches. It returns true when a platform-wide row for the control is active, or a firm row for `tenant_id` is active; for `model_route_block` it also requires a matching `route`. It reads `platform_control_state()` through a 10-second in-process cache (setting `platform_controls_cache_seconds`). It never writes, never raises for an unknown tenant, and has no agent-callable form.
+`control_active` is the one reader of the switches. It returns true when a platform-wide row for the control is active, or a firm row for `tenant_id` is active; for a keyed control (`model_route_block`, `integration_pause`) it also requires a matching `route`. It reads `platform_control_state()` through a 10-second in-process cache (setting `platform_controls_cache_seconds`). It never writes, never raises for an unknown tenant, and has no agent-callable form.
 
 | Control (stored value) | `control_active` name | Scope | Effect | Enforced by |
 |---|---|---|---|---|
@@ -199,6 +200,8 @@ def control_active(
 | `email_pause` | `email_pause` | platform or firm | the transport records the message `blocked` with violation `platform_paused`; the SES configuration-set pause is the second line | `communications.transport` |
 | `read_only` | `read_only` | platform or firm | every non-read route answers 503 `read_only`, except sign-in (pre-session routes and the two sign-outs), staff routes, the firm's support-session controls, the routes that only take access away (ending a person's access, revoking a staff invitation), browser error reports, and reads sent as POST; the full list is in the as-built note below | `AbacusRoute`, `firm_writable` |
 | `portal_sign_in` (renamed from 0086's `portal_sign_in_disabled` by migration 0156, P-08-T21) | `portal_sign_in` | firm | P-08's BFF answers 503 `sign_in_paused` for start, verify, resend and the second step; sessions carry on | P-08 BFF (`identity.portal_session.check_not_paused`; reader `kernel.controls.control_active`, re-exported as `platform.api.control_active`) |
+| `confirmation_links` (0887, A-08-T03) | `confirmation_links` | platform or firm | the public `/v1/confirm/*` family and respondent link issuance answer the uniform expired view | A-08 link authenticator (RB-91) |
+| `integration_pause` (0948, W-01-T07; DEC-5433) | `integration_pause` | platform or firm, with `route` = the catalogue key | WB-10 and WB-11 read an install **Paused** with Enable and Reconnect hidden and an uninstalled tile coming soon (AC-4); connect starts and completions answer 409 `integration_paused`; the health pass skips its installs | `integrations.kill_switch` (RB-04) |
 
 **As built (Q-01-T36, T37; DEC-338).** `ai_pause` is the first check in `ai_gateway.boundary.enforce_boundary`, which every completion and embedding passes just before its provider call; a refusal is a `DataBoundaryRefused` with reason `ai_paused` (audited as `ai.boundary_refused`), so a run ends as it does for any boundary refusal. `model_route_block` is skipped at admission (`_admitted`; an embedding answers `NotAdmitted` and waits). `email_pause` is checked first in `communications.deliveries.deliver`, before the sink, suppression or transport; the message is recorded `blocked` with violation `{"kind": "platform_paused"}`. `read_only` answers 503 `{"detail": "read_only"}` on every non-read route except these, which keep working (`identity.routing.stays_writable`):
 

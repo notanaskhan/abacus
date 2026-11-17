@@ -61,7 +61,12 @@ handled the same way. Recognise: many installs of one provider move to **Needs a
 same non-reauth code after the health pass; dependent agent runs fail at admission with
 `integration_unhealthy`. Contain: turn the provider's per-integration kill switch on (the install
 reads **Paused**; nothing calls the provider), or silence the pass with `integrations.health_monitor`
-off while the provider's status page shows the incident. Recover: clear the kill switch; the next
+off while the provider's status page shows the incident. The switch is `integration_pause` (0948,
+DEC-5433), keyed by the catalogue key, per firm or platform-wide, from an `abacus-ops` task:
+`python -m abacus_tools.platform_control set --control integration_pause --scope platform
+--integration <catalog_key> --on --operator <handle> --reason "<incident>"` (`--off` clears it;
+`--scope firm --tenant <tenant_id>` for one firm). Connect starts answer 409 `integration_paused`
+and the health pass skips its installs. Recover: clear the kill switch; the next
 health pass returns the installs to **Connected**; failed runs are retried by people, never
 automatically. Status page component: **Integrations** (SEV3 unless a close or a filing is blocked).
 
