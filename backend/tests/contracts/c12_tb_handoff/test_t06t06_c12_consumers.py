@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from abacus.api.export_openapi import document
 from abacus.modules.identity.authz.matrix import RULES
-from abacus.modules.ledger.tb_handoff_contract import (
+from abacus.modules.tax.tb_handoff_contract import (
     TbHandoffLandingOut,
     TbHandoffPreviewOut,
     TbHandoffReviewAccountOut,

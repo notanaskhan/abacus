@@ -238,6 +238,7 @@ export const ACTIONS = [
   "ebp_schedule.render",
   "ebp_schedule_h_mapping.publish",
   "efile_ack.record",
+  "elimination.agent_propose",
   "elimination.apply",
   "elimination.approve",
   "elimination.edit",

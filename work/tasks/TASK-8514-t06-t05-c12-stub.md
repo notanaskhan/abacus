@@ -16,7 +16,7 @@ plan_key: T-06-T05
 Spec section: docs/plan/epics/T-06.md §4.3, §8.1. C12 v1, source-agnostic for audit_release, review_release and close_lock: Pydantic models with classification tags, 501 routes behind tax.tb_handoff, Granite Peak and Copperleaf seed fixtures, docs/contracts/c12-tb-handoff.md, make generate.
 
 ## Plan (amber)
-1. `ledger/tb_handoff_contract.py`: targets, preview, create (Idempotency-Key, live human), read, mappings, the return's landing; client 404, flag 404, then 501. Mounted as the ledger module's first router (DEC-66: ledger owns tb_handoffs).
+1. `tax/tb_handoff_contract.py`: targets, preview, create (Idempotency-Key, live human), read, mappings, the return's landing; client 404, flag 404, then 501. Mounted as the ledger module's first router (DEC-66: ledger owns tb_handoffs).
 2. Preview status is the five tb_handoff words (three derived), so a Literal rather than the stored StrEnum.
 3. Fixtures `abacus_tools/synthetic/scenarios/brightwater_hale/tb_handoff_slice.py`: Granite Peak AUD-38 a, b, d typed by the C12 models (121 + 5 + 2 = 128; 3,100,000 − 750,000 = 2,350,000; review accounts 2255 and 6875; passed AJE-3 68,400) and Copperleaf's close_lock landing.
 4. `docs/contracts/c12-tb-handoff.md`; register row C12 moved from planned to stub; make generate.

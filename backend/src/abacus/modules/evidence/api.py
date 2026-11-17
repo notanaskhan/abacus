@@ -875,6 +875,9 @@ register_file_store(screen_for_store, read_staged)
 from abacus.modules.evidence import (  # noqa: E402
     search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )
+
+# A-09-T34 (DEC-5522): an evidence version's masked cells as an agent reads them.
+from abacus.modules.evidence.agent_sheets import sheet_rows_for as sheet_rows_for  # noqa: E402
 from abacus.modules.evidence.form_extraction import Extracted as ExtractedField  # noqa: E402
 from abacus.modules.evidence.form_extraction import extract as extract_form  # noqa: E402
 from abacus.modules.evidence.form_extraction import identify as identify_form  # noqa: E402

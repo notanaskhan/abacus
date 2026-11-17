@@ -1,5 +1,6 @@
 """C12 v1 stub: the TB hand-off into tax (T-06-T05; SPEC-702 F6, AC-27 to AC-31; DEC-66, ADR-158;
-`docs/contracts/c12-tb-handoff.md`). Screen family AUD-38 (the sheet over AUD-06), TXP-13 d and
+`docs/contracts/c12-tb-handoff.md`). Served by tax (ledger owns `tb_handoffs` and may not depend
+on identity, BOUND-002). Screen family AUD-38 (the sheet over AUD-06), TXP-13 d and
 the TXP-02 banner; C-02's CLS-12 calls the same create with `source_kind=close_lock`.
 
 Source-agnostic: an audit's released Final TB (`audit_release`, G8), a review engagement's
@@ -210,7 +211,7 @@ class TbHandoffLandingOut(BaseModel):
 
 # --- routes (each 501, one action) ------------------------------------------------------------
 
-tb_handoff_router = AbacusRouter(prefix="/v1", tags=["ledger"])
+tb_handoff_router = AbacusRouter(prefix="/v1", tags=["tax"])
 _E = "/engagements/{engagement_id}"
 
 

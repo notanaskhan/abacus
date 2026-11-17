@@ -6,6 +6,7 @@ Regenerate: python -m abacus_tools.codegen.eval_suites
 # fmt: off
 EVAL_SUITES: dict[str, tuple[str, int]] = {   'briefing.today': ('briefing.today@v1', 1),
     'close.agent': ('close.agent.run@v1', 1),
+    'consolidation.elimination_proposer': ('consolidation.elimination_proposer@v1', 1),
     'decisions.recommender': ('decisions.recommend@v1', 1),
     'evidence.matcher': ('evidence.inbox_match@v3', 1),
     'evidence.screener': ('evidence.screen@v0', 2),

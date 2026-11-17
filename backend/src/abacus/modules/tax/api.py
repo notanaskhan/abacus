@@ -99,6 +99,7 @@ from abacus.modules.tax.tax_profile import register as register_tax_profile
 from abacus.modules.tax.tax_profile import return_for_entity as return_for_entity
 from abacus.modules.tax.tax_profile import return_label as return_label
 from abacus.modules.tax.tax_profile import transcript_comparison_lines
+from abacus.modules.tax.tb_handoff_contract import tb_handoff_router
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
 from abacus.modules.tax.workbook_contract import workbook_router
 from abacus.modules.tax.workspace_contract import workspace_router
@@ -161,6 +162,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     fiduciary_router,  # FW-1 fiduciary workpapers, TXT-01 to TXT-03 (T-07-T05 stub; dark)
     estate_router,  # EW-1 estate workpapers, TXT-04 (T-07-T05 stub; dark)
     entity_depth_router,  # T-06-T07: entity depth, other workpapers, form pages (stubs; dark)
+    tb_handoff_router,  # T-06-T05: C12 v1, the TB hand-off (stub; dark); ledger owns the tables
 )
 
 
@@ -619,7 +621,10 @@ _register_hooks(
 # T-05-T45 (DEC-4711): the allocation service and the run plan's shape for the synthetic scenario
 # loader (tooling reaches tax only through this file).
 # T-06-T03 (DEC-5511): error codes declared before their services.
+# T-06-T05/T07 (DEC-5514, DEC-5516): the C12 and entity-depth models, for seed and consumers.
+from abacus.modules.tax import entity_depth_contract as entity_depth_contract  # noqa: E402
 from abacus.modules.tax import entity_depth_errors as entity_depth_errors  # noqa: E402
+from abacus.modules.tax import tb_handoff_contract as tb_handoff_contract  # noqa: E402
 from abacus.modules.tax.allocation_structure import TARGET as ALLOCATION_TARGET  # noqa: E402
 from abacus.modules.tax.allocation_structure import Draft as AllocationDraft  # noqa: E402
 from abacus.modules.tax.allocation_structure import DraftRung as AllocationDraftRung  # noqa: E402

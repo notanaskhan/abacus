@@ -293,3 +293,110 @@ async def suggest_account_mappings(
             )
         )
     return SuggestedOut(suggestion_ids=made)
+
+
+# --- A-09-T34 (DEC-5522): consolidation.elimination_proposer's one propose tool -------------
+
+
+class EliminationLineIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    caption: Annotated[str, Field(min_length=1, max_length=200), Conf]
+    client_entity_id: Annotated[UUID, Int]
+    debit: Annotated[Decimal, Field(ge=0, max_digits=20, decimal_places=2), Conf]
+    credit: Annotated[Decimal, Field(ge=0, max_digits=20, decimal_places=2), Conf]
+
+
+class EliminationCellIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    evidence_version_id: Annotated[UUID, Int]
+    sheet: Annotated[str, Field(min_length=1, max_length=120), Conf]
+    cell: Annotated[str, Field(pattern=r"^[A-Z]{1,3}[1-9][0-9]{0,5}$"), Int]
+    value: Annotated[Decimal, Field(gt=0, max_digits=20, decimal_places=2), Conf]
+
+
+class EliminationProposalIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    key: Annotated[str, Field(min_length=1, max_length=200), Int]
+    level: Annotated[int, Field(ge=1, le=3), Int]
+    description: Annotated[str, Field(min_length=1, max_length=200), Conf]
+    note: Annotated[str, Field(max_length=500), Conf] = ""
+    computation: Annotated[str, Field(max_length=500), Conf]
+    lines: Annotated[list[EliminationLineIn], Field(min_length=2, max_length=20), Conf]
+    cell: Annotated[EliminationCellIn | None, Conf] = None
+
+
+class EliminationProposalsIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    work_item_id: Annotated[UUID, Int]
+    consolidation_id: Annotated[UUID, Int]
+    proposals: Annotated[list[EliminationProposalIn], Field(min_length=1, max_length=40), Conf]
+
+    def tool_targets(self, agent: AgentContext) -> object:
+        from abacus.modules.agents.api import ToolTargets
+
+        return ToolTargets((agent.engagement_id,) if agent.engagement_id is not None else ())
+
+
+class EliminationsProposedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    entry_ids: Annotated[list[UUID], Int]
+    blocked: Annotated[int, Field(ge=0), Int]  # proposals whose cell did not verify
+
+
+@agent_tool(
+    name="assurance.propose_eliminations", kind="propose", action="elimination.agent_propose",
+    data_class="confidential", input_model=EliminationProposalsIn,
+    output_model=EliminationsProposedOut,
+)  # fmt: skip
+async def propose_eliminations(
+    agent: AgentContext, args: EliminationProposalsIn
+) -> EliminationsProposedOut:
+    """Proposed eliminations only, each naming its run; a person approves and posts on AUD-33.
+    A proposal whose evidence cell does not verify through C4 (with code's value) is blocked."""
+    from abacus.kernel.uow import uow
+    from abacus.modules.adjustments.api import eliminations as adj
+    from abacus.modules.evidence.api import CitationAnchor, CitationClaim, record_citations
+
+    made: list[UUID] = []
+    blocked = 0
+    for p in args.proposals:
+        citation_ids: list[UUID] = []
+        if p.cell is not None:
+            anchor = CitationAnchor(
+                "consolidation", args.consolidation_id, p.key[:120], None, agent.engagement_id
+            )
+            claim = CitationClaim(
+                "sheet_cell",
+                {
+                    "evidence_version_id": str(p.cell.evidence_version_id),
+                    "sheet": p.cell.sheet,
+                    "cell": p.cell.cell,
+                },
+                value=str(p.cell.value),
+            )
+            async with uow(agent.tenant) as tx:
+                recorded = await record_citations(tx, actor=agent, anchor=anchor, claims=[claim])
+            if not recorded or not recorded[0].verified:
+                blocked += 1
+                continue
+            citation_ids.append(recorded[0].id)
+        view = await adj.propose_by_agent(
+            agent,
+            work_item_id=args.work_item_id,
+            consolidation_id=args.consolidation_id,
+            level=p.level,
+            description=p.description,
+            lines=[
+                adj.EliminationLine(ln.caption, ln.client_entity_id, ln.debit, ln.credit)
+                for ln in p.lines
+            ],
+            computation=p.computation,
+            citation_ids=citation_ids,
+        )
+        made.append(view.id)
+    return EliminationsProposedOut(entry_ids=made, blocked=blocked)

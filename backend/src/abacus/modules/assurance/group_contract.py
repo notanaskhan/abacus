@@ -32,7 +32,7 @@ from abacus.kernel._statuses import (
     EliminationEntryStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.modules.adjustments.api import EliminationLine
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
@@ -524,10 +524,6 @@ async def _gate_record(ctx: AuthContext) -> None:
         raise NotFound(ENTITLEMENT)
 
 
-def _todo(task: str) -> NotImplementedYet:
-    return NotImplementedYet(task)
-
-
 @router.post(
     f"{_A}/consolidations",
     action="consolidation.edit",
@@ -878,9 +874,9 @@ def _elimination_out(v: object) -> EliminationOut:
         total_debit=view.total_debit,
         total_credit=view.total_credit,
         off_by=view.off_by,
-        computation=None,
-        citation_ids=[],
-        proposed_by_run_id=None,
+        computation=getattr(view, "computation", None),
+        citation_ids=list(getattr(view, "citation_ids", ())),
+        proposed_by_run_id=getattr(view, "proposed_by_run_id", None),
         approved_by_name=None,
         posted_at=None,
     )
@@ -1038,11 +1034,35 @@ async def group_reject_elimination(
     errors=(409, 501),
 )
 async def group_propose_eliminations(
-    consolidation_id: UUID, ctx: Ctx, _key: IdempotencyKey
+    consolidation_id: UUID,
+    ctx: Ctx,
+    _key: IdempotencyKey,
+    inventory_evidence_version_id: UUID | None = None,
 ) -> GroupRunRefOut:
-    """`EliminationProposal`: amounts by code, notes by the model, cells verified."""
+    """`EliminationProposal` (A-09-T34): amounts by code, words by the model, the inventory cell
+    cited and verified; proposals only. 409 `capability_unavailable` when the variant flag is off
+    or the firm is not synthetic."""
     await _gate_record(ctx)
-    raise _todo("A-09-T34")
+    from abacus.modules.assurance import elimination_proposer as proposer
+
+    engagement_id, work_item_id, entities = await proposer.entities_for(ctx, consolidation_id)
+    result = await proposer.run_proposals(
+        ctx,
+        engagement_id=engagement_id,
+        work_item_id=work_item_id,
+        consolidation_id=consolidation_id,
+        entities=entities,
+        inventory_version_id=inventory_evidence_version_id,
+    )
+    if result.outcome == "unavailable":
+        raise ProposerUnavailable(facts={"capability": proposer.CAPABILITY})
+    return GroupRunRefOut(workflow_id=f"elimination_proposal:{result.run_id or consolidation_id}")
+
+
+class ProposerUnavailable(DomainConflict):
+    """The proposer is off for this firm (its variant flag, or a firm that is not synthetic)."""
+
+    code = "capability_unavailable"
 
 
 @router.get(

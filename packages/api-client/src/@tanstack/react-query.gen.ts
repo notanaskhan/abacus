@@ -7705,7 +7705,9 @@ export const groupApproveEliminationsMutation = (options?: Partial<Options<Group
 /**
  * Group Propose Eliminations
  *
- * `EliminationProposal`: amounts by code, notes by the model, cells verified.
+ * `EliminationProposal` (A-09-T34): amounts by code, words by the model, the inventory cell
+ * cited and verified; proposals only. 409 `capability_unavailable` when the variant flag is off
+ * or the firm is not synthetic.
  */
 export const groupProposeEliminationsMutation = (options?: Partial<Options<GroupProposeEliminationsData>>): UseMutationOptions<GroupProposeEliminationsResponse, GroupProposeEliminationsError, Options<GroupProposeEliminationsData>> => {
     const mutationOptions: UseMutationOptions<GroupProposeEliminationsResponse, GroupProposeEliminationsError, Options<GroupProposeEliminationsData>> = {

@@ -10,14 +10,14 @@ import uuid
 from decimal import Decimal
 from typing import Final
 
-from abacus.modules.organisations.relationships_contract import (
-    EdgeState,
-    RelationshipBannerOut,
-    RelationshipEdgeOut,
-    RelationshipGraphOut,
-    RelationshipKind,
-    RelationshipNodeOut,
-)
+from abacus.modules.organisations.api import relationships_contract as _contract
+
+EdgeState = _contract.EdgeState
+RelationshipBannerOut = _contract.RelationshipBannerOut
+RelationshipEdgeOut = _contract.RelationshipEdgeOut
+RelationshipGraphOut = _contract.RelationshipGraphOut
+RelationshipKind = _contract.RelationshipKind
+RelationshipNodeOut = _contract.RelationshipNodeOut
 
 D = Decimal
 _NS: Final = uuid.UUID("5f0c0608-0000-4000-8000-000000c11003")
