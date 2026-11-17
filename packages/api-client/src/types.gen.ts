@@ -10737,6 +10737,10 @@ export type CloseSummaryOut = {
      */
     accounts_total: number;
     /**
+     * Adjustments
+     */
+    adjustments?: number;
+    /**
      * Allowed Actions
      */
     allowed_actions?: Array<'close.assign' | 'close.status_move' | 'close_run.start' | 'close_run.retry' | 'close_plan.edit' | 'close_plan.request_publish' | 'close_plan.publish' | 'close_plan.draft_from_history'>;
@@ -25357,6 +25361,10 @@ export type FluxSetOut = {
      */
     set_id: string;
     /**
+     * Subtotals
+     */
+    subtotals?: Array<FluxSubtotalOut>;
+    /**
      * Tested
      */
     tested: number;
@@ -25368,6 +25376,43 @@ export type FluxSetOut = {
      * Unexplained
      */
     unexplained: number;
+};
+
+/**
+ * FluxSubtotalOut
+ *
+ * S48 rest (CLS-10 DV-a): a code-computed subtotal row ("Gross profit", "Total operating
+ * expenses", "Net income"), drawn after the line it follows.
+ */
+export type FluxSubtotalOut = {
+    /**
+     * After Line Key
+     */
+    after_line_key?: string | null;
+    /**
+     * Caption
+     */
+    caption: string;
+    /**
+     * Change
+     */
+    change?: string | null;
+    /**
+     * Change Pct
+     */
+    change_pct?: string | null;
+    /**
+     * Current
+     */
+    current: string;
+    /**
+     * Kind
+     */
+    kind: 'gross_profit' | 'total_operating_expenses' | 'net_income';
+    /**
+     * Prior
+     */
+    prior?: string | null;
 };
 
 /**

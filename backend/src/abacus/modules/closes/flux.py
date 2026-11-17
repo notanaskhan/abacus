@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Annotated, ClassVar, Final, Literal, cast
@@ -35,7 +36,12 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
 from abacus.modules.closes import repository as repo
-from abacus.modules.closes.contract_work import FluxDriverOut, FluxLineOut, FluxSetOut
+from abacus.modules.closes.contract_work import (
+    FluxDriverOut,
+    FluxLineOut,
+    FluxSetOut,
+    FluxSubtotalOut,
+)
 from abacus.modules.closes.events import AnalyticLineExplained, AnalyticSetComputed
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
 from abacus.modules.workpapers import api as engine
@@ -48,7 +54,7 @@ DEFAULT_AMOUNT: Final = Decimal("2500")
 _TENTH: Final = Decimal("0.1")
 _KEY_BAD: Final = re.compile(r"[^A-Za-z0-9_.:-]")
 # An AJE counts until it is rejected or withdrawn; once recorded in QuickBooks the ledger has it.
-_LIVE: Final = frozenset(
+LIVE_ENTRY_STATUSES: Final = frozenset(
     {"proposed", "within_threshold", "review_required", "approved", "client_approved"}
 )
 _I = classified("internal")
@@ -201,7 +207,7 @@ async def _entry_lines(ctx: AuthContext, close_id: UUID) -> list[tuple[str, Deci
     return [
         (ln.account_code, ln.debit, ln.credit)
         for e in await entries_of(ctx, close_id, "aje")
-        if e.status in _LIVE and e.id not in recorded
+        if e.status in LIVE_ENTRY_STATUSES and e.id not in recorded
         for ln in e.lines
     ]
 
@@ -365,6 +371,93 @@ def _pct(v: object) -> Decimal | None:
     return None if v is None else cast(Decimal, v).quantize(_TENTH, rounding=ROUND_HALF_UP)
 
 
+# The P&L's sides by QuickBooks account type (C9's tree): cost of goods sold, operating expense.
+_COGS: Final = frozenset({"Cost of Goods Sold"})
+_OPERATING: Final = frozenset({"Expense"})
+Side = Literal["income", "cogs", "operating", "other"]
+
+
+def _sum(lines: Sequence[FluxLineOut], attr: str) -> Decimal | None:
+    values = [getattr(x, attr) for x in lines]
+    return None if any(v is None for v in values) else sum(values, Decimal(0))
+
+
+def _subtotal(
+    kind: Literal["gross_profit", "total_operating_expenses", "net_income"],
+    caption: str,
+    after: str | None,
+    current: Decimal,
+    prior: Decimal | None,
+) -> FluxSubtotalOut:
+    if prior is None:
+        return FluxSubtotalOut(kind=kind, caption=caption, after_line_key=after, current=current)
+    return FluxSubtotalOut(
+        kind=kind,
+        caption=caption,
+        after_line_key=after,
+        prior=prior,
+        current=current,
+        change=current - prior,
+        change_pct=_pct(engine.flux_change_pct(current, prior)),
+    )
+
+
+def subtotals(lines: Sequence[FluxLineOut], sides: Mapping[str, Side]) -> list[FluxSubtotalOut]:
+    """CLS-10 DV-a: code's subtotals over the set's own lines (ADR-050): gross profit is income
+    less cost of goods sold, after the last cost line; total operating expenses after the last
+    operating line; net income (income less every expense) after every line. A subtotal whose
+    side has no line is left out; a missing prior leaves its prior and change empty."""
+
+    def of(*want: Side) -> list[FluxLineOut]:
+        return [x for x in lines if sides.get(x.line_key) in want]
+
+    income, cogs, operating = of("income"), of("cogs"), of("operating")
+    expenses = of("cogs", "operating", "other")
+    out: list[FluxSubtotalOut] = []
+
+    def diff(a: list[FluxLineOut], b: list[FluxLineOut], attr: str) -> Decimal | None:
+        left, right = _sum(a, attr), _sum(b, attr)
+        return None if left is None or right is None else left - right
+
+    if cogs and income:
+        current = diff(income, cogs, "current") or Decimal(0)
+        out.append(_subtotal("gross_profit", "Gross profit", cogs[-1].line_key, current,
+                             diff(income, cogs, "prior")))  # fmt: skip
+    if operating:
+        out.append(_subtotal("total_operating_expenses", "Total operating expenses",
+                             operating[-1].line_key, _sum(operating, "current") or Decimal(0),
+                             _sum(operating, "prior")))  # fmt: skip
+    if income or expenses:
+        out.append(_subtotal("net_income", "Net income", None,
+                             diff(income, expenses, "current") or Decimal(0),
+                             diff(income, expenses, "prior")))  # fmt: skip
+    return out
+
+
+async def _sides(ctx: AuthContext, close_id: UUID) -> dict[str, Side]:
+    from abacus.modules.ledger.api import PeriodNotAvailable, account_tree
+
+    async with tenant_session(ctx.tenant) as session:
+        close = await repo.close_row(session, close_id)
+    if close is None or close.client_entity_id is None:
+        return {}
+    try:
+        tree = await account_tree(ctx.tenant, close.client_entity_id, close.period)
+    except PeriodNotAvailable:
+        return {}
+    out: dict[str, Side] = {}
+    for a in tree.accounts:
+        if a.classification == "income":
+            out[line_key(a.external_id)] = "income"
+        elif a.classification == "expense":
+            account_type = getattr(a, "account_type", None) or ""
+            out[line_key(a.external_id)] = (
+                "cogs" if account_type in _COGS else "operating" if account_type in _OPERATING
+                else "other"
+            )  # fmt: skip
+    return out
+
+
 async def _view(ctx: AuthContext, close_id: UUID, set_id: UUID, basis: Basis) -> FluxSetOut:
     from abacus.modules.closes.service import people
 
@@ -420,6 +513,7 @@ async def _view(ctx: AuthContext, close_id: UUID, set_id: UUID, basis: Basis) ->
         budget_available=False,
         lines=out,
         engine_version=engine.FLUX_ENGINE_VERSION,
+        subtotals=subtotals(out, await _sides(ctx, close_id)),
     )
 
 

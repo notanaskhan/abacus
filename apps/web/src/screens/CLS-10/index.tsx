@@ -6,7 +6,7 @@
 // or Partner, `flux.accept`; a draft is adopted by a person's own explanation first). Year over
 // year without the prior year's ledger reads dashes and "Not comparable" (d); Budget is disabled
 // with "No budget on file". Accepted lines raise the commentary banner (c).
-import type { FluxLineOut, FluxSetOut } from "@abacus/api-client";
+import type { FluxLineOut, FluxSetOut, FluxSubtotalOut } from "@abacus/api-client";
 import {
   acceptFluxLineMutation,
   closeFluxOptions,
@@ -16,6 +16,7 @@ import {
 } from "@abacus/api-client/query";
 import {
   AgentText,
+  DASH,
   Button,
   Icon,
   NumberedCitation,
@@ -30,7 +31,7 @@ import {
   pct,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type JSX, useState } from "react";
+import { Fragment, type JSX, useState } from "react";
 import { useCan } from "../../app-core/can";
 import { COPY, fill } from "./copy";
 
@@ -178,7 +179,7 @@ export function CLS10({ closeId, initial = {}, onOpen }: CLS10Props): JSX.Elemen
           active={COPY.segments.flux}
           options={[
             { label: COPY.segments.issues, count: summary.data?.open_issues ?? 0 },
-            COPY.segments.adjustments,
+            { label: COPY.segments.adjustments, count: summary.data?.adjustments ?? 0 },
             { label: COPY.segments.flux, count: t.over },
           ]}
           onChange={(label) => {
@@ -275,97 +276,141 @@ export function CLS10({ closeId, initial = {}, onOpen }: CLS10Props): JSX.Elemen
               {set.lines.map((line) => {
                 const over = line.test === "over_both";
                 const unexplained = line.status === "unexplained";
+                const after = (set.subtotals ?? []).filter(
+                  (s) => s.after_line_key === line.line_key,
+                );
                 return (
-                  <tr
-                    key={line.line_id}
-                    data-line={line.line_key}
-                    data-test={line.test}
-                    className="h-[34px] border-t border-hair align-top"
-                  >
-                    <td className="px-[12px] py-[8px] text-[12.5px]">{line.caption}</td>
-                    <td className="px-[8px] py-[8px] text-right tabular-nums">
-                      {whole(line.prior)}
-                    </td>
-                    <td className="px-[8px] py-[8px] text-right tabular-nums">
-                      {whole(line.current)}
-                    </td>
-                    <td
-                      data-variance={
-                        over ? (unexplained ? "unexplained" : "explained") : undefined
-                      }
-                      className={`px-[8px] py-[8px] text-right tabular-nums ${
-                        over && unexplained ? "bg-amber-tint font-medium text-amber-ink" : ""
-                      } ${negative(line.change) ? "text-red" : ""}`}
+                  <Fragment key={line.line_id}>
+                    <tr
+                      data-line={line.line_key}
+                      data-test={line.test}
+                      className="h-[34px] border-t border-hair align-top"
                     >
-                      {over && unexplained ? (
-                        <Icon
-                          name="triangle-alert"
-                          size={12}
-                          className="mr-[4px] inline text-amber"
+                      <td className="px-[12px] py-[8px] text-[12.5px]">{line.caption}</td>
+                      <td className="px-[8px] py-[8px] text-right tabular-nums">
+                        {whole(line.prior)}
+                      </td>
+                      <td className="px-[8px] py-[8px] text-right tabular-nums">
+                        {whole(line.current)}
+                      </td>
+                      <td
+                        data-variance={
+                          over ? (unexplained ? "unexplained" : "explained") : undefined
+                        }
+                        className={`px-[8px] py-[8px] text-right tabular-nums ${
+                          over && unexplained ? "bg-amber-tint font-medium text-amber-ink" : ""
+                        } ${negative(line.change) ? "text-red" : ""}`}
+                      >
+                        {over && unexplained ? (
+                          <Icon
+                            name="triangle-alert"
+                            size={12}
+                            className="mr-[4px] inline text-amber"
+                          />
+                        ) : null}
+                        {whole(line.change)}
+                      </td>
+                      <td
+                        className={`px-[8px] py-[8px] text-right tabular-nums ${
+                          negative(line.change_pct) ? "text-red" : ""
+                        }`}
+                      >
+                        {percent(line.change_pct)}
+                      </td>
+                      <td className="px-[8px] py-[8px]">{COPY.test[line.test]}</td>
+                      <td className="px-[8px] py-[8px]">
+                        <Explanation line={line} tracing={tracingId === line.line_id} />
+                      </td>
+                      <td className="px-[8px] py-[8px]">
+                        <StatusCell
+                          line={line}
+                          onIssue={() => {
+                            onOpen?.("CLS-06", line.line_key);
+                          }}
                         />
-                      ) : null}
-                      {whole(line.change)}
-                    </td>
-                    <td
-                      className={`px-[8px] py-[8px] text-right tabular-nums ${
-                        negative(line.change_pct) ? "text-red" : ""
-                      }`}
-                    >
-                      {percent(line.change_pct)}
-                    </td>
-                    <td className="px-[8px] py-[8px]">{COPY.test[line.test]}</td>
-                    <td className="px-[8px] py-[8px]">
-                      <Explanation line={line} tracing={tracingId === line.line_id} />
-                    </td>
-                    <td className="px-[8px] py-[8px]">
-                      <StatusCell
-                        line={line}
-                        onIssue={() => {
-                          onOpen?.("CLS-06", line.line_key);
-                        }}
-                      />
-                    </td>
-                    <td className="px-[8px] py-[6px] text-right">
-                      {over && line.status !== "accepted" ? (
-                        <span className="flex justify-end gap-[6px]">
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            loading={tracingId === line.line_id}
-                            onClick={() => {
-                              explain.mutate({
-                                path: { line_id: line.line_id },
-                                headers: { "Idempotency-Key": crypto.randomUUID() },
-                              });
-                            }}
-                          >
-                            {COPY.explain}
-                          </Button>
-                          {mayAccept ? (
+                      </td>
+                      <td className="px-[8px] py-[6px] text-right">
+                        {over && line.status !== "accepted" ? (
+                          <span className="flex justify-end gap-[6px]">
                             <Button
-                              variant="secondary"
+                              variant="ghost"
                               size="xs"
-                              disabled={line.status !== "explained"}
+                              loading={tracingId === line.line_id}
                               onClick={() => {
-                                accept.mutate({
+                                explain.mutate({
                                   path: { line_id: line.line_id },
-                                  headers: { "If-Match": String(line.row_version ?? 1) },
+                                  headers: { "Idempotency-Key": crypto.randomUUID() },
                                 });
                               }}
                             >
-                              {COPY.accept}
+                              {COPY.explain}
                             </Button>
-                          ) : null}
-                        </span>
-                      ) : null}
-                    </td>
-                  </tr>
+                            {mayAccept ? (
+                              <Button
+                                variant="secondary"
+                                size="xs"
+                                disabled={line.status !== "explained"}
+                                onClick={() => {
+                                  accept.mutate({
+                                    path: { line_id: line.line_id },
+                                    headers: { "If-Match": String(line.row_version ?? 1) },
+                                  });
+                                }}
+                              >
+                                {COPY.accept}
+                              </Button>
+                            ) : null}
+                          </span>
+                        ) : null}
+                      </td>
+                    </tr>
+                    {after.map((s) => (
+                      <SubtotalRow key={s.kind} subtotal={s} />
+                    ))}
+                  </Fragment>
                 );
               })}
+              {(set.subtotals ?? [])
+                .filter((s) => s.after_line_key == null)
+                .map((s) => (
+                  <SubtotalRow key={s.kind} subtotal={s} />
+                ))}
             </tbody>
           </table>
         </div>
       </section>
     </div>
+  );
+}
+
+/** S48 rest (DV-a): code's subtotal rows (gross profit and operating expenses with a top rule,
+ * net income with the double rule), dashes in the test, explanation and status cells. */
+function SubtotalRow({ subtotal: s }: { subtotal: FluxSubtotalOut }): JSX.Element {
+  const grand = s.kind === "net_income";
+  return (
+    <tr
+      data-subtotal={s.kind}
+      className={`h-[34px] font-medium ${
+        grand ? "border-t-[3px] border-double border-ink" : "border-t-[0.5px] border-stroke"
+      }`}
+    >
+      <td className="px-[12px] py-[8px] text-[12.5px]">{s.caption}</td>
+      <td className="px-[8px] py-[8px] text-right tabular-nums">{whole(s.prior)}</td>
+      <td className="px-[8px] py-[8px] text-right tabular-nums">{whole(s.current)}</td>
+      <td
+        className={`px-[8px] py-[8px] text-right tabular-nums ${negative(s.change) ? "text-red" : ""}`}
+      >
+        {whole(s.change)}
+      </td>
+      <td
+        className={`px-[8px] py-[8px] text-right tabular-nums ${negative(s.change_pct) ? "text-red" : ""}`}
+      >
+        {percent(s.change_pct)}
+      </td>
+      <td className="px-[8px] py-[8px] text-ink-3">{DASH}</td>
+      <td className="px-[8px] py-[8px] text-ink-3">{DASH}</td>
+      <td className="px-[8px] py-[8px] text-ink-3">{DASH}</td>
+      <td />
+    </tr>
   );
 }

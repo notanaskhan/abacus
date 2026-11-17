@@ -41,6 +41,7 @@ export function copperleafAugust(): CloseSummaryOut {
     preparer: person("Raj Malhotra", "RM"),
     reviewer: person("Priya Raman", "PR"),
     open_issues: 7,
+    adjustments: 5, // CLS-10 "Adjustments 5" (S48 rest, DV-b)
     documents_in_binder: 58,
     accounts_reconciled: 9,
     accounts_total: 21,

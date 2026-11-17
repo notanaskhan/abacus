@@ -319,6 +319,8 @@ class CloseSummaryOut(BaseModel):
     preparer: Annotated[ClosePersonOut | None, Internal] = None
     reviewer: Annotated[ClosePersonOut | None, Internal] = None
     open_issues: Annotated[int, Field(ge=0), Internal]
+    # S48 rest (CLS-10 DV-b): the close's adjusting entries still in play ("Adjustments 5").
+    adjustments: Annotated[int, Field(ge=0), Internal] = 0
     documents_in_binder: Annotated[int, Field(ge=0), Internal]
     accounts_reconciled: Annotated[int, Field(ge=0), Internal]
     accounts_total: Annotated[int, Field(ge=0), Internal]
