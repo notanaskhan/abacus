@@ -239,3 +239,16 @@ variable "je_scoring_p95_ms" {
   type        = number
   default     = 900000
 }
+
+# C-01-T52 (RB-92): the ledger sync's alarm thresholds.
+variable "ledger_sync_failure_rate_pct" {
+  description = "Failed entity syncs as a percent of attempts in an hour above which RB-92 pages."
+  type        = number
+  default     = 20
+}
+
+variable "ledger_sync_freshness_minutes" {
+  description = "p95 minutes between an entity's successful syncs above which RB-92 pages (SLO 60 ± 15)."
+  type        = number
+  default     = 90
+}

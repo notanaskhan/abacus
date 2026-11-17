@@ -132,6 +132,13 @@ _freshness = meter(__name__).create_histogram(
 )
 
 
+def _outcome(outcome: str, *, reason: str | None = None) -> None:
+    """C-01-T52: one counter sample and one log line per entity sync (the staging alarms filter
+    `ledger_sync.outcome`; codes only, never provider text). RB-92."""
+    _synced.add(1, {"outcome": outcome})
+    _log.info("ledger_sync.outcome", outcome=outcome, reason=reason)
+
+
 # The closes scope is the kernel's slot (`kernel.sync_scope`): closes registers, we read.
 
 
@@ -565,7 +572,7 @@ async def sync_entity(
         await flag_enabled(tenant, CONNECTIONS_LEDGER_SYNC, fresh=True)
         and await flag_enabled(tenant, CONNECTIONS_LIVE_LEDGER, fresh=True)
     ):
-        _synced.add(1, {"outcome": "paused"})
+        _outcome("paused")
         return SyncOutcome("paused", failure_code="connector_paused")
     scope = (await scope_of(tenant)).get(connection.client_entity_id)
     at = await business_now(tenant)
@@ -576,7 +583,7 @@ async def sync_entity(
         )
     if connection.status_reason_code in REAUTH_REASONS:
         await _pause(tenant, connection, scope, "needs_reauth")
-        _synced.add(1, {"outcome": "needs_reauth"})
+        _outcome("needs_reauth")
         return SyncOutcome("needs_reauth", failure_code=connection.status_reason_code)
     if scope is None:
         return SyncOutcome("unchanged")
@@ -586,7 +593,8 @@ async def sync_entity(
     if budget is not None and calls >= budget:
         if trigger == "schedule":
             await _pause(tenant, connection, scope, "meter_budget_exhausted")
-            _synced.add(1, {"outcome": "paused"})
+            _log.info("ledger_sync.meter_budget_exhausted")
+            _outcome("paused")
             return SyncOutcome("paused", failure_code="meter_budget_exhausted")
     elif schedule.paused_reason == "meter_budget_exhausted":
         schedule = Schedule(
@@ -638,7 +646,7 @@ async def sync_entity(
         retry = at + timedelta(seconds=exc.retry_after or 60)
         await _fail(tenant, connection, exc.code, retry)
         await _meter_only(tenant, month, _calls_of(connector))
-        _synced.add(1, {"outcome": "rate_limited"})
+        _outcome("rate_limited")
         return SyncOutcome("rate_limited", calls=_calls_of(connector), failure_code=exc.code)
     except ConnectorError as exc:
         await _meter_only(tenant, month, _calls_of(connector))
@@ -656,17 +664,17 @@ async def sync_entity(
                     after=Ref(ok=0),
                 )
             await _pause(tenant, connection, scope, "needs_reauth")
-            _synced.add(1, {"outcome": "needs_reauth"})
+            _outcome("needs_reauth")
             return SyncOutcome("needs_reauth", failure_code=exc.code)
         await _fail(tenant, connection, exc.code, None)
-        _synced.add(1, {"outcome": "failed"})
+        _outcome("failed")
         return SyncOutcome("failed", calls=_calls_of(connector), failure_code=exc.code)
     except (NormaliseError, Unvalidated, MonthIncomplete) as exc:
         code = str(getattr(exc, "code", None) or exc) or "invalid_payload"
         safe = code if code.replace("_", "").isalnum() and code.islower() else "invalid_payload"
         await _fail(tenant, connection, safe[:64], None)
         await _meter_only(tenant, month, _calls_of(connector))
-        _synced.add(1, {"outcome": "failed"})
+        _outcome("failed")
         return SyncOutcome("failed", calls=_calls_of(connector), failure_code=safe[:64])
 
     calls_made = _calls_of(connector)
@@ -689,13 +697,15 @@ async def sync_entity(
         previous = connection.last_sync_at
         await set_connection(tx.session, connection.id, last_sync_at=at)
         if previous is not None:
-            _freshness.record((at - previous).total_seconds() / 60)
+            minutes = (at - previous).total_seconds() / 60
+            _freshness.record(minutes)
+            _log.info("ledger_sync.freshness", minutes=round(minutes, 1))
         tx.record(
             "ledger.sync_now" if trigger == "on_demand" else "ledger.sync",
             target=Target("connection", connection.id),
             after=Ref(ok=1, snapshots=snapshots, calls=calls_made),
         )
-    _synced.add(1, {"outcome": "synced" if snapshots else "unchanged"})
+    _outcome("synced" if snapshots else "unchanged")
     return SyncOutcome("synced" if snapshots else "unchanged", snapshots, calls_made)
 
 

@@ -56,3 +56,10 @@ Rows that mention a pen test only as context (integration and escaped-defect lan
 catch-up lanes, x25 and x100 load tests, Q-03-T037's pen-finding protocol, Q-03-T017's ASVS
 self-assessment, the threat-model refreshes Q-03-T018, T091, T123 and T175, A-01-T32's
 source-assisted review, F-09-T13) are built as planned.
+
+## C-01-T52 delta-scope note (closes, 2026-11-17)
+
+When the deferred test runs (DEC-1389), the Sep 2028 delta scope adds the C-01 surfaces: POR-11
+(`/v1/portal/closes/{id}/questions` and the answer route), the close routes (`/v1/closes*`,
+`/v1/clients/{id}/close-plan*`, `/v1/close-templates*`, `/v1/analytic-lines*`), Sync now, and the
+`close_receipt` intake destination (INB-02). Nothing is tested now; this records the scope.
