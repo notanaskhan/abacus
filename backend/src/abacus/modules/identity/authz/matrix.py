@@ -103,6 +103,11 @@ CONDITION_KEYS: frozenset[str] = frozenset(
     # C-01-T02 (QC-3, DEC-5057): a function the actor must hold on the work item when `staff` is
     # the only role granting the action (a close's `close_preparer`); other roles are unaffected.
     | {"staff_function_in"}
+    # T-06-T03 (SPEC-702; DEC-5511): the hand-off's source engagement is released (G8, a review's
+    # release or a locked close); the target is the same client's; the contact a decision is sent
+    # to holds the client-owner grant on the entity. Target facts; they fail closed until the
+    # services (T-06-T20, T35) carry them.
+    | {"tb_handoff_source_released", "same_client", "decision_owner_contact"}
 )
 # T-01-T11: the §7216 purposes a `consent` condition may list (0402's `consents.purpose`).
 CONSENT_PURPOSES: tuple[str, ...] = (
@@ -118,6 +123,7 @@ _FLAG_CONDITIONS = (
     *("not_offshore", "scope_only", "not_preparer_of_target", "reserved_role"),
     "owner_of_target",  # K-02-T01
     *("is_named_approver", "link_scope_only", "email_verified"),  # A-08-T03
+    *("tb_handoff_source_released", "same_client", "decision_owner_contact"),  # T-06-T03
 )
 # A-07-T14 (ADR P-43): what an action may still do after a lock. The trigger names its tables.
 ARCHIVED_EXEMPT_KINDS: tuple[str, ...] = ("archive_addition", "verify", "legal_hold", "export")
@@ -155,6 +161,10 @@ class Rule:
     reserved_role: bool = False
     # K-02-T01 (DEC-1150): the actor is the target's named owner and a partner member now.
     owner_of_target: bool = False
+    # T-06-T03: a released hand-off source, the same client as the target, an owner contact.
+    tb_handoff_source_released: bool = False
+    same_client: bool = False
+    decision_owner_contact: bool = False
     # T-01-T11 (C19): the §7216 purposes every data subject of the target must hold.
     consent: frozenset[str] = frozenset()
     # A-08-T03: the actor is the person the target names as its approver (a sample expansion's
@@ -260,6 +270,9 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
         not_preparer_of_target="not_preparer_of_target" in flags,
         reserved_role="reserved_role" in flags,
         owner_of_target="owner_of_target" in flags,
+        tb_handoff_source_released="tb_handoff_source_released" in flags,
+        same_client="same_client" in flags,
+        decision_owner_contact="decision_owner_contact" in flags,
         consent=consent,
         is_named_approver="is_named_approver" in flags,
         link_scope_only="link_scope_only" in flags,

@@ -421,6 +421,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.filing.BindingSuperseded
+  blocking_diagnostics:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.entity_depth_errors.BlockingDiagnostics
+    summary: Final approval is refused while form diagnostics block (`facts.blocking`).
   branding_not_set_up:
     status: 422
     raised_by:
@@ -831,6 +836,11 @@ codes:
     raised_by:
     - abacus.modules.platform.governance_errors.DeciderMustDiffer
     summary: An incident decision needs two different people, one partner and the QI (AC-22).
+  decision_already_sent:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.entity_depth_errors.DecisionAlreadySent
+    summary: The decision request already went to the client; it is not sent twice.
   decision_card_state:
     status: 409
     raised_by:
@@ -1482,6 +1492,11 @@ codes:
     raised_by:
     - abacus.modules.ledger.tax_form_mapping.FormLineKeyUnknown
     summary: The key is not a mappable line of the set version the mapping set names.
+  form_template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.entity_depth_errors.FormTemplateMissing
+    summary: 'No form-face template exists for this form and tax year: the preview waits on the engine.'
   formula_invalid:
     status: 422
     raised_by:
@@ -1552,11 +1567,17 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.mapping.AlreadyPublished
+  handoff_needs_review:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.handoff_errors.HandoffNeedsReview
+    summary: Accounts marked for review have no choice yet (`facts.review_accounts`).
   handoff_not_available:
     status: 409
     raised_by:
     - abacus.modules.closes.delivery_errors.HandoffNotAvailable
-    summary: The tax hand-off opens only from a locked December close.
+    - abacus.modules.ledger.handoff_errors.HandoffNotAvailable
+    summary: The source is not released (G8, a review's release or a locked close).
   has_flags:
     status: 409
     raised_by:
@@ -2628,6 +2649,11 @@ codes:
     - abacus.modules.tax.consent_capture.OnePurposePerDocument
     summary: 'A document would carry more than one purpose (Treas. Reg. §301.7216-3; T-01-T30): a template
       whose terms name another purpose, or one template version asked to serve two.'
+  open_flags_note_required:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.entity_depth_errors.OpenFlagsNoteRequired
+    summary: A section sign-off with an open flag needs a note (`facts.open_flags`).
   open_items:
     status: 409
     raised_by:
@@ -2933,6 +2959,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.risks.PresumptionNotRebuttable
     summary: Management override of controls is presumed and never rebuttable (AU-C 240; AC4.5).
+  preview_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.handoff_errors.PreviewChanged
+    summary: 'The preview moved since it was read (`seen_preview_hash`): read it again.'
   preview_outdated:
     status: 409
     raised_by:
@@ -3116,6 +3147,16 @@ codes:
     raised_by:
     - abacus.modules.identity.walls.RelationshipPartner
     summary: 'The person leads the client''s relationship: reassign it first (AC8.3).'
+  relationship_percent_exceeds:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.relationship_errors.RelationshipPercentExceeds
+    summary: Ownership into one entity would exceed 100 percent (`facts.total_bp`).
+  relationship_self_edge:
+    status: 422
+    raised_by:
+    - abacus.modules.organisations.relationship_errors.RelationshipSelfEdge
+    summary: An entity cannot be related to itself.
   release_date_before_period_end:
     status: 422
     raised_by:
@@ -3255,6 +3296,11 @@ codes:
     raised_by:
     - abacus.modules.connections.entity.RetryUnavailable
     summary: Only a run a request item asked for can be retried until on-demand runs land (A-02-T30).
+  return_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.entity_depth_errors.ReturnLocked
+    summary: 'The return is Accepted or filed: its workpapers are read-only.'
   return_mismatch:
     status: 409
     raised_by:
@@ -4000,6 +4046,11 @@ codes:
     raised_by:
     - abacus.modules.tax.entity_sections.TieOutOff
     summary: A section with an off tie-out is signed only with a note (TXP-07 b2).
+  tie_out_off_note_required:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.entity_depth_errors.TieOutOffNoteRequired
+    summary: A sign-off over a tally that is off needs a note.
   tin_conflict:
     status: 409
     raised_by:

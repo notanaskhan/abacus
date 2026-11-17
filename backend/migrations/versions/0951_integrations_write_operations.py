@@ -1,10 +1,10 @@
 """Integrations W1 write operations, grants and switches (C-02-T05; C20 v2.1; SPEC-700 AC-15,
 AC-17, AC-21, AC-23; ADR-344; DEC-5504). Expand-only.
 
-- `write_operations`: one call to a client's system under a declared write, unique on
+- `ledger_write_operations`: one call to a client's system under a declared write, unique on
   `(tenant_id, capability_id, idempotency_key)`, always a person's (the grant's approver).
-- `write_evidence` (insert-only, immutable): the request, response and read-back bodies' object
-  keys and hashes (the bodies live in the evidence store under Object Lock).
+- `ledger_write_evidence` (insert-only, immutable): the request, response and read-back
+  bodies' object keys and hashes (the bodies live in the evidence store under Object Lock).
 - `connection_write_grants` (insert-only, immutable): the client owner's grant and revocation
   events; the current grant is the latest event. A trigger refuses a grant for an attest-flagged
   client (I-POLICY-NOT-ATTEST, ADR-164).
@@ -32,19 +32,19 @@ depends_on = None
 
 _CAPABILITY = "text NOT NULL CHECK (capability_id ~ '^[a-z][a-z_]{2,62}$')"
 TABLES = (
-    "write_operations",
-    "write_evidence",
+    "ledger_write_operations",
+    "ledger_write_evidence",
     "connection_write_grants",
     "firm_write_capabilities",
     "connection_engagement_settings",
 )
-IMMUTABLE = ("write_evidence", "connection_write_grants", "firm_write_capabilities")
+IMMUTABLE = ("ledger_write_evidence", "connection_write_grants", "firm_write_capabilities")
 INSERTS: dict[str, tuple[str, ...]] = {
-    "write_operations": (
+    "ledger_write_operations": (
         "tenant_id", "capability_id", "client_entity_id", "connection_id", "subject_type",
         "subject_id", "operation", "idempotency_key", "approval_grant_id", "actor_user_id",
     ),
-    "write_evidence": (
+    "ledger_write_evidence": (
         "tenant_id", "write_operation_id", "kind", "object_key", "sha256", "bytes",
     ),
     "connection_write_grants": (
@@ -60,7 +60,7 @@ INSERTS: dict[str, tuple[str, ...]] = {
     ),
 }  # fmt: skip
 UPDATES: dict[str, tuple[str, ...]] = {
-    "write_operations": (
+    "ledger_write_operations": (
         "status", "provider_request_id", "external_ref", "attempt", "started_at", "finished_at",
     ),
     "connection_engagement_settings": (
@@ -92,7 +92,7 @@ def _immutable(table: str) -> None:
 def upgrade() -> None:
     op.execute(
         f"""
-        CREATE TABLE write_operations (
+        CREATE TABLE ledger_write_operations (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
             capability_id {_CAPABILITY},
@@ -124,7 +124,7 @@ def upgrade() -> None:
     )
     op.execute(
         """
-        CREATE TABLE write_evidence (
+        CREATE TABLE ledger_write_evidence (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
             write_operation_id uuid NOT NULL,
@@ -135,7 +135,8 @@ def upgrade() -> None:
             captured_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             UNIQUE (tenant_id, id),
             UNIQUE (tenant_id, write_operation_id, kind),
-            FOREIGN KEY (tenant_id, write_operation_id) REFERENCES write_operations (tenant_id, id)
+            FOREIGN KEY (tenant_id, write_operation_id)
+                REFERENCES ledger_write_operations (tenant_id, id)
         )
         """
     )
@@ -247,8 +248,8 @@ def downgrade() -> None:
         "connection_engagement_settings",
         "firm_write_capabilities",
         "connection_write_grants",
-        "write_evidence",
-        "write_operations",
+        "ledger_write_evidence",
+        "ledger_write_operations",
     ):
         op.execute(f"DROP TABLE {table}")
     for table in IMMUTABLE:

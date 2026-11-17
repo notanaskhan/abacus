@@ -39,6 +39,10 @@ are not registered, or not known for this resource, denies (fail closed).
 The three target conditions are a person's: an agent or a system run never meets them, whatever its
 initiator could do, and a support session never does either (its facts are not resolved).
 
+- `tb_handoff_source_released`, `same_client`, `decision_owner_contact` (T-06-T03, SPEC-702):
+  the hand-off's source is released, its target is the same client's, and a decision request's
+  contact holds the client-owner grant; resource facts, failing closed while unknown.
+
 `conditions_hold` is pure, so the generated allow and deny tests drive it directly.
 """
 
@@ -80,6 +84,11 @@ class ConditionFacts:
     email_verified: bool | None = None
     # C-01-T02 (QC-3): the roles that allowed the action (None: unknown, fails closed).
     granting_roles: frozenset[str] | None = None
+    # T-06-T03: the hand-off source is released; the target is the same client's; the decision's
+    # contact holds the client-owner grant (None: unknown, fails closed).
+    source_released: bool | None = None
+    same_client: bool | None = None
+    owner_contact: bool | None = None
 
 
 def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
@@ -99,6 +108,13 @@ def conditions_hold(rule: Rule, facts: ConditionFacts, *, person: bool) -> bool:
     if rule.link_scope_only and facts.link_scope is not True:
         return False
     if rule.email_verified and facts.email_verified is not True:
+        return False
+    # T-06-T03 (SPEC-702): resource conditions; they bind every actor and fail closed.
+    if rule.tb_handoff_source_released and facts.source_released is not True:
+        return False
+    if rule.same_client and facts.same_client is not True:
+        return False
+    if rule.decision_owner_contact and facts.owner_contact is not True:
         return False
     if person:
         if rule.is_named_approver and facts.named_approver is not True:

@@ -240,7 +240,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "platform_audit_events": "platform_audit_events_immutable",  # 0920 (G-04-T04)
     "posting_results": "posting_results_immutable",  # 0950 (C-02-T04)
     "closing_date_events": "closing_date_events_immutable",  # 0950 (C-02-T04)
-    "write_evidence": "write_evidence_immutable",  # 0951 (C-02-T05)
+    "ledger_write_evidence": "ledger_write_evidence_immutable",  # 0951 (C-02-T05)
     "connection_write_grants": "connection_write_grants_immutable",  # 0951 (C-02-T05)
     "firm_write_capabilities": "firm_write_capabilities_immutable",  # 0951 (C-02-T05)
 }

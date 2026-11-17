@@ -76,8 +76,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
 # the firm switch's history and the engagement's posting switch.
 C02T05_TABLES: frozenset[str] = frozenset(
     {
-        "write_operations",
-        "write_evidence",
+        "ledger_write_operations",
+        "ledger_write_evidence",
         "connection_write_grants",
         "firm_write_capabilities",
         "connection_engagement_settings",
@@ -85,9 +85,9 @@ C02T05_TABLES: frozenset[str] = frozenset(
 )
 TABLES = TABLES | C02T05_TABLES
 INSERT_ONLY = INSERT_ONLY | frozenset(
-    {"write_evidence", "connection_write_grants", "firm_write_capabilities"}
+    {"ledger_write_evidence", "connection_write_grants", "firm_write_capabilities"}
 )
-INSERT_COLUMNS["write_operations"] = frozenset(
+INSERT_COLUMNS["ledger_write_operations"] = frozenset(
     {
         "tenant_id",
         "capability_id",
@@ -101,7 +101,7 @@ INSERT_COLUMNS["write_operations"] = frozenset(
         "actor_user_id",
     }
 )
-INSERT_COLUMNS["write_evidence"] = frozenset(
+INSERT_COLUMNS["ledger_write_evidence"] = frozenset(
     {"tenant_id", "write_operation_id", "kind", "object_key", "sha256", "bytes"}
 )
 INSERT_COLUMNS["connection_write_grants"] = frozenset(
@@ -130,7 +130,7 @@ INSERT_COLUMNS["connection_engagement_settings"] = frozenset(
         "posting_enabled_at",
     }
 )
-UPDATE_COLUMNS["write_operations"] = frozenset(
+UPDATE_COLUMNS["ledger_write_operations"] = frozenset(
     {"status", "provider_request_id", "external_ref", "attempt", "started_at", "finished_at"}
 )
 UPDATE_COLUMNS["connection_engagement_settings"] = frozenset(
