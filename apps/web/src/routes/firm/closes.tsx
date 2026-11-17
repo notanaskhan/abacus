@@ -15,6 +15,8 @@ import { appRoute, lazyScreen } from "../root";
 const Shell = lazyScreen(async () => (await import("../../screens/CLS-02")).CloseShell);
 // C-01-T35: CLS-03's Intake body inside the shell.
 const Intake = lazyScreen(async () => (await import("../../screens/CLS-03")).CLS03);
+// C-01-T37: CLS-04's Accounts body inside the shell.
+const Accounts = lazyScreen(async () => (await import("../../screens/CLS-04")).CLS04);
 // C-01-T34: CLS-02's Overview body inside the shell.
 const Overview = lazyScreen(async () => (await import("../../screens/CLS-02")).CloseOverview);
 const Index = lazyScreen(async () => (await import("../../screens/CLS-01")).CLS01);
@@ -147,6 +149,19 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
           />
         ) : screen === "CLS-03" ? (
           <Intake closeId={closeId} />
+        ) : screen === "CLS-04" ? (
+          <Accounts
+            closeId={closeId}
+            onReconciliation={(accountRef) => {
+              void navigate({
+                to: "/closes/$closeId/accounts/$accountRef",
+                params: { closeId, accountRef },
+              });
+            }}
+            onIssue={() => {
+              go(closeId, "review");
+            }}
+          />
         ) : screen === "CLS-10" ? (
           <Flux
             closeId={closeId}

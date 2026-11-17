@@ -23,6 +23,12 @@ import {
   copperleafRequestTree,
   squareSummary,
 } from "../seed/close-intake";
+import {
+  PREPAID,
+  copperleafAccountTree,
+  copperleafPrepaidRegister,
+  copperleafPrepaidWorkpaper,
+} from "../seed/close-accounts";
 import { copperleafAugust } from "../seed/closes";
 
 const notYet = () => json({ detail: "not_implemented" }, 501);
@@ -64,6 +70,11 @@ export function closeHandlers(): Record<string, FixtureHandler> {
     "GET /v1/closes/{close_id}/questionnaire": () => json(augustQuestionnaire()),
     "GET /v1/evidence-versions/{evidence_version_id}/close-summary": ({ params }) =>
       params.evidence_version_id === SQUARE_VERSION ? json(squareSummary()) : notYet(),
-    "GET /v1/closes/{close_id}/accounts": notYet,
+    // C-01-T37: CLS-04's tree, the Prepaid Insurance workpaper and its register (state a).
+    "GET /v1/closes/{close_id}/accounts": () => json(copperleafAccountTree()),
+    "GET /v1/closes/{close_id}/accounts/{account_ref}/workpaper": ({ params }) =>
+      params.account_ref === PREPAID ? json(copperleafPrepaidWorkpaper()) : notYet(),
+    "GET /v1/closes/{close_id}/accounts/{account_ref}/register": ({ params }) =>
+      params.account_ref === PREPAID ? json(copperleafPrepaidRegister()) : notYet(),
   };
 }
