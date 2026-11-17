@@ -927,21 +927,33 @@ async def ask_transaction_question_route(
     return await issues.ask_question(ctx, issue_id, body)
 
 
-@close_work_router.get(f"{_C}/flux", action="flux.read", response_model=FluxSetOut, errors=(501,))
+@close_work_router.get(f"{_C}/flux", action="flux.read", response_model=FluxSetOut, errors=(409,))
 async def close_flux_route(
     close_id: UUID, ctx: Ctx, basis: Annotated[FluxBasis, Query()] = "mom"
 ) -> FluxSetOut:
-    """CLS-10 sets and lines (AC-48; C-01-T25)."""
+    """CLS-10 sets and lines (AC-48; C-01-T25). The budget basis waits on a budget import."""
     await _engine_on(ctx)
-    _not_yet()
+    if basis == "budget":
+        raise NotFound("budget")
+    from abacus.modules.closes import flux
+
+    return await flux.flux_set(ctx, close_id, basis)
 
 
-@close_work_router.get(f"{_C}/flux.xlsx", action="flux.read", response_model=bytes, errors=(501,))
+@close_work_router.get(f"{_C}/flux.xlsx", action="flux.read", response_model=bytes, errors=(409,))
 async def close_flux_xlsx_route(
     close_id: UUID, ctx: Ctx, basis: Annotated[FluxBasis, Query()] = "mom"
 ) -> Response:
     await _engine_on(ctx)
-    _not_yet()
+    if basis == "budget":
+        raise NotFound("budget")
+    from abacus.modules.closes import flux
+
+    return Response(
+        content=await flux.export(ctx, close_id, basis),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="flux-{basis}.xlsx"'},
+    )
 
 
 @close_work_router.post(
@@ -963,25 +975,29 @@ async def explain_flux_line_route(
     "/analytic-lines/{line_id}/explanation",
     action="flux.edit",
     response_model=FluxLineOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def edit_flux_explanation_route(
     line_id: UUID, body: FluxExplanationIn, ctx: Ctx, if_match: IfMatch
 ) -> FluxLineOut:
     await _human_route(ctx, "flux.edit")
-    _not_yet()
+    from abacus.modules.closes import flux
+
+    return await flux.explain(ctx, line_id, body=body.text, if_match=if_match)
 
 
 @close_work_router.post(
     "/analytic-lines/{line_id}/accept",
     action="flux.accept",
     response_model=FluxLineOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def accept_flux_line_route(line_id: UUID, ctx: Ctx, if_match: IfMatch) -> FluxLineOut:
     """A Manager or Partner accepts; a Senior 403; never the agent (AC-49; C-01-T25)."""
     await _human_route(ctx, "flux.accept")
-    _not_yet()
+    from abacus.modules.closes import flux
+
+    return await flux.accept(ctx, line_id, if_match=if_match)
 
 
 @portal_close_router.get(
