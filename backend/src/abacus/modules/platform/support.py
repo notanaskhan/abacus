@@ -27,17 +27,19 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from datetime import datetime, time, timedelta
 from statistics import median
-from typing import Final, cast
+from typing import Annotated, ClassVar, Final, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 from sqlalchemy.engine import RowMapping
 
+from abacus.kernel.classification import classified
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, platform_transaction, tenant_session
 from abacus.kernel.errors import DomainRateLimited, NotFound
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import DomainEvent, Ref, Target, uow
+from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.identity.api import AuthContext, Staff, authorise_staff, names_of
 from abacus.modules.platform.console_contract import (
     QueueConversationDetailOut,
@@ -80,6 +82,30 @@ class SupportRateLimited(DomainRateLimited):
 
 FirmHealth = Callable[[TenantContext], Awaitable[Mapping[str, str]]]
 _HEALTH: list[FirmHealth] = []
+
+
+# S48 rest (G-04-T10, AC-48): the content-free "Accrued Support replied" email waits 5 minutes
+# and goes only when the person has not opened the thread since the reply.
+REPLY_NOTICE_DELAY: Final = timedelta(minutes=5)
+_I = classified("internal")
+
+
+class SupportReplyHeld(DomainEvent):
+    """A staff reply, held for `REPLY_NOTICE_DELAY` (identifiers only)."""
+
+    event_type: ClassVar[str] = "support.reply_held"
+
+    conversation_id: Annotated[UUID, _I]
+    message_id: Annotated[UUID, _I]
+
+
+class SupportReplied(DomainEvent):
+    """C16 `support_replied` (in-app and email, content-free): the reply is still unread."""
+
+    event_type: ClassVar[str] = "support.replied"
+
+    conversation_id: Annotated[UUID, _I]
+    recipient_user_ids: Annotated[list[UUID], _I]
 
 
 def register_firm_health(source: FirmHealth) -> None:
@@ -195,6 +221,8 @@ async def conversation(ctx: AuthContext) -> ConversationOut:
             )
         ]
     online, minutes, next_open = availability(await _hours(), system_now(), samples)
+    if conversation_id is not None:
+        await _mark_read(ctx, cast(UUID, conversation_id))
     return ConversationOut(
         id=conversation_id,
         availability=AvailabilityOut(
@@ -204,6 +232,56 @@ async def conversation(ctx: AuthContext) -> ConversationOut:
         session_cards=[],
         suggestions=[],
     )
+
+
+async def _mark_read(ctx: AuthContext, conversation_id: UUID) -> None:
+    """The person opened their thread (SHL-05): their read mark moves to now (one row each)."""
+    async with uow(ctx.tenant) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO support_conversation_reads (tenant_id, conversation_id, reader_kind, "
+                "last_read_at) VALUES (:t, :c, 'firm_user', abacus_now()) ON CONFLICT "
+                "(tenant_id, conversation_id, reader_kind) DO UPDATE SET last_read_at = "
+                "EXCLUDED.last_read_at"
+            ),
+            {"t": ctx.tenant_id, "c": conversation_id},
+        )
+        tx.record(
+            "support_conversation.read", target=Target("support_conversation", conversation_id)
+        )
+
+
+async def on_reply_held(event: OutboxEvent) -> None:
+    """Five minutes after a reply: the notice only when the person has not opened the thread
+    since (no read mark, or one older than the reply); a replay finds it read or sends again
+    nothing new (C16 deduplicates on the event)."""
+    conversation = UUID(str(event.payload["conversation_id"]))
+    message = UUID(str(event.payload["message_id"]))
+    tenant = TenantContext(event.tenant_id, "system", "support:reply_notice")
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT c.user_id, m.created_at, r.last_read_at FROM support_messages m "
+                    "JOIN support_conversations c ON c.id = m.conversation_id "
+                    "LEFT JOIN support_conversation_reads r ON r.conversation_id = c.id "
+                    "AND r.reader_kind = 'firm_user' WHERE m.id = :m AND c.id = :c"
+                ),
+                {"m": message, "c": conversation},
+            )
+        ).first()
+    if row is None or (row.last_read_at is not None and row.last_read_at >= row.created_at):
+        return
+    async with uow(tenant) as tx:
+        tx.record(
+            "support_message.reply_notice", target=Target("support_conversation", conversation)
+        )
+        tx.emit(SupportReplied(conversation_id=conversation, recipient_user_ids=[row.user_id]))
+
+
+SUBSCRIPTIONS: Final[Mapping[str, Callable[[OutboxEvent], Awaitable[None]]]] = {
+    "support.reply_held": on_reply_held,
+}
 
 
 async def send(ctx: AuthContext, body: str) -> SupportMessageOut:
@@ -504,6 +582,10 @@ async def reply(
             "support_message.replied",
             target=Target("support_conversation", conversation_id),
             after=Ref(message=made, length=len(body.strip())),
+        )
+        tx.emit(
+            SupportReplyHeld(conversation_id=conversation_id, message_id=cast(UUID, made)),
+            not_before=system_now() + REPLY_NOTICE_DELAY,
         )
     found = await detail(staff, conversation_id)
     return next(m for m in found.messages if m.id == made)

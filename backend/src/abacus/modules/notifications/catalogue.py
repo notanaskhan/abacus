@@ -463,6 +463,19 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "close_requests.published": Kind("close_requests_published", _listed, "close", "close_id"),
     # G-04-T12 (G-04 §4.8, DEC-5419): usage alerts; the platform names the recipients.
     "usage.threshold_crossed": Kind("usage_threshold_crossed", _listed, "firm", None, None),
+    # S48 rest (G-04 §4.8): plan requests and the support reply; the platform names recipients.
+    "plan_request.awaiting_partner": Kind(
+        "plan_request_awaiting_partner", _listed, "plan_change_request", "request_id", None
+    ),
+    "plan_request.decided": Kind(
+        "plan_request_decided", _listed, "plan_change_request", "request_id", None
+    ),
+    "plan_request.applied": Kind(
+        "plan_request_applied", _listed, "plan_change_request", "request_id", None
+    ),
+    "support.replied": Kind(
+        "support_replied", _listed, "support_conversation", "conversation_id", None
+    ),
     "engagement_budget.threshold_crossed": Kind(
         "engagement_budget_threshold_crossed", _listed, "engagement", "engagement_id"
     ),
@@ -786,6 +799,10 @@ TEMPLATES: Final[dict[str, str]] = {
     "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
     "ledger_sync.paused": "The hourly QuickBooks sync for a client is paused.",
     "usage.threshold_crossed": "Your firm has used a set share of its included agent-minutes.",
+    "plan_request.awaiting_partner": "A plan request is waiting for your approval.",
+    "plan_request.decided": "Your plan request was decided.",
+    "plan_request.applied": "Your firm's plan change was applied.",
+    "support.replied": "Accrued Support replied",
     "engagement_budget.threshold_crossed": "{subject} is near its agent-minute budget.",
     "usage.scheduled_paused": (
         "Scheduled agents are paused until the next usage month: the firm reached its included "
@@ -970,6 +987,12 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("usage_threshold_crossed", "system", "Gauge", email_default=True),
     NotificationKind("engagement_budget_threshold_crossed", "system", "Gauge", email_default=True),
     NotificationKind("usage_scheduled_paused", "system", "Gauge"),  # G-04-T08
+    # S48 rest (G-04 §4.8): plan requests (in-app and email) and the support reply (in-app; the
+    # content-free email goes only after 5 minutes unread, as the platform holds the event).
+    NotificationKind("plan_request_awaiting_partner", "system", "Gauge", email_default=True),
+    NotificationKind("plan_request_decided", "system", "Gauge", email_default=True),
+    NotificationKind("plan_request_applied", "system", "Gauge", email_default=True),
+    NotificationKind("support_replied", "system", "MessageSquareText", email_default=True),
     # C-01-T26 (DEC-5412): the close engine's kinds.
     NotificationKind("close_run_finished", "run", "ListChecks"),
     NotificationKind("close_run_needs_input", "run", "MessageSquareText"),

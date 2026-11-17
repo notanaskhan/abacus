@@ -80,6 +80,47 @@ class _Changed(DomainEvent):
     request_id: Annotated[UUID, classified("internal")]
 
 
+class PlanRequestAwaitingPartner(DomainEvent):
+    """S48 rest (G-04 §4.8): C16 `plan_request_awaiting_partner` to the partner approver, and
+    the C13 gate's trigger (identifiers only)."""
+
+    event_type: ClassVar[str] = "plan_request.awaiting_partner"
+
+    request_id: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class PlanRequestDecided(DomainEvent):
+    """C16 `plan_request_decided` to the requester (approved: sent to Accrued, or declined)."""
+
+    event_type: ClassVar[str] = "plan_request.decided"
+
+    request_id: Annotated[UUID, classified("internal")]
+    outcome: Annotated[str, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class PlanRequestApplied(DomainEvent):
+    """C16 `plan_request_applied` to the requester and the billing contact."""
+
+    event_type: ClassVar[str] = "plan_request.applied"
+
+    request_id: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+async def awaiting_plan_requests(tenant: TenantContext) -> list[tuple[UUID, UUID | None]]:
+    """S48 rest (C13): each request awaiting its partner, with the approver it waits on."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT id, approver_user_id FROM plan_change_requests "
+                "WHERE status = 'awaiting_partner' ORDER BY created_at"
+            )
+        )
+        return [(r[0], r[1]) for r in rows]
+
+
 # --- slots ---------------------------------------------------------------------------------------
 
 WorkbenchActive = Callable[[TenantContext], Awaitable[int]]
@@ -574,6 +615,12 @@ async def create_request(ctx: AuthContext, body: PlanRequestIn) -> PlanRequestOu
         )  # fmt: skip
         tx.record("plan_request.created", target=Target(TARGET, cast(UUID, made)))
         tx.emit(_Changed(tenant_id=ctx.tenant_id, request_id=cast(UUID, made)))
+        if approver is not None:
+            tx.emit(
+                PlanRequestAwaitingPartner(
+                    request_id=cast(UUID, made), recipient_user_ids=[cast(UUID, approver)]
+                )
+            )
     return await _one(ctx, cast(UUID, made))
 
 
@@ -614,6 +661,14 @@ async def settle_request(
         )
         tx.record(f"plan_request.{status}", target=Target(TARGET, request_id))
         tx.emit(_Changed(tenant_id=ctx.tenant_id, request_id=request_id))
+        if status in ("sent_to_accrued", "declined"):
+            tx.emit(
+                PlanRequestDecided(
+                    request_id=request_id,
+                    outcome=status,
+                    recipient_user_ids=[cast(UUID, row.requested_by)],
+                )
+            )
     return await _one(ctx, request_id)
 
 
