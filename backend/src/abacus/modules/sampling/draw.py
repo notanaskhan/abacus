@@ -29,6 +29,7 @@ from abacus.modules.sampling.compute import (
     StratumResult,
     StratumRule,
     canonical,
+    mus,
     sampler,
 )
 from abacus.modules.sampling.sample_sets import TARGET, version_content_hash
@@ -123,6 +124,13 @@ async def run_draw(tenant_id: UUID, version_id: UUID) -> str:
         drawn_items: Sequence[_Item] = je.items
         drawn_strata: Sequence[StratumResult] = ()
         items_hash = je.items_hash
+    elif version["method"] == mus.METHOD:
+        # A-08-T13 (ADR P-57, DEC-5402): the monetary-unit sampler, its own frozen version.
+        try:
+            drawn_mus = _select_mus(version, str(population["sha256"]), records)
+        except DrawRefused as refused:
+            return await fail_draw(tenant_id, version_id, refused.code)
+        drawn_items, drawn_strata, items_hash = drawn_mus.items, (), drawn_mus.items_hash
     else:
         try:
             drawn = _select(version, str(population["sha256"]), records)
@@ -231,4 +239,41 @@ def _select(
         raise DrawRefused("inputs_changed")
     if not stratified and len(drawn.items) != int(version["final_size"]):
         raise DrawRefused("size_mismatch")
+    return drawn
+
+
+def _select_mus(
+    version: Row,
+    population_hash: str,
+    records: list[dict[str, Any]],  # Any: database rows of mixed column types
+) -> mus.MusDraw:
+    """ "mus/1.0"'s selection from the parameters the version recorded, checked against them."""
+    if str(version["sampler_version"]) != mus.VERSION:
+        raise DrawRefused("unknown_sampler_version")
+    detail = cast(Mapping[str, object], _parameters(version).get("mus") or {})
+    try:
+        population = canonical(
+            Record(str(r["record_key"]), r["amount"] if isinstance(r["amount"], Decimal) else None)
+            for r in records
+        )
+    except ValueError:
+        raise DrawRefused("population_unreadable") from None
+    if population.population_hash != population_hash:
+        raise DrawRefused("population_changed")
+    try:
+        drawn = mus.select(
+            population,
+            seed=int(version["seed"]),
+            tolerable=Decimal(str(detail["tolerable"])),
+            expected=Decimal(str(detail["expected"])),
+            factors=mus.Factors(
+                Decimal(str(detail["confidence_pct"])),
+                Decimal(str(detail["reliability"])),
+                Decimal(str(detail["expansion"])),
+            ),
+        )
+    except (KeyError, ValueError):
+        raise DrawRefused("parameters_invalid") from None
+    if drawn.inputs_hash != version["inputs_hash"]:
+        raise DrawRefused("inputs_changed")
     return drawn

@@ -9,6 +9,7 @@ Red, protected path (A-03-T01). Imports only the standard library, `abacus.kerne
 - `stats`: `attribute_size`, `udl`, `udl_percent`, `projected_misstatement`,
   `projected_misstatement_ratio`.
 - `versions`: `SAMPLER_VERSIONS`, `CURRENT`, `sampler(identifier)`.
+- `mus`: monetary-unit sampler version "mus/1.0" (A-08-T13), frozen; 2.3 is untouched.
 """
 
 from abacus.modules.sampling.compute.canonical import (

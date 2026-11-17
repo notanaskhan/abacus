@@ -161,12 +161,14 @@ from abacus.modules.methodology.service import (
     version_in,
 )
 from abacus.modules.methodology.standards import (
+    MusFactors,
     aje_classification_for,
     assigned_review_levels,
     attribute_sample_size,
     current_version,
     current_version_of_kind,
     je_risk_criteria_version,
+    mus_factors,
     policy_payload,
     register_standard_examples,
     rmm_matrix_for,
@@ -308,6 +310,7 @@ __all__ = [
     "Methodology",
     "MethodologyVersionView",
     "MusConfidenceFactorsPayload",
+    "MusFactors",
     "ParsedProgram",
     "ParsedStep",
     "PiiHold",
@@ -383,6 +386,7 @@ __all__ = [
     "methodology_router",
     "methodology_templates",
     "methodology_version",
+    "mus_factors",  # A-08-T13: the MUS sampler's firm factors
     "ordered",
     "parse_workbook",
     "pii_hold",

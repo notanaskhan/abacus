@@ -2388,7 +2388,7 @@ export type AnalyticsLineOut = {
     /**
      * Change Pct
      */
-    change_pct: string;
+    change_pct: string | null;
     /**
      * Cy
      */
@@ -2488,6 +2488,10 @@ export type AnalyticsSetOut = {
      */
     engine_version: string;
     /**
+     * Failure Code
+     */
+    failure_code?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -2503,6 +2507,10 @@ export type AnalyticsSetOut = {
      * Lines
      */
     lines: Array<AnalyticsLineOut>;
+    /**
+     * Review Hash
+     */
+    review_hash?: string;
     /**
      * Stage
      */
@@ -39659,6 +39667,10 @@ export type ParametersIn = {
      */
     confidence?: number | string | null;
     /**
+     * Expected Misstatement
+     */
+    expected_misstatement?: number | string | null;
+    /**
      * Expected Rate
      */
     expected_rate?: number | string | null;
@@ -39666,6 +39678,10 @@ export type ParametersIn = {
      * Rmm
      */
     rmm?: 'low' | 'moderate' | 'high' | null;
+    /**
+     * Tolerable Misstatement
+     */
+    tolerable_misstatement?: number | string | null;
     /**
      * Tolerable Rate
      */
@@ -39690,6 +39706,10 @@ export type ParametersOut = {
      * Confidence
      */
     confidence: string | null;
+    /**
+     * Expected Misstatement
+     */
+    expected_misstatement?: string | null;
     /**
      * Expected Rate
      */
@@ -39719,6 +39739,10 @@ export type ParametersOut = {
      */
     sampler_version: string;
     /**
+     * Sampling Interval
+     */
+    sampling_interval?: string | null;
+    /**
      * Seed
      */
     seed: number;
@@ -39734,6 +39758,10 @@ export type ParametersOut = {
      * Statistical Crosscheck Size
      */
     statistical_crosscheck_size: number | null;
+    /**
+     * Tolerable Misstatement
+     */
+    tolerable_misstatement?: string | null;
     /**
      * Tolerable Rate
      */
@@ -44841,7 +44869,7 @@ export type QuestionnaireOut = {
     /**
      * Kind
      */
-    kind: 'organizer' | 'team_questions' | 'inquiry';
+    kind: 'organizer' | 'team_questions' | 'inquiry' | 'analytics_question' | 'ssars_inquiry';
     /**
      * Questions
      */
@@ -45165,6 +45193,16 @@ export type ReadAllOut = {
      * Marked
      */
     marked: number;
+};
+
+/**
+ * ReadFsOut
+ */
+export type ReadFsOut = {
+    /**
+     * Workpaper Id
+     */
+    workpaper_id: string;
 };
 
 /**
@@ -51206,7 +51244,7 @@ export type SampleItemOut = {
     /**
      * Selection Reason
      */
-    selection_reason: 'random' | 'threshold' | 'risk_score' | 'unpredictable' | 'named';
+    selection_reason: 'random' | 'threshold' | 'risk_score' | 'unpredictable' | 'named' | 'certainty' | 'pps';
     /**
      * Stratum Position
      */
@@ -63464,7 +63502,7 @@ export type VersionIn = {
     /**
      * Method
      */
-    method: 'attribute_nonstatistical' | 'attribute_statistical' | 'threshold_random_stratified';
+    method: 'attribute_nonstatistical' | 'attribute_statistical' | 'threshold_random_stratified' | 'monetary_unit';
     override?: OverrideIn | null;
     parameters: ParametersIn;
     /**
@@ -156494,6 +156532,66 @@ export type PublishInquiriesResponses = {
 };
 
 export type PublishInquiriesResponse = PublishInquiriesResponses[keyof PublishInquiriesResponses];
+
+export type OpenReadFsData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/ssars/read-fs';
+};
+
+export type OpenReadFsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type OpenReadFsError = OpenReadFsErrors[keyof OpenReadFsErrors];
+
+export type OpenReadFsResponses = {
+    /**
+     * Successful Response
+     */
+    201: ReadFsOut;
+};
+
+export type OpenReadFsResponse = OpenReadFsResponses[keyof OpenReadFsResponses];
 
 export type RemindData = {
     body: ReminderIn;

@@ -52,7 +52,10 @@ Rate = Annotated[Decimal, Field(ge=0, le=1), classified("internal")]
 
 SourceKind = Literal["upload", "general_ledger"]
 Method = Literal[
-    "attribute_nonstatistical", "attribute_statistical", "threshold_random_stratified"
+    "attribute_nonstatistical",
+    "attribute_statistical",
+    "threshold_random_stratified",
+    "monetary_unit",  # A-08-T13 (ADR P-57, DEC-5402): behind `sampling.monetary_unit`
 ]
 # A-08-T12 (ADR P-57): what a version may read; `je_score_selection` is drawn only through a JE
 # test's selection, never a direct version request, and `monetary_unit` arrives with A-08-T13.
@@ -65,7 +68,9 @@ ShownMethod = Literal[
 ]
 Rmm = Literal["low", "moderate", "high"]
 TestRule = Literal["all", "random", "none"]
-SelectionReason = Literal["random", "threshold", "risk_score", "unpredictable", "named"]
+SelectionReason = Literal[
+    "random", "threshold", "risk_score", "unpredictable", "named", "certainty", "pps"
+]  # fmt: skip
 SeedSource = Literal["server", "scenario"]
 Surface = Literal["POR-03", "POR-14"]
 Wave = Literal["sample"]
@@ -210,6 +215,10 @@ class ParametersOut(BaseModel):
     seed_source: Annotated[SeedSource, classified("internal")]
     sampler_version: Annotated[str, classified("internal")]
     citations: Annotated[list[CitationOut], classified("internal")]
+    # A-08-T13 (DEC-5402): a monetary-unit version's misstatements and sampling interval.
+    tolerable_misstatement: Annotated[Decimal | None, classified("confidential")] = None
+    expected_misstatement: Annotated[Decimal | None, classified("confidential")] = None
+    sampling_interval: Annotated[Decimal | None, classified("confidential")] = None
 
 
 class PersonStampOut(BaseModel):
@@ -410,6 +419,13 @@ class ParametersIn(BaseModel):
     tolerable_rate: Annotated[Decimal | None, Field(gt=0, lt=1), classified("internal")] = None
     expected_rate: Annotated[Decimal | None, Field(ge=0, lt=1), classified("internal")] = None
     confidence: Annotated[Decimal | None, Field(gt=0, lt=1), classified("internal")] = None
+    # A-08-T13 (DEC-5402): monetary-unit sampling's tolerable and expected misstatement.
+    tolerable_misstatement: Annotated[Decimal | None, Field(gt=0), classified("confidential")] = (
+        None
+    )
+    expected_misstatement: Annotated[Decimal | None, Field(ge=0), classified("confidential")] = (
+        None
+    )
 
 
 class VersionIn(BaseModel):

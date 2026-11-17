@@ -36,6 +36,8 @@ export const COPY = {
       attribute_nonstatistical: "Attribute (non-statistical, BH-EBP-210 Table 2)",
       attribute_statistical: "Attribute (statistical)",
       threshold_random_stratified: "Threshold + random (stratified)",
+      // A-08-T13 (DF-05 frame, behind sampling.monetary_unit).
+      monetary_unit: "Monetary unit",
     } as Record<string, string>,
     rmm: "RMM",
     rmms: { low: "Low (AUD-08)", moderate: "Moderate (AUD-08)", high: "High (AUD-08)" } as Record<
@@ -45,6 +47,9 @@ export const COPY = {
     tolerable: "Tolerable deviation rate",
     expected: "Expected deviation rate",
     confidence: "Confidence",
+    tolerableMisstatement: "Tolerable misstatement",
+    expectedMisstatement: "Expected misstatement",
+    interval: "Sampling interval",
     size: "Computed size",
     crosscheck: (n: number, confidence: string, tolerable: string, expected: string): string =>
       `statistical cross-check: ${String(n)} at ${confidence} / ${tolerable} / ${expected}`,
@@ -55,8 +60,11 @@ export const COPY = {
       attribute_nonstatistical: "uniform without replacement",
       attribute_statistical: "uniform without replacement",
       threshold_random_stratified: "threshold, then uniform without replacement",
+      monetary_unit: "items at or above the interval, then systematic PPS from a seeded start",
     } as Record<string, string>,
-    sampler: (v: string, how: string): string => `Accrued sampler v${v} · ${how}`,
+    // A-08-T13: "mus/1.0" names its own family; the numbered versions read "v2.3".
+    sampler: (v: string, how: string): string =>
+      `Accrued sampler ${/^\d/u.test(v) ? "v" : ""}${v} · ${how}`,
   },
   strata: {
     title: "Strata",
