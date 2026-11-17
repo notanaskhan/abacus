@@ -596,3 +596,8 @@ __all__ = [
     "wedge_report",
     "week_snapshots",
 ]
+
+# G-04-T10 (DEC-5417): W-01 fills the firm's integration health for SHL-05's status.
+from abacus.modules.platform.support import (  # noqa: E402 -- after the slots it reads
+    register_firm_health as register_firm_health,
+)

@@ -534,23 +534,35 @@ async def console_mark_applied(
     "/support/conversations",
     action="platform_support.reply",
     response_model=QueueConversationsOut,
-    errors=(501,),
 )
 async def console_queue(
+    staff: StaffDep,
     unanswered: Annotated[bool | None, Query()] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> QueueConversationsOut:
-    raise NotImplementedYet(_SUPPORT)
+    """PLT-01 Support (AC-47): every firm's open threads (G-04-T10)."""
+    from abacus.modules.platform import support
+
+    del cursor
+    found = await support.conversations(staff)
+    if unanswered is None:
+        return found
+    return found.model_copy(
+        update={"items": [i for i in found.items if i.unanswered == unanswered]}
+    )
 
 
 @router.get(
     "/support/conversations/{conversation_id}",
     action="platform_support.reply",
     response_model=QueueConversationDetailOut,
-    errors=(501,),
 )
-async def console_queue_conversation(conversation_id: UUID) -> QueueConversationDetailOut:
-    raise NotImplementedYet(_SUPPORT)
+async def console_queue_conversation(
+    conversation_id: UUID, staff: StaffDep
+) -> QueueConversationDetailOut:
+    from abacus.modules.platform import support
+
+    return await support.detail(staff, conversation_id)
 
 
 @router.post(
@@ -558,12 +570,13 @@ async def console_queue_conversation(conversation_id: UUID) -> QueueConversation
     action="platform_support.reply",
     response_model=QueueMessageOut,
     status_code=201,
-    errors=(501,),
 )
 async def console_queue_reply(
-    conversation_id: UUID, body: StaffReplyIn, _key: IdempotencyKey
+    conversation_id: UUID, body: StaffReplyIn, _key: IdempotencyKey, staff: StaffDep
 ) -> QueueMessageOut:
-    raise NotImplementedYet(_SUPPORT)
+    from abacus.modules.platform import support
+
+    return await support.reply(staff, conversation_id, body.body, body.related_article_slug)
 
 
 @router.get(
