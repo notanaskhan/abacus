@@ -239,6 +239,7 @@ from abacus.modules.platform.slots import (
     register_home_count,
     search_document,
 )
+from abacus.modules.platform.support import SUBSCRIPTIONS as SUPPORT_SUBSCRIPTIONS
 from abacus.modules.platform.support_contract import router as support_router
 from abacus.modules.platform.tenant_keys import (
     TENANT_KEY_ACTIVITIES,
@@ -383,7 +384,9 @@ register_work_classes(WORKFLOWS)
 # P-02-T06 (DEC-4612): the SearchIndexer, composed from the registered projections' triggers when
 # the worker reads it (after every owner registered), plus `membership.deactivated`.
 SUBSCRIPTIONS: Mapping[str, Handler] = _Composed(
-    {**WISP_SUBSCRIPTIONS, **METERING_SUBSCRIPTIONS}, SEARCH_SUBSCRIPTIONS
+    # S48 rest (G-04-T10): the held support reply notice.
+    {**WISP_SUBSCRIPTIONS, **METERING_SUBSCRIPTIONS, **SUPPORT_SUBSCRIPTIONS},
+    SEARCH_SUBSCRIPTIONS,
 )
 ACTIVITIES: tuple[object, ...] = (
     *FANOUT_ACTIVITIES,  # K-02-T12
@@ -612,6 +615,9 @@ from abacus.modules.platform.g04_seed import (  # noqa: E402
 )
 from abacus.modules.platform.plan_usage import (  # noqa: E402 -- G-04-T08: run admission reads it
     OverLimit as OverLimit,
+)
+from abacus.modules.platform.plan_usage import (  # noqa: E402 -- S48 rest: the C13 gate
+    awaiting_plan_requests as awaiting_plan_requests,
 )
 from abacus.modules.platform.plan_usage import (  # noqa: E402 -- G-04-T08
     over_limit_policy as over_limit_policy,

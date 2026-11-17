@@ -37,6 +37,10 @@ _METHODOLOGY_EVENTS: Final = frozenset(
     }
 )
 _WALL_EVENTS: Final = frozenset({"wall.created", "wall.approved", "wall.removed"})
+# S48 rest (G-04-T11, AC-40): a plan request awaiting its partner approver ("Waiting on you");
+# review registers it, since platform may import identity only.
+PLAN_REQUEST: Final = "plan_change_request"
+_PLAN_REQUEST_EVENTS: Final = frozenset({"plan_request.awaiting_partner", "plan_request.changed"})
 
 
 async def methodology_open(tenant: TenantContext, _engagement_id: UUID | None) -> list[OpenGate]:
@@ -49,6 +53,16 @@ async def walls_open(tenant: TenantContext, _engagement_id: UUID | None) -> list
     return [
         OpenGate(w.wall_id, None, assignee_user_id=w.approver_user_id, client_id=w.client_id)
         for w in await walls_awaiting_approval(tenant)
+    ]
+
+
+async def plan_requests_open(tenant: TenantContext, _engagement_id: UUID | None) -> list[OpenGate]:
+    """Each request awaiting its partner, assigned to the approver it names."""
+    from abacus.modules.platform.api import awaiting_plan_requests
+
+    return [
+        OpenGate(request_id, None, assignee_user_id=approver)
+        for request_id, approver in await awaiting_plan_requests(tenant)
     ]
 
 
@@ -91,6 +105,17 @@ def register_firm_gates() -> None:
             "wall.approve",
             _WALL_EVENTS,
             walls_open,
+            assigned_only=True,
+            scope="firm",
+        )
+    )
+    register_gate_source(
+        GateSource(
+            PLAN_REQUEST,
+            "decision",
+            "plan.read",
+            _PLAN_REQUEST_EVENTS,
+            plan_requests_open,
             assigned_only=True,
             scope="firm",
         )

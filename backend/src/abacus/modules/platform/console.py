@@ -51,6 +51,7 @@ from abacus.modules.platform.console_contract import (
     TenantsOut,
     TenantTilesOut,
 )
+from abacus.modules.platform.plan_usage import PlanRequestApplied
 
 READ: Final = "platform_tenant.read"
 UPDATE: Final = "platform_entitlements.update"
@@ -376,8 +377,8 @@ async def mark_applied(
             found = (
                 await tx.session.execute(
                     text(
-                        "SELECT status, version FROM plan_change_requests WHERE id = :id "
-                        "FOR UPDATE"
+                        "SELECT status, version, requested_by FROM plan_change_requests "
+                        "WHERE id = :id FOR UPDATE"
                     ),
                     {"id": request_id},
                 )
@@ -407,6 +408,20 @@ async def mark_applied(
                 "plan_request.applied",
                 target=Target("plan_change_request", request_id),
                 after=Ref(entitlement_version=entitlement_version),
+            )
+            # S48 rest (G-04 §4.8): the requester and the billing contact hear it was applied.
+            billing = await tx.session.scalar(
+                text("SELECT billing_contact_user_id FROM usage_alert_policies")
+            )
+            tx.emit(
+                PlanRequestApplied(
+                    request_id=request_id,
+                    recipient_user_ids=sorted(
+                        {cast(UUID, found.requested_by)}
+                        | ({cast(UUID, billing)} if billing is not None else set()),
+                        key=str,
+                    ),
+                )
             )
         async with platform_transaction(_actor(staff)) as conn:
             await conn.execute(

@@ -118,6 +118,9 @@ C13_EVENTS: Final = frozenset(
         "wall.created",
         "wall.approved",
         "wall.removed",
+        # S48 rest (G-04-T11): a plan request awaiting its partner, and its decision.
+        "plan_request.awaiting_partner",
+        "plan_request.changed",
         "envelope.drafted",
         "envelope.send_approved",
         "envelope.signer_signed",
