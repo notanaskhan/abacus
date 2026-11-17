@@ -71,3 +71,68 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"target_value", "direction", "version", "updated_by", "updated_at"}
     ),
 }
+
+# C-02-T05 (0951, DEC-5504): W1 write operations and their evidence, the client's write grants,
+# the firm switch's history and the engagement's posting switch.
+C02T05_TABLES: frozenset[str] = frozenset(
+    {
+        "write_operations",
+        "write_evidence",
+        "connection_write_grants",
+        "firm_write_capabilities",
+        "connection_engagement_settings",
+    }
+)
+TABLES = TABLES | C02T05_TABLES
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {"write_evidence", "connection_write_grants", "firm_write_capabilities"}
+)
+INSERT_COLUMNS["write_operations"] = frozenset(
+    {
+        "tenant_id",
+        "capability_id",
+        "client_entity_id",
+        "connection_id",
+        "subject_type",
+        "subject_id",
+        "operation",
+        "idempotency_key",
+        "approval_grant_id",
+        "actor_user_id",
+    }
+)
+INSERT_COLUMNS["write_evidence"] = frozenset(
+    {"tenant_id", "write_operation_id", "kind", "object_key", "sha256", "bytes"}
+)
+INSERT_COLUMNS["connection_write_grants"] = frozenset(
+    {
+        "tenant_id",
+        "connection_id",
+        "client_entity_id",
+        "capability_id",
+        "consent_copy_version",
+        "granted_by_client_user_id",
+        "mfa_at",
+        "event",
+        "actor_id",
+    }
+)
+INSERT_COLUMNS["firm_write_capabilities"] = frozenset(
+    {"tenant_id", "capability_id", "enabled", "changed_by", "mfa_at", "reason"}
+)
+INSERT_COLUMNS["connection_engagement_settings"] = frozenset(
+    {
+        "tenant_id",
+        "engagement_id",
+        "connection_id",
+        "posting_enabled",
+        "posting_enabled_by",
+        "posting_enabled_at",
+    }
+)
+UPDATE_COLUMNS["write_operations"] = frozenset(
+    {"status", "provider_request_id", "external_ref", "attempt", "started_at", "finished_at"}
+)
+UPDATE_COLUMNS["connection_engagement_settings"] = frozenset(
+    {"posting_enabled", "posting_enabled_by", "posting_enabled_at", "version"}
+)
