@@ -63,6 +63,11 @@ STAFF_CODE_TTL: Final = timedelta(minutes=10)
 STAFF_ATTEMPTS: Final = 5
 STAFF_LOCK: Final = timedelta(minutes=30)
 FIRM_ISSUER: Final = "Brightwater Hale"
+# Local sign-in only (this fake never runs outside local and test): the staff authenticator code
+# is accepted six 30-second steps either side, about three minutes, because on a laptop the code
+# is read from `/_harness/totp` and typed by hand. Real sign-in is WorkOS with one step either
+# side (`identity.TOTP_WINDOW`); the portal IdP fake keeps that window for contract parity.
+STAFF_TOTP_WINDOW: Final = 6
 
 
 def synthetic_only() -> None:
@@ -80,10 +85,10 @@ def _new_secret() -> str:
     return base64.b32encode(secrets.token_bytes(20)).decode().rstrip("=")
 
 
-def _totp_matches(secret: str, code: str, at: float) -> bool:
+def _totp_matches(secret: str, code: str, at: float, window: int = TOTP_WINDOW) -> bool:
     return any(
         hmac.compare_digest(totp_at(secret, at + d * TOTP_STEP_SECONDS), code)
-        for d in range(-TOTP_WINDOW, TOTP_WINDOW + 1)
+        for d in range(-window, window + 1)
     )
 
 
@@ -340,7 +345,9 @@ class StaffSignIn:
         until = self.locked_until(pending.email)
         if until is not None:
             return Outcome("locked", 0, until)
-        if not _totp_matches(self._secret(pending.email), code.strip(), self._now()):
+        if not _totp_matches(
+            self._secret(pending.email), code.strip(), self._now(), STAFF_TOTP_WINDOW
+        ):
             return self._fail(pending.email)
         pending.stage = "done"
         del self._pending[token]

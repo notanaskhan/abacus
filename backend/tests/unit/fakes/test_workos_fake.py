@@ -242,6 +242,35 @@ def test_t27_an_expired_code_is_refused(staff: StaffSignIn, clock: _Clock) -> No
     assert staff.submit_code(token, code).state == "expired"
 
 
+def test_local_staff_authenticator_code_holds_about_three_minutes(
+    staff: StaffSignIn, clock: _Clock
+) -> None:
+    """Local sign-in: a code read from the harness and typed by hand still works ~3 min later."""
+    token = staff.start(HANNAH)
+    code = staff.latest_code(HANNAH)
+    assert code is not None
+    assert staff.submit_code(token, code).state == "mfa_required"
+    totp = staff.current_totp(HANNAH)
+    clock.at = DEMO_INSTANT + timedelta(minutes=2, seconds=50)
+    assert staff.submit_totp(token, totp).state == "signed_in"
+
+
+def test_local_staff_authenticator_code_is_refused_past_the_window(
+    staff: StaffSignIn, clock: _Clock
+) -> None:
+    token = staff.start(HANNAH)
+    code = staff.latest_code(HANNAH)
+    assert code is not None
+    staff.submit_code(token, code)
+    totp = staff.current_totp(HANNAH)
+    clock.at = DEMO_INSTANT + timedelta(seconds=30 * (workos.STAFF_TOTP_WINDOW + 2))
+    assert staff.submit_totp(token, totp).state != "signed_in"
+
+
+def test_the_portal_idp_fake_keeps_one_step_either_side() -> None:
+    assert workos.TOTP_WINDOW == 1 < workos.STAFF_TOTP_WINDOW
+
+
 def test_t27_the_scenario_staff_are_the_loaders_users() -> None:
     people = scenario_staff()
     assert len(people) == 46
