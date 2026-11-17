@@ -1601,3 +1601,22 @@ INSERT_COLUMNS["fieldwork_run_rows"] = frozenset(
         "work_item_id",
     }
 )
+
+# A-09-T27 (0944, DEC-5405): a person's instructions send, completed or undone once.
+TABLES = TABLES | frozenset({"component_instruction_sends"})
+INSERT_COLUMNS["component_instruction_sends"] = frozenset(
+    {
+        "content_hash",
+        "engagement_id",
+        "generated_document_id",
+        "instructions_id",
+        "recipient_contact_id",
+        "sent_by",
+        "tenant_id",
+        "version_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["component_instruction_sends"] = frozenset(
+    {"completed_at", "grant_id", "undone_at"}
+)

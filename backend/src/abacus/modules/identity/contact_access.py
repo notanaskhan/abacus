@@ -376,6 +376,35 @@ async def grant_tcwg_member(
     )
 
 
+async def grant_component_auditor(
+    tx: UnitOfWork,
+    tenant: TenantContext,
+    *,
+    engagement_id: UUID,
+    client_id: UUID,
+    contact_id: UUID,
+    user_id: UUID | None,
+    email: str | None,
+    component_id: UUID,
+    granted_by: UUID,
+) -> K1Access:
+    """A-09-T27 (DEC-5405): the `component_auditor` role on one component (POR-23), inside the
+    person's completed instructions send. As for a K-1: a person who signs in holds it at once; a
+    contact without one gets a pending grant and an invitation carrying it."""
+    return await _grant_recipient(
+        tx,
+        tenant,
+        role="component_auditor",
+        scope_kind="component",
+        scope_id=component_id,
+        engagement_id=engagement_id,
+        client_id=client_id,
+        contact_id=contact_id,
+        user_id=user_id,
+        email=email,
+        granted_by=granted_by,
+    )
+
 async def _grant_recipient(
     tx: UnitOfWork,
     tenant: TenantContext,
