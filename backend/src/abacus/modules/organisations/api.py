@@ -406,6 +406,11 @@ _register_audit_labels()
 # P-02-T07 (DEC-4613): the C15 v1 search projection this module owns, registered at import.
 # T-06-T03 (DEC-5511): error codes declared before their services.
 from abacus.modules.organisations import relationship_errors as relationship_errors  # noqa: E402
+
+# T-06-T08 (DEC-5517): the relationships v1 models the seed and consumers type by.
+from abacus.modules.organisations import (  # noqa: E402
+    relationships_contract as relationships_contract,
+)
 from abacus.modules.organisations import (  # noqa: E402
     search as _search,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers at import
 )

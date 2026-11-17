@@ -1,0 +1,4 @@
+Record the kept eliminations of one consolidation as proposals a person approves and posts on
+AUD-33. Give the consolidation and its work item and, per entry, its key, level, description,
+note, code's computation, its lines and, for unrealized profit, the cited cell with code's value.
+This only proposes; it never approves, posts or changes an amount.

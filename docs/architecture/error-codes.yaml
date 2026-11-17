@@ -449,8 +449,9 @@ codes:
   capability_unavailable:
     status: 409
     raised_by:
+    - abacus.modules.assurance.group_contract.ProposerUnavailable
     - abacus.modules.workbench.sessions.CapabilityUnavailable
-    summary: 'DF-04: the session''s capability can''t run here now (`facts.reason`).'
+    summary: The proposer is off for this firm (its variant flag, or a firm that is not synthetic).
   cell_address_invalid:
     status: 422
     raised_by:

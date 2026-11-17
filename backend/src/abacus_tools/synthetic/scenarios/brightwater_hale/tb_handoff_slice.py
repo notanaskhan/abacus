@@ -12,15 +12,15 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Final
 
-from abacus.modules.ledger.tb_handoff_contract import (
-    TbHandoffBookIncomeOut,
-    TbHandoffCountsOut,
-    TbHandoffLandingOut,
-    TbHandoffPreviewOut,
-    TbHandoffReviewAccountOut,
-    TbHandoffTaxItemOut,
-)
+from abacus.modules.tax.api import tb_handoff_contract as _contract
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
+
+TbHandoffBookIncomeOut = _contract.TbHandoffBookIncomeOut
+TbHandoffCountsOut = _contract.TbHandoffCountsOut
+TbHandoffLandingOut = _contract.TbHandoffLandingOut
+TbHandoffPreviewOut = _contract.TbHandoffPreviewOut
+TbHandoffReviewAccountOut = _contract.TbHandoffReviewAccountOut
+TbHandoffTaxItemOut = _contract.TbHandoffTaxItemOut
 
 D = Decimal
 GRANITE_PEAK: Final = "Granite Peak Outdoor Supply, Inc."

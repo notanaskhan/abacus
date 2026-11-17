@@ -11,14 +11,14 @@ from datetime import date
 from decimal import Decimal
 from typing import Final
 
-from abacus.modules.tax.entity_depth_contract import (
-    TaxDepthK1PreviewOut,
-    TaxDepthK1PreviewsOut,
-    TaxDepthPartnerBasisOut,
-    TaxDepthPropertyOut,
-    TaxDepthStateOut,
-    TaxDepthStatesOut,
-)
+from abacus.modules.tax.api import entity_depth_contract as _contract
+
+TaxDepthK1PreviewOut = _contract.TaxDepthK1PreviewOut
+TaxDepthK1PreviewsOut = _contract.TaxDepthK1PreviewsOut
+TaxDepthPartnerBasisOut = _contract.TaxDepthPartnerBasisOut
+TaxDepthPropertyOut = _contract.TaxDepthPropertyOut
+TaxDepthStateOut = _contract.TaxDepthStateOut
+TaxDepthStatesOut = _contract.TaxDepthStatesOut
 
 D = Decimal
 RIDGELINE: Final = "Ridgeline Property Partners, LP"

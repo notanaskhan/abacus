@@ -446,3 +446,17 @@ register_citable("sheet_cell", verify_sheet_cell, display_sheet_cell, version=VE
 register_citable(
     "request_item", verify_request_item, display_request_item, version=VERIFIER_VERSION
 )
+
+
+# A-09-T34 (DEC-5522): the same reads for an agent that is shown a sheet before it cites it.
+async def readable_version(
+    tx: UnitOfWork, actor: Actor, version_id: UUID, anchor: Anchor
+) -> tuple[EvidenceVersion | None, Reason | None]:
+    return await _version(tx, actor, version_id, anchor)
+
+
+async def extracted_sheets(
+    tx: UnitOfWork, version_id: UUID
+) -> dict[str, tuple[tuple[str, ...], ...]]:
+    _, raw = await _extracted_text(tx, version_id)
+    return raw

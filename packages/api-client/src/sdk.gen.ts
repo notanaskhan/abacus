@@ -4644,7 +4644,9 @@ export const groupApproveEliminations = <ThrowOnError extends boolean = false>(o
 /**
  * Group Propose Eliminations
  *
- * `EliminationProposal`: amounts by code, notes by the model, cells verified.
+ * `EliminationProposal` (A-09-T34): amounts by code, words by the model, the inventory cell
+ * cited and verified; proposals only. 409 `capability_unavailable` when the variant flag is off
+ * or the firm is not synthetic.
  */
 export const groupProposeEliminations = <ThrowOnError extends boolean = false>(options: Options<GroupProposeEliminationsData, ThrowOnError>): RequestResult<GroupProposeEliminationsResponses, GroupProposeEliminationsErrors, ThrowOnError> => (options.client ?? client).post<GroupProposeEliminationsResponses, GroupProposeEliminationsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

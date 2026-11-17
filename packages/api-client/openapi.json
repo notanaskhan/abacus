@@ -200886,7 +200886,7 @@
     },
     "/v1/consolidations/{consolidation_id}/eliminations/propose": {
       "post": {
-        "description": "`EliminationProposal`: amounts by code, notes by the model, cells verified.",
+        "description": "`EliminationProposal` (A-09-T34): amounts by code, words by the model, the inventory cell\ncited and verified; proposals only. 409 `capability_unavailable` when the variant flag is off\nor the firm is not synthetic.",
         "operationId": "group_propose_eliminations",
         "parameters": [
           {
@@ -200897,6 +200897,23 @@
               "format": "uuid",
               "title": "Consolidation Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inventory_evidence_version_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inventory Evidence Version Id"
             }
           },
           {
@@ -241700,7 +241717,7 @@
         },
         "summary": "Handoff Preview Route",
         "tags": [
-          "ledger"
+          "tax"
         ],
         "x-abacus-action": "tb_handoff.preview"
       }
@@ -241817,7 +241834,7 @@
         },
         "summary": "Handoff Targets Route",
         "tags": [
-          "ledger"
+          "tax"
         ],
         "x-abacus-action": "tb_handoff.preview"
       }
@@ -241965,7 +241982,7 @@
         },
         "summary": "Handoff Create Route",
         "tags": [
-          "ledger"
+          "tax"
         ],
         "x-abacus-action": "tb_handoff.create"
       }
@@ -333843,7 +333860,7 @@
         },
         "summary": "Return Handoff Route",
         "tags": [
-          "ledger"
+          "tax"
         ],
         "x-abacus-action": "tax_return.read"
       }
@@ -349654,7 +349671,7 @@
         },
         "summary": "Handoff Route",
         "tags": [
-          "ledger"
+          "tax"
         ],
         "x-abacus-action": "tb_handoff.read"
       }
@@ -349771,7 +349788,7 @@
         },
         "summary": "Handoff Mappings Route",
         "tags": [
-          "ledger"
+          "tax"
         ],
         "x-abacus-action": "tb_handoff.read"
       }

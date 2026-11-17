@@ -17,6 +17,7 @@ system, never a posting batch, never a snapshot).
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -29,7 +30,7 @@ from sqlalchemy import text
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.identity.api import AgentContext, AuthContext, Forbidden, authorise
 
 TARGET: Final = "proposed_entry"
 APPROVE: Final = "elimination.approve"
@@ -71,6 +72,11 @@ class EliminationView:
     lines: tuple[EliminationLine, ...]
     total_debit: Decimal
     total_credit: Decimal
+    # A-09-T34 (DEC-5522): an agent-proposed entry names its run, code's computation and its
+    # verified citations (identifiers only); a person's entry carries none.
+    proposed_by_run_id: UUID | None = None
+    computation: str | None = None
+    citation_ids: tuple[UUID, ...] = ()
 
     @property
     def off_by(self) -> Decimal:
@@ -89,7 +95,7 @@ def _code(caption: str) -> str:
 
 _HEAD: Final = text(
     "SELECT id, engagement_id, work_item_id, consolidation_id, display_code, description, "
-    "status FROM proposed_entries WHERE id = :id AND kind = 'elimination'"
+    "status, source_ref FROM proposed_entries WHERE id = :id AND kind = 'elimination'"
 )
 _LINES: Final = text(
     "SELECT account_name, client_entity_id, debit, credit, consolidation_level FROM "
@@ -124,6 +130,7 @@ async def view(tenant: TenantContext, entry_id: UUID) -> EliminationView:
     # An edit zeroes the replaced lines (lines are never deleted; A-09-T20 rest, DEC-5328).
     live = [r for r in rows if Decimal(r[2]) or Decimal(r[3])] or list(rows)
     lines = tuple(EliminationLine(str(r[0]), r[1], Decimal(r[2]), Decimal(r[3])) for r in live)
+    run_id, computation, cited = _proposal_of(head["source_ref"])
     return EliminationView(
         id=head["id"],
         display_code=str(head["display_code"]),
@@ -133,6 +140,22 @@ async def view(tenant: TenantContext, entry_id: UUID) -> EliminationView:
         lines=lines,
         total_debit=sum((ln.debit for ln in lines), ZERO),
         total_credit=sum((ln.credit for ln in lines), ZERO),
+        proposed_by_run_id=run_id,
+        computation=computation,
+        citation_ids=cited,
+    )
+
+
+def _proposal_of(source_ref: object) -> tuple[UUID | None, str | None, tuple[UUID, ...]]:
+    """The run, computation and citations an agent proposal recorded in `source_ref`."""
+    if not isinstance(source_ref, dict) or "run_id" not in source_ref:
+        return None, None, ()
+    ref = cast(dict[str, object], source_ref)
+    cited = cast(list[object], ref.get("citation_ids") or [])
+    return (
+        UUID(str(ref["run_id"])),
+        str(ref.get("computation") or "") or None,
+        tuple(UUID(str(c)) for c in cited),
     )
 
 
@@ -217,6 +240,117 @@ async def propose_elimination(
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
     return await view(ctx.tenant, entry_id)
+
+
+AGENT_PROPOSE: Final = "elimination.agent_propose"
+
+
+async def propose_by_agent(
+    agent: AgentContext,
+    *,
+    work_item_id: UUID,
+    consolidation_id: UUID,
+    level: int,
+    description: str,
+    lines: Sequence[EliminationLine],
+    computation: str,
+    citation_ids: Sequence[UUID],
+) -> EliminationView:
+    """A-09-T34 (DEC-5522): `consolidation.elimination_proposer`'s entry, proposed only. The
+    agent's task scope must name `elimination.agent_propose`; it never approves or posts (those
+    actions deny the agent). The entry is the agent's, on behalf of the run's initiator, and
+    names its run; code computed every amount before this call."""
+    if agent.engagement_id is None:
+        raise NotFound("engagement")
+    engagement_id = agent.engagement_id
+    await authorise(agent, AGENT_PROPOSE, await _resource_of(agent.tenant, engagement_id))  # type: ignore[arg-type] -- a Resource
+    if await _locked(agent.tenant, consolidation_id):
+        raise ConsolidationLocked(facts={"consolidation": str(consolidation_id)})
+    debit = sum((ln.debit for ln in lines), ZERO)
+    credit = sum((ln.credit for ln in lines), ZERO)
+    if debit != credit or debit == ZERO:
+        raise UnbalancedEntry(facts={"lines": len(lines)})
+    source_ref = {
+        "run_id": str(agent.agent_run_id),
+        "computation": computation[:500],
+        "citation_ids": [str(c) for c in citation_ids],
+    }
+    async with uow(agent.tenant) as tx:
+        n = int(await tx.session.scalar(_NEXT_CODE, {"c": consolidation_id}) or 1)
+        number = int(
+            await tx.session.scalar(
+                text(
+                    "SELECT coalesce(max(number), 0) + 1 FROM proposed_entries "
+                    "WHERE work_item_id = :w AND kind = 'elimination'"
+                ),
+                {"w": work_item_id},
+            )
+            or 1
+        )
+        entry_id = cast(
+            UUID,
+            await tx.session.scalar(
+                text(
+                    "INSERT INTO proposed_entries (tenant_id, engagement_id, work_item_id, kind, "
+                    "number, ref, description, amount, account_class, threshold_result, "
+                    "is_attest_client, status, created_by_kind, created_by_id, "
+                    "on_behalf_of_user_id, source_ref, consolidation_id, posting_target, "
+                    "display_code) VALUES (:t, :e, :w, 'elimination', :n, :ref, :d, :a, "
+                    "'consolidation', 'review_required', true, 'review_required', 'agent', "
+                    ":run, :by, CAST(:src AS jsonb), :c, 'consolidation_layer', :code) "
+                    "RETURNING id"
+                ),
+                {
+                    "t": agent.tenant_id,
+                    "e": engagement_id,
+                    "w": work_item_id,
+                    "n": number,
+                    "ref": f"ELIM-{number}",
+                    "d": description.strip()[:300],
+                    "a": debit,
+                    "run": str(agent.agent_run_id),
+                    "by": agent.initiator.user_id,
+                    "src": json.dumps(source_ref),
+                    "c": consolidation_id,
+                    "code": f"E{n}",
+                },
+            ),
+        )
+        for line_no, ln in enumerate(lines, start=1):
+            await tx.session.execute(
+                text(
+                    "INSERT INTO proposed_entry_lines (tenant_id, engagement_id, work_item_id, "
+                    "entry_id, line_no, account_code, account_name, debit, credit, "
+                    "client_entity_id, consolidation_level) VALUES (:t, :e, :w, :id, :n, :code, "
+                    ":name, :dr, :cr, :ent, :lvl)"
+                ),
+                {
+                    "t": agent.tenant_id,
+                    "e": engagement_id,
+                    "w": work_item_id,
+                    "id": entry_id,
+                    "n": line_no,
+                    "code": _code(ln.caption),
+                    "name": ln.caption[:200],
+                    "dr": ln.debit,
+                    "cr": ln.credit,
+                    "ent": ln.client_entity_id,
+                    "lvl": level,
+                },
+            )
+        tx.record(
+            "elimination.proposed",
+            target=Target(TARGET, entry_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+            after=Ref(run=agent.agent_run_id),
+        )
+    return await view(agent.tenant, entry_id)
+
+
+async def _resource_of(tenant: TenantContext, engagement_id: UUID) -> object:
+    from abacus.modules.engagements.api import engagement_resource_of
+
+    return await engagement_resource_of(tenant, engagement_id)
 
 
 async def approve(ctx: AuthContext, entry_ids: Sequence[UUID]) -> list[EliminationView]:

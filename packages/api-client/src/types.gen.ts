@@ -93463,7 +93463,12 @@ export type GroupProposeEliminationsData = {
          */
         consolidation_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Inventory Evidence Version Id
+         */
+        inventory_evidence_version_id?: string | null;
+    };
     url: '/v1/consolidations/{consolidation_id}/eliminations/propose';
 };
 

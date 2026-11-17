@@ -79,6 +79,14 @@ async def _tbs(
     return found, len(found), len(facts.entities)
 
 
+async def mapped_lines(
+    tenant: TenantContext, facts: ledger.ConsolidationFacts
+) -> dict[str, list[ledger.ConsolidationTbLine]]:
+    """A-09-T34: each mapped entity's FS lines by its structure key (the proposer's input)."""
+    found, _, _ = await _tbs(tenant, facts)
+    return found
+
+
 def _members(facts: ledger.ConsolidationFacts, level: int) -> list[str]:
     ordered = sorted(facts.entities, key=lambda e: e.position)
     if level == 1:
