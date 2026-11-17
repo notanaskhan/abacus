@@ -39,15 +39,17 @@
 
 ## Deviations and gaps
 
-- **DV-a.** The AJE POLICY tally card and the "Template · Café with Square/Shopify" tag are not
-  drawn: `PlanVersionOut` names neither the plan's AJE policy nor its template (contract gap,
-  additive field for C-01-T42).
+- **DV-a.** Closed (S48 rest, TASK-8442): the AJE POLICY card reads the one threshold policy the
+  rows cite, named by K-02 ("BH AJE thresholds v2"), and the Tag reads the plan's template
+  ("Template · Café with Square/Shopify"); both are `PlanVersionOut` fields.
 - **DV-b.** Template cards show the template name only: `CloseTemplateOut` has no description
   line (the artboard's "Card and online sales clearing, …" is template content).
 - **DV-c.** The drafting card's progress comes from the scenario: the planner run is code-driven
   and inline (DEC-5413), so live mode has no partial progress to show; the drafted rows and their
   ticks are live.
-- **DV-d.** The version stepper (⇕) and "+ Add procedure" are drawn without behaviour; the
-  ENG-03 monthly-close step UI is not in this row's build (follow-up).
+- **DV-d.** The version stepper (⇕) lists the plan's versions and reads the one picked (S48
+  rest). "+ Add procedure" stays drawn without behaviour (no add-row artboard), and the ENG-03
+  monthly-close step is not built (it needs the engagement draft's template field and closes
+  generated on create).
 - **Lint.** The procedure word "Accrual" trips the product-name rule; one line-scoped disable with
   its reason (C-01 §3 F2).

@@ -28,7 +28,12 @@ export const COPY = {
     requestsValue: "{n} / month",
     manager: "Manager review",
     senior: "Senior review",
+    ajePolicy: "AJE policy",
   },
+  /** S48 rest (DV-a): the control bar's Tag 23h ("Template · Café with Square/Shopify"). */
+  template: "Template · {name}",
+  /** The ⇕ after "v3" in the close header (the version stepper). */
+  versionStepper: "Versions",
   search: "Search accounts",
   procedures: "Procedures",
   addProcedure: "Add procedure",

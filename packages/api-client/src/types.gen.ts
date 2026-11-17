@@ -40979,6 +40979,7 @@ export type PlanTallyOut = {
  * PlanVersionOut
  */
 export type PlanVersionOut = {
+    aje_policy?: ThresholdRefOut | null;
     /**
      * Allowed Actions
      */
@@ -41025,6 +41026,10 @@ export type PlanVersionOut = {
      */
     status: 'draft' | 'published' | 'discarded';
     tally: PlanTallyOut;
+    /**
+     * Template Name
+     */
+    template_name?: string | null;
     /**
      * Version
      */
