@@ -30,6 +30,7 @@ def test_one_suite_with_a_case_set_per_planning_mode_and_frozen_thresholds() -> 
     assert set(SUITE.modes) == {
         "gap", "risk_narrative", "risk", "ic", "ebp_provisions", "ebp_attribute",
         "soc1", "ebp_reconcile", "ebp_trust", "ebp_form5500", "related_parties",
+        "fieldwork_attribute", "flux_explain", "confirmation_reconcile",  # A-08-T25
     }  # fmt: skip
     for mode in SUITE.modes:
         assert any(c.key and c.mode == mode for c in SUITE.cases)
@@ -46,6 +47,8 @@ def test_one_suite_with_a_case_set_per_planning_mode_and_frozen_thresholds() -> 
         "presumed_risk_prepopulation": 1.0,
         "line_agreement": 0.98,  # A-05-T14's EBP case sets
         "forbidden_absent": 1.0,  # A-05-T33: the EBP v2 forbidden-content gate
+        "abstention": 0.95,  # A-08-T25: the fieldwork abstention gate
+        "extraction": 0.98,  # A-08-T25: the fieldwork extraction gate
     }
     assert set(SUITE.covers) == {"prompt_injection", "unicode_deception", "exfiltration_link"}
 
