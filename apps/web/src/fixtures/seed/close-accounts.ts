@@ -14,6 +14,8 @@ import { stableId } from "./prng";
 /** Operating Checking ••4410's external id: the reconciliation CLS-05 opens (close-book). */
 export const ACCOUNT_4410 = "35";
 export const PREPAID = "prepaid-insurance";
+/** Business Savings ••4436: its statement is still requested (CLS-05 g). */
+export const ACCOUNT_4436 = "36";
 
 type Kind = AccountNodeOut["classification"];
 
@@ -84,7 +86,10 @@ export function copperleafAccountTree(state: AccountsState = "a"): AccountTreeOu
       cls(A, "Asset", recorded ? "538355.45" : "539055.45", [
         type_(A, "Accounts Receivable", "18420.00", [leaf(A, "Accounts Receivable", "18420.00")]),
         type_(A, "Bank", "256610.50", [
-          leaf(A, "Business Savings (Front Range Bank)", "60000.00", { mask: "4436" }),
+          leaf(A, "Business Savings (Front Range Bank)", "60000.00", {
+            mask: "4436",
+            account_external_id: ACCOUNT_4436,
+          }),
           leaf(A, "Operating Checking (Front Range Bank)", "184610.50", {
             mask: "4410",
             account_external_id: ACCOUNT_4410,
