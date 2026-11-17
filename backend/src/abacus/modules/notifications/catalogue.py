@@ -466,6 +466,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "engagement_budget.threshold_crossed": Kind(
         "engagement_budget_threshold_crossed", _listed, "engagement", "engagement_id"
     ),
+    # G-04-T08 (AC-37, DEC-5420): scheduled agents paused at the plan limit, once a month.
+    "usage.scheduled_paused": Kind("usage_scheduled_paused", _admins, "firm", None, None),
     # C-01-T17: an entity's scheduled ledger sync paused (needs reauth, monthly call budget).
     "ledger_sync.paused": Kind(
         "ledger_sync_paused", _admins_and_leads, "connection", "connection_id"
@@ -785,6 +787,10 @@ TEMPLATES: Final[dict[str, str]] = {
     "ledger_sync.paused": "The hourly QuickBooks sync for a client is paused.",
     "usage.threshold_crossed": "Your firm has used a set share of its included agent-minutes.",
     "engagement_budget.threshold_crossed": "{subject} is near its agent-minute budget.",
+    "usage.scheduled_paused": (
+        "Scheduled agents are paused until the next usage month: the firm reached its included "
+        "agent-minutes."
+    ),
     "close_run.finished": "A close run on {subject} finished with open issues.",
     "close_run.needs_input": "A close run on {subject} is waiting for your input.",
     "close_plan.publish_requested": "A close plan draft is waiting for you to publish it.",
@@ -963,6 +969,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # G-04-T12 (DEC-5419): usage alerts, in-app and by email (AC-35, AC-38).
     NotificationKind("usage_threshold_crossed", "system", "Gauge", email_default=True),
     NotificationKind("engagement_budget_threshold_crossed", "system", "Gauge", email_default=True),
+    NotificationKind("usage_scheduled_paused", "system", "Gauge"),  # G-04-T08
     # C-01-T26 (DEC-5412): the close engine's kinds.
     NotificationKind("close_run_finished", "run", "ListChecks"),
     NotificationKind("close_run_needs_input", "run", "MessageSquareText"),

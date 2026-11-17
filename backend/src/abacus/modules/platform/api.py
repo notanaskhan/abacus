@@ -598,6 +598,12 @@ __all__ = [
 ]
 
 # G-04-T10 (DEC-5417): W-01 fills the firm's integration health for SHL-05's status.
+from abacus.modules.platform.plan_usage import (  # noqa: E402 -- G-04-T08: run admission reads it
+    OverLimit as OverLimit,
+)
+from abacus.modules.platform.plan_usage import (  # noqa: E402 -- G-04-T08
+    over_limit_policy as over_limit_policy,
+)
 from abacus.modules.platform.support import (  # noqa: E402 -- after the slots it reads
     register_firm_health as register_firm_health,
 )
