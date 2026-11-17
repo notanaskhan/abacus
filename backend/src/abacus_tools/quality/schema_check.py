@@ -238,6 +238,8 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "support_messages": "support_messages_immutable",  # 0920 (G-04-T04)
     "status_incident_updates": "status_incident_updates_immutable",  # 0920 (G-04-T04)
     "platform_audit_events": "platform_audit_events_immutable",  # 0920 (G-04-T04)
+    "posting_results": "posting_results_immutable",  # 0950 (C-02-T04)
+    "closing_date_events": "closing_date_events_immutable",  # 0950 (C-02-T04)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
