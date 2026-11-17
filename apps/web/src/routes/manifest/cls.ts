@@ -50,7 +50,7 @@ export const clsScreens = {
   },
   "CLS-10": {
     name: "Flux analysis · Copperleaf August vs July 2026",
-    status: "planned",
+    status: "fixture", // C-01-T40: a–e on the figure book's fixtures
     path: "/closes/$closeId/flux",
   },
   "CLS-11": {

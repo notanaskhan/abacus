@@ -499,6 +499,75 @@ function tenths(t: number): string {
   return `${sign}${String(Math.floor(abs / 10))}.${String(abs % 10)}`;
 }
 
+const PAYROLL_DRAFT =
+  "New hires +4,350 (two baristas from Jul 27), merit increases +1,850 (avg 3%, effective Aug 1), overtime +1,470 (roaster changeover Aug 10–14) = +7,670 — August payroll register, July register.";
+const REPAIRS_CLIENT =
+  "Electrical repair at the espresso bar: two failed breakers replaced and a circuit rewired; no new equipment (client, Sep 14; invoice SE-1187)";
+
+/** CLS-10 b (1:12 PM, after Ben Ashby's answer) and c (3:05 PM, both accepted by Priya Raman). */
+export function copperleafFluxAt(state: "a" | "b" | "c"): FluxSetOut {
+  const a = copperleafFlux();
+  const lines = a.lines.map((l): FluxLineOut => {
+    if (l.line_key === "payroll") {
+      return state === "c"
+        ? {
+            ...l,
+            status: "accepted",
+            explanation: PAYROLL_DRAFT,
+            accepted_by: closePerson("PR"),
+            row_version: 3,
+          }
+        : {
+            ...l,
+            status: state === "b" ? "explained" : "explained_draft",
+            explanation: PAYROLL_DRAFT,
+            row_version: 2,
+          };
+    }
+    if (l.line_key === "repairs_maintenance" && state !== "a") {
+      return state === "c"
+        ? {
+            ...l,
+            status: "accepted",
+            explanation: REPAIRS_CLIENT,
+            accepted_by: closePerson("PR"),
+            row_version: 2,
+          }
+        : { ...l, status: "explained", explanation: REPAIRS_CLIENT, row_version: 2 };
+    }
+    return l;
+  });
+  return {
+    ...a,
+    lines,
+    explained: lines.filter((l) => ["explained_draft", "explained", "accepted"].includes(l.status))
+      .length,
+    unexplained: lines.filter((l) => l.status === "unexplained").length,
+  };
+}
+
+/** CLS-10 d: year over year; August 2025 is not in the ledger, so every line is not comparable. */
+export function copperleafFluxYoy(): FluxSetOut {
+  const a = copperleafFlux();
+  return {
+    ...a,
+    set_id: stableId("analytic-set:copperleaf:2026-08:yoy"),
+    basis: "yoy",
+    explained: 0,
+    unexplained: 0,
+    lines: a.lines.map((l) => ({
+      ...l,
+      line_id: stableId(`analytic-line:copperleaf:2026-08:yoy:${l.line_key}`),
+      prior: null,
+      change: null,
+      change_pct: null,
+      test: "not_comparable",
+      status: "within_threshold",
+      drivers: [],
+    })),
+  };
+}
+
 /** CLS-10 a: 13 lines tested, 2 over both thresholds (Payroll explained as a draft, Repairs not). */
 export function copperleafFlux(): FluxSetOut {
   const lines: FluxLineOut[] = FLUX.map(([key, caption, prior, current]) => {

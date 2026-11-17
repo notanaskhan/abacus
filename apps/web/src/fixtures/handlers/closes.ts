@@ -5,7 +5,8 @@
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import {
   closesPortfolio,
-  copperleafFlux,
+  copperleafFluxAt,
+  copperleafFluxYoy,
   copperleafIssues,
   closeTemplates,
   copperleafPlan,
@@ -50,8 +51,11 @@ export function closeHandlers(): Record<string, FixtureHandler> {
     "GET /v1/closes/{close_id}/reconciliations/{account_ref}": ({ params }) =>
       params.account_ref === "35" ? json(copperleafReconciliation4410()) : notYet(),
     "GET /v1/closes/{close_id}/issues": () => json(copperleafIssues()),
-    "GET /v1/closes/{close_id}/flux": ({ query }) =>
-      (query.get("basis") ?? "mom") === "mom" ? json(copperleafFlux()) : notYet(),
+    "GET /v1/closes/{close_id}/flux": ({ query }) => {
+      const basis = query.get("basis") ?? "mom";
+      if (basis === "mom") return json(copperleafFluxAt("a"));
+      return basis === "yoy" ? json(copperleafFluxYoy()) : json({ detail: "not_found" }, 404);
+    },
     "GET /v1/clients/{client_id}/close-plan": () => json(copperleafPlan()),
     "GET /v1/clients/{client_id}/close-plan/versions": () => json(copperleafPlanHistory()),
     "GET /v1/close-templates": () => json(closeTemplates()),
