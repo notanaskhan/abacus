@@ -335,6 +335,15 @@ async def provision_setting(
     tx.record("firm_setting.provisioned", target=Target("firm", tenant_id), after=Ref(**{key: 1}))
 
 
+async def seats_in_use(tenant: TenantContext) -> int:
+    """G-04-T11 (ADM-14, AC-27): active staff plus live invitations, as ADM-02 counts them."""
+    from abacus.kernel.clock import system_now
+    from abacus.modules.identity.people_repository import seats_held
+
+    async with tenant_session(tenant) as session:
+        return await seats_held(session, system_now())
+
+
 async def seat_total(tenant: TenantContext) -> int | None:
     """The firm's seats (`plan.seats`, provisioning's; DEC-285), or None when not set."""
     value = await stored_value(tenant, "plan", "seats")
