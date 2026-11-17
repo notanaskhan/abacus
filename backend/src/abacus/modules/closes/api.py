@@ -37,6 +37,7 @@ from abacus.modules.closes.contract_work import close_work_router, portal_close_
 from abacus.modules.closes.gate_sources import register_close_gates
 from abacus.modules.closes.intake import ACTIVITIES as INTAKE_ACTIVITIES
 from abacus.modules.closes.intake import schedule_publish
+from abacus.modules.closes.intake_destination import register as intake_destination_register
 from abacus.modules.closes.issues import CLOSE_TARGET, add_note, open_exceptions, raise_exception
 from abacus.modules.closes.kind import CloseKind
 from abacus.modules.closes.reconciliations import SUBSCRIPTIONS as RECONCILIATION_SUBSCRIPTIONS
@@ -73,6 +74,8 @@ reconciliations_register()
 registrations_register()
 # C-01-T30 (DEC-5413): close.agent's flux and planner drafts are P-35 suggestions on these targets.
 agent_runs_register()
+# C-01-T58 (DEC-5414): INB-02's close_receipt destination (fails closed with closes.engine off).
+intake_destination_register()
 # C-01-T20: the close run's code plan (`closes.close_run`), its run-step kinds and the
 # `close_treatment` decision card.
 register_close_run_steps()
