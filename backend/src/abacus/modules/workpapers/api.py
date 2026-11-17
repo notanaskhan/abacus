@@ -30,7 +30,10 @@ from abacus.modules.workpapers.attribute_grid import (
     test_reviewables,
 )
 from abacus.modules.workpapers.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.workpapers.compute.flux import ENGINE_VERSION as FLUX_ENGINE_VERSION
 from abacus.modules.workpapers.compute.flux import FluxLine, FluxRow, FluxSet, Thresholds
+from abacus.modules.workpapers.compute.flux import change_pct as flux_change_pct
+from abacus.modules.workpapers.compute.flux import classify as classify_flux
 from abacus.modules.workpapers.compute.flux import evaluate as evaluate_flux
 from abacus.modules.workpapers.contract import router as a04_router
 from abacus.modules.workpapers.core import (
@@ -153,6 +156,7 @@ from abacus.modules.workpapers.service import CellEdit, set_cells  # noqa: E402 
 
 __all__ = [
     "CELL_TARGET",
+    "FLUX_ENGINE_VERSION",
     "ROUTERS",
     "WORKPAPER_KINDS",
     "AddressInvalid",
@@ -187,6 +191,7 @@ __all__ = [
     "canonical_address",
     "checks_for",
     "checks_router",
+    "classify_flux",
     "create_test",
     "create_workpaper",  # A-04-T28: the planning slice opens EBP-140 through the service
     "designed_layout",
@@ -197,6 +202,7 @@ __all__ = [
     "evaluate_workbook",
     "exception_prefill",
     "fieldwork_run_facts",
+    "flux_change_pct",
     "grid",
     "latest_test_of_variant",
     "latest_version_id",  # A-05-T16 (DEC-2489): EBP-02's document values

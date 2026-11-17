@@ -950,7 +950,7 @@ async def close_flux_xlsx_route(
     from abacus.modules.closes import flux
 
     return Response(
-        content=await flux.export(ctx, close_id, basis),
+        content=await flux.workbook_of(ctx, close_id, basis),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="flux-{basis}.xlsx"'},
     )

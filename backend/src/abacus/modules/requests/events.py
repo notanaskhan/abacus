@@ -156,3 +156,14 @@ class QuestionnaireTemplatePublished(DomainEvent):
     template_id: Annotated[UUID, classified("internal")]
     version: Annotated[int, classified("internal")]
     applies_to_tax_year: Annotated[int | None, classified("internal")]
+
+
+class TransactionQuestionAnswered(DomainEvent):
+    """C-01-T26 (C-01 §4.6): a client answered a transaction question. The work item's owner (a
+    close) tells the issue's assignee (C16 `transaction_question_answered`). Identifiers only."""
+
+    event_type: ClassVar[str] = "transaction_question.answered"
+
+    question_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    issue_id: Annotated[UUID | None, classified("internal")] = None

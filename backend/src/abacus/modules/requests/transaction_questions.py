@@ -32,6 +32,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import contact_ids_of_user
 from abacus.modules.identity.api import AuthContext, Forbidden
+from abacus.modules.requests.events import TransactionQuestionAnswered
 
 SUBJECT: Final = "transaction_question"
 QuestionStatus = Literal["open", "answered", "withdrawn"]
@@ -245,6 +246,11 @@ async def answer(
             "transaction_question.answered",
             target=Target(SUBJECT, question_id),
             after=Ref(contact_id=row.assignee_contact_id),
+        )
+        tx.emit(
+            TransactionQuestionAnswered(
+                question_id=question_id, work_item_id=row.work_item_id, issue_id=row.issue_id
+            )
         )
     async with tenant_session(ctx.tenant) as session:
         fresh = (await session.execute(_FOR_ITEM, {"w": row.work_item_id})).mappings()

@@ -452,6 +452,15 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "connection.reauth_due": Kind(
         "connection_reauth_due", _admins_and_leads, "connection", "connection_id"
     ),
+    # C-01-T26 (C-01 §4.6, DEC-5412): close runs, plan publication, answered questions and the
+    # BD1 requests digest. The closes module names the people (`recipient_user_ids`).
+    "close_run.finished": Kind("close_run_finished", _listed, "close", "close_id"),
+    "close_run.needs_input": Kind("close_run_needs_input", _listed, "close", "close_id"),
+    "close_plan.publish_requested": Kind(
+        "close_plan_publish_requested", _leads, "close_plan", "plan_id"
+    ),
+    "close_question.answered": Kind("transaction_question_answered", _listed, "close", "close_id"),
+    "close_requests.published": Kind("close_requests_published", _listed, "close", "close_id"),
     # C-01-T17: an entity's scheduled ledger sync paused (needs reauth, monthly call budget).
     "ledger_sync.paused": Kind(
         "ledger_sync_paused", _admins_and_leads, "connection", "connection_id"
@@ -769,6 +778,11 @@ TEMPLATES: Final[dict[str, str]] = {
     "integration.health_changed": "A firm integration needs to be reconnected.",
     "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
     "ledger_sync.paused": "The hourly QuickBooks sync for a client is paused.",
+    "close_run.finished": "A close run on {subject} finished with open issues.",
+    "close_run.needs_input": "A close run on {subject} is waiting for your input.",
+    "close_plan.publish_requested": "A close plan draft is waiting for you to publish it.",
+    "close_question.answered": "The client answered a question on {subject}.",
+    "close_requests.published": "This month's close requests for {subject} went to the client.",
     # W-01-T07 (AC-33): the person who chose Notify me (WB-10's coming-soon tile).
     "integration.available": "An integration you asked about can now be enabled.",
     # A-09-T09: group audit (no amounts, no names: DEC-61).
@@ -939,6 +953,12 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
     NotificationKind("connection_reauth_due", "client_activity", "Plug"),  # A-02-T25
     NotificationKind("ledger_sync_paused", "client_activity", "Plug"),  # C-01-T17
+    # C-01-T26 (DEC-5412): the close engine's kinds.
+    NotificationKind("close_run_finished", "run", "ListChecks"),
+    NotificationKind("close_run_needs_input", "run", "MessageSquareText"),
+    NotificationKind("close_plan_publish_requested", "approval", "ListChecks"),
+    NotificationKind("transaction_question_answered", "client_activity", "MessageSquare"),
+    NotificationKind("close_requests_published", "client_activity", "Send"),
     NotificationKind("integration_available", "other", "Plug"),  # W-01-T07
     # A-09-T09 (A-09 §4.8): group audit.
     NotificationKind("consolidation_finalized", "other", "ListChecks"),
