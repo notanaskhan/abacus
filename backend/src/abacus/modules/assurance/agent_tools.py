@@ -9,7 +9,7 @@ recommender's card is a person's decision, A-04). The runtime authorised `materi
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -226,3 +226,70 @@ async def read_selected_entry(agent: AgentContext, args: SelectedEntryIn) -> Sel
         amount=found.amount,
         score=found.score,
     )
+
+
+# --- A-09-T29 (DEC-5409): ledger.tb_mapper's one propose tool ---------------------------------
+
+
+class AccountSuggestionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    account_code: Annotated[str, Field(min_length=1, max_length=40), Conf]
+    line_id: Annotated[str, Field(min_length=1, max_length=120), Int]
+    confidence: Annotated[Literal["high", "medium", "low"], Int]
+    reasoning: Annotated[str, Field(max_length=140), Conf]
+
+
+class AccountSuggestionsIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    mapping_set_id: Annotated[UUID, Int]
+    suggestions: Annotated[list[AccountSuggestionIn], Field(min_length=1, max_length=300), Conf]
+
+    def tool_targets(self, agent: AgentContext) -> object:
+        from abacus.modules.agents.api import ToolTargets
+
+        return ToolTargets((agent.engagement_id,) if agent.engagement_id is not None else ())
+
+
+class SuggestedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    suggestion_ids: Annotated[list[UUID], Int]
+
+
+@agent_tool(
+    name="assurance.suggest_account_mappings", kind="propose", action="suggestion.create",
+    data_class="confidential", input_model=AccountSuggestionsIn, output_model=SuggestedOut,
+)  # fmt: skip
+async def suggest_account_mappings(
+    agent: AgentContext, args: AccountSuggestionsIn
+) -> SuggestedOut:
+    """Suggestions only: a person adopts each on AUD-31; the set is confirmed by a person."""
+    from abacus.modules.agents.api import create_suggestion
+    from abacus.modules.ledger import api as ledger
+
+    found = await ledger.mapping_set_by_id(agent.tenant, args.mapping_set_id)
+    if found is None or found.engagement_id != agent.engagement_id:
+        raise NotFound("mapping_set")
+    made: list[UUID] = []
+    for s in args.suggestions:
+        made.append(
+            await create_suggestion(
+                agent,
+                engagement_id=found.engagement_id,
+                target_type="account_mapping",
+                target_id=args.mapping_set_id,
+                field_key=f"fs_line:{s.account_code}"[:120],
+                proposed_value={
+                    "t": "json",
+                    "v": {
+                        "line_id": s.line_id,
+                        "confidence": s.confidence,
+                        "reasoning": s.reasoning,
+                    },
+                },
+                citation_ids=[],
+            )
+        )
+    return SuggestedOut(suggestion_ids=made)

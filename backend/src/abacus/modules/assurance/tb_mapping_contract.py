@@ -577,3 +577,83 @@ async def mapped_trial_balance_route(mapping_set_id: UUID, ctx: Ctx) -> MappedTr
 
 
 ROUTERS = (router,)
+
+
+# --- A-09-T29 (DEC-5409): ledger.tb_mapper's suggestions and the group confirm ---------------
+
+
+class TbSuggestionsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    outcome: Annotated[
+        Literal["suggested", "nothing_to_suggest", "refused", "unavailable"],
+        classified("internal"),
+    ]
+    suggestions: Annotated[int, Field(ge=0), classified("internal")]
+    abstained: Annotated[int, Field(ge=0), classified("internal")]
+
+
+@router.post(
+    "/mapping-sets/{mapping_set_id}/suggestions",
+    action="mapping_set.run",
+    response_model=TbSuggestionsOut,
+    status_code=202,
+    errors=(409,),
+)
+async def mapping_suggestions_route(
+    mapping_set_id: UUID,
+    ctx: Ctx,
+    rerun: Annotated[bool, Query()] = False,
+) -> TbSuggestionsOut:
+    """AUD-31 "Suggest with the agent"; `rerun=true` is "Request changes" on the accounts still
+    open. Suggestions only (a person adopts each); synthetic firms until the boundary clears."""
+    from abacus.modules.assurance.tb_mapper import run_suggestions
+
+    await live_gate(ctx, "mapping_set.run")
+    found = await run_suggestions(ctx, mapping_set_id, only_open=rerun)
+    return TbSuggestionsOut(
+        outcome=found.outcome, suggestions=found.suggestions, abstained=len(found.abstained)
+    )
+
+
+class GroupConfirmItemIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mapping_set_id: Annotated[UUID, classified("internal")]
+    body: Annotated[MappingConfirmIn, classified("internal")]
+
+
+class GroupConfirmIn(BaseModel):
+    """Every entity's mapping set of a group, confirmed by one person in one act (AUD-31 g)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    sets: Annotated[
+        list[GroupConfirmItemIn], Field(min_length=1, max_length=50), classified("internal")
+    ]
+
+
+class GroupConfirmOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    confirmed: Annotated[list[MappingSetSummaryOut], classified("internal")]
+
+
+@router.post(
+    "/mapping-sets/group-confirm",
+    action="mapping_set.confirm",
+    response_model=GroupConfirmOut,
+    errors=(409,),
+)
+async def mapping_group_confirm_route(body: GroupConfirmIn, ctx: Ctx) -> GroupConfirmOut:
+    """A live person only: each set's own confirm (its L1 and `content_changed` check) in turn;
+    the first refusal stops the rest and names the set."""
+    from abacus.modules.assurance import mapping_live as live  # it imports these models
+
+    await live_gate(ctx, "mapping_set.confirm")
+    if ctx.tenant.actor_kind != "human" or ctx.client:
+        raise Forbidden("mapping_set.confirm", "role")
+    done: list[MappingSetSummaryOut] = []
+    for item in body.sets:
+        done.append(await live.confirm(ctx, item.mapping_set_id, item.body))
+    return GroupConfirmOut(confirmed=done)

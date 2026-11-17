@@ -94,9 +94,18 @@ async def confirmation_engagement(tenant: TenantContext, confirmation_id: UUID) 
     return found if isinstance(found, UUID) else None
 
 
+async def mapping_set_engagement(tenant: TenantContext, mapping_set_id: UUID) -> UUID | None:
+    from abacus.modules.ledger import api as ledger
+
+    found = await ledger.mapping_set_by_id(tenant, mapping_set_id)
+    return None if found is None else found.engagement_id
+
+
 def register() -> None:
     register_suggestion_target("analytics_line", engagement_of=work_item_engagement)
     register_suggestion_target("confirmation", engagement_of=confirmation_engagement)
+    # A-09-T29 (DEC-5409): ledger.tb_mapper's suggestions on a mapping set (AUD-31).
+    register_suggestion_target("account_mapping", engagement_of=mapping_set_engagement)
     register_mode_mapping("fieldwork_attribute", fieldwork_attribute_inputs)
     register_mode_mapping("flux_explain", flux_explain_inputs)
     register_mode_mapping("confirmation_reconcile", confirmation_reconcile_inputs)

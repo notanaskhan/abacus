@@ -534,6 +534,13 @@ from abacus.modules.agents.run_start import open_capability_run  # noqa: E402 --
 from abacus.modules.integrations.api import register_dependents_provider  # noqa: E402
 
 register_dependents_provider(_dependents_of)
+# A-09-T29 (DEC-5409): a person's inline capability run, opened and closed by agents.
+from abacus.modules.agents.capability_runs import (  # noqa: E402 -- A-09-T29
+    end_capability_run as end_capability_run,
+)
+from abacus.modules.agents.capability_runs import (  # noqa: E402 -- A-09-T29
+    start_capability_run as start_capability_run,
+)
 from abacus.modules.agents.run_waits import WaitState  # noqa: E402 -- the history recorder's
 from abacus.modules.agents.service import load_run_v2_context  # noqa: E402 -- T-04-T25
 from abacus.modules.agents.spec_v2 import (  # noqa: E402
@@ -743,6 +750,7 @@ __all__ = [
     "draft",
     "draft_follow_ups",
     "effective_ai_policy",
+    "end_capability_run",
     "engagement_graph",
     "ensure_briefings",
     "extract_notice_fields",
@@ -825,6 +833,7 @@ __all__ = [
     "spec_v2",
     "stage_for",
     "start_agents",
+    "start_capability_run",
     "start_screening",
     "start_section_draft",
     "starts_in_shadow",

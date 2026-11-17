@@ -1,0 +1,4 @@
+Record your suggested financial-statement line for each kept account of one mapping set, as
+suggestions a person adopts on AUD-31. Give the mapping set id and, per account, its code, the
+catalogue line id, your confidence word and your reasoning (at most 140 characters). This writes
+suggestions only; it never maps, adopts or confirms anything.
