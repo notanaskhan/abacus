@@ -34,6 +34,7 @@ from abacus.modules.closes.contract import (
     status_guard,
 )
 from abacus.modules.closes.contract_work import close_work_router, portal_close_router
+from abacus.modules.closes.delivery_contract import delivery_router
 from abacus.modules.closes.gate_sources import register_close_gates
 from abacus.modules.closes.intake import ACTIVITIES as INTAKE_ACTIVITIES
 from abacus.modules.closes.intake import schedule_publish
@@ -87,7 +88,7 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 register_entity_owners(ENTITY_KINDS, audit_entities)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS = (closes_router, close_work_router, portal_close_router)
+ROUTERS = (closes_router, close_work_router, portal_close_router, delivery_router)  # C-02-T07
 
 
 # C-01-T19: the BD1 publish workflow; the worker reads these (no outbox subscriptions yet).
