@@ -577,6 +577,55 @@ async def work_items_for(
     return ids
 
 
+async def _mark_group(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    work_item_ids: list[UUID],
+    component_entity_ids: object,
+) -> None:
+    """A-09-T30 (DEC-5408): ENG-03 g. The assurance work item is a group audit and each chosen
+    entity of the client is a `component` engagement entity (others are ignored, never guessed)."""
+    from sqlalchemy import text as sql
+
+    await tx.session.execute(
+        sql(
+            "UPDATE assurance_work_items SET is_group_audit = true "
+            "WHERE work_item_id = ANY(:ids) AND engagement_id = :e"
+        ),
+        {"ids": list(work_item_ids), "e": engagement_id},
+    )
+    from abacus.modules.organisations.api import client_names
+
+    asked = [UUID(str(x)) for x in cast("list[object]", component_entity_ids or [])][:50]
+    head = (
+        await tx.session.execute(
+            select(Engagement.client_id, Engagement.client_entity_id).where(
+                Engagement.id == engagement_id
+            )
+        )
+    ).one()
+    names = await client_names(tx.session, asked) if asked else {}
+    chosen = [
+        e
+        for e in asked
+        if e in names and names[e].client_id == head.client_id and e != head.client_entity_id
+    ]
+    for entity in chosen:
+        await tx.session.execute(
+            sql(
+                "INSERT INTO engagement_entities (tenant_id, engagement_id, client_entity_id, "
+                "role) VALUES (:t, :e, :c, 'component') ON CONFLICT DO NOTHING"
+            ),
+            {"t": ctx.tenant_id, "e": engagement_id, "c": entity},
+        )
+    tx.record(
+        "engagement.group_audit_set",
+        target=Target("engagement", engagement_id),
+        after=Ref(n=len(chosen)),
+    )
+
+
 async def check_create(ctx: AuthContext, draft_id: UUID) -> None:
     """The route's check before its `Idempotency-Key` lookup, so a replay is authorised too
     (the stored answer runs no service call): the action, then the draft is the person's own."""
@@ -663,6 +712,8 @@ async def create_from_draft(
                 update(Engagement).where(Engagement.id == target.id).values(**values)
             )
         work = await work_items_for(tx, ctx, target, entry, name)
+        if group_audit:
+            await _mark_group(tx, ctx, target.id, work, d.payload.get("component_entity_ids"))
         roster = engagement_team_query().subquery("roster")
         on_team = set(
             (

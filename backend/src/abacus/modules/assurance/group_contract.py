@@ -1432,6 +1432,49 @@ async def group_send_follow_up(
     return FollowUpSentOut(message_id=await cl.send_follow_up(ctx, deliverable_id, _key))
 
 
+class StripEntityOut(BaseModel):
+    """AUD-06 g: one entity of the group with its current-period TB state (no figures)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    consolidation_entity_id: Annotated[UUID, Internal]
+    client_entity_id: Annotated[UUID, Internal]
+    name: Annotated[str, classified("confidential")]
+    level: Annotated[int, Internal]
+    tb_state: Annotated[Literal["attached", "missing", "not_needed", "needs_reauth"], Internal]
+
+
+class EntityStripOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[StripEntityOut], Internal]
+
+
+@router.get(
+    f"{_A}/group/entities",
+    action="group_scoping.read",
+    response_model=EntityStripOut,
+)
+async def group_entity_strip(work_item_id: UUID, ctx: Ctx) -> EntityStripOut:
+    """A-09-T30 (DEC-5408): AUD-06 g's entity strip; empty for a work item that is not a group
+    audit (the host renders as before)."""
+    await _gate(ctx, work_item_id, "group_scoping.read")
+    from abacus.modules.assurance import group_hosts
+
+    return EntityStripOut(
+        items=[
+            StripEntityOut(
+                consolidation_entity_id=e.consolidation_entity_id,
+                client_entity_id=e.client_entity_id,
+                name=e.name,
+                level=e.level,
+                tb_state=e.tb_state,
+            )
+            for e in await group_hosts.entity_strip(ctx.tenant, work_item_id)
+        ]
+    )
+
+
 class ComponentEvaluationIn(BaseModel):
     """A-09-T27 (DEC-5405): the evaluation facts a person records on AUD-35."""
 
