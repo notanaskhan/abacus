@@ -9,8 +9,9 @@ only), the deliverables in client words (Due · ✓ You uploaded · Overdue · R
 the Questions thread on `component_thread`. No firm-only word, no agent, no "Accrued".
 
 Uploads are new evidence versions (`component_auditor_upload`) linked to their deliverable; a
-drop with no deliverable picked answers the "Which deliverable is this for?" picker (None), and
-an upload to another component's deliverable is 404.
+drop with no deliverable picked answers the "Which deliverable is this for?" picker (None), the
+picker's answer links the person's own drop (`link_drop`), and an upload to another component's
+deliverable is 404.
 """
 
 from __future__ import annotations
@@ -282,6 +283,42 @@ async def place_file(
         system = TenantContext(ctx.tenant_id, "system", f"component_room:{room_id}")
         await ca.receive_deliverable(system, deliverable_id, item)
     return deliverable_id, version
+
+
+async def link_drop(
+    ctx: AuthContext, room_id: UUID, version_id: UUID, deliverable_id: UUID
+) -> UUID:
+    """S48 rest (POR-23 "Which deliverable is this for?"): link this person's own drop in this
+    room to one of this room's deliverables. Any other version, someone else's drop, another
+    room's deliverable or a drop already linked is 404; a deliverable not expecting a file is
+    409 (`DeliverableClosed`)."""
+    from abacus.modules.assurance import component_auditors as ca
+    from abacus.modules.evidence.api import component_upload_of
+
+    row = await _granted(ctx, room_id)
+    upload = await component_upload_of(ctx.tenant, version_id)
+    if (
+        upload is None
+        or upload.uploaded_by != ctx.user_id
+        or upload.engagement_id != row["engagement_id"]
+    ):
+        raise NotFound("evidence_version")
+    async with tenant_session(ctx.tenant) as session:
+        mine = await session.scalar(
+            text(
+                "SELECT 1 FROM component_deliverables WHERE id = :d AND component_auditor_id = :a"
+            ),
+            {"d": deliverable_id, "a": row["auditor_id"]},
+        )
+        linked = await session.scalar(
+            text("SELECT 1 FROM component_deliverables WHERE evidence_item_id = :i"),
+            {"i": upload.evidence_item_id},
+        )
+    if mine is None or linked is not None:
+        raise NotFound("component_deliverable")
+    system = TenantContext(ctx.tenant_id, "system", f"component_room:{room_id}")
+    await ca.receive_deliverable(system, deliverable_id, upload.evidence_item_id)
+    return deliverable_id
 
 
 async def questions(ctx: AuthContext, room_id: UUID) -> list[object]:

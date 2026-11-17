@@ -27,7 +27,7 @@ Every route answers, in order: a client principal 404; the action on the work it
 | Instructions | POST `/v1/component-auditors/{id}/instructions/draft` · PATCH `/v1/component-instructions/{id}` · POST `…/send` | `component_instructions.draft` / `.edit` / `.send` | T27 |
 | Make reference | POST `/v1/component-auditors/{id}/make-reference` | `component_auditor.manage` | T27 |
 | Deliverables | GET/POST `/v1/component-auditors/{id}/deliverables` · POST `/v1/component-deliverables/{id}/review` · `/return` | `component_deliverable.read` / `.manage` / `.review` | T28 |
-| Room (portal) | GET `/v1/portal/component-rooms/{id}` · `/instructions` (+ `/pdf`) · POST `/instructions/acknowledge` · POST `/deliverables/{did}/uploads` · `/drops` · GET/POST `/questions` | `component_room.read` / `component_instructions.acknowledge` / `component_deliverable.upload` / `component_room.ask` | T33 |
+| Room (portal) | GET `/v1/portal/component-rooms/{id}` · `/instructions` (+ `/pdf`) · POST `/instructions/acknowledge` · POST `/deliverables/{did}/uploads` · `/drops` · POST `/drops/{evidence_version_id}/deliverable` (the picker; S48 rest) · GET/POST `/questions` | `component_room.read` / `component_instructions.acknowledge` / `component_deliverable.upload` / `component_room.ask` | T33 |
 
 The room (`portal/component_room_contract.py`) answers a firm principal 404 and serves only the grant's `component` scope; every other component, the consolidation, eliminations, scoping and group materiality are 404 (INV-4).
 
