@@ -253,6 +253,7 @@ from abacus.modules.agents.section_draft import (
     followed_up_running as followed_up_running,
 )
 from abacus.modules.agents.section_draft import start as start_section_draft
+from abacus.modules.agents.section_draft import start_many as start_section_drafts
 from abacus.modules.agents.section_sources import (
     ModeDocument,
     ModeInputs,
@@ -838,6 +839,7 @@ __all__ = [
     "start_capability_run",
     "start_screening",
     "start_section_draft",
+    "start_section_drafts",  # A-08-T24 rest: a fan-out, 8 in flight
     "starts_in_shadow",
     "subject_engagement",
     "template_drafts_router",

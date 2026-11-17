@@ -149,17 +149,13 @@ async def _fan_out(
     sections: Sequence[str],
     key: str,
 ) -> list[UUID]:
-    """One drafter run per section; the first start refuses DF-04 before anything is recorded."""
-    from abacus.modules.agents.api import start_section_draft
+    """One drafter run per section, all recorded first (the first record refuses DF-04 before
+    anything exists), then started at most 8 in flight (A-08 §5)."""
+    from abacus.modules.agents.api import start_section_drafts
 
-    runs: list[UUID] = []
-    for section in sections[:MAX_ITEMS]:
-        runs.append(
-            await start_section_draft(
-                ctx, engagement_id, workpaper_id, mode, section, f"{key}:{section}"
-            )
-        )
-    return runs
+    return await start_section_drafts(
+        ctx, engagement_id, workpaper_id, mode, list(sections[:MAX_ITEMS]), key
+    )
 
 
 async def _initiator(user_id: UUID) -> str:
