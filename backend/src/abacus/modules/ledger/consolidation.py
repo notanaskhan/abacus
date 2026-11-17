@@ -714,6 +714,12 @@ class ConsolidationLockState(DomainConflict):
     code = "consolidation_lock_state"
 
 
+class ReopenReasonRequired(DomainInvalid):
+    """S48 rest (A-09-T26 found it): a reopen's reason is blank once trimmed (AC-4.5)."""
+
+    code = "reopen_reason_required"
+
+
 async def lock(
     tx: UnitOfWork, facts: ConsolidationFacts, *, tenant_id: UUID, user_id: UUID
 ) -> None:
@@ -744,6 +750,8 @@ async def reopen(
     tx: UnitOfWork, facts: ConsolidationFacts, *, tenant_id: UUID, user_id: UUID, reason: str
 ) -> None:
     """A Manager or the EP reopens with a reason (AC-4.5); the event keeps the reason."""
+    if not reason.strip():
+        raise ReopenReasonRequired
     if facts.lock_state != "locked":
         raise ConsolidationLockState(facts={"lock_state": facts.lock_state})
     done = await tx.session.execute(
