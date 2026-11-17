@@ -175,6 +175,13 @@ async def run_card(ctx: AuthContext, close_id: UUID, run_no: int) -> CloseRunOut
         if grouped.get(g.key)
     ]
     total = sum(len(g.procedures) for g in groups)
+    # C-01-T20 rest (DEC-5432): the newest run reads the close's open exceptions (CLS-06's count,
+    # notes excluded), the ones its procedures raised among them; a read-only run keeps 0.
+    open_issues = 0
+    if found.run_id == newest:
+        from abacus.modules.closes.issues import close_issues
+
+        open_issues = (await close_issues(ctx, close_id)).open
     return CloseRunOut(
         run_id=found.run_id,
         run_no=run_no,
@@ -185,7 +192,7 @@ async def run_card(ctx: AuthContext, close_id: UUID, run_no: int) -> CloseRunOut
         done=done,
         total=total,
         running=min(running, 3),
-        open_issues=0,
+        open_issues=open_issues,
         read_only=found.run_id != newest,
         groups=groups,
     )

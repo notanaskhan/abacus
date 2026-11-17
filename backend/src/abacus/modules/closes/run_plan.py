@@ -331,4 +331,5 @@ def register_treatment_kind() -> None:
     )
 
 
-register_plan_provider(PROVIDER, close_run_plan)
+# C-01-T20 rest (DEC-5432): a close run's procedures raise the exceptions their code finds.
+register_plan_provider(PROVIDER, close_run_plan, extra_scope=("issue.create",))

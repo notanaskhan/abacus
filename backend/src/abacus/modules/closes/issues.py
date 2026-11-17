@@ -43,7 +43,7 @@ from abacus.modules.closes.contract_work import (
 )
 from abacus.modules.communications.api import check_scope
 from abacus.modules.engagements.api import engagement_resource_of, get_ref
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.identity.api import Actor, AuthContext, Forbidden, authorise
 from abacus.modules.requests.api import (
     QuestionRow,
     ask_transaction_question,
@@ -153,7 +153,7 @@ def _parse(ref: str | None) -> tuple[str | None, str | None]:
 
 
 async def raise_exception(
-    ctx: AuthContext,
+    ctx: Actor,  # C-01-T20 rest (DEC-5432): the close run's agent raises through its task scope
     close_id: UUID,
     *,
     severity: Severity,

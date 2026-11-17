@@ -6,8 +6,9 @@ arrangements), calls the pure executor in `procedures.py` and records a new vers
 computed. Nothing is updated in place; a repeat with the same inputs (`inputs_hash`) records
 nothing new. The handler answers `succeeded` or `failed` with a code (`ledger_period_missing`,
 `account_missing`, `months_invalid`, `group_unknown`); a tally that does not tie is a result, not a
-failure: CLS-02 shows it and the reviewer raises the issue (C-01-T23 wires the automatic issue
-with its source run and step).
+failure: the step raises one engine exception on the close (C-01-T20 rest, DEC-5432; `_raise`),
+deduplicated by its source, so a rerun or CLS-04's workpaper never raises it twice. Its creator is
+the run's agent and its note names the procedure (AC-31).
 
 The handler acts as the run's agent context, which reads within the run's client scope; every
 figure is code (ADR-050). Model work never runs here: `close.agent`'s modes are child runs (T29).
@@ -27,6 +28,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.api import RunStepFacts, RunStepResult, register_run_step
 from abacus.modules.closes import procedures as p
 from abacus.modules.closes import repository as repo
+from abacus.modules.closes.issues import IssueClass
 from abacus.modules.identity.api import AgentContext
 from abacus.modules.ledger.api import (
     PeriodNotAvailable,
@@ -64,8 +66,8 @@ _LAST_SCHEDULE = text(
 )
 _INSERT_SCHEDULE = text(
     "INSERT INTO close_schedule_results (tenant_id, close_id, arrangement_id, period, inflows, "
-    "aje, "
-    "ending_balance, gl_balance, tie) VALUES (:t, :c, :a, :p, :in, :aje, :end, :gl, :tie)"
+    "aje, ending_balance, gl_balance, tie, engine_version, inputs_hash) VALUES (:t, :c, :a, :p, "
+    ":in, :aje, :end, :gl, :tie, :ev, :h)"
 )
 
 
@@ -103,6 +105,38 @@ def _failed(code: str) -> RunStepResult:
     return RunStepResult("failed", code)
 
 
+_TALLY = text(
+    "SELECT tally FROM reconciliations WHERE close_id = :c AND account_external_id = :a "
+    "ORDER BY version DESC LIMIT 1"
+)
+
+
+async def _raise(
+    ctx: AgentContext,
+    close: repo.CloseRow,
+    facts: RunStepFacts,
+    account: str,
+    issue_class: IssueClass,
+    wording: str,
+) -> None:
+    """One engine exception for what the procedure found (deduplicated by its source)."""
+    from abacus.modules.closes.issues import raise_exception
+
+    name = account
+    if close.client_entity_id is not None:
+        tree = await account_tree(ctx.tenant, close.client_entity_id, close.period)
+        name = next((a.name for a in tree.accounts if a.external_id == account), account)
+    await raise_exception(
+        ctx,
+        close.work_item_id,
+        severity="medium",
+        issue_class=issue_class,
+        title=f"{name} {wording}"[:200],
+        why=f"Raised by the close run: {facts.step_key}"[:500],
+        account_ref=account,
+    )
+
+
 async def reconcile_statement(ctx: AgentContext, facts: RunStepFacts) -> RunStepResult:
     """A new reconciliation version when its inputs changed (C-01-T23: `reconciliations.recompute`
     carries the open items to it); `pending` without a statement."""
@@ -118,6 +152,10 @@ async def reconcile_statement(ctx: AgentContext, facts: RunStepFacts) -> RunStep
         return _failed("ledger_period_missing")
     except (StepInputMissing, NotFound):
         return _failed("account_missing")
+    async with tenant_session(ctx.tenant) as session:
+        tally = await session.scalar(_TALLY, {"c": close.work_item_id, "a": account})
+    if tally == "off":
+        await _raise(ctx, close, facts, account, "bank_rec", "does not reconcile")
     return RunStepResult("succeeded", records_read=1)
 
 
@@ -151,12 +189,14 @@ async def clear_third_party_sales(ctx: AgentContext, facts: RunStepFacts) -> Run
     gross = sum((r.amount for r in rows if r.amount > 0), ZERO)
     clearing = p.clear_third_party_sales(gross, ZERO, ZERO, landed, landed)
     ties = int(clearing.difference == 0 and balance == 0)
+    if not ties:
+        await _raise(ctx, close, facts, account, "bank_rec", "has not cleared")
     async with uow(tenant) as tx:
         tx.record(
             "close_procedure.computed",
             target=Target("close", close.work_item_id),
             after=Ref(
-                step=facts.step_key[:60],
+                run=facts.run_id,
                 inputs_hash=p.inputs_hash([balance, len(rows)]),
                 tie=ties,
             ),
@@ -182,6 +222,7 @@ async def _schedules(ctx: AgentContext, facts: RunStepFacts, kind: str) -> RunSt
             await session.execute(_ARRANGEMENTS, {"e": close.client_entity_id, "k": kind})
         ).all()
     written = 0
+    off = False
     async with uow(tenant) as tx:
         for arrangement_id, _, total, start, finish, _expense in arrangements:
             if start is None or finish is None:
@@ -197,6 +238,7 @@ async def _schedules(ctx: AgentContext, facts: RunStepFacts, kind: str) -> RunSt
                     [p.Addition(str(arrangement_id), Decimal(total), months, start)], period_end
                 )
                 ending, aje, tie = d.month_charge, ZERO, "tie"
+            off = off or tie != "tie"
             last = (
                 await tx.session.execute(
                     _LAST_SCHEDULE,
@@ -217,14 +259,19 @@ async def _schedules(ctx: AgentContext, facts: RunStepFacts, kind: str) -> RunSt
                     "end": ending,
                     "gl": gl,
                     "tie": tie,
+                    # C-01-T20 rest: 0885 made both NOT NULL after this step was written.
+                    "ev": p.ENGINE_VERSION,
+                    "h": p.inputs_hash([str(arrangement_id), total, start, finish, gl]),
                 },
             )
             written += 1
         tx.record(
             "close_procedure.computed",
             target=Target("close", close.work_item_id),
-            after=Ref(step=facts.step_key[:60], written=written),
+            after=Ref(run=facts.run_id, written=written),
         )
+    if off and account is not None:
+        await _raise(ctx, close, facts, account, "schedule", "does not tie to its schedule")
     return RunStepResult("succeeded", records_read=len(arrangements))
 
 
@@ -254,7 +301,7 @@ async def _ledger_check(ctx: AgentContext, facts: RunStepFacts) -> RunStepResult
             "close_procedure.computed",
             target=Target("close", close.work_item_id),
             after=Ref(
-                step=facts.step_key[:60],
+                run=facts.run_id,
                 inputs_hash=p.inputs_hash([account, balance, close.period]),
             ),
         )
