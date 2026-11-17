@@ -12,8 +12,12 @@ evidence.matcher:
 # workpapers.section_drafter v1-v3 (A-04-T14, A-05-T14; A-05 §6; DEC-1958): $0.25 a section on the
 # medium tier, the EBP modes' baseline (chapter 05 §5.5.5, inferred); the planning modes' $0.15
 # budget sits under it. The gate fails a real run above $0.275 a section.
+# A-08-T25 (A-08 §6; DEC-5524): the fieldwork modes add the small tier for per-item attribute work
+# at $0.05 an item (inferred, as ledger.tb_mapper's small row); flux_explain and
+# confirmation_reconcile stay on the medium row. A-08's Bedrock report replaces both.
 workpapers.section_drafter:
   medium: "0.25"
+  small: "0.05"
 # notices.responder v1 (N-04-T25; N-04 §6): the spec's budgets, $0.25 a notice on the medium tier
 # (`analyze`) and $0.08 on the small tier (`extract`). The real run's per-mode median must stay
 # within 10 % of these (`notices_responder_real.clearance`).

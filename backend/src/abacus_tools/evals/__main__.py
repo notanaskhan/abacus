@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import cast
+from typing import cast, get_args
 
 from abacus.ai_gateway import Tier
 from abacus.modules.agents.api import ASSESSOR, DRAFTER, MATCHER, REVIEWER, spec
@@ -49,7 +49,7 @@ def main(argv: list[str]) -> int:
     # A-04-T14: the section drafter's suite has a case set per mode.
     parser.add_argument(
         "--mode",
-        choices=["gap", "risk_narrative", "risk", "ic", "soc1", "ebp_provisions", "ebp_attribute"],
+        choices=list(get_args(DraftMode)),  # A-08-T25: every suite mode, fieldwork's included
     )
     args = parser.parse_args(argv)
     if args.agent == "audit_completion":  # A-07-T40: A-07's deterministic conformance suite
