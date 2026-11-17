@@ -17,6 +17,26 @@ const Shell = lazyScreen(async () => (await import("../../screens/CLS-02")).Clos
 const Intake = lazyScreen(async () => (await import("../../screens/CLS-03")).CLS03);
 // C-01-T37: CLS-04's Accounts body inside the shell.
 const Accounts = lazyScreen(async () => (await import("../../screens/CLS-04")).CLS04);
+// C-01-T38: CLS-05, an account's reconciliation, inside the shell's Accounts tab.
+const Reconciliation = lazyScreen(async () => (await import("../../screens/CLS-05")).CLS05);
+
+function ReconciliationBody({ closeId, onReview }: { closeId: string; onReview: () => void }) {
+  const accountRef = useParam("accountRef");
+  const navigate = useNavigate();
+  return (
+    <Reconciliation
+      closeId={closeId}
+      accountRef={accountRef}
+      onAccount={(ref) => {
+        void navigate({
+          to: "/closes/$closeId/accounts/$accountRef",
+          params: { closeId, accountRef: ref },
+        });
+      }}
+      onIssue={onReview}
+    />
+  );
+}
 // C-01-T34: CLS-02's Overview body inside the shell.
 const Overview = lazyScreen(async () => (await import("../../screens/CLS-02")).CloseOverview);
 const Index = lazyScreen(async () => (await import("../../screens/CLS-01")).CLS01);
@@ -149,6 +169,13 @@ function CloseTabPage({ tab, screen }: { tab: Tab; screen: string }): JSX.Elemen
           />
         ) : screen === "CLS-03" ? (
           <Intake closeId={closeId} />
+        ) : screen === "CLS-05" ? (
+          <ReconciliationBody
+            closeId={closeId}
+            onReview={() => {
+              go(closeId, "review");
+            }}
+          />
         ) : screen === "CLS-04" ? (
           <Accounts
             closeId={closeId}
