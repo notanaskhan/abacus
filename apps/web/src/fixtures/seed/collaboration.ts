@@ -183,6 +183,7 @@ export function componentThread(): ThreadOut {
       label: "Pruett & Lang LLP",
       engagement_id: IDS.harlow,
       client_visible: true,
+      shared_with: "Pruett & Lang LLP",
     },
     engagement_id: IDS.harlow,
     status: "open",

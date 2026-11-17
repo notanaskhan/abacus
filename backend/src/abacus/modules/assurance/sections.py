@@ -60,6 +60,8 @@ class SectionState:
     # The section's earlier versions, newest first: the rail's child rows (EBP-02's Version 1;
     # DV-EBP-02-5, DEC-2492).
     versions: tuple[SectionVersion, ...] = ()
+    # S48 rest (AUD-02 h): a code-built chip after the sub-line ("Balanced · 50,760,000").
+    chip: str | None = None
 
 
 @dataclass(frozen=True)

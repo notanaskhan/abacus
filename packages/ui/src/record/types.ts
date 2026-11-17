@@ -29,6 +29,8 @@ export interface Phase {
   pill?: { kind: PhasePillKind; text: string };
   /** "Complete · 9:26 AM", "Running", "Queued"; amber for a line that wants a person. */
   live?: { text: string; tone?: "amber" };
+  /** A code-built chip after the line (AUD-02 h: "Balanced · 50,760,000"). */
+  chip?: string;
   /** The dark "Begin…" pill on a to-do phase that can start now. */
   begin?: boolean;
   /** Versions, indented to 30. */

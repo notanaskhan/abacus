@@ -1,7 +1,7 @@
 import { type JSX, type KeyboardEvent, type ReactNode, useId, useState } from "react";
 import { cn } from "../cn";
 import { Button } from "../components/button";
-import { Pill } from "../components/pill";
+import { Pill, Tag } from "../components/pill";
 import { Menu } from "../components/popover";
 import { StatusDisc } from "../components/status";
 import { type ForceState, forceAttr } from "../force-state";
@@ -208,6 +208,11 @@ export function PhaseRow({
               )}
             >
               {phase.live.text}
+            </span>
+          )}
+          {phase.chip !== undefined && (
+            <span data-chip="">
+              <Tag>{phase.chip}</Tag>
             </span>
           )}
         </span>

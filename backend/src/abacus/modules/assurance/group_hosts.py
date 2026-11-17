@@ -6,8 +6,8 @@ ENG-03 g made a group audit, AUD-02's Group band shows three rows in order (revi
 Structure (AUD-32 and its eliminations, "5 entities · finalized"), Scoping (AUD-34, "Group
 materiality 240,000 · decided 3:40 PM"), Component auditors (AUD-35, "Pruett & Lang LLP ·
 questionnaire received Sep 10");
-AUD-01 tags a group row ("Group · 4 components") and its component auditors ("Component auditor
-· Pruett & Lang LLP"). With the capability off, or on any other work item, every provider
+AUD-01 g tags a group row with a component auditor "Component auditor" (its Type reads "FS
+audit (group)"; S48 rest). With the capability off, or on any other work item, every provider
 answers nothing, so every live screen renders exactly as before. AUD-06 g's entity strip is the
 consolidation's entities with their current TB state (code's, no figures).
 """
@@ -17,6 +17,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Final, Literal
 from uuid import UUID
 
@@ -78,9 +79,28 @@ async def structure_row(tenant: TenantContext, work_item_id: UUID) -> SectionSta
     entities = len(getattr(facts, "entities", ()))
     if status == "finalized":
         return SectionState(
-            AuditSectionStatus.SIGNED_OFF, "sub_line", f"{entities} entities · finalized"
+            AuditSectionStatus.SIGNED_OFF,
+            "sub_line",
+            f"{entities} entities · finalized",
+            chip=await _tie_chip(tenant, facts),
         )
     return SectionState(AuditSectionStatus.IN_PROGRESS, "sub_line", f"{entities} entities")
+
+
+async def _tie_chip(tenant: TenantContext, facts: object) -> str | None:
+    """AUD-02 h: "Balanced · 50,760,000" when the engine's whole-group level (level 1) ties,
+    its total assets after eliminations; nothing before every TB is in or when it does not tie
+    (code's figures, ADR-050)."""
+    from abacus.modules.assurance.group_tb import levels_for
+
+    try:
+        found, _, _ = await levels_for(tenant, facts)  # type: ignore[arg-type] -- ConsolidationFacts
+    except Exception:  # a missing TB or mapping: no chip, never a broken cockpit
+        return None
+    level = next((lv for lv in found if lv.level == 1), None)
+    if level is None or not level.ties:
+        return None
+    return f"Balanced · {level.total_assets.quantize(Decimal(1)):,}"
 
 
 _DECIDED: Final = text(
@@ -138,51 +158,12 @@ _PROVIDERS: Final = {
 # --- AUD-01 tags ---------------------------------------------------------------------------------
 
 
-async def group_tags(
-    tenant: TenantContext, work_item_ids: Sequence[UUID]
-) -> Mapping[UUID, Sequence[IndexTag]]:
-    """'Group · 4 components' on a group audit's row (capability on only)."""
-    from abacus.modules.engagements.api import assurance_index
-    from abacus.modules.platform.api import group_audit_on
-
-    if not work_item_ids or not await group_audit_on(tenant):
-        return {}
-    a = assurance_index()
-    async with tenant_session(tenant) as session:
-        rows = (
-            await session.execute(
-                select(a.c.work_item_id).where(
-                    a.c.work_item_id.in_(list(work_item_ids)), a.c.is_group_audit.is_(True)
-                )
-            )
-        ).all()
-        counts = {
-            r.work_item_id: int(r.n)
-            for r in await session.execute(
-                text(
-                    "SELECT work_item_id, count(*) AS n FROM components "
-                    "WHERE work_item_id = ANY(:w) GROUP BY work_item_id"
-                ),
-                {"w": [r.work_item_id for r in rows]},
-            )
-        }
-    return {
-        r.work_item_id: [
-            IndexTag(
-                "group",
-                f"Group · {counts.get(r.work_item_id, 0)} components"
-                if counts.get(r.work_item_id)
-                else "Group",
-            )
-        ]
-        for r in rows
-    }
-
-
 async def component_auditor_tags(
     tenant: TenantContext, work_item_ids: Sequence[UUID]
 ) -> Mapping[UUID, Sequence[IndexTag]]:
-    """'Component auditor · Pruett & Lang LLP' for each component auditor on the row."""
+    """AUD-01 g (revision, verbatim): a group audit with a component auditor reads the tag
+    "Component auditor" once; the Type column already reads "FS audit (group)" (S48 rest: the
+    tag text is the artboard's, not a per-firm list)."""
     from abacus.modules.platform.api import group_audit_on
 
     if not work_item_ids or not await group_audit_on(tenant):
@@ -191,18 +172,16 @@ async def component_auditor_tags(
         rows = (
             await session.execute(
                 text(
-                    "SELECT work_item_id, organisation_name FROM component_auditors "
-                    "WHERE work_item_id = ANY(:w) ORDER BY created_at"
+                    "SELECT DISTINCT work_item_id FROM component_auditors "
+                    "WHERE work_item_id = ANY(:w)"
                 ),
                 {"w": list(work_item_ids)},
             )
         ).all()
-    out: dict[UUID, list[IndexTag]] = {}
-    for r in rows:
-        out.setdefault(r.work_item_id, []).append(
-            IndexTag("component_auditor", f"Component auditor · {r.organisation_name}")
-        )
-    return out
+    return {
+        work_item: [IndexTag("component_auditor", "Component auditor")]
+        for work_item in dict.fromkeys(r.work_item_id for r in rows)
+    }
 
 
 # --- AUD-06 g: the entity strip ------------------------------------------------------------------
@@ -265,5 +244,4 @@ def register() -> None:
             link="live",
             required_action="group_scoping.read",
         )
-    register_index_tag("group", group_tags, "metadata")
     register_index_tag("component_auditor", component_auditor_tags, "metadata")

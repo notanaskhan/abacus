@@ -159,6 +159,7 @@ describe("AUD-02 artboards", () => {
     expect(await screen.findByText("Structure")).toBeTruthy();
     expect(screen.getByText("Scoping")).toBeTruthy();
     expect(screen.getByText("Component auditors")).toBeTruthy();
+    expect(screen.getByText("Balanced · 50,760,000")).toBeTruthy(); // the tie chip
   });
 
   it("AUD-02a run: the sub-lines read exactly, the pill Processing, Started 9:24 AM, Begin… on Testing", async () => {

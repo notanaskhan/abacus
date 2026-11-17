@@ -31,5 +31,42 @@ async def test_capability_off_answers_nothing(monkeypatch: pytest.MonkeyPatch) -
     tenant = object()
     for provider in gh._PROVIDERS.values():  # pyright: ignore[reportPrivateUsage] -- the private helper under test
         assert await provider(tenant, uuid.uuid4()) is None  # type: ignore[arg-type] -- unused
-    assert await gh.group_tags(tenant, [uuid.uuid4()]) == {}  # type: ignore[arg-type] -- a stand-in tenant, unused when off
     assert await gh.component_auditor_tags(tenant, [uuid.uuid4()]) == {}  # type: ignore[arg-type] -- a stand-in tenant, unused when off
+
+
+@pytest.mark.parametrize(
+    ("ties", "levels", "chip"),
+    [
+        (True, (1, 2), "Balanced · 50,760,000"),
+        (False, (1, 2), None),  # it does not tie: no chip
+        (True, (2,), None),  # no whole-group level yet
+    ],
+)
+async def test_aud02h_the_tie_chip_is_the_engines_whole_group_total(
+    monkeypatch: pytest.MonkeyPatch, ties: bool, levels: tuple[int, ...], chip: str | None
+) -> None:
+    """S48 rest (AUD-02 h): "Balanced · 50,760,000" from level 1's tie and total assets."""
+    from decimal import Decimal
+    from types import SimpleNamespace
+
+    from abacus.modules.assurance import group_tb
+
+    async def levels_for(*_: object) -> tuple[list[SimpleNamespace], int, int]:
+        found = [
+            SimpleNamespace(level=n, ties=ties, total_assets=Decimal("50760000.00"))
+            for n in levels
+        ]
+        return found, 0, 0
+
+    monkeypatch.setattr(group_tb, "levels_for", levels_for)
+    assert await gh._tie_chip(object(), object()) == chip  # type: ignore[arg-type] -- stand-ins; the engine is faked
+
+
+async def test_aud02h_no_chip_when_the_engine_cannot_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    from abacus.modules.assurance import group_tb
+
+    async def missing(*_: object) -> object:
+        raise RuntimeError("a TB is missing")
+
+    monkeypatch.setattr(group_tb, "levels_for", missing)
+    assert await gh._tie_chip(object(), object()) is None  # type: ignore[arg-type] -- stand-ins; the engine is faked

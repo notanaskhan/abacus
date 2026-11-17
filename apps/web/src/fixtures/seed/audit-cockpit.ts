@@ -255,7 +255,16 @@ export function harlowCockpit(ids: CockpitIds): AuditCockpitOut {
       {
         key: "group",
         rows: [
-          row("group_structure", "Structure", "AUD-32", "signed_off", "5 entities · finalized"),
+          {
+            ...row(
+              "group_structure",
+              "Structure",
+              "AUD-32",
+              "signed_off",
+              "5 entities · finalized",
+            ),
+            chip: "Balanced · 50,760,000", // revision h's tie chip (§9.2)
+          },
           row(
             "group_scoping",
             "Scoping",

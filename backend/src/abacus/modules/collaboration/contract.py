@@ -91,6 +91,8 @@ class AnchorFactsOut(BaseModel):
     label: Annotated[str, Confidential]  # "Northwind · Exceptions row 6"
     engagement_id: Annotated[UUID | None, Internal] = None
     client_visible: Annotated[bool, Internal] = False
+    # SHL-18 f: "Visible to Pruett & Lang LLP" (the organisation's name; None inside the firm).
+    shared_with: Annotated[str | None, Confidential] = None
 
 
 # --- comments v2 ---------------------------------------------------------------------------------
