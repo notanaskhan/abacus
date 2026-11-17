@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import AUDITS_FIELDWORK_TESTING
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import now
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -102,7 +102,12 @@ async def _gate(ctx: AuthContext) -> None:
 async def start_run(test_id: UUID, ctx: Ctx, _key: IdempotencyKey) -> TestRunOut:
     """Begin… / Re-run (behind `audits.fieldwork_agents`; DF-04 on a closed data boundary)."""
     await _gate(ctx)
-    raise NotImplementedYet("A-08-T24")
+    from abacus.modules.workpapers import fieldwork_tests as ft
+
+    started = await ft.start_fieldwork_run(ctx, test_id, _key)
+    return TestRunOut(
+        run_id=started.run_id, items=started.items, initiator_name=started.initiator_name
+    )
 
 
 @router.post(f"{_T}/adopt", action="test.adopt", response_model=AdoptOut, errors=(409, 501))

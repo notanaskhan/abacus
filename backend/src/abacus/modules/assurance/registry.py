@@ -1582,3 +1582,22 @@ INSERT_COLUMNS["ssars_inquiry_programs"] = frozenset(
     }
 )
 UPDATE_COLUMNS["ssars_inquiry_programs"] = frozenset({"published_at", "published_by"})
+
+# A-08-T24 (0943, DEC-5403): the run rows a person started on AUD-12, AUD-13, AUD-26, AUD-14.
+TABLES = TABLES | frozenset({"fieldwork_run_rows"})
+INSERT_ONLY = INSERT_ONLY | frozenset({"fieldwork_run_rows"})
+INSERT_COLUMNS["fieldwork_run_rows"] = frozenset(
+    {
+        "code_result",
+        "engagement_id",
+        "idempotency_key",
+        "initiator_user_id",
+        "items",
+        "kind",
+        "run_ids",
+        "target_id",
+        "target_kind",
+        "tenant_id",
+        "work_item_id",
+    }
+)
