@@ -50250,6 +50250,33 @@
         "title": "ExtensionSubmitIn",
         "type": "object"
       },
+      "ExternalPartyIn": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "party_kind": {
+            "cls": "internal",
+            "enum": [
+              "person",
+              "organisation"
+            ],
+            "title": "Party Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "party_kind"
+        ],
+        "title": "ExternalPartyIn",
+        "type": "object"
+      },
       "ExtractedFieldOut": {
         "description": "One box: `match_id` is `ev:<version>#field:<key>`, which SHL-08's regions accept. A TIN\nbox carries `mask_token` (\"\u2022\u2022\u2022-\u2022\u2022-6081\") and never `value_text`.",
         "properties": {
@@ -60153,6 +60180,70 @@
           "screening_action"
         ],
         "title": "GraphItemOut",
+        "type": "object"
+      },
+      "GraphLayoutIn": {
+        "additionalProperties": false,
+        "properties": {
+          "positions": {
+            "additionalProperties": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ],
+              "type": "array"
+            },
+            "cls": "internal",
+            "maxProperties": 500,
+            "propertyNames": {
+              "format": "uuid"
+            },
+            "title": "Positions",
+            "type": "object"
+          }
+        },
+        "required": [
+          "positions"
+        ],
+        "title": "GraphLayoutIn",
+        "type": "object"
+      },
+      "GraphLayoutOut": {
+        "additionalProperties": false,
+        "properties": {
+          "saved": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Saved",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "saved"
+        ],
+        "title": "GraphLayoutOut",
         "type": "object"
       },
       "GraphMethodologyOut": {
@@ -100366,6 +100457,480 @@
           }
         },
         "title": "RelatedPartyActivityIn",
+        "type": "object"
+      },
+      "RelationshipBannerOut": {
+        "additionalProperties": false,
+        "description": "CLI-03 a \"Ridgeline 1065 \u2192 2 K-1s at risk\" (amber) or f \"K-1s released Sep 15 \u00b7 Feld and\nShah 1040s updated\" (green): the annotation slot.",
+        "properties": {
+          "text": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Text",
+            "type": "string"
+          },
+          "tone": {
+            "cls": "internal",
+            "enum": [
+              "amber",
+              "green"
+            ],
+            "title": "Tone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tone",
+          "text"
+        ],
+        "title": "RelationshipBannerOut",
+        "type": "object"
+      },
+      "RelationshipEdgeOut": {
+        "additionalProperties": false,
+        "description": "\"38% LP\"-style labels; K-1 edges draft until released, then solid olive.",
+        "properties": {
+          "edge_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Edge Id",
+            "type": "string"
+          },
+          "from_node_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "From Node Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "relationship",
+              "k1"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 60,
+            "title": "Label",
+            "type": "string"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Percent"
+          },
+          "relationship_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "spouse",
+                  "owner_of",
+                  "trustee_of",
+                  "beneficiary_of",
+                  "sponsor_of",
+                  "upper_tier_of",
+                  "executor_of",
+                  "gp_of",
+                  "lp_of",
+                  "estate_of"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Relationship Kind"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Since"
+          },
+          "source": {
+            "cls": "internal",
+            "enum": [
+              "person",
+              "intake",
+              "k1_package"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "draft",
+                  "released"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State"
+          },
+          "to_node_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "To Node Id",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "edge_id",
+          "kind",
+          "from_node_id",
+          "to_node_id",
+          "label",
+          "source"
+        ],
+        "title": "RelationshipEdgeOut",
+        "type": "object"
+      },
+      "RelationshipEndIn": {
+        "additionalProperties": false,
+        "properties": {
+          "effective_to": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Effective To",
+            "type": "string"
+          },
+          "reason": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "effective_to",
+          "reason"
+        ],
+        "title": "RelationshipEndIn",
+        "type": "object"
+      },
+      "RelationshipGraphOut": {
+        "additionalProperties": false,
+        "properties": {
+          "banner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RelationshipBannerOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "client_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "edges": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RelationshipEdgeOut"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "nodes": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RelationshipNodeOut"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "selected_node_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Selected Node Id"
+          }
+        },
+        "required": [
+          "client_id",
+          "nodes",
+          "edges"
+        ],
+        "title": "RelationshipGraphOut",
+        "type": "object"
+      },
+      "RelationshipIn": {
+        "additionalProperties": false,
+        "description": "Add relationship (O3 sheet): an entity or external party on either side; 422\n`relationship_self_edge` or `relationship_percent_exceeds`.",
+        "properties": {
+          "effective_from": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Effective From",
+            "type": "string"
+          },
+          "from_node_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "From Node Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "spouse",
+              "owner_of",
+              "trustee_of",
+              "beneficiary_of",
+              "sponsor_of",
+              "upper_tier_of",
+              "executor_of",
+              "gp_of",
+              "lp_of",
+              "estate_of"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Percent"
+          },
+          "to_node_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "To Node Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_node_id",
+          "to_node_id",
+          "kind",
+          "effective_from"
+        ],
+        "title": "RelationshipIn",
+        "type": "object"
+      },
+      "RelationshipNodeOut": {
+        "additionalProperties": false,
+        "properties": {
+          "external": {
+            "cls": "internal",
+            "default": false,
+            "title": "External",
+            "type": "boolean"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "client",
+              "entity",
+              "return",
+              "external_party"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Label",
+            "type": "string"
+          },
+          "node_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Node Id",
+            "type": "string"
+          },
+          "return_state": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Return State"
+          },
+          "sublabel": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sublabel"
+          },
+          "x": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "X"
+          },
+          "y": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Y"
+          }
+        },
+        "required": [
+          "node_id",
+          "kind",
+          "label"
+        ],
+        "title": "RelationshipNodeOut",
+        "type": "object"
+      },
+      "RelationshipPatchIn": {
+        "additionalProperties": false,
+        "properties": {
+          "effective_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Effective To"
+          },
+          "expected_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Percent"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "RelationshipPatchIn",
         "type": "object"
       },
       "ReleaseOut": {
@@ -186581,6 +187146,132 @@
         "x-abacus-action": "contact.unlock"
       }
     },
+    "/v1/clients/{client_id}/external-parties": {
+      "post": {
+        "operationId": "external_party",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalPartyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipNodeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "External Party Route",
+        "tags": [
+          "organisations"
+        ],
+        "x-abacus-action": "relationship.create"
+      }
+    },
     "/v1/clients/{client_id}/overview": {
       "get": {
         "description": "Per-kind profile from registered section providers, each filtered by its own read action;\nan unregistered section is absent and an unregistered column renders \"\u2014\" (fail closed).",
@@ -186684,6 +187375,123 @@
         "summary": "Client Overview Route",
         "tags": [
           "clients"
+        ],
+        "x-abacus-action": "client.read"
+      }
+    },
+    "/v1/clients/{client_id}/relationship-graph": {
+      "get": {
+        "description": "CLI-03 a-f: nodes, edges, the banner and the viewer's saved positions; walled nodes\nabsent, no count.",
+        "operationId": "relationship_graph",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipGraphOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Relationship Graph Route",
+        "tags": [
+          "organisations"
         ],
         "x-abacus-action": "client.read"
       }
@@ -186809,6 +187617,130 @@
           "clients"
         ],
         "x-abacus-action": "client.read"
+      },
+      "post": {
+        "operationId": "relationship_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipEdgeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Relationship Create Route",
+        "tags": [
+          "organisations"
+        ],
+        "x-abacus-action": "relationship.create"
       }
     },
     "/v1/close-templates": {
@@ -317769,6 +318701,279 @@
         "x-abacus-action": "proposed_entry.create"
       }
     },
+    "/v1/relationships/{rel_id}": {
+      "patch": {
+        "operationId": "relationship_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rel_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rel Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipEdgeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Relationship Update Route",
+        "tags": [
+          "organisations"
+        ],
+        "x-abacus-action": "relationship.update"
+      }
+    },
+    "/v1/relationships/{rel_id}/end": {
+      "post": {
+        "description": "Ended, never deleted.",
+        "operationId": "relationship_end",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rel_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rel Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipEndIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipEdgeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Relationship End Route",
+        "tags": [
+          "organisations"
+        ],
+        "x-abacus-action": "relationship.end"
+      }
+    },
     "/v1/report-templates": {
       "get": {
         "description": "The firm's templates with their current published version (P-11-T06).",
@@ -351591,6 +352796,133 @@
           "consents"
         ],
         "x-abacus-action": "transcript.compare"
+      }
+    },
+    "/v1/users/me/graph-layouts/{client_id}": {
+      "put": {
+        "description": "Own rows only; never audited.",
+        "operationId": "graph_layout",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GraphLayoutIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphLayoutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Graph Layout Route",
+        "tags": [
+          "organisations"
+        ],
+        "x-abacus-action": "graph_layout.save"
       }
     },
     "/v1/vendors/{vendor_id}": {

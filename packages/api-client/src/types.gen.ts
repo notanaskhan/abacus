@@ -23275,6 +23275,20 @@ export type ExtensionSubmitIn = {
 };
 
 /**
+ * ExternalPartyIn
+ */
+export type ExternalPartyIn = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Party Kind
+     */
+    party_kind: 'person' | 'organisation';
+};
+
+/**
  * ExtractedFieldOut
  *
  * One box: `match_id` is `ev:<version>#field:<key>`, which SHL-08's regions accept. A TIN
@@ -28051,6 +28065,31 @@ export type GraphItemOut = {
      * Status
      */
     status: string;
+};
+
+/**
+ * GraphLayoutIn
+ */
+export type GraphLayoutIn = {
+    /**
+     * Positions
+     */
+    positions: {
+        [key: string]: [
+            number | string,
+            number | string
+        ];
+    };
+};
+
+/**
+ * GraphLayoutOut
+ */
+export type GraphLayoutOut = {
+    /**
+     * Saved
+     */
+    saved: number;
 };
 
 /**
@@ -47189,6 +47228,205 @@ export type RelatedPartyActivityIn = {
      * Transactions
      */
     transactions?: Array<Aud27TransactionIn>;
+};
+
+/**
+ * RelationshipBannerOut
+ *
+ * CLI-03 a "Ridgeline 1065 → 2 K-1s at risk" (amber) or f "K-1s released Sep 15 · Feld and
+ * Shah 1040s updated" (green): the annotation slot.
+ */
+export type RelationshipBannerOut = {
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Tone
+     */
+    tone: 'amber' | 'green';
+};
+
+/**
+ * RelationshipEdgeOut
+ *
+ * "38% LP"-style labels; K-1 edges draft until released, then solid olive.
+ */
+export type RelationshipEdgeOut = {
+    /**
+     * Edge Id
+     */
+    edge_id: string;
+    /**
+     * From Node Id
+     */
+    from_node_id: string;
+    /**
+     * Kind
+     */
+    kind: 'relationship' | 'k1';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Percent
+     */
+    percent?: string | null;
+    /**
+     * Relationship Kind
+     */
+    relationship_kind?: 'spouse' | 'owner_of' | 'trustee_of' | 'beneficiary_of' | 'sponsor_of' | 'upper_tier_of' | 'executor_of' | 'gp_of' | 'lp_of' | 'estate_of' | null;
+    /**
+     * Since
+     */
+    since?: string | null;
+    /**
+     * Source
+     */
+    source: 'person' | 'intake' | 'k1_package';
+    /**
+     * State
+     */
+    state?: 'draft' | 'released' | null;
+    /**
+     * To Node Id
+     */
+    to_node_id: string;
+    /**
+     * Version
+     */
+    version?: number;
+};
+
+/**
+ * RelationshipEndIn
+ */
+export type RelationshipEndIn = {
+    /**
+     * Effective To
+     */
+    effective_to: string;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * RelationshipGraphOut
+ */
+export type RelationshipGraphOut = {
+    banner?: RelationshipBannerOut | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Edges
+     */
+    edges: Array<RelationshipEdgeOut>;
+    /**
+     * Nodes
+     */
+    nodes: Array<RelationshipNodeOut>;
+    /**
+     * Selected Node Id
+     */
+    selected_node_id?: string | null;
+};
+
+/**
+ * RelationshipIn
+ *
+ * Add relationship (O3 sheet): an entity or external party on either side; 422
+ * `relationship_self_edge` or `relationship_percent_exceeds`.
+ */
+export type RelationshipIn = {
+    /**
+     * Effective From
+     */
+    effective_from: string;
+    /**
+     * From Node Id
+     */
+    from_node_id: string;
+    /**
+     * Kind
+     */
+    kind: 'spouse' | 'owner_of' | 'trustee_of' | 'beneficiary_of' | 'sponsor_of' | 'upper_tier_of' | 'executor_of' | 'gp_of' | 'lp_of' | 'estate_of';
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Percent
+     */
+    percent?: number | string | null;
+    /**
+     * To Node Id
+     */
+    to_node_id: string;
+};
+
+/**
+ * RelationshipNodeOut
+ */
+export type RelationshipNodeOut = {
+    /**
+     * External
+     */
+    external?: boolean;
+    /**
+     * Kind
+     */
+    kind: 'client' | 'entity' | 'return' | 'external_party';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Node Id
+     */
+    node_id: string;
+    /**
+     * Return State
+     */
+    return_state?: string | null;
+    /**
+     * Sublabel
+     */
+    sublabel?: string | null;
+    /**
+     * X
+     */
+    x?: string | null;
+    /**
+     * Y
+     */
+    y?: string | null;
+};
+
+/**
+ * RelationshipPatchIn
+ */
+export type RelationshipPatchIn = {
+    /**
+     * Effective To
+     */
+    effective_to?: string | null;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Percent
+     */
+    percent?: number | string | null;
 };
 
 /**
@@ -87013,6 +87251,62 @@ export type UnlockContactPortalResponses = {
 
 export type UnlockContactPortalResponse = UnlockContactPortalResponses[keyof UnlockContactPortalResponses];
 
+export type ExternalPartyData = {
+    body: ExternalPartyIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}/external-parties';
+};
+
+export type ExternalPartyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExternalPartyError = ExternalPartyErrors[keyof ExternalPartyErrors];
+
+export type ExternalPartyResponses = {
+    /**
+     * Successful Response
+     */
+    201: RelationshipNodeOut;
+};
+
+export type ExternalPartyResponse = ExternalPartyResponses[keyof ExternalPartyResponses];
+
 export type ClientOverviewData = {
     body?: never;
     headers?: {
@@ -87064,6 +87358,62 @@ export type ClientOverviewResponses = {
 };
 
 export type ClientOverviewResponse = ClientOverviewResponses[keyof ClientOverviewResponses];
+
+export type RelationshipGraphData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}/relationship-graph';
+};
+
+export type RelationshipGraphErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RelationshipGraphError = RelationshipGraphErrors[keyof RelationshipGraphErrors];
+
+export type RelationshipGraphResponses = {
+    /**
+     * Successful Response
+     */
+    200: RelationshipGraphOut;
+};
+
+export type RelationshipGraphResponse = RelationshipGraphResponses[keyof RelationshipGraphResponses];
 
 export type ClientRelationshipsData = {
     body?: never;
@@ -87121,6 +87471,62 @@ export type ClientRelationshipsResponses = {
 };
 
 export type ClientRelationshipsResponse = ClientRelationshipsResponses[keyof ClientRelationshipsResponses];
+
+export type RelationshipCreateData = {
+    body: RelationshipIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/v1/clients/{client_id}/relationships';
+};
+
+export type RelationshipCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RelationshipCreateError = RelationshipCreateErrors[keyof RelationshipCreateErrors];
+
+export type RelationshipCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: RelationshipEdgeOut;
+};
+
+export type RelationshipCreateResponse = RelationshipCreateResponses[keyof RelationshipCreateResponses];
 
 export type CloseTemplatesData = {
     body?: never;
@@ -146703,6 +147109,126 @@ export type RecategorizeResponses = {
 
 export type RecategorizeResponse = RecategorizeResponses[keyof RecategorizeResponses];
 
+export type RelationshipUpdateData = {
+    body: RelationshipPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Rel Id
+         */
+        rel_id: string;
+    };
+    query?: never;
+    url: '/v1/relationships/{rel_id}';
+};
+
+export type RelationshipUpdateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RelationshipUpdateError = RelationshipUpdateErrors[keyof RelationshipUpdateErrors];
+
+export type RelationshipUpdateResponses = {
+    /**
+     * Successful Response
+     */
+    200: RelationshipEdgeOut;
+};
+
+export type RelationshipUpdateResponse = RelationshipUpdateResponses[keyof RelationshipUpdateResponses];
+
+export type RelationshipEndData = {
+    body: RelationshipEndIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Rel Id
+         */
+        rel_id: string;
+    };
+    query?: never;
+    url: '/v1/relationships/{rel_id}/end';
+};
+
+export type RelationshipEndErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RelationshipEndError = RelationshipEndErrors[keyof RelationshipEndErrors];
+
+export type RelationshipEndResponses = {
+    /**
+     * Successful Response
+     */
+    200: RelationshipEdgeOut;
+};
+
+export type RelationshipEndResponse = RelationshipEndResponses[keyof RelationshipEndResponses];
+
 export type ListReportTemplatesData = {
     body?: never;
     headers?: {
@@ -162006,6 +162532,62 @@ export type CompareTranscriptResponses = {
 };
 
 export type CompareTranscriptResponse = CompareTranscriptResponses[keyof CompareTranscriptResponses];
+
+export type GraphLayoutData = {
+    body: GraphLayoutIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/v1/users/me/graph-layouts/{client_id}';
+};
+
+export type GraphLayoutErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GraphLayoutError = GraphLayoutErrors[keyof GraphLayoutErrors];
+
+export type GraphLayoutResponses = {
+    /**
+     * Successful Response
+     */
+    200: GraphLayoutOut;
+};
+
+export type GraphLayoutResponse = GraphLayoutResponses[keyof GraphLayoutResponses];
 
 export type VendorData = {
     body?: never;
