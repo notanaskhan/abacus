@@ -253,15 +253,33 @@ class PlanRequest:
 PlanProvider = Callable[[TenantContext, UUID, PlanRequest], Awaitable[list[PlanStep]]]
 _PROVIDERS: dict[str, PlanProvider] = {}
 _PROVIDER_KEY: Final = re.compile(r"[a-z][a-z_]{0,30}\.[a-z][a-z_]{0,40}")
+# C-01-T20 rest (DEC-5432): the scope a provider may add to its own runs. A run step raises an
+# issue on what its code found; nothing here decides, approves or posts (ADR-005).
+EXTRA_SCOPE_ALLOWED: Final = frozenset({"issue.create"})
+_PROVIDER_SCOPE: dict[str, tuple[str, ...]] = {}
 
 
-def register_plan_provider(key: str, provider: PlanProvider) -> None:
+def register_plan_provider(
+    key: str, provider: PlanProvider, *, extra_scope: tuple[str, ...] = ()
+) -> None:
+    """`extra_scope` is added to the task scope of runs this provider plans, and only those;
+    a scope outside `EXTRA_SCOPE_ALLOWED` refuses."""
     if not _PROVIDER_KEY.fullmatch(key):
         raise ValueError(f"plan provider {key!r} must be <module>.<name>")
+    outside = set(extra_scope) - EXTRA_SCOPE_ALLOWED
+    if outside:
+        raise ValueError(f"plan provider {key!r} may not add {sorted(outside)!r} to its runs")
     known = _PROVIDERS.get(key)
     if known is not None and known is not provider:
         raise ValueError(f"plan provider {key!r} is already registered")
     _PROVIDERS[key] = provider
+    _PROVIDER_SCOPE[key] = tuple(dict.fromkeys(extra_scope))
+
+
+def run_scope(provider: str | None) -> list[str]:
+    """The task scope a run starts with: the engagement run's, plus its provider's extra."""
+    extra = () if provider is None else _PROVIDER_SCOPE.get(provider, ())
+    return [*TASK_SCOPE, *(s for s in extra if s not in TASK_SCOPE)]
 
 
 def plan_provider(key: str) -> PlanProvider | None:
@@ -425,7 +443,7 @@ async def start_engagement_run(
                     "version": SPEC_VERSION,
                     "eng": engagement_id,
                     "by": ctx.user_id,
-                    "scope": list(TASK_SCOPE),
+                    "scope": run_scope(provider),
                     "mode": "auto" if auto.enabled else "run",
                     "number": number,
                     "inputs": json.dumps(inputs, sort_keys=True, default=str),
