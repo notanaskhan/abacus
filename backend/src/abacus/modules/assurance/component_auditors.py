@@ -72,6 +72,16 @@ class ComponentInstructionsAcknowledged(DomainEvent):
     engagement_id: Annotated[UUID, _I]
 
 
+class ComponentDeliverableUploaded(DomainEvent):
+    """A-09-T28: the auditor's upload landed (C16 `component_deliverable_uploaded`)."""
+
+    event_type: ClassVar[str] = "component_deliverable.uploaded"
+
+    deliverable_id: Annotated[UUID, _I]
+    component_id: Annotated[UUID, _I]
+    engagement_id: Annotated[UUID, _I]
+
+
 class ComponentDeliverableEvent(DomainEvent):
     """`component_deliverable.requested|received|reviewed|returned` (identifiers only)."""
 
@@ -376,7 +386,7 @@ _REVIEW: Final = text(
 )
 _RETURN: Final = text(
     "UPDATE component_deliverables SET status = 'expected', returned_at = clock_timestamp(), "
-    "return_reason = :why, received_at = NULL, evidence_item_id = NULL, "
+    "return_reason = :why, received_at = NULL, evidence_item_id = NULL, went_late_at = NULL, "
     "row_version = row_version + 1 WHERE id = :d AND status = 'received' RETURNING id"
 )
 _RECEIVE: Final = text(
@@ -1164,11 +1174,10 @@ async def receive_deliverable(
             target=Target("component_deliverable", deliverable_id),
         )
         tx.emit(
-            ComponentDeliverableEvent(
+            ComponentDeliverableUploaded(
                 deliverable_id=deliverable_id,
                 component_id=cast(UUID, d["component_id"]),
                 engagement_id=cast(UUID, d["engagement_id"]),
-                change="received",
             )
         )
 

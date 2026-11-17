@@ -171,6 +171,10 @@ C13_EVENTS: Final = frozenset(
         "analytics.computed",
         "analytics.explanation_recorded",
         "analytics.explanation_accepted",
+        # A-09-T28 (assurance): a late component deliverable waits on the engagement partner.
+        "component_deliverable.late",
+        "component_deliverable.uploaded",
+        "component_deliverable.changed",
         # C-01-T15 (closes, QC-8): a close plan waits on its Managers' and Partners' publication.
         "close_plan.publish_requested",
         "close_plan.published",
