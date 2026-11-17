@@ -8,7 +8,7 @@ data boundary 409 `drafting_not_enabled` (DF-04) with no run recorded.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -18,6 +18,7 @@ from abacus.kernel._flags import AUDITS_ANALYTICS, AUDITS_CONFIRMATIONS
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
+from abacus.modules.agents.api import RunStateV2
 from abacus.modules.assurance import fieldwork_runs as svc
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
@@ -31,7 +32,7 @@ RowKind = Literal[
 class RunStateCountOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    state: Annotated[str, classified("internal")]
+    state: Annotated[RunStateV2, classified("internal")]
     runs: Annotated[int, Field(ge=0), classified("internal")]
 
 
@@ -74,7 +75,10 @@ def _out(rows: list[svc.RunRow]) -> RunRowsOut:
                 label=r.label,
                 run_ids=list(r.run_ids),
                 items=r.items,
-                states=[RunStateCountOut(state=k, runs=v) for k, v in sorted(r.states.items())],
+                states=[
+                    RunStateCountOut(state=cast("RunStateV2", k), runs=v)
+                    for k, v in sorted(r.states.items())
+                ],
                 attribution=r.attribution,
                 tb_balanced=(
                     bool(r.code_result.get("tb_balanced"))

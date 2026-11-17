@@ -31,7 +31,7 @@ GOLDEN = yaml.safe_load((Path(__file__).parent / "harlow_pike_fy2026.yaml").read
 
 def _tbs() -> dict[str, list[c.TbLine]]:
     return {
-        e: [c.TbLine(cap, sec, D(amounts[i])) for cap, sec, amounts in TB]  # type: ignore[arg-type] -- the section literals
+        e: [c.TbLine(cap, sec, D(amounts[i])) for cap, sec, amounts in TB]
         for i, e in enumerate(ENTITIES)
     }
 

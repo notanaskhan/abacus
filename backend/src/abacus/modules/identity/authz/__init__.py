@@ -65,7 +65,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Literal
+from typing import Final, Literal
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, Select, and_, any_, false, func, or_, select, true
@@ -1390,6 +1390,9 @@ async def authorise_own(ctx: Actor, action: str) -> None:
     _log.info("authz.allowed", action=action, tenant_id=ctx.tenant_id, **_who(ctx))
 
 
+_STAFF_ROLES: Final = frozenset({"platform_admin", "platform_support_desk"})
+
+
 def authorise_staff(
     action: str, *, roles: frozenset[str], mfa_at: datetime | None, staff_id: UUID
 ) -> str:
@@ -1399,7 +1402,9 @@ def authorise_staff(
     The matrix's `mfa_recent` asks for staff MFA within 15 minutes. Returns the role that allowed
     it (the platform audit names it); records the check like `authorise`."""
     rule = _rule(action)
-    allowed = sorted(r for r in roles if rule.decisions.get(r) == "allow")
+    # Only the console roles count, whatever else a caller passes: a firm role never reaches a
+    # staff action through this check.
+    allowed = sorted(r for r in roles & _STAFF_ROLES if rule.decisions.get(r) == "allow")
     if not allowed:
         _log.info("authz.denied", action=action, layer="role", staff_id=staff_id)
         raise Forbidden(action, "role")

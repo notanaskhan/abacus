@@ -3,6 +3,7 @@ through the shared dual-threshold engine, subtotals derived, the review hash and
 
 from __future__ import annotations
 
+import dataclasses
 import uuid
 from datetime import date
 from decimal import Decimal
@@ -54,7 +55,7 @@ def test_line_status_and_review_hash() -> None:
         None, None, None,
     )  # fmt: skip
     assert svc.line_status(computed, explanation) == "explained"
-    accepted = svc.ExplanationView(**{**explanation.__dict__, "accepted_by": uuid.uuid4()})
+    accepted = dataclasses.replace(explanation, accepted_by=uuid.uuid4())
     assert svc.line_status(computed, accepted) == "accepted"
 
 

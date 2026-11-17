@@ -24,15 +24,22 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
+from typing import Final, cast
 
 import httpx
 import pytest
+import yaml
+from testcontainers.core.container import DockerContainer
+from types_boto3_s3 import S3Client
 
+from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
+from abacus.kernel.storage import s3_client
 from abacus.kernel.uow import uow
 from abacus.modules.assurance import confirmations_respondent as respondent
 from abacus.modules.assurance import confirmations_service as cs
@@ -41,6 +48,7 @@ from abacus.modules.assurance.confirmations_contract_models import (
     ConfirmationCreateIn,
     ConfirmationLineIn,
 )
+from abacus.modules.evidence import storage
 from abacus.modules.identity import link_principals as lp
 from abacus.modules.identity.api import AuthContext
 
@@ -239,6 +247,65 @@ async def test_expiry_resolves_and_verifies_nothing(seed: Seeder) -> None:
     assert await lp.verify_code(token, code) is None
 
 
+# --- object storage, as tests/security/test_upload_hostile_files.py runs it (ADR-077) -----------
+# A second confirmation's letter reaches evidence storage; without this the settings name the dev
+# gateway on 7070, present on a laptop running `make dev` and absent on CI.
+_REPO: Final = Path(__file__).resolve().parents[3]
+_BUCKET: Final = "abacus-confirmation-isolation"
+_MASTER: Final = b"confirmation-isolation-master-key-01234567"
+_S3_ACCESS: Final = "abacus"  # the compose S3 image's fixed local credentials
+_S3_ROOT_KEY: Final = "abacuslocal"
+
+
+def _image(service: str) -> str:
+    loaded = cast(dict[str, object], yaml.safe_load((_REPO / "docker-compose.yml").read_text()))
+    return str(cast(dict[str, dict[str, object]], loaded["services"])[service]["image"])
+
+
+@pytest.fixture(scope="module")
+def _bucket() -> Iterator[S3Client]:
+    container = (
+        DockerContainer(_image("s3"))
+        .with_env("ROOT_ACCESS_KEY", _S3_ACCESS)
+        .with_env("ROOT_SECRET_KEY", _S3_ROOT_KEY)
+        .with_command("--health /health posix --versioning-dir /versions /data")
+        .with_tmpfs_mount("/data")
+        .with_tmpfs_mount("/versions")
+        .with_exposed_ports(7070)
+    )
+    with container:
+        endpoint = f"http://{container.get_container_host_ip()}:{container.get_exposed_port(7070)}"
+        deadline = time.monotonic() + 60
+        while True:
+            try:
+                if httpx.get(f"{endpoint}/health", timeout=2).status_code == 200:
+                    break
+            except httpx.HTTPError:
+                if time.monotonic() > deadline:
+                    raise
+            time.sleep(0.5)
+        client = s3_client(
+            endpoint_url=endpoint,
+            access_key=_S3_ACCESS,
+            secret_key=_S3_ROOT_KEY,
+            region="us-east-1",
+        )
+        client.create_bucket(Bucket=_BUCKET, ObjectLockEnabledForBucket=True)
+        yield client
+
+
+@pytest.fixture
+def evidence_storage(_bucket: S3Client) -> Iterator[None]:
+    reset_key_service()
+    storage.reset_storage()
+    configure_key_service(LocalKeyService(_MASTER))
+    storage.configure_storage(_bucket, _BUCKET)
+    yield
+    storage.reset_storage()
+    reset_key_service()
+
+
+@pytest.mark.usefixtures("evidence_storage")
 async def test_other_confirmations_are_unreachable(seed: Seeder) -> None:
     ctx, work_item = await _firm(seed)
     first, one = await _sent(ctx, work_item, seed, 1)
@@ -295,7 +362,24 @@ async def test_hostile_attachment_is_refused_and_nothing_stored(seed: Seeder) ->
     )
 
 
-async def test_kill_switch_turns_every_link_off(seed: Seeder, http: httpx.AsyncClient) -> None:
+async def _real_controls() -> frozenset[tuple[str, str, uuid.UUID | None, str | None]]:
+    """The app's own read of `platform_control_state()` (tests/conftest.py stubs it outside
+    integration, so a switch test reads the real rows itself)."""
+    from sqlalchemy import text
+
+    from abacus.kernel.db import platform_transaction
+
+    async with platform_transaction("platform:controls") as conn:
+        rows = (await conn.execute(text("SELECT * FROM platform_control_state()"))).all()
+    return frozenset((r.control, r.scope, r.tenant_id, r.route) for r in rows)
+
+
+async def test_kill_switch_turns_every_link_off(
+    seed: Seeder, http: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from abacus.kernel import controls
+
+    monkeypatch.setattr(controls, "_read", _real_controls)
     ctx, work_item = await _firm(seed)
     _, token = await _sent(ctx, work_item, seed, 1)
     assert await lp.resolve_link(token) is not None

@@ -405,6 +405,7 @@ async def grant_component_auditor(
         granted_by=granted_by,
     )
 
+
 async def _grant_recipient(
     tx: UnitOfWork,
     tenant: TenantContext,

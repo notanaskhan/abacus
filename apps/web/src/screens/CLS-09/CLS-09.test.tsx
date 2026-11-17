@@ -80,7 +80,10 @@ describe("CLS-09 Close plan editor", () => {
     await waitFor(() => {
       expect(screen.getByRole("dialog")).toBeTruthy();
     });
-    expect(screen.getAllByText("Operating Checking (Front Range Bank) ••4410").length).toBe(2);
+    // The drawer is titled with the account (its card repeats it, as does the row behind).
+    expect(
+      screen.getByRole("dialog", { name: "Operating Checking (Front Range Bank) ••4410" }),
+    ).toBeTruthy();
   });
 
   it("b: Raj's draft v4 reflows to 7 requests and offers only Request publish…", async () => {

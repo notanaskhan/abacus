@@ -186,13 +186,15 @@ async def test_a_second_live_ledger_for_a_covered_subsidiary_is_refused(seed: Se
 
 
 async def test_no_write_tool_reaches_consolidation_posting_or_coverage() -> None:
-    import abacus.api.app  # noqa: F401 -- every module's tools register at import
+    import importlib
+
     from abacus.modules.agents.api import registered_tools
 
+    importlib.import_module("abacus.api.app")  # every module's tools register at import
     writes = [
         t.name
-        for t in registered_tools()
-        if getattr(t, "kind", "") in {"write", "act"}
+        for t in registered_tools().values()
+        if t.kind == "approved_write"
         and any(k in t.name for k in ("consolidation", "elimination", "coverage", "posting"))
     ]
     assert writes == []

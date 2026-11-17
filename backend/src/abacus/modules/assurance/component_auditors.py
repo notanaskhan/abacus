@@ -34,11 +34,12 @@ from decimal import Decimal
 from typing import Annotated, ClassVar, Final, cast
 from uuid import UUID
 
-from sqlalchemy import text
 from temporalio import activity, workflow
 from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 with workflow.unsafe.imports_passed_through():
+    from sqlalchemy import text
+
     from abacus.kernel.classification import classified
     from abacus.kernel.db import TenantContext, tenant_session
     from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
@@ -140,7 +141,7 @@ class DeliverableClosed(DomainConflict):
 
 
 @dataclass(frozen=True)
-class Section:
+class InstructionPart:
     number: int
     title: str
     body: str
@@ -167,7 +168,7 @@ class InstructionsView:
     id: UUID
     status: str
     version_id: UUID
-    sections: tuple[Section, ...]
+    sections: tuple[InstructionPart, ...]
     provenance: str
     send_blocked_reason: str | None
     content_hash: str
@@ -227,10 +228,10 @@ def template_sections(blocks: Sequence[object] | None) -> list[tuple[str, list[s
 
 def merge(
     template: Sequence[tuple[str, Sequence[str]]], facts: Mapping[str, str]
-) -> tuple[Section, ...]:
+) -> tuple[InstructionPart, ...]:
     """Each placeholder takes its fact; a section with a placeholder no fact answers keeps it
     and reads Needs input. Code never writes the letter's words."""
-    out: list[Section] = []
+    out: list[InstructionPart] = []
     for n, (title, paragraphs) in enumerate(template, start=1):
         body = "\n\n".join(paragraphs)
         missing = False
@@ -244,11 +245,11 @@ def merge(
             return value
 
         merged = _PLACEHOLDER.sub(fill, body)
-        out.append(Section(n, title, merged, missing))
+        out.append(InstructionPart(n, title, merged, missing))
     return tuple(out)
 
 
-def sections_hash(sections: Sequence[Section]) -> str:
+def sections_hash(sections: Sequence[InstructionPart]) -> str:
     body = json.dumps(
         [[s.number, s.title, s.body, s.needs_input] for s in sections], sort_keys=True
     )
@@ -546,7 +547,7 @@ async def _view(ctx: AuthContext, instructions_id: UUID) -> InstructionsView:
     raw = r["sections"]
     stored = cast("list[dict[str, object]]", json.loads(raw) if isinstance(raw, str) else raw)
     sections = tuple(
-        Section(
+        InstructionPart(
             int(cast(int, s["number"])),
             str(s["title"]),
             str(s["body"]),
@@ -576,7 +577,7 @@ async def _view(ctx: AuthContext, instructions_id: UUID) -> InstructionsView:
 
 async def _insert_version(
     tx: UnitOfWork, ctx: AuthContext, row: Mapping[str, object], instructions_id: UUID,
-    sections: Sequence[Section],
+    sections: Sequence[InstructionPart],
 ) -> UUID:  # fmt: skip
     return cast(
         UUID,
@@ -694,7 +695,7 @@ async def edit_section(
     return await _view(ctx, instructions_id)
 
 
-def instruction_blocks(sections: Sequence[Section]) -> list[object]:
+def instruction_blocks(sections: Sequence[InstructionPart]) -> list[object]:
     """The C11 body: each section's numbered heading, then its paragraphs (the firm's words)."""
     blocks: list[object] = []
     for s in sections:
@@ -724,7 +725,7 @@ async def letter_body(tenant: TenantContext, owner: object, _scope: object) -> l
     stored = cast("list[dict[str, object]]", json.loads(raw) if isinstance(raw, str) else raw)
     return instruction_blocks(
         [
-            Section(int(cast(int, s["number"])), str(s["title"]), str(s["body"]), False)
+            InstructionPart(int(cast(int, s["number"])), str(s["title"]), str(s["body"]), False)
             for s in stored
         ]
     )

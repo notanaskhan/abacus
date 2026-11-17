@@ -244,7 +244,7 @@ async def acknowledge(ctx: AuthContext, room_id: UUID) -> date:
     return await today(ctx.tenant)
 
 
-async def upload(
+async def place_file(
     ctx: AuthContext, room_id: UUID, deliverable_id: UUID | None, file_name: str, content: bytes
 ) -> tuple[UUID | None, UUID]:
     """A new evidence version; linked to its deliverable (which must be this room's), or left
@@ -296,7 +296,7 @@ async def questions(ctx: AuthContext, room_id: UUID) -> list[object]:
     )
 
 
-async def ask(ctx: AuthContext, room_id: UUID, body: str) -> object:
+async def post_question(ctx: AuthContext, room_id: UUID, body: str) -> object:
     from abacus.modules.assurance.component_auditors import THREAD_KIND
     from abacus.modules.collaboration.api import post_client_comment
 

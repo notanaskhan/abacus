@@ -73,3 +73,14 @@ def test_the_platform_audit_keeps_a_fingerprint_not_the_reason() -> None:
     reason = "Brightwater added two Denver seniors for the busy season."
     printed = console.reason_fingerprint(reason)
     assert len(printed) == 16 and reason not in printed
+
+
+def test_a_firm_role_never_passes_the_staff_check_even_on_a_firm_action() -> None:
+    """End pass (S48): `authorise_staff` counts only the console roles, so a firm role handed in
+    by mistake never allows a firm action on the staff issuer."""
+    now = datetime.now(UTC)
+    with pytest.raises(Forbidden) as denied:
+        authorise_staff(
+            "activity.read", roles=frozenset({"firm_admin"}), mfa_at=now, staff_id=STAFF
+        )
+    assert denied.value.layer == "role"

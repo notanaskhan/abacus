@@ -1,8 +1,8 @@
 ---
 id: TASK-8433
 title: "Q-04-T203: R4 Sep-1 readiness review on PF-X1"
-spec: None
-acceptance_criteria: []
+spec: SPEC-000  # row (Q-04-T203)
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-review
 branch: q04-t202-t203-ops

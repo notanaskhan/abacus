@@ -86,6 +86,20 @@ codes:
     raised_by:
     - abacus.modules.methodology.imports.AgainstOtherTemplate
     summary: A version is diffed only against another version of its own template.
+  agent_not_available:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.agent_runs.AgentNotAvailable
+    summary: The firm's AI boundary is not cleared for this capability yet.
+  agent_output_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.agent.OutputRefused
+    summary: 'The model''s output may not be shown: `facts.reason` names why (a code, never the text).'
+  agent_run_not_recorded:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.agent_runs.RunNotRecorded
   ai_assessor_unavailable:
     status: 409
     raised_by:
@@ -2306,6 +2320,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.duplicates.NotADuplicate
     summary: The version carries no duplicate flag.
+  not_a_member:
+    status: 409
+    raised_by:
+    - abacus.modules.platform.plan_usage.NotAMember
   not_an_ebp_audit:
     status: 409
     raised_by:
@@ -2589,6 +2607,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpOutOfScope
+    - abacus.modules.closes.agent.OutOfScope
     - abacus.modules.closes.issues.OutOfScope
     - abacus.modules.collaboration.threads.CommentOutOfScope
     - abacus.modules.communications.service.OutOfScope
@@ -2786,6 +2805,11 @@ codes:
     raised_by:
     - abacus.modules.closes.contract.PlanVersionPinned
     summary: The close's plan version was pinned at BD1 and never changes (QC-2, AC-18).
+  planner_did_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.contract.PlannerDidNotDraft
+    summary: 'The planner run escalated or ran in shadow: no draft was written (C-01-T30).'
   planning_invalid:
     status: 422
     raised_by:
@@ -3620,6 +3644,7 @@ codes:
     - abacus.modules.organisations.consents.StaleVersion
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
+    - abacus.modules.platform.plan_usage.StaleVersion
     - abacus.modules.platform.safeguards.SafeguardsStale
     - abacus.modules.portal.settings.SettingsStale
     - abacus.modules.requests.portal_questionnaires.AnswerStale

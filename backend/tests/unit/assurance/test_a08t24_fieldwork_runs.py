@@ -26,7 +26,7 @@ async def test_attribution_names_the_initiator(monkeypatch: pytest.MonkeyPatch) 
         return {user: "Simone Baptiste"}
 
     monkeypatch.setattr(runs, "names_of", names)
-    assert await runs._initiator(user) == "Simone Baptiste via Agent"  # pyright: ignore[reportPrivateUsage]
+    assert await runs._initiator(user) == "Simone Baptiste via Agent"  # pyright: ignore[reportPrivateUsage] -- the private helper under test
 
 
 @pytest.mark.asyncio
@@ -40,7 +40,7 @@ async def test_df04_refuses_before_any_run(monkeypatch: pytest.MonkeyPatch) -> N
 
     monkeypatch.setattr(agents, "start_section_draft", refused)
     with pytest.raises(agents.DraftingNotEnabled) as caught:
-        await runs._fan_out(  # pyright: ignore[reportPrivateUsage]
+        await runs._fan_out(  # pyright: ignore[reportPrivateUsage] -- the private helper under test
             object(),  # type: ignore[arg-type] -- unused by the refusing start
             uuid.uuid4(),
             uuid.uuid4(),

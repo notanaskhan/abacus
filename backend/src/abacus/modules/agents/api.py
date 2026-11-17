@@ -226,6 +226,7 @@ from abacus.modules.agents.run_workflow import AgentRunWorkflow as AgentRunWorkf
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.runs_v2_contract import (
+    RunStateV2,
     capabilities_router,
     engagement_runs_v2_router,
     feedback_router,
@@ -677,6 +678,7 @@ __all__ = [
     "RunFacts",
     "RunInput",
     "RunOutcome",
+    "RunStateV2",  # A-08-T24: the fieldwork run row counts
     "RunStepRow",
     "RunV2Facts",
     "RunV2PlanState",

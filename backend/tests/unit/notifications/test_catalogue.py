@@ -49,6 +49,17 @@ def test_the_realtime_invalidations_subscribe_apart_from_the_catalogue() -> None
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        # S48: A-08-T21 an explanation to review; C-01-T26 the close kinds (DEC-5412); G-04-T12
+        # the usage thresholds (DEC-5419); G-04-T08 scheduled runs paused at 100% (DEC-5420).
+        "analytics.explanation_recorded",
+        "close_plan.publish_requested",
+        "close_question.answered",
+        "close_requests.published",
+        "close_run.finished",
+        "close_run.needs_input",
+        "usage.threshold_crossed",
+        "engagement_budget.threshold_crossed",
+        "usage.scheduled_paused",
         # S47 partials: A-08-T17 the expansion's approver (DEC-5327); A-08-T18 the confirmation
         # kinds (DEC-5324); W-01-T13 a firm install needing reauth (DEC-5333).
         "sample_expansion.requested",

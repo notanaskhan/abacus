@@ -28,6 +28,11 @@ _ENTITY: Final[dict[str, TextClause]] = {
         "JOIN close_plan_versions v ON v.id = r.version_id "
         "JOIN close_plans p ON p.id = v.plan_id WHERE r.id = ANY(:ids)"
     ),
+    # C-01-T30: a close plan version (the planner's draft) belongs to its plan's client entity.
+    "close_plan_version": text(
+        "SELECT v.id, p.client_entity_id FROM close_plan_versions v "
+        "JOIN close_plans p ON p.id = v.plan_id WHERE v.id = ANY(:ids)"
+    ),
     # C-01-T21: an arrangement belongs to the client entity it schedules.
     "arrangement": text("SELECT id, client_entity_id FROM arrangements WHERE id = ANY(:ids)"),
 }

@@ -59391,6 +59391,65 @@
         "title": "GroupComponentOut",
         "type": "object"
       },
+      "GroupConfirmIn": {
+        "additionalProperties": false,
+        "description": "Every entity's mapping set of a group, confirmed by one person in one act (AUD-31 g).",
+        "properties": {
+          "sets": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/GroupConfirmItemIn"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Sets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sets"
+        ],
+        "title": "GroupConfirmIn",
+        "type": "object"
+      },
+      "GroupConfirmItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/MappingConfirmIn",
+            "cls": "internal"
+          },
+          "mapping_set_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Mapping Set Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mapping_set_id",
+          "body"
+        ],
+        "title": "GroupConfirmItemIn",
+        "type": "object"
+      },
+      "GroupConfirmOut": {
+        "properties": {
+          "confirmed": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/MappingSetSummaryOut"
+            },
+            "title": "Confirmed",
+            "type": "array"
+          }
+        },
+        "required": [
+          "confirmed"
+        ],
+        "title": "GroupConfirmOut",
+        "type": "object"
+      },
       "GroupCoverageOut": {
         "properties": {
           "full_scope": {
@@ -107993,6 +108052,22 @@
           },
           "state": {
             "cls": "internal",
+            "enum": [
+              "queued",
+              "planning",
+              "awaiting_plan_approval",
+              "dispatched",
+              "running",
+              "needs_input",
+              "blocked_on_decision",
+              "waiting_on_inputs",
+              "succeeded",
+              "approved",
+              "partially_approved",
+              "rejected",
+              "failed",
+              "cancelled"
+            ],
             "title": "State",
             "type": "string"
           }
@@ -127170,6 +127245,40 @@
           "cells"
         ],
         "title": "TbRowOut",
+        "type": "object"
+      },
+      "TbSuggestionsOut": {
+        "properties": {
+          "abstained": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Abstained",
+            "type": "integer"
+          },
+          "outcome": {
+            "cls": "internal",
+            "enum": [
+              "suggested",
+              "nothing_to_suggest",
+              "refused",
+              "unavailable"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "suggestions": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Suggestions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "outcome",
+          "suggestions",
+          "abstained"
+        ],
+        "title": "TbSuggestionsOut",
         "type": "object"
       },
       "TbTickOut": {
@@ -148255,16 +148364,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Accept Flux Line Route",
@@ -148276,7 +148375,7 @@
     },
     "/v1/analytic-lines/{line_id}/explain": {
       "post": {
-        "description": "A person starts `close.agent` mode `flux` (C-01-T30).",
+        "description": "A person starts `close.agent` mode `flux` (C-01-T30): drivers code foots to the change,\nor the run waits on a person (escalated); the draft lands as a suggestion.",
         "operationId": "explain_flux_line",
         "parameters": [
           {
@@ -148393,16 +148492,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Explain Flux Line Route",
@@ -148540,16 +148629,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Edit Flux Explanation Route",
@@ -178030,7 +178109,7 @@
     },
     "/v1/clients/{client_id}/close-plan/draft-from-history": {
       "post": {
-        "description": "A person starts `close.agent` mode `planner` (AC-21; C-01-T30).",
+        "description": "A person starts `close.agent` mode `planner` (AC-21; C-01-T30); every drafted row is a\nsuggestion a person adopts (AC-22). A run that could not draft answers 409 with its id.",
         "operationId": "draft_plan_from_history",
         "parameters": [
           {
@@ -178147,16 +178226,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Draft Plan From History Route",
@@ -181811,7 +181880,7 @@
     },
     "/v1/closes/{close_id}/flux": {
       "get": {
-        "description": "CLS-10 sets and lines (AC-48; C-01-T25).",
+        "description": "CLS-10 sets and lines (AC-48; C-01-T25). The budget basis waits on a budget import.",
         "operationId": "close_flux",
         "parameters": [
           {
@@ -181913,6 +181982,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -181922,16 +182001,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Close Flux Route",
@@ -182046,6 +182115,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -182055,16 +182134,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Close Flux Xlsx Route",
@@ -248817,16 +248886,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Billing Rates",
@@ -248923,16 +248982,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Budget Alerts Get",
@@ -249047,16 +249096,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Budget Alerts Put",
@@ -251634,16 +251673,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Engagement Budgets",
@@ -254361,16 +254390,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Plan Get",
@@ -254507,16 +254526,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Plan Requests List",
@@ -254642,16 +254651,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Plan Requests Create",
@@ -254768,16 +254767,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Plan Requests Approve",
@@ -254904,16 +254893,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Plan Requests Decline",
@@ -255030,16 +255009,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Plan Requests Withdraw",
@@ -255146,16 +255115,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Plan Set Billing Contact",
@@ -264335,16 +264294,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Help Articles",
@@ -264450,16 +264399,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Help Article",
@@ -273405,6 +273344,123 @@
         "x-abacus-action": "legal_hold.lift"
       }
     },
+    "/v1/mapping-sets/group-confirm": {
+      "post": {
+        "description": "A live person only: each set's own confirm (its L1 and `content_changed` check) in turn;\nthe first refusal stops the rest and names the set.",
+        "operationId": "mapping_group_confirm",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupConfirmIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupConfirmOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Mapping Group Confirm Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "mapping_set.confirm"
+      }
+    },
     "/v1/mapping-sets/{mapping_set_id}": {
       "get": {
         "operationId": "mapping_set",
@@ -273917,6 +273973,133 @@
           "mapping"
         ],
         "x-abacus-action": "mapping_set.read"
+      }
+    },
+    "/v1/mapping-sets/{mapping_set_id}/suggestions": {
+      "post": {
+        "description": "AUD-31 \"Suggest with the agent\"; `rerun=true` is \"Request changes\" on the accounts still\nopen. Suggestions only (a person adopts each); synthetic firms until the boundary clears.",
+        "operationId": "mapping_suggestions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mapping_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Mapping Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rerun",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Rerun",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TbSuggestionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Mapping Suggestions Route",
+        "tags": [
+          "mapping"
+        ],
+        "x-abacus-action": "mapping_set.run"
       }
     },
     "/v1/mapping-sets/{mapping_set_id}/trial-balance": {
@@ -286314,16 +286497,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Plan Requests",
@@ -286434,16 +286607,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Mark Applied",
@@ -286994,16 +287157,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Regions",
@@ -288175,16 +288328,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Support Sessions",
@@ -288196,6 +288339,7 @@
     },
     "/v1/platform/support/conversations": {
       "get": {
+        "description": "PLT-01 Support (AC-47): every firm's open threads (G-04-T10).",
         "operationId": "console_queue",
         "parameters": [
           {
@@ -288298,16 +288442,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Queue",
@@ -288398,16 +288532,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Queue Conversation",
@@ -288519,16 +288643,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Queue Reply",
@@ -288540,6 +288654,7 @@
     },
     "/v1/platform/tenants": {
       "get": {
+        "description": "PLT-01 a (AC-1 to AC-4): the directory, metadata only (G-04-T09).",
         "operationId": "console_tenants",
         "parameters": [
           {
@@ -288707,16 +288822,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Tenants",
@@ -288925,16 +289030,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Tenant",
@@ -288946,6 +289041,7 @@
     },
     "/v1/platform/tenants/{tenant_code}/entitlements": {
       "patch": {
+        "description": "AC-7, AC-8: staff MFA within 15 minutes and a reason; the firm's trail names the staff\nmember (G-04-T09).",
         "operationId": "console_patch_entitlements",
         "parameters": [
           {
@@ -289044,16 +289140,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Console Patch Entitlements",
@@ -305471,6 +305557,7 @@
     },
     "/v1/reconciliations/{reconciliation_id}/items/{item_id}/entry-draft": {
       "get": {
+        "description": "Code's draft for an unrecorded or book-error item: the cash side and its amount; the\nperson picks the offset account before proposing (C-01-T23).",
         "operationId": "reconciling_item_entry_draft",
         "parameters": [
           {
@@ -315013,16 +315100,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Firm Status",
@@ -315968,16 +316045,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Support Conversation",
@@ -316105,16 +316172,6 @@
               }
             },
             "description": "Too soon or too many: retry after Retry-After"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Support Send Message",

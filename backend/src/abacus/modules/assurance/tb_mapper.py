@@ -159,9 +159,7 @@ def settle(answer: TbMapperOutput | None, given: TbMapperInput) -> Settled:
         elif len(s.reasoning) > MAX_REASONING:
             abstained.append((account.code, "reasoning_too_long"))
         else:
-            kept.append(
-                Kept(account.code, s.line_id, s.confidence, s.reasoning.strip())
-            )
+            kept.append(Kept(account.code, s.line_id, s.confidence, s.reasoning.strip()))
     return Settled(tuple(kept), tuple(abstained))
 
 

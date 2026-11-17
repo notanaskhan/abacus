@@ -77,8 +77,10 @@ def test_the_kind_is_composed_in_the_code_only_layout() -> None:
 
 
 def test_the_kind_list_stays_one_list() -> None:
-    path = Path(__file__).parents[3] / "migrations/versions/0763_c11_entries_journal.py"
-    spec = spec_from_file_location("m0763", path)
+    # The newest migration that rewrites the kind CHECK holds the whole list: 0763 added the
+    # journal; A-09-T27's 0944 adds `component_instructions` on top of it.
+    path = Path(__file__).parents[3] / "migrations/versions/0944_component_instructions_send.py"
+    spec = spec_from_file_location("m0944", path)
     assert spec is not None and spec.loader is not None
     module = module_from_spec(spec)
     spec.loader.exec_module(module)

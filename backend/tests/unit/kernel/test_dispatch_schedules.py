@@ -174,6 +174,7 @@ def test_the_two_moved_jobs_are_declared_as_background_schedules() -> None:
         "notification_purge:platform",
         "incident_reminders:platform",  # G-02-T18: the FTC clock reminders
         "pilot_metrics:platform",  # Q-04-T008: last week's pilot metrics (a batch job)
+        "usage_alerts:platform",  # G-04-T12: the nightly usage-alert reconcile (DEC-5419)
     }
     assert declared["spend_anomaly:platform"].every == timedelta(hours=1)
     assert declared["spend_anomaly:platform"].workflow is platform.SpendAnomalyWorkflow
@@ -183,6 +184,8 @@ def test_the_two_moved_jobs_are_declared_as_background_schedules() -> None:
     )
     assert declared["pilot_metrics:platform"].every == timedelta(days=7)
     assert declared["pilot_metrics:platform"].workflow.__name__ == "PilotMetricsWorkflow"
+    assert declared["usage_alerts:platform"].every == timedelta(days=1)
+    assert declared["usage_alerts:platform"].workflow is platform.UsageAlertReconcileWorkflow
     assert platform.WORKFLOWS[platform.SpendAnomalyWorkflow] == "background"
     assert notifications.WORKFLOWS[notifications.NotificationPurgeWorkflow] == "background"
 

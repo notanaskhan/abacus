@@ -166,6 +166,10 @@ describe("production builds draw neither Hand off to tax nor the entity strip", 
     expect(paneSource).toMatch(/PLANNED_VISIBLE && \(planned\.entities\?\.length \?\? 0\) > 1/u);
     // Each appears once, so no unguarded copy draws either.
     expect(paneSource.match(/data-aud06="hand-off"/gu)).toHaveLength(1);
-    expect(paneSource.match(/data-aud06="entities"/gu)).toHaveLength(1);
+    // A-09-T32: the live strip (a group audit's real entities, `data-live`) is the other copy;
+    // it draws only from the live read, never from the planned props.
+    expect(paneSource.match(/data-aud06="entities"/gu)).toHaveLength(2);
+    expect(paneSource.match(/data-aud06="entities"\s+data-live="true"/gu)).toHaveLength(1);
+    expect(paneSource).toMatch(/liveEntities\.length > 1 && \(/u);
   });
 });

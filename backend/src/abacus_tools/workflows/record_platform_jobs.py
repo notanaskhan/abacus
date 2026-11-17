@@ -20,6 +20,8 @@ throwaway containers, with their activities replaced by stubs (replay never runs
 - `export-expiry-v1-swept.json`: one export expiry sweep that expired four exports (A-01-T22).
 - `home-activity-prune-v1-pruned.json`: one Home client-activity prune that deleted five rows
   (I-01-T12).
+- `usage-alerts-v1-reconciled.json`: one nightly usage-alert reconcile that recorded two crossings
+  (G-04-T12, DEC-5419).
 Each run is started the way its Schedule starts it: no argument, its own id. A history already on
 disk is never overwritten: only the missing ones are recorded.
 """
@@ -58,7 +60,12 @@ from abacus.modules.identity.api import (
     AuthSessionPurgeWorkflow,
 )
 from abacus.modules.notifications.api import NOTIFICATION_PURGE_ID, NotificationPurgeWorkflow
-from abacus.modules.platform.api import SPEND_ANOMALY_ID, SpendAnomalyWorkflow
+from abacus.modules.platform.api import (
+    SPEND_ANOMALY_ID,
+    USAGE_ALERTS_ID,
+    SpendAnomalyWorkflow,
+    UsageAlertReconcileWorkflow,
+)
 from abacus.modules.practice.api import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
@@ -77,6 +84,7 @@ _FILES = (
     "auth-session-purge-v1-purged.json",
     "export-expiry-v1-swept.json",
     "home-activity-prune-v1-pruned.json",
+    "usage-alerts-v1-reconciled.json",
 )
 
 
@@ -140,6 +148,11 @@ async def _prune_activity() -> int:
     return 5
 
 
+@activity.defn(name="platform.usage_alerts")
+async def _usage_alerts() -> int:
+    return 2
+
+
 async def _run(client: Client, workflow: type, workflow_id: str) -> WorkflowHistory:
     handle: WorkflowHandle[object, int] = await client.start_workflow(
         workflow.run,  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType] -- a @workflow.defn class
@@ -168,12 +181,14 @@ async def _record(out: Path, stack: Stack) -> None:
             AuthSessionPurgeWorkflow,
             ExportExpirySweepWorkflow,
             HomeActivityPruneWorkflow,
+            UsageAlertReconcileWorkflow,
         ],
         activities=[
             *(_flag, _purge, _drain, _sweep, _partitions, _seal, _verify, _anchor, _labels),
             _purge_sessions,
             _expire,
             _prune_activity,
+            _usage_alerts,
         ],
     ):
         runs = (
@@ -189,6 +204,7 @@ async def _record(out: Path, stack: Stack) -> None:
             (AuthSessionPurgeWorkflow, AUTH_SESSION_PURGE_ID, _FILES[9]),
             (ExportExpirySweepWorkflow, EXPORT_EXPIRY_ID, _FILES[10]),
             (HomeActivityPruneWorkflow, HOME_ACTIVITY_PRUNE_ID, _FILES[11]),
+            (UsageAlertReconcileWorkflow, USAGE_ALERTS_ID, _FILES[12]),
         )
         for workflow, workflow_id, name in runs:
             if (out / name).exists():

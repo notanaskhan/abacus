@@ -50,7 +50,7 @@ STILL_STUBBED = {
 def test_one_action_and_a_501_only_while_stubbed(route: APIRoute) -> None:
     action = declared_action(route)
     assert action is not None and action in RULES
-    stubbed = any((m, route.path) in STILL_STUBBED for m in route.methods)
+    stubbed = any((m, route.path) in STILL_STUBBED for m in route.methods or ())
     assert (501 in route.responses) == stubbed
 
 
