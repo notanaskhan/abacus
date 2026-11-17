@@ -235,7 +235,11 @@ async def on_run_completed(event: OutboxEvent) -> None:
     redelivered event finds its row and writes nothing (S36 end pass, DEC-3417)."""
     line = run_minutes_from(event.payload)
     tenant = TenantContext(event.tenant_id, "system", f"{_READER}:{line.run_id}")
-    await _post_all(tenant, [line])
+    if await _post_all(tenant, [line]):
+        # G-04-T12 (DEC-5419): a crossing this posting made is announced once.
+        from abacus.modules.platform.usage_alerts import evaluate
+
+        await evaluate(event.tenant_id)
 
 
 SUBSCRIPTIONS: Final[dict[str, Handler]] = {"agent_run.completed": on_run_completed}

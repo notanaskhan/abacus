@@ -498,3 +498,21 @@ class WispPackWorkflow:
             start_to_close_timeout=_WISP_TIMEOUT,
             retry_policy=_WISP_STAMP_RETRY,
         )
+
+
+USAGE_ALERTS_ID: Final = "usage_alerts:platform"
+
+
+@workflow.defn(name="UsageAlertReconcile")
+class UsageAlertReconcileWorkflow:
+    """G-04-T12 (DEC-5419): the nightly usage-alert reconcile for every firm; a crossing already
+    recorded writes nothing (the events' unique index). A change goes behind `workflow.patched`."""
+
+    @workflow.run
+    async def run(self) -> int:
+        return await workflow.execute_activity(
+            "platform.usage_alerts",
+            result_type=int,
+            start_to_close_timeout=_PILOT_METRICS_TIMEOUT,
+            retry_policy=_JOB_RETRY,
+        )

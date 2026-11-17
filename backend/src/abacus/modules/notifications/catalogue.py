@@ -461,6 +461,11 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     "close_question.answered": Kind("transaction_question_answered", _listed, "close", "close_id"),
     "close_requests.published": Kind("close_requests_published", _listed, "close", "close_id"),
+    # G-04-T12 (G-04 §4.8, DEC-5419): usage alerts; the platform names the recipients.
+    "usage.threshold_crossed": Kind("usage_threshold_crossed", _listed, "firm", None, None),
+    "engagement_budget.threshold_crossed": Kind(
+        "engagement_budget_threshold_crossed", _listed, "engagement", "engagement_id"
+    ),
     # C-01-T17: an entity's scheduled ledger sync paused (needs reauth, monthly call budget).
     "ledger_sync.paused": Kind(
         "ledger_sync_paused", _admins_and_leads, "connection", "connection_id"
@@ -778,6 +783,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "integration.health_changed": "A firm integration needs to be reconnected.",
     "connection.reauth_due": "The client's accounting system sign-in ends within 7 days.",
     "ledger_sync.paused": "The hourly QuickBooks sync for a client is paused.",
+    "usage.threshold_crossed": "Your firm has used a set share of its included agent-minutes.",
+    "engagement_budget.threshold_crossed": "{subject} is near its agent-minute budget.",
     "close_run.finished": "A close run on {subject} finished with open issues.",
     "close_run.needs_input": "A close run on {subject} is waiting for your input.",
     "close_plan.publish_requested": "A close plan draft is waiting for you to publish it.",
@@ -953,6 +960,9 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("connection_needs_reauth", "client_activity", "Plug"),
     NotificationKind("connection_reauth_due", "client_activity", "Plug"),  # A-02-T25
     NotificationKind("ledger_sync_paused", "client_activity", "Plug"),  # C-01-T17
+    # G-04-T12 (DEC-5419): usage alerts, in-app and by email (AC-35, AC-38).
+    NotificationKind("usage_threshold_crossed", "system", "Gauge", email_default=True),
+    NotificationKind("engagement_budget_threshold_crossed", "system", "Gauge", email_default=True),
     # C-01-T26 (DEC-5412): the close engine's kinds.
     NotificationKind("close_run_finished", "run", "ListChecks"),
     NotificationKind("close_run_needs_input", "run", "MessageSquareText"),

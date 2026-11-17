@@ -23,9 +23,11 @@ from abacus.modules.platform.workflows import (
     INCIDENT_REMINDERS_ID,
     PILOT_METRICS_ID,
     SPEND_ANOMALY_ID,
+    USAGE_ALERTS_ID,
     IncidentClockRemindersWorkflow,
     PilotMetricsWorkflow,
     SpendAnomalyWorkflow,
+    UsageAlertReconcileWorkflow,
     WispPackWorkflow,
 )
 
@@ -47,11 +49,20 @@ async def pilot_metrics_activity() -> int:
     return written
 
 
+@activity.defn(name="platform.usage_alerts")
+async def usage_alerts_activity() -> int:
+    """G-04-T12: every firm's first crossings this usage month (nightly reconcile)."""
+    from abacus.modules.platform.usage_alerts import evaluate_all
+
+    return await evaluate_all()
+
+
 WORKFLOWS: dict[type, WorkClass] = {
     SpendAnomalyWorkflow: "background",
     IncidentClockRemindersWorkflow: "background",  # G-02-T18: days 20, 25 and 29
     WispPackWorkflow: "batch",  # G-02-T20: Export WISP pack
     PilotMetricsWorkflow: "batch",  # Q-04-T008: Mondays 06:00 Central
+    UsageAlertReconcileWorkflow: "batch",  # G-04-T12: nightly
 }
 register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = (
@@ -59,6 +70,7 @@ ACTIVITIES: tuple[object, ...] = (
     incident_reminders_activity,  # G-02-T18
     *WISP_ACTIVITIES,  # G-02-T20
     pilot_metrics_activity,  # Q-04-T008
+    usage_alerts_activity,  # G-04-T12
 )
 SCHEDULES: tuple[PlatformSchedule, ...] = (
     PlatformSchedule(
@@ -79,5 +91,11 @@ SCHEDULES: tuple[PlatformSchedule, ...] = (
         every=timedelta(days=7),
         weekly=(1, 6, 0, "America/Chicago"),
         note="Q-04-T008: last week's pilot metrics, Mondays 06:00 Central (AC-8.1)",
+    ),
+    PlatformSchedule(
+        id=USAGE_ALERTS_ID,
+        workflow=UsageAlertReconcileWorkflow,
+        every=timedelta(days=1),
+        note="G-04-T12: the nightly usage-alert reconcile (AC-35: nothing sent twice)",
     ),
 )
