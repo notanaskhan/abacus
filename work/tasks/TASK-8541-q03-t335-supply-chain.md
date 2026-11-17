@@ -1,8 +1,8 @@
 ---
 id: TASK-8541
 title: "Q-03-T335: Supply-chain hygiene 2028 Q3 (laptop side)"
-spec: SPEC-000
-acceptance_criteria: []
+spec: SPEC-341
+acceptance_criteria: [AC-47]
 risk_zone: red
 status: in-review
 branch: q03-t335-supply-chain

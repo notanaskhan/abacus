@@ -28,3 +28,13 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TXP-
 - DV-7: no 1120 M-3 in v1.
 - DV-14: TXP-13 d's retained-earnings frame composed from TXP-04 b grammar.
 - DV-11: TXP-02's banner reuses TXP-13 d's (DF-08 composed).
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens AUD-06 · Final layer | AUD-06 | designed (handoff link graph) |
+| Opens AUD-38 · hand-off details | AUD-38 | designed (handoff link graph) |
+| Opens SHL-08 · payroll allocation memo | SHL-08 | designed (handoff link graph) |

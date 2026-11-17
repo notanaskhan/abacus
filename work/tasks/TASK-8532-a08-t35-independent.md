@@ -2,7 +2,7 @@
 id: TASK-8532
 title: "A-08-T35: Independent AC tests for A-08's amber services"
 spec: SPEC-657
-acceptance_criteria: []
+acceptance_criteria: [AC-5, AC-6, AC-8, AC-9]
 risk_zone: amber
 status: in-review
 branch: a08-t35-independent

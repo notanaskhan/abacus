@@ -15,3 +15,12 @@ Each row is the frame it amends (an annotated handoff screenshot) and the build 
 |---|---|---|---|
 | `screenshots/CLS-11a.png` Write scope row | "Journal entries · recategorizations · attachments" | "Journal entries · closing date" | W1 v1 writes only JEs and the closing date (ADR-344 §1; SPEC-700 Q2) |
 | `CLS-11a.png` Authorized by | Mar 9, 2026 | Mar 9, 2026 is the write grant; the connection is Mar 4, 2026 (POR-16e) | seed contradiction settled (DEC-5508) |
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens CLS-02 · August 2026 close | CLS-02 | designed (handoff link graph) |
+| Opens WB-11 · QuickBooks Online integration detail | WB-11 | designed (handoff link graph) |

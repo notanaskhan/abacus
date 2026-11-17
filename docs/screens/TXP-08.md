@@ -24,3 +24,11 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TXP-
 - DV-1: README viewer for b reads "Jonah Feld"; the viewer is Samuel Ito.
 - DV-3: PRJ-01 links fixture-only until T-09.
 - DV-10: the §731 catalogue issue has no design; not built.
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens SHL-09 · Inside basis · all partners | SHL-09 | designed (handoff link graph) |

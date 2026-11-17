@@ -106,6 +106,27 @@ EVENTS: Final = {
     "proposal.created",
     "proposal.decided",
     "proposal.undone",
+    # C-01 (closes gates): flux acceptances and reconciliation L1 sign-offs.
+    "analytic_line.accepted",
+    "analytic_line.explained",
+    "analytic_set.computed",
+    "reconciliation.computed",
+    "reconciling_item.resolved",
+    # A-08 (assurance analytics, sampling expansions, completion sign-offs).
+    "analytics.computed",
+    "analytics.explanation_accepted",
+    "analytics.explanation_recorded",
+    "sample_expansion.decided",
+    "sample_expansion.requested",
+    "sign_off.recorded",
+    "sign_off.went_stale",
+    # A-09 (component deliverables, group audit).
+    "component_deliverable.changed",
+    "component_deliverable.late",
+    "component_deliverable.uploaded",
+    # G-04 (plan requests awaiting the partner, C13).
+    "plan_request.awaiting_partner",
+    "plan_request.changed",
 }
 # Contract §2: firm admin, practice leader (in scope), quality partner, engagement partner,
 # manager, senior, staff, reviewer, EQR reviewer.

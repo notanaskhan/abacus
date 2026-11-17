@@ -64,7 +64,10 @@ def test_review6_a_reveal_is_the_only_tin_route_left_unmasked() -> None:
         for method, path, action, endpoint in _tin_routes()
         if RULES[action].not_offshore and MASK_CALL not in inspect.getsource(endpoint)
     )
-    assert refused == ["POST /v1/client-entities/{entity_id}/tin/reveal"]
+    assert refused == [
+        "POST /v1/client-entities/{entity_id}/tin/reveal",
+        "POST /v1/vendors/{vendor_id}/tin:reveal",  # C-02-T07: a 1099 vendor's, refused offshore
+    ]
 
 
 class _Row(BaseModel):

@@ -2,7 +2,7 @@
 id: TASK-8530
 title: "A-08-T31: AUD-26 review, compilation and preparation states a-e"
 spec: SPEC-657
-acceptance_criteria: []
+acceptance_criteria: [AC-8]
 risk_zone: green
 status: in-review
 branch: a08-t31-aud26

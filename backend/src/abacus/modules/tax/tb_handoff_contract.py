@@ -261,7 +261,7 @@ async def handoff_create_route(
     "/tb-handoffs/{handoff_id}", action="tb_handoff.read", response_model=TbHandoffOut,
     errors=(501,),
 )  # fmt: skip
-async def handoff_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffOut:
+async def tb_handoff_route(handoff_id: UUID, ctx: Ctx) -> TbHandoffOut:
     await _on(ctx)
     raise NotImplementedYet
 

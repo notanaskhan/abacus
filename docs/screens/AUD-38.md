@@ -23,3 +23,11 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/AUD-
 ## Deviations
 - DV-13: e is built and reachable through the supersede event on staging.
 - Plus AUD-06 h (the ··· menu item) on AUD-06's contract.
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| tooltip or toast inside kits/AUD38 Tax Handoff | TXP-13 | designed (handoff link graph) |

@@ -81,6 +81,7 @@ from abacus.modules.organisations.contacts_contract import (
 )
 from abacus.modules.organisations.contract import (
     MaskedTinOut,
+    TinRevealOut,
     client_entities_router,
     clients_router,
 )
@@ -312,6 +313,7 @@ __all__ = [
     "TinInvalid",
     "TinKind",
     "TinKindNotAllowed",
+    "TinRevealOut",
     "TranscriptComparisonIn",
     "TranscriptComparisonOut",
     "TranscriptLineDiffOut",

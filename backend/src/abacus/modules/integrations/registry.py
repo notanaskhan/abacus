@@ -5,7 +5,7 @@ The tables it owns (ADR-103) and what the app role may do with them.
 
 from __future__ import annotations
 
-TABLES: frozenset[str] = frozenset(
+_TABLES_BEFORE_S49: frozenset[str] = frozenset(
     {
         # 0194 (A-02-T12): global catalogue content; the app reads it through
         # `integration_catalog_rows()` and holds no privilege on the table.
@@ -21,7 +21,9 @@ TABLES: frozenset[str] = frozenset(
         "integration_interest",
     }
 )
-INSERT_ONLY: frozenset[str] = frozenset({"integration_events"})  # W-01-T04: append-only
+_INSERT_ONLY_BEFORE_S49: frozenset[str] = frozenset(
+    {"integration_events"}
+)  # W-01-T04: append-only
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "firm_integrations": frozenset(
         {"tenant_id", "catalog_key", "status", "mode", "created_by"}
@@ -83,8 +85,8 @@ C02T05_TABLES: frozenset[str] = frozenset(
         "connection_engagement_settings",
     }
 )
-TABLES = TABLES | C02T05_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset(
+TABLES: frozenset[str] = _TABLES_BEFORE_S49 | C02T05_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_BEFORE_S49 | frozenset(
     {"ledger_write_evidence", "connection_write_grants", "firm_write_capabilities"}
 )
 INSERT_COLUMNS["ledger_write_operations"] = frozenset(

@@ -4,7 +4,7 @@ title: T-06 Entity return depth, relationships and hand-offs — TXP-03, TXP-04,
 status: approved
 owner: ayushkbhatia
 risk_zone: amber
-related_adrs: [ADR-004, ADR-005, ADR-007, ADR-026, ADR-050, ADR-052, ADR-151, ADR-158, ADR-161, ADR-164, ADR-167, ADR-205, ADR-320, ADR-341]
+related_adrs: [ADR-004, ADR-005, ADR-007, ADR-026, ADR-050, ADR-052, ADR-151, ADR-158, ADR-161, ADR-164, ADR-167, ADR-300, ADR-320, ADR-341]
 related_specs: [SPEC-651, SPEC-700, SPEC-701]
 created: 2026-11-17
 updated: 2026-11-17
@@ -37,7 +37,7 @@ who owns what and which K-1s flow where.
 |---|---|---|---|
 | DEC-77 computation boundary | ch09 + T-05 (SPEC-651) | decided | E3, E4, E8, E12 compute workpaper figures only |
 | DEC-78 filed forms from the engine | ch09 | decided | TAX-11 previews from an approved checkpoint, "Draft — not for filing" (OQ-1 yes) |
-| DEC-76 / P-62 reference data | ADR-205 | accepted | `tax/compute/parameters/ty20NN.yaml` (ty2027 on main; ty2025, ty2026, ty2028 in T-06-T13) |
+| DEC-76 / P-62 reference data | ADR-300 | accepted | `tax/compute/parameters/ty20NN.yaml` (ty2027 on main; ty2025, ty2026, ty2028 in T-06-T13) |
 | DEC-84 reviewer edits, re-approval | ch09 + T-05 | decided | ghost values, Re-approve… |
 | DEC-88 K-1 hand-off across clients | ch09 | decided | edge visible only to readers of both engagements |
 | DEC-32 + DF-02 CLI-03 from TPL-14 | ch09 | decided; the board (T-06-T68) is **not made** | CLI-03 composes TPL-14 a–f; T-06-T02 waits on the board |

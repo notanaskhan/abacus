@@ -154,6 +154,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "agent_run.read",  # SPEC-318 (TASK-461)
         "agent_run.sign_off",  # S29
         "agent_run.start",  # S29
+        "allocation_run.start",  # S49 (C-02, T-06, A-09 bundles)
         "analytics.accept",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "analytics.configure",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "analytics.explain",  # S45 (A-08-T03, A-09-T02, W-01-T02)
@@ -173,11 +174,22 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "assurance.record_release",
         "attention_flag.convert",  # A-04-T01 (DEC-1757)
         "audit_event.read_engagement",  # P-05-T02 (DEC-3103)
+        "backup_withholding.record",  # S49 (C-02, T-06, A-09 bundles)
+        "basis.read",  # S49 (C-02, T-06, A-09 bundles)
+        "book_tax.read",  # S49 (C-02, T-06, A-09 bundles)
         "citation.create",  # P-03-T02 (C4 v1)
         "citation.read",
         "citation.relink",
         "client_access.grant",
         "client_question.send",  # S45 (A-08-T03, A-09-T02, W-01-T02)
+        "close.lock",  # S49 (C-02, T-06, A-09 bundles)
+        "close.reopen",  # S49 (C-02, T-06, A-09 bundles)
+        "close_package.edit",  # S49 (C-02, T-06, A-09 bundles)
+        "close_package.export",  # S49 (C-02, T-06, A-09 bundles)
+        "close_package.generate",  # S49 (C-02, T-06, A-09 bundles)
+        "close_package.read",  # S49 (C-02, T-06, A-09 bundles)
+        "close_package.release",  # S49 (C-02, T-06, A-09 bundles)
+        "closing_date_conflict.resolve",  # S49 (C-02, T-06, A-09 bundles)
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
         "comment.resolve",  # P-05-T02 (DEC-3103)
@@ -227,9 +239,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "dashboard.read",  # SPEC-317 (TASK-460)
         "decision.decide",  # P-04-T08 (TASK-414)
         "decision.notify",  # P-04-T08 (TASK-414)
+        "decision.raise",  # S49 (C-02, T-06, A-09 bundles)
         "decision.read",  # P-04-T08 (TASK-414)
         "decision.reassess",  # P-04-T08 (TASK-414)
         "decision.request_analysis",  # P-04-T08 (TASK-414)
+        "decision.send_to_client",  # S49 (C-02, T-06, A-09 bundles)
         "decision_card.raise",  # A-04-T12 (DEC-1950)
         "deficiency.propose_severity",
         "disclosure_checklist.answer",  # S26 or S27 matrix mark
@@ -252,12 +266,14 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "ebp_provision.enter",  # A-05-T16 (DEC-2489)
         "ebp_schedule.draft",
         "ebp_schedule.render",
+        "elimination.agent_propose",  # S49 (C-02, T-06, A-09 bundles)
         "elimination.apply",  # S45 (A-09-T02; DEC-5055 renamed from elimination.post)
         "elimination.approve",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "elimination.edit",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "elimination.propose_run",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "elimination.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "engagement_ai.configure",  # S29
+        "engagement_ledger_settings.update",  # S49 (C-02, T-06, A-09 bundles)
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
         "envelope.evidence_download",  # N-02-T02 (SPEC-381)
@@ -295,7 +311,12 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "finding.request_decision",
         "finding.resolve",
         "finding.update",
+        "fixed_asset.create",  # S49 (C-02, T-06, A-09 bundles)
+        "fixed_asset.propose_change",  # S49 (C-02, T-06, A-09 bundles)
+        "fixed_asset.read",  # S49 (C-02, T-06, A-09 bundles)
         "follow_up.send",
+        "form_preview.download_draft",  # S49 (C-02, T-06, A-09 bundles)
+        "form_preview.read",  # S49 (C-02, T-06, A-09 bundles)
         "fraud_inquiry.request",
         "fraud_minutes.approve",
         "fraud_session.edit",
@@ -318,6 +339,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "inbox.read_content",  # N-01-T02
         "inbox_match.read",  # SPEC-033 (TASK-066)
         "inbox_match.request",
+        "information_return_batch.approve",  # S49 (C-02, T-06, A-09 bundles)
+        "information_return_batch.export",  # S49 (C-02, T-06, A-09 bundles)
+        "information_return_batch.record_ack",  # S49 (C-02, T-06, A-09 bundles)
+        "information_return_batch.record_filing",  # S49 (C-02, T-06, A-09 bundles)
+        "information_returns.read",  # S49 (C-02, T-06, A-09 bundles)
         "item.sign_prepared",  # SPEC-040 (TASK-100)
         "item.sign_reviewed",
         "je_test.configure",  # S45 (A-08-T03, A-09-T02, W-01-T02)
@@ -325,6 +351,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "je_test.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "je_test.score",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "ledger.pull",  # A-02 §4.4 (TASK-1185)
+        "ledger_connection.export",  # S49 (C-02, T-06, A-09 bundles)
+        "ledger_connection.read",  # S49 (C-02, T-06, A-09 bundles)
         "ledger_import.upload",  # SPEC-028 (TASK-052)
         "ledger_snapshot.create_from_document",
         "legal_letter.request",  # S26 or S27 matrix mark
@@ -346,10 +374,13 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "misstatement.read",
         "misstatement.set",  # SPEC-043 (TASK-107)
         "misstatement.update",
+        "other_workpapers.read",  # S49 (C-02, T-06, A-09 bundles)
         "party_in_interest.manage",
         "pii.reveal",  # P-03-T02 (C4 v1)
         "population.create",  # A-03-T01 (DEC-1550)
         "population.read",  # A-03-T01 (DEC-1550)
+        "posting_batch.dry_run",  # S49 (C-02, T-06, A-09 bundles)
+        "posting_batch.post",  # S49 (C-02, T-06, A-09 bundles)
         "procedure.configure",
         "procedure.read",
         "procedure.run",
@@ -361,12 +392,20 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "proposal.reject",  # P-04-T08 (TASK-414)
         "proposal.route",  # P-04-T08 (TASK-414)
         "proposal.undo",  # P-04-T08 (TASK-414)
+        "proposed_entry.approve",  # S49 (C-02, T-06, A-09 bundles)
         "proposed_entry.create",  # A-06-T03
+        "proposed_entry.export",  # S49 (C-02, T-06, A-09 bundles)
         "proposed_entry.read",
         "proposed_entry.record_client_decision",
+        "proposed_entry.record_external",  # S49 (C-02, T-06, A-09 bundles)
         "proposed_entry.reject",
+        "proposed_entry.reject_close",  # S49 (C-02, T-06, A-09 bundles)
+        "proposed_entry.request_approval",  # S49 (C-02, T-06, A-09 bundles)
         "proposed_entry.send_to_client",
+        "proposed_entry.undo_approval",  # S49 (C-02, T-06, A-09 bundles)
         "proposed_entry.update",
+        "proposed_entry.withdraw_approval",  # S49 (C-02, T-06, A-09 bundles)
+        "ptet.update",  # S49 (C-02, T-06, A-09 bundles)
         "related_party.manage",
         "related_party.read",
         "related_party.screen_out",
@@ -422,6 +461,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sign_off.request_re_review",  # S26 or S27 matrix mark
         "sign_off.review",
         "soc_report.evaluate",
+        "sourcing.approve",  # S49 (C-02, T-06, A-09 bundles)
+        "sourcing.propose",  # S49 (C-02, T-06, A-09 bundles)
         "ssars.inquiry_manage",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "ssars.read",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "statement.approve",  # SPEC-312 (TASK-324)
@@ -430,6 +471,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "statement.record_management_approval",  # S26 or S27 matrix mark
         "statement.send_draft",  # S26 or S27 matrix mark
         "statement.tie_out",  # S26 or S27 matrix mark
+        "states.read",  # S49 (C-02, T-06, A-09 bundles)
         "subsequent_event.create",  # S26 or S27 matrix mark
         "subsequent_event.update",  # S26 or S27 matrix mark
         "suggestion.resolve",  # P-04-T08 (TASK-414)
@@ -438,6 +480,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sum.request_conclusion",
         "sum.snapshot",
         "sum.update_factors",
+        "tax_handoff.publish",  # S49 (C-02, T-06, A-09 bundles)
+        "tax_handoff.read",  # S49 (C-02, T-06, A-09 bundles)
+        "tb_handoff.create",  # S49 (C-02, T-06, A-09 bundles)
+        "tb_handoff.preview",  # S49 (C-02, T-06, A-09 bundles)
+        "tb_handoff.read",  # S49 (C-02, T-06, A-09 bundles)
         "test.adopt",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "test.create",
         "test.export",  # S45 (A-08-T03, A-09-T02, W-01-T02)
@@ -445,6 +492,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "test.read",
         "test.run",  # S45 (A-08-T03, A-09-T02, W-01-T02)
         "tie_out_check.define",  # SPEC-310 (TASK-321)
+        "tin_match.record",  # S49 (C-02, T-06, A-09 bundles)
         "todo.assign",  # P-05-T02 (DEC-3103)
         "todo.complete",  # P-05-T02
         "todo.create",  # P-05-T02
@@ -457,6 +505,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "trial_balance.read",
         "upload_review.read",  # SPEC-030 (TASK-059 D1)
         "upload_review.request",  # SPEC-030 (TASK-058)
+        "vendor_1099.update",  # S49 (C-02, T-06, A-09 bundles)
+        "w9.request",  # S49 (C-02, T-06, A-09 bundles)
         "workpaper.draft",
         "workpaper.edit",  # SPEC-308 (TASK-319)
         "workpaper.export",

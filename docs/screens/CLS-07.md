@@ -17,3 +17,11 @@ Each row is the frame it amends (an annotated handoff screenshot) and the build 
 | `CLS-07g.png` footer | implies posting for the attest client | no Post control at all; "Send to client for approval…" only; rows read "Client approved" then "Recorded by ‹client›" | DEC-69, ADR-344 §4 |
 | `CLS-07a.png` primary without W1 | "Post 4 approved…" | "Export approved entries…" when `posting_enabled` is off; rows reach "Recorded in ledger" | DF-19; SPEC-700 AC-20 |
 | `CLS-07f.png` | "Accepted by Policy" sub-line | fixture-only frame in `/components`; never live | DEC-53, ADR-187 |
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens SHL-08 · Receiving log — Aug 28 | SHL-08 | designed (handoff link graph) |

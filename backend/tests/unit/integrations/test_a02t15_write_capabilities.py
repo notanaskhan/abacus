@@ -97,7 +97,7 @@ def test_ac50_a_missing_generated_module_fails_the_drift_check(
     ("before", "after", "rule"),
     [
         ("    enabled: false\n", "    enabled: true\n", "does not validate"),
-        ("    decision: P-16\n", "", "names the decision"),
+        ("    decision: ADR-344\n", "", "names the decision"),  # C-02-T02: P-16 is ADR-344
         ("version: 2", "version: 3", "does not validate"),
         ("    shape: W1\n", "    shape: W1\n    shape: W2\n", "appears twice"),
         (

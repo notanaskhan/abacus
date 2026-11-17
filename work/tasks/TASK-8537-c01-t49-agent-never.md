@@ -2,7 +2,7 @@
 id: TASK-8537
 title: "C-01-T49: close.agent never-verbs at the tool, route and database layers"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-50]
 risk_zone: red
 status: in-review
 branch: c01-t47-t49-independent

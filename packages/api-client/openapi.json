@@ -34345,16 +34345,16 @@
             "title": "Threshold Rule",
             "type": "string"
           },
-          "tin_mismatch": {
-            "cls": "internal",
-            "minimum": 0.0,
-            "title": "Tin Mismatch",
-            "type": "integer"
-          },
           "vendors_paid": {
             "cls": "internal",
             "minimum": 0.0,
             "title": "Vendors Paid",
+            "type": "integer"
+          },
+          "w9_mismatches": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "W9 Mismatches",
             "type": "integer"
           }
         },
@@ -34363,7 +34363,7 @@
           "vendors_paid",
           "reportable",
           "requested",
-          "tin_mismatch",
+          "w9_mismatches",
           "filed",
           "threshold_rule",
           "due_rule",
@@ -35124,30 +35124,6 @@
         "title": "DeliveryRevealIn",
         "type": "object"
       },
-      "DeliveryRevealOut": {
-        "additionalProperties": false,
-        "description": "A reveal is logged (P-03 `pii_reveals`) and returned once; never cached or logged.",
-        "properties": {
-          "expires_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Expires At",
-            "type": "string"
-          },
-          "tin": {
-            "cls": "restricted",
-            "pattern": "^[0-9]{9}$",
-            "title": "Tin",
-            "type": "string"
-          }
-        },
-        "required": [
-          "tin",
-          "expires_at"
-        ],
-        "title": "DeliveryRevealOut",
-        "type": "object"
-      },
       "DeliveryScheduleOut": {
         "additionalProperties": false,
         "description": "Fixed asset register: cost 278,400.00 \u00b7 accumulated depreciation 74,900.00 \u00b7 2026 book\ndepreciation 25,680.00.",
@@ -35418,7 +35394,8 @@
               }
             ],
             "cls": "restricted",
-            "title": "Tin Last4"
+            "title": "Tin Last4",
+            "x-pii-kind": "tin"
           },
           "vendor_id": {
             "cls": "internal",
@@ -93975,7 +93952,7 @@
           },
           "ref": {
             "cls": "internal",
-            "pattern": "^(AJE|RJE|PAJE)-[1-9][0-9]{0,3}$",
+            "pattern": "^(AJE|RJE|PAJE)-0?[1-9][0-9]{0,3}$",
             "title": "Ref",
             "type": "string"
           },
@@ -181332,7 +181309,7 @@
     },
     "/v1/client-entities/{client_entity_id}/information-returns": {
       "get": {
-        "description": "CLS-13 tiles, rule text from C21 rows, vendor rows (C-02-T45).",
+        "description": "CLS-13 tiles, rule text from C21 rows, vendor rows (C-02-T45). Each row's TIN last four is\nmasked for an offshore reader (review 6).",
         "operationId": "information_returns",
         "parameters": [
           {
@@ -349562,7 +349539,7 @@
     },
     "/v1/tb-handoffs/{handoff_id}": {
       "get": {
-        "operationId": "handoff",
+        "operationId": "tb_handoff",
         "parameters": [
           {
             "in": "path",
@@ -349669,7 +349646,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Handoff Route",
+        "summary": "Tb Handoff Route",
         "tags": [
           "tax"
         ],
@@ -353462,7 +353439,7 @@
     },
     "/v1/vendors/{vendor_id}/tin:reveal": {
       "post": {
-        "description": "Logged; refused offshore (`tin_reveal_refused`).",
+        "description": "Logged; refused offshore (`tin_reveal_refused`). The one reveal payload (organisations'\n`TinRevealOut`, the vendor as `entity_id`): no second schema carries a TIN (DEC-141).",
         "operationId": "tin_reveal",
         "parameters": [
           {
@@ -353523,7 +353500,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeliveryRevealOut"
+                  "$ref": "#/components/schemas/TinRevealOut"
                 }
               }
             },

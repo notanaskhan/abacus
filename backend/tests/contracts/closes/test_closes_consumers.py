@@ -137,6 +137,14 @@ BUILT: frozenset[tuple[str, str]] = frozenset(
         ("/v1/clients/{client_id}/close-plan/drafts/{version}/request-publish", "post"),
         ("/v1/clients/{client_id}/close-plan/drafts/{version}/rows/{row_id}:adopt", "post"),
         ("/v1/clients/{client_id}/close-plan/drafts/{version}/rows:adopt-all", "post"),
+        # C-01-T30 (TASK-8418): the planner run and its draft answer 202.
+        ("/v1/clients/{client_id}/close-plan/draft-from-history", "post"),
+        # C-01-T26 and T40: the flux set, its workbook and the explain, edit and accept routes.
+        ("/v1/closes/{close_id}/flux", "get"),
+        ("/v1/closes/{close_id}/flux.xlsx", "get"),
+        ("/v1/analytic-lines/{line_id}/explain", "post"),
+        ("/v1/analytic-lines/{line_id}/explanation", "put"),
+        ("/v1/analytic-lines/{line_id}/accept", "post"),
         ("/v1/close-templates", "get"),
         ("/v1/close-templates:import", "post"),
         # S46: C-01-T19 intake (TASK-8107) and C-01-T20 the close run (TASK-8109).

@@ -156,7 +156,10 @@ def test_ac22_the_plain_value_is_only_in_the_reveal_response_and_restricted() ->
         for method, op in ops.items()
         if f"#/components/schemas/{schema}" in json.dumps(op.get("responses", {}))
     ]
-    assert users == [("/v1/client-entities/{entity_id}/tin/reveal", "post")]
+    assert users == [
+        ("/v1/client-entities/{entity_id}/tin/reveal", "post"),
+        ("/v1/vendors/{vendor_id}/tin:reveal", "post"),  # C-02-T07: a 1099 vendor's, same schema
+    ]
 
 
 # --- C2 status codes ----------------------------------------------------------------------------

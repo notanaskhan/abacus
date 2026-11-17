@@ -1,8 +1,8 @@
 ---
 id: TASK-8540
 title: "G-04-T16: ADR-078 AC suite 2 for the console and support"
-spec: SPEC-000
-acceptance_criteria: []
+spec: SPEC-680
+acceptance_criteria: [AC-1, AC-12, AC-57]
 risk_zone: red
 status: in-review
 branch: g04-t15-t16-ac-suites

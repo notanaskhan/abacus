@@ -2,7 +2,7 @@
 id: TASK-8534
 title: "C-01-T38: CLS-05 Reconciliation states a-g"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-39, AC-40, AC-41, AC-42, AC-43]
 risk_zone: green
 status: in-review
 branch: c01-t38-cls05

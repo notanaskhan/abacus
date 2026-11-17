@@ -29,7 +29,14 @@ from abacus.kernel._flags import CLOSES_DELIVERY, CLOSES_INFORMATION_RETURNS, CL
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
-from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Forbidden,
+    current_context,
+    mask_tins_for,
+)
+from abacus.modules.organisations.api import TinRevealOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -229,7 +236,9 @@ class DeliveryVendorRowOut(BaseModel):
     form: Annotated[Form | None, Internal] = None
     box: Annotated[str | None, Field(max_length=4), Internal] = None
     amount: Money
-    tin_last4: Annotated[str | None, Field(pattern=r"^[0-9]{4}$"), Restricted] = None
+    tin_last4: Annotated[
+        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
+    ] = None
     w9_status: Annotated[W9Status, Internal]
     version: Annotated[int, Field(ge=1), Internal]
 
@@ -243,7 +252,7 @@ class DeliveryInformationReturnsOut(BaseModel):
     vendors_paid: Annotated[int, Field(ge=0), Internal]
     reportable: Annotated[int, Field(ge=0), Internal]
     requested: Annotated[int, Field(ge=0), Internal]
-    tin_mismatch: Annotated[int, Field(ge=0), Internal]
+    w9_mismatches: Annotated[int, Field(ge=0), Internal]  # W-9s whose TIN did not match
     filed: Annotated[int, Field(ge=0), Internal]
     threshold_rule: Annotated[str, Field(max_length=500), Internal]
     due_rule: Annotated[str, Field(max_length=500), Internal]
@@ -264,15 +273,6 @@ class DeliveryRevealIn(BaseModel):
     model_config = _cfg()
 
     reason: Annotated[str, Field(min_length=1, max_length=500), Confidential]
-
-
-class DeliveryRevealOut(BaseModel):
-    """A reveal is logged (P-03 `pii_reveals`) and returned once; never cached or logged."""
-
-    model_config = _cfg()
-
-    tin: Annotated[str, Field(pattern=r"^[0-9]{9}$"), Restricted]
-    expires_at: Annotated[datetime, Internal]
 
 
 class DeliveryW9RequestIn(BaseModel):
@@ -361,6 +361,12 @@ async def _human(ctx: AuthContext, flag: Flag, action: str) -> None:
     await _on(ctx, flag)
     if ctx.tenant.actor_kind != "human" or ctx.is_support:
         raise Forbidden(action, "role")
+
+
+def _not_built[M: BaseModel](model: type[M]) -> M:
+    """The stub's answer until its row builds it (501); the route already masks what it returns,
+    so the built body keeps the offshore masking (review 6)."""
+    raise NotImplementedYet
 
 
 @delivery_router.get(
@@ -504,9 +510,10 @@ async def close_tax_handoff_publish_route(
 async def information_returns_route(
     client_entity_id: UUID, ctx: Ctx, tax_year: int, w9: W9Status | None = None
 ) -> DeliveryInformationReturnsOut:
-    """CLS-13 tiles, rule text from C21 rows, vendor rows (C-02-T45)."""
+    """CLS-13 tiles, rule text from C21 rows, vendor rows (C-02-T45). Each row's TIN last four is
+    masked for an offshore reader (review 6)."""
     await _on(ctx, CLOSES_INFORMATION_RETURNS)
-    raise NotImplementedYet
+    return await mask_tins_for(ctx, _not_built(DeliveryInformationReturnsOut))
 
 
 @delivery_router.get(
@@ -515,7 +522,7 @@ async def information_returns_route(
 )  # fmt: skip
 async def vendor_route(vendor_id: UUID, ctx: Ctx) -> DeliveryVendorRowOut:
     await _on(ctx, CLOSES_INFORMATION_RETURNS)
-    raise NotImplementedYet
+    return await mask_tins_for(ctx, _not_built(DeliveryVendorRowOut))
 
 
 @delivery_router.patch(
@@ -526,15 +533,16 @@ async def vendor_patch_route(
     vendor_id: UUID, body: DeliveryVendorPatchIn, ctx: Ctx
 ) -> DeliveryVendorRowOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "vendor_1099.update")
-    raise NotImplementedYet
+    return await mask_tins_for(ctx, _not_built(DeliveryVendorRowOut))
 
 
 @delivery_router.post(
-    "/vendors/{vendor_id}/tin:reveal", action="tin.reveal", response_model=DeliveryRevealOut,
+    "/vendors/{vendor_id}/tin:reveal", action="tin.reveal", response_model=TinRevealOut,
     errors=(409, 501),
 )  # fmt: skip
-async def tin_reveal_route(vendor_id: UUID, body: DeliveryRevealIn, ctx: Ctx) -> DeliveryRevealOut:
-    """Logged; refused offshore (`tin_reveal_refused`)."""
+async def tin_reveal_route(vendor_id: UUID, body: DeliveryRevealIn, ctx: Ctx) -> TinRevealOut:
+    """Logged; refused offshore (`tin_reveal_refused`). The one reveal payload (organisations'
+    `TinRevealOut`, the vendor as `entity_id`): no second schema carries a TIN (DEC-141)."""
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "tin.reveal")
     raise NotImplementedYet
 

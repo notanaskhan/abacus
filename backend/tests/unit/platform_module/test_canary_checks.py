@@ -123,5 +123,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "spend_anomaly:platform",
         "usage_alerts:platform",  # G-04-T12: the nightly usage-alert reconcile (DEC-5419)
         "component_late:platform",  # A-09-T28: component deliverables gone late, hourly
+        "confirmation_follow_up:platform",  # A-08: the daily second-request sweep
+        "integration_health:platform",  # integrations: the health sweep, every 15 minutes
         f"canary:{canary_firm}",
     }

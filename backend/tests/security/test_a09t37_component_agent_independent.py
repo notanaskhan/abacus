@@ -231,8 +231,7 @@ def test_both_capabilities_only_propose_and_stay_off_client_data(capability: str
      "proposed_entry.approve", "posting_batch.post"],
 )  # fmt: skip
 def test_the_agent_is_denied_every_decision(action: str) -> None:
-    if action not in RULES:
-        pytest.skip(f"{action} is not declared")  # skip-reason: an action another epic declares
+    assert action in RULES, f"{action} is declared"
     assert RULES[action].decisions.get("agent", "deny") == "deny"
 
 

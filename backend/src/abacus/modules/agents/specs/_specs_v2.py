@@ -3,6 +3,7 @@
 Regenerate: python -m abacus_tools.codegen.agent_specs_v2
 """
 
+# ruff: noqa: E501
 # fmt: off
 SPECS_V2: dict[str, dict[str, object]] = {   'briefing.today': {   'autonomy': 'propose',
                           'cheaper_tiers': [],

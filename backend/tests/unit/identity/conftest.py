@@ -44,6 +44,12 @@ def conditions_met(monkeypatch: pytest.MonkeyPatch) -> MeetConditions:
 
     monkeypatch.setattr(authz.LOOKUPS, "functions", every_function)
 
+    async def consented(*_: object) -> bool:
+        return True
+
+    # T-01-T11 (C19): every data subject consents (the condition's own cases are elsewhere).
+    monkeypatch.setattr(authz, "consent_given", consented)
+
     def meet(resource: Resource, ctx: AuthContext, role: str) -> Resource:
         return replace(
             resource,
@@ -53,6 +59,10 @@ def conditions_met(monkeypatch: pytest.MonkeyPatch) -> MeetConditions:
                 reserved_role=role,
                 reserved_user_id=ctx.user_id,
                 approver_user_id=ctx.user_id,  # A-08-T03: `is_named_approver`
+                consent_subjects=frozenset({uuid.uuid4()}),  # T-01-T11 `consent`
+                source_released=True,  # T-06-T03 `tb_handoff_source_released`
+                same_client=True,  # T-06-T03 `same_client`
+                owner_contact=True,  # T-06-T03 `decision_owner_contact`
             ),
         )
 

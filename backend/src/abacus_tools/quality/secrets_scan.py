@@ -37,6 +37,11 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         " (T-05-T31)",
     ),
     (
+        "backend/src/abacus_tools/synthetic/scenarios/brightwater_hale/tb_handoff_slice.py",
+        "SECRET-003",
+        "a tax item's `key` names the item (passed_aje_3), never a credential (T-06-T06)",
+    ),
+    (
         "apps/web/src/screens/TAX-07/copy.ts",
         "SECRET-003",
         "a checkpoint row's `key` names the checkpoint (engineV3), never a credential (T-04-T27)",

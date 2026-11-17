@@ -59,7 +59,7 @@ Outbox: `incident.recorded` → `incident_recorded` (the firm's security admins 
 - `make incident-propagate REF=… FIRMS=… FACTS=… STAFF=… REASON=… [DRY_RUN=1]` and `make incident-status REF=…` (`abacus_tools.incidents`), with a staff-issuer token in `ABACUS_STAFF_TOKEN`; `STAFF` must be the id the token proves.
 
 ## 8. Consumer contract tests
-`backend/tests/integration/test_security_incidents.py` (AC-38, AC-39), `backend/tests/unit/platform/test_incident_clock.py`, `backend/tests/unit/tools/test_incidents_cli.py`, `backend/tests/workflows/test_incident_propagation_replay.py` (v1 and v2 histories).
+`backend/tests/integration/test_security_incidents.py` (AC-38, AC-39), `backend/tests/unit/platform_module/test_incident_clock.py`, `backend/tests/unit/tools/test_incidents_cli.py`, `backend/tests/workflows/test_incident_propagation_replay.py` (v1 and v2 histories).
 
 ## 9. Versioning
 | Version | Frozen on | Overlap ends | Notes |

@@ -7,7 +7,7 @@ every module's registry (schema_check), so adding a table edits only this file.
 from __future__ import annotations
 
 # The tables this module owns; no other module reads or writes them (ADR-008).
-TABLES: frozenset[str] = frozenset(
+_TABLES_BEFORE_S49: frozenset[str] = frozenset(
     {
         "clients",
         "client_entities",
@@ -33,7 +33,7 @@ TABLES: frozenset[str] = frozenset(
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY_BEFORE_S49: frozenset[str] = frozenset(
     {"tin_reveals", "team_rosters"}  # rosters: 0150
     | {"conflict_checks", "conflict_results", "conflict_result_events", "screening_records"}
     | {"consent_sets", "consent_events"}  # T-01-T08 (0402)
@@ -144,8 +144,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
 T06T12_TABLES: frozenset[str] = frozenset(
     {"external_parties", "entity_relationship_events", "relationship_graph_layouts"}
 )
-TABLES = TABLES | T06T12_TABLES
-INSERT_ONLY = INSERT_ONLY | frozenset({"entity_relationship_events"})
+TABLES: frozenset[str] = _TABLES_BEFORE_S49 | T06T12_TABLES
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_BEFORE_S49 | frozenset({"entity_relationship_events"})
 INSERT_COLUMNS["external_parties"] = frozenset(
     {"tenant_id", "client_id", "display_name", "kind", "note", "created_by"}
 )

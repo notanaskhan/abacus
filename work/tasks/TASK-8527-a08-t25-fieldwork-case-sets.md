@@ -1,8 +1,8 @@
 ---
 id: TASK-8527
 title: "A-08-T25: Fieldwork case sets in the section-drafter suite"
-spec: SPEC-000
-acceptance_criteria: []
+spec: SPEC-657
+acceptance_criteria: [AC-9]
 risk_zone: red
 status: in-review
 branch: a08-t25-fieldwork-evals

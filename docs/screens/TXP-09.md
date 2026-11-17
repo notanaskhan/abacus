@@ -24,3 +24,15 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TXP-
 - DV-4: the issues badge reads 11, then 10, then 9 (TXP-09 e, TXP-10 d), never 10 twice.
 - DV-10: composite and record-election extras not built.
 - NYC Recommend opens TAX-15 (T-08) pre-filled; no election recorded here.
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens the TXP-10 review point | TXP-10 | designed (handoff link graph) |
+| Opens SHL-08 · Form 8825 · the three properties | SHL-08 | designed (handoff link graph) |
+| Opens SHL-09 · 08 States!F8 | SHL-09 | designed (handoff link graph) |
+| Opens TAX-15 · a planning opportunity for Jonah Feld | TAX-15 | designed (handoff link graph) |
+| Opens TXP-12 · state K-1s for Ridgeline GP LLC | TXP-12 | designed (handoff link graph) |

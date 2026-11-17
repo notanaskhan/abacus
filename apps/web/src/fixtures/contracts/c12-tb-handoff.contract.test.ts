@@ -59,7 +59,8 @@ describe("C12 v1 fixtures for AUD-38 and CLS-12", () => {
   });
 
   it("every account choice names its source", () => {
-    const { source: _dropped, ...unsourced } = aud38a.review_accounts[0]!;
+    const unsourced: Record<string, unknown> = { ...aud38a.review_accounts[0] };
+    delete unsourced.source;
     const broken = { ...aud38a, review_accounts: [unsourced] };
     expect(validateResponse("GET", PREVIEW, broken)).not.toEqual([]);
   });

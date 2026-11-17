@@ -40,6 +40,7 @@ _HEADER = '''"""GENERATED from abacus/modules/agents/specs/v2/*.yaml. Do not edi
 Regenerate: python -m abacus_tools.codegen.agent_specs_v2
 """
 
+# ruff: noqa: E501
 '''
 
 

@@ -22,3 +22,17 @@ Parity tier target: C (T-06 §5.4). Copy keys live in `apps/web/src/screens/TXP-
 
 ## Deviations
 - M-1 and M-3 never both marked filed; TAX-11 renders only M-3.
+
+## Links
+
+The designed links of the handoff link graph (link-contract rule 5); each is wired when its screen task builds the screen.
+
+| From | To | Status |
+|---|---|---|
+| Opens the checkpoint in SHL-16 | SHL-16 | designed (handoff link graph) |
+| Opens SHL-09 · account 4510 → Schedule K line 18a | SHL-09 | designed (handoff link graph) |
+| Opens TXP-05 · Analysis of Net Income | TXP-05 | designed (handoff link graph) |
+| Opens FIL-01 · 2024 Form 1065 · Schedule L line 21 · 5,960,000 | FIL-01 | designed (handoff link graph) |
+| Opens TXP-02 · Financials · account 3100 Partner contributions | TXP-02 | designed (handoff link graph) |
+| Opens TXP-11 · workpaper · 07 M-2!C9 | TXP-11 | designed (handoff link graph) |
+| Opens the TXP-10 issue | TXP-10 | designed (handoff link graph) |

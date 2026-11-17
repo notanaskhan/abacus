@@ -2,7 +2,7 @@
 id: TASK-8536
 title: "C-01-T47: Independent AC tests for the closes services"
 spec: SPEC-655
-acceptance_criteria: []
+acceptance_criteria: [AC-37, AC-42, AC-48, AC-49]
 risk_zone: amber
 status: in-review
 branch: c01-t47-t49-independent
