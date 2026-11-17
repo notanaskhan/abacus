@@ -42,6 +42,9 @@ EXTRA_MODES: dict[str, dict[str, str]] = {
         "close.agent.intake@v1": "evals/close_agent",
         "close.agent.bank_rec@v1": "evals/close_agent",
         "close.agent.aje@v1": "evals/close_agent",
+        # C-01-T30 (DEC-5413): the flux and planner modes, on the same frozen suite.
+        "close.agent.flux@v1": "evals/close_agent",
+        "close.agent.planner@v1": "evals/close_agent",
     },
 }
 

@@ -1,13 +1,14 @@
 # close.agent v1 (C-01-T29; C-01 §5; chapter 05 §5.3.3; TASK-8304; DEC-5304). The close engine's
 # one capability: `modules/closes/agent.py` gives the model code's facts, verified citations and the
 # options code offers; code settles every answer (AgentBlocks number provenance, closed options) and
-# refuses any tool outside the list. Four modes, one prompt each (`close.agent.<mode>@v1`): run
-# (the default, bound to C-01's code plan provider `closes.close_run`), intake, bank_rec, aje. No
+# refuses any tool outside the list. Six modes, one prompt each (`close.agent.<mode>@v1`): run
+# (the default, bound to C-01's code plan provider `closes.close_run`), intake, bank_rec, aje, and
+# (C-01-T30, DEC-5413) flux (drivers code foots to the change) and planner (closed option sets). No
 # TRI in closes. Source of truth: compiled into ../_specs_v2.py by
 # `python -m abacus_tools.codegen.agent_specs_v2`.
 id: close.agent
 version: 1
-purpose: Write the close run's, intake's, bank reconciliation's and AJE draft's sentences over figures code computed, citing their sources, and suggest from the options code offers, for a named person to decide.
+purpose: Write the close run's, intake's, bank reconciliation's, AJE draft's and flux line's sentences over figures code computed, citing their sources, group register lines into flux drivers that code foots, and draft close plan rows from the options code offers, for a named person to decide.
 shape: workflow
 prompt: close.agent.run@v1
 tier: medium
@@ -23,6 +24,7 @@ task_scope:
   - suggestion.create
   - issue.create
   - decision_card.raise
+  - trial_balance.read
 limits:
   max_output_tokens: 1500
   max_cost_usd: "0.20"

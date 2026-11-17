@@ -49,16 +49,18 @@ SPECS_V2: dict[str, dict[str, object]] = {   'briefing.today': {   'autonomy': '
                        'output_schema': 'CloseAgentOutput',
                        'plan': 'required_when_writes',
                        'prompt': 'close.agent.run@v1',
-                       'purpose': "Write the close run's, intake's, bank reconciliation's and AJE "
-                                  "draft's sentences over figures code computed, citing their "
-                                  'sources, and suggest from the options code offers, for a named '
-                                  'person to decide.',
+                       'purpose': "Write the close run's, intake's, bank reconciliation's, AJE "
+                                  "draft's and flux line's sentences over figures code computed, "
+                                  'citing their sources, group register lines into flux drivers '
+                                  'that code foots, and draft close plan rows from the options '
+                                  'code offers, for a named person to decide.',
                        'routes': ['bedrock', 'direct'],
                        'shape': 'workflow',
                        'task_scope': [   'close.read',
                                          'suggestion.create',
                                          'issue.create',
-                                         'decision_card.raise'],
+                                         'decision_card.raise',
+                                         'trial_balance.read'],
                        'tier': 'medium',
                        'tools': {   'compute': [   'close.reconcile',
                                                    'close.read_upload_table',

@@ -16,6 +16,7 @@ from abacus.kernel.audit_owners import register_engagement_owners, register_enti
 from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.kernel.sync_scope import register_sync_scope
 from abacus.kernel.uow.relay import Handler, OutboxEvent
+from abacus.modules.closes.agent_runs import register as agent_runs_register
 from abacus.modules.closes.agent_tools import AGENT_TOOLS
 from abacus.modules.closes.audit_targets import (
     AUDIT_KINDS,
@@ -70,6 +71,8 @@ register_close_gates()
 reconciliations_register()
 # C-01-T26 (DEC-5412): C13 flux and L1 gates, HOME-01's tile, C15 search, KNW-04a examples.
 registrations_register()
+# C-01-T30 (DEC-5413): close.agent's flux and planner drafts are P-35 suggestions on these targets.
+agent_runs_register()
 # C-01-T20: the close run's code plan (`closes.close_run`), its run-step kinds and the
 # `close_treatment` decision card.
 register_close_run_steps()

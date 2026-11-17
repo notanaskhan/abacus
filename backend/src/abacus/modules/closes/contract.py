@@ -18,7 +18,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Annotated, Final, Literal, NoReturn
+from typing import Annotated, Final, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -28,7 +28,7 @@ from abacus.kernel._flags import CLOSES_ENGINE
 from abacus.kernel._statuses import CloseRunStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import DomainConflict, NotFound, NotImplementedYet
+from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, Forbidden, current_context
 
@@ -659,8 +659,10 @@ async def _human_route(ctx: AuthContext, action: str) -> None:
     _human(ctx, action)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
+class PlannerDidNotDraft(DomainConflict):
+    """The planner run escalated or ran in shadow: no draft was written (C-01-T30)."""
+
+    code = "planner_did_not_draft"
 
 
 @closes_router.get("/closes", action="close.read", response_model=CloseListOut, errors=())
@@ -958,14 +960,20 @@ async def request_plan_publish_route(
     action="close_plan.draft_from_history",
     response_model=DraftFromHistoryOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def draft_plan_from_history_route(
     client_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DraftFromHistoryOut:
-    """A person starts `close.agent` mode `planner` (AC-21; C-01-T30)."""
+    """A person starts `close.agent` mode `planner` (AC-21; C-01-T30); every drafted row is a
+    suggestion a person adopts (AC-22). A run that could not draft answers 409 with its id."""
     await _human_route(ctx, "close_plan.draft_from_history")
-    _not_yet()
+    from abacus.modules.closes import agent_runs
+
+    outcome, version = await agent_runs.draft_from_history(ctx, client_id)
+    if version is None:
+        raise PlannerDidNotDraft(facts={"run_id": str(outcome.run_id), "status": outcome.status})
+    return DraftFromHistoryOut(run_id=outcome.run_id, version=version)
 
 
 @closes_router.post(

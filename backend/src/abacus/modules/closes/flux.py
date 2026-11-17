@@ -35,7 +35,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
 from abacus.modules.closes import repository as repo
-from abacus.modules.closes.contract_work import FluxLineOut, FluxSetOut
+from abacus.modules.closes.contract_work import FluxDriverOut, FluxLineOut, FluxSetOut
 from abacus.modules.closes.events import AnalyticLineExplained, AnalyticSetComputed
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
 from abacus.modules.workpapers import api as engine
@@ -257,7 +257,8 @@ _LINES: Final = text(
     "FROM analytic_lines WHERE set_id = :s ORDER BY position"
 )
 _NEWEST: Final = text(
-    "SELECT DISTINCT ON (line_key) id, line_key, version, text_sealed, accepted_by "
+    "SELECT DISTINCT ON (line_key) id, line_key, version, text_sealed, accepted_by, author_kind, "
+    "drivers "
     "FROM analytic_explanations WHERE close_id = :c ORDER BY line_key, version DESC"
 )
 _LINE_BY_ID: Final = text(
@@ -296,7 +297,13 @@ async def compute(ctx: AuthContext, close_id: UUID, basis: Basis) -> UUID:
     version = 1 if latest is None else int(cast(int, latest["version"])) + 1
     async with uow(tenant) as tx:
         done = {
-            str(r["line_key"]): "accepted" if r["accepted_by"] else "explained"
+            str(r["line_key"]): (
+                "accepted"
+                if r["accepted_by"]
+                else "explained_draft"
+                if r["author_kind"] == "agent"
+                else "explained"
+            )
             for r in (await tx.session.execute(_NEWEST, {"c": close_id})).mappings()
         }
         set_id = cast(
@@ -337,6 +344,23 @@ async def _authorise_close(ctx: AuthContext, close_id: UUID, action: str) -> UUI
     return close.engagement_id
 
 
+def _drivers(raw: object) -> list[FluxDriverOut]:
+    """An agent draft's drivers (C-01-T30): code's amounts, each with its first citation."""
+    out: list[FluxDriverOut] = []
+    for d in cast("list[dict[str, object]]", raw if isinstance(raw, list) else []):
+        cites = cast("list[str]", d.get("citation_ids") or [])
+        if not cites:
+            continue
+        out.append(
+            FluxDriverOut(
+                label=str(d.get("label", ""))[:80],
+                amount=Decimal(str(d.get("amount", "0"))),
+                citation_id=UUID(cites[0]),
+            )
+        )
+    return out
+
+
 def _pct(v: object) -> Decimal | None:
     return None if v is None else cast(Decimal, v).quantize(_TENTH, rounding=ROUND_HALF_UP)
 
@@ -361,19 +385,27 @@ async def _view(ctx: AuthContext, close_id: UUID, set_id: UUID, basis: Basis) ->
         status = str(r["status"])
         explanation: str | None = None
         accepted_by = None
+        drivers: list[FluxDriverOut] = []
         if e is not None:
             explanation = (
                 await open_sealed(ctx.tenant_id, cast(bytes, e["text_sealed"]), FINGERPRINT)
             ).decode()
             accepted_by = named.get(cast(UUID, e["accepted_by"])) if e["accepted_by"] else None
-            status = "accepted" if e["accepted_by"] else "explained"
+            status = (
+                "accepted"
+                if e["accepted_by"]
+                else "explained_draft"
+                if e["author_kind"] == "agent"
+                else "explained"
+            )
+            drivers = _drivers(e["drivers"])
         out.append(
             FluxLineOut(
                 line_id=line_id(set_id, key), line_key=key, caption=str(r["caption"]),
                 prior=cast("Decimal | None", r["prior"]), current=cast(Decimal, r["current"]),
                 change=cast("Decimal | None", r["change"]), change_pct=_pct(r["change_pct"]),
                 test=r["test"], status=status,  # type: ignore[arg-type] -- the table's CHECK
-                explanation=explanation, accepted_by=accepted_by,
+                explanation=explanation, drivers=drivers, accepted_by=accepted_by,
                 row_version=1 if e is None else int(cast(int, e["version"])) + 1,
             )
         )  # fmt: skip
@@ -488,13 +520,15 @@ async def accept(ctx: AuthContext, the_line: UUID, *, if_match: str) -> FluxLine
         newest = (
             await tx.session.execute(
                 text(
-                    "SELECT id, version FROM analytic_explanations WHERE close_id = :c "
-                    "AND line_key = :k ORDER BY version DESC LIMIT 1 FOR UPDATE"
+                    "SELECT id, version, author_kind FROM analytic_explanations "
+                    "WHERE close_id = :c AND line_key = :k ORDER BY version DESC LIMIT 1 "
+                    "FOR UPDATE"
                 ),
                 {"c": found.close_id, "k": found.key},
             )
         ).first()
-        if newest is None:
+        if newest is None or newest.author_kind != "human":
+            # An agent's draft is adopted by a person's own explanation first (INV-1).
             raise NothingToAccept(facts={"line": found.key})
         if wanted != int(newest.version) + 1:
             raise FluxStale(facts={"row_version": int(newest.version) + 1})

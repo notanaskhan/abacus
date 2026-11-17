@@ -26,7 +26,20 @@ FACTS = [
         "amount": "3200.00",
         "usual": "640.00",
         "change_pct": "400.0",
+        # C-01-T30: the flux mode's change and register facts, the planner's profile counts.
+        "change": "7670.00",
+        "c1": "4350.00",
+        "c2": "1850.00",
+        "c3": "1470.00",
+        "months": "14",
+        "accounts": "21",
     }.items()
+]
+CHOICES = [
+    agent.PlanChoiceIn(row_key="1000", procedures=["reconciliation"], sources=["bank_feed"]),
+    agent.PlanChoiceIn(
+        row_key="1350", procedures=["amortization", "rollforward"], sources=["accrued_register"]
+    ),
 ]
 
 
@@ -36,7 +49,11 @@ def _given(mode: agent.Mode, **kw: object) -> agent.CloseAgentInput:
 
 @pytest.mark.parametrize("mode", agent.MODES)
 def test_ac_every_fake_response_settles_with_numbers_only_as_facts(mode: agent.Mode) -> None:
-    given = _given(mode, options=["5010", "6100"] if mode == "aje" else [])
+    given = _given(
+        mode,
+        options=["5010", "6100"] if mode == "aje" else [],
+        choices=CHOICES if mode == "planner" else [],
+    )
     settled = agent.settle(given, agent.FAKE_RESPONSES[mode])
     assert settled.mode == mode
 

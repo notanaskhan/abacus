@@ -28,7 +28,9 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'briefing.today': ('briefing.today
     'workpapers.section_drafter': ('workpapers.section_draft.gap@v1', 1)}
 EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'close.agent': {   'close.agent.aje@v1': 1,
                        'close.agent.bank_rec@v1': 1,
-                       'close.agent.intake@v1': 1},
+                       'close.agent.flux@v1': 1,
+                       'close.agent.intake@v1': 1,
+                       'close.agent.planner@v1': 1},
     'decisions.recommender': {   'decisions.recommend.convention_706d@v1': 1,
                                  'decisions.recommend.section_754@v1': 1},
     'evidence.matcher': {'evidence.inbox_match@v2': 1},
