@@ -207,3 +207,27 @@ module registers names. The front end opens it as `?ov=integration:<key>` (`ov.W
 (the canvas `CX.items` list, DF-35/DF-36) read by `connect_catalog.py`, and the front end's copy
 `apps/web/src/fixtures/seed/connect-catalog.json` (a test keeps them identical); E0 53 = 9 + 38 + 6,
 tags 65; E2 55 = 9 + 40 + 6, tags 67; CCH detail with 224 linked returns, five events, five agents.
+
+## C20 v2.1 · W1 (C-02-T06, 2026-11-17; SPEC-700; ADR-344; DEC-5505)
+
+| Field | Value |
+|---|---|
+| Status | stub; **v2.1 frozen Fri Sep 15, 2028** |
+| Code | `backend/src/abacus/modules/integrations/w1_contract.py` (`w1_router`, `w1_portal_router`) |
+| Flag | `closes.gl_console` (default off; off: 404; on: 501 until C-02-T20, T25, T27) |
+| Registry | `ledger_post_journal_entries` (W1) in `docs/architecture/write-capabilities.yaml`, `enabled: false` |
+| Consumer tests | `backend/tests/contracts/c20_integrations/test_c02t08_w1_consumer.py`, `apps/web/src/screens/CLS-11/contract.test.ts` (C-02-T08) |
+| Callers | CLS-11 (console), ADM-08b (firm switch, settings), POR-16 (write grant), CLS-07 (posting gates) |
+
+| Method and path | Action | Notes |
+|---|---|---|
+| `GET /v1/client-entities/{eid}/ledger-console` | `ledger_connection.read` | tiles 7 Posted · 1 Proposed · Jul 31; connection pane; walled → 404 |
+| `GET /v1/client-entities/{eid}/posting-batches` · `.csv` | `ledger_connection.read` · `.export` | posting log, deterministic CSV |
+| `GET /v1/client-entities/{eid}/ledger-activity` | `ledger_connection.read` | Sync events |
+| `GET /v1/posting-batches/{id}` | `ledger_connection.read` | O2 batch drawer |
+| `POST /v1/write-capabilities/ledger_post_journal_entries:enable` · `:disable` | `write_capability.enable` | security_admin, fresh MFA; 409 `write_capability_not_released` while the registry is off |
+| `GET/PUT /v1/integrations/quickbooks_online/settings/gl-posting` | `gl_posting_settings.read/update` | memo prefix, post-as; locked rows |
+| `PUT /v1/engagements/{id}/ledger-settings` | `engagement_ledger_settings.update` | `posting_enabled` |
+| `POST /v1/portal/connections/{cid}/write-grants` · `DELETE …/write-grants/current` | `connection.grant_write` / `revoke_write` | client owner, `scope_only`, fresh MFA; consent copy `por16.qbo.post_entries.v2`; attest refused (trigger) |
+
+The connection stays read-only (CONN-001): a grant is a consent record. **Write scope** on CLS-11 reads "Journal entries · closing date" (SPEC-700 Q2). Seed: connection Mar 4, 2026; write grant Mar 9, 2026 (Q16).
