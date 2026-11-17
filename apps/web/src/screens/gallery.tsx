@@ -27,6 +27,7 @@ import {
 // A-08-T26: the fieldwork L3 kit board registers itself as KIT-A08.
 import "./kit-a08";
 import { TestingWorkspace } from "./AUD-12"; // A-08-T27: the artboards on the A-08 kit
+import { GroupScoping } from "./AUD-34"; // A-09-T31: the group scoping artboards
 import { ComponentAuditors } from "./AUD-35"; // A-09-T22: the component auditors artboards
 import { Beneficiaries } from "./TXT-03"; // T-07-T25: beneficiaries, K-1s and the election
 import { EstateWorkpapers } from "./TXT-04"; // T-07-T26: gift and estate workpapers
@@ -2681,6 +2682,10 @@ registerScreen("TXT-02", {
 registerScreen("TXT-03", {
   title: "Beneficiaries, K-1s & 65-day election · Calloway Family Trust",
   Component: ({ params }: { params: FixtureParams }) => <Beneficiaries st={params.st} />,
+});
+registerScreen("AUD-34", {
+  title: "Group scoping & component materiality — Harlow & Pike",
+  Component: ({ params }: { params: FixtureParams }) => <GroupScoping st={params.st} />,
 });
 registerScreen("AUD-35", {
   title: "Component auditors — Harlow & Pike",
