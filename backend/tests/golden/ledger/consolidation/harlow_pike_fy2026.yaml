@@ -1,0 +1,20 @@
+# A-09-T25 (TASK-8413; ADR-078: implementer N, author AY): Harlow & Pike FY2026, the consolidation
+# engine's golden figures (A-09 §9.2; AUD-33 a; the seed of apps/web/src/fixtures/seed/group-audit.ts).
+# reviewed_by names the CPA golden-review memo of chapter 10 §10.9.4; the memo is signed by a CPA
+# before `group_audit` is entitled to a non-synthetic firm (DEC-1391: no live pilot firm yet, so
+# its status stays pending_cpa_signature).
+reviewed_by:
+  memo_id: GRM-A09-CONSOLIDATION-01
+  status: pending_cpa_signature
+fixture: harlow_pike_fy2026
+level_1:
+  total_assets: "50760000.00"
+  asset_eliminations: "48640000.00"
+  debits_equal_credits: "67840000.00"
+  net_income: "3500000.00"
+  eliminations_posted: 6
+  attribution_assets: [["manufacturing", "27000000.00"], ["distribution", "12760000.00"], ["real_estate", "8400000.00"], ["holdings", "2600000.00"]]
+level_2:
+  total_assets: "39760000.00"
+  net_income: "4760000.00"
+  eliminations_posted: 4
