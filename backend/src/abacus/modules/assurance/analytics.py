@@ -10,6 +10,9 @@ amber).
 - **`materiality.decided`**: each Current preliminary set of that work item gets a new version
   at the decided PM; an explanation carries forward (with its acceptance) only where the line's
   over/within result did not change, so a line that changed status goes back to Unexplained.
+- **`proposed_entry.client_decided`** (accepted): the entry now sits in the adjusted layer, so
+  each Current final-stage set of that work item reads Out of date (`adjustment_recorded`) until
+  a person runs it again; nothing is recomputed by itself and no line is edited.
 - **Explain** (`analytics.explain`): text and >= 1 citation that code verified and that is still
   valid on the engagement, else 422 `explanation_uncited`. An adopted agent suggestion names its
   suggestion; the agent itself never explains (it proposes through `suggestion.create`).
@@ -1365,6 +1368,33 @@ async def on_materiality_decided(event: OutboxEvent) -> None:
         )
 
 
+_STALE_FINAL: Final = text(
+    "UPDATE analytics_sets SET status = 'out_of_date', failure_code = 'adjustment_recorded' "
+    "WHERE work_item_id = :w AND stage = 'final' AND status = 'current' RETURNING id"
+)
+
+
+async def on_entry_client_decided(event: OutboxEvent) -> None:
+    """A-08-T21 (S48 rest): an entry the client accepted lands on the adjusted layer, so the work
+    item's Current final-stage sets go Out of date. A decline or a question changes nothing; a
+    replayed event finds no Current final set and writes nothing."""
+    if event.payload.get("decision") != "client_accepted":
+        return
+    work_item = event.payload.get("work_item_id")
+    if work_item is None:
+        return
+    work_item_id = UUID(str(work_item))
+    tenant = TenantContext(event.tenant_id, "system", f"{SYSTEM_ACTOR}:adjustment")
+    async with uow(tenant) as tx:
+        stale = [r.id for r in await tx.session.execute(_STALE_FINAL, {"w": work_item_id})]
+        for set_id in stale:
+            tx.record(
+                "analytics.went_out_of_date",
+                target=Target(TARGET, cast(UUID, set_id)),
+                after=Ref(reason="adjustment_recorded"),
+            )
+
+
 # --- prior-year figures and export ---------------------------------------------------------------
 
 
@@ -1529,5 +1559,6 @@ WORKFLOWS: Final[dict[type, str]] = {FluxAnalyticsWorkflow: "interactive"}
 ACTIVITIES: Final[tuple[object, ...]] = (compute_activity,)
 SUBSCRIPTIONS: Final = {
     "materiality.decided": on_materiality_decided,
+    "proposed_entry.client_decided": on_entry_client_decided,  # S48 rest: the adjusted layer
     "questionnaire.answered": on_questionnaire_answered,
 }
