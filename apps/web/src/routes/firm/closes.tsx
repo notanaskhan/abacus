@@ -1,8 +1,7 @@
-import { EmptyState, FlagOffState } from "@abacus/ui";
+import { FlagOffState } from "@abacus/ui";
 import { createRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useFlag } from "../../app-core/flags";
-import { MANIFEST, type Manifest } from "../manifest";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
@@ -19,6 +18,8 @@ const Intake = lazyScreen(async () => (await import("../../screens/CLS-03")).CLS
 // C-01-T34: CLS-02's Overview body inside the shell.
 const Overview = lazyScreen(async () => (await import("../../screens/CLS-02")).CloseOverview);
 const Index = lazyScreen(async () => (await import("../../screens/CLS-01")).CLS01);
+// C-01-T36: CLS-09's close plan editor, keyed by the client.
+const Plan = lazyScreen(async () => (await import("../../screens/CLS-09")).CLS09);
 
 // CLS-01 (C-01-T33): `/closes` behind `closes.engine`. The filters are the search params
 // (`period`, `status`, `preparer`, `reviewer`, `attest`, `q`), so a filtered view is a link. The
@@ -223,10 +224,12 @@ export const closePlanRoute = createRoute({
   path: "/close-plans/$clientId",
   component: function ClosePlanPage(): JSX.Element {
     const enabled = useFlag("closes.engine") === true;
+    const clientId = useParam("clientId");
+    const router = useRouter();
     return (
       <div data-screen="CLS-09" className="flex min-h-0 flex-1 flex-col">
         {enabled ? (
-          <EmptyState icon="layers" title={(MANIFEST as Manifest)["CLS-09"]?.name ?? "CLS-09"} />
+          <Plan clientId={clientId} onBack={() => { router.history.back(); }} />
         ) : (
           <FlagOffState flag="closes.engine" label="Closes" />
         )}

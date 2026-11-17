@@ -18,6 +18,8 @@ import type {
   CloseTaskGroupOut,
   FluxLineOut,
   FluxSetOut,
+  CloseTemplatesOut,
+  PlanHistoryOut,
   PlanRowOut,
   PlanVersionOut,
   PortalQuestionsOut,
@@ -828,6 +830,144 @@ export function copperleafPlanV3(): PlanVersionOut {
     },
     allowed_actions: ["close_plan.edit"],
     row_version: 1,
+  };
+}
+
+/** CLS-09's threshold cells (handoff spec, row order): BH AJE thresholds v2 class limits, the
+ * flux rule and each procedure's tie. */
+const THRESHOLDS = [
+  "Difference $0.00 · outstanding items > 90 days flagged",
+  "Difference $0.00",
+  "Difference $0.00",
+  "Subledger = GL",
+  "Items > 5 days flagged",
+  "Clears to the next-day transfer",
+  "Clears to the next payout",
+  "Difference ≤ $500",
+  "Prepaids ≤ $10,000",
+  "Capitalize > $2,500 (de minimis)",
+  "Capitalize > $2,500 (de minimis)",
+  "Capitalize > $2,500 (de minimis)",
+  "Depreciation ≤ $10,000",
+  "Difference $0.00",
+  "Subledger = GL",
+  "Payroll accruals ≤ $15,000",
+  "Other accruals ≤ $10,000",
+  "Deferred revenue ≤ $10,000",
+  "Liability = return",
+  "Liabilities = filings",
+  "Lender balance = GL",
+  null,
+  "10% and $2,500",
+] as const;
+const AJE_POLICY = stableId("threshold-policy-version:bh-aje-v2");
+
+function withThresholds(plan: PlanVersionOut): PlanVersionOut {
+  return {
+    ...plan,
+    rows: plan.rows.map((r, i) => {
+      const label = THRESHOLDS[i] ?? null;
+      return { ...r, threshold: label === null ? null : { label, policy_version_id: AJE_POLICY } };
+    }),
+  };
+}
+
+/** CLS-09 a with its threshold cells. */
+export function copperleafPlan(): PlanVersionOut {
+  return withThresholds(copperleafPlanV3());
+}
+
+/** CLS-09 b and b2: Raj's draft v4 after Tess connects the savings feed. Business Savings moves to
+ * Bank feed, so its statement request drops (8 → 7). Raj may request publish; Priya publishes. */
+export function copperleafPlanDraftV4(viewer: "RM" | "PR"): PlanVersionOut {
+  const v3 = copperleafPlan();
+  const rows = v3.rows.map((r) =>
+    r.account_name.startsWith("Business Savings")
+      ? { ...r, source: "bank_feed" as const, changed_from_previous: true }
+      : { ...r, row_id: r.row_id },
+  );
+  const requests = v3.request_templates.filter((t) => !t.title.startsWith("Business Savings"));
+  return {
+    ...v3,
+    version: 4,
+    status: "draft",
+    effective_from: null,
+    drafted_by: "Raj Malhotra",
+    published_by: null,
+    published_at: null,
+    rows,
+    request_templates: requests,
+    tally: { ...v3.tally, requests_per_month: requests.length },
+    allowed_actions:
+      viewer === "PR"
+        ? ["close_plan.edit", "close_plan.publish"]
+        : ["close_plan.edit", "close_plan.request_publish"],
+    row_version: 2,
+  };
+}
+
+/** CLS-09 c: Mar 5, 2026, the Close Planner drafting v1 for Raj; drafted rows wait on adoption. */
+export function copperleafPlanDraftV1(): PlanVersionOut {
+  const v3 = copperleafPlan();
+  return {
+    ...v3,
+    version: 1,
+    status: "draft",
+    effective_from: null,
+    drafted_by: "Raj Malhotra",
+    published_by: null,
+    published_at: null,
+    rows: v3.rows.map((r) => ({ ...r, drafted: true, adopted: false })),
+    allowed_actions: ["close_plan.edit", "close_plan.publish"],
+    row_version: 1,
+  };
+}
+
+/** CLS-09 f: v1 drafted by the Close Planner, v2 and v3 published by Priya Raman. */
+export function copperleafPlanHistory(): PlanHistoryOut {
+  return {
+    items: [
+      {
+        version: 3,
+        status: "published",
+        at: "2026-06-02T10:00:00-05:00",
+        attribution:
+          "Published Jun 2, 2026 · Priya Raman · Added Deferred Revenue — Subscriptions after the subscription launch",
+      },
+      {
+        version: 2,
+        status: "published",
+        at: "2026-03-06T10:00:00-06:00",
+        attribution: "Published Mar 6, 2026 · Priya Raman",
+      },
+      {
+        version: 1,
+        status: "draft",
+        at: "2026-03-05T10:00:00-06:00",
+        attribution: "Drafted Mar 5, 2026 · Close Planner via Raj Malhotra",
+      },
+    ],
+  };
+}
+
+/** CLS-09 d: the firm's four close templates (imported DB content, AC-20). */
+export function closeTemplates(): CloseTemplatesOut {
+  const t = (key: string, name: string, procedures: number, requests: number) => ({
+    template_id: stableId(`close-template:${key}`),
+    key,
+    name,
+    version: 1,
+    procedures,
+    requests,
+  });
+  return {
+    items: [
+      // Counts beside the names are not on the artboard: only v3's own (23, 8) is known.
+      t("cafe-square-shopify", "Café with Square/Shopify", 23, 8),
+      t("retail-shopify", "Retail with Shopify", 0, 0),
+      t("professional-services", "Professional services", 0, 0),
+      t("saas-deferred-revenue", "SaaS with deferred revenue", 0, 0),
+    ],
   };
 }
 

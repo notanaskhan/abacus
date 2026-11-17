@@ -45,7 +45,7 @@ export const clsScreens = {
   },
   "CLS-09": {
     name: "Close plan editor · Copperleaf close plan v3",
-    status: "planned",
+    status: "fixture", // C-01-T36: a–f on the figure book's fixtures; live with C-01-T42
     path: "/close-plans/$clientId",
   },
   "CLS-10": {
