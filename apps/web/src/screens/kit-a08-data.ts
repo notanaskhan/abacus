@@ -328,3 +328,13 @@ export {
   GRANITE_PEAK_CONFIRMATIONS,
   GRANITE_PEAK_COVERAGE,
 } from "../fixtures/seed/fieldwork";
+
+// A-08-T31: AUD-26's Lakeshore review analytics and inquiries.
+export {
+  LAKESHORE_EXPECTATIONS,
+  LAKESHORE_GRANTS_EXPLANATION,
+  LAKESHORE_INQUIRIES,
+  LAKESHORE_LINES,
+  LAKESHORE_RUN,
+  LAKESHORE_SUBTOTALS,
+} from "../fixtures/seed/fieldwork";
