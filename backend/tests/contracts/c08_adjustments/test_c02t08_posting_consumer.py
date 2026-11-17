@@ -63,10 +63,10 @@ OPERATIONS = {
 # AJE-01..06 (C-02-T09's seed): within threshold 4 · $20,020.00; review 1 · $14,900.00; AJE-06
 # (bank adjustments, no threshold class) $380.00 arrives at 10:12 AM (CLS-07c).
 ENTRIES = (
-    ("AJE-01", "6400.00", "payroll_accruals", "15000.00", ProposedEntryStatus.WITHIN_THRESHOLD),
-    ("AJE-02", "4200.00", "prepaids", "10000.00", ProposedEntryStatus.WITHIN_THRESHOLD),
-    ("AJE-03", "5320.00", "depreciation", "10000.00", ProposedEntryStatus.WITHIN_THRESHOLD),
-    ("AJE-04", "4100.00", "deferred_revenue", "10000.00", ProposedEntryStatus.WITHIN_THRESHOLD),
+    ("AJE-01", "11860.00", "payroll_accruals", "15000.00", ProposedEntryStatus.WITHIN_THRESHOLD),
+    ("AJE-02", "700.00", "prepaids", "10000.00", ProposedEntryStatus.WITHIN_THRESHOLD),
+    ("AJE-03", "2140.00", "depreciation", "10000.00", ProposedEntryStatus.WITHIN_THRESHOLD),
+    ("AJE-04", "5320.00", "deferred_revenue", "10000.00", ProposedEntryStatus.WITHIN_THRESHOLD),
     ("AJE-05", "14900.00", "other_accruals", "10000.00", ProposedEntryStatus.REVIEW_REQUIRED),
 )
 

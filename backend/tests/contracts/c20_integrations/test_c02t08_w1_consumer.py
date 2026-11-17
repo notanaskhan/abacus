@@ -103,8 +103,8 @@ def test_cls11b_the_log_names_the_july_batch_and_its_resolved_failure() -> None:
         status=PostingBatchStatus.POSTED,
         entry_count=6,
         approved_count=6,
-        first_external_ref="47901",
-        last_external_ref="47906",
+        first_external_ref="47602",
+        last_external_ref="47607",
         resolved_failures=1,
     )
     assert row.resolved_failures == 1

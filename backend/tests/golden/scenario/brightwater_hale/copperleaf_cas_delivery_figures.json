@@ -1,0 +1,47 @@
+{
+  "_doc": "C-02-T09 (TASK-8508; SPEC-700, SPEC-701): the Copperleaf CAS posting and delivery figure book, transcribed from docs/plan/epics/C-02.md §5.3 and the CLS-07, CLS-08, CLS-11, CLS-12 and CLS-13 handoff screens, never from the code. Read by backend/tests/golden/scenario/test_c02t09_cas_delivery_figures.py. Amounts are strings in dollars and cents.",
+  "clock": "2026-09-14T09:24:00-05:00",
+  "entries": {
+    "AJE-01": "11860.00", "AJE-02": "700.00", "AJE-03": "2140.00", "AJE-04": "5320.00",
+    "AJE-05": "14900.00", "AJE-06": "380.00"
+  },
+  "within_threshold": "20020.00",
+  "proposed_five": "34920.00",
+  "posted_six": "35300.00",
+  "qbo_ids": ["48213", "48218"],
+  "class_limits": {
+    "payroll_accruals": "15000.00", "prepaids": "10000.00", "depreciation": "10000.00",
+    "deferred_revenue": "10000.00", "other_accruals": "10000.00"
+  },
+  "batches": {
+    "2026-07-A": {"entries": 6, "amount": "31480.00", "qbo": ["47602", "47607"], "resolved": 1},
+    "2026-06-A": {"entries": 5, "amount": "27915.00", "qbo": ["46955", "46959"]},
+    "2026-05-A": {"entries": 5, "amount": "26340.00", "qbo": ["46310", "46314"]}
+  },
+  "posted_batches_before_august": 7,
+  "authorization": {"connected": "2026-03-04", "write_grant": "2026-03-09"},
+  "balance_sheet": {
+    "total_current_assets": "337135.45", "net_property_and_equipment": "212060.00",
+    "total_assets": "549195.45", "total_current_liabilities": "114483.05",
+    "total_liabilities": "184983.05", "total_equity": "364212.40",
+    "accounts_receivable": "18420.00", "accounts_payable": "21380.45"
+  },
+  "income_statement": {
+    "august": {"revenue": "214600.00", "gross_profit": "129740.00", "operating_expenses": "101425.00",
+               "operating_income": "28315.00", "net_income": "27795.00"},
+    "july": {"revenue": "205300.00", "gross_profit": "124130.00", "operating_expenses": "92150.00",
+             "operating_income": "31980.00", "net_income": "31455.00"}
+  },
+  "handoff": {
+    "accumulated_depreciation": "74900.00", "book_depreciation_2026": "25680.00",
+    "fixed_asset_cost": "278400.00", "prepaid_insurance": "8400.00", "distributions": "144000.00",
+    "tax_issues": 3, "locked_on": "2027-01-11"
+  },
+  "vendors": {
+    "paid": 12, "reportable": 6, "requested": 2, "tin_mismatch": 1, "filed": 0,
+    "reportable_names": ["Larimer Street Properties, LLC", "Brightwater Hale LLP",
+      "Sound Electric Contractors, LLC", "Elena Ruiz Design", "Hartwell & Lowe LLP",
+      "Mile High Window Cleaning"],
+    "rent": "78400.00", "firm_fee": "25600.00", "due_on": "2027-02-01"
+  }
+}
