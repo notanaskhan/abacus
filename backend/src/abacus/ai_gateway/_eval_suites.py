@@ -12,6 +12,7 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'briefing.today': ('briefing.today
     'evidence.upload_reviewer': ('evidence.upload_review@v3', 3),
     'fieldwork.entry_assessor': ('fieldwork.entry_assess@v2', 2),
     'issues.fix_runner': ('issues.fix_runner.tax@v1', 1),
+    'ledger.tb_mapper': ('ledger.tb_mapper@v1', 1),
     'methodology.importer': ('methodology.import_parse@v1', 1),
     'notices.responder': ('notices.analyze@v1', 1),
     'requests.guidance_drafter': ('requests.guidance_draft@v1', 1),

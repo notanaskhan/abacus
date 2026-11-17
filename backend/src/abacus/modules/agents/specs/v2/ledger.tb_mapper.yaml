@@ -1,0 +1,38 @@
+# ledger.tb_mapper v1 (A-09-T29; A-09 §6; SPEC-658 F1; DEC-5409). A group entity's trial balance
+# accounts to the firm's FS-line catalogue: `modules/assurance/tb_mapper.py` gives the model each
+# account's code, name, entity and code's facts (balance side, last year's line), never an amount;
+# code keeps a line only when it is in the catalogue and the answer is well-formed, and each kept
+# one becomes a suggestion through C17 (a person adopts it on AUD-31; group confirm stays a
+# person's). The shape is `workflow` (code's steps, one model call, one propose tool), as
+# tax.account_mapper's. Source of truth: compiled into ../_specs_v2.py by
+# `python -m abacus_tools.codegen.agent_specs_v2`.
+id: ledger.tb_mapper
+version: 1
+purpose: Suggest a catalogue FS line for each account of a group entity's trial balance from its code, name and code's facts, or abstain, for a person to adopt.
+shape: workflow
+prompt: ledger.tb_mapper@v1
+tier: small
+escalation_tier: small
+input_schema: TbMapperInput
+output_schema: TbMapperOutput
+tools:
+  propose: [assurance.suggest_account_mappings]
+task_scope:
+  - mapping_set.read
+  - suggestion.create
+limits:
+  max_output_tokens: 6000
+  max_cost_usd: "0.08"
+  max_steps: 3
+  max_seconds: 90
+  max_tool_calls: 1
+plan: required_when_writes
+autonomy: propose
+data_classes: [confidential]
+untrusted_inputs: [account_names]
+evaluation_suite: evals/tb_mapping
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none
