@@ -1,0 +1,25 @@
+# E3 depreciation parameters, TY2025 (T-06-T13; DEC-76 / ADR-205 second category; DEC-77).
+# PROTECTED: CPA-reviewed repo file (docs/architecture/protected-paths.md, DEC-5511); a change is a
+# reviewed policy change with its goldens in the same diff. `reviewed_by` stays null until the
+# CPA's memo is signed (chapter 10 §10.9.3, before the first real use). A null value is not yet
+# published or reviewed: the engine refuses to use it (ParameterMissing), never guesses.
+version: 1
+tax_year: 2025
+reviewed_by: null
+source: "IRC §168(k), §179, §163(j)(3), §448(c); Rev. Proc. 87-57 (MACRS); P.L. 119-21 §70301, §70306"
+
+# §168(k): property acquired (or under a written binding contract) after Jan 19, 2025 takes 100%;
+# earlier acquisitions follow the TCJA phase-down for the year it is placed in service.
+bonus:
+  full_after: "2025-01-19"
+  full_pct: "100"
+  phase_down_pct: "40"
+
+# §179 dollar limit and the investment phase-out threshold (whole dollars).
+section_179:
+  limit: "2500000"
+  phase_out_threshold: "4000000"
+
+# §163(j)(3) small-business exemption: average annual gross receipts of the three prior years at
+# or under this threshold (§448(c)).
+small_business_gross_receipts: "31000000"
