@@ -128501,16 +128501,16 @@
           "other_nonrecourse": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Other Nonrecourse"
+            "cls": "restricted",
+            "title": "Other Nonrecourse",
+            "x-tri": true
           },
           "outside": {
             "cls": "restricted",
@@ -128528,16 +128528,16 @@
           "qualified_nonrecourse": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Qualified Nonrecourse"
+            "cls": "restricted",
+            "title": "Qualified Nonrecourse",
+            "x-tri": true
           },
           "tally": {
             "cls": "internal",
@@ -128679,16 +128679,16 @@
           "unclassified": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Unclassified"
+            "cls": "restricted",
+            "title": "Unclassified",
+            "x-tri": true
           },
           "view": {
             "cls": "internal",
@@ -128734,23 +128734,19 @@
           "payment_amount": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
-                    "type": "string"
-                  }
-                ],
-                "cls": "restricted",
-                "x-tri": true
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Payment Amount"
+            "cls": "restricted",
+            "title": "Payment Amount",
+            "x-tri": true
           },
           "payment_on": {
             "anyOf": [
@@ -128911,16 +128907,16 @@
           "ptet_paid": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Ptet Paid"
+            "cls": "restricted",
+            "title": "Ptet Paid",
+            "x-tri": true
           },
           "ptet_paid_on": {
             "anyOf": [

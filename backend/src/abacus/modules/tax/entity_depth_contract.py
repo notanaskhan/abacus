@@ -35,6 +35,8 @@ IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, ma
 Internal = classified("internal")
 Tri = classified("restricted", tri=True)
 Money = Annotated[Decimal, Field(max_digits=20, decimal_places=2), Tri]
+# An optional figure keeps its tag on the outside of the union (classification is field-level).
+MaybeMoney = Annotated[Decimal | None, Field(max_digits=20, decimal_places=2), Tri]
 Percent = Annotated[Decimal, Field(ge=0, le=100, max_digits=7, decimal_places=4), Tri]
 
 Tally = Literal["tie", "off", "check"]
@@ -180,8 +182,8 @@ class TaxDepthPartnerBasisOut(BaseModel):
     inside: Money
     outside: Money
     tally: Annotated[Tally, Internal]
-    qualified_nonrecourse: Money | None = None
-    other_nonrecourse: Money | None = None
+    qualified_nonrecourse: MaybeMoney = None
+    other_nonrecourse: MaybeMoney = None
 
 
 class TaxDepthBasisOut(BaseModel):
@@ -228,7 +230,7 @@ class TaxDepthStateOut(BaseModel):
     state: Annotated[str, Field(pattern=r"^[A-Z]{2}$"), Internal]
     apportionment_pct: Percent
     ptet: Annotated[Ptet, Internal]
-    ptet_paid: Money | None = None
+    ptet_paid: MaybeMoney = None
     ptet_paid_on: Annotated[date | None, Tri] = None
     mapped: Annotated[bool, Internal]
     nexus_conclusion: Annotated[str | None, Field(max_length=200), Tri] = None
@@ -251,7 +253,7 @@ class TaxDepthPtetIn(BaseModel):
     model_config = _cfg()
 
     election: Annotated[Ptet, Internal]
-    payment_amount: Money | None = None
+    payment_amount: MaybeMoney = None
     payment_on: Annotated[date | None, Tri] = None
     expected_version: Annotated[int, Field(ge=1), Internal]
 
@@ -289,7 +291,7 @@ class TaxDepthProvisionOut(BaseModel):
     total: Money
     effective_rate: Percent
     rate_reconciliation_tally: Annotated[Tally, Internal]
-    unclassified: Money | None = None
+    unclassified: MaybeMoney = None
 
 
 class TaxDepthFunctionalExpensesOut(BaseModel):
