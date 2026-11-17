@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
+from typing import Final
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
@@ -39,9 +40,9 @@ with workflow.unsafe.imports_passed_through():
         RunInput,
         ScreeningInput,
         ScreeningOutcome,
-        SectionDraftChild,
         SectionDraftFanOutInput,
         SectionDraftInput,
+        SectionDraftOpenIn,
         SlotGrant,
     )
 
@@ -527,32 +528,44 @@ class EntryAssessWorkflow:
             await _release("screening.release_slot", run)
 
 
+# A-08-T24 rest: how often the fan-out asks which runs ended, and its activities' budget.
+_FAN_OUT_TICK: Final = timedelta(seconds=10)
+_FAN_OUT_START: Final = timedelta(seconds=30)
+
+
 @workflow.defn(name="section_draft_fan_out")
 class SectionDraftFanOutWorkflow:
-    """A-08-T24 rest: start the recorded section drafter runs as child workflows, at most
-    `max_parallel` in flight; a child that fails ends its own run (`SectionDraftWorkflow` always
-    fails its run) and never stops the rest. Returns how many children ran."""
+    """A-08-T24 rest: start the recorded section drafter runs through `kernel.dispatch` (each its
+    own `section_draft` workflow, ADR-071), at most `max_parallel` still going at once; every
+    `_FAN_OUT_TICK` it asks which have ended and starts the next. A run that fails ends itself
+    (`SectionDraftWorkflow` always fails its run). Returns how many it started."""
 
     @workflow.run
     async def run(self, input: SectionDraftFanOutInput) -> int:
-        gate = asyncio.Semaphore(max(1, input.max_parallel))
-
-        async def one(child: SectionDraftChild) -> None:
-            async with gate:
-                try:
-                    await workflow.execute_child_workflow(
-                        SectionDraftWorkflow.run,
-                        child.input,
-                        id=child.workflow_id,
-                        parent_close_policy=workflow.ParentClosePolicy.ABANDON,
-                    )
-                except asyncio.CancelledError:
-                    raise
-                except Exception:  # the child ended its own run; the rest go on
-                    workflow.logger.warning("section_draft_fan_out.child_failed")
-
-        await asyncio.gather(*(one(c) for c in input.children))
-        return len(input.children)
+        waiting = list(input.children)
+        going: list[str] = []
+        started = 0
+        cap = max(1, input.max_parallel)
+        while waiting or going:
+            while waiting and len(going) < cap:
+                child = waiting.pop(0)
+                await workflow.execute_activity(
+                    "section_draft.start_child",
+                    child,
+                    start_to_close_timeout=_FAN_OUT_START,
+                    retry_policy=_RETRY,
+                )
+                going.append(child.input.run_id)
+                started += 1
+            await workflow.sleep(_FAN_OUT_TICK)
+            going = await workflow.execute_activity(
+                "section_draft.open_runs",
+                SectionDraftOpenIn(input.tenant_id, going),
+                result_type=list[str],
+                start_to_close_timeout=_FAN_OUT_START,
+                retry_policy=_RETRY,
+            )
+        return started
 
 
 @workflow.defn(name="section_draft")

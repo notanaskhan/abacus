@@ -241,6 +241,14 @@ class SectionDraftFanOutInput:
 
 
 @dataclass(frozen=True)
+class SectionDraftOpenIn:
+    """Which of these runs are still going (the fan-out's check)."""
+
+    tenant_id: str
+    run_ids: list[str]
+
+
+@dataclass(frozen=True)
 class DecisionRecommendInput:
     """A-04-T15 (DEC-1953): one recommendation run for a card a proposer is raising. The run row
     holds the engagement and the initiator; it runs in the proposer's request (interactive)."""

@@ -41,6 +41,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Final, cast
 from uuid import NAMESPACE_URL, UUID, uuid5
 
+from temporalio import activity
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 
@@ -99,6 +100,7 @@ from abacus.modules.agents.workflow_types import (
     SectionDraftChild,
     SectionDraftFanOutInput,
     SectionDraftInput,
+    SectionDraftOpenIn,
 )
 from abacus.modules.agents.workflows import SectionDraftFanOutWorkflow, SectionDraftWorkflow
 from abacus.modules.engagements.api import get_ref, lock_ref
@@ -281,6 +283,36 @@ async def start_many(
                 id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
             )
     return runs
+
+
+@activity.defn(name="section_draft.start_child")
+async def start_child_activity(child: SectionDraftChild) -> None:
+    """The fan-out's start of one recorded run, through `kernel.dispatch` (ADR-071); a replay
+    finds it started."""
+    with suppress(WorkflowAlreadyStartedError):
+        await dispatch(
+            SectionDraftWorkflow,
+            child.input,
+            id=child.workflow_id,
+            id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+            id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+        )
+
+
+@activity.defn(name="section_draft.open_runs")
+async def open_runs_activity(given: SectionDraftOpenIn) -> list[str]:
+    """Which of the fan-out's runs are still running (the others ended, however they ended)."""
+    if not given.run_ids:
+        return []
+    from abacus.modules.agents.repository import running_of
+
+    reader = _reader(UUID(given.tenant_id), f"agents:{DRAFTER}")
+    async with tenant_session(reader) as session:
+        still = {str(r) for r in await running_of(session, [UUID(r) for r in given.run_ids])}
+    return [r for r in given.run_ids if r in still]
+
+
+FAN_OUT_ACTIVITIES: Final = (start_child_activity, open_runs_activity)
 
 
 async def _record(

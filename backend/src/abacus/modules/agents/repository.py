@@ -213,6 +213,16 @@ async def finish_run(
     return result.scalar_one_or_none() is not None
 
 
+async def running_of(session: AsyncSession, run_ids: Sequence[UUID]) -> set[UUID]:
+    """A-08-T24 rest: which of these runs are still running."""
+    if not run_ids:
+        return set()
+    rows = await session.execute(
+        select(AgentRun.id).where(AgentRun.id.in_(list(run_ids)), AgentRun.status == "running")
+    )
+    return set(rows.scalars())
+
+
 async def try_lock_run(session: AsyncSession, run_id: UUID) -> bool:
     """Take the run's advisory lock until this transaction ends; False if another holds it."""
     key = func.hashtextextended(f"agent_run:{run_id}", 0)
