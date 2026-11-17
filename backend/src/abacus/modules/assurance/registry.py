@@ -1567,3 +1567,18 @@ INSERT_COLUMNS["analytics_questions"] = frozenset(
         "tenant_id",
     }
 )
+
+# A-08-T22 (0941, DEC-5401): an SSARS inquiry program, published once by a person.
+TABLES = TABLES | frozenset({"ssars_inquiry_programs"})
+INSERT_COLUMNS["ssars_inquiry_programs"] = frozenset(
+    {
+        "created_by",
+        "engagement_id",
+        "methodology_program_id",
+        "questionnaire_ids",
+        "questions",
+        "tenant_id",
+        "work_item_id",
+    }
+)
+UPDATE_COLUMNS["ssars_inquiry_programs"] = frozenset({"published_at", "published_by"})

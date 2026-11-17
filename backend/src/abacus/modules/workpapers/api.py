@@ -80,6 +80,7 @@ from abacus.modules.workpapers.service import (
     matrix_sections,
     workpaper_facts,
     workpaper_reviewables,
+    workpapers_for,
 )
 from abacus.modules.workpapers.tb_fields import OWNER as TB_FIELD_OWNER
 from abacus.modules.workpapers.tie_out import (
@@ -210,6 +211,7 @@ __all__ = [
     "tie_digests",
     "validate_pack",
     "work_item_papers",
+    "workpapers_for",  # A-08-T22: the SSARS rail reads its Read-the-FS paper
 ]
 
 # Q-03-T235 (DEC-3304): ADM-07 and AUD-29 name this module's targets through the platform slot.

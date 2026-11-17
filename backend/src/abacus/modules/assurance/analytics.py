@@ -44,7 +44,7 @@ from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy, WorkflowIDR
 with workflow.unsafe.imports_passed_through():
     from abacus.kernel.classification import classified
     from abacus.kernel.db import TenantContext, tenant_session
-    from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound, NotImplementedYet
+    from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
     from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
     from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
     from abacus.kernel.uow.relay import OutboxEvent
@@ -661,8 +661,12 @@ async def run(
     if engagement_id is None:
         raise NotFound("work_item")
     if kind == "ssars_review":
-        raise NotImplementedYet("A-08-T22")  # the SSARS variance policy is T22's
-    threshold, policy = await threshold_for(ctx.tenant, work_item_id), None
+        from abacus.modules.assurance.ssars import review_threshold
+
+        found, policy = await review_threshold(ctx.tenant, work_item_id)
+        threshold = cast(ThresholdFacts, found)
+    else:
+        threshold, policy = await threshold_for(ctx.tenant, work_item_id), None
     return await _start(
         ctx.tenant,
         engagement_id=engagement_id,

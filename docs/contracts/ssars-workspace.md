@@ -4,7 +4,7 @@
 |---|---|
 | Register row | epic contract (A-08 §8.1), not a C-numbered contract |
 | Version | v1 |
-| Status | stub (A-08-T05) |
+| Status | implemented (A-08-T22, DEC-5401) |
 | Provider epic | A-08 (AY) |
 | Consumers | AUD-26, AUD-23, POR-05, POR-08 |
 | Freeze sprint | S47 (A-08 §8.1) |
@@ -23,12 +23,20 @@ Every route answers, in order: a client principal 404; the action on the work it
 | Workspace | GET `/v1/work-items/{wid}/ssars` | `ssars.read` | T22 |
 | Inquiry program · publish | POST `…/ssars/inquiries` · `…/ssars/publish` | `ssars.inquiry_manage` | T22 |
 | Reminder | POST `…/ssars/remind` | `client_question.send` | T22 |
+| Read the FS (compilation) | POST `…/ssars/read-fs` (201, the working paper id) | `workpaper.edit` | T22 |
 
 ## 3. Models
 `SsarsWorkspaceOut` (mode, standard, rail rows, analytics set, `InquirySummaryOut` answered/open, `legend` "No assurance is provided." for AR-C 70, `report_available`, approval label), `InquiryProgramIn`/`Out`, `ReminderIn`. A report for a preparation work item answers 409 `no_report_for_preparation`.
 
 ## 4. Status words
 Inquiry status words are request vocabulary (Requested · Answered). "Conclusion", never "opinion" (copy lint).
+
+## 4a. Implementation (A-08-T22, DEC-5401)
+- `assurance/ssars.py`, migration `0941_ssars_workspace` (`ssars_inquiry_programs`; workpaper kind `ssars_read_fs`).
+- Mode = engagement type (review, compilation, preparation); other types 404. Rail: review Inquiries · Analytics · FS · Report; compilation "Read the FS for obvious material misstatements" (L1 working paper `RFS-1`) · FS · Report "Compilation report (AR-C 80)"; preparation FS · "No report — AR-C 70" · the C18 `fs_package` approval ("Approved by … (POR-08)").
+- SSARS review analytics: `kind = ssars_review`, stage `review`, threshold from the firm settings `ssars_variance_pct` and `ssars_variance_amount` (unset: 10% and $50,000); expectations through `PUT …/expectation`.
+- Inquiry program: the methodology program's steps verbatim, one `ssars_inquiry` questionnaire per recipient; publish sends every question; a question is answered when any recipient answered it. Reminders are one more question the person worded, sent to every copy.
+- `report_builder.set_choice` refuses a preparation work item (409 `no_report_for_preparation`).
 
 ## 5. Human-only actions
 Publishing, reminding and accepting are a person's; the agent proposes explanations only.

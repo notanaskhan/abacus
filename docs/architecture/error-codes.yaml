@@ -1674,6 +1674,19 @@ codes:
     raised_by:
     - abacus.modules.identity.annual_independence.StatementMissing
     summary: The firm has not published its independence statement yet, so there is nothing to confirm.
+  inquiries_already_published:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ssars.InquiriesAlreadyPublished
+  inquiry_program_empty:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ssars.InquiryProgramEmpty
+    summary: The methodology program has no steps to ask.
+  inquiry_program_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ssars.NoInquiryProgram
   intake_not_allowed:
     status: 409
     raised_by:
@@ -2219,7 +2232,7 @@ codes:
   no_report_for_preparation:
     status: 409
     raised_by:
-    - abacus.modules.assurance.analytics_contract.NoReportForPreparation
+    - abacus.modules.assurance.ssars.NoReportForPreparation
     summary: 'AR-C 70: no report for a preparation work item (AC-8.6).'
   no_sender_address:
     status: 422
@@ -2377,6 +2390,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.acceptance_contract.NotSelf
     summary: Only the person themself confirms or declines their own independence.
+  not_ssars_work_item:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ssars.NotSsars
   not_staff:
     status: 409
     raised_by:

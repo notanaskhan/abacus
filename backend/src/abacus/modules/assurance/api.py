@@ -254,6 +254,7 @@ from abacus.modules.assurance.severity_suggestions import (
 from abacus.modules.assurance.soc_reports import AUDIT_KINDS as SOC_REPORT_KINDS
 from abacus.modules.assurance.soc_reports import audit_owners as soc_report_owners
 from abacus.modules.assurance.soc_reports import register_reliance_kind
+from abacus.modules.assurance.ssars import register as ssars_register
 from abacus.modules.assurance.tb_mapping_contract import MappingConfirmIn, MappingRunIn
 from abacus.modules.assurance.tb_mapping_contract import router as tb_mapping_router
 
@@ -314,6 +315,8 @@ register_reviewable_facts("mapping_set", mapping_facts)
 register_gates()  # A-04-T43, A-07-T15: G4 to G9 from assurance/gates.py
 # A-08-T21 (DEC-5400): explained analytics lines wait on a manager (HOME-02).
 register_acceptance_gate()
+# A-08-T22 (DEC-5401): the firm's SSARS variance policy (both legs).
+ssars_register()
 # A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
 register_entry_decision_hook(on_entry_client_decision)
 # A-06-T17 (DEC-2956): record mode's evidence must be an email on the entry's own engagement.
