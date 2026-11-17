@@ -121,6 +121,23 @@ async def _gate(ctx: AuthContext) -> None:
         raise NotFound("group_audit")
 
 
+class ComponentRoomsOut(BaseModel):
+    """A-09-T32 (DEC-5407): the rooms the person's grants open, for the `/component-room`
+    landing (one room in the J20 scenario)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    room_ids: Annotated[list[UUID], Internal]
+
+
+@router.get("", action="component_room.read", response_model=ComponentRoomsOut)
+async def component_room_list_rooms(ctx: Member) -> ComponentRoomsOut:
+    await _gate(ctx)
+    from abacus.modules.assurance.api import component_room as svc
+
+    return ComponentRoomsOut(room_ids=await svc.my_rooms(ctx))
+
+
 @router.get(
     "/{room_id}", action="component_room.read", response_model=ComponentRoomOut, errors=(501,)
 )

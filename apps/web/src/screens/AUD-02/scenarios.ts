@@ -28,5 +28,6 @@ export const OPENS: Readonly<
   d: { section: "materiality" },
   e: {},
   f: { autoMode: "asking" },
+  h: {}, // A-09-T32: the Group band (Harlow & Pike)
   g: {},
 };

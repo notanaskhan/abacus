@@ -25,6 +25,7 @@ import {
   tbLayerViewOptions,
   tbLeadsheetAreaOptions,
   tieOutChecksOptions,
+  groupEntityStripOptions,
   trialBalancesOptions,
 } from "@abacus/api-client/query";
 import {
@@ -86,6 +87,8 @@ export interface TrialBalanceOptions {
   onSignOff?: (tbId: string) => void;
   /** A-02-T35: the evidence version open in the dock's viewer, for Agree to source…. */
   sourceVersionId?: string | null;
+  /** A-09-T32 (DEC-5408): the audit work item, for the live group entity strip (AUD-06 g). */
+  auditId?: string;
 }
 
 export interface TrialBalancePane {
@@ -689,8 +692,18 @@ export function useTrialBalancePane(
     onSignOff,
     planned = {},
     sourceVersionId = null,
+    auditId,
   }: TrialBalanceOptions = {},
 ): TrialBalancePane {
+  // AUD-06 g live (A-09-T32): the group's entities from the API; empty (and so no strip) for a
+  // work item that is not a group audit or with the capability off.
+  const groupOn = useFlag("assurance.group_audit") === true;
+  const strip = useQuery({
+    ...groupEntityStripOptions({ path: { work_item_id: auditId ?? "" } }),
+    enabled: enabled && groupOn && auditId !== undefined,
+    retry: false,
+  });
+  const liveEntities = (strip.data?.items ?? []).map((e) => e.name);
   const [tab, setTab] = useState<TbTab>(initial.tab ?? "trial_balance");
   const [layer, setLayer] = useState<TbLayer>(initial.layer ?? "unadjusted");
   const [selected, setSelected] = useState<string | null>(initial.line ?? null);
@@ -854,7 +867,22 @@ export function useTrialBalancePane(
     children:
       v === undefined ? null : (
         <div data-aud06="body" className="flex flex-col">
-          {PLANNED_VISIBLE && (planned.entities?.length ?? 0) > 1 && (
+          {liveEntities.length > 1 && (
+            <div
+              data-aud06="entities"
+              data-live="true"
+              className="flex h-[36px] flex-none items-center gap-[8px] px-[12px]"
+            >
+              <Segmented
+                size="small"
+                label={COPY.entities}
+                options={liveEntities.map((e) => ({ label: e }))}
+                {...(liveEntities[0] === undefined ? {} : { active: liveEntities[0] })}
+              />
+              <span className="text-meta text-ink-3">{COPY.consolidated}</span>
+            </div>
+          )}
+          {liveEntities.length <= 1 && PLANNED_VISIBLE && (planned.entities?.length ?? 0) > 1 && (
             <div
               data-aud06="entities"
               className="flex h-[36px] flex-none items-center gap-[8px] px-[12px]"

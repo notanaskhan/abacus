@@ -1,5 +1,5 @@
 // AUD-02 Audit cockpit: one fixture scenario per artboard A-01-T12 builds (a–e, g), and f
-// (A-01-T31; h is A-09's, i K-04's). docs/screens/AUD-02.md. All seen by Hannah Leclerc on Northwind's PY2025 EBP
+// (A-01-T31), and h, A-09-T32's Group band (Harlow & Pike, revision h; i is K-04's). docs/screens/AUD-02.md. All seen by Hannah Leclerc on Northwind's PY2025 EBP
 // audit at E0; clocks are the state labels' times (DV-3):
 //
 //   a  9:41 AM  Marcus Delaney's run #4127: the run grammar; overview pill "Processing"
@@ -26,9 +26,13 @@ import { auditHandlers, northwindAuditId } from "../handlers/audits";
 import { trustHandlers } from "../handlers/trust";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
-import type { CockpitGrammar } from "../seed/audit-cockpit";
+import { type CockpitGrammar, harlowCockpit } from "../seed/audit-cockpit";
 import { capabilitiesFor } from "../seed/shell";
+import { HARLOW_ENGAGEMENT } from "../seed/aud06";
+import { stableId } from "../seed/prng";
 import { DOCUMENTS } from "../seed/trust";
+
+const HARLOW_CLIENT = stableId("client:harlow-pike");
 
 const E0 = seedScenario();
 const seed = getSeed();
@@ -95,6 +99,28 @@ function autoMode(): Scenario {
   };
 }
 
+/** h (A-09-T32): Harlow & Pike's group audit, the Group band on (revision h). The cockpit read
+ * answers the group engagement's projection; the rest of the frame is the shared one. */
+function group(): Scenario {
+  const base = at("h", "15:45", "idle");
+  return {
+    ...base,
+    persona: "omar-haddad",
+    handlers: {
+      ...base.handlers,
+      "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, ["group_scoping.read"])),
+      "GET /v1/audits/{work_item_id}/cockpit": ({ params }) =>
+        json(
+          harlowCockpit({
+            workItemId: params.work_item_id ?? AUDIT_ID,
+            engagementId: HARLOW_ENGAGEMENT,
+            clientId: HARLOW_CLIENT,
+          }),
+        ),
+    },
+  };
+}
+
 export const scenarios = defineScenarios({
   a: at("a", "09:41", "run"),
   b: at("b", "09:20", "idle"),
@@ -103,4 +129,5 @@ export const scenarios = defineScenarios({
   e: at("e", "09:58", "failed"),
   f: autoMode(),
   g: at("g", "09:41", "pills"),
+  h: group(),
 });

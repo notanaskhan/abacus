@@ -285,6 +285,7 @@ function Cockpit({
   const tbOn = useFlag("ledger.tb_workpaper") === true && selected === TRIAL_BALANCE;
   const tb = useTrialBalancePane(cockpit.engagement_id, {
     enabled: tbOn,
+    auditId: cockpit.work_item_id, // A-09-T32: AUD-06 g's live entity strip
     ...(trialBalance === undefined ? {} : { initial: trialBalance }),
     onLink: () => {
       onDock?.("viewer", doc ?? null);

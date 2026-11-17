@@ -198,3 +198,88 @@ export function northwindCockpit(
     allowed_actions: [],
   };
 }
+
+/** AUD-02 h (A-09-T32; AUD-02 revision h, DEC-5408): Harlow & Pike's group audit at Planning, the
+ * Group band between Planning and Fieldwork with the revision's three rows. Every word and figure
+ * is the revision's (§9.2: 5 entities, 50,760,000, materiality 240,000 decided 3:40 PM, Pruett &
+ * Lang LLP). */
+export function harlowCockpit(ids: CockpitIds): AuditCockpitOut {
+  const wid = ids.workItemId;
+  const row = (
+    key: string,
+    title: string,
+    route: string,
+    state: NonNullable<AuditSectionRowOut["section_state"]>,
+    sub: string,
+  ): AuditSectionRowOut => ({
+    key,
+    title,
+    route,
+    link: "live",
+    work_item_ref: wid,
+    grammar: "sub_line",
+    section_state: state,
+    sub_line: sub,
+    allowed_actions: [],
+  });
+  return {
+    work_item_id: wid,
+    engagement_id: ids.engagementId,
+    audit_bar: {
+      title: "FY2026 Group Financial Statement Audit",
+      methodology_label: "BH Audit Methodology · FS v5",
+      run_started_at: null,
+      auto_mode: null,
+    },
+    overview: {
+      client_id: ids.clientId,
+      client_name: "Harlow & Pike Holdings, Inc.",
+      name: "Harlow & Pike Holdings, Inc.",
+      period_label: "FYE 12/31/2026 · group audit",
+      phase: "planning",
+    },
+    bands: [
+      { key: "overview", rows: [] },
+      {
+        key: "planning",
+        rows: [
+          row(
+            "trial_balance",
+            "Trial Balance",
+            "AUD-31",
+            "signed_off",
+            "Mapped 244 of 244 · confirmed CD",
+          ),
+        ],
+      },
+      {
+        key: "group",
+        rows: [
+          row("group_structure", "Structure", "AUD-32", "signed_off", "5 entities · finalized"),
+          row(
+            "group_scoping",
+            "Scoping",
+            "AUD-34",
+            "signed_off",
+            "Group materiality 240,000 · decided 3:40 PM",
+          ),
+          row(
+            "component_auditors",
+            "Component auditors",
+            "AUD-35",
+            "in_progress",
+            "Pruett & Lang LLP · questionnaire received Sep 10",
+          ),
+        ],
+      },
+      { key: "fieldwork", rows: [] },
+      { key: "completion", collapsed: true, rows: [] },
+      { key: "reporting", collapsed: true, rows: [] },
+    ],
+    dock_tabs: ["agent", "viewer"],
+    phase_mode: "derived",
+    read_only_reason: null,
+    version: 1,
+    allowed_actions: [],
+  };
+}

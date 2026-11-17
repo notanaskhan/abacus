@@ -25123,6 +25123,52 @@
         "title": "ComponentDeliverablesOut",
         "type": "object"
       },
+      "ComponentEvaluationIn": {
+        "additionalProperties": false,
+        "description": "A-09-T27 (DEC-5405): the evaluation facts a person records on AUD-35.",
+        "properties": {
+          "competence_evaluated": {
+            "cls": "internal",
+            "default": false,
+            "title": "Competence Evaluated",
+            "type": "boolean"
+          },
+          "independence_confirmed": {
+            "cls": "internal",
+            "default": false,
+            "title": "Independence Confirmed",
+            "type": "boolean"
+          },
+          "peer_review_obtained_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Peer Review Obtained On"
+          },
+          "questionnaire_received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Questionnaire Received On"
+          }
+        },
+        "title": "ComponentEvaluationIn",
+        "type": "object"
+      },
       "ComponentInstructionSectionOut": {
         "properties": {
           "body": {
@@ -25217,6 +25263,19 @@
             ],
             "cls": "internal",
             "title": "Send Blocked Reason"
+          },
+          "send_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Send Id"
           },
           "status": {
             "$ref": "#/components/schemas/ComponentInstructionsStatus",
@@ -25341,6 +25400,25 @@
           "deliverables"
         ],
         "title": "ComponentRoomOut",
+        "type": "object"
+      },
+      "ComponentRoomsOut": {
+        "description": "A-09-T32 (DEC-5407): the rooms the person's grants open, for the `/component-room`\nlanding (one room in the J20 scenario).",
+        "properties": {
+          "room_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Room Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "room_ids"
+        ],
+        "title": "ComponentRoomsOut",
         "type": "object"
       },
       "ComposerLetterOut": {
@@ -39761,6 +39839,17 @@
         "additionalProperties": false,
         "description": "Identifiers and typed values only: no TIN and no free text beyond the engagement name\n(P-07 \u00a74.2 M2). Absent fields are not chosen yet.",
         "properties": {
+          "component_entity_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Component Entity Ids",
+            "type": "array"
+          },
           "deadlines": {
             "cls": "internal",
             "default": [],
@@ -42892,6 +42981,23 @@
           "record_id"
         ],
         "title": "EntityRefPart",
+        "type": "object"
+      },
+      "EntityStripOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StripEntityOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "EntityStripOut",
         "type": "object"
       },
       "EntriesJournalOut": {
@@ -54546,35 +54652,6 @@
         "title": "FolderItemsOut",
         "type": "object"
       },
-      "FollowUpDraftOut": {
-        "description": "A follow-up drafted from the approved Reminder template; a person sends it through the\nexisting `follow_up.send` (DEC-74).",
-        "properties": {
-          "follow_up_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Follow Up Id",
-            "type": "string"
-          },
-          "request_item_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Request Item Id",
-            "type": "string"
-          },
-          "template_key": {
-            "cls": "internal",
-            "title": "Template Key",
-            "type": "string"
-          }
-        },
-        "required": [
-          "follow_up_id",
-          "request_item_id",
-          "template_key"
-        ],
-        "title": "FollowUpDraftOut",
-        "type": "object"
-      },
       "FollowUpDraftsIn": {
         "additionalProperties": false,
         "description": "BND-01 b (binders) or BND-02 d (requests of one binder): one of the two lists.",
@@ -55119,6 +55196,21 @@
           "ids"
         ],
         "title": "FollowUpSendManyIn",
+        "type": "object"
+      },
+      "FollowUpSentOut": {
+        "properties": {
+          "message_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id"
+        ],
+        "title": "FollowUpSentOut",
         "type": "object"
       },
       "Form5500Out": {
@@ -56831,7 +56923,8 @@
               "fs_package",
               "run_trace_export",
               "ebp_supplemental_schedule",
-              "client_entries_journal"
+              "client_entries_journal",
+              "component_instructions"
             ],
             "title": "Kind",
             "type": "string"
@@ -99057,7 +99150,8 @@
               "fs_package",
               "run_trace_export",
               "ebp_supplemental_schedule",
-              "client_entries_journal"
+              "client_entries_journal",
+              "component_instructions"
             ],
             "title": "Family",
             "type": "string"
@@ -112938,6 +113032,27 @@
         "title": "SendToPartnerIn",
         "type": "object"
       },
+      "SendUndoneOut": {
+        "properties": {
+          "send_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Send Id",
+            "type": "string"
+          },
+          "undone": {
+            "cls": "internal",
+            "title": "Undone",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "send_id",
+          "undone"
+        ],
+        "title": "SendUndoneOut",
+        "type": "object"
+      },
       "SendingDomainIn": {
         "additionalProperties": false,
         "properties": {
@@ -121698,6 +121813,53 @@
         "title": "StreamTopicsOut",
         "type": "object"
       },
+      "StripEntityOut": {
+        "description": "AUD-06 g: one entity of the group with its current-period TB state (no figures).",
+        "properties": {
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "consolidation_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Consolidation Entity Id",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "title": "Level",
+            "type": "integer"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "tb_state": {
+            "cls": "internal",
+            "enum": [
+              "attached",
+              "missing",
+              "not_needed",
+              "needs_reauth"
+            ],
+            "title": "Tb State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consolidation_entity_id",
+          "client_entity_id",
+          "name",
+          "level",
+          "tb_state"
+        ],
+        "title": "StripEntityOut",
+        "type": "object"
+      },
       "StructureEntityIn": {
         "additionalProperties": false,
         "properties": {
@@ -127974,7 +128136,8 @@
               "fs_package",
               "run_trace_export",
               "ebp_supplemental_schedule",
-              "client_entries_journal"
+              "client_entries_journal",
+              "component_instructions"
             ],
             "title": "Family",
             "type": "string"
@@ -143689,6 +143852,37 @@
         "title": "MisstatementOut",
         "type": "object"
       },
+      "abacus__modules__assurance__group_contract__FollowUpDraftOut": {
+        "description": "AUD-35 d's drafted follow-up: the firm's template key and code's values (P-25 off).",
+        "properties": {
+          "recipient_contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Recipient Contact Id",
+            "type": "string"
+          },
+          "template_key": {
+            "cls": "internal",
+            "title": "Template Key",
+            "type": "string"
+          },
+          "variables": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Variables",
+            "type": "object"
+          }
+        },
+        "required": [
+          "template_key",
+          "recipient_contact_id",
+          "variables"
+        ],
+        "title": "FollowUpDraftOut",
+        "type": "object"
+      },
       "abacus__modules__closes__contract__AdoptOut": {
         "additionalProperties": false,
         "properties": {
@@ -145052,6 +145246,35 @@
           "count"
         ],
         "title": "StatusTileOut",
+        "type": "object"
+      },
+      "abacus__modules__tax__schedules_contract__FollowUpDraftOut": {
+        "description": "A follow-up drafted from the approved Reminder template; a person sends it through the\nexisting `follow_up.send` (DEC-74).",
+        "properties": {
+          "follow_up_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Follow Up Id",
+            "type": "string"
+          },
+          "request_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "template_key": {
+            "cls": "internal",
+            "title": "Template Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "follow_up_id",
+          "request_item_id",
+          "template_key"
+        ],
+        "title": "FollowUpDraftOut",
         "type": "object"
       },
       "abacus__modules__workpapers__fieldwork_tests_contract__AdoptIn": {
@@ -164427,6 +164650,113 @@
           }
         },
         "summary": "Group Export Group Scoping",
+        "tags": [
+          "group-audit"
+        ],
+        "x-abacus-action": "group_scoping.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/group/entities": {
+      "get": {
+        "description": "A-09-T30 (DEC-5408): AUD-06 g's entity strip; empty for a work item that is not a group\naudit (the host renders as before).",
+        "operationId": "group_entity_strip",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityStripOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Group Entity Strip",
         "tags": [
           "group-audit"
         ],
@@ -184525,6 +184855,132 @@
         "x-abacus-action": "component_deliverable.manage"
       }
     },
+    "/v1/component-auditors/{auditor_id}/evaluation": {
+      "patch": {
+        "operationId": "group_evaluate_component_auditor",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "auditor_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Auditor Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComponentEvaluationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComponentAuditorOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Group Evaluate Component Auditor",
+        "tags": [
+          "group-audit"
+        ],
+        "x-abacus-action": "component_auditor.manage"
+      }
+    },
     "/v1/component-auditors/{auditor_id}/instructions/draft": {
       "post": {
         "description": "The deterministic template merge on the person's behalf (DV-6).",
@@ -184798,6 +185254,238 @@
           "group-audit"
         ],
         "x-abacus-action": "component_auditor.manage"
+      }
+    },
+    "/v1/component-deliverables/{deliverable_id}/follow-up": {
+      "get": {
+        "description": "A-09-T28 (DEC-5406): a template merge, never model text for a real firm (P-25).",
+        "operationId": "group_draft_follow_up",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deliverable_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Deliverable Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__assurance__group_contract__FollowUpDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Group Draft Follow Up",
+        "tags": [
+          "group-audit"
+        ],
+        "x-abacus-action": "component_deliverable.manage"
+      },
+      "post": {
+        "operationId": "group_send_follow_up",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deliverable_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Deliverable Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpSentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Group Send Follow Up",
+        "tags": [
+          "group-audit"
+        ],
+        "x-abacus-action": "component_deliverable.manage"
       }
     },
     "/v1/component-deliverables/{deliverable_id}/return": {
@@ -185082,6 +185770,123 @@
           "group-audit"
         ],
         "x-abacus-action": "component_deliverable.review"
+      }
+    },
+    "/v1/component-instruction-sends/{send_id}/undo": {
+      "post": {
+        "description": "The sender's Undo inside 10 seconds: nothing is sent (409 `undo_window_closed` after).",
+        "operationId": "group_undo_instructions_send",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "send_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Send Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendUndoneOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Group Undo Instructions Send",
+        "tags": [
+          "group-audit"
+        ],
+        "x-abacus-action": "component_instructions.send"
       }
     },
     "/v1/component-instructions/{instructions_id}": {
@@ -291679,6 +292484,102 @@
         "x-abacus-action": "transaction_question.read_own"
       }
     },
+    "/v1/portal/component-rooms": {
+      "get": {
+        "operationId": "component_room_list_rooms",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComponentRoomsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Component Room List Rooms",
+        "tags": [
+          "portal component room"
+        ],
+        "x-abacus-action": "component_room.read"
+      }
+    },
     "/v1/portal/component-rooms/{room_id}": {
       "get": {
         "operationId": "component_room_get_room",
@@ -291817,6 +292718,17 @@
             "schema": {
               "format": "uuid",
               "title": "Deliverable Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
               "type": "string"
             }
           },
@@ -291965,6 +292877,7 @@
     },
     "/v1/portal/component-rooms/{room_id}/drops": {
       "post": {
+        "description": "A drop names no deliverable: the answer's None opens the picker (the file is kept).",
         "operationId": "component_room_drop",
         "parameters": [
           {
@@ -291974,6 +292887,17 @@
             "schema": {
               "format": "uuid",
               "title": "Room Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
               "type": "string"
             }
           },
@@ -305347,7 +306271,8 @@
                     "fs_package",
                     "run_trace_export",
                     "ebp_supplemental_schedule",
-                    "client_entries_journal"
+                    "client_entries_journal",
+                    "component_instructions"
                   ],
                   "type": "string"
                 },
@@ -325209,7 +326134,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FollowUpDraftOut"
+                  "$ref": "#/components/schemas/abacus__modules__tax__schedules_contract__FollowUpDraftOut"
                 }
               }
             },
