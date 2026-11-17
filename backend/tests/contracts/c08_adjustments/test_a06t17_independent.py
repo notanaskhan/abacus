@@ -117,7 +117,20 @@ def test_the_send_needs_a_recent_second_factor() -> None:
 
 
 def test_no_matrix_action_posts() -> None:
-    assert [a for a in MATRIX if a.endswith((".post", ".push", ".write_back"))] == []
+    """ADR-344 (P-16; C-02-T08, DEC-5507) opens exactly one posting action, `posting_batch.post`:
+    a person's, with a fresh second factor, under the W1 registry entry, which stays off, refuses
+    attest clients and never admits the policy principal. Any other posting action still fails."""
+    from abacus.modules.integrations import _capabilities as caps
+
+    assert [a for a in MATRIX if a.endswith((".post", ".push", ".write_back"))] == [
+        "posting_batch.post"
+    ]
+    row = MATRIX["posting_batch.post"]
+    assert row["agent"] == "deny" and row["system"] == "deny"
+    assert row.get("mfa_recent") == "required" and row.get("independence") == "required"
+    w1 = next(w for w in caps.WRITES if w["key"] == "ledger_post_journal_entries")
+    assert w1["enabled"] is False
+    assert w1["attest_clients"] == "refused" and w1["policy_principal"] == "never"
 
 
 def test_the_send_is_held_on_a_grant_and_undo_voids_it() -> None:

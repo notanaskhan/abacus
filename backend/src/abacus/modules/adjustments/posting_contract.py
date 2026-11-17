@@ -24,6 +24,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from abacus.kernel._flags import ADJUSTMENTS_POSTING
+from abacus.kernel._statuses import (
+    ClosingDateConflictStatus,
+    PostingBatchStatus,
+    ProposedEntryStatus,
+)
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
@@ -35,21 +40,9 @@ Internal = classified("internal")
 Confidential = classified("confidential")
 Money = Annotated[Decimal, Field(ge=0, max_digits=20, decimal_places=2), Confidential]
 
-EntryStatus = Literal[
-    "proposed",
-    "within_threshold",
-    "review_required",
-    "approved",
-    "rejected",
-    "client_approved",
-    "client_declined",
-    "posted",
-    "failed_post",
-    "reversed",
-    "recorded_externally",
-]
-BatchStatus = Literal["proposed", "posting", "posted", "failed_post"]
-ConflictStatus = Literal["open", "client_asked", "redated", "resolved"]
+EntryStatus = ProposedEntryStatus  # the `proposed_entry` registry object (C-02-T03)
+BatchStatus = PostingBatchStatus  # the `posting_batch` registry object (C-02-T03)
+ConflictStatus = ClosingDateConflictStatus
 PreflightCheck = Literal[
     "balanced", "open_period", "mapped_accounts", "active_accounts", "closing_date_unlocked"
 ]
@@ -123,7 +116,7 @@ class CloseEntryRowOut(BaseModel):
             "ref": "AJE-05",
             "description": "Accrued utilities — August",
             "amount": "14900.00",
-            "status": "review_required",
+            "status": ProposedEntryStatus.REVIEW_REQUIRED.value,
             "class_limit": {"account_class": "other_accruals", "limit": "10000.00"},
             "approval_label": None,
             "external_txn_ref": None,
@@ -287,7 +280,7 @@ class PostingBatchOut(BaseModel):
             "batch_id": "00000000-0000-4000-8000-0000000008a0",
             "batch_code": "2026-08-A",
             "period": "2026-08",
-            "status": "posted",
+            "status": PostingBatchStatus.POSTED.value,
             "entry_count": 6,
             "total_amount": "35300.00",
             "first_external_ref": "48213",

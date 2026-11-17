@@ -6074,10 +6074,7 @@ export type BatchEntryOut = {
      * Ref
      */
     ref: string;
-    /**
-     * Status
-     */
-    status: 'proposed' | 'within_threshold' | 'review_required' | 'approved' | 'rejected' | 'client_approved' | 'client_declined' | 'posted' | 'failed_post' | 'reversed' | 'recorded_externally';
+    status: ProposedEntryStatus;
 };
 
 /**
@@ -10378,10 +10375,7 @@ export type CloseEntryRowOut = {
      * Reverses On
      */
     reverses_on?: string | null;
-    /**
-     * Status
-     */
-    status: 'proposed' | 'within_threshold' | 'review_required' | 'approved' | 'rejected' | 'client_approved' | 'client_declined' | 'posted' | 'failed_post' | 'reversed' | 'recorded_externally';
+    status: ProposedEntryStatus;
     /**
      * Version
      */
@@ -11244,6 +11238,11 @@ export type CloseWorkpaperOut = {
      */
     tally: 'pending' | 'tie' | 'off' | 'ties_once_posted' | 'recorded' | 'reconciled';
 };
+
+/**
+ * ClosingDateConflictStatus
+ */
+export type ClosingDateConflictStatus = 'open' | 'client_asked' | 'redated' | 'resolved';
 
 /**
  * CodeRequestIn
@@ -12658,10 +12657,7 @@ export type ConflictOut = {
      * Ledger Closing Date
      */
     ledger_closing_date: string;
-    /**
-     * Status
-     */
-    status: 'open' | 'client_asked' | 'redated' | 'resolved';
+    status: ClosingDateConflictStatus;
 };
 
 /**
@@ -44023,10 +44019,7 @@ export type PostingBatchOut = {
      * Resolved Failure Count
      */
     resolved_failure_count?: number;
-    /**
-     * Status
-     */
-    status: 'proposed' | 'posting' | 'posted' | 'failed_post';
+    status: PostingBatchStatus;
     /**
      * Total Amount
      */
@@ -44040,6 +44033,11 @@ export type PostingBatchOut = {
      */
     version: number;
 };
+
+/**
+ * PostingBatchStatus
+ */
+export type PostingBatchStatus = 'proposed' | 'posting' | 'posted' | 'failed_post';
 
 /**
  * PostingLogOut
@@ -45037,6 +45035,11 @@ export type ProposedEntryDecideIn = {
      */
     seen_hash: string;
 };
+
+/**
+ * ProposedEntryStatus
+ */
+export type ProposedEntryStatus = 'proposed' | 'within_threshold' | 'review_required' | 'approved' | 'client_approved' | 'client_declined' | 'rejected' | 'posted' | 'failed_post' | 'reversed' | 'recorded_externally';
 
 /**
  * ProposedItemIn
@@ -68293,10 +68296,7 @@ export type AbacusModulesAdjustmentsPostingContractDecisionOut = {
      * Entry Id
      */
     entry_id: string;
-    /**
-     * Status
-     */
-    status: 'proposed' | 'within_threshold' | 'review_required' | 'approved' | 'rejected' | 'client_approved' | 'client_declined' | 'posted' | 'failed_post' | 'reversed' | 'recorded_externally';
+    status: ProposedEntryStatus;
     /**
      * Undo Until
      */

@@ -13042,22 +13042,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "proposed",
-              "within_threshold",
-              "review_required",
-              "approved",
-              "rejected",
-              "client_approved",
-              "client_declined",
-              "posted",
-              "failed_post",
-              "reversed",
-              "recorded_externally"
-            ],
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/ProposedEntryStatus",
+            "cls": "internal"
           }
         },
         "required": [
@@ -22456,22 +22442,8 @@
             "title": "Reverses On"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "proposed",
-              "within_threshold",
-              "review_required",
-              "approved",
-              "rejected",
-              "client_approved",
-              "client_declined",
-              "posted",
-              "failed_post",
-              "reversed",
-              "recorded_externally"
-            ],
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/ProposedEntryStatus",
+            "cls": "internal"
           },
           "version": {
             "cls": "internal",
@@ -24355,6 +24327,16 @@
         ],
         "title": "CloseWorkpaperOut",
         "type": "object"
+      },
+      "ClosingDateConflictStatus": {
+        "enum": [
+          "open",
+          "client_asked",
+          "redated",
+          "resolved"
+        ],
+        "title": "ClosingDateConflictStatus",
+        "type": "string"
       },
       "CodeRequestIn": {
         "additionalProperties": false,
@@ -27378,15 +27360,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "open",
-              "client_asked",
-              "redated",
-              "resolved"
-            ],
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/ClosingDateConflictStatus",
+            "cls": "internal"
           }
         },
         "required": [
@@ -93662,15 +93637,8 @@
             "type": "integer"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "proposed",
-              "posting",
-              "posted",
-              "failed_post"
-            ],
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/PostingBatchStatus",
+            "cls": "internal"
           },
           "total_amount": {
             "cls": "confidential",
@@ -93709,6 +93677,16 @@
         ],
         "title": "PostingBatchOut",
         "type": "object"
+      },
+      "PostingBatchStatus": {
+        "enum": [
+          "proposed",
+          "posting",
+          "posted",
+          "failed_post"
+        ],
+        "title": "PostingBatchStatus",
+        "type": "string"
       },
       "PostingLogOut": {
         "additionalProperties": false,
@@ -95728,6 +95706,23 @@
         ],
         "title": "ProposedEntryDecideIn",
         "type": "object"
+      },
+      "ProposedEntryStatus": {
+        "enum": [
+          "proposed",
+          "within_threshold",
+          "review_required",
+          "approved",
+          "client_approved",
+          "client_declined",
+          "rejected",
+          "posted",
+          "failed_post",
+          "reversed",
+          "recorded_externally"
+        ],
+        "title": "ProposedEntryStatus",
+        "type": "string"
       },
       "ProposedItemIn": {
         "additionalProperties": false,
@@ -145526,22 +145521,8 @@
             "type": "string"
           },
           "status": {
-            "cls": "internal",
-            "enum": [
-              "proposed",
-              "within_threshold",
-              "review_required",
-              "approved",
-              "rejected",
-              "client_approved",
-              "client_declined",
-              "posted",
-              "failed_post",
-              "reversed",
-              "recorded_externally"
-            ],
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/ProposedEntryStatus",
+            "cls": "internal"
           },
           "undo_until": {
             "anyOf": [
