@@ -19,16 +19,16 @@ from pydantic import ValidationError
 from abacus.api.export_openapi import document
 from abacus.kernel._statuses import PostingBatchStatus, ProposedEntryStatus
 from abacus.modules.adjustments.posting_contract import (
-    ApproverContextOut,
-    BatchEntryOut,
-    ClassLimitOut,
-    CloseEntriesOut,
-    CloseEntryRowOut,
-    DryRunOut,
+    PostingApproverContextOut,
+    PostingBatchEntryOut,
     PostingBatchOut,
-    PreflightResultOut,
-    TalliesOut,
-    TallyOut,
+    PostingClassLimitOut,
+    PostingCloseEntriesOut,
+    PostingCloseEntryRowOut,
+    PostingDryRunOut,
+    PostingPreflightResultOut,
+    PostingTalliesOut,
+    PostingTallyOut,
 )
 from abacus.modules.identity.authz.matrix import RULES
 
@@ -71,38 +71,40 @@ ENTRIES = (
 )
 
 
-def _rows(status: ProposedEntryStatus | None = None) -> list[CloseEntryRowOut]:
+def _rows(status: ProposedEntryStatus | None = None) -> list[PostingCloseEntryRowOut]:
     return [
-        CloseEntryRowOut(
+        PostingCloseEntryRowOut(
             entry_id=uuid.uuid4(),
             ref=ref,
             amount=Decimal(amount),
             status=status or initial,
-            class_limit=ClassLimitOut(account_class=cls, limit=Decimal(limit)),
+            class_limit=PostingClassLimitOut(account_class=cls, limit=Decimal(limit)),
             version=1,
         )
         for ref, amount, cls, limit, initial in ENTRIES
     ]
 
 
-def _tally(rows: list[CloseEntryRowOut], *statuses: ProposedEntryStatus) -> TallyOut:
+def _tally(rows: list[PostingCloseEntryRowOut], *statuses: ProposedEntryStatus) -> PostingTallyOut:
     picked = [r for r in rows if r.status in statuses] if statuses else rows
-    return TallyOut(count=len(picked), amount=sum((r.amount for r in picked), Decimal("0.00")))
+    return PostingTallyOut(
+        count=len(picked), amount=sum((r.amount for r in picked), Decimal("0.00"))
+    )
 
 
-def _cls07a() -> CloseEntriesOut:
+def _cls07a() -> PostingCloseEntriesOut:
     rows = _rows()
-    return CloseEntriesOut(
+    return PostingCloseEntriesOut(
         items=rows,
         total=len(rows),
-        tallies=TalliesOut(
+        tallies=PostingTalliesOut(
             proposed=_tally(rows),
             within_threshold=_tally(rows, ProposedEntryStatus.WITHIN_THRESHOLD),
             review_required=_tally(rows, ProposedEntryStatus.REVIEW_REQUIRED),
             approved=0,
             of=len(rows),
         ),
-        approver=ApproverContextOut(
+        approver=PostingApproverContextOut(
             user_id=uuid.uuid4(),
             display_name="Raj Malhotra",
             role_label="CAS Senior",
@@ -132,13 +134,13 @@ def test_cls07a_tallies_foot_by_code() -> None:
 
 def test_cls07c2_the_dry_run_names_six_entries_and_the_closing_date() -> None:
     total = Decimal("20020.00") + Decimal("14900.00") + Decimal("380.00")
-    dry = DryRunOut(
+    dry = PostingDryRunOut(
         entry_count=6,
         total_amount=total,
         ledger_label="QuickBooks Online",
         client_entity_name="Copperleaf Coffee Roasters",
         closing_date_target=date(2026, 8, 31),
-        results=[PreflightResultOut(entry_id=uuid.uuid4(), ok=True) for _ in range(6)],
+        results=[PostingPreflightResultOut(entry_id=uuid.uuid4(), ok=True) for _ in range(6)],
     )
     assert dry.total_amount == Decimal("35300.00")
     assert all(r.ok for r in dry.results)
@@ -146,7 +148,7 @@ def test_cls07c2_the_dry_run_names_six_entries_and_the_closing_date() -> None:
 
 def test_cls07d_batch_2026_08_a_reads_qbo_48213_to_48218() -> None:
     entries = [
-        BatchEntryOut(
+        PostingBatchEntryOut(
             entry_id=uuid.uuid4(),
             ref=f"AJE-0{i + 1}",
             status=ProposedEntryStatus.POSTED,
@@ -171,7 +173,7 @@ def test_cls07d_batch_2026_08_a_reads_qbo_48213_to_48218() -> None:
 
 
 def test_cls07e_a_failed_entry_fails_alone_with_its_reason() -> None:
-    failed = BatchEntryOut(
+    failed = PostingBatchEntryOut(
         entry_id=uuid.uuid4(),
         ref="AJE-03",
         status=ProposedEntryStatus.FAILED_POST,
@@ -194,7 +196,7 @@ def test_cls07f_policy_acceptance_is_not_a_status() -> None:
 
 def test_a_breaking_change_to_a_row_is_refused() -> None:
     with pytest.raises(ValidationError):
-        CloseEntryRowOut.model_validate({"entry_id": str(uuid.uuid4()), "ref": "AJE-01"})
+        PostingCloseEntryRowOut.model_validate({"entry_id": str(uuid.uuid4()), "ref": "AJE-01"})
     with pytest.raises(ValidationError):
         PostingBatchOut.model_validate(
             {

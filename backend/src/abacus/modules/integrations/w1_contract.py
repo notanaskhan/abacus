@@ -50,7 +50,7 @@ def _cfg(example: dict[str, object] | None = None) -> ConfigDict:
 # --- CLS-11 console ----------------------------------------------------------------------------
 
 
-class ConsoleTilesOut(BaseModel):
+class W1ConsoleTilesOut(BaseModel):
     """CLS-11a tiles: 7 Posted (1 resolved Aug 11 under Failed post 0), 1 Proposed, Jul 31."""
 
     model_config = _cfg(
@@ -65,7 +65,7 @@ class ConsoleTilesOut(BaseModel):
     closing_date: Annotated[date | None, Internal] = None
 
 
-class ConnectionPaneOut(BaseModel):
+class W1ConnectionPaneOut(BaseModel):
     """Authorized by Tess Moreno (client portal) · Mode "Client-authorized: read ledger, post
     approved entries" · Last sync 9:02 AM · 1,214 transactions read (Aug 1-31) · 0 errors."""
 
@@ -86,18 +86,18 @@ class ConnectionPaneOut(BaseModel):
     dependents: Annotated[list[str], Internal] = []
 
 
-class LedgerConsoleOut(BaseModel):
+class W1LedgerConsoleOut(BaseModel):
     model_config = _cfg()
 
     client_entity_id: Annotated[UUID, Internal]
     client_entity_name: Annotated[str, Field(max_length=200), Confidential]
     ledger_label: Annotated[str, Field(max_length=60), Internal]
-    tiles: Annotated[ConsoleTilesOut, Internal]
-    connection: Annotated[ConnectionPaneOut | None, Internal] = None
+    tiles: Annotated[W1ConsoleTilesOut, Internal]
+    connection: Annotated[W1ConnectionPaneOut | None, Internal] = None
     posting_paused_by: Annotated[str | None, Field(max_length=200), Confidential] = None
 
 
-class PostingLogRowOut(BaseModel):
+class W1PostingLogRowOut(BaseModel):
     """2026-07-A · Posted · QBO 47901-47906 · 1 failure resolved."""
 
     model_config = _cfg(
@@ -117,14 +117,14 @@ class PostingLogRowOut(BaseModel):
     resolved_failures: Annotated[int, Field(ge=0), Internal] = 0
 
 
-class PostingLogOut(BaseModel):
+class W1PostingLogOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[PostingLogRowOut], Internal]
+    items: Annotated[list[W1PostingLogRowOut], Internal]
     total: Annotated[int, Field(ge=0), Internal]
 
 
-class ActivityOut(BaseModel):
+class W1ActivityOut(BaseModel):
     """A Sync events row (CLS-11a2), its label resolved at read time."""
 
     model_config = _cfg()
@@ -137,23 +137,23 @@ class ActivityOut(BaseModel):
     provider_code: Annotated[str | None, Field(max_length=64), Internal] = None
 
 
-class ActivityListOut(BaseModel):
+class W1ActivityListOut(BaseModel):
     model_config = _cfg()
 
-    items: Annotated[list[ActivityOut], Internal]
+    items: Annotated[list[W1ActivityOut], Internal]
     total: Annotated[int, Field(ge=0), Internal]
 
 
 # --- switches and settings (ADM-08b, the engagement) -------------------------------------------
 
 
-class CapabilitySwitchIn(BaseModel):
+class W1CapabilitySwitchIn(BaseModel):
     model_config = _cfg()
 
     reason: Annotated[str | None, Field(max_length=500), Confidential] = None
 
 
-class CapabilitySwitchOut(BaseModel):
+class W1CapabilitySwitchOut(BaseModel):
     """ "Enabled QuickBooks Online posting · Felix Andersen" (ADM-07)."""
 
     model_config = _cfg()
@@ -165,7 +165,7 @@ class CapabilitySwitchOut(BaseModel):
     changed_at: Annotated[datetime | None, Internal] = None
 
 
-class GlPostingSettingsOut(BaseModel):
+class W1GlPostingSettingsOut(BaseModel):
     """ADM-08b: two locked rows ("Post only human-approved batches", "Attest posting disabled"),
     the memo prefix and the "Post as" label."""
 
@@ -180,7 +180,7 @@ class GlPostingSettingsOut(BaseModel):
     version: Annotated[int, Field(ge=1), Internal]
 
 
-class GlPostingSettingsIn(BaseModel):
+class W1GlPostingSettingsIn(BaseModel):
     model_config = _cfg()
 
     memo_prefix: Annotated[str, Field(min_length=1, max_length=40), Confidential]
@@ -188,7 +188,7 @@ class GlPostingSettingsIn(BaseModel):
     expected_version: Annotated[int, Field(ge=1), Internal]
 
 
-class EngagementLedgerSettingsIn(BaseModel):
+class W1EngagementLedgerSettingsIn(BaseModel):
     model_config = _cfg()
 
     connection_id: Annotated[UUID, Internal]
@@ -196,7 +196,7 @@ class EngagementLedgerSettingsIn(BaseModel):
     expected_version: Annotated[int | None, Field(ge=1), Internal] = None
 
 
-class EngagementLedgerSettingsOut(BaseModel):
+class W1EngagementLedgerSettingsOut(BaseModel):
     model_config = _cfg()
 
     engagement_id: Annotated[UUID, Internal]
@@ -208,7 +208,7 @@ class EngagementLedgerSettingsOut(BaseModel):
 # --- POR-16 write grant (portal) ---------------------------------------------------------------
 
 
-class WriteGrantIn(BaseModel):
+class W1WriteGrantIn(BaseModel):
     """The QBO consent sheet's "will" list includes "post journal entries your accountant
     approves, and set the closing date after posting"; "won't" includes "change or delete
     existing transactions" (consent copy v2, a catalogue row)."""
@@ -219,7 +219,7 @@ class WriteGrantIn(BaseModel):
     consent_copy_version: Annotated[ConsentCopy, Internal]
 
 
-class WriteGrantOut(BaseModel):
+class W1WriteGrantOut(BaseModel):
     model_config = _cfg()
 
     connection_id: Annotated[UUID, Internal]
@@ -257,10 +257,10 @@ async def _portal_on(ctx: AuthContext, action: str) -> None:
 @w1_router.get(
     f"{_E}/ledger-console",
     action="ledger_connection.read",
-    response_model=LedgerConsoleOut,
+    response_model=W1LedgerConsoleOut,
     errors=(501,),
 )
-async def ledger_console_route(client_entity_id: UUID, ctx: Ctx) -> LedgerConsoleOut:
+async def ledger_console_route(client_entity_id: UUID, ctx: Ctx) -> W1LedgerConsoleOut:
     """CLS-11 subbar, tiles and connection pane; a walled entity answers 404 (C-02-T20)."""
     await _console_on(ctx)
     raise NotImplementedYet
@@ -269,7 +269,7 @@ async def ledger_console_route(client_entity_id: UUID, ctx: Ctx) -> LedgerConsol
 @w1_router.get(
     f"{_E}/posting-batches",
     action="ledger_connection.read",
-    response_model=PostingLogOut,
+    response_model=W1PostingLogOut,
     errors=(501,),
 )
 async def posting_log_route(
@@ -277,7 +277,7 @@ async def posting_log_route(
     ctx: Ctx,
     period: str | None = None,
     status: BatchStatus | None = None,
-) -> PostingLogOut:
+) -> W1PostingLogOut:
     """The posting log, newest first (CLS-11a)."""
     await _console_on(ctx)
     raise NotImplementedYet
@@ -298,12 +298,12 @@ async def posting_log_csv_route(client_entity_id: UUID, ctx: Ctx) -> bytes:
 @w1_router.get(
     f"{_E}/ledger-activity",
     action="ledger_connection.read",
-    response_model=ActivityListOut,
+    response_model=W1ActivityListOut,
     errors=(501,),
 )
 async def ledger_activity_route(
     client_entity_id: UUID, ctx: Ctx, kind: ActivityKind | None = None
-) -> ActivityListOut:
+) -> W1ActivityListOut:
     """Sync events (CLS-11a2), newest first."""
     await _console_on(ctx)
     raise NotImplementedYet
@@ -312,10 +312,10 @@ async def ledger_activity_route(
 @w1_router.get(
     "/posting-batches/{batch_id}",
     action="ledger_connection.read",
-    response_model=PostingLogRowOut,
+    response_model=W1PostingLogRowOut,
     errors=(501,),
 )
-async def posting_batch_route(batch_id: UUID, ctx: Ctx) -> PostingLogRowOut:
+async def posting_batch_route(batch_id: UUID, ctx: Ctx) -> W1PostingLogRowOut:
     """The O2 batch drawer (CLS-11b2); entries with QBO ids come from C8's batch read."""
     await _console_on(ctx)
     raise NotImplementedYet
@@ -324,10 +324,10 @@ async def posting_batch_route(batch_id: UUID, ctx: Ctx) -> PostingLogRowOut:
 @w1_router.post(
     "/write-capabilities/ledger_post_journal_entries:enable",
     action="write_capability.enable",
-    response_model=CapabilitySwitchOut,
+    response_model=W1CapabilitySwitchOut,
     errors=(409, 501),
 )
-async def enable_capability_route(body: CapabilitySwitchIn, ctx: Ctx) -> CapabilitySwitchOut:
+async def enable_capability_route(body: W1CapabilitySwitchIn, ctx: Ctx) -> W1CapabilitySwitchOut:
     """The firm switch; 409 `write_capability_not_released` while the registry is off."""
     await _human(ctx, "write_capability.enable")
     raise NotImplementedYet
@@ -336,10 +336,10 @@ async def enable_capability_route(body: CapabilitySwitchIn, ctx: Ctx) -> Capabil
 @w1_router.post(
     "/write-capabilities/ledger_post_journal_entries:disable",
     action="write_capability.enable",
-    response_model=CapabilitySwitchOut,
+    response_model=W1CapabilitySwitchOut,
     errors=(409, 501),
 )
-async def disable_capability_route(body: CapabilitySwitchIn, ctx: Ctx) -> CapabilitySwitchOut:
+async def disable_capability_route(body: W1CapabilitySwitchIn, ctx: Ctx) -> W1CapabilitySwitchOut:
     """Turning the switch off always succeeds and refuses every in-flight batch's next entry."""
     await _human(ctx, "write_capability.enable")
     raise NotImplementedYet
@@ -348,10 +348,10 @@ async def disable_capability_route(body: CapabilitySwitchIn, ctx: Ctx) -> Capabi
 @w1_router.get(
     "/integrations/quickbooks_online/settings/gl-posting",
     action="gl_posting_settings.read",
-    response_model=GlPostingSettingsOut,
+    response_model=W1GlPostingSettingsOut,
     errors=(501,),
 )
-async def gl_posting_settings_route(ctx: Ctx) -> GlPostingSettingsOut:
+async def gl_posting_settings_route(ctx: Ctx) -> W1GlPostingSettingsOut:
     await _console_on(ctx)
     raise NotImplementedYet
 
@@ -359,12 +359,12 @@ async def gl_posting_settings_route(ctx: Ctx) -> GlPostingSettingsOut:
 @w1_router.put(
     "/integrations/quickbooks_online/settings/gl-posting",
     action="gl_posting_settings.update",
-    response_model=GlPostingSettingsOut,
+    response_model=W1GlPostingSettingsOut,
     errors=(409, 501),
 )
 async def gl_posting_settings_update_route(
-    body: GlPostingSettingsIn, ctx: Ctx
-) -> GlPostingSettingsOut:
+    body: W1GlPostingSettingsIn, ctx: Ctx
+) -> W1GlPostingSettingsOut:
     await _human(ctx, "gl_posting_settings.update")
     raise NotImplementedYet
 
@@ -372,12 +372,12 @@ async def gl_posting_settings_update_route(
 @w1_router.put(
     "/engagements/{engagement_id}/ledger-settings",
     action="engagement_ledger_settings.update",
-    response_model=EngagementLedgerSettingsOut,
+    response_model=W1EngagementLedgerSettingsOut,
     errors=(409, 501),
 )
 async def engagement_ledger_settings_route(
-    engagement_id: UUID, body: EngagementLedgerSettingsIn, ctx: Ctx
-) -> EngagementLedgerSettingsOut:
+    engagement_id: UUID, body: W1EngagementLedgerSettingsIn, ctx: Ctx
+) -> W1EngagementLedgerSettingsOut:
     """The engagement's `posting_enabled` (partner or manager)."""
     await _human(ctx, "engagement_ledger_settings.update")
     raise NotImplementedYet
@@ -386,11 +386,13 @@ async def engagement_ledger_settings_route(
 @w1_portal_router.post(
     "/connections/{connection_id}/write-grants",
     action="connection.grant_write",
-    response_model=WriteGrantOut,
+    response_model=W1WriteGrantOut,
     status_code=201,
     errors=(409, 501),
 )
-async def grant_write_route(connection_id: UUID, body: WriteGrantIn, ctx: Ctx) -> WriteGrantOut:
+async def grant_write_route(
+    connection_id: UUID, body: W1WriteGrantIn, ctx: Ctx
+) -> W1WriteGrantOut:
     """The client owner grants posting with a fresh MFA; refused for an attest client."""
     await _portal_on(ctx, "connection.grant_write")
     raise NotImplementedYet
@@ -399,10 +401,10 @@ async def grant_write_route(connection_id: UUID, body: WriteGrantIn, ctx: Ctx) -
 @w1_portal_router.delete(
     "/connections/{connection_id}/write-grants/current",
     action="connection.revoke_write",
-    response_model=WriteGrantOut,
+    response_model=W1WriteGrantOut,
     errors=(501,),
 )
-async def revoke_write_route(connection_id: UUID, ctx: Ctx) -> WriteGrantOut:
+async def revoke_write_route(connection_id: UUID, ctx: Ctx) -> W1WriteGrantOut:
     """The client owner revokes; the next entry of any in-flight batch is `write_grant_missing`."""
     await _portal_on(ctx, "connection.revoke_write")
     raise NotImplementedYet

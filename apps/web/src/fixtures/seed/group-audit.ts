@@ -4,6 +4,10 @@
 // entity columns and the eliminations, never typed (the contract test foots them). The live values
 // come from the consolidation engine (A-09-T13) once the services land.
 import type {
+  RoomDeliverableOut,
+  RoomInstructionsOut,
+  RoomQuestionOut,
+  RoomQuestionsOut,
   ComponentRoomOut,
   ConsolidatedTbOut,
   ConsolidationOut,
@@ -397,47 +401,140 @@ export const GROUP_SCOPING_DECIDED: GroupScopingOut = {
   allowed_actions: ["component.edit"],
 };
 
-/** POR-23 a: Renee Pruett's room on Wed Sep 23, 9:40 AM (0 of 4; client words only). */
-export const COMPONENT_ROOM_INVITED: ComponentRoomOut = {
-  id: GROUP_IDS.room,
-  group_name: "Harlow & Pike Holdings, Inc. · FY2026 group audit",
-  component_name: "Harlow & Pike Distribution, Inc.",
-  firm_name: "Brightwater Hale LLP",
-  acknowledged_on: null,
-  uploaded: 0,
-  expected: 4,
-  deliverables: [
+/** POR-23's four deliverables as the handoff lists them (POR-23 a; instructions §2). */
+const ROOM_DELIVERABLES = [
+  ["planning", "Planning confirmation", "2026-10-02"],
+  ["interim-memo", "Interim memo", "2026-11-30"],
+  [
+    "clearance",
+    "Clearance memo, summary of uncorrected misstatements and component trial balance",
+    "2027-02-12",
+  ],
+  ["subsequent-events", "Subsequent events update through the group report date", "2027-03-19"],
+] as const;
+
+type RoomWord = RoomDeliverableOut["word"];
+
+function roomOf(
+  words: readonly [RoomWord, string | null, string | null][],
+  acknowledged: string | null,
+): ComponentRoomOut {
+  const deliverables = ROOM_DELIVERABLES.map(([key, title, due], i) => ({
+    id: ids(`deliverable:${key}`),
+    title,
+    due_on: due,
+    word: words[i]?.[0] ?? "due",
+    uploaded_on: words[i]?.[1] ?? null,
+    return_note: words[i]?.[2] ?? null,
+  }));
+  return {
+    id: GROUP_IDS.room,
+    group_name: "Harlow & Pike Holdings, Inc. · FY2026 group audit",
+    component_name: "Harlow & Pike Distribution, Inc.",
+    firm_name: "Brightwater Hale LLP",
+    acknowledged_on: acknowledged,
+    uploaded: deliverables.filter((d) => d.word === "you_uploaded").length,
+    expected: deliverables.length,
+    deliverables,
+  };
+}
+
+export type Por23State = "a" | "b" | "c" | "d" | "e" | "f";
+
+/** POR-23 a-e (f is the expired invitation: no room). Client words only. */
+export const COMPONENT_ROOM: Readonly<Record<Exclude<Por23State, "f">, ComponentRoomOut>> = {
+  a: roomOf([], null),
+  b: roomOf([], "2026-09-23"),
+  c: roomOf(
+    [
+      ["you_uploaded", "2026-10-01", null],
+      ["overdue", null, null],
+    ],
+    "2026-09-23",
+  ),
+  d: roomOf(
+    [
+      ["you_uploaded", "2026-10-01", null],
+      ["you_uploaded", "2026-12-02", null],
+    ],
+    "2026-09-23",
+  ),
+  e: roomOf(
+    [
+      ["you_uploaded", "2026-10-01", null],
+      ["returned", null, "Please upload the signed memo. — Omar Haddad"],
+    ],
+    "2026-09-23",
+  ),
+};
+
+/** POR-23 a, kept under its old name for the AUD-35 tracker's fixtures. */
+export const COMPONENT_ROOM_INVITED: ComponentRoomOut = COMPONENT_ROOM.a;
+
+/** The instructions' sections (POR-23 a preview; Sent Sep 21, 2026). */
+export const ROOM_INSTRUCTIONS: RoomInstructionsOut = {
+  sent_on: "2026-09-21",
+  sections: [
     {
-      id: ids("deliverable:interim-memo"),
-      title: "Interim memo",
-      due_on: "2026-11-30",
-      word: "due",
-      uploaded_on: null,
-      return_note: null,
+      number: 1,
+      title: "Scope.",
+      body: "Perform a full-scope audit of the financial information of Harlow & Pike Distribution, Inc. for the group audit.",
     },
     {
-      id: ids("deliverable:clearance"),
-      title: "Clearance letter",
-      due_on: "2027-02-12",
-      word: "due",
-      uploaded_on: null,
-      return_note: null,
+      number: 2,
+      title: "Timetable and deliverables.",
+      body: "Planning confirmation by October 2, 2026; interim memo by November 30, 2026; clearance memo, summary of uncorrected misstatements and component trial balance by February 12, 2027; subsequent events through the group auditor's report date, expected March 19, 2027.",
     },
     {
-      id: ids("deliverable:summary"),
-      title: "Summary of uncorrected misstatements",
-      due_on: "2027-02-12",
-      word: "due",
-      uploaded_on: null,
-      return_note: null,
+      number: 3,
+      title: "Independence and ethics.",
+      body: "Confirm that your firm and team are independent of the group under the AICPA Code of Professional Conduct.",
     },
     {
-      id: ids("deliverable:representations"),
-      title: "Representation letter",
-      due_on: "2027-02-12",
-      word: "due",
-      uploaded_on: null,
-      return_note: null,
+      number: 4,
+      title: "Materiality.",
+      body: "Component performance materiality is $105,000. Communicate every identified misstatement above $12,000.",
     },
   ],
+};
+
+const question = (key: string, at: string, author: string, body: string): RoomQuestionOut => ({
+  id: ids(`question:${key}`),
+  at,
+  author_name: author,
+  body,
+});
+
+const B_THREAD: RoomQuestionOut[] = [
+  question(
+    "renee",
+    "2026-09-23T14:52:00Z",
+    "Renee Pruett",
+    "Is component PM based on the component's own benchmark or allocated from group?",
+  ),
+  question(
+    "omar",
+    "2026-09-23T16:15:00Z",
+    "Omar Haddad · Brightwater Hale",
+    "Allocated from group PM 180,000, weighted by component risk; see instructions §4.",
+  ),
+];
+
+/** The thread by state (b adds the PM question; c adds Margaret's reminder). */
+export const ROOM_QUESTIONS: Readonly<Record<Exclude<Por23State, "f">, RoomQuestionsOut>> = {
+  a: { items: [] },
+  b: { items: B_THREAD },
+  c: {
+    items: [
+      ...B_THREAD,
+      question(
+        "margaret",
+        "2026-12-01T14:52:00Z",
+        "Margaret Okonkwo · Brightwater Hale",
+        "Your interim memo for Harlow & Pike Distribution, Inc. was due November 30. Please upload it to the group audit room or tell us when to expect it.",
+      ),
+    ],
+  },
+  d: { items: B_THREAD },
+  e: { items: B_THREAD },
 };

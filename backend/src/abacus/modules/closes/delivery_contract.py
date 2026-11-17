@@ -67,7 +67,7 @@ def _cfg(example: dict[str, object] | None = None) -> ConfigDict:
 # --- CLS-08 package ----------------------------------------------------------------------------
 
 
-class PreconditionOut(BaseModel):
+class DeliveryPreconditionOut(BaseModel):
     """CLS-08c: "9 of 21 accounts reconciled" · "7 open issues" · "Entries not posted"."""
 
     model_config = _cfg({"blocker": "accounts_unreconciled", "done": 9, "of": 21})
@@ -77,7 +77,7 @@ class PreconditionOut(BaseModel):
     of: Annotated[int | None, Field(ge=0), Internal] = None
 
 
-class StatementLineOut(BaseModel):
+class DeliveryStatementLineOut(BaseModel):
     model_config = _cfg()
 
     key: Annotated[str, Field(max_length=80), Internal]
@@ -86,7 +86,7 @@ class StatementLineOut(BaseModel):
     account_refs: Annotated[list[str], Internal] = []
 
 
-class PackageOut(BaseModel):
+class DeliveryPackageOut(BaseModel):
     """CLS-08a: total assets 549,195.45 = 184,983.05 + 364,212.40; net income 27,795 (July
     31,455); route AR-C 70 preparation with "No assurance is provided." on every page."""
 
@@ -105,10 +105,10 @@ class PackageOut(BaseModel):
     legend: Annotated[str | None, Field(max_length=200), Internal] = None
     sections: Annotated[list[Section], Internal]
     cas_answer: Annotated[bool, Internal]
-    balance_sheet: Annotated[list[StatementLineOut], Internal] = []
-    income_statement: Annotated[list[StatementLineOut], Internal] = []
+    balance_sheet: Annotated[list[DeliveryStatementLineOut], Internal] = []
+    income_statement: Annotated[list[DeliveryStatementLineOut], Internal] = []
     commentary: Annotated[str | None, Field(max_length=20000), Confidential] = None
-    preconditions: Annotated[list[PreconditionOut], Internal]
+    preconditions: Annotated[list[DeliveryPreconditionOut], Internal]
     released_at: Annotated[datetime | None, Internal] = None
     released_by: Annotated[str | None, Field(max_length=200), Confidential] = None
     client_approved_at: Annotated[datetime | None, Internal] = None
@@ -117,7 +117,7 @@ class PackageOut(BaseModel):
     version: Annotated[int, Field(ge=1), Internal]
 
 
-class PackageEditIn(BaseModel):
+class DeliveryPackageEditIn(BaseModel):
     model_config = _cfg()
 
     sections: Annotated[list[Section], Field(min_length=1), Internal]
@@ -125,21 +125,21 @@ class PackageEditIn(BaseModel):
     expected_version: Annotated[int, Field(ge=1), Internal]
 
 
-class CommentaryIn(BaseModel):
+class DeliveryCommentaryIn(BaseModel):
     model_config = _cfg()
 
     doc: Annotated[str, Field(max_length=20000), Confidential]
     expected_version: Annotated[int, Field(ge=1), Internal]
 
 
-class GenerateOut(BaseModel):
+class DeliveryGenerateOut(BaseModel):
     model_config = _cfg()
 
     run_id: Annotated[UUID, Internal]
     version_no: Annotated[int, Field(ge=1), Internal]
 
 
-class PageOut(BaseModel):
+class DeliveryPageOut(BaseModel):
     model_config = _cfg()
 
     page_no: Annotated[int, Field(ge=1), Internal]
@@ -147,19 +147,19 @@ class PageOut(BaseModel):
     image_url: Annotated[str, Field(max_length=2000), Internal]
 
 
-class ReleaseIn(BaseModel):
+class DeliveryReleaseIn(BaseModel):
     model_config = _cfg()
 
     seen_version: Annotated[int, Field(ge=1), Internal]
 
 
-class ReopenIn(BaseModel):
+class DeliveryReopenIn(BaseModel):
     model_config = _cfg()
 
     reason: Annotated[str, Field(min_length=1, max_length=1000), Confidential]
 
 
-class CloseStateOut(BaseModel):
+class DeliveryCloseStateOut(BaseModel):
     model_config = _cfg()
 
     close_id: Annotated[UUID, Internal]
@@ -170,7 +170,7 @@ class CloseStateOut(BaseModel):
 # --- CLS-12 hand-off ---------------------------------------------------------------------------
 
 
-class ScheduleOut(BaseModel):
+class DeliveryScheduleOut(BaseModel):
     """Fixed asset register: cost 278,400.00 · accumulated depreciation 74,900.00 · 2026 book
     depreciation 25,680.00."""
 
@@ -182,7 +182,7 @@ class ScheduleOut(BaseModel):
     figures: Annotated[dict[str, Decimal], Confidential] = {}
 
 
-class HandoffOut(BaseModel):
+class DeliveryHandoffOut(BaseModel):
     model_config = _cfg()
 
     status: Annotated[HandoffStatus, Internal]
@@ -190,12 +190,12 @@ class HandoffOut(BaseModel):
     tb_version: Annotated[str | None, Field(pattern=r"^TB v[1-9][0-9]*$"), Internal] = None
     locked_at: Annotated[date | None, Internal] = None
     target_return_id: Annotated[UUID | None, Internal] = None
-    schedules: Annotated[list[ScheduleOut], Internal] = []
+    schedules: Annotated[list[DeliveryScheduleOut], Internal] = []
     superseded_on_next: Annotated[bool, Internal] = False
     version: Annotated[int, Field(ge=1), Internal] = 1
 
 
-class HandoffIn(BaseModel):
+class DeliveryHandoffIn(BaseModel):
     model_config = _cfg()
 
     schedules: Annotated[list[str], Field(max_length=20), Internal]
@@ -203,7 +203,7 @@ class HandoffIn(BaseModel):
     seen_version: Annotated[int, Field(ge=1), Internal]
 
 
-class HandoffPublishedOut(BaseModel):
+class DeliveryHandoffPublishedOut(BaseModel):
     """ "Handed off to 2026 Form 1120-S · 3 tax issues created"."""
 
     model_config = _cfg()
@@ -216,7 +216,7 @@ class HandoffPublishedOut(BaseModel):
 # --- CLS-13 information returns ----------------------------------------------------------------
 
 
-class VendorRowOut(BaseModel):
+class DeliveryVendorRowOut(BaseModel):
     """Larimer Street Properties · 1099-MISC box 1 rents · $78,400.00 · TIN ••-•••4471."""
 
     model_config = _cfg()
@@ -234,7 +234,7 @@ class VendorRowOut(BaseModel):
     version: Annotated[int, Field(ge=1), Internal]
 
 
-class InformationReturnsOut(BaseModel):
+class DeliveryInformationReturnsOut(BaseModel):
     """CLS-13a: 12 Vendors paid · 6 Reportable · 2 Requested · 1 TIN mismatch · 0 Filed."""
 
     model_config = _cfg()
@@ -247,11 +247,11 @@ class InformationReturnsOut(BaseModel):
     filed: Annotated[int, Field(ge=0), Internal]
     threshold_rule: Annotated[str, Field(max_length=500), Internal]
     due_rule: Annotated[str, Field(max_length=500), Internal]
-    items: Annotated[list[VendorRowOut], Internal]
+    items: Annotated[list[DeliveryVendorRowOut], Internal]
     batch_status: Annotated[BatchStatus, Internal]
 
 
-class VendorPatchIn(BaseModel):
+class DeliveryVendorPatchIn(BaseModel):
     model_config = _cfg()
 
     entity_type: Annotated[EntityType | None, Internal] = None
@@ -260,13 +260,13 @@ class VendorPatchIn(BaseModel):
     expected_version: Annotated[int, Field(ge=1), Internal]
 
 
-class RevealIn(BaseModel):
+class DeliveryRevealIn(BaseModel):
     model_config = _cfg()
 
     reason: Annotated[str, Field(min_length=1, max_length=500), Confidential]
 
 
-class RevealOut(BaseModel):
+class DeliveryRevealOut(BaseModel):
     """A reveal is logged (P-03 `pii_reveals`) and returned once; never cached or logged."""
 
     model_config = _cfg()
@@ -275,7 +275,7 @@ class RevealOut(BaseModel):
     expires_at: Annotated[datetime, Internal]
 
 
-class W9RequestIn(BaseModel):
+class DeliveryW9RequestIn(BaseModel):
     model_config = _cfg()
 
     vendor_ids: Annotated[list[UUID], Field(min_length=1, max_length=100), Internal]
@@ -283,14 +283,14 @@ class W9RequestIn(BaseModel):
     wording_template_version_id: Annotated[UUID, Internal]
 
 
-class W9RequestOut(BaseModel):
+class DeliveryW9RequestOut(BaseModel):
     model_config = _cfg()
 
     request_id: Annotated[UUID, Internal]
     request_item_ids: Annotated[list[UUID], Internal]
 
 
-class TinMatchIn(BaseModel):
+class DeliveryTinMatchIn(BaseModel):
     model_config = _cfg()
 
     checked_on: Annotated[date, Internal]
@@ -298,7 +298,7 @@ class TinMatchIn(BaseModel):
     evidence_version_id: Annotated[UUID, Internal]
 
 
-class BackupWithholdingIn(BaseModel):
+class DeliveryBackupWithholdingIn(BaseModel):
     model_config = _cfg()
 
     event: Annotated[BackupEvent, Internal]
@@ -306,13 +306,13 @@ class BackupWithholdingIn(BaseModel):
     evidence_version_id: Annotated[UUID | None, Internal] = None
 
 
-class RecordOut(BaseModel):
+class DeliveryRecordOut(BaseModel):
     model_config = _cfg()
 
     record_id: Annotated[UUID, Internal]
 
 
-class ReturnBatchIn(BaseModel):
+class DeliveryReturnBatchIn(BaseModel):
     model_config = _cfg()
 
     client_entity_id: Annotated[UUID, Internal]
@@ -320,7 +320,7 @@ class ReturnBatchIn(BaseModel):
     seen_versions: Annotated[dict[UUID, int], Internal]
 
 
-class ReturnBatchOut(BaseModel):
+class DeliveryReturnBatchOut(BaseModel):
     model_config = _cfg()
 
     batch_id: Annotated[UUID, Internal]
@@ -329,7 +329,7 @@ class ReturnBatchOut(BaseModel):
     due_on: Annotated[date | None, Internal] = None
 
 
-class FiledIn(BaseModel):
+class DeliveryFiledIn(BaseModel):
     model_config = _cfg()
 
     iris_receipt_id: Annotated[str, Field(min_length=1, max_length=64), Internal]
@@ -337,7 +337,7 @@ class FiledIn(BaseModel):
     evidence_version_id: Annotated[UUID, Internal]
 
 
-class AckIn(BaseModel):
+class DeliveryAckIn(BaseModel):
     model_config = _cfg()
 
     status: Annotated[Literal["accepted", "rejected"], Internal]
@@ -363,25 +363,34 @@ async def _human(ctx: AuthContext, flag: Flag, action: str) -> None:
         raise Forbidden(action, "role")
 
 
-@delivery_router.get(_PKG, action="close_package.read", response_model=PackageOut, errors=(501,))
-async def package_route(close_id: UUID, ctx: Ctx) -> PackageOut:
+@delivery_router.get(
+    _PKG, action="close_package.read", response_model=DeliveryPackageOut, errors=(501,)
+)
+async def package_route(close_id: UUID, ctx: Ctx) -> DeliveryPackageOut:
     """Structure, preconditions and route (C-02-T21)."""
     await _on(ctx, CLOSES_DELIVERY)
     raise NotImplementedYet
 
 
 @delivery_router.patch(
-    _PKG, action="close_package.edit", response_model=PackageOut, errors=(409, 501)
+    _PKG, action="close_package.edit", response_model=DeliveryPackageOut, errors=(409, 501)
 )
-async def package_edit_route(close_id: UUID, body: PackageEditIn, ctx: Ctx) -> PackageOut:
+async def package_edit_route(
+    close_id: UUID, body: DeliveryPackageEditIn, ctx: Ctx
+) -> DeliveryPackageOut:
     await _human(ctx, CLOSES_DELIVERY, "close_package.edit")
     raise NotImplementedYet
 
 
 @delivery_router.patch(
-    f"{_PKG}/commentary", action="close_package.edit", response_model=PackageOut, errors=(409, 501)
+    f"{_PKG}/commentary",
+    action="close_package.edit",
+    response_model=DeliveryPackageOut,
+    errors=(409, 501),
 )
-async def commentary_route(close_id: UUID, body: CommentaryIn, ctx: Ctx) -> PackageOut:
+async def commentary_route(
+    close_id: UUID, body: DeliveryCommentaryIn, ctx: Ctx
+) -> DeliveryPackageOut:
     """Only commentary is editable; figures are locked to the ledger."""
     await _human(ctx, CLOSES_DELIVERY, "close_package.edit")
     raise NotImplementedYet
@@ -390,20 +399,23 @@ async def commentary_route(close_id: UUID, body: CommentaryIn, ctx: Ctx) -> Pack
 @delivery_router.post(
     f"{_PKG}/generate",
     action="close_package.generate",
-    response_model=GenerateOut,
+    response_model=DeliveryGenerateOut,
     status_code=202,
     errors=(409, 501),
 )
-async def generate_route(close_id: UUID, ctx: Ctx) -> GenerateOut:
+async def generate_route(close_id: UUID, ctx: Ctx) -> DeliveryGenerateOut:
     """A deterministic DET run; regenerate keeps commentary edits."""
     await _human(ctx, CLOSES_DELIVERY, "close_package.generate")
     raise NotImplementedYet
 
 
 @delivery_router.get(
-    f"{_PKG}/pages/{{page_no}}", action="close_package.read", response_model=PageOut, errors=(501,)
+    f"{_PKG}/pages/{{page_no}}",
+    action="close_package.read",
+    response_model=DeliveryPageOut,
+    errors=(501,),
 )
-async def page_route(close_id: UUID, page_no: int, ctx: Ctx) -> PageOut:
+async def page_route(close_id: UUID, page_no: int, ctx: Ctx) -> DeliveryPageOut:
     await _on(ctx, CLOSES_DELIVERY)
     raise NotImplementedYet
 
@@ -427,39 +439,42 @@ async def package_xlsx_route(close_id: UUID, ctx: Ctx) -> bytes:
 @delivery_router.post(
     f"{_PKG}/release",
     action="close_package.release",
-    response_model=PackageOut,
+    response_model=DeliveryPackageOut,
     status_code=202,
     errors=(409, 501),
 )
 async def release_route(
-    close_id: UUID, body: ReleaseIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> PackageOut:
+    close_id: UUID, body: DeliveryReleaseIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> DeliveryPackageOut:
     """Partner only, live, fresh MFA; 409 `release_preconditions_unmet` (C-02-T23)."""
     await _human(ctx, CLOSES_DELIVERY, "close_package.release")
     raise NotImplementedYet
 
 
 @delivery_router.post(
-    f"{_C}/lock", action="close.lock", response_model=CloseStateOut, errors=(409, 501)
+    f"{_C}/lock", action="close.lock", response_model=DeliveryCloseStateOut, errors=(409, 501)
 )
-async def lock_route(close_id: UUID, ctx: Ctx) -> CloseStateOut:
+async def lock_route(close_id: UUID, ctx: Ctx) -> DeliveryCloseStateOut:
     """409 `client_approval_required` before the client approves."""
     await _human(ctx, CLOSES_DELIVERY, "close.lock")
     raise NotImplementedYet
 
 
 @delivery_router.post(
-    f"{_C}/reopen", action="close.reopen", response_model=CloseStateOut, errors=(409, 501)
+    f"{_C}/reopen", action="close.reopen", response_model=DeliveryCloseStateOut, errors=(409, 501)
 )
-async def reopen_route(close_id: UUID, body: ReopenIn, ctx: Ctx) -> CloseStateOut:
+async def reopen_route(close_id: UUID, body: DeliveryReopenIn, ctx: Ctx) -> DeliveryCloseStateOut:
     await _human(ctx, CLOSES_DELIVERY, "close.reopen")
     raise NotImplementedYet
 
 
 @delivery_router.get(
-    f"{_C}/tax-handoff", action="tax_handoff.read", response_model=HandoffOut, errors=(501,)
+    f"{_C}/tax-handoff",
+    action="tax_handoff.read",
+    response_model=DeliveryHandoffOut,
+    errors=(501,),
 )
-async def handoff_route(close_id: UUID, ctx: Ctx) -> HandoffOut:
+async def close_tax_handoff_route(close_id: UUID, ctx: Ctx) -> DeliveryHandoffOut:
     """Availability and preview; `handoff_not_available` before a locked December close."""
     await _on(ctx, CLOSES_TAX_HANDOFF)
     raise NotImplementedYet
@@ -468,13 +483,13 @@ async def handoff_route(close_id: UUID, ctx: Ctx) -> HandoffOut:
 @delivery_router.post(
     f"{_C}/tax-handoff",
     action="tax_handoff.publish",
-    response_model=HandoffPublishedOut,
+    response_model=DeliveryHandoffPublishedOut,
     status_code=202,
     errors=(409, 501),
 )
-async def handoff_publish_route(
-    close_id: UUID, body: HandoffIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> HandoffPublishedOut:
+async def close_tax_handoff_publish_route(
+    close_id: UUID, body: DeliveryHandoffIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> DeliveryHandoffPublishedOut:
     """Publish through C12 `receive_tb_handoff` (C-02-T39)."""
     await _human(ctx, CLOSES_TAX_HANDOFF, "tax_handoff.publish")
     raise NotImplementedYet
@@ -483,40 +498,42 @@ async def handoff_publish_route(
 @delivery_router.get(
     "/client-entities/{client_entity_id}/information-returns",
     action="information_returns.read",
-    response_model=InformationReturnsOut,
+    response_model=DeliveryInformationReturnsOut,
     errors=(501,),
 )
 async def information_returns_route(
     client_entity_id: UUID, ctx: Ctx, tax_year: int, w9: W9Status | None = None
-) -> InformationReturnsOut:
+) -> DeliveryInformationReturnsOut:
     """CLS-13 tiles, rule text from C21 rows, vendor rows (C-02-T45)."""
     await _on(ctx, CLOSES_INFORMATION_RETURNS)
     raise NotImplementedYet
 
 
 @delivery_router.get(
-    "/vendors/{vendor_id}", action="information_returns.read", response_model=VendorRowOut,
+    "/vendors/{vendor_id}", action="information_returns.read", response_model=DeliveryVendorRowOut,
     errors=(501,),
 )  # fmt: skip
-async def vendor_route(vendor_id: UUID, ctx: Ctx) -> VendorRowOut:
+async def vendor_route(vendor_id: UUID, ctx: Ctx) -> DeliveryVendorRowOut:
     await _on(ctx, CLOSES_INFORMATION_RETURNS)
     raise NotImplementedYet
 
 
 @delivery_router.patch(
-    "/vendors/{vendor_id}", action="vendor_1099.update", response_model=VendorRowOut,
+    "/vendors/{vendor_id}", action="vendor_1099.update", response_model=DeliveryVendorRowOut,
     errors=(409, 501),
 )  # fmt: skip
-async def vendor_patch_route(vendor_id: UUID, body: VendorPatchIn, ctx: Ctx) -> VendorRowOut:
+async def vendor_patch_route(
+    vendor_id: UUID, body: DeliveryVendorPatchIn, ctx: Ctx
+) -> DeliveryVendorRowOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "vendor_1099.update")
     raise NotImplementedYet
 
 
 @delivery_router.post(
-    "/vendors/{vendor_id}/tin:reveal", action="tin.reveal", response_model=RevealOut,
+    "/vendors/{vendor_id}/tin:reveal", action="tin.reveal", response_model=DeliveryRevealOut,
     errors=(409, 501),
 )  # fmt: skip
-async def tin_reveal_route(vendor_id: UUID, body: RevealIn, ctx: Ctx) -> RevealOut:
+async def tin_reveal_route(vendor_id: UUID, body: DeliveryRevealIn, ctx: Ctx) -> DeliveryRevealOut:
     """Logged; refused offshore (`tin_reveal_refused`)."""
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "tin.reveal")
     raise NotImplementedYet
@@ -524,11 +541,11 @@ async def tin_reveal_route(vendor_id: UUID, body: RevealIn, ctx: Ctx) -> RevealO
 
 @delivery_router.post(
     "/client-entities/{client_entity_id}/w9-requests", action="w9.request",
-    response_model=W9RequestOut, status_code=201, errors=(409, 501),
+    response_model=DeliveryW9RequestOut, status_code=201, errors=(409, 501),
 )  # fmt: skip
 async def w9_request_route(
-    client_entity_id: UUID, body: W9RequestIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> W9RequestOut:
+    client_entity_id: UUID, body: DeliveryW9RequestIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> DeliveryW9RequestOut:
     """Portal requests through C5, sent by a person (DEC-74)."""
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "w9.request")
     raise NotImplementedYet
@@ -536,29 +553,31 @@ async def w9_request_route(
 
 @delivery_router.post(
     "/vendors/{vendor_id}/tin-match-results", action="tin_match.record",
-    response_model=RecordOut, status_code=201, errors=(409, 501),
+    response_model=DeliveryRecordOut, status_code=201, errors=(409, 501),
 )  # fmt: skip
-async def tin_match_route(vendor_id: UUID, body: TinMatchIn, ctx: Ctx) -> RecordOut:
+async def tin_match_route(
+    vendor_id: UUID, body: DeliveryTinMatchIn, ctx: Ctx
+) -> DeliveryRecordOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "tin_match.record")
     raise NotImplementedYet
 
 
 @delivery_router.post(
     "/vendors/{vendor_id}/backup-withholding", action="backup_withholding.record",
-    response_model=RecordOut, status_code=201, errors=(409, 501),
+    response_model=DeliveryRecordOut, status_code=201, errors=(409, 501),
 )  # fmt: skip
 async def backup_withholding_route(
-    vendor_id: UUID, body: BackupWithholdingIn, ctx: Ctx
-) -> RecordOut:
+    vendor_id: UUID, body: DeliveryBackupWithholdingIn, ctx: Ctx
+) -> DeliveryRecordOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "backup_withholding.record")
     raise NotImplementedYet
 
 
 @delivery_router.post(
     "/information-return-batches", action="information_return_batch.approve",
-    response_model=ReturnBatchOut, status_code=201, errors=(409, 501),
+    response_model=DeliveryReturnBatchOut, status_code=201, errors=(409, 501),
 )  # fmt: skip
-async def return_batch_route(body: ReturnBatchIn, ctx: Ctx) -> ReturnBatchOut:
+async def return_batch_route(body: DeliveryReturnBatchIn, ctx: Ctx) -> DeliveryReturnBatchOut:
     """After the December close locks (`close_not_locked`); human only."""
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "information_return_batch.approve")
     raise NotImplementedYet
@@ -576,19 +595,19 @@ async def iris_csv_route(batch_id: UUID, ctx: Ctx) -> bytes:
 
 @delivery_router.post(
     "/information-return-batches/{batch_id}/filed",
-    action="information_return_batch.record_filing", response_model=ReturnBatchOut,
+    action="information_return_batch.record_filing", response_model=DeliveryReturnBatchOut,
     errors=(409, 501),
 )  # fmt: skip
-async def filed_route(batch_id: UUID, body: FiledIn, ctx: Ctx) -> ReturnBatchOut:
+async def filed_route(batch_id: UUID, body: DeliveryFiledIn, ctx: Ctx) -> DeliveryReturnBatchOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "information_return_batch.record_filing")
     raise NotImplementedYet
 
 
 @delivery_router.post(
     "/information-return-batches/{batch_id}/acknowledgement",
-    action="information_return_batch.record_ack", response_model=ReturnBatchOut,
+    action="information_return_batch.record_ack", response_model=DeliveryReturnBatchOut,
     errors=(409, 501),
 )  # fmt: skip
-async def ack_route(batch_id: UUID, body: AckIn, ctx: Ctx) -> ReturnBatchOut:
+async def ack_route(batch_id: UUID, body: DeliveryAckIn, ctx: Ctx) -> DeliveryReturnBatchOut:
     await _human(ctx, CLOSES_INFORMATION_RETURNS, "information_return_batch.record_ack")
     raise NotImplementedYet

@@ -61,3 +61,13 @@ One nav item "Group audit"; "Accrued" nowhere; client words Due · ✓ You uploa
 ## Acceptance
 
 SPEC-658's criteria for this screen; each becomes a test named "POR-23 acceptance: <criterion>".
+
+## A-09-T36 (states a–f, DEC-5523)
+Fixture scenarios a–f (`fixtures/scenarios/POR-23.ts`, Renee Pruett): a invited (Sep 23, 9:40 AM), b acknowledged with a question (11:20 AM), c interim memo overdue (Dec 1, 9:05 AM), d uploaded (Dec 2), e returned, f invitation expired. The seed's four deliverables are now the handoff's (Planning confirmation Oct 2; Interim memo Nov 30; Clearance memo, summary of uncorrected misstatements and component trial balance Feb 12, 2027; Subsequent events update Mar 19, 2027).
+
+| Where | Handoff | Built | Why |
+|---|---|---|---|
+| Intro team line | "Group engagement partner Margaret Okonkwo · Manager Omar Haddad" | omitted | the room read model carries no firm people (A-09-T33's allowlist); a later read-model field |
+| Empty thread | "Questions go to Omar Haddad and Margaret Okonkwo." | "Questions go to Brightwater Hale LLP." | same |
+| d uploaded sub-line | "✓ You uploaded Dec 2 · Brightwater Hale is reviewing it" | "✓ You uploaded Dec 2" | the client word is `you_uploaded` for received and reviewed alike (client words only) |
+| Letter preview | first page with a fade, "Page 1 of 6" | sections in full, "Open the full letter ›" opens the reader with Download PDF | the instructions arrive as sections, not page images |

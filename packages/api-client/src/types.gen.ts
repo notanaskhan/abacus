@@ -840,24 +840,6 @@ export type AccruedIncidentFactsIn = {
 };
 
 /**
- * AckIn
- */
-export type AckIn = {
-    /**
-     * At
-     */
-    at: string;
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id: string;
-    /**
-     * Status
-     */
-    status: 'accepted' | 'rejected';
-};
-
-/**
  * ActivityActorOut
  */
 export type ActivityActorOut = {
@@ -942,17 +924,51 @@ export type ActivityItemOut = {
 };
 
 /**
- * ActivityListOut
+ * ActivityOut
+ *
+ * One automatic action: references only, never client content (AC-7).
  */
-export type ActivityListOut = {
+export type ActivityOut = {
     /**
-     * Items
+     * Action
      */
-    items: Array<AbacusModulesIntegrationsW1ContractActivityOut>;
+    action: string;
     /**
-     * Total
+     * Created At
      */
-    total: number;
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Count
+     */
+    item_count: number | null;
+    /**
+     * Outcome
+     */
+    outcome: 'done' | 'skipped' | 'failed';
+    /**
+     * Policy
+     */
+    policy: string;
+    /**
+     * Policy Version
+     */
+    policy_version: number;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Record Id
+     */
+    record_id: string | null;
+    /**
+     * Record Type
+     */
+    record_type: string | null;
 };
 
 /**
@@ -2500,7 +2516,7 @@ export type AnalyticsSetOut = {
      */
     stage: 'preliminary' | 'substantive' | 'final' | 'review';
     status: AnalyticsSetStatus;
-    tallies: AbacusModulesAssuranceAnalyticsContractTalliesOut;
+    tallies: TalliesOut;
     threshold: ThresholdOut;
     /**
      * Version No
@@ -3297,39 +3313,6 @@ export type ApproveVersionIn = {
      * Row Version
      */
     row_version: number;
-};
-
-/**
- * ApproverContextOut
- *
- * The footer: "Approving as Raj Malhotra · CAS Senior · may approve within-threshold
- * batches under BH AJE thresholds v2".
- */
-export type ApproverContextOut = {
-    /**
-     * Display Name
-     */
-    display_name: string;
-    /**
-     * May Batch Within Threshold
-     */
-    may_batch_within_threshold: boolean;
-    /**
-     * Policy Label
-     */
-    policy_label: string;
-    /**
-     * Policy Version Id
-     */
-    policy_version_id: string;
-    /**
-     * Role Label
-     */
-    role_label: string;
-    /**
-     * User Id
-     */
-    user_id: string;
 };
 
 /**
@@ -5963,24 +5946,6 @@ export type AvailabilityOut = {
 };
 
 /**
- * BackupWithholdingIn
- */
-export type BackupWithholdingIn = {
-    /**
-     * Event
-     */
-    event: 'watch_started' | 'b_notice_received' | 'started' | 'stopped';
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id?: string | null;
-    /**
-     * Reason
-     */
-    reason: string;
-};
-
-/**
  * BadgePart
  */
 export type BadgePart = {
@@ -6042,39 +6007,6 @@ export type BasisIn = {
      * Trivial Pct
      */
     trivial_pct: number | string;
-};
-
-/**
- * BatchEntryOut
- *
- * A batch drawer row: AJE-01 · Posted · QBO 48213.
- */
-export type BatchEntryOut = {
-    /**
-     * Deep Link
-     */
-    deep_link?: string | null;
-    /**
-     * Entry Id
-     */
-    entry_id: string;
-    /**
-     * External Txn Ref
-     */
-    external_txn_ref?: string | null;
-    /**
-     * Failure
-     */
-    failure?: 'inactive_account' | 'unmapped_account' | 'closing_date_locked' | 'attest_client_posting_refused' | 'write_grant_missing' | 'write_capability_disabled' | 'write_capability_not_released' | 'posting_not_enabled' | null;
-    /**
-     * Provider Message
-     */
-    provider_message?: string | null;
-    /**
-     * Ref
-     */
-    ref: string;
-    status: ProposedEntryStatus;
 };
 
 /**
@@ -7548,44 +7480,6 @@ export type CapabilityAvailabilityOut = {
 };
 
 /**
- * CapabilitySwitchIn
- */
-export type CapabilitySwitchIn = {
-    /**
-     * Reason
-     */
-    reason?: string | null;
-};
-
-/**
- * CapabilitySwitchOut
- *
- * "Enabled QuickBooks Online posting · Felix Andersen" (ADM-07).
- */
-export type CapabilitySwitchOut = {
-    /**
-     * Capability Id
-     */
-    capability_id: 'ledger_post_journal_entries';
-    /**
-     * Changed At
-     */
-    changed_at?: string | null;
-    /**
-     * Changed By
-     */
-    changed_by?: string | null;
-    /**
-     * Enabled
-     */
-    enabled: boolean;
-    /**
-     * Released
-     */
-    released: boolean;
-};
-
-/**
  * Card
  *
  * One engagement the viewer has open gates or attention on, in card order (§3.4).
@@ -8993,20 +8887,6 @@ export type CitedSourceOut = {
 };
 
 /**
- * ClassLimitOut
- */
-export type ClassLimitOut = {
-    /**
-     * Account Class
-     */
-    account_class: string;
-    /**
-     * Limit
-     */
-    limit: string;
-};
-
-/**
  * ClassificationOut
  *
  * What code (or the matcher) says the file is; agent values carry citations or none.
@@ -10313,76 +10193,6 @@ export type ClientVisibleChangeOut = {
 };
 
 /**
- * CloseEntriesOut
- */
-export type CloseEntriesOut = {
-    approver: ApproverContextOut;
-    /**
-     * Is Attest Client
-     */
-    is_attest_client: boolean;
-    /**
-     * Items
-     */
-    items: Array<CloseEntryRowOut>;
-    /**
-     * Posting Enabled
-     */
-    posting_enabled: boolean;
-    tallies: AbacusModulesAdjustmentsPostingContractTalliesOut;
-    /**
-     * Total
-     */
-    total: number;
-};
-
-/**
- * CloseEntryRowOut
- *
- * A CLS-07 row: AJE-05 · Review required · > $10,000 other accruals.
- */
-export type CloseEntryRowOut = {
-    /**
-     * Allowed Actions
-     */
-    allowed_actions?: Array<'proposed_entry.approve' | 'proposed_entry.request_approval' | 'proposed_entry.undo_approval' | 'proposed_entry.withdraw_approval' | 'proposed_entry.reject_close' | 'proposed_entry.record_external' | 'posting_batch.post'>;
-    /**
-     * Amount
-     */
-    amount: string;
-    /**
-     * Approval Label
-     */
-    approval_label?: string | null;
-    class_limit?: ClassLimitOut | null;
-    /**
-     * Description
-     */
-    description?: string | null;
-    /**
-     * Entry Id
-     */
-    entry_id: string;
-    /**
-     * External Txn Ref
-     */
-    external_txn_ref?: string | null;
-    /**
-     * Ref
-     */
-    ref: string;
-    /**
-     * Reverses On
-     */
-    reverses_on?: string | null;
-    status: ProposedEntryStatus;
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
  * CloseIssueOut
  */
 export type CloseIssueOut = {
@@ -10855,24 +10665,6 @@ export type CloseRunsOut = {
      * Ready To Run
      */
     ready_to_run?: number;
-};
-
-/**
- * CloseStateOut
- */
-export type CloseStateOut = {
-    /**
-     * Close Id
-     */
-    close_id: string;
-    /**
-     * Status
-     */
-    status: 'in_review' | 'approved' | 'delivered' | 'locked';
-    /**
-     * Version
-     */
-    version: number;
 };
 
 /**
@@ -11410,20 +11202,6 @@ export type CommentPostedOut = {
  * CommentThreadStatus
  */
 export type CommentThreadStatus = 'open' | 'resolved';
-
-/**
- * CommentaryIn
- */
-export type CommentaryIn = {
-    /**
-     * Doc
-     */
-    doc: string;
-    /**
-     * Expected Version
-     */
-    expected_version: number;
-};
 
 /**
  * CommitteeMemberOut
@@ -12632,35 +12410,6 @@ export type ConflictClearIn = {
 };
 
 /**
- * ConflictOut
- *
- * CLS-11e: "AJE dated Aug 31 cannot post — the QuickBooks closing date is Aug 31, 2026".
- */
-export type ConflictOut = {
-    /**
-     * Client Asked At
-     */
-    client_asked_at?: string | null;
-    /**
-     * Conflict Id
-     */
-    conflict_id: string;
-    /**
-     * Entry Date
-     */
-    entry_date: string;
-    /**
-     * Entry Id
-     */
-    entry_id: string;
-    /**
-     * Ledger Closing Date
-     */
-    ledger_closing_date: string;
-    status: ClosingDateConflictStatus;
-};
-
-/**
  * ConflictResultOut
  *
  * One match. A redacted row (a client the caller is walled from) carries only `id`,
@@ -13373,67 +13122,6 @@ export type ConnectionOut = {
 };
 
 /**
- * ConnectionPaneOut
- *
- * Authorized by Tess Moreno (client portal) · Mode "Client-authorized: read ledger, post
- * approved entries" · Last sync 9:02 AM · 1,214 transactions read (Aug 1-31) · 0 errors.
- */
-export type ConnectionPaneOut = {
-    /**
-     * Authorized By
-     */
-    authorized_by?: string | null;
-    /**
-     * Closing Date
-     */
-    closing_date?: string | null;
-    /**
-     * Closing Date Set At
-     */
-    closing_date_set_at?: string | null;
-    /**
-     * Closing Date Set By
-     */
-    closing_date_set_by?: string | null;
-    /**
-     * Connection Id
-     */
-    connection_id: string;
-    /**
-     * Dependents
-     */
-    dependents?: Array<string>;
-    /**
-     * Health
-     */
-    health: 'connected' | 'needs_attention' | 'needs_reauth' | 'disconnected';
-    /**
-     * Last Sync At
-     */
-    last_sync_at?: string | null;
-    /**
-     * Last Sync Errors
-     */
-    last_sync_errors?: number | null;
-    /**
-     * Last Sync Transactions
-     */
-    last_sync_transactions?: number | null;
-    /**
-     * Next Sync At
-     */
-    next_sync_at?: string | null;
-    /**
-     * Retry At
-     */
-    retry_at?: string | null;
-    /**
-     * Write Granted
-     */
-    write_granted: boolean;
-};
-
-/**
  * ConnectionPersonOut
  */
 export type ConnectionPersonOut = {
@@ -14111,34 +13799,6 @@ export type ConsolePublishIn = {
      * Reason
      */
     reason: string;
-};
-
-/**
- * ConsoleTilesOut
- *
- * CLS-11a tiles: 7 Posted (1 resolved Aug 11 under Failed post 0), 1 Proposed, Jul 31.
- */
-export type ConsoleTilesOut = {
-    /**
-     * Closing Date
-     */
-    closing_date?: string | null;
-    /**
-     * Failed Post
-     */
-    failed_post: number;
-    /**
-     * Posted
-     */
-    posted: number;
-    /**
-     * Proposed
-     */
-    proposed: number;
-    /**
-     * Resolved Failures
-     */
-    resolved_failures: number;
 };
 
 /**
@@ -15660,6 +15320,37 @@ export type DecisionOptionOut = {
 };
 
 /**
+ * DecisionOut
+ */
+export type DecisionOut = {
+    /**
+     * Corrects Proposal
+     */
+    corrects_proposal: boolean;
+    /**
+     * Decision
+     */
+    decision: 'accept' | 'reject' | 'send_back';
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    item_status: RequestStatus;
+    /**
+     * Reason Code
+     */
+    reason_code: string | null;
+    /**
+     * Request Item Ids
+     */
+    request_item_ids: Array<string>;
+};
+
+/**
  * DecisionRaisedOut
  */
 export type DecisionRaisedOut = {
@@ -16129,6 +15820,230 @@ export type DeliverablesOut = {
 };
 
 /**
+ * DeliveryAckIn
+ */
+export type DeliveryAckIn = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Status
+     */
+    status: 'accepted' | 'rejected';
+};
+
+/**
+ * DeliveryBackupWithholdingIn
+ */
+export type DeliveryBackupWithholdingIn = {
+    /**
+     * Event
+     */
+    event: 'watch_started' | 'b_notice_received' | 'started' | 'stopped';
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * DeliveryCloseStateOut
+ */
+export type DeliveryCloseStateOut = {
+    /**
+     * Close Id
+     */
+    close_id: string;
+    /**
+     * Status
+     */
+    status: 'in_review' | 'approved' | 'delivered' | 'locked';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * DeliveryCommentaryIn
+ */
+export type DeliveryCommentaryIn = {
+    /**
+     * Doc
+     */
+    doc: string;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+};
+
+/**
+ * DeliveryFiledIn
+ */
+export type DeliveryFiledIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Filed On
+     */
+    filed_on: string;
+    /**
+     * Iris Receipt Id
+     */
+    iris_receipt_id: string;
+};
+
+/**
+ * DeliveryGenerateOut
+ */
+export type DeliveryGenerateOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * DeliveryHandoffIn
+ */
+export type DeliveryHandoffIn = {
+    /**
+     * Items
+     */
+    items?: Array<string>;
+    /**
+     * Schedules
+     */
+    schedules: Array<string>;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * DeliveryHandoffOut
+ */
+export type DeliveryHandoffOut = {
+    /**
+     * Locked At
+     */
+    locked_at?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Schedules
+     */
+    schedules?: Array<DeliveryScheduleOut>;
+    /**
+     * Status
+     */
+    status: 'not_available' | 'ready' | 'handed_off' | 'superseded';
+    /**
+     * Superseded On Next
+     */
+    superseded_on_next?: boolean;
+    /**
+     * Target Return Id
+     */
+    target_return_id?: string | null;
+    /**
+     * Tb Version
+     */
+    tb_version?: string | null;
+    /**
+     * Version
+     */
+    version?: number;
+};
+
+/**
+ * DeliveryHandoffPublishedOut
+ *
+ * "Handed off to 2026 Form 1120-S · 3 tax issues created".
+ */
+export type DeliveryHandoffPublishedOut = {
+    /**
+     * Handoff Id
+     */
+    handoff_id: string;
+    /**
+     * Tax Issues Created
+     */
+    tax_issues_created: number;
+    /**
+     * Tb Version
+     */
+    tb_version: string;
+};
+
+/**
+ * DeliveryInformationReturnsOut
+ *
+ * CLS-13a: 12 Vendors paid · 6 Reportable · 2 Requested · 1 TIN mismatch · 0 Filed.
+ */
+export type DeliveryInformationReturnsOut = {
+    /**
+     * Batch Status
+     */
+    batch_status: 'not_started' | 'approved' | 'exported' | 'filed_iris' | 'accepted' | 'rejected';
+    /**
+     * Due Rule
+     */
+    due_rule: string;
+    /**
+     * Filed
+     */
+    filed: number;
+    /**
+     * Items
+     */
+    items: Array<DeliveryVendorRowOut>;
+    /**
+     * Reportable
+     */
+    reportable: number;
+    /**
+     * Requested
+     */
+    requested: number;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Threshold Rule
+     */
+    threshold_rule: string;
+    /**
+     * Tin Mismatch
+     */
+    tin_mismatch: number;
+    /**
+     * Vendors Paid
+     */
+    vendors_paid: number;
+};
+
+/**
  * DeliveryItemOut
  */
 export type DeliveryItemOut = {
@@ -16199,6 +16114,101 @@ export type DeliveryOut = {
 };
 
 /**
+ * DeliveryPackageEditIn
+ */
+export type DeliveryPackageEditIn = {
+    /**
+     * Cas Answer
+     */
+    cas_answer: boolean;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Sections
+     */
+    sections: Array<'balance_sheet' | 'income_statement' | 'cash_flows' | 'reconciliation_summary' | 'commentary'>;
+};
+
+/**
+ * DeliveryPackageOut
+ *
+ * CLS-08a: total assets 549,195.45 = 184,983.05 + 364,212.40; net income 27,795 (July
+ * 31,455); route AR-C 70 preparation with "No assurance is provided." on every page.
+ */
+export type DeliveryPackageOut = {
+    /**
+     * Balance Sheet
+     */
+    balance_sheet?: Array<DeliveryStatementLineOut>;
+    /**
+     * Cas Answer
+     */
+    cas_answer: boolean;
+    /**
+     * Client Approved At
+     */
+    client_approved_at?: string | null;
+    /**
+     * Client Approved By
+     */
+    client_approved_by?: string | null;
+    /**
+     * Close Id
+     */
+    close_id: string;
+    /**
+     * Commentary
+     */
+    commentary?: string | null;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Income Statement
+     */
+    income_statement?: Array<DeliveryStatementLineOut>;
+    /**
+     * Legend
+     */
+    legend?: string | null;
+    /**
+     * Preconditions
+     */
+    preconditions: Array<DeliveryPreconditionOut>;
+    /**
+     * Released At
+     */
+    released_at?: string | null;
+    /**
+     * Released By
+     */
+    released_by?: string | null;
+    /**
+     * Route
+     */
+    route: 'ar_c_70_preparation' | 'cas_by_product' | 'standalone_letter';
+    /**
+     * Sections
+     */
+    sections: Array<'balance_sheet' | 'income_statement' | 'cash_flows' | 'reconciliation_summary' | 'commentary'>;
+    /**
+     * Status
+     */
+    status: 'drafting' | 'draft' | 'released' | 'approved_by_client';
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * DeliveryPacketOut
  */
 export type DeliveryPacketOut = {
@@ -16246,6 +16256,315 @@ export type DeliveryPacketPatchIn = {
      * Seen Version
      */
     seen_version: number;
+};
+
+/**
+ * DeliveryPageOut
+ */
+export type DeliveryPageOut = {
+    /**
+     * Image Url
+     */
+    image_url: string;
+    /**
+     * Of
+     */
+    of: number;
+    /**
+     * Page No
+     */
+    page_no: number;
+};
+
+/**
+ * DeliveryPreconditionOut
+ *
+ * CLS-08c: "9 of 21 accounts reconciled" · "7 open issues" · "Entries not posted".
+ */
+export type DeliveryPreconditionOut = {
+    /**
+     * Blocker
+     */
+    blocker: 'accounts_unreconciled' | 'issues_open' | 'entries_unposted';
+    /**
+     * Done
+     */
+    done?: number | null;
+    /**
+     * Of
+     */
+    of?: number | null;
+};
+
+/**
+ * DeliveryRecordOut
+ */
+export type DeliveryRecordOut = {
+    /**
+     * Record Id
+     */
+    record_id: string;
+};
+
+/**
+ * DeliveryReleaseIn
+ */
+export type DeliveryReleaseIn = {
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * DeliveryReopenIn
+ */
+export type DeliveryReopenIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * DeliveryReturnBatchIn
+ */
+export type DeliveryReturnBatchIn = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Seen Versions
+     */
+    seen_versions: {
+        [key: string]: number;
+    };
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * DeliveryReturnBatchOut
+ */
+export type DeliveryReturnBatchOut = {
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Forms
+     */
+    forms: number;
+    /**
+     * Status
+     */
+    status: 'not_started' | 'approved' | 'exported' | 'filed_iris' | 'accepted' | 'rejected';
+};
+
+/**
+ * DeliveryRevealIn
+ */
+export type DeliveryRevealIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * DeliveryRevealOut
+ *
+ * A reveal is logged (P-03 `pii_reveals`) and returned once; never cached or logged.
+ */
+export type DeliveryRevealOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Tin
+     */
+    tin: string;
+};
+
+/**
+ * DeliveryScheduleOut
+ *
+ * Fixed asset register: cost 278,400.00 · accumulated depreciation 74,900.00 · 2026 book
+ * depreciation 25,680.00.
+ */
+export type DeliveryScheduleOut = {
+    /**
+     * Figures
+     */
+    figures?: {
+        [key: string]: string;
+    };
+    /**
+     * Included
+     */
+    included: boolean;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * DeliveryStatementLineOut
+ */
+export type DeliveryStatementLineOut = {
+    /**
+     * Account Refs
+     */
+    account_refs?: Array<string>;
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
+ * DeliveryTinMatchIn
+ */
+export type DeliveryTinMatchIn = {
+    /**
+     * Checked On
+     */
+    checked_on: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Result
+     */
+    result: 'match' | 'mismatch' | 'not_issued' | 'invalid';
+};
+
+/**
+ * DeliveryVendorPatchIn
+ */
+export type DeliveryVendorPatchIn = {
+    /**
+     * Entity Type
+     */
+    entity_type?: 'individual' | 'single_member_llc' | 'partnership' | 'c_corporation' | 's_corporation' | 'trust_estate' | 'llc_c' | 'llc_s' | 'llc_p' | 'other' | 'unknown' | null;
+    /**
+     * Exempt Reason
+     */
+    exempt_reason?: string | null;
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Is Attorney
+     */
+    is_attorney?: boolean | null;
+};
+
+/**
+ * DeliveryVendorRowOut
+ *
+ * Larimer Street Properties · 1099-MISC box 1 rents · $78,400.00 · TIN ••-•••4471.
+ */
+export type DeliveryVendorRowOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Box
+     */
+    box?: string | null;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Entity Type
+     */
+    entity_type: 'individual' | 'single_member_llc' | 'partnership' | 'c_corporation' | 's_corporation' | 'trust_estate' | 'llc_c' | 'llc_s' | 'llc_p' | 'other' | 'unknown';
+    /**
+     * Form
+     */
+    form?: 'nec' | 'misc' | null;
+    /**
+     * Is Attorney
+     */
+    is_attorney: boolean;
+    /**
+     * Reportability
+     */
+    reportability: 'reportable' | 'below_threshold' | 'exempt_corporation' | 'paid_by_card';
+    /**
+     * Tin Last4
+     */
+    tin_last4?: string | null;
+    /**
+     * Vendor Id
+     */
+    vendor_id: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * W9 Status
+     */
+    w9_status: 'on_file' | 'requested' | 'tin_mismatch' | 'missing';
+};
+
+/**
+ * DeliveryW9RequestIn
+ */
+export type DeliveryW9RequestIn = {
+    /**
+     * Channel
+     */
+    channel?: 'portal';
+    /**
+     * Vendor Ids
+     */
+    vendor_ids: Array<string>;
+    /**
+     * Wording Template Version Id
+     */
+    wording_template_version_id: string;
+};
+
+/**
+ * DeliveryW9RequestOut
+ */
+export type DeliveryW9RequestOut = {
+    /**
+     * Request Id
+     */
+    request_id: string;
+    /**
+     * Request Item Ids
+     */
+    request_item_ids: Array<string>;
 };
 
 /**
@@ -17379,39 +17698,6 @@ export type DropFileOut = {
      * Request Item Id
      */
     request_item_id?: string | null;
-};
-
-/**
- * DryRunOut
- *
- * CLS-07c2: "Post 6 entries ($35,300.00) to QuickBooks Online · Copperleaf Coffee
- * Roasters? The closing date will be set to Aug 31, 2026." No write happens.
- */
-export type DryRunOut = {
-    /**
-     * Client Entity Name
-     */
-    client_entity_name: string;
-    /**
-     * Closing Date Target
-     */
-    closing_date_target?: string | null;
-    /**
-     * Entry Count
-     */
-    entry_count: number;
-    /**
-     * Ledger Label
-     */
-    ledger_label: string;
-    /**
-     * Results
-     */
-    results: Array<PreflightResultOut>;
-    /**
-     * Total Amount
-     */
-    total_amount: string;
 };
 
 /**
@@ -19495,46 +19781,6 @@ export type EngagementIndexSummaryOut = {
 };
 
 /**
- * EngagementLedgerSettingsIn
- */
-export type EngagementLedgerSettingsIn = {
-    /**
-     * Connection Id
-     */
-    connection_id: string;
-    /**
-     * Expected Version
-     */
-    expected_version?: number | null;
-    /**
-     * Posting Enabled
-     */
-    posting_enabled: boolean;
-};
-
-/**
- * EngagementLedgerSettingsOut
- */
-export type EngagementLedgerSettingsOut = {
-    /**
-     * Connection Id
-     */
-    connection_id: string;
-    /**
-     * Engagement Id
-     */
-    engagement_id: string;
-    /**
-     * Posting Enabled
-     */
-    posting_enabled: boolean;
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
  * EngagementLetterRecordOut
  */
 export type EngagementLetterRecordOut = {
@@ -20530,16 +20776,6 @@ export type EntryDraftOut = {
      * Suggestion Id
      */
     suggestion_id?: string | null;
-};
-
-/**
- * EntryIdsIn
- */
-export type EntryIdsIn = {
-    /**
-     * Entry Ids
-     */
-    entry_ids: Array<string>;
 };
 
 /**
@@ -24514,24 +24750,6 @@ export type FiledDestinationOut = {
 };
 
 /**
- * FiledIn
- */
-export type FiledIn = {
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id: string;
-    /**
-     * Filed On
-     */
-    filed_on: string;
-    /**
-     * Iris Receipt Id
-     */
-    iris_receipt_id: string;
-};
-
-/**
  * FilingIn
  *
  * Manual EFAST2 tracking; `filed` needs the date and the acknowledgement evidence.
@@ -26988,20 +27206,6 @@ export type GenerateClosesOut = {
 };
 
 /**
- * GenerateOut
- */
-export type GenerateOut = {
-    /**
-     * Run Id
-     */
-    run_id: string;
-    /**
-     * Version No
-     */
-    version_no: number;
-};
-
-/**
  * GeneratedDocumentOut
  *
  * One generated document: its computed status (DF-31) and its insert-only versions.
@@ -27319,53 +27523,6 @@ export type GlImportOut = {
      * Status
      */
     status: 'processing' | 'waiting_for_tb' | 'reconciled' | 'failed';
-};
-
-/**
- * GlPostingSettingsIn
- */
-export type GlPostingSettingsIn = {
-    /**
-     * Expected Version
-     */
-    expected_version: number;
-    /**
-     * Memo Prefix
-     */
-    memo_prefix: string;
-    /**
-     * Post As
-     */
-    post_as: string;
-};
-
-/**
- * GlPostingSettingsOut
- *
- * ADM-08b: two locked rows ("Post only human-approved batches", "Attest posting disabled"),
- * the memo prefix and the "Post as" label.
- */
-export type GlPostingSettingsOut = {
-    /**
-     * Attest Posting Disabled
-     */
-    attest_posting_disabled?: true;
-    /**
-     * Human Approved Only
-     */
-    human_approved_only?: true;
-    /**
-     * Memo Prefix
-     */
-    memo_prefix: string;
-    /**
-     * Post As
-     */
-    post_as: string;
-    /**
-     * Version
-     */
-    version: number;
 };
 
 /**
@@ -28902,23 +29059,25 @@ export type GuidanceIn = {
 };
 
 /**
- * HandoffPublishedOut
- *
- * "Handed off to 2026 Form 1120-S · 3 tax issues created".
+ * HandoffIn
  */
-export type HandoffPublishedOut = {
+export type HandoffIn = {
     /**
-     * Handoff Id
+     * State
      */
-    handoff_id: string;
+    state: string;
+};
+
+/**
+ * HandoffOut
+ *
+ * A-02-T33: where the connect host sends the browser on; the host only, never a tenant.
+ */
+export type HandoffOut = {
     /**
-     * Tax Issues Created
+     * Origin Host
      */
-    tax_issues_created: number;
-    /**
-     * Tb Version
-     */
-    tb_version: string;
+    origin_host: string;
 };
 
 /**
@@ -30512,54 +30671,6 @@ export type InformationReturnThresholdsPayload = {
      * Rows
      */
     rows: Array<InformationReturnThreshold>;
-};
-
-/**
- * InformationReturnsOut
- *
- * CLS-13a: 12 Vendors paid · 6 Reportable · 2 Requested · 1 TIN mismatch · 0 Filed.
- */
-export type InformationReturnsOut = {
-    /**
-     * Batch Status
-     */
-    batch_status: 'not_started' | 'approved' | 'exported' | 'filed_iris' | 'accepted' | 'rejected';
-    /**
-     * Due Rule
-     */
-    due_rule: string;
-    /**
-     * Filed
-     */
-    filed: number;
-    /**
-     * Items
-     */
-    items: Array<VendorRowOut>;
-    /**
-     * Reportable
-     */
-    reportable: number;
-    /**
-     * Requested
-     */
-    requested: number;
-    /**
-     * Tax Year
-     */
-    tax_year: number;
-    /**
-     * Threshold Rule
-     */
-    threshold_rule: string;
-    /**
-     * Tin Mismatch
-     */
-    tin_mismatch: number;
-    /**
-     * Vendors Paid
-     */
-    vendors_paid: number;
 };
 
 /**
@@ -34152,30 +34263,6 @@ export type LeadsheetsOut = {
      * Items
      */
     items: Array<ReturnLeadsheetOut>;
-};
-
-/**
- * LedgerConsoleOut
- */
-export type LedgerConsoleOut = {
-    /**
-     * Client Entity Id
-     */
-    client_entity_id: string;
-    /**
-     * Client Entity Name
-     */
-    client_entity_name: string;
-    connection?: ConnectionPaneOut | null;
-    /**
-     * Ledger Label
-     */
-    ledger_label: string;
-    /**
-     * Posting Paused By
-     */
-    posting_paused_by?: string | null;
-    tiles: ConsoleTilesOut;
 };
 
 /**
@@ -40202,101 +40289,6 @@ export type PackageDecideIn = {
 };
 
 /**
- * PackageEditIn
- */
-export type PackageEditIn = {
-    /**
-     * Cas Answer
-     */
-    cas_answer: boolean;
-    /**
-     * Expected Version
-     */
-    expected_version: number;
-    /**
-     * Sections
-     */
-    sections: Array<'balance_sheet' | 'income_statement' | 'cash_flows' | 'reconciliation_summary' | 'commentary'>;
-};
-
-/**
- * PackageOut
- *
- * CLS-08a: total assets 549,195.45 = 184,983.05 + 364,212.40; net income 27,795 (July
- * 31,455); route AR-C 70 preparation with "No assurance is provided." on every page.
- */
-export type PackageOut = {
-    /**
-     * Balance Sheet
-     */
-    balance_sheet?: Array<AbacusModulesClosesDeliveryContractStatementLineOut>;
-    /**
-     * Cas Answer
-     */
-    cas_answer: boolean;
-    /**
-     * Client Approved At
-     */
-    client_approved_at?: string | null;
-    /**
-     * Client Approved By
-     */
-    client_approved_by?: string | null;
-    /**
-     * Close Id
-     */
-    close_id: string;
-    /**
-     * Commentary
-     */
-    commentary?: string | null;
-    /**
-     * Content Hash
-     */
-    content_hash: string;
-    /**
-     * Income Statement
-     */
-    income_statement?: Array<AbacusModulesClosesDeliveryContractStatementLineOut>;
-    /**
-     * Legend
-     */
-    legend?: string | null;
-    /**
-     * Preconditions
-     */
-    preconditions: Array<PreconditionOut>;
-    /**
-     * Released At
-     */
-    released_at?: string | null;
-    /**
-     * Released By
-     */
-    released_by?: string | null;
-    /**
-     * Route
-     */
-    route: 'ar_c_70_preparation' | 'cas_by_product' | 'standalone_letter';
-    /**
-     * Sections
-     */
-    sections: Array<'balance_sheet' | 'income_statement' | 'cash_flows' | 'reconciliation_summary' | 'commentary'>;
-    /**
-     * Status
-     */
-    status: 'drafting' | 'draft' | 'released' | 'approved_by_client';
-    /**
-     * Version
-     */
-    version: number;
-    /**
-     * Version No
-     */
-    version_no: number;
-};
-
-/**
  * PageBreakBlock
  */
 export type PageBreakBlock = {
@@ -40419,24 +40411,6 @@ export type PageOcrOut = {
      * Refused Reason
      */
     refused_reason?: 'kill_switch' | 'flag_off' | 'provider_terms' | 'boundary_basis' | 'consent_7216' | 'daily_page_cap' | 'size_limit' | 'provider_error' | null;
-};
-
-/**
- * PageOut
- */
-export type PageOut = {
-    /**
-     * Image Url
-     */
-    image_url: string;
-    /**
-     * Of
-     */
-    of: number;
-    /**
-     * Page No
-     */
-    page_no: number;
 };
 
 /**
@@ -43993,23 +43967,79 @@ export type PortalVisibilityOut = {
 };
 
 /**
- * PostBatchIn
+ * PostingApproveIn
  */
-export type PostBatchIn = {
+export type PostingApproveIn = {
     /**
-     * Entry Ids
+     * Seen Version
      */
-    entry_ids: Array<string>;
+    seen_version: number;
+};
+
+/**
+ * PostingApproverContextOut
+ *
+ * The footer: "Approving as Raj Malhotra · CAS Senior · may approve within-threshold
+ * batches under BH AJE thresholds v2".
+ */
+export type PostingApproverContextOut = {
     /**
-     * Seen Versions
+     * Display Name
      */
-    seen_versions: {
-        [key: string]: number;
-    };
+    display_name: string;
     /**
-     * Set Closing Date
+     * May Batch Within Threshold
      */
-    set_closing_date?: boolean;
+    may_batch_within_threshold: boolean;
+    /**
+     * Policy Label
+     */
+    policy_label: string;
+    /**
+     * Policy Version Id
+     */
+    policy_version_id: string;
+    /**
+     * Role Label
+     */
+    role_label: string;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * PostingBatchEntryOut
+ *
+ * A batch drawer row: AJE-01 · Posted · QBO 48213.
+ */
+export type PostingBatchEntryOut = {
+    /**
+     * Deep Link
+     */
+    deep_link?: string | null;
+    /**
+     * Entry Id
+     */
+    entry_id: string;
+    /**
+     * External Txn Ref
+     */
+    external_txn_ref?: string | null;
+    /**
+     * Failure
+     */
+    failure?: 'inactive_account' | 'unmapped_account' | 'closing_date_locked' | 'attest_client_posting_refused' | 'write_grant_missing' | 'write_capability_disabled' | 'write_capability_not_released' | 'posting_not_enabled' | null;
+    /**
+     * Provider Message
+     */
+    provider_message?: string | null;
+    /**
+     * Ref
+     */
+    ref: string;
+    status: ProposedEntryStatus;
 };
 
 /**
@@ -44033,7 +44063,7 @@ export type PostingBatchOut = {
     /**
      * Entries
      */
-    entries?: Array<BatchEntryOut>;
+    entries?: Array<PostingBatchEntryOut>;
     /**
      * Entry Count
      */
@@ -44079,13 +44109,37 @@ export type PostingBatchOut = {
 export type PostingBatchStatus = 'proposed' | 'posting' | 'posted' | 'failed_post';
 
 /**
- * PostingLogOut
+ * PostingClassLimitOut
  */
-export type PostingLogOut = {
+export type PostingClassLimitOut = {
+    /**
+     * Account Class
+     */
+    account_class: string;
+    /**
+     * Limit
+     */
+    limit: string;
+};
+
+/**
+ * PostingCloseEntriesOut
+ */
+export type PostingCloseEntriesOut = {
+    approver: PostingApproverContextOut;
+    /**
+     * Is Attest Client
+     */
+    is_attest_client: boolean;
     /**
      * Items
      */
-    items: Array<PostingLogRowOut>;
+    items: Array<PostingCloseEntryRowOut>;
+    /**
+     * Posting Enabled
+     */
+    posting_enabled: boolean;
+    tallies: PostingTalliesOut;
     /**
      * Total
      */
@@ -44093,47 +44147,287 @@ export type PostingLogOut = {
 };
 
 /**
- * PostingLogRowOut
+ * PostingCloseEntryRowOut
  *
- * 2026-07-A · Posted · QBO 47901-47906 · 1 failure resolved.
+ * A CLS-07 row: AJE-05 · Review required · > $10,000 other accruals.
  */
-export type PostingLogRowOut = {
+export type PostingCloseEntryRowOut = {
     /**
-     * Approved Count
+     * Allowed Actions
      */
-    approved_count: number;
+    allowed_actions?: Array<'proposed_entry.approve' | 'proposed_entry.request_approval' | 'proposed_entry.undo_approval' | 'proposed_entry.withdraw_approval' | 'proposed_entry.reject_close' | 'proposed_entry.record_external' | 'posting_batch.post'>;
     /**
-     * Batch Code
+     * Amount
      */
-    batch_code: string;
+    amount: string;
     /**
-     * Batch Id
+     * Approval Label
      */
-    batch_id: string;
+    approval_label?: string | null;
+    class_limit?: PostingClassLimitOut | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Entry Id
+     */
+    entry_id: string;
+    /**
+     * External Txn Ref
+     */
+    external_txn_ref?: string | null;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Reverses On
+     */
+    reverses_on?: string | null;
+    status: ProposedEntryStatus;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * PostingConflictOut
+ *
+ * CLS-11e: "AJE dated Aug 31 cannot post — the QuickBooks closing date is Aug 31, 2026".
+ */
+export type PostingConflictOut = {
+    /**
+     * Client Asked At
+     */
+    client_asked_at?: string | null;
+    /**
+     * Conflict Id
+     */
+    conflict_id: string;
+    /**
+     * Entry Date
+     */
+    entry_date: string;
+    /**
+     * Entry Id
+     */
+    entry_id: string;
+    /**
+     * Ledger Closing Date
+     */
+    ledger_closing_date: string;
+    status: ClosingDateConflictStatus;
+};
+
+/**
+ * PostingDecisionOut
+ *
+ * A written decision with its 10-second Undo window (DEC-24).
+ */
+export type PostingDecisionOut = {
+    /**
+     * Approval Label
+     */
+    approval_label?: string | null;
+    /**
+     * Decision Id
+     */
+    decision_id: string;
+    /**
+     * Entry Id
+     */
+    entry_id: string;
+    status: ProposedEntryStatus;
+    /**
+     * Undo Until
+     */
+    undo_until?: string | null;
+};
+
+/**
+ * PostingDryRunOut
+ *
+ * CLS-07c2: "Post 6 entries ($35,300.00) to QuickBooks Online · Copperleaf Coffee
+ * Roasters? The closing date will be set to Aug 31, 2026." No write happens.
+ */
+export type PostingDryRunOut = {
+    /**
+     * Client Entity Name
+     */
+    client_entity_name: string;
+    /**
+     * Closing Date Target
+     */
+    closing_date_target?: string | null;
     /**
      * Entry Count
      */
     entry_count: number;
     /**
-     * First External Ref
+     * Ledger Label
      */
-    first_external_ref?: string | null;
+    ledger_label: string;
     /**
-     * Last External Ref
+     * Results
      */
-    last_external_ref?: string | null;
+    results: Array<PostingPreflightResultOut>;
     /**
-     * Period
+     * Total Amount
      */
-    period: string;
+    total_amount: string;
+};
+
+/**
+ * PostingEntryIdsIn
+ */
+export type PostingEntryIdsIn = {
     /**
-     * Resolved Failures
+     * Entry Ids
      */
-    resolved_failures?: number;
+    entry_ids: Array<string>;
+};
+
+/**
+ * PostingPostBatchIn
+ */
+export type PostingPostBatchIn = {
     /**
-     * Status
+     * Entry Ids
      */
-    status: 'proposed' | 'posting' | 'posted' | 'failed_post';
+    entry_ids: Array<string>;
+    /**
+     * Seen Versions
+     */
+    seen_versions: {
+        [key: string]: number;
+    };
+    /**
+     * Set Closing Date
+     */
+    set_closing_date?: boolean;
+};
+
+/**
+ * PostingPreflightResultOut
+ */
+export type PostingPreflightResultOut = {
+    /**
+     * Account Ref
+     */
+    account_ref?: string | null;
+    /**
+     * Entry Id
+     */
+    entry_id: string;
+    /**
+     * Failed Check
+     */
+    failed_check?: 'balanced' | 'open_period' | 'mapped_accounts' | 'active_accounts' | 'closing_date_unlocked' | null;
+    /**
+     * Ok
+     */
+    ok: boolean;
+    /**
+     * Refusal
+     */
+    refusal?: 'inactive_account' | 'unmapped_account' | 'closing_date_locked' | 'attest_client_posting_refused' | 'write_grant_missing' | 'write_capability_disabled' | 'write_capability_not_released' | 'posting_not_enabled' | null;
+};
+
+/**
+ * PostingReasonIn
+ */
+export type PostingReasonIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code: string;
+};
+
+/**
+ * PostingRecordExternalIn
+ *
+ * Recorded in ledger (export path) or Recorded by <client> (attest): evidence or a sync
+ * match, at least one.
+ */
+export type PostingRecordExternalIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Match Ref
+     */
+    match_ref?: string | null;
+};
+
+/**
+ * PostingRedateIn
+ */
+export type PostingRedateIn = {
+    /**
+     * New Date
+     */
+    new_date: string;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * PostingRequestApprovalIn
+ */
+export type PostingRequestApprovalIn = {
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
+ * PostingTalliesOut
+ *
+ * CLS-07a: PROPOSED 5 · $34,920.00, WITHIN 4 · $20,020.00, REVIEW 1 · $14,900.00, APPROVED
+ * 0 of 5, POSTED Pending.
+ */
+export type PostingTalliesOut = {
+    /**
+     * Approved
+     */
+    approved: number;
+    /**
+     * Of
+     */
+    of: number;
+    /**
+     * Posted Batch Code
+     */
+    posted_batch_code?: string | null;
+    proposed: PostingTallyOut;
+    review_required: PostingTallyOut;
+    within_threshold: PostingTallyOut;
+};
+
+/**
+ * PostingTallyOut
+ *
+ * One tile of the CLS-07 tally strip: a count and code's sum.
+ */
+export type PostingTallyOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Count
+     */
+    count: number;
 };
 
 /**
@@ -44242,26 +44536,6 @@ export type PostureOut = {
 };
 
 /**
- * PreconditionOut
- *
- * CLS-08c: "9 of 21 accounts reconciled" · "7 open issues" · "Entries not posted".
- */
-export type PreconditionOut = {
-    /**
-     * Blocker
-     */
-    blocker: 'accounts_unreconciled' | 'issues_open' | 'entries_unposted';
-    /**
-     * Done
-     */
-    done?: number | null;
-    /**
-     * Of
-     */
-    of?: number | null;
-};
-
-/**
  * PreferencesIn
  */
 export type PreferencesIn = {
@@ -44279,32 +44553,6 @@ export type PreferencesOut = {
      * Default Office Id
      */
     default_office_id: string | null;
-};
-
-/**
- * PreflightResultOut
- */
-export type PreflightResultOut = {
-    /**
-     * Account Ref
-     */
-    account_ref?: string | null;
-    /**
-     * Entry Id
-     */
-    entry_id: string;
-    /**
-     * Failed Check
-     */
-    failed_check?: 'balanced' | 'open_period' | 'mapped_accounts' | 'active_accounts' | 'closing_date_unlocked' | null;
-    /**
-     * Ok
-     */
-    ok: boolean;
-    /**
-     * Refusal
-     */
-    refusal?: 'inactive_account' | 'unmapped_account' | 'closing_date_locked' | 'attest_client_posting_refused' | 'write_grant_missing' | 'write_capability_disabled' | 'write_capability_not_released' | 'posting_not_enabled' | null;
 };
 
 /**
@@ -46294,6 +46542,20 @@ export type ReasonCodesOut = {
 };
 
 /**
+ * ReasonIn
+ */
+export type ReasonIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason Code
+     */
+    reason_code: string;
+};
+
+/**
  * ReasonOut
  */
 export type ReasonOut = {
@@ -46686,23 +46948,6 @@ export type RecordCitationOut = {
 };
 
 /**
- * RecordExternalIn
- *
- * Recorded in ledger (export path) or Recorded by <client> (attest): evidence or a sync
- * match, at least one.
- */
-export type RecordExternalIn = {
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id?: string | null;
-    /**
-     * Match Ref
-     */
-    match_ref?: string | null;
-};
-
-/**
  * RecordInputHashesOut
  */
 export type RecordInputHashesOut = {
@@ -46734,16 +46979,6 @@ export type RecordLinkOut = {
      * Target Id
      */
     target_id?: string | null;
-};
-
-/**
- * RecordOut
- */
-export type RecordOut = {
-    /**
-     * Record Id
-     */
-    record_id: string;
 };
 
 /**
@@ -46852,20 +47087,6 @@ export type RedactionOut = {
      * Redacted By Name
      */
     redacted_by_name: string;
-};
-
-/**
- * RedateIn
- */
-export type RedateIn = {
-    /**
-     * New Date
-     */
-    new_date: string;
-    /**
-     * Reason
-     */
-    reason: string;
 };
 
 /**
@@ -47105,7 +47326,7 @@ export type RegisterOut = {
      * Risks
      */
     risks: Array<RegisterRiskOut>;
-    tally: AbacusModulesAssurancePlanningContractTallyOut;
+    tally: TallyOut;
 };
 
 /**
@@ -47430,6 +47651,22 @@ export type RelationshipPatchIn = {
 };
 
 /**
+ * ReleaseIn
+ *
+ * G8: "I am the engagement partner and I authorize release of this report".
+ */
+export type ReleaseIn = {
+    /**
+     * Authorize
+     */
+    authorize: true;
+    /**
+     * Seen Gate Hash
+     */
+    seen_gate_hash: string;
+};
+
+/**
  * ReleaseOut
  */
 export type ReleaseOut = {
@@ -47648,16 +47885,6 @@ export type RenderTicketOut = {
      * Version No
      */
     version_no: number;
-};
-
-/**
- * ReopenIn
- */
-export type ReopenIn = {
-    /**
-     * Reason
-     */
-    reason: string;
 };
 
 /**
@@ -48209,16 +48436,6 @@ export type RepresentationToggleIn = {
      * Seen Version
      */
     seen_version: number;
-};
-
-/**
- * RequestApprovalIn
- */
-export type RequestApprovalIn = {
-    /**
-     * User Id
-     */
-    user_id: string;
 };
 
 /**
@@ -49672,48 +49889,6 @@ export type ReturnAsFiledIn = {
 };
 
 /**
- * ReturnBatchIn
- */
-export type ReturnBatchIn = {
-    /**
-     * Client Entity Id
-     */
-    client_entity_id: string;
-    /**
-     * Seen Versions
-     */
-    seen_versions: {
-        [key: string]: number;
-    };
-    /**
-     * Tax Year
-     */
-    tax_year: number;
-};
-
-/**
- * ReturnBatchOut
- */
-export type ReturnBatchOut = {
-    /**
-     * Batch Id
-     */
-    batch_id: string;
-    /**
-     * Due On
-     */
-    due_on?: string | null;
-    /**
-     * Forms
-     */
-    forms: number;
-    /**
-     * Status
-     */
-    status: 'not_started' | 'approved' | 'exported' | 'filed_iris' | 'accepted' | 'rejected';
-};
-
-/**
  * ReturnFieldViewStatus
  */
 export type ReturnFieldViewStatus = 'imported' | 'edited' | 'proposed' | 'recomputed' | 'signed_off';
@@ -49813,6 +49988,22 @@ export type ReturnToClientIn = {
      * Note
      */
     note?: string | null;
+};
+
+/**
+ * RevealOut
+ *
+ * The full IP for 10 seconds.
+ */
+export type RevealOut = {
+    /**
+     * Expires At
+     */
+    expires_at: string;
+    /**
+     * Ip
+     */
+    ip: string;
 };
 
 /**
@@ -52916,33 +53107,6 @@ export type ScheduleLineOut = {
      * Period
      */
     period: string;
-};
-
-/**
- * ScheduleOut
- *
- * Fixed asset register: cost 278,400.00 · accumulated depreciation 74,900.00 · 2026 book
- * depreciation 25,680.00.
- */
-export type ScheduleOut = {
-    /**
-     * Figures
-     */
-    figures?: {
-        [key: string]: string;
-    };
-    /**
-     * Included
-     */
-    included: boolean;
-    /**
-     * Key
-     */
-    key: string;
-    /**
-     * Label
-     */
-    label: string;
 };
 
 /**
@@ -57846,6 +58010,49 @@ export type StatementDraftStartedOut = {
 };
 
 /**
+ * StatementLineOut
+ */
+export type StatementLineOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Box
+     */
+    box?: [
+        number,
+        number,
+        number,
+        number
+    ] | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Excluded
+     */
+    excluded: boolean;
+    /**
+     * Exclusion Reason
+     */
+    exclusion_reason: string | null;
+    /**
+     * Page
+     */
+    page: number | null;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Posted On
+     */
+    posted_on: string | null;
+};
+
+/**
  * StatementNoteOut
  *
  * A note as this draft rendered it; `unresolved` names figures with no line (DEC-2389).
@@ -57908,7 +58115,7 @@ export type StatementOut = {
     /**
      * Lines
      */
-    lines: Array<AbacusModulesEvidenceRoutesStatementLineOut>;
+    lines: Array<StatementLineOut>;
     /**
      * Opening
      */
@@ -59591,6 +59798,68 @@ export type TakenOut = {
      * Evidence Version Id
      */
     evidence_version_id: string;
+};
+
+/**
+ * TalliesOut
+ */
+export type TalliesOut = {
+    /**
+     * Explained
+     */
+    explained: number;
+    /**
+     * Lines
+     */
+    lines: number;
+    /**
+     * Over Threshold
+     */
+    over_threshold: number;
+    /**
+     * Tb Balanced
+     */
+    tb_balanced: boolean;
+    /**
+     * Unexplained
+     */
+    unexplained: number;
+};
+
+/**
+ * TallyOut
+ *
+ * Counted from the rows by code (AC4.1: 10 · 2 (+1 proposed) · 2 · 3 · 1 · Pending).
+ */
+export type TallyOut = {
+    /**
+     * Ep Approval
+     */
+    ep_approval: 'pending' | 'approved' | 'changed';
+    /**
+     * Fraud
+     */
+    fraud: number;
+    /**
+     * High Rmm
+     */
+    high_rmm: number;
+    /**
+     * Risks
+     */
+    risks: number;
+    /**
+     * Significant
+     */
+    significant: number;
+    /**
+     * Significant Proposed
+     */
+    significant_proposed: number;
+    /**
+     * Unaddressed
+     */
+    unaddressed: number;
 };
 
 /**
@@ -63858,24 +64127,6 @@ export type TimeZoneIo = {
 };
 
 /**
- * TinMatchIn
- */
-export type TinMatchIn = {
-    /**
-     * Checked On
-     */
-    checked_on: string;
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id: string;
-    /**
-     * Result
-     */
-    result: 'match' | 'mismatch' | 'not_issued' | 'invalid';
-};
-
-/**
  * TinRevealIn
  */
 export type TinRevealIn = {
@@ -65903,80 +66154,6 @@ export type VarianceThresholdsPayloadOutput = {
 };
 
 /**
- * VendorPatchIn
- */
-export type VendorPatchIn = {
-    /**
-     * Entity Type
-     */
-    entity_type?: 'individual' | 'single_member_llc' | 'partnership' | 'c_corporation' | 's_corporation' | 'trust_estate' | 'llc_c' | 'llc_s' | 'llc_p' | 'other' | 'unknown' | null;
-    /**
-     * Exempt Reason
-     */
-    exempt_reason?: string | null;
-    /**
-     * Expected Version
-     */
-    expected_version: number;
-    /**
-     * Is Attorney
-     */
-    is_attorney?: boolean | null;
-};
-
-/**
- * VendorRowOut
- *
- * Larimer Street Properties · 1099-MISC box 1 rents · $78,400.00 · TIN ••-•••4471.
- */
-export type VendorRowOut = {
-    /**
-     * Amount
-     */
-    amount: string;
-    /**
-     * Box
-     */
-    box?: string | null;
-    /**
-     * Display Name
-     */
-    display_name: string;
-    /**
-     * Entity Type
-     */
-    entity_type: 'individual' | 'single_member_llc' | 'partnership' | 'c_corporation' | 's_corporation' | 'trust_estate' | 'llc_c' | 'llc_s' | 'llc_p' | 'other' | 'unknown';
-    /**
-     * Form
-     */
-    form?: 'nec' | 'misc' | null;
-    /**
-     * Is Attorney
-     */
-    is_attorney: boolean;
-    /**
-     * Reportability
-     */
-    reportability: 'reportable' | 'below_threshold' | 'exempt_corporation' | 'paid_by_card';
-    /**
-     * Tin Last4
-     */
-    tin_last4?: string | null;
-    /**
-     * Vendor Id
-     */
-    vendor_id: string;
-    /**
-     * Version
-     */
-    version: number;
-    /**
-     * W9 Status
-     */
-    w9_status: 'on_file' | 'requested' | 'tin_mismatch' | 'missing';
-};
-
-/**
  * VerifiedOut
  */
 export type VerifiedOut = {
@@ -66544,35 +66721,385 @@ export type VoidIn = {
 };
 
 /**
- * W9RequestIn
+ * W1ActivityListOut
  */
-export type W9RequestIn = {
+export type W1ActivityListOut = {
     /**
-     * Channel
+     * Items
      */
-    channel?: 'portal';
+    items: Array<W1ActivityOut>;
     /**
-     * Vendor Ids
+     * Total
      */
-    vendor_ids: Array<string>;
-    /**
-     * Wording Template Version Id
-     */
-    wording_template_version_id: string;
+    total: number;
 };
 
 /**
- * W9RequestOut
+ * W1ActivityOut
+ *
+ * A Sync events row (CLS-11a2), its label resolved at read time.
  */
-export type W9RequestOut = {
+export type W1ActivityOut = {
     /**
-     * Request Id
+     * Actor Name
      */
-    request_id: string;
+    actor_name?: string | null;
     /**
-     * Request Item Ids
+     * At
      */
-    request_item_ids: Array<string>;
+    at: string;
+    /**
+     * Batch Code
+     */
+    batch_code?: string | null;
+    /**
+     * Count
+     */
+    count?: number | null;
+    /**
+     * Kind
+     */
+    kind: 'sync' | 'sync_failed' | 'post' | 'closing_date' | 'write_grant' | 'reauth';
+    /**
+     * Provider Code
+     */
+    provider_code?: string | null;
+};
+
+/**
+ * W1CapabilitySwitchIn
+ */
+export type W1CapabilitySwitchIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
+ * W1CapabilitySwitchOut
+ *
+ * "Enabled QuickBooks Online posting · Felix Andersen" (ADM-07).
+ */
+export type W1CapabilitySwitchOut = {
+    /**
+     * Capability Id
+     */
+    capability_id: 'ledger_post_journal_entries';
+    /**
+     * Changed At
+     */
+    changed_at?: string | null;
+    /**
+     * Changed By
+     */
+    changed_by?: string | null;
+    /**
+     * Enabled
+     */
+    enabled: boolean;
+    /**
+     * Released
+     */
+    released: boolean;
+};
+
+/**
+ * W1ConnectionPaneOut
+ *
+ * Authorized by Tess Moreno (client portal) · Mode "Client-authorized: read ledger, post
+ * approved entries" · Last sync 9:02 AM · 1,214 transactions read (Aug 1-31) · 0 errors.
+ */
+export type W1ConnectionPaneOut = {
+    /**
+     * Authorized By
+     */
+    authorized_by?: string | null;
+    /**
+     * Closing Date
+     */
+    closing_date?: string | null;
+    /**
+     * Closing Date Set At
+     */
+    closing_date_set_at?: string | null;
+    /**
+     * Closing Date Set By
+     */
+    closing_date_set_by?: string | null;
+    /**
+     * Connection Id
+     */
+    connection_id: string;
+    /**
+     * Dependents
+     */
+    dependents?: Array<string>;
+    /**
+     * Health
+     */
+    health: 'connected' | 'needs_attention' | 'needs_reauth' | 'disconnected';
+    /**
+     * Last Sync At
+     */
+    last_sync_at?: string | null;
+    /**
+     * Last Sync Errors
+     */
+    last_sync_errors?: number | null;
+    /**
+     * Last Sync Transactions
+     */
+    last_sync_transactions?: number | null;
+    /**
+     * Next Sync At
+     */
+    next_sync_at?: string | null;
+    /**
+     * Retry At
+     */
+    retry_at?: string | null;
+    /**
+     * Write Granted
+     */
+    write_granted: boolean;
+};
+
+/**
+ * W1ConsoleTilesOut
+ *
+ * CLS-11a tiles: 7 Posted (1 resolved Aug 11 under Failed post 0), 1 Proposed, Jul 31.
+ */
+export type W1ConsoleTilesOut = {
+    /**
+     * Closing Date
+     */
+    closing_date?: string | null;
+    /**
+     * Failed Post
+     */
+    failed_post: number;
+    /**
+     * Posted
+     */
+    posted: number;
+    /**
+     * Proposed
+     */
+    proposed: number;
+    /**
+     * Resolved Failures
+     */
+    resolved_failures: number;
+};
+
+/**
+ * W1EngagementLedgerSettingsIn
+ */
+export type W1EngagementLedgerSettingsIn = {
+    /**
+     * Connection Id
+     */
+    connection_id: string;
+    /**
+     * Expected Version
+     */
+    expected_version?: number | null;
+    /**
+     * Posting Enabled
+     */
+    posting_enabled: boolean;
+};
+
+/**
+ * W1EngagementLedgerSettingsOut
+ */
+export type W1EngagementLedgerSettingsOut = {
+    /**
+     * Connection Id
+     */
+    connection_id: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Posting Enabled
+     */
+    posting_enabled: boolean;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * W1GlPostingSettingsIn
+ */
+export type W1GlPostingSettingsIn = {
+    /**
+     * Expected Version
+     */
+    expected_version: number;
+    /**
+     * Memo Prefix
+     */
+    memo_prefix: string;
+    /**
+     * Post As
+     */
+    post_as: string;
+};
+
+/**
+ * W1GlPostingSettingsOut
+ *
+ * ADM-08b: two locked rows ("Post only human-approved batches", "Attest posting disabled"),
+ * the memo prefix and the "Post as" label.
+ */
+export type W1GlPostingSettingsOut = {
+    /**
+     * Attest Posting Disabled
+     */
+    attest_posting_disabled?: true;
+    /**
+     * Human Approved Only
+     */
+    human_approved_only?: true;
+    /**
+     * Memo Prefix
+     */
+    memo_prefix: string;
+    /**
+     * Post As
+     */
+    post_as: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * W1LedgerConsoleOut
+ */
+export type W1LedgerConsoleOut = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Client Entity Name
+     */
+    client_entity_name: string;
+    connection?: W1ConnectionPaneOut | null;
+    /**
+     * Ledger Label
+     */
+    ledger_label: string;
+    /**
+     * Posting Paused By
+     */
+    posting_paused_by?: string | null;
+    tiles: W1ConsoleTilesOut;
+};
+
+/**
+ * W1PostingLogOut
+ */
+export type W1PostingLogOut = {
+    /**
+     * Items
+     */
+    items: Array<W1PostingLogRowOut>;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * W1PostingLogRowOut
+ *
+ * 2026-07-A · Posted · QBO 47901-47906 · 1 failure resolved.
+ */
+export type W1PostingLogRowOut = {
+    /**
+     * Approved Count
+     */
+    approved_count: number;
+    /**
+     * Batch Code
+     */
+    batch_code: string;
+    /**
+     * Batch Id
+     */
+    batch_id: string;
+    /**
+     * Entry Count
+     */
+    entry_count: number;
+    /**
+     * First External Ref
+     */
+    first_external_ref?: string | null;
+    /**
+     * Last External Ref
+     */
+    last_external_ref?: string | null;
+    /**
+     * Period
+     */
+    period: string;
+    /**
+     * Resolved Failures
+     */
+    resolved_failures?: number;
+    /**
+     * Status
+     */
+    status: 'proposed' | 'posting' | 'posted' | 'failed_post';
+};
+
+/**
+ * W1WriteGrantIn
+ *
+ * The QBO consent sheet's "will" list includes "post journal entries your accountant
+ * approves, and set the closing date after posting"; "won't" includes "change or delete
+ * existing transactions" (consent copy v2, a catalogue row).
+ */
+export type W1WriteGrantIn = {
+    /**
+     * Capability Id
+     */
+    capability_id: 'ledger_post_journal_entries';
+    /**
+     * Consent Copy Version
+     */
+    consent_copy_version: 'por16.qbo.post_entries.v2';
+};
+
+/**
+ * W1WriteGrantOut
+ */
+export type W1WriteGrantOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Connection Id
+     */
+    connection_id: string;
+    /**
+     * Consent Copy Version
+     */
+    consent_copy_version: 'por16.qbo.post_entries.v2';
+    /**
+     * Event
+     */
+    event: 'granted' | 'revoked';
 };
 
 /**
@@ -69529,46 +70056,6 @@ export type WorkspaceSummaryOut = {
 };
 
 /**
- * WriteGrantIn
- *
- * The QBO consent sheet's "will" list includes "post journal entries your accountant
- * approves, and set the closing date after posting"; "won't" includes "change or delete
- * existing transactions" (consent copy v2, a catalogue row).
- */
-export type WriteGrantIn = {
-    /**
-     * Capability Id
-     */
-    capability_id: 'ledger_post_journal_entries';
-    /**
-     * Consent Copy Version
-     */
-    consent_copy_version: 'por16.qbo.post_entries.v2';
-};
-
-/**
- * WriteGrantOut
- */
-export type WriteGrantOut = {
-    /**
-     * At
-     */
-    at: string;
-    /**
-     * Connection Id
-     */
-    connection_id: string;
-    /**
-     * Consent Copy Version
-     */
-    consent_copy_version: 'por16.qbo.post_entries.v2';
-    /**
-     * Event
-     */
-    event: 'granted' | 'revoked';
-};
-
-/**
  * YourPartOut
  */
 export type YourPartOut = {
@@ -69647,143 +70134,6 @@ export type AbacusModulesAdjustmentsContractRejectIn = {
 };
 
 /**
- * ApproveIn
- */
-export type AbacusModulesAdjustmentsPostingContractApproveIn = {
-    /**
-     * Seen Version
-     */
-    seen_version: number;
-};
-
-/**
- * DecisionOut
- *
- * A written decision with its 10-second Undo window (DEC-24).
- */
-export type AbacusModulesAdjustmentsPostingContractDecisionOut = {
-    /**
-     * Approval Label
-     */
-    approval_label?: string | null;
-    /**
-     * Decision Id
-     */
-    decision_id: string;
-    /**
-     * Entry Id
-     */
-    entry_id: string;
-    status: ProposedEntryStatus;
-    /**
-     * Undo Until
-     */
-    undo_until?: string | null;
-};
-
-/**
- * ReasonIn
- */
-export type AbacusModulesAdjustmentsPostingContractReasonIn = {
-    /**
-     * Note
-     */
-    note?: string | null;
-    /**
-     * Reason Code
-     */
-    reason_code: string;
-};
-
-/**
- * TalliesOut
- *
- * CLS-07a: PROPOSED 5 · $34,920.00, WITHIN 4 · $20,020.00, REVIEW 1 · $14,900.00, APPROVED
- * 0 of 5, POSTED Pending.
- */
-export type AbacusModulesAdjustmentsPostingContractTalliesOut = {
-    /**
-     * Approved
-     */
-    approved: number;
-    /**
-     * Of
-     */
-    of: number;
-    /**
-     * Posted Batch Code
-     */
-    posted_batch_code?: string | null;
-    proposed: AbacusModulesAdjustmentsPostingContractTallyOut;
-    review_required: AbacusModulesAdjustmentsPostingContractTallyOut;
-    within_threshold: AbacusModulesAdjustmentsPostingContractTallyOut;
-};
-
-/**
- * TallyOut
- *
- * One tile of the CLS-07 tally strip: a count and code's sum.
- */
-export type AbacusModulesAdjustmentsPostingContractTallyOut = {
-    /**
-     * Amount
-     */
-    amount: string;
-    /**
-     * Count
-     */
-    count: number;
-};
-
-/**
- * ActivityOut
- *
- * One automatic action: references only, never client content (AC-7).
- */
-export type AbacusModulesAgentsRoutesActivityOut = {
-    /**
-     * Action
-     */
-    action: string;
-    /**
-     * Created At
-     */
-    created_at: string;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Item Count
-     */
-    item_count: number | null;
-    /**
-     * Outcome
-     */
-    outcome: 'done' | 'skipped' | 'failed';
-    /**
-     * Policy
-     */
-    policy: string;
-    /**
-     * Policy Version
-     */
-    policy_version: number;
-    /**
-     * Reason
-     */
-    reason: string | null;
-    /**
-     * Record Id
-     */
-    record_id: string | null;
-    /**
-     * Record Type
-     */
-    record_type: string | null;
-};
-
-/**
  * AdoptIn
  */
 export type AbacusModulesAgentsRoutesAdoptIn = {
@@ -69843,32 +70193,6 @@ export type AbacusModulesAgentsRoutesCitationOut = {
      * Verified
      */
     verified: boolean;
-};
-
-/**
- * TalliesOut
- */
-export type AbacusModulesAssuranceAnalyticsContractTalliesOut = {
-    /**
-     * Explained
-     */
-    explained: number;
-    /**
-     * Lines
-     */
-    lines: number;
-    /**
-     * Over Threshold
-     */
-    over_threshold: number;
-    /**
-     * Tb Balanced
-     */
-    tb_balanced: boolean;
-    /**
-     * Unexplained
-     */
-    unexplained: number;
 };
 
 /**
@@ -70168,20 +70492,6 @@ export type AbacusModulesAssuranceFindingsContractMisstatementOut = {
 };
 
 /**
- * ReasonIn
- */
-export type AbacusModulesAssuranceFindingsContractReasonIn = {
-    /**
-     * Note
-     */
-    note?: string | null;
-    /**
-     * Reason Code
-     */
-    reason_code: string;
-};
-
-/**
  * FollowUpDraftOut
  *
  * AUD-35 d's drafted follow-up: the firm's template key and code's values (P-25 off).
@@ -70204,58 +70514,6 @@ export type AbacusModulesAssuranceGroupContractFollowUpDraftOut = {
 };
 
 /**
- * TallyOut
- *
- * Counted from the rows by code (AC4.1: 10 · 2 (+1 proposed) · 2 · 3 · 1 · Pending).
- */
-export type AbacusModulesAssurancePlanningContractTallyOut = {
-    /**
-     * Ep Approval
-     */
-    ep_approval: 'pending' | 'approved' | 'changed';
-    /**
-     * Fraud
-     */
-    fraud: number;
-    /**
-     * High Rmm
-     */
-    high_rmm: number;
-    /**
-     * Risks
-     */
-    risks: number;
-    /**
-     * Significant
-     */
-    significant: number;
-    /**
-     * Significant Proposed
-     */
-    significant_proposed: number;
-    /**
-     * Unaddressed
-     */
-    unaddressed: number;
-};
-
-/**
- * ReleaseIn
- *
- * G8: "I am the engagement partner and I authorize release of this report".
- */
-export type AbacusModulesAssuranceReleaseContractReleaseIn = {
-    /**
-     * Authorize
-     */
-    authorize: true;
-    /**
-     * Seen Gate Hash
-     */
-    seen_gate_hash: string;
-};
-
-/**
  * AdoptOut
  */
 export type AbacusModulesClosesContractAdoptOut = {
@@ -70267,142 +70525,6 @@ export type AbacusModulesClosesContractAdoptOut = {
      * Row Version
      */
     row_version: number;
-};
-
-/**
- * HandoffIn
- */
-export type AbacusModulesClosesDeliveryContractHandoffIn = {
-    /**
-     * Items
-     */
-    items?: Array<string>;
-    /**
-     * Schedules
-     */
-    schedules: Array<string>;
-    /**
-     * Seen Version
-     */
-    seen_version: number;
-};
-
-/**
- * HandoffOut
- */
-export type AbacusModulesClosesDeliveryContractHandoffOut = {
-    /**
-     * Locked At
-     */
-    locked_at?: string | null;
-    /**
-     * Reason
-     */
-    reason?: string | null;
-    /**
-     * Schedules
-     */
-    schedules?: Array<ScheduleOut>;
-    /**
-     * Status
-     */
-    status: 'not_available' | 'ready' | 'handed_off' | 'superseded';
-    /**
-     * Superseded On Next
-     */
-    superseded_on_next?: boolean;
-    /**
-     * Target Return Id
-     */
-    target_return_id?: string | null;
-    /**
-     * Tb Version
-     */
-    tb_version?: string | null;
-    /**
-     * Version
-     */
-    version?: number;
-};
-
-/**
- * ReleaseIn
- */
-export type AbacusModulesClosesDeliveryContractReleaseIn = {
-    /**
-     * Seen Version
-     */
-    seen_version: number;
-};
-
-/**
- * RevealIn
- */
-export type AbacusModulesClosesDeliveryContractRevealIn = {
-    /**
-     * Reason
-     */
-    reason: string;
-};
-
-/**
- * RevealOut
- *
- * A reveal is logged (P-03 `pii_reveals`) and returned once; never cached or logged.
- */
-export type AbacusModulesClosesDeliveryContractRevealOut = {
-    /**
-     * Expires At
-     */
-    expires_at: string;
-    /**
-     * Tin
-     */
-    tin: string;
-};
-
-/**
- * StatementLineOut
- */
-export type AbacusModulesClosesDeliveryContractStatementLineOut = {
-    /**
-     * Account Refs
-     */
-    account_refs?: Array<string>;
-    /**
-     * Amount
-     */
-    amount: string;
-    /**
-     * Key
-     */
-    key: string;
-    /**
-     * Label
-     */
-    label: string;
-};
-
-/**
- * HandoffIn
- */
-export type AbacusModulesConnectionsRoutesHandoffIn = {
-    /**
-     * State
-     */
-    state: string;
-};
-
-/**
- * HandoffOut
- *
- * A-02-T33: where the connect host sends the browser on; the host only, never a tenant.
- */
-export type AbacusModulesConnectionsRoutesHandoffOut = {
-    /**
-     * Origin Host
-     */
-    origin_host: string;
 };
 
 /**
@@ -70522,37 +70644,6 @@ export type AbacusModulesEvidenceRoutesCitationOut = {
 };
 
 /**
- * DecisionOut
- */
-export type AbacusModulesEvidenceRoutesDecisionOut = {
-    /**
-     * Corrects Proposal
-     */
-    corrects_proposal: boolean;
-    /**
-     * Decision
-     */
-    decision: 'accept' | 'reject' | 'send_back';
-    /**
-     * Evidence Version Id
-     */
-    evidence_version_id: string;
-    /**
-     * Id
-     */
-    id: string;
-    item_status: RequestStatus;
-    /**
-     * Reason Code
-     */
-    reason_code: string | null;
-    /**
-     * Request Item Ids
-     */
-    request_item_ids: Array<string>;
-};
-
-/**
  * ReconciliationOut
  */
 export type AbacusModulesEvidenceRoutesReconciliationOut = {
@@ -70600,49 +70691,6 @@ export type AbacusModulesEvidenceRoutesRejectIn = {
      * Seen Proposal
      */
     seen_proposal?: string | null;
-};
-
-/**
- * StatementLineOut
- */
-export type AbacusModulesEvidenceRoutesStatementLineOut = {
-    /**
-     * Amount
-     */
-    amount: string;
-    /**
-     * Box
-     */
-    box?: [
-        number,
-        number,
-        number,
-        number
-    ] | null;
-    /**
-     * Description
-     */
-    description: string;
-    /**
-     * Excluded
-     */
-    excluded: boolean;
-    /**
-     * Exclusion Reason
-     */
-    exclusion_reason: string | null;
-    /**
-     * Page
-     */
-    page: number | null;
-    /**
-     * Position
-     */
-    position: number;
-    /**
-     * Posted On
-     */
-    posted_on: string | null;
 };
 
 /**
@@ -70849,38 +70897,6 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
-};
-
-/**
- * ActivityOut
- *
- * A Sync events row (CLS-11a2), its label resolved at read time.
- */
-export type AbacusModulesIntegrationsW1ContractActivityOut = {
-    /**
-     * Actor Name
-     */
-    actor_name?: string | null;
-    /**
-     * At
-     */
-    at: string;
-    /**
-     * Batch Code
-     */
-    batch_code?: string | null;
-    /**
-     * Count
-     */
-    count?: number | null;
-    /**
-     * Kind
-     */
-    kind: 'sync' | 'sync_failed' | 'post' | 'closing_date' | 'write_grant' | 'reauth';
-    /**
-     * Provider Code
-     */
-    provider_code?: string | null;
 };
 
 /**
@@ -71172,22 +71188,6 @@ export type AbacusModulesSignaturesContractRevealIn = {
      * Reason
      */
     reason: string;
-};
-
-/**
- * RevealOut
- *
- * The full IP for 10 seconds.
- */
-export type AbacusModulesSignaturesContractRevealOut = {
-    /**
-     * Expires At
-     */
-    expires_at: string;
-    /**
-     * Ip
-     */
-    ip: string;
 };
 
 /**
@@ -80804,7 +80804,7 @@ export type AuditReleaseResponses = {
 export type AuditReleaseResponse = AuditReleaseResponses[keyof AuditReleaseResponses];
 
 export type AuditReleasePostData = {
-    body: AbacusModulesAssuranceReleaseContractReleaseIn;
+    body: ReleaseIn;
     headers: {
         /**
          * Idempotency-Key
@@ -84701,7 +84701,7 @@ export type InformationReturnsResponses = {
     /**
      * Successful Response
      */
-    200: InformationReturnsOut;
+    200: DeliveryInformationReturnsOut;
 };
 
 export type InformationReturnsResponse = InformationReturnsResponses[keyof InformationReturnsResponses];
@@ -84762,7 +84762,7 @@ export type LedgerActivityResponses = {
     /**
      * Successful Response
      */
-    200: ActivityListOut;
+    200: W1ActivityListOut;
 };
 
 export type LedgerActivityResponse = LedgerActivityResponses[keyof LedgerActivityResponses];
@@ -84818,7 +84818,7 @@ export type LedgerConsoleResponses = {
     /**
      * Successful Response
      */
-    200: LedgerConsoleOut;
+    200: W1LedgerConsoleOut;
 };
 
 export type LedgerConsoleResponse = LedgerConsoleResponses[keyof LedgerConsoleResponses];
@@ -84995,7 +84995,7 @@ export type PostingLogResponses = {
     /**
      * Successful Response
      */
-    200: PostingLogOut;
+    200: W1PostingLogOut;
 };
 
 export type PostingLogResponse = PostingLogResponses[keyof PostingLogResponses];
@@ -85298,7 +85298,7 @@ export type StageTranscriptFileResponses = {
 export type StageTranscriptFileResponse = StageTranscriptFileResponses[keyof StageTranscriptFileResponses];
 
 export type W9RequestData = {
-    body: W9RequestIn;
+    body: DeliveryW9RequestIn;
     headers: {
         /**
          * Idempotency-Key
@@ -85356,7 +85356,7 @@ export type W9RequestResponses = {
     /**
      * Successful Response
      */
-    201: W9RequestOut;
+    201: DeliveryW9RequestOut;
 };
 
 export type W9RequestResponse = W9RequestResponses[keyof W9RequestResponses];
@@ -88489,7 +88489,7 @@ export type LockResponses = {
     /**
      * Successful Response
      */
-    200: CloseStateOut;
+    200: DeliveryCloseStateOut;
 };
 
 export type LockResponse = LockResponses[keyof LockResponses];
@@ -88545,13 +88545,13 @@ export type PackageResponses = {
     /**
      * Successful Response
      */
-    200: PackageOut;
+    200: DeliveryPackageOut;
 };
 
 export type PackageResponse = PackageResponses[keyof PackageResponses];
 
 export type PackageEditData = {
-    body: PackageEditIn;
+    body: DeliveryPackageEditIn;
     headers?: {
         /**
          * Authorization
@@ -88605,7 +88605,7 @@ export type PackageEditResponses = {
     /**
      * Successful Response
      */
-    200: PackageOut;
+    200: DeliveryPackageOut;
 };
 
 export type PackageEditResponse = PackageEditResponses[keyof PackageEditResponses];
@@ -88727,7 +88727,7 @@ export type PackageXlsxResponses = {
 export type PackageXlsxResponse = PackageXlsxResponses[keyof PackageXlsxResponses];
 
 export type CommentaryData = {
-    body: CommentaryIn;
+    body: DeliveryCommentaryIn;
     headers?: {
         /**
          * Authorization
@@ -88781,7 +88781,7 @@ export type CommentaryResponses = {
     /**
      * Successful Response
      */
-    200: PackageOut;
+    200: DeliveryPackageOut;
 };
 
 export type CommentaryResponse = CommentaryResponses[keyof CommentaryResponses];
@@ -88841,7 +88841,7 @@ export type GenerateResponses = {
     /**
      * Successful Response
      */
-    202: GenerateOut;
+    202: DeliveryGenerateOut;
 };
 
 export type GenerateResponse = GenerateResponses[keyof GenerateResponses];
@@ -88901,13 +88901,13 @@ export type PageResponses = {
     /**
      * Successful Response
      */
-    200: PageOut;
+    200: DeliveryPageOut;
 };
 
 export type PageResponse = PageResponses[keyof PageResponses];
 
 export type ReleaseData = {
-    body: AbacusModulesClosesDeliveryContractReleaseIn;
+    body: DeliveryReleaseIn;
     headers: {
         /**
          * Idempotency-Key
@@ -88965,7 +88965,7 @@ export type ReleaseResponses = {
     /**
      * Successful Response
      */
-    202: PackageOut;
+    202: DeliveryPackageOut;
 };
 
 export type ReleaseResponse = ReleaseResponses[keyof ReleaseResponses];
@@ -89087,7 +89087,7 @@ export type CloseReconciliationResponses = {
 export type CloseReconciliationResponse = CloseReconciliationResponses[keyof CloseReconciliationResponses];
 
 export type ReopenData = {
-    body: ReopenIn;
+    body: DeliveryReopenIn;
     headers?: {
         /**
          * Authorization
@@ -89141,7 +89141,7 @@ export type ReopenResponses = {
     /**
      * Successful Response
      */
-    200: CloseStateOut;
+    200: DeliveryCloseStateOut;
 };
 
 export type ReopenResponse = ReopenResponses[keyof ReopenResponses];
@@ -89507,7 +89507,7 @@ export type CloseStatusResponses = {
 
 export type CloseStatusResponse = CloseStatusResponses[keyof CloseStatusResponses];
 
-export type HandoffData = {
+export type CloseTaxHandoffData = {
     body?: never;
     headers?: {
         /**
@@ -89529,7 +89529,7 @@ export type HandoffData = {
     url: '/v1/closes/{close_id}/tax-handoff';
 };
 
-export type HandoffErrors = {
+export type CloseTaxHandoffErrors = {
     /**
      * Not authenticated
      */
@@ -89552,19 +89552,19 @@ export type HandoffErrors = {
     501: ErrorOut;
 };
 
-export type HandoffError = HandoffErrors[keyof HandoffErrors];
+export type CloseTaxHandoffError = CloseTaxHandoffErrors[keyof CloseTaxHandoffErrors];
 
-export type HandoffResponses = {
+export type CloseTaxHandoffResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesClosesDeliveryContractHandoffOut;
+    200: DeliveryHandoffOut;
 };
 
-export type HandoffResponse = HandoffResponses[keyof HandoffResponses];
+export type CloseTaxHandoffResponse = CloseTaxHandoffResponses[keyof CloseTaxHandoffResponses];
 
-export type HandoffPublishData = {
-    body: AbacusModulesClosesDeliveryContractHandoffIn;
+export type CloseTaxHandoffPublishData = {
+    body: DeliveryHandoffIn;
     headers: {
         /**
          * Idempotency-Key
@@ -89589,7 +89589,7 @@ export type HandoffPublishData = {
     url: '/v1/closes/{close_id}/tax-handoff';
 };
 
-export type HandoffPublishErrors = {
+export type CloseTaxHandoffPublishErrors = {
     /**
      * Not authenticated
      */
@@ -89616,16 +89616,16 @@ export type HandoffPublishErrors = {
     501: ErrorOut;
 };
 
-export type HandoffPublishError = HandoffPublishErrors[keyof HandoffPublishErrors];
+export type CloseTaxHandoffPublishError = CloseTaxHandoffPublishErrors[keyof CloseTaxHandoffPublishErrors];
 
-export type HandoffPublishResponses = {
+export type CloseTaxHandoffPublishResponses = {
     /**
      * Successful Response
      */
-    202: HandoffPublishedOut;
+    202: DeliveryHandoffPublishedOut;
 };
 
-export type HandoffPublishResponse = HandoffPublishResponses[keyof HandoffPublishResponses];
+export type CloseTaxHandoffPublishResponse = CloseTaxHandoffPublishResponses[keyof CloseTaxHandoffPublishResponses];
 
 export type AskClientData = {
     body?: never;
@@ -89682,13 +89682,13 @@ export type AskClientResponses = {
     /**
      * Successful Response
      */
-    200: ConflictOut;
+    200: PostingConflictOut;
 };
 
 export type AskClientResponse = AskClientResponses[keyof AskClientResponses];
 
 export type RedateData = {
-    body: RedateIn;
+    body: PostingRedateIn;
     headers?: {
         /**
          * Authorization
@@ -89742,7 +89742,7 @@ export type RedateResponses = {
     /**
      * Successful Response
      */
-    200: ConflictOut;
+    200: PostingConflictOut;
 };
 
 export type RedateResponse = RedateResponses[keyof RedateResponses];
@@ -92378,14 +92378,14 @@ export type CompleteResponses = {
 
 export type CompleteResponse = CompleteResponses[keyof CompleteResponses];
 
-export type Handoff2Data = {
-    body: AbacusModulesConnectionsRoutesHandoffIn;
+export type HandoffData = {
+    body: HandoffIn;
     path?: never;
     query?: never;
     url: '/v1/connections/handoff';
 };
 
-export type Handoff2Errors = {
+export type HandoffErrors = {
     /**
      * Not authenticated
      */
@@ -92404,16 +92404,16 @@ export type Handoff2Errors = {
     422: ValidationErrorOut;
 };
 
-export type Handoff2Error = Handoff2Errors[keyof Handoff2Errors];
+export type HandoffError = HandoffErrors[keyof HandoffErrors];
 
-export type Handoff2Responses = {
+export type HandoffResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesConnectionsRoutesHandoffOut;
+    200: HandoffOut;
 };
 
-export type Handoff2Response = Handoff2Responses[keyof Handoff2Responses];
+export type HandoffResponse = HandoffResponses[keyof HandoffResponses];
 
 export type ChooseCoverageData = {
     body: LedgerCoverageIn;
@@ -96039,7 +96039,7 @@ export type ActivityResponses = {
      *
      * Successful Response
      */
-    200: Array<AbacusModulesAgentsRoutesActivityOut>;
+    200: Array<ActivityOut>;
 };
 
 export type ActivityResponse = ActivityResponses[keyof ActivityResponses];
@@ -98827,7 +98827,7 @@ export type AcceptResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesEvidenceRoutesDecisionOut;
+    201: DecisionOut;
 };
 
 export type AcceptResponse = AcceptResponses[keyof AcceptResponses];
@@ -98891,7 +98891,7 @@ export type RejectResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesEvidenceRoutesDecisionOut;
+    201: DecisionOut;
 };
 
 export type RejectResponse = RejectResponses[keyof RejectResponses];
@@ -98955,7 +98955,7 @@ export type SendBackResponses = {
     /**
      * Successful Response
      */
-    201: AbacusModulesEvidenceRoutesDecisionOut;
+    201: DecisionOut;
 };
 
 export type SendBackResponse = SendBackResponses[keyof SendBackResponses];
@@ -102464,7 +102464,7 @@ export type ProcessEditResponses = {
 export type ProcessEditResponse = ProcessEditResponses[keyof ProcessEditResponses];
 
 export type EngagementLedgerSettingsData = {
-    body: EngagementLedgerSettingsIn;
+    body: W1EngagementLedgerSettingsIn;
     headers?: {
         /**
          * Authorization
@@ -102518,7 +102518,7 @@ export type EngagementLedgerSettingsResponses = {
     /**
      * Successful Response
      */
-    200: EngagementLedgerSettingsOut;
+    200: W1EngagementLedgerSettingsOut;
 };
 
 export type EngagementLedgerSettingsResponse = EngagementLedgerSettingsResponses[keyof EngagementLedgerSettingsResponses];
@@ -116677,7 +116677,7 @@ export type RevealSignerIpResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesSignaturesContractRevealOut;
+    200: RevealOut;
 };
 
 export type RevealSignerIpResponse = RevealSignerIpResponses[keyof RevealSignerIpResponses];
@@ -118535,7 +118535,7 @@ export type FindingToMisstatementResponses = {
 export type FindingToMisstatementResponse = FindingToMisstatementResponses[keyof FindingToMisstatementResponses];
 
 export type FindingNotApplicableData = {
-    body: AbacusModulesAssuranceFindingsContractReasonIn;
+    body: ReasonIn;
     headers: {
         /**
          * Idempotency-Key
@@ -118659,7 +118659,7 @@ export type FindingRequestDecisionResponses = {
 export type FindingRequestDecisionResponse = FindingRequestDecisionResponses[keyof FindingRequestDecisionResponses];
 
 export type FindingResolveData = {
-    body: AbacusModulesAssuranceFindingsContractReasonIn;
+    body: ReasonIn;
     headers: {
         /**
          * Idempotency-Key
@@ -128172,7 +128172,7 @@ export type MatchClientResponses = {
 export type MatchClientResponse = MatchClientResponses[keyof MatchClientResponses];
 
 export type ReturnBatchData = {
-    body: ReturnBatchIn;
+    body: DeliveryReturnBatchIn;
     headers?: {
         /**
          * Authorization
@@ -128221,13 +128221,13 @@ export type ReturnBatchResponses = {
     /**
      * Successful Response
      */
-    201: ReturnBatchOut;
+    201: DeliveryReturnBatchOut;
 };
 
 export type ReturnBatchResponse = ReturnBatchResponses[keyof ReturnBatchResponses];
 
 export type AckData = {
-    body: AckIn;
+    body: DeliveryAckIn;
     headers?: {
         /**
          * Authorization
@@ -128281,13 +128281,13 @@ export type AckResponses = {
     /**
      * Successful Response
      */
-    200: ReturnBatchOut;
+    200: DeliveryReturnBatchOut;
 };
 
 export type AckResponse = AckResponses[keyof AckResponses];
 
 export type FiledData = {
-    body: FiledIn;
+    body: DeliveryFiledIn;
     headers?: {
         /**
          * Authorization
@@ -128341,7 +128341,7 @@ export type FiledResponses = {
     /**
      * Successful Response
      */
-    200: ReturnBatchOut;
+    200: DeliveryReturnBatchOut;
 };
 
 export type FiledResponse = FiledResponses[keyof FiledResponses];
@@ -128569,13 +128569,13 @@ export type GlPostingSettingsResponses = {
     /**
      * Successful Response
      */
-    200: GlPostingSettingsOut;
+    200: W1GlPostingSettingsOut;
 };
 
 export type GlPostingSettingsResponse = GlPostingSettingsResponses[keyof GlPostingSettingsResponses];
 
 export type GlPostingSettingsUpdateData = {
-    body: GlPostingSettingsIn;
+    body: W1GlPostingSettingsIn;
     headers?: {
         /**
          * Authorization
@@ -128624,7 +128624,7 @@ export type GlPostingSettingsUpdateResponses = {
     /**
      * Successful Response
      */
-    200: GlPostingSettingsOut;
+    200: W1GlPostingSettingsOut;
 };
 
 export type GlPostingSettingsUpdateResponse = GlPostingSettingsUpdateResponses[keyof GlPostingSettingsUpdateResponses];
@@ -135064,7 +135064,7 @@ export type MisstatementEffectResponses = {
 export type MisstatementEffectResponse = MisstatementEffectResponses[keyof MisstatementEffectResponses];
 
 export type MisstatementPassData = {
-    body: AbacusModulesAssuranceFindingsContractReasonIn;
+    body: ReasonIn;
     headers: {
         /**
          * Idempotency-Key
@@ -140879,7 +140879,7 @@ export type RetryConnectionResponses = {
 export type RetryConnectionResponse = RetryConnectionResponses[keyof RetryConnectionResponses];
 
 export type GrantWriteData = {
-    body: WriteGrantIn;
+    body: W1WriteGrantIn;
     headers?: {
         /**
          * Authorization
@@ -140933,7 +140933,7 @@ export type GrantWriteResponses = {
     /**
      * Successful Response
      */
-    201: WriteGrantOut;
+    201: W1WriteGrantOut;
 };
 
 export type GrantWriteResponse = GrantWriteResponses[keyof GrantWriteResponses];
@@ -140989,7 +140989,7 @@ export type RevokeWriteResponses = {
     /**
      * Successful Response
      */
-    200: WriteGrantOut;
+    200: W1WriteGrantOut;
 };
 
 export type RevokeWriteResponse = RevokeWriteResponses[keyof RevokeWriteResponses];
@@ -144518,7 +144518,7 @@ export type PostingBatchResponses = {
     /**
      * Successful Response
      */
-    200: PostingLogRowOut;
+    200: W1PostingLogRowOut;
 };
 
 export type PostingBatchResponse = PostingBatchResponses[keyof PostingBatchResponses];
@@ -145016,7 +145016,7 @@ export type AgentProposalResponses = {
 export type AgentProposalResponse = AgentProposalResponses[keyof AgentProposalResponses];
 
 export type ApproveEntryData = {
-    body: AbacusModulesAdjustmentsPostingContractApproveIn;
+    body: PostingApproveIn;
     headers?: {
         /**
          * Authorization
@@ -145070,7 +145070,7 @@ export type ApproveEntryResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAdjustmentsPostingContractDecisionOut;
+    200: PostingDecisionOut;
 };
 
 export type ApproveEntryResponse = ApproveEntryResponses[keyof ApproveEntryResponses];
@@ -145396,7 +145396,7 @@ export type GroupRejectEliminationResponses = {
 export type GroupRejectEliminationResponse = GroupRejectEliminationResponses[keyof GroupRejectEliminationResponses];
 
 export type RecordExternalData = {
-    body: RecordExternalIn;
+    body: PostingRecordExternalIn;
     headers?: {
         /**
          * Authorization
@@ -145450,7 +145450,7 @@ export type RecordExternalResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAdjustmentsPostingContractDecisionOut;
+    200: PostingDecisionOut;
 };
 
 export type RecordExternalResponse = RecordExternalResponses[keyof RecordExternalResponses];
@@ -145520,7 +145520,7 @@ export type ProposedEntryRejectResponses = {
 export type ProposedEntryRejectResponse = ProposedEntryRejectResponses[keyof ProposedEntryRejectResponses];
 
 export type RejectCloseEntryData = {
-    body: AbacusModulesAdjustmentsPostingContractReasonIn;
+    body: PostingReasonIn;
     headers?: {
         /**
          * Authorization
@@ -145574,13 +145574,13 @@ export type RejectCloseEntryResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAdjustmentsPostingContractDecisionOut;
+    200: PostingDecisionOut;
 };
 
 export type RejectCloseEntryResponse = RejectCloseEntryResponses[keyof RejectCloseEntryResponses];
 
 export type RequestApproval2Data = {
-    body: RequestApprovalIn;
+    body: PostingRequestApprovalIn;
     headers?: {
         /**
          * Authorization
@@ -145634,13 +145634,13 @@ export type RequestApproval2Responses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAdjustmentsPostingContractDecisionOut;
+    200: PostingDecisionOut;
 };
 
 export type RequestApproval2Response = RequestApproval2Responses[keyof RequestApproval2Responses];
 
 export type WithdrawApprovalData = {
-    body: AbacusModulesAdjustmentsPostingContractReasonIn;
+    body: PostingReasonIn;
     headers?: {
         /**
          * Authorization
@@ -145694,7 +145694,7 @@ export type WithdrawApprovalResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAdjustmentsPostingContractDecisionOut;
+    200: PostingDecisionOut;
 };
 
 export type WithdrawApprovalResponse = WithdrawApprovalResponses[keyof WithdrawApprovalResponses];
@@ -145754,7 +145754,7 @@ export type UndoApprovalResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesAdjustmentsPostingContractDecisionOut;
+    200: PostingDecisionOut;
 };
 
 export type UndoApprovalResponse = UndoApprovalResponses[keyof UndoApprovalResponses];
@@ -161083,7 +161083,7 @@ export type WorksheetFieldsResponses = {
 
 export type WorksheetFieldsResponse = WorksheetFieldsResponses[keyof WorksheetFieldsResponses];
 
-export type Handoff3Data = {
+export type Handoff2Data = {
     body?: never;
     headers?: {
         /**
@@ -161105,7 +161105,7 @@ export type Handoff3Data = {
     url: '/v1/tb-handoffs/{handoff_id}';
 };
 
-export type Handoff3Errors = {
+export type Handoff2Errors = {
     /**
      * Not authenticated
      */
@@ -161128,16 +161128,16 @@ export type Handoff3Errors = {
     501: ErrorOut;
 };
 
-export type Handoff3Error = Handoff3Errors[keyof Handoff3Errors];
+export type Handoff2Error = Handoff2Errors[keyof Handoff2Errors];
 
-export type Handoff3Responses = {
+export type Handoff2Responses = {
     /**
      * Successful Response
      */
     200: TbHandoffOut;
 };
 
-export type Handoff3Response = Handoff3Responses[keyof Handoff3Responses];
+export type Handoff2Response = Handoff2Responses[keyof Handoff2Responses];
 
 export type HandoffMappingsData = {
     body?: never;
@@ -162645,13 +162645,13 @@ export type VendorResponses = {
     /**
      * Successful Response
      */
-    200: VendorRowOut;
+    200: DeliveryVendorRowOut;
 };
 
 export type VendorResponse = VendorResponses[keyof VendorResponses];
 
 export type VendorPatchData = {
-    body: VendorPatchIn;
+    body: DeliveryVendorPatchIn;
     headers?: {
         /**
          * Authorization
@@ -162705,13 +162705,13 @@ export type VendorPatchResponses = {
     /**
      * Successful Response
      */
-    200: VendorRowOut;
+    200: DeliveryVendorRowOut;
 };
 
 export type VendorPatchResponse = VendorPatchResponses[keyof VendorPatchResponses];
 
 export type BackupWithholdingData = {
-    body: BackupWithholdingIn;
+    body: DeliveryBackupWithholdingIn;
     headers?: {
         /**
          * Authorization
@@ -162765,13 +162765,13 @@ export type BackupWithholdingResponses = {
     /**
      * Successful Response
      */
-    201: RecordOut;
+    201: DeliveryRecordOut;
 };
 
 export type BackupWithholdingResponse = BackupWithholdingResponses[keyof BackupWithholdingResponses];
 
 export type TinMatchData = {
-    body: TinMatchIn;
+    body: DeliveryTinMatchIn;
     headers?: {
         /**
          * Authorization
@@ -162825,13 +162825,13 @@ export type TinMatchResponses = {
     /**
      * Successful Response
      */
-    201: RecordOut;
+    201: DeliveryRecordOut;
 };
 
 export type TinMatchResponse = TinMatchResponses[keyof TinMatchResponses];
 
 export type TinRevealData = {
-    body: AbacusModulesClosesDeliveryContractRevealIn;
+    body: DeliveryRevealIn;
     headers?: {
         /**
          * Authorization
@@ -162885,7 +162885,7 @@ export type TinRevealResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesClosesDeliveryContractRevealOut;
+    200: DeliveryRevealOut;
 };
 
 export type TinRevealResponse = TinRevealResponses[keyof TinRevealResponses];
@@ -164338,7 +164338,7 @@ export type PopulationCreateResponses = {
 export type PopulationCreateResponse = PopulationCreateResponses[keyof PopulationCreateResponses];
 
 export type PostBatchData = {
-    body: PostBatchIn;
+    body: PostingPostBatchIn;
     headers: {
         /**
          * Idempotency-Key
@@ -164402,7 +164402,7 @@ export type PostBatchResponses = {
 export type PostBatchResponse = PostBatchResponses[keyof PostBatchResponses];
 
 export type DryRunData = {
-    body: EntryIdsIn;
+    body: PostingEntryIdsIn;
     headers?: {
         /**
          * Authorization
@@ -164456,7 +164456,7 @@ export type DryRunResponses = {
     /**
      * Successful Response
      */
-    200: DryRunOut;
+    200: PostingDryRunOut;
 };
 
 export type DryRunResponse = DryRunResponses[keyof DryRunResponses];
@@ -164819,7 +164819,7 @@ export type CloseEntriesResponses = {
     /**
      * Successful Response
      */
-    200: CloseEntriesOut;
+    200: PostingCloseEntriesOut;
 };
 
 export type CloseEntriesResponse = CloseEntriesResponses[keyof CloseEntriesResponses];
@@ -166311,7 +166311,7 @@ export type PostSessionMessageResponses = {
 export type PostSessionMessageResponse = PostSessionMessageResponses[keyof PostSessionMessageResponses];
 
 export type DisableCapabilityData = {
-    body: CapabilitySwitchIn;
+    body: W1CapabilitySwitchIn;
     headers?: {
         /**
          * Authorization
@@ -166360,13 +166360,13 @@ export type DisableCapabilityResponses = {
     /**
      * Successful Response
      */
-    200: CapabilitySwitchOut;
+    200: W1CapabilitySwitchOut;
 };
 
 export type DisableCapabilityResponse = DisableCapabilityResponses[keyof DisableCapabilityResponses];
 
 export type EnableCapabilityData = {
-    body: CapabilitySwitchIn;
+    body: W1CapabilitySwitchIn;
     headers?: {
         /**
          * Authorization
@@ -166415,7 +166415,7 @@ export type EnableCapabilityResponses = {
     /**
      * Successful Response
      */
-    200: CapabilitySwitchOut;
+    200: W1CapabilitySwitchOut;
 };
 
 export type EnableCapabilityResponse = EnableCapabilityResponses[keyof EnableCapabilityResponses];

@@ -1,4 +1,5 @@
 import type { ComponentRoomOut, RoomDeliverableOut } from "@abacus/api-client";
+import { componentRoomDrop, componentRoomLinkDrop } from "@abacus/api-client";
 import {
   componentRoomAcknowledgeMutation,
   componentRoomAskMutation,
@@ -14,6 +15,7 @@ import {
   PortalBrandProvider,
   PortalLayout,
   date as formatDate,
+  dateTime as formatDateTime,
   toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +33,8 @@ import { COPY } from "./copy";
 export interface Por23Props {
   mobile?: boolean;
   frame?: boolean;
+  /** The firm's name from the portal's branding (the expired state has no room to read it from). */
+  firm?: string;
 }
 
 function DeliverableRow({
@@ -45,10 +49,12 @@ function DeliverableRow({
     d.word === "you_uploaded"
       ? COPY.word.you_uploaded(d.uploaded_on === null ? due : on(d.uploaded_on))
       : d.word === "returned"
-        ? COPY.word.returned
+        ? COPY.word.due(due)
         : d.word === "overdue"
           ? COPY.word.overdue(due)
           : COPY.word.due(due);
+  const pill =
+    d.word === "overdue" ? COPY.pill.overdue : d.word === "returned" ? COPY.pill.returned : null;
   return (
     <li
       data-por23="deliverable"
@@ -56,10 +62,18 @@ function DeliverableRow({
       className="flex min-h-[52px] items-center gap-[10px] border-b border-hair px-[14px]"
     >
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-body text-ink">{d.title}</span>
-        <span className={`text-meta ${d.word === "overdue" ? "text-danger" : "text-ink-3"}`}>
-          {sub}
+        <span className="flex items-center gap-[6px] text-body text-ink">
+          {d.title}
+          {pill !== null && (
+            <span
+              data-pill={d.word}
+              className="rounded-full bg-danger-tint px-[8px] text-meta font-medium text-danger"
+            >
+              {pill}
+            </span>
+          )}
         </span>
+        <span className="text-meta text-ink-3">{sub}</span>
         {d.word === "returned" && d.return_note !== null && (
           <span className="text-meta text-ink-2">{d.return_note}</span>
         )}
@@ -74,6 +88,9 @@ function Pane({ room }: { room: ComponentRoomOut }): JSX.Element {
   const now = useNow();
   const on = (v: string): string => formatDate(v, { now });
   const [asking, setAsking] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [dropped, setDropped] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
   const [key] = useState(() => crypto.randomUUID());
   const instructions = useQuery({
@@ -100,6 +117,73 @@ function Pane({ room }: { room: ComponentRoomOut }): JSX.Element {
     },
   });
   const firm = room.firm_name;
+  const open = room.deliverables.filter((d) => d.word !== "you_uploaded");
+  async function drop(file: File): Promise<void> {
+    try {
+      const made = await componentRoomDrop({
+        path: { room_id: room.id },
+        query: { filename: file.name },
+        body: file as never,
+        bodySerializer: null,
+        headers: {
+          "Idempotency-Key": crypto.randomUUID(),
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        throwOnError: true,
+      });
+      // The room asks which deliverable when the server could not tell from the name.
+      if (made.data.deliverable_id === null) setDropped(made.data.evidence_version_id);
+      else void queries.invalidateQueries();
+    } catch {
+      toast.show(COPY.drop);
+    }
+  }
+  async function link(): Promise<void> {
+    if (dropped === null || picked === null) return;
+    await componentRoomLinkDrop({
+      path: { room_id: room.id, evidence_version_id: dropped },
+      body: { deliverable_id: picked },
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      throwOnError: true,
+    });
+    setDropped(null);
+    setPicked(null);
+    void queries.invalidateQueries();
+  }
+  if (reading) {
+    const sections = instructions.data?.sections ?? [];
+    return (
+      <div data-screen="POR-23" data-view="letter" className="flex flex-col">
+        <div className="flex h-[46px] items-center gap-[8px] border-b border-hair px-[14px]">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setReading(false);
+            }}
+          >
+            {COPY.backToRoom}
+          </Button>
+          <span className="flex-1 text-center text-title font-medium">
+            {COPY.instructionsTitle}
+          </span>
+          <a
+            className="text-body font-medium text-ink"
+            href={`/v1/portal/component-rooms/${room.id}/instructions/pdf`}
+          >
+            {COPY.downloadPdf}
+          </a>
+        </div>
+        <article className="flex flex-col gap-[10px] px-[22px] py-[18px]">
+          {sections.map((s) => (
+            <div key={s.number} className="flex flex-col gap-[2px]">
+              <p className="text-body font-medium text-ink">{`§${String(s.number)} ${s.title}`}</p>
+              <p className="whitespace-pre-line text-meta text-ink-2">{s.body}</p>
+            </div>
+          ))}
+        </article>
+      </div>
+    );
+  }
   return (
     <div data-screen="POR-23" className="flex flex-col">
       <h1 className="h-[46px] border-b border-hair text-center text-title font-medium leading-[46px]">
@@ -109,9 +193,23 @@ function Pane({ room }: { room: ComponentRoomOut }): JSX.Element {
         <p className="text-heading font-medium text-ink">{room.group_name}</p>
         <p className="text-body text-ink-2">{COPY.component(room.component_name)}</p>
         <p className="text-meta text-ink-2">{COPY.intro(firm)}</p>
-        <p className="mt-[6px] text-body font-medium text-ink">
-          {COPY.progress(room.uploaded, room.expected)}
-        </p>
+        <div className="mt-[6px] flex items-center gap-[10px]">
+          <p className="flex-1 text-body font-medium text-ink">
+            {COPY.progress(room.uploaded, room.expected)}
+          </p>
+          <label className="flex h-[30px] cursor-pointer items-center rounded-full bg-wash px-[12px] text-meta text-ink-2">
+            {COPY.drop}
+            <input
+              type="file"
+              className="sr-only"
+              aria-label={COPY.drop}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file !== undefined) void drop(file);
+              }}
+            />
+          </label>
+        </div>
       </section>
       <section aria-label={COPY.instructions}>
         <div className="flex h-[32px] items-center gap-[6px] bg-wash px-[14px] text-meta font-medium text-ink-2">
@@ -129,6 +227,16 @@ function Pane({ room }: { room: ComponentRoomOut }): JSX.Element {
               <p className="whitespace-pre-line text-meta text-ink-2">{s.body}</p>
             </div>
           ))}
+        </div>
+        <div className="px-[22px]">
+          <Button
+            variant="link"
+            onClick={() => {
+              setReading(true);
+            }}
+          >
+            {COPY.openLetter}
+          </Button>
         </div>
         <div className="flex flex-wrap items-center gap-[8px] px-[14px] py-[12px]">
           {room.acknowledged_on === null && (
@@ -174,7 +282,9 @@ function Pane({ room }: { room: ComponentRoomOut }): JSX.Element {
           <ul className="flex flex-col gap-[8px] px-[14px]">
             {(questions.data?.items ?? []).map((q) => (
               <li key={q.id} className="rounded-card bg-card p-[10px] shadow-e1">
-                <p className="text-meta font-medium text-ink">{q.author_name}</p>
+                <p className="text-meta font-medium text-ink">
+                  {COPY.thread(q.author_name, formatDateTime(q.at))}
+                </p>
                 <p className="whitespace-pre-line text-meta text-ink">{q.body}</p>
               </li>
             ))}
@@ -231,6 +341,34 @@ function Pane({ room }: { room: ComponentRoomOut }): JSX.Element {
       >
         <p className="text-body text-ink-2">{COPY.acknowledgeNote}</p>
       </Dialog>
+      <Dialog
+        open={dropped !== null}
+        onOpenChange={(v) => {
+          if (!v) setDropped(null);
+        }}
+        title={COPY.whichDeliverable}
+        action={
+          <Button variant="primary" disabled={picked === null} onClick={() => void link()}>
+            {COPY.link}
+          </Button>
+        }
+      >
+        <fieldset className="flex flex-col gap-[6px]">
+          {open.map((d) => (
+            <label key={d.id} className="flex items-center gap-[8px] text-body text-ink">
+              <input
+                type="radio"
+                name="por23-deliverable"
+                checked={picked === d.id}
+                onChange={() => {
+                  setPicked(d.id);
+                }}
+              />
+              {d.title}
+            </label>
+          ))}
+        </fieldset>
+      </Dialog>
     </div>
   );
 }
@@ -256,7 +394,7 @@ function Room(props: Por23Props): JSX.Element {
       <div className="mx-auto flex w-full max-w-[720px] flex-col overflow-y-auto rounded-pane bg-card shadow-e2">
         {closed ? (
           <EmptyState title={COPY.expired} icon="link-2-off">
-            {COPY.expiredBody}
+            {COPY.expiredBody(props.firm ?? "")}
           </EmptyState>
         ) : room.data !== undefined ? (
           <Pane room={room.data} />
@@ -271,7 +409,7 @@ export function POR23(props: Por23Props = {}): JSX.Element | null {
   if (branding.data === undefined) return null;
   return (
     <PortalBrandProvider brand={brandOf(branding.data)}>
-      <Room {...props} />
+      <Room {...props} firm={props.firm ?? brandOf(branding.data).name} />
     </PortalBrandProvider>
   );
 }

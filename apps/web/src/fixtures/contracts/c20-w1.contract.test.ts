@@ -2,7 +2,7 @@
 // (docs/contracts/c20-integrations.md v2.1; SPEC-700 AC-3, AC-24). Typed with the generated
 // client and checked against the OpenAPI document. Copperleaf's console at 9:24 AM, Sep 14, 2026.
 // The pytest half is backend/tests/contracts/c20_integrations/test_c02t08_w1_consumer.py.
-import type { LedgerConsoleOut, PostingLogRowOut, WriteGrantIn } from "@abacus/api-client";
+import type { W1LedgerConsoleOut, W1PostingLogRowOut, W1WriteGrantIn } from "@abacus/api-client";
 import { STATUS_REGISTRY } from "@abacus/ui";
 import { describe, expect, it } from "vitest";
 import { validateResponse } from "../schema-check";
@@ -12,7 +12,7 @@ const BATCH = "/v1/posting-batches/{batch_id}";
 type Entry = { label: string; clientLabel?: string };
 const GRANT = STATUS_REGISTRY.ledger_write_grant as Record<string, Entry>;
 
-const cls11a: LedgerConsoleOut = {
+const cls11a: W1LedgerConsoleOut = {
   client_entity_id: "00000000-0000-4000-8000-0000000000c1",
   client_entity_name: "Copperleaf Coffee Roasters, Inc.",
   ledger_label: "QuickBooks Online",
@@ -45,7 +45,7 @@ describe("C20 v2.1 fixtures for CLS-11 and POR-16", () => {
   });
 
   it("b: the July batch reads its resolved failure", () => {
-    const row: PostingLogRowOut = {
+    const row: W1PostingLogRowOut = {
       batch_id: "00000000-0000-4000-8000-0000000007a0",
       batch_code: "2026-07-A",
       period: "2026-07",
@@ -60,7 +60,7 @@ describe("C20 v2.1 fixtures for CLS-11 and POR-16", () => {
   });
 
   it("POR-16: the grant names consent copy v2 and the registry's words", () => {
-    const grant: WriteGrantIn = {
+    const grant: W1WriteGrantIn = {
       capability_id: "ledger_post_journal_entries",
       consent_copy_version: "por16.qbo.post_entries.v2",
     };

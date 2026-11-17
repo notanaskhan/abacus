@@ -16,14 +16,13 @@ import pytest
 from pydantic import ValidationError
 
 from abacus.api.export_openapi import document
-from abacus.kernel._statuses import PostingBatchStatus
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.integrations.w1_contract import (
-    ConnectionPaneOut,
-    ConsoleTilesOut,
-    LedgerConsoleOut,
-    PostingLogRowOut,
-    WriteGrantIn,
+    W1ConnectionPaneOut,
+    W1ConsoleTilesOut,
+    W1LedgerConsoleOut,
+    W1PostingLogRowOut,
+    W1WriteGrantIn,
 )
 
 Json = dict[str, object]
@@ -61,19 +60,19 @@ OPERATIONS = {
 CT = UTC  # the fixtures carry UTC instants; the screen renders CT
 
 
-def _cls11a() -> LedgerConsoleOut:
-    return LedgerConsoleOut(
+def _cls11a() -> W1LedgerConsoleOut:
+    return W1LedgerConsoleOut(
         client_entity_id=uuid.uuid4(),
         client_entity_name="Copperleaf Coffee Roasters, Inc.",
         ledger_label="QuickBooks Online",
-        tiles=ConsoleTilesOut(
+        tiles=W1ConsoleTilesOut(
             posted=7,
             proposed=1,
             failed_post=0,
             resolved_failures=1,
             closing_date=date(2026, 7, 31),
         ),
-        connection=ConnectionPaneOut(
+        connection=W1ConnectionPaneOut(
             connection_id=uuid.uuid4(),
             health="connected",
             authorized_by="Tess Moreno (client portal)",
@@ -96,11 +95,11 @@ def test_cls11a_the_console_reads_its_tiles_and_pane() -> None:
 
 
 def test_cls11b_the_log_names_the_july_batch_and_its_resolved_failure() -> None:
-    row = PostingLogRowOut(
+    row = W1PostingLogRowOut(
         batch_id=uuid.uuid4(),
         batch_code="2026-07-A",
         period="2026-07",
-        status=PostingBatchStatus.POSTED,
+        status="posted",
         entry_count=6,
         approved_count=6,
         first_external_ref="47602",
@@ -114,17 +113,17 @@ def test_cls11b_the_log_names_the_july_batch_and_its_resolved_failure() -> None:
 def test_cls11c_d_unhealthy_connections_fit(health: str) -> None:
     pane = _cls11a().connection
     assert pane is not None
-    changed = ConnectionPaneOut.model_validate({**pane.model_dump(), "health": health})
+    changed = W1ConnectionPaneOut.model_validate({**pane.model_dump(), "health": health})
     assert changed.health == health
 
 
 def test_por16_the_grant_names_consent_copy_v2_only() -> None:
-    WriteGrantIn(
+    W1WriteGrantIn(
         capability_id="ledger_post_journal_entries",
         consent_copy_version="por16.qbo.post_entries.v2",
     )
     with pytest.raises(ValidationError):
-        WriteGrantIn.model_validate(
+        W1WriteGrantIn.model_validate(
             {"capability_id": "ledger_post_journal_entries", "consent_copy_version": "v1"}
         )
 
