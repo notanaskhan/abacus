@@ -97,7 +97,7 @@ def test_e3_is_the_cited_1_000_000_times_the_code_computed_24_0_percent() -> Non
 def _answer(
     *, e3_cell: bool = True, e3_note: str = "Profit on goods still on hand."
 ) -> ep.ProposerOutput:
-    entries = []
+    entries: list[ep.ProposerEntry] = []
     for c in ep.candidates(HARLOW_PIKE):
         evidence = None
         if c.kind == "unrealized_profit" and e3_cell:
