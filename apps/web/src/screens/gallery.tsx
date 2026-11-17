@@ -29,6 +29,7 @@ import "./kit-a08";
 import { TestingWorkspace } from "./AUD-12"; // A-08-T27: the artboards on the A-08 kit
 import { AnalyticsWorkspace } from "./AUD-13"; // A-08-T28: preliminary, substantive, final
 import { ConfirmationsWorkspace } from "./AUD-14"; // A-08-T29: the confirmation log
+import { SsarsWorkspace } from "./AUD-26"; // A-08-T31: review, compilation, preparation
 import { GroupScoping } from "./AUD-34"; // A-09-T31: the group scoping artboards
 import { ComponentAuditors } from "./AUD-35"; // A-09-T22: the component auditors artboards
 import { Beneficiaries } from "./TXT-03"; // T-07-T25: beneficiaries, K-1s and the election
@@ -2704,6 +2705,10 @@ registerScreen("AUD-13", {
 registerScreen("AUD-14", {
   title: "Confirmations — Granite Peak FY2026",
   Component: ({ params }: { params: FixtureParams }) => <ConfirmationsWorkspace st={params.st} />,
+});
+registerScreen("AUD-26", {
+  title: "Review, compilation & preparation workspace",
+  Component: ({ params }: { params: FixtureParams }) => <SsarsWorkspace st={params.st} />,
 });
 
 // AUD-33 (A-09-T15): the consolidated trial balance, a to g, Omar Haddad at 2:05 PM.

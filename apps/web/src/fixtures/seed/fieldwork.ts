@@ -506,3 +506,130 @@ export const GRANITE_PEAK_CONFIRMATIONS: ConfirmationLogRow[] = [
       "Subsequent receipt Jul 14, 2026 $198,450.00 — agreed to Front Range Bank deposit and remittance advice",
   },
 ]; // fmt: skip
+
+// ---- AUD-26 (A-08-T31): Lakeshore's review analytics and inquiries, from the handoff (#aud26) ----
+
+/** a: each line's expectation, as the review analytics set them (run #4119). */
+export const LAKESHORE_EXPECTATIONS: Record<string, string> = {
+  contributions: "+5% to +10% · campaign pledges",
+  grants: "±10%",
+  other_revenue: "±10%",
+  program_services: "+3% to +8% · new site",
+  management_and_general: "±10%",
+  fundraising: "±10%",
+};
+
+/** The statement subtotals (derived): [after the line, caption, cy, py, change, %, note]. */
+export const LAKESHORE_SUBTOTALS: {
+  after: string;
+  caption: string;
+  cy: string;
+  py: string;
+  change: string;
+  pct: string;
+  note?: string;
+}[] = [
+  {
+    after: "other_revenue",
+    caption: "Total revenue",
+    cy: "4174000",
+    py: "4288000",
+    change: "-114000",
+    pct: "-2.7",
+  },
+  {
+    after: "fundraising",
+    caption: "Total expenses",
+    cy: "4014000",
+    py: "3863000",
+    change: "151000",
+    pct: "3.9",
+  },
+  {
+    after: "fundraising",
+    caption: "Change in net assets",
+    cy: "160000",
+    py: "425000",
+    change: "-265000",
+    pct: "-62.4",
+    note: "Explained by grants",
+  },
+  {
+    after: "fundraising",
+    caption: "Net assets, end of year",
+    cy: "4920000",
+    py: "4760000",
+    change: "160000",
+    pct: "3.4",
+  },
+]; // fmt: skip
+
+export const LAKESHORE_GRANTS_EXPLANATION = {
+  result: "Explained — County Library grant ended Dec 2025",
+  source: "Inquiry answer · Monica Hale-Ruiz · Sep 9 (POR-05)",
+  evidence: "County Library grant agreement 2023–2025.pdf · p. 2",
+  corroborated: "FY2026 grant receipts in Xero stop after Dec 2025 ✓",
+};
+
+/** a: the agent's narration on run #4119 (rendered through AgentText). */
+export const LAKESHORE_RUN = {
+  title: "Review analytics · run #4119 · Sep 14, 9:02 AM",
+  narration:
+    "I set expectations from the FY2025 reviewed statements, the board-approved FY2026 budget and Monica Hale-Ruiz's answers. One line is over the threshold: Grants, down $360,000 (24.3%). The County Library grant agreement shows the grant ended in December 2025, and Xero shows no receipts after that. That explains the difference. I have not concluded — please review the explanation.",
+  tools: [
+    "Build expectations from FY2025 statements and budget",
+    "Compare the FY2026 trial balance (Xero) to expectations",
+    "Match explanations to inquiry answers",
+  ],
+};
+
+/** b: the inquiry program (11 of 14 answered; the six cards the artboard shows). */
+export const LAKESHORE_INQUIRIES: {
+  question: string;
+  respondent: string;
+  answer?: string;
+  status: string;
+  answered: boolean;
+}[] = [
+  {
+    question: "Have accounting principles or methods changed since FY2025?",
+    respondent: "Monica Hale-Ruiz",
+    answer: "No changes.",
+    status: "Answered Sep 9",
+    answered: true,
+  },
+  {
+    question:
+      "How are shared costs (rent, salaries) allocated to program, management and general, and fundraising?",
+    respondent: "Monica Hale-Ruiz",
+    answer: "Quarterly time studies for salaries; rent by square footage.",
+    status: "Answered Sep 9",
+    answered: true,
+  },
+  {
+    question: "Why did grant revenue decrease?",
+    respondent: "Monica Hale-Ruiz",
+    answer: "The County Library grant ended in December 2025.",
+    status: "Answered Sep 9",
+    answered: true,
+  },
+  {
+    question: "Are you aware of any fraud or suspected fraud affecting the organization?",
+    respondent: "Board treasurer",
+    status: "Requested Sep 10",
+    answered: false,
+  },
+  {
+    question:
+      "Have any events occurred since June 30, 2026 that could need adjustment or disclosure?",
+    respondent: "Monica Hale-Ruiz",
+    status: "Requested Sep 10",
+    answered: false,
+  },
+  {
+    question: "Are any pledges receivable due after more than one year?",
+    respondent: "Monica Hale-Ruiz",
+    status: "Requested Sep 10",
+    answered: false,
+  },
+]; // fmt: skip
