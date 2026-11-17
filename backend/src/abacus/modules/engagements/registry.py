@@ -217,6 +217,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # SECURITY DEFINER trigger writes phase, phase_source and phase_changed_at (DEC-262).
     "assurance_work_items": frozenset(
         {"auto_mode", "ebp_plan_kind", "limited_scope_103a3c", "standards_set_id", "version"}
+        | {"is_group_audit"}  # A-09-T30 (0946, DEC-5408): ENG-03 g's group toggle
     ),
     "engagement_letters": frozenset(
         {"status", "letter_date", "reason", "link", "recorded_by", "recorded_at"}

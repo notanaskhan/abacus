@@ -404,6 +404,8 @@ class EngagementDraftPayload(BaseModel):
     team: Annotated[list[DraftTeamMemberIn], Field(max_length=50), classified("internal")] = []
     eqr_user_id: Annotated[UUID | None, classified("internal")] = None
     group_audit: Annotated[bool, classified("internal")] = False
+    # A-09-T30 (DEC-5408): ENG-03 g's component entities (the client's own; others ignored).
+    component_entity_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")] = []
     portal_contact_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")] = []
     prior_engagement_id: Annotated[UUID | None, classified("internal")] = None
 

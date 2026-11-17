@@ -165,6 +165,7 @@ from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, 
 from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
 from abacus.modules.assurance.gates import register as register_gates
 from abacus.modules.assurance.group_contract import router as group_router
+from abacus.modules.assurance.group_hosts import register as group_hosts_register
 from abacus.modules.assurance.group_pull import ACTIVITIES as PULL_ALL_ACTIVITIES
 from abacus.modules.assurance.group_pull import WORKFLOWS as PULL_ALL_WORKFLOWS
 from abacus.modules.assurance.group_structure import SUBSCRIPTIONS as GROUP_STRUCTURE_SUBSCRIPTIONS
@@ -335,6 +336,8 @@ ssars_register()
 component_auditors_register()
 # A-09-T28 (DEC-5406): the late gate (Today) and the follow-up email template.
 component_late_register()
+# A-09-T30 (DEC-5408): AUD-02's Group band rows and AUD-01's group tags.
+group_hosts_register()
 register_anchor(COMPONENT_THREAD_KIND, COMPONENT_THREAD_ANCHORS)  # type: ignore[arg-type] -- an AnchorProvider
 # A-08-T24 (DEC-5403): AUD-12's Begin fans out through assurance's runner.
 fieldwork_runs_register()
