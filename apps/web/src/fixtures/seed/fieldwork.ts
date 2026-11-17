@@ -402,3 +402,107 @@ export const GRANITE_PEAK_SUBTOTALS: Record<
     },
   ],
 }; // fmt: skip
+
+// ---- AUD-14 (A-08-T29): Granite Peak's confirmation log, verbatim from the handoff (#aud14) ----
+
+/** One row of the log as AUD-14 shows it (the bank group carries its masked account lines). */
+export interface ConfirmationLogRow {
+  number: string;
+  item: string;
+  respondent: string;
+  address: string;
+  channel: string;
+  sent: string;
+  response: string;
+  book: string | null;
+  confirmed: string | null;
+  difference: string | null;
+  status:
+    | "draft"
+    | "authorization_requested"
+    | "sent"
+    | "responded"
+    | "exception"
+    | "alternative_procedures"
+    | "closed";
+  subLine?: string;
+  lines?: { account: string; book: string; confirmed: string; difference: string }[];
+}
+
+export const GRANITE_PEAK_CONFIRMATIONS: ConfirmationLogRow[] = [
+  {
+    number: "C1",
+    item: "Bank balances & debt",
+    respondent: "Front Range Bank",
+    address:
+      "Bank's published confirmation address; authorization signed by Luis Ferrante Sep 17 (SIG-02)",
+    channel: "Bank confirmation network",
+    sent: "Sep 18",
+    response: "Sep 23",
+    book: null,
+    confirmed: null,
+    difference: null,
+    status: "closed",
+    lines: [
+      {
+        account: "Cash — operating ••7712",
+        book: "2140000.00",
+        confirmed: "2140000.00",
+        difference: "0.00",
+      },
+      {
+        account: "Revolver ••6604",
+        book: "6500000.00",
+        confirmed: "6500000.00",
+        difference: "0.00",
+      },
+      {
+        account: "Term loan ••6611",
+        book: "3200000.00",
+        confirmed: "3200000.00",
+        difference: "0.00",
+      },
+    ],
+  },
+  {
+    number: "C2",
+    item: "Accounts receivable",
+    respondent: "Summit Trail Outfitters",
+    address: "Customer master matched website and phone call (CH, Sep 17)",
+    channel: "Accrued link",
+    sent: "Sep 18",
+    response: "Sep 25",
+    book: "412600.00",
+    confirmed: "412600.00",
+    difference: "0.00",
+    status: "closed",
+  },
+  {
+    number: "C3",
+    item: "Accounts receivable",
+    respondent: "Alpine Ridge Sports",
+    address: "Matched prior-year confirmation and phone call (CH, Sep 17)",
+    channel: "Accrued link",
+    sent: "Sep 18",
+    response: "Sep 24",
+    book: "286900.00",
+    confirmed: "282600.00",
+    difference: "4300.00",
+    status: "exception",
+  },
+  {
+    number: "C4",
+    item: "Accounts receivable",
+    respondent: "Canyon Basecamp Co.",
+    address: "Website and phone call (CH, Sep 17)",
+    channel: "Accrued link",
+    sent: "Sep 18",
+    response: "No response",
+    book: "198450.00",
+    confirmed: null,
+    difference: null,
+    status: "alternative_procedures",
+    subLine:
+      "Subsequent receipt Jul 14, 2026 $198,450.00 — agreed to Front Range Bank deposit and remittance advice",
+  },
+]; // fmt: skip
