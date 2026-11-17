@@ -56,3 +56,12 @@ h and i (Tessellate, HR and ticketing) are X-02's.
 | f body | "…or post accepted entries. Your August close may be delayed." | "…won't be able to read your books. What it already received stays in your client file." | DF-19; A-02 AC-9.5 |
 | e scopes | Read ledger · Post approved entries | Read ledger | DF-19 |
 | Back chip | "‹ Account" | "‹ Home" | POR-12 is N-03's (A-02 §11.2 Q4) |
+
+## Design deltas (C-02-T10, DEC-5509)
+When W1 is live for a non-attest client (ADR-344), the consent sheet uses consent copy v2 (`por16.qbo.post_entries.v2`, catalogue rows, counsel-reviewed). Until then DF-19's mask above stands.
+
+| Frame | Handoff | Build | Why |
+|---|---|---|---|
+| `screenshots/POR-16e.png` will / won't lists | "Post approved entries" | will: "post journal entries your accountant approves, and set the closing date after posting"; won't: "change or delete existing transactions" | ADR-344 §1; SPEC-700 AC-23 |
+| `POR-16e.png` beside Connect | — | "Export instead" stays beside Connect | ADR-108 |
+| Attest client | — | no write-grant control (the grant is refused by trigger) | ADR-164; SPEC-700 AC-21 |
