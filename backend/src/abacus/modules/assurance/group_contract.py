@@ -1342,13 +1342,15 @@ async def group_list_deliverables(auditor_id: UUID, ctx: Ctx) -> ComponentDelive
     errors=(409, 501),
 )
 async def group_add_deliverable(
-    auditor_id: UUID, body: ComponentDeliverableIn, ctx: Ctx, _key: IdempotencyKey
+    auditor_id: UUID, body: ComponentDeliverableIn, ctx: Ctx, key: IdempotencyKey
 ) -> ComponentDeliverableOut:
     await _gate_record(ctx)
     from abacus.modules.assurance import component_auditors as ca
 
     return _deliverable_out(
-        await ca.request_deliverable(ctx, auditor_id, title=body.title, due_on=body.due_on)
+        await ca.request_deliverable(
+            ctx, auditor_id, title=body.title, due_on=body.due_on, idempotency_key=key
+        )
     )
 
 
