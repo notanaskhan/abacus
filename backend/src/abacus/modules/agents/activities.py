@@ -42,6 +42,9 @@ from abacus.modules.agents.knowledge import embed_next_batch, fail_document
 from abacus.modules.agents.run_activities import RUN_V2_ACTIVITIES
 from abacus.modules.agents.run_backfill import backfill_run_batch_activity
 from abacus.modules.agents.run_records import persist_run_record
+from abacus.modules.agents.section_draft import (
+    FAN_OUT_ACTIVITIES as SECTION_DRAFT_FAN_OUT_ACTIVITIES,
+)
 from abacus.modules.agents.section_draft import draft as draft_section
 from abacus.modules.agents.section_sources import PackRefused
 from abacus.modules.agents.service import (
@@ -725,6 +728,7 @@ ACTIVITIES = (
     create_assess_run_activity,  # SPEC-037 Q4 (TASK-085)
     assess_activity,
     section_draft_activity,  # A-04-T11
+    *SECTION_DRAFT_FAN_OUT_ACTIVITIES,  # A-08-T24 rest: the fan-out (ADR-071 dispatch)
     acquire_slot_activity,
     release_slot_activity,
     screen_activity,
