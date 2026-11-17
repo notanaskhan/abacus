@@ -136,6 +136,8 @@ from abacus.modules.assurance.ebp_tests import create as create_ebp_test  # TASK
 from abacus.modules.assurance.ebp_tests import mark as mark_ebp_test  # TASK-7815: the seed
 from abacus.modules.assurance.eqr_service import SUBSCRIPTIONS as EQR_SUBSCRIPTIONS
 from abacus.modules.assurance.eqr_service import register_eqr_checklist_template
+from abacus.modules.assurance.fieldwork_runs import register as fieldwork_runs_register
+from abacus.modules.assurance.fieldwork_runs_contract import router as fieldwork_runs_router
 from abacus.modules.assurance.findings import AUDIT_KINDS as FINDING_KINDS
 from abacus.modules.assurance.findings import audit_owners as finding_owners
 from abacus.modules.assurance.findings import register_exception_routes
@@ -299,6 +301,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     confirmations_router,  # A-08-T06 confirmations stub (docs/contracts/confirmations.md)
     analytics_router,  # A-08-T05 analytics and SSARS stubs (audit-analytics, ssars-workspace)
     group_router,  # A-09-T03 group-audit stubs (ledger-consolidation, group-audit)
+    fieldwork_runs_router,  # A-08-T24 (DEC-5403): AUD-13/AUD-26/AUD-14 run rows
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
@@ -317,6 +320,8 @@ register_gates()  # A-04-T43, A-07-T15: G4 to G9 from assurance/gates.py
 register_acceptance_gate()
 # A-08-T22 (DEC-5401): the firm's SSARS variance policy (both legs).
 ssars_register()
+# A-08-T24 (DEC-5403): AUD-12's Begin fans out through assurance's runner.
+fieldwork_runs_register()
 # A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
 register_entry_decision_hook(on_entry_client_decision)
 # A-06-T17 (DEC-2956): record mode's evidence must be an email on the entry's own engagement.

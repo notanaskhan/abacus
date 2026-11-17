@@ -42,5 +42,10 @@ Every route answers, in order: a client principal 404; the action on the work it
 - Accept takes `seen_hash` = `AnalyticsSetOut.review_hash` (409 `content_changed`); the matrix's `not_preparer_of_target` gets the explanations' authors. HOME-02 gate `analytics_explanation_acceptance` (managers) and notification `analytics_explanations_ready` (engagement leads).
 - Not yet: `adjustment.approved` marking final-stage sets Out of date (C8 emits no such event on main), the SSE progress stream (A-08-T24).
 
+## 4b. Run rows (A-08-T24, DEC-5403)
+- POST `/v1/analytics-sets/{aid}/runs` (202, `analytics.explain`) records three rows: `tie_out` (code, the layer's balance), `flux_explain` (one section-drafter run per Unexplained line on the engagement's `AN-1` paper, "<initiator> via Agent") and `client_questions` (code templating: the lines a person may ask about). GET `…/runs` is the polling fallback for C6 v2's stream.
+- A closed data boundary answers 409 `drafting_not_enabled` before any run is recorded (DF-04, no model call). `audits.fieldwork_agents` off answers 404.
+- AUD-12 Begin (`POST /v1/tests/{id}/runs`) fans out one `fieldwork_attribute` run per sampled item on the test's paper; AUD-14 Reconcile (`POST /v1/confirmations/{cid}/runs`) one `confirmation_reconcile` run on `CF-1`.
+
 ## 5. Human-only actions
 Accepting explanations and sending client questions: the agent is denied; explanations it drafts are suggestions (`suggestion.create`). No model text reaches a client (DV-4).

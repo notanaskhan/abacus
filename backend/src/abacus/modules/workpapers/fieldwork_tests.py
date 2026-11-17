@@ -405,3 +405,52 @@ async def export_xlsx(ctx: AuthContext, test_id: UUID) -> bytes:
             after=Ref(version=found.version_no, content_hash=found.content_hash),
         )
     return workbook([Sheet("Testing", [list(_EXPORT_HEAD), *rows])])
+
+
+# --- A-08-T24 (DEC-5403): a test's run, through the runner assurance registers -----------------
+
+
+@dataclass(frozen=True)
+class FieldworkRunFacts:
+    engagement_id: UUID
+    work_item_id: UUID
+    workpaper_id: UUID
+    positions: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class FieldworkRun:
+    run_id: UUID
+    items: int
+    initiator_name: str
+
+
+FieldworkRunner = Callable[[AuthContext, UUID, str], Awaitable[FieldworkRun]]
+_RUNNER: list[FieldworkRunner] = []
+
+
+def register_test_runner(runner: FieldworkRunner) -> None:
+    """assurance's fan-out (the section drafter's `fieldwork_attribute` mode per item)."""
+    if _RUNNER and _RUNNER[0] is not runner:
+        raise ValueError("a test runner is already registered")
+    _RUNNER[:] = [runner]
+
+
+async def fieldwork_run_facts(ctx: AuthContext, test_id: UUID) -> FieldworkRunFacts:
+    """The AUD-12 test's engagement, paper and sampled positions, for a person allowed to run."""
+    test = await _aud12(ctx, test_id)
+    found = await grid.grid(ctx, cast(UUID, test["engagement_id"]), test_id)
+    return FieldworkRunFacts(
+        cast(UUID, test["engagement_id"]),
+        cast(UUID, test["work_item_id"]),
+        cast(UUID, test["workpaper_id"]),
+        tuple(sorted(r.position for r in found.rows)),
+    )
+
+
+async def start_fieldwork_run(
+    ctx: AuthContext, test_id: UUID, idempotency_key: str
+) -> FieldworkRun:
+    if not _RUNNER:
+        raise NotFound("test_runner")
+    return await _RUNNER[0](ctx, test_id, idempotency_key)

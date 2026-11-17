@@ -107744,6 +107744,103 @@
         "title": "RunRecordOut",
         "type": "object"
       },
+      "RunRowOut": {
+        "description": "One run row: \"Simone Baptiste via Agent\" for an agent row, \"Code\" for a code row.",
+        "properties": {
+          "attribution": {
+            "cls": "confidential",
+            "title": "Attribution",
+            "type": "string"
+          },
+          "items": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Items",
+            "type": "integer"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "fieldwork_attribute",
+              "flux_explain",
+              "tie_out",
+              "client_questions",
+              "confirmation_reconcile"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "cls": "public",
+            "title": "Label",
+            "type": "string"
+          },
+          "run_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Run Ids",
+            "type": "array"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "states": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RunStateCountOut"
+            },
+            "title": "States",
+            "type": "array"
+          },
+          "tb_balanced": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tb Balanced"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "run_ids",
+          "items",
+          "states",
+          "attribution",
+          "tb_balanced",
+          "started_at"
+        ],
+        "title": "RunRowOut",
+        "type": "object"
+      },
+      "RunRowsOut": {
+        "properties": {
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RunRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "RunRowsOut",
+        "type": "object"
+      },
       "RunSignOffIn": {
         "additionalProperties": false,
         "properties": {
@@ -107790,6 +107887,27 @@
           "run_id"
         ],
         "title": "RunStartedOut",
+        "type": "object"
+      },
+      "RunStateCountOut": {
+        "properties": {
+          "runs": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Runs",
+            "type": "integer"
+          },
+          "state": {
+            "cls": "internal",
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "runs"
+        ],
+        "title": "RunStateCountOut",
         "type": "object"
       },
       "RunStepRetryIn": {
@@ -149164,6 +149282,238 @@
         "x-abacus-action": "analytics.read"
       }
     },
+    "/v1/analytics-sets/{analytics_set_id}/runs": {
+      "get": {
+        "description": "The polling fallback while the SSE stream is unavailable.",
+        "operationId": "analytics_run_rows",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRowsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Analytics Run Rows",
+        "tags": [
+          "fieldwork-runs"
+        ],
+        "x-abacus-action": "analytics.read"
+      },
+      "post": {
+        "operationId": "start_analytics_runs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analytics_set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analytics Set Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRowsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Start Analytics Runs",
+        "tags": [
+          "fieldwork-runs"
+        ],
+        "x-abacus-action": "analytics.explain"
+      }
+    },
     "/v1/approval-batches": {
       "post": {
         "description": "Within-threshold entries approved together by the named person (T10).",
@@ -187070,6 +187420,133 @@
           "confirmations"
         ],
         "x-abacus-action": "confirmation.send"
+      }
+    },
+    "/v1/confirmations/{confirmation_id}/runs": {
+      "post": {
+        "operationId": "start_reconcile_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "confirmation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Confirmation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRowsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Start Reconcile Run",
+        "tags": [
+          "fieldwork-runs"
+        ],
+        "x-abacus-action": "confirmation.read"
       }
     },
     "/v1/confirmations/{confirmation_id}/second-request": {

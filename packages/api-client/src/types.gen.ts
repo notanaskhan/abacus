@@ -50616,6 +50616,56 @@ export type RunRecordOut = {
 };
 
 /**
+ * RunRowOut
+ *
+ * One run row: "Simone Baptiste via Agent" for an agent row, "Code" for a code row.
+ */
+export type RunRowOut = {
+    /**
+     * Attribution
+     */
+    attribution: string;
+    /**
+     * Items
+     */
+    items: number;
+    /**
+     * Kind
+     */
+    kind: 'fieldwork_attribute' | 'flux_explain' | 'tie_out' | 'client_questions' | 'confirmation_reconcile';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Run Ids
+     */
+    run_ids: Array<string>;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * States
+     */
+    states: Array<RunStateCountOut>;
+    /**
+     * Tb Balanced
+     */
+    tb_balanced: boolean | null;
+};
+
+/**
+ * RunRowsOut
+ */
+export type RunRowsOut = {
+    /**
+     * Rows
+     */
+    rows: Array<RunRowOut>;
+};
+
+/**
  * RunSignOffIn
  */
 export type RunSignOffIn = {
@@ -50643,6 +50693,20 @@ export type RunStartedOut = {
      * Status
      */
     status?: 'queued';
+};
+
+/**
+ * RunStateCountOut
+ */
+export type RunStateCountOut = {
+    /**
+     * Runs
+     */
+    runs: number;
+    /**
+     * State
+     */
+    state: string;
 };
 
 /**
@@ -69996,6 +70060,118 @@ export type LineProvenanceResponses = {
 
 export type LineProvenanceResponse = LineProvenanceResponses[keyof LineProvenanceResponses];
 
+export type AnalyticsRunRowsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}/runs';
+};
+
+export type AnalyticsRunRowsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AnalyticsRunRowsError = AnalyticsRunRowsErrors[keyof AnalyticsRunRowsErrors];
+
+export type AnalyticsRunRowsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunRowsOut;
+};
+
+export type AnalyticsRunRowsResponse = AnalyticsRunRowsResponses[keyof AnalyticsRunRowsResponses];
+
+export type StartAnalyticsRunsData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Analytics Set Id
+         */
+        analytics_set_id: string;
+    };
+    query?: never;
+    url: '/v1/analytics-sets/{analytics_set_id}/runs';
+};
+
+export type StartAnalyticsRunsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StartAnalyticsRunsError = StartAnalyticsRunsErrors[keyof StartAnalyticsRunsErrors];
+
+export type StartAnalyticsRunsResponses = {
+    /**
+     * Successful Response
+     */
+    202: RunRowsOut;
+};
+
+export type StartAnalyticsRunsResponse = StartAnalyticsRunsResponses[keyof StartAnalyticsRunsResponses];
+
 export type ApprovalBatchData = {
     body: BatchIn;
     headers: {
@@ -87058,6 +87234,66 @@ export type RevokeLinkResponses = {
 };
 
 export type RevokeLinkResponse = RevokeLinkResponses[keyof RevokeLinkResponses];
+
+export type StartReconcileRunData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Confirmation Id
+         */
+        confirmation_id: string;
+    };
+    query?: never;
+    url: '/v1/confirmations/{confirmation_id}/runs';
+};
+
+export type StartReconcileRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StartReconcileRunError = StartReconcileRunErrors[keyof StartReconcileRunErrors];
+
+export type StartReconcileRunResponses = {
+    /**
+     * Successful Response
+     */
+    202: RunRowsOut;
+};
+
+export type StartReconcileRunResponse = StartReconcileRunResponses[keyof StartReconcileRunResponses];
 
 export type SecondRequestData = {
     body?: never;

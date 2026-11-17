@@ -52,7 +52,14 @@ from abacus.modules.workpapers.drafting import (
     paper_id_of_kind,
     paper_of_kind,
 )
-from abacus.modules.workpapers.fieldwork_tests import deviation_counts, register_finding_raiser
+from abacus.modules.workpapers.fieldwork_tests import (
+    FieldworkRun,
+    FieldworkRunFacts,
+    deviation_counts,
+    fieldwork_run_facts,
+    register_finding_raiser,
+    register_test_runner,
+)
 from abacus.modules.workpapers.fieldwork_tests_contract import router as fieldwork_tests_router
 from abacus.modules.workpapers.guards import register_sign_off_guard
 from abacus.modules.workpapers.layouts import (
@@ -156,6 +163,8 @@ __all__ = [
     "ExceptionPrefill",
     "ExportCell",
     "ExportSheet",
+    "FieldworkRun",  # A-08-T24 (DEC-5403): assurance runs an AUD-12 test
+    "FieldworkRunFacts",
     "FluxLine",
     "FluxRow",
     "FluxSet",
@@ -187,6 +196,7 @@ __all__ = [
     "evaluate_flux",
     "evaluate_workbook",
     "exception_prefill",
+    "fieldwork_run_facts",
     "grid",
     "latest_test_of_variant",
     "latest_version_id",  # A-05-T16 (DEC-2489): EBP-02's document values
@@ -203,6 +213,7 @@ __all__ = [
     "register_designed_layout",
     "register_finding_raiser",
     "register_sign_off_guard",  # A-05-T16 (DEC-2069)
+    "register_test_runner",
     "render_formula",
     "render_workbook",
     "resolve",
