@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query, Response
@@ -315,6 +315,24 @@ class ProposalRefOut(BaseModel):
 
 
 # --- CLS-05 reconciliation -----------------------------------------------------------------------
+
+
+def _item_out(i: dict[str, object]) -> ReconcilingItemOut:
+    """C-01-T23: one reconciling item row as CLS-05 shows it."""
+    return ReconcilingItemOut(
+        item_id=cast(UUID, i["id"]),
+        side=cast(Literal["bank", "book"], i["side"]),
+        kind=cast(ItemKind, i["kind"]),
+        ref=cast(str | None, i.get("ref")),
+        txn_date=cast(date, i["txn_date"]),
+        days_at_period_end=int(cast(int, i.get("days_at_period_end") or 0)),
+        amount=Decimal(str(i["amount"])),
+        stale=bool(i.get("stale") or False),
+        register_line_ref=cast(str | None, i.get("register_line_ref")),
+        issue_id=cast(UUID | None, i.get("issue_id")),
+        proposed_entry_id=cast(UUID | None, i.get("proposed_entry_id")),
+        resolution=cast(Literal["carry_forward", "cleared"] | None, i.get("resolution")),
+    )
 
 
 class StatementRegionOut(BaseModel):
@@ -767,7 +785,33 @@ async def close_reconciliation_route(
 ) -> CloseReconciliationOut:
     """CLS-05's VM: both sides, items, aging, matches and regions (C-01-T23)."""
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import reconciliations as recs
+
+    v = await recs.view(ctx, close_id, account_ref)
+    row = cast("dict[str, object]", v["row"])
+    state = v["state"]
+    stale = bool(getattr(state, "stale", False))
+    open_count = int(cast(int, v["open_count"]))
+    return CloseReconciliationOut(
+        reconciliation_id=cast(UUID, row["id"]),
+        version=int(cast(int, row["version"])),
+        account_external_id=account_ref,
+        account_name=str(v["account_name"]),
+        period_end=cast(date, v["period_end"]),
+        statement_evidence_version_id=cast(UUID | None, row["statement_evidence_version_id"]),
+        balance_per_bank=cast(Decimal | None, row["balance_per_bank"]),
+        adjusted_bank=cast(Decimal | None, row["adjusted_bank"]),
+        book_balance=cast(Decimal, row["book_balance"]),
+        adjusted_book=cast(Decimal, row["adjusted_book"] or row["book_balance"]),
+        difference=cast(Decimal | None, row["difference"]),
+        tally=cast(TallyWord, row["tally"]),
+        items=[_item_out(i) for i in cast("list[dict[str, object]]", v["items"])],
+        statement_lines=[],  # regions arrive with verified C4 citations (partial, TASK-8415)
+        sign_off_stale=stale,
+        sign_off_blockers=[recs.BLOCKED] * (1 if open_count else 0),
+        engine_version=str(row["engine_version"]),
+        inputs_hash=str(row["inputs_hash"]),
+    )
 
 
 @close_work_router.post(
@@ -781,7 +825,10 @@ async def resolve_reconciling_item_route(
 ) -> ReconcilingItemOut:
     """Carry forward or cleared, with a required note; a person's (C-01-T23)."""
     await _human_route(ctx, "reconciliation.resolve_item")
-    _not_yet()
+    from abacus.modules.closes import reconciliations as recs
+
+    found = await recs.resolve_item(ctx, reconciliation_id, item_id, body.resolution, body.note)
+    return _item_out(found)
 
 
 @close_work_router.get(
@@ -793,8 +840,25 @@ async def resolve_reconciling_item_route(
 async def reconciling_item_entry_draft_route(
     reconciliation_id: UUID, item_id: UUID, ctx: Ctx
 ) -> EntryDraftOut:
+    """Code's draft for an unrecorded or book-error item: the cash side and its amount; the
+    person picks the offset account before proposing (C-01-T23)."""
     await _engine_on(ctx)
-    _not_yet()
+    from abacus.modules.closes import reconciliations as recs
+
+    found = await recs.item_for_draft(ctx, reconciliation_id, item_id)
+    amount = abs(Decimal(str(found["amount"])))
+    deposit = str(found["kind"]) == "unrecorded_deposit"
+    return EntryDraftOut(
+        lines=[
+            EntryLineOut(
+                account_ref=str(found["account_external_id"]),
+                account_name=str(found.get("account_name") or ""),
+                debit=amount if deposit else None,
+                credit=None if deposit else amount,
+            )
+        ],
+        drafted_by="code",
+    )
 
 
 @close_work_router.post(
@@ -809,7 +873,20 @@ async def propose_close_entry_route(
 ) -> ProposalRefOut:
     """A person proposes through `adjustments.api.propose_entry`; the agent cannot (AC-41)."""
     await _human_route(ctx, "proposed_entry.create")
-    _not_yet()
+    from abacus.modules.closes import reconciliations as recs
+
+    entry_id, number = await recs.propose_from_item(
+        ctx,
+        close_id,
+        body.reconciliation_item_id,
+        body.description,
+        [(ln.account_ref, ln.debit or Decimal(0), ln.credit or Decimal(0)) for ln in body.lines],
+    )
+    return ProposalRefOut(
+        proposed_entry_id=entry_id,
+        entry_number=number,
+        review_href=f"?ov=approve:{entry_id}",
+    )
 
 
 @close_work_router.get(

@@ -38,6 +38,8 @@ from abacus.modules.closes.intake import ACTIVITIES as INTAKE_ACTIVITIES
 from abacus.modules.closes.intake import schedule_publish
 from abacus.modules.closes.issues import CLOSE_TARGET, add_note, open_exceptions, raise_exception
 from abacus.modules.closes.kind import CloseKind
+from abacus.modules.closes.reconciliations import SUBSCRIPTIONS as RECONCILIATION_SUBSCRIPTIONS
+from abacus.modules.closes.reconciliations import register as reconciliations_register
 from abacus.modules.closes.request_publish_types import (
     PUBLISH as PUBLISH_REQUESTS,
 )
@@ -62,6 +64,8 @@ from abacus.modules.engagements.api import register_work_item_kind
 register_work_item_kind("close", CloseKind())
 # C-01-T15 (QC-8): a requested publication waits on the engagement's Managers and Partners.
 register_close_gates()
+# C-01-T23 (DEC-5410): reconciliations are reviewables; a new ledger snapshot recomputes them.
+reconciliations_register()
 # C-01-T20: the close run's code plan (`closes.close_run`), its run-step kinds and the
 # `close_treatment` decision card.
 register_close_run_steps()
@@ -83,7 +87,10 @@ async def _on_close_created(event: OutboxEvent) -> None:
         await schedule_publish(event.tenant_id, UUID(close_id))
 
 
-SUBSCRIPTIONS: dict[str, Handler] = {"close.created": _on_close_created}
+SUBSCRIPTIONS: dict[str, Handler] = {
+    "close.created": _on_close_created,
+    **RECONCILIATION_SUBSCRIPTIONS,  # C-01-T23
+}
 WORKFLOWS: dict[type, WorkClass] = {RequestPublishWorkflow: "background"}
 register_work_classes(WORKFLOWS)
 ACTIVITIES: tuple[Callable[..., Any], ...] = INTAKE_ACTIVITIES  # Any: Temporal activities

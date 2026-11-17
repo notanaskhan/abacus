@@ -1,6 +1,6 @@
 # ac-test-author: ayushkbhatia
 """A-09-T26 (TASK-8414; ADR-078 independent AC tests for N's consolidation, elimination and
-coverage work; SPEC-658 F2 to F4; DEC-5410).
+coverage work; SPEC-658 F2 to F4).
 
 Written from SPEC-658 and A-09 §6 (the T12 and 0889/0897 rules as the epic states them), not
 from the services, against the database the app runs on:

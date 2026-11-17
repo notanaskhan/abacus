@@ -2999,6 +2999,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.confirmations_lifecycle.ReconcilerCannotAccept
+  reconciling_item_resolved:
+    status: 409
+    raised_by:
+    - abacus.modules.closes.reconciliations.ItemResolved
   reconciling_items_do_not_foot:
     status: 409
     raised_by:
