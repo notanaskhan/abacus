@@ -97,17 +97,7 @@ export const closesIndexRoute = createRoute({
               replace: true,
             })
           }
-          onOpen={(closeId) => {
-            void navigate({ to: "/closes/$closeId", params: { closeId } });
-          }}
-          onStartRun={(closeId) => {
-            void navigate({ to: "/closes/$closeId", params: { closeId } });
-          }}
-          onViewPlan={(row) => {
-            // CLS-09 is keyed by the client; the plan resolves its Monthly close engagement
-            // (DEC-5021).
-            void navigate({ to: "/close-plans/$clientId", params: { clientId: row.client_id } });
-          }}
+          // C-01-T42: CLS-01 opens CLS-02 and CLS-09 itself (to.CLS02, to.CLS09).
         />
       </div>
     );

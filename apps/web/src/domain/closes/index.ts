@@ -14,3 +14,4 @@ export {
   useCloses,
   useRunningCloses,
 } from "./queries";
+export { RUN_POLL_MS, closeReadState, runIsLive } from "./states";
