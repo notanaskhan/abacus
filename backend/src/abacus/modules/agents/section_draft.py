@@ -95,8 +95,12 @@ from abacus.modules.agents.service import (
 from abacus.modules.agents.spec import AgentSpec, spec
 from abacus.modules.agents.stages import starts_in_shadow
 from abacus.modules.agents.v2_citations import record_agent_citations
-from abacus.modules.agents.workflow_types import SectionDraftInput
-from abacus.modules.agents.workflows import SectionDraftWorkflow
+from abacus.modules.agents.workflow_types import (
+    SectionDraftChild,
+    SectionDraftFanOutInput,
+    SectionDraftInput,
+)
+from abacus.modules.agents.workflows import SectionDraftFanOutWorkflow, SectionDraftWorkflow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import CitationClaim
 from abacus.modules.identity.api import AgentContext, AuthContext, authorise
@@ -128,7 +132,13 @@ UNKNOWN_FACT: Final = "unknown_fact"
 REVIEW_REQUIRED: Final = "review_required"
 _NUMBER: Final = re.compile(r"\d[\d,]*(?:\.\d+)?")
 
-WORKFLOWS: dict[type, WorkClass] = {SectionDraftWorkflow: spec(DRAFTER).work_class}
+WORKFLOWS: dict[type, WorkClass] = {
+    SectionDraftWorkflow: spec(DRAFTER).work_class,
+    # A-08-T24 rest: a person's fan-out runs on the drafter's own class.
+    SectionDraftFanOutWorkflow: spec(DRAFTER).work_class,
+}
+# A-08 §5: per item fan-out, at most 8 section drafter runs in flight.
+FAN_OUT_PARALLEL: Final = 8
 register_work_classes(WORKFLOWS)
 
 
@@ -225,6 +235,63 @@ async def start(
 ) -> UUID:
     """One run for this paper section, once per idempotency key; the route authorised
     `workpaper.draft` and both flags."""
+    run_id, child = await _record(
+        ctx, engagement_id, workpaper_id, mode, section_key, idempotency_key
+    )
+    if child is not None:
+        with suppress(WorkflowAlreadyStartedError):
+            await dispatch(
+                SectionDraftWorkflow,
+                child.input,
+                id=child.workflow_id,
+                id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+                id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+            )
+    return run_id
+
+
+async def start_many(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    workpaper_id: UUID,
+    mode: str,
+    sections: Sequence[str],
+    idempotency_key: str,
+) -> list[UUID]:
+    """A-08-T24 rest: one run per section, every one recorded before any starts (the first
+    record refuses DF-04 before anything exists), then one fan-out workflow starts the new ones
+    at most `FAN_OUT_PARALLEL` at a time. A replayed key returns the runs it made and starts
+    nothing more."""
+    runs: list[UUID] = []
+    children: list[SectionDraftChild] = []
+    for section in sections:
+        run_id, child = await _record(
+            ctx, engagement_id, workpaper_id, mode, section, f"{idempotency_key}:{section}"
+        )
+        runs.append(run_id)
+        if child is not None:
+            children.append(child)
+    if children:
+        with suppress(WorkflowAlreadyStartedError):
+            await dispatch(
+                SectionDraftFanOutWorkflow,
+                SectionDraftFanOutInput(str(ctx.tenant_id), children, FAN_OUT_PARALLEL),
+                id=f"section_draft_fan_out:{ctx.tenant_id}:{workpaper_id}:{idempotency_key}",
+                id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+                id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+            )
+    return runs
+
+
+async def _record(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    workpaper_id: UUID,
+    mode: str,
+    section_key: str | None,
+    idempotency_key: str,
+) -> tuple[UUID, SectionDraftChild | None]:
+    """Check, then record one run; the child to start is None when the key already made it."""
     drafter = spec(DRAFTER)
     mode_call(drafter, mode)
     if drafter.client_data != "cleared" and not await is_synthetic(ctx.tenant):
@@ -248,7 +315,7 @@ async def start(
     async with tenant_session(reader) as session:
         existing = await run_for_event(session, drafter.id, event)
     if existing is not None:
-        return existing.id  # a replayed start: the run it made
+        return existing.id, None  # a replayed start: the run it made
     run_id: UUID | None = None
     capped = False
     # A concurrent start that won the insert leaves nothing to record (MissingAuditEvent).
@@ -295,19 +362,12 @@ async def start(
             found = await run_for_event(session, drafter.id, event)
         if found is None:
             raise NotFound("agent_run")
-        return found.id
+        return found.id, None
     section = section_key
-    with suppress(WorkflowAlreadyStartedError):
-        await dispatch(
-            SectionDraftWorkflow,
-            SectionDraftInput(
-                str(ctx.tenant_id), str(run_id), str(workpaper_id), mode, section_key or ""
-            ),
-            id=f"section_draft:{ctx.tenant_id}:{paper.work_item_id}:{section or 'all'}:{run_id}",
-            id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
-            id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
-        )
-    return run_id
+    return run_id, SectionDraftChild(
+        SectionDraftInput(str(ctx.tenant_id), str(run_id), str(workpaper_id), mode, section or ""),
+        f"section_draft:{ctx.tenant_id}:{paper.work_item_id}:{section or 'all'}:{run_id}",
+    )
 
 
 # --- load_context --------------------------------------------------------------------------------

@@ -32,13 +32,18 @@ async def test_attribution_names_the_initiator(monkeypatch: pytest.MonkeyPatch) 
 @pytest.mark.asyncio
 async def test_df04_refuses_before_any_run(monkeypatch: pytest.MonkeyPatch) -> None:
     from abacus.modules.agents import api as agents
+    from abacus.modules.agents import section_draft
 
-    started: list[str] = []
+    started: list[object] = []
 
-    async def refused(*args: object) -> uuid.UUID:
+    async def refused(*args: object) -> tuple[uuid.UUID, None]:
         raise agents.DraftingNotEnabled
 
-    monkeypatch.setattr(agents, "start_section_draft", refused)
+    async def dispatched(*args: object, **kwargs: object) -> None:
+        started.append(args[0])
+
+    monkeypatch.setattr(section_draft, "_record", refused)
+    monkeypatch.setattr(section_draft, "dispatch", dispatched)
     with pytest.raises(agents.DraftingNotEnabled) as caught:
         await runs._fan_out(  # pyright: ignore[reportPrivateUsage] -- the private helper under test
             object(),  # type: ignore[arg-type] -- unused by the refusing start
@@ -50,3 +55,64 @@ async def test_df04_refuses_before_any_run(monkeypatch: pytest.MonkeyPatch) -> N
         )
     assert caught.value.code == "drafting_not_enabled"
     assert started == []
+
+
+@pytest.mark.asyncio
+async def test_a_fan_out_records_every_run_then_starts_them_eight_at_a_time(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A-08-T24 rest (A-08 §5): every run is recorded first, then one fan-out workflow starts the
+    new ones at most 8 in flight; a replayed key starts nothing more."""
+    from abacus.modules.agents import section_draft
+    from abacus.modules.agents.workflow_types import SectionDraftChild, SectionDraftInput
+
+    tenant = uuid.uuid4()
+    made: dict[str, uuid.UUID] = {}
+    started: list[tuple[object, object]] = []
+
+    async def record(
+        ctx: object, engagement: object, paper: object, mode: str, section: str, key: str
+    ) -> tuple[uuid.UUID, SectionDraftChild | None]:
+        if key in made:
+            return made[key], None
+        made[key] = uuid.uuid4()
+        child = SectionDraftChild(
+            SectionDraftInput(str(tenant), str(made[key]), str(paper), mode, section),
+            f"section_draft:{made[key]}",
+        )
+        return made[key], child
+
+    async def dispatched(workflow: object, given: object, **kwargs: object) -> None:
+        started.append((workflow, given))
+
+    class _Ctx:
+        tenant_id = tenant
+
+    monkeypatch.setattr(section_draft, "_record", record)
+    monkeypatch.setattr(section_draft, "dispatch", dispatched)
+    sections = [f"item:{n}" for n in range(1, 13)]
+    first = await section_draft.start_many(
+        _Ctx(),  # type: ignore[arg-type] -- only the tenant id is read
+        uuid.uuid4(),
+        uuid.uuid4(),
+        "fieldwork_attribute",
+        sections,
+        "begin",
+    )
+    assert len(first) == 12
+    assert len(started) == 1
+    workflow, given = started[0]
+    assert workflow is section_draft.SectionDraftFanOutWorkflow
+    assert isinstance(given, section_draft.SectionDraftFanOutInput)
+    assert given.max_parallel == 8
+    assert [c.input.section_key for c in given.children] == sections
+    again = await section_draft.start_many(
+        _Ctx(),  # type: ignore[arg-type] -- only the tenant id is read
+        uuid.uuid4(),
+        uuid.uuid4(),
+        "fieldwork_attribute",
+        sections,
+        "begin",
+    )
+    assert again == first
+    assert len(started) == 1

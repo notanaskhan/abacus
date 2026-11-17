@@ -222,6 +222,25 @@ class SectionDraftInput:
 
 
 @dataclass(frozen=True)
+class SectionDraftChild:
+    """One recorded section drafter run and the workflow id it runs under (A-08-T24 rest)."""
+
+    input: SectionDraftInput
+    workflow_id: str
+
+
+@dataclass(frozen=True)
+class SectionDraftFanOutInput:
+    """A-08-T24 rest (A-08 §5: per item fan-out, max 8 parallel): the runs one person started
+    together (AUD-12 Begin, AUD-13 Run), each already recorded, started at most `max_parallel`
+    at a time."""
+
+    tenant_id: str
+    children: list[SectionDraftChild]
+    max_parallel: int
+
+
+@dataclass(frozen=True)
 class DecisionRecommendInput:
     """A-04-T15 (DEC-1953): one recommendation run for a card a proposer is raising. The run row
     holds the engagement and the initiator; it runs in the proposer's request (interactive)."""

@@ -39,6 +39,8 @@ with workflow.unsafe.imports_passed_through():
         RunInput,
         ScreeningInput,
         ScreeningOutcome,
+        SectionDraftChild,
+        SectionDraftFanOutInput,
         SectionDraftInput,
         SlotGrant,
     )
@@ -523,6 +525,34 @@ class EntryAssessWorkflow:
             raise
         finally:
             await _release("screening.release_slot", run)
+
+
+@workflow.defn(name="section_draft_fan_out")
+class SectionDraftFanOutWorkflow:
+    """A-08-T24 rest: start the recorded section drafter runs as child workflows, at most
+    `max_parallel` in flight; a child that fails ends its own run (`SectionDraftWorkflow` always
+    fails its run) and never stops the rest. Returns how many children ran."""
+
+    @workflow.run
+    async def run(self, input: SectionDraftFanOutInput) -> int:
+        gate = asyncio.Semaphore(max(1, input.max_parallel))
+
+        async def one(child: SectionDraftChild) -> None:
+            async with gate:
+                try:
+                    await workflow.execute_child_workflow(
+                        SectionDraftWorkflow.run,
+                        child.input,
+                        id=child.workflow_id,
+                        parent_close_policy=workflow.ParentClosePolicy.ABANDON,
+                    )
+                except asyncio.CancelledError:
+                    raise
+                except Exception:  # the child ended its own run; the rest go on
+                    workflow.logger.warning("section_draft_fan_out.child_failed")
+
+        await asyncio.gather(*(one(c) for c in input.children))
+        return len(input.children)
 
 
 @workflow.defn(name="section_draft")
