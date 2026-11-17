@@ -521,6 +521,8 @@ NOT_CREATING = {
     # act on existing rows, so 200.
     "/v1/component-instruction-sends/{send_id}/undo",
     "/v1/mapping-sets/group-confirm",
+    # S48 rest (A-09-T33): linking a drop to its deliverable acts on existing rows, so 200.
+    "/v1/portal/component-rooms/{room_id}/drops/{evidence_version_id}/deliverable",
 }
 
 

@@ -377,7 +377,10 @@ from abacus.modules.agents.workflow_types import (
     NextTickInput,
     RunInput,
     ScreeningInput,
+    SectionDraftChild,
+    SectionDraftFanOutInput,
     SectionDraftInput,
+    SectionDraftOpenIn,
     SlotGrant,
 )
 from abacus.modules.agents.workflows import (
@@ -385,6 +388,7 @@ from abacus.modules.agents.workflows import (
     GuidanceDraftWorkflow,
     InboxMatchWorkflow,
     ScreeningWorkflow,
+    SectionDraftFanOutWorkflow,
     SectionDraftWorkflow,
     UploadReviewWorkflow,
 )
@@ -690,8 +694,12 @@ __all__ = [
     "ScreeningResultView",
     "ScreeningWorkflow",
     "SectionDraft",
+    "SectionDraftChild",
+    "SectionDraftFanOutInput",
+    "SectionDraftFanOutWorkflow",
     "SectionDraftFinished",
     "SectionDraftInput",
+    "SectionDraftOpenIn",
     "SectionDraftWorkflow",
     "SectionSource",
     "ShadowReportChanged",

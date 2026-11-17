@@ -372,8 +372,9 @@ async def test_a_pull_whose_token_was_refused_leaves_the_slot_needs_reauth(seed:
         lambda tx: mark_slot_needs_reauth(tx, tenant_id=tenant, key=key, user_id=user),
     )
     states = await seed.value(
-        "SELECT string_agg(state, ',') FROM consolidation_trial_balances "
-        "WHERE consolidation_id = $1 AND superseded_by IS NULL",
+        "SELECT string_agg(t.state, ',') FROM consolidation_trial_balances t "
+        "JOIN consolidation_entities e ON e.id = t.consolidation_entity_id "
+        "WHERE e.consolidation_id = $1 AND t.superseded_by IS NULL",
         consolidation,
     )
     assert states == "needs_reauth"
@@ -407,7 +408,7 @@ async def _entry(
     return await seed.value(
         "INSERT INTO proposed_entries (tenant_id, engagement_id, work_item_id, kind, number, ref, "
         "threshold_result, is_attest_client, status, created_by_kind, created_by_id, "
-        "consolidation_id, posting_target) VALUES ($1, $2, $3, $4, 1, 'X-1', 'review_required', "
+        "consolidation_id, posting_target) VALUES ($1, $2, $3, $4, 1, $9, 'review_required', "
         "false, $5, 'human', $6, $7, $8) RETURNING id",
         tenant,
         engagement,
@@ -417,6 +418,7 @@ async def _entry(
         str(user),
         consolidation if kind == "elimination" else None,
         target,
+        "ELIM-1" if kind == "elimination" else "AJE-1",
     )
 
 

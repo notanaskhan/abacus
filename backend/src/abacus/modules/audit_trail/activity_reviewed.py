@@ -12,6 +12,12 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-17 (S48 rest): identifiers and a reason code only
+        "analytics.went_out_of_date",
+        "component_deliverable.request_blocked",
+        "component_deliverable.request_sent",
+        "support_conversation.read",
+        "support_message.reply_notice",
         # reviewed 2026-11-17 (S48 end pass): A-08-T21 to T24, A-09-T27/T28/T31, C-01-T25 to
         # T30, G-04-T08 to T13; identifiers, positions, counts, lengths and percents only (no
         # names, amounts, message text or client answers)

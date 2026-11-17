@@ -11,6 +11,7 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
+from abacus.modules.agents.api import SectionDraftFanOutWorkflow
 from abacus.modules.assurance.api import (
     ComponentLateSweep,
     FluxAnalyticsWorkflow,
@@ -28,6 +29,11 @@ RUNS: dict[str, tuple[str, type]] = {
         InstructionsSendWorkflow,
     ),
     "component-late-sweep-v1-swept": ("component_late:platform", ComponentLateSweep),
+    # S48 rest (A-08-T24, DEC-5425): the fan-out, two runs.
+    "section-draft-fan-out-v1-two": (
+        "section_draft_fan_out:00000000-0000-4000-8000-0000000000b1:recorder",
+        SectionDraftFanOutWorkflow,
+    ),
 }
 
 

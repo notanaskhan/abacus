@@ -2122,6 +2122,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/portal/component-rooms/{room_id}/drops", "component_deliverable.upload"),
     (
         "POST",
+        "/v1/portal/component-rooms/{room_id}/drops/{evidence_version_id}/deliverable",
+        "component_deliverable.upload",
+    ),
+    (
+        "POST",
         "/v1/portal/component-rooms/{room_id}/instructions/acknowledge",
         "component_instructions.acknowledge",
     ),

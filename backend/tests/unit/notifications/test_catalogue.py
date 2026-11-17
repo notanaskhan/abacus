@@ -60,6 +60,11 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "usage.threshold_crossed",
         "engagement_budget.threshold_crossed",
         "usage.scheduled_paused",
+        # S48 rest (DEC-5431): plan requests and the held support reply.
+        "plan_request.awaiting_partner",
+        "plan_request.decided",
+        "plan_request.applied",
+        "support.replied",
         # S47 partials: A-08-T17 the expansion's approver (DEC-5327); A-08-T18 the confirmation
         # kinds (DEC-5324); W-01-T13 a firm install needing reauth (DEC-5333).
         "sample_expansion.requested",
