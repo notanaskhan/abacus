@@ -790,6 +790,9 @@ from abacus.modules.reporting.statements import (  # noqa: E402
     draft as draft_statements,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
 )
 from abacus.modules.reporting.statements import (  # noqa: E402
+    package_state as statements_package_state,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for assurance's SSARS FS row (A-08-T22)
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
     pick_checklist as pick_statements_checklist,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the scenario loader
 )
 from abacus.modules.reporting.statements import (  # noqa: E402

@@ -369,6 +369,13 @@ async def _read_fs_state(ctx: AuthContext, engagement_id: UUID) -> str:
     return "not_started" if found is None else str(found.status)
 
 
+async def _fs_state(ctx: AuthContext, work_item_id: UUID) -> str:
+    """S48 rest: the FS row reads the statements package's own state (reporting owns it)."""
+    from abacus.modules.reporting.api import statements_package_state
+
+    return await statements_package_state(ctx.tenant, work_item_id)
+
+
 async def open_read_fs(ctx: AuthContext, work_item_id: UUID) -> UUID:
     """AUD-26c: the compilation's "Read the FS" procedure as a working paper (L1 sign-off)."""
     from abacus.modules.workpapers.api import create_workpaper, workpapers_for
@@ -435,7 +442,7 @@ async def workspace(ctx: AuthContext, work_item_id: UUID) -> Workspace:
         ]
     if mode == "compilation":
         rail.append(RailRow("read_fs", READ_FS_TITLE, await _read_fs_state(ctx, engagement_id)))
-    rail.append(RailRow("fs", "FS", "not_started"))
+    rail.append(RailRow("fs", "FS", await _fs_state(ctx, work_item_id)))
     if mode == "preparation":
         rail.append(RailRow("report", "No report — AR-C 70", "not_applicable"))
         approval = await _approval_label(ctx, engagement_id)

@@ -603,6 +603,18 @@ async def current_of(tenant: TenantContext, work_item_id: UUID) -> DocumentView:
     )
 
 
+async def package_state(tenant: TenantContext, work_item_id: UUID) -> str:
+    """A-08-T22 (S48 rest): the work item's financial-statements package as one status word for
+    a rail row: `not_started` (no document or no version yet), `out_of_date` (the current version
+    no longer matches the trial balance or the recorded entries), `published`, else `draft`."""
+    found = await current_of(tenant, work_item_id)
+    if found.document is None or found.current is None:
+        return "not_started"
+    if found.current.out_of_date:
+        return "out_of_date"
+    return "published" if found.document["status"] == "published" else "draft"
+
+
 # --- tie-out ----------------------------------------------------------------------------------
 
 
