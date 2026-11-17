@@ -376,6 +376,49 @@ async def engagement_budgets(ctx: AuthContext, alerting: bool) -> EngagementBudg
     return EngagementBudgetsOut(items=out, counts={"alerting": len(out)})
 
 
+# --- over-limit policy (G-04-T08) ----------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class OverLimit:
+    """`platform.api.over_limit_policy` (plan-usage contract): the firm's At 100% choice and
+    whether this usage month's minutes are at or over the included minutes."""
+
+    pause_scheduled: bool
+    at_or_over: bool
+    usage_month: str
+    minutes: int
+    included: int
+
+
+async def over_limit_policy(tenant: TenantContext) -> OverLimit:
+    from abacus.kernel._flags import PLATFORM_PLAN_USAGE
+    from abacus.kernel.flags import flag_enabled
+
+    month = usage_month_of(await clock.today(tenant))
+    async with tenant_session(tenant) as session:
+        policy = await session.scalar(text("SELECT at_100_behaviour FROM usage_alert_policies"))
+        minutes = int(
+            await session.scalar(
+                text(
+                    "SELECT coalesce(sum(minutes), 0) FROM usage_month_rollups "
+                    "WHERE usage_month = :m"
+                ),
+                {"m": month},
+            )
+            or 0
+        )
+    included = await _included(tenant)
+    on = await flag_enabled(tenant, PLATFORM_PLAN_USAGE)
+    return OverLimit(
+        pause_scheduled=on and policy == "pause_scheduled",
+        at_or_over=included > 0 and minutes >= included,
+        usage_month=month,
+        minutes=minutes,
+        included=included,
+    )
+
+
 # --- billing rates -------------------------------------------------------------------------------
 
 
@@ -579,8 +622,8 @@ __all__ = [
     "billing_rates",
     "budget_alerts",
     "create_request",
-    "settle_request",
     "engagement_budgets",
+    "over_limit_policy",
     "plan",
     "plan_requests",
     "register_billing_rates",
@@ -588,5 +631,6 @@ __all__ = [
     "rule_minutes",
     "set_billing_contact",
     "set_budget_alerts",
+    "settle_request",
     "used_pct",
 ]
